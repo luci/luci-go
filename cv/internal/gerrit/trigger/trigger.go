@@ -30,6 +30,10 @@ import (
 // known as CQ.
 const CQLabelName = "Commit-Queue"
 
+// AutoSubmitLabelName is the name of the Gerrit label used for triggering
+// auto submission on a given CL.
+const AutoSubmitLabelName = "Auto-Submit"
+
 var voteToMode = map[int32]run.Mode{
 	1: run.DryRun,
 	2: run.FullRun,
@@ -87,6 +91,15 @@ func Find(input *FindInput) *run.Triggers {
 		CqVoteTrigger:         cqTrigger,
 		NewPatchsetRunTrigger: nprTrigger,
 	}
+}
+
+func HasAutoSubmit(ci *gerritpb.ChangeInfo) bool {
+	for _, ai := range ci.GetLabels()[AutoSubmitLabelName].GetAll() {
+		if ai.GetValue() > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func isNewPatchsetRunTriggerable(cg *cfgpb.ConfigGroup) bool {

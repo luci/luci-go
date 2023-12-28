@@ -158,14 +158,15 @@ func TestRunBuilder(t *testing.T) {
 
 		owner, err := identity.MakeIdentity("user:owner@example.com")
 		So(err, ShouldBeNil)
-
+		trIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.User, triggerer.Email))
 		rb := Creator{
 			LUCIProject:              lProject,
 			ConfigGroupID:            prjcfg.ConfigGroupID("sha256:cafe/cq-group"),
 			OperationID:              "this-operation-id",
 			Mode:                     run.DryRun,
 			Owner:                    owner,
-			CreatedBy:                identity.Identity(fmt.Sprintf("%s:%s", identity.User, triggerer.Email)),
+			CreatedBy:                trIdentity,
+			BilledTo:                 trIdentity,
 			Options:                  &run.Options{},
 			ExpectedIncompleteRunIDs: common.MakeRunIDs("expected/000-run"),
 			InputCLs: []CL{
@@ -318,6 +319,7 @@ func TestRunBuilder(t *testing.T) {
 				Mode:                rb.Mode,
 				Owner:               rb.Owner,
 				CreatedBy:           rb.CreatedBy,
+				BilledTo:            rb.BilledTo,
 				Options:             &run.Options{},
 				DepRuns:             common.RunIDs{"dead-beef"},
 			}

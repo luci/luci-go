@@ -67,6 +67,8 @@ type Creator struct {
 	ModeDefinition *cfgpb.Mode
 	// Owner is the Run Owner. Required.
 	Owner identity.Identity
+	// BilledTo is to consume the Run quota of. Required.
+	BilledTo identity.Identity
 	// CreatedBy is the creator of the Run. Required.
 	CreatedBy identity.Identity
 	// Options is metadata of the Run. Required.
@@ -211,6 +213,8 @@ func (rb *Creator) prepare(now time.Time) {
 		panic("ModeDefinition is required for non-standard mode")
 	case rb.Owner == "":
 		panic("Owner is required")
+	case rb.BilledTo == "":
+		panic("BilledTo is required")
 	case rb.CreatedBy == "":
 		panic("CreatedBy is required")
 	case rb.Options == nil:
@@ -409,6 +413,7 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 		Status:         run.Status_PENDING,
 		Owner:          rb.Owner,
 		CreatedBy:      rb.CreatedBy,
+		BilledTo:       rb.BilledTo,
 		Options:        rb.Options,
 		DepRuns:        rb.DepRuns,
 	}

@@ -407,6 +407,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		return nil, errors.Annotate(err, "failed to construct triggerer identity of %s", t.GetEmail()).Err()
 	}
 	sort.Sort(incompleteRuns)
+	payer := quotaPayer(cls[latestIndex], owner, triggererIdentity, t)
 	return &runcreator.Creator{
 		ConfigGroupID:            cg.ID,
 		LUCIProject:              cg.ProjectString(),
@@ -415,6 +416,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		CreateTime:               t.GetTime().AsTime(),
 		Owner:                    owner,
 		CreatedBy:                triggererIdentity,
+		BilledTo:                 payer,
 		Options:                  opts,
 		ExpectedIncompleteRunIDs: incompleteRuns,
 		OperationID:              fmt.Sprintf("PM-%d", mathrand.Int63(ctx)),
@@ -696,4 +698,23 @@ func (rs *runStage) resolveDepRuns(ctx context.Context, rc *runcreator.Creator) 
 		}
 	}
 	return shouldCreateNow, depRuns
+}
+
+func quotaPayer(cl *changelist.CL, owner, triggerer identity.Identity, t *run.Trigger) identity.Identity {
+	switch owner {
+	case "":
+		panic(fmt.Errorf("CL %d: empty owner was given: %q", cl.ID, owner))
+	case identity.AnonymousIdentity:
+		panic(fmt.Errorf("CL %d: the CL owner is anonymous", cl.ID))
+	}
+	mode := run.Mode(t.GetMode())
+	cqv := t.GetModeDefinition().GetCqLabelValue()
+	switch {
+	case mode != run.FullRun && cqv != trigger.CQVoteByMode(run.FullRun):
+		return triggerer
+	case trigger.HasAutoSubmit(cl.Snapshot.GetGerrit().GetInfo()):
+		return owner
+	default:
+		return triggerer
+	}
 }

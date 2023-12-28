@@ -33,6 +33,40 @@ import (
 	la "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestHasAutoSubmit(t *testing.T) {
+	t.Parallel()
+
+	c.Convey("HasAutoSubmit", t, func() {
+		now := testclock.TestRecentTimeUTC
+		ci := &gerritpb.ChangeInfo{
+			Status:          gerritpb.ChangeStatus_NEW,
+			CurrentRevision: "deadbeef~1",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef~1": {
+					Number:  2,
+					Created: timestamppb.New(now.Add(-30 * time.Minute)),
+				},
+				"deadbeef~2": {
+					Number:  1,
+					Created: timestamppb.New(now.Add(-1 * time.Hour)),
+				},
+			},
+			Labels: map[string]*gerritpb.LabelInfo{
+				AutoSubmitLabelName: {
+					All: nil, // set in tests.
+				},
+			},
+		}
+		c.So(HasAutoSubmit(ci), c.ShouldBeFalse)
+		ci.Labels[AutoSubmitLabelName].All = []*gerritpb.ApprovalInfo{{
+			User:  gf.U("u-1"),
+			Value: modeToVote[run.FullRun],
+			Date:  timestamppb.New(now.Add(-15 * time.Minute)),
+		}}
+		c.So(HasAutoSubmit(ci), c.ShouldBeTrue)
+	})
+}
+
 func TestFindCQTrigger(t *testing.T) {
 	t.Parallel()
 
