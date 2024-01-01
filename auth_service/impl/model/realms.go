@@ -147,13 +147,13 @@ func MergeRealms(
 	projectIDs := make([]string, len(allAuthProjectRealms))
 	realmsByProject := make(map[string]*protocol.Realms, len(allAuthProjectRealms))
 	for i, authProjectRealms := range allAuthProjectRealms {
-		projectRealms := &protocol.Realms{}
-		if err := proto.Unmarshal(authProjectRealms.Realms, projectRealms); err != nil {
+		projRealms, err := authProjectRealms.RealmsToProto()
+		if err != nil {
 			return nil, errors.Annotate(err,
-				"error unmarshalling Realms from AuthProjectRealms").Err()
+				"error parsing Realms from AuthProjectRealms").Err()
 		}
 		projectIDs[i] = authProjectRealms.ID
-		realmsByProject[authProjectRealms.ID] = projectRealms
+		realmsByProject[authProjectRealms.ID] = projRealms
 	}
 	sort.Strings(projectIDs)
 

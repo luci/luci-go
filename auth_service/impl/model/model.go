@@ -17,10 +17,12 @@ package model
 
 import (
 	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/base64"
 	stderrors "errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -518,6 +520,29 @@ func makeAuthProjectRealmsMeta(ctx context.Context, project string) *AuthProject
 		ID:     "meta",
 		Parent: projectRealmsKey(ctx, project),
 	}
+}
+
+// RealmsToProto processes the Realms field and returns it as a proto.
+//
+// Returns an annotated error if one occurs.
+func (apr *AuthProjectRealms) RealmsToProto() (projectRealms *protocol.Realms, err error) {
+	blob := apr.Realms
+	// Project realms may have been stored by either the Python or Go
+	// version of Auth Service. If written by the Python version, then
+	// legacy decoding is necessary prior to unmarshalling the realms.
+	if isLegacyEncoded(blob) {
+		blob, err = decodeLegacyData(blob)
+		if err != nil {
+			return nil, errors.Annotate(err, "error decoding project realms").Err()
+		}
+	}
+
+	projectRealms = &protocol.Realms{}
+	if err = proto.Unmarshal(blob, projectRealms); err != nil {
+		return nil, errors.Annotate(err, "error unmarshalling project realms").Err()
+	}
+
+	return projectRealms, nil
 }
 
 // ProjectID returns the project that an AuthProjectRealmsMeta is connected to.
@@ -1718,4 +1743,35 @@ func (snapshot *AuthDBSnapshot) ToProto() *rpcpb.Snapshot {
 		AuthDbDeflated: snapshot.AuthDBDeflated,
 		CreatedTs:      timestamppb.New(snapshot.CreatedTS),
 	}
+}
+
+// /////////////////////////////////////////////////////////////////////
+// ///////////// Realms legacy decoding helper functions ///////////////
+// /////////////////////////////////////////////////////////////////////
+
+// decodeLegacyData decodes the given data using zlib.
+func decodeLegacyData(input []byte) ([]byte, error) {
+	r, err := zlib.NewReader(bytes.NewBuffer(input))
+	if err != nil {
+		return nil, err
+	}
+	w := bytes.NewBuffer([]byte{})
+	if _, err := io.Copy(w, r); err != nil {
+		_ = r.Close()
+		return w.Bytes(), err
+	}
+	return w.Bytes(), r.Close()
+}
+
+// isLegacyEncoded returns whether the given blob has zlib headers.
+func isLegacyEncoded(blob []byte) bool {
+	// Based on https://github.com/googleapis/python-ndb/blob/b0f431048b7b/google/cloud/ndb/model.py#L338
+	// Check for the two prefixes:
+	// "x\x9c" -> {0x78, 0x9c}
+	// "x^" -> {0x78, 0x5e}
+	if len(blob) < 2 {
+		return false
+	}
+	header := ([2]byte)(blob[:2])
+	return header == [2]byte{0x78, 0x9c} || header == [2]byte{0x78, 0x5e}
 }

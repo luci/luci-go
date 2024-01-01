@@ -15,6 +15,8 @@
 package model
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"crypto/sha256"
 	"fmt"
@@ -1851,5 +1853,58 @@ func TestProtoConversion(t *testing.T) {
 		g.AuthVersionedEntityMixin = AuthVersionedEntityMixin{}
 
 		So(AuthGroupFromProto(ctx, g.ToProto(true)), ShouldResemble, g)
+	})
+}
+
+func TestRealmsToProto(t *testing.T) {
+	t.Parallel()
+
+	Convey("Parsing Realms from AuthProjectRealms", t, func() {
+		projRealms := &protocol.Realms{
+			Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
+			Realms: []*protocol.Realm{
+				{
+					Name: "testProj:@root",
+					Bindings: []*protocol.Binding{
+						{
+							// Permissions p2, z, p1.
+							Permissions: []uint32{0, 1, 2},
+							Principals:  []string{"group:gr1"},
+						},
+					},
+				},
+			},
+		}
+		modernFormat, err := proto.Marshal(projRealms)
+		So(err, ShouldBeNil)
+
+		Convey("modern format", func() {
+			apr := &AuthProjectRealms{
+				ID:     "testProj",
+				Realms: modernFormat,
+			}
+			parsed, err := apr.RealmsToProto()
+			So(err, ShouldBeNil)
+			So(parsed, ShouldResembleProto, projRealms)
+		})
+
+		Convey("legacy format", func() {
+			// This is an approximation of what the Python version of
+			// Auth Service would have put in Datastore.
+			var b bytes.Buffer
+			w := zlib.NewWriter(&b)
+			_, err := w.Write(modernFormat)
+			So(err, ShouldBeNil)
+			So(w.Close(), ShouldBeNil)
+			legacyFormat := b.Bytes()
+
+			apr := &AuthProjectRealms{
+				ID:     "testProj",
+				Realms: legacyFormat,
+			}
+			parsed, err := apr.RealmsToProto()
+			So(err, ShouldBeNil)
+			So(parsed, ShouldResembleProto, projRealms)
+		})
 	})
 }
