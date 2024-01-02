@@ -3224,6 +3224,7 @@ scheduler.policy(
     max_concurrent_invocations = None,
     max_batch_size = None,
     log_base = None,
+    pending_timeout = None,
 )
 ```
 
@@ -3246,13 +3247,18 @@ The following batching strategies are supported:
     and up to `max_batch_size` limit) and collapses them into one new build,
     where N is the total number of pending triggers. The base of the
     logarithm is defined by `log_base`.
+  * `scheduler.NEWEST_FIRST`: use a function that prioritizes the most recent
+     pending triggering requests. Triggers stay pending until they either
+    become the most recent pending triggering request or expire. The timeout
+    for pending triggers is specified by `pending_timeout`.
 
 #### Arguments {#scheduler.policy-args}
 
 * **kind**: one of `*_BATCHING_KIND` values above. Required.
 * **max_concurrent_invocations**: limit on a number of builds running at the same time. If the number of currently running builds launched through LUCI Scheduler is more than or equal to this setting, LUCI Scheduler will keep queuing up triggering requests, waiting for some running build to finish before starting a new one. Default is 1.
-* **max_batch_size**: limit on how many pending triggering requests to "collapse" into a new single build. For example, setting this to 1 will make each triggering request result in a separate build. When multiple triggering request are collapsed into a single build, properties of the most recent triggering request are used to derive properties for the build. For example, when triggering requests come from a [luci.gitiles_poller(...)](#luci.gitiles-poller), only a git revision from the latest triggering request (i.e. the latest commit) will end up in the build properties. Default is 1000 (effectively unlimited).
+* **max_batch_size**: limit on how many pending triggering requests to "collapse" into a new single build. For example, setting this to 1 will make each triggering request result in a separate build. When multiple triggering request are collapsed into a single build, properties of the most recent triggering request are used to derive properties for the build. For example, when triggering requests come from a [luci.gitiles_poller(...)](#luci.gitiles-poller), only a git revision from the latest triggering request (i.e. the latest commit) will end up in the build properties. This value is ignored by NEWEST_FIRST, since batching isn't well-defined in that policy kind. Default is 1000 (effectively unlimited).
 * **log_base**: base of the logarithm operation during logarithmic batching. For example, setting this to 2, will cause 3 out of 8 pending triggering requests to be combined into a single build. Required when using `LOGARITHMIC_BATCHING_KIND`, ignored otherwise. Must be larger or equal to 1.0001 for numerical stability reasons.
+* **pending_timeout**: how long until a pending trigger is discarded. For example, setting this to 1 day will cause triggers that stay pending for at least 1 day to be removed from consideration. This value is ignored by policy kinds other than NEWEST_FIRST, which can starve old triggers and cause the pending triggers list to grow without bound. Default is 7 days.
 
 
 #### Returns  {#scheduler.policy-returns}
@@ -3298,6 +3304,26 @@ See [scheduler.policy(...)](#scheduler.policy) for all details.
 * **log_base**: see [scheduler.policy(...)](#scheduler.policy). Required.
 * **max_concurrent_invocations**: see [scheduler.policy(...)](#scheduler.policy).
 * **max_batch_size**: see [scheduler.policy(...)](#scheduler.policy).
+
+
+
+
+### scheduler.newest_first {#scheduler.newest-first}
+
+```python
+scheduler.newest_first(max_concurrent_invocations = None, pending_timeout = None)
+```
+
+
+
+Shortcut for `scheduler.policy(scheduler.NEWEST_FIRST_KIND, ...)`.
+
+See [scheduler.policy(...)](#scheduler.policy) for all details.
+
+#### Arguments {#scheduler.newest-first-args}
+
+* **max_concurrent_invocations**: see [scheduler.policy(...)](#scheduler.policy).
+* **pending_timeout**: see [scheduler.policy(...)](#scheduler.policy).
 
 
 

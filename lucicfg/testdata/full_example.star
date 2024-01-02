@@ -216,6 +216,17 @@ luci.builder(
 )
 
 luci.builder(
+    name = "newest first schedule builder",
+    bucket = "ci",
+    executable = "main/recipe",
+    triggering_policy = scheduler.newest_first(
+        max_concurrent_invocations = 2,
+        pending_timeout = 3*24*time.hour,
+    ),
+    repo = "https://newest-first.repo.example.com",
+)
+
+luci.builder(
     name = "builder with custom swarming host",
     bucket = "ci",
     executable = "main/recipe",
@@ -967,6 +978,24 @@ lucicfg.emit(
 #       description_html: "this is a linux ci builder"
 #     }
 #     builders {
+#       name: "newest first schedule builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       exe {
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
+#       }
+#     }
+#     builders {
 #       name: "watched builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       exe {
@@ -1448,6 +1477,23 @@ lucicfg.emit(
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.ci"
 #     builder: "linux ci builder"
+#   }
+# }
+# job {
+#   id: "newest first schedule builder"
+#   realm: "ci"
+#   acl_sets: "ci"
+#   triggering_policy {
+#     kind: NEWEST_FIRST
+#     max_concurrent_invocations: 2
+#     pending_timeout {
+#       seconds: 259200
+#     }
+#   }
+#   buildbucket {
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "luci.infra.ci"
+#     builder: "newest first schedule builder"
 #   }
 # }
 # job {
