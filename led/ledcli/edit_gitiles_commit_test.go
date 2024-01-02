@@ -29,41 +29,65 @@ func TestParseGitilesURL(t *testing.T) {
 
 	cases := []struct {
 		url    string
+		ref    string
 		err    string
 		commit *bbpb.GitilesCommit
 	}{
 		// Failure cases
 		{
 			url: "",
+			ref: "",
 			err: "Only *.googlesource.com URLs are supported",
 		},
 		{
 			url: "https://some.gitiles.com/c/bar/+/123",
+			ref: "",
 			err: "Only *.googlesource.com URLs are supported",
 		},
 		{
 			url: "https://chromium.googlesource.com/chromium/src/+/invalid/ref",
+			ref: "",
 			err: "Commit ref should start with `refs/`: \"invalid/ref\"",
 		},
 		{
 			url: "https://chromium-review.googlesource.com/c/chromium/src/+/4812898",
+			ref: "",
 			err: "Please specify Gitiles URL instead of Gerrit URL",
+		},
+		{
+			url: "https://chromium.googlesource.com/chromium/src/+/refs/tags/120.0.6045.58",
+			ref: "refs/tags/120.0.6045.58",
+			err: "Please remove `-ref` flag from the command, ref is already found from gitiles url",
+		},
+		{
+			url: "https://chromium.googlesource.com/chromium/src/+/b09958322314a4d429f5e335e1a8b8ccb7c5000d",
+			ref: "",
+			err: "Please provide commit ref through `-ref` flag",
+		},
+		{
+			url: "https://chromium.googlesource.com/chromium/src/+/b09958322314a4d429f5e335e1a8b8ccb7c5999d",
+			ref: "main",
+			err: "Commit ref should start with `refs/`: \"main\"",
 		},
 		// Success cases
 		{
 			url: "https://chromium.googlesource.com/chromium/src/+/b09958322314a4d429f5e335e1a8b8ccb7c5520d",
+			ref: "refs/heads/main",
 			commit: &bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Id:      "b09958322314a4d429f5e335e1a8b8ccb7c5520d",
+				Ref:     "refs/heads/main",
 			},
 		},
 		{
 			url: "https://chromium.git.corp.google.com/chromium/src/+/b09958322314a4d429f5e335e1a8b8ccb7c5520d",
+			ref: "refs/heads/main",
 			commit: &bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Id:      "b09958322314a4d429f5e335e1a8b8ccb7c5520d",
+				Ref:     "refs/heads/main",
 			},
 		},
 		{
@@ -80,7 +104,7 @@ func TestParseGitilesURL(t *testing.T) {
 		for _, tc := range cases {
 			tc := tc
 			Convey(fmt.Sprintf("%q", tc.url), func() {
-				commit, err := parseGitilesURL(tc.url)
+				commit, err := parseGitilesURL(tc.url, tc.ref)
 				if tc.err != "" {
 					So(commit, ShouldBeNil)
 					So(err, ShouldErrLike, tc.err)
