@@ -101,4 +101,10 @@ message Settings {
     string host = 1;
   }
   LuciBisection luci_bisection = 8;
+
+  message SheriffOMatic {
+    // host is the hostname of the Sheriff-O-Matic instance we're pointing to (eg. sheriff-o-matic.appspot.com).
+    string host = 1;
+  }
+  LuciBisection sheriff_o_matic = 9;
 }
