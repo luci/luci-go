@@ -435,75 +435,81 @@ def _buildbucket_shadow_bucket_constraints(buckets):
         constraints.pools.extend(pools)
     return shadow_bucket_constraints
 
+def _buildbucket_builder(node, def_swarming_host):
+    if node.key.kind != kinds.BUILDER:
+        fail("impossible")
+    exe, recipe, properties, experiments = _handle_executable(node)
+    combined_experiments = dict(node.props.experiments)
+    combined_experiments.update(experiments)
+    task_template_canary_percentage = None
+    if _use_experiment_for_task_template_canary_percentage.is_enabled():
+        if node.props.task_template_canary_percentage:
+            combined_experiments["luci.buildbucket.canary_software"] = node.props.task_template_canary_percentage
+    else:
+        task_template_canary_percentage = optional_UInt32Value(
+            node.props.task_template_canary_percentage,
+        )
+    bldr_config = buildbucket_pb.BuilderConfig(
+        name = node.props.name,
+        description_html = node.props.description_html,
+        exe = exe,
+        recipe = recipe,
+        properties = properties,
+        allowed_property_overrides = sorted(node.props.allowed_property_overrides),
+        service_account = node.props.service_account,
+        caches = _buildbucket_caches(node.props.caches),
+        execution_timeout_secs = optional_sec(node.props.execution_timeout),
+        grace_period = optional_duration_pb(node.props.grace_period),
+        heartbeat_timeout_secs = optional_sec(node.props.heartbeat_timeout),
+        dimensions = _buildbucket_dimensions(node.props.dimensions),
+        priority = node.props.priority,
+        expiration_secs = optional_sec(node.props.expiration_timeout),
+        wait_for_capacity = _buildbucket_trinary(node.props.wait_for_capacity),
+        retriable = _buildbucket_trinary(node.props.retriable),
+        build_numbers = _buildbucket_toggle(node.props.build_numbers),
+        experimental = _buildbucket_toggle(node.props.experimental),
+        experiments = combined_experiments,
+        task_template_canary_percentage = task_template_canary_percentage,
+        resultdb = node.props.resultdb,
+        contact_team_email = node.props.contact_team_email,
+    )
+    if node.props.backend != None:
+        backend = graph.node(node.props.backend)
+        bldr_config.backend = buildbucket_pb.BuilderConfig.Backend(
+            target = backend.props.target,
+            config_json = backend.props.config,
+        )
+    if node.props.backend_alt != None:
+        backend_alt = graph.node(node.props.backend_alt)
+        bldr_config.backend_alt = buildbucket_pb.BuilderConfig.Backend(
+            target = backend_alt.props.target,
+            config_json = backend_alt.props.config,
+        )
+
+    swarming_host = node.props.swarming_host
+    if node.props.backend == None and node.props.backend_alt == None and not swarming_host:
+        if not def_swarming_host:
+            def_swarming_host = get_service("swarming", "defining builders").host
+        swarming_host = def_swarming_host
+    if swarming_host:
+        bldr_config.swarming_host = swarming_host
+        bldr_config.swarming_tags = node.props.swarming_tags
+
+    if node.props.shadow_service_account or node.props.shadow_pool or node.props.shadow_properties or node.props.shadow_dimensions:
+        bldr_config.shadow_builder_adjustments = buildbucket_pb.BuilderConfig.ShadowBuilderAdjustments(
+            service_account = node.props.shadow_service_account,
+            pool = node.props.shadow_pool,
+            properties = to_json(node.props.shadow_properties) if node.props.shadow_properties else None,
+            dimensions = _buildbucket_dimensions(node.props.shadow_dimensions, allow_none = True),
+        )
+    return bldr_config, def_swarming_host
+
 def _buildbucket_builders(bucket):
     """luci.bucket(...) node => buildbucket_pb.Swarming or None."""
     def_swarming_host = None
     builders = []
     for node in graph.children(bucket.key, kinds.BUILDER):
-        exe, recipe, properties, experiments = _handle_executable(node)
-        combined_experiments = dict(node.props.experiments)
-        combined_experiments.update(experiments)
-        task_template_canary_percentage = None
-        if _use_experiment_for_task_template_canary_percentage.is_enabled():
-            if node.props.task_template_canary_percentage:
-                combined_experiments["luci.buildbucket.canary_software"] = node.props.task_template_canary_percentage
-        else:
-            task_template_canary_percentage = optional_UInt32Value(
-                node.props.task_template_canary_percentage,
-            )
-        bldr_config = buildbucket_pb.BuilderConfig(
-            name = node.props.name,
-            description_html = node.props.description_html,
-            exe = exe,
-            recipe = recipe,
-            properties = properties,
-            allowed_property_overrides = sorted(node.props.allowed_property_overrides),
-            service_account = node.props.service_account,
-            caches = _buildbucket_caches(node.props.caches),
-            execution_timeout_secs = optional_sec(node.props.execution_timeout),
-            grace_period = optional_duration_pb(node.props.grace_period),
-            heartbeat_timeout_secs = optional_sec(node.props.heartbeat_timeout),
-            dimensions = _buildbucket_dimensions(node.props.dimensions),
-            priority = node.props.priority,
-            expiration_secs = optional_sec(node.props.expiration_timeout),
-            wait_for_capacity = _buildbucket_trinary(node.props.wait_for_capacity),
-            retriable = _buildbucket_trinary(node.props.retriable),
-            build_numbers = _buildbucket_toggle(node.props.build_numbers),
-            experimental = _buildbucket_toggle(node.props.experimental),
-            experiments = combined_experiments,
-            task_template_canary_percentage = task_template_canary_percentage,
-            resultdb = node.props.resultdb,
-            contact_team_email = node.props.contact_team_email,
-        )
-        if node.props.backend != None:
-            backend = graph.node(node.props.backend)
-            bldr_config.backend = buildbucket_pb.BuilderConfig.Backend(
-                target = backend.props.target,
-                config_json = backend.props.config,
-            )
-        if node.props.backend_alt != None:
-            backend_alt = graph.node(node.props.backend_alt)
-            bldr_config.backend_alt = buildbucket_pb.BuilderConfig.Backend(
-                target = backend_alt.props.target,
-                config_json = backend_alt.props.config,
-            )
-
-        swarming_host = node.props.swarming_host
-        if node.props.backend == None and node.props.backend_alt == None and not swarming_host:
-            if not def_swarming_host:
-                def_swarming_host = get_service("swarming", "defining builders").host
-            swarming_host = def_swarming_host
-        if swarming_host:
-            bldr_config.swarming_host = swarming_host
-            bldr_config.swarming_tags = node.props.swarming_tags
-
-        if node.props.shadow_service_account or node.props.shadow_pool or node.props.shadow_properties or node.props.shadow_dimensions:
-            bldr_config.shadow_builder_adjustments = buildbucket_pb.BuilderConfig.ShadowBuilderAdjustments(
-                service_account = node.props.shadow_service_account,
-                pool = node.props.shadow_pool,
-                properties = to_json(node.props.shadow_properties) if node.props.shadow_properties else None,
-                dimensions = _buildbucket_dimensions(node.props.shadow_dimensions, allow_none = True),
-            )
+        bldr_config, def_swarming_host = _buildbucket_builder(node, def_swarming_host)
         builders.append(bldr_config)
     return buildbucket_pb.Swarming(builders = builders) if builders else None
 
