@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 
 	"go.chromium.org/luci/cipkg/core"
@@ -113,7 +114,15 @@ func MustSetExecutor[M proto.Message](r *ReexecRegistry, execFunc Executor[M]) {
 // Any application using the framework must call the .Intercept() function very
 // early in your program's `main()`. This will intercept the invocation of this
 // program and divert execution control to the registered Executor.
+// On windows, environment variable NoDefaultCurrentDirectoryInExePath will
+// always be set to prevent searching binaries from current workding directory
+// by default, which because of its relative nature, is forbidden by golang.
 func (r *ReexecRegistry) Intercept(ctx context.Context) {
+	if runtime.GOOS == "windows" {
+		if err := os.Setenv("NoDefaultCurrentDirectoryInExePath", "1"); err != nil {
+			panic(fmt.Sprintf("failed to set NoDefaultCurrentDirectoryInExePath on Windows: %s", err))
+		}
+	}
 	r.interceptWithArgs(ctx, environ.System(), os.Args, os.Exit)
 }
 

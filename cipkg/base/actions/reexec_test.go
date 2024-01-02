@@ -17,6 +17,10 @@ package actions
 import (
 	"context"
 	"errors"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"go.chromium.org/luci/cipkg/core"
@@ -68,4 +72,47 @@ func checkReexecArg(args []string, m proto.Message) {
 	b, err := protojson.Marshal(m)
 	So(err, ShouldBeNil)
 	So(args, ShouldContain, string(b))
+}
+
+// This test is for windows's default binary searching behaviour, which lookup
+// from current working directory. Because of its relative nature, this is
+// forbidden by golang and causing error. We expect if Intercept() is called,
+// NoDefaultCurrentDirectoryInExePath will be set to prevent that behaviour.
+func TestBinLookup(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.SkipNow()
+	}
+
+	Convey("lookup from cwd", t, func() {
+		bin := t.TempDir()
+
+		f, err := os.CreateTemp(bin, "something*.exe")
+		So(err, ShouldBeNil)
+		err = f.Close()
+		So(err, ShouldBeNil)
+
+		olddir, err := os.Getwd()
+		So(err, ShouldBeNil)
+		err = os.Chdir(bin)
+		So(err, ShouldBeNil)
+		t.Cleanup(func() {
+			if err := os.Chdir(olddir); err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		fname := filepath.Base(f.Name())
+
+		err = os.Unsetenv("NoDefaultCurrentDirectoryInExePath")
+		So(err, ShouldBeNil)
+
+		_, err = exec.LookPath(fname)
+		So(errors.Is(err, exec.ErrDot), ShouldBeTrue)
+
+		err = os.Setenv("NoDefaultCurrentDirectoryInExePath", "1")
+		So(err, ShouldBeNil)
+
+		_, err = exec.LookPath(fname)
+		So(errors.Is(err, exec.ErrNotFound), ShouldBeTrue)
+	})
 }
