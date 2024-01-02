@@ -1036,7 +1036,7 @@ func TestValidateProject(t *testing.T) {
 							use_invocation_timestamp: true
 						}
 					}
-					execution_timeout_secs: 172800
+					execution_timeout_secs: 432000
 				}
 				builders {
 					name: "only expiration_secs"
@@ -1052,7 +1052,7 @@ func TestValidateProject(t *testing.T) {
 						cipd_version: "refs/heads/main"
 					}
 					properties: "{}"
-					expiration_secs: 172800
+					expiration_secs: 432000
 				}
 				builders {
 					name: "both specified"
@@ -1067,7 +1067,7 @@ func TestValidateProject(t *testing.T) {
 						dimensions: "pool:shadow_pool"
 						dimensions: "allowempty:"
 					}
-					expiration_secs: 172800
+					expiration_secs: 432000
 					execution_timeout_secs: 172800
 				}
 			`
@@ -1075,9 +1075,9 @@ func TestValidateProject(t *testing.T) {
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 3)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "execution_timeout_secs 172800 + (default) expiration_secs 21600 exceeds max build completion time 172800")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(default) execution_timeout_secs 10800 + expiration_secs 172800 exceeds max build completion time 172800")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "execution_timeout_secs 172800 + expiration_secs 172800 exceeds max build completion time 172800")
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "execution_timeout_secs 432000 + (default) expiration_secs 21600 exceeds max build completion time 432000")
+			So(ve.Errors[1].Error(), ShouldContainSubstring, "(default) execution_timeout_secs 10800 + expiration_secs 432000 exceeds max build completion time 432000")
+			So(ve.Errors[2].Error(), ShouldContainSubstring, "execution_timeout_secs 172800 + expiration_secs 432000 exceeds max build completion time 432000")
 		})
 	})
 

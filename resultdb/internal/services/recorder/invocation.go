@@ -42,9 +42,13 @@ const (
 
 	// By default, finalize the invocation 2d after creation if it is still
 	// incomplete.
+	defaultInvocationDeadlineDuration = 2 * day
+
+	// The maximum amount of time for an invocation.
 	// This is the same as the BUILD_TIMEOUT
 	// https://source.chromium.org/chromium/infra/infra/+/main:appengine/cr-buildbucket/model.py;l=28;drc=e6d97dc362dd4a412fc7b07da0c4df53f2940a80
-	defaultInvocationDeadlineDuration = 2 * day
+	// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/buildbucket/appengine/model/build.go;l=53
+	maxInvocationDeadlineDuration = 5 * day
 )
 
 // invocationTokenKind generates and validates tokens issued to authorize

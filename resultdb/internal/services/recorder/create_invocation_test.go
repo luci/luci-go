@@ -67,7 +67,7 @@ func TestValidateInvocationDeadline(t *testing.T) {
 		Convey(`deadline in the future`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(1e3 * time.Hour))
 			err := validateInvocationDeadline(deadline, now)
-			So(err, ShouldErrLike, `must be before 48h in the future`)
+			So(err, ShouldErrLike, `must be before 120h in the future`)
 		})
 	})
 }

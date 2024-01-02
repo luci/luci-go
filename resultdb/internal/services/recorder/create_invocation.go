@@ -67,8 +67,8 @@ func validateInvocationDeadline(deadline *timestamppb.Timestamp, now time.Time) 
 	case d.Sub(now) < 10*time.Second:
 		return errors.Reason("must be at least 10 seconds in the future").Err()
 
-	case d.Sub(now) > 2*24*time.Hour:
-		return errors.Reason("must be before 48h in the future").Err()
+	case d.Sub(now) > maxInvocationDeadlineDuration:
+		return errors.Reason("must be before %dh in the future", int(maxInvocationDeadlineDuration.Hours())).Err()
 
 	default:
 		return nil

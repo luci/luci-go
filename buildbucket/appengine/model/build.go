@@ -50,7 +50,7 @@ const (
 	BuildStorageDuration = time.Hour * 24 * 30 * 18 // ~18 months
 	// BuildMaxCompletionTime defines the maximum duration that a Build must be
 	// completed within, from the build creation time.
-	BuildMaxCompletionTime = time.Hour * 24 * 2 // 2 days
+	BuildMaxCompletionTime = time.Hour * 24 * 5 // 5 days
 
 	// defaultBuildSyncInterval is the default interval between a build's latest
 	// update time and the next time to sync it with backend.
