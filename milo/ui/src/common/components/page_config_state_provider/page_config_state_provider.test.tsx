@@ -123,4 +123,31 @@ describe('PageConfigStateProvider', () => {
       'Error: cannot support two page config dialogs at the same time',
     );
   });
+
+  it('switch between pages', async () => {
+    const { rerender } = render(
+      <PageConfigStateProvider>
+        <TestConfigButton />
+        <TestPage />
+      </PageConfigStateProvider>,
+    );
+
+    expect(screen.getByTestId('open-config-dialog')).not.toBeDisabled();
+
+    rerender(
+      <PageConfigStateProvider>
+        <TestConfigButton />
+      </PageConfigStateProvider>,
+    );
+    expect(screen.getByTestId('open-config-dialog')).toBeDisabled();
+
+    rerender(
+      <PageConfigStateProvider>
+        <TestConfigButton />
+        <TestPage />
+      </PageConfigStateProvider>,
+    );
+
+    expect(screen.getByTestId('open-config-dialog')).not.toBeDisabled();
+  });
 });

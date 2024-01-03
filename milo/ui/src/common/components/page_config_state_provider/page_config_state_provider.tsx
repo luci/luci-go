@@ -102,7 +102,7 @@ export function usePageSpecificConfig() {
 
   useEffect(() => {
     ctx.setCurrentPageId(componentId);
-    () => ctx.setCurrentPageId(null);
+    return () => ctx.setCurrentPageId(null);
   }, [ctx, componentId]);
 
   return [ctx.showConfigDialog, ctx.setShowConfigDialog] as const;
