@@ -90,53 +90,55 @@ func TestCollect(t *testing.T) {
 		mockedStdoutErr := error(nil)
 		mockedCASErr := error(nil)
 
-		service := &swarmingtest.Client{
-			TaskResultsMock: func(ctx context.Context, taskIDs []string, fields *swarming.TaskResultFields) ([]swarming.ResultOrErr, error) {
-				out := make([]swarming.ResultOrErr, len(taskIDs))
-				for i, taskID := range taskIDs {
-					if code, ok := mockedErr[taskID]; ok {
-						out[i] = swarming.ResultOrErr{Err: status.Errorf(code, "some error")}
-					} else if state, ok := mockedState[taskID]; ok {
-						out[i] = swarming.ResultOrErr{
-							Result: &swarmingv2.TaskResultResponse{
-								TaskId: taskID,
-								State:  state,
-							},
-						}
-						if mockedHasCAS[taskID] {
-							out[i].Result.CasOutputRoot = &swarmingv2.CASReference{
-								CasInstance: "cas-instance",
-								Digest: &swarmingv2.Digest{
-									Hash: "cas-" + taskID,
+		service := func() *swarmingtest.Client {
+			return &swarmingtest.Client{
+				TaskResultsMock: func(ctx context.Context, taskIDs []string, fields *swarming.TaskResultFields) ([]swarming.ResultOrErr, error) {
+					out := make([]swarming.ResultOrErr, len(taskIDs))
+					for i, taskID := range taskIDs {
+						if code, ok := mockedErr[taskID]; ok {
+							out[i] = swarming.ResultOrErr{Err: status.Errorf(code, "some error")}
+						} else if state, ok := mockedState[taskID]; ok {
+							out[i] = swarming.ResultOrErr{
+								Result: &swarmingv2.TaskResultResponse{
+									TaskId: taskID,
+									State:  state,
 								},
 							}
+							if mockedHasCAS[taskID] {
+								out[i].Result.CasOutputRoot = &swarmingv2.CASReference{
+									CasInstance: "cas-instance",
+									Digest: &swarmingv2.Digest{
+										Hash: "cas-" + taskID,
+									},
+								}
+							}
+						} else {
+							panic(fmt.Sprintf("unexpected task %q", taskID))
 						}
-					} else {
-						panic(fmt.Sprintf("unexpected task %q", taskID))
 					}
-				}
-				return out, nil
-			},
+					return out, nil
+				},
 
-			TaskOutputMock: func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
-				return &swarmingv2.TaskOutputResponse{
-					Output: []byte(fmt.Sprintf("Output of %s", taskID)),
-				}, mockedStdoutErr
-			},
+				TaskOutputMock: func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
+					return &swarmingv2.TaskOutputResponse{
+						Output: []byte(fmt.Sprintf("Output of %s", taskID)),
+					}, mockedStdoutErr
+				},
 
-			FilesFromCASMock: func(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
-				if casRef.CasInstance != "cas-instance" {
-					panic("unexpected CAS instance")
-				}
-				if !strings.HasPrefix(casRef.Digest.Hash, "cas-") {
-					panic("unexpected fake digest")
-				}
-				taskID := casRef.Digest.Hash[len("cas-"):]
-				if want := filepath.Join(casOutputDir, taskID); want != outdir {
-					panic(fmt.Sprintf("expecting out dir %q, got %q", want, outdir))
-				}
-				return []string{"out-" + taskID}, mockedCASErr
-			},
+				FilesFromCASMock: func(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
+					if casRef.CasInstance != "cas-instance" {
+						panic("unexpected CAS instance")
+					}
+					if !strings.HasPrefix(casRef.Digest.Hash, "cas-") {
+						panic("unexpected fake digest")
+					}
+					taskID := casRef.Digest.Hash[len("cas-"):]
+					if want := filepath.Join(casOutputDir, taskID); want != outdir {
+						panic(fmt.Sprintf("expecting out dir %q, got %q", want, outdir))
+					}
+					return []string{"out-" + taskID}, mockedCASErr
+				},
+			}
 		}
 
 		Convey(`Happy path`, func() {
@@ -163,7 +165,7 @@ func TestCollect(t *testing.T) {
 					"-output-dir", casOutputDir,
 					"a1", "a0", "a2",
 				},
-				nil, service,
+				nil, service(),
 			)
 			So(code, ShouldEqual, 0)
 
@@ -219,6 +221,51 @@ func TestCollect(t *testing.T) {
 			}
 		})
 
+		Convey(`Happy path, but with invalid utf-8 runes`, func() {
+			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
+
+			invalidUtf8OutputService := service()
+			invalidUtf8OutputService.TaskOutputMock = func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
+				output := []byte(fmt.Sprintf("Output of %s", taskID))
+				// utf-8 requires 11110xxx to be followed 3 10xxxxxx
+				// In this case, its followed by 2
+				// 3 bytes which form the invalid rune should be removed from
+				// final output.
+				output = append(output, 0b11110_101)
+				output = append(output, 0b10_010101)
+				output = append(output, 0b10_001001)
+				output = append(output, '!')
+				return &swarmingv2.TaskOutputResponse{
+					Output: output,
+				}, mockedStdoutErr
+			}
+
+			res, _, code, _, _ := SubcommandTest(
+				ctx,
+				CmdCollect,
+				[]string{
+					"-server", "example.com",
+					"-json-output", "-",
+					"-task-output-stdout", "json",
+					"-output-dir", casOutputDir,
+					"a0",
+				},
+				nil, invalidUtf8OutputService,
+			)
+			So(code, ShouldEqual, 0)
+
+			json, _ := base.EncodeJSON(res)
+			So(string(json), ShouldEqual, `{
+ "a0": {
+  "output": "Output of a0!",
+  "results": {
+   "task_id": "a0",
+   "state": "COMPLETED"
+  }
+ }
+}`)
+		})
+
 		Convey(`Collect error`, func() {
 			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
 			mockedErr["a1"] = codes.PermissionDenied
@@ -233,7 +280,7 @@ func TestCollect(t *testing.T) {
 					"-output-dir", casOutputDir,
 					"a0", "a1",
 				},
-				nil, service,
+				nil, service(),
 			)
 			So(code, ShouldEqual, 0)
 
@@ -266,7 +313,7 @@ func TestCollect(t *testing.T) {
 					"-output-dir", casOutputDir,
 					"a0",
 				},
-				nil, service,
+				nil, service(),
 			)
 			So(code, ShouldEqual, 0)
 
@@ -297,7 +344,7 @@ func TestCollect(t *testing.T) {
 					"-output-dir", casOutputDir,
 					"a0",
 				},
-				nil, service,
+				nil, service(),
 			)
 			So(code, ShouldEqual, 0)
 
@@ -334,7 +381,7 @@ func TestCollect(t *testing.T) {
 					"-timeout", "1h",
 					"a0",
 				},
-				nil, service,
+				nil, service(),
 			)
 			So(code, ShouldEqual, 0)
 
@@ -369,7 +416,7 @@ func TestCollect(t *testing.T) {
 					"-wait=false",
 					"a1", "a0",
 				},
-				nil, service,
+				nil, service(),
 			)
 			So(code, ShouldEqual, 0)
 
@@ -411,7 +458,7 @@ func TestCollect(t *testing.T) {
 					"-eager",
 					"a1", "a0", "a2",
 				},
-				nil, service,
+				nil, service(),
 			)
 			So(code, ShouldEqual, 0)
 
