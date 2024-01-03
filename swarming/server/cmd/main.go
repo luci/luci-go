@@ -133,6 +133,10 @@ func main() {
 		// Handlers for TQ tasks involving bigquery export.
 		bq.RegisterTQTasks()
 
+		cron.RegisterHandler("bq-export-cleanup", func(ctx context.Context) error {
+			return bq.CleanupExportState(ctx)
+		})
+
 		cron.RegisterHandler("bq-export", func(ctx context.Context) error {
 			if *bqExportDataset == "none" {
 				return nil

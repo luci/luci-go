@@ -16,6 +16,7 @@ package bq
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -37,6 +38,68 @@ import (
 
 func init() {
 	RegisterTQTasks()
+}
+
+func TestExportStateCleanup(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func() {
+		setup := func() (context.Context, testclock.TestClock, *tqtesting.Scheduler) {
+			ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+			ctx = memory.Use(ctx)
+			ctx, skdr := tq.TestingContext(ctx, nil)
+			return ctx, tc, skdr
+		}
+		Convey("cron deletes age(exportState.Created) >= 24hrs", func() {
+			const n = 200
+			ctx, tc, _ := setup()
+			datastore.GetTestable(ctx).AutoIndex(true)
+			datastore.GetTestable(ctx).Consistent(true)
+			now := tc.Now()
+			newest := now.Add(-2 * time.Hour)
+			oldest := now.Add(-48 * time.Hour)
+			ents := make([]*ExportState, 0, n*2)
+			for i := 0; i < n; i++ {
+				oldest = oldest.Add(-exportDuration)
+				ents = append(ents, &ExportState{
+					Key: exportStateKey(ctx, &taskspb.CreateExportTask{
+						Start:        timestamppb.New(oldest),
+						Duration:     durationpb.New(exportDuration),
+						CloudProject: "foo",
+						Dataset:      "bar",
+						TableName:    TaskRequests,
+					}),
+					CreatedAt: oldest,
+				})
+
+				newest = newest.Add(exportDuration)
+				ents = append(ents, &ExportState{
+					Key: exportStateKey(ctx, &taskspb.CreateExportTask{
+						Start:        timestamppb.New(newest),
+						Duration:     durationpb.New(exportDuration),
+						CloudProject: "foo",
+						Dataset:      "bar",
+						TableName:    TaskRequests,
+					}),
+					CreatedAt: newest,
+				})
+			}
+			So(datastore.Put(ctx, ents), ShouldBeNil)
+			So(CleanupExportState(ctx), ShouldBeNil)
+			q := datastore.NewQuery(exportStateKind)
+			count := 0
+			cu := now.Add(-maxExportStateAge)
+			err := datastore.Run(ctx, q, func(e *ExportState) error {
+				if e.CreatedAt.After(cu) {
+					count += 1
+					return nil
+				}
+				return fmt.Errorf("Too recent: %+v, co: %s, now: %s", e, cu, now)
+			})
+			So(err, ShouldBeNil)
+			So(count, ShouldEqual, n)
+		})
+	})
 }
 
 func TestCreateExportTask(t *testing.T) {

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -43,6 +44,10 @@ const maxTasksToSchedule = 20
 // export by ScheduleExportTasks
 const latestAge = 2 * time.Minute
 
+// maxExportStateAge is the amount of time before an ExportState is garbage
+// collected.
+const maxExportStateAge = 24 * time.Hour
+
 func RegisterTQTasks() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "bq-export-interval",
@@ -57,6 +62,51 @@ func RegisterTQTasks() {
 
 func tableID(cloudProject, dataset, tableName string) string {
 	return fmt.Sprintf("%s.%s.%s", cloudProject, dataset, tableName)
+}
+
+// CleanupExportState deletes export states which are older than
+// maxExportStateAge.
+func CleanupExportState(ctx context.Context) error {
+	// ScheduleExportTasks runs every 1m
+	// * schedules 4 exports per minute
+	// * on 4 tables
+	const batchSize = 4 * 4 * 10
+	// Will need to tune this value
+	const nWorkers = 64
+	g := new(errgroup.Group)
+	g.SetLimit(nWorkers)
+
+	now := clock.Now(ctx).UTC()
+	cutoff := now.Add(-maxExportStateAge)
+	logging.Infof(ctx, "Deleting ExportState created earlier than %s", cutoff)
+	q := datastore.NewQuery(exportStateKind).Lte("CreatedAt", cutoff)
+
+	deleteBatch := func(batch []*datastore.Key) {
+		g.Go(func() error {
+			logging.Debugf(ctx, "Attempting delete of %d ExportStates", len(batch))
+			return datastore.Delete(ctx, batch)
+		})
+	}
+
+	// RunInBatch works sequentially, so we can use closure to store the
+	// current batch.
+	batch := make([]*datastore.Key, 0, batchSize)
+	err := datastore.RunBatch(ctx, batchSize, q, func(key *datastore.Key) {
+		batch = append(batch, key)
+		if len(batch) == batchSize {
+			deleteBatch(batch)
+			batch = make([]*datastore.Key, 0, batchSize)
+		}
+	})
+	// Whatever is left of batches gets deleted in this call.
+	deleteBatch(batch)
+
+	if err != nil {
+		logging.Errorf(ctx, "ExportState cleanup query failed")
+		// Useful work may still happen in g, in that case wait until its done
+		return errors.Join(err, g.Wait())
+	}
+	return g.Wait()
 }
 
 // ScheduleExportTasks creates a series of tasks responsible for

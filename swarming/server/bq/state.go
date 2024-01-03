@@ -57,9 +57,10 @@ func exportScheduleKey(ctx context.Context, tableName string) *datastore.Key {
 	return datastore.NewKey(ctx, "bq.ExportSchedule", tableName, 0, nil)
 }
 
+const exportStateKind = "bq.ExportState"
+
 // ExportState stores the name of the WriteStream associated with exporting
 // datastore data to a specific table for a time interval.
-// TODO(jonahhooper) add cron to expire exportState
 type ExportState struct {
 	// Extra are entity properties that didn't match any declared ones below.
 	//
@@ -78,11 +79,15 @@ type ExportState struct {
 	// After the WriteStream has been committed, this can be checked using the
 	// bigquery managedwriter SDK.
 	WriteStreamName string `gae:",noindex"`
+
+	// CreatedAt is the time when the exportState was created. Used to determine
+	// when to "garbage collect" the ExportState.
+	CreatedAt time.Time `gae:""`
 }
 
 // exportStateKey derives a key based a hash derived from the string of the task
 func exportStateKey(ctx context.Context, task *taskspb.CreateExportTask) *datastore.Key {
 	tableID := tableID(task.CloudProject, task.Dataset, task.TableName)
 	text := fmt.Sprintf("%s:%d:%d", tableID, task.Start.AsTime().Unix(), task.Duration.AsDuration())
-	return datastore.NewKey(ctx, "bq.ExportState", text, 0, nil)
+	return datastore.NewKey(ctx, exportStateKind, text, 0, nil)
 }
