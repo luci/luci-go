@@ -41,6 +41,9 @@ import (
 // Similar to RFC3339 but with an implicit UTC time zone.
 const utcRFC3339 = "2006-01-02T15:04:05"
 
+// botListLimit is the maximum number of bots to list per query. It should be <= 1000.
+const botListLimit = 1000
+
 // setConnected sets the Swarming bot as connected in the datastore if it isn't already.
 func setConnected(c context.Context, id, hostname string, at time.Time) error {
 	// Check dscache in case vm.Connected is set now, to avoid a costly transaction.
@@ -250,48 +253,55 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 	case task.GetSwarming() == "":
 		return errors.Reason("InspectSwarming: swarming is required").Err()
 	}
-	// Create a map to hold all the hostnames in the database
-	vmMap := make(map[string]*model.VM)
-	qV := datastore.NewQuery("VM").Eq("swarming", task.GetSwarming())
-	if err := datastore.Run(c, qV, func(vm *model.VM) {
-		vmMap[vm.Hostname] = vm
-	}); err != nil {
-		return errors.Annotate(err, "InspectSwarming: failed to listVMs").Err()
+	var inpectSwarmingSubtasks []*tq.Task
+	blc := getSwarming(c, task.GetSwarming()).Bots.List().Context(c)
+	// Add cursor if available
+	if task.Cursor != "" {
+		blc = blc.Cursor(task.Cursor)
 	}
-	var manageExistingTasks []*tq.Task
-	cursor := ""
-	for botsRemaning := len(vmMap) > 0; botsRemaning; {
-		blc := getSwarming(c, task.GetSwarming()).Bots.List().Context(c)
-		// Add cursor if available
-		if cursor != "" {
-			blc = blc.Cursor(cursor)
+	// Process the maximum number of bots
+	blc.Limit(botListLimit)
+	listRPCResp, err := blc.Do()
+	if err != nil {
+		return errors.Annotate(err, "InspectSwarming: failed to List instances from swarming").Err()
+	}
+	// Schedule the new task with the new cursor
+	if listRPCResp.Cursor != "" {
+		task.Cursor = listRPCResp.Cursor
+		if err := getDispatcher(c).AddTask(c, &tq.Task{Payload: task}); err != nil {
+			// Log error and process the bots
+			logging.Errorf(c, "InspectSwarming: failed to schedule inspect swarming task. %v", err)
 		}
-		listRPCResp, err := blc.Do()
-		if err != nil {
-			return errors.Annotate(err, "InspectSwarming: failed to List instances from swarming").Err()
-		}
-		cursor = listRPCResp.Cursor
-		for _, bot := range listRPCResp.Items {
-			vm, ok := vmMap[bot.BotId]
-			if ok {
-				manageExistingTasks = append(manageExistingTasks, &tq.Task{
+	}
+	for _, bot := range listRPCResp.Items {
+		qV := datastore.NewQuery("VM").Eq("hostname", bot.BotId)
+		if err := datastore.Run(c, qV, func(vm *model.VM) {
+			if bot.IsDead || bot.Deleted {
+				// If the bot is dead or deleted, schedule a task to destroy the instance
+				logging.Debugf(c, "bot %s is dead[%v]/deleted[%v]. Destroying instance", bot.BotId, bot.IsDead, bot.Deleted)
+				inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
+					Payload: &tasks.DestroyInstance{
+						Id:  vm.ID,
+						Url: vm.URL,
+					},
+				})
+			} else {
+				// Schedule a task to check and delete the bot if needed
+				inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
 					Payload: &tasks.DeleteStaleSwarmingBot{
 						Id:          vm.ID,
 						FirstSeenTs: bot.FirstSeenTs,
 					},
 				})
-				delete(vmMap, bot.BotId)
 			}
-		}
-		// Stop the loop if we run out of cursors
-		if cursor == "" {
-			botsRemaning = false
+		}); err != nil {
+			logging.Debugf(c, "bot %s does not exist in datastore?", bot.BotId)
 		}
 	}
 	// Dispatch all the tasks
-	if len(manageExistingTasks) > 0 {
-		if err := getDispatcher(c).AddTask(c, manageExistingTasks...); err != nil {
-			return errors.Annotate(err, "InspectSwarming: failed to schedule terminate task").Err()
+	if len(inpectSwarmingSubtasks) > 0 {
+		if err := getDispatcher(c).AddTask(c, inpectSwarmingSubtasks...); err != nil {
+			return errors.Annotate(err, "InspectSwarming: failed to schedule sub task(s)").Err()
 		}
 	}
 	return nil

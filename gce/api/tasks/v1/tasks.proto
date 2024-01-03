@@ -109,6 +109,8 @@ message DrainVM {
 message InspectSwarming {
   // The name of the swarming service to inspect
   string swarming = 1;
+  // The cursor for the swarming list query
+  string cursor = 2;
 }
 
 // A task to delete bot that is stale in swarming.

@@ -734,11 +734,6 @@ func TestInspectSwarming(t *testing.T) {
 		})
 
 		Convey("Swarming error", func() {
-			So(datastore.Put(c, &model.VM{
-				ID:       "vm-1",
-				Hostname: "vm-1-abcd",
-				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
 			rt.Handler = func(_ any) (int, any) {
 				return http.StatusInternalServerError, nil
 			}
@@ -746,6 +741,78 @@ func TestInspectSwarming(t *testing.T) {
 				Swarming: "https://gce-swarming.appspot.com",
 			})
 			So(err, ShouldNotBeNil)
+		})
+		Convey("Ignore non-gce bot", func() {
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-1",
+				Hostname: "vm-1-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-2",
+				Hostname: "vm-2-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			rt.Handler = func(_ any) (int, any) {
+				return http.StatusOK, &swarming.SwarmingRpcsBotList{
+					Cursor: "",
+					Items: []*swarming.SwarmingRpcsBotInfo{
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-1-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
+						},
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-2-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
+						},
+						// We don't have a record for this bot in datastore
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-3-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
+						},
+					},
+				}
+			}
+			err := inspectSwarming(c, &tasks.InspectSwarming{
+				Swarming: "https://gce-swarming.appspot.com",
+			})
+			So(err, ShouldBeNil)
+			// ignoring vm-3-abcd as we didn't see it in datastore
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+		})
+		Convey("Delete dead or deleted bots", func() {
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-1",
+				Hostname: "vm-1-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			So(datastore.Put(c, &model.VM{
+				ID:       "vm-2",
+				Hostname: "vm-2-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+			}), ShouldBeNil)
+			rt.Handler = func(_ any) (int, any) {
+				return http.StatusOK, &swarming.SwarmingRpcsBotList{
+					Cursor: "",
+					Items: []*swarming.SwarmingRpcsBotInfo{
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-1-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
+							IsDead:      true,
+						},
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-2-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
+							Deleted:     true,
+						},
+					},
+				}
+			}
+			err := inspectSwarming(c, &tasks.InspectSwarming{
+				Swarming: "https://gce-swarming.appspot.com",
+			})
+			So(err, ShouldBeNil)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
 		})
 		Convey("HappyPath-1", func() {
 			So(datastore.Put(c, &model.VM{
@@ -833,41 +900,26 @@ func TestInspectSwarming(t *testing.T) {
 				Hostname: "vm-3-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
 			}), ShouldBeNil)
-			call := 0
 			rt.Handler = func(_ any) (int, any) {
-				// Returns 2 bots and a cursor for first call
-				if call == 0 {
-					call += 1
-					return http.StatusOK, &swarming.SwarmingRpcsBotList{
-						Cursor: "cursor",
-						Items: []*swarming.SwarmingRpcsBotInfo{
-							&swarming.SwarmingRpcsBotInfo{
-								BotId:       "vm-1-abcd",
-								FirstSeenTs: "2023-01-02T15:04:05",
-							},
-							&swarming.SwarmingRpcsBotInfo{
-								BotId:       "vm-2-abcd",
-								FirstSeenTs: "2023-01-02T15:04:05",
-							},
+				return http.StatusOK, &swarming.SwarmingRpcsBotList{
+					Cursor: "cursor",
+					Items: []*swarming.SwarmingRpcsBotInfo{
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-1-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
 						},
-					}
-				} else {
-					// Returns last bot and no cursor for subsequent calls
-					return http.StatusOK, &swarming.SwarmingRpcsBotList{
-						Cursor: "",
-						Items: []*swarming.SwarmingRpcsBotInfo{
-							&swarming.SwarmingRpcsBotInfo{
-								BotId:       "vm-3-abcd",
-								FirstSeenTs: "2023-01-02T15:04:05",
-							},
+						&swarming.SwarmingRpcsBotInfo{
+							BotId:       "vm-2-abcd",
+							FirstSeenTs: "2023-01-02T15:04:05",
 						},
-					}
+					},
 				}
 			}
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
 			})
 			So(err, ShouldBeNil)
+			// Two DeleteStaleSwarmingBot tasks and one inspectSwarming task with cursor
 			So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
 		})
 
