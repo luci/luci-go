@@ -329,7 +329,7 @@ def gen_buildbucket_cfg(ctx):
     shadow_bucket_constraints = _buildbucket_shadow_bucket_constraints(buckets)
     for bucket in buckets:
         swarming = _buildbucket_builders(bucket)
-        dynamic_builder_template = {} if bucket.props.dynamic else None
+        dynamic_builder_template = _buildbucket_dynamic_builder_template(bucket)
         if dynamic_builder_template != None and swarming != None:
             error("dynamic bucket \"%s\" must not have pre-defined builders" % bucket.props.name, trace = bucket.trace)
 
@@ -436,8 +436,8 @@ def _buildbucket_shadow_bucket_constraints(buckets):
     return shadow_bucket_constraints
 
 def _buildbucket_builder(node, def_swarming_host):
-    if node.key.kind != kinds.BUILDER:
-        fail("impossible")
+    if node.key.kind != kinds.BUILDER and node.key.kind != kinds.DYNAMIC_BUILDER_TEMPLATE:
+        fail("impossible: can only generate builder config for a builder or dynamic_builder_template")
     exe, recipe, properties, experiments = _handle_executable(node)
     combined_experiments = dict(node.props.experiments)
     combined_experiments.update(experiments)
@@ -531,9 +531,17 @@ def _handle_executable(node):
     When we are ready to move config output entirely from recipes to their
     exe equivalents, we can stop producing Recipe definitions here.
     """
+    if node.key.kind != kinds.BUILDER and node.key.kind != kinds.DYNAMIC_BUILDER_TEMPLATE:
+        fail("impossible: can only handle executable for a builder or dynamic_builder_template")
+
     executables = graph.children(node.key, kinds.EXECUTABLE)
     if len(executables) != 1:
-        fail("impossible: the builder should have a reference to an executable")
+        if node.key.kind == kinds.BUILDER:
+            fail("impossible: the builder should have a reference to an executable")
+        else:
+            # a dynamic_builder_template without executable is allowed.
+            properties = to_json(node.props.properties) if node.props.properties else None
+            return None, None, properties, {}
     experiments = {}
     executable = executables[0]
     if not executable.props.cmd and executable.props.recipe:
@@ -1698,3 +1706,20 @@ def _parse_location_filters_for_tricium(location_filters):
         if f.path_regexp and f.path_regexp.startswith(r".+\."):
             exts.append(f.path_regexp[len(r".+\."):])
     return sorted(set(host_and_projs)), sorted(set(exts))
+
+def _buildbucket_dynamic_builder_template(bucket):
+    """luci.bucket(...) node => buildbucket_pb.Bucket.DynamicBuilderTemplate or None."""
+    if not bucket.props.dynamic and len(graph.children(bucket.key, kinds.DYNAMIC_BUILDER_TEMPLATE)) == 0:
+        return None
+
+    if not bucket.props.dynamic and len(graph.children(bucket.key, kinds.DYNAMIC_BUILDER_TEMPLATE)) > 0:
+        error("bucket \"%s\" must not have dynamic_builder_template" % bucket.props.name, trace = bucket.trace)
+
+    if len(graph.children(bucket.key, kinds.DYNAMIC_BUILDER_TEMPLATE)) > 1:
+        error("dynamic bucket \"%s\" can have at most one dynamic_builder_template" % bucket.props.name, trace = bucket.trace)
+
+    bldr_template = None
+    for node in graph.children(bucket.key, kinds.DYNAMIC_BUILDER_TEMPLATE):
+        bldr_template, _ = _buildbucket_builder(node, None)
+
+    return buildbucket_pb.Bucket.DynamicBuilderTemplate(template = bldr_template)

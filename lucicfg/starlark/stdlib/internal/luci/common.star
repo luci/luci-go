@@ -44,10 +44,12 @@ load("@stdlib//internal/validate.star", "validate")
 #   luci.bucket -> [luci.gitiles_poller]
 #   luci.bucket -> [luci.bucket_constraints]
 #   luci.bucket_constraints_root -> [luci.bucket_constraints]
+#   luci.bucket -> [luci.dynamic_builder_template]
 #   luci.builder_ref -> luci.builder
 #   luci.builder -> [luci.triggerer]
 #   luci.builder -> luci.executable
 #   luci.builder -> luci.task_backend
+#   luci.dynamic_builder_template -> luci.executable
 #   luci.gitiles_poller -> [luci.triggerer]
 #   luci.triggerer -> [luci.builder_ref]
 #   luci.milo_entries_root -> [luci.list_view_entry]
@@ -171,6 +173,7 @@ kinds = struct(
     SHADOW_OF = "luci.shadow_of",
     BUCKET_CONSTRAINTS = "luci.bucket_constraints",
     BUILDBUCKET_NOTIFICATION_TOPIC = "luci.buildbucket_notification_topic",
+    DYNAMIC_BUILDER_TEMPLATE = "luci.dynamic_builder_template",
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = "luci.builder_ref",
@@ -225,10 +228,10 @@ keys = struct(
     # Generates a key of the given kind and name within some auto-generated
     # unique container key.
     #
-    # Used with LIST_VIEW_ENTRY, CONSOLE_VIEW_ENTRY, CQ_TRYJOB_VERIFIER and
-    # BUCKET_CONSTRAINTS helper nodes. They don't really represent any
-    # "external" entities, and their names don't really matter, other than for
-    # error messages.
+    # Used with LIST_VIEW_ENTRY, CONSOLE_VIEW_ENTRY, CQ_TRYJOB_VERIFIER,
+    # BUCKET_CONSTRAINTS and DYNAMIC_BUILDER_TEMPLATE helper nodes.
+    # They don't really represent any "external" entities, and their names don't
+    # really matter, other than for error messages.
     #
     # Note that IDs of keys whose kind stars with '_' (like '_UNIQUE' here),
     # are skipped when printing the key in error messages. Thus the meaningless

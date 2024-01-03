@@ -31,6 +31,7 @@ load("@stdlib//internal/luci/rules/cq.star", _cq = "cq")
 load("@stdlib//internal/luci/rules/cq_group.star", _cq_group = "cq_group")
 load("@stdlib//internal/luci/rules/cq_tryjob_verifier.star", _cq_tryjob_verifier = "cq_tryjob_verifier")
 load("@stdlib//internal/luci/rules/custom_role.star", _custom_role = "custom_role")
+load("@stdlib//internal/luci/rules/dynamic_builder_template.star", _dynamic_builder_template = "dynamic_builder_template")
 load("@stdlib//internal/luci/rules/executable.star", _executable = "executable", _recipe = "recipe")
 load("@stdlib//internal/luci/rules/external_console_view.star", _external_console_view = "external_console_view")
 load("@stdlib//internal/luci/rules/gitiles_poller.star", _gitiles_poller = "gitiles_poller")
@@ -95,6 +96,7 @@ luci = struct(
     bucket_constraints = _bucket_constraints,
     buildbucket_notification_topic = _buildbucket_notification_topic,
     task_backend = _task_backend,
+    dynamic_builder_template = _dynamic_builder_template,
 )
 acl = _acl
 cq = _cq_helpers
