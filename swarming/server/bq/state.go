@@ -16,9 +16,12 @@ package bq
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/swarming/server/bq/taskspb"
 )
 
 const (
@@ -52,4 +55,34 @@ type ExportSchedule struct {
 
 func exportScheduleKey(ctx context.Context, tableName string) *datastore.Key {
 	return datastore.NewKey(ctx, "bq.ExportSchedule", tableName, 0, nil)
+}
+
+// ExportState stores the name of the WriteStream associated with exporting
+// datastore data to a specific table for a time interval.
+// TODO(jonahhooper) add cron to expire exportState
+type ExportState struct {
+	// Extra are entity properties that didn't match any declared ones below.
+	//
+	// Should normally be empty.
+	Extra datastore.PropertyMap `gae:"-,extra"`
+
+	// Key is derived using exportStateKey(...).
+	// It designed to ensure that the same taskpb.CreateExportTask will always
+	// point to the same ExportState object.
+	// The key does not protect against duplicate values for duration changes
+	// or changes of the tableName.
+	Key *datastore.Key `gae:"$key"`
+
+	// WriteStreamName is name of the writestream being exported to.
+	// When empty, it means we have yet to start exporting this time interval.
+	// After the WriteStream has been committed, this can be checked using the
+	// bigquery managedwriter SDK.
+	WriteStreamName string `gae:",noindex"`
+}
+
+// exportStateKey derives a key based a hash derived from the string of the task
+func exportStateKey(ctx context.Context, task *taskspb.CreateExportTask) *datastore.Key {
+	tableID := tableID(task.CloudProject, task.Dataset, task.TableName)
+	text := fmt.Sprintf("%s:%d:%d", tableID, task.Start.AsTime().Unix(), task.Duration.AsDuration())
+	return datastore.NewKey(ctx, "bq.ExportState", text, 0, nil)
 }

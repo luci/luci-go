@@ -13,3 +13,46 @@
 // limitations under the License.
 
 package bq
+
+import (
+	"context"
+	"testing"
+
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/swarming/server/bq/taskspb"
+
+	. "github.com/smartystreets/goconvey/convey"
+)
+
+func TestExportState(t *testing.T) {
+	t.Parallel()
+	Convey("With mocks", t, func() {
+		setup := func() (context.Context, testclock.TestClock) {
+			ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+			ctx = memory.Use(ctx)
+			return ctx, tc
+		}
+		Convey("Can create export state key from CreateExportTask", func() {
+			ctx, _ := setup()
+			task := &taskspb.CreateExportTask{
+				CloudProject: "foo",
+				Dataset:      "bar",
+				TableName:    "baz",
+				Start:        timestamppb.New(testclock.TestRecentTimeUTC),
+				Duration:     durationpb.New(100),
+			}
+			state := ExportState{
+				Key:             exportStateKey(ctx, task),
+				WriteStreamName: "stream",
+			}
+			err := datastore.Put(ctx, &state)
+			So(err, ShouldBeNil)
+		})
+	})
+}
