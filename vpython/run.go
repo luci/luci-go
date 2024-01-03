@@ -16,70 +16,12 @@ package vpython
 
 import (
 	"context"
-	"os"
-	"strings"
 
 	"go.chromium.org/luci/vpython/python"
-	"go.chromium.org/luci/vpython/venv"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 )
-
-// Run sets up a Python VirtualEnv and executes the supplied Options.
-//
-// If the Python interpreter was successfully launched, Run will never return,
-// and the process will exit with the return code of the Python interpreter.
-//
-// If the Python environment could not be set-up, or if the interpreter could
-// not be invoked, Run will return an non-nil error.
-//
-// Run consists of:
-//
-//   - Identify the target Python script to run (if there is one).
-//   - Identifying the Python interpreter to use.
-//   - Composing the environment specification.
-//   - Constructing the virtual environment (download, install).
-//   - Execute the Python process with the supplied arguments.
-//
-// The Python subprocess is bound to the lifetime of ctx, and will be terminated
-// if ctx is cancelled.
-func Run(c context.Context, opts Options) error {
-	// Resolve our Options.
-	if err := opts.resolve(c); err != nil {
-		return errors.Annotate(err, "could not resolve options").Err()
-	}
-
-	if opts.EnvConfig.Spec.PythonVersion == "" {
-		opts.EnvConfig.Spec.PythonVersion = opts.DefaultSpec.PythonVersion
-	}
-
-	// Create our virtual environment root directory.
-	opts.EnvConfig.FailIfLocked = !opts.WaitForEnv
-	err := venv.With(c, opts.EnvConfig, func(c context.Context, ve *venv.Env) error {
-		e := opts.Environ.Clone()
-		python.IsolateEnvironment(&e, !opts.ClearPythonPath)
-
-		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
-		if !opts.VpythonOptIn {
-			// Prepend BinDir to $PATH
-			e.Set("PATH", strings.Join(
-				[]string{ve.BinDir, e.Get("PATH")}, string(os.PathListSeparator)))
-		}
-
-		// Run our bootstrapped Python command.
-		logging.Debugf(c, "Python environment:\nWorkDir: %s\nEnv: %s", opts.WorkDir, e)
-		if err := systemSpecificLaunch(c, ve, opts.CommandLine, e, opts.WorkDir); err != nil {
-			return errors.Annotate(err, "failed to execute bootstrapped Python").Err()
-		}
-		return nil
-	})
-	if err == nil {
-		panic("must not return nil error")
-	}
-	return err
-}
 
 // Exec runs the specified Python command.
 //

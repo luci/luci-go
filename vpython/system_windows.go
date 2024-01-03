@@ -25,28 +25,10 @@ import (
 	"unsafe"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/vpython/python"
-	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 )
-
-// systemSpecificLaunch launches the process described by "cmd" while ensuring
-// that the VirtualEnv lock is held throughout its duration (best effort).
-//
-// On Windows, we don't forward signals. Forwarding signals on Windows is
-// nuanced. For now, we won't, since sending them via Python is similarly
-// nuanced and not commonly done.
-//
-// For more discussion, see:
-// https://github.com/golang/go/issues/6720
-//
-// On Windows, we launch it as a child process and interpret any signal that we
-// receive as terminal, cancelling the child.
-func systemSpecificLaunch(c context.Context, ve *venv.Env, cl *python.CommandLine, env environ.Env, dir string) error {
-	return Exec(c, ve.Interpreter(), cl, env, dir, nil)
-}
 
 // Copied from https://github.com/golang/go/blob/go1.16.15/src/syscall/exec_windows.go
 // createEnvBlock converts an array of environment strings into

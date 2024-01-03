@@ -27,16 +27,6 @@ import (
 // filesystem-compatible.
 const Version = "v2"
 
-// Clone returns a deep clone of the supplied Environment.
-//
-// If e is nil, a non-nil empty Environment will be returned.
-func (e *Environment) Clone() *Environment {
-	if e == nil {
-		return &Environment{}
-	}
-	return proto.Clone(e).(*Environment)
-}
-
 // IsZero returns true if this tag is a zero value.
 func (t *PEP425Tag) IsZero() bool {
 	return t == nil || (t.Python == "" && t.Abi == "" && t.Platform == "")

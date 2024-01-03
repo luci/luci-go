@@ -15,21 +15,13 @@
 package spec
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
 	"sort"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
-
-	"github.com/golang/protobuf/proto"
 )
-
-// Render creates a human-readable string from spec.
-func Render(spec *vpython.Spec) string { return proto.MarshalTextString(spec) }
 
 // NormalizeSpec normalizes the specification Message such that two messages
 // with identical meaning will have identical representation.
@@ -90,39 +82,6 @@ func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
 	return nil
 }
 
-// Hash hashes the contents of the supplied "spec" and "rt" and returns the
-// result as a hex-encoded string.
-//
-// If not empty, the contents of extra are prefixed to hash string. This can
-// be used to factor additional influences into the spec hash.
-func Hash(spec *vpython.Spec, rt *vpython.Runtime, extra ...string) string {
-	mustMarshal := func(msg proto.Message) []byte {
-		data, err := proto.Marshal(msg)
-		if err != nil {
-			panic(fmt.Errorf("failed to marshal proto: %v", err))
-		}
-		return data
-	}
-	specData := mustMarshal(spec)
-	rtData := mustMarshal(rt)
-
-	mustWrite := func(v int, err error) {
-		if err != nil {
-			panic(fmt.Errorf("impossible: %s", err))
-		}
-	}
-
-	hash := sha256.New()
-	for _, s := range extra {
-		mustWrite(fmt.Fprintf(hash, "%s:", s))
-	}
-	mustWrite(fmt.Fprintf(hash, "%s:", vpython.Version))
-	mustWrite(hash.Write(specData))
-	mustWrite(hash.Write([]byte(":")))
-	mustWrite(hash.Write(rtData))
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
 type specPackageSlice []*vpython.Spec_Package
 
 func (s specPackageSlice) Len() int      { return len(s) }
@@ -132,18 +91,5 @@ func (s specPackageSlice) Less(i, j int) bool {
 	return sortby.Chain{
 		func(i, j int) bool { return s[i].Name < s[j].Name },
 		func(i, j int) bool { return s[i].Version < s[j].Version },
-	}.Use(i, j)
-}
-
-type pep425TagSlice []*vpython.PEP425Tag
-
-func (s pep425TagSlice) Len() int      { return len(s) }
-func (s pep425TagSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-func (s pep425TagSlice) Less(i, j int) bool {
-	return sortby.Chain{
-		func(i, j int) bool { return s[i].Python < s[j].Python },
-		func(i, j int) bool { return s[i].Abi < s[j].Abi },
-		func(i, j int) bool { return s[i].Platform < s[j].Platform },
 	}.Use(i, j)
 }

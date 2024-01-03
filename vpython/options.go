@@ -23,11 +23,9 @@ import (
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/spec"
-	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
@@ -43,17 +41,9 @@ type Options struct {
 	// The Python command-line to execute. Must not be nil.
 	CommandLine *python.CommandLine
 
-	// EnvConfig is the VirtualEnv configuration to run from.
-	EnvConfig venv.Config
-
 	// DefaultSpec is the default specification to use, if no specification was
 	// supplied or probed.
 	DefaultSpec vpython.Spec
-
-	// BaseWheels is the set of wheels to include in the spec. These will always
-	// be merged into the runtime spec and normalized, such that any duplicate
-	// wheels will be deduplicated.
-	BaseWheels []*vpython.Spec_Package
 
 	// SpecLoader is the spec.Loader to use to load a specification file for a
 	// given script.
@@ -61,59 +51,15 @@ type Options struct {
 	// The empty value is a valid default spec.Loader.
 	SpecLoader spec.Loader
 
-	// WaitForEnv, if true, means that if another agent holds a lock on the target
-	// environment, we will wait until it is available. If false, we will
-	// immediately exit Setup with an error.
-	WaitForEnv bool
-
 	// WorkDir is the Python working directory. If empty, the current working
 	// directory will be used.
 	//
 	// If EnvRoot is empty, WorkDir will be used as the base environment root.
 	WorkDir string
 
-	// Environ is environment to pass to subprocesses.
-	Environ environ.Env
-
-	// ClearPythonPath, if true, instructs vpython to clear the PYTHONPATH
-	// environment variable prior to launch.
-	//
-	// TODO(iannucci): Delete this once we're satisfied that PYTHONPATH exports
-	// are under control.
-	ClearPythonPath bool
-
-	// VpythonOptIn, if true, means that users must explicitly chose to enter/stay
-	// in the vpython environment when invoking subprocesses. For example, they
-	// would need to use sys.executable or 'vpython' for the subprocess.
-	//
-	// Practically, when this is true, the virtualenv's bin directory will NOT be
-	// added to $PATH for the subprocess.
-	VpythonOptIn bool
-}
-
-func (o *Options) resolve(c context.Context) error {
-	// Resolve our working directory to an absolute path.
-	if o.WorkDir == "" {
-		wd, err := os.Getwd()
-		if err != nil {
-			return errors.Annotate(err, "failed to get working directory").Err()
-		}
-		o.WorkDir = wd
+	EnvConfig struct {
+		Spec *vpython.Spec
 	}
-	if err := filesystem.AbsPath(&o.WorkDir); err != nil {
-		return errors.Annotate(err, "failed to resolve absolute path of WorkDir").Err()
-	}
-
-	// Resolve our target python script.
-	if err := o.ResolveSpec(c); err != nil {
-		return errors.Annotate(err, "failed to resolve Python script").Err()
-	}
-	if len(o.BaseWheels) > 0 {
-		o.EnvConfig.Spec = o.EnvConfig.Spec.Clone()
-		o.EnvConfig.Spec.Wheel = append(o.EnvConfig.Spec.Wheel, o.BaseWheels...)
-	}
-
-	return nil
 }
 
 // ResolveSpec resolves the configured environment specification. The resulting

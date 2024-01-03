@@ -22,30 +22,9 @@ import (
 	"os"
 	"syscall"
 
-	"go.chromium.org/luci/vpython/python"
-	"go.chromium.org/luci/vpython/venv"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 )
-
-// systemSpecificLaunch launches the process described by "cmd" while ensuring
-// that the VirtualEnv lock is held throughout its duration (best effort).
-//
-// On Linux/Mac, we use "execve" to *become* the target process. We need to
-// continue to hold the lock for that process, though. We do this by passing it
-// as an open file handle to the subprocess.
-//
-// This can be error-prone, as it places the burden on the subprocess to
-// manage the file descriptor.
-func systemSpecificLaunch(c context.Context, ve *venv.Env, cl *python.CommandLine, env environ.Env, dir string) error {
-	return Exec(c, ve.Interpreter(), cl, env, dir, func() error {
-		if err := ve.LockHandle.PreserveExec(); err != nil {
-			return errors.Annotate(err, "could not perserve lock across exec").Err()
-		}
-		return nil
-	})
-}
 
 func execImpl(c context.Context, argv []string, env environ.Env, dir string, setupFn func() error) error {
 	// Change directory.
