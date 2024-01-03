@@ -33,6 +33,7 @@ requests to staging servers (typically hosted on GCP). Check
 [.env.development](.env.development) for instructions to configure the target
 servers and other local development settings.
 
+
 #### Login on a local UI server
 Currently, there's no easy way to perform a login flow on a local UI server. To
 test the page with a logged in session, you can
@@ -53,6 +54,16 @@ test the page with a logged in session, you can
 
    note that the auth state obtained from a dev environment cannot be used to
       query prod services and vice versa.
+
+### Deploy a demo to GAE dev instance
+This deploys your local code to GAE as a dev instance that uses real auth
+and can be accessed by other people.
+
+```
+cd ui
+npm run build
+gae.py upload -p ../ -A luci-milo-dev default
+```
 
 ### Add a new npm package
 You can use [npm install](https://docs.npmjs.com/cli/v8/commands/npm-install) to
