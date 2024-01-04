@@ -53,16 +53,16 @@ func populateRunInfo(ctx context.Context, runs []*run.Run) ([]*apiv0pb.GetCLRunI
 // to fill in details in each apiv0pb.GetCLRunInfoResponse_RunInfo.
 func populateRunInfoResponse(ctx context.Context, r *run.Run) (*apiv0pb.GetCLRunInfoResponse_RunInfo, error) {
 	var originChange *apiv0pb.GerritChange
-	if r.OriginCL != 0 {
+	if r.RootCL != 0 {
 		// Fetch the origin CL.
-		originCL := &changelist.CL{ID: r.OriginCL}
+		originCL := &changelist.CL{ID: r.RootCL}
 		if err := datastore.Get(ctx, originCL); err != nil {
 			return nil, err
 		}
 
 		originGerrit := originCL.Snapshot.GetGerrit()
 		if originGerrit == nil {
-			return nil, fmt.Errorf("origin CL %d has non-Gerrit snapshot", r.OriginCL)
+			return nil, fmt.Errorf("root CL %d has non-Gerrit snapshot", r.RootCL)
 		}
 
 		originChange = &apiv0pb.GerritChange{

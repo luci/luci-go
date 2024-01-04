@@ -152,7 +152,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				Owner:      "user:foo@example.org",
 				CLs:        common.MakeCLIDs(int64(cl.ID)),
 				Mode:       run.FullRun,
-				OriginCL:   cl.ID,
+				RootCL:     cl.ID,
 			}
 			rcl := &run.RunCL{
 				Run: datastore.MakeKey(ctx, common.RunKind, string(r.ID)),

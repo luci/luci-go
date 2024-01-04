@@ -113,11 +113,11 @@ type Run struct {
 	//
 	// The index of Runs by CL is provided via RunCL's `IndexedID` field.
 	CLs common.CLIDs `gae:",noindex"`
-	// OriginCL is the CL in `CLs` that triggers this Run in the combined mode.
+	// RootCL is the CL in `CLs` that triggers this Run in the combined mode.
 	//
 	// For example, for a stack of 2 CLs, if the top CL gains a vote that triggers
 	// a Dry Run for the stack, the top CL is the origin CL.
-	OriginCL common.CLID `gae:",noindex"`
+	RootCL common.CLID `gae:",noindex"`
 	// Options are Run-specific additions on top of LUCI project config.
 	Options *Options
 	// CancellationReasons are the reasons for cancelling a Run.
