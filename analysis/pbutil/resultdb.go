@@ -286,6 +286,8 @@ func SourceRefToResultDB(v *pb.SourceRef) *rdbpb.SourceRef {
 }
 
 // SourceRefFromSources extracts a SourceRef from given sources.
+//
+// panics if the sources object is not valid.
 func SourceRefFromSources(sources *pb.Sources) *pb.SourceRef {
 	return &pb.SourceRef{
 		System: &pb.SourceRef_Gitiles{
@@ -301,4 +303,12 @@ func SourceRefFromSources(sources *pb.Sources) *pb.SourceRef {
 // SourceRefHash returns a short hash of the source ref.
 func SourceRefHash(sourceRef *pb.SourceRef) []byte {
 	return pbutil.SourceRefHash(SourceRefToResultDB(sourceRef))
+}
+
+// SourcePosition returns the position along the source
+// ref tested by the given sources.
+//
+// panics if the sources object is not valid.
+func SourcePosition(sources *pb.Sources) int64 {
+	return sources.GitilesCommit.Position
 }

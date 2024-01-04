@@ -191,10 +191,10 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			for i := range changelistHosts {
 				var ownerKind pb.ChangelistOwnerKind
 				if changelistOwnerKinds != nil {
-					ownerKind = ownerKindFromDB(changelistOwnerKinds[i])
+					ownerKind = OwnerKindFromDB(changelistOwnerKinds[i])
 				}
 				changelists = append(changelists, Changelist{
-					Host:      decompressHost(changelistHosts[i]),
+					Host:      DecompressHost(changelistHosts[i]),
 					Change:    changelistChanges[i],
 					Patchset:  changelistPatchsets[i],
 					OwnerKind: ownerKind,
@@ -438,10 +438,10 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 		for i := range changelistHosts {
 			var ownerKind pb.ChangelistOwnerKind
 			if changelistOwnerKinds != nil {
-				ownerKind = ownerKindFromDB(changelistOwnerKinds[i])
+				ownerKind = OwnerKindFromDB(changelistOwnerKinds[i])
 			}
 			changelists = append(changelists, &pb.Changelist{
-				Host:      decompressHost(changelistHosts[i]),
+				Host:      DecompressHost(changelistHosts[i]),
 				Change:    changelistChanges[i],
 				Patchset:  int32(changelistPatchsets[i]),
 				OwnerKind: ownerKind,

@@ -29,9 +29,13 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
+	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/stability"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,7 +43,7 @@ import (
 )
 
 func TestTestVariantsServer(t *testing.T) {
-	Convey("Given a projects server", t, func() {
+	Convey("Given a test variants server", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 
 		// For user identification.
@@ -47,12 +51,6 @@ func TestTestVariantsServer(t *testing.T) {
 		authState := &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"luci-analysis-access"},
-			IdentityPermissions: []authtest.RealmPermission{
-				{
-					Realm:      "project:realm",
-					Permission: rdbperms.PermListTestResults,
-				},
-			},
 		}
 		ctx = auth.WithState(ctx, authState)
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
@@ -77,6 +75,14 @@ func TestTestVariantsServer(t *testing.T) {
 			So(response, ShouldBeNil)
 		})
 		Convey("QueryFailureRate", func() {
+			// Grant the permissions needed for this RPC.
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{
+					Realm:      "project:realm",
+					Permission: rdbperms.PermListTestResults,
+				},
+			}
+
 			err := testresults.CreateQueryFailureRateTestData(ctx)
 			So(err, ShouldBeNil)
 
@@ -158,52 +164,93 @@ func TestTestVariantsServer(t *testing.T) {
 			})
 		})
 		Convey("QueryStability", func() {
-			request := &pb.QueryTestVariantStabilityRequest{
-				Project: "project",
-				TestVariants: []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
-					{
-						TestId:  "test_id",
-						Variant: pbutil.Variant("key1", "val1", "key2", "val1"),
-						Sources: testSources(),
-					},
-					{
-						TestId:  "test_id",
-						Variant: pbutil.Variant("key1", "val2", "key2", "val2"),
-						Sources: testSources(),
-					},
+			// Grant the permissions needed for this RPC.
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{
+					Realm:      "project:realm",
+					Permission: rdbperms.PermListTestResults,
+				},
+				{
+					Realm:      "project:@project",
+					Permission: perms.PermGetConfig,
 				},
 			}
 
+			err := stability.CreateQueryStabilityTestData(ctx)
+			So(err, ShouldBeNil)
+
+			opts := stability.QueryStabilitySampleRequest()
+			request := &pb.QueryTestVariantStabilityRequest{
+				Project:      opts.Project,
+				TestVariants: opts.TestVariantPositions,
+			}
+			ctx, _ := testclock.UseTime(ctx, opts.AsAtTime)
+
+			projectCfg := config.CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_MONORAIL)
+			projectCfg.TestStabilityCriteria = toTestStabilityCriteriaConfig(opts.Criteria)
+			configs := make(map[string]*configpb.ProjectConfig)
+			configs["project"] = projectCfg
+			err = config.SetTestProjectConfig(ctx, configs)
+			So(err, ShouldBeNil)
+
 			Convey("Valid input", func() {
-				_, err := server.QueryStability(ctx, request)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+				rsp, err := server.QueryStability(ctx, request)
+				So(err, ShouldBeNil)
+
+				expectedResult := &pb.QueryTestVariantStabilityResponse{
+					TestVariants: stability.QueryStabilitySampleResponse(),
+					Criteria:     opts.Criteria,
+				}
+				So(rsp, ShouldResembleProto, expectedResult)
 			})
 			Convey("Query by VariantHash", func() {
 				for _, tv := range request.TestVariants {
 					tv.VariantHash = pbutil.VariantHash(tv.Variant)
 					tv.Variant = nil
 				}
-				_, err := server.QueryStability(ctx, request)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+				rsp, err := server.QueryStability(ctx, request)
+				So(err, ShouldBeNil)
+
+				expectedAnalysis := stability.QueryStabilitySampleResponse()
+				for _, tv := range expectedAnalysis {
+					tv.VariantHash = pbutil.VariantHash(tv.Variant)
+					tv.Variant = nil
+				}
+				expectedResult := &pb.QueryTestVariantStabilityResponse{
+					TestVariants: expectedAnalysis,
+					Criteria:     opts.Criteria,
+				}
+				So(rsp, ShouldResembleProto, expectedResult)
+			})
+			Convey("No test stability configuration", func() {
+				// Remove test stability configuration.
+				projectCfg.TestStabilityCriteria = nil
+				err = config.SetTestProjectConfig(ctx, configs)
+				So(err, ShouldBeNil)
+
+				response, err := server.QueryStability(ctx, request)
+				So(err, ShouldBeRPCFailedPrecondition, "project has not defined test stability criteria; set test_stability_criteria in project configuration and try again")
+				So(response, ShouldBeNil)
 			})
 			Convey("No list test results permission", func() {
-				authState.IdentityPermissions = []authtest.RealmPermission{
-					{
-						// This permission is for a project other than the one
-						// being queried.
-						Realm:      "otherproject:realm",
-						Permission: rdbperms.PermListTestResults,
-					},
-				}
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryStability(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list] in any realm")
 				So(response, ShouldBeNil)
 			})
+			Convey("No get project config permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
+
+				response, err := server.QueryStability(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission analysis.config.get in realm "project:@project"`)
+				So(response, ShouldBeNil)
+			})
 			Convey("Invalid input", func() {
 				// This checks at least one case of invalid input is detected, sufficient to verify
 				// validation is invoked.
-				// Exhaustive checking of request validation is performed in TestValidateQueryRateRequest.
+				// Exhaustive checking of request validation is performed in
+				// TestValidateQueryTestVariantStabilityRequest.
 				request.Project = ""
 
 				response, err := server.QueryStability(ctx, request)
@@ -409,6 +456,20 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 			So(err, ShouldErrLike, `test_variants[3]: same test variant already requested at index 2`)
 		})
 	})
+}
+
+func toTestStabilityCriteriaConfig(criteria *pb.TestStabilityCriteria) *configpb.TestStabilityCriteria {
+	return &configpb.TestStabilityCriteria{
+		FailureRate: &configpb.TestStabilityCriteria_FailureRateCriteria{
+			FailureThreshold:            criteria.FailureRate.FailureThreshold,
+			ConsecutiveFailureThreshold: criteria.FailureRate.ConsecutiveFailureThreshold,
+		},
+		FlakeRate: &configpb.TestStabilityCriteria_FlakeRateCriteria{
+			MinWindow:          criteria.FlakeRate.MinWindow,
+			FlakeThreshold:     criteria.FlakeRate.FlakeThreshold,
+			FlakeRateThreshold: criteria.FlakeRate.FlakeRateThreshold,
+		},
+	}
 }
 
 func testSources() *pb.Sources {

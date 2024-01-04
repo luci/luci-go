@@ -414,10 +414,10 @@ func toPBVerdictExamples(ves []*verdictExample) []*pb.TestVariantFailureRateAnal
 		for i := range ve.ChangelistHosts {
 			var ownerKind pb.ChangelistOwnerKind
 			if ve.ChangelistOwnerKinds != nil {
-				ownerKind = ownerKindFromDB(ve.ChangelistOwnerKinds[i])
+				ownerKind = OwnerKindFromDB(ve.ChangelistOwnerKinds[i])
 			}
 			cls = append(cls, &pb.Changelist{
-				Host:      decompressHost(ve.ChangelistHosts[i]),
+				Host:      DecompressHost(ve.ChangelistHosts[i]),
 				Change:    ve.ChangelistChanges[i],
 				Patchset:  int32(ve.ChangelistPatchsets[i]),
 				OwnerKind: ownerKind,
@@ -452,10 +452,10 @@ func toPBRecentVerdicts(verdicts []*recentVerdict) []*pb.TestVariantFailureRateA
 		for i := range v.ChangelistHosts {
 			var ownerKind pb.ChangelistOwnerKind
 			if v.ChangelistOwnerKinds != nil {
-				ownerKind = ownerKindFromDB(v.ChangelistOwnerKinds[i])
+				ownerKind = OwnerKindFromDB(v.ChangelistOwnerKinds[i])
 			}
 			cls = append(cls, &pb.Changelist{
-				Host:      decompressHost(v.ChangelistHosts[i]),
+				Host:      DecompressHost(v.ChangelistHosts[i]),
 				Change:    v.ChangelistChanges[i],
 				Patchset:  int32(v.ChangelistPatchsets[i]),
 				OwnerKind: ownerKind,

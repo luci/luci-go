@@ -28,8 +28,8 @@ func ownerKindToDB(value pb.ChangelistOwnerKind) string {
 	}
 }
 
-// ownerKindFromDB decodes owner kind from its database representation.
-func ownerKindFromDB(value string) pb.ChangelistOwnerKind {
+// OwnerKindFromDB decodes owner kind from its database representation.
+func OwnerKindFromDB(value string) pb.ChangelistOwnerKind {
 	switch value {
 	case "A":
 		return pb.ChangelistOwnerKind_AUTOMATION

@@ -65,9 +65,9 @@ func compressHost(host string) string {
 	return host
 }
 
-// decompressHost recovers a gerrit hostname from its compressed database
+// DecompressHost recovers a gerrit hostname from its compressed database
 // representation.
-func decompressHost(host string) string {
+func DecompressHost(host string) string {
 	if strings.Contains(host, ".") {
 		return host
 	} else {

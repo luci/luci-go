@@ -445,13 +445,13 @@ message TestVariantStabilityAnalysis {
 
         message RecentVerdict {
             // The commit position of the source verdict on the queried branch.
-            int32 position = 1;
-
-            // The partition time of the verdict.
-            google.protobuf.Timestamp partition_time = 2;
+            int64 position = 1;
 
             // The changelist(s) tested, if any.
-            repeated Changelist changelists = 3;
+            repeated Changelist changelists = 2;
+
+            // The invocations included in this source verdict.
+            repeated string invocations = 3;
 
             // The number of unexpected runs associated with the verdict.
             // An unexpected run is a run (e.g. swarming task) which
@@ -493,15 +493,13 @@ message TestVariantStabilityAnalysis {
         // such as in the case of retried presubmit runs on the same patchset.
         message VerdictExample {
             // The commit position of the verdict on the queried branch.
-            int32 position = 1;
-
-            // The earliest partition time of the source verdict.
-            // This is the earliest time associated with any of the
-            // source verdict's test verdicts.
-            google.protobuf.Timestamp earliest_partition_time = 2;
+            int64 position = 1;
 
             // The changelist(s) tested, if any.
-            repeated Changelist changelists = 3;
+            repeated Changelist changelists = 2;
+
+            // The invocations included in this source verdict.
+            repeated string invocations = 3;
         }
 
         // Examples of source verdicts which had both expected and unexpected runs,
@@ -511,5 +509,13 @@ message TestVariantStabilityAnalysis {
         //
         // Limited to at most 10 examples.
         repeated VerdictExample flake_examples = 4;
+
+        // The least source position included in the analysis window. Inclusive.
+        // If the analysis window is empty (e.g. because there is no data), this is zero.
+        int64 start_position = 5;
+
+        // The greatest source position included in the analysis window. Inclusive.
+        // If the analysis window is empty (e.g. because there is no data), this is zero.
+        int64 end_position = 6;
     }
 }

@@ -29,7 +29,7 @@ func TestHost(t *testing.T) {
 				"something-other-123.gerrit.instance",
 			}
 			for _, input := range values {
-				So(decompressHost(compressHost(input)), ShouldEqual, input)
+				So(DecompressHost(compressHost(input)), ShouldEqual, input)
 			}
 		})
 		Convey("Compress", func() {
@@ -48,7 +48,7 @@ func TestHost(t *testing.T) {
 				"some.other.instance": "some.other.instance",
 			}
 			for input, expectedOutput := range testCases {
-				So(decompressHost(input), ShouldEqual, expectedOutput)
+				So(DecompressHost(input), ShouldEqual, expectedOutput)
 			}
 		})
 	})

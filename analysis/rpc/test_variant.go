@@ -18,17 +18,16 @@ import (
 	"context"
 	"regexp"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/stability"
 	"go.chromium.org/luci/analysis/pbutil"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -132,15 +131,69 @@ func (*testVariantsServer) QueryStability(ctx context.Context, req *pb.QueryTest
 		return nil, invalidArgumentError(err)
 	}
 
-	var err error
-	// Query all subrealms the caller can see test results in.
-	const subRealm = ""
-	_, err = perms.QuerySubRealmsNonEmpty(ctx, req.Project, subRealm, nil, rdbperms.PermListTestResults)
+	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetConfig); err != nil {
+		return nil, err
+	}
+
+	// Fetch a recent project configuration.
+	// (May be a recent value that was cached.)
+	cfg, err := readProjectConfig(ctx, req.Project)
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, appstatus.Error(codes.Unimplemented, "not implemented")
+	criteria, err := fromTestStabilityCriteriaConfig(cfg.Config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Query all subrealms the caller can see test results in.
+	const subRealm = ""
+	subRealms, err := perms.QuerySubRealmsNonEmpty(ctx, req.Project, subRealm, nil, rdbperms.PermListTestResults)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := stability.QueryStabilityOptions{
+		Project:              req.Project,
+		SubRealms:            subRealms,
+		TestVariantPositions: req.TestVariants,
+		Criteria:             criteria,
+		AsAtTime:             clock.Now(ctx),
+	}
+
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	stabilityAnalysis, err := stability.QueryStability(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.QueryTestVariantStabilityResponse{
+		TestVariants: stabilityAnalysis,
+		Criteria:     criteria,
+	}, nil
+}
+
+func fromTestStabilityCriteriaConfig(cfg *configpb.ProjectConfig) (*pb.TestStabilityCriteria, error) {
+	if cfg.TestStabilityCriteria == nil {
+		return nil, failedPreconditionError(errors.Reason("project has not defined test stability criteria; set test_stability_criteria in project configuration and try again").Err())
+	}
+
+	criteria := cfg.TestStabilityCriteria
+
+	// We have test stability criteria. We can rely on project configuration
+	// validation to ensure mandatory fields have been set.
+	return &pb.TestStabilityCriteria{
+		FailureRate: &pb.TestStabilityCriteria_FailureRateCriteria{
+			FailureThreshold:            criteria.FailureRate.FailureThreshold,
+			ConsecutiveFailureThreshold: criteria.FailureRate.ConsecutiveFailureThreshold,
+		},
+		FlakeRate: &pb.TestStabilityCriteria_FlakeRateCriteria{
+			MinWindow:          criteria.FlakeRate.MinWindow,
+			FlakeThreshold:     criteria.FlakeRate.FlakeThreshold,
+			FlakeRateThreshold: criteria.FlakeRate.FlakeRateThreshold,
+		},
+	}, nil
 }
 
 func validateQueryTestVariantStabilityRequest(req *pb.QueryTestVariantStabilityRequest) error {
