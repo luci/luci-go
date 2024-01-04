@@ -59,22 +59,25 @@ func createTestHistoryTestData(ctx context.Context, referenceTime time.Time) err
 				WithStatus(pb.TestResultStatus_PASS).
 				WithIsFromBisection(isFromBisection)
 			if hasUnsubmittedChanges {
-				baseTestResult = baseTestResult.WithChangelists([]Changelist{
-					{
-						Host:      "anothergerrit.gerrit.instance",
-						Change:    5471,
-						Patchset:  6,
-						OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+				sources := Sources{
+					Changelists: []Changelist{
+						{
+							Host:      "anothergerrit.gerrit.instance",
+							Change:    5471,
+							Patchset:  6,
+							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+						},
+						{
+							Host:      "mygerrit-review.googlesource.com",
+							Change:    4321,
+							Patchset:  5,
+							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+						},
 					},
-					{
-						Host:      "mygerrit-review.googlesource.com",
-						Change:    4321,
-						Patchset:  5,
-						OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-					},
-				})
+				}
+				baseTestResult = baseTestResult.WithSources(sources)
 			} else {
-				baseTestResult = baseTestResult.WithChangelists(nil)
+				baseTestResult = baseTestResult.WithSources(Sources{})
 			}
 
 			trs := NewTestVerdict().
@@ -149,7 +152,10 @@ func CreateQueryFailureRateTestData(ctx context.Context) error {
 					OwnerKind: clOwnerKind,
 				})
 			}
-			baseTestResult = baseTestResult.WithChangelists(changelists)
+			sources := Sources{
+				Changelists: changelists,
+			}
+			baseTestResult = baseTestResult.WithSources(sources)
 
 			trs := NewTestVerdict().
 				WithBaseTestResult(baseTestResult.Build()).

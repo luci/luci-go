@@ -20,11 +20,10 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	configpb "go.chromium.org/luci/analysis/proto/config"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 func SamplePayload() *taskspb.IngestTestResults {
@@ -37,10 +36,10 @@ func SamplePayload() *taskspb.IngestTestResults {
 	}
 }
 
-func SampleSourcesMap(commitPosition int) map[string]*rdbpb.Sources {
-	return map[string]*rdbpb.Sources{
+func SampleSourcesMap(commitPosition int) map[string]*pb.Sources {
+	return map[string]*pb.Sources{
 		"sources_id": {
-			GitilesCommit: &rdbpb.GitilesCommit{
+			GitilesCommit: &pb.GitilesCommit{
 				Host:     "host",
 				Project:  "proj",
 				Ref:      "ref",

@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/internal/gerrit"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctrlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/resultdb"
@@ -137,30 +138,11 @@ func TestIngestTestResults(t *testing.T) {
 			mbc := buildbucket.NewMockedClient(mrc.Ctx, ctl)
 			ctx = mbc.Ctx
 
+			clsByHost := gerritChangesByHostForTesting()
+			ctx = gerrit.UseFakeClient(ctx, clsByHost)
+
 			bHost := "host"
 			partitionTime := clock.Now(ctx).Add(-1 * time.Hour)
-
-			expectedInvocation := &IngestionContext{
-				Project:              "project",
-				IngestedInvocationID: "build-87654321",
-				SubRealm:             "ci",
-				PartitionTime:        timestamppb.New(partitionTime).AsTime(),
-				BuildStatus:          pb.BuildStatus_BUILD_STATUS_FAILURE,
-				Changelists: []testresults.Changelist{
-					{
-						Host:      "anothergerrit.gerrit.instance",
-						Change:    77788,
-						Patchset:  19,
-						OwnerKind: pb.ChangelistOwnerKind_HUMAN,
-					},
-					{
-						Host:      "mygerrit-review.googlesource.com",
-						Change:    12345,
-						Patchset:  5,
-						OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-					},
-				},
-			}
 
 			setupGetInvocationMock := func() {
 				invReq := &rdbpb.GetInvocationRequest{
@@ -287,7 +269,7 @@ func TestIngestTestResults(t *testing.T) {
 				verifyContinuationTask(skdr, expectedContinuation)
 				ingestionCtl.TaskCount = ingestionCtl.TaskCount + 1 // Expect to have been incremented.
 				verifyIngestionControl(ctx, ingestionCtl)
-				verifyTestResults(ctx, expectedInvocation)
+				verifyTestResults(ctx, partitionTime)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyTestVerdicts(testVerdicts, partitionTime)
 				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
@@ -315,11 +297,12 @@ func TestIngestTestResults(t *testing.T) {
 				// task to be created.
 				verifyContinuationTask(skdr, nil)
 				verifyIngestionControl(ctx, ingestionCtl)
-				verifyTestResults(ctx, expectedInvocation)
+				verifyTestResults(ctx, partitionTime)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyTestVerdicts(testVerdicts, partitionTime)
 				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
 			})
+
 			Convey(`Retry task after continuation task already created`, func() {
 				// Scenario: First task fails after it has already scheduled
 				// its continuation.
@@ -342,7 +325,7 @@ func TestIngestTestResults(t *testing.T) {
 				// as it was already scheduled.
 				verifyContinuationTask(skdr, nil)
 				verifyIngestionControl(ctx, ingestionCtl)
-				verifyTestResults(ctx, expectedInvocation)
+				verifyTestResults(ctx, partitionTime)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyTestVerdicts(testVerdicts, partitionTime)
 				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
@@ -366,7 +349,7 @@ func TestIngestTestResults(t *testing.T) {
 
 				// Verify
 				// Test results still ingested.
-				verifyTestResults(ctx, expectedInvocation)
+				verifyTestResults(ctx, partitionTime)
 
 				// Cluster has happened.
 				verifyClustering(chunkStore, clusteredFailures)
@@ -525,26 +508,49 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 	So(len(client.Insertions), ShouldEqual, 1)
 }
 
-func verifyTestResults(ctx context.Context, expectedInvocation *IngestionContext) {
+func verifyTestResults(ctx context.Context, expectedPartitionTime time.Time) {
 	trBuilder := testresults.NewTestResult().
 		WithProject("project").
-		WithPartitionTime(expectedInvocation.PartitionTime).
+		WithPartitionTime(expectedPartitionTime.In(time.UTC)).
 		WithIngestedInvocationID("build-87654321").
 		WithSubRealm("ci").
-		WithChangelists([]testresults.Changelist{
-			{
-				Host:      "anothergerrit.gerrit.instance",
-				Change:    77788,
-				Patchset:  19,
-				OwnerKind: pb.ChangelistOwnerKind_HUMAN,
-			},
-			{
-				Host:      "mygerrit-review.googlesource.com",
-				Change:    12345,
-				Patchset:  5,
-				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+		WithSources(testresults.Sources{
+			Changelists: []testresults.Changelist{
+				{
+					Host:      "anothergerrit.gerrit.instance",
+					Change:    77788,
+					Patchset:  19,
+					OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+				},
+				{
+					Host:      "mygerrit-review.googlesource.com",
+					Change:    12345,
+					Patchset:  5,
+					OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+				},
 			},
 		})
+
+	rdbSources := testresults.Sources{
+		RefHash: pbutil.SourceRefHash(&pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "project.googlesource.com",
+					Project: "myproject/src",
+					Ref:     "refs/heads/main",
+				},
+			},
+		}),
+		Position: 16801,
+		Changelists: []testresults.Changelist{
+			{
+				Host:      "project-review.googlesource.com",
+				Change:    9991,
+				Patchset:  82,
+				OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+			},
+		},
+	}
 
 	expectedTRs := []*testresults.TestResult{
 		trBuilder.WithTestID("ninja://test_consistent_failure").
@@ -556,6 +562,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *IngestionContext
 			WithRunDuration(3*time.Second+1*time.Microsecond).
 			WithExonerationReasons(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE).
 			WithIsFromBisection(false).
+			WithSources(rdbSources).
 			Build(),
 		trBuilder.WithTestID("ninja://test_expected").
 			WithVariantHash("hash").
@@ -1035,10 +1042,11 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 				},
 				Changelists: []*pb.GerritChange{
 					{
-						Host:     "project-review.googlesource.com",
-						Project:  "myproject/src2",
-						Change:   9991,
-						Patchset: 82,
+						Host:      "project-review.googlesource.com",
+						Project:   "myproject/src2",
+						Change:    9991,
+						Patchset:  82,
+						OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 					},
 				},
 				IsDirty: false,

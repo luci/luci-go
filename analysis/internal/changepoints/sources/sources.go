@@ -16,25 +16,23 @@
 package sources
 
 import (
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	analysispb "go.chromium.org/luci/analysis/proto/v1"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // FromUnsubmittedCode Return true if sources is from unsubmitted code, i.e.
 // from try run that did not result in submitted code.
-func FromUnsubmittedCode(sources *rdbpb.Sources, presubmit *controlpb.PresubmitResult) bool {
+func FromUnsubmittedCode(sources *pb.Sources, presubmit *controlpb.PresubmitResult) bool {
 	hasCL := len(sources.GetChangelists()) > 0
 	submittedPresubmit := presubmit != nil &&
-		presubmit.Status == analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED &&
-		presubmit.Mode == analysispb.PresubmitRunMode_FULL_RUN
+		presubmit.Status == pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED &&
+		presubmit.Mode == pb.PresubmitRunMode_FULL_RUN
 	return hasCL && !submittedPresubmit
 }
 
 // SourcesMapHasCommitData checks if sourcesMap has commit data.
 // It returns true if at least one sources in the map has commit position data.
-func SourcesMapHasCommitData(sourcesMap map[string]*rdbpb.Sources) bool {
+func SourcesMapHasCommitData(sourcesMap map[string]*pb.Sources) bool {
 	for _, sources := range sourcesMap {
 		if HasCommitData(sources) {
 			return true
@@ -43,7 +41,7 @@ func SourcesMapHasCommitData(sourcesMap map[string]*rdbpb.Sources) bool {
 	return false
 }
 
-func HasCommitData(sources *rdbpb.Sources) bool {
+func HasCommitData(sources *pb.Sources) bool {
 	if sources.IsDirty {
 		return false
 	}
@@ -54,6 +52,6 @@ func HasCommitData(sources *rdbpb.Sources) bool {
 	return commit.GetHost() != "" && commit.GetProject() != "" && commit.GetRef() != "" && commit.GetPosition() != 0
 }
 
-func CommitPosition(sources *rdbpb.Sources) int {
+func CommitPosition(sources *pb.Sources) int {
 	return int(sources.GitilesCommit.Position)
 }

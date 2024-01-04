@@ -44,13 +44,6 @@ func TestSpan(t *testing.T) {
 				},
 				{
 					Project:      "testprojectb",
-					Host:         "mysource-review.googlesource.com",
-					Change:       123456,
-					OwnerKind:    analysispb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
-					CreationTime: time.Date(2022, 2, 3, 4, 5, 6, 0, time.UTC),
-				},
-				{
-					Project:      "testprojectb",
 					Host:         "mysource-internal-review.googlesource.com",
 					Change:       123456,
 					OwnerKind:    analysispb.ChangelistOwnerKind_HUMAN,
@@ -63,20 +56,21 @@ func TestSpan(t *testing.T) {
 					OwnerKind:    analysispb.ChangelistOwnerKind_HUMAN,
 					CreationTime: time.Date(2020, 2, 3, 4, 5, 6, 0, time.UTC),
 				},
+				{
+					Project:      "testprojectb",
+					Host:         "mysource-review.googlesource.com",
+					Change:       123456,
+					OwnerKind:    analysispb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
+					CreationTime: time.Date(2022, 2, 3, 4, 5, 6, 0, time.UTC),
+				},
 			}
 			err := SetGerritChangelistsForTesting(ctx, clsToCreate)
 			So(err, ShouldBeNil)
 
-			expectedCLs := make(map[Key]*GerritChangelist)
-			for _, entry := range clsToCreate {
-				key := Key{entry.Project, entry.Host, entry.Change}
-				expectedCLs[key] = entry
-			}
-
 			Convey("ReadAll", func() {
 				cls, err := ReadAll(span.Single(ctx))
 				So(err, ShouldBeNil)
-				So(cls, ShouldResemble, expectedCLs)
+				So(cls, ShouldResemble, clsToCreate)
 			})
 			Convey("Read", func() {
 				expectedCLs := make(map[Key]*GerritChangelist)
@@ -118,10 +112,10 @@ func TestSpan(t *testing.T) {
 				})
 			})
 		})
-		Convey("Create", func() {
+		Convey("CreateOrUpdate", func() {
 			save := func(g *GerritChangelist) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					m, err := Create(g)
+					m, err := CreateOrUpdate(g)
 					if err != nil {
 						return err
 					}

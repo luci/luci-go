@@ -89,9 +89,8 @@ func ValidateSources(sources *pb.Sources) error {
 		return errors.Reason("changelists: exceeds maximum of 10 changelists").Err()
 	}
 	type distinctChangelist struct {
-		host    string
-		project string
-		change  int64
+		host   string
+		change int64
 	}
 	clToIndex := make(map[distinctChangelist]int)
 
@@ -100,9 +99,8 @@ func ValidateSources(sources *pb.Sources) error {
 			return errors.Annotate(err, "changelists[%v]", i).Err()
 		}
 		cl := distinctChangelist{
-			host:    cl.Host,
-			project: cl.Project,
-			change:  cl.Change,
+			host:   cl.Host,
+			change: cl.Change,
 		}
 		if duplicateIndex, ok := clToIndex[cl]; ok {
 			return errors.Reason("changelists[%v]: duplicate change modulo patchset number; same change at changelists[%v]", i, duplicateIndex).Err()

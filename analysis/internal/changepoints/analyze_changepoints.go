@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/pbutil"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 var (
@@ -73,7 +74,7 @@ type CheckPoint struct {
 
 // Analyze performs change point analyses based on incoming test verdicts.
 // sourcesMap contains the information about the source code being tested.
-func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*rdbpb.Sources, exporter *bqexporter.Exporter) error {
+func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
 	logging.Debugf(ctx, "Analyzing %d test variants for build %d", len(tvs), payload.Build.Id)
 
 	// Check that sourcesMap is not empty and has commit position data.
@@ -112,7 +113,7 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 	return nil
 }
 
-func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*rdbpb.Sources, exporter *bqexporter.Exporter) error {
+func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
 	// Nothing to analyze.
 	if len(tvs) == 0 {
 		return nil
@@ -258,7 +259,7 @@ func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, rowInp
 //     (commit position >= smallest start position), or
 //   - There is no finalizing or finalized segment (i.e. the entire known
 //     test history is inside the input buffer)
-func isOutOfOrderAndShouldBeDiscarded(tvb *testvariantbranch.Entry, src *rdbpb.Sources) bool {
+func isOutOfOrderAndShouldBeDiscarded(tvb *testvariantbranch.Entry, src *pb.Sources) bool {
 	// No test variant branch. Should be ok to proceed.
 	if tvb == nil {
 		return false
@@ -313,10 +314,10 @@ func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []*inputbuffer.Segment {
 // of TestVariantBranch tvb.
 // If tvb is nil, it means it is not in spanner. In this case, return a new
 // TestVariantBranch object with a single element in the input buffer.
-func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) (*testvariantbranch.Entry, error) {
+func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*pb.Sources) (*testvariantbranch.Entry, error) {
 	src := sourcesMap[tv.SourcesId]
 	if tvb == nil {
-		ref := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(src))
+		ref := pbutil.SourceRefFromSources(src)
 		tvb = &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     payload.GetBuild().GetProject(),
@@ -346,7 +347,7 @@ func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, 
 //   - Have at least 1 non-duplicate and non-skipped test result (the test
 //     result needs to be both non-duplicate and non-skipped).
 //   - Not from unsubmitted code (i.e. try run that did not result in submitted code)
-func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) ([]*rdbpb.TestVariant, error) {
+func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*pb.Sources) ([]*rdbpb.TestVariant, error) {
 	results := []*rdbpb.TestVariant{}
 	presubmit := payload.PresubmitRun
 	project := payload.Build.Project
@@ -387,7 +388,7 @@ func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	return results, nil
 }
 
-func testVariantBranchKeys(tvs []*rdbpb.TestVariant, project string, sourcesMap map[string]*rdbpb.Sources) []testvariantbranch.Key {
+func testVariantBranchKeys(tvs []*rdbpb.TestVariant, project string, sourcesMap map[string]*pb.Sources) []testvariantbranch.Key {
 	results := make([]testvariantbranch.Key, len(tvs))
 	for i, tv := range tvs {
 		src := sourcesMap[tv.SourcesId]
@@ -395,7 +396,7 @@ func testVariantBranchKeys(tvs []*rdbpb.TestVariant, project string, sourcesMap 
 			Project:     project,
 			TestID:      tv.TestId,
 			VariantHash: tv.VariantHash,
-			RefHash:     testvariantbranch.RefHash(pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(src)))),
+			RefHash:     testvariantbranch.RefHash(pbutil.SourceRefHash(pbutil.SourceRefFromSources(src))),
 		}
 	}
 	return results

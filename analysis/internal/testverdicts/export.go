@@ -56,15 +56,16 @@ func NewExporter(client InsertClient) *Exporter {
 // ExportOptions captures context which will be exported
 // alongside the test verdicts.
 type ExportOptions struct {
-	Payload    *taskspb.IngestTestResults
-	Invocation *rdbpb.Invocation
+	Payload     *taskspb.IngestTestResults
+	Invocation  *rdbpb.Invocation
+	SourcesByID map[string]*pb.Sources
 }
 
 // Export exports the given test verdicts to BigQuery.
-func (e *Exporter) Export(ctx context.Context, tvs *rdbpb.QueryTestVariantsResponse, opts ExportOptions) error {
-	rows := make([]*bqpb.TestVerdictRow, 0, len(tvs.TestVariants))
-	for _, tv := range tvs.TestVariants {
-		exportRow, err := prepareExportRow(tv, tvs.Sources, opts)
+func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant, opts ExportOptions) error {
+	rows := make([]*bqpb.TestVerdictRow, 0, len(testVariants))
+	for _, tv := range testVariants {
+		exportRow, err := prepareExportRow(tv, opts)
 		if err != nil {
 			return errors.Annotate(err, "prepare row").Err()
 		}
@@ -79,7 +80,7 @@ func (e *Exporter) Export(ctx context.Context, tvs *rdbpb.QueryTestVariantsRespo
 
 // prepareExportRow prepares a BigQuery export row for a
 // ResultDB test verdict.
-func prepareExportRow(tv *rdbpb.TestVariant, sourcesByID map[string]*rdbpb.Sources, opts ExportOptions) (*bqpb.TestVerdictRow, error) {
+func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions) (*bqpb.TestVerdictRow, error) {
 	project, _, err := perms.SplitRealm(opts.Invocation.Realm)
 	if err != nil {
 		return nil, errors.Annotate(err, "invalid realm").Err()
@@ -103,7 +104,7 @@ func prepareExportRow(tv *rdbpb.TestVariant, sourcesByID map[string]*rdbpb.Sourc
 	var sourceRef *pb.SourceRef
 	var sourceRefHash string
 	if tv.SourcesId != "" {
-		sources = pbutil.SourcesFromResultDB(sourcesByID[tv.SourcesId])
+		sources = opts.SourcesByID[tv.SourcesId]
 		sourceRef = pbutil.SourceRefFromSources(sources)
 		sourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(sourceRef))
 	}

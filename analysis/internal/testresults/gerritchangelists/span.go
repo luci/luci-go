@@ -18,6 +18,7 @@ package gerritchangelists
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -75,8 +76,26 @@ func Read(ctx context.Context, keys map[Key]struct{}) (map[Key]*GerritChangelist
 }
 
 // ReadAll reads all gerrit changelists. Provided for testing only.
-func ReadAll(ctx context.Context) (map[Key]*GerritChangelist, error) {
-	return readByKeys(ctx, spanner.AllKeys())
+func ReadAll(ctx context.Context) ([]*GerritChangelist, error) {
+	entries, err := readByKeys(ctx, spanner.AllKeys())
+	if err != nil {
+		return nil, err
+	}
+	var results []*GerritChangelist
+	for _, cl := range entries {
+		results = append(results, cl)
+	}
+	// Sort changelists by key.
+	sort.Slice(results, func(i, j int) bool {
+		if results[i].Project != results[j].Project {
+			return results[i].Project < results[j].Project
+		}
+		if results[i].Host != results[j].Host {
+			return results[i].Host < results[j].Host
+		}
+		return results[i].Change < results[j].Change
+	})
+	return results, nil
 }
 
 // readByKeys reads gerrit changelists for the given keyset.
@@ -112,9 +131,9 @@ func readByKeys(ctx context.Context, keys spanner.KeySet) (map[Key]*GerritChange
 	return results, nil
 }
 
-// Create returns a Spanner mutation that inserts the given
+// CreateOrUpdate returns a Spanner mutation that inserts the given
 // gerrit changelist record.
-func Create(g *GerritChangelist) (*spanner.Mutation, error) {
+func CreateOrUpdate(g *GerritChangelist) (*spanner.Mutation, error) {
 	if err := validateGerritChangelist(g); err != nil {
 		return nil, err
 	}
@@ -127,7 +146,7 @@ func Create(g *GerritChangelist) (*spanner.Mutation, error) {
 		"OwnerKind":    g.OwnerKind,
 		"CreationTime": spanner.CommitTimestamp,
 	}
-	return spanner.InsertMap("GerritChangelists", spanutil.ToSpannerMap(row)), nil
+	return spanner.InsertOrUpdateMap("GerritChangelists", spanutil.ToSpannerMap(row)), nil
 }
 
 // validateGerritChangelist validates that the GerritChangelist is valid.

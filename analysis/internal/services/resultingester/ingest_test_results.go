@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package resultingester defines the top-level task queue which ingests
+// test results from ResultDB and pushes it into LUCI Analysis's analysis
+// pipelines (e.g. clustering, change point analysis).
 package resultingester
 
 import (
@@ -47,9 +50,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+	"go.chromium.org/luci/analysis/internal/testresults/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/tracing"
-	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	// Add support for Spanner transactions in TQ.
@@ -285,6 +288,12 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return transient.Tag.Apply(err)
 	}
 
+	sources, err := gerritchangelists.PopulateOwnerKinds(ctx, payload.Build.Project, rsp.Sources)
+	if err != nil {
+		err = errors.Annotate(err, "populate changelist owner kinds").Err()
+		return transient.Tag.Apply(err)
+	}
+
 	// Schedule a task to deal with the next page of results (if needed).
 	// Do this immediately, so that task can commence while we are still
 	// inserting the results for this page.
@@ -296,7 +305,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	}
 
 	// Record the test results for test history.
-	err = recordTestResults(ctx, ingestion, rsp.TestVariants)
+	err = recordTestResults(ctx, ingestion, rsp.TestVariants, sources)
 	if err != nil {
 		// If any transaction failed, the task will be retried and the tables will be
 		// eventual-consistent.
@@ -309,7 +318,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	// Note that this is different from the ingestForTestVariantAnalysis below
 	// which should eventually be removed.
 	// See go/luci-test-variant-analysis-design for details.
-	err = ingestForChangePointAnalysis(ctx, i.testVariantBranchExporter, rsp, payload)
+	err = ingestForChangePointAnalysis(ctx, i.testVariantBranchExporter, rsp.TestVariants, sources, payload)
 	if err != nil {
 		return errors.Annotate(err, "change point analysis").Err()
 	}
@@ -317,12 +326,12 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	// Insert the test results for clustering. This should occur
 	// after test variant analysis ingestion as it queries the results of the
 	// above analysis.
-	err = ingestForClustering(ctx, i.clustering, payload, ingestion, rsp)
+	err = ingestForClustering(ctx, i.clustering, payload, ingestion, rsp.TestVariants, sources)
 	if err != nil {
 		return err
 	}
 
-	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp, inv, payload)
+	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp.TestVariants, sources, inv, payload)
 	if err != nil {
 		return errors.Annotate(err, "export verdicts").Err()
 	}
@@ -439,7 +448,7 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 	return err
 }
 
-func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestResults, ing *IngestionContext, rsp *rdbpb.QueryTestVariantsResponse) (err error) {
+func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestResults, ing *IngestionContext, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
 	defer func() { tracing.End(s, err) }()
 
@@ -469,21 +478,21 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 		}
 	}
 
-	failingRDBVerdicts := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
-	testVariantBranchStats, err := queryTestVariantAnalysisForClustering(ctx, failingRDBVerdicts, ing.Project, ing.PartitionTime, rsp.Sources)
+	failingRDBVerdicts := filterToTestVariantsWithUnexpectedFailures(testVariants)
+	testVariantBranchStats, err := queryTestVariantAnalysisForClustering(ctx, failingRDBVerdicts, ing.Project, ing.PartitionTime, sources)
 	if err != nil {
 		return errors.Annotate(err, "query test variant analysis for clustering").Err()
 	}
 
 	verdicts := make([]ingestion.TestVerdict, 0, len(failingRDBVerdicts))
 	for i, tv := range failingRDBVerdicts {
-		var sources *pb.Sources
+		var s *pb.Sources
 		if tv.SourcesId != "" {
-			sources = pbutil.SourcesFromResultDB(rsp.Sources[tv.SourcesId])
+			s = sources[tv.SourcesId]
 		}
 		verdicts = append(verdicts, ingestion.TestVerdict{
 			Verdict:           tv,
-			Sources:           sources,
+			Sources:           s,
 			TestVariantBranch: testVariantBranchStats[i],
 		})
 	}
@@ -503,7 +512,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 // the specified test verdicts. The returned slice has exactly one entry
 // for each verdict in `tvs`. If analysis is not available for a given
 // verdict, the corresponding item in the response will be nil.
-func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, project string, partitionTime time.Time, sourcesMap map[string]*rdbpb.Sources) (tvbs []*clusteringpb.TestVariantBranch, err error) {
+func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, project string, partitionTime time.Time, sourcesMap map[string]*pb.Sources) (tvbs []*clusteringpb.TestVariantBranch, err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.queryTestVariantAnalysisForClustering")
 	defer func() { tracing.End(s, err) }()
 
@@ -528,7 +537,7 @@ func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.Tes
 	return result, nil
 }
 
-func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, rsp *rdbpb.QueryTestVariantsResponse, payload *taskspb.IngestTestResults) (err error) {
+func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, payload *taskspb.IngestTestResults) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForChangePointAnalysis")
 	defer func() { tracing.End(s, err) }()
 
@@ -540,7 +549,7 @@ func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exp
 	if !tvaEnabled {
 		return nil
 	}
-	err = changepoints.Analyze(ctx, rsp.TestVariants, payload, rsp.Sources, exporter)
+	err = changepoints.Analyze(ctx, testVariants, payload, sources, exporter)
 	if err != nil {
 		return errors.Annotate(err, "analyze test variants").Err()
 	}
@@ -548,7 +557,7 @@ func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exp
 }
 
 func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.Exporter,
-	rsp *rdbpb.QueryTestVariantsResponse, inv *rdbpb.Invocation, payload *taskspb.IngestTestResults) (err error) {
+	testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, inv *rdbpb.Invocation, payload *taskspb.IngestTestResults) (err error) {
 
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForVerdictExport")
 	defer func() { tracing.End(s, err) }()
@@ -563,10 +572,11 @@ func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.E
 	}
 	// Export test verdicts.
 	exportOptions := testverdicts.ExportOptions{
-		Payload:    payload,
-		Invocation: inv,
+		Payload:     payload,
+		Invocation:  inv,
+		SourcesByID: sources,
 	}
-	err = verdictExporter.Export(ctx, rsp, exportOptions)
+	err = verdictExporter.Export(ctx, testVariants, exportOptions)
 	if err != nil {
 		return errors.Annotate(err, "export").Err()
 	}

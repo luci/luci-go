@@ -24,9 +24,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-func ToPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, src *rdbpb.Sources) (inputbuffer.PositionVerdict, error) {
+func ToPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, src *pb.Sources) (inputbuffer.PositionVerdict, error) {
 	isSimpleExpectedPassed := (tv.Status == rdbpb.TestVariantStatus_EXPECTED && len(tv.Results) == 1 && tv.Results[0].Result.Status == rdbpb.TestStatus_PASS)
 
 	verdict := inputbuffer.PositionVerdict{

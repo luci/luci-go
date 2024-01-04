@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package luci.analysis.v1;
 
+import "google/api/field_behavior.proto";
+
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // Specifies the source code that was tested.
@@ -82,12 +84,6 @@ message GerritChange {
   // Gerrit hostname, e.g. "chromium-review.googlesource.com".
   string host = 1;
 
-  // Due to a historical mistake, this proto needs to be
-  // binary compatible with the Changelist message until
-  // March 2024. (I.E. support being deserialized from legacy
-  // serialized Changelist messages).
-  reserved 4;
-
   // Gerrit project, e.g. "chromium/src".
   string project = 5;
 
@@ -96,6 +92,10 @@ message GerritChange {
 
   // Patch set number, e.g. 1.
   int64 patchset = 3;
+
+  // The kind of owner of the changelist. Output only.
+  ChangelistOwnerKind owner_kind = 4
+    [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // A gerrit changelist.

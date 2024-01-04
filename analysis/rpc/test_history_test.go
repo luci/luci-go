@@ -113,22 +113,24 @@ func TestTestHistoryServer(t *testing.T) {
 					WithIsFromBisection(isFromBisection).
 					WithoutRunDuration()
 				if hasUnsubmittedChanges {
-					baseTestResult = baseTestResult.WithChangelists([]testresults.Changelist{
-						{
-							Host:      "anothergerrit.gerrit.instance",
-							Change:    5471,
-							Patchset:  6,
-							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
-						},
-						{
-							Host:      "mygerrit-review.googlesource.com",
-							Change:    4321,
-							Patchset:  5,
-							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+					baseTestResult = baseTestResult.WithSources(testresults.Sources{
+						Changelists: []testresults.Changelist{
+							{
+								Host:      "anothergerrit.gerrit.instance",
+								Change:    5471,
+								Patchset:  6,
+								OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+							},
+							{
+								Host:      "mygerrit-review.googlesource.com",
+								Change:    4321,
+								Patchset:  5,
+								OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+							},
 						},
 					})
 				} else {
-					baseTestResult = baseTestResult.WithChangelists(nil)
+					baseTestResult = baseTestResult.WithSources(testresults.Sources{})
 				}
 
 				trs := testresults.NewTestVerdict().

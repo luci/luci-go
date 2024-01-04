@@ -1069,7 +1069,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 										PassCount: 1,
 									},
 								},
-								inputbuffer.Run{
+								{
 									IsDuplicate: true,
 									Unexpected: inputbuffer.ResultCounts{
 										FailCount: 1,

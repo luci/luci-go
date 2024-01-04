@@ -25,7 +25,7 @@ type TestResultBuilder struct {
 	result TestResult
 }
 
-func NewTestResult() *TestResultBuilder {
+func NewTestResult() TestResultBuilder {
 	d := time.Hour
 	result := TestResult{
 		Project:              "proj",
@@ -40,121 +40,138 @@ func NewTestResult() *TestResultBuilder {
 		Status:               pb.TestResultStatus_PASS,
 		ExonerationReasons:   nil,
 		SubRealm:             "realm",
-		Changelists: []Changelist{
-			{
-				Host:     "mygerrit-review.googlesource.com",
-				Change:   12345678,
-				Patchset: 9,
+		Sources: Sources{
+			RefHash:  []byte{0, 1, 2, 3, 4, 5, 6, 7},
+			Position: 999444,
+			Changelists: []Changelist{
+				{
+					Host:     "mygerrit-review.googlesource.com",
+					Change:   12345678,
+					Patchset: 9,
+				},
+				{
+					Host:     "anothergerrit.gerrit.instance",
+					Change:   234568790,
+					Patchset: 1,
+				},
 			},
-			{
-				Host:     "anothergerrit.gerrit.instance",
-				Change:   234568790,
-				Patchset: 1,
-			},
+			IsDirty: true,
 		},
 	}
-	return &TestResultBuilder{
+	return TestResultBuilder{
 		result: result,
 	}
 }
 
-func (b *TestResultBuilder) WithProject(project string) *TestResultBuilder {
+func (b TestResultBuilder) WithProject(project string) TestResultBuilder {
 	b.result.Project = project
 	return b
 }
 
-func (b *TestResultBuilder) WithTestID(testID string) *TestResultBuilder {
+func (b TestResultBuilder) WithTestID(testID string) TestResultBuilder {
 	b.result.TestID = testID
 	return b
 }
 
-func (b *TestResultBuilder) WithPartitionTime(partitionTime time.Time) *TestResultBuilder {
+func (b TestResultBuilder) WithPartitionTime(partitionTime time.Time) TestResultBuilder {
 	b.result.PartitionTime = partitionTime
 	return b
 }
 
-func (b *TestResultBuilder) WithVariantHash(variantHash string) *TestResultBuilder {
+func (b TestResultBuilder) WithVariantHash(variantHash string) TestResultBuilder {
 	b.result.VariantHash = variantHash
 	return b
 }
 
-func (b *TestResultBuilder) WithIngestedInvocationID(invID string) *TestResultBuilder {
+func (b TestResultBuilder) WithIngestedInvocationID(invID string) TestResultBuilder {
 	b.result.IngestedInvocationID = invID
 	return b
 }
 
-func (b *TestResultBuilder) WithRunIndex(runIndex int64) *TestResultBuilder {
+func (b TestResultBuilder) WithRunIndex(runIndex int64) TestResultBuilder {
 	b.result.RunIndex = runIndex
 	return b
 }
 
-func (b *TestResultBuilder) WithResultIndex(resultIndex int64) *TestResultBuilder {
+func (b TestResultBuilder) WithResultIndex(resultIndex int64) TestResultBuilder {
 	b.result.ResultIndex = resultIndex
 	return b
 }
 
-func (b *TestResultBuilder) WithIsUnexpected(unexpected bool) *TestResultBuilder {
+func (b TestResultBuilder) WithIsUnexpected(unexpected bool) TestResultBuilder {
 	b.result.IsUnexpected = unexpected
 	return b
 }
 
-func (b *TestResultBuilder) WithRunDuration(duration time.Duration) *TestResultBuilder {
+func (b TestResultBuilder) WithRunDuration(duration time.Duration) TestResultBuilder {
 	b.result.RunDuration = &duration
 	return b
 }
 
-func (b *TestResultBuilder) WithoutRunDuration() *TestResultBuilder {
+func (b TestResultBuilder) WithoutRunDuration() TestResultBuilder {
 	b.result.RunDuration = nil
 	return b
 }
 
-func (b *TestResultBuilder) WithStatus(status pb.TestResultStatus) *TestResultBuilder {
+func (b TestResultBuilder) WithStatus(status pb.TestResultStatus) TestResultBuilder {
 	b.result.Status = status
 	return b
 }
 
-func (b *TestResultBuilder) WithExonerationReasons(exonerationReasons ...pb.ExonerationReason) *TestResultBuilder {
+func (b TestResultBuilder) WithExonerationReasons(exonerationReasons ...pb.ExonerationReason) TestResultBuilder {
 	b.result.ExonerationReasons = exonerationReasons
 	return b
 }
 
-func (b *TestResultBuilder) WithoutExoneration() *TestResultBuilder {
+func (b TestResultBuilder) WithoutExoneration() TestResultBuilder {
 	b.result.ExonerationReasons = nil
 	return b
 }
 
-func (b *TestResultBuilder) WithSubRealm(subRealm string) *TestResultBuilder {
+func (b TestResultBuilder) WithSubRealm(subRealm string) TestResultBuilder {
 	b.result.SubRealm = subRealm
 	return b
 }
 
-func (b *TestResultBuilder) WithChangelists(changelist []Changelist) *TestResultBuilder {
-	// Copy changelist to stop changes the caller may make to changelist
-	// after this call propagating into the resultant test result.
-	cls := make([]Changelist, len(changelist))
-	copy(cls, changelist)
-
-	// Ensure changelists are stored sorted.
-	SortChangelists(cls)
-	b.result.Changelists = cls
+func (b TestResultBuilder) WithSources(sources Sources) TestResultBuilder {
+	// Copy sources to avoid aliasing artifacts. Changes made to
+	// slices within the sources struct after this call should
+	// not propagate to the test result.
+	b.result.Sources = copySources(sources)
 	return b
 }
 
-func (b *TestResultBuilder) WithIsFromBisection(value bool) *TestResultBuilder {
+func (b TestResultBuilder) WithIsFromBisection(value bool) TestResultBuilder {
 	b.result.IsFromBisection = value
 	return b
 }
 
-func (b *TestResultBuilder) Build() *TestResult {
+func (b TestResultBuilder) Build() *TestResult {
 	// Copy the result, so that calling further methods on the builder does
 	// not change the returned test verdict.
 	result := new(TestResult)
 	*result = b.result
-
-	cls := make([]Changelist, len(b.result.Changelists))
-	copy(cls, b.result.Changelists)
-	result.Changelists = cls
+	result.Sources = copySources(b.result.Sources)
 	return result
+}
+
+// copySources makes a deep copy of the given code sources.
+func copySources(sources Sources) Sources {
+	var refHash []byte
+	if sources.RefHash != nil {
+		refHash = make([]byte, len(sources.RefHash))
+		copy(refHash, sources.RefHash)
+	}
+
+	cls := make([]Changelist, len(sources.Changelists))
+	copy(cls, sources.Changelists)
+
+	return Sources{
+		RefHash:     refHash,
+		Position:    sources.Position,
+		Changelists: cls,
+		IsDirty:     sources.IsDirty,
+	}
 }
 
 // TestVerdictBuilder provides methods to build a test variant for testing.

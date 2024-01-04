@@ -38,7 +38,7 @@ func TestQueryForClustering(t *testing.T) {
 		ctx := newContext(t)
 		sourcesMap := tu.SampleSourcesMap(10)
 
-		ref := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))
+		ref := pbutil.SourceRefFromSources(sourcesMap["sources_id"])
 		tvb := &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     "chromium",

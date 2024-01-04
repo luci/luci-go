@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -108,7 +109,6 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 				SourcesId: "sources1",
 			},
-			// Should ignore for test variant analysis.
 			{
 				TestId:      "ninja://test_expected",
 				VariantHash: "hash",
@@ -278,7 +278,6 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					},
 				},
 			},
-			// Should ignore for test variant analysis.
 			{
 				TestId:      "ninja://test_skip",
 				VariantHash: "hash",
@@ -345,4 +344,18 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 		}
 	}
 	return response
+}
+
+func gerritChangesByHostForTesting() map[string][]*gerritpb.ChangeInfo {
+	result := make(map[string][]*gerritpb.ChangeInfo)
+	result["project-review.googlesource.com"] = []*gerritpb.ChangeInfo{
+		{
+			Number:  9991,
+			Project: "myproject/src2",
+			Owner: &gerritpb.AccountInfo{
+				Email: "username@chromium.org",
+			},
+		},
+	}
+	return result
 }

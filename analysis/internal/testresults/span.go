@@ -52,7 +52,7 @@ type Changelist struct {
 	// Host is the gerrit hostname. E.g. chromium-review.googlesource.com.
 	Host      string
 	Change    int64
-	Patchset  int32
+	Patchset  int64
 	OwnerKind pb.ChangelistOwnerKind
 }
 
@@ -74,6 +74,29 @@ func SortChangelists(cls []Changelist) {
 	})
 }
 
+// Sources captures information about the code sources that were
+// tested by a test result.
+type Sources struct {
+	// 8-byte hash of the source reference (e.g. git branch) tested.
+	// This refers to the base commit/version tested, before any changelists
+	// are applied.
+	RefHash []byte
+	// The position along the source reference that was tested.
+	// This refers to the base commit/version tested, before any changelists
+	// are applied.
+	Position int64
+	// The gerrit changelists applied on top of the base version/commit.
+	// At most 10 changelists should be specified here, if there are more
+	// then limit to 10 and set HasDirtySources to true.
+	Changelists []Changelist
+	// Whether other modifications were made to the sources, not described
+	// by the fields above. For example, a package was upreved in the build.
+	// If this is set, then the source information is approximate: suitable
+	// for plotting results by source position the UI but not good enough
+	// for change point analysis.
+	IsDirty bool
+}
+
 // TestResult represents a row in the TestResults table.
 type TestResult struct {
 	Project              string
@@ -88,10 +111,7 @@ type TestResult struct {
 	Status               pb.TestResultStatus
 	// Properties of the test verdict (stored denormalised) follow.
 	ExonerationReasons []pb.ExonerationReason
-	SourceRefHash      []byte
-	SourcePosition     int64
-	Changelists        []Changelist
-	HasDirtySources    bool
+	Sources            Sources
 	// Properties of the invocation (stored denormalised) follow.
 	SubRealm        string
 	IsFromBisection bool
@@ -150,8 +170,8 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			// Data in Spanner should be consistent, so commitPosition.Valid ==
 			// (gitReferenceHash != nil).
 			if sourcePosition.Valid {
-				tr.SourceRefHash = sourceRefHash
-				tr.SourcePosition = sourcePosition.Int64
+				tr.Sources.RefHash = sourceRefHash
+				tr.Sources.Position = sourcePosition.Int64
 			}
 
 			// Data in spanner should be consistent, so
@@ -176,12 +196,12 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				changelists = append(changelists, Changelist{
 					Host:      decompressHost(changelistHosts[i]),
 					Change:    changelistChanges[i],
-					Patchset:  int32(changelistPatchsets[i]),
+					Patchset:  changelistPatchsets[i],
 					OwnerKind: ownerKind,
 				})
 			}
-			tr.Changelists = changelists
-			tr.HasDirtySources = hasDirtySources.Valid && hasDirtySources.Bool
+			tr.Sources.Changelists = changelists
+			tr.Sources.IsDirty = hasDirtySources.Valid && hasDirtySources.Bool
 
 			return fn(tr)
 		})
@@ -212,23 +232,23 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 
 	var sourceRefHash []byte
 	var sourcePosition spanner.NullInt64
-	if tr.SourcePosition > 0 && len(tr.SourceRefHash) > 0 {
-		sourceRefHash = tr.SourceRefHash
-		sourcePosition = spanner.NullInt64{Valid: true, Int64: tr.SourcePosition}
+	if tr.Sources.Position > 0 && len(tr.Sources.RefHash) > 0 {
+		sourceRefHash = tr.Sources.RefHash
+		sourcePosition = spanner.NullInt64{Valid: true, Int64: tr.Sources.Position}
 	}
 
-	changelistHosts := make([]string, 0, len(tr.Changelists))
-	changelistChanges := make([]int64, 0, len(tr.Changelists))
-	changelistPatchsets := make([]int64, 0, len(tr.Changelists))
-	changelistOwnerKinds := make([]string, 0, len(tr.Changelists))
-	for _, cl := range tr.Changelists {
+	changelistHosts := make([]string, 0, len(tr.Sources.Changelists))
+	changelistChanges := make([]int64, 0, len(tr.Sources.Changelists))
+	changelistPatchsets := make([]int64, 0, len(tr.Sources.Changelists))
+	changelistOwnerKinds := make([]string, 0, len(tr.Sources.Changelists))
+	for _, cl := range tr.Sources.Changelists {
 		changelistHosts = append(changelistHosts, compressHost(cl.Host))
 		changelistChanges = append(changelistChanges, cl.Change)
 		changelistPatchsets = append(changelistPatchsets, int64(cl.Patchset))
 		changelistOwnerKinds = append(changelistOwnerKinds, ownerKindToDB(cl.OwnerKind))
 	}
 
-	hasDirtySources := spanner.NullBool{Bool: tr.HasDirtySources, Valid: tr.HasDirtySources}
+	hasDirtySources := spanner.NullBool{Bool: tr.Sources.IsDirty, Valid: tr.Sources.IsDirty}
 
 	isUnexpected := spanner.NullBool{Bool: tr.IsUnexpected, Valid: tr.IsUnexpected}
 	isFromBisection := spanner.NullBool{Bool: tr.IsFromBisection, Valid: tr.IsFromBisection}

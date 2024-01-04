@@ -85,9 +85,9 @@ func TestAnalyzeChangePoint(t *testing.T) {
 	Convey(`No commit position should skip`, t, func() {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
-		sourcesMap := map[string]*rdbpb.Sources{
+		sourcesMap := map[string]*pb.Sources{
 			"sources_id": {
-				GitilesCommit: &rdbpb.GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
 					Host:    "host",
 					Project: "proj",
 					Ref:     "ref",
@@ -109,9 +109,9 @@ func TestAnalyzeChangePoint(t *testing.T) {
 			},
 		}
 
-		sourcesMap := map[string]*rdbpb.Sources{
+		sourcesMap := map[string]*pb.Sources{
 			"sources_id": {
-				GitilesCommit: &rdbpb.GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
 					Host:     "host",
 					Project:  "proj",
 					Ref:      "ref",
@@ -119,7 +119,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				},
 			},
 			"sources_id_2": {
-				GitilesCommit: &rdbpb.GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
 					Host:     "host_2",
 					Project:  "proj_2",
 					Ref:      "ref_2",
@@ -226,7 +226,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		}
 
 		sourcesMap := tu.SampleSourcesMap(10)
-		sourcesMap["sources_id"].Changelists = []*rdbpb.GerritChange{
+		sourcesMap["sources_id"].Changelists = []*pb.GerritChange{
 			{
 				Host:     "host",
 				Project:  "proj",
@@ -378,7 +378,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))),
+			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(sourcesMap["sources_id"])),
 			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -415,7 +415,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_2",
 			VariantHash: "hash_2",
-			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))),
+			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(sourcesMap["sources_id"])),
 			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k2": "v2",
@@ -569,7 +569,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			}
 		}
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		ref := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))
+		ref := pbutil.SourceRefFromSources(sourcesMap["sources_id"])
 		tvb := &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     "chromium",
@@ -659,7 +659,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))),
+			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(sourcesMap["sources_id"])),
 			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -734,7 +734,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				FinalizedCounts: &cpb.Counts{},
 			})
 		}
-		sourceRef := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))
+		sourceRef := pbutil.SourceRefFromSources(sourcesMap["sources_id"])
 		tvb := &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     "chromium",
