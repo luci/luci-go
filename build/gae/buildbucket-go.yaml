@@ -11,3 +11,5 @@ build:
     dest: ${contextdir}/frontend
   - go_gae_bundle: ${inputsdir}/monitor/service-monitor.yaml
     dest: ${contextdir}/monitor
+  - go_gae_bundle: ${inputsdir}/taskbackendlite/service-taskbackendlite.yaml
+    dest: ${contextdir}/taskbackendlite
