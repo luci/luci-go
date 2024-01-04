@@ -40,6 +40,7 @@ import (
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/gerritchangelists"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -150,31 +151,9 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 
 	gerritChanges := build.GetInput().GetGerritChanges()
 
-	// Capture the tested changelists in sorted order. This ensures that for
-	// the same combination of CLs tested, the arrays are identical.
-	sortChangelists(gerritChanges)
-
-	// Truncate the list of changelists to avoid storing an excessive number.
-	// Apply truncation after sorting to ensure a stable set of changelists.
-	if len(gerritChanges) > maximumCLs {
-		gerritChanges = gerritChanges[:maximumCLs]
-	}
-
-	changelists := make([]*pb.Changelist, 0, len(gerritChanges))
-	for _, change := range gerritChanges {
-		if err := testresults.ValidateGerritHostname(change.Host); err != nil {
-			return false, err
-		}
-		ownerKind, err := retrieveChangelistOwnerKind(ctx, project, change)
-		if err != nil {
-			return false, errors.Annotate(err, "retrieving gerrit change %s/%v", change.Host, change.Change).Err()
-		}
-		changelists = append(changelists, &pb.Changelist{
-			Host:      change.Host,
-			Change:    change.Change,
-			Patchset:  int32(change.Patchset),
-			OwnerKind: ownerKind,
-		})
+	changelists, err := prepareChangelists(ctx, project, gerritChanges)
+	if err != nil {
+		return false, errors.Annotate(err, "prepare changelists").Err()
 	}
 
 	commit := build.Output.GetGitilesCommit()
@@ -202,6 +181,56 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 	}
 	buildProcessingOutcomeCounter.Add(ctx, 1, project, "success")
 	return true, nil
+}
+
+func prepareChangelists(ctx context.Context, project string, gerritChanges []*bbpb.GerritChange) ([]*pb.Changelist, error) {
+	// Capture the tested changelists in sorted order. This ensures that for
+	// the same combination of CLs tested, the arrays are identical.
+	gerritChanges = sortChangelists(gerritChanges)
+
+	// Truncate the list of changelists to avoid storing an excessive number.
+	// Apply truncation after sorting to ensure a stable set of changelists.
+	if len(gerritChanges) > maximumCLs {
+		gerritChanges = gerritChanges[:maximumCLs]
+	}
+
+	// Lookup the owner kind of each changelist.
+	lookupRequest := make(map[gerritchangelists.Key]gerritchangelists.LookupRequest)
+	for _, change := range gerritChanges {
+		if err := testresults.ValidateGerritHostname(change.Host); err != nil {
+			return nil, err
+		}
+		key := gerritchangelists.Key{
+			Project: project,
+			Host:    change.Host,
+			Change:  change.Change,
+		}
+		lookupRequest[key] = gerritchangelists.LookupRequest{
+			GerritProject: change.Project,
+		}
+	}
+
+	ownerKinds, err := gerritchangelists.FetchOwnerKinds(ctx, lookupRequest)
+	if err != nil {
+		return nil, errors.Annotate(err, "retrieving gerrit owner kinds").Err()
+	}
+
+	result := make([]*pb.Changelist, 0, len(gerritChanges))
+	for _, change := range gerritChanges {
+		key := gerritchangelists.Key{
+			Project: project,
+			Host:    change.Host,
+			Change:  change.Change,
+		}
+
+		result = append(result, &pb.Changelist{
+			Host:      change.Host,
+			Change:    change.Change,
+			Patchset:  int32(change.Patchset),
+			OwnerKind: ownerKinds[key],
+		})
+	}
+	return result, nil
 }
 
 func includedByAncestorBuild(ctx context.Context, buildID, ancestorBuildID int64, rdbHost string, project string) (bool, error) {
@@ -357,7 +386,12 @@ func gardenerRotations(buildInputProperties *structpb.Struct) []string {
 
 // sortChangelists sorts a slice of changelists to be in ascending
 // lexicographical order by (host, change, patchset).
-func sortChangelists(cls []*bbpb.GerritChange) {
+func sortChangelists(cls []*bbpb.GerritChange) []*bbpb.GerritChange {
+	// Copy the CLs list to avoid modifying the passed arguments.
+	originalCLs := cls
+	cls = make([]*bbpb.GerritChange, len(originalCLs))
+	copy(cls, originalCLs)
+
 	sort.Slice(cls, func(i, j int) bool {
 		// Returns true iff cls[i] is less than cls[j].
 		if cls[i].Host < cls[j].Host {
@@ -371,4 +405,5 @@ func sortChangelists(cls []*bbpb.GerritChange) {
 		}
 		return false
 	})
+	return cls
 }

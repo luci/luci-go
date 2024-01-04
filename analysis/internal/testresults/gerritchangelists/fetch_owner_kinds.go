@@ -39,8 +39,16 @@ var (
 	automationAccountRE = regexp.MustCompile(`^.*@.*\.gserviceaccount\.com$`)
 )
 
-// PopulateOwnerKinds augments the given sources information to include
-// the owner kind of each changelist.
+// LookupRequest represents parameters to a request to lookup up the
+// owner kind of a gerrit changelist.
+type LookupRequest struct {
+	// Gerrit project in which the changelist is. Optional, but
+	// gerrit prefers this be set to speed up lookups.
+	GerritProject string
+}
+
+// FetchOwnerKinds retrieves the owner kind of each of the nominated
+// gerrit changelists.
 //
 // For each changelist for which the owner kind is not cached in Spanner,
 // this method will make an RPC to gerrit.
@@ -48,55 +56,30 @@ var (
 // This method must NOT be called within a Spanner transaction
 // context, as it will create its own transactions to access
 // the changelist cache.
-func PopulateOwnerKinds(ctx context.Context, project string, sourcesByID map[string]*rdbpb.Sources) (map[string]*pb.Sources, error) {
-	if sourcesByID == nil {
-		return make(map[string]*pb.Sources), nil
-	}
-
-	// Find the cache keys to lookup.
-	cacheKeys := make(map[Key]struct{})
-	for _, sources := range sourcesByID {
-		for _, cl := range sources.Changelists {
-			key := Key{
-				Project: project,
-				Host:    cl.Host,
-				Change:  cl.Change,
-			}
-			cacheKeys[key] = struct{}{}
+func FetchOwnerKinds(ctx context.Context, reqs map[Key]LookupRequest) (map[Key]pb.ChangelistOwnerKind, error) {
+	cacheResult := make(map[Key]*GerritChangelist)
+	if len(reqs) > 0 {
+		keys := make(map[Key]struct{})
+		for key := range reqs {
+			keys[key] = struct{}{}
 		}
-	}
 
-	cacheRecords := make(map[Key]*GerritChangelist)
-	if len(cacheKeys) > 0 {
 		// Try to retrieve changelist details from the Spanner cache.
 		var err error
-		cacheRecords, err = Read(span.Single(ctx), cacheKeys)
+		cacheResult, err = Read(span.Single(ctx), keys)
 		if err != nil {
 			return nil, errors.Annotate(err, "read changelist cache").Err()
 		}
 	}
 
-	// Identify the changelists for which we had a cache miss.
-	// Record the gerrit project hint for each, so that we can
-	// query gerrit.
-	clsToFetchWithGerritProjectHint := make(map[Key]string)
-	for _, sources := range sourcesByID {
-		for _, cl := range sources.Changelists {
-			key := Key{
-				Project: project,
-				Host:    cl.Host,
-				Change:  cl.Change,
-			}
-			if _, ok := cacheRecords[key]; !ok {
-				clsToFetchWithGerritProjectHint[key] = cl.Project
-			}
-		}
-	}
-
 	var ms []*spanner.Mutation
-	for key, gerritProjectHint := range clsToFetchWithGerritProjectHint {
+	for key, req := range reqs {
+		if _, ok := cacheResult[key]; ok {
+			continue
+		}
+
 		// Retrieve the changelist details from Gerrit.
-		ownerKind, err := retrieveChangelistOwnerKind(ctx, key, gerritProjectHint)
+		ownerKind, err := retrieveChangelistOwnerKind(ctx, key, req.GerritProject)
 		if err != nil {
 			return nil, errors.Annotate(err, "retrieve owner kind from gerrit").Err()
 		}
@@ -118,7 +101,7 @@ func PopulateOwnerKinds(ctx context.Context, project string, sourcesByID map[str
 
 		// Combine the fetched changelist details with those retrieved
 		// from the cache earlier.
-		cacheRecords[key] = cl
+		cacheResult[key] = cl
 	}
 
 	if len(ms) > 0 {
@@ -132,8 +115,49 @@ func PopulateOwnerKinds(ctx context.Context, project string, sourcesByID map[str
 		}
 	}
 
+	result := make(map[Key]pb.ChangelistOwnerKind)
+	for key, entry := range cacheResult {
+		result[key] = entry.OwnerKind
+	}
+	return result, nil
+}
+
+// PopulateOwnerKinds augments the given sources information to include
+// the owner kind of each changelist.
+//
+// For each changelist for which the owner kind is not cached in Spanner,
+// this method will make an RPC to gerrit.
+//
+// This method must NOT be called within a Spanner transaction
+// context, as it will create its own transactions to access
+// the changelist cache.
+func PopulateOwnerKinds(ctx context.Context, project string, sourcesByID map[string]*rdbpb.Sources) (map[string]*pb.Sources, error) {
+	if sourcesByID == nil {
+		return make(map[string]*pb.Sources), nil
+	}
+
+	// Create the lookup requests.
+	reqs := make(map[Key]LookupRequest)
+	for _, sources := range sourcesByID {
+		for _, cl := range sources.Changelists {
+			key := Key{
+				Project: project,
+				Host:    cl.Host,
+				Change:  cl.Change,
+			}
+			reqs[key] = LookupRequest{
+				GerritProject: cl.Project,
+			}
+		}
+	}
+
+	kinds, err := FetchOwnerKinds(ctx, reqs)
+	if err != nil {
+		return nil, err
+	}
+
 	// Augmenting the original ResultDB sources with the owner kind
-	// of each changelist, as retrieved from gerrit and the cache.
+	// of each changelist, as retrieved from gerrit or the cache.
 	result := make(map[string]*pb.Sources)
 	for id, sources := range sourcesByID {
 		augmentedSources := pbutil.SourcesFromResultDB(sources)
@@ -144,10 +168,9 @@ func PopulateOwnerKinds(ctx context.Context, project string, sourcesByID map[str
 				Host:    augmentedCL.Host,
 				Change:  augmentedCL.Change,
 			}
-			record := cacheRecords[key]
 
 			// Augment each changelist with the owner kind.
-			augmentedCL.OwnerKind = record.OwnerKind
+			augmentedCL.OwnerKind = kinds[key]
 		}
 		result[id] = augmentedSources
 	}
