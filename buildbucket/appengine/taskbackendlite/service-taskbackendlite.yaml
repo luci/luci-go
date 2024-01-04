@@ -10,6 +10,8 @@ luci_gae_vars:
     VPC_CONNECTOR: projects/cr-buildbucket-dev/locations/us-central1/connectors/connector
   cr-buildbucket:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+    REDIS_ADDR: 10.52.56.84:6379
+    VPC_CONNECTOR: projects/cr-buildbucket/locations/us-central1/connectors/connector-e2-standard-4
 
 basic_scaling:
   max_instances: 1
