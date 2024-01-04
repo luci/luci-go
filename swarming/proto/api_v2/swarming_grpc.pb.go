@@ -953,34 +953,21 @@ var Tasks_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Swarming_ListQueues_FullMethodName     = "/swarming.v2.Swarming/ListQueues"
 	Swarming_GetDetails_FullMethodName     = "/swarming.v2.Swarming/GetDetails"
 	Swarming_GetToken_FullMethodName       = "/swarming.v2.Swarming/GetToken"
 	Swarming_GetPermissions_FullMethodName = "/swarming.v2.Swarming/GetPermissions"
-	Swarming_GetBootstrap_FullMethodName   = "/swarming.v2.Swarming/GetBootstrap"
-	Swarming_GetBotConfig_FullMethodName   = "/swarming.v2.Swarming/GetBotConfig"
 )
 
 // SwarmingClient is the client API for Swarming service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SwarmingClient interface {
-	// ListQueues returns a list of task queues. Each queue contains a list of dimensions
-	// associated with that queue and an expiry date for each dimension.
-	ListQueues(ctx context.Context, in *TaskQueuesRequest, opts ...grpc.CallOption) (*TaskQueueList, error)
-	// GetDetails returns information about the server
+	// GetDetails returns public information about the Swarming instance.
 	GetDetails(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServerDetails, error)
 	// GetToken returns a token to bootstrap a new bot.
-	// This may seem strange to be a POST and not a GET, but it's very
-	// important to make sure GET requests are idempotent and safe
-	// to be pre-fetched; generating a token is neither of those things.
 	GetToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BootstrapToken, error)
 	// GetPermissions returns the caller's permissions.
 	GetPermissions(ctx context.Context, in *PermissionsRequest, opts ...grpc.CallOption) (*ClientPermissions, error)
-	// GetBootStrap returns the current version of bootstrap.py.
-	GetBootstrap(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileContent, error)
-	// GetBotConfig returns the current version of bot_config.py.
-	GetBotConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileContent, error)
 }
 
 type swarmingClient struct {
@@ -989,15 +976,6 @@ type swarmingClient struct {
 
 func NewSwarmingClient(cc grpc.ClientConnInterface) SwarmingClient {
 	return &swarmingClient{cc}
-}
-
-func (c *swarmingClient) ListQueues(ctx context.Context, in *TaskQueuesRequest, opts ...grpc.CallOption) (*TaskQueueList, error) {
-	out := new(TaskQueueList)
-	err := c.cc.Invoke(ctx, Swarming_ListQueues_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *swarmingClient) GetDetails(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServerDetails, error) {
@@ -1027,44 +1005,16 @@ func (c *swarmingClient) GetPermissions(ctx context.Context, in *PermissionsRequ
 	return out, nil
 }
 
-func (c *swarmingClient) GetBootstrap(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileContent, error) {
-	out := new(FileContent)
-	err := c.cc.Invoke(ctx, Swarming_GetBootstrap_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *swarmingClient) GetBotConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileContent, error) {
-	out := new(FileContent)
-	err := c.cc.Invoke(ctx, Swarming_GetBotConfig_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // SwarmingServer is the server API for Swarming service.
 // All implementations must embed UnimplementedSwarmingServer
 // for forward compatibility
 type SwarmingServer interface {
-	// ListQueues returns a list of task queues. Each queue contains a list of dimensions
-	// associated with that queue and an expiry date for each dimension.
-	ListQueues(context.Context, *TaskQueuesRequest) (*TaskQueueList, error)
-	// GetDetails returns information about the server
+	// GetDetails returns public information about the Swarming instance.
 	GetDetails(context.Context, *emptypb.Empty) (*ServerDetails, error)
 	// GetToken returns a token to bootstrap a new bot.
-	// This may seem strange to be a POST and not a GET, but it's very
-	// important to make sure GET requests are idempotent and safe
-	// to be pre-fetched; generating a token is neither of those things.
 	GetToken(context.Context, *emptypb.Empty) (*BootstrapToken, error)
 	// GetPermissions returns the caller's permissions.
 	GetPermissions(context.Context, *PermissionsRequest) (*ClientPermissions, error)
-	// GetBootStrap returns the current version of bootstrap.py.
-	GetBootstrap(context.Context, *emptypb.Empty) (*FileContent, error)
-	// GetBotConfig returns the current version of bot_config.py.
-	GetBotConfig(context.Context, *emptypb.Empty) (*FileContent, error)
 	mustEmbedUnimplementedSwarmingServer()
 }
 
@@ -1072,9 +1022,6 @@ type SwarmingServer interface {
 type UnimplementedSwarmingServer struct {
 }
 
-func (UnimplementedSwarmingServer) ListQueues(context.Context, *TaskQueuesRequest) (*TaskQueueList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListQueues not implemented")
-}
 func (UnimplementedSwarmingServer) GetDetails(context.Context, *emptypb.Empty) (*ServerDetails, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDetails not implemented")
 }
@@ -1083,12 +1030,6 @@ func (UnimplementedSwarmingServer) GetToken(context.Context, *emptypb.Empty) (*B
 }
 func (UnimplementedSwarmingServer) GetPermissions(context.Context, *PermissionsRequest) (*ClientPermissions, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPermissions not implemented")
-}
-func (UnimplementedSwarmingServer) GetBootstrap(context.Context, *emptypb.Empty) (*FileContent, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBootstrap not implemented")
-}
-func (UnimplementedSwarmingServer) GetBotConfig(context.Context, *emptypb.Empty) (*FileContent, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBotConfig not implemented")
 }
 func (UnimplementedSwarmingServer) mustEmbedUnimplementedSwarmingServer() {}
 
@@ -1101,24 +1042,6 @@ type UnsafeSwarmingServer interface {
 
 func RegisterSwarmingServer(s grpc.ServiceRegistrar, srv SwarmingServer) {
 	s.RegisterService(&Swarming_ServiceDesc, srv)
-}
-
-func _Swarming_ListQueues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TaskQueuesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SwarmingServer).ListQueues(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Swarming_ListQueues_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SwarmingServer).ListQueues(ctx, req.(*TaskQueuesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Swarming_GetDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1175,42 +1098,6 @@ func _Swarming_GetPermissions_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Swarming_GetBootstrap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SwarmingServer).GetBootstrap(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Swarming_GetBootstrap_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SwarmingServer).GetBootstrap(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Swarming_GetBotConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SwarmingServer).GetBotConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Swarming_GetBotConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SwarmingServer).GetBotConfig(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Swarming_ServiceDesc is the grpc.ServiceDesc for Swarming service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1218,10 +1105,6 @@ var Swarming_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "swarming.v2.Swarming",
 	HandlerType: (*SwarmingServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "ListQueues",
-			Handler:    _Swarming_ListQueues_Handler,
-		},
 		{
 			MethodName: "GetDetails",
 			Handler:    _Swarming_GetDetails_Handler,
@@ -1233,14 +1116,6 @@ var Swarming_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPermissions",
 			Handler:    _Swarming_GetPermissions_Handler,
-		},
-		{
-			MethodName: "GetBootstrap",
-			Handler:    _Swarming_GetBootstrap_Handler,
-		},
-		{
-			MethodName: "GetBotConfig",
-			Handler:    _Swarming_GetBotConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

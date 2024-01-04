@@ -98,22 +98,12 @@ service Tasks {
 }
 
 service Swarming {
-  // ListQueues returns a list of task queues. Each queue contains a list of dimensions
-  // associated with that queue and an expiry date for each dimension.
-  rpc ListQueues(TaskQueuesRequest) returns (TaskQueueList);
-  // GetDetails returns information about the server
+  // GetDetails returns public information about the Swarming instance.
   rpc GetDetails(google.protobuf.Empty) returns (ServerDetails);
   // GetToken returns a token to bootstrap a new bot.
-  // This may seem strange to be a POST and not a GET, but it's very
-  // important to make sure GET requests are idempotent and safe
-  // to be pre-fetched; generating a token is neither of those things.
   rpc GetToken(google.protobuf.Empty) returns (BootstrapToken);
   // GetPermissions returns the caller's permissions.
   rpc GetPermissions(PermissionsRequest) returns (ClientPermissions);
-  // GetBootStrap returns the current version of bootstrap.py.
-  rpc GetBootstrap(google.protobuf.Empty) returns (FileContent);
-  // GetBotConfig returns the current version of bot_config.py.
-  rpc GetBotConfig(google.protobuf.Empty) returns (FileContent);
 }
 
 // Enums
@@ -229,44 +219,50 @@ message StringListPair {
   repeated string value = 2;
 }
 
-// Reports details about the server.
+// Public details about the server.
 message ServerDetails {
   string server_version = 1;
   string bot_version = 2;
-  string machine_provider_template = 3;
+  string machine_provider_template = 3 [deprecated=true];
   string display_server_url_template = 4;
-  string luci_config = 5;
+  string luci_config = 5 [deprecated=true];
   string cas_viewer_server = 6;
 }
 
-// Returns a token to bootstrap a new bot.
+// An opaque token that can be used to bootstrap a new bot.
 message BootstrapToken {
   string bootstrap_token = 1;
 }
 
-
-// Reports the client's permissions.
+// Actions the caller is permitted to perform over a resource.
+//
+// The subject of an action is either a bot, a task or a bunch of pools, as
+// specified in the PermissionsRequest message. Pools as specified indirectly
+// via "pool:<name>" tags.
+//
+// This methods exists primarily to be used by the Web UI e.g. to hide
+// inaccessible elements.
 message ClientPermissions {
+  // True if allowed to delete the specified bot.
   bool delete_bot = 1;
+  // True if allowed to delete bots in all specified pools.
   bool delete_bots = 2;
+  // True if allowed to terminate the specified bot.
   bool terminate_bot = 3;
-  bool get_configs = 4;
-  bool put_configs = 5;
-  // Cancel one single task
+  // Not used, always false.
+  bool get_configs = 4 [deprecated=true];
+  // Not used, always false.
+  bool put_configs = 5 [deprecated=true];
+  // True if allowed to cancel the specified task.
   bool cancel_task = 6;
+  // True if allowed to request a bot bootstrap token.
   bool get_bootstrap_token = 7;
-  // Cancel multiple tasks at once, usually in emergencies.
+  // True if allowed to cancel tasks in all specified pools.
   bool cancel_tasks = 8;
+  // All known pools in which the caller is permitted to list all bots.
   repeated string list_bots = 9;
+  // All known pools in which the caller is permitted to list all tasks.
   repeated string list_tasks = 10;
-}
-
-// contents of a file
-message FileContent {
-  string content = 1;
-  string version = 2;
-  string who = 3;
-  google.protobuf.Timestamp when = 4;
 }
 
 // This is a [Digest][build.bazel.remote.execution.v2.Digest] of a blob on
@@ -755,6 +751,9 @@ message ResultDBInfo {
 
 // Representation of the TaskResultSummary or TaskRunResult ndb model.
 message TaskResultResponse {
+  reserved 7;
+  reserved "children_task_ids";
+
   // Summary task ID (ending with '0') when creating a new task.
   string task_id = 1;
   // Time when the task was abandoned instead of normal completion (e.g.
@@ -770,8 +769,6 @@ message TaskResultResponse {
   string bot_version = 5;
   // The cloud project id where the bot saves its logs.
   string bot_logs_cloud_project = 6;
-  // List of task IDs that this task triggered, if any.
-  repeated string children_task_ids = 7;
   // Time the task completed normally. Only one of abandoned_ts or completed_ts
   // can be set except for state == KILLED.
   //
@@ -943,21 +940,6 @@ message TaskRequestMetadataResponse {
   TaskRequestResponse request = 2;
   // Set to finished task result in case task was deduplicated.
   TaskResultResponse task_result = 3;
-}
-
-message TaskQueue {
-  // Must be a list of 'key:value' strings to filter the returned list of bots
-  // on.
-  repeated StringPair dimensions = 1;
-  google.protobuf.Timestamp valid_until_ts = 2;
-}
-
-message TaskQueueList {
-  string cursor = 1;
-  // Note that it's possible that the RPC returns a tad more or less items than
-  // requested limit.
-  repeated TaskQueue items = 2;
-  google.protobuf.Timestamp now = 3;
 }
 
 // Representation of the BotInfo ndb model.
@@ -1149,11 +1131,6 @@ message TaskIdWithOffsetRequest {
 message TaskIdWithPerfRequest {
   string task_id = 1;
   bool include_performance_stats = 2;
-}
-
-message TaskQueuesRequest {
-  int32 limit = 1;
-  string cursor = 2;
 }
 
 message BatchGetResultRequest {
