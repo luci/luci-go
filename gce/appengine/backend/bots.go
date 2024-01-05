@@ -42,7 +42,7 @@ import (
 const utcRFC3339 = "2006-01-02T15:04:05"
 
 // botListLimit is the maximum number of bots to list per query. It should be <= 1000.
-const botListLimit = 1000
+const botListLimit = 500
 
 // setConnected sets the Swarming bot as connected in the datastore if it isn't already.
 func setConnected(c context.Context, id, hostname string, at time.Time) error {

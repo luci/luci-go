@@ -18,6 +18,6 @@ cron:
 - url: /internal/cron/audit-project
   schedule: every 15 minutes
 - url: /internal/cron/drain-vms
-  schedule: every 15 minutes
+  schedule: every 1 minutes
 - url: /internal/cron/inspect-swarming
-  schedule: every 15 minutes
+  schedule: every 1 minutes
