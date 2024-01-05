@@ -57,9 +57,10 @@ func MakePRun(r *run.Run) *PRun {
 	clids := common.CLIDsAsInt64s(r.CLs)
 	sort.Sort(sortableInt64s(clids))
 	return &PRun{
-		Id:    string(r.ID),
-		Clids: clids,
-		Mode:  string(r.Mode),
+		Id:       string(r.ID),
+		Clids:    clids,
+		Mode:     string(r.Mode),
+		RootClid: int64(r.RootCL),
 	}
 }
 

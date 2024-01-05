@@ -224,6 +224,10 @@ message PRun {
   //
   // It uses the string value of run.Mode.
   string mode = 3;
+	// ID of the root CL that triggers this Run in the combined mode.
+	//
+	// It is the same as `run.root_cl`.
+  int64 root_clid = 4;
 }
 
 // Component is a set of CLs related to each other.

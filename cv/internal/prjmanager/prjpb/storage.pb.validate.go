@@ -734,6 +734,8 @@ func (m *PRun) validate(all bool) error {
 
 	// no validation rules for Mode
 
+	// no validation rules for RootClid
+
 	if len(errors) > 0 {
 		return PRunMultiError(errors)
 	}
