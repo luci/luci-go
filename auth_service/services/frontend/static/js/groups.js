@@ -34,6 +34,43 @@ const trimGroupDescription = (desc) => {
   return firstLine;
 }
 
+// Given a set of strings, returns the first one with longest
+// substring match with the search term.
+const longestMatch = (items, text) => {
+  if (text.length === 0 || items.size === 0) {
+    return null;
+  }
+
+  // Invariant: curSet is non empty subsequence of 'items';
+  // each item in curSet has 'curPrefix' as a substring.
+  var curPrefix = '';
+  var curSet = items;
+  for (var i = 0; i < text.length; i++) {
+    // Attempt to increase curPrefix.
+    var newPrefix = curPrefix + text[i];
+    var newSet = new Set();
+    curSet.forEach((item) => {
+      if (item.indexOf(newPrefix) != -1) {
+        newSet.add(item);
+      }
+    });
+    // No matches at all -> curSet contains longest matches.
+    if (newSet.size === 0) {
+      // Could not find the first letter -> no match at all.
+      if (i === 0) {
+        return null;
+      }
+      return curSet.values().next().value;
+    }
+
+    // Carry on.
+    curPrefix = newPrefix;
+    curSet = newSet;
+  }
+  // curSet is a subset of 'items' that have 'text' as substring, pick first.
+  return curSet.values().next().value;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Address bar manipulation.
 
@@ -120,6 +157,9 @@ class GroupChooser {
 
     // Set of known groups, used for checking group presence.
     this.groupSet = new Set()
+
+    // Mapping of group name -> HTML element.
+    this.groupOptions = new Map();
   }
 
   // Loads list of groups from a server.
@@ -158,6 +198,9 @@ class GroupChooser {
       description.textContent = trimGroupDescription(group.description);
       this.element.appendChild(clone);
 
+      // Keep a reference to the HTML element, so we can scroll to it later.
+      this.groupOptions.set(group.name, listEl);
+
       listEl.addEventListener('click', () => {
         this.setSelection(group.name);
       });
@@ -183,12 +226,17 @@ class GroupChooser {
 
     groupElements.forEach((currentGroup) => {
       if (currentGroup.dataset.groupName === name) {
+        selectionMade = true;
         currentGroup.classList.add('active');
       } else {
         currentGroup.classList.remove('active');
       }
     });
-    this.element.dispatchEvent(selectionChangedEvent);
+
+    if (selectionMade) {
+      this.ensureGroupVisible(name);
+      this.element.dispatchEvent(selectionChangedEvent);
+    }
   }
 
   // Selects first group available.
@@ -198,6 +246,34 @@ class GroupChooser {
       this.setSelection(elements[0].dataset.groupName);
     }
   }
+
+  // Scrolls group list so that the given group is visible.
+  ensureGroupVisible(name) {
+    let groupOption = this.groupOptions.get(name);
+    if (!groupOption) {
+      return;
+    }
+
+    let chooserRect = this.element.getBoundingClientRect();
+    let optionRect = groupOption.getBoundingClientRect();
+
+    // Scroll to the selected group if it's not completely visible.
+    if ((optionRect.top < chooserRect.top) || (optionRect.bottom > chooserRect.bottom)) {
+      this.element.scrollTop += optionRect.top - chooserRect.top;
+    }
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Text field to search for a group.
+
+class SearchBox {
+
+  constructor(element) {
+    // Root DOM element.
+    this.element = document.querySelector(element);
+  }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -283,7 +359,7 @@ class GroupForm {
       // Attach event listener to this field.
       const validatorNames = Array.from(element.classList).filter((name) => { return name in validators; })
       const errorElement = element.nextElementSibling;
-      const formFieldObj = {element, validatorNames, errorElement};
+      const formFieldObj = { element, validatorNames, errorElement };
       element.addEventListener('input', () => {
         this.validate(formFieldObj);
       });
@@ -301,7 +377,7 @@ class GroupForm {
 
         this.doSubmit(authGroup).then(() => {
           location.reload();
-        }).catch((error) =>{
+        }).catch((error) => {
           console.log(error);
           alert(error);
         });
@@ -344,7 +420,7 @@ class GroupForm {
   // Updates the value of the current formField Object
   // then calls validation callbacks on the given field.
   validate(formFieldObj) {
-    const {element, errorElement} = formFieldObj;
+    const { element, errorElement } = formFieldObj;
     const value = element.value.trim();
     resetValidity(element, errorElement);
 
@@ -454,6 +530,7 @@ window.onload = () => {
   // Setup global UI elements.
   const groupChooser = new GroupChooser('#group-chooser');
   const contentFrame = new ContentFrame('#group-content');
+  const searchBox = new SearchBox('#search-box');
 
   const startNewGroupFlow = () => {
     let form = new NewGroupForm();
@@ -484,7 +561,6 @@ window.onload = () => {
       startNewGroupFlow();
       groupChooser.setSelection(null);
     } else if (groupChooser.isKnownGroup(current)) {
-      // TODO(cjacomet): Make scroller center onto group selected.
       groupChooser.setSelection(current);
     } else if (selectDefault) {
       groupChooser.selectDefault();
@@ -493,5 +569,20 @@ window.onload = () => {
 
   groupChooser.refetchGroups().then(() => {
     jumpToCurrentGroup(true);
+  });
+
+  // Allow selecting a group via search box.
+  searchBox.element.addEventListener('input', () => {
+    var found = longestMatch(groupChooser.groupSet, searchBox.element.value);
+    if (found) {
+      groupChooser.setSelection(found);
+    }
+  });
+
+  // Focus on group members box if "Enter" is hit.
+  searchBox.element.addEventListener('keyup', (e) => {
+    if (e.keyCode == 13 && contentFrame.content) {
+      contentFrame.element.querySelector('#membersAndGlobs').focus();
+    }
   });
 };

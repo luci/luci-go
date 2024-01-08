@@ -23,21 +23,21 @@
   </div>
   <form id="group-form" class="m-2">
     <div class="row mb-3">
-      <label for="group-name" class="col-2 col-form-label">Group Name</label>
+      <label for="group-name-box" class="col-2 col-form-label">Group Name</label>
       <div class="col">
         <input class="form-control groupName required" rows="1" id="group-name-box" placeholder="required"></input>
         <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row mb-3">
-      <label for="description" class="col-2 col-form-label">Description</label>
+      <label for="description-box" class="col-2 col-form-label">Description</label>
       <div class="col">
         <textarea class="form-control required" rows="3" id="description-box" placeholder="required"></textarea>
         <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row">
-      <label for="owners" class="col-2 col-form-label">Owners</label>
+      <label for="owners-box" class="col-2 col-form-label">Owners</label>
       <div class="col">
         <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
         <span class="error" aria-live="polite"></span>
@@ -45,14 +45,14 @@
     </div>
     <hr>
     <div class="row mb-3">
-      <label for="members" class="col-2 col-form-label">Members</label>
+      <label for="membersAndGlobs" class="col-2 col-form-label">Members</label>
       <div class="col">
         <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
         <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row">
-      <label for="subgroups" class="col-2 col-form-label">Subgroups</label>
+      <label for="nested" class="col-2 col-form-label">Subgroups</label>
       <div class="col">
         <textarea class="form-control groupList" rows="5" id="nested"></textarea>
         <span class="error" aria-live="polite"></span>
@@ -82,14 +82,14 @@
   </div>
   <form id="group-form" class="m-2">
     <div class="row mb-3">
-      <label for="description" class="col-2 col-form-label">Description</label>
+      <label for="description-box" class="col-2 col-form-label">Description</label>
       <div class="col">
         <textarea class="form-control required" rows="3" id="description-box"></textarea>
         <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row">
-      <label for="owners" class="col-2 col-form-label">Owners</label>
+      <label for="owners-box" class="col-2 col-form-label">Owners</label>
       <div class="col">
         <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
         <span class="error" aria-live="polite"></span>
@@ -97,14 +97,14 @@
     </div>
     <hr>
     <div class="row mb-3">
-      <label for="members" class="col-2 col-form-label">Members</label>
+      <label for="membersAndGlobs" class="col-2 col-form-label">Members</label>
       <div class="col">
         <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
         <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row">
-      <label for="subgroups" class="col-2 col-form-label">Subgroups</label>
+      <label for="nested" class="col-2 col-form-label">Subgroups</label>
       <div class="col">
         <textarea class="form-control groupList" rows="5" id="nested"></textarea>
         <span class="error" aria-live="polite"></span>
@@ -118,28 +118,30 @@
 
 <div class="row">
   <div class="col-4 my-2 border rounded">
-    <div class="row my-2">
-      <form class="d-flex">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-        <button class="btn btn-outline-success" type="submit">Search</button>
-      </form>
-      <div class="row pt-2">
-        <div class="col">
-          <div class="form-check pt-2 sm-6">
-            <input class="form-check-input me-2" type="checkbox" value="" id="external-check">
-            <label class="form-check-label" for="external-check">
-              Show External Groups
-            </label>
-          </div>
+    <div class="row mt-2">
+      <div class="input-group">
+        <input id="search-box" class="form-control" type="search" placeholder="Search" aria-label="Search">
+        <button id="search-group-btn" type="button" class="btn btn-outline-secondary">
+          <i class="bi bi-search" style="font-size: 16px; color: #333"></i>
+        </button>
+      </div>
+    </div>
+    <div class="row justify-content-between align-items-center">
+      <div class="col-auto my-2">
+        <div class="form-check sm-6">
+          <input class="form-check-input" type="checkbox" value="" id="external-check">
+          <label class="form-check-label" for="external-check">
+            Show external groups
+          </label>
         </div>
-        <div class="col-2 me-2">
-          <button type="button" class="btn btn-outline-primary" id="create-group-btn">Create</button>
-        </div>
+      </div>
+      <div class="col-auto my-2">
+        <button type="button" class="btn btn-outline-primary" id="create-group-btn">Create</button>
       </div>
     </div>
     <div class="row">
       <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">
-          <!-- Load group-scroller-row template. -->
+        <!-- Load group-scroller-row template. -->
       </ul>
     </div>
   </div>
@@ -149,4 +151,3 @@
 </div>
 
 {{end}}
-
