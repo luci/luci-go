@@ -316,16 +316,14 @@ func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptio
 	}
 	if change.UpdateVerified {
 		if change.ShouldBeVerified {
-			// If the issue is not already closed by the user.
-			if options.Issue.IssueState.Assignee != nil {
-				request.Add.Verifier = options.Issue.IssueState.Assignee
-				request.AddMask.Paths = append(request.AddMask.Paths, "verifier")
-			} else {
-				request.Add.Verifier = &issuetracker.User{
-					EmailAddress: rg.selfEmail,
-				}
-				request.AddMask.Paths = append(request.AddMask.Paths, "verifier")
+			// Mark LUCI Analysis the verifier.
+			request.Add.Verifier = &issuetracker.User{
+				EmailAddress: rg.selfEmail,
+			}
+			request.AddMask.Paths = append(request.AddMask.Paths, "verifier")
 
+			if options.Issue.IssueState.Assignee == nil {
+				// Make LUCI Analysis the assignee if there is no assignee.
 				request.Add.Assignee = &issuetracker.User{
 					EmailAddress: rg.selfEmail,
 				}
