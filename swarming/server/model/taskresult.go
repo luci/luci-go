@@ -422,3 +422,8 @@ func TaskOutputChunkKey(ctx context.Context, taskReq *datastore.Key, idx int64) 
 	return datastore.NewKey(ctx, "TaskOutputChunk", "", idx+1,
 		datastore.NewKey(ctx, "TaskOutput", "", 1, TaskRunResultKey(ctx, taskReq)))
 }
+
+// TaskResultSummaryQuery prepares a query that fetches TaskResultSummary entities.
+func TaskResultSummaryQuery() *datastore.Query {
+	return datastore.NewQuery("TaskResultSummary")
+}
