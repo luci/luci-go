@@ -20,14 +20,12 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
 	"go.chromium.org/luci/analysis/internal/aip"
@@ -56,6 +54,7 @@ type AnalysisClient interface {
 	ReadCluster(ctx context.Context, luciProject string, clusterID clustering.ClusterID) (*analysis.Cluster, error)
 	ReadClusterFailures(ctx context.Context, options analysis.ReadClusterFailuresOptions) (cfs []*analysis.ClusterFailure, err error)
 	ReadClusterExoneratedTestVariants(ctx context.Context, options analysis.ReadClusterExoneratedTestVariantsOptions) (tvs []*analysis.ExoneratedTestVariant, err error)
+	ReadClusterExoneratedTestVariantBranches(ctx context.Context, options analysis.ReadClusterExoneratedTestVariantBranchesOptions) (tvbs []*analysis.ExoneratedTestVariantBranch, err error)
 	ReadClusterHistory(ctx context.Context, options analysis.ReadClusterHistoryOptions) (ret []*analysis.ReadClusterHistoryDay, err error)
 	QueryClusterSummaries(ctx context.Context, luciProject string, options *analysis.QueryClusterSummariesOptions) ([]*analysis.ClusterSummary, error)
 }
@@ -184,10 +183,6 @@ func (c *clustersServer) Get(ctx context.Context, req *pb.GetClusterRequest) (*p
 
 	cluster, err := c.analysisClient.ReadCluster(ctx, project, clusterID)
 	if err != nil {
-		if err == analysis.ProjectNotExistsErr {
-			return nil, appstatus.Error(codes.NotFound,
-				"LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
-		}
 		return nil, err
 	}
 
@@ -465,11 +460,6 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 
 			clusters, err = c.analysisClient.QueryClusterSummaries(ctx, req.Project, opts)
 			if err != nil {
-				if err == analysis.ProjectNotExistsErr {
-					bqErr = appstatus.Error(codes.NotFound,
-						"LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
-					return nil
-				}
 				if analysis.InvalidArgumentTag.In(err) {
 					bqErr = invalidArgumentError(err)
 					return nil
@@ -619,10 +609,6 @@ func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.Query
 
 	failures, err := c.analysisClient.ReadClusterFailures(ctx, opts)
 	if err != nil {
-		if err == analysis.ProjectNotExistsErr {
-			return nil, appstatus.Error(codes.NotFound,
-				"LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
-		}
 		return nil, errors.Annotate(err, "query cluster failures").Err()
 	}
 	response := &pb.QueryClusterFailuresResponse{}
@@ -717,11 +703,7 @@ func (c *clustersServer) QueryExoneratedTestVariants(ctx context.Context, req *p
 
 	testVariants, err := c.analysisClient.ReadClusterExoneratedTestVariants(ctx, opts)
 	if err != nil {
-		if err == analysis.ProjectNotExistsErr {
-			return nil, appstatus.Error(codes.NotFound,
-				"LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
-		}
-		return nil, errors.Annotate(err, "query cluster failures").Err()
+		return nil, errors.Annotate(err, "query exonerated test variants").Err()
 	}
 	response := &pb.QueryClusterExoneratedTestVariantsResponse{}
 	for _, f := range testVariants {
@@ -738,6 +720,66 @@ func createClusterExoneratedTestVariant(tv *analysis.ExoneratedTestVariant) *pb.
 		CriticalFailuresExonerated: tv.CriticalFailuresExonerated,
 		LastExoneration:            timestamppb.New(tv.LastExoneration.Timestamp),
 	}
+}
+
+func (c *clustersServer) QueryExoneratedTestVariantBranches(ctx context.Context, req *pb.QueryClusterExoneratedTestVariantBranchesRequest) (*pb.QueryClusterExoneratedTestVariantBranchesResponse, error) {
+	project, clusterID, err := parseClusterExoneratedTestVariantBranchesName(req.Parent)
+	if err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+	}
+
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
+		return nil, err
+	}
+	opts := analysis.ReadClusterExoneratedTestVariantBranchesOptions{
+		Project:   project,
+		ClusterID: clusterID,
+	}
+	opts.Realms, err = perms.QueryRealmsNonEmpty(ctx, project, nil, perms.ListTestResultsAndExonerations...)
+	if err != nil {
+		// If the user has permission in no realms, QueryRealmsNonEmpty
+		// will return an appstatus error PERMISSION_DENIED.
+		// Otherwise, e.g. in case AuthDB was unavailable, the error will
+		// not be an appstatus error and the client will get an internal
+		// server error.
+		return nil, err
+	}
+
+	testVariantBranches, err := c.analysisClient.ReadClusterExoneratedTestVariantBranches(ctx, opts)
+	if err != nil {
+		return nil, errors.Annotate(err, "query exonerated test variant branches").Err()
+	}
+	response := &pb.QueryClusterExoneratedTestVariantBranchesResponse{}
+	for _, tvb := range testVariantBranches {
+		response.TestVariantBranches = append(response.TestVariantBranches, createClusterExoneratedTestVariantBranch(tvb))
+	}
+
+	return response, nil
+}
+
+func createClusterExoneratedTestVariantBranch(tv *analysis.ExoneratedTestVariantBranch) *pb.ClusterExoneratedTestVariantBranch {
+	return &pb.ClusterExoneratedTestVariantBranch{
+		Project:                    tv.Project.StringVal,
+		TestId:                     tv.TestID.StringVal,
+		Variant:                    createVariantPB(tv.Variant),
+		SourceRef:                  createSourceRef(tv.SourceRef),
+		CriticalFailuresExonerated: tv.CriticalFailuresExonerated,
+		LastExoneration:            timestamppb.New(tv.LastExoneration.Timestamp),
+	}
+}
+
+func createSourceRef(sourceRef analysis.SourceRef) *pb.SourceRef {
+	result := &pb.SourceRef{}
+	if sourceRef.Gitiles != nil {
+		result.System = &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
+				Host:    sourceRef.Gitiles.Host.StringVal,
+				Project: sourceRef.Gitiles.Project.StringVal,
+				Ref:     sourceRef.Gitiles.Ref.StringVal,
+			},
+		}
+	}
+	return result
 }
 
 // QueryHistory clusters a list of test failures. See proto definition for more.
@@ -783,10 +825,6 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 
 	days, err := c.analysisClient.ReadClusterHistory(ctx, opts)
 	if err != nil {
-		if err == analysis.ProjectNotExistsErr {
-			return nil, appstatus.Error(codes.NotFound,
-				"LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
-		}
 		return nil, errors.Annotate(err, "cluster history").Err()
 	}
 

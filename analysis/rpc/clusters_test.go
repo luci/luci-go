@@ -609,16 +609,6 @@ func TestClusters(t *testing.T) {
 					So(response, ShouldBeNil)
 					So(err, ShouldBeRPCInvalidArgument, "name: invalid cluster identity: ID is not valid lowercase hexadecimal bytes")
 				})
-				Convey("Dataset does not exist", func() {
-					delete(analysisClient.clustersByProject, "testproject")
-
-					// Run
-					response, err := server.Get(ctx, request)
-
-					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
-				})
 			})
 		})
 		Convey("QueryClusterSummaries", func() {
@@ -964,16 +954,6 @@ func TestClusters(t *testing.T) {
 				})
 			})
 			Convey("Invalid request", func() {
-				Convey("Dataset does not exist", func() {
-					delete(analysisClient.clusterMetricsByProject, "testproject")
-
-					// Run
-					response, err := server.QueryClusterSummaries(ctx, request)
-
-					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
-				})
 				Convey("Failure filter syntax is invalid", func() {
 					request.FailureFilter = "test_id::"
 
@@ -1356,7 +1336,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster identity: algorithm not valid")
+					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: algorithm not valid")
 				})
 				Convey("Invalid cluster ID in parent", func() {
 					request.Parent = "projects/blah/clusters/reason-v3/123/failures"
@@ -1366,7 +1346,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster identity: ID is not valid lowercase hexadecimal bytes")
+					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: ID is not valid lowercase hexadecimal bytes")
 				})
 				Convey("Invalid metric ID format", func() {
 					request.MetricFilter = "metrics/human-cls-failed-presubmit"
@@ -1387,16 +1367,6 @@ func TestClusters(t *testing.T) {
 					// Verify
 					So(response, ShouldBeNil)
 					So(err, ShouldBeRPCInvalidArgument, `filter_metric: no metric with ID "not-exists"`)
-				})
-				Convey("Dataset does not exist", func() {
-					delete(analysisClient.clustersByProject, "testproject")
-
-					// Run
-					response, err := server.QueryClusterFailures(ctx, request)
-
-					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
 				})
 			})
 		})
@@ -1519,7 +1489,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants")
+					So(err, ShouldBeRPCInvalidArgument, "parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants")
 				})
 				Convey("Invalid cluster algorithm in parent", func() {
 					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/exoneratedTestVariants"
@@ -1529,7 +1499,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster identity: algorithm not valid")
+					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: algorithm not valid")
 				})
 				Convey("Invalid cluster ID in parent", func() {
 					request.Parent = "projects/blah/clusters/reason-v3/123/exoneratedTestVariants"
@@ -1539,17 +1509,186 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster identity: ID is not valid lowercase hexadecimal bytes")
+					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: ID is not valid lowercase hexadecimal bytes")
 				})
-				Convey("Dataset does not exist", func() {
-					delete(analysisClient.clustersByProject, "testproject")
+			})
+		})
+
+		Convey("QueryExoneratedTestVariantBranches", func() {
+			authState.IdentityPermissions = listTestResultsPermissions(
+				"testproject:realm1",
+				"testproject:realm2",
+				"otherproject:realm3",
+			)
+			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+				Realm:      "testproject:@project",
+				Permission: perms.PermGetCluster,
+			}, authtest.RealmPermission{
+				Realm:      "testproject:@project",
+				Permission: perms.PermExpensiveClusterQueries,
+			})
+
+			request := &pb.QueryClusterExoneratedTestVariantBranchesRequest{
+				Parent: "projects/testproject/clusters/reason-v1/cccccc00000000000000000000000001/exoneratedTestVariantBranches",
+			}
+			Convey("Not authorised to get cluster", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
+
+				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
+				So(response, ShouldBeNil)
+			})
+			Convey("Not authorised to perform expensive queries", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
+
+				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
+				So(response, ShouldBeNil)
+			})
+			Convey("Not authorised to list test results in any realm", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
+
+				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
+				So(response, ShouldBeNil)
+			})
+			Convey("Not authorised to list test exonerations in any realm", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
+
+				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
+				So(response, ShouldBeNil)
+			})
+			Convey("With a valid request", func() {
+				analysisClient.expectedRealmsQueried = []string{"testproject:realm1", "testproject:realm2"}
+				analysisClient.exoneratedTVBsByProjectAndCluster["testproject"] = map[clustering.ClusterID][]*analysis.ExoneratedTestVariantBranch{
+					{
+						Algorithm: "reason-v1",
+						ID:        "cccccc00000000000000000000000001",
+					}: {
+						{
+							Project: bqString("testproject"),
+							TestID:  bqString("testID-1"),
+							Variant: []*analysis.Variant{
+								{
+									Key:   bqString("key1"),
+									Value: bqString("value1"),
+								},
+								{
+									Key:   bqString("key2"),
+									Value: bqString("value2"),
+								},
+							},
+							SourceRef: analysis.SourceRef{
+								Gitiles: &analysis.GitilesRef{
+									Host:    bqString("myproject.googlesource.com"),
+									Project: bqString("myproject/src"),
+									Ref:     bqString("refs/heads/main"),
+								},
+							},
+							CriticalFailuresExonerated: 51,
+							LastExoneration:            bigquery.NullTimestamp{Timestamp: time.Date(2123, time.April, 1, 2, 3, 4, 5, time.UTC), Valid: true},
+						},
+						{
+							Project: bqString("testproject"),
+							TestID:  bigquery.NullString{StringVal: "testID-2"},
+							Variant: []*analysis.Variant{
+								{
+									Key:   bqString("key1"),
+									Value: bqString("value2"),
+								},
+								{
+									Key:   bqString("key3"),
+									Value: bqString("value3"),
+								},
+							},
+							SourceRef: analysis.SourceRef{
+								Gitiles: &analysis.GitilesRef{
+									Host:    bqString("myproject2.googlesource.com"),
+									Project: bqString("myproject2/src"),
+									Ref:     bqString("refs/heads/main2"),
+								},
+							},
+							CriticalFailuresExonerated: 172,
+							LastExoneration:            bigquery.NullTimestamp{Timestamp: time.Date(2124, time.May, 2, 3, 4, 5, 6, time.UTC), Valid: true},
+						},
+					},
+				}
+
+				expectedResponse := &pb.QueryClusterExoneratedTestVariantBranchesResponse{
+					TestVariantBranches: []*pb.ClusterExoneratedTestVariantBranch{
+						{
+							Project: "testproject",
+							TestId:  "testID-1",
+							Variant: pbutil.Variant("key1", "value1", "key2", "value2"),
+							SourceRef: &pb.SourceRef{
+								System: &pb.SourceRef_Gitiles{
+									Gitiles: &pb.GitilesRef{
+										Host:    "myproject.googlesource.com",
+										Project: "myproject/src",
+										Ref:     "refs/heads/main",
+									},
+								},
+							},
+							CriticalFailuresExonerated: 51,
+							LastExoneration:            timestamppb.New(time.Date(2123, time.April, 1, 2, 3, 4, 5, time.UTC)),
+						},
+						{
+							Project: "testproject",
+							TestId:  "testID-2",
+							Variant: pbutil.Variant("key1", "value2", "key3", "value3"),
+							SourceRef: &pb.SourceRef{
+								System: &pb.SourceRef_Gitiles{
+									Gitiles: &pb.GitilesRef{
+										Host:    "myproject2.googlesource.com",
+										Project: "myproject2/src",
+										Ref:     "refs/heads/main2",
+									},
+								},
+							},
+							CriticalFailuresExonerated: 172,
+							LastExoneration:            timestamppb.New(time.Date(2124, time.May, 2, 3, 4, 5, 6, time.UTC)),
+						},
+					},
+				}
+
+				// Run
+				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
+
+				// Verify.
+				So(err, ShouldBeNil)
+				So(response, ShouldResembleProto, expectedResponse)
+			})
+			Convey("With an invalid request", func() {
+				Convey("Invalid parent", func() {
+					request.Parent = "blah"
 
 					// Run
-					response, err := server.QueryExoneratedTestVariants(ctx, request)
+					response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
+					So(err, ShouldBeRPCInvalidArgument, "parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariantBranches")
+				})
+				Convey("Invalid cluster algorithm in parent", func() {
+					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/exoneratedTestVariantBranches"
+
+					// Run
+					response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: algorithm not valid")
+				})
+				Convey("Invalid cluster ID in parent", func() {
+					request.Parent = "projects/blah/clusters/reason-v3/123/exoneratedTestVariantBranches"
+
+					// Run
+					response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, "parent: cluster id: ID is not valid lowercase hexadecimal bytes")
 				})
 			})
 		})
@@ -1635,29 +1774,31 @@ func sortClusterEntries(entries []*pb.ClusterResponse_ClusteredTestResult_Cluste
 }
 
 type fakeAnalysisClient struct {
-	clustersByProject                map[string][]*analysis.Cluster
-	failuresByProjectAndCluster      map[string]map[clustering.ClusterID][]*analysis.ClusterFailure
-	exoneratedTVsByProjectAndCluster map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariant
-	clusterMetricsByProject          map[string][]*analysis.ClusterSummary
-	clusterMetricBreakdownsByProject map[string][]*analysis.ClusterMetricBreakdown
-	expectedRealmsQueried            []string
-	expectedMetricFilter             *metrics.Definition
+	clustersByProject                 map[string][]*analysis.Cluster
+	failuresByProjectAndCluster       map[string]map[clustering.ClusterID][]*analysis.ClusterFailure
+	exoneratedTVsByProjectAndCluster  map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariant
+	exoneratedTVBsByProjectAndCluster map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariantBranch
+	clusterMetricsByProject           map[string][]*analysis.ClusterSummary
+	clusterMetricBreakdownsByProject  map[string][]*analysis.ClusterMetricBreakdown
+	expectedRealmsQueried             []string
+	expectedMetricFilter              *metrics.Definition
 }
 
 func newFakeAnalysisClient() *fakeAnalysisClient {
 	return &fakeAnalysisClient{
-		clustersByProject:                make(map[string][]*analysis.Cluster),
-		failuresByProjectAndCluster:      make(map[string]map[clustering.ClusterID][]*analysis.ClusterFailure),
-		exoneratedTVsByProjectAndCluster: make(map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariant),
-		clusterMetricsByProject:          make(map[string][]*analysis.ClusterSummary),
-		clusterMetricBreakdownsByProject: make(map[string][]*analysis.ClusterMetricBreakdown),
+		clustersByProject:                 make(map[string][]*analysis.Cluster),
+		failuresByProjectAndCluster:       make(map[string]map[clustering.ClusterID][]*analysis.ClusterFailure),
+		exoneratedTVsByProjectAndCluster:  make(map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariant),
+		exoneratedTVBsByProjectAndCluster: make(map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariantBranch),
+		clusterMetricsByProject:           make(map[string][]*analysis.ClusterSummary),
+		clusterMetricBreakdownsByProject:  make(map[string][]*analysis.ClusterMetricBreakdown),
 	}
 }
 
 func (f *fakeAnalysisClient) ReadCluster(ctx context.Context, project string, clusterID clustering.ClusterID) (*analysis.Cluster, error) {
 	clusters, ok := f.clustersByProject[project]
 	if !ok {
-		return nil, analysis.ProjectNotExistsErr
+		return nil, nil
 	}
 
 	var result *analysis.Cluster
@@ -1676,7 +1817,7 @@ func (f *fakeAnalysisClient) ReadCluster(ctx context.Context, project string, cl
 func (f *fakeAnalysisClient) QueryClusterSummaries(ctx context.Context, project string, options *analysis.QueryClusterSummariesOptions) ([]*analysis.ClusterSummary, error) {
 	clusters, ok := f.clusterMetricsByProject[project]
 	if !ok {
-		return nil, analysis.ProjectNotExistsErr
+		return nil, nil
 	}
 
 	set := stringset.NewFromSlice(options.Realms...)
@@ -1723,7 +1864,7 @@ func copyClusterSummary(cs *analysis.ClusterSummary, queriedMetrics []metrics.De
 func (f *fakeAnalysisClient) ReadClusterFailures(ctx context.Context, options analysis.ReadClusterFailuresOptions) ([]*analysis.ClusterFailure, error) {
 	failuresByCluster, ok := f.failuresByProjectAndCluster[options.Project]
 	if !ok {
-		return nil, analysis.ProjectNotExistsErr
+		return nil, nil
 	}
 	if f.expectedMetricFilter != nil && (options.MetricFilter == nil || *options.MetricFilter != *f.expectedMetricFilter) ||
 		f.expectedMetricFilter == nil && options.MetricFilter != nil {
@@ -1741,15 +1882,29 @@ func (f *fakeAnalysisClient) ReadClusterFailures(ctx context.Context, options an
 func (f *fakeAnalysisClient) ReadClusterExoneratedTestVariants(ctx context.Context, options analysis.ReadClusterExoneratedTestVariantsOptions) ([]*analysis.ExoneratedTestVariant, error) {
 	exoneratedTVsByCluster, ok := f.exoneratedTVsByProjectAndCluster[options.Project]
 	if !ok {
-		return nil, analysis.ProjectNotExistsErr
+		return nil, nil
 	}
 
 	set := stringset.NewFromSlice(options.Realms...)
 	if set.Len() != len(f.expectedRealmsQueried) || !set.HasAll(f.expectedRealmsQueried...) {
-		panic("realms passed to ReadClusterFailures do not match expected")
+		panic("realms passed to ReadClusterExoneratedTestVariants do not match expected")
 	}
 
 	return exoneratedTVsByCluster[options.ClusterID], nil
+}
+
+func (f *fakeAnalysisClient) ReadClusterExoneratedTestVariantBranches(ctx context.Context, options analysis.ReadClusterExoneratedTestVariantBranchesOptions) ([]*analysis.ExoneratedTestVariantBranch, error) {
+	exoneratedTVBsByCluster, ok := f.exoneratedTVBsByProjectAndCluster[options.Project]
+	if !ok {
+		return nil, nil
+	}
+
+	set := stringset.NewFromSlice(options.Realms...)
+	if set.Len() != len(f.expectedRealmsQueried) || !set.HasAll(f.expectedRealmsQueried...) {
+		panic("realms passed to ReadClusterExoneratedTestVariantBranches do not match expected")
+	}
+
+	return exoneratedTVBsByCluster[options.ClusterID], nil
 }
 
 func (f *fakeAnalysisClient) ReadClusterHistory(ctx context.Context, options analysis.ReadClusterHistoryOptions) (ret []*analysis.ReadClusterHistoryDay, err error) {

@@ -41,16 +41,19 @@ var (
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
 	ClusterFailuresNameRe = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/failures$`)
-	// ClusterExoneratedTestVariantsNameRe performs a partial validation of
-	// the resource name for a cluster's exonerated test variants.
+	// ClusterExoneratedTestVariantsNameRe and
+	// ClusterExoneratedTestVariantBranchesNameRe performs a partial
+	// validation of the resource name for a cluster's exonerated
+	// test variant (branches).
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
-	ClusterExoneratedTestVariantsNameRe = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/exoneratedTestVariants$`)
-	ProjectNameRe                       = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)$`)
-	ProjectConfigNameRe                 = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/config$`)
-	ProjectMetricNameRe                 = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/metrics/(` + metrics.MetricIDPattern + `)$`)
-	ReclusteringProgressNameRe          = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/reclusteringProgress$`)
-	RuleNameRe                          = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
+	ClusterExoneratedTestVariantsNameRe        = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/exoneratedTestVariants$`)
+	ClusterExoneratedTestVariantBranchesNameRe = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/exoneratedTestVariantBranches$`)
+	ProjectNameRe                              = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)$`)
+	ProjectConfigNameRe                        = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/config$`)
+	ProjectMetricNameRe                        = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/metrics/(` + metrics.MetricIDPattern + `)$`)
+	ReclusteringProgressNameRe                 = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/reclusteringProgress$`)
+	RuleNameRe                                 = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
 	// TestVariantBranchNameRe performs a partial validation of a TestVariantBranch name.
 	// Test ID must be further validated with ValidateTestID.
 	TestVariantBranchNameRe = regexp.MustCompile(`^projects/(` + pbutil.ProjectRePattern + `)/tests/([^/]+)/variants/(` + config.VariantHashRePattern + `)/refs/(` + config.RefHashRePattern + `)$`)
@@ -134,7 +137,7 @@ func parseClusterFailuresName(name string) (project string, clusterID clustering
 	id := match[3]
 	cID := clustering.ClusterID{Algorithm: algorithm, ID: id}
 	if err := cID.Validate(); err != nil {
-		return "", clustering.ClusterID{}, errors.Annotate(err, "invalid cluster identity").Err()
+		return "", clustering.ClusterID{}, errors.Annotate(err, "cluster id").Err()
 	}
 	return match[1], cID, nil
 }
@@ -145,13 +148,30 @@ func parseClusterFailuresName(name string) (project string, clusterID clustering
 func parseClusterExoneratedTestVariantsName(name string) (project string, clusterID clustering.ClusterID, err error) {
 	match := ClusterExoneratedTestVariantsNameRe.FindStringSubmatch(name)
 	if match == nil {
-		return "", clustering.ClusterID{}, errors.New("invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants")
+		return "", clustering.ClusterID{}, errors.New("invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants")
 	}
 	algorithm := resolveAlgorithm(match[2])
 	id := match[3]
 	cID := clustering.ClusterID{Algorithm: algorithm, ID: id}
 	if err := cID.Validate(); err != nil {
-		return "", clustering.ClusterID{}, errors.Annotate(err, "invalid cluster identity").Err()
+		return "", clustering.ClusterID{}, errors.Annotate(err, "cluster id").Err()
+	}
+	return match[1], cID, nil
+}
+
+// parseClusterExoneratedTestVariantBranchesName parses the resource name for a
+// cluster's exonerated test variant branches into its constituent ID parts.
+// Algorithm aliases are resolved to concrete algorithm names.
+func parseClusterExoneratedTestVariantBranchesName(name string) (project string, clusterID clustering.ClusterID, err error) {
+	match := ClusterExoneratedTestVariantBranchesNameRe.FindStringSubmatch(name)
+	if match == nil {
+		return "", clustering.ClusterID{}, errors.New("invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariantBranches")
+	}
+	algorithm := resolveAlgorithm(match[2])
+	id := match[3]
+	cID := clustering.ClusterID{Algorithm: algorithm, ID: id}
+	if err := cID.Validate(); err != nil {
+		return "", clustering.ClusterID{}, errors.Annotate(err, "cluster id").Err()
 	}
 	return match[1], cID, nil
 }

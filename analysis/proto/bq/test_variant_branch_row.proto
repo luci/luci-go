@@ -17,7 +17,7 @@ syntax = "proto3";
 package luci.analysis.bq;
 
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 import "go.chromium.org/luci/common/bq/pb/options.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";

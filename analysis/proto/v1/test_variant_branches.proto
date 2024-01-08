@@ -20,6 +20,7 @@ import "google/api/field_behavior.proto";
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 

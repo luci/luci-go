@@ -134,8 +134,20 @@ service Clusters {
     //
     // Consider solving this use case in future by a standard AIP-132 List
     // method with filter and order_by support.
+    //
+    // This RPC is useful for projects using the legacy QueryFailureRate
+    // API for exoneration.
     rpc QueryExoneratedTestVariants(QueryClusterExoneratedTestVariantsRequest)
         returns (QueryClusterExoneratedTestVariantsResponse) {};
+
+    // Queries test variant branches in the cluster which have recently had
+    // an exoneration recorded against them. Only exonerations on failures
+    // which are part of the cluster are considered.
+    //
+    // Use for projects performing branch-scoped exoneration using
+    // QueryStability.
+    rpc QueryExoneratedTestVariantBranches(QueryClusterExoneratedTestVariantBranchesRequest)
+        returns (QueryClusterExoneratedTestVariantBranchesResponse) {};
 
     // Queries the history of metrics for clustered failures satisying given criteria.
     // For example the number of test runs failed on each day for the last 7 days.
@@ -612,6 +624,51 @@ message ClusterExoneratedTestVariant {
     google.protobuf.Timestamp last_exoneration = 4;
 }
 
+message QueryClusterExoneratedTestVariantBranchesRequest {
+    // The resource name of the cluster exonerated test variant branches to retrieve.
+    // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/exoneratedTestVariantBranches.
+    string parent = 1;
+}
+
+message QueryClusterExoneratedTestVariantBranchesResponse {
+    // A list of test variants branches in the cluster which have exonerated
+    // critical failures. Ordered by recency of the exoneration (most recent
+    // exonerations first) and limited to at most 100 test variant branches.
+    //
+    // Pagination following AIP-158 may be implemented in future if
+    // more than 100 items is needed.
+    repeated ClusterExoneratedTestVariantBranch test_variant_branches = 1;
+}
+
+// ClusterExoneratedTestVariantBranch represents a (test, variant, source ref)
+// in a cluster which has been exonerated. A cluster test variant branch is
+// the subset of a test variant branch that intersects with the failures of a
+// cluster.
+message ClusterExoneratedTestVariantBranch {
+    // The LUCI project.
+    string project = 1;
+
+    // A unique identifier of the test in a LUCI project.
+    string test_id = 2;
+
+    // Description of one specific way of running the test,
+    // e.g. a specific bucket, builder and a test suite.
+    luci.analysis.v1.Variant variant = 3;
+
+    // The branch in source control that was tested, if known.
+    // For example, the `refs/heads/main` branch in the `chromium/src` repo
+    // hosted by `chromium.googlesource.com`.
+    luci.analysis.v1.SourceRef source_ref = 4;
+
+    // The number of critical (presubmit-blocking) failures in the
+    // cluster which have been exonerated on this test variant
+    // in the last week.
+    int32 critical_failures_exonerated = 5;
+
+    // The partition time of the most recent exoneration of a
+    // critical failure.
+    google.protobuf.Timestamp last_exoneration = 6;
+}
 
 message QueryClusterHistoryRequest {
     // The LUCI Project.

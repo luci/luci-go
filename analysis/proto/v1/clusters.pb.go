@@ -1322,6 +1322,211 @@ func (x *ClusterExoneratedTestVariant) GetLastExoneration() *timestamppb.Timesta
 	return nil
 }
 
+type QueryClusterExoneratedTestVariantBranchesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The resource name of the cluster exonerated test variant branches to retrieve.
+	// Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/exoneratedTestVariantBranches.
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+}
+
+func (x *QueryClusterExoneratedTestVariantBranchesRequest) Reset() {
+	*x = QueryClusterExoneratedTestVariantBranchesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryClusterExoneratedTestVariantBranchesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryClusterExoneratedTestVariantBranchesRequest) ProtoMessage() {}
+
+func (x *QueryClusterExoneratedTestVariantBranchesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryClusterExoneratedTestVariantBranchesRequest.ProtoReflect.Descriptor instead.
+func (*QueryClusterExoneratedTestVariantBranchesRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *QueryClusterExoneratedTestVariantBranchesRequest) GetParent() string {
+	if x != nil {
+		return x.Parent
+	}
+	return ""
+}
+
+type QueryClusterExoneratedTestVariantBranchesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// A list of test variants branches in the cluster which have exonerated
+	// critical failures. Ordered by recency of the exoneration (most recent
+	// exonerations first) and limited to at most 100 test variant branches.
+	//
+	// Pagination following AIP-158 may be implemented in future if
+	// more than 100 items is needed.
+	TestVariantBranches []*ClusterExoneratedTestVariantBranch `protobuf:"bytes,1,rep,name=test_variant_branches,json=testVariantBranches,proto3" json:"test_variant_branches,omitempty"`
+}
+
+func (x *QueryClusterExoneratedTestVariantBranchesResponse) Reset() {
+	*x = QueryClusterExoneratedTestVariantBranchesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryClusterExoneratedTestVariantBranchesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryClusterExoneratedTestVariantBranchesResponse) ProtoMessage() {}
+
+func (x *QueryClusterExoneratedTestVariantBranchesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryClusterExoneratedTestVariantBranchesResponse.ProtoReflect.Descriptor instead.
+func (*QueryClusterExoneratedTestVariantBranchesResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *QueryClusterExoneratedTestVariantBranchesResponse) GetTestVariantBranches() []*ClusterExoneratedTestVariantBranch {
+	if x != nil {
+		return x.TestVariantBranches
+	}
+	return nil
+}
+
+// ClusterExoneratedTestVariantBranch represents a (test, variant, source ref)
+// in a cluster which has been exonerated. A cluster test variant branch is
+// the subset of a test variant branch that intersects with the failures of a
+// cluster.
+type ClusterExoneratedTestVariantBranch struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The LUCI project.
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// A unique identifier of the test in a LUCI project.
+	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	// Description of one specific way of running the test,
+	// e.g. a specific bucket, builder and a test suite.
+	Variant *Variant `protobuf:"bytes,3,opt,name=variant,proto3" json:"variant,omitempty"`
+	// The branch in source control that was tested, if known.
+	// For example, the `refs/heads/main` branch in the `chromium/src` repo
+	// hosted by `chromium.googlesource.com`.
+	SourceRef *SourceRef `protobuf:"bytes,4,opt,name=source_ref,json=sourceRef,proto3" json:"source_ref,omitempty"`
+	// The number of critical (presubmit-blocking) failures in the
+	// cluster which have been exonerated on this test variant
+	// in the last week.
+	CriticalFailuresExonerated int32 `protobuf:"varint,5,opt,name=critical_failures_exonerated,json=criticalFailuresExonerated,proto3" json:"critical_failures_exonerated,omitempty"`
+	// The partition time of the most recent exoneration of a
+	// critical failure.
+	LastExoneration *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_exoneration,json=lastExoneration,proto3" json:"last_exoneration,omitempty"`
+}
+
+func (x *ClusterExoneratedTestVariantBranch) Reset() {
+	*x = ClusterExoneratedTestVariantBranch{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ClusterExoneratedTestVariantBranch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterExoneratedTestVariantBranch) ProtoMessage() {}
+
+func (x *ClusterExoneratedTestVariantBranch) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterExoneratedTestVariantBranch.ProtoReflect.Descriptor instead.
+func (*ClusterExoneratedTestVariantBranch) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ClusterExoneratedTestVariantBranch) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *ClusterExoneratedTestVariantBranch) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *ClusterExoneratedTestVariantBranch) GetVariant() *Variant {
+	if x != nil {
+		return x.Variant
+	}
+	return nil
+}
+
+func (x *ClusterExoneratedTestVariantBranch) GetSourceRef() *SourceRef {
+	if x != nil {
+		return x.SourceRef
+	}
+	return nil
+}
+
+func (x *ClusterExoneratedTestVariantBranch) GetCriticalFailuresExonerated() int32 {
+	if x != nil {
+		return x.CriticalFailuresExonerated
+	}
+	return 0
+}
+
+func (x *ClusterExoneratedTestVariantBranch) GetLastExoneration() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastExoneration
+	}
+	return nil
+}
+
 type QueryClusterHistoryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1352,7 +1557,7 @@ type QueryClusterHistoryRequest struct {
 func (x *QueryClusterHistoryRequest) Reset() {
 	*x = QueryClusterHistoryRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1365,7 +1570,7 @@ func (x *QueryClusterHistoryRequest) String() string {
 func (*QueryClusterHistoryRequest) ProtoMessage() {}
 
 func (x *QueryClusterHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1378,7 +1583,7 @@ func (x *QueryClusterHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryClusterHistoryRequest.ProtoReflect.Descriptor instead.
 func (*QueryClusterHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{16}
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *QueryClusterHistoryRequest) GetProject() string {
@@ -1423,7 +1628,7 @@ type QueryClusterHistoryResponse struct {
 func (x *QueryClusterHistoryResponse) Reset() {
 	*x = QueryClusterHistoryResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1436,7 +1641,7 @@ func (x *QueryClusterHistoryResponse) String() string {
 func (*QueryClusterHistoryResponse) ProtoMessage() {}
 
 func (x *QueryClusterHistoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1449,7 +1654,7 @@ func (x *QueryClusterHistoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryClusterHistoryResponse.ProtoReflect.Descriptor instead.
 func (*QueryClusterHistoryResponse) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{17}
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *QueryClusterHistoryResponse) GetDays() []*ClusterHistoryDay {
@@ -1476,7 +1681,7 @@ type ClusterHistoryDay struct {
 func (x *ClusterHistoryDay) Reset() {
 	*x = ClusterHistoryDay{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1489,7 +1694,7 @@ func (x *ClusterHistoryDay) String() string {
 func (*ClusterHistoryDay) ProtoMessage() {}
 
 func (x *ClusterHistoryDay) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1502,7 +1707,7 @@ func (x *ClusterHistoryDay) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterHistoryDay.ProtoReflect.Descriptor instead.
 func (*ClusterHistoryDay) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{18}
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ClusterHistoryDay) GetMetrics() map[string]int32 {
@@ -1541,7 +1746,7 @@ type ClusterRequest_TestResult struct {
 func (x *ClusterRequest_TestResult) Reset() {
 	*x = ClusterRequest_TestResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1554,7 +1759,7 @@ func (x *ClusterRequest_TestResult) String() string {
 func (*ClusterRequest_TestResult) ProtoMessage() {}
 
 func (x *ClusterRequest_TestResult) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1607,7 +1812,7 @@ type ClusterResponse_ClusteredTestResult struct {
 func (x *ClusterResponse_ClusteredTestResult) Reset() {
 	*x = ClusterResponse_ClusteredTestResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1620,7 +1825,7 @@ func (x *ClusterResponse_ClusteredTestResult) String() string {
 func (*ClusterResponse_ClusteredTestResult) ProtoMessage() {}
 
 func (x *ClusterResponse_ClusteredTestResult) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1668,7 +1873,7 @@ type ClusterResponse_ClusteredTestResult_ClusterEntry struct {
 func (x *ClusterResponse_ClusteredTestResult_ClusterEntry) Reset() {
 	*x = ClusterResponse_ClusteredTestResult_ClusterEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[21]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1681,7 +1886,7 @@ func (x *ClusterResponse_ClusteredTestResult_ClusterEntry) String() string {
 func (*ClusterResponse_ClusteredTestResult_ClusterEntry) ProtoMessage() {}
 
 func (x *ClusterResponse_ClusteredTestResult_ClusterEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[21]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1723,7 +1928,7 @@ type Cluster_Counts struct {
 func (x *Cluster_Counts) Reset() {
 	*x = Cluster_Counts{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[22]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1736,7 +1941,7 @@ func (x *Cluster_Counts) String() string {
 func (*Cluster_Counts) ProtoMessage() {}
 
 func (x *Cluster_Counts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[22]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1775,7 +1980,7 @@ type Cluster_TimewiseCounts struct {
 func (x *Cluster_TimewiseCounts) Reset() {
 	*x = Cluster_TimewiseCounts{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[23]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1788,7 +1993,7 @@ func (x *Cluster_TimewiseCounts) String() string {
 func (*Cluster_TimewiseCounts) ProtoMessage() {}
 
 func (x *Cluster_TimewiseCounts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[23]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1848,7 +2053,7 @@ type ClusterSummary_MetricValue struct {
 func (x *ClusterSummary_MetricValue) Reset() {
 	*x = ClusterSummary_MetricValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[25]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1861,7 +2066,7 @@ func (x *ClusterSummary_MetricValue) String() string {
 func (*ClusterSummary_MetricValue) ProtoMessage() {}
 
 func (x *ClusterSummary_MetricValue) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[25]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1906,7 +2111,7 @@ type DistinctClusterFailure_Exoneration struct {
 func (x *DistinctClusterFailure_Exoneration) Reset() {
 	*x = DistinctClusterFailure_Exoneration{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[27]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1919,7 +2124,7 @@ func (x *DistinctClusterFailure_Exoneration) String() string {
 func (*DistinctClusterFailure_Exoneration) ProtoMessage() {}
 
 func (x *DistinctClusterFailure_Exoneration) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[27]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1977,7 +2182,7 @@ type DistinctClusterFailure_PresubmitRun struct {
 func (x *DistinctClusterFailure_PresubmitRun) Reset() {
 	*x = DistinctClusterFailure_PresubmitRun{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[28]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1990,7 +2195,7 @@ func (x *DistinctClusterFailure_PresubmitRun) String() string {
 func (*DistinctClusterFailure_PresubmitRun) ProtoMessage() {}
 
 func (x *DistinctClusterFailure_PresubmitRun) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[28]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2320,6 +2525,42 @@ var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDesc = []byte{
 	0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0f,
 	0x6c, 0x61, 0x73, 0x74, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22,
+	0x4a, 0x0a, 0x30, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x45,
+	0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x22, 0x9d, 0x01, 0x0a, 0x31,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f, 0x6e,
+	0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e,
+	0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x68, 0x0a, 0x15, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e,
+	0x74, 0x5f, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x34, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f, 0x6e, 0x65,
+	0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74,
+	0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x52, 0x13, 0x74, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69,
+	0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x65, 0x73, 0x22, 0xd1, 0x02, 0x0a, 0x22,
+	0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65,
+	0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e,
+	0x63, 0x68, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x17, 0x0a, 0x07,
+	0x74, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74,
+	0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x33, 0x0a, 0x07, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e,
+	0x74, 0x52, 0x07, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x12, 0x3a, 0x0a, 0x0a, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x5f, 0x72, 0x65, 0x66, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x66, 0x52, 0x09, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x52, 0x65, 0x66, 0x12, 0x40, 0x0a, 0x1c, 0x63, 0x72, 0x69, 0x74, 0x69, 0x63,
+	0x61, 0x6c, 0x5f, 0x66, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x5f, 0x65, 0x78, 0x6f, 0x6e,
+	0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x05, 0x52, 0x1a, 0x63, 0x72,
+	0x69, 0x74, 0x69, 0x63, 0x61, 0x6c, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x45, 0x78,
+	0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x12, 0x45, 0x0a, 0x10, 0x6c, 0x61, 0x73, 0x74,
+	0x5f, 0x65, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x06, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0f,
+	0x6c, 0x61, 0x73, 0x74, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22,
 	0x8b, 0x01, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
 	0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18,
 	0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
@@ -2350,7 +2591,7 @@ var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDesc = []byte{
 	0x20, 0x43, 0x4c, 0x55, 0x53, 0x54, 0x45, 0x52, 0x5f, 0x53, 0x55, 0x4d, 0x4d, 0x41, 0x52, 0x59,
 	0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45,
 	0x44, 0x10, 0x00, 0x12, 0x09, 0x0a, 0x05, 0x42, 0x41, 0x53, 0x49, 0x43, 0x10, 0x01, 0x12, 0x08,
-	0x0a, 0x04, 0x46, 0x55, 0x4c, 0x4c, 0x10, 0x02, 0x32, 0x9d, 0x06, 0x0a, 0x08, 0x43, 0x6c, 0x75,
+	0x0a, 0x04, 0x46, 0x55, 0x4c, 0x4c, 0x10, 0x02, 0x32, 0xcf, 0x07, 0x0a, 0x08, 0x43, 0x6c, 0x75,
 	0x73, 0x74, 0x65, 0x72, 0x73, 0x12, 0x50, 0x0a, 0x07, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
 	0x12, 0x20, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
 	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
@@ -2393,18 +2634,29 @@ var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDesc = []byte{
 	0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
 	0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61,
 	0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6d, 0x0a, 0x0c, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x2c, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0xaf, 0x01, 0x0a, 0x22, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73,
+	0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x65, 0x73,
+	0x12, 0x42, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
+	0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61,
+	0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x65, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x43, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65,
+	0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x65,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6d, 0x0a, 0x0c, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x2c, 0x2e, 0x6c, 0x75,
+	0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x48, 0x69, 0x73, 0x74, 0x6f,
+	0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x6c, 0x75, 0x63, 0x69,
 	0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
 	0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61,
-	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f, 0x2e, 0x63,
-	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
-	0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
-	0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f,
+	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
+	0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x70, 0x62, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2420,111 +2672,121 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP() []
 }
 
 var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_goTypes = []interface{}{
-	(ClusterSummaryView)(0),                                  // 0: luci.analysis.v1.ClusterSummaryView
-	(*ClusterRequest)(nil),                                   // 1: luci.analysis.v1.ClusterRequest
-	(*ClusterResponse)(nil),                                  // 2: luci.analysis.v1.ClusterResponse
-	(*ClusteringVersion)(nil),                                // 3: luci.analysis.v1.ClusteringVersion
-	(*GetClusterRequest)(nil),                                // 4: luci.analysis.v1.GetClusterRequest
-	(*Cluster)(nil),                                          // 5: luci.analysis.v1.Cluster
-	(*GetReclusteringProgressRequest)(nil),                   // 6: luci.analysis.v1.GetReclusteringProgressRequest
-	(*ReclusteringProgress)(nil),                             // 7: luci.analysis.v1.ReclusteringProgress
-	(*QueryClusterSummariesRequest)(nil),                     // 8: luci.analysis.v1.QueryClusterSummariesRequest
-	(*QueryClusterSummariesResponse)(nil),                    // 9: luci.analysis.v1.QueryClusterSummariesResponse
-	(*ClusterSummary)(nil),                                   // 10: luci.analysis.v1.ClusterSummary
-	(*QueryClusterFailuresRequest)(nil),                      // 11: luci.analysis.v1.QueryClusterFailuresRequest
-	(*QueryClusterFailuresResponse)(nil),                     // 12: luci.analysis.v1.QueryClusterFailuresResponse
-	(*DistinctClusterFailure)(nil),                           // 13: luci.analysis.v1.DistinctClusterFailure
-	(*QueryClusterExoneratedTestVariantsRequest)(nil),        // 14: luci.analysis.v1.QueryClusterExoneratedTestVariantsRequest
-	(*QueryClusterExoneratedTestVariantsResponse)(nil),       // 15: luci.analysis.v1.QueryClusterExoneratedTestVariantsResponse
-	(*ClusterExoneratedTestVariant)(nil),                     // 16: luci.analysis.v1.ClusterExoneratedTestVariant
-	(*QueryClusterHistoryRequest)(nil),                       // 17: luci.analysis.v1.QueryClusterHistoryRequest
-	(*QueryClusterHistoryResponse)(nil),                      // 18: luci.analysis.v1.QueryClusterHistoryResponse
-	(*ClusterHistoryDay)(nil),                                // 19: luci.analysis.v1.ClusterHistoryDay
-	(*ClusterRequest_TestResult)(nil),                        // 20: luci.analysis.v1.ClusterRequest.TestResult
-	(*ClusterResponse_ClusteredTestResult)(nil),              // 21: luci.analysis.v1.ClusterResponse.ClusteredTestResult
-	(*ClusterResponse_ClusteredTestResult_ClusterEntry)(nil), // 22: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry
-	(*Cluster_Counts)(nil),                                   // 23: luci.analysis.v1.Cluster.Counts
-	(*Cluster_TimewiseCounts)(nil),                           // 24: luci.analysis.v1.Cluster.TimewiseCounts
-	nil,                                                      // 25: luci.analysis.v1.Cluster.MetricsEntry
-	(*ClusterSummary_MetricValue)(nil),                       // 26: luci.analysis.v1.ClusterSummary.MetricValue
-	nil,                                                      // 27: luci.analysis.v1.ClusterSummary.MetricsEntry
-	(*DistinctClusterFailure_Exoneration)(nil),               // 28: luci.analysis.v1.DistinctClusterFailure.Exoneration
-	(*DistinctClusterFailure_PresubmitRun)(nil),              // 29: luci.analysis.v1.DistinctClusterFailure.PresubmitRun
-	nil,                           // 30: luci.analysis.v1.ClusterHistoryDay.MetricsEntry
-	(*timestamppb.Timestamp)(nil), // 31: google.protobuf.Timestamp
-	(*TimeRange)(nil),             // 32: luci.analysis.v1.TimeRange
-	(*ClusterId)(nil),             // 33: luci.analysis.v1.ClusterId
-	(*AssociatedBug)(nil),         // 34: luci.analysis.v1.AssociatedBug
-	(*Variant)(nil),               // 35: luci.analysis.v1.Variant
-	(BuildStatus)(0),              // 36: luci.analysis.v1.BuildStatus
-	(*Changelist)(nil),            // 37: luci.analysis.v1.Changelist
-	(*FailureReason)(nil),         // 38: luci.analysis.v1.FailureReason
-	(ExonerationReason)(0),        // 39: luci.analysis.v1.ExonerationReason
-	(*PresubmitRunId)(nil),        // 40: luci.analysis.v1.PresubmitRunId
-	(PresubmitRunMode)(0),         // 41: luci.analysis.v1.PresubmitRunMode
-	(PresubmitRunStatus)(0),       // 42: luci.analysis.v1.PresubmitRunStatus
+	(ClusterSummaryView)(0),                                   // 0: luci.analysis.v1.ClusterSummaryView
+	(*ClusterRequest)(nil),                                    // 1: luci.analysis.v1.ClusterRequest
+	(*ClusterResponse)(nil),                                   // 2: luci.analysis.v1.ClusterResponse
+	(*ClusteringVersion)(nil),                                 // 3: luci.analysis.v1.ClusteringVersion
+	(*GetClusterRequest)(nil),                                 // 4: luci.analysis.v1.GetClusterRequest
+	(*Cluster)(nil),                                           // 5: luci.analysis.v1.Cluster
+	(*GetReclusteringProgressRequest)(nil),                    // 6: luci.analysis.v1.GetReclusteringProgressRequest
+	(*ReclusteringProgress)(nil),                              // 7: luci.analysis.v1.ReclusteringProgress
+	(*QueryClusterSummariesRequest)(nil),                      // 8: luci.analysis.v1.QueryClusterSummariesRequest
+	(*QueryClusterSummariesResponse)(nil),                     // 9: luci.analysis.v1.QueryClusterSummariesResponse
+	(*ClusterSummary)(nil),                                    // 10: luci.analysis.v1.ClusterSummary
+	(*QueryClusterFailuresRequest)(nil),                       // 11: luci.analysis.v1.QueryClusterFailuresRequest
+	(*QueryClusterFailuresResponse)(nil),                      // 12: luci.analysis.v1.QueryClusterFailuresResponse
+	(*DistinctClusterFailure)(nil),                            // 13: luci.analysis.v1.DistinctClusterFailure
+	(*QueryClusterExoneratedTestVariantsRequest)(nil),         // 14: luci.analysis.v1.QueryClusterExoneratedTestVariantsRequest
+	(*QueryClusterExoneratedTestVariantsResponse)(nil),        // 15: luci.analysis.v1.QueryClusterExoneratedTestVariantsResponse
+	(*ClusterExoneratedTestVariant)(nil),                      // 16: luci.analysis.v1.ClusterExoneratedTestVariant
+	(*QueryClusterExoneratedTestVariantBranchesRequest)(nil),  // 17: luci.analysis.v1.QueryClusterExoneratedTestVariantBranchesRequest
+	(*QueryClusterExoneratedTestVariantBranchesResponse)(nil), // 18: luci.analysis.v1.QueryClusterExoneratedTestVariantBranchesResponse
+	(*ClusterExoneratedTestVariantBranch)(nil),                // 19: luci.analysis.v1.ClusterExoneratedTestVariantBranch
+	(*QueryClusterHistoryRequest)(nil),                        // 20: luci.analysis.v1.QueryClusterHistoryRequest
+	(*QueryClusterHistoryResponse)(nil),                       // 21: luci.analysis.v1.QueryClusterHistoryResponse
+	(*ClusterHistoryDay)(nil),                                 // 22: luci.analysis.v1.ClusterHistoryDay
+	(*ClusterRequest_TestResult)(nil),                         // 23: luci.analysis.v1.ClusterRequest.TestResult
+	(*ClusterResponse_ClusteredTestResult)(nil),               // 24: luci.analysis.v1.ClusterResponse.ClusteredTestResult
+	(*ClusterResponse_ClusteredTestResult_ClusterEntry)(nil),  // 25: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry
+	(*Cluster_Counts)(nil),                                    // 26: luci.analysis.v1.Cluster.Counts
+	(*Cluster_TimewiseCounts)(nil),                            // 27: luci.analysis.v1.Cluster.TimewiseCounts
+	nil,                                                       // 28: luci.analysis.v1.Cluster.MetricsEntry
+	(*ClusterSummary_MetricValue)(nil),                        // 29: luci.analysis.v1.ClusterSummary.MetricValue
+	nil,                                                       // 30: luci.analysis.v1.ClusterSummary.MetricsEntry
+	(*DistinctClusterFailure_Exoneration)(nil),                // 31: luci.analysis.v1.DistinctClusterFailure.Exoneration
+	(*DistinctClusterFailure_PresubmitRun)(nil),               // 32: luci.analysis.v1.DistinctClusterFailure.PresubmitRun
+	nil,                           // 33: luci.analysis.v1.ClusterHistoryDay.MetricsEntry
+	(*timestamppb.Timestamp)(nil), // 34: google.protobuf.Timestamp
+	(*TimeRange)(nil),             // 35: luci.analysis.v1.TimeRange
+	(*ClusterId)(nil),             // 36: luci.analysis.v1.ClusterId
+	(*AssociatedBug)(nil),         // 37: luci.analysis.v1.AssociatedBug
+	(*Variant)(nil),               // 38: luci.analysis.v1.Variant
+	(BuildStatus)(0),              // 39: luci.analysis.v1.BuildStatus
+	(*Changelist)(nil),            // 40: luci.analysis.v1.Changelist
+	(*SourceRef)(nil),             // 41: luci.analysis.v1.SourceRef
+	(*FailureReason)(nil),         // 42: luci.analysis.v1.FailureReason
+	(ExonerationReason)(0),        // 43: luci.analysis.v1.ExonerationReason
+	(*PresubmitRunId)(nil),        // 44: luci.analysis.v1.PresubmitRunId
+	(PresubmitRunMode)(0),         // 45: luci.analysis.v1.PresubmitRunMode
+	(PresubmitRunStatus)(0),       // 46: luci.analysis.v1.PresubmitRunStatus
 }
 var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_depIdxs = []int32{
-	20, // 0: luci.analysis.v1.ClusterRequest.test_results:type_name -> luci.analysis.v1.ClusterRequest.TestResult
-	21, // 1: luci.analysis.v1.ClusterResponse.clustered_test_results:type_name -> luci.analysis.v1.ClusterResponse.ClusteredTestResult
+	23, // 0: luci.analysis.v1.ClusterRequest.test_results:type_name -> luci.analysis.v1.ClusterRequest.TestResult
+	24, // 1: luci.analysis.v1.ClusterResponse.clustered_test_results:type_name -> luci.analysis.v1.ClusterResponse.ClusteredTestResult
 	3,  // 2: luci.analysis.v1.ClusterResponse.clustering_version:type_name -> luci.analysis.v1.ClusteringVersion
-	31, // 3: luci.analysis.v1.ClusteringVersion.rules_version:type_name -> google.protobuf.Timestamp
-	31, // 4: luci.analysis.v1.ClusteringVersion.config_version:type_name -> google.protobuf.Timestamp
-	25, // 5: luci.analysis.v1.Cluster.metrics:type_name -> luci.analysis.v1.Cluster.MetricsEntry
+	34, // 3: luci.analysis.v1.ClusteringVersion.rules_version:type_name -> google.protobuf.Timestamp
+	34, // 4: luci.analysis.v1.ClusteringVersion.config_version:type_name -> google.protobuf.Timestamp
+	28, // 5: luci.analysis.v1.Cluster.metrics:type_name -> luci.analysis.v1.Cluster.MetricsEntry
 	3,  // 6: luci.analysis.v1.ReclusteringProgress.last:type_name -> luci.analysis.v1.ClusteringVersion
 	3,  // 7: luci.analysis.v1.ReclusteringProgress.next:type_name -> luci.analysis.v1.ClusteringVersion
-	32, // 8: luci.analysis.v1.QueryClusterSummariesRequest.time_range:type_name -> luci.analysis.v1.TimeRange
+	35, // 8: luci.analysis.v1.QueryClusterSummariesRequest.time_range:type_name -> luci.analysis.v1.TimeRange
 	0,  // 9: luci.analysis.v1.QueryClusterSummariesRequest.view:type_name -> luci.analysis.v1.ClusterSummaryView
 	10, // 10: luci.analysis.v1.QueryClusterSummariesResponse.cluster_summaries:type_name -> luci.analysis.v1.ClusterSummary
-	33, // 11: luci.analysis.v1.ClusterSummary.cluster_id:type_name -> luci.analysis.v1.ClusterId
-	34, // 12: luci.analysis.v1.ClusterSummary.bug:type_name -> luci.analysis.v1.AssociatedBug
-	27, // 13: luci.analysis.v1.ClusterSummary.metrics:type_name -> luci.analysis.v1.ClusterSummary.MetricsEntry
+	36, // 11: luci.analysis.v1.ClusterSummary.cluster_id:type_name -> luci.analysis.v1.ClusterId
+	37, // 12: luci.analysis.v1.ClusterSummary.bug:type_name -> luci.analysis.v1.AssociatedBug
+	30, // 13: luci.analysis.v1.ClusterSummary.metrics:type_name -> luci.analysis.v1.ClusterSummary.MetricsEntry
 	13, // 14: luci.analysis.v1.QueryClusterFailuresResponse.failures:type_name -> luci.analysis.v1.DistinctClusterFailure
-	35, // 15: luci.analysis.v1.DistinctClusterFailure.variant:type_name -> luci.analysis.v1.Variant
-	31, // 16: luci.analysis.v1.DistinctClusterFailure.partition_time:type_name -> google.protobuf.Timestamp
-	29, // 17: luci.analysis.v1.DistinctClusterFailure.presubmit_run:type_name -> luci.analysis.v1.DistinctClusterFailure.PresubmitRun
-	28, // 18: luci.analysis.v1.DistinctClusterFailure.exonerations:type_name -> luci.analysis.v1.DistinctClusterFailure.Exoneration
-	36, // 19: luci.analysis.v1.DistinctClusterFailure.build_status:type_name -> luci.analysis.v1.BuildStatus
-	37, // 20: luci.analysis.v1.DistinctClusterFailure.changelists:type_name -> luci.analysis.v1.Changelist
+	38, // 15: luci.analysis.v1.DistinctClusterFailure.variant:type_name -> luci.analysis.v1.Variant
+	34, // 16: luci.analysis.v1.DistinctClusterFailure.partition_time:type_name -> google.protobuf.Timestamp
+	32, // 17: luci.analysis.v1.DistinctClusterFailure.presubmit_run:type_name -> luci.analysis.v1.DistinctClusterFailure.PresubmitRun
+	31, // 18: luci.analysis.v1.DistinctClusterFailure.exonerations:type_name -> luci.analysis.v1.DistinctClusterFailure.Exoneration
+	39, // 19: luci.analysis.v1.DistinctClusterFailure.build_status:type_name -> luci.analysis.v1.BuildStatus
+	40, // 20: luci.analysis.v1.DistinctClusterFailure.changelists:type_name -> luci.analysis.v1.Changelist
 	16, // 21: luci.analysis.v1.QueryClusterExoneratedTestVariantsResponse.test_variants:type_name -> luci.analysis.v1.ClusterExoneratedTestVariant
-	35, // 22: luci.analysis.v1.ClusterExoneratedTestVariant.variant:type_name -> luci.analysis.v1.Variant
-	31, // 23: luci.analysis.v1.ClusterExoneratedTestVariant.last_exoneration:type_name -> google.protobuf.Timestamp
-	19, // 24: luci.analysis.v1.QueryClusterHistoryResponse.days:type_name -> luci.analysis.v1.ClusterHistoryDay
-	30, // 25: luci.analysis.v1.ClusterHistoryDay.metrics:type_name -> luci.analysis.v1.ClusterHistoryDay.MetricsEntry
-	38, // 26: luci.analysis.v1.ClusterRequest.TestResult.failure_reason:type_name -> luci.analysis.v1.FailureReason
-	22, // 27: luci.analysis.v1.ClusterResponse.ClusteredTestResult.clusters:type_name -> luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry
-	33, // 28: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry.cluster_id:type_name -> luci.analysis.v1.ClusterId
-	34, // 29: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry.bug:type_name -> luci.analysis.v1.AssociatedBug
-	23, // 30: luci.analysis.v1.Cluster.TimewiseCounts.one_day:type_name -> luci.analysis.v1.Cluster.Counts
-	23, // 31: luci.analysis.v1.Cluster.TimewiseCounts.three_day:type_name -> luci.analysis.v1.Cluster.Counts
-	23, // 32: luci.analysis.v1.Cluster.TimewiseCounts.seven_day:type_name -> luci.analysis.v1.Cluster.Counts
-	24, // 33: luci.analysis.v1.Cluster.MetricsEntry.value:type_name -> luci.analysis.v1.Cluster.TimewiseCounts
-	26, // 34: luci.analysis.v1.ClusterSummary.MetricsEntry.value:type_name -> luci.analysis.v1.ClusterSummary.MetricValue
-	39, // 35: luci.analysis.v1.DistinctClusterFailure.Exoneration.reason:type_name -> luci.analysis.v1.ExonerationReason
-	40, // 36: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.presubmit_run_id:type_name -> luci.analysis.v1.PresubmitRunId
-	41, // 37: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.mode:type_name -> luci.analysis.v1.PresubmitRunMode
-	42, // 38: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.status:type_name -> luci.analysis.v1.PresubmitRunStatus
-	1,  // 39: luci.analysis.v1.Clusters.Cluster:input_type -> luci.analysis.v1.ClusterRequest
-	4,  // 40: luci.analysis.v1.Clusters.Get:input_type -> luci.analysis.v1.GetClusterRequest
-	6,  // 41: luci.analysis.v1.Clusters.GetReclusteringProgress:input_type -> luci.analysis.v1.GetReclusteringProgressRequest
-	8,  // 42: luci.analysis.v1.Clusters.QueryClusterSummaries:input_type -> luci.analysis.v1.QueryClusterSummariesRequest
-	11, // 43: luci.analysis.v1.Clusters.QueryClusterFailures:input_type -> luci.analysis.v1.QueryClusterFailuresRequest
-	14, // 44: luci.analysis.v1.Clusters.QueryExoneratedTestVariants:input_type -> luci.analysis.v1.QueryClusterExoneratedTestVariantsRequest
-	17, // 45: luci.analysis.v1.Clusters.QueryHistory:input_type -> luci.analysis.v1.QueryClusterHistoryRequest
-	2,  // 46: luci.analysis.v1.Clusters.Cluster:output_type -> luci.analysis.v1.ClusterResponse
-	5,  // 47: luci.analysis.v1.Clusters.Get:output_type -> luci.analysis.v1.Cluster
-	7,  // 48: luci.analysis.v1.Clusters.GetReclusteringProgress:output_type -> luci.analysis.v1.ReclusteringProgress
-	9,  // 49: luci.analysis.v1.Clusters.QueryClusterSummaries:output_type -> luci.analysis.v1.QueryClusterSummariesResponse
-	12, // 50: luci.analysis.v1.Clusters.QueryClusterFailures:output_type -> luci.analysis.v1.QueryClusterFailuresResponse
-	15, // 51: luci.analysis.v1.Clusters.QueryExoneratedTestVariants:output_type -> luci.analysis.v1.QueryClusterExoneratedTestVariantsResponse
-	18, // 52: luci.analysis.v1.Clusters.QueryHistory:output_type -> luci.analysis.v1.QueryClusterHistoryResponse
-	46, // [46:53] is the sub-list for method output_type
-	39, // [39:46] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	38, // 22: luci.analysis.v1.ClusterExoneratedTestVariant.variant:type_name -> luci.analysis.v1.Variant
+	34, // 23: luci.analysis.v1.ClusterExoneratedTestVariant.last_exoneration:type_name -> google.protobuf.Timestamp
+	19, // 24: luci.analysis.v1.QueryClusterExoneratedTestVariantBranchesResponse.test_variant_branches:type_name -> luci.analysis.v1.ClusterExoneratedTestVariantBranch
+	38, // 25: luci.analysis.v1.ClusterExoneratedTestVariantBranch.variant:type_name -> luci.analysis.v1.Variant
+	41, // 26: luci.analysis.v1.ClusterExoneratedTestVariantBranch.source_ref:type_name -> luci.analysis.v1.SourceRef
+	34, // 27: luci.analysis.v1.ClusterExoneratedTestVariantBranch.last_exoneration:type_name -> google.protobuf.Timestamp
+	22, // 28: luci.analysis.v1.QueryClusterHistoryResponse.days:type_name -> luci.analysis.v1.ClusterHistoryDay
+	33, // 29: luci.analysis.v1.ClusterHistoryDay.metrics:type_name -> luci.analysis.v1.ClusterHistoryDay.MetricsEntry
+	42, // 30: luci.analysis.v1.ClusterRequest.TestResult.failure_reason:type_name -> luci.analysis.v1.FailureReason
+	25, // 31: luci.analysis.v1.ClusterResponse.ClusteredTestResult.clusters:type_name -> luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry
+	36, // 32: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry.cluster_id:type_name -> luci.analysis.v1.ClusterId
+	37, // 33: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry.bug:type_name -> luci.analysis.v1.AssociatedBug
+	26, // 34: luci.analysis.v1.Cluster.TimewiseCounts.one_day:type_name -> luci.analysis.v1.Cluster.Counts
+	26, // 35: luci.analysis.v1.Cluster.TimewiseCounts.three_day:type_name -> luci.analysis.v1.Cluster.Counts
+	26, // 36: luci.analysis.v1.Cluster.TimewiseCounts.seven_day:type_name -> luci.analysis.v1.Cluster.Counts
+	27, // 37: luci.analysis.v1.Cluster.MetricsEntry.value:type_name -> luci.analysis.v1.Cluster.TimewiseCounts
+	29, // 38: luci.analysis.v1.ClusterSummary.MetricsEntry.value:type_name -> luci.analysis.v1.ClusterSummary.MetricValue
+	43, // 39: luci.analysis.v1.DistinctClusterFailure.Exoneration.reason:type_name -> luci.analysis.v1.ExonerationReason
+	44, // 40: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.presubmit_run_id:type_name -> luci.analysis.v1.PresubmitRunId
+	45, // 41: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.mode:type_name -> luci.analysis.v1.PresubmitRunMode
+	46, // 42: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.status:type_name -> luci.analysis.v1.PresubmitRunStatus
+	1,  // 43: luci.analysis.v1.Clusters.Cluster:input_type -> luci.analysis.v1.ClusterRequest
+	4,  // 44: luci.analysis.v1.Clusters.Get:input_type -> luci.analysis.v1.GetClusterRequest
+	6,  // 45: luci.analysis.v1.Clusters.GetReclusteringProgress:input_type -> luci.analysis.v1.GetReclusteringProgressRequest
+	8,  // 46: luci.analysis.v1.Clusters.QueryClusterSummaries:input_type -> luci.analysis.v1.QueryClusterSummariesRequest
+	11, // 47: luci.analysis.v1.Clusters.QueryClusterFailures:input_type -> luci.analysis.v1.QueryClusterFailuresRequest
+	14, // 48: luci.analysis.v1.Clusters.QueryExoneratedTestVariants:input_type -> luci.analysis.v1.QueryClusterExoneratedTestVariantsRequest
+	17, // 49: luci.analysis.v1.Clusters.QueryExoneratedTestVariantBranches:input_type -> luci.analysis.v1.QueryClusterExoneratedTestVariantBranchesRequest
+	20, // 50: luci.analysis.v1.Clusters.QueryHistory:input_type -> luci.analysis.v1.QueryClusterHistoryRequest
+	2,  // 51: luci.analysis.v1.Clusters.Cluster:output_type -> luci.analysis.v1.ClusterResponse
+	5,  // 52: luci.analysis.v1.Clusters.Get:output_type -> luci.analysis.v1.Cluster
+	7,  // 53: luci.analysis.v1.Clusters.GetReclusteringProgress:output_type -> luci.analysis.v1.ReclusteringProgress
+	9,  // 54: luci.analysis.v1.Clusters.QueryClusterSummaries:output_type -> luci.analysis.v1.QueryClusterSummariesResponse
+	12, // 55: luci.analysis.v1.Clusters.QueryClusterFailures:output_type -> luci.analysis.v1.QueryClusterFailuresResponse
+	15, // 56: luci.analysis.v1.Clusters.QueryExoneratedTestVariants:output_type -> luci.analysis.v1.QueryClusterExoneratedTestVariantsResponse
+	18, // 57: luci.analysis.v1.Clusters.QueryExoneratedTestVariantBranches:output_type -> luci.analysis.v1.QueryClusterExoneratedTestVariantBranchesResponse
+	21, // 58: luci.analysis.v1.Clusters.QueryHistory:output_type -> luci.analysis.v1.QueryClusterHistoryResponse
+	51, // [51:59] is the sub-list for method output_type
+	43, // [43:51] is the sub-list for method input_type
+	43, // [43:43] is the sub-list for extension type_name
+	43, // [43:43] is the sub-list for extension extendee
+	0,  // [0:43] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() }
@@ -2729,7 +2991,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryClusterHistoryRequest); i {
+			switch v := v.(*QueryClusterExoneratedTestVariantBranchesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2741,7 +3003,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryClusterHistoryResponse); i {
+			switch v := v.(*QueryClusterExoneratedTestVariantBranchesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2753,7 +3015,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClusterHistoryDay); i {
+			switch v := v.(*ClusterExoneratedTestVariantBranch); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2765,7 +3027,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClusterRequest_TestResult); i {
+			switch v := v.(*QueryClusterHistoryRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2777,7 +3039,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClusterResponse_ClusteredTestResult); i {
+			switch v := v.(*QueryClusterHistoryResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2789,7 +3051,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClusterResponse_ClusteredTestResult_ClusterEntry); i {
+			switch v := v.(*ClusterHistoryDay); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2801,7 +3063,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Cluster_Counts); i {
+			switch v := v.(*ClusterRequest_TestResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2813,7 +3075,19 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Cluster_TimewiseCounts); i {
+			switch v := v.(*ClusterResponse_ClusteredTestResult); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ClusterResponse_ClusteredTestResult_ClusterEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2825,7 +3099,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClusterSummary_MetricValue); i {
+			switch v := v.(*Cluster_Counts); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2836,8 +3110,8 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DistinctClusterFailure_Exoneration); i {
+		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Cluster_TimewiseCounts); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2849,6 +3123,30 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ClusterSummary_MetricValue); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DistinctClusterFailure_Exoneration); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DistinctClusterFailure_PresubmitRun); i {
 			case 0:
 				return &v.state
@@ -2867,7 +3165,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   30,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -2966,7 +3264,17 @@ type ClustersClient interface {
 	//
 	// Consider solving this use case in future by a standard AIP-132 List
 	// method with filter and order_by support.
+	//
+	// This RPC is useful for projects using the legacy QueryFailureRate
+	// API for exoneration.
 	QueryExoneratedTestVariants(ctx context.Context, in *QueryClusterExoneratedTestVariantsRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantsResponse, error)
+	// Queries test variant branches in the cluster which have recently had
+	// an exoneration recorded against them. Only exonerations on failures
+	// which are part of the cluster are considered.
+	//
+	// Use for projects performing branch-scoped exoneration using
+	// QueryStability.
+	QueryExoneratedTestVariantBranches(ctx context.Context, in *QueryClusterExoneratedTestVariantBranchesRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantBranchesResponse, error)
 	// Queries the history of metrics for clustered failures satisying given criteria.
 	// For example the number of test runs failed on each day for the last 7 days.
 	//
@@ -3031,6 +3339,15 @@ func (c *clustersPRPCClient) QueryClusterFailures(ctx context.Context, in *Query
 func (c *clustersPRPCClient) QueryExoneratedTestVariants(ctx context.Context, in *QueryClusterExoneratedTestVariantsRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantsResponse, error) {
 	out := new(QueryClusterExoneratedTestVariantsResponse)
 	err := c.client.Call(ctx, "luci.analysis.v1.Clusters", "QueryExoneratedTestVariants", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clustersPRPCClient) QueryExoneratedTestVariantBranches(ctx context.Context, in *QueryClusterExoneratedTestVariantBranchesRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantBranchesResponse, error) {
+	out := new(QueryClusterExoneratedTestVariantBranchesResponse)
+	err := c.client.Call(ctx, "luci.analysis.v1.Clusters", "QueryExoneratedTestVariantBranches", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3102,6 +3419,15 @@ func (c *clustersClient) QueryClusterFailures(ctx context.Context, in *QueryClus
 func (c *clustersClient) QueryExoneratedTestVariants(ctx context.Context, in *QueryClusterExoneratedTestVariantsRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantsResponse, error) {
 	out := new(QueryClusterExoneratedTestVariantsResponse)
 	err := c.cc.Invoke(ctx, "/luci.analysis.v1.Clusters/QueryExoneratedTestVariants", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clustersClient) QueryExoneratedTestVariantBranches(ctx context.Context, in *QueryClusterExoneratedTestVariantBranchesRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantBranchesResponse, error) {
+	out := new(QueryClusterExoneratedTestVariantBranchesResponse)
+	err := c.cc.Invoke(ctx, "/luci.analysis.v1.Clusters/QueryExoneratedTestVariantBranches", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3191,7 +3517,17 @@ type ClustersServer interface {
 	//
 	// Consider solving this use case in future by a standard AIP-132 List
 	// method with filter and order_by support.
+	//
+	// This RPC is useful for projects using the legacy QueryFailureRate
+	// API for exoneration.
 	QueryExoneratedTestVariants(context.Context, *QueryClusterExoneratedTestVariantsRequest) (*QueryClusterExoneratedTestVariantsResponse, error)
+	// Queries test variant branches in the cluster which have recently had
+	// an exoneration recorded against them. Only exonerations on failures
+	// which are part of the cluster are considered.
+	//
+	// Use for projects performing branch-scoped exoneration using
+	// QueryStability.
+	QueryExoneratedTestVariantBranches(context.Context, *QueryClusterExoneratedTestVariantBranchesRequest) (*QueryClusterExoneratedTestVariantBranchesResponse, error)
 	// Queries the history of metrics for clustered failures satisying given criteria.
 	// For example the number of test runs failed on each day for the last 7 days.
 	//
@@ -3222,6 +3558,9 @@ func (*UnimplementedClustersServer) QueryClusterFailures(context.Context, *Query
 }
 func (*UnimplementedClustersServer) QueryExoneratedTestVariants(context.Context, *QueryClusterExoneratedTestVariantsRequest) (*QueryClusterExoneratedTestVariantsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryExoneratedTestVariants not implemented")
+}
+func (*UnimplementedClustersServer) QueryExoneratedTestVariantBranches(context.Context, *QueryClusterExoneratedTestVariantBranchesRequest) (*QueryClusterExoneratedTestVariantBranchesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryExoneratedTestVariantBranches not implemented")
 }
 func (*UnimplementedClustersServer) QueryHistory(context.Context, *QueryClusterHistoryRequest) (*QueryClusterHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryHistory not implemented")
@@ -3339,6 +3678,24 @@ func _Clusters_QueryExoneratedTestVariants_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Clusters_QueryExoneratedTestVariantBranches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryClusterExoneratedTestVariantBranchesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClustersServer).QueryExoneratedTestVariantBranches(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.analysis.v1.Clusters/QueryExoneratedTestVariantBranches",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClustersServer).QueryExoneratedTestVariantBranches(ctx, req.(*QueryClusterExoneratedTestVariantBranchesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Clusters_QueryHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryClusterHistoryRequest)
 	if err := dec(in); err != nil {
@@ -3384,6 +3741,10 @@ var _Clusters_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryExoneratedTestVariants",
 			Handler:    _Clusters_QueryExoneratedTestVariants_Handler,
+		},
+		{
+			MethodName: "QueryExoneratedTestVariantBranches",
+			Handler:    _Clusters_QueryExoneratedTestVariantBranches_Handler,
 		},
 		{
 			MethodName: "QueryHistory",

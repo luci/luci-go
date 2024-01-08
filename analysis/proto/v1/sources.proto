@@ -98,6 +98,31 @@ message GerritChange {
     [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
+// Represents a reference in a source control system.
+message SourceRef {
+  // The source control system used.
+  // Only gitiles is supported at this moment. If other systems need to be
+  // supported in future (e.g. non-gitiles git, subversion, google storage
+  // buckets), they can be added here
+  oneof system {
+    // A branch in gitiles repository.
+    GitilesRef gitiles = 1;
+  }
+}
+
+// Represents a branch in a gitiles repository.
+message GitilesRef {
+  // The gitiles host, e.g. "chromium.googlesource.com".
+  string host = 1;
+
+  // The project on the gitiles host, e.g. "chromium/src".
+  string project = 2;
+
+  // Commit ref, e.g. "refs/heads/main" from which the commit was fetched.
+  // Not the branch name, use "refs/heads/branch"
+  string ref = 3;
+}
+
 // A gerrit changelist.
 message Changelist {
   // Gerrit hostname, e.g. "chromium-review.googlesource.com".

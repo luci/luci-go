@@ -20,17 +20,12 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 )
-
-// ProjectNotExistsErr is returned if the dataset for the given project
-// does not exist.
-var ProjectNotExistsErr = errors.New("project does not exist in LUCI Analysis or analysis is not yet available")
 
 // InvalidArgumentTag is used to indicate that one of the query options
 // is invalid.
@@ -83,11 +78,7 @@ func (c *Client) ProjectsWithDataset(ctx context.Context) (map[string]struct{}, 
 }
 
 func handleJobReadError(err error) error {
-	switch e := err.(type) {
-	case *googleapi.Error:
-		if e.Code == 404 {
-			return ProjectNotExistsErr
-		}
-	}
+	// Insert custom handling of BigQuery errors if needed.
+
 	return errors.Annotate(err, "obtain result iterator").Err()
 }
