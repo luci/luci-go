@@ -242,7 +242,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	changelistPatchsets := make([]int64, 0, len(tr.Sources.Changelists))
 	changelistOwnerKinds := make([]string, 0, len(tr.Sources.Changelists))
 	for _, cl := range tr.Sources.Changelists {
-		changelistHosts = append(changelistHosts, compressHost(cl.Host))
+		changelistHosts = append(changelistHosts, CompressHost(cl.Host))
 		changelistChanges = append(changelistChanges, cl.Change)
 		changelistPatchsets = append(changelistPatchsets, int64(cl.Patchset))
 		changelistOwnerKinds = append(changelistOwnerKinds, ownerKindToDB(cl.OwnerKind))

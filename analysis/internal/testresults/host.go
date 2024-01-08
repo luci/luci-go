@@ -46,9 +46,9 @@ func ValidateGerritHostname(host string) error {
 	return nil
 }
 
-// compressHost transforms a gerrit hostname into its compressed database
+// CompressHost transforms a gerrit hostname into its compressed database
 // representation.
-func compressHost(host string) string {
+func CompressHost(host string) string {
 	// Most gerrit hostnames are of the form <project>-review.googlesource.com.
 	// Store these in the database without the suffix.
 	if strings.HasSuffix(host, GerritHostnameSuffix) {

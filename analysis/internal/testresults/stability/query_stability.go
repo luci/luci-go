@@ -139,11 +139,16 @@ func partitionQueryIntoBatches(tvs []*pb.QueryTestVariantStabilityRequest_TestVa
 // queryStabilityShard reads test stability statistics for test variants.
 // Must be called in a spanner transactional context.
 func queryStabilityShard(ctx context.Context, opts QueryStabilityOptions) ([]*pb.TestVariantStabilityAnalysis, error) {
+	type changelist struct {
+		Host   string
+		Change int64
+	}
 	type testVariant struct {
 		TestID              string
 		VariantHash         string
 		SourceRefHash       []byte
 		QuerySourcePosition int64
+		ExcludedChangelists []changelist
 	}
 
 	tvs := make([]testVariant, 0, len(opts.TestVariantPositions))
@@ -153,11 +158,20 @@ func queryStabilityShard(ctx context.Context, opts QueryStabilityOptions) ([]*pb
 			variantHash = pbutil.VariantHash(ptv.Variant)
 		}
 
+		excludedCLs := make([]changelist, 0, len(ptv.Sources.Changelists))
+		for _, cl := range ptv.Sources.Changelists {
+			excludedCLs = append(excludedCLs, changelist{
+				Host:   testresults.CompressHost(cl.Host),
+				Change: cl.Change,
+			})
+		}
+
 		tvs = append(tvs, testVariant{
 			TestID:              ptv.TestId,
 			VariantHash:         variantHash,
 			SourceRefHash:       pbutil.SourceRefHash(pbutil.SourceRefFromSources(ptv.Sources)),
 			QuerySourcePosition: pbutil.SourcePosition(ptv.Sources),
+			ExcludedChangelists: excludedCLs,
 		})
 	}
 
@@ -823,18 +837,26 @@ WITH test_variant_verdicts AS (
 						AND SubRealm IN UNNEST(@subRealms)
 						-- Exclude skipped results.
 						AND Status <> @skip
-						-- Exclude test results testing multiple CLs, as
-						-- we cannot ensure at most one verdict per CL for
-						-- them.
 						AND (
-							ChangelistHosts IS NULL OR
-							ARRAY_LENGTH(ChangelistHosts) = 0 OR
+							(
+								-- Either there must be no CL tested by this result.
+								ChangelistHosts IS NULL OR ARRAY_LENGTH(ChangelistHosts) = 0
+							)
+							OR (
+								-- Or there must be exactly one CL tested.
+								ARRAY_LENGTH(ChangelistHosts) = 1
 
-							-- If there is a CL under test it may not be authored by automation.
-							-- Automatic uprev automation will happily upload out CL after CL
-							-- with essentially the same change, that breaks the same test.
-							-- This adds more noise than signal.
-							(ARRAY_LENGTH(ChangelistHosts) = 1 AND ChangelistOwnerKinds[SAFE_OFFSET(0)] <> 'A')
+								-- And that CL may not be authored by automation.
+								-- Automatic uprev automation will happily upload out CL after CL
+								-- with essentially the same change, that breaks the same test.
+								-- This adds more noise than signal.
+								AND ChangelistOwnerKinds[SAFE_OFFSET(0)] <> 'A'
+
+								-- And that CL must not be one of changelists which we
+								-- are considering exonerating as a result of this RPC.
+								AND STRUCT(ChangelistHosts[SAFE_OFFSET(0)] as Host, ChangelistChanges[SAFE_OFFSET(0)] AS Change)
+									NOT IN UNNEST(tv.ExcludedChangelists)
+							)
 						)
 					GROUP BY PartitionTime, IngestedInvocationId, RunIndex
 				)

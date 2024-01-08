@@ -266,13 +266,27 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				invocationID:  "sourceverdict13-ignore-no-sources",
 				runStatuses:   pass,
 				sources: testresults.Sources{
+					// Has no branch and position information, so should be ignored.
 					Changelists: changelists(pb.ChangelistOwnerKind_HUMAN, 10),
+				},
+			},
+			{
+				partitionTime: referenceTime.Add(-7 * day),
+				variant:       var1,
+				// A result for the same CL as being queried, so should be ignored
+				// to avoid CLs contributing to their own exoneration.
+				invocationID: "sourceverdict14-ignore-same-cl-as-query",
+				runStatuses:  failPass,
+				sources: testresults.Sources{
+					RefHash:     otherBranch,
+					Position:    130,
+					Changelists: changelists(pb.ChangelistOwnerKind_HUMAN, 888888),
 				},
 			},
 			{
 				partitionTime: referenceTime.Add(-6 * day),
 				variant:       var1,
-				invocationID:  "sourceverdict14",
+				invocationID:  "sourceverdict15",
 				runStatuses:   pass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
@@ -283,7 +297,7 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 			{
 				partitionTime: referenceTime.Add(-6 * day),
 				variant:       var1,
-				invocationID:  "sourceverdict15-part1",
+				invocationID:  "sourceverdict16-part1",
 				runStatuses:   failFail,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
@@ -295,7 +309,7 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				variant:       var1,
 				// Should merge with sourceverdict13-part1 due to sharing
 				// same sources.
-				invocationID: "sourceverdict15-part2",
+				invocationID: "sourceverdict16-part2",
 				runStatuses:  failFail,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
@@ -305,7 +319,7 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 			{
 				partitionTime: referenceTime.Add(-1 * day),
 				variant:       var1,
-				invocationID:  "sourceverdict16",
+				invocationID:  "sourceverdict17",
 				runStatuses:   failFail,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
@@ -353,6 +367,14 @@ func QueryStabilitySampleRequest() QueryStabilityOptions {
 					Ref:        "refs/heads/mybranch",
 					CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
 					Position:   130,
+				},
+				Changelists: []*pb.GerritChange{
+					{
+						Host:     "mygerrit-review.googlesource.com",
+						Project:  "mygerrit/src",
+						Change:   888888,
+						Patchset: 1,
+					},
 				},
 			},
 		},
@@ -413,19 +435,19 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 				RecentVerdicts: []*pb.TestVariantStabilityAnalysis_FailureRate_RecentVerdict{
 					{
 						Position:       140,
-						Invocations:    []string{"sourceverdict16"},
+						Invocations:    []string{"sourceverdict17"},
 						UnexpectedRuns: 2,
 						TotalRuns:      2,
 					},
 					{
 						Position:       130,
-						Invocations:    []string{"sourceverdict15-part1", "sourceverdict15-part2"},
+						Invocations:    []string{"sourceverdict16-part1", "sourceverdict16-part2"},
 						UnexpectedRuns: 4,
 						TotalRuns:      4,
 					},
 					{
 						Position:    129,
-						Invocations: []string{"sourceverdict14"},
+						Invocations: []string{"sourceverdict15"},
 						TotalRuns:   1,
 					},
 					{
