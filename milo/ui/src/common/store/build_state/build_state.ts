@@ -97,14 +97,11 @@ export class StepExt {
   }
 
   /**
-   * summaryParts split summaryMarkdown into header and content.
+   * summary renders summaryMarkdown into HTML.
    */
   // TODO(weiweilin): we should move this to build_step.ts because it contains
   // rendering logic.
-  // TODO(weiweilin): this is a hack required to replicate the behavior of the
-  // old build page. eventually, we probably want users to define headers
-  // explicitly in another field.
-  @computed get summaryParts() {
+  @computed get summary() {
     const bodyContainer = document.createElement('div');
     render(
       unsafeHTML(renderMarkdown(this.summaryMarkdown || '')),
@@ -114,88 +111,14 @@ export class StepExt {
     // We don't need to check bodyContainer.firstChild because text are
     // automatically wrapped in <p>.
     if (bodyContainer.firstElementChild === null) {
-      return [null, null];
-    }
-
-    // We treat <div>s as paragraphs too because this is the behavior in the
-    // legacy build page.
-    const firstParagraph = bodyContainer.firstElementChild;
-    if (!['P', 'DIV'].includes(firstParagraph.tagName)) {
-      // The first element is not a paragraph, nothing is in the header.
-      return [null, bodyContainer];
-    }
-
-    const headerContainer = document.createElement('span');
-
-    // Finds all the nodes belongs to the header.
-    while (firstParagraph.firstChild !== null) {
-      // Found some text, move them from the body to the header.
-      if (firstParagraph.firstChild !== firstParagraph.firstElementChild) {
-        headerContainer.appendChild(
-          firstParagraph.removeChild(firstParagraph.firstChild),
-        );
-        continue;
-      }
-
-      // Found an inline element, move it from the body to the header.
-      if (
-        ['A', 'SPAN', 'I', 'B', 'STRONG', 'CODE'].includes(
-          firstParagraph.firstElementChild.tagName,
-        )
-      ) {
-        headerContainer.appendChild(
-          firstParagraph.removeChild(firstParagraph.firstElementChild),
-        );
-        continue;
-      }
-
-      // Found a line break, remove it from the body. The remaining nodes are
-      // not in the header. Stop processing nodes.
-      if (firstParagraph.firstElementChild.tagName === 'BR') {
-        firstParagraph.removeChild(firstParagraph.firstElementChild);
-        break;
-      }
-
-      // Found other (non-inline) elements. The remaining nodes are not in
-      // the header. Stop processing nodes.
-      break;
-    }
-
-    if (firstParagraph.firstChild === null) {
-      bodyContainer.removeChild(firstParagraph);
+      return null;
     }
 
     // Show a tooltip in case the header content is cutoff.
-    headerContainer.title = headerContainer.textContent || '';
+    bodyContainer.title = bodyContainer.textContent || '';
 
     // If the container is empty, return null instead.
-    return [
-      headerContainer.firstChild ? headerContainer : null,
-      bodyContainer.firstElementChild ? bodyContainer : null,
-    ];
-  }
-
-  /**
-   * Header of summaryMarkdown.
-   *
-   * It means to provide an overview of summaryMarkdown, and is shown in the UI
-   * even when the corresponding step is collapsed.
-   * Currently, it is the first line of the summaryMarkdown. For example, if
-   * summaryMarkdown is 'header<br/>content' header should be 'header'.
-   */
-  @computed get header() {
-    return this.summaryParts[0];
-  }
-
-  /**
-   * Content of summaryMarkdown, aside from header.
-   *
-   * It is only shown in the UI if the corresponding step is expanded.
-   * For example, if summaryMarkdown is 'header<br/>content' summary should be
-   * 'content'.
-   */
-  @computed get summary() {
-    return this.summaryParts[1];
+    return bodyContainer;
   }
 
   @computed get filteredLogs() {

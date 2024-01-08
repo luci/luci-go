@@ -124,15 +124,8 @@ describe('StepExt', () => {
     });
   });
 
-  describe('summary header and content should be split properly', () => {
-    function getExpectedHeaderHTML(markdownBody: string): string {
-      const container = document.createElement('div');
-      // Wrap in a <p> and remove it later so <!----> are not injected.
-      render(unsafeHTML(renderMarkdown(`<p>${markdownBody}</p>`)), container);
-      return container.firstElementChild!.innerHTML;
-    }
-
-    function getExpectedBodyHTML(markdownBody: string): string {
+  describe('summary should be rendered properly', () => {
+    function getExpectedHTML(markdownBody: string): string {
       const container = document.createElement('div');
       render(unsafeHTML(renderMarkdown(markdownBody)), container);
       return container.innerHTML;
@@ -140,13 +133,11 @@ describe('StepExt', () => {
 
     test('for no summary', async () => {
       const step = createStep(0, 'step', BuildbucketStatus.Success, undefined);
-      expect(step.header).toBeNull();
       expect(step.summary).toBeNull();
     });
 
     test('for empty summary', async () => {
       const step = createStep(0, 'step', BuildbucketStatus.Success, '');
-      expect(step.header).toBeNull();
       expect(step.summary).toBeNull();
     });
 
@@ -157,134 +148,20 @@ describe('StepExt', () => {
         BuildbucketStatus.Success,
         'this is some text',
       );
-      expect(step.header?.innerHTML).toStrictEqual('this is some text');
-      expect(step.summary).toBeNull();
-    });
-
-    test('for header and content separated by <br/>', async () => {
-      const step = createStep(
-        0,
-        'step',
-        BuildbucketStatus.Success,
-        'header<br/>content',
-      );
-      expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML('header'),
-      );
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('content'),
+        getExpectedHTML('this is some text'),
       );
     });
 
-    test('for header and content separated by <br/>, header is empty', async () => {
-      const step = createStep(
-        0,
-        'step',
-        BuildbucketStatus.Success,
-        '<br/>body',
-      );
-      expect(step.header).toBeNull();
-      expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('body'),
-      );
-    });
-
-    test('for header and content separated by <br/>, body is empty', async () => {
-      const step = createStep(
-        0,
-        'step',
-        BuildbucketStatus.Success,
-        'header<br/>',
-      );
-      expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML('header'),
-      );
-      expect(step.summary).toBeNull();
-    });
-
-    test('for header and content separated by <br/>, header is a link', async () => {
+    test('for summary with a link', async () => {
       const step = createStep(
         0,
         'step',
         BuildbucketStatus.Success,
         '<a href="http://google.com">Link</a><br/>content',
       );
-      expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML('<a href="http://google.com">Link</a>'),
-      );
       expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('content'),
-      );
-    });
-
-    test('for header and content separated by <br/>, header has some inline elements', async () => {
-      const step = createStep(
-        0,
-        'step',
-        BuildbucketStatus.Success,
-        '<span>span</span><i>i</i><b>b</b><strong>strong</strong><br/>content',
-      );
-      expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML(
-          '<span>span</span><i>i</i><b>b</b><strong>strong</strong>',
-        ),
-      );
-      expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('content'),
-      );
-    });
-
-    test('for header and content separated by <br/>, header is a list', async () => {
-      const step = createStep(
-        0,
-        'step',
-        BuildbucketStatus.Success,
-        '<ul><li>item</li></ul><br/>content',
-      );
-      expect(step.header).toBeNull();
-      expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('<ul><li>item</li></ul><br/>content'),
-      );
-    });
-
-    test('for header is a list', async () => {
-      const step = createStep(
-        0,
-        'step',
-        BuildbucketStatus.Success,
-        '<ul><li>item1</li><li>item2</li></ul>',
-      );
-      expect(step.header).toBeNull();
-      expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('<ul><li>item1</li><li>item2</li></ul>'),
-      );
-    });
-
-    test('for <br/> is contained in <div>', async () => {
-      const step = createStep(
-        0,
-        'step',
-        BuildbucketStatus.Success,
-        '<div>header<br/>other</div>content',
-      );
-      expect(step.header?.innerHTML).toStrictEqual(
-        getExpectedHeaderHTML('header'),
-      );
-      expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('<div>other</div>content'),
-      );
-    });
-
-    test('for <br/> is contained in some nested tags', async () => {
-      const step = createStep(
-        0,
-        'step',
-        BuildbucketStatus.Success,
-        '<div><div>header<br/>other</div></div>content',
-      );
-      expect(step.header).toBeNull();
-      expect(step.summary?.innerHTML).toStrictEqual(
-        getExpectedBodyHTML('<div><div>header<br/>other</div></div>content'),
+        getExpectedHTML('<a href="http://google.com">Link</a><br/>content'),
       );
     });
   });

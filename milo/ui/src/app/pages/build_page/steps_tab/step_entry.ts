@@ -97,13 +97,17 @@ export class BuildPageStepEntryElement
     if (!this.shouldRenderContent) {
       return html``;
     }
+    // We have to cloneNode below because otherwise lit 'uses' the HTML elements
+    // and if we try to render them a second time we get an empty box.
     return html`
       <div
         id="summary"
         class="${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg"
-        style=${styleMap({ display: this.step.summary ? '' : 'none' })}
+        style=${styleMap({
+          display: this.step.summary ? '' : 'none',
+        })}
       >
-        ${this.step.summary}
+        ${this.step.summary?.cloneNode(true)}
       </div>
       <ul
         id="log-links"
@@ -277,11 +281,13 @@ export class BuildPageStepEntryElement
               class="hidden-icon"
               @click=${(e: Event) => e.stopPropagation()}
             ></milo-copy-to-clipboard>
-            <span id="header-markdown">${this.step.header}</span>
-            ${this.step.header !== null && this.step.header.title !== ''
+            <span id="header-markdown"
+              >${this.expanded ? null : this.step.summary}</span
+            >
+            ${!this.expanded && this.step.summary?.title
               ? html` <milo-copy-to-clipboard
-                  .textToCopy=${this.step.header.title}
-                  title="Copy the step header."
+                  .textToCopy=${this.step.summary.title}
+                  title="Copy the step summary."
                   class="hidden-icon"
                   @click=${(e: Event) => e.stopPropagation()}
                 ></milo-copy-to-clipboard>`
