@@ -896,22 +896,18 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 		// only. In practice, all deps likely come from the same backend.
 		var (
 			clBareBones           = ExternalID("bare-bones/10").MustCreateIfNotExists(ctx)
-			clOld                 = ExternalID("old/11").MustCreateIfNotExists(ctx)
 			clUpToDate            = ExternalID("up-to-date/12").MustCreateIfNotExists(ctx)
 			clUpToDateDiffProject = ExternalID("up-to-date-diff-project/13").MustCreateIfNotExists(ctx)
 		)
-		clOld.UpdateTime = datastore.RoundTime(ct.Clock.Now().Add(-autoRefreshAfter - time.Minute).UTC())
-		clOld.Snapshot = &Snapshot{
-			ExternalUpdateTime:    timestamppb.New(clOld.UpdateTime),
+		clUpToDate.Snapshot = &Snapshot{
+			ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
 			Patchset:              1,
 			MinEquivalentPatchset: 1,
 			LuciProject:           lProject,
 		}
-		clUpToDate.Snapshot = proto.Clone(clOld.Snapshot).(*Snapshot)
-		clUpToDate.Snapshot.ExternalUpdateTime = timestamppb.New(ct.Clock.Now())
 		clUpToDateDiffProject.Snapshot = proto.Clone(clUpToDate.Snapshot).(*Snapshot)
 		clUpToDateDiffProject.Snapshot.LuciProject = "other-project"
-		So(datastore.Put(ctx, clOld, clUpToDate, clUpToDateDiffProject), ShouldBeNil)
+		So(datastore.Put(ctx, clUpToDate, clUpToDateDiffProject), ShouldBeNil)
 
 		Convey("no deps", func() {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, nil, UpdateCLTask_RUN_POKE)
@@ -922,19 +918,17 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 		Convey("only existing CLs", func() {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, map[ExternalID]DepKind{
 				clBareBones.ExternalID:           DepKind_SOFT,
-				clOld.ExternalID:                 DepKind_HARD,
 				clUpToDate.ExternalID:            DepKind_HARD,
 				clUpToDateDiffProject.ExternalID: DepKind_SOFT,
 			}, UpdateCLTask_RUN_POKE)
 			So(err, ShouldBeNil)
 			So(deps, ShouldResembleProto, sortDeps([]*Dep{
 				{Clid: int64(clBareBones.ID), Kind: DepKind_SOFT},
-				{Clid: int64(clOld.ID), Kind: DepKind_HARD},
 				{Clid: int64(clUpToDate.ID), Kind: DepKind_HARD},
 				{Clid: int64(clUpToDateDiffProject.ID), Kind: DepKind_SOFT},
 			}))
 			// Update for the `clUpToDate` is not necessary.
-			So(scheduledUpdates(), ShouldResemble, eids(clOld, clBareBones, clUpToDateDiffProject))
+			So(scheduledUpdates(), ShouldResemble, eids(clBareBones, clUpToDateDiffProject))
 		})
 
 		Convey("only new CLs", func() {

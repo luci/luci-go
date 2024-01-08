@@ -911,12 +911,6 @@ func depNeedsRefresh(ctx context.Context, dep CL, luciProject string) bool {
 		return true
 	case dep.Snapshot.GetLuciProject() != luciProject:
 		return true
-	case clock.Since(ctx, dep.UpdateTime) > autoRefreshAfter:
-		// Strictly speaking, cl.UpdateTime isn't just changed on refresh, but also
-		// whenever Run starts/ends. However, the start of Run is usually
-		// happenening right after recent refresh, and end of Run is usually
-		// followed by the refresh.
-		return true
 	default:
 		return false
 	}
