@@ -17,12 +17,12 @@ package frontend
 import (
 	"text/template"
 
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/router"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/internal/config"
 	configpb "go.chromium.org/luci/milo/proto/config"
+	"go.chromium.org/luci/server/router"
 )
 
 // configsJSHandler serves /configs.js used by the browser-side.
@@ -41,6 +41,7 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 		Resultdb:      settings.Resultdb,
 		LuciAnalysis:  settings.LuciAnalysis,
 		LuciBisection: settings.LuciBisection,
+		SheriffOMatic: settings.SheriffOMatic,
 	}
 
 	header := c.Writer.Header()

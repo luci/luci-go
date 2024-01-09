@@ -39,4 +39,19 @@ declare const SETTINGS: {
   readonly luciBisection: {
     readonly host: string;
   };
+  readonly sheriffOMatic: {
+    readonly host: string;
+  };
 };
+
+/**
+ * Google Analytics interfaces.
+ */
+interface GAArgs {
+  hitType: string;
+  eventCategory: string;
+  eventAction: string;
+  eventLabel: string;
+  transport: string;
+}
+declare const ga: (operation: string, args: GAArgs) => void;

@@ -162,6 +162,51 @@ export function testVerdictStatusToJSON(object: TestVerdictStatus): string {
   }
 }
 
+/**
+ * Machine-readable reason that a test execution was skipped.
+ * It is a mirror of luci.resultdb.v1.SkipReason, but the right to evolve
+ * it independently is reserved.
+ */
+export enum SkipReason {
+  /**
+   * UNSPECIFIED - Skip reason was not specified.
+   * This represents an unset field which should be used for non-skip test
+   * result statuses.  It can also be used if none of the other statuses
+   * apply.
+   */
+  UNSPECIFIED = 0,
+  /**
+   * AUTOMATICALLY_DISABLED_FOR_FLAKINESS - Disabled automatically in response to a test skipping policy that skips
+   * flaky tests.
+   * Used for ChromeOS CQ test filtering.
+   */
+  AUTOMATICALLY_DISABLED_FOR_FLAKINESS = 1,
+}
+
+export function skipReasonFromJSON(object: any): SkipReason {
+  switch (object) {
+    case 0:
+    case "SKIP_REASON_UNSPECIFIED":
+      return SkipReason.UNSPECIFIED;
+    case 1:
+    case "AUTOMATICALLY_DISABLED_FOR_FLAKINESS":
+      return SkipReason.AUTOMATICALLY_DISABLED_FOR_FLAKINESS;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SkipReason");
+  }
+}
+
+export function skipReasonToJSON(object: SkipReason): string {
+  switch (object) {
+    case SkipReason.UNSPECIFIED:
+      return "SKIP_REASON_UNSPECIFIED";
+    case SkipReason.AUTOMATICALLY_DISABLED_FOR_FLAKINESS:
+      return "AUTOMATICALLY_DISABLED_FOR_FLAKINESS";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SkipReason");
+  }
+}
+
 export interface TestVerdict {
   /**
    * Unique identifier of the test.

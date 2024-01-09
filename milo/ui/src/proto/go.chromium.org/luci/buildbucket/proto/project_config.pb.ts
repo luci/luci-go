@@ -113,7 +113,7 @@ export function acl_RoleToJSON(object: Acl_Role): string {
  * a user that has permissions to schedule a build to the bucket, can override
  * this config.
  *
- * Next tag: 38.
+ * Next tag: 40.
  */
 export interface BuilderConfig {
   /**
@@ -229,6 +229,22 @@ export interface BuilderConfig {
    * uint32 type are relics of the past.
    */
   readonly executionTimeoutSecs: number;
+  /**
+   * Maximum amount of time to wait for the next heartbeat(i.e UpdateBuild).
+   *
+   * After a build is started, the client can send heartbeat requests
+   * periodically. Buildbucket will mark the build as INFRA_FAILURE, if the
+   * timeout threshold reaches. It’s to fail a build more quickly, rather than
+   * waiting for `execution_timeout_secs` to expire. Some V1 users, which don't
+   * have real task backends, can utilize this feature.
+   *
+   * By default, the value is 0, which means no timeout threshold is applied.
+   *
+   * Note: this field only takes effect for TaskBackendLite builds. For builds
+   * with full-featured TaskBackend Implementation, `sync_backend_tasks` cron
+   * job fulfills the similar functionality.
+   */
+  readonly heartbeatTimeoutSecs: number;
   /**
    * Maximum build pending time.
    *
@@ -541,6 +557,8 @@ export interface BuilderConfig_ExperimentsEntry {
 /**
  * Configurations that need to be replaced when running a led build for this
  * Builder.
+ *
+ * Note: Builders in a dynamic bucket cannot have ShadowBuilderAdjustments.
  */
 export interface BuilderConfig_ShadowBuilderAdjustments {
   readonly serviceAccount: string;
@@ -652,6 +670,9 @@ export interface Bucket {
    * * Led builds will share the same ResultDB config as the real builds, so
    *   their test results will be exported to the same BigQuery tables.
    * * Subscribers of Buildbucket PubSub need to filter them out.
+   *
+   * Note: Don't set it if it's a dynamic bucket. Currently, a dynamic bucket is
+   * not allowed to have a shadow bucket.
    */
   readonly shadow: string;
   /**
@@ -700,6 +721,11 @@ export interface Bucket_Constraints {
 
 /** Template of builders in a dynamic bucket. */
 export interface Bucket_DynamicBuilderTemplate {
+  /**
+   * The Builder template which is shared among all builders in this dynamic
+   * bucket.
+   */
+  readonly template: BuilderConfig | undefined;
 }
 
 /** Schema of buildbucket.cfg file, a project config. */
@@ -851,6 +877,7 @@ function createBaseBuilderConfig(): BuilderConfig {
     allowedPropertyOverrides: [],
     priority: 0,
     executionTimeoutSecs: 0,
+    heartbeatTimeoutSecs: 0,
     expirationSecs: 0,
     gracePeriod: undefined,
     waitForCapacity: 0,
@@ -911,6 +938,9 @@ export const BuilderConfig = {
     }
     if (message.executionTimeoutSecs !== 0) {
       writer.uint32(56).uint32(message.executionTimeoutSecs);
+    }
+    if (message.heartbeatTimeoutSecs !== 0) {
+      writer.uint32(312).uint32(message.heartbeatTimeoutSecs);
     }
     if (message.expirationSecs !== 0) {
       writer.uint32(160).uint32(message.expirationSecs);
@@ -1065,6 +1095,13 @@ export const BuilderConfig = {
 
           message.executionTimeoutSecs = reader.uint32();
           continue;
+        case 39:
+          if (tag !== 312) {
+            break;
+          }
+
+          message.heartbeatTimeoutSecs = reader.uint32();
+          continue;
         case 20:
           if (tag !== 160) {
             break;
@@ -1217,6 +1254,7 @@ export const BuilderConfig = {
         : [],
       priority: isSet(object.priority) ? globalThis.Number(object.priority) : 0,
       executionTimeoutSecs: isSet(object.executionTimeoutSecs) ? globalThis.Number(object.executionTimeoutSecs) : 0,
+      heartbeatTimeoutSecs: isSet(object.heartbeatTimeoutSecs) ? globalThis.Number(object.heartbeatTimeoutSecs) : 0,
       expirationSecs: isSet(object.expirationSecs) ? globalThis.Number(object.expirationSecs) : 0,
       gracePeriod: isSet(object.gracePeriod) ? Duration.fromJSON(object.gracePeriod) : undefined,
       waitForCapacity: isSet(object.waitForCapacity) ? trinaryFromJSON(object.waitForCapacity) : 0,
@@ -1290,6 +1328,9 @@ export const BuilderConfig = {
     }
     if (message.executionTimeoutSecs !== 0) {
       obj.executionTimeoutSecs = Math.round(message.executionTimeoutSecs);
+    }
+    if (message.heartbeatTimeoutSecs !== 0) {
+      obj.heartbeatTimeoutSecs = Math.round(message.heartbeatTimeoutSecs);
     }
     if (message.expirationSecs !== 0) {
       obj.expirationSecs = Math.round(message.expirationSecs);
@@ -1375,6 +1416,7 @@ export const BuilderConfig = {
     message.allowedPropertyOverrides = object.allowedPropertyOverrides?.map((e) => e) || [];
     message.priority = object.priority ?? 0;
     message.executionTimeoutSecs = object.executionTimeoutSecs ?? 0;
+    message.heartbeatTimeoutSecs = object.heartbeatTimeoutSecs ?? 0;
     message.expirationSecs = object.expirationSecs ?? 0;
     message.gracePeriod = (object.gracePeriod !== undefined && object.gracePeriod !== null)
       ? Duration.fromPartial(object.gracePeriod)
@@ -2582,11 +2624,14 @@ export const Bucket_Constraints = {
 };
 
 function createBaseBucket_DynamicBuilderTemplate(): Bucket_DynamicBuilderTemplate {
-  return {};
+  return { template: undefined };
 }
 
 export const Bucket_DynamicBuilderTemplate = {
-  encode(_: Bucket_DynamicBuilderTemplate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: Bucket_DynamicBuilderTemplate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.template !== undefined) {
+      BuilderConfig.encode(message.template, writer.uint32(10).fork()).ldelim();
+    }
     return writer;
   },
 
@@ -2597,6 +2642,13 @@ export const Bucket_DynamicBuilderTemplate = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.template = BuilderConfig.decode(reader, reader.uint32());
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2606,20 +2658,28 @@ export const Bucket_DynamicBuilderTemplate = {
     return message;
   },
 
-  fromJSON(_: any): Bucket_DynamicBuilderTemplate {
-    return {};
+  fromJSON(object: any): Bucket_DynamicBuilderTemplate {
+    return { template: isSet(object.template) ? BuilderConfig.fromJSON(object.template) : undefined };
   },
 
-  toJSON(_: Bucket_DynamicBuilderTemplate): unknown {
+  toJSON(message: Bucket_DynamicBuilderTemplate): unknown {
     const obj: any = {};
+    if (message.template !== undefined) {
+      obj.template = BuilderConfig.toJSON(message.template);
+    }
     return obj;
   },
 
   create<I extends Exact<DeepPartial<Bucket_DynamicBuilderTemplate>, I>>(base?: I): Bucket_DynamicBuilderTemplate {
     return Bucket_DynamicBuilderTemplate.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<Bucket_DynamicBuilderTemplate>, I>>(_: I): Bucket_DynamicBuilderTemplate {
+  fromPartial<I extends Exact<DeepPartial<Bucket_DynamicBuilderTemplate>, I>>(
+    object: I,
+  ): Bucket_DynamicBuilderTemplate {
     const message = createBaseBucket_DynamicBuilderTemplate() as any;
+    message.template = (object.template !== undefined && object.template !== null)
+      ? BuilderConfig.fromPartial(object.template)
+      : undefined;
     return message;
   },
 };

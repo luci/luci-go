@@ -27,7 +27,7 @@ const SCORE_COLOR_MAP: { [score: string]: string } = Object.freeze({
   ...Object.fromEntries(
     Array(8)
       .fill(0)
-      .map((_, i) => [`${i + 2}`, 'var(--warning-color)'])
+      .map((_, i) => [`${i + 2}`, 'var(--warning-color)']),
   ),
   '10': 'var(--success-color)',
 });
@@ -38,13 +38,13 @@ const TEXT_MAP: { [key: string]: string } = Object.freeze({
   ...Object.fromEntries(
     Array(3)
       .fill(0)
-      .map((_, i) => [`${i + 2}`, 'Very unhealthy'])
+      .map((_, i) => [`${i + 2}`, 'Very unhealthy']),
   ),
   '5': 'Unhealthy',
   ...Object.fromEntries(
     Array(4)
       .fill(0)
-      .map((_, i) => [`${i + 6}`, 'Slightly unhealthy'])
+      .map((_, i) => [`${i + 6}`, 'Slightly unhealthy']),
   ),
   '10': 'Healthy',
 });

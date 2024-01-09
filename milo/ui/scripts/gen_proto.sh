@@ -42,3 +42,4 @@ protoc \
   ./go.chromium.org/luci/milo/proto/v1/rpc.proto \
   ./go.chromium.org/luci/resultdb/proto/v1/resultdb.proto \
   ./go.chromium.org/luci/swarming/proto/api_v2/swarming.proto \
+  ./infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \

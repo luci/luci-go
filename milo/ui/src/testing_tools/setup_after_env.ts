@@ -65,6 +65,9 @@ configJSVars.SETTINGS = Object.freeze({
   luciBisection: {
     host: assertNonNullable(process.env['VITE_LUCI_BISECTION_HOST']),
   },
+  sheriffOMatic: {
+    host: assertNonNullable(process.env['VITE_SHERIFF_O_MATIC_HOST']),
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by

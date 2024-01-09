@@ -360,6 +360,7 @@ export interface TestResult {
    * * duration
    * * variant_hash
    * * failure_reason.primary_error_message (truncated to 140 characters)
+   * * skip_reason
    *
    * Output only.
    */

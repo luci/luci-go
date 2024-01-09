@@ -206,6 +206,14 @@ export const routes: RouteObject[] = [
         path: 'p/:project/inv/:invID/test/:testID/variant/:vHash',
         lazy: () => import('@/test_verdict/pages/test_verdict_page'),
       },
+      {
+        path: 'monitoring',
+        lazy: () => import('@/monitoring/pages/monitoring_page'),
+      },
+      {
+        path: 'monitoring/:tree',
+        lazy: () => import('@/monitoring/pages/monitoring_page'),
+      },
     ],
   },
 ];

@@ -68,7 +68,7 @@ export interface Sources {
    * At most 10 changelist(s) may be specified here. If there
    * are more, only include the first 10 and set is_dirty.
    */
-  readonly changelists: readonly Changelist[];
+  readonly changelists: readonly GerritChange[];
   /**
    * Whether there were any changes made to the sources, not described above.
    * For example, a version of a dependency was upgraded before testing (e.g.
@@ -115,6 +115,18 @@ export interface GitilesCommit {
   readonly position: string;
 }
 
+/** A Gerrit patchset. */
+export interface GerritChange {
+  /** Gerrit hostname, e.g. "chromium-review.googlesource.com". */
+  readonly host: string;
+  /** Gerrit project, e.g. "chromium/src". */
+  readonly project: string;
+  /** Change number, e.g. 12345. */
+  readonly change: string;
+  /** Patch set number, e.g. 1. */
+  readonly patchset: string;
+}
+
 /** A gerrit changelist. */
 export interface Changelist {
   /** Gerrit hostname, e.g. "chromium-review.googlesource.com". */
@@ -137,7 +149,7 @@ export const Sources = {
       GitilesCommit.encode(message.gitilesCommit, writer.uint32(10).fork()).ldelim();
     }
     for (const v of message.changelists) {
-      Changelist.encode(v!, writer.uint32(18).fork()).ldelim();
+      GerritChange.encode(v!, writer.uint32(18).fork()).ldelim();
     }
     if (message.isDirty === true) {
       writer.uint32(24).bool(message.isDirty);
@@ -164,7 +176,7 @@ export const Sources = {
             break;
           }
 
-          message.changelists.push(Changelist.decode(reader, reader.uint32()));
+          message.changelists.push(GerritChange.decode(reader, reader.uint32()));
           continue;
         case 3:
           if (tag !== 24) {
@@ -186,7 +198,7 @@ export const Sources = {
     return {
       gitilesCommit: isSet(object.gitilesCommit) ? GitilesCommit.fromJSON(object.gitilesCommit) : undefined,
       changelists: globalThis.Array.isArray(object?.changelists)
-        ? object.changelists.map((e: any) => Changelist.fromJSON(e))
+        ? object.changelists.map((e: any) => GerritChange.fromJSON(e))
         : [],
       isDirty: isSet(object.isDirty) ? globalThis.Boolean(object.isDirty) : false,
     };
@@ -198,7 +210,7 @@ export const Sources = {
       obj.gitilesCommit = GitilesCommit.toJSON(message.gitilesCommit);
     }
     if (message.changelists?.length) {
-      obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+      obj.changelists = message.changelists.map((e) => GerritChange.toJSON(e));
     }
     if (message.isDirty === true) {
       obj.isDirty = message.isDirty;
@@ -214,7 +226,7 @@ export const Sources = {
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
       ? GitilesCommit.fromPartial(object.gitilesCommit)
       : undefined;
-    message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    message.changelists = object.changelists?.map((e) => GerritChange.fromPartial(e)) || [];
     message.isDirty = object.isDirty ?? false;
     return message;
   },
@@ -335,6 +347,110 @@ export const GitilesCommit = {
     message.ref = object.ref ?? "";
     message.commitHash = object.commitHash ?? "";
     message.position = object.position ?? "0";
+    return message;
+  },
+};
+
+function createBaseGerritChange(): GerritChange {
+  return { host: "", project: "", change: "0", patchset: "0" };
+}
+
+export const GerritChange = {
+  encode(message: GerritChange, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.host !== "") {
+      writer.uint32(10).string(message.host);
+    }
+    if (message.project !== "") {
+      writer.uint32(42).string(message.project);
+    }
+    if (message.change !== "0") {
+      writer.uint32(16).int64(message.change);
+    }
+    if (message.patchset !== "0") {
+      writer.uint32(24).int64(message.patchset);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GerritChange {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGerritChange() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.host = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.change = longToString(reader.int64() as Long);
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.patchset = longToString(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GerritChange {
+    return {
+      host: isSet(object.host) ? globalThis.String(object.host) : "",
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      change: isSet(object.change) ? globalThis.String(object.change) : "0",
+      patchset: isSet(object.patchset) ? globalThis.String(object.patchset) : "0",
+    };
+  },
+
+  toJSON(message: GerritChange): unknown {
+    const obj: any = {};
+    if (message.host !== "") {
+      obj.host = message.host;
+    }
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.change !== "0") {
+      obj.change = message.change;
+    }
+    if (message.patchset !== "0") {
+      obj.patchset = message.patchset;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GerritChange>, I>>(base?: I): GerritChange {
+    return GerritChange.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GerritChange>, I>>(object: I): GerritChange {
+    const message = createBaseGerritChange() as any;
+    message.host = object.host ?? "";
+    message.project = object.project ?? "";
+    message.change = object.change ?? "0";
+    message.patchset = object.patchset ?? "0";
     return message;
   },
 };

@@ -1,6 +1,7 @@
 /* eslint-disable */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
+import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { BuilderID } from "../../../buildbucket/proto/builder_common.pb";
 import { GitilesCommit } from "../../../buildbucket/proto/common.pb";
@@ -283,6 +284,11 @@ export interface ListTestAnalysesRequest {
    * with the exception of page_size and page_token.
    */
   readonly pageToken: string;
+  /**
+   * The fields to be included in the response.
+   * By default, all fields are included.
+   */
+  readonly fields: readonly string[] | undefined;
 }
 
 export interface ListTestAnalysesResponse {
@@ -298,6 +304,11 @@ export interface ListTestAnalysesResponse {
 export interface GetTestAnalysisRequest {
   /** ID of the analysis. */
   readonly analysisId: string;
+  /**
+   * The fields to be included in the response.
+   * By default, all fields are included.
+   */
+  readonly fields: readonly string[] | undefined;
 }
 
 export interface TestAnalysis {
@@ -497,6 +508,46 @@ export interface TestCulprit {
   readonly culpritAction: readonly CulpritAction[];
   /** The details of suspect verification for the culprit. */
   readonly verificationDetails: TestSuspectVerificationDetails | undefined;
+}
+
+export interface BatchGetTestAnalysesRequest {
+  /** The LUCI project. */
+  readonly project: string;
+  /**
+   * The response will only contain analyses which analyze failures in this list.
+   * It is an error to request for more than 100 test failures.
+   */
+  readonly testFailures: readonly BatchGetTestAnalysesRequest_TestFailureIdentifier[];
+  /**
+   * The fields to be included in the response.
+   * By default, all fields are included.
+   */
+  readonly fields: readonly string[] | undefined;
+}
+
+/** Identify a test failure. */
+export interface BatchGetTestAnalysesRequest_TestFailureIdentifier {
+  /**
+   * Identify a test variant. All fields are required.
+   * This represents the ongoing test failure of this test variant.
+   */
+  readonly testId: string;
+  readonly variantHash: string;
+  /**
+   * TODO: Add an optional source_position field in this proto.
+   * This is the source position where a failure occurs.
+   * See go/surface-bisection-and-changepoint-analysis-som.
+   */
+  readonly refHash: string;
+}
+
+export interface BatchGetTestAnalysesResponse {
+  /**
+   * Test analyses for each test failure in the order they were requested.
+   * The test analysis will be null if the requested test failure has not been
+   * analyzed by any bisection.
+   */
+  readonly testAnalyses: readonly TestAnalysis[];
 }
 
 function createBaseGetAnalysisRequest(): GetAnalysisRequest {
@@ -1404,7 +1455,7 @@ export const BuildFailure = {
 };
 
 function createBaseListTestAnalysesRequest(): ListTestAnalysesRequest {
-  return { project: "", pageSize: 0, pageToken: "" };
+  return { project: "", pageSize: 0, pageToken: "", fields: undefined };
 }
 
 export const ListTestAnalysesRequest = {
@@ -1417,6 +1468,9 @@ export const ListTestAnalysesRequest = {
     }
     if (message.pageToken !== "") {
       writer.uint32(26).string(message.pageToken);
+    }
+    if (message.fields !== undefined) {
+      FieldMask.encode(FieldMask.wrap(message.fields), writer.uint32(34).fork()).ldelim();
     }
     return writer;
   },
@@ -1449,6 +1503,13 @@ export const ListTestAnalysesRequest = {
 
           message.pageToken = reader.string();
           continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.fields = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1463,6 +1524,7 @@ export const ListTestAnalysesRequest = {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      fields: isSet(object.fields) ? FieldMask.unwrap(FieldMask.fromJSON(object.fields)) : undefined,
     };
   },
 
@@ -1477,6 +1539,9 @@ export const ListTestAnalysesRequest = {
     if (message.pageToken !== "") {
       obj.pageToken = message.pageToken;
     }
+    if (message.fields !== undefined) {
+      obj.fields = FieldMask.toJSON(FieldMask.wrap(message.fields));
+    }
     return obj;
   },
 
@@ -1488,6 +1553,7 @@ export const ListTestAnalysesRequest = {
     message.project = object.project ?? "";
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
+    message.fields = object.fields ?? undefined;
     return message;
   },
 };
@@ -1569,13 +1635,16 @@ export const ListTestAnalysesResponse = {
 };
 
 function createBaseGetTestAnalysisRequest(): GetTestAnalysisRequest {
-  return { analysisId: "0" };
+  return { analysisId: "0", fields: undefined };
 }
 
 export const GetTestAnalysisRequest = {
   encode(message: GetTestAnalysisRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.analysisId !== "0") {
       writer.uint32(8).int64(message.analysisId);
+    }
+    if (message.fields !== undefined) {
+      FieldMask.encode(FieldMask.wrap(message.fields), writer.uint32(18).fork()).ldelim();
     }
     return writer;
   },
@@ -1594,6 +1663,13 @@ export const GetTestAnalysisRequest = {
 
           message.analysisId = longToString(reader.int64() as Long);
           continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.fields = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1604,13 +1680,19 @@ export const GetTestAnalysisRequest = {
   },
 
   fromJSON(object: any): GetTestAnalysisRequest {
-    return { analysisId: isSet(object.analysisId) ? globalThis.String(object.analysisId) : "0" };
+    return {
+      analysisId: isSet(object.analysisId) ? globalThis.String(object.analysisId) : "0",
+      fields: isSet(object.fields) ? FieldMask.unwrap(FieldMask.fromJSON(object.fields)) : undefined,
+    };
   },
 
   toJSON(message: GetTestAnalysisRequest): unknown {
     const obj: any = {};
     if (message.analysisId !== "0") {
       obj.analysisId = message.analysisId;
+    }
+    if (message.fields !== undefined) {
+      obj.fields = FieldMask.toJSON(FieldMask.wrap(message.fields));
     }
     return obj;
   },
@@ -1621,6 +1703,7 @@ export const GetTestAnalysisRequest = {
   fromPartial<I extends Exact<DeepPartial<GetTestAnalysisRequest>, I>>(object: I): GetTestAnalysisRequest {
     const message = createBaseGetTestAnalysisRequest() as any;
     message.analysisId = object.analysisId ?? "0";
+    message.fields = object.fields ?? undefined;
     return message;
   },
 };
@@ -2862,6 +2945,255 @@ export const TestCulprit = {
   },
 };
 
+function createBaseBatchGetTestAnalysesRequest(): BatchGetTestAnalysesRequest {
+  return { project: "", testFailures: [], fields: undefined };
+}
+
+export const BatchGetTestAnalysesRequest = {
+  encode(message: BatchGetTestAnalysesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    for (const v of message.testFailures) {
+      BatchGetTestAnalysesRequest_TestFailureIdentifier.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.fields !== undefined) {
+      FieldMask.encode(FieldMask.wrap(message.fields), writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BatchGetTestAnalysesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchGetTestAnalysesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testFailures.push(BatchGetTestAnalysesRequest_TestFailureIdentifier.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.fields = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchGetTestAnalysesRequest {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      testFailures: globalThis.Array.isArray(object?.testFailures)
+        ? object.testFailures.map((e: any) => BatchGetTestAnalysesRequest_TestFailureIdentifier.fromJSON(e))
+        : [],
+      fields: isSet(object.fields) ? FieldMask.unwrap(FieldMask.fromJSON(object.fields)) : undefined,
+    };
+  },
+
+  toJSON(message: BatchGetTestAnalysesRequest): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.testFailures?.length) {
+      obj.testFailures = message.testFailures.map((e) => BatchGetTestAnalysesRequest_TestFailureIdentifier.toJSON(e));
+    }
+    if (message.fields !== undefined) {
+      obj.fields = FieldMask.toJSON(FieldMask.wrap(message.fields));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BatchGetTestAnalysesRequest>, I>>(base?: I): BatchGetTestAnalysesRequest {
+    return BatchGetTestAnalysesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BatchGetTestAnalysesRequest>, I>>(object: I): BatchGetTestAnalysesRequest {
+    const message = createBaseBatchGetTestAnalysesRequest() as any;
+    message.project = object.project ?? "";
+    message.testFailures =
+      object.testFailures?.map((e) => BatchGetTestAnalysesRequest_TestFailureIdentifier.fromPartial(e)) || [];
+    message.fields = object.fields ?? undefined;
+    return message;
+  },
+};
+
+function createBaseBatchGetTestAnalysesRequest_TestFailureIdentifier(): BatchGetTestAnalysesRequest_TestFailureIdentifier {
+  return { testId: "", variantHash: "", refHash: "" };
+}
+
+export const BatchGetTestAnalysesRequest_TestFailureIdentifier = {
+  encode(
+    message: BatchGetTestAnalysesRequest_TestFailureIdentifier,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.testId !== "") {
+      writer.uint32(10).string(message.testId);
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(18).string(message.variantHash);
+    }
+    if (message.refHash !== "") {
+      writer.uint32(26).string(message.refHash);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BatchGetTestAnalysesRequest_TestFailureIdentifier {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchGetTestAnalysesRequest_TestFailureIdentifier() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.refHash = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchGetTestAnalysesRequest_TestFailureIdentifier {
+    return {
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      refHash: isSet(object.refHash) ? globalThis.String(object.refHash) : "",
+    };
+  },
+
+  toJSON(message: BatchGetTestAnalysesRequest_TestFailureIdentifier): unknown {
+    const obj: any = {};
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    if (message.refHash !== "") {
+      obj.refHash = message.refHash;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BatchGetTestAnalysesRequest_TestFailureIdentifier>, I>>(
+    base?: I,
+  ): BatchGetTestAnalysesRequest_TestFailureIdentifier {
+    return BatchGetTestAnalysesRequest_TestFailureIdentifier.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BatchGetTestAnalysesRequest_TestFailureIdentifier>, I>>(
+    object: I,
+  ): BatchGetTestAnalysesRequest_TestFailureIdentifier {
+    const message = createBaseBatchGetTestAnalysesRequest_TestFailureIdentifier() as any;
+    message.testId = object.testId ?? "";
+    message.variantHash = object.variantHash ?? "";
+    message.refHash = object.refHash ?? "";
+    return message;
+  },
+};
+
+function createBaseBatchGetTestAnalysesResponse(): BatchGetTestAnalysesResponse {
+  return { testAnalyses: [] };
+}
+
+export const BatchGetTestAnalysesResponse = {
+  encode(message: BatchGetTestAnalysesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.testAnalyses) {
+      TestAnalysis.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BatchGetTestAnalysesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchGetTestAnalysesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testAnalyses.push(TestAnalysis.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchGetTestAnalysesResponse {
+    return {
+      testAnalyses: globalThis.Array.isArray(object?.testAnalyses)
+        ? object.testAnalyses.map((e: any) => TestAnalysis.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: BatchGetTestAnalysesResponse): unknown {
+    const obj: any = {};
+    if (message.testAnalyses?.length) {
+      obj.testAnalyses = message.testAnalyses.map((e) => TestAnalysis.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BatchGetTestAnalysesResponse>, I>>(base?: I): BatchGetTestAnalysesResponse {
+    return BatchGetTestAnalysesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BatchGetTestAnalysesResponse>, I>>(object: I): BatchGetTestAnalysesResponse {
+    const message = createBaseBatchGetTestAnalysesResponse() as any;
+    message.testAnalyses = object.testAnalyses?.map((e) => TestAnalysis.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 /**
  * Analyses service includes all methods related to failure analyses
  * called from LUCI Bisection clients, such as SoM.
@@ -2900,6 +3232,13 @@ export interface Analyses {
   ListTestAnalyses(request: ListTestAnalysesRequest): Promise<ListTestAnalysesResponse>;
   /** GetTestAnalysis is used to get a test analysis by its ID. */
   GetTestAnalysis(request: GetTestAnalysisRequest): Promise<TestAnalysis>;
+  /**
+   * BatchGetTestAnalyses is an RPC to batch get test analyses for test failures.
+   * At this moment it only support getting the bisection for the ongoing test failure.
+   * TODO(@beining): This endpoint can be extended to support returning bisection for
+   * any test failure by specifying source position in the request.
+   */
+  BatchGetTestAnalyses(request: BatchGetTestAnalysesRequest): Promise<BatchGetTestAnalysesResponse>;
 }
 
 export const AnalysesServiceName = "luci.bisection.v1.Analyses";
@@ -2917,6 +3256,7 @@ export class AnalysesClientImpl implements Analyses {
     this.UpdateAnalysis = this.UpdateAnalysis.bind(this);
     this.ListTestAnalyses = this.ListTestAnalyses.bind(this);
     this.GetTestAnalysis = this.GetTestAnalysis.bind(this);
+    this.BatchGetTestAnalyses = this.BatchGetTestAnalyses.bind(this);
   }
   GetAnalysis(request: GetAnalysisRequest): Promise<Analysis> {
     const data = GetAnalysisRequest.encode(request).finish();
@@ -2958,6 +3298,12 @@ export class AnalysesClientImpl implements Analyses {
     const data = GetTestAnalysisRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "GetTestAnalysis", data);
     return promise.then((data) => TestAnalysis.decode(_m0.Reader.create(data)));
+  }
+
+  BatchGetTestAnalyses(request: BatchGetTestAnalysesRequest): Promise<BatchGetTestAnalysesResponse> {
+    const data = BatchGetTestAnalysesRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "BatchGetTestAnalyses", data);
+    return promise.then((data) => BatchGetTestAnalysesResponse.decode(_m0.Reader.create(data)));
   }
 }
 

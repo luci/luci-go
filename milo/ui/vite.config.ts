@@ -65,6 +65,9 @@ export default defineConfig(({ mode }) => {
     luciBisection: {
       host: env['VITE_LUCI_BISECTION_HOST'],
     },
+    sheriffOMatic: {
+      host: env['VITE_SHERIFF_O_MATIC_HOST'],
+    }
   };
 
   const localDevConfigsJs =

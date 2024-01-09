@@ -407,7 +407,11 @@ export interface Build_Output {
   readonly statusDetails:
     | StatusDetails
     | undefined;
-  /** Deprecated. Use summary_markdown instead. */
+  /**
+   * Deprecated. Use summary_markdown instead.
+   *
+   * @deprecated
+   */
   readonly summaryHtml: string;
   readonly summaryMarkdown: string;
 }
@@ -522,7 +526,11 @@ export interface BuildInfra {
   readonly recipe: BuildInfra_Recipe | undefined;
   readonly resultdb: BuildInfra_ResultDB | undefined;
   readonly bbagent: BuildInfra_BBAgent | undefined;
-  readonly backend: BuildInfra_Backend | undefined;
+  readonly backend:
+    | BuildInfra_Backend
+    | undefined;
+  /** It should only be set for led builds. */
+  readonly led: BuildInfra_Led | undefined;
 }
 
 /** Buildbucket-specific information, captured at the build creation time. */
@@ -677,6 +685,18 @@ export interface BuildInfra_Buildbucket_Agent {
    * If a path is not listed here, it is the same as PURPOSE_UNSPECIFIED.
    */
   readonly purposes: { [key: string]: BuildInfra_Buildbucket_Agent_Purpose };
+  /**
+   * Cache for the cipd client.
+   * The cache name should be in the format like `cipd_client_<sha(client_version)>`.
+   */
+  readonly cipdClientCache:
+    | CacheEntry
+    | undefined;
+  /**
+   * Cache for the cipd packages.
+   * The cache name should be in the format like `cipd_cache_<sha(task_service_account)>`.
+   */
+  readonly cipdPackagesCache: CacheEntry | undefined;
 }
 
 export enum BuildInfra_Buildbucket_Agent_Purpose {
@@ -799,7 +819,14 @@ export interface BuildInfra_Buildbucket_Agent_Output {
    */
   readonly resolvedData: { [key: string]: ResolvedDataRef };
   readonly status: Status;
-  readonly statusDetails: StatusDetails | undefined;
+  readonly statusDetails:
+    | StatusDetails
+    | undefined;
+  /**
+   * Deprecated. Use summary_markdown instead.
+   *
+   * @deprecated
+   */
   readonly summaryHtml: string;
   /**
    * The agent's resolved CIPD ${platform} (e.g. "linux-amd64",
@@ -818,6 +845,7 @@ export interface BuildInfra_Buildbucket_Agent_Output {
    * cipd packages installation time.
    */
   readonly totalDuration: Duration | undefined;
+  readonly summaryMarkdown: string;
 }
 
 export interface BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry {
@@ -999,6 +1027,12 @@ export interface BuildInfra_ResultDB {
   readonly bqExports: readonly BigQueryExport[];
   /** Deprecated. Any values specified here are ignored. */
   readonly historyOptions: HistoryOptions | undefined;
+}
+
+/** Led specific information. */
+export interface BuildInfra_Led {
+  /** The original bucket this led build is shadowing. */
+  readonly shadowedBucket: string;
 }
 
 /**
@@ -2794,6 +2828,7 @@ function createBaseBuildInfra(): BuildInfra {
     resultdb: undefined,
     bbagent: undefined,
     backend: undefined,
+    led: undefined,
   };
 }
 
@@ -2819,6 +2854,9 @@ export const BuildInfra = {
     }
     if (message.backend !== undefined) {
       BuildInfra_Backend.encode(message.backend, writer.uint32(58).fork()).ldelim();
+    }
+    if (message.led !== undefined) {
+      BuildInfra_Led.encode(message.led, writer.uint32(66).fork()).ldelim();
     }
     return writer;
   },
@@ -2879,6 +2917,13 @@ export const BuildInfra = {
 
           message.backend = BuildInfra_Backend.decode(reader, reader.uint32());
           continue;
+        case 8:
+          if (tag !== 66) {
+            break;
+          }
+
+          message.led = BuildInfra_Led.decode(reader, reader.uint32());
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2897,6 +2942,7 @@ export const BuildInfra = {
       resultdb: isSet(object.resultdb) ? BuildInfra_ResultDB.fromJSON(object.resultdb) : undefined,
       bbagent: isSet(object.bbagent) ? BuildInfra_BBAgent.fromJSON(object.bbagent) : undefined,
       backend: isSet(object.backend) ? BuildInfra_Backend.fromJSON(object.backend) : undefined,
+      led: isSet(object.led) ? BuildInfra_Led.fromJSON(object.led) : undefined,
     };
   },
 
@@ -2922,6 +2968,9 @@ export const BuildInfra = {
     }
     if (message.backend !== undefined) {
       obj.backend = BuildInfra_Backend.toJSON(message.backend);
+    }
+    if (message.led !== undefined) {
+      obj.led = BuildInfra_Led.toJSON(message.led);
     }
     return obj;
   },
@@ -2951,6 +3000,9 @@ export const BuildInfra = {
       : undefined;
     message.backend = (object.backend !== undefined && object.backend !== null)
       ? BuildInfra_Backend.fromPartial(object.backend)
+      : undefined;
+    message.led = (object.led !== undefined && object.led !== null)
+      ? BuildInfra_Led.fromPartial(object.led)
       : undefined;
     return message;
   },
@@ -3199,7 +3251,14 @@ export const BuildInfra_Buildbucket = {
 };
 
 function createBaseBuildInfra_Buildbucket_Agent(): BuildInfra_Buildbucket_Agent {
-  return { input: undefined, output: undefined, source: undefined, purposes: {} };
+  return {
+    input: undefined,
+    output: undefined,
+    source: undefined,
+    purposes: {},
+    cipdClientCache: undefined,
+    cipdPackagesCache: undefined,
+  };
 }
 
 export const BuildInfra_Buildbucket_Agent = {
@@ -3216,6 +3275,12 @@ export const BuildInfra_Buildbucket_Agent = {
     Object.entries(message.purposes).forEach(([key, value]) => {
       BuildInfra_Buildbucket_Agent_PurposesEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).ldelim();
     });
+    if (message.cipdClientCache !== undefined) {
+      CacheEntry.encode(message.cipdClientCache, writer.uint32(42).fork()).ldelim();
+    }
+    if (message.cipdPackagesCache !== undefined) {
+      CacheEntry.encode(message.cipdPackagesCache, writer.uint32(50).fork()).ldelim();
+    }
     return writer;
   },
 
@@ -3257,6 +3322,20 @@ export const BuildInfra_Buildbucket_Agent = {
             message.purposes[entry4.key] = entry4.value;
           }
           continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.cipdClientCache = CacheEntry.decode(reader, reader.uint32());
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.cipdPackagesCache = CacheEntry.decode(reader, reader.uint32());
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3280,6 +3359,8 @@ export const BuildInfra_Buildbucket_Agent = {
           {},
         )
         : {},
+      cipdClientCache: isSet(object.cipdClientCache) ? CacheEntry.fromJSON(object.cipdClientCache) : undefined,
+      cipdPackagesCache: isSet(object.cipdPackagesCache) ? CacheEntry.fromJSON(object.cipdPackagesCache) : undefined,
     };
   },
 
@@ -3302,6 +3383,12 @@ export const BuildInfra_Buildbucket_Agent = {
           obj.purposes[k] = buildInfra_Buildbucket_Agent_PurposeToJSON(v);
         });
       }
+    }
+    if (message.cipdClientCache !== undefined) {
+      obj.cipdClientCache = CacheEntry.toJSON(message.cipdClientCache);
+    }
+    if (message.cipdPackagesCache !== undefined) {
+      obj.cipdPackagesCache = CacheEntry.toJSON(message.cipdPackagesCache);
     }
     return obj;
   },
@@ -3328,6 +3415,12 @@ export const BuildInfra_Buildbucket_Agent = {
       }
       return acc;
     }, {});
+    message.cipdClientCache = (object.cipdClientCache !== undefined && object.cipdClientCache !== null)
+      ? CacheEntry.fromPartial(object.cipdClientCache)
+      : undefined;
+    message.cipdPackagesCache = (object.cipdPackagesCache !== undefined && object.cipdPackagesCache !== null)
+      ? CacheEntry.fromPartial(object.cipdPackagesCache)
+      : undefined;
     return message;
   },
 };
@@ -3907,6 +4000,7 @@ function createBaseBuildInfra_Buildbucket_Agent_Output(): BuildInfra_Buildbucket
     summaryHtml: "",
     agentPlatform: "",
     totalDuration: undefined,
+    summaryMarkdown: "",
   };
 }
 
@@ -3930,6 +4024,9 @@ export const BuildInfra_Buildbucket_Agent_Output = {
     }
     if (message.totalDuration !== undefined) {
       Duration.encode(message.totalDuration, writer.uint32(50).fork()).ldelim();
+    }
+    if (message.summaryMarkdown !== "") {
+      writer.uint32(58).string(message.summaryMarkdown);
     }
     return writer;
   },
@@ -3986,6 +4083,13 @@ export const BuildInfra_Buildbucket_Agent_Output = {
 
           message.totalDuration = Duration.decode(reader, reader.uint32());
           continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.summaryMarkdown = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4008,6 +4112,7 @@ export const BuildInfra_Buildbucket_Agent_Output = {
       summaryHtml: isSet(object.summaryHtml) ? globalThis.String(object.summaryHtml) : "",
       agentPlatform: isSet(object.agentPlatform) ? globalThis.String(object.agentPlatform) : "",
       totalDuration: isSet(object.totalDuration) ? Duration.fromJSON(object.totalDuration) : undefined,
+      summaryMarkdown: isSet(object.summaryMarkdown) ? globalThis.String(object.summaryMarkdown) : "",
     };
   },
 
@@ -4036,6 +4141,9 @@ export const BuildInfra_Buildbucket_Agent_Output = {
     }
     if (message.totalDuration !== undefined) {
       obj.totalDuration = Duration.toJSON(message.totalDuration);
+    }
+    if (message.summaryMarkdown !== "") {
+      obj.summaryMarkdown = message.summaryMarkdown;
     }
     return obj;
   },
@@ -4067,6 +4175,7 @@ export const BuildInfra_Buildbucket_Agent_Output = {
     message.totalDuration = (object.totalDuration !== undefined && object.totalDuration !== null)
       ? Duration.fromPartial(object.totalDuration)
       : undefined;
+    message.summaryMarkdown = object.summaryMarkdown ?? "";
     return message;
   },
 };
@@ -4959,6 +5068,63 @@ export const BuildInfra_ResultDB = {
     message.historyOptions = (object.historyOptions !== undefined && object.historyOptions !== null)
       ? HistoryOptions.fromPartial(object.historyOptions)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseBuildInfra_Led(): BuildInfra_Led {
+  return { shadowedBucket: "" };
+}
+
+export const BuildInfra_Led = {
+  encode(message: BuildInfra_Led, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.shadowedBucket !== "") {
+      writer.uint32(10).string(message.shadowedBucket);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BuildInfra_Led {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBuildInfra_Led() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.shadowedBucket = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BuildInfra_Led {
+    return { shadowedBucket: isSet(object.shadowedBucket) ? globalThis.String(object.shadowedBucket) : "" };
+  },
+
+  toJSON(message: BuildInfra_Led): unknown {
+    const obj: any = {};
+    if (message.shadowedBucket !== "") {
+      obj.shadowedBucket = message.shadowedBucket;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BuildInfra_Led>, I>>(base?: I): BuildInfra_Led {
+    return BuildInfra_Led.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BuildInfra_Led>, I>>(object: I): BuildInfra_Led {
+    const message = createBaseBuildInfra_Led() as any;
+    message.shadowedBucket = object.shadowedBucket ?? "";
     return message;
   },
 };
