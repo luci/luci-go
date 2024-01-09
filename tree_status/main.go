@@ -15,18 +15,18 @@
 package main
 
 import (
-	"context"
-
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
+
 	pb "go.chromium.org/luci/tree_status/proto/v1"
+	"go.chromium.org/luci/tree_status/rpc"
+
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func main() {
@@ -39,16 +39,7 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-
-		pb.RegisterTreeStatusServer(srv, &treeStatusServer{})
-
+		pb.RegisterTreeStatusServer(srv, &rpc.TreeStatusServer{})
 		return nil
 	})
-}
-
-type treeStatusServer struct{}
-
-func (*treeStatusServer) Get(ctx context.Context, request *pb.TreeStatusGetRequest) (*pb.TreeStatusGetResponse, error) {
-	logging.Infof(ctx, "Get")
-	return &pb.TreeStatusGetResponse{}, nil
 }

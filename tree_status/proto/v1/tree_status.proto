@@ -16,16 +16,107 @@ syntax = "proto3";
 
 package luci.tree_status.v1;
 
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
 option go_package = "go.chromium.org/luci/tree_status/proto/v1";
 
 service TreeStatus {
-  rpc Get(TreeStatusGetRequest) returns (TreeStatusGetResponse) {};
+  // List all status values for a tree in chronological order.
+  rpc ListStatus(ListStatusRequest) returns (ListStatusResponse) {};
+
+  // Get a status for a tree.
+  // Use the resource alias 'latest' to get just the current status.
+  rpc GetStatus(GetStatusRequest) returns (Status) {};
+
+  // Create a new status update for the tree.
+  rpc CreateStatus(CreateStatusRequest) returns (Status) {};
 }
 
-message TreeStatusGetRequest {
-
+message GetStatusRequest {
+  // The status value to get.
+  //
+  // You can use 'latest' as the id to get the latest status for a tree,
+  // i.e. set the name to 'trees/{tree}/status/latest'
+  // 
+  // Format: trees/{tree}/status/{id}
+  string name = 1;
 }
 
-message TreeStatusGetResponse {
+// GeneralState are the possible states for a tree to be in.
+enum GeneralState {
+  // GeneralState was not specified.
+  // This should not be used, it is the default value for an unset field.
+  GENERAL_STATE_UNSPECIFIED = 0;
 
+  // The tree is open and accepting new commits.
+  GENERAL_STATE_OPEN = 1;
+  // The tree is closed, no new commits are currently being accepted.
+  GENERAL_STATE_CLOSED = 2;
+  // The tree is throttled.  The meaning of this state can vary by project,
+  // but generally it is between the open and closed states.
+  GENERAL_STATE_THROTTLED = 3;
+  // The tree is in maintenance.  Generally CLs will not be accepted while the
+  // tree is in this state.
+  GENERAL_STATE_MAINTENANCE = 4;
+}
+
+// The Status of a tree for an interval of time.
+message Status {
+  // The name of this status.
+  // Format: trees/{tree}/status/{id}
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+  // The general state of the tree.  Possible values are open, closed, throttled
+  // and maintenance.
+  GeneralState general_state = 2;
+  // The message explaining details about the status.  This may contain HTML,
+  // it is the responsibility of the caller to sanitize the HTML before display.
+  string message = 4;
+  // The username of the user who added this.  May be empty if
+  // the reader does not have permission to see personal data.  Will also be
+  // set to 'user' after the username TTL (of 30 days).
+  string create_user = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // The date and time the status update was made in UTC ISO 8601 format.
+  google.protobuf.Timestamp create_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message ListStatusRequest {
+  // The parent tree which the status values belongs to.
+  // Format: trees/{tree}/status
+  string parent = 1;
+
+  // The maximum number of status values to return. The service may return fewer
+  // than this value. If unspecified, at most 50 status values will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 2;
+
+  // A page token, received from a previous `ListStatus` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListStatus` must match
+  // the call that provided the page token.
+  string page_token = 3;
+}
+
+message ListStatusResponse {
+  // The status values of the tree.
+  repeated Status status = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message CreateStatusRequest {
+  // The parent tree which the status values belongs to.
+  // Format: trees/{tree}/status
+  string parent = 1;
+
+  // The status to create.
+  // Only the general state and message fields can be provided, the current date
+  // will be used for the date and the RPC caller will be used for the username.
+  Status status = 2;
 }
