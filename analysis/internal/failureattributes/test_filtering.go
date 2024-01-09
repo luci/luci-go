@@ -111,7 +111,7 @@ var projectAttributionRule = map[string]attributionRule{
 		attributionWindowDays: 14,
 		failureFilterSQL:      `NOT r.expected AND tv.change_verifier_run IS NULL`,
 		partitionSQL:          `tv.test_id, STRING(tv.variant.board), tv.sources.gitiles_commit.ref`,
-		runFilterSQL: `tv.change_verifier_run IS NULL AND r.expected AND r.status='SKIP' ` +
+		runFilterSQL: `tv.change_verifier_run IS NOT NULL AND r.expected AND r.status='SKIP' ` +
 			`AND r.skip_reason='AUTOMATICALLY_DISABLED_FOR_FLAKINESS'`,
 		runCountSQL: `r.name`,
 	},
