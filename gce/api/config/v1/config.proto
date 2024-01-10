@@ -10,6 +10,8 @@ package config;
 
 import "google/type/dayofweek.proto";
 
+import "google/protobuf/empty.proto";
+
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
@@ -290,7 +292,11 @@ message Config {
   // Chrome Infra Auth groups considered to own this config.
   repeated string owner = 9;
 
-
+  // Set of VMs to be created.
+  // Each VM represent a DUT.
+  // Optional. Updated dynamically via RPC.
+  // TODO(b/318715067): Remove once Device Manager is ready.
+  map<string, google.protobuf.Empty> duts = 10;
 
   // Fields below should only be set by the server.
 
