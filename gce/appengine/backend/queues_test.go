@@ -24,6 +24,7 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/genproto/googleapis/type/dayofweek"
 	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
@@ -424,7 +425,7 @@ func TestQueues(t *testing.T) {
 					So(cfg.Config.CurrentAmount, ShouldEqual, 0)
 				})
 
-				Convey("default", func() {
+				Convey("DUTs have priority", func() {
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: &config.Config{
@@ -432,10 +433,15 @@ func TestQueues(t *testing.T) {
 								Project: "project",
 							},
 							Amount: &config.Amount{
-								Min: 3,
-								Max: 3,
+								Min: 5,
+								Max: 6,
 							},
 							Prefix: "prefix",
+							Duts: map[string]*emptypb.Empty{
+								"dut1": {},
+								"dut2": {},
+								"dut3": {},
+							},
 						},
 					}), ShouldBeNil)
 					err := expandConfig(c, &tasks.ExpandConfig{
@@ -447,79 +453,11 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, cfg), ShouldBeNil)
-					So(cfg.Config.CurrentAmount, ShouldEqual, 3)
-				})
-
-				Convey("default - skip existing vms", func() {
-					So(datastore.Put(c, &model.Config{
-						ID: "id",
-						Config: &config.Config{
-							Attributes: &config.VM{
-								Project: "project",
-							},
-							Amount: &config.Amount{
-								Min: 3,
-								Max: 3,
-							},
-							Prefix: "prefix",
-						},
-					}), ShouldBeNil)
-					So(datastore.Put(c, &model.VM{
-						ID:     "prefix-1",
-						Config: "id",
-						Prefix: "prefix",
-					}), ShouldBeNil)
-					err := expandConfig(c, &tasks.ExpandConfig{
-						Id: "id",
+					So(cfg.Config.Duts, ShouldResembleProto, map[string]*emptypb.Empty{
+						"dut1": {},
+						"dut2": {},
+						"dut3": {},
 					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
-					cfg := &model.Config{
-						ID: "id",
-					}
-					So(datastore.Get(c, cfg), ShouldBeNil)
-					So(cfg.Config.CurrentAmount, ShouldEqual, 3)
-				})
-
-				Convey("default - skip all vms", func() {
-					So(datastore.Put(c, &model.Config{
-						ID: "id",
-						Config: &config.Config{
-							Attributes: &config.VM{
-								Project: "project",
-							},
-							Amount: &config.Amount{
-								Min: 3,
-								Max: 3,
-							},
-							Prefix: "prefix",
-						},
-					}), ShouldBeNil)
-					So(datastore.Put(c, &model.VM{
-						ID:     "prefix-0",
-						Config: "id",
-						Prefix: "prefix",
-					}), ShouldBeNil)
-					So(datastore.Put(c, &model.VM{
-						ID:     "prefix-1",
-						Config: "id",
-						Prefix: "prefix",
-					}), ShouldBeNil)
-					So(datastore.Put(c, &model.VM{
-						ID:     "prefix-2",
-						Config: "id",
-						Prefix: "prefix",
-					}), ShouldBeNil)
-					err := expandConfig(c, &tasks.ExpandConfig{
-						Id: "id",
-					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
-					cfg := &model.Config{
-						ID: "id",
-					}
-					So(datastore.Get(c, cfg), ShouldBeNil)
-					So(cfg.Config.CurrentAmount, ShouldEqual, 3)
 				})
 
 				Convey("schedule", func() {
@@ -588,6 +526,193 @@ func TestQueues(t *testing.T) {
 			})
 		})
 
+		Convey("createTasksPerAmount", func() {
+			Convey("invalid", func() {
+				Convey("config.Duts is not empty", func() {
+					vms := []*model.VM{}
+					m := &model.Config{
+						ID: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							CurrentAmount: 3,
+							Duts: map[string]*emptypb.Empty{
+								"dut1": {},
+								"dut2": {},
+							},
+							Prefix: "prefix",
+						},
+					}
+					n := time.Now()
+					t, err := createTasksPerAmount(c, vms, m, n)
+					So(err, ShouldErrLike, "config.Duts should be empty")
+					So(t, ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				Convey("default", func() {
+					vms := []*model.VM{}
+					m := &model.Config{
+						ID: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							CurrentAmount: 3,
+							Prefix:        "prefix",
+						},
+					}
+					n := time.Now()
+					t, err := createTasksPerAmount(c, vms, m, n)
+					So(err, ShouldBeNil)
+					So(len(t), ShouldEqual, 3)
+				})
+
+				Convey("default - skip existing vms", func() {
+					vms := []*model.VM{
+						{
+							ID:     "prefix-1",
+							Config: "id",
+							Prefix: "prefix",
+						},
+					}
+					m := &model.Config{
+						ID: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							CurrentAmount: 3,
+							Prefix:        "prefix",
+						},
+					}
+					n := time.Now()
+					t, err := createTasksPerAmount(c, vms, m, n)
+					So(err, ShouldBeNil)
+					So(t, ShouldHaveLength, 2)
+				})
+
+				Convey("default - skip all vms", func() {
+					vms := []*model.VM{
+						{
+							ID:     "prefix-0",
+							Config: "id",
+							Prefix: "prefix",
+						},
+						{
+							ID:     "prefix-1",
+							Config: "id",
+							Prefix: "prefix",
+						},
+						{
+							ID:     "prefix-2",
+							Config: "id",
+							Prefix: "prefix",
+						},
+					}
+					m := &model.Config{
+						ID: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							CurrentAmount: 3,
+							Prefix:        "prefix",
+						},
+					}
+					n := time.Now()
+					t, err := createTasksPerAmount(c, vms, m, n)
+					So(err, ShouldBeNil)
+					So(t, ShouldHaveLength, 0)
+				})
+			})
+		})
+
+		Convey("createTasksPerDUT", func() {
+			Convey("invalid", func() {
+				Convey("config.Duts is nil", func() {
+					vms := []*model.VM{}
+					m := &model.Config{
+						ID: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							Prefix: "prefix",
+						},
+					}
+					n := time.Now()
+					t, err := createTasksPerDUT(c, vms, m, n)
+					So(err, ShouldErrLike, "config.DUTs cannot be empty")
+					So(t, ShouldBeEmpty)
+				})
+				Convey("config.Duts is empty", func() {
+					vms := []*model.VM{}
+					m := &model.Config{
+						ID: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Project: "project",
+							},
+							Duts:   map[string]*emptypb.Empty{},
+							Prefix: "prefix",
+						},
+					}
+					n := time.Now()
+					t, err := createTasksPerDUT(c, vms, m, n)
+					So(err, ShouldErrLike, "config.DUTs cannot be empty")
+					So(t, ShouldBeEmpty)
+				})
+			})
+		})
+
+		Convey("valid", func() {
+			Convey("default", func() {
+				vms := []*model.VM{}
+				m := &model.Config{
+					ID: "id",
+					Config: &config.Config{
+						Attributes: &config.VM{
+							Project: "project",
+						},
+						Duts: map[string]*emptypb.Empty{
+							"dut1": {},
+							"dut2": {},
+							"dut3": {},
+						},
+						Prefix: "prefix",
+					},
+				}
+				n := time.Now()
+				t, err := createTasksPerDUT(c, vms, m, n)
+				So(err, ShouldBeNil)
+				So(len(t), ShouldEqual, 3)
+			})
+
+			Convey("dispatched task contain DUT info", func() {
+				vms := []*model.VM{}
+				m := &model.Config{
+					ID: "id",
+					Config: &config.Config{
+						Attributes: &config.VM{
+							Project: "project",
+						},
+						Duts: map[string]*emptypb.Empty{
+							"dut1": {},
+						},
+						Prefix: "prefix",
+					},
+				}
+				n := time.Now()
+				t, err := createTasksPerDUT(c, vms, m, n)
+				So(err, ShouldBeNil)
+				vm := t[0].Payload.(*tasks.CreateVM)
+				So(vm.DUT, ShouldEqual, "dut1")
+			})
+		})
+
 		Convey("reportQuota", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
@@ -649,6 +774,13 @@ func TestQueues(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 			})
+		})
+
+		Convey("getUniqueID", func() {
+			c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
+			c = mathrand.Set(c, rand.New(rand.NewSource(1)))
+			id := getUniqueID(c, "prefix")
+			So(id, ShouldEqual, "prefix-1454472306000-fpll")
 		})
 	})
 }

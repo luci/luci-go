@@ -306,11 +306,82 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	if err != nil {
 		return err
 	}
+
+	var t []*tq.Task
+	// DUTs take priority.
+	if len(cfg.Config.GetDuts()) > 0 {
+		t, err = createTasksPerDUT(c, vms, cfg, now)
+	} else {
+		t, err = createTasksPerAmount(c, vms, cfg, now)
+	}
+	if err != nil {
+		return err
+	}
+
+	logging.Debugf(c, "for config %s, creating %d VMs", cfg.Config.Prefix, len(t))
+	if err := getDispatcher(c).AddTask(c, t...); err != nil {
+		return errors.Annotate(err, "failed to schedule tasks").Err()
+	}
+	return nil
+}
+
+// getUniqueID returns a unique ID based on Unix time in milliseconds.
+func getUniqueID(c context.Context, prefix string) string {
+	ms := clock.Now(c).UnixMilli()
+	return fmt.Sprintf("%s-%d-%s", prefix, ms, getSuffix(c))
+}
+
+// createTasksPerDUT returns a slice of CreateVM tasks based on config.Duts.
+func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, now time.Time) ([]*tq.Task, error) {
+	logging.Debugf(c, "CloudBots flow entered for config %s", cfg.Config.Prefix)
+	if len(cfg.Config.Duts) == 0 {
+		return nil, errors.Reason("config.DUTs cannot be empty").Err()
+	}
+	existingVMs := make(map[string]string, len(vms))
+	for _, vm := range vms {
+		existingVMs[vm.DUT] = vm.Hostname
+	}
+	var t []*tq.Task
+	var i int32 = 0
+	for dut := range cfg.Config.Duts {
+		if vm, ok := existingVMs[dut]; ok {
+			logging.Debugf(c, "the DUT %s is already assigned to an existing VM %s, skipping", dut, vm)
+			continue
+		}
+		t = append(t, &tq.Task{
+			Payload: &tasks.CreateVM{
+				Id:         getUniqueID(c, cfg.Config.Prefix),
+				Attributes: cfg.Config.Attributes,
+				Config:     cfg.ID,
+				Created: &timestamppb.Timestamp{
+					Seconds: now.Unix(),
+				},
+				// Index is not needed here.
+				// CloudBots flow does not rely on Index for VM hostname uniqueness.
+				DUT:      dut,
+				Lifetime: randomizeLifetime(cfg.Config.Lifetime.GetSeconds()),
+				Prefix:   cfg.Config.Prefix,
+				Revision: cfg.Config.Revision,
+				Swarming: cfg.Config.Swarming,
+				Timeout:  cfg.Config.Timeout.GetSeconds(),
+			},
+		})
+		i++
+	}
+	return t, nil
+}
+
+// createTasksPerAmount returns a slice of CreateVM tasks based on config.CurrentAmount.
+func createTasksPerAmount(c context.Context, vms []*model.VM, cfg *model.Config, now time.Time) ([]*tq.Task, error) {
+	logging.Debugf(c, "default flow entered for config %s", cfg.Config.Prefix)
+	if len(cfg.Config.Duts) > 0 {
+		return nil, errors.Reason("config.Duts should be empty").Err()
+	}
 	existingVMs := stringset.New(len(vms))
 	for _, vm := range vms {
 		existingVMs.Add(vm.ID)
 	}
-	t := make([]*tq.Task, 0)
+	var t []*tq.Task
 	for i := int32(0); i < cfg.Config.CurrentAmount; i++ {
 		id := fmt.Sprintf("%s-%d", cfg.Config.Prefix, i)
 		if !existingVMs.Has(id) {
@@ -318,7 +389,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 				Payload: &tasks.CreateVM{
 					Id:         id,
 					Attributes: cfg.Config.Attributes,
-					Config:     task.Id,
+					Config:     cfg.ID,
 					Created: &timestamppb.Timestamp{
 						Seconds: now.Unix(),
 					},
@@ -332,11 +403,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 			})
 		}
 	}
-	logging.Debugf(c, "for config %s, creating %d VMs", cfg.Config.Prefix, len(t))
-	if err := getDispatcher(c).AddTask(c, t...); err != nil {
-		return errors.Annotate(err, "failed to schedule tasks").Err()
-	}
-	return nil
+	return t, nil
 }
 
 // randomizeLifetime randomizes the specified lifetime within an interval.

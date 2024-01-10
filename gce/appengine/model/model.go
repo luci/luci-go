@@ -110,6 +110,9 @@ type VM struct {
 	// A GCE instance should not be created for a drained VM.
 	// Any existing GCE instance should be deleted regardless of deadline.
 	Drained bool `gae:"drained"`
+	// DUT is the name of the matched lab DUT.
+	// Optional if the VM is not linked to a DUT.
+	DUT string `gae:"dut"`
 	// Hostname is the short hostname of the GCE instance to create.
 	Hostname string `gae:"hostname"`
 	// Image is the source image for the boot disk of the GCE instance.

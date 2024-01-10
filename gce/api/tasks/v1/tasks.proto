@@ -61,6 +61,8 @@ message CreateVM {
   string swarming = 9;
   // The timeout of the VM in seconds.
   int64 timeout = 10;
+  // the lab DUT assigned to the VM.
+  string DUT = 11;
 }
 
 // A task to expand a config.
