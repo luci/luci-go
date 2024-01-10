@@ -361,6 +361,54 @@ func TestQueues(t *testing.T) {
 							So(v.Drained, ShouldBeFalse)
 						})
 					})
+
+					Convey("DUTs", func() {
+						Convey("DUT is in config", func() {
+							datastore.Put(c, &model.Config{
+								ID: "config",
+								Config: &config.Config{
+									Duts: map[string]*emptypb.Empty{
+										"dut1": {},
+										"dut2": {},
+										"dut3": {},
+									},
+								},
+							})
+							v := &model.VM{
+								ID:     "id",
+								Config: "config",
+								DUT:    "dut1",
+							}
+							So(datastore.Put(c, v), ShouldBeNil)
+							So(drainVM(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeFalse)
+							So(datastore.Get(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeFalse)
+						})
+
+						Convey("DUT is not in config", func() {
+							datastore.Put(c, &model.Config{
+								ID: "config",
+								Config: &config.Config{
+									Duts: map[string]*emptypb.Empty{
+										"dut1": {},
+										"dut2": {},
+										"dut3": {},
+									},
+								},
+							})
+							v := &model.VM{
+								ID:     "id",
+								Config: "config",
+								DUT:    "dut4",
+							}
+							So(datastore.Put(c, v), ShouldBeNil)
+							So(drainVM(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeTrue)
+							So(datastore.Get(c, v), ShouldBeNil)
+							So(v.Drained, ShouldBeTrue)
+						})
+					})
 				})
 
 				Convey("deleted", func() {

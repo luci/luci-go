@@ -136,10 +136,21 @@ func drainVM(c context.Context, vm *model.VM) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
-	if cfg.Config.GetCurrentAmount() > vm.Index {
-		return nil
+	if vm.DUT != "" {
+		// DUT is still present in config.
+		// Index is not available for VM mapped to DUT due to different sequences of creation.
+		duts := cfg.Config.GetDuts()
+		if _, ok := duts[vm.DUT]; ok {
+			return nil
+		}
+		logging.Debugf(c, "config %q only specifies %d VMs", cfg.ID, cfg.Config.GetCurrentAmount())
+	} else {
+		// This VM is below the currentAmount threshold and should not be drained.
+		if cfg.Config.GetCurrentAmount() > vm.Index {
+			return nil
+		}
+		logging.Debugf(c, "config %q only specifies %d VMs", cfg.ID, cfg.Config.GetCurrentAmount())
 	}
-	logging.Debugf(c, "config %q only specifies %d VMs", cfg.ID, cfg.Config.GetCurrentAmount())
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
 		case err == datastore.ErrNoSuchEntity:
