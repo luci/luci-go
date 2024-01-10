@@ -19,6 +19,7 @@ import { createRoot } from 'react-dom/client';
 import '@/common/api/stackdriver_errors';
 import { initDefaultTrustedTypesPolicy } from '@/common/tools/sanitize_html';
 import { assertNonNullable } from '@/generic_libs/tools/utils';
+import '@/proto_utils/duration_patch';
 
 import { App } from './App';
 

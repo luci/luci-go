@@ -24,6 +24,7 @@ import * as idbKeyVal from 'idb-keyval';
 import { configure } from 'mobx';
 
 import { assertNonNullable } from '@/generic_libs/tools/utils';
+import '@/proto_utils/duration_patch';
 
 import {
   createSelectiveMockFromModule,
