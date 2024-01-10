@@ -20,4 +20,4 @@ cron:
 - url: /internal/cron/drain-vms
   schedule: every 1 minutes
 - url: /internal/cron/inspect-swarming
-  schedule: every 1 minutes
+  schedule: every 2 minutes
