@@ -183,11 +183,21 @@ func createVM(c context.Context, payload proto.Message) error {
 	case task.GetConfig() == "":
 		return errors.Reason("config is required").Err()
 	}
+
+	// VMs paired with DUTs cannot rely on index for hostname uniqueness.
+	// Instead, we rely on timestamp see getUniqueID.
+	var hostname string
+	if task.DUT != "" {
+		hostname = task.Id
+	} else {
+		hostname = fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c))
+	}
 	vm := &model.VM{
 		ID:         task.Id,
 		Config:     task.Config,
 		Configured: clock.Now(c).Unix(),
-		Hostname:   fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c)),
+		DUT:        task.DUT,
+		Hostname:   hostname,
 		Index:      task.Index,
 		Lifetime:   task.Lifetime,
 		Prefix:     task.Prefix,

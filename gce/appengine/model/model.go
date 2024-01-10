@@ -171,8 +171,10 @@ func (vm *VM) getDisks() []*compute.AttachedDisk {
 }
 
 // getMetadata returns a *compute.Metadata representation of this VM's metadata.
+// vm.DUT is added to the returned metadata if needed.
+// This ensure that getMetadata always returns the current vm.DUT value.
 func (vm *VM) getMetadata() *compute.Metadata {
-	if len(vm.Attributes.GetMetadata()) == 0 {
+	if len(vm.Attributes.GetMetadata()) == 0 && vm.DUT == "" {
 		return nil
 	}
 	meta := &compute.Metadata{
@@ -192,6 +194,13 @@ func (vm *VM) getMetadata() *compute.Metadata {
 			Key:   key,
 			Value: val,
 		}
+	}
+	if vm.DUT != "" {
+		m := &compute.MetadataItems{
+			Key:   "dut",
+			Value: &vm.DUT,
+		}
+		meta.Items = append(meta.Items, m)
 	}
 	return meta
 }

@@ -408,6 +408,40 @@ func TestVM(t *testing.T) {
 				So(m.Items[0].Key, ShouldEqual, "")
 				So(m.Items[0].Value, ShouldBeNil)
 			})
+
+			Convey("empty with dut", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Metadata: []*config.Metadata{},
+					},
+					DUT: "dut-1",
+				}
+				m := v.getMetadata()
+				So(m.Items, ShouldHaveLength, 1)
+				So(m.Items[0].Key, ShouldEqual, "dut")
+				So(*m.Items[0].Value, ShouldEqual, "dut-1")
+			})
+
+			Convey("non-empty with dut", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Metadata: []*config.Metadata{
+							{
+								Metadata: &config.Metadata_FromText{
+									FromText: "key:file",
+								},
+							},
+						},
+					},
+					DUT: "dut-1",
+				}
+				m := v.getMetadata()
+				So(m.Items, ShouldHaveLength, 2)
+				So(m.Items[0].Key, ShouldEqual, "key")
+				So(*m.Items[0].Value, ShouldEqual, "file")
+				So(m.Items[1].Key, ShouldEqual, "dut")
+				So(*m.Items[1].Value, ShouldEqual, "dut-1")
+			})
 		})
 	})
 
