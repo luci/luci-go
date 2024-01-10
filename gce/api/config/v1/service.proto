@@ -61,7 +61,7 @@ message UpdateRequest {
   // The config.
   Config config = 2;
 
-  // The fields to update. Only config.current_amount may be updated.
+  // The fields to update. Only config.current_amount and config.duts may be updated.
   google.protobuf.FieldMask update_mask = 3;
 }
 

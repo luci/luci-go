@@ -120,11 +120,54 @@ func (*Config) Update(c context.Context, req *config.UpdateRequest) (*config.Con
 		return nil, status.Errorf(codes.InvalidArgument, "update mask is required")
 	}
 	for _, p := range req.UpdateMask.Paths {
-		if p != "config.current_amount" {
+		switch p {
+		case "config.current_amount":
+			ret, err := updateAmount(c, req)
+			return ret, err
+		case "config.duts":
+			ret, err := updateDUTs(c, req)
+			return ret, err
+		default:
 			return nil, status.Errorf(codes.InvalidArgument, "field %q is invalid or immutable", p)
 		}
-		logging.Debugf(c, "update config %s current_amount to %d", req.GetId(), req.GetConfig().GetCurrentAmount())
 	}
+	return nil, nil
+}
+
+// updateDUTs updates config.Duts.
+// This is used for go/cloudbots.
+func updateDUTs(c context.Context, req *config.UpdateRequest) (*config.Config, error) {
+	logging.Debugf(c, "update config %s duts to %d", req.GetId(), req.GetConfig().GetDuts())
+
+	var ret *config.Config
+
+	if err := datastore.RunInTransaction(c, func(c context.Context) error {
+		cfg, err := getConfigByID(c, req.Id)
+		if err != nil {
+			return err
+		}
+		ret = cfg.Config
+		duts := req.Config.GetDuts()
+		if dutsEqual(ret.GetDuts(), duts) {
+			return nil
+		}
+		cfg.Config.Duts = duts
+		// Config.CurrentAmount serves as a second source of truth.
+		// The first source of truth being Config.Duts.
+		cfg.Config.CurrentAmount = int32(len(duts))
+		if err := datastore.Put(c, cfg); err != nil {
+			return errors.Annotate(err, "failed to store config").Err()
+		}
+		return nil
+	}, nil); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+// updateAmount updates config.CurrentAmount.
+func updateAmount(c context.Context, req *config.UpdateRequest) (*config.Config, error) {
+	logging.Debugf(c, "update config %s current_amount to %d", req.GetId(), req.GetConfig().GetCurrentAmount())
 
 	var ret *config.Config
 
@@ -209,4 +252,19 @@ func notFoundErr(id string) error {
 	// To avoid revealing information about config existence to unauthorized users,
 	// not found and permission denied responses should be ambiguous.
 	return status.Errorf(codes.NotFound, "no config found with ID %q or unauthorized user", id)
+}
+
+// dutsEqual test equality between two sets of DUTs.
+// The sets are equal if they have the same length and
+// if the same keys are present in both sets.
+func dutsEqual(x, y map[string]*emptypb.Empty) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	for k := range x {
+		if _, ok := y[k]; !ok {
+			return false
+		}
+	}
+	return true
 }

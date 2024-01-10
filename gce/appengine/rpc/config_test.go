@@ -410,6 +410,7 @@ func TestConfig(t *testing.T) {
 						"owners",
 					},
 					Prefix: "prefix",
+					Duts:   map[string]*emptypb.Empty{"dut1": {}},
 				},
 			}), ShouldBeNil)
 
@@ -488,12 +489,31 @@ func TestConfig(t *testing.T) {
 						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
 					})
 
-					Convey("other", func() {
+					Convey("invalid mask", func() {
 						cfg, err := srv.Update(c, &config.UpdateRequest{
 							Id: "id",
 							UpdateMask: &field_mask.FieldMask{
 								Paths: []string{
 									"config.amount.default",
+								},
+							},
+						})
+						So(err, ShouldErrLike, "invalid or immutable")
+						So(cfg, ShouldBeNil)
+						mdl := &model.Config{
+							ID: "id",
+						}
+						err = datastore.Get(c, mdl)
+						So(err, ShouldBeNil)
+						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					})
+
+					Convey("immutable field", func() {
+						cfg, err := srv.Update(c, &config.UpdateRequest{
+							Id: "id",
+							UpdateMask: &field_mask.FieldMask{
+								Paths: []string{
+									"config.prefix",
 								},
 							},
 						})
@@ -534,69 +554,150 @@ func TestConfig(t *testing.T) {
 				})
 
 				Convey("authorized", func() {
-					Convey("min", func() {
-						cfg, err := srv.Update(c, &config.UpdateRequest{
-							Id: "id",
-							UpdateMask: &field_mask.FieldMask{
-								Paths: []string{
-									"config.current_amount",
+					Convey("CurrentAmount", func() {
+						Convey("min", func() {
+							cfg, err := srv.Update(c, &config.UpdateRequest{
+								Id: "id",
+								UpdateMask: &field_mask.FieldMask{
+									Paths: []string{
+										"config.current_amount",
+									},
 								},
-							},
+							})
+							So(err, ShouldBeNil)
+							So(cfg.CurrentAmount, ShouldEqual, 1)
+							mdl := &model.Config{
+								ID: "id",
+							}
+							err = datastore.Get(c, mdl)
+							So(err, ShouldBeNil)
+							So(mdl.Config.CurrentAmount, ShouldEqual, 1)
 						})
-						So(err, ShouldBeNil)
-						So(cfg.CurrentAmount, ShouldEqual, 1)
-						mdl := &model.Config{
-							ID: "id",
-						}
-						err = datastore.Get(c, mdl)
-						So(err, ShouldBeNil)
-						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
-					})
 
-					Convey("max", func() {
-						cfg, err := srv.Update(c, &config.UpdateRequest{
-							Id: "id",
-							Config: &config.Config{
-								CurrentAmount: 4,
-							},
-							UpdateMask: &field_mask.FieldMask{
-								Paths: []string{
-									"config.current_amount",
+						Convey("max", func() {
+							cfg, err := srv.Update(c, &config.UpdateRequest{
+								Id: "id",
+								Config: &config.Config{
+									CurrentAmount: 4,
 								},
-							},
+								UpdateMask: &field_mask.FieldMask{
+									Paths: []string{
+										"config.current_amount",
+									},
+								},
+							})
+							So(err, ShouldBeNil)
+							So(cfg.CurrentAmount, ShouldEqual, 3)
+							mdl := &model.Config{
+								ID: "id",
+							}
+							err = datastore.Get(c, mdl)
+							So(err, ShouldBeNil)
+							So(mdl.Config.CurrentAmount, ShouldEqual, 3)
 						})
-						So(err, ShouldBeNil)
-						So(cfg.CurrentAmount, ShouldEqual, 3)
-						mdl := &model.Config{
-							ID: "id",
-						}
-						err = datastore.Get(c, mdl)
-						So(err, ShouldBeNil)
-						So(mdl.Config.CurrentAmount, ShouldEqual, 3)
-					})
 
-					Convey("updates", func() {
-						cfg, err := srv.Update(c, &config.UpdateRequest{
-							Id: "id",
-							Config: &config.Config{
-								CurrentAmount: 2,
-							},
-							UpdateMask: &field_mask.FieldMask{
-								Paths: []string{
-									"config.current_amount",
+						Convey("updates", func() {
+							cfg, err := srv.Update(c, &config.UpdateRequest{
+								Id: "id",
+								Config: &config.Config{
+									CurrentAmount: 2,
 								},
-							},
+								UpdateMask: &field_mask.FieldMask{
+									Paths: []string{
+										"config.current_amount",
+									},
+								},
+							})
+							So(err, ShouldBeNil)
+							So(cfg.CurrentAmount, ShouldEqual, 2)
+							mdl := &model.Config{
+								ID: "id",
+							}
+							err = datastore.Get(c, mdl)
+							So(err, ShouldBeNil)
+							So(mdl.Config.CurrentAmount, ShouldEqual, 2)
 						})
-						So(err, ShouldBeNil)
-						So(cfg.CurrentAmount, ShouldEqual, 2)
-						mdl := &model.Config{
-							ID: "id",
-						}
-						err = datastore.Get(c, mdl)
-						So(err, ShouldBeNil)
-						So(mdl.Config.CurrentAmount, ShouldEqual, 2)
+					})
+					Convey("duts", func() {
+						Convey("updates", func() {
+							cfg, err := srv.Update(c, &config.UpdateRequest{
+								Id: "id",
+								Config: &config.Config{
+									Duts: map[string]*emptypb.Empty{
+										"hello": {},
+										"world": {},
+									},
+								},
+								UpdateMask: &field_mask.FieldMask{
+									Paths: []string{
+										"config.duts",
+									},
+								},
+							})
+							So(err, ShouldBeNil)
+							So(cfg.CurrentAmount, ShouldEqual, 2)
+							So(cfg.Duts, ShouldResembleProto, map[string]*emptypb.Empty{
+								"hello": {},
+								"world": {},
+							})
+							mdl := &model.Config{
+								ID: "id",
+							}
+							err = datastore.Get(c, mdl)
+							So(err, ShouldBeNil)
+							So(mdl.Config.CurrentAmount, ShouldEqual, 2)
+							So(mdl.Config.Duts, ShouldResembleProto, map[string]*emptypb.Empty{
+								"hello": {},
+								"world": {},
+							})
+						})
 					})
 				})
+			})
+		})
+	})
+	Convey("equalDuts", t, func() {
+		Convey("fail", func() {
+			Convey("different length", func() {
+				s1 := map[string]*emptypb.Empty{
+					"dut1": {},
+				}
+				s2 := map[string]*emptypb.Empty{
+					"dut1": {},
+					"dut2": {},
+				}
+				isEqual := dutsEqual(s1, s2)
+				So(isEqual, ShouldBeFalse)
+			})
+			Convey("different keys", func() {
+				s1 := map[string]*emptypb.Empty{
+					"dut1": {},
+				}
+				s2 := map[string]*emptypb.Empty{
+					"dut2": {},
+				}
+				isEqual := dutsEqual(s1, s2)
+				So(isEqual, ShouldBeFalse)
+			})
+		})
+		Convey("pass", func() {
+			Convey("same keys", func() {
+				s1 := map[string]*emptypb.Empty{
+					"dut1": {},
+					"dut2": {},
+				}
+				s2 := map[string]*emptypb.Empty{
+					"dut1": {},
+					"dut2": {},
+				}
+				isEqual := dutsEqual(s1, s2)
+				So(isEqual, ShouldBeTrue)
+			})
+			Convey("empty", func() {
+				s1 := map[string]*emptypb.Empty{}
+				s2 := map[string]*emptypb.Empty{}
+				isEqual := dutsEqual(s1, s2)
+				So(isEqual, ShouldBeTrue)
 			})
 		})
 	})

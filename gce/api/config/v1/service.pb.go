@@ -316,7 +316,7 @@ type UpdateRequest struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The config.
 	Config *Config `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
-	// The fields to update. Only config.current_amount may be updated.
+	// The fields to update. Only config.current_amount and config.duts may be updated.
 	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,3,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 }
 
