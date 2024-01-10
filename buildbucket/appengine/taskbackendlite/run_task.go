@@ -39,6 +39,7 @@ import (
 
 const (
 	DefaultTaskCreationTimeout = 10 * time.Minute
+	TopicIDFormat              = "taskbackendlite-%s"
 )
 
 // TaskBackendLite implements pb.TaskBackendLiteServer.
@@ -64,15 +65,6 @@ type TaskNotification struct {
 // RunTask handles the request to create a task. Implements pb.TaskBackendLiteServer.
 func (t *TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (*pb.RunTaskResponse, error) {
 	logging.Debugf(ctx, "%q called RunTask with request %s", auth.CurrentIdentity(ctx), proto.MarshalTextString(req))
-	// Decide which topic to use.
-	var topicID string
-	cfg := req.BackendConfig.AsMap()
-	if val, ok := cfg["topic_id"].(string); !ok || val == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "'topic_id'in req.BackendConfig is not specified or it's not a string")
-	} else {
-		topicID = val
-	}
-
 	project, err := t.checkPerm(ctx)
 	if err != nil {
 		return nil, err
@@ -111,6 +103,7 @@ func (t *TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (
 		return nil, status.Errorf(codes.Internal, "error when creating Pub/Sub client: %s", err)
 	}
 	defer psClient.Close()
+	topicID := fmt.Sprintf(TopicIDFormat, project)
 	topic := psClient.Topic(topicID)
 	defer topic.Stop()
 	data, err := json.MarshalIndent(&TaskNotification{

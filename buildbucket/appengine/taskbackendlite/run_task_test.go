@@ -17,10 +17,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -54,7 +54,7 @@ func TestRunTask(t *testing.T) {
 			psclient.Close()
 			psserver.Close()
 		}()
-		topicFoo, err := psclient.CreateTopic(ctx, "foo")
+		myTopic, err := psclient.CreateTopic(ctx, fmt.Sprintf(TopicIDFormat, "myProject"))
 		So(err, ShouldBeNil)
 
 		srv := &TaskBackendLite{}
@@ -62,15 +62,6 @@ func TestRunTask(t *testing.T) {
 			BuildId:   "123",
 			RequestId: "request_id",
 			Target:    "target",
-			BackendConfig: &structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"topic_id": {
-						Kind: &structpb.Value_StringValue{
-							StringValue: "foo",
-						},
-					},
-				},
-			},
 			Secrets: &pb.BuildSecrets{
 				StartBuildToken: "token",
 			},
@@ -120,38 +111,12 @@ func TestRunTask(t *testing.T) {
 			So(psserver.Messages(), ShouldHaveLength, 0)
 		})
 
-		Convey("no topic_id in backend_config", func() {
-			res, err := srv.RunTask(ctx, &pb.RunTaskRequest{
-				BuildId:       "123",
-				BackendConfig: &structpb.Struct{},
-			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "'topic_id'in req.BackendConfig is not specified or it's not a string")
-		})
-
-		Convey("topic_id is not a string", func() {
-			res, err := srv.RunTask(ctx, &pb.RunTaskRequest{
-				BuildId: "123",
-				BackendConfig: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"topic_id": {
-							Kind: &structpb.Value_NumberValue{
-								NumberValue: 1,
-							},
-						},
-					},
-				},
-			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "'topic_id'in req.BackendConfig is not specified or it's not a string")
-		})
-
 		Convey("topic not exist", func() {
-			err := topicFoo.Delete(ctx)
+			err := myTopic.Delete(ctx)
 			So(err, ShouldBeNil)
 			res, err := srv.RunTask(ctx, req)
 			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "topic foo does not exist on Cloud project myApp-dev")
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "topic taskbackendlite-myProject does not exist on Cloud project myApp-dev")
 		})
 
 		Convey("perm errors", func() {
