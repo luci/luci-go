@@ -1,7 +1,18 @@
 diff --git a/node_modules/ts-proto/build/generate-services.js b/node_modules/ts-proto/build/generate-services.js
-index 8117f7f..e3d6fe6 100644
+index 8117f7f..3c53729 100644
 --- a/node_modules/ts-proto/build/generate-services.js
 +++ b/node_modules/ts-proto/build/generate-services.js
+@@ -87,8 +87,8 @@ function generateRegularRpcMethod(ctx, methodDesc) {
+     ];
+     const maybeCtx = options.context ? "ctx," : "";
+     const maybeAbortSignal = options.useAbortSignal ? "abortSignal || undefined," : "";
+-    let encode = (0, ts_poet_1.code) `${rawInputType}.encode(request).finish()`;
+-    let decode = (0, ts_poet_1.code) `data => ${rawOutputType}.decode(${Reader}.create(data))`;
++    let encode = (0, ts_poet_1.code) `${rawInputType}.toJSON(request)`;
++    let decode = (0, ts_poet_1.code) `data => ${rawOutputType}.fromJSON(data)`;
+     // if (options.useDate && rawOutputType.toString().includes("Timestamp")) {
+     //   decode = code`data => ${utils.fromTimestamp}(${rawOutputType}.decode(${Reader}.create(data)))`;
+     // }
 @@ -158,6 +158,7 @@ function generateServiceClientImpl(ctx, fileDesc, serviceDesc) {
      chunks.push((0, ts_poet_1.code) `export class ${name}ClientImpl${t} implements ${(0, ts_poet_1.def)(i)} {`);
      // Create the constructor(rpc: Rpc)
@@ -10,3 +21,12 @@ index 8117f7f..e3d6fe6 100644
      chunks.push((0, ts_poet_1.code) `private readonly rpc: ${rpcType};`);
      chunks.push((0, ts_poet_1.code) `private readonly service: string;`);
      chunks.push((0, ts_poet_1.code) `constructor(rpc: ${rpcType}, opts?: {service?: string}) {`);
+@@ -284,7 +285,7 @@ function generateRpcType(ctx, hasStreamingMethods) {
+     const maybeContext = options.context ? "<Context>" : "";
+     const maybeContextParam = options.context ? "ctx: Context," : "";
+     const maybeAbortSignalParam = options.useAbortSignal ? "abortSignal?: AbortSignal," : "";
+-    const methods = [[(0, ts_poet_1.code) `request`, (0, ts_poet_1.code) `Uint8Array`, (0, ts_poet_1.code) `Promise<Uint8Array>`]];
++    const methods = [[(0, ts_poet_1.code) `request`, (0, ts_poet_1.code) `unknown`, (0, ts_poet_1.code) `Promise<unknown>`]];
+     if (hasStreamingMethods) {
+         const observable = (0, types_1.observableType)(ctx, true);
+         methods.push([(0, ts_poet_1.code) `clientStreamingRequest`, (0, ts_poet_1.code) `${observable}<Uint8Array>`, (0, ts_poet_1.code) `Promise<Uint8Array>`]);

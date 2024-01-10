@@ -483,43 +483,62 @@ export interface StringListPair {
   readonly value: readonly string[];
 }
 
-/** Reports details about the server. */
+/** Public details about the server. */
 export interface ServerDetails {
   readonly serverVersion: string;
   readonly botVersion: string;
+  /** @deprecated */
   readonly machineProviderTemplate: string;
   readonly displayServerUrlTemplate: string;
+  /** @deprecated */
   readonly luciConfig: string;
   readonly casViewerServer: string;
 }
 
-/** Returns a token to bootstrap a new bot. */
+/** An opaque token that can be used to bootstrap a new bot. */
 export interface BootstrapToken {
   readonly bootstrapToken: string;
 }
 
-/** Reports the client's permissions. */
+/**
+ * Actions the caller is permitted to perform over a resource.
+ *
+ * The subject of an action is either a bot, a task or a bunch of pools, as
+ * specified in the PermissionsRequest message. Pools as specified indirectly
+ * via "pool:<name>" tags.
+ *
+ * This methods exists primarily to be used by the Web UI e.g. to hide
+ * inaccessible elements.
+ */
 export interface ClientPermissions {
+  /** True if allowed to delete the specified bot. */
   readonly deleteBot: boolean;
+  /** True if allowed to delete bots in all specified pools. */
   readonly deleteBots: boolean;
+  /** True if allowed to terminate the specified bot. */
   readonly terminateBot: boolean;
+  /**
+   * Not used, always false.
+   *
+   * @deprecated
+   */
   readonly getConfigs: boolean;
+  /**
+   * Not used, always false.
+   *
+   * @deprecated
+   */
   readonly putConfigs: boolean;
-  /** Cancel one single task */
+  /** True if allowed to cancel the specified task. */
   readonly cancelTask: boolean;
+  /** True if allowed to request a bot bootstrap token. */
   readonly getBootstrapToken: boolean;
-  /** Cancel multiple tasks at once, usually in emergencies. */
+  /** True if allowed to cancel tasks in all specified pools. */
   readonly cancelTasks: boolean;
+  /** All known pools in which the caller is permitted to list all bots. */
   readonly listBots: readonly string[];
+  /** All known pools in which the caller is permitted to list all tasks. */
   readonly listTasks: readonly string[];
-}
-
-/** contents of a file */
-export interface FileContent {
-  readonly content: string;
-  readonly version: string;
-  readonly who: string;
-  readonly when: string | undefined;
 }
 
 /**
@@ -1153,8 +1172,6 @@ export interface TaskResultResponse {
   readonly botVersion: string;
   /** The cloud project id where the bot saves its logs. */
   readonly botLogsCloudProject: string;
-  /** List of task IDs that this task triggered, if any. */
-  readonly childrenTaskIds: readonly string[];
   /**
    * Time the task completed normally. Only one of abandoned_ts or completed_ts
    * can be set except for state == KILLED.
@@ -1294,25 +1311,6 @@ export interface TaskRequestMetadataResponse {
     | undefined;
   /** Set to finished task result in case task was deduplicated. */
   readonly taskResult: TaskResultResponse | undefined;
-}
-
-export interface TaskQueue {
-  /**
-   * Must be a list of 'key:value' strings to filter the returned list of bots
-   * on.
-   */
-  readonly dimensions: readonly StringPair[];
-  readonly validUntilTs: string | undefined;
-}
-
-export interface TaskQueueList {
-  readonly cursor: string;
-  /**
-   * Note that it's possible that the RPC returns a tad more or less items than
-   * requested limit.
-   */
-  readonly items: readonly TaskQueue[];
-  readonly now: string | undefined;
 }
 
 /** Representation of the BotInfo ndb model. */
@@ -1503,11 +1501,6 @@ export interface TaskIdWithOffsetRequest {
 export interface TaskIdWithPerfRequest {
   readonly taskId: string;
   readonly includePerformanceStats: boolean;
-}
-
-export interface TaskQueuesRequest {
-  readonly limit: number;
-  readonly cursor: string;
 }
 
 export interface BatchGetResultRequest {
@@ -2082,110 +2075,6 @@ export const ClientPermissions = {
     message.cancelTasks = object.cancelTasks ?? false;
     message.listBots = object.listBots?.map((e) => e) || [];
     message.listTasks = object.listTasks?.map((e) => e) || [];
-    return message;
-  },
-};
-
-function createBaseFileContent(): FileContent {
-  return { content: "", version: "", who: "", when: undefined };
-}
-
-export const FileContent = {
-  encode(message: FileContent, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.content !== "") {
-      writer.uint32(10).string(message.content);
-    }
-    if (message.version !== "") {
-      writer.uint32(18).string(message.version);
-    }
-    if (message.who !== "") {
-      writer.uint32(26).string(message.who);
-    }
-    if (message.when !== undefined) {
-      Timestamp.encode(toTimestamp(message.when), writer.uint32(34).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): FileContent {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFileContent() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.content = reader.string();
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.version = reader.string();
-          continue;
-        case 3:
-          if (tag !== 26) {
-            break;
-          }
-
-          message.who = reader.string();
-          continue;
-        case 4:
-          if (tag !== 34) {
-            break;
-          }
-
-          message.when = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): FileContent {
-    return {
-      content: isSet(object.content) ? globalThis.String(object.content) : "",
-      version: isSet(object.version) ? globalThis.String(object.version) : "",
-      who: isSet(object.who) ? globalThis.String(object.who) : "",
-      when: isSet(object.when) ? globalThis.String(object.when) : undefined,
-    };
-  },
-
-  toJSON(message: FileContent): unknown {
-    const obj: any = {};
-    if (message.content !== "") {
-      obj.content = message.content;
-    }
-    if (message.version !== "") {
-      obj.version = message.version;
-    }
-    if (message.who !== "") {
-      obj.who = message.who;
-    }
-    if (message.when !== undefined) {
-      obj.when = message.when;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<FileContent>, I>>(base?: I): FileContent {
-    return FileContent.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<FileContent>, I>>(object: I): FileContent {
-    const message = createBaseFileContent() as any;
-    message.content = object.content ?? "";
-    message.version = object.version ?? "";
-    message.who = object.who ?? "";
-    message.when = object.when ?? undefined;
     return message;
   },
 };
@@ -5029,7 +4918,6 @@ function createBaseTaskResultResponse(): TaskResultResponse {
     botIdleSinceTs: undefined,
     botVersion: "",
     botLogsCloudProject: "",
-    childrenTaskIds: [],
     completedTs: undefined,
     costSavedUsd: 0,
     createdTs: undefined,
@@ -5077,9 +4965,6 @@ export const TaskResultResponse = {
     }
     if (message.botLogsCloudProject !== "") {
       writer.uint32(50).string(message.botLogsCloudProject);
-    }
-    for (const v of message.childrenTaskIds) {
-      writer.uint32(58).string(v!);
     }
     if (message.completedTs !== undefined) {
       Timestamp.encode(toTimestamp(message.completedTs), writer.uint32(66).fork()).ldelim();
@@ -5209,13 +5094,6 @@ export const TaskResultResponse = {
           }
 
           message.botLogsCloudProject = reader.string();
-          continue;
-        case 7:
-          if (tag !== 58) {
-            break;
-          }
-
-          message.childrenTaskIds.push(reader.string());
           continue;
         case 8:
           if (tag !== 66) {
@@ -5421,9 +5299,6 @@ export const TaskResultResponse = {
       botIdleSinceTs: isSet(object.botIdleSinceTs) ? globalThis.String(object.botIdleSinceTs) : undefined,
       botVersion: isSet(object.botVersion) ? globalThis.String(object.botVersion) : "",
       botLogsCloudProject: isSet(object.botLogsCloudProject) ? globalThis.String(object.botLogsCloudProject) : "",
-      childrenTaskIds: globalThis.Array.isArray(object?.childrenTaskIds)
-        ? object.childrenTaskIds.map((e: any) => globalThis.String(e))
-        : [],
       completedTs: isSet(object.completedTs) ? globalThis.String(object.completedTs) : undefined,
       costSavedUsd: isSet(object.costSavedUsd) ? globalThis.Number(object.costSavedUsd) : 0,
       createdTs: isSet(object.createdTs) ? globalThis.String(object.createdTs) : undefined,
@@ -5477,9 +5352,6 @@ export const TaskResultResponse = {
     }
     if (message.botLogsCloudProject !== "") {
       obj.botLogsCloudProject = message.botLogsCloudProject;
-    }
-    if (message.childrenTaskIds?.length) {
-      obj.childrenTaskIds = message.childrenTaskIds;
     }
     if (message.completedTs !== undefined) {
       obj.completedTs = message.completedTs;
@@ -5570,7 +5442,6 @@ export const TaskResultResponse = {
     message.botIdleSinceTs = object.botIdleSinceTs ?? undefined;
     message.botVersion = object.botVersion ?? "";
     message.botLogsCloudProject = object.botLogsCloudProject ?? "";
-    message.childrenTaskIds = object.childrenTaskIds?.map((e) => e) || [];
     message.completedTs = object.completedTs ?? undefined;
     message.costSavedUsd = object.costSavedUsd ?? 0;
     message.createdTs = object.createdTs ?? undefined;
@@ -6024,171 +5895,6 @@ export const TaskRequestMetadataResponse = {
     message.taskResult = (object.taskResult !== undefined && object.taskResult !== null)
       ? TaskResultResponse.fromPartial(object.taskResult)
       : undefined;
-    return message;
-  },
-};
-
-function createBaseTaskQueue(): TaskQueue {
-  return { dimensions: [], validUntilTs: undefined };
-}
-
-export const TaskQueue = {
-  encode(message: TaskQueue, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.dimensions) {
-      StringPair.encode(v!, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.validUntilTs !== undefined) {
-      Timestamp.encode(toTimestamp(message.validUntilTs), writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): TaskQueue {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTaskQueue() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.dimensions.push(StringPair.decode(reader, reader.uint32()));
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.validUntilTs = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TaskQueue {
-    return {
-      dimensions: globalThis.Array.isArray(object?.dimensions)
-        ? object.dimensions.map((e: any) => StringPair.fromJSON(e))
-        : [],
-      validUntilTs: isSet(object.validUntilTs) ? globalThis.String(object.validUntilTs) : undefined,
-    };
-  },
-
-  toJSON(message: TaskQueue): unknown {
-    const obj: any = {};
-    if (message.dimensions?.length) {
-      obj.dimensions = message.dimensions.map((e) => StringPair.toJSON(e));
-    }
-    if (message.validUntilTs !== undefined) {
-      obj.validUntilTs = message.validUntilTs;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<TaskQueue>, I>>(base?: I): TaskQueue {
-    return TaskQueue.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<TaskQueue>, I>>(object: I): TaskQueue {
-    const message = createBaseTaskQueue() as any;
-    message.dimensions = object.dimensions?.map((e) => StringPair.fromPartial(e)) || [];
-    message.validUntilTs = object.validUntilTs ?? undefined;
-    return message;
-  },
-};
-
-function createBaseTaskQueueList(): TaskQueueList {
-  return { cursor: "", items: [], now: undefined };
-}
-
-export const TaskQueueList = {
-  encode(message: TaskQueueList, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.cursor !== "") {
-      writer.uint32(10).string(message.cursor);
-    }
-    for (const v of message.items) {
-      TaskQueue.encode(v!, writer.uint32(18).fork()).ldelim();
-    }
-    if (message.now !== undefined) {
-      Timestamp.encode(toTimestamp(message.now), writer.uint32(26).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): TaskQueueList {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTaskQueueList() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.cursor = reader.string();
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.items.push(TaskQueue.decode(reader, reader.uint32()));
-          continue;
-        case 3:
-          if (tag !== 26) {
-            break;
-          }
-
-          message.now = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TaskQueueList {
-    return {
-      cursor: isSet(object.cursor) ? globalThis.String(object.cursor) : "",
-      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => TaskQueue.fromJSON(e)) : [],
-      now: isSet(object.now) ? globalThis.String(object.now) : undefined,
-    };
-  },
-
-  toJSON(message: TaskQueueList): unknown {
-    const obj: any = {};
-    if (message.cursor !== "") {
-      obj.cursor = message.cursor;
-    }
-    if (message.items?.length) {
-      obj.items = message.items.map((e) => TaskQueue.toJSON(e));
-    }
-    if (message.now !== undefined) {
-      obj.now = message.now;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<TaskQueueList>, I>>(base?: I): TaskQueueList {
-    return TaskQueueList.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<TaskQueueList>, I>>(object: I): TaskQueueList {
-    const message = createBaseTaskQueueList() as any;
-    message.cursor = object.cursor ?? "";
-    message.items = object.items?.map((e) => TaskQueue.fromPartial(e)) || [];
-    message.now = object.now ?? undefined;
     return message;
   },
 };
@@ -8696,80 +8402,6 @@ export const TaskIdWithPerfRequest = {
   },
 };
 
-function createBaseTaskQueuesRequest(): TaskQueuesRequest {
-  return { limit: 0, cursor: "" };
-}
-
-export const TaskQueuesRequest = {
-  encode(message: TaskQueuesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.limit !== 0) {
-      writer.uint32(8).int32(message.limit);
-    }
-    if (message.cursor !== "") {
-      writer.uint32(18).string(message.cursor);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): TaskQueuesRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTaskQueuesRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 8) {
-            break;
-          }
-
-          message.limit = reader.int32();
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.cursor = reader.string();
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TaskQueuesRequest {
-    return {
-      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
-      cursor: isSet(object.cursor) ? globalThis.String(object.cursor) : "",
-    };
-  },
-
-  toJSON(message: TaskQueuesRequest): unknown {
-    const obj: any = {};
-    if (message.limit !== 0) {
-      obj.limit = Math.round(message.limit);
-    }
-    if (message.cursor !== "") {
-      obj.cursor = message.cursor;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<TaskQueuesRequest>, I>>(base?: I): TaskQueuesRequest {
-    return TaskQueuesRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<TaskQueuesRequest>, I>>(object: I): TaskQueuesRequest {
-    const message = createBaseTaskQueuesRequest() as any;
-    message.limit = object.limit ?? 0;
-    message.cursor = object.cursor ?? "";
-    return message;
-  },
-};
-
 function createBaseBatchGetResultRequest(): BatchGetResultRequest {
   return { taskIds: [], includePerformanceStats: false };
 }
@@ -9079,51 +8711,51 @@ export class BotsClientImpl implements Bots {
     this.GetBotDimensions = this.GetBotDimensions.bind(this);
   }
   GetBot(request: BotRequest): Promise<BotInfo> {
-    const data = BotRequest.encode(request).finish();
+    const data = BotRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetBot", data);
-    return promise.then((data) => BotInfo.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BotInfo.fromJSON(data));
   }
 
   DeleteBot(request: BotRequest): Promise<DeleteResponse> {
-    const data = BotRequest.encode(request).finish();
+    const data = BotRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "DeleteBot", data);
-    return promise.then((data) => DeleteResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => DeleteResponse.fromJSON(data));
   }
 
   ListBotEvents(request: BotEventsRequest): Promise<BotEventsResponse> {
-    const data = BotEventsRequest.encode(request).finish();
+    const data = BotEventsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListBotEvents", data);
-    return promise.then((data) => BotEventsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BotEventsResponse.fromJSON(data));
   }
 
   TerminateBot(request: TerminateRequest): Promise<TerminateResponse> {
-    const data = TerminateRequest.encode(request).finish();
+    const data = TerminateRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "TerminateBot", data);
-    return promise.then((data) => TerminateResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TerminateResponse.fromJSON(data));
   }
 
   ListBotTasks(request: BotTasksRequest): Promise<TaskListResponse> {
-    const data = BotTasksRequest.encode(request).finish();
+    const data = BotTasksRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListBotTasks", data);
-    return promise.then((data) => TaskListResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TaskListResponse.fromJSON(data));
   }
 
   ListBots(request: BotsRequest): Promise<BotInfoListResponse> {
-    const data = BotsRequest.encode(request).finish();
+    const data = BotsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListBots", data);
-    return promise.then((data) => BotInfoListResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BotInfoListResponse.fromJSON(data));
   }
 
   CountBots(request: BotsCountRequest): Promise<BotsCount> {
-    const data = BotsCountRequest.encode(request).finish();
+    const data = BotsCountRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CountBots", data);
-    return promise.then((data) => BotsCount.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BotsCount.fromJSON(data));
   }
 
   GetBotDimensions(request: BotsDimensionsRequest): Promise<BotsDimensions> {
-    const data = BotsDimensionsRequest.encode(request).finish();
+    const data = BotsDimensionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetBotDimensions", data);
-    return promise.then((data) => BotsDimensions.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BotsDimensions.fromJSON(data));
   }
 }
 
@@ -9194,93 +8826,79 @@ export class TasksClientImpl implements Tasks {
     this.CountTasks = this.CountTasks.bind(this);
   }
   GetResult(request: TaskIdWithPerfRequest): Promise<TaskResultResponse> {
-    const data = TaskIdWithPerfRequest.encode(request).finish();
+    const data = TaskIdWithPerfRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetResult", data);
-    return promise.then((data) => TaskResultResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TaskResultResponse.fromJSON(data));
   }
 
   BatchGetResult(request: BatchGetResultRequest): Promise<BatchGetResultResponse> {
-    const data = BatchGetResultRequest.encode(request).finish();
+    const data = BatchGetResultRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "BatchGetResult", data);
-    return promise.then((data) => BatchGetResultResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BatchGetResultResponse.fromJSON(data));
   }
 
   GetRequest(request: TaskIdRequest): Promise<TaskRequestResponse> {
-    const data = TaskIdRequest.encode(request).finish();
+    const data = TaskIdRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetRequest", data);
-    return promise.then((data) => TaskRequestResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TaskRequestResponse.fromJSON(data));
   }
 
   CancelTask(request: TaskCancelRequest): Promise<CancelResponse> {
-    const data = TaskCancelRequest.encode(request).finish();
+    const data = TaskCancelRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CancelTask", data);
-    return promise.then((data) => CancelResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => CancelResponse.fromJSON(data));
   }
 
   GetStdout(request: TaskIdWithOffsetRequest): Promise<TaskOutputResponse> {
-    const data = TaskIdWithOffsetRequest.encode(request).finish();
+    const data = TaskIdWithOffsetRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetStdout", data);
-    return promise.then((data) => TaskOutputResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TaskOutputResponse.fromJSON(data));
   }
 
   NewTask(request: NewTaskRequest): Promise<TaskRequestMetadataResponse> {
-    const data = NewTaskRequest.encode(request).finish();
+    const data = NewTaskRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "NewTask", data);
-    return promise.then((data) => TaskRequestMetadataResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TaskRequestMetadataResponse.fromJSON(data));
   }
 
   ListTasks(request: TasksWithPerfRequest): Promise<TaskListResponse> {
-    const data = TasksWithPerfRequest.encode(request).finish();
+    const data = TasksWithPerfRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListTasks", data);
-    return promise.then((data) => TaskListResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TaskListResponse.fromJSON(data));
   }
 
   ListTaskStates(request: TaskStatesRequest): Promise<TaskStates> {
-    const data = TaskStatesRequest.encode(request).finish();
+    const data = TaskStatesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListTaskStates", data);
-    return promise.then((data) => TaskStates.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TaskStates.fromJSON(data));
   }
 
   ListTaskRequests(request: TasksRequest): Promise<TaskRequestsResponse> {
-    const data = TasksRequest.encode(request).finish();
+    const data = TasksRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListTaskRequests", data);
-    return promise.then((data) => TaskRequestsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TaskRequestsResponse.fromJSON(data));
   }
 
   CancelTasks(request: TasksCancelRequest): Promise<TasksCancelResponse> {
-    const data = TasksCancelRequest.encode(request).finish();
+    const data = TasksCancelRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CancelTasks", data);
-    return promise.then((data) => TasksCancelResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TasksCancelResponse.fromJSON(data));
   }
 
   CountTasks(request: TasksCountRequest): Promise<TasksCount> {
-    const data = TasksCountRequest.encode(request).finish();
+    const data = TasksCountRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CountTasks", data);
-    return promise.then((data) => TasksCount.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TasksCount.fromJSON(data));
   }
 }
 
 export interface Swarming {
-  /**
-   * ListQueues returns a list of task queues. Each queue contains a list of dimensions
-   * associated with that queue and an expiry date for each dimension.
-   */
-  ListQueues(request: TaskQueuesRequest): Promise<TaskQueueList>;
-  /** GetDetails returns information about the server */
+  /** GetDetails returns public information about the Swarming instance. */
   GetDetails(request: Empty): Promise<ServerDetails>;
-  /**
-   * GetToken returns a token to bootstrap a new bot.
-   * This may seem strange to be a POST and not a GET, but it's very
-   * important to make sure GET requests are idempotent and safe
-   * to be pre-fetched; generating a token is neither of those things.
-   */
+  /** GetToken returns a token to bootstrap a new bot. */
   GetToken(request: Empty): Promise<BootstrapToken>;
   /** GetPermissions returns the caller's permissions. */
   GetPermissions(request: PermissionsRequest): Promise<ClientPermissions>;
-  /** GetBootStrap returns the current version of bootstrap.py. */
-  GetBootstrap(request: Empty): Promise<FileContent>;
-  /** GetBotConfig returns the current version of bot_config.py. */
-  GetBotConfig(request: Empty): Promise<FileContent>;
 }
 
 export const SwarmingServiceName = "swarming.v2.Swarming";
@@ -9291,52 +8909,31 @@ export class SwarmingClientImpl implements Swarming {
   constructor(rpc: Rpc, opts?: { service?: string }) {
     this.service = opts?.service || SwarmingServiceName;
     this.rpc = rpc;
-    this.ListQueues = this.ListQueues.bind(this);
     this.GetDetails = this.GetDetails.bind(this);
     this.GetToken = this.GetToken.bind(this);
     this.GetPermissions = this.GetPermissions.bind(this);
-    this.GetBootstrap = this.GetBootstrap.bind(this);
-    this.GetBotConfig = this.GetBotConfig.bind(this);
   }
-  ListQueues(request: TaskQueuesRequest): Promise<TaskQueueList> {
-    const data = TaskQueuesRequest.encode(request).finish();
-    const promise = this.rpc.request(this.service, "ListQueues", data);
-    return promise.then((data) => TaskQueueList.decode(_m0.Reader.create(data)));
-  }
-
   GetDetails(request: Empty): Promise<ServerDetails> {
-    const data = Empty.encode(request).finish();
+    const data = Empty.toJSON(request);
     const promise = this.rpc.request(this.service, "GetDetails", data);
-    return promise.then((data) => ServerDetails.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ServerDetails.fromJSON(data));
   }
 
   GetToken(request: Empty): Promise<BootstrapToken> {
-    const data = Empty.encode(request).finish();
+    const data = Empty.toJSON(request);
     const promise = this.rpc.request(this.service, "GetToken", data);
-    return promise.then((data) => BootstrapToken.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BootstrapToken.fromJSON(data));
   }
 
   GetPermissions(request: PermissionsRequest): Promise<ClientPermissions> {
-    const data = PermissionsRequest.encode(request).finish();
+    const data = PermissionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetPermissions", data);
-    return promise.then((data) => ClientPermissions.decode(_m0.Reader.create(data)));
-  }
-
-  GetBootstrap(request: Empty): Promise<FileContent> {
-    const data = Empty.encode(request).finish();
-    const promise = this.rpc.request(this.service, "GetBootstrap", data);
-    return promise.then((data) => FileContent.decode(_m0.Reader.create(data)));
-  }
-
-  GetBotConfig(request: Empty): Promise<FileContent> {
-    const data = Empty.encode(request).finish();
-    const promise = this.rpc.request(this.service, "GetBotConfig", data);
-    return promise.then((data) => FileContent.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ClientPermissions.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 function bytesFromBase64(b64: string): Uint8Array {

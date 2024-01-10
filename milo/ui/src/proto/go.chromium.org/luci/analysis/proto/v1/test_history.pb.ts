@@ -1333,32 +1333,32 @@ export class TestHistoryClientImpl implements TestHistory {
     this.QueryTests = this.QueryTests.bind(this);
   }
   Query(request: QueryTestHistoryRequest): Promise<QueryTestHistoryResponse> {
-    const data = QueryTestHistoryRequest.encode(request).finish();
+    const data = QueryTestHistoryRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "Query", data);
-    return promise.then((data) => QueryTestHistoryResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryTestHistoryResponse.fromJSON(data));
   }
 
   QueryStats(request: QueryTestHistoryStatsRequest): Promise<QueryTestHistoryStatsResponse> {
-    const data = QueryTestHistoryStatsRequest.encode(request).finish();
+    const data = QueryTestHistoryStatsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryStats", data);
-    return promise.then((data) => QueryTestHistoryStatsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryTestHistoryStatsResponse.fromJSON(data));
   }
 
   QueryVariants(request: QueryVariantsRequest): Promise<QueryVariantsResponse> {
-    const data = QueryVariantsRequest.encode(request).finish();
+    const data = QueryVariantsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryVariants", data);
-    return promise.then((data) => QueryVariantsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryVariantsResponse.fromJSON(data));
   }
 
   QueryTests(request: QueryTestsRequest): Promise<QueryTestsResponse> {
-    const data = QueryTestsRequest.encode(request).finish();
+    const data = QueryTestsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTests", data);
-    return promise.then((data) => QueryTestsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryTestsResponse.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;

@@ -22,7 +22,7 @@ import {
   useAuthState,
   useGetAccessToken,
 } from '@/common/components/auth_state_provider';
-import { BinaryPrpcClient } from '@/generic_libs/tools/prpc_client';
+import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 
 import {
   PrpcMethod,
@@ -102,7 +102,7 @@ export function usePrpcQuery<
     queryKey,
     queryFn: async () => {
       const client = new ClientImpl(
-        new BinaryPrpcClient({ host, insecure, getAuthToken }),
+        new PrpcClient({ host, insecure, getAuthToken }),
       );
       // `method` is constrained to be a key that has an associated property of
       // type `PrpcMethod` in a `Service`. Therefore `service[method]` is

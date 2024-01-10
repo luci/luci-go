@@ -14,111 +14,100 @@
 
 import { GrpcError, ProtocolError, RpcCode } from '@chopsui/prpc-client';
 
-import { BinaryPrpcClient } from './prpc_client';
+import { PrpcClient } from './prpc_client';
 
-describe('BinaryPrpcClient', () => {
-  const enc = new TextEncoder();
-  const dec = new TextDecoder();
-
+describe('PrpcClient', () => {
   it('without token', async () => {
     const mockedFetch = jest.fn(fetch).mockResolvedValue(
-      new Response(enc.encode('response'), {
+      new Response(')]}\'\n{"key":"response"}', {
         headers: {
           'X-Prpc-Grpc-Code': RpcCode.OK.toString(),
         },
       }),
     );
-    const client = new BinaryPrpcClient({
+    const client = new PrpcClient({
       host: 'host.com',
       fetchImpl: mockedFetch,
       getAuthToken: () => '',
     });
 
-    const res = await client.request(
-      'service',
-      'method',
-      enc.encode('request'),
-    );
+    const res = await client.request('service', 'method', { key: 'request' });
     expect(mockedFetch).toHaveBeenCalledWith(
       'https://host.com/prpc/service/method',
       {
-        body: enc.encode('request'),
+        body: JSON.stringify({ key: 'request' }),
         credentials: 'omit',
         headers: {
-          accept: 'application/prpc; encoding=binary',
-          'content-type': 'application/prpc; encoding=binary',
+          accept: 'application/json',
+          'content-type': 'application/json',
         },
         method: 'POST',
       },
     );
-    expect(dec.decode(res)).toEqual('response');
+    expect(res).toEqual({ key: 'response' });
   });
 
   it('with token', async () => {
     const mockedFetch = jest.fn(fetch).mockResolvedValue(
-      new Response(enc.encode('response'), {
+      new Response(')]}\'\n{"key":"response"}', {
         headers: {
           'X-Prpc-Grpc-Code': RpcCode.OK.toString(),
         },
       }),
     );
-    const client = new BinaryPrpcClient({
+    const client = new PrpcClient({
       host: 'host.com',
       fetchImpl: mockedFetch,
       getAuthToken: () => 'auth token',
     });
 
-    const res = await client.request(
-      'service',
-      'method',
-      enc.encode('request'),
-    );
+    const res = await client.request('service', 'method', { key: 'request' });
     expect(mockedFetch).toHaveBeenCalledWith(
       'https://host.com/prpc/service/method',
       {
-        body: enc.encode('request'),
+        body: JSON.stringify({ key: 'request' }),
         credentials: 'omit',
         headers: {
-          accept: 'application/prpc; encoding=binary',
-          'content-type': 'application/prpc; encoding=binary',
+          accept: 'application/json',
+          'content-type': 'application/json',
           authorization: 'Bearer auth token',
         },
         method: 'POST',
       },
     );
-    expect(dec.decode(res)).toEqual('response');
+    expect(res).toEqual({ key: 'response' });
   });
 
   it('RPC error', async () => {
     const mockedFetch = jest.fn(fetch).mockResolvedValue(
-      new Response(enc.encode('response'), {
+      new Response('not found', {
         headers: {
           'X-Prpc-Grpc-Code': RpcCode.NOT_FOUND.toString(),
         },
       }),
     );
-    const client = new BinaryPrpcClient({
+    const client = new PrpcClient({
       host: 'host.com',
       fetchImpl: mockedFetch,
     });
 
-    const call = client.request('service', 'method', enc.encode('request'));
+    const call = client.request('service', 'method', { key: 'request' });
     await expect(call).rejects.toEqual(expect.any(GrpcError));
     const err = (await call.catch((e) => e)) as GrpcError;
     expect(err.code).toEqual(RpcCode.NOT_FOUND);
-    expect(err.description).toEqual('response');
+    expect(err.description).toEqual('not found');
   });
 
   it('protocol error', async () => {
     const mockedFetch = jest
       .fn(fetch)
-      .mockResolvedValue(new Response(enc.encode('response')));
-    const client = new BinaryPrpcClient({
+      .mockResolvedValue(new Response(')]}\'\n{"key":"response"}'));
+    const client = new PrpcClient({
       host: 'host.com',
       fetchImpl: mockedFetch,
     });
 
-    const call = client.request('service', 'method', enc.encode('request'));
+    const call = client.request('service', 'method', { key: 'request' });
     await expect(call).rejects.toEqual(expect.any(ProtocolError));
     const err = (await call.catch((e) => e)) as ProtocolError;
     expect(err.httpStatus).toEqual(200);
@@ -127,19 +116,19 @@ describe('BinaryPrpcClient', () => {
 
   it('invalid RPC code', async () => {
     const mockedFetch = jest.fn(fetch).mockResolvedValue(
-      new Response(enc.encode('response'), {
+      new Response(')]}\'\n{"key":"response"}', {
         status: 400,
         headers: {
           'X-Prpc-Grpc-Code': 'not a string',
         },
       }),
     );
-    const client = new BinaryPrpcClient({
+    const client = new PrpcClient({
       host: 'host.com',
       fetchImpl: mockedFetch,
     });
 
-    const call = client.request('service', 'method', enc.encode('request'));
+    const call = client.request('service', 'method', { key: 'request' });
     await expect(call).rejects.toEqual(expect.any(ProtocolError));
     const err = (await call.catch((e) => e)) as ProtocolError;
     expect(err.httpStatus).toEqual(400);

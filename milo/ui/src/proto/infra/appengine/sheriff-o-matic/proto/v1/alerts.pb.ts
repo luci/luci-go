@@ -309,14 +309,14 @@ export class AlertsClientImpl implements Alerts {
     this.ListAlerts = this.ListAlerts.bind(this);
   }
   ListAlerts(request: ListAlertsRequest): Promise<ListAlertsResponse> {
-    const data = ListAlertsRequest.encode(request).finish();
+    const data = ListAlertsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListAlerts", data);
-    return promise.then((data) => ListAlertsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListAlertsResponse.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;

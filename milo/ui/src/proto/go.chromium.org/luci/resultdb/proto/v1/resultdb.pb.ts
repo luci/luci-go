@@ -3185,98 +3185,98 @@ export class ResultDBClientImpl implements ResultDB {
     this.QueryTestMetadata = this.QueryTestMetadata.bind(this);
   }
   GetInvocation(request: GetInvocationRequest): Promise<Invocation> {
-    const data = GetInvocationRequest.encode(request).finish();
+    const data = GetInvocationRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetInvocation", data);
-    return promise.then((data) => Invocation.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Invocation.fromJSON(data));
   }
 
   GetTestResult(request: GetTestResultRequest): Promise<TestResult> {
-    const data = GetTestResultRequest.encode(request).finish();
+    const data = GetTestResultRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetTestResult", data);
-    return promise.then((data) => TestResult.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TestResult.fromJSON(data));
   }
 
   ListTestResults(request: ListTestResultsRequest): Promise<ListTestResultsResponse> {
-    const data = ListTestResultsRequest.encode(request).finish();
+    const data = ListTestResultsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListTestResults", data);
-    return promise.then((data) => ListTestResultsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListTestResultsResponse.fromJSON(data));
   }
 
   GetTestExoneration(request: GetTestExonerationRequest): Promise<TestExoneration> {
-    const data = GetTestExonerationRequest.encode(request).finish();
+    const data = GetTestExonerationRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetTestExoneration", data);
-    return promise.then((data) => TestExoneration.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TestExoneration.fromJSON(data));
   }
 
   ListTestExonerations(request: ListTestExonerationsRequest): Promise<ListTestExonerationsResponse> {
-    const data = ListTestExonerationsRequest.encode(request).finish();
+    const data = ListTestExonerationsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListTestExonerations", data);
-    return promise.then((data) => ListTestExonerationsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListTestExonerationsResponse.fromJSON(data));
   }
 
   QueryTestResults(request: QueryTestResultsRequest): Promise<QueryTestResultsResponse> {
-    const data = QueryTestResultsRequest.encode(request).finish();
+    const data = QueryTestResultsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTestResults", data);
-    return promise.then((data) => QueryTestResultsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryTestResultsResponse.fromJSON(data));
   }
 
   QueryTestExonerations(request: QueryTestExonerationsRequest): Promise<QueryTestExonerationsResponse> {
-    const data = QueryTestExonerationsRequest.encode(request).finish();
+    const data = QueryTestExonerationsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTestExonerations", data);
-    return promise.then((data) => QueryTestExonerationsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryTestExonerationsResponse.fromJSON(data));
   }
 
   QueryTestResultStatistics(request: QueryTestResultStatisticsRequest): Promise<QueryTestResultStatisticsResponse> {
-    const data = QueryTestResultStatisticsRequest.encode(request).finish();
+    const data = QueryTestResultStatisticsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTestResultStatistics", data);
-    return promise.then((data) => QueryTestResultStatisticsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryTestResultStatisticsResponse.fromJSON(data));
   }
 
   QueryNewTestVariants(request: QueryNewTestVariantsRequest): Promise<QueryNewTestVariantsResponse> {
-    const data = QueryNewTestVariantsRequest.encode(request).finish();
+    const data = QueryNewTestVariantsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryNewTestVariants", data);
-    return promise.then((data) => QueryNewTestVariantsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryNewTestVariantsResponse.fromJSON(data));
   }
 
   GetArtifact(request: GetArtifactRequest): Promise<Artifact> {
-    const data = GetArtifactRequest.encode(request).finish();
+    const data = GetArtifactRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetArtifact", data);
-    return promise.then((data) => Artifact.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Artifact.fromJSON(data));
   }
 
   ListArtifacts(request: ListArtifactsRequest): Promise<ListArtifactsResponse> {
-    const data = ListArtifactsRequest.encode(request).finish();
+    const data = ListArtifactsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListArtifacts", data);
-    return promise.then((data) => ListArtifactsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListArtifactsResponse.fromJSON(data));
   }
 
   QueryArtifacts(request: QueryArtifactsRequest): Promise<QueryArtifactsResponse> {
-    const data = QueryArtifactsRequest.encode(request).finish();
+    const data = QueryArtifactsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryArtifacts", data);
-    return promise.then((data) => QueryArtifactsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryArtifactsResponse.fromJSON(data));
   }
 
   QueryTestVariants(request: QueryTestVariantsRequest): Promise<QueryTestVariantsResponse> {
-    const data = QueryTestVariantsRequest.encode(request).finish();
+    const data = QueryTestVariantsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTestVariants", data);
-    return promise.then((data) => QueryTestVariantsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryTestVariantsResponse.fromJSON(data));
   }
 
   BatchGetTestVariants(request: BatchGetTestVariantsRequest): Promise<BatchGetTestVariantsResponse> {
-    const data = BatchGetTestVariantsRequest.encode(request).finish();
+    const data = BatchGetTestVariantsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "BatchGetTestVariants", data);
-    return promise.then((data) => BatchGetTestVariantsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BatchGetTestVariantsResponse.fromJSON(data));
   }
 
   QueryTestMetadata(request: QueryTestMetadataRequest): Promise<QueryTestMetadataResponse> {
-    const data = QueryTestMetadataRequest.encode(request).finish();
+    const data = QueryTestMetadataRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTestMetadata", data);
-    return promise.then((data) => QueryTestMetadataResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryTestMetadataResponse.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;

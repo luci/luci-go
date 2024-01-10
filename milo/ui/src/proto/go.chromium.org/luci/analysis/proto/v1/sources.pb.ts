@@ -125,6 +125,27 @@ export interface GerritChange {
   readonly change: string;
   /** Patch set number, e.g. 1. */
   readonly patchset: string;
+  /** The kind of owner of the changelist. Output only. */
+  readonly ownerKind: ChangelistOwnerKind;
+}
+
+/** Represents a reference in a source control system. */
+export interface SourceRef {
+  /** A branch in gitiles repository. */
+  readonly gitiles?: GitilesRef | undefined;
+}
+
+/** Represents a branch in a gitiles repository. */
+export interface GitilesRef {
+  /** The gitiles host, e.g. "chromium.googlesource.com". */
+  readonly host: string;
+  /** The project on the gitiles host, e.g. "chromium/src". */
+  readonly project: string;
+  /**
+   * Commit ref, e.g. "refs/heads/main" from which the commit was fetched.
+   * Not the branch name, use "refs/heads/branch"
+   */
+  readonly ref: string;
 }
 
 /** A gerrit changelist. */
@@ -352,7 +373,7 @@ export const GitilesCommit = {
 };
 
 function createBaseGerritChange(): GerritChange {
-  return { host: "", project: "", change: "0", patchset: "0" };
+  return { host: "", project: "", change: "0", patchset: "0", ownerKind: 0 };
 }
 
 export const GerritChange = {
@@ -368,6 +389,9 @@ export const GerritChange = {
     }
     if (message.patchset !== "0") {
       writer.uint32(24).int64(message.patchset);
+    }
+    if (message.ownerKind !== 0) {
+      writer.uint32(32).int32(message.ownerKind);
     }
     return writer;
   },
@@ -407,6 +431,13 @@ export const GerritChange = {
 
           message.patchset = longToString(reader.int64() as Long);
           continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.ownerKind = reader.int32() as any;
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -422,6 +453,7 @@ export const GerritChange = {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       change: isSet(object.change) ? globalThis.String(object.change) : "0",
       patchset: isSet(object.patchset) ? globalThis.String(object.patchset) : "0",
+      ownerKind: isSet(object.ownerKind) ? changelistOwnerKindFromJSON(object.ownerKind) : 0,
     };
   },
 
@@ -439,6 +471,9 @@ export const GerritChange = {
     if (message.patchset !== "0") {
       obj.patchset = message.patchset;
     }
+    if (message.ownerKind !== 0) {
+      obj.ownerKind = changelistOwnerKindToJSON(message.ownerKind);
+    }
     return obj;
   },
 
@@ -451,6 +486,155 @@ export const GerritChange = {
     message.project = object.project ?? "";
     message.change = object.change ?? "0";
     message.patchset = object.patchset ?? "0";
+    message.ownerKind = object.ownerKind ?? 0;
+    return message;
+  },
+};
+
+function createBaseSourceRef(): SourceRef {
+  return { gitiles: undefined };
+}
+
+export const SourceRef = {
+  encode(message: SourceRef, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.gitiles !== undefined) {
+      GitilesRef.encode(message.gitiles, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SourceRef {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSourceRef() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.gitiles = GitilesRef.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SourceRef {
+    return { gitiles: isSet(object.gitiles) ? GitilesRef.fromJSON(object.gitiles) : undefined };
+  },
+
+  toJSON(message: SourceRef): unknown {
+    const obj: any = {};
+    if (message.gitiles !== undefined) {
+      obj.gitiles = GitilesRef.toJSON(message.gitiles);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SourceRef>, I>>(base?: I): SourceRef {
+    return SourceRef.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SourceRef>, I>>(object: I): SourceRef {
+    const message = createBaseSourceRef() as any;
+    message.gitiles = (object.gitiles !== undefined && object.gitiles !== null)
+      ? GitilesRef.fromPartial(object.gitiles)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGitilesRef(): GitilesRef {
+  return { host: "", project: "", ref: "" };
+}
+
+export const GitilesRef = {
+  encode(message: GitilesRef, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.host !== "") {
+      writer.uint32(10).string(message.host);
+    }
+    if (message.project !== "") {
+      writer.uint32(18).string(message.project);
+    }
+    if (message.ref !== "") {
+      writer.uint32(26).string(message.ref);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GitilesRef {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGitilesRef() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.host = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.ref = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GitilesRef {
+    return {
+      host: isSet(object.host) ? globalThis.String(object.host) : "",
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      ref: isSet(object.ref) ? globalThis.String(object.ref) : "",
+    };
+  },
+
+  toJSON(message: GitilesRef): unknown {
+    const obj: any = {};
+    if (message.host !== "") {
+      obj.host = message.host;
+    }
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.ref !== "") {
+      obj.ref = message.ref;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GitilesRef>, I>>(base?: I): GitilesRef {
+    return GitilesRef.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GitilesRef>, I>>(object: I): GitilesRef {
+    const message = createBaseGitilesRef() as any;
+    message.host = object.host ?? "";
+    message.project = object.project ?? "";
+    message.ref = object.ref ?? "";
     return message;
   },
 };

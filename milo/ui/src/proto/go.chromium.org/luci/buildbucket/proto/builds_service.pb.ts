@@ -3563,68 +3563,68 @@ export class BuildsClientImpl implements Builds {
     this.StartBuild = this.StartBuild.bind(this);
   }
   GetBuild(request: GetBuildRequest): Promise<Build> {
-    const data = GetBuildRequest.encode(request).finish();
+    const data = GetBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetBuild", data);
-    return promise.then((data) => Build.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Build.fromJSON(data));
   }
 
   SearchBuilds(request: SearchBuildsRequest): Promise<SearchBuildsResponse> {
-    const data = SearchBuildsRequest.encode(request).finish();
+    const data = SearchBuildsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "SearchBuilds", data);
-    return promise.then((data) => SearchBuildsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => SearchBuildsResponse.fromJSON(data));
   }
 
   UpdateBuild(request: UpdateBuildRequest): Promise<Build> {
-    const data = UpdateBuildRequest.encode(request).finish();
+    const data = UpdateBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "UpdateBuild", data);
-    return promise.then((data) => Build.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Build.fromJSON(data));
   }
 
   ScheduleBuild(request: ScheduleBuildRequest): Promise<Build> {
-    const data = ScheduleBuildRequest.encode(request).finish();
+    const data = ScheduleBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ScheduleBuild", data);
-    return promise.then((data) => Build.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Build.fromJSON(data));
   }
 
   CancelBuild(request: CancelBuildRequest): Promise<Build> {
-    const data = CancelBuildRequest.encode(request).finish();
+    const data = CancelBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CancelBuild", data);
-    return promise.then((data) => Build.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Build.fromJSON(data));
   }
 
   Batch(request: BatchRequest): Promise<BatchResponse> {
-    const data = BatchRequest.encode(request).finish();
+    const data = BatchRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "Batch", data);
-    return promise.then((data) => BatchResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BatchResponse.fromJSON(data));
   }
 
   CreateBuild(request: CreateBuildRequest): Promise<Build> {
-    const data = CreateBuildRequest.encode(request).finish();
+    const data = CreateBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CreateBuild", data);
-    return promise.then((data) => Build.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Build.fromJSON(data));
   }
 
   SynthesizeBuild(request: SynthesizeBuildRequest): Promise<Build> {
-    const data = SynthesizeBuildRequest.encode(request).finish();
+    const data = SynthesizeBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "SynthesizeBuild", data);
-    return promise.then((data) => Build.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Build.fromJSON(data));
   }
 
   GetBuildStatus(request: GetBuildStatusRequest): Promise<Build> {
-    const data = GetBuildStatusRequest.encode(request).finish();
+    const data = GetBuildStatusRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetBuildStatus", data);
-    return promise.then((data) => Build.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Build.fromJSON(data));
   }
 
   StartBuild(request: StartBuildRequest): Promise<StartBuildResponse> {
-    const data = StartBuildRequest.encode(request).finish();
+    const data = StartBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "StartBuild", data);
-    return promise.then((data) => StartBuildResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => StartBuildResponse.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;

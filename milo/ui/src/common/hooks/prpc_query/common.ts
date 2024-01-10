@@ -32,11 +32,7 @@ export type PrpcServiceMethodKeys<S> = keyof {
   string;
 
 interface Rpc {
-  request(
-    service: string,
-    method: string,
-    data: Uint8Array,
-  ): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 export interface PrpcQueryBaseOptions<S, MK, Req> {

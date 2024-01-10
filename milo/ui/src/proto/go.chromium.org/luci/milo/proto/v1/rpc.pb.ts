@@ -2438,62 +2438,62 @@ export class MiloInternalClientImpl implements MiloInternal {
     this.QueryConsoleSnapshots = this.QueryConsoleSnapshots.bind(this);
   }
   QueryBlamelist(request: QueryBlamelistRequest): Promise<QueryBlamelistResponse> {
-    const data = QueryBlamelistRequest.encode(request).finish();
+    const data = QueryBlamelistRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryBlamelist", data);
-    return promise.then((data) => QueryBlamelistResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryBlamelistResponse.fromJSON(data));
   }
 
   ListProjects(request: ListProjectsRequest): Promise<ListProjectsResponse> {
-    const data = ListProjectsRequest.encode(request).finish();
+    const data = ListProjectsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListProjects", data);
-    return promise.then((data) => ListProjectsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListProjectsResponse.fromJSON(data));
   }
 
   GetProjectCfg(request: GetProjectCfgRequest): Promise<Project> {
-    const data = GetProjectCfgRequest.encode(request).finish();
+    const data = GetProjectCfgRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetProjectCfg", data);
-    return promise.then((data) => Project.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Project.fromJSON(data));
   }
 
   QueryRecentBuilds(request: QueryRecentBuildsRequest): Promise<QueryRecentBuildsResponse> {
-    const data = QueryRecentBuildsRequest.encode(request).finish();
+    const data = QueryRecentBuildsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryRecentBuilds", data);
-    return promise.then((data) => QueryRecentBuildsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryRecentBuildsResponse.fromJSON(data));
   }
 
   ListBuilders(request: ListBuildersRequest): Promise<ListBuildersResponse> {
-    const data = ListBuildersRequest.encode(request).finish();
+    const data = ListBuildersRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListBuilders", data);
-    return promise.then((data) => ListBuildersResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListBuildersResponse.fromJSON(data));
   }
 
   QueryBuilderStats(request: QueryBuilderStatsRequest): Promise<BuilderStats> {
-    const data = QueryBuilderStatsRequest.encode(request).finish();
+    const data = QueryBuilderStatsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryBuilderStats", data);
-    return promise.then((data) => BuilderStats.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BuilderStats.fromJSON(data));
   }
 
   BatchCheckPermissions(request: BatchCheckPermissionsRequest): Promise<BatchCheckPermissionsResponse> {
-    const data = BatchCheckPermissionsRequest.encode(request).finish();
+    const data = BatchCheckPermissionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "BatchCheckPermissions", data);
-    return promise.then((data) => BatchCheckPermissionsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BatchCheckPermissionsResponse.fromJSON(data));
   }
 
   QueryConsoles(request: QueryConsolesRequest): Promise<QueryConsolesResponse> {
-    const data = QueryConsolesRequest.encode(request).finish();
+    const data = QueryConsolesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryConsoles", data);
-    return promise.then((data) => QueryConsolesResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryConsolesResponse.fromJSON(data));
   }
 
   QueryConsoleSnapshots(request: QueryConsoleSnapshotsRequest): Promise<QueryConsoleSnapshotsResponse> {
-    const data = QueryConsoleSnapshotsRequest.encode(request).finish();
+    const data = QueryConsoleSnapshotsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryConsoleSnapshots", data);
-    return promise.then((data) => QueryConsoleSnapshotsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryConsoleSnapshotsResponse.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;

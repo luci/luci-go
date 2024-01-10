@@ -22,7 +22,7 @@ import {
   useAuthState,
   useGetAccessToken,
 } from '@/common/components/auth_state_provider';
-import { BinaryPrpcClient } from '@/generic_libs/tools/prpc_client';
+import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 
 import { PrpcMethod, PrpcQueryBaseOptions, genPrpcQueryKey } from './common';
 
@@ -129,7 +129,7 @@ export function useInfinitePrpcQuery<
     queryKey,
     queryFn: async ({ pageParam = '' }) => {
       const client = new ClientImpl(
-        new BinaryPrpcClient({ host, insecure, getAuthToken }),
+        new PrpcClient({ host, insecure, getAuthToken }),
       );
 
       const req = {

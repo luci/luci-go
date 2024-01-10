@@ -44,7 +44,7 @@ export interface PrpcClientOptions {
  * Class for interacting with a pRPC API with a binary protocol.
  * Protocol: https://godoc.org/go.chromium.org/luci/grpc/prpc
  */
-export class BinaryPrpcClient {
+export class PrpcClient {
   readonly host: string;
   readonly getAuthToken: () => string | Promise<string>;
   readonly insecure: boolean;
@@ -61,7 +61,7 @@ export class BinaryPrpcClient {
    * Send an RPC request.
    * @param service Full service name, including package name.
    * @param method  Service method name.
-   * @param data The protobuf message to send in binary format.
+   * @param data The protobuf message to send in canonical JSON format.
    * @throws {ProtocolError} when an error happens at the pRPC protocol
    * (HTTP) level.
    * @throws {GrpcError} when the response returns a non-OK gRPC status.
@@ -70,8 +70,8 @@ export class BinaryPrpcClient {
   async request(
     service: string,
     method: string,
-    data: Uint8Array,
-  ): Promise<Uint8Array> {
+    data: unknown,
+  ): Promise<unknown> {
     const protocol = this.insecure ? 'http:' : 'https:';
     const url = `${protocol}//${this.host}/prpc/${service}/${method}`;
 
@@ -80,11 +80,11 @@ export class BinaryPrpcClient {
       method: 'POST',
       credentials: 'omit',
       headers: {
-        accept: 'application/prpc; encoding=binary',
-        'content-type': 'application/prpc; encoding=binary',
+        accept: 'application/json',
+        'content-type': 'application/json',
         ...(token && { authorization: `Bearer ${token}` }),
       },
-      body: data,
+      body: JSON.stringify(data),
     });
 
     if (!response.headers.has('X-Prpc-Grpc-Code')) {
@@ -105,10 +105,13 @@ export class BinaryPrpcClient {
       );
     }
 
+    const text = await response.text();
+
     if (rpcCode !== RpcCode.OK) {
-      throw new GrpcError(rpcCode, await response.text());
+      throw new GrpcError(rpcCode, text);
     }
 
-    return new Uint8Array(await response.arrayBuffer());
+    // Strips out the XSSI prefix.
+    return JSON.parse(text.slice(")]}'\n".length));
   }
 }

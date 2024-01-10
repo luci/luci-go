@@ -22,7 +22,7 @@ import {
   Variant,
 } from "./common.pb";
 import { FailureReason } from "./failure_reason.pb";
-import { Changelist } from "./sources.pb";
+import { Changelist, SourceRef } from "./sources.pb";
 
 export const protobufPackage = "luci.analysis.v1";
 
@@ -603,6 +603,65 @@ export interface ClusterExoneratedTestVariant {
    */
   readonly variant:
     | Variant
+    | undefined;
+  /**
+   * The number of critical (presubmit-blocking) failures in the
+   * cluster which have been exonerated on this test variant
+   * in the last week.
+   */
+  readonly criticalFailuresExonerated: number;
+  /**
+   * The partition time of the most recent exoneration of a
+   * critical failure.
+   */
+  readonly lastExoneration: string | undefined;
+}
+
+export interface QueryClusterExoneratedTestVariantBranchesRequest {
+  /**
+   * The resource name of the cluster exonerated test variant branches to retrieve.
+   * Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/exoneratedTestVariantBranches.
+   */
+  readonly parent: string;
+}
+
+export interface QueryClusterExoneratedTestVariantBranchesResponse {
+  /**
+   * A list of test variants branches in the cluster which have exonerated
+   * critical failures. Ordered by recency of the exoneration (most recent
+   * exonerations first) and limited to at most 100 test variant branches.
+   *
+   * Pagination following AIP-158 may be implemented in future if
+   * more than 100 items is needed.
+   */
+  readonly testVariantBranches: readonly ClusterExoneratedTestVariantBranch[];
+}
+
+/**
+ * ClusterExoneratedTestVariantBranch represents a (test, variant, source ref)
+ * in a cluster which has been exonerated. A cluster test variant branch is
+ * the subset of a test variant branch that intersects with the failures of a
+ * cluster.
+ */
+export interface ClusterExoneratedTestVariantBranch {
+  /** The LUCI project. */
+  readonly project: string;
+  /** A unique identifier of the test in a LUCI project. */
+  readonly testId: string;
+  /**
+   * Description of one specific way of running the test,
+   * e.g. a specific bucket, builder and a test suite.
+   */
+  readonly variant:
+    | Variant
+    | undefined;
+  /**
+   * The branch in source control that was tested, if known.
+   * For example, the `refs/heads/main` branch in the `chromium/src` repo
+   * hosted by `chromium.googlesource.com`.
+   */
+  readonly sourceRef:
+    | SourceRef
     | undefined;
   /**
    * The number of critical (presubmit-blocking) failures in the
@@ -3034,6 +3093,290 @@ export const ClusterExoneratedTestVariant = {
   },
 };
 
+function createBaseQueryClusterExoneratedTestVariantBranchesRequest(): QueryClusterExoneratedTestVariantBranchesRequest {
+  return { parent: "" };
+}
+
+export const QueryClusterExoneratedTestVariantBranchesRequest = {
+  encode(
+    message: QueryClusterExoneratedTestVariantBranchesRequest,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryClusterExoneratedTestVariantBranchesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryClusterExoneratedTestVariantBranchesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryClusterExoneratedTestVariantBranchesRequest {
+    return { parent: isSet(object.parent) ? globalThis.String(object.parent) : "" };
+  },
+
+  toJSON(message: QueryClusterExoneratedTestVariantBranchesRequest): unknown {
+    const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantBranchesRequest>, I>>(
+    base?: I,
+  ): QueryClusterExoneratedTestVariantBranchesRequest {
+    return QueryClusterExoneratedTestVariantBranchesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantBranchesRequest>, I>>(
+    object: I,
+  ): QueryClusterExoneratedTestVariantBranchesRequest {
+    const message = createBaseQueryClusterExoneratedTestVariantBranchesRequest() as any;
+    message.parent = object.parent ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryClusterExoneratedTestVariantBranchesResponse(): QueryClusterExoneratedTestVariantBranchesResponse {
+  return { testVariantBranches: [] };
+}
+
+export const QueryClusterExoneratedTestVariantBranchesResponse = {
+  encode(
+    message: QueryClusterExoneratedTestVariantBranchesResponse,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    for (const v of message.testVariantBranches) {
+      ClusterExoneratedTestVariantBranch.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryClusterExoneratedTestVariantBranchesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryClusterExoneratedTestVariantBranchesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testVariantBranches.push(ClusterExoneratedTestVariantBranch.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryClusterExoneratedTestVariantBranchesResponse {
+    return {
+      testVariantBranches: globalThis.Array.isArray(object?.testVariantBranches)
+        ? object.testVariantBranches.map((e: any) => ClusterExoneratedTestVariantBranch.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QueryClusterExoneratedTestVariantBranchesResponse): unknown {
+    const obj: any = {};
+    if (message.testVariantBranches?.length) {
+      obj.testVariantBranches = message.testVariantBranches.map((e) => ClusterExoneratedTestVariantBranch.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantBranchesResponse>, I>>(
+    base?: I,
+  ): QueryClusterExoneratedTestVariantBranchesResponse {
+    return QueryClusterExoneratedTestVariantBranchesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantBranchesResponse>, I>>(
+    object: I,
+  ): QueryClusterExoneratedTestVariantBranchesResponse {
+    const message = createBaseQueryClusterExoneratedTestVariantBranchesResponse() as any;
+    message.testVariantBranches =
+      object.testVariantBranches?.map((e) => ClusterExoneratedTestVariantBranch.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseClusterExoneratedTestVariantBranch(): ClusterExoneratedTestVariantBranch {
+  return {
+    project: "",
+    testId: "",
+    variant: undefined,
+    sourceRef: undefined,
+    criticalFailuresExonerated: 0,
+    lastExoneration: undefined,
+  };
+}
+
+export const ClusterExoneratedTestVariantBranch = {
+  encode(message: ClusterExoneratedTestVariantBranch, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    if (message.testId !== "") {
+      writer.uint32(18).string(message.testId);
+    }
+    if (message.variant !== undefined) {
+      Variant.encode(message.variant, writer.uint32(26).fork()).ldelim();
+    }
+    if (message.sourceRef !== undefined) {
+      SourceRef.encode(message.sourceRef, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.criticalFailuresExonerated !== 0) {
+      writer.uint32(40).int32(message.criticalFailuresExonerated);
+    }
+    if (message.lastExoneration !== undefined) {
+      Timestamp.encode(toTimestamp(message.lastExoneration), writer.uint32(50).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ClusterExoneratedTestVariantBranch {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClusterExoneratedTestVariantBranch() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variant = Variant.decode(reader, reader.uint32());
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.sourceRef = SourceRef.decode(reader, reader.uint32());
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.criticalFailuresExonerated = reader.int32();
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.lastExoneration = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ClusterExoneratedTestVariantBranch {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
+      sourceRef: isSet(object.sourceRef) ? SourceRef.fromJSON(object.sourceRef) : undefined,
+      criticalFailuresExonerated: isSet(object.criticalFailuresExonerated)
+        ? globalThis.Number(object.criticalFailuresExonerated)
+        : 0,
+      lastExoneration: isSet(object.lastExoneration) ? globalThis.String(object.lastExoneration) : undefined,
+    };
+  },
+
+  toJSON(message: ClusterExoneratedTestVariantBranch): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variant !== undefined) {
+      obj.variant = Variant.toJSON(message.variant);
+    }
+    if (message.sourceRef !== undefined) {
+      obj.sourceRef = SourceRef.toJSON(message.sourceRef);
+    }
+    if (message.criticalFailuresExonerated !== 0) {
+      obj.criticalFailuresExonerated = Math.round(message.criticalFailuresExonerated);
+    }
+    if (message.lastExoneration !== undefined) {
+      obj.lastExoneration = message.lastExoneration;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ClusterExoneratedTestVariantBranch>, I>>(
+    base?: I,
+  ): ClusterExoneratedTestVariantBranch {
+    return ClusterExoneratedTestVariantBranch.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ClusterExoneratedTestVariantBranch>, I>>(
+    object: I,
+  ): ClusterExoneratedTestVariantBranch {
+    const message = createBaseClusterExoneratedTestVariantBranch() as any;
+    message.project = object.project ?? "";
+    message.testId = object.testId ?? "";
+    message.variant = (object.variant !== undefined && object.variant !== null)
+      ? Variant.fromPartial(object.variant)
+      : undefined;
+    message.sourceRef = (object.sourceRef !== undefined && object.sourceRef !== null)
+      ? SourceRef.fromPartial(object.sourceRef)
+      : undefined;
+    message.criticalFailuresExonerated = object.criticalFailuresExonerated ?? 0;
+    message.lastExoneration = object.lastExoneration ?? undefined;
+    return message;
+  },
+};
+
 function createBaseQueryClusterHistoryRequest(): QueryClusterHistoryRequest {
   return { project: "", failureFilter: "", days: 0, metrics: [] };
 }
@@ -3482,10 +3825,24 @@ export interface Clusters {
    *
    * Consider solving this use case in future by a standard AIP-132 List
    * method with filter and order_by support.
+   *
+   * This RPC is useful for projects using the legacy QueryFailureRate
+   * API for exoneration.
    */
   QueryExoneratedTestVariants(
     request: QueryClusterExoneratedTestVariantsRequest,
   ): Promise<QueryClusterExoneratedTestVariantsResponse>;
+  /**
+   * Queries test variant branches in the cluster which have recently had
+   * an exoneration recorded against them. Only exonerations on failures
+   * which are part of the cluster are considered.
+   *
+   * Use for projects performing branch-scoped exoneration using
+   * QueryStability.
+   */
+  QueryExoneratedTestVariantBranches(
+    request: QueryClusterExoneratedTestVariantBranchesRequest,
+  ): Promise<QueryClusterExoneratedTestVariantBranchesResponse>;
   /**
    * Queries the history of metrics for clustered failures satisying given criteria.
    * For example the number of test runs failed on each day for the last 7 days.
@@ -3511,55 +3868,64 @@ export class ClustersClientImpl implements Clusters {
     this.QueryClusterSummaries = this.QueryClusterSummaries.bind(this);
     this.QueryClusterFailures = this.QueryClusterFailures.bind(this);
     this.QueryExoneratedTestVariants = this.QueryExoneratedTestVariants.bind(this);
+    this.QueryExoneratedTestVariantBranches = this.QueryExoneratedTestVariantBranches.bind(this);
     this.QueryHistory = this.QueryHistory.bind(this);
   }
   Cluster(request: ClusterRequest): Promise<ClusterResponse> {
-    const data = ClusterRequest.encode(request).finish();
+    const data = ClusterRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "Cluster", data);
-    return promise.then((data) => ClusterResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ClusterResponse.fromJSON(data));
   }
 
   Get(request: GetClusterRequest): Promise<Cluster> {
-    const data = GetClusterRequest.encode(request).finish();
+    const data = GetClusterRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "Get", data);
-    return promise.then((data) => Cluster.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Cluster.fromJSON(data));
   }
 
   GetReclusteringProgress(request: GetReclusteringProgressRequest): Promise<ReclusteringProgress> {
-    const data = GetReclusteringProgressRequest.encode(request).finish();
+    const data = GetReclusteringProgressRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetReclusteringProgress", data);
-    return promise.then((data) => ReclusteringProgress.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ReclusteringProgress.fromJSON(data));
   }
 
   QueryClusterSummaries(request: QueryClusterSummariesRequest): Promise<QueryClusterSummariesResponse> {
-    const data = QueryClusterSummariesRequest.encode(request).finish();
+    const data = QueryClusterSummariesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryClusterSummaries", data);
-    return promise.then((data) => QueryClusterSummariesResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryClusterSummariesResponse.fromJSON(data));
   }
 
   QueryClusterFailures(request: QueryClusterFailuresRequest): Promise<QueryClusterFailuresResponse> {
-    const data = QueryClusterFailuresRequest.encode(request).finish();
+    const data = QueryClusterFailuresRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryClusterFailures", data);
-    return promise.then((data) => QueryClusterFailuresResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryClusterFailuresResponse.fromJSON(data));
   }
 
   QueryExoneratedTestVariants(
     request: QueryClusterExoneratedTestVariantsRequest,
   ): Promise<QueryClusterExoneratedTestVariantsResponse> {
-    const data = QueryClusterExoneratedTestVariantsRequest.encode(request).finish();
+    const data = QueryClusterExoneratedTestVariantsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryExoneratedTestVariants", data);
-    return promise.then((data) => QueryClusterExoneratedTestVariantsResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryClusterExoneratedTestVariantsResponse.fromJSON(data));
+  }
+
+  QueryExoneratedTestVariantBranches(
+    request: QueryClusterExoneratedTestVariantBranchesRequest,
+  ): Promise<QueryClusterExoneratedTestVariantBranchesResponse> {
+    const data = QueryClusterExoneratedTestVariantBranchesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryExoneratedTestVariantBranches", data);
+    return promise.then((data) => QueryClusterExoneratedTestVariantBranchesResponse.fromJSON(data));
   }
 
   QueryHistory(request: QueryClusterHistoryRequest): Promise<QueryClusterHistoryResponse> {
-    const data = QueryClusterHistoryRequest.encode(request).finish();
+    const data = QueryClusterHistoryRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryHistory", data);
-    return promise.then((data) => QueryClusterHistoryResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryClusterHistoryResponse.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;

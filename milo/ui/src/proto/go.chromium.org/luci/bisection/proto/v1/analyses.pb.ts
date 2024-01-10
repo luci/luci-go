@@ -3259,56 +3259,56 @@ export class AnalysesClientImpl implements Analyses {
     this.BatchGetTestAnalyses = this.BatchGetTestAnalyses.bind(this);
   }
   GetAnalysis(request: GetAnalysisRequest): Promise<Analysis> {
-    const data = GetAnalysisRequest.encode(request).finish();
+    const data = GetAnalysisRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetAnalysis", data);
-    return promise.then((data) => Analysis.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Analysis.fromJSON(data));
   }
 
   QueryAnalysis(request: QueryAnalysisRequest): Promise<QueryAnalysisResponse> {
-    const data = QueryAnalysisRequest.encode(request).finish();
+    const data = QueryAnalysisRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryAnalysis", data);
-    return promise.then((data) => QueryAnalysisResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => QueryAnalysisResponse.fromJSON(data));
   }
 
   ListAnalyses(request: ListAnalysesRequest): Promise<ListAnalysesResponse> {
-    const data = ListAnalysesRequest.encode(request).finish();
+    const data = ListAnalysesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListAnalyses", data);
-    return promise.then((data) => ListAnalysesResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListAnalysesResponse.fromJSON(data));
   }
 
   TriggerAnalysis(request: TriggerAnalysisRequest): Promise<TriggerAnalysisResponse> {
-    const data = TriggerAnalysisRequest.encode(request).finish();
+    const data = TriggerAnalysisRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "TriggerAnalysis", data);
-    return promise.then((data) => TriggerAnalysisResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TriggerAnalysisResponse.fromJSON(data));
   }
 
   UpdateAnalysis(request: UpdateAnalysisRequest): Promise<Analysis> {
-    const data = UpdateAnalysisRequest.encode(request).finish();
+    const data = UpdateAnalysisRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "UpdateAnalysis", data);
-    return promise.then((data) => Analysis.decode(_m0.Reader.create(data)));
+    return promise.then((data) => Analysis.fromJSON(data));
   }
 
   ListTestAnalyses(request: ListTestAnalysesRequest): Promise<ListTestAnalysesResponse> {
-    const data = ListTestAnalysesRequest.encode(request).finish();
+    const data = ListTestAnalysesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListTestAnalyses", data);
-    return promise.then((data) => ListTestAnalysesResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListTestAnalysesResponse.fromJSON(data));
   }
 
   GetTestAnalysis(request: GetTestAnalysisRequest): Promise<TestAnalysis> {
-    const data = GetTestAnalysisRequest.encode(request).finish();
+    const data = GetTestAnalysisRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetTestAnalysis", data);
-    return promise.then((data) => TestAnalysis.decode(_m0.Reader.create(data)));
+    return promise.then((data) => TestAnalysis.fromJSON(data));
   }
 
   BatchGetTestAnalyses(request: BatchGetTestAnalysesRequest): Promise<BatchGetTestAnalysesResponse> {
-    const data = BatchGetTestAnalysesRequest.encode(request).finish();
+    const data = BatchGetTestAnalysesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "BatchGetTestAnalyses", data);
-    return promise.then((data) => BatchGetTestAnalysesResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BatchGetTestAnalysesResponse.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;

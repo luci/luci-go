@@ -18,7 +18,7 @@ import {
   useAuthState,
   useGetAccessToken,
 } from '@/common/components/auth_state_provider';
-import { BinaryPrpcClient } from '@/generic_libs/tools/prpc_client';
+import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 
 import {
   PrpcQueryBaseOptions,
@@ -94,7 +94,7 @@ export function usePrpcQueries<
   const { identity } = useAuthState();
   const getAuthToken = useGetAccessToken();
   const client = new ClientImpl(
-    new BinaryPrpcClient({ host, insecure, getAuthToken }),
+    new PrpcClient({ host, insecure, getAuthToken }),
   );
   const m =
     // `method` is constrained to be a key that has an associated property of

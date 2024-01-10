@@ -771,26 +771,26 @@ export class BuildersClientImpl implements Builders {
     this.SetBuilderHealth = this.SetBuilderHealth.bind(this);
   }
   GetBuilder(request: GetBuilderRequest): Promise<BuilderItem> {
-    const data = GetBuilderRequest.encode(request).finish();
+    const data = GetBuilderRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetBuilder", data);
-    return promise.then((data) => BuilderItem.decode(_m0.Reader.create(data)));
+    return promise.then((data) => BuilderItem.fromJSON(data));
   }
 
   ListBuilders(request: ListBuildersRequest): Promise<ListBuildersResponse> {
-    const data = ListBuildersRequest.encode(request).finish();
+    const data = ListBuildersRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListBuilders", data);
-    return promise.then((data) => ListBuildersResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => ListBuildersResponse.fromJSON(data));
   }
 
   SetBuilderHealth(request: SetBuilderHealthRequest): Promise<SetBuilderHealthResponse> {
-    const data = SetBuilderHealthRequest.encode(request).finish();
+    const data = SetBuilderHealthRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "SetBuilderHealth", data);
-    return promise.then((data) => SetBuilderHealthResponse.decode(_m0.Reader.create(data)));
+    return promise.then((data) => SetBuilderHealthResponse.fromJSON(data));
   }
 }
 
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  request(service: string, method: string, data: unknown): Promise<unknown>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
