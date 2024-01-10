@@ -199,38 +199,3 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, error) {
 	}
 	return deps, rootDir, nil
 }
-
-// ProcessIsolateForCAS works similarly to ProcessIsolate. However, it is
-// simpler in that it returns a list of dependency *relative* paths and the
-// root directory, which are the necessary input to upload to RBE-CAS.
-//
-// TODO(crbug.com/1193375): remove after migrating to RBE's cas package.
-func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
-	content, err := os.ReadFile(opts.Isolate)
-	if err != nil {
-		return nil, "", errors.Annotate(err, "failed to call ReadFile: %s", opts.Isolate).Err()
-	}
-	deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
-	if err != nil {
-		return nil, "", errors.Annotate(err, "failed to call LoadIsolateForConfig: %s", opts.Isolate).Err()
-	}
-
-	deps, rootDir, err := processDependencies(deps, isolateDir, opts)
-	if err != nil {
-		return nil, "", errors.Annotate(err, "failed to casll processDependencies: %s", opts.Isolate).Err()
-	}
-
-	relDeps := make([]string, len(deps))
-	for i, dep := range deps {
-		rel, err := filepath.Rel(rootDir, dep)
-		if err != nil {
-			return nil, "", errors.Annotate(err, "failed to call filepath.Rel(%s, %s)", rootDir, dep).Err()
-		}
-		if strings.HasSuffix(dep, osPathSeparator) && !strings.HasSuffix(rel, osPathSeparator) {
-			// Make it consistent with the isolated format such that directory paths must end with osPathSeparator.
-			rel += osPathSeparator
-		}
-		relDeps[i] = rel
-	}
-	return relDeps, rootDir, nil
-}

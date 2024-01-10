@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
@@ -375,28 +374,6 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 	}
 
 	return rootDgs, nil
-}
-
-func buildCASInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec, error) {
-	// TODO(crbug.com/1193375): remove this func after migrating to RBE's cas package.
-	inputPaths, execRoot, err := isolate.ProcessIsolateForCAS(opts)
-	if err != nil {
-		return "", nil, err
-	}
-
-	inputSpec := &command.InputSpec{
-		Inputs: inputPaths,
-	}
-	if opts.IgnoredPathFilterRe != "" {
-		inputSpec.InputExclusions = []*command.InputExclusion{
-			{
-				Regex: opts.IgnoredPathFilterRe,
-				Type:  command.UnspecifiedInputType,
-			},
-		}
-	}
-
-	return execRoot, inputSpec, nil
 }
 
 type regexpCache map[string]*regexp.Regexp

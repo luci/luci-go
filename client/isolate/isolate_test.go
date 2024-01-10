@@ -167,39 +167,4 @@ func TestProcessIsolateFile(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(deps, ShouldResemble, []string{dir1 + osPathSeparator, filepath.Join(dir2, "foo")})
 	})
-
-	Convey(`Process isolate for CAS`, t, func() {
-		tmpDir := t.TempDir()
-		dir1 := filepath.Join(tmpDir, "dir1")
-		So(os.Mkdir(dir1, 0700), ShouldBeNil)
-		isolDir := filepath.Join(tmpDir, "out")
-		So(os.Mkdir(isolDir, 0700), ShouldBeNil)
-		dir2 := filepath.Join(isolDir, "dir2")
-		So(os.Mkdir(dir2, 0700), ShouldBeNil)
-		So(os.WriteFile(filepath.Join(dir1, "foo"), []byte("foo"), 0600), ShouldBeNil)
-		So(os.WriteFile(filepath.Join(dir2, "bar"), []byte("bar"), 0600), ShouldBeNil)
-		isolate := `{
-			'variables': {
-				'files': [
-					'../dir1/',
-					'../dir1/foo',
-					'dir2/bar',
-				],
-			},
-		}`
-
-		isolatePath := filepath.Join(isolDir, "my.isolate")
-		So(os.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
-
-		opts := &ArchiveOptions{
-			Isolate:             isolatePath,
-			AllowMissingFileDir: false,
-		}
-
-		relDeps, rootDir, err := ProcessIsolateForCAS(opts)
-		So(err, ShouldBeNil)
-		So(rootDir, ShouldResemble, filepath.Dir(isolDir))
-		So(relDeps, ShouldResemble, []string{"dir1" + osPathSeparator, filepath.Join("dir1", "foo"), filepath.Join("out", "dir2", "bar")})
-	})
-
 }
