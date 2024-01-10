@@ -1,0 +1,2619 @@
+/* eslint-disable */
+import Long from "long";
+import _m0 from "protobufjs/minimal";
+import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
+import { Variant } from "./common.pb";
+import { Changelist, Sources } from "./sources.pb";
+
+export const protobufPackage = "luci.analysis.v1";
+
+export interface QueryTestVariantFailureRateRequest {
+  /** The LUCI Project for which test variants should be looked up. */
+  readonly project: string;
+  /**
+   * The list of test variants to retrieve results for.
+   * At most 100 test variants may be specified in one request.
+   * It is an error to request the same test variant twice.
+   */
+  readonly testVariants: readonly TestVariantIdentifier[];
+}
+
+/** The identity of a test variant. */
+export interface TestVariantIdentifier {
+  /** A unique identifier of the test in a LUCI project. */
+  readonly testId: string;
+  /**
+   * Description of one specific way of running the test,
+   * e.g. a specific bucket, builder and a test suite.
+   */
+  readonly variant:
+    | Variant
+    | undefined;
+  /**
+   * The variant hash. Alternative to specifying the variant.
+   * Prefer to specify the full variant (if available), as the
+   * variant hashing implementation is an implementation detail
+   * and may change.
+   */
+  readonly variantHash: string;
+}
+
+export interface QueryTestVariantFailureRateResponse {
+  /**
+   * The time buckets used for time interval data.
+   *
+   * Currently each interval represents 24 weekday hours, including the
+   * weekend contained in that range (if any). This is to compensate
+   * for the typically reduced testing that is seen over weekends.
+   * So interval with age=1 is the last 24 hours of weekday data
+   * before the time the query is made, age=2 is the 24 hours of
+   * weekday data before that, and so on.
+   * In total, there will be 5 intervals, numbered 1 to 5.
+   *
+   * 24 hours of weekday data before X is defined to be
+   * the smallest period ending at X which includes exactly 24
+   * hours of a weekday in UTC. Therefore:
+   * If X is on a weekend (in UTC), the returned data will
+   * cover all of the weekend up to X and all of previous Friday (in UTC).
+   * If X is on a Monday (in UTC), the returned data will cover all
+   * of the weekend, up to a time on Friday that corresponds to
+   * X's time on Monday (e.g. if X is Monday at 8am, the period goes
+   * back to Friday at 8am).
+   * Otherwise, X is on a Tuesday to Friday (in UTC), the period
+   * will cover the last 24 hours.
+   */
+  readonly intervals: readonly QueryTestVariantFailureRateResponse_Interval[];
+  /**
+   * The test variant failure rate analysis requested.
+   * Test variants are returned in the order they were requested.
+   */
+  readonly testVariants: readonly TestVariantFailureRateAnalysis[];
+}
+
+/**
+ * Interval defines the time buckets used for time interval
+ * data.
+ */
+export interface QueryTestVariantFailureRateResponse_Interval {
+  /**
+   * The interval being defined. age=1 is the most recent
+   * interval, age=2 is the interval immediately before that,
+   * and so on.
+   */
+  readonly intervalAge: number;
+  /** The start time of the interval (inclusive). */
+  readonly startTime:
+    | string
+    | undefined;
+  /** The end time of the interval (exclusive). */
+  readonly endTime: string | undefined;
+}
+
+/**
+ * Signals relevant to determining whether a test variant should be
+ * exonerated in presubmit.
+ */
+export interface TestVariantFailureRateAnalysis {
+  /** A unique identifier of the test in a LUCI project. */
+  readonly testId: string;
+  /**
+   * Description of one specific way of running the test,
+   * e.g. a specific bucket, builder and a test suite.
+   * Only populated if populated on the request.
+   */
+  readonly variant:
+    | Variant
+    | undefined;
+  /**
+   * The variant hash.
+   * Only populated if populated on the request.
+   */
+  readonly variantHash: string;
+  /**
+   * Statistics broken down by time interval. Intervals will be ordered
+   * by recency, starting at the most recent interval (age = 1).
+   *
+   * The following filtering applies to verdicts used in time interval data:
+   * - Verdicts are filtered to at most one per unique CL under test,
+   *   with verdicts for multi-CL tryjob runs excluded.
+   */
+  readonly intervalStats: readonly TestVariantFailureRateAnalysis_IntervalStats[];
+  /**
+   * Examples of verdicts which had both expected and unexpected runs.
+   *
+   * Ordered by recency, starting at the most recent example at offset 0.
+   *
+   * Limited to at most 10. Further limited to only verdicts produced
+   * since 5 weekdays ago (this corresponds to the exact same time range
+   * as for which interval data is provided).
+   */
+  readonly runFlakyVerdictExamples: readonly TestVariantFailureRateAnalysis_VerdictExample[];
+  /**
+   * The most recent verdicts for the test variant.
+   *
+   * The following filtering applies to verdicts used in this field:
+   * - Verdicts are filtered to at most one per unique CL under test,
+   *   with verdicts for multi-CL tryjob runs excluded.
+   * - Verdicts for CLs authored by automation are excluded, to avoid a
+   *   single repeatedly failing automatic uprev process populating
+   *   this list with 10 failures.
+   * Ordered by recency, starting at the most recent verdict at offset 0.
+   *
+   * Limited to at most 10. Further limited to only verdicts produced
+   * since 5 weekdays ago (this corresponds to the exact same time range
+   * as for which interval data is provided).
+   */
+  readonly recentVerdicts: readonly TestVariantFailureRateAnalysis_RecentVerdict[];
+}
+
+export interface TestVariantFailureRateAnalysis_IntervalStats {
+  /**
+   * The age of the interval. 1 is the most recent interval,
+   * 2 is the interval immediately before that, and so on.
+   * Cross reference with the intervals field on the
+   * QueryTestVariantFailureRateResponse response to
+   * identify the exact time interval this represents.
+   */
+  readonly intervalAge: number;
+  /**
+   * The number of verdicts which had only expected runs.
+   * An expected run is a run (e.g. swarming task) which has at least
+   * one expected result, excluding skipped results.
+   */
+  readonly totalRunExpectedVerdicts: number;
+  /**
+   * The number of verdicts which had both expected and
+   * unexpected runs.
+   * An expected run is a run (e.g. swarming task) which has at least
+   * one expected result, excluding skips.
+   * An unexpected run is a run which had only unexpected
+   * results (and at least one unexpected result), excluding skips.
+   */
+  readonly totalRunFlakyVerdicts: number;
+  /**
+   * The number of verdicts which had only unexpected runs.
+   * An unexpected run is a run (e.g. swarming task) which had only
+   * unexpected results (and at least one unexpected result),
+   * excluding skips.
+   */
+  readonly totalRunUnexpectedVerdicts: number;
+}
+
+/** VerdictExample describes a verdict that is part of a statistic. */
+export interface TestVariantFailureRateAnalysis_VerdictExample {
+  /**
+   * The partition time of the verdict. This the time associated with the
+   * test result for test history purposes, usually the build or presubmit
+   * run start time.
+   */
+  readonly partitionTime:
+    | string
+    | undefined;
+  /** The identity of the ingested invocation. */
+  readonly ingestedInvocationId: string;
+  /** The changelist(s) tested, if any. */
+  readonly changelists: readonly Changelist[];
+}
+
+export interface TestVariantFailureRateAnalysis_RecentVerdict {
+  /**
+   * The partition time of the verdict. This the time associated with the
+   * test result for test history purposes, usually the build or presubmit
+   * run start time.
+   */
+  readonly partitionTime:
+    | string
+    | undefined;
+  /** The identity of the ingested invocation. */
+  readonly ingestedInvocationId: string;
+  /** The changelist(s) tested, if any. */
+  readonly changelists: readonly Changelist[];
+  /**
+   * Whether the verdict had an unexpected run.
+   * An unexpected run is a run (e.g. swarming task) which
+   * had only unexpected results, after excluding skips.
+   *
+   * Example: a verdict includes the result of two
+   * swarming tasks (i.e. two runs), which each contain two
+   * test results.
+   * One of the two test runs has two unexpected failures.
+   * Therefore, the verdict has an unexpected run.
+   */
+  readonly hasUnexpectedRuns: boolean;
+}
+
+export interface QueryTestVariantStabilityRequest {
+  /** The LUCI Project for which test variants should be looked up. */
+  readonly project: string;
+  /** The test variant positions to query. */
+  readonly testVariants: readonly QueryTestVariantStabilityRequest_TestVariantPosition[];
+}
+
+/** Represents a test variant at a particular source position. */
+export interface QueryTestVariantStabilityRequest_TestVariantPosition {
+  /** The unique identifier of the test in a LUCI project. */
+  readonly testId: string;
+  /**
+   * Description of one specific way of running the test,
+   * e.g. a specific bucket, builder and test suite.
+   */
+  readonly variant:
+    | Variant
+    | undefined;
+  /**
+   * The variant hash. Alternative to specifying the variant.
+   * Prefer to specify the full variant (if available), as the
+   * variant hashing implementation is an implementation detail
+   * and may change.
+   */
+  readonly variantHash: string;
+  /**
+   * The source positions to obtain stability relevant to.
+   *
+   * The base sources (e.g. base git commit branch and position)
+   * is mandatory, except for the commit hash, which is ignored.
+   *
+   * If any changelists are specified then any stability analysis
+   * will exclude prior results for that changelist from the
+   * analysis.
+   *
+   * is_dirty is ignored.
+   */
+  readonly sources: Sources | undefined;
+}
+
+export interface QueryTestVariantStabilityResponse {
+  /** The requested test variant stability analysis. */
+  readonly testVariants: readonly TestVariantStabilityAnalysis[];
+  /**
+   * The criteria used to determine if tests are stable.
+   * This is as configured in the project's LUCI Analysis configuration.
+   */
+  readonly criteria: TestStabilityCriteria | undefined;
+}
+
+/**
+ * Criteria used to determine test stability. This criteria is used
+ * to inform test exoneration in presubmit via the
+ * TestVariants.QueryStability RPC.
+ *
+ * Criteria is applied using a data source which contains
+ * the last 14 days' of test result data for all test variants,
+ * with certain filterings applied.
+ *
+ * See go/luci-exoneration-v2 as well each criteria below for more details.
+ */
+export interface TestStabilityCriteria {
+  /** The failure rate criteria to apply. Mandatory. */
+  readonly failureRate:
+    | TestStabilityCriteria_FailureRateCriteria
+    | undefined;
+  /** The flake rate criteria to apply. Mandatory. */
+  readonly flakeRate: TestStabilityCriteria_FlakeRateCriteria | undefined;
+}
+
+/**
+ * The failure rate criteria detects consistently failing
+ * and highly flaky tests (e.g. 95%+ failing) by looking for
+ * a high number of failures at the queried position of the
+ * test's history.
+ *
+ * The criteria obtains from the last 14 days' of filtered test data
+ * a set of (up to) 20 test runs centered on the queried commit
+ * position (10 prior and 10 after) and applies criteria
+ * to this in various ways.
+ * The 20 test runs are sorted by commit position and then time.
+ *
+ * See go/luci-exoneration-v2 for more detail.
+ */
+export interface TestStabilityCriteria_FailureRateCriteria {
+  /**
+   * The number of unexpected test runs that must be
+   * found in a sliding window of size 10 containing the
+   * queried position to begin exoneration.
+   * 6 is a good starting value.
+   *
+   * The criteria is applied over sliding windows of size
+   * 10 around the query position. Assuming the full 20 test
+   * runs are obtained, this means 11 window positions are considered.
+   * If any window satisifes the threshold, the criteria is met
+   * and the test is considered unstable.
+   *
+   * In the event that 10 test runs cannot be found in the last
+   * 14 days of test history, a window sized to the available
+   * test runs is used but the criteria is not scaled.
+   */
+  readonly failureThreshold: number;
+  /**
+   * The number of consecutive unexpected test runs, which if
+   * present at the leading or trailing part of the (up to) 20
+   * test verdicts, will trigger exoneration.
+   * 3 is a good starting value.
+   *
+   * The consecutive failures must also touch the query position.
+   *
+   * This is designed to create a fast path to exoneration for
+   * 100% failing tests which produce a strong and consistent
+   * failing signal, leveraging the statistical significance
+   * of consecutive failures. If this threshold is met,
+   * the failure_threshold above does NOT need to be met.
+   *
+   * E.g. the following scenario WILL trigger this criteria for
+   * a threshold of four or less.
+   *
+   * History: >F F F F< P P P P P P P
+   *            ^
+   *            Query position
+   *
+   * The following scenario WILL NOT trigger this criteria:
+   *
+   * History:>P F F F F< P P P P P P P
+   *              ^
+   *              Query position
+   *
+   * (N.B. Direction of history is irrelevant as criteria is
+   * applied symmetrically. Either the left or right could
+   * represent 'later' by commit position.)
+   */
+  readonly consecutiveFailureThreshold: number;
+}
+
+/**
+ * The flake rate criteria detects flaky tests by looking for
+ * examples where a test has obtained expected and unexpected
+ * test runs for the same sources under test.
+ *
+ * If there are more flaky source verdicts found than a threshold,
+ * the test is considered flaky.
+ *
+ * The analysis window is all source verdicts for 7 days' worth
+ * of commit positions either side of the queried position.
+ * The conversion between time and commit position is discussed
+ * in go/luci-exoneration-v2.
+ *
+ * In the event that an unsatisfactory number of source positions
+ * are found using this method, the window is enlarged to possibly
+ * include any verdict in the last 14 days. This is to improve
+ * detection performance on tests with a low volume of results.
+ */
+export interface TestStabilityCriteria_FlakeRateCriteria {
+  /**
+   * The minimum number of source verdicts desired
+   * for the analysis window.
+   *
+   * As standard, all source verdicts for sources
+   * +/- 7 days from the queried position are used.
+   *
+   * However, if the number of verdicts is not equal
+   * to or greater than min_window, all source verdicts
+   * from the last 14 days will be used. This is designed
+   * to prioritise adequate flake detection performance
+   * for test variants with low result volumes, at the
+   * cost of data recency.
+   *
+   * If the number of source verdicts in the last 14 days
+   * is less than min_window, then whatever source verdicts
+   * are available are still used.
+   *
+   * 100 is a good starting value.
+   */
+  readonly minWindow: number;
+  /**
+   * The minimum number of flaky source verdicts required
+   * to trigger the criteria. 2 is a good starting value.
+   */
+  readonly flakeThreshold: number;
+  /**
+   * The minimum flake rate required to trigger the criteria,
+   * as a proportion of all source verdicts. This must be a
+   * value between 0.0 and 1.0.
+   * 0.01 (1%) is a good starting value.
+   *
+   * Both flake_threshold AND the flake_rate_threshold must be met
+   * for a test to be considered unstable.
+   *
+   * Note that not even the most flaky (50% flaky) test would
+   * be expected to produce more than a 25% flake rate if
+   * failures are retried once. This is because its expected
+   * outcomes are:
+   * - Pass on first try = 50%
+   * - Fail on first try, pass on second try = 25% (flaky)
+   * - Fail on both tries = 25%
+   */
+  readonly flakeRateThreshold: number;
+}
+
+/** Stability analysis for a test variant at a particular source position. */
+export interface TestVariantStabilityAnalysis {
+  /** A unique identifier of the test in a LUCI project. */
+  readonly testId: string;
+  /**
+   * Description of one specific way of running the test,
+   * e.g. a specific bucket, builder and a test suite.
+   * Only populated if populated on the request.
+   */
+  readonly variant:
+    | Variant
+    | undefined;
+  /**
+   * The variant hash.
+   * Only populated if populated on the request.
+   */
+  readonly variantHash: string;
+  /**
+   * Information related to the application of failure rate
+   * criteria, if this criteria was considered.
+   */
+  readonly failureRate:
+    | TestVariantStabilityAnalysis_FailureRate
+    | undefined;
+  /**
+   * Information related to the application of flake rate
+   * criteria, if this criteria was considered.
+   */
+  readonly flakeRate: TestVariantStabilityAnalysis_FlakeRate | undefined;
+}
+
+export interface TestVariantStabilityAnalysis_FailureRate {
+  /**
+   * Whether the failure rate criteria was met. If set, this means the
+   * test is unstable by this criteria.
+   */
+  readonly isMet: boolean;
+  /** The maximum number of failures observed in any analysis window. */
+  readonly unexpectedTestRuns: number;
+  /**
+   * The number of consecutive unexpected test runs from the leading
+   * and/or trailing part of test history, which touches the
+   * the query position.
+   * If there is no such sequence, this is 0.
+   */
+  readonly consecutiveUnexpectedTestRuns: number;
+  /**
+   * Relevant source verdicts used in the analysis. Limited to 20 runs,
+   * which may span between 1 and 20 source verdicts.
+   */
+  readonly recentVerdicts: readonly TestVariantStabilityAnalysis_FailureRate_RecentVerdict[];
+}
+
+export interface TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
+  /** The commit position of the source verdict on the queried branch. */
+  readonly position: string;
+  /** The changelist(s) tested, if any. */
+  readonly changelists: readonly Changelist[];
+  /** The invocations included in this source verdict. */
+  readonly invocations: readonly string[];
+  /**
+   * The number of unexpected runs associated with the verdict.
+   * An unexpected run is a run (e.g. swarming task) which
+   * had only unexpected results, after excluding skips.
+   * Presubmit results are limited to contributing 1 unexpected
+   * run to the analysis by design. Postsubmit results can have more.
+   */
+  readonly unexpectedRuns: number;
+  /**
+   * The total number of test runs associated with the verdict.
+   * Presubmit results are limited to contributing 1 unexpected
+   * run to the analysis by design. Postsubmit results can have more.
+   */
+  readonly totalRuns: number;
+}
+
+export interface TestVariantStabilityAnalysis_FlakeRate {
+  /**
+   * Whether the flake rate criteria was met. If set, this means the
+   * test was deemed unstable by this criteria.
+   */
+  readonly isMet: boolean;
+  /** The total number of run-flaky verdicts observed. */
+  readonly runFlakyVerdicts: number;
+  /** The total number of verdicts in the run flaky verdicts analysis window. */
+  readonly totalVerdicts: number;
+  /**
+   * Examples of source verdicts which had both expected and unexpected runs,
+   * that contributed to run_flaky_verdicts.
+   *
+   * Ordered by recency, starting at the most recent example.
+   *
+   * Limited to at most 10 examples.
+   */
+  readonly flakeExamples: readonly TestVariantStabilityAnalysis_FlakeRate_VerdictExample[];
+  /**
+   * The least source position included in the analysis window. Inclusive.
+   * If the analysis window is empty (e.g. because there is no data), this is zero.
+   */
+  readonly startPosition: string;
+  /**
+   * The greatest source position included in the analysis window. Inclusive.
+   * If the analysis window is empty (e.g. because there is no data), this is zero.
+   */
+  readonly endPosition: string;
+}
+
+/**
+ * VerdictExample describes a source verdict that is part of a statistic.
+ * Note that a source verdict may contain data from multiple test verdicts,
+ * such as in the case of retried presubmit runs on the same patchset.
+ */
+export interface TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
+  /** The commit position of the verdict on the queried branch. */
+  readonly position: string;
+  /** The changelist(s) tested, if any. */
+  readonly changelists: readonly Changelist[];
+  /** The invocations included in this source verdict. */
+  readonly invocations: readonly string[];
+}
+
+function createBaseQueryTestVariantFailureRateRequest(): QueryTestVariantFailureRateRequest {
+  return { project: "", testVariants: [] };
+}
+
+export const QueryTestVariantFailureRateRequest = {
+  encode(message: QueryTestVariantFailureRateRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    for (const v of message.testVariants) {
+      TestVariantIdentifier.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantFailureRateRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantFailureRateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testVariants.push(TestVariantIdentifier.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantFailureRateRequest {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      testVariants: globalThis.Array.isArray(object?.testVariants)
+        ? object.testVariants.map((e: any) => TestVariantIdentifier.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QueryTestVariantFailureRateRequest): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.testVariants?.length) {
+      obj.testVariants = message.testVariants.map((e) => TestVariantIdentifier.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryTestVariantFailureRateRequest>, I>>(
+    base?: I,
+  ): QueryTestVariantFailureRateRequest {
+    return QueryTestVariantFailureRateRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryTestVariantFailureRateRequest>, I>>(
+    object: I,
+  ): QueryTestVariantFailureRateRequest {
+    const message = createBaseQueryTestVariantFailureRateRequest() as any;
+    message.project = object.project ?? "";
+    message.testVariants = object.testVariants?.map((e) => TestVariantIdentifier.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTestVariantIdentifier(): TestVariantIdentifier {
+  return { testId: "", variant: undefined, variantHash: "" };
+}
+
+export const TestVariantIdentifier = {
+  encode(message: TestVariantIdentifier, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.testId !== "") {
+      writer.uint32(10).string(message.testId);
+    }
+    if (message.variant !== undefined) {
+      Variant.encode(message.variant, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(26).string(message.variantHash);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantIdentifier {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantIdentifier() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.variant = Variant.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantIdentifier {
+    return {
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+    };
+  },
+
+  toJSON(message: TestVariantIdentifier): unknown {
+    const obj: any = {};
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variant !== undefined) {
+      obj.variant = Variant.toJSON(message.variant);
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantIdentifier>, I>>(base?: I): TestVariantIdentifier {
+    return TestVariantIdentifier.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantIdentifier>, I>>(object: I): TestVariantIdentifier {
+    const message = createBaseTestVariantIdentifier() as any;
+    message.testId = object.testId ?? "";
+    message.variant = (object.variant !== undefined && object.variant !== null)
+      ? Variant.fromPartial(object.variant)
+      : undefined;
+    message.variantHash = object.variantHash ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantFailureRateResponse(): QueryTestVariantFailureRateResponse {
+  return { intervals: [], testVariants: [] };
+}
+
+export const QueryTestVariantFailureRateResponse = {
+  encode(message: QueryTestVariantFailureRateResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.intervals) {
+      QueryTestVariantFailureRateResponse_Interval.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    for (const v of message.testVariants) {
+      TestVariantFailureRateAnalysis.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantFailureRateResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantFailureRateResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.intervals.push(QueryTestVariantFailureRateResponse_Interval.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testVariants.push(TestVariantFailureRateAnalysis.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantFailureRateResponse {
+    return {
+      intervals: globalThis.Array.isArray(object?.intervals)
+        ? object.intervals.map((e: any) => QueryTestVariantFailureRateResponse_Interval.fromJSON(e))
+        : [],
+      testVariants: globalThis.Array.isArray(object?.testVariants)
+        ? object.testVariants.map((e: any) => TestVariantFailureRateAnalysis.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QueryTestVariantFailureRateResponse): unknown {
+    const obj: any = {};
+    if (message.intervals?.length) {
+      obj.intervals = message.intervals.map((e) => QueryTestVariantFailureRateResponse_Interval.toJSON(e));
+    }
+    if (message.testVariants?.length) {
+      obj.testVariants = message.testVariants.map((e) => TestVariantFailureRateAnalysis.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryTestVariantFailureRateResponse>, I>>(
+    base?: I,
+  ): QueryTestVariantFailureRateResponse {
+    return QueryTestVariantFailureRateResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryTestVariantFailureRateResponse>, I>>(
+    object: I,
+  ): QueryTestVariantFailureRateResponse {
+    const message = createBaseQueryTestVariantFailureRateResponse() as any;
+    message.intervals = object.intervals?.map((e) => QueryTestVariantFailureRateResponse_Interval.fromPartial(e)) || [];
+    message.testVariants = object.testVariants?.map((e) => TestVariantFailureRateAnalysis.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantFailureRateResponse_Interval(): QueryTestVariantFailureRateResponse_Interval {
+  return { intervalAge: 0, startTime: undefined, endTime: undefined };
+}
+
+export const QueryTestVariantFailureRateResponse_Interval = {
+  encode(message: QueryTestVariantFailureRateResponse_Interval, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.intervalAge !== 0) {
+      writer.uint32(8).int32(message.intervalAge);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(18).fork()).ldelim();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantFailureRateResponse_Interval {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantFailureRateResponse_Interval() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.intervalAge = reader.int32();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantFailureRateResponse_Interval {
+    return {
+      intervalAge: isSet(object.intervalAge) ? globalThis.Number(object.intervalAge) : 0,
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+    };
+  },
+
+  toJSON(message: QueryTestVariantFailureRateResponse_Interval): unknown {
+    const obj: any = {};
+    if (message.intervalAge !== 0) {
+      obj.intervalAge = Math.round(message.intervalAge);
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryTestVariantFailureRateResponse_Interval>, I>>(
+    base?: I,
+  ): QueryTestVariantFailureRateResponse_Interval {
+    return QueryTestVariantFailureRateResponse_Interval.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryTestVariantFailureRateResponse_Interval>, I>>(
+    object: I,
+  ): QueryTestVariantFailureRateResponse_Interval {
+    const message = createBaseQueryTestVariantFailureRateResponse_Interval() as any;
+    message.intervalAge = object.intervalAge ?? 0;
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    return message;
+  },
+};
+
+function createBaseTestVariantFailureRateAnalysis(): TestVariantFailureRateAnalysis {
+  return {
+    testId: "",
+    variant: undefined,
+    variantHash: "",
+    intervalStats: [],
+    runFlakyVerdictExamples: [],
+    recentVerdicts: [],
+  };
+}
+
+export const TestVariantFailureRateAnalysis = {
+  encode(message: TestVariantFailureRateAnalysis, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.testId !== "") {
+      writer.uint32(10).string(message.testId);
+    }
+    if (message.variant !== undefined) {
+      Variant.encode(message.variant, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(26).string(message.variantHash);
+    }
+    for (const v of message.intervalStats) {
+      TestVariantFailureRateAnalysis_IntervalStats.encode(v!, writer.uint32(34).fork()).ldelim();
+    }
+    for (const v of message.runFlakyVerdictExamples) {
+      TestVariantFailureRateAnalysis_VerdictExample.encode(v!, writer.uint32(42).fork()).ldelim();
+    }
+    for (const v of message.recentVerdicts) {
+      TestVariantFailureRateAnalysis_RecentVerdict.encode(v!, writer.uint32(50).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantFailureRateAnalysis {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantFailureRateAnalysis() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.variant = Variant.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.intervalStats.push(TestVariantFailureRateAnalysis_IntervalStats.decode(reader, reader.uint32()));
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.runFlakyVerdictExamples.push(
+            TestVariantFailureRateAnalysis_VerdictExample.decode(reader, reader.uint32()),
+          );
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.recentVerdicts.push(TestVariantFailureRateAnalysis_RecentVerdict.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantFailureRateAnalysis {
+    return {
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      intervalStats: globalThis.Array.isArray(object?.intervalStats)
+        ? object.intervalStats.map((e: any) => TestVariantFailureRateAnalysis_IntervalStats.fromJSON(e))
+        : [],
+      runFlakyVerdictExamples: globalThis.Array.isArray(object?.runFlakyVerdictExamples)
+        ? object.runFlakyVerdictExamples.map((e: any) => TestVariantFailureRateAnalysis_VerdictExample.fromJSON(e))
+        : [],
+      recentVerdicts: globalThis.Array.isArray(object?.recentVerdicts)
+        ? object.recentVerdicts.map((e: any) => TestVariantFailureRateAnalysis_RecentVerdict.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TestVariantFailureRateAnalysis): unknown {
+    const obj: any = {};
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variant !== undefined) {
+      obj.variant = Variant.toJSON(message.variant);
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    if (message.intervalStats?.length) {
+      obj.intervalStats = message.intervalStats.map((e) => TestVariantFailureRateAnalysis_IntervalStats.toJSON(e));
+    }
+    if (message.runFlakyVerdictExamples?.length) {
+      obj.runFlakyVerdictExamples = message.runFlakyVerdictExamples.map((e) =>
+        TestVariantFailureRateAnalysis_VerdictExample.toJSON(e)
+      );
+    }
+    if (message.recentVerdicts?.length) {
+      obj.recentVerdicts = message.recentVerdicts.map((e) => TestVariantFailureRateAnalysis_RecentVerdict.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantFailureRateAnalysis>, I>>(base?: I): TestVariantFailureRateAnalysis {
+    return TestVariantFailureRateAnalysis.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantFailureRateAnalysis>, I>>(
+    object: I,
+  ): TestVariantFailureRateAnalysis {
+    const message = createBaseTestVariantFailureRateAnalysis() as any;
+    message.testId = object.testId ?? "";
+    message.variant = (object.variant !== undefined && object.variant !== null)
+      ? Variant.fromPartial(object.variant)
+      : undefined;
+    message.variantHash = object.variantHash ?? "";
+    message.intervalStats =
+      object.intervalStats?.map((e) => TestVariantFailureRateAnalysis_IntervalStats.fromPartial(e)) || [];
+    message.runFlakyVerdictExamples =
+      object.runFlakyVerdictExamples?.map((e) => TestVariantFailureRateAnalysis_VerdictExample.fromPartial(e)) || [];
+    message.recentVerdicts =
+      object.recentVerdicts?.map((e) => TestVariantFailureRateAnalysis_RecentVerdict.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTestVariantFailureRateAnalysis_IntervalStats(): TestVariantFailureRateAnalysis_IntervalStats {
+  return { intervalAge: 0, totalRunExpectedVerdicts: 0, totalRunFlakyVerdicts: 0, totalRunUnexpectedVerdicts: 0 };
+}
+
+export const TestVariantFailureRateAnalysis_IntervalStats = {
+  encode(message: TestVariantFailureRateAnalysis_IntervalStats, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.intervalAge !== 0) {
+      writer.uint32(8).int32(message.intervalAge);
+    }
+    if (message.totalRunExpectedVerdicts !== 0) {
+      writer.uint32(16).int32(message.totalRunExpectedVerdicts);
+    }
+    if (message.totalRunFlakyVerdicts !== 0) {
+      writer.uint32(24).int32(message.totalRunFlakyVerdicts);
+    }
+    if (message.totalRunUnexpectedVerdicts !== 0) {
+      writer.uint32(32).int32(message.totalRunUnexpectedVerdicts);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantFailureRateAnalysis_IntervalStats {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantFailureRateAnalysis_IntervalStats() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.intervalAge = reader.int32();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.totalRunExpectedVerdicts = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalRunFlakyVerdicts = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.totalRunUnexpectedVerdicts = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantFailureRateAnalysis_IntervalStats {
+    return {
+      intervalAge: isSet(object.intervalAge) ? globalThis.Number(object.intervalAge) : 0,
+      totalRunExpectedVerdicts: isSet(object.totalRunExpectedVerdicts)
+        ? globalThis.Number(object.totalRunExpectedVerdicts)
+        : 0,
+      totalRunFlakyVerdicts: isSet(object.totalRunFlakyVerdicts) ? globalThis.Number(object.totalRunFlakyVerdicts) : 0,
+      totalRunUnexpectedVerdicts: isSet(object.totalRunUnexpectedVerdicts)
+        ? globalThis.Number(object.totalRunUnexpectedVerdicts)
+        : 0,
+    };
+  },
+
+  toJSON(message: TestVariantFailureRateAnalysis_IntervalStats): unknown {
+    const obj: any = {};
+    if (message.intervalAge !== 0) {
+      obj.intervalAge = Math.round(message.intervalAge);
+    }
+    if (message.totalRunExpectedVerdicts !== 0) {
+      obj.totalRunExpectedVerdicts = Math.round(message.totalRunExpectedVerdicts);
+    }
+    if (message.totalRunFlakyVerdicts !== 0) {
+      obj.totalRunFlakyVerdicts = Math.round(message.totalRunFlakyVerdicts);
+    }
+    if (message.totalRunUnexpectedVerdicts !== 0) {
+      obj.totalRunUnexpectedVerdicts = Math.round(message.totalRunUnexpectedVerdicts);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantFailureRateAnalysis_IntervalStats>, I>>(
+    base?: I,
+  ): TestVariantFailureRateAnalysis_IntervalStats {
+    return TestVariantFailureRateAnalysis_IntervalStats.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantFailureRateAnalysis_IntervalStats>, I>>(
+    object: I,
+  ): TestVariantFailureRateAnalysis_IntervalStats {
+    const message = createBaseTestVariantFailureRateAnalysis_IntervalStats() as any;
+    message.intervalAge = object.intervalAge ?? 0;
+    message.totalRunExpectedVerdicts = object.totalRunExpectedVerdicts ?? 0;
+    message.totalRunFlakyVerdicts = object.totalRunFlakyVerdicts ?? 0;
+    message.totalRunUnexpectedVerdicts = object.totalRunUnexpectedVerdicts ?? 0;
+    return message;
+  },
+};
+
+function createBaseTestVariantFailureRateAnalysis_VerdictExample(): TestVariantFailureRateAnalysis_VerdictExample {
+  return { partitionTime: undefined, ingestedInvocationId: "", changelists: [] };
+}
+
+export const TestVariantFailureRateAnalysis_VerdictExample = {
+  encode(message: TestVariantFailureRateAnalysis_VerdictExample, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.partitionTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.partitionTime), writer.uint32(10).fork()).ldelim();
+    }
+    if (message.ingestedInvocationId !== "") {
+      writer.uint32(18).string(message.ingestedInvocationId);
+    }
+    for (const v of message.changelists) {
+      Changelist.encode(v!, writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantFailureRateAnalysis_VerdictExample {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantFailureRateAnalysis_VerdictExample() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.partitionTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.ingestedInvocationId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.changelists.push(Changelist.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantFailureRateAnalysis_VerdictExample {
+    return {
+      partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
+      ingestedInvocationId: isSet(object.ingestedInvocationId) ? globalThis.String(object.ingestedInvocationId) : "",
+      changelists: globalThis.Array.isArray(object?.changelists)
+        ? object.changelists.map((e: any) => Changelist.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TestVariantFailureRateAnalysis_VerdictExample): unknown {
+    const obj: any = {};
+    if (message.partitionTime !== undefined) {
+      obj.partitionTime = message.partitionTime;
+    }
+    if (message.ingestedInvocationId !== "") {
+      obj.ingestedInvocationId = message.ingestedInvocationId;
+    }
+    if (message.changelists?.length) {
+      obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantFailureRateAnalysis_VerdictExample>, I>>(
+    base?: I,
+  ): TestVariantFailureRateAnalysis_VerdictExample {
+    return TestVariantFailureRateAnalysis_VerdictExample.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantFailureRateAnalysis_VerdictExample>, I>>(
+    object: I,
+  ): TestVariantFailureRateAnalysis_VerdictExample {
+    const message = createBaseTestVariantFailureRateAnalysis_VerdictExample() as any;
+    message.partitionTime = object.partitionTime ?? undefined;
+    message.ingestedInvocationId = object.ingestedInvocationId ?? "";
+    message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTestVariantFailureRateAnalysis_RecentVerdict(): TestVariantFailureRateAnalysis_RecentVerdict {
+  return { partitionTime: undefined, ingestedInvocationId: "", changelists: [], hasUnexpectedRuns: false };
+}
+
+export const TestVariantFailureRateAnalysis_RecentVerdict = {
+  encode(message: TestVariantFailureRateAnalysis_RecentVerdict, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.partitionTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.partitionTime), writer.uint32(10).fork()).ldelim();
+    }
+    if (message.ingestedInvocationId !== "") {
+      writer.uint32(18).string(message.ingestedInvocationId);
+    }
+    for (const v of message.changelists) {
+      Changelist.encode(v!, writer.uint32(26).fork()).ldelim();
+    }
+    if (message.hasUnexpectedRuns === true) {
+      writer.uint32(32).bool(message.hasUnexpectedRuns);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantFailureRateAnalysis_RecentVerdict {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantFailureRateAnalysis_RecentVerdict() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.partitionTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.ingestedInvocationId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.changelists.push(Changelist.decode(reader, reader.uint32()));
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.hasUnexpectedRuns = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantFailureRateAnalysis_RecentVerdict {
+    return {
+      partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
+      ingestedInvocationId: isSet(object.ingestedInvocationId) ? globalThis.String(object.ingestedInvocationId) : "",
+      changelists: globalThis.Array.isArray(object?.changelists)
+        ? object.changelists.map((e: any) => Changelist.fromJSON(e))
+        : [],
+      hasUnexpectedRuns: isSet(object.hasUnexpectedRuns) ? globalThis.Boolean(object.hasUnexpectedRuns) : false,
+    };
+  },
+
+  toJSON(message: TestVariantFailureRateAnalysis_RecentVerdict): unknown {
+    const obj: any = {};
+    if (message.partitionTime !== undefined) {
+      obj.partitionTime = message.partitionTime;
+    }
+    if (message.ingestedInvocationId !== "") {
+      obj.ingestedInvocationId = message.ingestedInvocationId;
+    }
+    if (message.changelists?.length) {
+      obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+    }
+    if (message.hasUnexpectedRuns === true) {
+      obj.hasUnexpectedRuns = message.hasUnexpectedRuns;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantFailureRateAnalysis_RecentVerdict>, I>>(
+    base?: I,
+  ): TestVariantFailureRateAnalysis_RecentVerdict {
+    return TestVariantFailureRateAnalysis_RecentVerdict.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantFailureRateAnalysis_RecentVerdict>, I>>(
+    object: I,
+  ): TestVariantFailureRateAnalysis_RecentVerdict {
+    const message = createBaseTestVariantFailureRateAnalysis_RecentVerdict() as any;
+    message.partitionTime = object.partitionTime ?? undefined;
+    message.ingestedInvocationId = object.ingestedInvocationId ?? "";
+    message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    message.hasUnexpectedRuns = object.hasUnexpectedRuns ?? false;
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantStabilityRequest(): QueryTestVariantStabilityRequest {
+  return { project: "", testVariants: [] };
+}
+
+export const QueryTestVariantStabilityRequest = {
+  encode(message: QueryTestVariantStabilityRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    for (const v of message.testVariants) {
+      QueryTestVariantStabilityRequest_TestVariantPosition.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantStabilityRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantStabilityRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testVariants.push(
+            QueryTestVariantStabilityRequest_TestVariantPosition.decode(reader, reader.uint32()),
+          );
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantStabilityRequest {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      testVariants: globalThis.Array.isArray(object?.testVariants)
+        ? object.testVariants.map((e: any) => QueryTestVariantStabilityRequest_TestVariantPosition.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QueryTestVariantStabilityRequest): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.testVariants?.length) {
+      obj.testVariants = message.testVariants.map((e) =>
+        QueryTestVariantStabilityRequest_TestVariantPosition.toJSON(e)
+      );
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryTestVariantStabilityRequest>, I>>(
+    base?: I,
+  ): QueryTestVariantStabilityRequest {
+    return QueryTestVariantStabilityRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryTestVariantStabilityRequest>, I>>(
+    object: I,
+  ): QueryTestVariantStabilityRequest {
+    const message = createBaseQueryTestVariantStabilityRequest() as any;
+    message.project = object.project ?? "";
+    message.testVariants =
+      object.testVariants?.map((e) => QueryTestVariantStabilityRequest_TestVariantPosition.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantStabilityRequest_TestVariantPosition(): QueryTestVariantStabilityRequest_TestVariantPosition {
+  return { testId: "", variant: undefined, variantHash: "", sources: undefined };
+}
+
+export const QueryTestVariantStabilityRequest_TestVariantPosition = {
+  encode(
+    message: QueryTestVariantStabilityRequest_TestVariantPosition,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.testId !== "") {
+      writer.uint32(10).string(message.testId);
+    }
+    if (message.variant !== undefined) {
+      Variant.encode(message.variant, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(26).string(message.variantHash);
+    }
+    if (message.sources !== undefined) {
+      Sources.encode(message.sources, writer.uint32(34).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantStabilityRequest_TestVariantPosition {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantStabilityRequest_TestVariantPosition() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.variant = Variant.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.sources = Sources.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantStabilityRequest_TestVariantPosition {
+    return {
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      sources: isSet(object.sources) ? Sources.fromJSON(object.sources) : undefined,
+    };
+  },
+
+  toJSON(message: QueryTestVariantStabilityRequest_TestVariantPosition): unknown {
+    const obj: any = {};
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variant !== undefined) {
+      obj.variant = Variant.toJSON(message.variant);
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    if (message.sources !== undefined) {
+      obj.sources = Sources.toJSON(message.sources);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryTestVariantStabilityRequest_TestVariantPosition>, I>>(
+    base?: I,
+  ): QueryTestVariantStabilityRequest_TestVariantPosition {
+    return QueryTestVariantStabilityRequest_TestVariantPosition.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryTestVariantStabilityRequest_TestVariantPosition>, I>>(
+    object: I,
+  ): QueryTestVariantStabilityRequest_TestVariantPosition {
+    const message = createBaseQueryTestVariantStabilityRequest_TestVariantPosition() as any;
+    message.testId = object.testId ?? "";
+    message.variant = (object.variant !== undefined && object.variant !== null)
+      ? Variant.fromPartial(object.variant)
+      : undefined;
+    message.variantHash = object.variantHash ?? "";
+    message.sources = (object.sources !== undefined && object.sources !== null)
+      ? Sources.fromPartial(object.sources)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantStabilityResponse(): QueryTestVariantStabilityResponse {
+  return { testVariants: [], criteria: undefined };
+}
+
+export const QueryTestVariantStabilityResponse = {
+  encode(message: QueryTestVariantStabilityResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.testVariants) {
+      TestVariantStabilityAnalysis.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.criteria !== undefined) {
+      TestStabilityCriteria.encode(message.criteria, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantStabilityResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantStabilityResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testVariants.push(TestVariantStabilityAnalysis.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.criteria = TestStabilityCriteria.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantStabilityResponse {
+    return {
+      testVariants: globalThis.Array.isArray(object?.testVariants)
+        ? object.testVariants.map((e: any) => TestVariantStabilityAnalysis.fromJSON(e))
+        : [],
+      criteria: isSet(object.criteria) ? TestStabilityCriteria.fromJSON(object.criteria) : undefined,
+    };
+  },
+
+  toJSON(message: QueryTestVariantStabilityResponse): unknown {
+    const obj: any = {};
+    if (message.testVariants?.length) {
+      obj.testVariants = message.testVariants.map((e) => TestVariantStabilityAnalysis.toJSON(e));
+    }
+    if (message.criteria !== undefined) {
+      obj.criteria = TestStabilityCriteria.toJSON(message.criteria);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryTestVariantStabilityResponse>, I>>(
+    base?: I,
+  ): QueryTestVariantStabilityResponse {
+    return QueryTestVariantStabilityResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryTestVariantStabilityResponse>, I>>(
+    object: I,
+  ): QueryTestVariantStabilityResponse {
+    const message = createBaseQueryTestVariantStabilityResponse() as any;
+    message.testVariants = object.testVariants?.map((e) => TestVariantStabilityAnalysis.fromPartial(e)) || [];
+    message.criteria = (object.criteria !== undefined && object.criteria !== null)
+      ? TestStabilityCriteria.fromPartial(object.criteria)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTestStabilityCriteria(): TestStabilityCriteria {
+  return { failureRate: undefined, flakeRate: undefined };
+}
+
+export const TestStabilityCriteria = {
+  encode(message: TestStabilityCriteria, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.failureRate !== undefined) {
+      TestStabilityCriteria_FailureRateCriteria.encode(message.failureRate, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.flakeRate !== undefined) {
+      TestStabilityCriteria_FlakeRateCriteria.encode(message.flakeRate, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestStabilityCriteria {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestStabilityCriteria() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.failureRate = TestStabilityCriteria_FailureRateCriteria.decode(reader, reader.uint32());
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.flakeRate = TestStabilityCriteria_FlakeRateCriteria.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestStabilityCriteria {
+    return {
+      failureRate: isSet(object.failureRate)
+        ? TestStabilityCriteria_FailureRateCriteria.fromJSON(object.failureRate)
+        : undefined,
+      flakeRate: isSet(object.flakeRate)
+        ? TestStabilityCriteria_FlakeRateCriteria.fromJSON(object.flakeRate)
+        : undefined,
+    };
+  },
+
+  toJSON(message: TestStabilityCriteria): unknown {
+    const obj: any = {};
+    if (message.failureRate !== undefined) {
+      obj.failureRate = TestStabilityCriteria_FailureRateCriteria.toJSON(message.failureRate);
+    }
+    if (message.flakeRate !== undefined) {
+      obj.flakeRate = TestStabilityCriteria_FlakeRateCriteria.toJSON(message.flakeRate);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestStabilityCriteria>, I>>(base?: I): TestStabilityCriteria {
+    return TestStabilityCriteria.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestStabilityCriteria>, I>>(object: I): TestStabilityCriteria {
+    const message = createBaseTestStabilityCriteria() as any;
+    message.failureRate = (object.failureRate !== undefined && object.failureRate !== null)
+      ? TestStabilityCriteria_FailureRateCriteria.fromPartial(object.failureRate)
+      : undefined;
+    message.flakeRate = (object.flakeRate !== undefined && object.flakeRate !== null)
+      ? TestStabilityCriteria_FlakeRateCriteria.fromPartial(object.flakeRate)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTestStabilityCriteria_FailureRateCriteria(): TestStabilityCriteria_FailureRateCriteria {
+  return { failureThreshold: 0, consecutiveFailureThreshold: 0 };
+}
+
+export const TestStabilityCriteria_FailureRateCriteria = {
+  encode(message: TestStabilityCriteria_FailureRateCriteria, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.failureThreshold !== 0) {
+      writer.uint32(8).int32(message.failureThreshold);
+    }
+    if (message.consecutiveFailureThreshold !== 0) {
+      writer.uint32(16).int32(message.consecutiveFailureThreshold);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestStabilityCriteria_FailureRateCriteria {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestStabilityCriteria_FailureRateCriteria() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.failureThreshold = reader.int32();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.consecutiveFailureThreshold = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestStabilityCriteria_FailureRateCriteria {
+    return {
+      failureThreshold: isSet(object.failureThreshold) ? globalThis.Number(object.failureThreshold) : 0,
+      consecutiveFailureThreshold: isSet(object.consecutiveFailureThreshold)
+        ? globalThis.Number(object.consecutiveFailureThreshold)
+        : 0,
+    };
+  },
+
+  toJSON(message: TestStabilityCriteria_FailureRateCriteria): unknown {
+    const obj: any = {};
+    if (message.failureThreshold !== 0) {
+      obj.failureThreshold = Math.round(message.failureThreshold);
+    }
+    if (message.consecutiveFailureThreshold !== 0) {
+      obj.consecutiveFailureThreshold = Math.round(message.consecutiveFailureThreshold);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestStabilityCriteria_FailureRateCriteria>, I>>(
+    base?: I,
+  ): TestStabilityCriteria_FailureRateCriteria {
+    return TestStabilityCriteria_FailureRateCriteria.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestStabilityCriteria_FailureRateCriteria>, I>>(
+    object: I,
+  ): TestStabilityCriteria_FailureRateCriteria {
+    const message = createBaseTestStabilityCriteria_FailureRateCriteria() as any;
+    message.failureThreshold = object.failureThreshold ?? 0;
+    message.consecutiveFailureThreshold = object.consecutiveFailureThreshold ?? 0;
+    return message;
+  },
+};
+
+function createBaseTestStabilityCriteria_FlakeRateCriteria(): TestStabilityCriteria_FlakeRateCriteria {
+  return { minWindow: 0, flakeThreshold: 0, flakeRateThreshold: 0 };
+}
+
+export const TestStabilityCriteria_FlakeRateCriteria = {
+  encode(message: TestStabilityCriteria_FlakeRateCriteria, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.minWindow !== 0) {
+      writer.uint32(8).int32(message.minWindow);
+    }
+    if (message.flakeThreshold !== 0) {
+      writer.uint32(16).int32(message.flakeThreshold);
+    }
+    if (message.flakeRateThreshold !== 0) {
+      writer.uint32(25).double(message.flakeRateThreshold);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestStabilityCriteria_FlakeRateCriteria {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestStabilityCriteria_FlakeRateCriteria() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.minWindow = reader.int32();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.flakeThreshold = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 25) {
+            break;
+          }
+
+          message.flakeRateThreshold = reader.double();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestStabilityCriteria_FlakeRateCriteria {
+    return {
+      minWindow: isSet(object.minWindow) ? globalThis.Number(object.minWindow) : 0,
+      flakeThreshold: isSet(object.flakeThreshold) ? globalThis.Number(object.flakeThreshold) : 0,
+      flakeRateThreshold: isSet(object.flakeRateThreshold) ? globalThis.Number(object.flakeRateThreshold) : 0,
+    };
+  },
+
+  toJSON(message: TestStabilityCriteria_FlakeRateCriteria): unknown {
+    const obj: any = {};
+    if (message.minWindow !== 0) {
+      obj.minWindow = Math.round(message.minWindow);
+    }
+    if (message.flakeThreshold !== 0) {
+      obj.flakeThreshold = Math.round(message.flakeThreshold);
+    }
+    if (message.flakeRateThreshold !== 0) {
+      obj.flakeRateThreshold = message.flakeRateThreshold;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestStabilityCriteria_FlakeRateCriteria>, I>>(
+    base?: I,
+  ): TestStabilityCriteria_FlakeRateCriteria {
+    return TestStabilityCriteria_FlakeRateCriteria.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestStabilityCriteria_FlakeRateCriteria>, I>>(
+    object: I,
+  ): TestStabilityCriteria_FlakeRateCriteria {
+    const message = createBaseTestStabilityCriteria_FlakeRateCriteria() as any;
+    message.minWindow = object.minWindow ?? 0;
+    message.flakeThreshold = object.flakeThreshold ?? 0;
+    message.flakeRateThreshold = object.flakeRateThreshold ?? 0;
+    return message;
+  },
+};
+
+function createBaseTestVariantStabilityAnalysis(): TestVariantStabilityAnalysis {
+  return { testId: "", variant: undefined, variantHash: "", failureRate: undefined, flakeRate: undefined };
+}
+
+export const TestVariantStabilityAnalysis = {
+  encode(message: TestVariantStabilityAnalysis, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.testId !== "") {
+      writer.uint32(10).string(message.testId);
+    }
+    if (message.variant !== undefined) {
+      Variant.encode(message.variant, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(26).string(message.variantHash);
+    }
+    if (message.failureRate !== undefined) {
+      TestVariantStabilityAnalysis_FailureRate.encode(message.failureRate, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.flakeRate !== undefined) {
+      TestVariantStabilityAnalysis_FlakeRate.encode(message.flakeRate, writer.uint32(42).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantStabilityAnalysis {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantStabilityAnalysis() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.variant = Variant.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.failureRate = TestVariantStabilityAnalysis_FailureRate.decode(reader, reader.uint32());
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.flakeRate = TestVariantStabilityAnalysis_FlakeRate.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantStabilityAnalysis {
+    return {
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      failureRate: isSet(object.failureRate)
+        ? TestVariantStabilityAnalysis_FailureRate.fromJSON(object.failureRate)
+        : undefined,
+      flakeRate: isSet(object.flakeRate)
+        ? TestVariantStabilityAnalysis_FlakeRate.fromJSON(object.flakeRate)
+        : undefined,
+    };
+  },
+
+  toJSON(message: TestVariantStabilityAnalysis): unknown {
+    const obj: any = {};
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variant !== undefined) {
+      obj.variant = Variant.toJSON(message.variant);
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    if (message.failureRate !== undefined) {
+      obj.failureRate = TestVariantStabilityAnalysis_FailureRate.toJSON(message.failureRate);
+    }
+    if (message.flakeRate !== undefined) {
+      obj.flakeRate = TestVariantStabilityAnalysis_FlakeRate.toJSON(message.flakeRate);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantStabilityAnalysis>, I>>(base?: I): TestVariantStabilityAnalysis {
+    return TestVariantStabilityAnalysis.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantStabilityAnalysis>, I>>(object: I): TestVariantStabilityAnalysis {
+    const message = createBaseTestVariantStabilityAnalysis() as any;
+    message.testId = object.testId ?? "";
+    message.variant = (object.variant !== undefined && object.variant !== null)
+      ? Variant.fromPartial(object.variant)
+      : undefined;
+    message.variantHash = object.variantHash ?? "";
+    message.failureRate = (object.failureRate !== undefined && object.failureRate !== null)
+      ? TestVariantStabilityAnalysis_FailureRate.fromPartial(object.failureRate)
+      : undefined;
+    message.flakeRate = (object.flakeRate !== undefined && object.flakeRate !== null)
+      ? TestVariantStabilityAnalysis_FlakeRate.fromPartial(object.flakeRate)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTestVariantStabilityAnalysis_FailureRate(): TestVariantStabilityAnalysis_FailureRate {
+  return { isMet: false, unexpectedTestRuns: 0, consecutiveUnexpectedTestRuns: 0, recentVerdicts: [] };
+}
+
+export const TestVariantStabilityAnalysis_FailureRate = {
+  encode(message: TestVariantStabilityAnalysis_FailureRate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.isMet === true) {
+      writer.uint32(8).bool(message.isMet);
+    }
+    if (message.unexpectedTestRuns !== 0) {
+      writer.uint32(16).int32(message.unexpectedTestRuns);
+    }
+    if (message.consecutiveUnexpectedTestRuns !== 0) {
+      writer.uint32(24).int32(message.consecutiveUnexpectedTestRuns);
+    }
+    for (const v of message.recentVerdicts) {
+      TestVariantStabilityAnalysis_FailureRate_RecentVerdict.encode(v!, writer.uint32(34).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantStabilityAnalysis_FailureRate {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantStabilityAnalysis_FailureRate() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.isMet = reader.bool();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.unexpectedTestRuns = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.consecutiveUnexpectedTestRuns = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.recentVerdicts.push(
+            TestVariantStabilityAnalysis_FailureRate_RecentVerdict.decode(reader, reader.uint32()),
+          );
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantStabilityAnalysis_FailureRate {
+    return {
+      isMet: isSet(object.isMet) ? globalThis.Boolean(object.isMet) : false,
+      unexpectedTestRuns: isSet(object.unexpectedTestRuns) ? globalThis.Number(object.unexpectedTestRuns) : 0,
+      consecutiveUnexpectedTestRuns: isSet(object.consecutiveUnexpectedTestRuns)
+        ? globalThis.Number(object.consecutiveUnexpectedTestRuns)
+        : 0,
+      recentVerdicts: globalThis.Array.isArray(object?.recentVerdicts)
+        ? object.recentVerdicts.map((e: any) => TestVariantStabilityAnalysis_FailureRate_RecentVerdict.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TestVariantStabilityAnalysis_FailureRate): unknown {
+    const obj: any = {};
+    if (message.isMet === true) {
+      obj.isMet = message.isMet;
+    }
+    if (message.unexpectedTestRuns !== 0) {
+      obj.unexpectedTestRuns = Math.round(message.unexpectedTestRuns);
+    }
+    if (message.consecutiveUnexpectedTestRuns !== 0) {
+      obj.consecutiveUnexpectedTestRuns = Math.round(message.consecutiveUnexpectedTestRuns);
+    }
+    if (message.recentVerdicts?.length) {
+      obj.recentVerdicts = message.recentVerdicts.map((e) =>
+        TestVariantStabilityAnalysis_FailureRate_RecentVerdict.toJSON(e)
+      );
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantStabilityAnalysis_FailureRate>, I>>(
+    base?: I,
+  ): TestVariantStabilityAnalysis_FailureRate {
+    return TestVariantStabilityAnalysis_FailureRate.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantStabilityAnalysis_FailureRate>, I>>(
+    object: I,
+  ): TestVariantStabilityAnalysis_FailureRate {
+    const message = createBaseTestVariantStabilityAnalysis_FailureRate() as any;
+    message.isMet = object.isMet ?? false;
+    message.unexpectedTestRuns = object.unexpectedTestRuns ?? 0;
+    message.consecutiveUnexpectedTestRuns = object.consecutiveUnexpectedTestRuns ?? 0;
+    message.recentVerdicts =
+      object.recentVerdicts?.map((e) => TestVariantStabilityAnalysis_FailureRate_RecentVerdict.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTestVariantStabilityAnalysis_FailureRate_RecentVerdict(): TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
+  return { position: "0", changelists: [], invocations: [], unexpectedRuns: 0, totalRuns: 0 };
+}
+
+export const TestVariantStabilityAnalysis_FailureRate_RecentVerdict = {
+  encode(
+    message: TestVariantStabilityAnalysis_FailureRate_RecentVerdict,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.position !== "0") {
+      writer.uint32(8).int64(message.position);
+    }
+    for (const v of message.changelists) {
+      Changelist.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    for (const v of message.invocations) {
+      writer.uint32(26).string(v!);
+    }
+    if (message.unexpectedRuns !== 0) {
+      writer.uint32(32).int32(message.unexpectedRuns);
+    }
+    if (message.totalRuns !== 0) {
+      writer.uint32(40).int32(message.totalRuns);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantStabilityAnalysis_FailureRate_RecentVerdict() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.position = longToString(reader.int64() as Long);
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.changelists.push(Changelist.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.invocations.push(reader.string());
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.unexpectedRuns = reader.int32();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.totalRuns = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
+    return {
+      position: isSet(object.position) ? globalThis.String(object.position) : "0",
+      changelists: globalThis.Array.isArray(object?.changelists)
+        ? object.changelists.map((e: any) => Changelist.fromJSON(e))
+        : [],
+      invocations: globalThis.Array.isArray(object?.invocations)
+        ? object.invocations.map((e: any) => globalThis.String(e))
+        : [],
+      unexpectedRuns: isSet(object.unexpectedRuns) ? globalThis.Number(object.unexpectedRuns) : 0,
+      totalRuns: isSet(object.totalRuns) ? globalThis.Number(object.totalRuns) : 0,
+    };
+  },
+
+  toJSON(message: TestVariantStabilityAnalysis_FailureRate_RecentVerdict): unknown {
+    const obj: any = {};
+    if (message.position !== "0") {
+      obj.position = message.position;
+    }
+    if (message.changelists?.length) {
+      obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+    }
+    if (message.invocations?.length) {
+      obj.invocations = message.invocations;
+    }
+    if (message.unexpectedRuns !== 0) {
+      obj.unexpectedRuns = Math.round(message.unexpectedRuns);
+    }
+    if (message.totalRuns !== 0) {
+      obj.totalRuns = Math.round(message.totalRuns);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantStabilityAnalysis_FailureRate_RecentVerdict>, I>>(
+    base?: I,
+  ): TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
+    return TestVariantStabilityAnalysis_FailureRate_RecentVerdict.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantStabilityAnalysis_FailureRate_RecentVerdict>, I>>(
+    object: I,
+  ): TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
+    const message = createBaseTestVariantStabilityAnalysis_FailureRate_RecentVerdict() as any;
+    message.position = object.position ?? "0";
+    message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    message.invocations = object.invocations?.map((e) => e) || [];
+    message.unexpectedRuns = object.unexpectedRuns ?? 0;
+    message.totalRuns = object.totalRuns ?? 0;
+    return message;
+  },
+};
+
+function createBaseTestVariantStabilityAnalysis_FlakeRate(): TestVariantStabilityAnalysis_FlakeRate {
+  return {
+    isMet: false,
+    runFlakyVerdicts: 0,
+    totalVerdicts: 0,
+    flakeExamples: [],
+    startPosition: "0",
+    endPosition: "0",
+  };
+}
+
+export const TestVariantStabilityAnalysis_FlakeRate = {
+  encode(message: TestVariantStabilityAnalysis_FlakeRate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.isMet === true) {
+      writer.uint32(8).bool(message.isMet);
+    }
+    if (message.runFlakyVerdicts !== 0) {
+      writer.uint32(16).int32(message.runFlakyVerdicts);
+    }
+    if (message.totalVerdicts !== 0) {
+      writer.uint32(24).int32(message.totalVerdicts);
+    }
+    for (const v of message.flakeExamples) {
+      TestVariantStabilityAnalysis_FlakeRate_VerdictExample.encode(v!, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.startPosition !== "0") {
+      writer.uint32(40).int64(message.startPosition);
+    }
+    if (message.endPosition !== "0") {
+      writer.uint32(48).int64(message.endPosition);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantStabilityAnalysis_FlakeRate {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantStabilityAnalysis_FlakeRate() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.isMet = reader.bool();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.runFlakyVerdicts = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalVerdicts = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.flakeExamples.push(
+            TestVariantStabilityAnalysis_FlakeRate_VerdictExample.decode(reader, reader.uint32()),
+          );
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.startPosition = longToString(reader.int64() as Long);
+          continue;
+        case 6:
+          if (tag !== 48) {
+            break;
+          }
+
+          message.endPosition = longToString(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantStabilityAnalysis_FlakeRate {
+    return {
+      isMet: isSet(object.isMet) ? globalThis.Boolean(object.isMet) : false,
+      runFlakyVerdicts: isSet(object.runFlakyVerdicts) ? globalThis.Number(object.runFlakyVerdicts) : 0,
+      totalVerdicts: isSet(object.totalVerdicts) ? globalThis.Number(object.totalVerdicts) : 0,
+      flakeExamples: globalThis.Array.isArray(object?.flakeExamples)
+        ? object.flakeExamples.map((e: any) => TestVariantStabilityAnalysis_FlakeRate_VerdictExample.fromJSON(e))
+        : [],
+      startPosition: isSet(object.startPosition) ? globalThis.String(object.startPosition) : "0",
+      endPosition: isSet(object.endPosition) ? globalThis.String(object.endPosition) : "0",
+    };
+  },
+
+  toJSON(message: TestVariantStabilityAnalysis_FlakeRate): unknown {
+    const obj: any = {};
+    if (message.isMet === true) {
+      obj.isMet = message.isMet;
+    }
+    if (message.runFlakyVerdicts !== 0) {
+      obj.runFlakyVerdicts = Math.round(message.runFlakyVerdicts);
+    }
+    if (message.totalVerdicts !== 0) {
+      obj.totalVerdicts = Math.round(message.totalVerdicts);
+    }
+    if (message.flakeExamples?.length) {
+      obj.flakeExamples = message.flakeExamples.map((e) =>
+        TestVariantStabilityAnalysis_FlakeRate_VerdictExample.toJSON(e)
+      );
+    }
+    if (message.startPosition !== "0") {
+      obj.startPosition = message.startPosition;
+    }
+    if (message.endPosition !== "0") {
+      obj.endPosition = message.endPosition;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantStabilityAnalysis_FlakeRate>, I>>(
+    base?: I,
+  ): TestVariantStabilityAnalysis_FlakeRate {
+    return TestVariantStabilityAnalysis_FlakeRate.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantStabilityAnalysis_FlakeRate>, I>>(
+    object: I,
+  ): TestVariantStabilityAnalysis_FlakeRate {
+    const message = createBaseTestVariantStabilityAnalysis_FlakeRate() as any;
+    message.isMet = object.isMet ?? false;
+    message.runFlakyVerdicts = object.runFlakyVerdicts ?? 0;
+    message.totalVerdicts = object.totalVerdicts ?? 0;
+    message.flakeExamples =
+      object.flakeExamples?.map((e) => TestVariantStabilityAnalysis_FlakeRate_VerdictExample.fromPartial(e)) || [];
+    message.startPosition = object.startPosition ?? "0";
+    message.endPosition = object.endPosition ?? "0";
+    return message;
+  },
+};
+
+function createBaseTestVariantStabilityAnalysis_FlakeRate_VerdictExample(): TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
+  return { position: "0", changelists: [], invocations: [] };
+}
+
+export const TestVariantStabilityAnalysis_FlakeRate_VerdictExample = {
+  encode(
+    message: TestVariantStabilityAnalysis_FlakeRate_VerdictExample,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.position !== "0") {
+      writer.uint32(8).int64(message.position);
+    }
+    for (const v of message.changelists) {
+      Changelist.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    for (const v of message.invocations) {
+      writer.uint32(26).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVariantStabilityAnalysis_FlakeRate_VerdictExample() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.position = longToString(reader.int64() as Long);
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.changelists.push(Changelist.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.invocations.push(reader.string());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
+    return {
+      position: isSet(object.position) ? globalThis.String(object.position) : "0",
+      changelists: globalThis.Array.isArray(object?.changelists)
+        ? object.changelists.map((e: any) => Changelist.fromJSON(e))
+        : [],
+      invocations: globalThis.Array.isArray(object?.invocations)
+        ? object.invocations.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TestVariantStabilityAnalysis_FlakeRate_VerdictExample): unknown {
+    const obj: any = {};
+    if (message.position !== "0") {
+      obj.position = message.position;
+    }
+    if (message.changelists?.length) {
+      obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+    }
+    if (message.invocations?.length) {
+      obj.invocations = message.invocations;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TestVariantStabilityAnalysis_FlakeRate_VerdictExample>, I>>(
+    base?: I,
+  ): TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
+    return TestVariantStabilityAnalysis_FlakeRate_VerdictExample.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TestVariantStabilityAnalysis_FlakeRate_VerdictExample>, I>>(
+    object: I,
+  ): TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
+    const message = createBaseTestVariantStabilityAnalysis_FlakeRate_VerdictExample() as any;
+    message.position = object.position ?? "0";
+    message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    message.invocations = object.invocations?.map((e) => e) || [];
+    return message;
+  },
+};
+
+/** Provides methods to obtain statistics about test variants. */
+export interface TestVariants {
+  /**
+   * Queries the failure rate of specified test variants, returning
+   * signals indicating if the test variant is flaky and/or
+   * deterministically failing. Intended for use by recipes to
+   * inform exoneration decisions.
+   *
+   * This RPC is used to support version one of exoneration.
+   * It will be replaced by QueryStability over time.
+   *
+   * Changes to this RPC should comply with https://google.aip.dev/231.
+   */
+  queryFailureRate(request: QueryTestVariantFailureRateRequest): Promise<QueryTestVariantFailureRateResponse>;
+  /**
+   * Queries the stability of specified test variants.
+   * Intended for use by recipes to inform exoneration decisions,
+   * and by UI to show test stability.
+   */
+  queryStability(request: QueryTestVariantStabilityRequest): Promise<QueryTestVariantStabilityResponse>;
+}
+
+export const TestVariantsServiceName = "luci.analysis.v1.TestVariants";
+export class TestVariantsClientImpl implements TestVariants {
+  static readonly DEFAULT_SERVICE = TestVariantsServiceName;
+  private readonly rpc: Rpc;
+  private readonly service: string;
+  constructor(rpc: Rpc, opts?: { service?: string }) {
+    this.service = opts?.service || TestVariantsServiceName;
+    this.rpc = rpc;
+    this.queryFailureRate = this.queryFailureRate.bind(this);
+    this.queryStability = this.queryStability.bind(this);
+  }
+  queryFailureRate(request: QueryTestVariantFailureRateRequest): Promise<QueryTestVariantFailureRateResponse> {
+    const data = QueryTestVariantFailureRateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryFailureRate", data);
+    return promise.then((data) => QueryTestVariantFailureRateResponse.fromJSON(data));
+  }
+
+  queryStability(request: QueryTestVariantStabilityRequest): Promise<QueryTestVariantStabilityResponse> {
+    const data = QueryTestVariantStabilityRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryStability", data);
+    return promise.then((data) => QueryTestVariantStabilityResponse.fromJSON(data));
+  }
+}
+
+interface Rpc {
+  request(service: string, method: string, data: unknown): Promise<unknown>;
+}
+
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function toTimestamp(dateStr: string): Timestamp {
+  const date = new globalThis.Date(dateStr);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): string {
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis).toISOString();
+}
+
+function longToString(long: Long) {
+  return long.toString();
+}
+
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
+}

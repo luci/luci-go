@@ -123,6 +123,14 @@ cd frontend/ui
 npm run lint-fix
 ```
 
+## Regenerating UI proto bindings
+
+You can regenerate typescript bindings for proto files by running:
+```
+cd frontend/ui
+npm run gen_proto
+```
+
 ## Deployment
 
 ### Developer Testing {#test-deployment}

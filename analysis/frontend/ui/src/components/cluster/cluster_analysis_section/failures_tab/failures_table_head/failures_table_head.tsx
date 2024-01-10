@@ -18,8 +18,8 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 
-import { MetricName } from '@/tools/failures_tools';
 import { Tooltip } from '@mui/material';
+import { MetricName } from '@/tools/failures_tools';
 
 const NarrowTableCell = styled(TableCell)(() => ({
   [`&.${tableCellClasses.root}`]: {
@@ -51,12 +51,12 @@ const FailuresTableHead = ({
           </Tooltip>
         </NarrowTableCell>
         <NarrowTableCell sx={{ width: '100px' }}>
-          <Tooltip title={<>The combined result of all retries of this test variant in this build.  See <a href="http://go/resultdb-concepts#test-verdict" target="_blank">go/resultdb-concepts</a> for more details.</>}>
+          <Tooltip title={<>The combined result of all retries of this test variant in this build.  See <a href="http://go/resultdb-concepts#test-verdict" target="_blank" rel="noreferrer">go/resultdb-concepts</a> for more details.</>}>
             <span>Verdict</span>
           </Tooltip>
         </NarrowTableCell>
         <NarrowTableCell>
-          <Tooltip title={<>The key value pairs that define the configuration in which the test was run.  Any variant keys that are used for grouping will be omitted. See <a href="http://go/resultdb-concepts#test-variant" target="_blank">go/resultdb-concepts</a> for more details.</>}>
+          <Tooltip title={<>The key value pairs that define the configuration in which the test was run.  Any variant keys that are used for grouping will be omitted. See <a href="http://go/resultdb-concepts#test-variant" target="_blank" rel="noreferrer">go/resultdb-concepts</a> for more details.</>}>
             <span>Variant</span>
           </Tooltip>
         </NarrowTableCell>

@@ -9,9 +9,11 @@
     "watch": "tsc --noEmit --skipLibCheck && node esbuild_watch.mjs",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "e2e": "tsc --noEmit --skipLibCheck && cypress run",
+    "postinstall": "patch-package",
     "test": "tsc --noEmit --skipLibCheck && jest",
     "lint": "eslint ./src/",
-    "lint-fix": "eslint ./src/ --fix"
+    "lint-fix": "eslint ./src/ --fix",
+    "gen_proto": "sh ./scripts/gen_proto.sh"
   },
   "dependencies": {
     "@chopsui/prpc-client": "^1.1.0",
@@ -26,6 +28,7 @@
     "dayjs": "^1.11.7",
     "dompurify": "^3.0.5",
     "nanoid": "^4.0.1",
+    "patch-package": "^8.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-query": "^3.39.3",
@@ -73,6 +76,7 @@
     "stylelint-config-standard": "^30.0.1",
     "stylelint-scss": "^4.4.0",
     "ts-jest": "^29.0.5",
+    "ts-proto": "^1.161.1",
     "typescript": "^4.9.5"
   }
 }
