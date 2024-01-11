@@ -17,12 +17,11 @@ package model
 
 import (
 	"bytes"
-	"compress/zlib"
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	stderrors "errors"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -44,9 +43,15 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/impl/util/zlib"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
+)
+
+const (
+	// Max size of AuthDBShard.Blob.
+	MaxShardSize = 900 * 1024 // 900 kB.
 )
 
 // AuthVersionedEntityMixin is for AuthDB entities that
@@ -531,7 +536,8 @@ func (apr *AuthProjectRealms) RealmsToProto() (projectRealms *protocol.Realms, e
 	// version of Auth Service. If written by the Python version, then
 	// legacy decoding is necessary prior to unmarshalling the realms.
 	if isLegacyEncoded(blob) {
-		blob, err = decodeLegacyData(blob)
+		// Legacy encoding is actually zlib compression, so decompress.
+		blob, err = zlib.Decompress(blob)
 		if err != nil {
 			return nil, errors.Annotate(err, "error decoding project realms").Err()
 		}
@@ -1331,6 +1337,98 @@ func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool) (*AuthDBSn
 	}
 }
 
+// StoreAuthDBSnapshot stores the AuthDB blob (serialized proto) into
+// Datastore.
+//
+// Args:
+//   - replicationState: the AuthReplicationState corresponding to the
+//     given authDBBlob.
+//   - authDBBlob: serialized protocol.ReplicationPushRequest message
+//     (has AuthDB inside).
+func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationState, authDBBlob []byte) (err error) {
+	logging.Debugf(ctx, "Storing AuthDB Rev %d", replicationState.AuthDBRev)
+
+	// Get the SHA256 hex digest of the AuthDB blob (before compression).
+	blobHexDigest := hex.EncodeToString(authDBBlob)
+
+	// Get the deflated serialized protocol.ReplicationPushRequest message.
+	deflated, err := zlib.Compress(authDBBlob)
+	if err != nil {
+		return errors.Annotate(err, "error compressing AuthDB").Err()
+	}
+
+	// Split it into shards to avoid hitting entity size limits. Do it
+	// only if `deflated` is larger than the limit. Otherwise it is more
+	// efficient to store it inline in AuthDBSnapshot (it is also how it
+	// is stored in older entities, before sharding was introduced).
+	var shardIDs []string
+	if len(deflated) > MaxShardSize {
+		shardIDs, err = shardAuthDB(ctx, replicationState.AuthDBRev, deflated, MaxShardSize)
+		if err != nil {
+			return errors.Annotate(err, "error sharding AuthDB").Err()
+		}
+	}
+
+	// Attempt to add the AuthDBSnapshot to datastore.
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Check for an existing snapshot at this revision.
+		authDBSnapshot := &AuthDBSnapshot{
+			Kind: "AuthDBSnapshot",
+			ID:   replicationState.AuthDBRev,
+		}
+		err := datastore.Get(ctx, authDBSnapshot)
+		if err == nil {
+			// Already exists.
+			logging.Infof(ctx, "skipping storing of AuthDBSnapshot - already exists for Rev %d", replicationState.AuthDBRev)
+			return nil
+		} else if !errors.Is(err, datastore.ErrNoSuchEntity) {
+			// Unexpected error when checking datastore.
+			return errors.Annotate(err, "error when checking for existing AuthDBSnapshot").Err()
+		}
+
+		// AuthDBSnapshot does not exist for this revision, so it can be
+		// written.
+		authDBSnapshot.AuthDBSha256 = blobHexDigest
+		authDBSnapshot.CreatedTS = replicationState.ModifiedTS
+		// Set either AuthDBDeflated or ShardIDs.
+		if len(shardIDs) > 0 {
+			authDBSnapshot.ShardIDs = shardIDs
+		} else {
+			authDBSnapshot.AuthDBDeflated = deflated
+		}
+		return datastore.Put(ctx, authDBSnapshot)
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err, "error storing AuthDBSnapshot").Err()
+	}
+
+	// Update AuthDBSnapshotLatest, if necessary.
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		latest := &AuthDBSnapshotLatest{
+			Kind: "AuthDBSnapshotLatest",
+			ID:   "latest",
+		}
+		err := datastore.Get(ctx, latest)
+		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
+			return err
+		}
+
+		if latest.AuthDBRev < replicationState.AuthDBRev {
+			latest.AuthDBRev = replicationState.AuthDBRev
+			latest.ModifiedTS = replicationState.ModifiedTS
+			latest.AuthDBSha256 = blobHexDigest
+			return datastore.Put(ctx, latest)
+		}
+
+		return nil
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err, "error updating AuthDBSnapshotLatest").Err()
+	}
+
+	return nil
+}
+
 // GetAuthDBSnapshotLatest returns the AuthDBSnapshotLatest datastore entity.
 //
 // Returns datastore.ErrNoSuchEntity if the AuthDBSnapshotLatest is not present.
@@ -1650,6 +1748,45 @@ func GetAllAuthProjectRealmsMeta(ctx context.Context) ([]*AuthProjectRealmsMeta,
 	return authProjectRealmsMeta, nil
 }
 
+// shardAuthDB splits the given blob into multiple AuthDBShard entities.
+//
+// Stores shards sequentially to avoid making a bunch of memory-hungry
+// calls in parallel.
+//
+// Args:
+//   - authDBRev: AuthDB revision to use in AuthDBShard entity keys.
+//   - blob: the data to split into shards.
+//   - maxSize: the maximum shard size.
+//
+// Returns:
+//   - the IDs of the shards that the blob was sequentially written to.
+func shardAuthDB(ctx context.Context, authDBRev int64, blob []byte, maxSize int) ([]string, error) {
+	logging.Debugf(ctx, "sharding AuthDB Rev %d", authDBRev)
+
+	var shard []byte
+	shardIDs := []string{}
+	for len(blob) > 0 {
+		if len(blob) < maxSize {
+			maxSize = len(blob)
+		}
+
+		shard, blob = blob[:maxSize], blob[maxSize:]
+		shardID := fmt.Sprintf("%d:%s", authDBRev, hex.EncodeToString(shard))
+		authDBShard := &AuthDBShard{
+			Kind: "AuthDBShard",
+			ID:   shardID,
+			Blob: shard,
+		}
+
+		if err := datastore.Put(ctx, authDBShard); err != nil {
+			return []string{}, err
+		}
+		shardIDs = append(shardIDs, shardID)
+	}
+
+	return shardIDs, nil
+}
+
 // Fetches a list of AuthDBShard entities and merges their payload.
 //
 // shardIDs:
@@ -1746,22 +1883,8 @@ func (snapshot *AuthDBSnapshot) ToProto() *rpcpb.Snapshot {
 }
 
 // /////////////////////////////////////////////////////////////////////
-// ///////////// Realms legacy decoding helper functions ///////////////
+// ////////////////// Realms legacy helper function ////////////////////
 // /////////////////////////////////////////////////////////////////////
-
-// decodeLegacyData decodes the given data using zlib.
-func decodeLegacyData(input []byte) ([]byte, error) {
-	r, err := zlib.NewReader(bytes.NewBuffer(input))
-	if err != nil {
-		return nil, err
-	}
-	w := bytes.NewBuffer([]byte{})
-	if _, err := io.Copy(w, r); err != nil {
-		_ = r.Close()
-		return w.Bytes(), err
-	}
-	return w.Bytes(), r.Close()
-}
 
 // isLegacyEncoded returns whether the given blob has zlib headers.
 func isLegacyEncoded(blob []byte) bool {

@@ -15,10 +15,9 @@
 package model
 
 import (
-	"bytes"
-	"compress/zlib"
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"testing"
@@ -41,6 +40,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/taskspb"
 	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/impl/util/zlib"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -1835,6 +1835,98 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 	})
 }
 
+func TestStoreAuthDBSnapshot(t *testing.T) {
+	t.Parallel()
+
+	Convey("storing AuthDBSnapshot works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		// Set up the test data.
+		authDBBlob := []byte("test-authdb-blob")
+		expectedDeflated, err := zlib.Compress(authDBBlob)
+		So(err, ShouldBeNil)
+		expectedHexDigest := hex.EncodeToString(authDBBlob)
+
+		// Store the AuthDBSnapshot.
+		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), authDBBlob)
+		So(err, ShouldBeNil)
+
+		// Check the AuthDBSnapshot stored data.
+		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false)
+		So(err, ShouldBeNil)
+		So(authDBSnapshot, ShouldResembleProto, &AuthDBSnapshot{
+			Kind:           "AuthDBSnapshot",
+			ID:             1,
+			AuthDBDeflated: expectedDeflated,
+			AuthDBSha256:   expectedHexDigest,
+			CreatedTS:      testModifiedTS,
+		})
+		decompressedBlob, _ := zlib.Decompress(authDBSnapshot.AuthDBDeflated)
+		So(decompressedBlob, ShouldEqual, authDBBlob)
+
+		Convey("no overwriting for existing revision", func() {
+			// Attempt to store the AuthDBSnapshot for an existing revision.
+			err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), []byte("test-authdb-blob-changed"))
+			So(err, ShouldBeNil)
+
+			// Check the AuthDBSnapshot stored data was not actually changed.
+			authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false)
+			So(err, ShouldBeNil)
+			So(authDBSnapshot, ShouldResembleProto, &AuthDBSnapshot{
+				Kind:           "AuthDBSnapshot",
+				ID:             1,
+				AuthDBDeflated: expectedDeflated,
+				AuthDBSha256:   expectedHexDigest,
+				CreatedTS:      testModifiedTS,
+			})
+		})
+	})
+
+	Convey("AuthDBSnapshotLatest is appropriately updated", t, func() {
+		ctx := memory.Use(context.Background())
+
+		// Set the latest revision to 24.
+		latestSnapshot := &AuthDBSnapshotLatest{
+			Kind:      "AuthDBSnapshotLatest",
+			ID:        "latest",
+			AuthDBRev: 24,
+		}
+		So(datastore.Put(ctx, latestSnapshot), ShouldBeNil)
+
+		Convey("updated for later revision", func() {
+			So(StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 28), nil), ShouldBeNil)
+
+			// Check the latest AuthDBSnapshot pointer was updated.
+			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx)
+			So(err, ShouldBeNil)
+			So(latestSnapshot.AuthDBRev, ShouldEqual, 28)
+		})
+
+		Convey("not updated for earlier revision", func() {
+			So(StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 23), nil), ShouldBeNil)
+
+			// Check the latest AuthDBSnapshot pointer was not updated.
+			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx)
+			So(err, ShouldBeNil)
+			So(latestSnapshot.AuthDBRev, ShouldEqual, 24)
+		})
+	})
+
+	Convey("unsharding sharded data works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		// Shard an AuthDB compressed blob.
+		authDBDeflatedBlob := []byte("this is test data")
+		shardIDs, err := shardAuthDB(ctx, 32, authDBDeflatedBlob, 8)
+		So(err, ShouldBeNil)
+
+		// Check the blob is reconstructed given the same shard IDs.
+		unshardedBlob, err := unshardAuthDB(ctx, shardIDs)
+		So(err, ShouldBeNil)
+		So(unshardedBlob, ShouldEqual, authDBDeflatedBlob)
+	})
+}
+
 func TestProtoConversion(t *testing.T) {
 	t.Parallel()
 
@@ -1891,12 +1983,8 @@ func TestRealmsToProto(t *testing.T) {
 		Convey("legacy format", func() {
 			// This is an approximation of what the Python version of
 			// Auth Service would have put in Datastore.
-			var b bytes.Buffer
-			w := zlib.NewWriter(&b)
-			_, err := w.Write(modernFormat)
+			legacyFormat, err := zlib.Compress(modernFormat)
 			So(err, ShouldBeNil)
-			So(w.Close(), ShouldBeNil)
-			legacyFormat := b.Bytes()
 
 			apr := &AuthProjectRealms{
 				ID:     "testProj",
