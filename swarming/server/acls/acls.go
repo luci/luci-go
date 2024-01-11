@@ -22,6 +22,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/swarming/server/cfg"
@@ -47,7 +50,9 @@ import (
 // be used if RPCs results are an aggregation over a pool, and thus explicitly
 // require pool-level permissions.
 type Checker struct {
-	cfg *cfg.Config
+	cfg    *cfg.Config       // swarming config
+	db     authdb.DB         // auth DB with groups and permissions
+	caller identity.Identity // authenticated identity of the caller
 }
 
 // CheckResult is returned by all Checker methods.
@@ -118,16 +123,67 @@ type TaskAuthInfo struct {
 
 // NewChecker constructs an ACL checker that uses the given config snapshot.
 func NewChecker(ctx context.Context, cfg *cfg.Config) *Checker {
-	return &Checker{cfg: cfg}
+	state := auth.GetState(ctx)
+	return &Checker{
+		cfg:    cfg,
+		db:     state.DB(),
+		caller: state.User().Identity,
+	}
 }
 
 // CheckServerPerm checks if the caller has a permission on a server level.
 //
 // Having a permission on a server level means it applies to all pools, tasks
-// and bots in this instance of Swarming.
+// and bots in this instance of Swarming. Server level permissions are defined
+// via "auth { ... }" stanza with group names in the server's settings.cfg.
 func (chk *Checker) CheckServerPerm(ctx context.Context, perm realms.Permission) CheckResult {
-	// TODO(vadimsh): Implement.
-	return CheckResult{Permitted: true}
+	serverGroups := chk.cfg.Settings().Auth
+
+	var allowedGroups []string
+
+	switch perm {
+	case PermTasksGet, PermPoolsListTasks:
+		allowedGroups = []string{
+			serverGroups.ViewAllTasksGroup,
+			serverGroups.PrivilegedUsersGroup,
+			serverGroups.AdminsGroup,
+		}
+
+	case PermPoolsListBots:
+		allowedGroups = []string{
+			serverGroups.ViewAllBotsGroup,
+			serverGroups.PrivilegedUsersGroup,
+			serverGroups.AdminsGroup,
+		}
+
+	case PermPoolsCreateBot:
+		allowedGroups = []string{
+			serverGroups.BotBootstrapGroup,
+			serverGroups.AdminsGroup,
+		}
+
+	case PermTasksCancel, PermPoolsCancelTask, PermPoolsDeleteBot, PermPoolsTerminateBot:
+		allowedGroups = []string{
+			serverGroups.AdminsGroup,
+		}
+	}
+
+	if len(allowedGroups) != 0 {
+		switch yes, err := chk.db.IsMember(ctx, chk.caller, allowedGroups); {
+		case err != nil:
+			logging.Errorf(ctx, "Error when checking groups: %s", err)
+			return CheckResult{InternalError: true}
+		case yes:
+			return CheckResult{Permitted: true}
+		}
+	}
+
+	return CheckResult{
+		err: status.Errorf(
+			codes.PermissionDenied,
+			"the caller %q doesn't have server-level permission %q",
+			chk.caller, perm),
+	}
 }
 
 // CheckPoolPerm checks if the caller has a permission on a pool level.
@@ -135,51 +191,139 @@ func (chk *Checker) CheckServerPerm(ctx context.Context, perm realms.Permission)
 // Having a permission on a pool level means it applies for all tasks and bots
 // in that pool. CheckPoolPerm implicitly calls CheckServerPerm.
 func (chk *Checker) CheckPoolPerm(ctx context.Context, pool string, perm realms.Permission) CheckResult {
-	// TODO(vadimsh): Implement.
-	return chk.CheckServerPerm(ctx, perm)
+	// If have a server-level permission, no need to check the pool. Server-level
+	// permissions are also the only way to deal with deleted pools.
+	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.InternalError {
+		return res
+	}
+
+	if cfg := chk.cfg.Pool(pool); cfg != nil {
+		switch yes, err := chk.db.HasPermission(ctx, chk.caller, perm, cfg.Realm, nil); {
+		case err != nil:
+			logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, cfg.Realm, err)
+			return CheckResult{InternalError: true}
+		case yes:
+			return CheckResult{Permitted: true}
+		}
+	}
+
+	// TODO(vadimsh): Make the error message more informative.
+	return CheckResult{
+		err: status.Errorf(
+			codes.PermissionDenied,
+			"the caller %q doesn't have permission %q in the pool %q or the pool doesn't exist",
+			chk.caller, perm, pool),
+	}
+}
+
+// FilterPoolsByPerm filters the list of pools keeping only ones in which the
+// caller has the permission.
+//
+// If the caller doesn't have the permission in any of the pools, returns nil
+// slice and no error. Returns a gRPC status error if the check failed due to
+// some internal issues.
+func (chk *Checker) FilterPoolsByPerm(ctx context.Context, pools []string, perm realms.Permission) ([]string, error) {
+	// If have a server-level permission, no need to check individual pools.
+	switch res := chk.CheckServerPerm(ctx, perm); {
+	case res.InternalError:
+		return nil, res.ToGrpcErr()
+	case res.Permitted:
+		return pools, nil
+	}
+
+	var filtered []string
+
+	ok := chk.visitRealms(ctx, pools, perm, func(pool string, allowed bool) bool {
+		if allowed {
+			filtered = append(filtered, pool)
+		}
+		return true
+	})
+
+	if !ok {
+		return nil, (&CheckResult{InternalError: true}).ToGrpcErr()
+	}
+	return filtered, nil
 }
 
 // CheckAllPoolsPerm checks if the caller has a permission in *all* given pools.
 //
 // The list of pools must not be empty. Panics if it is.
 func (chk *Checker) CheckAllPoolsPerm(ctx context.Context, pools []string, perm realms.Permission) CheckResult {
-	if len(pools) == 0 {
+	switch len(pools) {
+	case 0:
 		panic("empty list of pools in CheckAllPoolsPerm")
+	case 1:
+		// Use a single pool check for better error messages.
+		return chk.CheckPoolPerm(ctx, pools[0], perm)
 	}
+
 	// If have a server-level permission, no need to check individual pools.
 	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.InternalError {
 		return res
 	}
-	// TODO(vadimsh): Optimize.
-	for _, pool := range pools {
-		if res := chk.CheckPoolPerm(ctx, pool, perm); !res.Permitted || res.InternalError {
-			// TODO(vadimsh): Improve the error message.
-			return res
+
+	allAllowed := true
+
+	ok := chk.visitRealms(ctx, pools, perm, func(_ string, allowed bool) bool {
+		allAllowed = allAllowed && allowed
+		return allAllowed
+	})
+
+	switch {
+	case !ok:
+		return CheckResult{InternalError: true}
+	case allAllowed:
+		return CheckResult{Permitted: true}
+	default:
+		// TODO(vadimsh): Make the error message more informative.
+		return CheckResult{
+			err: status.Errorf(
+				codes.PermissionDenied,
+				"the caller %q doesn't have permission %q in some of the requested pools",
+				chk.caller, perm),
 		}
 	}
-	return CheckResult{Permitted: true}
 }
 
 // CheckAnyPoolsPerm checks if the caller has a permission in *any* given pool.
 //
 // The list of pools must not be empty. Panics if it is.
 func (chk *Checker) CheckAnyPoolsPerm(ctx context.Context, pools []string, perm realms.Permission) CheckResult {
-	if len(pools) == 0 {
+	switch len(pools) {
+	case 0:
 		panic("empty list of pools in CheckAnyPoolsPerm")
+	case 1:
+		// Use a single pool check for better error messages.
+		return chk.CheckPoolPerm(ctx, pools[0], perm)
 	}
+
 	// If have a server-level permission, no need to check individual pools.
 	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.InternalError {
 		return res
 	}
-	// TODO(vadimsh): Optimize.
-	for _, pool := range pools {
-		if res := chk.CheckPoolPerm(ctx, pool, perm); res.Permitted || res.InternalError {
-			return res
+
+	oneAllowed := false
+
+	ok := chk.visitRealms(ctx, pools, perm, func(_ string, allowed bool) bool {
+		oneAllowed = oneAllowed || allowed
+		return !oneAllowed
+	})
+
+	switch {
+	case !ok:
+		return CheckResult{InternalError: true}
+	case oneAllowed:
+		return CheckResult{Permitted: true}
+	default:
+		// TODO(vadimsh): Make the error message more informative.
+		return CheckResult{
+			err: status.Errorf(
+				codes.PermissionDenied,
+				"the caller %q doesn't have permission %q in any of the requested pools",
+				chk.caller, perm),
 		}
 	}
-	// TODO(vadimsh): Improve the error message to mention concrete pools if the
-	// caller has permissions to see them at all.
-	return CheckResult{err: status.Errorf(codes.PermissionDenied, "no %q permission in required pools", perm)}
 }
 
 // CheckTaskPerm checks if the caller has a permission in a specific task.
@@ -188,6 +332,11 @@ func (chk *Checker) CheckAnyPoolsPerm(ctx context.Context, pools []string, perm 
 // permissions (via CheckPoolPerm).
 func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm realms.Permission) CheckResult {
 	// TODO(vadimsh): Implement.
+	// Check submitter == caller.
+	// Check the server level permission.
+	// Check the task realm permission.
+	// Check the assigned pool permission.
+	// Check bot's pool permissions.
 	return chk.CheckServerPerm(ctx, perm)
 }
 
@@ -196,5 +345,39 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 // It checks bot's pool permissions via CheckPoolPerm.
 func (chk *Checker) CheckBotPerm(ctx context.Context, botID string, perm realms.Permission) CheckResult {
 	// TODO(vadimsh): Implement.
+	// Check the server lever permissions.
+	// Lookup a list of bot realms based on the config and/or history.
+	// CheckAnyPoolsPerm.
 	return chk.CheckServerPerm(ctx, perm)
+}
+
+// visitRealms does a permission check for every pool, sequentially.
+//
+// It calls the callback with the outcome of the check. If the callback returns
+// true, the iteration continues. Otherwise it stops and visitRealms returns
+// true. Returns false only on internal problems with the check.
+func (chk *Checker) visitRealms(ctx context.Context, pools []string, perm realms.Permission, cb func(pool string, allowed bool) bool) (ok bool) {
+	checkedRealms := map[string]bool{}
+	for _, pool := range pools {
+		cfg := chk.cfg.Pool(pool)
+		if cfg == nil {
+			// Missing pools assumed to have no permissions in them.
+			if !cb(pool, false) {
+				return true
+			}
+			continue
+		}
+		if _, checked := checkedRealms[cfg.Realm]; !checked {
+			outcome, err := chk.db.HasPermission(ctx, chk.caller, perm, cfg.Realm, nil)
+			if err != nil {
+				logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, cfg.Realm, err)
+				return false
+			}
+			checkedRealms[cfg.Realm] = outcome
+		}
+		if !cb(pool, checkedRealms[cfg.Realm]) {
+			return true
+		}
+	}
+	return true
 }

@@ -77,6 +77,11 @@ type Config struct {
 	botGroups *botGroups       // can map bot ID to a bot group config
 }
 
+// Settings are settings proto with defaults filled in.
+func (cfg *Config) Settings() *configpb.SettingsCfg {
+	return cfg.settings
+}
+
 // Pool returns a config for the given pool or nil if there's no such pool.
 func (cfg *Config) Pool(name string) *Pool {
 	return cfg.poolMap[name]

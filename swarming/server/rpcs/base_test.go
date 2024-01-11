@@ -20,7 +20,10 @@ import (
 
 	"google.golang.org/grpc"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
@@ -32,6 +35,9 @@ func TestServerInterceptor(t *testing.T) {
 
 	Convey("With config in datastore", t, func() {
 		ctx := memory.Use(context.Background())
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.AnonymousIdentity,
+		})
 		cfg := MockConfigs(ctx, MockedConfigs{})
 
 		interceptor := ServerInterceptor(cfg, []*grpc.ServiceDesc{

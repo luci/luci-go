@@ -18,10 +18,12 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	configpb "go.chromium.org/luci/swarming/proto/config"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -31,11 +33,21 @@ func TestSwarmingServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
+		const caller identity.Identity = "user:caller@example.com"
+
 		ctx := memory.Use(context.Background())
 		ctx = MockRequestState(ctx, MockedRequestState{
-			Caller:  "user:caller@example.com",
-			AuthDB:  authtest.NewFakeDB(),
-			Configs: MockedConfigs{},
+			Caller: caller,
+			AuthDB: authtest.NewFakeDB(
+				authtest.MockMembership(caller, "admins"),
+			),
+			Configs: MockedConfigs{
+				Settings: &configpb.SettingsCfg{
+					Auth: &configpb.AuthSettings{
+						AdminsGroup: "admins",
+					},
+				},
+			},
 		})
 
 		srv := SwarmingServer{}
