@@ -188,6 +188,8 @@ func newTestFailureBundle(project string, group *lucianalysis.BuilderRegressionG
 			VariantHash: tv.VariantHash.String(),
 			Variant:     variant,
 			RefHash:     group.RefHash.String(),
+			Bucket:      group.Bucket.String(),
+			Builder:     group.Builder.String(),
 			Ref: &pb.SourceRef{System: &pb.SourceRef_Gitiles{
 				Gitiles: &pb.GitilesRef{
 					Host:    group.Ref.Gitiles.Host.String(),
@@ -268,8 +270,8 @@ func prepareFailureAnalysis(ctx context.Context, client analysisClient, bundle *
 	}
 	testFailureAnalysis := &model.TestFailureAnalysis{
 		Project:          tf.Project,
-		Bucket:           buildInfo.Bucket,
-		Builder:          buildInfo.Builder,
+		Bucket:           tf.Bucket,
+		Builder:          tf.Builder,
 		CreateTime:       clock.Now(ctx),
 		Status:           pb.AnalysisStatus_CREATED,
 		Priority:         rerun.PriorityTestFailure,

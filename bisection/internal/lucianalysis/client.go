@@ -75,11 +75,12 @@ WITH
   ),
   builder_regression_groups_with_latest_build AS (
     SELECT
+      v.buildbucket_build.builder.bucket,
+      v.buildbucket_build.builder.builder,
       ANY_VALUE(g) AS regression_group,
       ANY_VALUE(v.buildbucket_build.id HAVING MAX v.partition_time) AS build_id,
       ANY_VALUE(REGEXP_EXTRACT(v.results[0].parent.id, r'^task-{{.SwarmingProject}}.appspot.com-([0-9a-f]+)$') HAVING MAX v.partition_time) AS swarming_run_id,
       ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
-      ANY_VALUE(b.builder.bucket HAVING MAX v.partition_time) AS bucket,
       ANY_VALUE(JSON_VALUE_ARRAY(b.input.properties, "$.sheriff_rotations") HAVING MAX v.partition_time) AS SheriffRotations,
       ANY_VALUE(JSON_VALUE(b.input.properties, "$.builder_group") HAVING MAX v.partition_time) AS BuilderGroup,
     FROM builder_regression_groups g
@@ -98,7 +99,7 @@ WITH
     -- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
     -- If this is found to be too restricted, we can increase it later.
     WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
-    GROUP BY g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
+    GROUP BY v.buildbucket_build.builder.bucket, v.buildbucket_build.builder.builder, g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
 {{- if .ExcludedPools}}
 {{- template "withExcludedPools" .}}
@@ -111,6 +112,8 @@ LIMIT 5000
 
 {{- define "withoutExcludedPools"}}
 SELECT regression_group.*,
+  bucket,
+  builder,
   -- use empty array instead of null so we can read into []NullString.
   IFNULL(SheriffRotations, []) as SheriffRotations
 FROM builder_regression_groups_with_latest_build
@@ -122,6 +125,8 @@ WHERE {{.DimensionExcludeFilter}} AND (bucket NOT IN UNNEST(@excludedBuckets))
 
 {{define "withExcludedPools"}}
 SELECT regression_group.*,
+  bucket,
+  builder,
   -- use empty array instead of null so we can read into []NullString.
   IFNULL(SheriffRotations, []) as SheriffRotations
 FROM builder_regression_groups_with_latest_build g
@@ -179,6 +184,8 @@ func (c *Client) Close() error {
 // BuilderRegressionGroup contains a list of test variants
 // which use the same builder and have the same regression range.
 type BuilderRegressionGroup struct {
+	Bucket                   bigquery.NullString
+	Builder                  bigquery.NullString
 	RefHash                  bigquery.NullString
 	Ref                      *Ref
 	RegressionStartPosition  bigquery.NullInt64
@@ -294,8 +301,6 @@ func buildBucketBuildTableName(luciProject string) (string, error) {
 
 type BuildInfo struct {
 	BuildID         int64
-	Bucket          string
-	Builder         string
 	StartCommitHash string
 	EndCommitHash   string
 }
@@ -304,14 +309,14 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 	q := c.client.Query(`
 	SELECT
 		ANY_VALUE(buildbucket_build.id) AS BuildID,
-		ANY_VALUE(buildbucket_build.builder.bucket) AS Bucket,
-		ANY_VALUE(buildbucket_build.builder.builder) AS Builder,
 		ANY_VALUE(sources.gitiles_commit.commit_hash) AS CommitHash,
 		sources.gitiles_commit.position AS Position
 	FROM test_verdicts
 	WHERE test_id = @testID
 		AND variant_hash = @variantHash
 		AND source_ref_hash = @refHash
+		AND buildbucket_build.builder.bucket = @bucket
+		AND buildbucket_build.builder.builder = @builder
 		AND sources.gitiles_commit.position in (@startPosition, @endPosition)
 		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
 	GROUP BY sources.gitiles_commit.position
@@ -323,6 +328,8 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 		{Name: "testID", Value: tf.TestID},
 		{Name: "variantHash", Value: tf.VariantHash},
 		{Name: "refHash", Value: tf.RefHash},
+		{Name: "bucket", Value: tf.Bucket},
+		{Name: "builder", Value: tf.Builder},
 		{Name: "startPosition", Value: tf.RegressionStartPosition},
 		{Name: "endPosition", Value: tf.RegressionEndPosition},
 	}
@@ -346,11 +353,8 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 	}
 	buildInfo := BuildInfo{
 		BuildID:       rowVals["BuildID"].(int64),
-		Bucket:        rowVals["Bucket"].(string),
-		Builder:       rowVals["Builder"].(string),
 		EndCommitHash: rowVals["CommitHash"].(string),
 	}
-	buildInfo.StartCommitHash = rowVals["CommitHash"].(string)
 	// Second row is for regression start position.
 	err = it.Next(&rowVals)
 	if err != nil {

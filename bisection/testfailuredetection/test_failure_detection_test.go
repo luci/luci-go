@@ -147,8 +147,6 @@ func TestFailureDetection(t *testing.T) {
 			buildInfoByProject: map[string]lucianalysis.BuildInfo{
 				"testProject": {
 					BuildID:         1,
-					Bucket:          "bucket",
-					Builder:         "builder",
 					StartCommitHash: "startCommitHash",
 					EndCommitHash:   "endCommitHash",
 				},
@@ -242,8 +240,6 @@ func TestFailureDetection(t *testing.T) {
 			buildInfoByProject: map[string]lucianalysis.BuildInfo{
 				"testProject": {
 					BuildID:         1,
-					Bucket:          "bucket",
-					Builder:         "builder",
 					StartCommitHash: "startCommitHash",
 					EndCommitHash:   "endCommitHash",
 				},
@@ -315,6 +311,8 @@ func TestFailureDetection(t *testing.T) {
 					},
 				},
 				RefHash: "testRefHash",
+				Bucket:  "bucket",
+				Builder: "builder",
 				Ref: &pb.SourceRef{
 					System: &pb.SourceRef_Gitiles{
 						Gitiles: &pb.GitilesRef{
@@ -356,6 +354,8 @@ func (f *fakeLUCIAnalysisClient) ReadBuildInfo(ctx context.Context, tf *model.Te
 
 func fakeBuilderRegressionGroup(primaryTestID, primaryVariantHash string, start, end int64, startHour time.Time) *lucianalysis.BuilderRegressionGroup {
 	return &lucianalysis.BuilderRegressionGroup{
+		Bucket:  bqString("bucket"),
+		Builder: bqString("builder"),
 		RefHash: bqString("testRefHash"),
 		Ref: &lucianalysis.Ref{
 			Gitiles: &lucianalysis.Gitiles{
@@ -395,6 +395,8 @@ func fakeTestFailure(ID int64, testID, variantHash string) *model.TestFailure {
 		TestID:                   testID,
 		VariantHash:              variantHash,
 		RefHash:                  "testRefHash",
+		Bucket:                   "bucket",
+		Builder:                  "builder",
 		RegressionStartPosition:  0,
 		RegressionEndPosition:    0,
 		StartPositionFailureRate: 0,

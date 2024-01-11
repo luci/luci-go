@@ -384,6 +384,10 @@ type TestFailure struct {
 	TestSuiteName string `gae:"test_suite_name"`
 	// Hash of the ref to identify the branch in the source control.
 	RefHash string `gae:"ref_hash"`
+	// The LUCI bucket for the builder of this test failure.
+	Bucket string `gae:"bucket"`
+	// The name for the builder of this test failure.
+	Builder string `gae:"builder"`
 	// The branch where this failure happens.
 	Ref *pb.SourceRef `gae:"ref"`
 	// Start commit position of the regression range exclusive.
