@@ -19,7 +19,7 @@ import {
   TestVariantFailureRateAnalysis,
   QueryTestVariantFailureRateRequest,
   QueryTestVariantFailureRateResponse,
-} from '@/services/test_variants';
+} from '@/legacy_services/test_variants';
 
 export const getMockTestVariantIdentifier = (id: string): TestVariantIdentifier => {
   return {

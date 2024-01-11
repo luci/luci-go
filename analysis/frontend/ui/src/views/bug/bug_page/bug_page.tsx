@@ -33,8 +33,8 @@ import {
   getRulesService,
   LookupBugRequest,
   parseRuleName,
-} from '@/services/rules';
-import { prpcRetrier } from '@/services/shared_models';
+} from '@/legacy_services/rules';
+import { prpcRetrier } from '@/legacy_services/shared_models';
 import {
   linkToRule,
   loginLink,

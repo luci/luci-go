@@ -27,7 +27,7 @@ import {
   QueryClusterHistoryResponse,
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
-} from '@/services/cluster';
+} from '@/legacy_services/cluster';
 
 export const getMockCluster = (id: string,
     project = 'testproject',

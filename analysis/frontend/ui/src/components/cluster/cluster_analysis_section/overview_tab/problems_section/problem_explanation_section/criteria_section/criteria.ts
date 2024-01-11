@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ClusterMetrics, TimewiseCounts } from '@/services/cluster';
-import { Metric } from '@/services/metrics';
-import { BugManagementPolicy } from '@/services/project';
+import { ClusterMetrics, TimewiseCounts } from '@/legacy_services/cluster';
+import { Metric } from '@/legacy_services/metrics';
+import { BugManagementPolicy } from '@/legacy_services/project';
 
 export interface Criterium {
   metricId: string;

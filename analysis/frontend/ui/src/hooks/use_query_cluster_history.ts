@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import { useQuery } from 'react-query';
-import { getClustersService, QueryClusterHistoryRequest } from '@/services/cluster';
-import { prpcRetrier } from '@/services/shared_models';
+import { getClustersService, QueryClusterHistoryRequest } from '@/legacy_services/cluster';
+import { prpcRetrier } from '@/legacy_services/shared_models';
 
 const useQueryClusterHistory = (
     project: string,

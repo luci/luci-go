@@ -21,8 +21,8 @@ import {
   SelectChangeEvent,
 } from '@mui/material';
 
-import { MetricId } from '@/services/shared_models';
-import { Metric } from '@/services/metrics';
+import { MetricId } from '@/legacy_services/shared_models';
+import { Metric } from '@/legacy_services/metrics';
 
 const MenuProps = {
   PaperProps: {

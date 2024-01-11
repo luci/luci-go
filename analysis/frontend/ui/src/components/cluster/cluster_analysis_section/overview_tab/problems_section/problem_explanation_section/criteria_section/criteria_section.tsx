@@ -22,7 +22,7 @@ import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
 import { ClusterContext } from '@/components/cluster/cluster_context';
 import useFetchCluster from '@/hooks/use_fetch_cluster';
-import { BugManagementPolicy } from '@/services/project';
+import { BugManagementPolicy } from '@/legacy_services/project';
 
 import { OverviewTabContextData } from '../../../overview_tab_context';
 import { criteriaForPolicy, Criterium } from './criteria';

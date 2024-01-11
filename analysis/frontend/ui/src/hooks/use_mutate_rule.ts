@@ -22,7 +22,7 @@ import { SnackbarContext } from '@/context/snackbar_context';
 import {
   getRulesService,
   UpdateRuleRequest,
-} from '@/services/rules';
+} from '@/legacy_services/rules';
 
 type MutationCallback = () => void;
 

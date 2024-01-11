@@ -18,8 +18,8 @@ import { nanoid } from 'nanoid';
 import {
   DistinctClusterFailure,
   Exoneration,
-} from '@/services/cluster';
-import { Variant, unionVariant } from '@/services/shared_models';
+} from '@/legacy_services/cluster';
+import { Variant, unionVariant } from '@/legacy_services/shared_models';
 
 /**
  * Creates a list of distinct variants found in the list of failures provided.

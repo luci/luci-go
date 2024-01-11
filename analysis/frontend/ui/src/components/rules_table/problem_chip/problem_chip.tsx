@@ -15,7 +15,7 @@
 import DoneIcon from '@mui/icons-material/Done';
 import Chip from '@mui/material/Chip';
 
-import { BugManagementPolicy } from '@/services/project';
+import { BugManagementPolicy } from '@/legacy_services/project';
 
 type Color = 'error' | 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'info';
 

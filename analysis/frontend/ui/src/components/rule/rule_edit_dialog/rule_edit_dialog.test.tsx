@@ -24,7 +24,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { Rule } from '@/services/rules';
+import { Rule } from '@/legacy_services/rules';
 import { identityFunction } from '@/testing_tools/functions';
 import { renderWithClient } from '@/testing_tools/libs/mock_rquery';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';

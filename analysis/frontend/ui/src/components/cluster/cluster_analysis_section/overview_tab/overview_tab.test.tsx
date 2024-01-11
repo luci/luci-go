@@ -19,7 +19,7 @@ import fetchMock from 'fetch-mock-jest';
 import { screen } from '@testing-library/react';
 
 import { ClusterContextProvider } from '@/components/cluster/cluster_context';
-import { QueryClusterHistoryResponse } from '@/services/cluster';
+import { QueryClusterHistoryResponse } from '@/legacy_services/cluster';
 import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {

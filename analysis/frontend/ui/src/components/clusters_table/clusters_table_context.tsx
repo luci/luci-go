@@ -14,7 +14,7 @@
 
 import { createContext } from 'react';
 
-import { Metric } from '@/services/metrics';
+import { Metric } from '@/legacy_services/metrics';
 
 interface ClusterTableData {
   metrics: Metric[];

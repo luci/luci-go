@@ -33,7 +33,7 @@ import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
   Rule,
   UpdateRuleRequest,
-} from '@/services/rules';
+} from '@/legacy_services/rules';
 import { linkToCluster } from '@/tools/urlHandling/links';
 import RuleDefinition from '../rule_definition/rule_definition';
 

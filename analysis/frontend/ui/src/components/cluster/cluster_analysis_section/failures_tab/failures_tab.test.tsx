@@ -30,7 +30,7 @@ import {
   newMockFailure,
 } from '@/testing_tools/mocks/failures_mock';
 
-import { QueryClusterFailuresRequest } from '@/services/cluster';
+import { QueryClusterFailuresRequest } from '@/legacy_services/cluster';
 import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 import { ClusterContextProvider } from '../../cluster_context';
 import FailuresTab from './failures_tab';

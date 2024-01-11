@@ -17,8 +17,8 @@ import { useQuery } from 'react-query';
 import {
   getProjectsService,
   ListProjectsRequest,
-} from '@/services/project';
-import { prpcRetrier } from '@/services/shared_models';
+} from '@/legacy_services/project';
+import { prpcRetrier } from '@/legacy_services/shared_models';
 
 const useFetchProjects = () => {
   const service = getProjectsService();

@@ -21,7 +21,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { parseRuleName } from '@/services/rules';
+import { parseRuleName } from '@/legacy_services/rules';
 import { linkToRule } from '@/tools/urlHandling/links';
 
 const ruleLink = (ruleName: string): string => {

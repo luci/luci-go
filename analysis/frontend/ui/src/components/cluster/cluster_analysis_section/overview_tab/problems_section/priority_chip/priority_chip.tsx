@@ -14,7 +14,7 @@
 
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
-import { BuganizerPriority } from '@/services/project';
+import { BuganizerPriority } from '@/legacy_services/project';
 
 interface Props {
   priority: BuganizerPriority;

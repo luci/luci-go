@@ -45,8 +45,8 @@ import { SnackbarContext } from '@/context/snackbar_context';
 import {
   CreateRuleRequest,
   getRulesService,
-} from '@/services/rules';
-import { ClusterId } from '@/services/shared_models';
+} from '@/legacy_services/rules';
+import { ClusterId } from '@/legacy_services/shared_models';
 import { linkToRule } from '@/tools/urlHandling/links';
 
 const NewRulePage = () => {

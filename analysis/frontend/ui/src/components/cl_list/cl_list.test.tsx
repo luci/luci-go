@@ -21,7 +21,7 @@ import {
   waitForElementToBeRemoved,
 } from '@testing-library/react';
 
-import { Changelist } from '@/services/shared_models';
+import { Changelist } from '@/legacy_services/shared_models';
 
 import CLList from './cl_list';
 

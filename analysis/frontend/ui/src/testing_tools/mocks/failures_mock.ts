@@ -14,7 +14,7 @@
 
 import dayjs from 'dayjs';
 
-import { DistinctClusterFailure } from '@/services/cluster';
+import { DistinctClusterFailure } from '@/legacy_services/cluster';
 import {
   FailureGroup,
   GroupKey,

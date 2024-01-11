@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BugManagement, BugManagementPolicy } from '@/services/project';
-import { BugManagementState, PolicyState } from '@/services/rules';
+import { BugManagement, BugManagementPolicy } from '@/legacy_services/project';
+import { BugManagementState, PolicyState } from '@/legacy_services/rules';
 
 export interface Problem {
   policy: BugManagementPolicy;

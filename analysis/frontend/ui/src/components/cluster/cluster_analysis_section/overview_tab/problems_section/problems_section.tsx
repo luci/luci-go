@@ -31,9 +31,9 @@ import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import { useFetchProjectConfig } from '@/hooks/use_fetch_project_config';
-import { BugManagement } from '@/services/project';
+import { BugManagement } from '@/legacy_services/project';
 import useFetchRule from '@/hooks/use_fetch_rule';
-import { BugManagementState } from '@/services/rules';
+import { BugManagementState } from '@/legacy_services/rules';
 
 import { Problem, identifyProblems, sortProblemsByDescendingActiveAndPriority } from '@/tools/problems';
 import { ProblemExplanationDialog } from './problem_explanation_dialog/problem_explanation_dialog';

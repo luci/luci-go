@@ -23,12 +23,12 @@ import {
   getClustersService,
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
-} from '@/services/cluster';
-import { Metric } from '@/services/metrics';
+} from '@/legacy_services/cluster';
+import { Metric } from '@/legacy_services/metrics';
 import {
   MetricId,
   prpcRetrier,
-} from '@/services/shared_models';
+} from '@/legacy_services/shared_models';
 
 export interface ClustersFetchOptions {
   project: string;

@@ -20,7 +20,7 @@ import {
   getClustersService,
   GetReclusteringProgressRequest,
   ReclusteringProgress,
-} from '@/services/cluster';
+} from '@/legacy_services/cluster';
 
 dayjsextend(isSameOrAfter);
 

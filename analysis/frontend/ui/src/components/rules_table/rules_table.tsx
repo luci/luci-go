@@ -31,8 +31,8 @@ import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import {
   getRulesService,
   ListRulesRequest,
-} from '@/services/rules';
-import { prpcRetrier } from '@/services/shared_models';
+} from '@/legacy_services/rules';
+import { prpcRetrier } from '@/legacy_services/shared_models';
 import { useFetchProjectConfig } from '@/hooks/use_fetch_project_config';
 
 import { useProblemFilterParam } from './hooks';

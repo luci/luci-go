@@ -15,7 +15,7 @@
 import dayjs from 'dayjs';
 import fetchMock from 'fetch-mock-jest';
 
-import { Rule } from '@/services/rules';
+import { Rule } from '@/legacy_services/rules';
 
 export const createDefaultMockRule = (): Rule => {
   return {

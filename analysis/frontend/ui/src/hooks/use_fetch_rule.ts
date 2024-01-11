@@ -14,8 +14,8 @@
 
 import { useQuery } from 'react-query';
 
-import { getRulesService } from '@/services/rules';
-import { prpcRetrier } from '@/services/shared_models';
+import { getRulesService } from '@/legacy_services/rules';
+import { prpcRetrier } from '@/legacy_services/shared_models';
 
 const useFetchRule = (ruleId: string | undefined, project: string | undefined) => {
   const rulesService = getRulesService();

@@ -14,7 +14,7 @@
 
 import dayjs from 'dayjs';
 
-import { ReclusteringProgress } from '@/services/cluster';
+import { ReclusteringProgress } from '@/legacy_services/cluster';
 
 export const createMockProgress = (progress: number): ReclusteringProgress => {
   return {

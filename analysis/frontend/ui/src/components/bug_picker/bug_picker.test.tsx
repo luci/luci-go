@@ -21,7 +21,7 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { ProjectConfig } from '@/services/project';
+import { ProjectConfig } from '@/legacy_services/project';
 import { identityFunction } from '@/testing_tools/functions';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';

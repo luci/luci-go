@@ -17,7 +17,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import { Metric } from '@/services/metrics';
+import { Metric } from '@/legacy_services/metrics';
 
 export interface HistoryTimeRange {
   id: string;

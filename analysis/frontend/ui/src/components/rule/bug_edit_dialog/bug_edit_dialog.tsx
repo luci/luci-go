@@ -33,7 +33,7 @@ import ErrorAlert from '@/components/error_alert/error_alert';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchRule from '@/hooks/use_fetch_rule';
 import { useMutateRule } from '@/hooks/use_mutate_rule';
-import { UpdateRuleRequest } from '@/services/rules';
+import { UpdateRuleRequest } from '@/legacy_services/rules';
 
 interface Props {
     open: boolean;

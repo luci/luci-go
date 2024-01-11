@@ -24,7 +24,7 @@ import Skeleton from '@mui/material/Skeleton';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { ClusterSummary } from '@/services/cluster';
+import { ClusterSummary } from '@/legacy_services/cluster';
 import { getMetricColor } from '@/tools/metric_colors';
 import { linkToCluster } from '@/tools/urlHandling/links';
 

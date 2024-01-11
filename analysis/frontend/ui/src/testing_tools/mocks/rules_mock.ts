@@ -14,7 +14,7 @@
 
 import fetchMock from 'fetch-mock-jest';
 
-import { ListRulesResponse } from '@/services/rules';
+import { ListRulesResponse } from '@/legacy_services/rules';
 
 import { createDefaultMockRule } from './rule_mock';
 

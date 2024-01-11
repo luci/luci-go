@@ -36,7 +36,7 @@ import { Tooltip } from '@mui/material';
 import {
   DistinctClusterFailure,
   PresubmitRun,
-} from '@/services/cluster';
+} from '@/legacy_services/cluster';
 import {
   FailureGroup,
 } from '@/tools/failures_tools';

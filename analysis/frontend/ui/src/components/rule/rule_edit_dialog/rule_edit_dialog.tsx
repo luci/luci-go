@@ -31,7 +31,7 @@ import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
   Rule,
   UpdateRuleRequest,
-} from '@/services/rules';
+} from '@/legacy_services/rules';
 
 interface Props {
     open: boolean;

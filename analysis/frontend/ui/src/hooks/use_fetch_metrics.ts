@@ -18,8 +18,8 @@ import {
   ListProjectMetricsRequest,
   getMetricsService,
   Metric,
-} from '@/services/metrics';
-import { prpcRetrier } from '@/services/shared_models';
+} from '@/legacy_services/metrics';
+import { prpcRetrier } from '@/legacy_services/shared_models';
 
 const useFetchMetrics = (project: string, onSuccess?: (data: Metric[]) => void): UseQueryResult<Metric[], Error> => {
   const metricsService = getMetricsService();

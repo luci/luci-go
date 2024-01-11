@@ -14,7 +14,7 @@
 /* eslint-disable jest/no-conditional-expect */
 
 
-import { DistinctClusterFailure } from '@/services/cluster';
+import { DistinctClusterFailure } from '@/legacy_services/cluster';
 import {
   impactFilterNamed,
   newMockFailure,

@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import dayjs from 'dayjs';
+import { obtainAuthState } from '@/api/auth_state';
 
-import { Issue } from '@/legacy_services/monorail';
-
-export const createMockBug = (): Issue => {
-  return {
-    name: 'bug for rule',
-    summary: 'a bug for a rule',
-    status: {
-      status: 'accepted',
-      derivation: '',
-    },
-    reporter: 'user@example.com',
-    modifyTime: dayjs().toISOString(),
-  };
-};
+// getAccessToken returns the OAuth access token of the current login session.
+export async function getSessionAccessToken(): Promise<string> {
+  if (!window.isAnonymous) {
+    const state = await obtainAuthState();
+    return state.accessToken;
+  }
+  // Not logged-in.
+  return '';
+}

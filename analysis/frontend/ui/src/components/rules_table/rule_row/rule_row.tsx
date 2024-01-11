@@ -23,9 +23,9 @@ import Tooltip from '@mui/material/Tooltip';
 import Box from '@mui/material/Box';
 import {
   Rule,
-} from '@/services/rules';
+} from '@/legacy_services/rules';
 import { linkToRule } from '@/tools/urlHandling/links';
-import { BugManagement } from '@/services/project';
+import { BugManagement } from '@/legacy_services/project';
 import { identifyProblems, sortProblemsByDescendingActiveAndPriority } from '@/tools/problems';
 import ProblemChip from '../problem_chip/problem_chip';
 

@@ -36,7 +36,7 @@ import {
 import {
   QueryTestVariantFailureRateRequest,
   QueryTestVariantFailureRateResponse,
-} from '@/services/test_variants';
+} from '@/legacy_services/test_variants';
 
 import { ClusterContextProvider } from '../../cluster_context';
 import ExonerationsTable from './exonerations_tab';

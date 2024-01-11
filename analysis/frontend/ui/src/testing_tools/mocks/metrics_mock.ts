@@ -18,7 +18,7 @@ import {
   ListProjectMetricsRequest,
   ListProjectMetricsResponse,
   Metric,
-} from '@/services/metrics';
+} from '@/legacy_services/metrics';
 
 export const getMockMetricsList = (project: string): Metric[] => {
   const humanClsFailedPresubmitMetric : Metric = {

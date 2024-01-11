@@ -25,8 +25,8 @@ import {
   useOrderByParam,
   useSelectedMetricsParam,
 } from '@/components/clusters_table/hooks';
-import { Metric } from '@/services/metrics';
-import { MetricId } from '@/services/shared_models';
+import { Metric } from '@/legacy_services/metrics';
+import { MetricId } from '@/legacy_services/shared_models';
 
 const ClustersTableHead = () => {
   const { metrics } = useContext(ClusterTableContextData);

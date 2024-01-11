@@ -33,15 +33,15 @@ import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
   GetIssueRequest,
   getIssuesService,
-} from '@/services/monorail';
+} from '@/legacy_services/monorail';
 import {
   Rule,
   UpdateRuleRequest,
-} from '@/services/rules';
+} from '@/legacy_services/rules';
 import {
   AssociatedBug,
   prpcRetrier,
-} from '@/services/shared_models';
+} from '@/legacy_services/shared_models';
 import { MuiDefaultColor } from '@/types/mui_types';
 import GridLabel from '@/components/grid_label/grid_label';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';

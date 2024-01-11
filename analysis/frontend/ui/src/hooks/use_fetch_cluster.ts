@@ -18,8 +18,8 @@ import {
   GetClusterRequest,
   getClustersService,
   Cluster,
-} from '@/services/cluster';
-import { prpcRetrier } from '@/services/shared_models';
+} from '@/legacy_services/cluster';
+import { prpcRetrier } from '@/legacy_services/shared_models';
 
 const useFetchCluster = (
     project: string,

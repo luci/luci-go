@@ -36,12 +36,12 @@ import {
   testVariantFromAnalysis,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import { getClustersService } from '@/services/cluster';
-import { prpcRetrier } from '@/services/shared_models';
+import { getClustersService } from '@/legacy_services/cluster';
+import { prpcRetrier } from '@/legacy_services/shared_models';
 import {
   getTestVariantsService,
   QueryTestVariantFailureRateRequest,
-} from '@/services/test_variants';
+} from '@/legacy_services/test_variants';
 
 import { ClusterContext } from '../../cluster_context';
 import ExonerationsTableHead from './exonerations_table_head/exonerations_table_head';

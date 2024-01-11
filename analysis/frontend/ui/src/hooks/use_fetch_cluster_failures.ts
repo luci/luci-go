@@ -18,9 +18,9 @@ import {
   getClustersService,
   DistinctClusterFailure,
   QueryClusterFailuresRequest,
-} from '@/services/cluster';
-import { prpcRetrier } from '@/services/shared_models';
-import { Metric } from '@/services/metrics';
+} from '@/legacy_services/cluster';
+import { prpcRetrier } from '@/legacy_services/shared_models';
+import { Metric } from '@/legacy_services/metrics';
 
 const useFetchClusterFailures = (
     project: string,

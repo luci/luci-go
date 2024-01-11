@@ -26,7 +26,7 @@ import {
   ImpactFilters,
   VariantGroup,
 } from '@/tools/failures_tools';
-import { Metric } from '@/services/metrics';
+import { Metric } from '@/legacy_services/metrics';
 
 interface Props {
     metrics: Metric[],

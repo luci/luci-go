@@ -14,7 +14,7 @@
 
 import fetchMock from 'fetch-mock-jest';
 
-import { BugManagementPolicy, ProjectConfig } from '@/services/project';
+import { BugManagementPolicy, ProjectConfig } from '@/legacy_services/project';
 
 export const createMockExonerationsPolicy = (): BugManagementPolicy => {
   return {

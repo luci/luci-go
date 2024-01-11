@@ -16,13 +16,13 @@ import dayjs from 'dayjs';
 
 import {
   ClusterExoneratedTestVariant,
-} from '@/services/cluster';
+} from '@/legacy_services/cluster';
 import {
   TestVariantFailureRateAnalysis,
   TestVariantFailureRateAnalysisVerdictExample,
   TestVariantFailureRateAnalysisRecentVerdict,
-} from '@/services/test_variants';
-import { Variant } from '@/services/shared_models';
+} from '@/legacy_services/test_variants';
+import { Variant } from '@/legacy_services/shared_models';
 
 // Fields that can be used for sorting FailureGroups.
 export type SortableField = 'testId' | 'beingExonerated' | 'lastExoneration' | 'criticalFailuresExonerated';

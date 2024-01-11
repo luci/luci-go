@@ -1,5 +1,5 @@
 import { ParamKeyValuePair, useSearchParams } from 'react-router-dom';
-import { Metric } from '@/services/metrics';
+import { Metric } from '@/legacy_services/metrics';
 import { MetricName } from '@/tools/failures_tools';
 
 export function useSelectedVariantGroupsParam(): [string[], (selectedVariantGroups: string[], replace?: boolean) => void] {

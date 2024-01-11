@@ -14,13 +14,13 @@
 
 import {
   PresubmitRunId,
-} from '@/services/cluster';
+} from '@/legacy_services/cluster';
 import {
   Changelist,
   ClusterId,
   Variant,
   variantAsPairs,
-} from '@/services/shared_models';
+} from '@/legacy_services/shared_models';
 
 export const linkToCluster = (project: string, c: ClusterId): string => {
   if (c.algorithm.startsWith('rules-') || c.algorithm == 'rules') {

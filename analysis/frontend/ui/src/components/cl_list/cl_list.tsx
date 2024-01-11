@@ -28,7 +28,7 @@ import {
 } from '@/tools/urlHandling/links';
 import {
   Changelist,
-} from '@/services/shared_models';
+} from '@/legacy_services/shared_models';
 
 interface Props {
   changelists: Changelist[];

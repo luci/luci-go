@@ -23,8 +23,8 @@ import {
   YAxis,
 } from 'recharts';
 
-import { Metric } from '@/services/metrics';
-import { ClusterHistoryDay } from '@/services/cluster';
+import { Metric } from '@/legacy_services/metrics';
+import { ClusterHistoryDay } from '@/legacy_services/cluster';
 
 interface Props {
   height: number;

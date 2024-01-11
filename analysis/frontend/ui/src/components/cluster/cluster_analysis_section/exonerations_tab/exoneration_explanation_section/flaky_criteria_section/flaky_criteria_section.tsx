@@ -33,7 +33,7 @@ import {
 } from '@/tools/urlHandling/links';
 import {
   TestVariantFailureRateAnalysisVerdictExample,
-} from '@/services/test_variants';
+} from '@/legacy_services/test_variants';
 import CLList from '@/components/cl_list/cl_list';
 import { ExplanationChip } from '../explanation_chip/explanation_chip';
 

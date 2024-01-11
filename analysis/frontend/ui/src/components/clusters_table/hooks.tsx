@@ -18,8 +18,8 @@ import {
 } from 'react-router-dom';
 
 import { TimeInterval } from '@/hooks/use_fetch_clusters';
-import { Metric } from '@/services/metrics';
-import { MetricId } from '@/services/shared_models';
+import { Metric } from '@/legacy_services/metrics';
+import { MetricId } from '@/legacy_services/shared_models';
 
 export interface OrderBy {
   metric: MetricId,

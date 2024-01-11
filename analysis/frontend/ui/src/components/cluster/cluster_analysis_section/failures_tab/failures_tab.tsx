@@ -43,7 +43,7 @@ import {
 } from '@/tools/failures_tools';
 
 import useFetchMetrics from '@/hooks/use_fetch_metrics';
-import { Metric } from '@/services/metrics';
+import { Metric } from '@/legacy_services/metrics';
 import useFetchClusterFailures from '@/hooks/use_fetch_cluster_failures';
 import { ClusterContext } from '../../cluster_context';
 import FailuresTableFilter from './failures_table_filter/failures_table_filter';

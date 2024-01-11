@@ -29,8 +29,8 @@ import {
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
   TimeRange,
-} from '@/services/cluster';
-import { Metric } from '@/services/metrics';
+} from '@/legacy_services/cluster';
+import { Metric } from '@/legacy_services/metrics';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
