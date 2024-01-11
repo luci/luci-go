@@ -18,10 +18,12 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/auth_service/api/taskspb"
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/auth_service/api/taskspb"
 )
 
 func init() {
@@ -52,8 +54,7 @@ func init() {
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ReplicationTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
-			// TODO(crbug/1376603): Replace this noop function when replication is implemented.
-			return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask))
+			return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask), dryRun)
 		},
 		Custom: func(ctx context.Context, payload protoreflect.ProtoMessage) (*tq.CustomPayload, error) {
 			task := payload.(*taskspb.ReplicationTask)
