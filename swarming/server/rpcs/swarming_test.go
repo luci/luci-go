@@ -20,10 +20,14 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -33,45 +37,152 @@ func TestSwarmingServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		const caller identity.Identity = "user:caller@example.com"
+		const (
+			adminID      identity.Identity = "user:admin@example.com"
+			unknownID    identity.Identity = "user:unknown@example.com"
+			authorizedID identity.Identity = "user:authorized@example.com"
+			submitterID  identity.Identity = "user:submitter@example.com"
 
-		ctx := memory.Use(context.Background())
-		ctx = MockRequestState(ctx, MockedRequestState{
-			Caller: caller,
-			AuthDB: authtest.NewFakeDB(
-				authtest.MockMembership(caller, "admins"),
-			),
-			Configs: MockedConfigs{
-				Settings: &configpb.SettingsCfg{
-					Auth: &configpb.AuthSettings{
-						AdminsGroup: "admins",
+			taskID = "65aba3a3e6b99310"
+		)
+
+		configs := MockedConfigs{
+			Settings: &configpb.SettingsCfg{
+				Auth: &configpb.AuthSettings{
+					AdminsGroup: "admins",
+				},
+			},
+			Pools: &configpb.PoolsCfg{
+				Pool: []*configpb.Pool{
+					{
+						Name:  []string{"visible-pool-1", "visible-pool-2"},
+						Realm: "project:visible-realm",
+					},
+					{
+						Name:  []string{"hidden-pool-1", "hidden-pool-2"},
+						Realm: "project:hidden-realm",
+					},
+					{
+						Name:  []string{"task-pool"},
+						Realm: "project:task-pool-realm",
 					},
 				},
 			},
-		})
+		}
+		db := authtest.NewFakeDB(
+			authtest.MockMembership(adminID, "admins"),
+		)
+		authorized := []realms.Permission{
+			acls.PermPoolsDeleteBot,
+			acls.PermPoolsTerminateBot,
+			acls.PermPoolsCreateBot,
+			acls.PermPoolsCancelTask,
+			acls.PermPoolsListBots,
+			acls.PermPoolsListTasks,
+			acls.PermTasksCancel,
+		}
+		for _, perm := range authorized {
+			db.AddMocks(authtest.MockPermission(authorizedID, "project:visible-realm", perm))
+		}
+
+		ctx := memory.Use(context.Background())
+
+		key, err := model.TaskIDToRequestKey(ctx, taskID)
+		So(err, ShouldBeNil)
+		So(datastore.Put(ctx, &model.TaskRequest{
+			Key:           key,
+			Realm:         "project:task-realm",
+			Authenticated: submitterID,
+			TaskSlices: []model.TaskSlice{
+				{
+					Properties: model.TaskProperties{
+						Dimensions: map[string][]string{
+							"pool": {"task-pool"},
+						},
+					},
+				},
+			},
+		}), ShouldBeNil)
 
 		srv := SwarmingServer{}
 
-		Convey("GetPermissions OK", func() {
+		call := func(caller identity.Identity, botID, taskID string, tags []string) *apipb.ClientPermissions {
+			ctx := MockRequestState(ctx, MockedRequestState{
+				Caller:  caller,
+				AuthDB:  db,
+				Configs: configs,
+			})
 			resp, err := srv.GetPermissions(ctx, &apipb.PermissionsRequest{
-				BotId:  "bot-id",
-				TaskId: "task-id",
-				Tags:   []string{"pool:pool-0", "pool:pool-1", "other:tag"},
+				BotId:  botID,
+				TaskId: taskID,
+				Tags:   tags,
 			})
 			So(err, ShouldBeNil)
-			// TODO(vadimsh): Implement.
-			So(resp, ShouldResembleProto, &apipb.ClientPermissions{
+			return resp
+		}
+
+		Convey("Admin", func() {
+			So(call(adminID, "", taskID, nil), ShouldResembleProto, &apipb.ClientPermissions{
 				DeleteBot:         true,
 				DeleteBots:        true,
 				TerminateBot:      true,
 				GetConfigs:        false,
 				PutConfigs:        false,
 				CancelTask:        true,
-				GetBootstrapToken: false,
+				GetBootstrapToken: true,
 				CancelTasks:       true,
-				ListBots:          []string{},
-				ListTasks:         []string{},
+				ListBots: []string{
+					"hidden-pool-1",
+					"hidden-pool-2",
+					"task-pool",
+					"visible-pool-1",
+					"visible-pool-2",
+				},
+				ListTasks: []string{
+					"hidden-pool-1",
+					"hidden-pool-2",
+					"task-pool",
+					"visible-pool-1",
+					"visible-pool-2",
+				},
 			})
+		})
+
+		Convey("Unknown", func() {
+			So(call(unknownID, "", taskID, nil), ShouldResembleProto, &apipb.ClientPermissions{
+				// All empty.
+			})
+		})
+
+		Convey("Authorized pools", func() {
+			So(call(authorizedID, "", "", []string{"pool:visible-pool-1"}),
+				ShouldResembleProto,
+				&apipb.ClientPermissions{
+					CancelTask:  true,
+					CancelTasks: true,
+					DeleteBots:  true,
+					ListBots:    []string{"visible-pool-1", "visible-pool-2"},
+					ListTasks:   []string{"visible-pool-1", "visible-pool-2"},
+				},
+			)
+		})
+
+		Convey("Hidden pools", func() {
+			So(call(authorizedID, "", "", []string{"pool:hidden-pool-1"}),
+				ShouldResembleProto,
+				&apipb.ClientPermissions{
+					ListBots:  []string{"visible-pool-1", "visible-pool-2"},
+					ListTasks: []string{"visible-pool-1", "visible-pool-2"},
+				},
+			)
+		})
+
+		Convey("Accessing task", func() {
+			// TODO(vadimsh): Add a test once CheckTaskPerm is implemented.
+		})
+
+		Convey("Accessing bot", func() {
+			// TODO(vadimsh): Add a test once CheckBotPerm is implemented.
 		})
 	})
 }

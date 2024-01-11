@@ -42,39 +42,38 @@ func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.Permis
 		}
 	}
 
-	var taskInfo acls.TaskAuthInfo
-	if req.TaskId != "" {
-		// TODO(vadimsh): Fetch task info.
-	}
-
 	var internalErr error
 
-	checkPoolsPerm := func(perm realms.Permission) bool {
+	checkServerPerm := func(perm realms.Permission) bool {
 		if internalErr != nil {
 			return false
 		}
-		var res acls.CheckResult
-		if len(pools) == 0 {
-			res = state.ACL.CheckServerPerm(ctx, perm)
-		} else {
-			res = state.ACL.CheckAllPoolsPerm(ctx, pools, perm)
-		}
+		res := state.ACL.CheckServerPerm(ctx, perm)
 		if res.InternalError {
 			internalErr = res.ToGrpcErr()
 		}
 		return res.Permitted
 	}
 
-	checkTaskPerm := func(perm realms.Permission) bool {
+	checkPoolsPerm := func(perm realms.Permission) bool {
 		if internalErr != nil {
 			return false
 		}
-		var res acls.CheckResult
-		if req.TaskId == "" {
-			res = state.ACL.CheckServerPerm(ctx, perm)
-		} else {
-			res = state.ACL.CheckTaskPerm(ctx, taskInfo, perm)
+		if len(pools) == 0 {
+			return checkServerPerm(perm)
 		}
+		res := state.ACL.CheckAllPoolsPerm(ctx, pools, perm)
+		if res.InternalError {
+			internalErr = res.ToGrpcErr()
+		}
+		return res.Permitted
+	}
+
+	checkTaskPerm := func(taskInfo acls.TaskAuthInfo, perm realms.Permission) bool {
+		if internalErr != nil {
+			return false
+		}
+		res := state.ACL.CheckTaskPerm(ctx, taskInfo, perm)
 		if res.InternalError {
 			internalErr = res.ToGrpcErr()
 		}
@@ -85,29 +84,55 @@ func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.Permis
 		if internalErr != nil {
 			return false
 		}
-		var res acls.CheckResult
 		if req.BotId == "" {
-			res = state.ACL.CheckServerPerm(ctx, perm)
-		} else {
-			res = state.ACL.CheckBotPerm(ctx, req.BotId, perm)
+			return checkServerPerm(perm)
 		}
+		res := state.ACL.CheckBotPerm(ctx, req.BotId, perm)
 		if res.InternalError {
 			internalErr = res.ToGrpcErr()
 		}
 		return res.Permitted
 	}
 
+	poolsWithPerm := func(perm realms.Permission) []string {
+		if internalErr != nil {
+			return nil
+		}
+		filtered, err := state.ACL.FilterPoolsByPerm(ctx, state.Config.Pools(), perm)
+		if err != nil {
+			internalErr = err
+			return nil
+		}
+		return filtered
+	}
+
 	resp := &apipb.ClientPermissions{
 		DeleteBot:         checkBotPerm(acls.PermPoolsDeleteBot),
 		DeleteBots:        checkPoolsPerm(acls.PermPoolsDeleteBot),
 		TerminateBot:      checkBotPerm(acls.PermPoolsTerminateBot),
-		GetConfigs:        false, // TODO
-		PutConfigs:        false, // TODO
-		CancelTask:        checkTaskPerm(acls.PermPoolsCancelTask),
-		GetBootstrapToken: false, // TODO
+		GetBootstrapToken: checkServerPerm(acls.PermPoolsCreateBot),
+		GetConfigs:        false, // deprecated and unused
+		PutConfigs:        false, // deprecated and unused
+		CancelTask:        false, // see below
 		CancelTasks:       checkPoolsPerm(acls.PermPoolsCancelTask),
-		ListBots:          []string{}, // TODO
-		ListTasks:         []string{}, // TODO
+		ListBots:          poolsWithPerm(acls.PermPoolsListBots),
+		ListTasks:         poolsWithPerm(acls.PermPoolsListTasks),
+	}
+
+	// If we are given a task ID, we need to check if we can cancel this specific
+	// task. If there's no task ID, we need to check we can cancel *any* task in
+	// the specified pools (and we already did this check, see CancelTasks). These
+	// are two different permissions (PermTasksCancel vs PermPoolsCancelTask)
+	// since mass-canceling needs to be more restricted compared to canceling
+	// tasks one by one.
+	if req.TaskId != "" {
+		taskRequest, err := FetchTaskRequest(ctx, req.TaskId)
+		if err != nil {
+			return nil, err
+		}
+		resp.CancelTask = checkTaskPerm(taskRequest.TaskAuthInfo(), acls.PermTasksCancel)
+	} else {
+		resp.CancelTask = resp.CancelTasks
 	}
 
 	if internalErr != nil {

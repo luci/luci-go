@@ -21,12 +21,18 @@ import (
 	"strings"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/model"
 )
 
 var requestStateCtxKey = "swarming.rpcs.RequestState"
@@ -87,4 +93,28 @@ func State(ctx context.Context) *RequestState {
 		panic("no RequestState in the context")
 	}
 	return state
+}
+
+// FetchTaskRequest fetches a task request given its ID.
+//
+// Returns gRPC status errors, logs internal errors. Does not check ACLs yet.
+// It is the caller's responsibility.
+func FetchTaskRequest(ctx context.Context, taskID string) (*model.TaskRequest, error) {
+	if taskID == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "task_id is required")
+	}
+	key, err := model.TaskIDToRequestKey(ctx, taskID)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "task_id %s: %s", taskID, err)
+	}
+	req := &model.TaskRequest{Key: key}
+	switch err = datastore.Get(ctx, req); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, status.Errorf(codes.NotFound, "no such task")
+	case err != nil:
+		logging.Errorf(ctx, "Error fetching TaskRequest %s: %s", taskID, err)
+		return nil, status.Errorf(codes.Internal, "datastore error fetching the task")
+	default:
+		return req, nil
+	}
 }
