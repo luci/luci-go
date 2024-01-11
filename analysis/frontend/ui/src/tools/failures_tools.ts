@@ -17,9 +17,10 @@ import { nanoid } from 'nanoid';
 
 import {
   DistinctClusterFailure,
-  Exoneration,
-} from '@/legacy_services/cluster';
+  DistinctClusterFailure_Exoneration,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { Variant, unionVariant } from '@/legacy_services/shared_models';
+import { BuildStatus, ExonerationReason, PresubmitRunMode } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 
 /**
  * Creates a list of distinct variants found in the list of failures provided.
@@ -199,7 +200,7 @@ export const criticalFailuresExoneratedIdsExtractor = (): FeatureExtractor => {
         // exoneration reason UNEXPECTED_PASS as the test is considered
         // passing.
         // TODO(b/250541091): Temporarily exclude OCCURS_ON_MAINLINE.
-        if (f.exonerations[i].reason == 'OCCURS_ON_OTHER_CLS') {
+        if (f.exonerations[i].reason == ExonerationReason.OCCURS_ON_OTHER_CLS) {
           exoneratedByCQ = true;
         }
       }
@@ -218,14 +219,11 @@ export const criticalFailuresExoneratedIdsExtractor = (): FeatureExtractor => {
 
 // Returns whether the failure was exonerated for a reason other than it occurred
 // on other CLs or on mainline.
-const isExoneratedByNonLUCIAnalysis = (exonerations: Exoneration[] | undefined): boolean => {
-  if (exonerations === undefined) {
-    return false;
-  }
+const isExoneratedByNonLUCIAnalysis = (exonerations: readonly DistinctClusterFailure_Exoneration[]): boolean => {
   let hasOtherExoneration = false;
   for (let i = 0; i < exonerations.length; i++) {
     // TODO(b/250541091): Temporarily exclude OCCURS_ON_MAINLINE.
-    if (exonerations[i].reason != 'OCCURS_ON_OTHER_CLS') {
+    if (exonerations[i].reason != ExonerationReason.OCCURS_ON_OTHER_CLS) {
       hasOtherExoneration = true;
     }
   }
@@ -242,7 +240,7 @@ export const rejectedIngestedInvocationIdsExtractor = (impactFilter: ImpactFilte
     // This requires exclusion of all exonerated test results, as well as
     // test results from builds which passed (which implies the test results
     // could not have caused the presubmit run to fail).
-    if (((failure.exonerations !== undefined && failure.exonerations.length > 0) || failure.buildStatus != 'BUILD_STATUS_FAILURE') &&
+    if (((failure.exonerations !== undefined && failure.exonerations.length > 0) || failure.buildStatus != BuildStatus.FAILURE) &&
                 !(impactFilter.ignoreLUCIAnalysisExoneration || impactFilter.ignoreAllExoneration)) {
       return values;
     }
@@ -274,7 +272,7 @@ export const rejectedPresubmitRunIdsExtractor = (impactFilter: ImpactFilter): Fe
     // This requires exclusion of all exonerated test results, as well as
     // test results from builds which passed (which implies the test results
     // could not have caused the presubmit run to fail).
-    if (((failure.exonerations !== undefined && failure.exonerations.length > 0) || failure.buildStatus != 'BUILD_STATUS_FAILURE') &&
+    if (((failure.exonerations !== undefined && failure.exonerations.length > 0) || failure.buildStatus != BuildStatus.FAILURE) &&
                 !(impactFilter.ignoreLUCIAnalysisExoneration || impactFilter.ignoreAllExoneration)) {
       return values;
     }
@@ -291,7 +289,7 @@ export const rejectedPresubmitRunIdsExtractor = (impactFilter: ImpactFilter): Fe
     }
     if (failure.changelists !== undefined && failure.changelists.length > 0 &&
         failure.presubmitRun !== undefined && failure.presubmitRun.owner == 'user' &&
-        failure.isBuildCritical && failure.presubmitRun.mode == 'FULL_RUN') {
+        failure.isBuildCritical && failure.presubmitRun.mode == PresubmitRunMode.FULL_RUN) {
       values.add(failure.changelists[0].host + '/' + failure.changelists[0].change);
     }
     return values;

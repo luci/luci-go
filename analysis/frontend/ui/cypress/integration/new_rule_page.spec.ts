@@ -38,7 +38,7 @@ describe('New Rule Page', () => {
         ruleId: 'ea5305bc5069b449ee43ee64d26d667f',
       };
       // Construct pRPC response.
-      const body = ')]}\'' + JSON.stringify(response);
+      const body = ')]}\'\n' + JSON.stringify(response);
       req.reply(body, {
         'X-Prpc-Grpc-Code': '0',
       });
@@ -72,7 +72,7 @@ describe('New Rule Page', () => {
         ruleId: 'ea5305bc5069b449ee43ee64d26d667f',
       };
       // Construct pRPC response.
-      const body = ')]}\'' + JSON.stringify(response);
+      const body = ')]}\'\n' + JSON.stringify(response);
       req.reply(body, {
         'X-Prpc-Grpc-Code': '0',
       });

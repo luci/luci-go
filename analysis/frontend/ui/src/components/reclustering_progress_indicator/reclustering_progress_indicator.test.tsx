@@ -21,6 +21,7 @@ import fetchMock from 'fetch-mock-jest';
 
 import { screen } from '@testing-library/react';
 
+import { mockReclusteringProgress } from '@/testing_tools/mocks/cluster_mock';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
@@ -38,12 +39,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
 
   it('given an finished progress, then should not display', async () => {
     mockFetchAuthState();
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\''+JSON.stringify(createMockDoneProgress()),
-    });
+    mockReclusteringProgress(createMockDoneProgress());
     renderWithRouterAndClient(
         <ReclusteringProgressIndicator
           project='chromium'
@@ -56,12 +52,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
 
   it('given a progress, then should display percentage', async () => {
     mockFetchAuthState();
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\''+JSON.stringify(createMockProgress(800)),
-    });
+    mockReclusteringProgress(createMockProgress(800));
     renderWithRouterAndClient(
         <ReclusteringProgressIndicator
           project='chromium'
@@ -79,12 +70,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
   // eslint-disable-next-line jest/no-disabled-tests
   it.skip('when progress is done, then should display button to refresh analysis', async () => {
     mockFetchAuthState();
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\''+JSON.stringify(createMockProgress(800)),
-    });
+    mockReclusteringProgress(createMockProgress(800));
     renderWithRouterAndClient(
         <ReclusteringProgressIndicator
           project='chromium'
@@ -94,12 +80,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
     await screen.findByRole('alert');
     await screen.findByText('80%');
 
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\''+JSON.stringify(createMockDoneProgress()),
-    }, { overwriteRoutes: true });
+    mockReclusteringProgress(createMockDoneProgress());
 
     await screen.findByRole('button');
     expect(screen.getByText('View updated impact')).toBeInTheDocument();

@@ -24,7 +24,7 @@ import Skeleton from '@mui/material/Skeleton';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { ClusterSummary } from '@/legacy_services/cluster';
+import { ClusterSummary } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { getMetricColor } from '@/tools/metric_colors';
 import { linkToCluster } from '@/tools/urlHandling/links';
 
@@ -40,7 +40,7 @@ interface Props {
 interface SparklineProps {
   isLoading?: boolean,
   isSuccess?: boolean,
-  values: string[],
+  values: readonly string[],
   color: string;
 }
 
@@ -121,7 +121,8 @@ const ClustersTableRow = ({
   return (
     <TableRow>
       <TableCell data-testid="clusters_table_title">
-        <Link component={RouterLink} to={linkToCluster(project, cluster.clusterId)} underline="hover">{cluster.title}</Link>
+        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+        <Link component={RouterLink} to={linkToCluster(project, cluster.clusterId!)} underline="hover">{cluster.title}</Link>
       </TableCell>
       <TableCell data-testid="clusters_table_bug">
         {

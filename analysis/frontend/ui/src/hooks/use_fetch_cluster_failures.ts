@@ -15,12 +15,12 @@
 import { useQuery, UseQueryResult } from 'react-query';
 
 import {
-  getClustersService,
   DistinctClusterFailure,
   QueryClusterFailuresRequest,
-} from '@/legacy_services/cluster';
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { prpcRetrier } from '@/legacy_services/shared_models';
 import { Metric } from '@/legacy_services/metrics';
+import { getClustersService } from '@/services/services';
 
 const useFetchClusterFailures = (
     project: string,
@@ -34,7 +34,7 @@ const useFetchClusterFailures = (
 
         const request : QueryClusterFailuresRequest = {
           parent: `projects/${project}/clusters/${algorithm}/${id}/failures`,
-          metricFilter: filterToMetric?.name,
+          metricFilter: filterToMetric?.name || '',
         };
         const response = await service.queryClusterFailures(request);
         return response.failures || [];

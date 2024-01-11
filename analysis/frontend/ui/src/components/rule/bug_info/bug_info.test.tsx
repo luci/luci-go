@@ -57,7 +57,7 @@ describe('Test BugInfo component', () => {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ')]}\'' + JSON.stringify(mockIssue),
+      body: ')]}\'\n' + JSON.stringify(mockIssue),
     });
 
     renderWithRouterAndClient(
@@ -78,7 +78,7 @@ describe('Test BugInfo component', () => {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ')]}\'' + JSON.stringify(mockIssue),
+      body: ')]}\'\n' + JSON.stringify(mockIssue),
     });
 
     mockRule.isManagingBug = false;

@@ -46,7 +46,7 @@ describe('Bug Page', () => {
         ],
       };
       // Construct pRPC response.
-      const body = ')]}\'' + JSON.stringify(response);
+      const body = ')]}\'\n' + JSON.stringify(response);
       req.reply(body, {
         'X-Prpc-Grpc-Code': '0',
       });

@@ -63,6 +63,6 @@ export const mockFetchRule = (rule: Rule) => {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(rule),
+    body: ')]}\'\n' + JSON.stringify(rule),
   });
 };

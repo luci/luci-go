@@ -20,15 +20,15 @@ import {
 
 import {
   ClusterSummaryView,
-  getClustersService,
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
-} from '@/legacy_services/cluster';
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { Metric } from '@/legacy_services/metrics';
 import {
   MetricId,
   prpcRetrier,
 } from '@/legacy_services/shared_models';
+import { getClustersService } from '@/services/services';
 
 export interface ClustersFetchOptions {
   project: string;
@@ -108,7 +108,7 @@ export const useFetchClusterSummaries = (
         orderBy.metric !== '' &&
         metrics.length > 0 &&
         interval !== undefined &&
-        (view !== 'FULL' || (view === 'FULL' && interval.duration > 24))
+        (view !== ClusterSummaryView.FULL || (ClusterSummaryView.FULL && interval.duration > 24))
         ),
       },
   );

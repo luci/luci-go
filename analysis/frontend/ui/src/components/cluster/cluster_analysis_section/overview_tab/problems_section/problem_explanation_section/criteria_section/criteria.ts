@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ClusterMetrics, TimewiseCounts } from '@/legacy_services/cluster';
+import { Cluster_TimewiseCounts } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { Metric } from '@/legacy_services/metrics';
 import { BugManagementPolicy } from '@/legacy_services/project';
 
@@ -27,12 +27,12 @@ export interface Criterium {
   satisfied: boolean;
 }
 
-export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions: Metric[], metricValues: ClusterMetrics | undefined, activationCriteria: boolean) : Criterium[] => {
+export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions: Metric[], metricValues: {[key: string]: Cluster_TimewiseCounts} | undefined, activationCriteria: boolean) : Criterium[] => {
   const result : Criterium[] = [];
   policy.metrics.forEach((m) => {
     const metricDefinition = metricDefinitions.find((d) => d.metricId == m.metricId);
     const threshold = activationCriteria ? m.activationThreshold : m.deactivationThreshold;
-    const currentTimewiseCounts : TimewiseCounts | undefined = metricValues ? metricValues[m.metricId] : undefined;
+    const currentTimewiseCounts : Cluster_TimewiseCounts | undefined = metricValues ? metricValues[m.metricId] : undefined;
 
     const metricName = metricDefinition?.humanReadableName || m.metricId;
     const metricDescription = metricDefinition?.description || '(metric description unavailable)';
@@ -40,7 +40,7 @@ export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions
     if (threshold.oneDay !== undefined) {
       let currentValue : string|undefined;
       if (currentTimewiseCounts) {
-        currentValue = currentTimewiseCounts.oneDay.nominal || '0';
+        currentValue = currentTimewiseCounts.oneDay?.nominal || '0';
       }
       result.push({
         metricId: m.metricId,
@@ -56,7 +56,7 @@ export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions
     if (threshold.threeDay !== undefined) {
       let currentValue : string|undefined;
       if (currentTimewiseCounts) {
-        currentValue = currentTimewiseCounts.threeDay.nominal || '0';
+        currentValue = currentTimewiseCounts.threeDay?.nominal || '0';
       }
       result.push({
         metricId: m.metricId,
@@ -72,7 +72,7 @@ export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions
     if (threshold.sevenDay !== undefined) {
       let currentValue : string|undefined;
       if (currentTimewiseCounts) {
-        currentValue = currentTimewiseCounts.sevenDay.nominal || '0';
+        currentValue = currentTimewiseCounts.sevenDay?.nominal || '0';
       }
       result.push({
         metricId: m.metricId,

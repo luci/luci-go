@@ -61,7 +61,7 @@ describe('Test RuleEditDialog component', () => {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ')]}\''+JSON.stringify(updatedRule),
+      body: ')]}\'\n'+JSON.stringify(updatedRule),
     });
 
     fireEvent.click(screen.getByText('Save'));

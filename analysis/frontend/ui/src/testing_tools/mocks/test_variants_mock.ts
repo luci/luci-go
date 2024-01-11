@@ -55,6 +55,6 @@ export const mockQueryFailureRate = (request: QueryTestVariantFailureRateRequest
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(response),
   }, { overwriteRoutes: true });
 };

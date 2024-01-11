@@ -24,7 +24,7 @@ import {
 } from '@testing-library/react';
 
 import { ClusterContextProvider } from '@/components/cluster/cluster_context';
-import { QueryClusterHistoryResponse } from '@/legacy_services/cluster';
+import { QueryClusterHistoryResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import { mockQueryHistory } from '@/testing_tools/mocks/cluster_mock';

@@ -35,8 +35,8 @@ import HistoryIcon from '@mui/icons-material/History';
 import { Tooltip } from '@mui/material';
 import {
   DistinctClusterFailure,
-  PresubmitRun,
-} from '@/legacy_services/cluster';
+  DistinctClusterFailure_PresubmitRun,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import {
   FailureGroup,
 } from '@/tools/failures_tools';
@@ -48,6 +48,7 @@ import {
 } from '@/tools/urlHandling/links';
 
 import CLList from '@/components/cl_list/cl_list';
+import { PresubmitRunMode, PresubmitRunStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 
 interface Props {
   project: string;
@@ -95,28 +96,28 @@ const FailuresTableRows = ({
     return unselectedVariantPairs;
   };
 
-  const presubmitRunIcon = (run: PresubmitRun) => {
-    if (run.status == 'PRESUBMIT_RUN_STATUS_SUCCEEDED') {
-      if (run.mode == 'FULL_RUN') {
+  const presubmitRunIcon = (run: DistinctClusterFailure_PresubmitRun) => {
+    if (run.status == PresubmitRunStatus.SUCCEEDED) {
+      if (run.mode == PresubmitRunMode.FULL_RUN) {
         return <RampLeftIcon />;
       } else {
         return <DoneIcon />;
       }
-    } else if (run.status == 'PRESUBMIT_RUN_STATUS_FAILED') {
+    } else if (run.status == PresubmitRunStatus.FAILED) {
       return <CloseIcon />;
     } else {
       return <RemoveIcon />;
     }
   };
 
-  const presubmitRunLabel = (run: PresubmitRun): string => {
-    if (run.status == 'PRESUBMIT_RUN_STATUS_SUCCEEDED') {
-      if (run.mode == 'FULL_RUN') {
+  const presubmitRunLabel = (run: DistinctClusterFailure_PresubmitRun): string => {
+    if (run.status == PresubmitRunStatus.SUCCEEDED) {
+      if (run.mode == PresubmitRunMode.FULL_RUN) {
         return 'Submitted';
       } else {
         return 'Succeeded';
       }
-    } else if (run.status == 'PRESUBMIT_RUN_STATUS_FAILED') {
+    } else if (run.status == PresubmitRunStatus.FAILED) {
       return 'Failed';
     } else {
       return 'Canceled';
@@ -208,7 +209,9 @@ const FailuresTableRows = ({
                   target='_blank'
                   variant='outlined'
                   clickable
-                  href={presubmitRunLink(group.failure.presubmitRun.presubmitRunId)}
+                  // Will always be non-null if presubmitRun is non-null.
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  href={presubmitRunLink(group.failure.presubmitRun.presubmitRunId!)}
                 />
               )}
             </NarrowTableCell>

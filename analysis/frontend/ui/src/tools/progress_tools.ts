@@ -17,10 +17,10 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 
 import {
   ClusteringVersion,
-  getClustersService,
   GetReclusteringProgressRequest,
   ReclusteringProgress,
-} from '@/legacy_services/cluster';
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { getClustersService } from '@/services/services';
 
 dayjsextend(isSameOrAfter);
 
@@ -38,12 +38,16 @@ export const noProgressToShow = -2;
 
 export const progressToLatestAlgorithms = (progress: ReclusteringProgress): number => {
   return progressTo(progress, (target: ClusteringVersion) => {
-    return target.algorithmsVersion >= progress.next.algorithmsVersion;
+    // 'next' will be set on all progress objects.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return target.algorithmsVersion >= progress.next!.algorithmsVersion;
   });
 };
 
 export const progressToLatestConfig = (progress: ReclusteringProgress): number => {
-  const targetConfigVersion = dayjs(progress.next.configVersion);
+  // 'next' will be set on all progress objects.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const targetConfigVersion = dayjs(progress.next!.configVersion);
   return progressTo(progress, (target: ClusteringVersion) => {
     return dayjs(target.configVersion).isSameOrAfter(targetConfigVersion);
   });
@@ -62,11 +66,16 @@ export const progressToRulesVersion = (progress: ReclusteringProgress, rulesVers
 // the returned value is value from 0 to 1000. If the run is pending,
 // the value -1 is returned.
 const progressTo = (progress: ReclusteringProgress, predicate: (target: ClusteringVersion) => boolean): number => {
-  if (predicate(progress.last)) {
+  // 'last' will be set on all progress objects.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  if (predicate(progress.last!)) {
     // Completed
     return 1000;
   }
-  if (predicate(progress.next)) {
+
+  // 'next' will be set on all progress objects.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  if (predicate(progress.next!)) {
     return progress.progressPerMille || 0;
   }
   // Run not yet started (e.g. because we are still finishing a previous

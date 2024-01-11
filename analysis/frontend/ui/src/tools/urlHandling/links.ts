@@ -14,7 +14,7 @@
 
 import {
   PresubmitRunId,
-} from '@/legacy_services/cluster';
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import {
   Changelist,
   ClusterId,

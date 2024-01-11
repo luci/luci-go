@@ -27,12 +27,14 @@ import {
   QueryClusterHistoryResponse,
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
-} from '@/legacy_services/cluster';
+  ReclusteringProgress,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { DeepMutable } from '@/types/types';
 
 export const getMockCluster = (id: string,
     project = 'testproject',
     algorithm = 'reason-v2',
-    title = ''): Cluster => {
+    title = ''): DeepMutable<Cluster> => {
   return {
     name: `projects/${project}/clusters/${algorithm}/${id}`,
     hasExample: true,
@@ -58,7 +60,7 @@ export const getMockCluster = (id: string,
   };
 };
 
-export const getMockRuleBasicClusterSummary = (id: string): ClusterSummary => {
+export const getMockRuleBasicClusterSummary = (id: string): DeepMutable<ClusterSummary> => {
   return {
     clusterId: {
       'algorithm': 'rules-v2',
@@ -74,18 +76,21 @@ export const getMockRuleBasicClusterSummary = (id: string): ClusterSummary => {
     metrics: {
       'human-cls-failed-presubmit': {
         value: '27',
+        dailyBreakdown: [],
       },
       'critical-failures-exonerated': {
         value: '918',
+        dailyBreakdown: [],
       },
       'failures': {
         value: '1871',
+        dailyBreakdown: [],
       },
     },
   };
 };
 
-export const getMockRuleFullClusterSummary = (id: string): ClusterSummary => {
+export const getMockRuleFullClusterSummary = (id: string): DeepMutable<ClusterSummary> => {
   return {
     clusterId: {
       'algorithm': 'rules-v2',
@@ -126,12 +131,15 @@ export const getMockSuggestedBasicClusterSummary = (id: string, algorithm = 'rea
     metrics: {
       'human-cls-failed-presubmit': {
         value: '29',
+        dailyBreakdown: [],
       },
       'critical-failures-exonerated': {
         value: '919',
+        dailyBreakdown: [],
       },
       'failures': {
         value: '1872',
+        dailyBreakdown: [],
       },
     },
   };
@@ -164,21 +172,22 @@ export const getMockSuggestedFullClusterSummary = (id: string, algorithm = 'reas
 
 export const getMockClusterExoneratedTestVariant = (id: string, exoneratedFailures: number): ClusterExoneratedTestVariant => {
   return {
-    'testId': id,
-    'criticalFailuresExonerated': exoneratedFailures,
-    'lastExoneration': '2052-01-02T03:04:05.678901234Z',
+    testId: id,
+    variant: undefined,
+    criticalFailuresExonerated: exoneratedFailures,
+    lastExoneration: '2052-01-02T03:04:05.678901234Z',
   };
 };
 
 export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest, response: QueryClusterSummariesResponse, overwriteRoutes = true) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterSummaries',
-    body: request,
+    body: QueryClusterSummariesRequest.toJSON(request) as object,
   }, {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(QueryClusterSummariesResponse.toJSON(response)),
   }, { overwriteRoutes: overwriteRoutes });
 };
 
@@ -198,22 +207,22 @@ export const mockGetCluster = (
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(Cluster.toJSON(response) as object),
   }, { overwriteRoutes: true });
 };
 
-export const mockQueryClusterFailures = (request: QueryClusterFailuresRequest, failures: DistinctClusterFailure[] | undefined) => {
+export const mockQueryClusterFailures = (request: QueryClusterFailuresRequest, failures: DistinctClusterFailure[]) => {
   const response: QueryClusterFailuresResponse = {
     failures: failures,
   };
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterFailures',
-    body: request,
+    body: QueryClusterFailuresRequest.toJSON(request) as object,
   }, {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(QueryClusterFailuresResponse.toJSON(response) as object),
   }, { overwriteRoutes: true });
 };
 
@@ -226,12 +235,12 @@ export const mockQueryExoneratedTestVariants = (parent: string, testVariants: Cl
   };
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryExoneratedTestVariants',
-    body: request,
+    body: QueryClusterExoneratedTestVariantsRequest.toJSON(request) as object,
   }, {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(QueryClusterExoneratedTestVariantsResponse.toJSON(response)),
   }, { overwriteRoutes: true });
 };
 
@@ -243,6 +252,15 @@ export const mockQueryHistory = (
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(QueryClusterHistoryResponse.toJSON(response)),
+  }, { overwriteRoutes: true });
+};
+
+export const mockReclusteringProgress = (response: ReclusteringProgress) => {
+  fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
+    headers: {
+      'X-Prpc-Grpc-Code': '0',
+    },
+    body: ')]}\'\n'+JSON.stringify(ReclusteringProgress.toJSON(response)),
   }, { overwriteRoutes: true });
 };

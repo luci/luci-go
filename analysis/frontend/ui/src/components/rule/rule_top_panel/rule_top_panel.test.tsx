@@ -22,6 +22,7 @@ import { screen } from '@testing-library/react';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import { createMockBug } from '@/testing_tools/mocks/bug_mock';
+import { mockReclusteringProgress } from '@/testing_tools/mocks/cluster_mock';
 import { createMockDoneProgress } from '@/testing_tools/mocks/progress_mock';
 import { mockFetchProjectConfig } from '@/testing_tools/mocks/projects_mock';
 import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
@@ -33,23 +34,18 @@ describe('Test RuleTopPanel component', () => {
     mockFetchProjectConfig();
     mockFetchAuthState();
     const mockRule = createDefaultMockRule();
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\''+JSON.stringify(createMockDoneProgress()),
-    });
+    mockReclusteringProgress(createMockDoneProgress());
     fetchMock.post('https://api-dot-crbug.com/prpc/monorail.v3.Issues/GetIssue', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ')]}\'' + JSON.stringify(createMockBug()),
+      body: ')]}\'\n' + JSON.stringify(createMockBug()),
     });
     fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Get', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ')]}\''+JSON.stringify(mockRule),
+      body: ')]}\'\n'+JSON.stringify(mockRule),
     });
 
     renderWithRouterAndClient(

@@ -24,14 +24,14 @@ import {
 } from 'recharts';
 
 import { Metric } from '@/legacy_services/metrics';
-import { ClusterHistoryDay } from '@/legacy_services/cluster';
+import { ClusterHistoryDay } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 
 interface Props {
   height: number;
   color: string,
   isAnnotated: boolean,
   metric: Metric,
-  data: ClusterHistoryDay[],
+  data: readonly ClusterHistoryDay[],
 }
 
 export const SingleMetricChart = (
@@ -41,7 +41,7 @@ export const SingleMetricChart = (
       width="100%"
       height={height} >
       <BarChart
-        data={data}
+        data={data as ClusterHistoryDay[]} // Trust that barchart will not modify readonly data.
         syncId="impactMetrics"
         margin={{ top: 20, bottom: 20 }} >
         <XAxis dataKey="date" />

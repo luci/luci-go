@@ -31,7 +31,7 @@ import {
 } from '@/legacy_services/shared_models';
 
 interface Props {
-  changelists: Changelist[];
+  changelists: readonly Changelist[];
 }
 
 const LightTooltip = styled(({ className, ...props }: TooltipProps) => (

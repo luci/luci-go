@@ -25,6 +25,7 @@ import {
   useFetchClusterSummaries,
 } from '@/hooks/use_fetch_clusters';
 
+import { ClusterSummaryView } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { ClusterTableContextData } from '../clusters_table_context';
 import { TIME_INTERVAL_OPTIONS } from '../clusters_table_form/clusters_table_interval_selection/clusters_table_interval_selection';
 import ClustersTableHead from '../clusters_table_head/clusters_table_head';
@@ -64,12 +65,12 @@ const ClustersTableContent = ({
     isSuccess: isBasicSummariesSuccess,
     data: basicSummaries,
     error: basicSummariesError,
-  } = useFetchClusterSummaries(fetchOptions, 'BASIC');
+  } = useFetchClusterSummaries(fetchOptions, ClusterSummaryView.BASIC);
   const {
     isLoading: isFullSummariesLoading,
     isSuccess: isFullSummariesSuccess,
     data: fullSummaries,
-  } = useFetchClusterSummaries(fetchOptions, 'FULL');
+  } = useFetchClusterSummaries(fetchOptions, ClusterSummaryView.FULL);
   // Note: it is expected that the call for basic cluster summaries will return
   // before the call for full cluster summaries. Full cluster summaries will be
   // displayed when available, and will replace basic cluster summaries.
@@ -100,7 +101,9 @@ const ClustersTableContent = ({
               {
                 rows.map((row) => {
                   return <ClustersTableRow
-                    key={`${row.clusterId.algorithm}:${row.clusterId.id}`}
+                    // Cluster ID will be set on all clusters.
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    key={`${row.clusterId!.algorithm}:${row.clusterId!.id}`}
                     project={project}
                     cluster={row}
                     isBreakdownLoading={isFullSummariesLoading}

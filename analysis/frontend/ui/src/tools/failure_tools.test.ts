@@ -14,7 +14,7 @@
 /* eslint-disable jest/no-conditional-expect */
 
 
-import { DistinctClusterFailure } from '@/legacy_services/cluster';
+import { DistinctClusterFailure } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import {
   impactFilterNamed,
   newMockFailure,

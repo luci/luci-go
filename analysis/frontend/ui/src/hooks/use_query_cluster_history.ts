@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import { useQuery } from 'react-query';
-import { getClustersService, QueryClusterHistoryRequest } from '@/legacy_services/cluster';
+import { QueryClusterHistoryRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { prpcRetrier } from '@/legacy_services/shared_models';
+import { getClustersService } from '@/services/services';
 
 const useQueryClusterHistory = (
     project: string,
@@ -33,7 +34,6 @@ const useQueryClusterHistory = (
 
     const response = await clustersService.queryHistory(request);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return response;
   }, {
     retry: prpcRetrier,

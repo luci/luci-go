@@ -112,6 +112,6 @@ export class PrpcClient {
     }
 
     // Strips out the XSSI prefix.
-    return JSON.parse(text.slice(")]}'\n".length));
+    return JSON.parse(text.slice(')]}\'\n'.length));
   }
 }

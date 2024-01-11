@@ -16,7 +16,7 @@ import dayjs from 'dayjs';
 
 import {
   ClusterExoneratedTestVariant,
-} from '@/legacy_services/cluster';
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import {
   TestVariantFailureRateAnalysis,
   TestVariantFailureRateAnalysisVerdictExample,
@@ -150,7 +150,7 @@ export const testVariantFromAnalysis = (etv: ClusterExoneratedTestVariant, atv: 
     key: testVariantKey(atv.testId, atv.variant),
     testId: atv.testId,
     variant: atv.variant,
-    lastExoneration: etv.lastExoneration,
+    lastExoneration: etv.lastExoneration || '',
     criticalFailuresExonerated: etv.criticalFailuresExonerated,
     runFlakyVerdicts1wd: runFlakyVerdicts1wd,
     runFlakyVerdicts5wd: runFlakyVerdicts5wd,

@@ -30,7 +30,7 @@ import {
   newMockFailure,
 } from '@/testing_tools/mocks/failures_mock';
 
-import { QueryClusterFailuresRequest } from '@/legacy_services/cluster';
+import { QueryClusterFailuresRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 import { ClusterContextProvider } from '../../cluster_context';
 import FailuresTab from './failures_tab';
@@ -48,6 +48,7 @@ describe('Test FailureTable component', () => {
   it('given cluster failures, should group and display them', async () => {
     const failuresRequest: QueryClusterFailuresRequest = {
       parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+      metricFilter: '',
     };
     const mockFailures = createDefaultMockFailures();
     mockQueryClusterFailures(failuresRequest, mockFailures);
@@ -66,6 +67,7 @@ describe('Test FailureTable component', () => {
   it('when clicking a sortable column then should modify groups order', async () => {
     const failuresRequest: QueryClusterFailuresRequest = {
       parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+      metricFilter: '',
     };
     const mockFailures = [
       newMockFailure().withTestId('group1').build(),
@@ -106,6 +108,7 @@ describe('Test FailureTable component', () => {
   it('when expanding then should show child groups', async () => {
     const failuresRequest: QueryClusterFailuresRequest = {
       parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+      metricFilter: '',
     };
     const mockFailures = [
       newMockFailure().withTestId('group1').build(),
@@ -136,6 +139,7 @@ describe('Test FailureTable component', () => {
   it('when filtering by failure type then should display matching groups', async () => {
     const failuresRequest: QueryClusterFailuresRequest = {
       parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+      metricFilter: '',
     };
     const mockFailures = [
       newMockFailure().withoutPresubmit().withTestId('group1').build(),
@@ -183,6 +187,7 @@ describe('Test FailureTable component', () => {
   it('when filtering with impact then should recalculate impact', async () => {
     const failuresRequest: QueryClusterFailuresRequest = {
       parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+      metricFilter: '',
     };
     const mockFailures = [
       newMockFailure().withoutPresubmit().withTestId('group1').build(),
@@ -214,6 +219,7 @@ describe('Test FailureTable component', () => {
   it('when grouping by variants then should modify displayed tree', async () => {
     const failuresRequest: QueryClusterFailuresRequest = {
       parent: 'projects/chrome/clusters/rules/rule-123345/failures',
+      metricFilter: '',
     };
     const mockFailures = [
       newMockFailure().withVariantGroups('v1', 'a').withTestId('group1').build(),

@@ -26,7 +26,7 @@ import CodeBlock from '@/components/codeblock/codeblock';
 import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchCluster from '@/hooks/use_fetch_cluster';
-import { Cluster } from '@/legacy_services/cluster';
+import { Cluster } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 
 import { ClusterContext } from '../cluster_context';
 

@@ -36,7 +36,7 @@ import {
   testVariantFromAnalysis,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import { getClustersService } from '@/legacy_services/cluster';
+import { getClustersService } from '@/services/services';
 import { prpcRetrier } from '@/legacy_services/shared_models';
 import {
   getTestVariantsService,

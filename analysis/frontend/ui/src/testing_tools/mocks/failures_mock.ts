@@ -14,7 +14,7 @@
 
 import dayjs from 'dayjs';
 
-import { DistinctClusterFailure } from '@/legacy_services/cluster';
+import { DistinctClusterFailure } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import {
   FailureGroup,
   GroupKey,
@@ -22,9 +22,12 @@ import {
   ImpactFilters,
   VariantGroup,
 } from '@/tools/failures_tools';
+import { BuildStatus, ExonerationReason, PresubmitRunMode, PresubmitRunStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
+import { ChangelistOwnerKind } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
+import { Mutable } from '@/types/types';
 
 class ClusterFailureBuilder {
-  failure: DistinctClusterFailure;
+  failure: Mutable<DistinctClusterFailure>;
   constructor() {
     this.failure = {
       testId: 'ninja://dir/test.param',
@@ -32,17 +35,18 @@ class ClusterFailureBuilder {
       presubmitRun: {
         presubmitRunId: { system: 'cv', id: 'presubmitRunId' },
         owner: 'user',
-        mode: 'FULL_RUN',
-        status: 'PRESUBMIT_RUN_STATUS_SUCCEEDED',
+        mode: PresubmitRunMode.FULL_RUN,
+        status: PresubmitRunStatus.SUCCEEDED,
       },
       changelists: [{
         host: 'clproject-review.googlesource.com',
         change: '123456',
         patchset: 7,
+        ownerKind: ChangelistOwnerKind.CHANGELIST_OWNER_UNSPECIFIED,
       }],
       partitionTime: '2021-05-12T19:05:34',
-      exonerations: undefined,
-      buildStatus: 'BUILD_STATUS_SUCCESS',
+      exonerations: [],
+      buildStatus: BuildStatus.SUCCESS,
       isBuildCritical: true,
       ingestedInvocationId: 'build-buildnumber',
       isIngestedInvocationBlocked: false,
@@ -61,26 +65,24 @@ class ClusterFailureBuilder {
     return this;
   }
   buildFailed() {
-    this.failure.buildStatus = 'BUILD_STATUS_FAILURE';
+    this.failure.buildStatus = BuildStatus.FAILURE;
     return this;
   }
   dryRun() {
     this.failure.presubmitRun = {
       presubmitRunId: { system: 'cv', id: 'presubmitRunId' },
       owner: 'user',
-      mode: 'DRY_RUN',
-      status: 'PRESUBMIT_RUN_STATUS_SUCCEEDED',
+      mode: PresubmitRunMode.DRY_RUN,
+      status: PresubmitRunStatus.SUCCEEDED,
     };
     return this;
   }
   exonerateOccursOnOtherCLs() {
-    this.failure.exonerations = [];
-    this.failure.exonerations.push({ reason: 'OCCURS_ON_OTHER_CLS' });
+    this.failure.exonerations = [{ reason: ExonerationReason.OCCURS_ON_OTHER_CLS }];
     return this;
   }
   exonerateNotCritical() {
-    this.failure.exonerations = [];
-    this.failure.exonerations.push({ reason: 'NOT_CRITICAL' });
+    this.failure.exonerations = [{ reason: ExonerationReason.NOT_CRITICAL }];
     return this;
   }
   withVariantGroups(key: string, value: string) {
@@ -95,7 +97,7 @@ class ClusterFailureBuilder {
     return this;
   }
   withoutPresubmit() {
-    this.failure.changelists = undefined;
+    this.failure.changelists = [];
     this.failure.presubmitRun = undefined;
     return this;
   }

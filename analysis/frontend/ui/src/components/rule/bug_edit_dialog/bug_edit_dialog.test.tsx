@@ -107,7 +107,7 @@ describe('Test BugEditDialog component', () => {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ')]}\'' + JSON.stringify(updatedRule),
+      body: ')]}\'\n' + JSON.stringify(updatedRule),
     });
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => fetchMock.lastCall() !== undefined && fetchMock.lastCall()![0] === 'http://localhost/prpc/luci.analysis.v1.Rules/Update');

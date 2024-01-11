@@ -77,6 +77,6 @@ export const mockFetchMetrics = (project?: string, metrics?: Metric[]) => {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(response),
   });
 };

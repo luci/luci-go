@@ -77,6 +77,6 @@ export const mockFetchProjectConfig = (projectConfig?: ProjectConfig) => {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(projectConfig),
+    body: ')]}\'\n' + JSON.stringify(projectConfig),
   });
 };

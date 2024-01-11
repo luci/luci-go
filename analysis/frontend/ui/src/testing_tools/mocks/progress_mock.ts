@@ -14,10 +14,11 @@
 
 import dayjs from 'dayjs';
 
-import { ReclusteringProgress } from '@/legacy_services/cluster';
+import { ReclusteringProgress } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 
 export const createMockProgress = (progress: number): ReclusteringProgress => {
   return {
+    name: 'projects/testproject/reclusteringProgress',
     progressPerMille: progress,
     next: {
       rulesVersion: dayjs().toISOString(),
@@ -35,6 +36,7 @@ export const createMockProgress = (progress: number): ReclusteringProgress => {
 export const createMockDoneProgress = (): ReclusteringProgress => {
   const currentDate = dayjs();
   return {
+    name: 'projects/testproject/reclusteringProgress',
     progressPerMille: 1000,
     next: {
       rulesVersion: currentDate.toISOString(),
