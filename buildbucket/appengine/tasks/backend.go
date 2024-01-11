@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"google.golang.org/api/googleapi"
-
+	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -255,13 +255,27 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 			return nil, 0, err
 		}
 		resp := make(cipdPackageDetailsMap, len(out.Files))
+		hasErrFile := false
 		for _, file := range out.Files {
+			if s := file.Status; s != nil && s.Code != int32(codepb.Code_OK) {
+				hasErrFile = true
+				logging.Warningf(ctx, "cannot resolve the package %q: error code - %d, message - %s", file.Package, s.Code, s.Message)
+				continue
+			}
 			resp[file.Package] = &cipdPackageDetails{
 				Hash: file.Instance.HexDigest,
 				Size: file.Size,
 			}
 		}
-		return resp, cipdCacheTTL, nil
+
+		ttl := cipdCacheTTL
+		if hasErrFile {
+			// Sometimes, the cipd package may not exist on one of platforms or its
+			// tag hasn't been populated yet, etc. Choose a shorter cache time in
+			// these situations.
+			ttl = 1 * time.Minute
+		}
+		return resp, ttl, nil
 	})
 	if err != nil {
 		return nil, errors.Annotate(err, "cache error for cipd request").Err()

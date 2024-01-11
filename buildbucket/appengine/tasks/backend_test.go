@@ -28,6 +28,8 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"google.golang.org/api/googleapi"
+	codepb "google.golang.org/genproto/googleapis/rpc/code"
+	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -62,7 +64,7 @@ import (
 // This will help track the number of times the cipd server is called to test if the cache is working as intended.
 var numCipdCalls int
 
-func describeBootstrapBundle(c C) http.HandlerFunc {
+func describeBootstrapBundle(c C, hasBadPkgFile bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.So(r.URL.Path, ShouldEqual, "/prpc/cipd.Repository/DescribeBootstrapBundle")
 		numCipdCalls++
@@ -88,6 +90,15 @@ func describeBootstrapBundle(c C) http.HandlerFunc {
 			}
 			bootstrapFiles = append(bootstrapFiles, bootstrapFile)
 		}
+		if hasBadPkgFile {
+			bootstrapFiles = append(bootstrapFiles, &cipdpb.DescribeBootstrapBundleResponse_BootstrapFile{
+				Package: req.Prefix + "/" + "bad-platform",
+				Status: &statuspb.Status{
+					Code:    int32(codepb.Code_NOT_FOUND),
+					Message: "no such tag",
+				},
+			})
+		}
 		res := &cipdpb.DescribeBootstrapBundleResponse{
 			Files: bootstrapFiles,
 		}
@@ -103,7 +114,7 @@ func describeBootstrapBundle(c C) http.HandlerFunc {
 	}
 }
 
-func helpTestCipdCall(c C, ctx context.Context, infra *pb.BuildInfra) {
+func helpTestCipdCall(c C, ctx context.Context, infra *pb.BuildInfra, expectedNumCalls int) {
 	m, err := extractCipdDetails(ctx, "project", infra)
 	c.So(err, ShouldBeNil)
 	detail, ok := m["infra/tools/luci/bbagent/linux-amd64"]
@@ -120,7 +131,7 @@ func helpTestCipdCall(c C, ctx context.Context, infra *pb.BuildInfra) {
 		SizeBytes: 100,
 		Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
 	})
-	c.So(numCipdCalls, ShouldEqual, 1)
+	c.So(numCipdCalls, ShouldEqual, expectedNumCalls)
 }
 
 func TestCipdClient(t *testing.T) {
@@ -136,7 +147,7 @@ func TestCipdClient(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
-		mockCipdServer := httptest.NewServer(describeBootstrapBundle(c))
+		mockCipdServer := httptest.NewServer(describeBootstrapBundle(c, false))
 		defer mockCipdServer.Close()
 		mockCipdClient := &prpc.Client{
 			Host: strings.TrimPrefix(mockCipdServer.URL, "http://"),
@@ -178,12 +189,37 @@ func TestCipdClient(t *testing.T) {
 					Hostname: "some unique host name",
 				},
 			}
-			numCipdCalls = 0
-			// call extractCipdDetails function 10 times.
-			// The test asserts that numCipdCalls should always be 1
-			for i := 0; i < 10; i++ {
-				helpTestCipdCall(c, ctx, infra)
-			}
+			Convey("no non-ok pkg file", func() {
+				numCipdCalls = 0
+				// call extractCipdDetails function 10 times.
+				// The test asserts that numCipdCalls should always be 1
+				for i := 0; i < 10; i++ {
+					helpTestCipdCall(c, ctx, infra, 1)
+				}
+			})
+			Convey("contain non-ok pkg file", func() {
+				mockCipdServer := httptest.NewServer(describeBootstrapBundle(c, true))
+				defer mockCipdServer.Close()
+				mockCipdClient := &prpc.Client{
+					Host: strings.TrimPrefix(mockCipdServer.URL, "http://"),
+					Options: &prpc.Options{
+						Retry: func() retry.Iterator {
+							return &retry.Limited{
+								Retries: 3,
+								Delay:   0,
+							}
+						},
+						Insecure:  true,
+						UserAgent: "prpc-test",
+					},
+				}
+				ctx = context.WithValue(ctx, MockCipdClientKey{}, mockCipdClient)
+				numCipdCalls = 0
+				helpTestCipdCall(c, ctx, infra, 1)
+				// make the cuurent time longer than the cache TTL.
+				ctx, _ = testclock.UseTime(ctx, now.Add(5*time.Minute))
+				helpTestCipdCall(c, ctx, infra, 2)
+			})
 		})
 	})
 }
@@ -222,7 +258,7 @@ func TestCreateBackendTask(t *testing.T) {
 			},
 		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
-		server := httptest.NewServer(describeBootstrapBundle(c))
+		server := httptest.NewServer(describeBootstrapBundle(c, false))
 		defer server.Close()
 		client := &prpc.Client{
 			Host: strings.TrimPrefix(server.URL, "http://"),
@@ -453,7 +489,7 @@ func TestCreateBackendTask(t *testing.T) {
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
 		So(err, ShouldBeNil)
-		server := httptest.NewServer(describeBootstrapBundle(c))
+		server := httptest.NewServer(describeBootstrapBundle(c, false))
 		defer server.Close()
 		client := &prpc.Client{
 			Host: strings.TrimPrefix(server.URL, "http://"),
