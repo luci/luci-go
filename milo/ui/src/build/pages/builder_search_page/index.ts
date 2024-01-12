@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './builder_search';
+export * from './builder_search_page';

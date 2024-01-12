@@ -14,69 +14,63 @@
 
 import { act, cleanup, render } from '@testing-library/react';
 
-import { BuilderListDisplay } from '@/app/pages/search/builder_search/builder_list_display';
-import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
+import { BuilderListDisplay } from '@/build/pages/builder_search_page/builder_list_display';
+import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
 import {
   ListBuildersResponse,
-  MiloInternal,
-} from '@/common/services/milo_internal';
+  MiloInternalClientImpl,
+} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuilderList } from './builder_list';
 
-jest.mock('@/common/hooks/legacy_prpc_query', () => {
+jest.mock('@/common/hooks/prpc_query', () => {
   return createSelectiveSpiesFromModule<
-    typeof import('@/common/hooks/legacy_prpc_query')
-  >('@/common/hooks/legacy_prpc_query', ['useInfinitePrpcQuery']);
+    typeof import('@/common/hooks/prpc_query')
+  >('@/common/hooks/prpc_query', ['useInfinitePrpcQuery']);
 });
 
-jest.mock('@/app/pages/search/builder_search/builder_list_display', () => {
+jest.mock('@/build/pages/builder_search_page/builder_list_display', () => {
   return createSelectiveSpiesFromModule<
-    typeof import('@/app/pages/search/builder_search/builder_list_display')
-  >('@/app/pages/search/builder_search/builder_list_display', [
+    typeof import('@/build/pages/builder_search_page/builder_list_display')
+  >('@/build/pages/builder_search_page/builder_list_display', [
     'BuilderListDisplay',
   ]);
 });
 
 const builderPages: { [pageToken: string]: ListBuildersResponse } = {
-  '': {
-    builders: [
+  '': ListBuildersResponse.fromPartial({
+    builders: Object.freeze([
       {
         id: { project: 'proj1', bucket: 'bucket1', builder: 'builder1' },
-        config: {},
       },
       {
         id: { project: 'proj1', bucket: 'bucket1', builder: 'builder2' },
-        config: {},
       },
-    ],
+    ]),
     nextPageToken: 'page2',
-  },
-  page2: {
-    builders: [
+  }),
+  page2: ListBuildersResponse.fromPartial({
+    builders: Object.freeze([
       {
         id: { project: 'proj1', bucket: 'bucket2', builder: 'builder1' },
-        config: {},
       },
       {
         id: { project: 'proj1', bucket: 'bucket2', builder: 'builder2' },
-        config: {},
       },
-    ],
+    ]),
     nextPageToken: 'page3',
-  },
-  page3: {
-    builders: [
+  }),
+  page3: ListBuildersResponse.fromPartial({
+    builders: Object.freeze([
       {
         id: { project: 'proj2', bucket: 'bucket1', builder: 'builder1' },
-        config: {},
       },
       {
         id: { project: 'proj2', bucket: 'bucket1', builder: 'builder2' },
-        config: {},
       },
-    ],
-  },
+    ]),
+  }),
 };
 
 describe('BuilderList', () => {
@@ -88,7 +82,7 @@ describe('BuilderList', () => {
     jest.useFakeTimers();
     useInfinitePrpcQuerySpy = jest.mocked(useInfinitePrpcQuery);
     listBuilderMock = jest
-      .spyOn(MiloInternal.prototype, 'listBuilders')
+      .spyOn(MiloInternalClientImpl.prototype, 'ListBuilders')
       .mockImplementation(async ({ pageToken }) => {
         return builderPages[pageToken || ''];
       });
@@ -113,9 +107,14 @@ describe('BuilderList', () => {
     expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
       host: '',
       insecure: location.protocol === 'http:',
-      Service: MiloInternal,
-      method: 'listBuilders',
-      request: { pageSize: expect.anything() },
+      ClientImpl: MiloInternalClientImpl,
+      method: 'ListBuilders',
+      request: {
+        project: '',
+        group: '',
+        pageSize: expect.anything(),
+        pageToken: '',
+      },
     });
     // All the pages should've been be loaded.
     expect(listBuilderMock).toHaveBeenCalledTimes(3);

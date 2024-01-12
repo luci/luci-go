@@ -151,7 +151,9 @@ export function useInfinitePrpcQuery<
         >
       )(req);
     },
-    getNextPageParam: (lastRes) => lastRes.nextPageToken,
+    // Return `null` when the next page token is an empty string so it get
+    // treated as no next page.
+    getNextPageParam: (lastRes) => lastRes.nextPageToken || null,
     ...options,
   });
 }

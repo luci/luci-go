@@ -29,7 +29,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'builder-search',
-    lazy: () => import('@/app/pages/search/builder_search'),
+    lazy: () => import('@/build/pages/builder_search_page'),
   },
   {
     path: 'p/:project/test-search',

@@ -15,9 +15,9 @@
 import { Box, Link, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { BuilderID } from '@/common/services/buildbucket';
 import { getBuilderURLPath } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
 interface BuilderListDisplayProps {
   readonly groupedBuilders: {

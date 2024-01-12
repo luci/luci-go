@@ -23,12 +23,12 @@ import {
 import { UiPage } from '@/common/constants/view';
 import {
   ListBuildersRequest,
-  MiloInternal,
-} from '@/common/services/milo_internal';
-import { CacheOption } from '@/generic_libs/tools/cached_fn';
+  ListBuildersResponse,
+  MiloInternalClientImpl,
+} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { BuilderSearch } from './builder_search';
+import { BuilderSearch } from './builder_search_page';
 
 describe('BuilderSearch', () => {
   beforeEach(() => {
@@ -42,13 +42,12 @@ describe('BuilderSearch', () => {
 
   it('should throttle search requests', async () => {
     jest
-      .spyOn(MiloInternal.prototype, 'listBuilders')
-      .mockImplementation(
-        (_: ListBuildersRequest, _cache: CacheOption = {}) => {
-          return Promise.resolve({
-            builders: [
+      .spyOn(MiloInternalClientImpl.prototype, 'ListBuilders')
+      .mockImplementation((_: ListBuildersRequest) => {
+        return Promise.resolve(
+          ListBuildersResponse.fromPartial({
+            builders: Object.freeze([
               {
-                config: {},
                 id: {
                   bucket: 'test_bucket',
                   builder: 'builder',
@@ -56,7 +55,6 @@ describe('BuilderSearch', () => {
                 },
               },
               {
-                config: {},
                 id: {
                   bucket: 'test_bucket',
                   builder: 'builder-id',
@@ -64,7 +62,6 @@ describe('BuilderSearch', () => {
                 },
               },
               {
-                config: {},
                 id: {
                   bucket: 'test_bucket',
                   builder: 'builder-id-with-suffix',
@@ -72,7 +69,6 @@ describe('BuilderSearch', () => {
                 },
               },
               {
-                config: {},
                 id: {
                   bucket: 'test_bucket',
                   builder: 'another-builder',
@@ -80,17 +76,16 @@ describe('BuilderSearch', () => {
                 },
               },
               {
-                config: {},
                 id: {
                   bucket: 'test_bucket',
                   builder: 'another-builder-id',
                   project: 'chromium',
                 },
               },
-            ],
-          });
-        },
-      );
+            ]),
+          }),
+        );
+      });
 
     render(
       <FakeContextProvider

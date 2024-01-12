@@ -15,8 +15,11 @@
 import { groupBy, mapValues } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { MiloInternal } from '@/common/services/milo_internal';
+import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
+import {
+  ListBuildersRequest,
+  MiloInternalClientImpl,
+} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { BuilderListDisplay } from './builder_list_display';
 
@@ -29,11 +32,11 @@ export function BuilderList({ searchQuery }: BuilderListProps) {
     useInfinitePrpcQuery({
       host: '',
       insecure: location.protocol === 'http:',
-      Service: MiloInternal,
-      method: 'listBuilders',
-      request: {
+      ClientImpl: MiloInternalClientImpl,
+      method: 'ListBuilders',
+      request: ListBuildersRequest.fromPartial({
         pageSize: 10000,
-      },
+      }),
     });
 
   if (isError) {
@@ -45,14 +48,14 @@ export function BuilderList({ searchQuery }: BuilderListProps) {
   const builders = useMemo(
     () =>
       data?.pages
-        .flatMap((p) => p.builders || [])
-        .map((b) => {
+        .flatMap((p) => p.builders.map((b) => b.id!))
+        .map((bid) => {
           return [
             // Pre-compute to support case-sensitive grouping.
-            `${b.id.project}/${b.id.bucket}`,
+            `${bid.project}/${bid.bucket}`,
             // Pre-compute to support case-insensitive searching.
-            `${b.id.project}/${b.id.bucket}/${b.id.builder}`.toLowerCase(),
-            b.id,
+            `${bid.project}/${bid.bucket}/${bid.builder}`.toLowerCase(),
+            bid,
           ] as const;
         }) || [],
     [data],

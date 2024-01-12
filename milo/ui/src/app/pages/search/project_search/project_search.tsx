@@ -20,11 +20,10 @@ import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
+import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { getLoginUrl } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-
-import { SearchInput } from '../search_input';
 
 import { ProjectList } from './project_list';
 
