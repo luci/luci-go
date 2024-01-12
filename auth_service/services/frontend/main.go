@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl"
 	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/servers/accounts"
 	"go.chromium.org/luci/auth_service/impl/servers/allowlists"
 	"go.chromium.org/luci/auth_service/impl/servers/authdb"
@@ -64,6 +65,10 @@ func main() {
 	modules := []module.Module{
 		encryptedcookies.NewModuleFromFlags(), // for authenticating web UI calls
 	}
+
+	// Parse flags from environment variables.
+	dryRunAPIChange := model.ParseDryRunEnvVar(model.DryRunAPIChangesEnvVar)
+	enableGroupImports := model.ParseEnableEnvVar(model.EnableGroupImportsEnvVar)
 
 	impl.Main(modules, func(srv *server.Server) error {
 		// On GAE '/static' is served by GAE itself (see app.yaml). When running
@@ -106,7 +111,7 @@ func main() {
 		// Register all RPC servers.
 		internalspb.RegisterInternalsServer(srv, &internals.Server{})
 		rpcpb.RegisterAccountsServer(srv, &accounts.Server{})
-		rpcpb.RegisterGroupsServer(srv, groups.NewServer(false))
+		rpcpb.RegisterGroupsServer(srv, groups.NewServer(dryRunAPIChange))
 		rpcpb.RegisterAllowlistsServer(srv, &allowlists.Server{})
 		rpcpb.RegisterAuthDBServer(srv, authdbServer)
 		rpcpb.RegisterChangeLogsServer(srv, &changelogs.Server{})
@@ -158,7 +163,9 @@ func main() {
 		// TODO(cjacomet): Add smoke test for this endpoint
 		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", apiMw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
 		srv.Routes.GET("/auth/api/v1/server/oauth_config", nil, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
-		srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName", apiMw, adaptGrpcErr(imports.HandleTarballIngestHandler))
+		if enableGroupImports {
+			srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName", apiMw, adaptGrpcErr(imports.HandleTarballIngestHandler))
+		}
 		return nil
 	})
 }

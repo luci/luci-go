@@ -51,8 +51,11 @@ func main() {
 		cron.NewModuleFromFlags(),
 	}
 
+	// Parse flags from environment variables.
+	dryRunCronConfig := model.ParseDryRunEnvVar(model.DryRunCronConfigEnvVar)
+	dryRunCronRealms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
+
 	impl.Main(modules, func(srv *server.Server) error {
-		dryRun := true
 		cron.RegisterHandler("update-config", func(ctx context.Context) error {
 			historicalComment := "Updated from update-config cron"
 
@@ -68,7 +71,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			if err := model.UpdateAllowlistEntities(ctx, subnets, dryRun, historicalComment); err != nil {
+			if err := model.UpdateAllowlistEntities(ctx, subnets, dryRunCronConfig, historicalComment); err != nil {
 				return err
 			}
 
@@ -90,7 +93,7 @@ func main() {
 				return err
 			}
 
-			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, dryRun, historicalComment); err != nil {
+			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, dryRunCronConfig, historicalComment); err != nil {
 				return err
 			}
 			return nil
@@ -107,7 +110,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			if err := model.UpdateAuthRealmsGlobals(ctx, permsCfg, dryRun, historicalComment); err != nil {
+			if err := model.UpdateAuthRealmsGlobals(ctx, permsCfg, dryRunCronRealms, historicalComment); err != nil {
 				return err
 			}
 
@@ -119,7 +122,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			jobs, err := realmsinternals.CheckConfigChanges(ctx, permsDB, latestRealms, storedRealms, dryRun, historicalComment)
+			jobs, err := realmsinternals.CheckConfigChanges(ctx, permsDB, latestRealms, storedRealms, dryRunCronRealms, historicalComment)
 			if err != nil {
 				return err
 			}

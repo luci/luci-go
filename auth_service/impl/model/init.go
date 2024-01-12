@@ -27,7 +27,10 @@ import (
 )
 
 func init() {
-	dryRun := true
+	// Parse flags fron environment variables.
+	dryRunChangelog := ParseDryRunEnvVar(DryRunTQChangelogEnvVar)
+	dryRunReplication := ParseDryRunEnvVar(DryRunTQReplicationEnvVar)
+
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "process-change-task",
 		Prototype: (*taskspb.ProcessChangeTask)(nil),
@@ -36,7 +39,7 @@ func init() {
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ProcessChangeTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
-			return handleProcessChangeTask(ctx, payload.(*taskspb.ProcessChangeTask), dryRun)
+			return handleProcessChangeTask(ctx, payload.(*taskspb.ProcessChangeTask), dryRunChangelog)
 		},
 		Custom: func(ctx context.Context, payload protoreflect.ProtoMessage) (*tq.CustomPayload, error) {
 			task := payload.(*taskspb.ProcessChangeTask)
@@ -54,7 +57,7 @@ func init() {
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ReplicationTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
-			return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask), dryRun)
+			return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask), dryRunReplication)
 		},
 		Custom: func(ctx context.Context, payload protoreflect.ProtoMessage) (*tq.CustomPayload, error) {
 			task := payload.(*taskspb.ReplicationTask)
