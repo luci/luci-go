@@ -26,11 +26,11 @@ import {
   ImpactFilters,
   VariantGroup,
 } from '@/tools/failures_tools';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 interface Props {
-    metrics: Metric[],
-    metricFilter: Metric | undefined,
+    metrics: ProjectMetric[],
+    metricFilter: ProjectMetric | undefined,
     onMetricFilterChanged: (event: SelectChangeEvent) => void,
     impactFilter: ImpactFilter,
     onImpactFilterChanged: (event: SelectChangeEvent) => void,

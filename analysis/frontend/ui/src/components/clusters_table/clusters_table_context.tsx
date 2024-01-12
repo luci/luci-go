@@ -14,10 +14,10 @@
 
 import { createContext } from 'react';
 
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 interface ClusterTableData {
-  metrics: Metric[];
+  metrics: ProjectMetric[];
 }
 
 export const ClusterTableContextData = createContext<ClusterTableData>({
@@ -25,7 +25,7 @@ export const ClusterTableContextData = createContext<ClusterTableData>({
 });
 
 interface Props {
-  metrics: Metric[] | undefined;
+  metrics: ProjectMetric[] | undefined;
   children: React.ReactNode;
 }
 

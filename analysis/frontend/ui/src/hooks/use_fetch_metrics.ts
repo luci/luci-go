@@ -14,14 +14,11 @@
 
 import { useQuery, UseQueryResult } from 'react-query';
 
-import {
-  ListProjectMetricsRequest,
-  getMetricsService,
-  Metric,
-} from '@/legacy_services/metrics';
+import { getMetricsService } from '@/services/services';
 import { prpcRetrier } from '@/legacy_services/shared_models';
+import { ListProjectMetricsRequest, ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
-const useFetchMetrics = (project: string, onSuccess?: (data: Metric[]) => void): UseQueryResult<Metric[], Error> => {
+const useFetchMetrics = (project: string, onSuccess?: (data: ProjectMetric[]) => void): UseQueryResult<ProjectMetric[], Error> => {
   const metricsService = getMetricsService();
   return useQuery(['metrics', project], async () => {
     const request: ListProjectMetricsRequest = {

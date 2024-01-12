@@ -23,14 +23,14 @@ import {
   YAxis,
 } from 'recharts';
 
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { ClusterHistoryDay } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 
 interface Props {
   height: number;
   color: string,
   isAnnotated: boolean,
-  metric: Metric,
+  metric: ProjectMetric,
   data: readonly ClusterHistoryDay[],
 }
 

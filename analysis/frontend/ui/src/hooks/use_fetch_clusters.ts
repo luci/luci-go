@@ -23,7 +23,7 @@ import {
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import {
   MetricId,
   prpcRetrier,
@@ -34,7 +34,7 @@ export interface ClustersFetchOptions {
   project: string;
   failureFilter: string;
   orderBy?: OrderBy;
-  metrics: Metric[];
+  metrics: ProjectMetric[];
   interval?: TimeInterval;
 }
 
@@ -67,7 +67,7 @@ const orderByClause = (orderBy?: OrderBy): string => {
 
 // metricsKey returns a unique key to represent the given
 // set of metrics.
-export const metricsKey = (metrics: Metric[]): string => {
+export const metricsKey = (metrics: ProjectMetric[]): string => {
   const metricNames = metrics.map((m) => m.name);
   // Sort to ensure we treat the input as a set instead
   // of a list.

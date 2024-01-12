@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Cluster_TimewiseCounts } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { BugManagementPolicy } from '@/legacy_services/project';
 
 export interface Criterium {
@@ -27,7 +27,7 @@ export interface Criterium {
   satisfied: boolean;
 }
 
-export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions: Metric[], metricValues: {[key: string]: Cluster_TimewiseCounts} | undefined, activationCriteria: boolean) : Criterium[] => {
+export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions: ProjectMetric[], metricValues: {[key: string]: Cluster_TimewiseCounts} | undefined, activationCriteria: boolean) : Criterium[] => {
   const result : Criterium[] = [];
   policy.metrics.forEach((m) => {
     const metricDefinition = metricDefinitions.find((d) => d.metricId == m.metricId);

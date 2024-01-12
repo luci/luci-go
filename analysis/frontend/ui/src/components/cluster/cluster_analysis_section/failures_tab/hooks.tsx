@@ -1,5 +1,5 @@
 import { ParamKeyValuePair, useSearchParams } from 'react-router-dom';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { MetricName } from '@/tools/failures_tools';
 
 export function useSelectedVariantGroupsParam(): [string[], (selectedVariantGroups: string[], replace?: boolean) => void] {
@@ -29,13 +29,13 @@ export function useSelectedVariantGroupsParam(): [string[], (selectedVariantGrou
   return [selectedVariantGroups, updateSelectedVariantGroupsParam];
 }
 
-export function useFilterToMetricParam(metrics: Metric[]): [Metric | undefined, (filterToMetric: Metric | undefined, replace?: boolean) => void] {
+export function useFilterToMetricParam(metrics: ProjectMetric[]): [ProjectMetric | undefined, (filterToMetric: ProjectMetric | undefined, replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const filterToMetricParam = searchParams.get('filterToMetric') || '';
 
   const filterToMetric = metrics.find((metric) => filterToMetricParam.indexOf(metric.metricId) > -1);
 
-  function updateFilterToMetricParam(filterToMetric: Metric | undefined, replace = false) {
+  function updateFilterToMetricParam(filterToMetric: ProjectMetric | undefined, replace = false) {
     const params: ParamKeyValuePair[] = [];
     for (const [k, v] of searchParams.entries()) {
       if (k !== 'filterToMetric') {

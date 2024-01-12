@@ -25,7 +25,7 @@ import {
   useOrderByParam,
   useSelectedMetricsParam,
 } from '@/components/clusters_table/hooks';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { MetricId } from '@/legacy_services/shared_models';
 
 const ClustersTableHead = () => {
@@ -60,7 +60,7 @@ const ClustersTableHead = () => {
         <TableCell>Cluster</TableCell>
         <TableCell sx={{ width: '150px' }}>Bug</TableCell>
         {
-          filteredMetrics.map((metric: Metric) => (
+          filteredMetrics.map((metric: ProjectMetric) => (
             <TableCell
               key={metric.metricId}
               sortDirection={(orderBy && (orderBy.metric === metric.metricId)) ? (orderBy.isAscending ? 'asc' : 'desc') : false}

@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 
 import { MetricId } from '@/legacy_services/shared_models';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 const MenuProps = {
   PaperProps: {
@@ -34,7 +34,7 @@ const MenuProps = {
 };
 
 interface Props {
-    metrics: Metric[];
+    metrics: ProjectMetric[];
     selectedMetrics: MetricId[];
     handleSelectedMetricsChanged: (selectedMetricsIds: MetricId[]) => void;
     labelId?: string;

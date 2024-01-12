@@ -14,14 +14,10 @@
 
 import fetchMock from 'fetch-mock-jest';
 
-import {
-  ListProjectMetricsRequest,
-  ListProjectMetricsResponse,
-  Metric,
-} from '@/legacy_services/metrics';
+import { ListProjectMetricsRequest, ListProjectMetricsResponse, ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
-export const getMockMetricsList = (project: string): Metric[] => {
-  const humanClsFailedPresubmitMetric : Metric = {
+export const getMockMetricsList = (project: string): ProjectMetric[] => {
+  const humanClsFailedPresubmitMetric : ProjectMetric = {
     name: 'projects/' + project + '/metrics/human-cls-failed-presubmit',
     metricId: 'human-cls-failed-presubmit',
     humanReadableName: 'User Cls Failed Presubmit',
@@ -29,7 +25,7 @@ export const getMockMetricsList = (project: string): Metric[] => {
     isDefault: true,
     sortPriority: 30,
   };
-  const criticalFailuresExonerated : Metric = {
+  const criticalFailuresExonerated : ProjectMetric = {
     name: 'projects/' + project + '/metrics/critical-failures-exonerated',
     metricId: 'critical-failures-exonerated',
     humanReadableName: 'Presubmit-blocking Failures Exonerated',
@@ -37,7 +33,7 @@ export const getMockMetricsList = (project: string): Metric[] => {
     isDefault: true,
     sortPriority: 40,
   };
-  const testRunsFailed : Metric = {
+  const testRunsFailed : ProjectMetric = {
     name: 'projects/' + project + '/metrics/test-runs-failed',
     metricId: 'test-runs-failed',
     humanReadableName: 'Test Runs Failed',
@@ -45,7 +41,7 @@ export const getMockMetricsList = (project: string): Metric[] => {
     isDefault: false,
     sortPriority: 20,
   };
-  const failures : Metric = {
+  const failures : ProjectMetric = {
     name: 'projects/' + project + '/metrics/failures',
     metricId: 'failures',
     humanReadableName: 'Total Failures',
@@ -56,7 +52,7 @@ export const getMockMetricsList = (project: string): Metric[] => {
   return [humanClsFailedPresubmitMetric, criticalFailuresExonerated, testRunsFailed, failures];
 };
 
-export const mockFetchMetrics = (project?: string, metrics?: Metric[]) => {
+export const mockFetchMetrics = (project?: string, metrics?: ProjectMetric[]) => {
   if (project === undefined) {
     project = 'testproject';
   }
@@ -72,11 +68,11 @@ export const mockFetchMetrics = (project?: string, metrics?: Metric[]) => {
 
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Metrics/ListForProject',
-    body: request,
+    body: ListProjectMetricsRequest.toJSON(request) as object,
   }, {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'\n' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(ListProjectMetricsResponse.toJSON(response)),
   });
 };

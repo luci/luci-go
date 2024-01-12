@@ -19,14 +19,14 @@ import {
   QueryClusterFailuresRequest,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { prpcRetrier } from '@/legacy_services/shared_models';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { getClustersService } from '@/services/services';
 
 const useFetchClusterFailures = (
     project: string,
     algorithm: string,
     id: string,
-    filterToMetric: Metric | undefined,
+    filterToMetric: ProjectMetric | undefined,
 ): UseQueryResult<DistinctClusterFailure[], Error> => {
   return useQuery(['clusterFailures', project, algorithm, id, filterToMetric?.metricId],
       async () => {

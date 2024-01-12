@@ -31,7 +31,7 @@ import {
   QueryClusterSummariesResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { TimeRange } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
@@ -68,7 +68,7 @@ describe('Test ClustersTable component', () => {
   };
 
   it('should display column headings reflecting the system metrics', async () => {
-    const metrics: Metric[] = [{
+    const metrics: ProjectMetric[] = [{
       name: 'projects/testproject/metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
@@ -322,7 +322,7 @@ describe('Test ClustersTable component', () => {
   });
 
   it('when removing order by column, should select highest sort order in selected metrics', async () => {
-    const metrics: Metric[] = [{
+    const metrics: ProjectMetric[] = [{
       name: 'projects/testproject/metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',

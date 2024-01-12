@@ -18,7 +18,7 @@ import {
 } from 'react-router-dom';
 
 import { TimeInterval } from '@/hooks/use_fetch_clusters';
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { MetricId } from '@/legacy_services/shared_models';
 
 export interface OrderBy {
@@ -77,7 +77,7 @@ export function useIntervalParam(intervals: TimeInterval[]): [TimeInterval | und
   return [interval, updateIntervalParam];
 }
 
-export function useOrderByParam(metrics: Metric[]): [OrderBy | undefined, (orderBy: OrderBy, replace?: boolean) => void] {
+export function useOrderByParam(metrics: ProjectMetric[]): [OrderBy | undefined, (orderBy: OrderBy, replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const orderByParam = searchParams.get('orderBy') || '';
   const orderDir = searchParams.get('orderDir') || '';
@@ -117,14 +117,14 @@ export function useOrderByParam(metrics: Metric[]): [OrderBy | undefined, (order
   return [orderBy, updateOrderByParams];
 }
 
-export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selectedMetrics: Metric[], replace?: boolean) => void] {
+export function useSelectedMetricsParam(metrics: ProjectMetric[]): [ProjectMetric[], (selectedMetrics: ProjectMetric[], replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedMetricsParam = searchParams.get('selectedMetrics') || '';
   const selectedMetricsIds = selectedMetricsParam.split(',');
 
   const selectedMetrics = metrics.filter((metric) => selectedMetricsIds.indexOf(metric.metricId) > -1);
 
-  function updateSelectedMetricsParam(selectedMetrics: Metric[], replace = false) {
+  function updateSelectedMetricsParam(selectedMetrics: ProjectMetric[], replace = false) {
     const params: ParamKeyValuePair[] = [];
 
     const selectedMetricsIds = selectedMetrics.map((metric) => metric.metricId).join(',');

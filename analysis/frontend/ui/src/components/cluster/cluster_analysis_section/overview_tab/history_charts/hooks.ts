@@ -17,7 +17,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 export interface HistoryTimeRange {
   id: string;
@@ -78,7 +78,7 @@ export function useHistoryTimeRangeParam(options: HistoryTimeRange[]): [HistoryT
   return [timeRange, updateHistoryTimeRangeParam];
 }
 
-export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selectedMetrics: Metric[], replace?: boolean) => void] {
+export function useSelectedMetricsParam(metrics: ProjectMetric[]): [ProjectMetric[], (selectedMetrics: ProjectMetric[], replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedMetricsParam = searchParams.get('selectedMetrics') || '';
   const selectedMetricsIds = selectedMetricsParam.split(',');
@@ -86,7 +86,7 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
   const selectedMetrics = metrics.filter((metric) => selectedMetricsIds.indexOf(metric.metricId) > -1);
 
 
-  function updateSelectedMetricsParam(selectedMetrics: Metric[], replace = false) {
+  function updateSelectedMetricsParam(selectedMetrics: ProjectMetric[], replace = false) {
     const params: ParamKeyValuePair[] = [];
     for (const [k, v] of searchParams.entries()) {
       if (k !== 'selectedMetrics') {

@@ -14,10 +14,10 @@
 
 import { createContext } from 'react';
 
-import { Metric } from '@/legacy_services/metrics';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 interface OverviewTabData {
-  metrics: Metric[];
+  metrics: ProjectMetric[];
 }
 
 export const OverviewTabContextData = createContext<OverviewTabData>({
@@ -25,7 +25,7 @@ export const OverviewTabContextData = createContext<OverviewTabData>({
 });
 
 interface Props {
-  metrics?: Metric[];
+  metrics?: ProjectMetric[];
   children: React.ReactNode;
 }
 
