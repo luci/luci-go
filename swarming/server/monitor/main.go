@@ -70,17 +70,17 @@ func main() {
 			mon = monitor.NewNilMonitor()
 		}
 
-		registerMetricsCron(srv, mon, "report-bots", "", reportBots)
-		registerMetricsCron(srv, mon, "report-tasks", "-new", reportTasks)
+		registerMetricsCron(srv, mon, "report-bots", reportBots)
+		registerMetricsCron(srv, mon, "report-tasks", reportTasks)
 		return nil
 	})
 }
 
-func registerMetricsCron(srv *server.Server, mon monitor.Monitor, id, serviceNameSuffix string, report func(ctx context.Context, state *tsmon.State, serviceName string) error) {
+func registerMetricsCron(srv *server.Server, mon monitor.Monitor, id string, report func(ctx context.Context, state *tsmon.State, serviceName string) error) {
 	state := tsmon.NewState()
 	state.SetStore(store.NewInMemory(&target.Task{
 		DataCenter:  "appengine",
-		ServiceName: srv.Options.TsMonServiceName + serviceNameSuffix,
+		ServiceName: srv.Options.TsMonServiceName,
 		JobName:     srv.Options.TsMonJobName,
 		HostName:    "global",
 	}))
