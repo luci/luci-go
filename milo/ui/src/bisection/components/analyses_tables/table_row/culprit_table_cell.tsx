@@ -28,7 +28,7 @@ interface CulpritActionIconProps {
   actionType: CulpritActionType;
 }
 
-const CulpritActionIcon = ({ actionType }: CulpritActionIconProps) => {
+function CulpritActionIcon({ actionType }: CulpritActionIconProps) {
   switch (actionType) {
     case 'CULPRIT_AUTO_REVERTED':
       return (
@@ -65,13 +65,13 @@ const CulpritActionIcon = ({ actionType }: CulpritActionIconProps) => {
     default:
       return <></>;
   }
-};
+}
 
 interface CulpritSpanProps {
   culprit: Culprit;
 }
 
-const CulpritSpan = ({ culprit }: CulpritSpanProps) => {
+function CulpritSpan({ culprit }: CulpritSpanProps) {
   let description = getCommitShortHash(culprit.commit.id);
   if (culprit.reviewTitle) {
     description += `: ${culprit.reviewTitle}`;
@@ -98,17 +98,17 @@ const CulpritSpan = ({ culprit }: CulpritSpanProps) => {
       </Link>
     </span>
   );
-};
+}
 
 interface CulpritsTableCellProps {
   culprits: Culprit[] | undefined;
   status: AnalysisStatus;
 }
 
-export const CulpritsTableCell = ({
+export function CulpritsTableCell({
   culprits,
   status,
-}: CulpritsTableCellProps) => {
+}: CulpritsTableCellProps) {
   if (culprits == null || culprits.length == 0) {
     return (
       <TableCell>
@@ -132,4 +132,4 @@ export const CulpritsTableCell = ({
       )}
     </TableCell>
   );
-};
+}

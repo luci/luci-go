@@ -30,7 +30,7 @@ interface AnalysisTableProps {
   analysis: Analysis;
 }
 
-export const AnalysisTableRow = ({ analysis }: AnalysisTableProps) => {
+export function AnalysisTableRow({ analysis }: AnalysisTableProps) {
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
   return (
@@ -72,4 +72,4 @@ export const AnalysisTableRow = ({ analysis }: AnalysisTableProps) => {
       />
     </TableRow>
   );
-};
+}

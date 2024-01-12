@@ -24,11 +24,11 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { AnalysisOverview } from '@/bisection/components/analysis_overview/analysis_overview';
-import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table/culprit_verification_table';
+import { AnalysisOverview } from '@/bisection/components/analysis_overview';
+import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table';
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
-import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysis_table/heuristic_analysis_table';
-import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
+import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysis_table';
+import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import {
@@ -81,7 +81,7 @@ enum AnalysisComponentTabs {
   CULPRIT_VERIFICATION = 'Culprit verification',
 }
 
-export const AnalysisDetailsPage = () => {
+export function AnalysisDetailsPage() {
   const { bbid } = useParams();
   if (!bbid) {
     // The page should always be mounted to a path where bbid is set.
@@ -218,7 +218,7 @@ export const AnalysisDetailsPage = () => {
   }
 
   return <></>;
-};
+}
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.

@@ -24,7 +24,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { nanoid } from 'nanoid';
 
-import { PlainTable } from '@/bisection/components/plain_table/plain_table';
+import { PlainTable } from '@/bisection/components/plain_table';
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { displayRerunStatus } from '@/bisection/tools/info_display';
 import { linkToBuild } from '@/bisection/tools/link_constructors';
@@ -88,7 +88,7 @@ const INACTION_REASONS_WITH_REVERT_LINK: CulpritInactionReason[] = [
   'REVERT_HAS_COMMENT',
 ];
 
-const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
+function CulpritActionTableCell({ action }: CulpritActionTableCellProps) {
   if (action == null) {
     return <TableCell></TableCell>;
   }
@@ -137,11 +137,11 @@ const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
       .
     </TableCell>
   );
-};
+}
 
-export const VerificationDetailsTable = ({
+export function VerificationDetailsTable({
   details,
-}: VerificationDetailsTableProps) => {
+}: VerificationDetailsTableProps) {
   if (!details.suspectRerun && !details.parentRerun) {
     return <>No rerun found</>;
   }
@@ -185,7 +185,7 @@ export const VerificationDetailsTable = ({
       </TableBody>
     </PlainTable>
   );
-};
+}
 
 const CulpritTableRow = ({ culprit }: CulpritTableRowProps) => {
   const { commit, reviewUrl, reviewTitle } = culprit;

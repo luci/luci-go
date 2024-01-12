@@ -66,18 +66,18 @@ interface RerunStatusProps {
   status: RerunStatus;
 }
 
-export const RerunStatusInfo = ({ status }: RerunStatusProps) => {
+export function RerunStatusInfo({ status }: RerunStatusProps) {
   const statusLabel = RERUN_STATUS_LABELS[status];
 
   return <Typography color={statusLabel.color}>{statusLabel.text}</Typography>;
-};
+}
 
 interface AnalysisStatusProps {
   status: AnalysisStatus;
 }
 
-export const AnalysisStatusInfo = ({ status }: AnalysisStatusProps) => {
+export function AnalysisStatusInfo({ status }: AnalysisStatusProps) {
   const statusLabel = ANALYSIS_STATUS_LABELS[status];
 
   return <Typography color={statusLabel.color}>{statusLabel.text}</Typography>;
-};
+}

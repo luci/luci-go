@@ -18,7 +18,7 @@ import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { VerificationDetailsTable } from '@/bisection/components/culprits_table/culprits_table';
+import { VerificationDetailsTable } from '@/bisection/components/culprits_table';
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { Suspect } from '@/common/services/luci_bisection';
 
@@ -26,7 +26,7 @@ interface Props {
   suspect: Suspect;
 }
 
-export const CulpritVerificationTableRow = ({ suspect }: Props) => {
+export function CulpritVerificationTableRow({ suspect }: Props) {
   const { commit, reviewUrl, reviewTitle, verificationDetails, type } = suspect;
 
   let suspectDescription = getCommitShortHash(commit.id);
@@ -56,4 +56,4 @@ export const CulpritVerificationTableRow = ({ suspect }: Props) => {
       </TableRow>
     </>
   );
-};
+}

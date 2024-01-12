@@ -19,8 +19,10 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import { useState } from 'react';
 
-import { ListAnalysesTable } from '@/bisection/components/analyses_tables/list_analyses_table';
-import { SearchAnalysisTable } from '@/bisection/components/analyses_tables/search_analysis_table';
+import {
+  ListAnalysesTable,
+  SearchAnalysisTable,
+} from '@/bisection/components/analyses_tables';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 

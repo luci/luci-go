@@ -19,8 +19,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
-import { PlainTable } from '@/bisection/components/plain_table/plain_table';
-import { AnalysisStatusInfo } from '@/bisection/components/status_info/status_info';
+import { PlainTable } from '@/bisection/components/plain_table';
+import { AnalysisStatusInfo } from '@/bisection/components/status_info';
 import {
   ExternalLink,
   linkToBuild,
@@ -74,7 +74,7 @@ function getBugLinks(analysis: Analysis): ExternalLink[] {
   return bugLinks;
 }
 
-export const AnalysisOverview = ({ analysis }: Props) => {
+export function AnalysisOverview({ analysis }: Props) {
   const buildLink = linkToBuild(analysis.firstFailedBbid);
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
@@ -193,4 +193,4 @@ export const AnalysisOverview = ({ analysis }: Props) => {
       </PlainTable>
     </TableContainer>
   );
-};
+}

@@ -23,8 +23,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import { PlainTable } from '@/bisection/components/plain_table/plain_table';
-import { AnalysisStatusInfo } from '@/bisection/components/status_info/status_info';
+import { PlainTable } from '@/bisection/components/plain_table';
+import { AnalysisStatusInfo } from '@/bisection/components/status_info';
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { EMPTY_LINK } from '@/bisection/tools/link_constructors';
 import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
@@ -33,7 +33,7 @@ import {
   SingleRerun,
 } from '@/common/services/luci_bisection';
 
-import { NthSectionAnalysisTableRow } from './nthsection_analysis_table_row/nthsection_analysis_table_row';
+import { NthSectionAnalysisTableRow } from './nthsection_analysis_table_row';
 
 interface NthSectionAnalysisTableProps {
   result?: NthSectionAnalysisResult | null;
@@ -43,9 +43,9 @@ interface RerunProps {
   reruns: SingleRerun[];
 }
 
-export const NthSectionAnalysisTable = ({
+export function NthSectionAnalysisTable({
   result,
-}: NthSectionAnalysisTableProps) => {
+}: NthSectionAnalysisTableProps) {
   if (result == null || result == undefined) {
     return (
       <span className="data-placeholder">There is no nthsection analysis</span>
@@ -66,15 +66,15 @@ export const NthSectionAnalysisTable = ({
       ></NthSectionAnalysisRerunsTable>
     </>
   );
-};
+}
 
 interface NthSectionAnalysisDetailProps {
   result: NthSectionAnalysisResult;
 }
 
-export const NthSectionAnalysisDetail = ({
+export function NthSectionAnalysisDetail({
   result,
-}: NthSectionAnalysisDetailProps) => {
+}: NthSectionAnalysisDetailProps) {
   const commitLink = EMPTY_LINK;
   const suspect = result.suspect;
   if (suspect) {
@@ -121,9 +121,9 @@ export const NthSectionAnalysisDetail = ({
       </PlainTable>
     </TableContainer>
   );
-};
+}
 
-export const NthSectionAnalysisRerunsTable = ({ reruns }: RerunProps) => {
+export function NthSectionAnalysisRerunsTable({ reruns }: RerunProps) {
   if (!reruns || reruns.length == 0) {
     return <span className="data-placeholder">No reruns found</span>;
   }
@@ -163,4 +163,4 @@ export const NthSectionAnalysisRerunsTable = ({ reruns }: RerunProps) => {
       </Table>
     </TableContainer>
   );
-};
+}

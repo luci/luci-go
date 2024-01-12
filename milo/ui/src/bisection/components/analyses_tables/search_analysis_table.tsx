@@ -29,13 +29,13 @@ import TableRow from '@mui/material/TableRow';
 import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { LUCIBisectionService } from '@/common/services/luci_bisection';
 
-import { AnalysisTableRow } from './analysis_table_row/analysis_table_row';
+import { AnalysisTableRow } from './table_row';
 
 interface Props {
   bbid: string | null | undefined;
 }
 
-export const SearchAnalysisTable = ({ bbid }: Props) => {
+export function SearchAnalysisTable({ bbid }: Props) {
   const {
     isLoading,
     isError,
@@ -136,4 +136,4 @@ export const SearchAnalysisTable = ({ bbid }: Props) => {
       )}
     </Box>
   );
-};
+}

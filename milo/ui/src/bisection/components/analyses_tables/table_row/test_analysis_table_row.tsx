@@ -29,9 +29,7 @@ interface TestAnalysisTableRowProps {
   analysis: TestAnalysis;
 }
 
-export const TestAnalysisTableRow = ({
-  analysis,
-}: TestAnalysisTableRowProps) => {
+export function TestAnalysisTableRow({ analysis }: TestAnalysisTableRowProps) {
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
   const failureStartHour = analysis.testFailures[0]
@@ -95,4 +93,4 @@ export const TestAnalysisTableRow = ({
       />
     </TableRow>
   );
-};
+}

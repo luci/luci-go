@@ -35,13 +35,13 @@ import {
   LUCIBisectionService,
 } from '@/common/services/luci_bisection';
 
-import { AnalysisTableRow } from './analysis_table_row/analysis_table_row';
+import { AnalysisTableRow } from './table_row';
 
 interface DisplayedRowsLabelProps {
   from: number;
 }
 
-export const ListAnalysesTable = () => {
+export function ListAnalysesTable() {
   // TODO: implement sorting & filtering for certain columns
 
   // The current page of analyses
@@ -192,4 +192,4 @@ export const ListAnalysesTable = () => {
       </>
     </Box>
   );
-};
+}

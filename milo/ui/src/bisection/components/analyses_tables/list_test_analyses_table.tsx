@@ -32,7 +32,7 @@ import {
 
 import { TestAnalysesTable } from './test_analyses_table';
 
-export const ListTestAnalysesTable = () => {
+export function ListTestAnalysesTable() {
   const { project } = useParams();
   if (!project) {
     // The page should always be mounted to a path where project is set.
@@ -182,4 +182,4 @@ export const ListTestAnalysesTable = () => {
       </>
     </Box>
   );
-};
+}

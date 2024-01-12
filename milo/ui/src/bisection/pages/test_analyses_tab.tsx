@@ -20,8 +20,10 @@ import { useState } from 'react';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { ListTestAnalysesTable } from '../components/analyses_tables/list_test_analyses_table';
-import { SearchTestAnalysisTable } from '../components/analyses_tables/search_test_analysis_table';
+import {
+  ListTestAnalysesTable,
+  SearchTestAnalysisTable,
+} from '../components/analyses_tables';
 
 const digitsRegex = new RegExp('^([0-9]*)$');
 
@@ -29,7 +31,7 @@ const isValidID = (id: string): boolean => {
   return digitsRegex.test(id);
 };
 
-export const TestAnalysesTab = () => {
+export function TestAnalysesTab() {
   const [pendingSearchID, setPendingSearchID] = useState<string>('');
   const [searchID, setSearchID] = useState<string>('');
   const searchForAnalysis = () => {
@@ -98,7 +100,7 @@ export const TestAnalysesTab = () => {
       )}
     </div>
   );
-};
+}
 
 export function Component() {
   useTabId('test-analysis');

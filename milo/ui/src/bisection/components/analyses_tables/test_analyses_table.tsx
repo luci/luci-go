@@ -23,34 +23,39 @@ import TableRow from '@mui/material/TableRow';
 
 import { TestAnalysis } from '@/common/services/luci_bisection';
 
-import { TestAnalysisTableRow } from './analysis_table_row/test_analysis_table_row';
+import { TestAnalysisTableRow } from './table_row';
 
 interface TestAnalysesTableProps {
   analyses: TestAnalysis[];
 }
 
-export const TestAnalysesTable = ({ analyses }: TestAnalysesTableProps) => (
-  <TableContainer className="analyses-table-container" component={Paper}>
-    <Table className="analyses-table" size="small">
-      <TableHead>
-        <TableRow>
-          <TableCell>Analysis ID</TableCell>
-          <TableCell>Created time</TableCell>
-          <TableCell>Duration</TableCell>
-          <TableCell>Status</TableCell>
-          <TableCell>
-            Duration since <br />
-            failure start
-          </TableCell>
-          <TableCell>Builder</TableCell>
-          <TableCell>Culprit CL</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {analyses.map((analysis) => (
-          <TestAnalysisTableRow key={analysis.analysisId} analysis={analysis} />
-        ))}
-      </TableBody>
-    </Table>
-  </TableContainer>
-);
+export function TestAnalysesTable({ analyses }: TestAnalysesTableProps) {
+  return (
+    <TableContainer className="analyses-table-container" component={Paper}>
+      <Table className="analyses-table" size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Analysis ID</TableCell>
+            <TableCell>Created time</TableCell>
+            <TableCell>Duration</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>
+              Duration since <br />
+              failure start
+            </TableCell>
+            <TableCell>Builder</TableCell>
+            <TableCell>Culprit CL</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {analyses.map((analysis) => (
+            <TestAnalysisTableRow
+              key={analysis.analysisId}
+              analysis={analysis}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}

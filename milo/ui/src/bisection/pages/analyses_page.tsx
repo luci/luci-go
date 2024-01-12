@@ -15,20 +15,22 @@
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { AppRoutedTabs, AppRoutedTab } from '@/common/components/routed_tabs';
 
-export const AnalysesPage = () => (
-  <AppRoutedTabs>
-    <AppRoutedTab
-      label="Compile Analysis"
-      value="compile-analysis"
-      to="compile-analysis"
-    />
-    <AppRoutedTab
-      label="Test Analysis"
-      value="test-analysis"
-      to="test-analysis"
-    />
-  </AppRoutedTabs>
-);
+export function AnalysesPage() {
+  return (
+    <AppRoutedTabs>
+      <AppRoutedTab
+        label="Compile Analysis"
+        value="compile-analysis"
+        to="compile-analysis"
+      />
+      <AppRoutedTab
+        label="Test Analysis"
+        value="test-analysis"
+        to="test-analysis"
+      />
+    </AppRoutedTabs>
+  );
+}
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.

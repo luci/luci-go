@@ -24,11 +24,11 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { TestAnalysisOverview } from '@/bisection/components/analysis_overview/test_analysis_overview';
-import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table/culprit_verification_table';
+import { TestAnalysisOverview } from '@/bisection/components/analysis_overview';
+import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table';
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
-import { TestFailuresTable } from '@/bisection/components/test_table/test_failures_table';
+import { TestFailuresTable } from '@/bisection/components/test_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { LUCIBisectionService } from '@/common/services/luci_bisection';
@@ -40,7 +40,7 @@ enum AnalysisComponentTabs {
   CULPRIT_VERIFICATION = 'Culprit verification',
 }
 
-export const TestAnalysisDetailsPage = () => {
+export function TestAnalysisDetailsPage() {
   const { id } = useParams();
   if (!id) {
     // The page should always be mounted to a path where id is set.
@@ -157,7 +157,7 @@ export const TestAnalysisDetailsPage = () => {
       </div>
     </>
   );
-};
+}
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.

@@ -18,7 +18,7 @@ import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { RerunStatusInfo } from '@/bisection/components/status_info/status_info';
+import { RerunStatusInfo } from '@/bisection/components/status_info';
 import { linkToBuild, linkToCommit } from '@/bisection/tools/link_constructors';
 import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
 import { SingleRerun } from '@/common/services/luci_bisection';
@@ -31,7 +31,7 @@ interface Props {
 // Test analysis rpc doesn't return the rerun type because all rerun are "Nthsection" type.
 const DEFAULT_RERUN_TYPE = 'Nthsection';
 
-export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
+export function NthSectionAnalysisTableRow({ rerun }: Props) {
   const { startTime, endTime, bbid, commit, index, type } = rerun;
 
   const buildLink = linkToBuild(bbid);
@@ -74,4 +74,4 @@ export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
       </TableRow>
     </>
   );
-};
+}

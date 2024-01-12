@@ -24,7 +24,7 @@ import TableRow from '@mui/material/TableRow';
 
 import { Suspect } from '@/common/services/luci_bisection';
 
-import { CulpritVerificationTableRow } from './culprit_verification_table_row/culprit_verification_table_row';
+import { CulpritVerificationTableRow } from './culprit_verification_table_row';
 
 interface Props {
   suspects: Suspect[];
@@ -36,7 +36,7 @@ function getRows(suspects: Suspect[]) {
   ));
 }
 
-export const CulpritVerificationTable = ({ suspects }: Props) => {
+export function CulpritVerificationTable({ suspects }: Props) {
   if (suspects.length == 0) {
     return (
       <span className="data-placeholder">No culprit verification results</span>
@@ -60,4 +60,4 @@ export const CulpritVerificationTable = ({ suspects }: Props) => {
       </Table>
     </TableContainer>
   );
-};
+}

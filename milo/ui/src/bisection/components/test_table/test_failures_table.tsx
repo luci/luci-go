@@ -33,7 +33,7 @@ interface TestFailuresTableProps {
   testFailures?: TestFailure[];
 }
 
-export const TestFailuresTable = ({ testFailures }: TestFailuresTableProps) => {
+export function TestFailuresTable({ testFailures }: TestFailuresTableProps) {
   if (!testFailures?.length) {
     return (
       <span className="data-placeholder">Error: No test failures found</span>
@@ -66,13 +66,13 @@ export const TestFailuresTable = ({ testFailures }: TestFailuresTableProps) => {
       </Table>
     </TableContainer>
   );
-};
+}
 
 interface TestFailureRowProps {
   testFailure: TestFailure;
 }
 
-const TestFailureRow = ({ testFailure }: TestFailureRowProps) => {
+function TestFailureRow({ testFailure }: TestFailureRowProps) {
   // TODO: get project from test failure and remove the hardcoded project.
   const testHistoryLink = urlSetSearchQueryParam(
     getTestHistoryURLPath('chromium', testFailure.testId),
@@ -106,4 +106,4 @@ const TestFailureRow = ({ testFailure }: TestFailureRowProps) => {
       </TableRow>
     </>
   );
-};
+}

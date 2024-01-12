@@ -19,8 +19,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import { DateTime } from 'luxon';
 
-import { PlainTable } from '@/bisection/components/plain_table/plain_table';
-import { AnalysisStatusInfo } from '@/bisection/components/status_info/status_info';
+import { PlainTable } from '@/bisection/components/plain_table';
+import { AnalysisStatusInfo } from '@/bisection/components/status_info';
 import {
   ExternalLink,
   linkToBuilder,
@@ -45,7 +45,7 @@ interface Props {
   analysis: TestAnalysis;
 }
 
-export const TestAnalysisOverview = ({ analysis }: Props) => {
+export function TestAnalysisOverview({ analysis }: Props) {
   const builderLink = linkToBuilder(analysis.builder);
   const suspectRange = getSuspectRange(analysis);
   const failureStartHour = analysis.testFailures[0]
@@ -132,4 +132,4 @@ export const TestAnalysisOverview = ({ analysis }: Props) => {
       </PlainTable>
     </TableContainer>
   );
-};
+}

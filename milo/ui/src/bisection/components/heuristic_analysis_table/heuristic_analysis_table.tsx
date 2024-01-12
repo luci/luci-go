@@ -27,13 +27,13 @@ import {
   isAnalysisComplete,
 } from '@/common/services/luci_bisection';
 
-import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row/heuristic_analysis_table_row';
+import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row';
 
 interface Props {
   result?: HeuristicAnalysisResult;
 }
 
-export const HeuristicAnalysisTable = ({ result }: Props) => {
+export function HeuristicAnalysisTable({ result }: Props) {
   if (!result) {
     return (
       <span className="data-placeholder" data-testid="heuristic-analysis-table">
@@ -84,4 +84,4 @@ export const HeuristicAnalysisTable = ({ result }: Props) => {
       </Table>
     </TableContainer>
   );
-};
+}

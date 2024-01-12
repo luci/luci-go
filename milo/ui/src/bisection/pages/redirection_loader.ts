@@ -19,9 +19,7 @@ export const REDIRECT_TO_PROJECT = 'chromium';
 // RedirectionLoader redirects /ui/bisection/* to /ui/p/{PROJECT}/bisection/*.
 // It also remap the sub path for compile bisection from `/analysis` to `/compile-analysis`.
 // As we change the route for bisection pages, this redirection keeps old links works.
-export const redirectionLoader = ({
-  request,
-}: LoaderFunctionArgs): Response => {
+export function redirectionLoader({ request }: LoaderFunctionArgs): Response {
   const url = new URL(request.url);
   const matches = url.pathname.match(/^\/ui\/bisection(.*)$/);
   if (!matches || matches.length < 2) {
@@ -29,6 +27,6 @@ export const redirectionLoader = ({
   }
   const subPath = matches[1].replace(/^\/analysis/, '/compile-analysis');
   return redirect(`/ui/p/${REDIRECT_TO_PROJECT}/bisection${subPath}`);
-};
+}
 
 export const loader = redirectionLoader;

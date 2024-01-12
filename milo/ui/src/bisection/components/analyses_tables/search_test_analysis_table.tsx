@@ -29,7 +29,7 @@ interface Props {
   analysisId: number;
 }
 
-export const SearchTestAnalysisTable = ({ analysisId }: Props) => {
+export function SearchTestAnalysisTable({ analysisId }: Props) {
   const {
     isLoading,
     isError,
@@ -81,4 +81,4 @@ export const SearchTestAnalysisTable = ({ analysisId }: Props) => {
       <TestAnalysesTable analyses={[analysis]} />
     </Box>
   );
-};
+}

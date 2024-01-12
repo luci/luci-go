@@ -26,7 +26,7 @@ interface Props {
   suspect: HeuristicSuspect;
 }
 
-export const HeuristicAnalysisTableRow = ({ suspect }: Props) => {
+export function HeuristicAnalysisTableRow({ suspect }: Props) {
   const {
     gitilesCommit,
     reviewUrl,
@@ -76,4 +76,4 @@ export const HeuristicAnalysisTableRow = ({ suspect }: Props) => {
       ))}
     </>
   );
-};
+}
