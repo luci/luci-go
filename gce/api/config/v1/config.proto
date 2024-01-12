@@ -201,6 +201,9 @@ message VM {
 
   // The performance monitoring unit is the type of performance monitoring unit.
   PerformanceMonitoringUnit performance_monitoring_unit = 19;
+
+  // Ensure VMs are terminated if under maintenance.
+  bool terminate_on_maintenance = 20;
 }
 
 // A length of time.
