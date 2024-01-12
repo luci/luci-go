@@ -433,18 +433,22 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 // periodically check the build liveness.
 func shouldCheckLiveness(ctx context.Context, bld *model.Build, backendCfg *pb.BackendSetting) (bool, uint32, error) {
 	if _, ok := backendCfg.Mode.(*pb.BackendSetting_LiteMode_); ok {
+		bkt := &model.Bucket{
+			ID:     bld.Proto.Builder.Bucket,
+			Parent: model.ProjectKey(ctx, bld.Proto.Builder.Project),
+		}
 		bldr := &model.Builder{
 			ID:     bld.Proto.Builder.Builder,
-			Parent: model.BucketKey(ctx, bld.Proto.Builder.Project, bld.Proto.Builder.Bucket),
+			Parent: datastore.KeyForObj(ctx, bkt),
 		}
-		switch err := datastore.Get(ctx, bldr); {
-		case errors.Contains(err, datastore.ErrNoSuchEntity):
-			// TODO(crbug.com/1502975): It could be a dynamic builder. Fetching its
-			// bucket to look for `dynamic_builder_template` after builder_config is
-			// added into `dynamic_builder_template` message proto.
-			return false, 0, errors.Annotate(err, "builder %s not found", bld.BuilderID).Err()
-		case err != nil:
-			return false, 0, errors.Annotate(err, "cannot fetch builder %s", bld.BuilderID).Err()
+		if err := datastore.Get(ctx, bldr, bkt); err != nil {
+			switch merr, ok := err.(errors.MultiError); {
+			case ok && errors.Contains(merr[0], datastore.ErrNoSuchEntity) && bkt.Proto.GetDynamicBuilderTemplate() != nil:
+				// It's a dynamic builder.
+				return true, bkt.Proto.DynamicBuilderTemplate.Template.GetHeartbeatTimeoutSecs(), nil
+			default:
+				return false, 0, errors.Annotate(err, "failed to fetch builder %s", bld.BuilderID).Err()
+			}
 		}
 		// No matter whether the hearbeat_timeout_secs is set or not, Buildbucket
 		// should always monitor the liveness for the build on TaskBackendLite.

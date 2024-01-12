@@ -653,9 +653,13 @@ func TestCreateBackendTask(t *testing.T) {
 		})
 
 		Convey("Lite backend", func() {
+			bkt := &model.Bucket{
+				ID:     "bucket",
+				Parent: model.ProjectKey(ctx, "project"),
+			}
 			bldr := &model.Builder{
 				ID:     "builder",
-				Parent: model.BucketKey(ctx, "project", "bucket"),
+				Parent: datastore.KeyForObj(ctx, bkt),
 				Config: &pb.BuilderConfig{
 					Name:                 "builder",
 					HeartbeatTimeoutSecs: 5,
@@ -663,7 +667,7 @@ func TestCreateBackendTask(t *testing.T) {
 			}
 			build.Proto.SchedulingTimeout = durationpb.New(1 * time.Minute)
 			infra.Proto.Backend.Task.Id.Target = "lite://foo-lite"
-			So(datastore.Put(ctx, build, infra, bldr), ShouldBeNil)
+			So(datastore.Put(ctx, build, infra, bkt, bldr), ShouldBeNil)
 
 			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
 				Task: &pb.Task{
@@ -722,6 +726,31 @@ func TestCreateBackendTask(t *testing.T) {
 				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
 				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 0)
 				So(tasks[0].ETA, ShouldEqual, now.Add(10*time.Second))
+			})
+
+			Convey("builder not found", func() {
+				So(datastore.Delete(ctx, bldr), ShouldBeNil)
+				err = CreateBackendTask(ctx, 1, "request_id")
+				So(err, ShouldErrLike, "failed to fetch builder project/bucket/builder: datastore: no such entity")
+
+			})
+
+			Convey("in dynamic bucket", func() {
+				So(datastore.Delete(ctx, bldr, bkt), ShouldBeNil)
+				bkt.Proto = &pb.Bucket{
+					Name: "bucket",
+					DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{
+						Template: &pb.BuilderConfig{},
+					},
+				}
+				So(datastore.Put(ctx, bkt), ShouldBeNil)
+				err = CreateBackendTask(ctx, 1, "request_id")
+				So(err, ShouldBeNil)
+				tasks := sch.Tasks()
+				So(tasks, ShouldHaveLength, 1)
+				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetBuildId(), ShouldEqual, build.ID)
+				So(tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), ShouldEqual, 0)
+				So(tasks[0].ETA, ShouldEqual, now.Add(1*time.Minute))
 			})
 		})
 	})
