@@ -106,7 +106,7 @@ func main() {
 		// Register all RPC servers.
 		internalspb.RegisterInternalsServer(srv, &internals.Server{})
 		rpcpb.RegisterAccountsServer(srv, &accounts.Server{})
-		rpcpb.RegisterGroupsServer(srv, &groups.Server{})
+		rpcpb.RegisterGroupsServer(srv, groups.NewServer(false))
 		rpcpb.RegisterAllowlistsServer(srv, &allowlists.Server{})
 		rpcpb.RegisterAuthDBServer(srv, authdbServer)
 		rpcpb.RegisterChangeLogsServer(srv, &changelogs.Server{})

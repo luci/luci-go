@@ -288,7 +288,7 @@ func TestGenerateChanges(t *testing.T) {
 		Convey("AuthGroup changes", func() {
 			Convey("AuthGroup Created/Deleted", func() {
 				ag1 := makeAuthGroup(ctx, "group-1")
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API")
+				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -298,7 +298,7 @@ func TestGenerateChanges(t *testing.T) {
 					Owners:     AdminGroup,
 				}})
 
-				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API"), ShouldBeNil)
+				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
@@ -325,7 +325,7 @@ func TestGenerateChanges(t *testing.T) {
 				So(datastore.Put(ctx, og), ShouldBeNil)
 
 				ag1 := makeAuthGroup(ctx, "group-1")
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API")
+				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -337,7 +337,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				ag1.Owners = og.ID
 				ag1.Description = "test-desc"
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API")
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
@@ -352,7 +352,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				ag1.Description = "new-desc"
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API")
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				actualChanges, err = generateChanges(ctx, 3, false)
@@ -368,7 +368,7 @@ func TestGenerateChanges(t *testing.T) {
 				// Add members in Create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Members = []string{"user:someone@example.com"}
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API")
+				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -383,7 +383,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add members to already existing group
 				ag1.Members = append(ag1.Members, "user:another-one@example.com")
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API")
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
@@ -395,7 +395,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Remove members from existing group
 				ag1.Members = []string{"user:someone@example.com"}
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API")
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				actualChanges, err = generateChanges(ctx, 3, false)
@@ -406,7 +406,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				// Remove members when deleting group
-				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API"), ShouldBeNil)
+				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
@@ -423,7 +423,7 @@ func TestGenerateChanges(t *testing.T) {
 				// Add globs in create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Globs = []string{"user:*@example.com"}
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API")
+				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -438,7 +438,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add globs to already existing group
 				ag1.Globs = append(ag1.Globs, "user:test-*@test.com")
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API")
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
@@ -449,7 +449,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				ag1.Globs = []string{"user:test-*@test.com"}
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API")
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				So(err, ShouldBeNil)
@@ -460,7 +460,7 @@ func TestGenerateChanges(t *testing.T) {
 					Globs:      []string{"user:*@example.com"},
 				}})
 
-				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API"), ShouldBeNil)
+				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
@@ -481,7 +481,7 @@ func TestGenerateChanges(t *testing.T) {
 				// Add globs in create
 				ag1 := makeAuthGroup(ctx, "group-1")
 				ag1.Nested = []string{ag2.ID}
-				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API")
+				_, err := CreateAuthGroup(ctx, ag1, false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
@@ -496,7 +496,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add globs to already existing group
 				ag1.Nested = append(ag1.Nested, ag3.ID)
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API")
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
@@ -507,7 +507,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 
 				ag1.Nested = []string{"group-2"}
-				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API")
+				_, err = UpdateAuthGroup(ctx, ag1, nil, "", false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				So(err, ShouldBeNil)
@@ -518,7 +518,7 @@ func TestGenerateChanges(t *testing.T) {
 					Nested:     []string{"group-3"},
 				}})
 
-				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API"), ShouldBeNil)
+				So(DeleteAuthGroup(ctx, ag1.ID, "", false, "Go pRPC API", false), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
@@ -831,7 +831,7 @@ func TestGenerateChanges(t *testing.T) {
 			groupNames := []string{"group-1", "group-2", "group-3"}
 			for _, groupName := range groupNames {
 				ag := makeAuthGroup(ctx, groupName)
-				_, err := CreateAuthGroup(ctx, ag, false, "Go pRPC API")
+				_, err := CreateAuthGroup(ctx, ag, false, "Go pRPC API", false)
 				So(err, ShouldBeNil)
 			}
 			// There should be a changelog task and replication task for
