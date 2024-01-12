@@ -65,6 +65,7 @@ describe('Test ProblemExplanationSection component', () => {
         policyId: 'exonerations',
         isActive: true,
         lastActivationTime: '2022-02-01T02:34:56.123456Z',
+        lastDeactivationTime: undefined,
       },
     };
 

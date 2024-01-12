@@ -73,8 +73,8 @@ describe('Test TimestampInfoBar component', () => {
   });
   it('when provided with no user, then only time should be displayed', async () => {
     const rule = createDefaultMockRule();
-    rule.createUser = undefined;
-    rule.lastAuditableUpdateUser = undefined;
+    rule.createUser = '';
+    rule.lastAuditableUpdateUser = '';
     render(<TimestampInfoBar
       createUsername={rule.createUser}
       createTime={rule.createTime}

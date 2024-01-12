@@ -30,14 +30,12 @@ describe('test RuleEditInput component', () => {
 
     render(
         <RuleEditInput
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          definition={mockRule.ruleDefinition!}
+          definition={mockRule.ruleDefinition}
           onDefinitionChange={identityFunction}
         />,
     );
     await screen.findByTestId('rule-input');
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(screen.getByText(mockRule.ruleDefinition!)).toBeInTheDocument();
+    expect(screen.getByText(mockRule.ruleDefinition)).toBeInTheDocument();
   });
 });

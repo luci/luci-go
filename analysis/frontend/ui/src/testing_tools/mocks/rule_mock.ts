@@ -15,9 +15,10 @@
 import dayjs from 'dayjs';
 import fetchMock from 'fetch-mock-jest';
 
-import { Rule } from '@/legacy_services/rules';
+import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { DeepMutable } from '@/types/types';
 
-export const createDefaultMockRule = (): Rule => {
+export const createDefaultMockRule = (): DeepMutable<Rule> => {
   return {
     name: 'projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818',
     project: 'chromium',
@@ -32,6 +33,7 @@ export const createDefaultMockRule = (): Rule => {
     isActive: true,
     isManagingBug: true,
     isManagingBugPriority: true,
+    isManagingBugPriorityLastUpdateTime: '2022-01-30T01:11:11.111111Z',
     sourceCluster: {
       algorithm: 'testname-v3',
       id: '78ff0812026b30570ca730b1541125ea',
@@ -41,6 +43,7 @@ export const createDefaultMockRule = (): Rule => {
         policyId: 'exonerations',
         isActive: true,
         lastActivationTime: '2022-02-01T02:34:56.123456Z',
+        lastDeactivationTime: undefined,
       }, {
         policyId: 'cls-rejected',
         isActive: false,
@@ -63,6 +66,15 @@ export const mockFetchRule = (rule: Rule) => {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'\n' + JSON.stringify(rule),
+    body: ')]}\'\n' + JSON.stringify(Rule.toJSON(rule)),
+  });
+};
+
+export const mockUpdateRule = (updatedRule: Rule) => {
+  fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Update', {
+    headers: {
+      'X-Prpc-Grpc-Code': '0',
+    },
+    body: ')]}\'\n'+JSON.stringify(Rule.toJSON(updatedRule)),
   });
 };

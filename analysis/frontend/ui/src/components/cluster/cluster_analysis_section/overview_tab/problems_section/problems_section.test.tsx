@@ -56,10 +56,12 @@ describe('Test ProblemSection component', () => {
 
   it('given a rule with active or previously active problems, it should show those problems', async () => {
     const mockRule = createDefaultMockRule();
-    mockRule.bugManagementState.policyState = [{
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    mockRule.bugManagementState!.policyState = [{
       policyId: 'exonerations',
       isActive: true,
       lastActivationTime: '2022-02-01T02:34:56.123456Z',
+      lastDeactivationTime: undefined,
     }, {
       policyId: 'cls-rejected',
       isActive: false,
@@ -118,12 +120,17 @@ describe('Test ProblemSection component', () => {
 
   it('given a rule with no active or previously active problems, it should show placeholder text', async () => {
     const mockRule = createDefaultMockRule();
-    mockRule.bugManagementState.policyState = [{
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    mockRule.bugManagementState!.policyState = [{
       policyId: 'exonerations',
       isActive: false,
+      lastActivationTime: undefined,
+      lastDeactivationTime: undefined,
     }, {
       policyId: 'cls-rejected',
       isActive: false,
+      lastActivationTime: undefined,
+      lastDeactivationTime: undefined,
     }];
     mockFetchRule(mockRule);
     mockFetchProjectConfig(createMockProjectConfig());

@@ -29,12 +29,10 @@ import Paper from '@mui/material/Paper';
 import MultiRulesFound from '@/components/bugs/multi_rules_found/multi_rules_found';
 import ErrorAlert from '@/components/error_alert/error_alert';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import {
-  getRulesService,
-  LookupBugRequest,
-  parseRuleName,
-} from '@/legacy_services/rules';
 import { prpcRetrier } from '@/legacy_services/shared_models';
+import { LookupBugRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { getRulesService } from '@/services/services';
+import { parseRuleName } from '@/tools/rules';
 import {
   linkToRule,
   loginLink,

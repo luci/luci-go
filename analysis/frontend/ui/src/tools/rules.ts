@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQuery } from 'react-query';
+const ruleNameRE = /^projects\/(.*)\/rules\/(.*)$/;
 
-import { prpcRetrier } from '@/legacy_services/shared_models';
-import { getRulesService } from '@/services/services';
+// RuleKey represents the key parts of a rule resource name.
+export interface RuleKey {
+  project: string;
+  ruleId: string;
+}
 
-const useFetchRule = (ruleId: string | undefined, project: string | undefined) => {
-  const rulesService = getRulesService();
-
-  return useQuery(['rule', project, ruleId], async () => await rulesService.get(
-      {
-        name: `projects/${project}/rules/${ruleId}`,
-      },
-  ), {
-    retry: prpcRetrier,
-  });
-};
-
-export default useFetchRule;
+// parseRuleName parses a rule resource name into its key parts.
+export function parseRuleName(name: string): RuleKey {
+  const results = name.match(ruleNameRE);
+  if (results == null) {
+    throw new Error('invalid rule resource name: ' + name);
+  }
+  return {
+    project: results[1],
+    ruleId: results[2],
+  };
+}

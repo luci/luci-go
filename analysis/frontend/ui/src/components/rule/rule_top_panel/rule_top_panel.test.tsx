@@ -25,7 +25,7 @@ import { createMockBug } from '@/testing_tools/mocks/bug_mock';
 import { mockReclusteringProgress } from '@/testing_tools/mocks/cluster_mock';
 import { createMockDoneProgress } from '@/testing_tools/mocks/progress_mock';
 import { mockFetchProjectConfig } from '@/testing_tools/mocks/projects_mock';
-import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
+import { createDefaultMockRule, mockFetchRule } from '@/testing_tools/mocks/rule_mock';
 
 import RuleTopPanel from './rule_top_panel';
 
@@ -41,12 +41,7 @@ describe('Test RuleTopPanel component', () => {
       },
       body: ')]}\'\n' + JSON.stringify(createMockBug()),
     });
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Get', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\'\n'+JSON.stringify(mockRule),
-    });
+    mockFetchRule(mockRule);
 
     renderWithRouterAndClient(
         <RuleTopPanel

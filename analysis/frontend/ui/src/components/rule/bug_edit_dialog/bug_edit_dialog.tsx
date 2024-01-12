@@ -33,7 +33,7 @@ import ErrorAlert from '@/components/error_alert/error_alert';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchRule from '@/hooks/use_fetch_rule';
 import { useMutateRule } from '@/hooks/use_mutate_rule';
-import { UpdateRuleRequest } from '@/legacy_services/rules';
+import { UpdateRuleRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
 interface Props {
     open: boolean;
@@ -57,8 +57,11 @@ const BugEditDialog = ({
 
   useEffect(() => {
     if (rule) {
-      setBugId(rule.bug.id);
-      setBugSystem(rule.bug.system);
+      // Rules always have a bug set.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const bug = rule.bug!;
+      setBugId(bug.id);
+      setBugSystem(bug.system);
     }
   }, [rule]);
 
@@ -89,13 +92,16 @@ const BugEditDialog = ({
   };
 
   const handleClose = () => {
-    setBugSystem(rule.bug.system);
-    setBugId(rule.bug.id);
+    // Rules always have a bug set.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const bug = rule.bug!;
+    setBugSystem(bug.system);
+    setBugId(bug.id);
     setOpen(false);
   };
 
   const handleSave = () => {
-    const request: UpdateRuleRequest = {
+    const request: UpdateRuleRequest = UpdateRuleRequest.create({
       rule: {
         name: rule.name,
         bug: {
@@ -103,9 +109,9 @@ const BugEditDialog = ({
           id: bugId,
         },
       },
-      updateMask: 'bug',
+      updateMask: Object.freeze(['bug']),
       etag: rule.etag,
-    };
+    });
     mutateRule.mutate(request);
   };
 

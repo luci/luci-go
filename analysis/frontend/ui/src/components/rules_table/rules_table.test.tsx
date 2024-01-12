@@ -62,7 +62,7 @@ describe('Test RulesTable component', () => {
   it('if rule definitions are unavailable, filler text is displayed', async () => {
     const response = createDefaultMockListRulesResponse();
     response.rules?.forEach((r) => {
-      r.ruleDefinition = undefined;
+      r.ruleDefinition = '';
     });
 
     mockFetchRules(response);

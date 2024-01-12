@@ -28,10 +28,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 
 import RuleEditInput from '@/components/rule_edit_input/rule_edit_input';
 import { useMutateRule } from '@/hooks/use_mutate_rule';
-import {
-  Rule,
-  UpdateRuleRequest,
-} from '@/legacy_services/rules';
+import { Rule, UpdateRuleRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
 interface Props {
     open: boolean;
@@ -60,14 +57,14 @@ const RuleEditDialog = ({
   };
 
   const handleSave = () => {
-    const request: UpdateRuleRequest = {
+    const request: UpdateRuleRequest = UpdateRuleRequest.create({
       rule: {
         name: rule.name,
         ruleDefinition: currentRuleDefinition,
       },
-      updateMask: 'ruleDefinition',
+      updateMask: Object.freeze(['ruleDefinition']),
       etag: rule.etag,
-    };
+    });
     mutateRule.mutate(request);
   };
 

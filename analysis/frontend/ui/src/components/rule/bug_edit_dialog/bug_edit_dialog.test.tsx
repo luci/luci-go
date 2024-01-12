@@ -23,16 +23,17 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
-import { Rule } from '../../../legacy_services/rules';
-import { noopStateChanger } from '../../../testing_tools/functions';
-import { renderWithRouterAndClient } from '../../../testing_tools/libs/mock_router';
-import { mockFetchAuthState } from '../../../testing_tools/mocks/authstate_mock';
-import { mockFetchProjectConfig } from '../../../testing_tools/mocks/projects_mock';
+import { noopStateChanger } from '@/testing_tools/functions';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { mockFetchProjectConfig } from '@/testing_tools/mocks/projects_mock';
 import {
   createDefaultMockRule,
   mockFetchRule,
-} from '../../../testing_tools/mocks/rule_mock';
+  mockUpdateRule,
+} from '@/testing_tools/mocks/rule_mock';
 import BugEditDialog from './bug_edit_dialog';
 
 describe('Test BugEditDialog component', () => {
@@ -103,12 +104,8 @@ describe('Test BugEditDialog component', () => {
         url: 'http://linktobug',
       },
     };
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Update', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\'\n' + JSON.stringify(updatedRule),
-    });
+    mockUpdateRule(updatedRule);
+
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => fetchMock.lastCall() !== undefined && fetchMock.lastCall()![0] === 'http://localhost/prpc/luci.analysis.v1.Rules/Update');
     expect(fetchMock.lastCall()![1]!.body).toEqual('{"rule":'+

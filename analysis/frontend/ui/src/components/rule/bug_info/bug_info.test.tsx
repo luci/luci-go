@@ -24,7 +24,7 @@ import {
 } from '@testing-library/react';
 
 import { Issue } from '@/legacy_services/monorail';
-import { Rule } from '@/legacy_services/rules';
+import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import { createMockBug } from '@/testing_tools/mocks/bug_mock';
@@ -34,11 +34,12 @@ import {
   mockFetchRule,
 } from '@/testing_tools/mocks/rule_mock';
 
+import { DeepMutable } from '@/types/types';
 import BugInfo from './bug_info';
 
 describe('Test BugInfo component', () => {
-  let mockRule!: Rule;
-  let mockIssue!: Issue;
+  let mockRule: DeepMutable<Rule>;
+  let mockIssue: Issue;
 
   beforeEach(() => {
     mockFetchAuthState();
@@ -65,7 +66,8 @@ describe('Test BugInfo component', () => {
           rule={mockRule}/>,
     );
 
-    expect(screen.getByText(mockRule.bug.linkText)).toBeInTheDocument();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(screen.getByText(mockRule.bug!.linkText)).toBeInTheDocument();
 
     await screen.findByText('Status');
     expect(screen.getByText(mockIssue.summary)).toBeInTheDocument();
@@ -88,7 +90,8 @@ describe('Test BugInfo component', () => {
           rule={mockRule}/>,
     );
 
-    expect(screen.getByText(mockRule.bug.linkText)).toBeInTheDocument();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(screen.getByText(mockRule.bug!.linkText)).toBeInTheDocument();
 
     await screen.findByText('Status');
     expect(screen.getByText(mockIssue.summary)).toBeInTheDocument();
@@ -108,7 +111,8 @@ describe('Test BugInfo component', () => {
         <BugInfo rule={mockRule}/>,
     );
 
-    await waitFor(() => expect(screen.getByText(mockRule.bug.linkText)).toBeInTheDocument());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    await waitFor(() => expect(screen.getByText(mockRule.bug!.linkText)).toBeInTheDocument());
   });
 
 

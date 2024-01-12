@@ -28,12 +28,10 @@ import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import {
-  getRulesService,
-  ListRulesRequest,
-} from '@/legacy_services/rules';
-import { prpcRetrier } from '@/legacy_services/shared_models';
 import { useFetchProjectConfig } from '@/hooks/use_fetch_project_config';
+import { prpcRetrier } from '@/legacy_services/shared_models';
+import { ListRulesRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { getRulesService } from '@/services/services';
 
 import { useProblemFilterParam } from './hooks';
 import RuleRow from './rule_row/rule_row';
@@ -60,14 +58,16 @@ const RulesTable = ({ project } : Props ) => {
 
         const response = await rulesService.list(request);
 
-        const rules = response.rules || [];
-        const sortedRules = rules.sort((a, b)=> {
+        const rules = (response.rules || []);
+        const sortedRules = [...rules].sort((a, b)=> {
           // These are RFC 3339-formatted date/time strings.
           // Because they are all use the same timezone, and RFC 3339
           // date/times are specified from most significant to least
           // significant, any string sort that produces a lexicographical
           // ordering should also sort by time.
-          return b.lastAuditableUpdateTime.localeCompare(a.lastAuditableUpdateTime);
+
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          return b.lastAuditableUpdateTime!.localeCompare(a.lastAuditableUpdateTime!);
         });
         return sortedRules;
       }, {
@@ -104,7 +104,8 @@ const RulesTable = ({ project } : Props ) => {
     return policyIDs.indexOf(policyID);
   };
 
-  const filteredRules = (rules || []).filter((r) => problemFilter == '' || r.bugManagementState.policyState?.some((ps) => ps.policyId == problemFilter && ps.lastActivationTime));
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const filteredRules = (rules || []).filter((r) => problemFilter == '' || r.bugManagementState!.policyState?.some((ps) => ps.policyId == problemFilter && ps.lastActivationTime));
 
   return (
     <>

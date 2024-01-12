@@ -30,10 +30,7 @@ import GridLabel from '@/components/grid_label/grid_label';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
 import RuleEditDialog from '@/components/rule/rule_edit_dialog/rule_edit_dialog';
 import { useMutateRule } from '@/hooks/use_mutate_rule';
-import {
-  Rule,
-  UpdateRuleRequest,
-} from '@/legacy_services/rules';
+import { Rule, UpdateRuleRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { linkToCluster } from '@/tools/urlHandling/links';
 import RuleDefinition from '../rule_definition/rule_definition';
 
@@ -53,14 +50,14 @@ const RuleInfo = ({ project, rule }: Props) => {
   const mutateRule = useMutateRule();
 
   const toggleArchived = () => {
-    const request: UpdateRuleRequest = {
+    const request: UpdateRuleRequest = UpdateRuleRequest.create({
       rule: {
         name: rule.name,
         isActive: !rule.isActive,
       },
-      updateMask: 'isActive',
+      updateMask: Object.freeze(['isActive']),
       etag: rule.etag,
-    };
+    });
     mutateRule.mutate(request);
   };
 
@@ -92,7 +89,7 @@ const RuleInfo = ({ project, rule }: Props) => {
           <Grid item xs={10} alignItems="center">
             <Box sx={{ display: 'inline-block' }} paddingTop={1}>
               {
-                rule.sourceCluster.algorithm && rule.sourceCluster.id ? (
+                rule.sourceCluster?.algorithm && rule.sourceCluster?.id ? (
                   <Link aria-label='source cluster link' component={RouterLink} to={linkToCluster(project, rule.sourceCluster)}>
                     {rule.sourceCluster.algorithm}/{rule.sourceCluster.id}
                   </Link>

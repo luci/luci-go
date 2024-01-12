@@ -21,8 +21,8 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { parseRuleName } from '@/legacy_services/rules';
 import { linkToRule } from '@/tools/urlHandling/links';
+import { parseRuleName } from '@/tools/rules';
 
 const ruleLink = (ruleName: string): string => {
   const ruleKey = parseRuleName(ruleName);
@@ -32,7 +32,7 @@ const ruleLink = (ruleName: string): string => {
 interface Props {
   bugSystem: string;
   bugId: string;
-  rules: string[]
+  rules: readonly string[]
 }
 
 const MultiRulesFound = ({

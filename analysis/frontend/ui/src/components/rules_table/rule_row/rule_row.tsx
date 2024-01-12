@@ -21,12 +21,11 @@ import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 
 import Box from '@mui/material/Box';
-import {
-  Rule,
-} from '@/legacy_services/rules';
 import { linkToRule } from '@/tools/urlHandling/links';
 import { BugManagement } from '@/legacy_services/project';
+import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { identifyProblems, sortProblemsByDescendingActiveAndPriority } from '@/tools/problems';
+
 import ProblemChip from '../problem_chip/problem_chip';
 
 interface RowProps {
@@ -37,7 +36,8 @@ interface RowProps {
 }
 
 const RuleRow = ({ rule, bugManagementConfig, focusPolicyID, colorIndexFunc } : RowProps ) => {
-  const problems = identifyProblems(bugManagementConfig, rule.bugManagementState);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const problems = identifyProblems(bugManagementConfig, rule.bugManagementState!);
   sortProblemsByDescendingActiveAndPriority(problems, focusPolicyID);
 
   return <TableRow>
@@ -70,7 +70,8 @@ const RuleRow = ({ rule, bugManagementConfig, focusPolicyID, colorIndexFunc } : 
         ),
       )}
     </TableCell>
-    <TableCell><Link href={rule.bug.url} underline="hover">{rule.bug.linkText}</Link></TableCell>
+    {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+    <TableCell><Link href={rule.bug!.url} underline="hover">{rule.bug!.linkText}</Link></TableCell>
     <TableCell>{dayjs.utc(rule.lastAuditableUpdateTime).local().fromNow()}</TableCell>
   </TableRow>;
 };

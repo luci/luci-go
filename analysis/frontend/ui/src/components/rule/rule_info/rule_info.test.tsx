@@ -23,10 +23,10 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { Rule } from '@/legacy_services/rules';
+import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
-import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
+import { createDefaultMockRule, mockUpdateRule } from '@/testing_tools/mocks/rule_mock';
 
 import RuleInfo from './rule_info';
 
@@ -41,9 +41,9 @@ describe('Test RuleInfo component', () => {
 
     await screen.findByText('Rule Details');
 
+    expect(screen.getByText(mockRule.ruleDefinition)).toBeInTheDocument();
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(screen.getByText(mockRule.ruleDefinition!)).toBeInTheDocument();
-    expect(screen.getByText(`${mockRule.sourceCluster.algorithm}/${mockRule.sourceCluster.id}`)).toBeInTheDocument();
+    expect(screen.getByText(`${mockRule.sourceCluster!.algorithm}/${mockRule.sourceCluster!.id}`)).toBeInTheDocument();
     expect(screen.getByText('Archived')).toBeInTheDocument();
     expect(screen.getByText('No')).toBeInTheDocument();
   });
@@ -83,20 +83,14 @@ describe('Test RuleInfo component', () => {
       ...mockRule,
       isActive: false,
     };
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Update', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\'\n'+JSON.stringify(updatedRule),
-    });
+    mockUpdateRule(updatedRule);
 
     fireEvent.click(screen.getByText('Confirm'));
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await waitFor(() => fetchMock.lastCall() !== undefined && fetchMock.lastCall()![0] === 'http://localhost/prpc/luci.analysis.v1.Rules/Update');
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(fetchMock.lastCall()![1]!.body).toEqual('{"rule":{"name":"projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818",' +
-        '"isActive":false},' +
+    expect(fetchMock.lastCall()![1]!.body).toEqual('{"rule":{"name":"projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818"},' +
         '"updateMask":"isActive","etag":"W/\\"2022-01-31T03:36:14.89643Z\\""' +
         '}');
   });

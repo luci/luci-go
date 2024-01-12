@@ -33,9 +33,9 @@ import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import { useFetchProjectConfig } from '@/hooks/use_fetch_project_config';
 import { BugManagement } from '@/legacy_services/project';
 import useFetchRule from '@/hooks/use_fetch_rule';
-import { BugManagementState } from '@/legacy_services/rules';
-
+import { BugManagementState } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { Problem, identifyProblems, sortProblemsByDescendingActiveAndPriority } from '@/tools/problems';
+
 import { ProblemExplanationDialog } from './problem_explanation_dialog/problem_explanation_dialog';
 import { ProblemRow } from './problem_row/problem_row';
 
@@ -77,7 +77,8 @@ export const ProblemsSection = () => {
       }
       {projectConfig && rule && (
         <ProblemsSummary
-          bugManagementState={rule.bugManagementState}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          bugManagementState={rule.bugManagementState!}
           config={projectConfig.bugManagement}></ProblemsSummary>
       )}
     </Box>

@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import { BugManagement, BugManagementPolicy } from '@/legacy_services/project';
-import { BugManagementState, PolicyState } from '@/legacy_services/rules';
+import { BugManagementState, BugManagementState_PolicyState } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
 export interface Problem {
   policy: BugManagementPolicy;
-  state: PolicyState;
+  state: BugManagementState_PolicyState;
 }
 
 // identifyProblems combines the bug management state with configured

@@ -24,11 +24,11 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { Rule } from '@/legacy_services/rules';
+import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { identityFunction } from '@/testing_tools/functions';
 import { renderWithClient } from '@/testing_tools/libs/mock_rquery';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
-import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
+import { createDefaultMockRule, mockUpdateRule } from '@/testing_tools/mocks/rule_mock';
 
 import RuleEditDialog from './rule_edit_dialog';
 
@@ -57,12 +57,7 @@ describe('Test RuleEditDialog component', () => {
       ...mockRule,
       ruleDefinition: 'new rule definition',
     };
-    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Update', {
-      headers: {
-        'X-Prpc-Grpc-Code': '0',
-      },
-      body: ')]}\'\n'+JSON.stringify(updatedRule),
-    });
+    mockUpdateRule(updatedRule);
 
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => fetchMock.lastCall() !== undefined && fetchMock.lastCall()![0] === 'http://localhost/prpc/luci.analysis.v1.Rules/Update');

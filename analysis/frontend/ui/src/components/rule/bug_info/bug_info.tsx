@@ -35,13 +35,10 @@ import {
   getIssuesService,
 } from '@/legacy_services/monorail';
 import {
-  Rule,
-  UpdateRuleRequest,
-} from '@/legacy_services/rules';
-import {
   AssociatedBug,
   prpcRetrier,
 } from '@/legacy_services/shared_models';
+import { Rule, UpdateRuleRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { MuiDefaultColor } from '@/types/mui_types';
 import GridLabel from '@/components/grid_label/grid_label';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
@@ -97,11 +94,15 @@ const BugInfo = ({
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const isMonorail = (rule.bug.system == 'monorail');
-  const requestName = rule.bug.system + '/' + rule.bug.id;
+  // Rules always have a bug set.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const bug = rule.bug!;
+
+  const isMonorail = (bug.system == 'monorail');
+  const requestName = bug.system + '/' + bug.id;
   const { isLoading, data: issue, error } = useQuery(['bug', requestName],
       async () => {
-        const fetchBugRequest = createIssueServiceRequest(rule.bug);
+        const fetchBugRequest = createIssueServiceRequest(bug);
         return await issueService.getIssue(fetchBugRequest);
       }, {
         retry: prpcRetrier,
@@ -112,26 +113,26 @@ const BugInfo = ({
   const mutateRule = useMutateRule();
 
   const handleToggleUpdateBug = () => {
-    const request: UpdateRuleRequest = {
+    const request: UpdateRuleRequest = UpdateRuleRequest.create({
       rule: {
         name: rule.name,
         isManagingBug: !rule.isManagingBug,
       },
-      updateMask: 'isManagingBug',
+      updateMask: Object.freeze(['isManagingBug']),
       etag: rule.etag,
-    };
+    });
     mutateRule.mutate(request);
   };
 
   const handleToggleUpdateBugPriority = () => {
-    const request: UpdateRuleRequest = {
+    const request: UpdateRuleRequest = UpdateRuleRequest.create({
       rule: {
         name: rule.name,
         isManagingBugPriority: !rule.isManagingBugPriority,
       },
-      updateMask: 'isManagingBugPriority',
+      updateMask: Object.freeze(['isManagingBugPriority']),
       etag: rule.etag,
-    };
+    });
     mutateRule.mutate(request);
   };
 
@@ -145,8 +146,8 @@ const BugInfo = ({
           <GridLabel xs={4} lg={2} text="Bug">
           </GridLabel>
           <Grid container item xs={8} lg={5} alignItems="center" columnGap={1}>
-            <Link data-testid="bug" target="_blank" href={rule.bug.url}>
-              {rule.bug.linkText}
+            <Link data-testid="bug" target="_blank" href={bug.url}>
+              {bug.linkText}
             </Link>
             <IconButton data-testid="bug-edit" aria-label="edit" onClick={() => setEditDialogOpen(true)}>
               <Edit />

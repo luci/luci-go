@@ -19,10 +19,8 @@ import {
 } from 'react-query';
 
 import { SnackbarContext } from '@/context/snackbar_context';
-import {
-  getRulesService,
-  UpdateRuleRequest,
-} from '@/legacy_services/rules';
+import { getRulesService } from '@/services/services';
+import { UpdateRuleRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
 type MutationCallback = () => void;
 

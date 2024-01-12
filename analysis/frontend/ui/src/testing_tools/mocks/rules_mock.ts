@@ -14,11 +14,12 @@
 
 import fetchMock from 'fetch-mock-jest';
 
-import { ListRulesResponse } from '@/legacy_services/rules';
+import { ListRulesResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
+import { DeepMutable } from '@/types/types';
 import { createDefaultMockRule } from './rule_mock';
 
-export const createDefaultMockListRulesResponse = (): ListRulesResponse => {
+export const createDefaultMockListRulesResponse = (): DeepMutable<ListRulesResponse> => {
   const rule1 = createDefaultMockRule();
   rule1.name = 'projects/chromium/rules/ce83f8395178a0f2edad59fc1a160001';
   rule1.ruleId = 'ce83f8395178a0f2edad59fc1a160001';
@@ -34,6 +35,7 @@ export const createDefaultMockListRulesResponse = (): ListRulesResponse => {
       policyId: 'exonerations',
       isActive: true,
       lastActivationTime: '2022-02-01T01:34:56.123456Z',
+      lastDeactivationTime: undefined,
     }],
   };
 
@@ -65,6 +67,6 @@ export const mockFetchRules = (response: ListRulesResponse) => {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'\n' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(ListRulesResponse.toJSON(response)),
   });
 };

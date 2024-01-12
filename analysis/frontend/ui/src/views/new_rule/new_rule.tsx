@@ -42,12 +42,10 @@ import BugPicker from '@/components/bug_picker/bug_picker';
 import ErrorAlert from '@/components/error_alert/error_alert';
 import RuleEditInput from '@/components/rule_edit_input/rule_edit_input';
 import { SnackbarContext } from '@/context/snackbar_context';
-import {
-  CreateRuleRequest,
-  getRulesService,
-} from '@/legacy_services/rules';
 import { ClusterId } from '@/legacy_services/shared_models';
+import { CreateRuleRequest, Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { linkToRule } from '@/tools/urlHandling/links';
+import { getRulesService } from '@/services/services';
 
 const NewRulePage = () => {
   const { project } = useParams();
@@ -107,7 +105,7 @@ const NewRulePage = () => {
   const handleSave = () => {
     const request: CreateRuleRequest = {
       parent: `projects/${project}`,
-      rule: {
+      rule: Rule.create({
         bug: {
           system: bugSystem,
           id: bugId,
@@ -117,7 +115,7 @@ const NewRulePage = () => {
         isManagingBug: false,
         isManagingBugPriority: true,
         sourceCluster: sourceCluster,
-      },
+      }),
     };
     createRule.mutate(request, {
       onSuccess(data) {
