@@ -281,11 +281,8 @@ func (vm *VM) getGCPChannel() config.GCPChannel {
 // getScheduling returns a *compute.Scheduling representation of this VM's
 // scheduling options.
 func (vm *VM) getScheduling() *compute.Scheduling {
-	opts := vm.Attributes.GetScheduling()
-	if len(opts.GetNodeAffinity()) == 0 && !vm.Attributes.EnableConfidentialCompute {
-		return nil
-	}
 	scheduling := &compute.Scheduling{}
+	opts := vm.Attributes.GetScheduling()
 	affinities := make([]*compute.SchedulingNodeAffinity, len(opts.GetNodeAffinity()))
 	for i, na := range opts.GetNodeAffinity() {
 		affinities[i] = &compute.SchedulingNodeAffinity{
@@ -300,10 +297,13 @@ func (vm *VM) getScheduling() *compute.Scheduling {
 		}
 	}
 	scheduling.NodeAffinities = affinities
-	if vm.Attributes.EnableConfidentialCompute {
+	if vm.Attributes.GetEnableConfidentialCompute() || vm.Attributes.GetTerminateOnMaintenance() {
 		scheduling.OnHostMaintenance = "TERMINATE"
 	}
-	return scheduling
+	if len(scheduling.NodeAffinities) > 0 || scheduling.OnHostMaintenance == "TERMINATE" {
+		return scheduling
+	}
+	return nil
 }
 
 // getShieldedInstanceConfig returns a *compute.ShieldedInstanceConfig

@@ -650,6 +650,43 @@ func TestVM(t *testing.T) {
 				s := v.getScheduling()
 				So(s, ShouldBeNil)
 			})
+			Convey("empty & Confidential", func() {
+				v := &VM{
+					Attributes: config.VM{
+						EnableConfidentialCompute: true,
+					},
+				}
+				s := v.getScheduling()
+				So(s, ShouldResemble, &compute.Scheduling{
+					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
+					OnHostMaintenance: "TERMINATE",
+				})
+			})
+			Convey("empty & Terminatable", func() {
+				v := &VM{
+					Attributes: config.VM{
+						TerminateOnMaintenance: true,
+					},
+				}
+				s := v.getScheduling()
+				So(s, ShouldResemble, &compute.Scheduling{
+					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
+					OnHostMaintenance: "TERMINATE",
+				})
+			})
+			Convey("empty & Confidential & Terminatable", func() {
+				v := &VM{
+					Attributes: config.VM{
+						EnableConfidentialCompute: true,
+						TerminateOnMaintenance:    true,
+					},
+				}
+				s := v.getScheduling()
+				So(s, ShouldResemble, &compute.Scheduling{
+					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
+					OnHostMaintenance: "TERMINATE",
+				})
+			})
 		})
 
 		Convey("non-zero", func() {
@@ -720,6 +757,48 @@ func TestVM(t *testing.T) {
 					So(s.NodeAffinities, ShouldHaveLength, 1)
 					So(s.NodeAffinities[0].Values, ShouldHaveLength, 1)
 					So(s.NodeAffinities[0].Values[0], ShouldEqual, "node-affinity-value")
+				})
+				Convey("not-empty other cases", func() {
+					inScheduling := &config.Scheduling{
+						NodeAffinity: []*config.NodeAffinity{{Key: "node-affinity-key"}},
+					}
+					Convey("Confidential", func() {
+						v := &VM{
+							Attributes: config.VM{
+								Scheduling:                inScheduling,
+								EnableConfidentialCompute: true,
+							},
+						}
+						s := v.getScheduling()
+						So(s.NodeAffinities, ShouldHaveLength, 1)
+						So(s.NodeAffinities[0].Key, ShouldEqual, "node-affinity-key")
+						So(s.OnHostMaintenance, ShouldEqual, "TERMINATE")
+					})
+					Convey("Terminatable", func() {
+						v := &VM{
+							Attributes: config.VM{
+								Scheduling:             inScheduling,
+								TerminateOnMaintenance: true,
+							},
+						}
+						s := v.getScheduling()
+						So(s.NodeAffinities, ShouldHaveLength, 1)
+						So(s.NodeAffinities[0].Key, ShouldEqual, "node-affinity-key")
+						So(s.OnHostMaintenance, ShouldEqual, "TERMINATE")
+					})
+					Convey("Confidential & Terminatable", func() {
+						v := &VM{
+							Attributes: config.VM{
+								Scheduling:                inScheduling,
+								EnableConfidentialCompute: true,
+								TerminateOnMaintenance:    true,
+							},
+						}
+						s := v.getScheduling()
+						So(s.NodeAffinities, ShouldHaveLength, 1)
+						So(s.NodeAffinities[0].Key, ShouldEqual, "node-affinity-key")
+						So(s.OnHostMaintenance, ShouldEqual, "TERMINATE")
+					})
 				})
 			})
 		})
