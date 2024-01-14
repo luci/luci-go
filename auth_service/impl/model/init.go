@@ -16,7 +16,6 @@ package model
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 
@@ -41,13 +40,6 @@ func init() {
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
 			return handleProcessChangeTask(ctx, payload.(*taskspb.ProcessChangeTask), dryRunChangelog)
 		},
-		Custom: func(ctx context.Context, payload protoreflect.ProtoMessage) (*tq.CustomPayload, error) {
-			task := payload.(*taskspb.ProcessChangeTask)
-			return &tq.CustomPayload{
-				Method:      "POST",
-				RelativeURI: fmt.Sprintf("/internal/auth/taskqueue/process-change/%d", task.AuthDbRev),
-			}, nil
-		},
 	})
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "replication-task",
@@ -58,13 +50,6 @@ func init() {
 			task := payload.(*taskspb.ReplicationTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
 			return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask), dryRunReplication)
-		},
-		Custom: func(ctx context.Context, payload protoreflect.ProtoMessage) (*tq.CustomPayload, error) {
-			task := payload.(*taskspb.ReplicationTask)
-			return &tq.CustomPayload{
-				Method:      "POST",
-				RelativeURI: fmt.Sprintf("/internal/taskqueue/replication/%d", task.AuthDbRev),
-			}, nil
 		},
 	})
 }
