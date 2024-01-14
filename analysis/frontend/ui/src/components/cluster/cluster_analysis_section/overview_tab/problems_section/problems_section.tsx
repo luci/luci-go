@@ -31,8 +31,8 @@ import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import { useFetchProjectConfig } from '@/hooks/use_fetch_project_config';
-import { BugManagement } from '@/legacy_services/project';
 import useFetchRule from '@/hooks/use_fetch_rule';
+import { BugManagement } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 import { BugManagementState } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { Problem, identifyProblems, sortProblemsByDescendingActiveAndPriority } from '@/tools/problems';
 

@@ -15,7 +15,7 @@
 import DoneIcon from '@mui/icons-material/Done';
 import Chip from '@mui/material/Chip';
 
-import { BugManagementPolicy } from '@/legacy_services/project';
+import { BugManagementPolicy } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 
 type Color = 'error' | 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'info';
 

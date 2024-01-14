@@ -51,13 +51,17 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
       Problem description<HelpTooltip text={problemDescriptionTooltipText} />
     </Typography>
     <Typography component="div" gutterBottom>
-      <SanitizedHtml html={problem.policy.explanation.problemHtml} />
+      {/* Explanation field is always set on policies. This is enforced by config validation. */}
+      {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+      <SanitizedHtml html={problem.policy.explanation!.problemHtml} />
     </Typography>
     <Typography component="h6" paddingTop='0.5rem' sx={{ fontWeight: 'bold' }}>
       How to resolve<HelpTooltip text={actionDescriptionTooltipText} />
     </Typography>
     <Typography component="div" gutterBottom>
-      <SanitizedHtml html={problem.policy.explanation.actionHtml} />
+      {/* Explanation field is always set on policies. This is enforced by config validation. */}
+      {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+      <SanitizedHtml html={problem.policy.explanation!.actionHtml} />
     </Typography>
     {
       problem.state.isActive &&

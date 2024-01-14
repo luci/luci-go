@@ -21,7 +21,7 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { ProjectConfig } from '@/legacy_services/project';
+import { BugManagement, ProjectConfig } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 import { identityFunction } from '@/testing_tools/functions';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
@@ -70,7 +70,7 @@ describe('Test BugPicker component', () => {
   it('handles project config missing monorail details', async () => {
     const bareProjectConfig: ProjectConfig = {
       name: 'projects/chromium/config',
-      bugManagement: {},
+      bugManagement: BugManagement.create(),
     };
     mockFetchProjectConfig(bareProjectConfig);
 

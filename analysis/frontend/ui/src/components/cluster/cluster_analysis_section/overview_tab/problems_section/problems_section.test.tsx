@@ -155,7 +155,8 @@ describe('Test ProblemSection component', () => {
     mockFetchRule(mockRule);
 
     const mockConfig = createMockProjectConfig();
-    mockConfig.bugManagement.policies = undefined;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    mockConfig.bugManagement!.policies = [];
     mockFetchProjectConfig(mockConfig);
 
     renderTabWithRouterAndClient(

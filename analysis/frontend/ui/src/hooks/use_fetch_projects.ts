@@ -14,11 +14,9 @@
 
 import { useQuery } from 'react-query';
 
-import {
-  getProjectsService,
-  ListProjectsRequest,
-} from '@/legacy_services/project';
 import { prpcRetrier } from '@/legacy_services/shared_models';
+import { ListProjectsRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
+import { getProjectsService } from '@/services/services';
 
 const useFetchProjects = () => {
   const service = getProjectsService();
@@ -26,7 +24,7 @@ const useFetchProjects = () => {
   return useQuery('projects', async () => {
     const response = await service.list(request);
     // Chromium milestone projects are explicitly ignored by the backend, match this in the frontend.
-    return response.projects?.filter((p) => !/^(chromium|chrome)-m[0-9]+$/.test(p.project)) || null;
+    return response.projects.filter((p) => !/^(chromium|chrome)-m[0-9]+$/.test(p.project));
   }, {
     retry: prpcRetrier,
   });

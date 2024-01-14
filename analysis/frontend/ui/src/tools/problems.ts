@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BugManagement, BugManagementPolicy } from '@/legacy_services/project';
+import { BugManagement, BugManagementPolicy } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 import { BugManagementState, BugManagementState_PolicyState } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
 export interface Problem {

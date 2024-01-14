@@ -22,7 +22,7 @@ import Tooltip from '@mui/material/Tooltip';
 
 import Box from '@mui/material/Box';
 import { linkToRule } from '@/tools/urlHandling/links';
-import { BugManagement } from '@/legacy_services/project';
+import { BugManagement } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { identifyProblems, sortProblemsByDescendingActiveAndPriority } from '@/tools/problems';
 

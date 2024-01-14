@@ -14,7 +14,8 @@
 
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
-import { BuganizerPriority } from '@/legacy_services/project';
+
+import { BuganizerPriority, buganizerPriorityToJSON } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 
 interface Props {
   priority: BuganizerPriority;
@@ -22,15 +23,16 @@ interface Props {
 
 export const PriorityChip = ({ priority }: Props) => {
   return <Chip
-    color={(priority == 'P0' || priority == 'P1') ? 'primary' : 'default'}
-    variant={priority == 'P0' ? 'filled' : 'outlined'}
+    color={(priority == BuganizerPriority.P0 || BuganizerPriority.P1) ? 'primary' : 'default'}
+    variant={priority == BuganizerPriority.P0 ? 'filled' : 'outlined'}
     size="medium"
     data-testid="problem_priority_chip"
     label={
       <Typography
-        sx={{ fontWeight: (priority == 'P0' ? 'bold' : 'regular') }}
+        sx={{ fontWeight: (priority == BuganizerPriority.P0 ? 'bold' : 'regular') }}
         color="inherit">
-        {priority}
+        {/* Returns string representation of enum value, e.g. 'P2'. */}
+        {buganizerPriorityToJSON(priority)}
       </Typography>
     } />;
 };

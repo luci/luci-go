@@ -14,14 +14,15 @@
 
 import fetchMock from 'fetch-mock-jest';
 
-import { BugManagementPolicy, ProjectConfig } from '@/legacy_services/project';
+import { BugManagementPolicy, BuganizerPriority, ProjectConfig } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
+import { DeepMutable } from '@/types/types';
 
-export const createMockExonerationsPolicy = (): BugManagementPolicy => {
+export const createMockExonerationsPolicy = (): DeepMutable<BugManagementPolicy> => {
   return {
     id: 'exonerations',
     owners: ['exoneration-owner1@google.com', 'exoneration-owner2@google.com'],
     humanReadableName: 'test variant(s) are being exonerated (ignored) in presubmit',
-    priority: 'P2',
+    priority: BuganizerPriority.P2,
     metrics: [{
       metricId: 'critical-failures-exonerated',
       activationThreshold: {
@@ -38,7 +39,7 @@ export const createMockExonerationsPolicy = (): BugManagementPolicy => {
   };
 };
 
-export const createMockProjectConfig = (): ProjectConfig => {
+export const createMockProjectConfig = (): DeepMutable<ProjectConfig> => {
   return {
     name: 'projects/chromium/config',
     bugManagement: {
@@ -46,7 +47,7 @@ export const createMockProjectConfig = (): ProjectConfig => {
         id: 'cls-rejected',
         owners: ['cls-rejected-owner1@google.com', 'cls-rejected-owner2@google.com'],
         humanReadableName: 'many CL(s) are being rejected',
-        priority: 'P0',
+        priority: BuganizerPriority.P0,
         metrics: [{
           metricId: 'human-cls-failed-presubmit',
           activationThreshold: {
@@ -77,6 +78,6 @@ export const mockFetchProjectConfig = (projectConfig?: ProjectConfig) => {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'\n' + JSON.stringify(projectConfig),
+    body: ')]}\'\n' + JSON.stringify(ProjectConfig.toJSON(projectConfig)),
   });
 };

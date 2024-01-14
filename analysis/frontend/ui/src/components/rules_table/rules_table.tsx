@@ -75,7 +75,7 @@ const RulesTable = ({ project } : Props ) => {
       },
   );
 
-  const policyIDs = projectConfig?.bugManagement.policies?.map((p) => p.id) || [];
+  const policyIDs = projectConfig?.bugManagement?.policies?.map((p) => p.id) || [];
   const [problemFilter, setProblemFilter] = useProblemFilterParam(policyIDs);
 
   if (error) {
@@ -120,7 +120,7 @@ const RulesTable = ({ project } : Props ) => {
             onChange={handleProblemFilterChange}
             inputProps={{ 'data-testid': 'problem_filter_input' }}>
             <MenuItem value="">All rules</MenuItem>
-            {projectConfig?.bugManagement.policies?.map((policy) => (
+            {projectConfig?.bugManagement?.policies?.map((policy) => (
               <MenuItem
                 key={policy.id}
                 value={policy.id}>

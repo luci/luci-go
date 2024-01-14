@@ -14,7 +14,7 @@
 
 import { Cluster_TimewiseCounts } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
-import { BugManagementPolicy } from '@/legacy_services/project';
+import { BugManagementPolicy } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 
 export interface Criterium {
   metricId: string;
@@ -37,7 +37,7 @@ export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions
     const metricName = metricDefinition?.humanReadableName || m.metricId;
     const metricDescription = metricDefinition?.description || '(metric description unavailable)';
 
-    if (threshold.oneDay !== undefined) {
+    if (threshold?.oneDay !== undefined) {
       let currentValue : string|undefined;
       if (currentTimewiseCounts) {
         currentValue = currentTimewiseCounts.oneDay?.nominal || '0';
@@ -53,7 +53,7 @@ export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions
         satisfied: isCriteriumSatisfied(currentValue, threshold.oneDay, activationCriteria),
       });
     }
-    if (threshold.threeDay !== undefined) {
+    if (threshold?.threeDay !== undefined) {
       let currentValue : string|undefined;
       if (currentTimewiseCounts) {
         currentValue = currentTimewiseCounts.threeDay?.nominal || '0';
@@ -69,7 +69,7 @@ export const criteriaForPolicy = (policy: BugManagementPolicy, metricDefinitions
         satisfied: isCriteriumSatisfied(currentValue, threshold.threeDay, activationCriteria),
       });
     }
-    if (threshold.sevenDay !== undefined) {
+    if (threshold?.sevenDay !== undefined) {
       let currentValue : string|undefined;
       if (currentTimewiseCounts) {
         currentValue = currentTimewiseCounts.sevenDay?.nominal || '0';

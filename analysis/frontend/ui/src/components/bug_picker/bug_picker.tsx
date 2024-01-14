@@ -138,7 +138,7 @@ const BugPicker = ({
       // Switching to monorail is disabled if the project config does not have
       // monorail details, so we can assume it exists.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const monorailConfig = projectConfig.bugManagement.monorail!;
+      const monorailConfig = projectConfig.bugManagement!.monorail!;
       handleBugIdChanged(`${monorailConfig.project}/${getBugNumber(bugId)}`);
     } else if (e.target.value == 'buganizer') {
       handleBugIdChanged(getBugNumber(bugId));
@@ -167,8 +167,8 @@ const BugPicker = ({
             onChange={onBugSystemChange}
             variant="standard"
             inputProps={{ 'data-testid': 'bug-system' }}>
-            <MenuItem value={getStaticBugSystem('monorail')} disabled={!projectConfig.bugManagement.monorail}>
-              {projectConfig.bugManagement.monorail?.displayPrefix || 'monorail'}
+            <MenuItem value={getStaticBugSystem('monorail')} disabled={!projectConfig.bugManagement?.monorail}>
+              {projectConfig.bugManagement?.monorail?.displayPrefix || 'monorail'}
             </MenuItem>
             <MenuItem value={getStaticBugSystem('buganizer')}>
                 Buganizer

@@ -17,12 +17,9 @@ import {
   UseQueryResult,
 } from 'react-query';
 
-import {
-  GetProjectConfigRequest,
-  getProjectsService,
-  ProjectConfig,
-} from '@/legacy_services/project';
+import { GetProjectConfigRequest, ProjectConfig } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 import { prpcRetrier } from '@/legacy_services/shared_models';
+import { getProjectsService } from '@/services/services';
 
 export const useFetchProjectConfig = (
     project: string,
