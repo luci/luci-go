@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/hex"
 	"regexp"
 
 	"go.chromium.org/luci/common/clock"
@@ -209,24 +210,25 @@ func validateQueryTestVariantStabilityRequest(req *pb.QueryTestVariantStabilityR
 	if len(req.TestVariants) > MaxTestVariants {
 		return errors.Reason("test_variants: no more than %v may be queried at a time", MaxTestVariants).Err()
 	}
-	seenTestVariants := make(map[testVariant]int)
+	seenTestVariantBranches := make(map[testVariantBranch]int)
 	for i, tv := range req.TestVariants {
-		if err := validateTestVariantPosition(tv, i, seenTestVariants); err != nil {
+		if err := validateTestVariantPosition(tv, i, seenTestVariantBranches); err != nil {
 			return errors.Annotate(err, "test_variants[%v]", i).Err()
 		}
 	}
 	return nil
 }
 
-type testVariant struct {
-	testID      string
-	variantHash string
+type testVariantBranch struct {
+	testID        string
+	variantHash   string
+	sourceRefHash string
 }
 
 // validateTestVariantPosition validates the given test variant position at the given offset
 // in the request. seenTestVariants is used to track the previously seen test variants
 // and their offsets so that duplicates can be identified.
-func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVariantPosition, offset int, seenTestVariants map[testVariant]int) error {
+func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVariantPosition, offset int, seenTestVariantBranches map[testVariantBranch]int) error {
 	if tv.GetTestId() == "" {
 		return errors.Reason("test_id: unspecified").Err()
 	}
@@ -255,15 +257,18 @@ func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVar
 		variantHash = pbutil.VariantHash(nil)
 	}
 
-	// Each test variant may appear in the request only once.
-	key := testVariant{testID: tv.TestId, variantHash: variantHash}
-	if previousOffset, ok := seenTestVariants[key]; ok {
-		return errors.Reason("same test variant already requested at index %v", previousOffset).Err()
-	}
-	seenTestVariants[key] = offset
-
 	if err := pbutil.ValidateSources(tv.Sources); err != nil {
 		return errors.Annotate(err, "sources").Err()
 	}
+
+	sourceRefHash := hex.EncodeToString(pbutil.SourceRefHash(pbutil.SourceRefFromSources(tv.Sources)))
+
+	// Each test variant branch may appear in the request only once.
+	key := testVariantBranch{testID: tv.TestId, variantHash: variantHash, sourceRefHash: sourceRefHash}
+	if previousOffset, ok := seenTestVariantBranches[key]; ok {
+		return errors.Reason("same test variant branch already requested at index %v", previousOffset).Err()
+	}
+	seenTestVariantBranches[key] = offset
+
 	return nil
 }

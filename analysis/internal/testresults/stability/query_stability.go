@@ -116,17 +116,17 @@ type queryStabilityBatch struct {
 
 // partitionQueryIntoBatches partitions a list of test variant positions
 // into batches.
-func partitionQueryIntoBatches(tvs []*pb.QueryTestVariantStabilityRequest_TestVariantPosition, batchSize int) []*queryStabilityBatch {
+func partitionQueryIntoBatches(tvps []*pb.QueryTestVariantStabilityRequest_TestVariantPosition, batchSize int) []*queryStabilityBatch {
 	var batches []*queryStabilityBatch
 	batchInput := make([]*pb.QueryTestVariantStabilityRequest_TestVariantPosition, 0, batchSize)
-	for _, tv := range tvs {
+	for _, tvp := range tvps {
 		if len(batchInput) >= batchSize {
 			batches = append(batches, &queryStabilityBatch{
 				input: batchInput,
 			})
 			batchInput = make([]*pb.QueryTestVariantStabilityRequest_TestVariantPosition, 0, batchSize)
 		}
-		batchInput = append(batchInput, tv)
+		batchInput = append(batchInput, tvp)
 	}
 	if len(batchInput) > 0 {
 		batches = append(batches, &queryStabilityBatch{
@@ -143,7 +143,7 @@ func queryStabilityShard(ctx context.Context, opts QueryStabilityOptions) ([]*pb
 		Host   string
 		Change int64
 	}
-	type testVariant struct {
+	type testVariantPosition struct {
 		TestID              string
 		VariantHash         string
 		SourceRefHash       []byte
@@ -151,7 +151,7 @@ func queryStabilityShard(ctx context.Context, opts QueryStabilityOptions) ([]*pb
 		ExcludedChangelists []changelist
 	}
 
-	tvs := make([]testVariant, 0, len(opts.TestVariantPositions))
+	tvps := make([]testVariantPosition, 0, len(opts.TestVariantPositions))
 	for _, ptv := range opts.TestVariantPositions {
 		variantHash := ptv.VariantHash
 		if variantHash == "" {
@@ -166,7 +166,7 @@ func queryStabilityShard(ctx context.Context, opts QueryStabilityOptions) ([]*pb
 			})
 		}
 
-		tvs = append(tvs, testVariant{
+		tvps = append(tvps, testVariantPosition{
 			TestID:              ptv.TestId,
 			VariantHash:         variantHash,
 			SourceRefHash:       pbutil.SourceRefHash(pbutil.SourceRefFromSources(ptv.Sources)),
@@ -177,14 +177,14 @@ func queryStabilityShard(ctx context.Context, opts QueryStabilityOptions) ([]*pb
 
 	stmt := spanner.NewStatement(testStabilityQuery)
 	stmt.Params = map[string]any{
-		"project":      opts.Project,
-		"testVariants": tvs,
-		"subRealms":    opts.SubRealms,
-		"asAtTime":     opts.AsAtTime,
-		"skip":         int64(pb.TestResultStatus_SKIP),
+		"project":              opts.Project,
+		"testVariantPositions": tvps,
+		"subRealms":            opts.SubRealms,
+		"asAtTime":             opts.AsAtTime,
+		"skip":                 int64(pb.TestResultStatus_SKIP),
 	}
 
-	results := make([]*pb.TestVariantStabilityAnalysis, 0, len(tvs))
+	results := make([]*pb.TestVariantStabilityAnalysis, 0, len(tvps))
 
 	index := 0
 	var b spanutil.Buffer
@@ -209,12 +209,12 @@ func queryStabilityShard(ctx context.Context, opts QueryStabilityOptions) ([]*pb
 		}
 
 		analysis := &pb.TestVariantStabilityAnalysis{}
-		if testID != tvs[index].TestID || variantHash != tvs[index].VariantHash {
+		if testID != tvps[index].TestID || variantHash != tvps[index].VariantHash {
 			// This should never happen, as the SQL statement is designed
 			// to return results in the same order as test variants requested.
 			panic("results in incorrect order")
 		}
-		sourcePosition := tvs[index].QuerySourcePosition
+		sourcePosition := tvps[index].QuerySourcePosition
 
 		analysis.TestId = testID
 		analysis.Variant = opts.TestVariantPositions[index].Variant
@@ -880,7 +880,7 @@ WITH test_variant_verdicts AS (
 				IF(ChangelistHost IS NULL, DirtySourcesUniqifier, NULL)
 			ORDER BY Verdict.SourcePosition DESC, Verdict.MaxPartitionTime DESC
 		) AS Verdicts,
-	FROM UNNEST(@testVariants) tv WITH OFFSET Index
+	FROM UNNEST(@testVariantPositions) tv WITH OFFSET Index
 )
 
 SELECT

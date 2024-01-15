@@ -439,7 +439,26 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 			So(err, ShouldErrLike, `test_variants[1]: sources: gitiles_commit: host: unspecified`)
 		})
 
-		Convey("duplicate test variants", func() {
+		Convey("multiple branches of same test variant", func() {
+			sources2 := testSources()
+			sources2.GitilesCommit.Ref = "refs/heads/other"
+			req.TestVariants = append(req.TestVariants, []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
+				{
+					TestId:  "my_test",
+					Variant: pbutil.Variant("key1", "val1", "key2", "val2"),
+					Sources: testSources(),
+				},
+				{
+					TestId:  "my_test",
+					Variant: pbutil.Variant("key1", "val1", "key2", "val2"),
+					Sources: sources2,
+				},
+			}...)
+			err := validateQueryTestVariantStabilityRequest(req)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("duplicate test variant branches", func() {
 			req.TestVariants = append(req.TestVariants, []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
 				{
 					TestId:  "my_test",
@@ -453,7 +472,7 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 				},
 			}...)
 			err := validateQueryTestVariantStabilityRequest(req)
-			So(err, ShouldErrLike, `test_variants[3]: same test variant already requested at index 2`)
+			So(err, ShouldErrLike, `test_variants[3]: same test variant branch already requested at index 2`)
 		})
 	})
 }
