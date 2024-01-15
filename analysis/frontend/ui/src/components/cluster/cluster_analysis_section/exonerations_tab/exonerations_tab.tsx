@@ -37,8 +37,8 @@ import {
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import { getClustersService, getTestVariantsService } from '@/services/services';
-import { prpcRetrier } from '@/legacy_services/shared_models';
 import { QueryTestVariantFailureRateRequest, TestVariantIdentifier } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
+import { prpcRetrier } from '@/tools/prpc_retrier';
 
 import { ClusterContext } from '../../cluster_context';
 import ExonerationsTableHead from './exonerations_table_head/exonerations_table_head';

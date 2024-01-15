@@ -27,23 +27,21 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Switch from '@mui/material/Switch';
-import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 
+import PanelHeading from '@/components/headings/panel_heading/panel_heading';
+import GridLabel from '@/components/grid_label/grid_label';
+import HelpTooltip from '@/components/help_tooltip/help_tooltip';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
+import BugEditDialog from '@/components/rule/bug_edit_dialog/bug_edit_dialog';
 import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
   GetIssueRequest,
   getIssuesService,
 } from '@/legacy_services/monorail';
-import {
-  AssociatedBug,
-  prpcRetrier,
-} from '@/legacy_services/shared_models';
+import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { Rule, UpdateRuleRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { MuiDefaultColor } from '@/types/mui_types';
-import GridLabel from '@/components/grid_label/grid_label';
-import HelpTooltip from '@/components/help_tooltip/help_tooltip';
-import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import BugEditDialog from '@/components/rule/bug_edit_dialog/bug_edit_dialog';
+import { prpcRetrier } from '@/tools/prpc_retrier';
 
 const createIssueServiceRequest = (bug: AssociatedBug): GetIssueRequest => {
   const parts = bug.id.split('/');

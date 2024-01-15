@@ -28,7 +28,7 @@ interface Props {
 }
 
 const RuleTopPanel = ({ project, ruleId }: Props) => {
-  const { isLoading, isError, data: rule, error } = useFetchRule(ruleId, project);
+  const { isLoading, isError, data: rule, error } = useFetchRule(project, ruleId);
 
   if (isLoading) {
     return <LinearProgress />;

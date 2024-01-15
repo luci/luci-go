@@ -13,14 +13,13 @@
 // limitations under the License.
 
 import {
-  PresubmitRunId,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
-import {
-  Changelist,
   ClusterId,
+  PresubmitRunId,
   Variant,
-  variantAsPairs,
-} from '@/legacy_services/shared_models';
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
+import { Changelist } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
+
+import { variantAsPairs } from '../variant_tools';
 
 export const linkToCluster = (project: string, c: ClusterId): string => {
   if (c.algorithm.startsWith('rules-') || c.algorithm == 'rules') {

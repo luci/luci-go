@@ -14,9 +14,9 @@
 
 import { useQuery } from 'react-query';
 
-import { prpcRetrier } from '@/legacy_services/shared_models';
 import { ListProjectsRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 import { getProjectsService } from '@/services/services';
+import { prpcRetrier } from '@/tools/prpc_retrier';
 
 const useFetchProjects = () => {
   const service = getProjectsService();

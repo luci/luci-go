@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,63 +13,19 @@
 // limitations under the License.
 
 import {
-  GrpcError,
-  RpcCode,
-} from '@chopsui/prpc-client';
-
-// Contains data models shared between multiple services.
-
-export interface ClusterId {
-  algorithm: string;
-  id: string;
-}
-
-// MetricId represents the identifier of a LUCI Analysis metric.
-export type MetricId = string;
-
-export interface AssociatedBug {
-  system: string;
-  id: string;
-  linkText: string;
-  url: string;
-}
-
-export interface Changelist {
-  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
-  host: string;
-
-  // Change number, encoded as a string, e.g. "12345".
-  change: string;
-
-  // Patchset number, e.g. 1.
-  patchset: number;
-}
-
-export interface VariantDef {
-  [key: string]: string | undefined;
-}
-
-export interface Variant {
-  def: VariantDef;
-}
-
-export interface VariantPair {
-  key: string;
-  value: string;
-}
+  Variant,
+  Variant_DefEntry,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 
 // variantAsPairs converts a variant (mapping from keys
 // to values) into a set of key-value pairs. key-value
 // pairs are returned in sorted key order.
-export function variantAsPairs(v?: Variant): VariantPair[] {
-  const result: VariantPair[] = [];
+export function variantAsPairs(v?: Variant): Variant_DefEntry[] {
+  const result: Variant_DefEntry[] = [];
   if (v === undefined) {
     return result;
   }
-  for (const key in v.def) {
-    if (!Object.prototype.hasOwnProperty.call(v.def, key)) {
-      continue;
-    }
+  for (const key of Object.keys(v.def)) {
     const value = v.def[key] || '';
     result.push({ key: key, value: value });
   }
@@ -90,11 +46,8 @@ export function unionVariant(v1?: Variant, v2?: Variant): Variant {
   if (v1 === undefined || v2 === undefined) {
     return result;
   }
-  for (const key in v1.def) {
+  for (const key of Object.keys(v1.def)) {
     // Only keep keys that are both in v1 and v2.
-    if (!Object.prototype.hasOwnProperty.call(v1.def, key)) {
-      continue;
-    }
     if (!Object.prototype.hasOwnProperty.call(v2.def, key)) {
       continue;
     }
@@ -106,25 +59,4 @@ export function unionVariant(v1?: Variant, v2?: Variant): Variant {
     }
   }
   return result;
-}
-
-export function isRetriable(e: GrpcError): boolean {
-  // The following codes indicate transient errors that are retriable. See:
-  // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/grpc/grpcutil/errors.go;l=176?q=codeToStatus&type=cs
-  switch (e.code) {
-    case RpcCode.INTERNAL:
-      return true;
-    case RpcCode.UNKNOWN:
-      return true;
-    case RpcCode.UNAVAILABLE:
-      return true;
-  }
-  return false;
-}
-
-export function prpcRetrier(_failureCount: number, e: Error): boolean {
-  if (e instanceof GrpcError && isRetriable(e)) {
-    return true;
-  }
-  return false;
 }

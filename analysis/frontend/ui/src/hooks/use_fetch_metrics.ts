@@ -15,8 +15,8 @@
 import { useQuery, UseQueryResult } from 'react-query';
 
 import { getMetricsService } from '@/services/services';
-import { prpcRetrier } from '@/legacy_services/shared_models';
 import { ListProjectMetricsRequest, ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
+import { prpcRetrier } from '@/tools/prpc_retrier';
 
 const useFetchMetrics = (project: string, onSuccess?: (data: ProjectMetric[]) => void): UseQueryResult<ProjectMetric[], Error> => {
   const metricsService = getMetricsService();

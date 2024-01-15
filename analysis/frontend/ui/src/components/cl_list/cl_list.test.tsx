@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-
 import {
   fireEvent,
   render,
@@ -21,7 +20,7 @@ import {
   waitForElementToBeRemoved,
 } from '@testing-library/react';
 
-import { Changelist } from '@/legacy_services/shared_models';
+import { Changelist, ChangelistOwnerKind } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 
 import CLList from './cl_list';
 
@@ -38,6 +37,7 @@ describe('Test CLList component', () => {
       host: 'chromium-review.googlesource.com',
       change: '12345678901234',
       patchset: 543,
+      ownerKind: ChangelistOwnerKind.HUMAN,
     };
     render(
         <CLList changelists={[changelist]}/>,
@@ -54,10 +54,12 @@ describe('Test CLList component', () => {
       host: 'chromium-review.googlesource.com',
       change: '12345678901234',
       patchset: 543,
+      ownerKind: ChangelistOwnerKind.HUMAN,
     }, {
       host: 'chromium-internal-review.googlesource.com',
       change: '85132217',
       patchset: 432,
+      ownerKind: ChangelistOwnerKind.HUMAN,
     }];
     render(
         <CLList changelists={changelists}/>,

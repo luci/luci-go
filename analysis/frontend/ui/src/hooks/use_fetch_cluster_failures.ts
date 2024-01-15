@@ -18,9 +18,9 @@ import {
   DistinctClusterFailure,
   QueryClusterFailuresRequest,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
-import { prpcRetrier } from '@/legacy_services/shared_models';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { getClustersService } from '@/services/services';
+import { prpcRetrier } from '@/tools/prpc_retrier';
 
 const useFetchClusterFailures = (
     project: string,

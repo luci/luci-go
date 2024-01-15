@@ -23,7 +23,7 @@ import {
 import { ClusterTableContextData } from '@/components/clusters_table/clusters_table_context';
 import { useSelectedMetricsParam } from '@/components/clusters_table/hooks';
 import MetricsSelector from '@/components/metrics_selector/metrics_selector';
-import { MetricId } from '@/legacy_services/shared_models';
+import { MetricId } from '@/types/metric_id';
 
 const ClustersTableMetricSelection = () => {
   const metrics = useContext(ClusterTableContextData).metrics;

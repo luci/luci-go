@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQuery } from 'react-query';
-
-import { getRulesService } from '@/services/services';
-import { prpcRetrier } from '@/tools/prpc_retrier';
-
-const useFetchRule = (project: string, ruleId: string) => {
-  const rulesService = getRulesService();
-
-  return useQuery(['rules', project, ruleId], async () => await rulesService.get(
-      {
-        name: `projects/${project}/rules/${ruleId}`,
-      },
-  ), {
-    retry: prpcRetrier,
-  });
-};
-
-export default useFetchRule;
+// MetricId represents the identifier of a LUCI Analysis metric.
+export type MetricId = string;

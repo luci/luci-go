@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQuery } from 'react-query';
-
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
 import Table from '@mui/material/Table';
@@ -29,9 +27,7 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import { useFetchProjectConfig } from '@/hooks/use_fetch_project_config';
-import { prpcRetrier } from '@/legacy_services/shared_models';
-import { ListRulesRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
-import { getRulesService } from '@/services/services';
+import useFetchRules from '@/hooks/use_fetch_rules';
 
 import { useProblemFilterParam } from './hooks';
 import RuleRow from './rule_row/rule_row';
@@ -42,38 +38,13 @@ interface Props {
 }
 
 const RulesTable = ({ project } : Props ) => {
-  const rulesService = getRulesService();
-
   const {
     isLoading: isConfigLoading,
     data: projectConfig,
     error: configError,
   } = useFetchProjectConfig(project);
 
-  const { isLoading, data: rules, error } = useQuery(['rules', project],
-      async () => {
-        const request: ListRulesRequest = {
-          parent: `projects/${encodeURIComponent(project || '')}`,
-        };
-
-        const response = await rulesService.list(request);
-
-        const rules = (response.rules || []);
-        const sortedRules = [...rules].sort((a, b)=> {
-          // These are RFC 3339-formatted date/time strings.
-          // Because they are all use the same timezone, and RFC 3339
-          // date/times are specified from most significant to least
-          // significant, any string sort that produces a lexicographical
-          // ordering should also sort by time.
-
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return b.lastAuditableUpdateTime!.localeCompare(a.lastAuditableUpdateTime!);
-        });
-        return sortedRules;
-      }, {
-        retry: prpcRetrier,
-      },
-  );
+  const { isLoading, data: rules, error } = useFetchRules(project);
 
   const policyIDs = projectConfig?.bugManagement?.policies?.map((p) => p.id) || [];
   const [problemFilter, setProblemFilter] = useProblemFilterParam(policyIDs);

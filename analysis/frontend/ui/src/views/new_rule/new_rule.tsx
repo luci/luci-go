@@ -42,7 +42,7 @@ import BugPicker from '@/components/bug_picker/bug_picker';
 import ErrorAlert from '@/components/error_alert/error_alert';
 import RuleEditInput from '@/components/rule_edit_input/rule_edit_input';
 import { SnackbarContext } from '@/context/snackbar_context';
-import { ClusterId } from '@/legacy_services/shared_models';
+import { ClusterId } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { CreateRuleRequest, Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { linkToRule } from '@/tools/urlHandling/links';
 import { getRulesService } from '@/services/services';

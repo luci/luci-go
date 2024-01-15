@@ -14,6 +14,7 @@
 
 import dayjs from 'dayjs';
 
+import { Variant } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import {
   ClusterExoneratedTestVariant,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
@@ -22,7 +23,6 @@ import {
   TestVariantFailureRateAnalysis_VerdictExample,
   TestVariantFailureRateAnalysis_RecentVerdict,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
-import { Variant } from '@/legacy_services/shared_models';
 
 // Fields that can be used for sorting FailureGroups.
 export type SortableField = 'testId' | 'beingExonerated' | 'lastExoneration' | 'criticalFailuresExonerated';

@@ -16,11 +16,17 @@ import dayjs from 'dayjs';
 import { nanoid } from 'nanoid';
 
 import {
+  BuildStatus,
+  Variant,
+  ExonerationReason,
+  PresubmitRunMode,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
+import {
   DistinctClusterFailure,
   DistinctClusterFailure_Exoneration,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
-import { Variant, unionVariant } from '@/legacy_services/shared_models';
-import { BuildStatus, ExonerationReason, PresubmitRunMode } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
+
+import { unionVariant } from './variant_tools';
 
 /**
  * Creates a list of distinct variants found in the list of failures provided.

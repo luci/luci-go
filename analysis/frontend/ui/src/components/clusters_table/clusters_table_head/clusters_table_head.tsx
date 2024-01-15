@@ -26,7 +26,7 @@ import {
   useSelectedMetricsParam,
 } from '@/components/clusters_table/hooks';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
-import { MetricId } from '@/legacy_services/shared_models';
+import { MetricId } from '@/types/metric_id';
 
 const ClustersTableHead = () => {
   const { metrics } = useContext(ClusterTableContextData);

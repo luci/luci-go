@@ -19,7 +19,7 @@ import {
 
 import { TimeInterval } from '@/hooks/use_fetch_clusters';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
-import { MetricId } from '@/legacy_services/shared_models';
+import { MetricId } from '@/types/metric_id';
 
 export interface OrderBy {
   metric: MetricId,

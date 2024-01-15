@@ -21,8 +21,8 @@ import {
   SelectChangeEvent,
 } from '@mui/material';
 
-import { MetricId } from '@/legacy_services/shared_models';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
+import { MetricId } from '@/types/metric_id';
 
 const MenuProps = {
   PaperProps: {

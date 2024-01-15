@@ -57,7 +57,7 @@ export const ProblemsSection = () => {
     isLoading: isRuleLoading,
     data: rule,
     error: ruleError,
-  } = useFetchRule(clusterId.id, clusterId.project);
+  } = useFetchRule(clusterId.project, clusterId.id);
 
   return (
     <Box>

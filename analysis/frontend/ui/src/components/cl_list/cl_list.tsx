@@ -23,12 +23,10 @@ import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Link from '@mui/material/Link';
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 
+import { Changelist } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 import {
   clLink,
 } from '@/tools/urlHandling/links';
-import {
-  Changelist,
-} from '@/legacy_services/shared_models';
 
 interface Props {
   changelists: readonly Changelist[];

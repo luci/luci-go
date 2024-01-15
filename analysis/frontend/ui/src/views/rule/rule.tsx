@@ -29,7 +29,7 @@ import useFetchRule from '@/hooks/use_fetch_rule';
 const Rule = () => {
   const { project, id } = useParams();
 
-  const { isLoading, data: rule, error, isSuccess } = useFetchRule(id, project);
+  const { isLoading, data: rule, error, isSuccess } = useFetchRule(project || '', id || '');
 
   if (!project || !id) {
     return (

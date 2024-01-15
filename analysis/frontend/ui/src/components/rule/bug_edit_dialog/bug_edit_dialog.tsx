@@ -46,7 +46,7 @@ const BugEditDialog = ({
 }: Props) => {
   const { project, id: ruleId } = useParams();
 
-  const { isLoading, data: rule, error } = useFetchRule(ruleId, project);
+  const { isLoading, data: rule, error } = useFetchRule(project || '', ruleId || '');
 
   const [bugSystem, setBugSystem] = useState('');
   const [bugId, setBugId] = useState('');

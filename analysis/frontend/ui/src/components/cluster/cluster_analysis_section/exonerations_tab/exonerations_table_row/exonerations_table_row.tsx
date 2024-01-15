@@ -37,8 +37,8 @@ import {
   isFlakyCriteriaAlmostMet,
   isFlakyCriteriaMet,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
-import { variantAsPairs } from '@/legacy_services/shared_models';
 import { testHistoryLink } from '@/tools/urlHandling/links';
+import { variantAsPairs } from '@/tools/variant_tools';
 
 import ExonerationExplanationSection from '../exoneration_explanation_section/exoneration_explanation_section';
 

@@ -24,11 +24,9 @@ import {
   QueryClusterSummariesResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
-import {
-  MetricId,
-  prpcRetrier,
-} from '@/legacy_services/shared_models';
 import { getClustersService } from '@/services/services';
+import { prpcRetrier } from '@/tools/prpc_retrier';
+import { MetricId } from '@/types/metric_id';
 
 export interface ClustersFetchOptions {
   project: string;

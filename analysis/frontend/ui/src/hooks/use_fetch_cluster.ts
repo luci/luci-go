@@ -17,8 +17,8 @@ import { useQuery, UseQueryResult } from 'react-query';
 import {
   getClustersService,
 } from '@/services/services';
-import { prpcRetrier } from '@/legacy_services/shared_models';
 import { Cluster, GetClusterRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { prpcRetrier } from '@/tools/prpc_retrier';
 
 const useFetchCluster = (
     project: string,

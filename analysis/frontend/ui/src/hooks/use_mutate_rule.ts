@@ -34,7 +34,7 @@ export const useMutateRule = (
 
   return useMutation((updateRuleRequest: UpdateRuleRequest) => ruleService.update(updateRuleRequest), {
     onSuccess: (data) => {
-      queryClient.setQueryData(['rule', data.project, data.ruleId], data);
+      queryClient.setQueryData(['rules', data.project, data.ruleId], data);
       setSnack({
         open: true,
         message: 'Rule updated successfully',

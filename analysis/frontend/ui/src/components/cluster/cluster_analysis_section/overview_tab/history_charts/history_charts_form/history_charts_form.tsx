@@ -26,7 +26,7 @@ import Typography from '@mui/material/Typography';
 
 import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import MetricsSelector from '@/components/metrics_selector/metrics_selector';
-import { MetricId } from '@/legacy_services/shared_models';
+import { MetricId } from '@/types/metric_id';
 
 import { OverviewTabContextData } from '../../overview_tab_context';
 import {
