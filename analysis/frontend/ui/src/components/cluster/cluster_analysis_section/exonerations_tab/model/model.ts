@@ -19,9 +19,9 @@ import {
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import {
   TestVariantFailureRateAnalysis,
-  TestVariantFailureRateAnalysisVerdictExample,
-  TestVariantFailureRateAnalysisRecentVerdict,
-} from '@/legacy_services/test_variants';
+  TestVariantFailureRateAnalysis_VerdictExample,
+  TestVariantFailureRateAnalysis_RecentVerdict,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import { Variant } from '@/legacy_services/shared_models';
 
 // Fields that can be used for sorting FailureGroups.
@@ -40,8 +40,8 @@ export interface ExoneratedTestVariant {
   runFlakyVerdicts5wd: number;
   runFlakyPercentage1wd: number;
   recentVerdictsWithUnexpectedRuns: number;
-  runFlakyVerdictExamples: TestVariantFailureRateAnalysisVerdictExample[];
-  recentVerdicts: TestVariantFailureRateAnalysisRecentVerdict[];
+  runFlakyVerdictExamples: readonly TestVariantFailureRateAnalysis_VerdictExample[];
+  recentVerdicts: readonly TestVariantFailureRateAnalysis_RecentVerdict[];
 }
 
 const testVariantKey = (testId: string, variant?: Variant): string => {

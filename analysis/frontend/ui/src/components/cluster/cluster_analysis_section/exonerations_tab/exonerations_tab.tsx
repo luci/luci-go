@@ -36,12 +36,9 @@ import {
   testVariantFromAnalysis,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import { getClustersService } from '@/services/services';
+import { getClustersService, getTestVariantsService } from '@/services/services';
 import { prpcRetrier } from '@/legacy_services/shared_models';
-import {
-  getTestVariantsService,
-  QueryTestVariantFailureRateRequest,
-} from '@/legacy_services/test_variants';
+import { QueryTestVariantFailureRateRequest, TestVariantIdentifier } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
 import { ClusterContext } from '../../cluster_context';
 import ExonerationsTableHead from './exonerations_table_head/exonerations_table_head';
@@ -86,10 +83,10 @@ const ExonerationsTab = ({
         const tvRequest: QueryTestVariantFailureRateRequest = {
           project: project,
           testVariants: clusterExoneratedTestVariants.map((v) => {
-            return {
+            return TestVariantIdentifier.create({
               testId: v.testId,
               variant: v.variant,
-            };
+            });
           }),
         };
         const tvService = getTestVariantsService();

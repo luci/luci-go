@@ -16,6 +16,7 @@ import { ClustersClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/
 import { MetricsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { ProjectsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 import { RulesClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { TestVariantsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
 import { PrpcClient } from './prpc_client';
 import { getSessionAccessToken } from './auth_token';
@@ -56,6 +57,17 @@ export const getProjectsService = () => {
 export const getRulesService = () => {
   const insecure = document.location.protocol === 'http:';
   const client = new RulesClientImpl(
+      new PrpcClient({
+        insecure: insecure,
+        getAuthToken: getSessionAccessToken,
+      }),
+  );
+  return client;
+};
+
+export const getTestVariantsService = () => {
+  const insecure = document.location.protocol === 'http:';
+  const client = new TestVariantsClientImpl(
       new PrpcClient({
         insecure: insecure,
         getAuthToken: getSessionAccessToken,

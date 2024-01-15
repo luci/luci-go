@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ChangelistOwnerKind } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 import { ExoneratedTestVariant } from './model';
 
 export class ExoneratedTestVariantBuilder {
@@ -39,14 +40,17 @@ export class ExoneratedTestVariantBuilder {
           host: 'myprojectone-review.googlesource.com',
           change: 'changelist-one',
           patchset: 8111,
+          ownerKind: ChangelistOwnerKind.HUMAN,
         }, {
           host: 'myprojecttwo-review.googlesource.com',
           change: 'changelist-two',
           patchset: 8222,
+          ownerKind: ChangelistOwnerKind.CHANGELIST_OWNER_UNSPECIFIED,
         }],
       }, {
         partitionTime: '2040-01-02T03:04:05.678901234Z',
         ingestedInvocationId: 'build-222222222222',
+        changelists: [],
       }],
       recentVerdicts: [{
         partitionTime: '2030-01-02T03:04:05.678901234Z',
@@ -56,14 +60,18 @@ export class ExoneratedTestVariantBuilder {
           host: 'myprojectthree-review.googlesource.com',
           change: 'changelist-three',
           patchset: 8333,
+          ownerKind: ChangelistOwnerKind.HUMAN,
         }, {
           host: 'myprojectfour-review.googlesource.com',
           change: 'changelist-four',
           patchset: 8444,
+          ownerKind: ChangelistOwnerKind.CHANGELIST_OWNER_UNSPECIFIED,
         }],
       }, {
         partitionTime: '2030-01-02T03:04:05.678901234Z',
         ingestedInvocationId: 'build-444444444444',
+        hasUnexpectedRuns: false,
+        changelists: [],
       }],
     };
   }

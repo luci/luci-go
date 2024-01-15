@@ -27,14 +27,12 @@ import {
   ExoneratedTestVariant,
   ExonerationCriteria,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
+import CLList from '@/components/cl_list/cl_list';
 import {
   invocationName,
   failureLink,
 } from '@/tools/urlHandling/links';
-import {
-  TestVariantFailureRateAnalysisRecentVerdict,
-} from '@/legacy_services/test_variants';
-import CLList from '@/components/cl_list/cl_list';
+import { TestVariantFailureRateAnalysis_RecentVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import { ExplanationChip } from '../explanation_chip/explanation_chip';
 
 interface Props {
@@ -86,7 +84,7 @@ const FailureCriteriaSection = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {testVariant.recentVerdicts.map((verdict: TestVariantFailureRateAnalysisRecentVerdict, i: number) => {
+          {testVariant.recentVerdicts.map((verdict: TestVariantFailureRateAnalysis_RecentVerdict, i: number) => {
             return (
               <TableRow key={i.toString()}>
                 <TableCell>

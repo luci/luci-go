@@ -21,6 +21,10 @@ import {
   screen,
 } from '@testing-library/react';
 
+import {
+  QueryTestVariantFailureRateRequest,
+  QueryTestVariantFailureRateResponse,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
@@ -33,10 +37,6 @@ import {
   mockQueryFailureRate,
 } from '@/testing_tools/mocks/test_variants_mock';
 
-import {
-  QueryTestVariantFailureRateRequest,
-  QueryTestVariantFailureRateResponse,
-} from '@/legacy_services/test_variants';
 
 import { ClusterContextProvider } from '../../cluster_context';
 import ExonerationsTable from './exonerations_tab';

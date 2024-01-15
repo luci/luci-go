@@ -19,42 +19,54 @@ import {
   TestVariantFailureRateAnalysis,
   QueryTestVariantFailureRateRequest,
   QueryTestVariantFailureRateResponse,
-} from '@/legacy_services/test_variants';
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
 export const getMockTestVariantIdentifier = (id: string): TestVariantIdentifier => {
-  return {
+  return TestVariantIdentifier.create({
     'testId': id,
-  };
+  });
 };
 
 export const getMockTestVariantFailureRateAnalysis = (id: string): TestVariantFailureRateAnalysis => {
-  return {
+  return TestVariantFailureRateAnalysis.create({
     testId: id,
-    intervalStats: [{
+    intervalStats: Object.freeze([{
       intervalAge: 1,
       totalRunExpectedVerdicts: 101,
       totalRunFlakyVerdicts: 102,
       totalRunUnexpectedVerdicts: 103,
     }, {
       intervalAge: 2,
+      totalRunExpectedVerdicts: 0,
+      totalRunFlakyVerdicts: 0,
+      totalRunUnexpectedVerdicts: 0,
     }, {
       intervalAge: 3,
+      totalRunExpectedVerdicts: 0,
+      totalRunFlakyVerdicts: 0,
+      totalRunUnexpectedVerdicts: 0,
     }, {
       intervalAge: 4,
+      totalRunExpectedVerdicts: 0,
+      totalRunFlakyVerdicts: 0,
+      totalRunUnexpectedVerdicts: 0,
     }, {
       intervalAge: 5,
-    }],
-  };
+      totalRunExpectedVerdicts: 0,
+      totalRunFlakyVerdicts: 0,
+      totalRunUnexpectedVerdicts: 0,
+    }]),
+  });
 };
 
 export const mockQueryFailureRate = (request: QueryTestVariantFailureRateRequest, response: QueryTestVariantFailureRateResponse) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.TestVariants/QueryFailureRate',
-    body: request,
+    body: QueryTestVariantFailureRateRequest.toJSON(request) as object,
   }, {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'\n' + JSON.stringify(response),
+    body: ')]}\'\n' + JSON.stringify(QueryTestVariantFailureRateResponse.toJSON(response)),
   }, { overwriteRoutes: true });
 };
