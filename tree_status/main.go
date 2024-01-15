@@ -15,13 +15,16 @@
 package main
 
 import (
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/secrets"
+	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/tree_status/internal/span"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 	"go.chromium.org/luci/tree_status/rpc"
 
@@ -36,9 +39,17 @@ func main() {
 		gaeemulation.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		spanmodule.NewModuleFromFlags(nil),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
+		srv.ConfigurePRPC(func(s *prpc.Server) {
+			s.AccessControl = prpc.AllowOriginAll
+			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+			s.HackFixFieldMasksForJSON = true
+		})
+		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
+
 		pb.RegisterTreeStatusServer(srv, &rpc.TreeStatusServer{})
 		return nil
 	})

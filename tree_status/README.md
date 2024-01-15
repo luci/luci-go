@@ -14,6 +14,12 @@ To enter the infra env (via the infra.git checkout), run:
 eval infra/go/env.py
 ```
 
+## Running tests locally
+
+```
+INTEGRATION_TESTS=1 go test ./...
+```
+
 ## Running locally
 
 ```
