@@ -39,6 +39,7 @@ const config: Config = {
   moduleNameMapper: {
     '\\.(css|less)$': 'identity-obj-proxy',
     '\\.(svg|md)($|\\?)': '<rootDir>/src/testing_tools/asset_module_stub',
+    // Support custom path mapping declared in tsconfig.json.
     '^@/(.*)': '<rootDir>/src/$1',
     '^@root/(.*)': '<rootDir>/$1',
   },

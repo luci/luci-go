@@ -17,7 +17,7 @@ import * as path from 'path';
 
 import replace from '@rollup/plugin-replace';
 import react from '@vitejs/plugin-react';
-import { PluginOption, defineConfig, loadEnv } from 'vite';
+import { Plugin, defineConfig, loadEnv } from 'vite';
 import { VitePWA as vitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
@@ -45,9 +45,10 @@ function getBoolEnv(
   return null;
 }
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd());
-
+/**
+ * Construct a `configs.js` file from environment variables.
+ */
+function getLocalDevConfigsJs(env: Record<string, string>) {
   const localVersion = env['VITE_MILO_VERSION'];
   const localSettings: typeof SETTINGS = {
     buildbucket: {
@@ -67,7 +68,7 @@ export default defineConfig(({ mode }) => {
     },
     sheriffOMatic: {
       host: env['VITE_SHERIFF_O_MATIC_HOST'],
-    }
+    },
   };
 
   const localDevConfigsJs =
@@ -78,7 +79,18 @@ export default defineConfig(({ mode }) => {
       2,
     )});\n`;
 
-  const virtualConfigJs: PluginOption = {
+  return localDevConfigsJs;
+}
+
+/**
+ * Get a virtual-configs-js plugin so we can import configs.js in the service
+ * workers with the correct syntax required by different environments.
+ */
+function getVirtualConfigsJsPlugin(
+  mode: string,
+  configsContent: string,
+): Plugin {
+  return {
     name: 'virtual-configs-js',
     resolveId: (id, importer) => {
       if (id !== 'virtual:configs.js') {
@@ -109,10 +121,17 @@ export default defineConfig(({ mode }) => {
       // that has limited browser support. So we need to use `importScripts`
       // instead of `import` to load `/configs.js`.
       return mode === 'development'
-        ? localDevConfigsJs
+        ? configsContent
         : "importScripts('/configs.js');";
     },
   };
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd());
+
+  const localDevConfigsJs = getLocalDevConfigsJs(env);
+  const virtualConfigJs = getVirtualConfigsJsPlugin(mode, localDevConfigsJs);
 
   return {
     base: '/ui',
@@ -158,7 +177,7 @@ export default defineConfig(({ mode }) => {
         // Vite resolves external resources with relative URLs (URLs without a
         // domain name) inconsistently.
         // Inject `<script src="/configs.js" ><script>` via a plugin to prevent
-        // Vite from conditionally prepend "/ui" prefix onto the URL.
+        // Vite from conditionally prepending "/ui" prefix onto the URL.
         transformIndexHtml: (html) => ({
           html,
           tags: [
@@ -267,7 +286,11 @@ export default defineConfig(({ mode }) => {
           configFile: true,
         },
       }),
+      // Support custom path mapping declared in tsconfig.json.
       tsconfigPaths(),
+      // Needed to add workbox powered service workers, which enables us to
+      // implement some cache strategy that's not possible with regular HTTP
+      // cache due to dynamic URLs.
       vitePWA({
         injectRegister: null,
         // We cannot use the simpler 'generateSW' mode because
@@ -319,6 +342,9 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 8080,
       strictPort: true,
+      // Proxy the queries to `self.location.host` to the configured milo server
+      // (typically https://luci-milo-dev.appspot.com) since we don't run the
+      // milo go server on the same host.
       proxy: {
         '^(?!/ui(/.*)?$)': {
           target: env['VITE_MILO_URL'],
