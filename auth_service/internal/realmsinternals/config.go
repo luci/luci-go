@@ -28,8 +28,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/encoding/prototext"
 
-	"go.chromium.org/luci/auth_service/impl/model"
-	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
@@ -42,11 +40,23 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/internal/permissions"
 )
 
 const (
-	Cria             = "services/chrome-infra-auth"
-	CriaDev          = "services/chrome-infra-auth-dev"
+	// The services associated with Auth Service aka Chrome Infra Auth,
+	// to get its own configs.
+	Cria    = "services/chrome-infra-auth"
+	CriaDev = "services/chrome-infra-auth-dev"
+
+	// The AppID of the deployed development environment, so the correct
+	// config path will be used.
+	DevAppID = "chrome-infra-auth-dev"
+
+	// Paths to use within a project or service's folder when looking
+	// for realms configs.
 	RealmsCfgPath    = "realms.cfg"
 	RealmsDevCfgPath = "realms-dev.cfg"
 )
@@ -516,10 +526,12 @@ func sliceCompare[T string | uint32](sli []T, slj []T) bool {
 //	ErrNoConfig -- config is not found
 //	annotated error -- for all other errors
 func GetConfigs(ctx context.Context) ([]*model.RealmsCfgRev, []*model.RealmsCfgRev, error) {
-	projects, err := cfgclient.ProjectsWithConfig(ctx, cfgPath(ctx))
+	targetCfgPath := cfgPath(ctx)
+	projects, err := cfgclient.ProjectsWithConfig(ctx, targetCfgPath)
 	if err != nil {
 		return nil, nil, err
 	}
+	logging.Debugf(ctx, "%d projects with %s: %s", len(projects), targetCfgPath, projects)
 
 	// client to fetch configs
 	client := cfgclient.Client(ctx)
@@ -550,7 +562,8 @@ func GetConfigs(ctx context.Context) ([]*model.RealmsCfgRev, []*model.RealmsCfgR
 		return nil
 	})
 
-	// Get self config i.e. services/chrome-infra-auth/realms.cfg
+	// Get self config i.e. services/chrome-infra-auth-dev/realms-dev.cfg
+	// or services/chrome-infra-auth/realms.cfg.
 	eg.Go(func() error {
 		return latestMap.getLatestConfig(childCtx, client, self(ctx))
 	})
@@ -567,6 +580,15 @@ func GetConfigs(ctx context.Context) ([]*model.RealmsCfgRev, []*model.RealmsCfgR
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// Log the projects that have stored AuthProjectRealmsMeta, to aid in
+	// debugging.
+	projectsWithMeta := make([]string, len(storedMeta))
+	for i, meta := range storedMeta {
+		metaProj, _ := meta.ProjectID()
+		projectsWithMeta[i] = metaProj
+	}
+	logging.Debugf(ctx, "fetched realms metadata for %d projects: %s", len(storedMeta), projectsWithMeta)
 
 	storedRevs := make([]*model.RealmsCfgRev, len(storedMeta))
 
@@ -610,9 +632,10 @@ func (r *realmsMap) getLatestConfig(ctx context.Context, client config.Interface
 		return err
 	}
 
-	cfg, err := client.GetConfig(ctx, cfgSet, cfgPath(ctx), false)
+	targetCfgPath := cfgPath(ctx)
+	cfg, err := client.GetConfig(ctx, cfgSet, targetCfgPath, false)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch realms.cfg for %s", project).Err()
+		return errors.Annotate(err, "failed to fetch %s for %s", targetCfgPath, project).Err()
 	}
 
 	r.mu.Lock()
@@ -624,7 +647,7 @@ func (r *realmsMap) getLatestConfig(ctx context.Context, client config.Interface
 
 // cfgPath is a helper function to know which cfg, depending on dev or prod env.
 func cfgPath(ctx context.Context) string {
-	if info.IsDevAppServer(ctx) {
+	if info.IsDevAppServer(ctx) || info.AppID(ctx) == DevAppID {
 		return RealmsDevCfgPath
 	}
 	return RealmsCfgPath

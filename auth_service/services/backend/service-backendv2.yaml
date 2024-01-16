@@ -1,5 +1,6 @@
 runtime: go121
 service: backendv2
+app_engine_apis: true
 
 # luci_gae_vars is interpreted by gae.py, for apps deployed manually.
 # It maps the app ID being deployed to values of vars used below.

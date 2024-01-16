@@ -1229,7 +1229,7 @@ func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string,
 			entity.CreatedTS = createdTS
 
 			if dryRun {
-				logging.Infof(ctx, "creating:\n%+v", entity)
+				logging.Infof(ctx, "(dry run) creating:\n%+v", entity)
 			} else {
 				if err := commitEntity(entity, createdTS, creator, false); err != nil {
 					return err
@@ -1246,7 +1246,7 @@ func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string,
 			entity.Subnets = subnetMap[id]
 
 			if dryRun {
-				logging.Infof(ctx, "updating:\n%+v", entity)
+				logging.Infof(ctx, "(dry run) updating:\n%+v", entity)
 			} else {
 				if err := commitEntity(entity, now, currentIdentity, false); err != nil {
 					return err
@@ -1257,7 +1257,7 @@ func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string,
 		toDelete := oldAllowlistSet.Difference(updatedAllowlistSet)
 		for id := range toDelete {
 			if dryRun {
-				logging.Infof(ctx, "deleting:\n%v", id)
+				logging.Infof(ctx, "(dry run) deleting:\n%v", id)
 			} else {
 				if err := commitEntity(oldAllowlistMap[id], now, currentIdentity, true); err != nil {
 					return err
@@ -1314,7 +1314,7 @@ func UpdateAuthGlobalConfig(ctx context.Context, oauthcfg *configspb.OAuthConfig
 		}
 		rootAuthGlobalCfg.SecurityConfig = seccfgBlob
 		if dryRun {
-			logging.Infof(ctx, "updating:\n%+v", rootAuthGlobalCfg)
+			logging.Infof(ctx, "(dry run) updating:\n%+v", rootAuthGlobalCfg)
 		} else {
 			if err := commitEntity(rootAuthGlobalCfg, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false); err != nil {
 				return err

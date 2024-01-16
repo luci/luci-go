@@ -120,6 +120,7 @@ func main() {
 			// realms.cfg handling.
 			latestRealms, storedRealms, err := realmsinternals.GetConfigs(ctx)
 			if err != nil {
+				logging.Errorf(ctx, "aborting realms update - failed to fetch latest for all configs: %v", err)
 				return err
 			}
 			jobs, err := realmsinternals.CheckConfigChanges(ctx, permsDB, latestRealms, storedRealms, dryRunCronRealms, historicalComment)
