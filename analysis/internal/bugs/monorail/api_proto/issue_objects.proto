@@ -145,7 +145,7 @@ message FieldValue {
 }
 
 // Documents and tracks a bug, task, or feature request within a Project.
-// Next available tag: 23
+// Next available tag: 24
 message Issue {
   option (google.api.resource) = {
     type: "api.crbug.com/Issue"
@@ -252,6 +252,8 @@ message Issue {
   // See monorail/doc/userguide/concepts.md#issue-approvals-and-gates
   repeated string phases = 22 [
       (google.api.field_behavior) = OUTPUT_ONLY];
+  // The issue tracker ID this Monorail issue migrated to.
+  string migrated_id = 23;
 }
 
 // States that an issue or its comments can be in (aip.dev/216).
