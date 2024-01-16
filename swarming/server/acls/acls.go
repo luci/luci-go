@@ -342,13 +342,49 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 
 // CheckBotPerm checks if the caller has a permission in a specific bot.
 //
-// It checks bot's pool permissions via CheckPoolPerm.
+// It looks up a realm the bot belong to (based on "pool" dimension) and then
+// checks the caller has the required permission in this realm.
 func (chk *Checker) CheckBotPerm(ctx context.Context, botID string, perm realms.Permission) CheckResult {
-	// TODO(vadimsh): Implement.
-	// Check the server lever permissions.
-	// Lookup a list of bot realms based on the config and/or history.
-	// CheckAnyPoolsPerm.
-	return chk.CheckServerPerm(ctx, perm)
+	// If have a server-level permission, no need to fetch bot info.
+	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.InternalError {
+		return res
+	}
+
+	// TODO(vadimsh): Python code used to fetch BotInfo or BotEvent from datastore
+	// to look up bot pools. This matters for bots removed from configs. Avoid
+	// this for now (fetch the bot info exclusively from the current config) to
+	// see if it makes any observable difference for real use cases.
+	pools := chk.cfg.BotGroup(botID).Pools()
+	if len(pools) == 0 {
+		panic("impossible due to the config validation and Pools() logic")
+	}
+
+	// Note: we can't just call CheckAnyPoolsPerm since it can potentially leak
+	// pool name in its error message. In CheckBotPerm we don't know if the caller
+	// is allowed to see bot => pool association and should not expose the pool
+	// name in errors, only bot ID.
+
+	oneAllowed := false
+
+	ok := chk.visitRealms(ctx, pools, perm, func(_ string, allowed bool) bool {
+		oneAllowed = oneAllowed || allowed
+		return !oneAllowed
+	})
+
+	switch {
+	case !ok:
+		return CheckResult{InternalError: true}
+	case oneAllowed:
+		return CheckResult{Permitted: true}
+	default:
+		// TODO(vadimsh): Make the error message more informative.
+		return CheckResult{
+			err: status.Errorf(
+				codes.PermissionDenied,
+				"the caller %q doesn't have permission %q in the pool that contains bot %q or this bot doesn't exist",
+				chk.caller, perm, botID),
+		}
+	}
 }
 
 // visitRealms does a permission check for every pool, sequentially.
@@ -357,11 +393,32 @@ func (chk *Checker) CheckBotPerm(ctx context.Context, botID string, perm realms.
 // true, the iteration continues. Otherwise it stops and visitRealms returns
 // true. Returns false only on internal problems with the check.
 func (chk *Checker) visitRealms(ctx context.Context, pools []string, perm realms.Permission, cb func(pool string, allowed bool) bool) (ok bool) {
-	checkedRealms := map[string]bool{}
+	// A micro optimization for a very common case of one pool. Skips a map.
+	if len(pools) == 1 {
+		pool := pools[0]
+		cfg := chk.cfg.Pool(pool)
+		if cfg == nil {
+			// Missing pools assumed to have no permissions in them.
+			logging.Warningf(ctx, "Unknown pool when checking ACLs: %s", pool)
+			cb(pool, false)
+		} else {
+			outcome, err := chk.db.HasPermission(ctx, chk.caller, perm, cfg.Realm, nil)
+			if err != nil {
+				logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, cfg.Realm, err)
+				return false
+			}
+			cb(pool, outcome)
+		}
+		return true
+	}
+
+	// Generic case that makes more memory allocations.
+	checkedRealms := make(map[string]bool, 2)
 	for _, pool := range pools {
 		cfg := chk.cfg.Pool(pool)
 		if cfg == nil {
 			// Missing pools assumed to have no permissions in them.
+			logging.Warningf(ctx, "Unknown pool when checking ACLs: %s", pool)
 			if !cb(pool, false) {
 				return true
 			}

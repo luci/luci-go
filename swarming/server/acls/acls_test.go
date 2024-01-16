@@ -52,7 +52,7 @@ func TestServerLevel(t *testing.T) {
 		PrivilegedUsersGroup: "privileged",
 		ViewAllBotsGroup:     "view-all-bots",
 		ViewAllTasksGroup:    "view-all-tasks",
-	}, nil)
+	}, nil, nil)
 
 	db := authtest.NewFakeDB(
 		authtest.MockMembership("user:admin@example.com", "admins"),
@@ -157,7 +157,7 @@ func TestPoolLevel(t *testing.T) {
 		"visible-pool-2": "project:visible-realm",
 		"hidden-pool-1":  "project:hidden-realm",
 		"hidden-pool-2":  "project:hidden-realm",
-	})
+	}, nil)
 
 	db := authtest.NewFakeDB(
 		authtest.MockMembership(privilegedID, "privileged"),
@@ -319,6 +319,68 @@ func TestPoolLevel(t *testing.T) {
 	})
 }
 
+func TestBotLevel(t *testing.T) {
+	const (
+		unknownID    identity.Identity = "user:unknown@example.com"
+		privilegedID identity.Identity = "user:privileged@example.com"
+		authorizedID identity.Identity = "user:authorized@example.com"
+	)
+
+	t.Parallel()
+
+	ctx := context.Background()
+
+	cfg := mockedConfig(&configpb.AuthSettings{
+		PrivilegedUsersGroup: "privileged",
+	}, map[string]string{
+		"visible-pool": "project:visible-realm",
+		"hidden-pool":  "project:hidden-realm",
+	}, map[string][]string{
+		"visible-bot": {"visible-pool", "hidden-pool"},
+		"hidden-bot":  {"hidden-pool"},
+	})
+
+	db := authtest.NewFakeDB(
+		authtest.MockMembership(privilegedID, "privileged"),
+		authtest.MockPermission(authorizedID, "project:visible-realm", PermPoolsListBots),
+	)
+
+	checkBotVisible := func(caller identity.Identity, botID string) bool {
+		chk := Checker{cfg: cfg, db: db, caller: caller}
+		res := chk.CheckBotPerm(ctx, botID, PermPoolsListBots)
+		So(res.InternalError, ShouldBeFalse)
+		return res.Permitted
+	}
+
+	Convey("Unknown", t, func() {
+		So(checkBotVisible(unknownID, "visible-bot"), ShouldBeFalse)
+		So(checkBotVisible(unknownID, "hidden-bot"), ShouldBeFalse)
+		So(checkBotVisible(unknownID, "unknown-bot"), ShouldBeFalse)
+	})
+
+	Convey("Privileged", t, func() {
+		So(checkBotVisible(privilegedID, "visible-bot"), ShouldBeTrue)
+		So(checkBotVisible(privilegedID, "hidden-bot"), ShouldBeTrue)
+		So(checkBotVisible(privilegedID, "unknown-bot"), ShouldBeTrue)
+	})
+
+	Convey("Authorized", t, func() {
+		So(checkBotVisible(authorizedID, "visible-bot"), ShouldBeTrue)
+		So(checkBotVisible(authorizedID, "hidden-bot"), ShouldBeFalse)
+		So(checkBotVisible(authorizedID, "unknown-bot"), ShouldBeFalse)
+	})
+
+	Convey("Error message", t, func() {
+		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
+		res := chk.CheckBotPerm(ctx, "hidden-bot", PermPoolsListBots)
+		So(res.InternalError, ShouldBeFalse)
+		err := res.ToGrpcErr()
+		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		So(err, ShouldErrLike, `the caller "user:authorized@example.com" doesn't have permission `+
+			`"swarming.pools.listBots" in the pool that contains bot "hidden-bot" or this bot doesn't exist`)
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // allPermissions returns all registered Swarming permissions.
@@ -346,7 +408,7 @@ func assertSame(got, want []realms.Permission) {
 }
 
 // mockedConfig prepares a queryable config.
-func mockedConfig(settings *configpb.AuthSettings, pools map[string]string) *cfg.Config {
+func mockedConfig(settings *configpb.AuthSettings, pools map[string]string, bots map[string][]string) *cfg.Config {
 	// Note this logic is the same as in rpcs.MockConfigs, but we can't use it
 	// directly due to import cycles. It is a relatively small chunk of code, it's
 	// not worth extracting into a separate package. So just repeat it.
@@ -364,6 +426,25 @@ func mockedConfig(settings *configpb.AuthSettings, pools map[string]string) *cfg
 	}
 	sort.Slice(poolpb, func(i, j int) bool { return poolpb[i].Name[0] < poolpb[j].Name[0] })
 
+	// Prepare minimal bots.cfg.
+	var botpb []*configpb.BotGroup
+	for botID, pools := range bots {
+		var dims []string
+		for _, pool := range pools {
+			dims = append(dims, "pool:"+pool)
+		}
+		botpb = append(botpb, &configpb.BotGroup{
+			BotId:      []string{botID},
+			Dimensions: dims,
+			Auth: []*configpb.BotAuth{ // required field
+				{
+					RequireLuciMachineToken: true,
+				},
+			},
+		})
+	}
+	sort.Slice(botpb, func(i, j int) bool { return botpb[i].BotId[0] < botpb[j].BotId[0] })
+
 	// Convert configs to raw proto text files.
 	files := make(cfgmem.Files)
 	putPb := func(path string, msg proto.Message) {
@@ -377,6 +458,10 @@ func mockedConfig(settings *configpb.AuthSettings, pools map[string]string) *cfg
 	}
 	putPb("settings.cfg", &configpb.SettingsCfg{Auth: settings})
 	putPb("pools.cfg", &configpb.PoolsCfg{Pool: poolpb})
+	putPb("bots.cfg", &configpb.BotsCfg{
+		TrustedDimensions: []string{"pool"},
+		BotGroup:          botpb,
+	})
 
 	// Put new configs into a temporary fake datastore.
 	ctx := memory.Use(context.Background())

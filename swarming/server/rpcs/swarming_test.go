@@ -68,6 +68,20 @@ func TestSwarmingServer(t *testing.T) {
 					},
 				},
 			},
+			Bots: &configpb.BotsCfg{
+				TrustedDimensions: []string{"pool"},
+				BotGroup: []*configpb.BotGroup{
+					{
+						BotId:      []string{"visible-bot"},
+						Dimensions: []string{"pool:visible-pool-1"},
+						Auth: []*configpb.BotAuth{
+							{
+								RequireLuciMachineToken: true,
+							},
+						},
+					},
+				},
+			},
 		}
 		db := authtest.NewFakeDB(
 			authtest.MockMembership(adminID, "admins"),
@@ -182,7 +196,23 @@ func TestSwarmingServer(t *testing.T) {
 		})
 
 		Convey("Accessing bot", func() {
-			// TODO(vadimsh): Add a test once CheckBotPerm is implemented.
+			So(call(authorizedID, "visible-bot", "", nil),
+				ShouldResembleProto,
+				&apipb.ClientPermissions{
+					DeleteBot:    true,
+					TerminateBot: true,
+					ListBots:     []string{"visible-pool-1", "visible-pool-2"},
+					ListTasks:    []string{"visible-pool-1", "visible-pool-2"},
+				},
+			)
+
+			So(call(authorizedID, "hidden-bot", "", nil),
+				ShouldResembleProto,
+				&apipb.ClientPermissions{
+					ListBots:  []string{"visible-pool-1", "visible-pool-2"},
+					ListTasks: []string{"visible-pool-1", "visible-pool-2"},
+				},
+			)
 		})
 	})
 }
