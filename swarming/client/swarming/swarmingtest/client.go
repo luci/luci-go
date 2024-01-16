@@ -17,6 +17,7 @@ package swarmingtest
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
@@ -28,6 +29,7 @@ type Client struct {
 	CountTasksMock     func(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (*swarmingv2.TasksCount, error)
 	ListTasksMock      func(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
 	CancelTaskMock     func(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
+	CancelTasksMock    func(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingv2.TasksCancelResponse, error)
 	TaskRequestMock    func(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
 	TaskOutputMock     func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
 	TaskResultMock     func(ctx context.Context, taskID string, fields *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error)
@@ -57,6 +59,10 @@ func (c *Client) ListTasks(ctx context.Context, limit int32, start float64, stat
 
 func (c *Client) CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error) {
 	return c.CancelTaskMock(ctx, taskID, killRunning)
+}
+
+func (c *Client) CancelTasks(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingv2.TasksCancelResponse, error) {
+	return c.CancelTasksMock(ctx, limit, tags, killRunning, start, end)
 }
 
 func (c *Client) TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error) {

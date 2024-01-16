@@ -84,6 +84,7 @@ type Client interface {
 	CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (*swarmingv2.TasksCount, error)
 	ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
 	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
+	CancelTasks(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingv2.TasksCancelResponse, error)
 
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
 	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
@@ -324,6 +325,39 @@ func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, kil
 		KillRunning: killRunning,
 		TaskId:      taskID,
 	})
+}
+
+func (s *swarmingServiceImpl) CancelTasks(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingv2.TasksCancelResponse, error) {
+	requestLimit := int32(1000)
+	cursor := ""
+	// Keep calling as long as there's a cursor indicating more tasks to cancel.
+	for {
+		if limit < requestLimit {
+			requestLimit = limit
+		}
+		cancelRequest := &swarmingv2.TasksCancelRequest{
+			Limit:       requestLimit,
+			Cursor:      cursor,
+			Tags:        tags,
+			KillRunning: killRunning,
+		}
+		if !start.IsZero() {
+			cancelRequest.Start = timestamppb.New(start)
+		}
+		if !end.IsZero() {
+			cancelRequest.End = timestamppb.New(end)
+		}
+		resp, err := s.tasksClient.CancelTasks(ctx, cancelRequest)
+		if err != nil {
+			return resp, err
+		}
+
+		limit -= resp.Matched
+		cursor = resp.Cursor
+		if cursor == "" || limit <= 0 {
+			return resp, nil
+		}
+	}
 }
 
 func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarmingv2.TaskRequestResponse, err error) {

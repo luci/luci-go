@@ -92,6 +92,7 @@ func getApplication() *cli.Application {
 		Commands: []*subcommands.Command{
 			subcommands.Section("Tasks\n"),
 			swarmingimpl.CmdCancelTask(af),
+			swarmingimpl.CmdCancelTasks(af),
 			swarmingimpl.CmdCollect(af),
 			swarmingimpl.CmdReproduce(af),
 			swarmingimpl.CmdRequestShow(af),
