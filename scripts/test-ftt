@@ -42,6 +42,46 @@ checkdep() {
   which -- "$1" 1>/dev/null 2>/dev/null || die 'missing dependency: '"$1"
 }
 
+# backup_self backs up the currently-executing script to ~/test-ftt.
+# We do this for convenience.
+#
+# The script test-ftt is itself checked into the LUCI git repo.
+# It also manipulates the git state, which can cause changes to the script
+# to be removed from the working directory. We copy ourselves to the home
+# directory in order to make it easier to tweak something and then immediately
+# run the script again.
+backup_self() {
+  cp -- "${HOME}/test-ftt" "${HOME}/test-ftt.BAK" 1>/dev/null 2>/dev/null
+  if cmp --silent -- "${selfpath}" "${HOME}"/test-ftt; then
+    return
+  fi
+  cp -- "${selfpath}" "${HOME}"/test-ftt || die 'failed to back up self'
+}
+
+# must_check_git_clean checks that the git repo pointed to by $1 is clean.
+# We die informatively if it is not clean.
+#
+# Submodules being dirty or pointing to the wrong commit is okay here. We are only
+# concerend about preventing the user from losing work.
+must_check_git_clean() {
+  [[ -z "$(git -C "$1" status --porcelain --ignore-submodules=all)" ]] || die "directory '$1' is not clean"
+}
+
+# must_checkout_patchset_in_luci_dir checks out the patchset specified by the user in the luci directory.
+# This function is only safe to call if we have already checked that the directory is clear.
+must_checkout_patchset_in_luci_dir() {
+  # (1/5) Clear the local version of the dev branch so we have somewhere to work. We don't care whether the branch exists or not.
+  git -C "$luci_dir" branch -D "$MY_DEVEL_BRANCH" 1>/dev/null 2>/dev/null
+  # (2/5) Fetch the user-specified patchset. Don't check whether it's the latest or not because I don't know how to do that.
+  git -C "$luci_dir" fetch https://chromium.googlesource.com/infra/luci/luci-go refs/changes/51/4917851/"$patchset" || die 'failed to fetch patchset'
+  # (3/5) Move the working directory to point at the thing that we just fetched.
+  git -C "$luci_dir" checkout FETCH_HEAD || die 'failed to check out fetch head after fetching patch. Wowzers.'
+  # (4/5) Drop a branch to save our current location. Use the branch name that we freed in step 1.
+  git -C "$luci_dir" checkout -b "$MY_DEVEL_BRANCH" || die 'failed to drop development branch for later devleopment'
+  # (5/5) Set the tracking branch of the branch that we just dropped to the upstream so that we can run 'git cl upload' later.
+  git -C "$luci_dir" branch -u "origin/main" || die 'failed to set the upstream branch of the development branch correctly'
+}
+
 # main takes the input args and runs the tests.
 main() {
   local -r usage='test-ftt [-h] [-i infra-dir] [-p patchset-number]
@@ -68,12 +108,16 @@ main() {
   checkdep 'realpath'
   checkdep 'git'
   checkdep 'mktemp'
+  checkdep 'cp'
+  checkdep 'unlink'
 
   [[ -n ${infra_dir} ]] || die "no directory given"
   [[ -e ${infra_dir} ]] || die "path \`${infra_dir}' does not exist"
   [[ -d ${infra_dir} ]] || die "path \`${infra_dir}' is not directory"
 
   [[ -n "${patchset}" ]] || die 'no patchset given'
+
+  local -r selfpath="$(realpath -- "$0")"
 
   local -r infra_dir="$(realpath -- "${infra_dir}")" || die "failed to get realpath to \`$1'"
 
@@ -88,6 +132,18 @@ main() {
 
   [[ -d $luci_dir ]] || die "luci directory \`${luci_dir}' does not exist or is not directory"
   [[ -f $luci_dir/AUTHORS ]] || die "failed heuristic: derived directory \`${luci_dir}' has no AUTHORS file"
+
+  local -r infra_go_root="${infra_dir}/infra/go/src/infra"
+  [[ -d "${infra_dir}" ]] || die "infra go root directory ${infra_go_root} does not exist"
+  [[ -d "${infra_go_root}/unifiedfleet" ]] || die "failed heuristic: derived directory '${infra_go_root}/unifiedfleet' does not exist."
+
+  must_check_git_clean "${infra_go_root}"
+  must_check_git_clean "${luci_dir}"
+
+  # Back ourselves up, after this point all subsequent commands can change the git state.
+  backup_self
+
+  must_checkout_patchset_in_luci_dir
 
   die 'not yet implemented'
 }
