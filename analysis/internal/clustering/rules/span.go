@@ -208,6 +208,28 @@ func ReadActive(ctx context.Context, project string) ([]*Entry, error) {
 	return rs, nil
 }
 
+// ReadWithMonorailForProject reads all LUCI Analysis failure association rules
+// using monorail in the given LUCI Project.
+//
+// This RPC was introduced for the specific purpose of supporting monorail
+// migration for projects. As rules are never deleted by LUCI Analysis, and
+// this method does no pagination, this style of method will cease to scale
+// at some point.
+//
+// It has implemented this way only because monorail has a limited remaining life
+// and we seem able to get away with a pagination-free approach for now.
+func ReadWithMonorailForProject(ctx context.Context, project string) ([]*Entry, error) {
+	whereClause := `Project = @project AND BugSystem = 'monorail'`
+	params := map[string]any{
+		"project": project,
+	}
+	rs, err := readWhere(ctx, whereClause, params)
+	if err != nil {
+		return nil, errors.Annotate(err, "query monorail rules for project").Err()
+	}
+	return rs, nil
+}
+
 // ReadByBug reads the failure association rules associated with the given bug.
 // At most one rule will be returned per project.
 func ReadByBug(ctx context.Context, bugID bugs.BugID) ([]*Entry, error) {

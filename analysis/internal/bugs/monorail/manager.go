@@ -355,7 +355,7 @@ func (m *BugManager) GetMergedInto(ctx context.Context, bug bugs.BugID) (*bugs.B
 		// Indicates an implementation error with the caller.
 		panic("monorail bug manager can only deal with monorail bugs")
 	}
-	name, err := toMonorailIssueName(bug.ID)
+	name, err := ToMonorailIssueName(bug.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -485,10 +485,10 @@ func toMonorailProjectAndID(bug string) (project, id string, err error) {
 	return parts[1], parts[2], nil
 }
 
-// toMonorailIssueName converts an internal bug name like
+// ToMonorailIssueName converts an internal bug name like
 // "{monorail_project}/{numeric_id}" to a monorail issue name like
 // "projects/{project}/issues/{numeric_id}".
-func toMonorailIssueName(bug string) (string, error) {
+func ToMonorailIssueName(bug string) (string, error) {
 	parts := bugs.MonorailBugIDRe.FindStringSubmatch(bug)
 	if parts == nil {
 		return "", fmt.Errorf("invalid bug %q", bug)

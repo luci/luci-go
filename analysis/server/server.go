@@ -35,6 +35,8 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	bugscron "go.chromium.org/luci/analysis/internal/bugs/cron"
+	"go.chromium.org/luci/analysis/internal/bugs/monorail/migration"
+	migrationpb "go.chromium.org/luci/analysis/internal/bugs/monorail/migration/proto"
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -99,6 +101,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
 		analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
 		analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer())
+		migrationpb.RegisterMonorailMigrationServer(srv, migration.NewMonorailMigrationServer())
 
 		// GAE crons.
 		updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, srv.Options.Prod)

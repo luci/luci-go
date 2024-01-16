@@ -186,7 +186,7 @@ func (rg *RequestGenerator) linkToRuleComment(ruleID string) string {
 // PrepareRuleAssociatedComment prepares a request that notifies the bug
 // it is associated with failures in LUCI Analysis.
 func (rg *RequestGenerator) PrepareRuleAssociatedComment(ruleID, bugID string) (*mpb.ModifyIssuesRequest, error) {
-	issueName, err := toMonorailIssueName(bugID)
+	issueName, err := ToMonorailIssueName(bugID)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (rg *RequestGenerator) PreparePolicyActivatedComment(ruleID, bugID string, 
 		return nil, nil
 	}
 
-	name, err := toMonorailIssueName(bugID)
+	name, err := ToMonorailIssueName(bugID)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +273,7 @@ func (rg *RequestGenerator) PreparePolicyActivatedComment(ruleID, bugID string, 
 // duplicate bug pair, after LUCI Analysis has attempted to merge their
 // failure association rules.
 func (rg *RequestGenerator) UpdateDuplicateSource(bugID, errorMessage, sourceRuleID, destinationRuleID string) (*mpb.ModifyIssuesRequest, error) {
-	name, err := toMonorailIssueName(bugID)
+	name, err := ToMonorailIssueName(bugID)
 	if err != nil {
 		return nil, err
 	}
