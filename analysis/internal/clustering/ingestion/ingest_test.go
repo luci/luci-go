@@ -326,6 +326,79 @@ func TestIngest(t *testing.T) {
 					testIngestion(tvs, expectedCFs)
 					So(len(chunkStore.Contents), ShouldEqual, 1)
 				})
+				Convey(`No BugComponent metadata, but public_buganizer_component tag present`, func() {
+					tv.Verdict.TestMetadata.BugComponent = nil
+
+					for _, result := range tv.Verdict.Results {
+						result.Result.Tags = []*rdbpb.StringPair{
+							{
+								Key:   "public_buganizer_component",
+								Value: "654321",
+							},
+						}
+					}
+					for _, cf := range expectedCFs {
+						cf.BugTrackingComponent.System = "buganizer"
+						cf.BugTrackingComponent.Component = "654321"
+						cf.Tags = []*pb.StringPair{
+							{
+								Key:   "public_buganizer_component",
+								Value: "654321",
+							},
+						}
+					}
+					testIngestion(tvs, expectedCFs)
+					So(len(chunkStore.Contents), ShouldEqual, 1)
+				})
+				Convey(`No BugComponent metadata, both public_buganizer_component and monorail_component present`, func() {
+					tv.Verdict.TestMetadata.BugComponent = nil
+
+					for _, result := range tv.Verdict.Results {
+						result.Result.Tags = []*rdbpb.StringPair{
+							{
+								Key:   "monorail_component",
+								Value: "Component>MyComponent",
+							},
+							{
+								Key:   "public_buganizer_component",
+								Value: "654321",
+							},
+						}
+					}
+					for _, cf := range expectedCFs {
+						cf.Tags = []*pb.StringPair{
+							{
+								Key:   "monorail_component",
+								Value: "Component>MyComponent",
+							},
+							{
+								Key:   "public_buganizer_component",
+								Value: "654321",
+							},
+						}
+					}
+
+					Convey("With monorail as preferred system", func() {
+						opts.PreferBuganizerComponents = false
+
+						for _, cf := range expectedCFs {
+							cf.BugTrackingComponent.System = "monorail"
+							cf.BugTrackingComponent.Component = "Component>MyComponent"
+						}
+						testIngestion(tvs, expectedCFs)
+						So(len(chunkStore.Contents), ShouldEqual, 1)
+					})
+					Convey("With buganizer as preferred system", func() {
+						opts.PreferBuganizerComponents = true
+
+						for _, cf := range expectedCFs {
+							cf.BugTrackingComponent.System = "buganizer"
+							cf.BugTrackingComponent.Component = "654321"
+						}
+						testIngestion(tvs, expectedCFs)
+						So(len(chunkStore.Contents), ShouldEqual, 1)
+					})
+				})
 			})
 			Convey(`Failure with no sources`, func() {
 				tv.Sources = nil

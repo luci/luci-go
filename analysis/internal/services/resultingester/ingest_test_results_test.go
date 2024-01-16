@@ -1225,7 +1225,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Status:     pb.TestResultStatus_FAIL,
 					Expected:   false,
 					Duration:   1.0,
-					Tags:       pbutil.StringPairs("random_tag", "random_tag_value", "monorail_component", "Monorail>Component"),
+					Tags:       pbutil.StringPairs("random_tag", "random_tag_value", "public_buganizer_component", "951951951"),
 					Properties: "{}",
 				},
 			},

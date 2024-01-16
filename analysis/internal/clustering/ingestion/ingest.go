@@ -58,6 +58,10 @@ type Options struct {
 	// The gardener rotations the build is a part of. Corresponds to the
 	// `sheriff_rotations` field of the build input properties.
 	BuildGardenerRotations []string
+	// Whether LUCI Analysis should preferentially ingest buganizer component
+	// data instead of monorail, if both are available.
+	// TODO(b/320356457): Delete once chromium buganizer migration complete.
+	PreferBuganizerComponents bool
 }
 
 type PresubmitRun struct {

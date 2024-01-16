@@ -53,6 +53,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testresults/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/tracing"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	// Add support for Spanner transactions in TQ.
@@ -452,15 +453,21 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
 	defer func() { tracing.End(s, err) }()
 
+	cfg, err := config.Project(ctx, ing.Project)
+	if err != nil {
+		return errors.Annotate(err, "read project config").Err()
+	}
+
 	// Setup clustering ingestion.
 	opts := ingestion.Options{
-		TaskIndex:              payload.TaskIndex,
-		Project:                ing.Project,
-		PartitionTime:          ing.PartitionTime,
-		Realm:                  ing.Project + ":" + ing.SubRealm,
-		InvocationID:           ing.IngestedInvocationID,
-		BuildStatus:            payload.Build.Status,
-		BuildGardenerRotations: payload.Build.GardenerRotations,
+		TaskIndex:                 payload.TaskIndex,
+		Project:                   ing.Project,
+		PartitionTime:             ing.PartitionTime,
+		Realm:                     ing.Project + ":" + ing.SubRealm,
+		InvocationID:              ing.IngestedInvocationID,
+		BuildStatus:               payload.Build.Status,
+		BuildGardenerRotations:    payload.Build.GardenerRotations,
+		PreferBuganizerComponents: cfg.BugManagement.GetDefaultBugSystem() != configpb.BugSystem_MONORAIL,
 	}
 
 	if payload.PresubmitRun != nil {

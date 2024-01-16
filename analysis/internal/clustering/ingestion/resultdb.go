@@ -124,7 +124,7 @@ func failureFromResult(tr *rdbpb.TestResult, tv TestVerdict, opts Options) *cpb.
 		Tags:                          pbutil.StringPairFromResultDB(tr.Tags),
 		VariantHash:                   tv.Verdict.VariantHash, // Get from variant, as it is not populated on each result.
 		FailureReason:                 pbutil.FailureReasonFromResultDB(tr.FailureReason),
-		BugTrackingComponent:          extractBugTrackingComponent(tr.Tags, tv.Verdict.TestMetadata),
+		BugTrackingComponent:          extractBugTrackingComponent(tr.Tags, tv.Verdict.TestMetadata, opts.PreferBuganizerComponents),
 		StartTime:                     tr.StartTime,
 		Duration:                      tr.Duration,
 		Exonerations:                  exonerations,
@@ -154,7 +154,7 @@ func exonerationFromResultDB(e *rdbpb.TestExoneration) *cpb.TestExoneration {
 	}
 }
 
-func extractBugTrackingComponent(tags []*rdbpb.StringPair, testMetadata *rdbpb.TestMetadata) *pb.BugTrackingComponent {
+func extractBugTrackingComponent(tags []*rdbpb.StringPair, testMetadata *rdbpb.TestMetadata, preferBuganizerComponents bool) *pb.BugTrackingComponent {
 	if testMetadata != nil && testMetadata.BugComponent != nil {
 		bc := testMetadata.BugComponent
 		switch bcSystem := bc.System.(type) {
@@ -170,17 +170,39 @@ func extractBugTrackingComponent(tags []*rdbpb.StringPair, testMetadata *rdbpb.T
 			}
 		}
 	} else {
-		var value string
+		var buganizerComponent string
 		for _, tag := range tags {
-			if tag.Key == "monorail_component" {
-				value = tag.Value
+			if tag.Key == "public_buganizer_component" {
+				buganizerComponent = tag.Value
 				break
 			}
 		}
-		if value != "" {
+		var monorailComponent string
+		for _, tag := range tags {
+			if tag.Key == "monorail_component" {
+				monorailComponent = tag.Value
+				break
+			}
+		}
+
+		if preferBuganizerComponents && buganizerComponent != "" {
+			return &pb.BugTrackingComponent{
+				System:    "buganizer",
+				Component: buganizerComponent,
+			}
+		}
+
+		if monorailComponent != "" {
 			return &pb.BugTrackingComponent{
 				System:    "monorail",
-				Component: value,
+				Component: monorailComponent,
+			}
+		}
+
+		if buganizerComponent != "" {
+			return &pb.BugTrackingComponent{
+				System:    "buganizer",
+				Component: buganizerComponent,
 			}
 		}
 	}

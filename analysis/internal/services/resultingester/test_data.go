@@ -219,7 +219,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 							Status:    rdbpb.TestStatus_FAIL,
 							Expected:  false,
 							Duration:  durationpb.New(time.Second * 1),
-							Tags:      pbutil.StringPairs("random_tag", "random_tag_value", "monorail_component", "Monorail>Component"),
+							Tags:      pbutil.StringPairs("random_tag", "random_tag_value", "public_buganizer_component", "951951951"),
 						},
 					},
 				},
