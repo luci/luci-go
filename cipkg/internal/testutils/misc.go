@@ -17,12 +17,12 @@ package testutils
 import (
 	"testing"
 
-	"github.com/smartystreets/goconvey/convey"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func Assert[T any](tb testing.TB, x any) T {
 	tb.Helper()
 	ret, ok := x.(T)
-	convey.So(ok, convey.ShouldBeTrue)
+	So(ok, ShouldBeTrue)
 	return ret
 }
