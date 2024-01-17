@@ -490,7 +490,10 @@ func TestMutatorConcurrent(t *testing.T) {
 		)
 		// Number of tries per worker.
 		// With probabilities above, it typically takes <60 tries.
-		const R = 300
+		//
+		// This value was set to 300 before 2024-01-16 and it flaked once, so
+		// let's increase it to 30000.
+		const R = 30000
 		// Number of workers.
 		const N = 20
 
@@ -512,6 +515,11 @@ func TestMutatorConcurrent(t *testing.T) {
 				acc := makeAccess(lProject, accTS)
 				var err error
 				for i := 0; i < R; i++ {
+					// Make this thing a little more robust against flakiness and sleep for a millisecond
+					// every so often.
+					if i % 1000 == 0 {
+						time.Sleep(1 * time.Millisecond)
+					}
 					_, err = m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 						ret := ErrStopMutation
 						if t := cl.Snapshot.GetExternalUpdateTime(); t == nil || t.AsTime().Before(snapTS) {
