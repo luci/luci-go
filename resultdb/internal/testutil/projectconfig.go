@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -29,6 +28,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbcfg "go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/server/caching"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var textPBMultiline = prototext.MarshalOptions{
@@ -49,9 +50,9 @@ func TestProjectConfigContext(ctx context.Context, project, user, bucket string)
 // and prefix.
 func SetGCSAllowedBuckets(ctx context.Context, project, user, bucket string) context.Context {
 	testProject := rdbcfg.CreatePlaceholderProjectConfig()
-	convey.So(len(testProject.GcsAllowList), convey.ShouldEqual, 1)
+	So(len(testProject.GcsAllowList), ShouldEqual, 1)
 	testProject.GcsAllowList[0].Users = []string{user}
-	convey.So(len(testProject.GcsAllowList[0].Buckets), convey.ShouldEqual, 1)
+	So(len(testProject.GcsAllowList[0].Buckets), ShouldEqual, 1)
 	testProject.GcsAllowList[0].Buckets[0] = bucket
 
 	cfgSet := config.Set(fmt.Sprintf("projects/%s", project))
@@ -61,7 +62,7 @@ func SetGCSAllowedBuckets(ctx context.Context, project, user, bucket string) con
 
 	ctx = cfgclient.Use(ctx, cfgmem.New(configs))
 	err := rdbcfg.UpdateProjects(ctx)
-	convey.So(err, convey.ShouldBeNil)
+	So(err, ShouldBeNil)
 	datastore.GetTestable(ctx).CatchupIndexes()
 
 	return ctx
