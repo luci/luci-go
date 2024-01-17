@@ -21,8 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smartystreets/goconvey/convey"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -31,6 +29,8 @@ import (
 	"go.chromium.org/luci/common/testing/assertions"
 
 	"go.chromium.org/luci/cv/internal/cvtesting/saferesembletest"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSafeShouldResemble(t *testing.T) {
@@ -296,20 +296,20 @@ func TestSafeShouldResemble(t *testing.T) {
 	for i, c := range cases {
 		i, tCase := i, c
 		name := fmt.Sprintf("%2d: %s", i, tCase.name)
-		convey.Convey(name, t, func() {
+		Convey(name, t, func() {
 			if tCase.shouldPanicLike != "" {
-				convey.So(func() { SafeShouldResemble(tCase.a, tCase.e) }, assertions.ShouldPanicLike, tCase.shouldPanicLike)
+				So(func() { SafeShouldResemble(tCase.a, tCase.e) }, assertions.ShouldPanicLike, tCase.shouldPanicLike)
 				return
 			}
 
 			diff := SafeShouldResemble(tCase.a, tCase.e)
 			if len(tCase.diffsContains) == 0 {
-				convey.So(diff, convey.ShouldEqual, "")
+				So(diff, ShouldEqual, "")
 				return
 			}
-			_, _ = convey.Printf("\n\n===== diff emitted for %s =====\n%s\n%s\n", name, diff, strings.Repeat("=", 80))
+			_, _ = Printf("\n\n===== diff emitted for %s =====\n%s\n%s\n", name, diff, strings.Repeat("=", 80))
 			for _, sub := range tCase.diffsContains {
-				convey.So(diff, convey.ShouldContainSubstring, sub)
+				So(diff, ShouldContainSubstring, sub)
 			}
 		})
 	}

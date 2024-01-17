@@ -21,10 +21,11 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/assertions"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // SafeShouldResemble compares 2 structs recursively, which may include proto
@@ -39,7 +40,7 @@ func SafeShouldResemble(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return fmt.Sprintf("expected 1 value, got %d", len(expected))
 	}
-	if diff := convey.ShouldHaveSameTypeAs(actual, expected[0]); diff != "" {
+	if diff := ShouldHaveSameTypeAs(actual, expected[0]); diff != "" {
 		return diff
 	}
 
@@ -83,7 +84,7 @@ func SafeShouldResemble(actual any, expected ...any) string {
 	}
 	p.compareRecursiveAndNilify()
 	// OK, now compare all non-proto fields.
-	if diff := convey.ShouldResemble(copyA.Interface(), copyE.Interface()); diff != "" {
+	if diff := ShouldResemble(copyA.Interface(), copyE.Interface()); diff != "" {
 		buf.WriteRune('\n')
 		addWithIndent(buf, "non-proto fields differ:\n", poorifyIfConveyJSON(diff))
 	}
