@@ -442,12 +442,8 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 	query := datastore.NewQuery("").Ancestor(HistoricalRevisionKey(ctx, authDBRev))
 	changes := []*AuthDBChange{}
 
-	getPms := func(key *datastore.Key, class string, ch *AuthDBChange, pm datastore.PropertyMap) (string, datastore.PropertyMap, datastore.PropertyMap, error) {
+	getPms := func(key *datastore.Key, class string, pm datastore.PropertyMap) (string, datastore.PropertyMap, datastore.PropertyMap, error) {
 		target := fmt.Sprintf("%s$%s", class, key.StringID())
-		ch.ID = target
-		if err := datastore.Get(ctx, ch); err != nil && err != datastore.ErrNoSuchEntity {
-			return "", nil, nil, err
-		}
 		var oldpm datastore.PropertyMap
 		if pk := PreviousHistoricalRevisionKey(ctx, pm); pk != nil {
 			oldpm = make(datastore.PropertyMap)
@@ -460,11 +456,6 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 	}
 
 	err = datastore.Run(ctx, query, func(pm datastore.PropertyMap) error {
-		c := &AuthDBChange{
-			Kind:   "AuthDBChange",
-			Parent: ChangeLogRevisionKey(ctx, authDBRev),
-		}
-
 		key := getDatastoreKey(pm)
 		if key == nil {
 			return errors.New("key not found for pm")
@@ -482,7 +473,7 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 		// [2] = AuthGroup -- second group
 		// [3] = Group -- third group
 		if df, ok := knownHistoricalEntities[heKeys[0]]; ok {
-			target, oldpm, pm, err := getPms(key, heKeys[2], c, pm)
+			target, oldpm, pm, err := getPms(key, heKeys[2], pm)
 			if err != nil {
 				return err
 			}
