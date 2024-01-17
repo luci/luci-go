@@ -167,6 +167,7 @@ func migrateRule(ctx context.Context, rule *rules.Entry, monorailClient *monorai
 			System: "buganizer",
 			ID:     issue.MigratedId,
 		}
+		r.BugManagementState.RuleAssociationNotified = false
 
 		m, err := rules.Update(r, rules.UpdateOptions{
 			IsAuditableUpdate: true,

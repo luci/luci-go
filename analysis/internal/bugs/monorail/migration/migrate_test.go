@@ -157,6 +157,7 @@ func TestMigration(t *testing.T) {
 					System: "buganizer",
 					ID:     "8111",
 				}
+				expectedRules[0].BugManagementState.RuleAssociationNotified = false
 				expectedRules[0].LastAuditableUpdateUser = "system"
 
 				rs, err := rules.ReadAllForTesting(span.Single(ctx))
