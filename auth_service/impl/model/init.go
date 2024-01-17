@@ -45,7 +45,7 @@ func init() {
 		ID:        "replication-task",
 		Prototype: (*taskspb.ReplicationTask)(nil),
 		Kind:      tq.Transactional,
-		Queue:     "replication-queue",
+		Queue:     "replication",
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ReplicationTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
