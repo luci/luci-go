@@ -53,6 +53,7 @@ describe('Test RulesTable component', () => {
     expect(screen.getByText('crbug.com/90001')).toBeInTheDocument();
     expect(screen.getByText('test LIKE "rule1%"')).toBeInTheDocument();
     expect(screen.getByText('exonerations')).toBeInTheDocument();
+    expect(screen.getByText('P2')).toBeInTheDocument(); // Priority shown as problem is active.
 
     expect(screen.getByText('crbug.com/90002')).toBeInTheDocument();
     expect(screen.getByText('reason LIKE "rule2%"')).toBeInTheDocument();

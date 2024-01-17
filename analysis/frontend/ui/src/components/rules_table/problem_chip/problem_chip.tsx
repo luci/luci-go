@@ -15,7 +15,7 @@
 import DoneIcon from '@mui/icons-material/Done';
 import Chip from '@mui/material/Chip';
 
-import { BugManagementPolicy } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
+import { BugManagementPolicy, BuganizerPriority } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 
 type Color = 'error' | 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'info';
 
@@ -35,11 +35,28 @@ const ProblemChip = ({ policy, fadedOut, active, colorIndex } : Props ) => {
   return <Chip
     size="small"
     sx={{ margin: '1px', opacity: (fadedOut ? '50%' : undefined) }}
-    label={<>{active ? (<><strong>{policy.priority}</strong>&nbsp;&nbsp;</>) : undefined}{policy.id}</>}
+    label={<>{active ? (<><strong>{bugPriorityLabel(policy.priority)}</strong>&nbsp;&nbsp;</>) : undefined}{policy.id}</>}
     color={COLORS_LIST[colorIndex % COLORS_LIST.length]}
     icon={!active ? (<DoneIcon />) : undefined}
     variant={active ? 'filled' : 'outlined'}
   />;
 };
+
+function bugPriorityLabel(priority: BuganizerPriority): string {
+  switch (priority) {
+    case BuganizerPriority.P0:
+      return 'P0';
+    case BuganizerPriority.P1:
+      return 'P1';
+    case BuganizerPriority.P2:
+      return 'P2';
+    case BuganizerPriority.P3:
+      return 'P3';
+    case BuganizerPriority.P4:
+      return 'P4';
+    default:
+      return '';
+  }
+}
 
 export default ProblemChip;
