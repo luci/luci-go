@@ -48,7 +48,7 @@ func (*Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotReques
 		}
 	}
 
-	switch snapshot, err := model.GetAuthDBSnapshot(ctx, request.Revision, request.SkipBody); {
+	switch snapshot, err := model.GetAuthDBSnapshot(ctx, request.Revision, request.SkipBody, false); {
 	case err == nil:
 		return snapshot.ToProto(), nil
 	case err == datastore.ErrNoSuchEntity:
@@ -62,7 +62,7 @@ func (*Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotReques
 
 // getLatestRevision is a helper function to set the latest revision number for the GetSnapshotRequest.
 func getLatestRevision(ctx context.Context, request *rpcpb.GetSnapshotRequest) (int64, error) {
-	switch latest, err := model.GetAuthDBSnapshotLatest(ctx); {
+	switch latest, err := model.GetAuthDBSnapshotLatest(ctx, false); {
 	case err == nil:
 		return latest.AuthDBRev, nil
 	case err == datastore.ErrNoSuchEntity:

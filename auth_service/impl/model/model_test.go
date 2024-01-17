@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -1754,9 +1755,10 @@ func TestAuthRealmsConfig(t *testing.T) {
 func TestGetAuthDBSnapshot(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
+	dryRun := false
 
 	Convey("Testing GetAuthDBSnapshot", t, func() {
-		_, err := GetAuthDBSnapshot(ctx, 42, false)
+		_, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
 		snapshot := testAuthDBSnapshot(ctx, 42)
@@ -1764,20 +1766,20 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		err = datastore.Put(ctx, snapshot)
 		So(err, ShouldBeNil)
 
-		actual, err := GetAuthDBSnapshot(ctx, 42, false)
+		actual, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, snapshot)
 
 		err = datastore.Put(ctx, snapshot)
 		So(err, ShouldBeNil)
 
-		actual, err = GetAuthDBSnapshot(ctx, 42, false)
+		actual, err = GetAuthDBSnapshot(ctx, 42, false, dryRun)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, snapshot)
 	})
 
 	Convey("Testing GetAuthDBSnapshotLatest", t, func() {
-		_, err := GetAuthDBSnapshotLatest(ctx)
+		_, err := GetAuthDBSnapshotLatest(ctx, dryRun)
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
 		snapshot := testAuthDBSnapshot(ctx, 42)
@@ -1793,7 +1795,7 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 
 		So(err, ShouldBeNil)
 
-		actual, err := GetAuthDBSnapshotLatest(ctx)
+		actual, err := GetAuthDBSnapshotLatest(ctx, dryRun)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, authDBSnapshotLatest)
 	})
@@ -1815,7 +1817,7 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		So(datastore.Put(ctx, authDBShard1), ShouldBeNil)
 		So(datastore.Put(ctx, authDBShard2), ShouldBeNil)
 
-		actualBlob, err := unshardAuthDB(ctx, shardIDs)
+		actualBlob, err := unshardAuthDB(ctx, shardIDs, dryRun)
 		So(err, ShouldBeNil)
 		So(actualBlob, ShouldResemble, expectedBlob)
 	})
@@ -1825,11 +1827,11 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(datastore.Put(ctx, snapshot), ShouldBeNil)
 
-		actualSnapshot, err := GetAuthDBSnapshot(ctx, 42, false)
+		actualSnapshot, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
 		So(err, ShouldBeNil)
 		So(actualSnapshot.AuthDBDeflated, ShouldResemble, expectedAuthDB)
 
-		actualSnapshot, err = GetAuthDBSnapshot(ctx, 42, true)
+		actualSnapshot, err = GetAuthDBSnapshot(ctx, 42, true, dryRun)
 		So(err, ShouldBeNil)
 		So(actualSnapshot.AuthDBDeflated, ShouldBeNil)
 	})
@@ -1837,6 +1839,7 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 
 func TestStoreAuthDBSnapshot(t *testing.T) {
 	t.Parallel()
+	dryRun := false
 
 	Convey("storing AuthDBSnapshot works", t, func() {
 		ctx := memory.Use(context.Background())
@@ -1848,11 +1851,11 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 		expectedHexDigest := hex.EncodeToString(authDBBlob)
 
 		// Store the AuthDBSnapshot.
-		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), authDBBlob)
+		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), authDBBlob, dryRun)
 		So(err, ShouldBeNil)
 
 		// Check the AuthDBSnapshot stored data.
-		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false)
+		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false, dryRun)
 		So(err, ShouldBeNil)
 		So(authDBSnapshot, ShouldResembleProto, &AuthDBSnapshot{
 			Kind:           "AuthDBSnapshot",
@@ -1866,11 +1869,11 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 
 		Convey("no overwriting for existing revision", func() {
 			// Attempt to store the AuthDBSnapshot for an existing revision.
-			err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), []byte("test-authdb-blob-changed"))
+			err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), []byte("test-authdb-blob-changed"), dryRun)
 			So(err, ShouldBeNil)
 
 			// Check the AuthDBSnapshot stored data was not actually changed.
-			authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false)
+			authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false, dryRun)
 			So(err, ShouldBeNil)
 			So(authDBSnapshot, ShouldResembleProto, &AuthDBSnapshot{
 				Kind:           "AuthDBSnapshot",
@@ -1894,19 +1897,19 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 		So(datastore.Put(ctx, latestSnapshot), ShouldBeNil)
 
 		Convey("updated for later revision", func() {
-			So(StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 28), nil), ShouldBeNil)
+			So(StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 28), nil, dryRun), ShouldBeNil)
 
 			// Check the latest AuthDBSnapshot pointer was updated.
-			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx)
+			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, dryRun)
 			So(err, ShouldBeNil)
 			So(latestSnapshot.AuthDBRev, ShouldEqual, 28)
 		})
 
 		Convey("not updated for earlier revision", func() {
-			So(StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 23), nil), ShouldBeNil)
+			So(StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 23), nil, dryRun), ShouldBeNil)
 
 			// Check the latest AuthDBSnapshot pointer was not updated.
-			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx)
+			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, dryRun)
 			So(err, ShouldBeNil)
 			So(latestSnapshot.AuthDBRev, ShouldEqual, 24)
 		})
@@ -1917,14 +1920,57 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 
 		// Shard an AuthDB compressed blob.
 		authDBDeflatedBlob := []byte("this is test data")
-		shardIDs, err := shardAuthDB(ctx, 32, authDBDeflatedBlob, 8)
+		shardIDs, err := shardAuthDB(ctx, 32, authDBDeflatedBlob, 8, dryRun)
 		So(err, ShouldBeNil)
 
 		// Check the blob is reconstructed given the same shard IDs.
-		unshardedBlob, err := unshardAuthDB(ctx, shardIDs)
+		unshardedBlob, err := unshardAuthDB(ctx, shardIDs, dryRun)
 		So(err, ShouldBeNil)
 		So(unshardedBlob, ShouldEqual, authDBDeflatedBlob)
 	})
+
+	Convey("storing snapshot in dry run mode works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		// Set up the test data.
+		authDBBlob := []byte("test-authdb-blob")
+		expectedDeflated, err := zlib.Compress(authDBBlob)
+		So(err, ShouldBeNil)
+		expectedHexDigest := hex.EncodeToString(authDBBlob)
+
+		// Store the AuthDBSnapshot in dry run mode.
+		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 12), authDBBlob, true)
+		So(err, ShouldBeNil)
+
+		// Check the AuthDBSnapshot was stored in dry run mode.
+		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 12, false, true)
+		So(err, ShouldBeNil)
+		So(authDBSnapshot, ShouldResembleProto, &AuthDBSnapshot{
+			Kind:           "V2AuthDBSnapshot",
+			ID:             12,
+			AuthDBDeflated: expectedDeflated,
+			AuthDBSha256:   expectedHexDigest,
+			CreatedTS:      testModifiedTS,
+		})
+		decompressedBlob, _ := zlib.Decompress(authDBSnapshot.AuthDBDeflated)
+		So(decompressedBlob, ShouldEqual, authDBBlob)
+
+		// Check the AuthDBSnapshotLatest for dry run mode was updated.
+		latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, true)
+		So(err, ShouldBeNil)
+		So(latestSnapshot.AuthDBRev, ShouldEqual, 12)
+
+		// Check no snapshot was written with dry run mode off.
+		_, err = GetAuthDBSnapshot(ctx, 12, false, false)
+		So(errors.Is(err, datastore.ErrNoSuchEntity), ShouldBeTrue)
+		_, err = GetAuthDBSnapshotLatest(ctx, false)
+		So(errors.Is(err, datastore.ErrNoSuchEntity), ShouldBeTrue)
+	})
+}
+
+func TestDryRun(t *testing.T) {
+	t.Parallel()
+
 }
 
 func TestProtoConversion(t *testing.T) {

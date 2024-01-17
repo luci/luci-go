@@ -52,6 +52,10 @@ import (
 const (
 	// Max size of AuthDBShard.Blob.
 	MaxShardSize = 900 * 1024 // 900 kB.
+
+	// The prefix to use for datastore entities' Kind field when in dry
+	// run mode.
+	DryRunPrefix = "V2"
 )
 
 // AuthVersionedEntityMixin is for AuthDB entities that
@@ -1328,9 +1332,9 @@ func UpdateAuthGlobalConfig(ctx context.Context, oauthcfg *configspb.OAuthConfig
 //
 // Returns datastore.ErrNoSuchEntity if the AuthDBSnapshot is not present.
 // Returns an annotated error for other errors.
-func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool) (*AuthDBSnapshot, error) {
+func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool, dryRun bool) (*AuthDBSnapshot, error) {
 	authDBSnapshot := &AuthDBSnapshot{
-		Kind: "AuthDBSnapshot",
+		Kind: entityKind("AuthDBSnapshot", dryRun),
 		ID:   rev,
 	}
 	switch err := datastore.Get(ctx, authDBSnapshot); {
@@ -1338,7 +1342,7 @@ func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool) (*AuthDBSn
 		if skipBody {
 			authDBSnapshot.AuthDBDeflated = nil
 		} else if len(authDBSnapshot.ShardIDs) != 0 {
-			authDBSnapshot.AuthDBDeflated, err = unshardAuthDB(ctx, authDBSnapshot.ShardIDs)
+			authDBSnapshot.AuthDBDeflated, err = unshardAuthDB(ctx, authDBSnapshot.ShardIDs, dryRun)
 			if err != nil {
 				return nil, err
 			}
@@ -1360,8 +1364,8 @@ func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool) (*AuthDBSn
 //     given authDBBlob.
 //   - authDBBlob: serialized protocol.ReplicationPushRequest message
 //     (has AuthDB inside).
-func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationState, authDBBlob []byte) (err error) {
-	logging.Debugf(ctx, "Storing AuthDB Rev %d", replicationState.AuthDBRev)
+func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationState, authDBBlob []byte, dryRun bool) (err error) {
+	logging.Debugf(ctx, "Storing AuthDB Rev %d (dry run: %s)", replicationState.AuthDBRev, dryRun)
 
 	// Get the SHA256 hex digest of the AuthDB blob (before compression).
 	blobHexDigest := hex.EncodeToString(authDBBlob)
@@ -1378,7 +1382,7 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 	// is stored in older entities, before sharding was introduced).
 	var shardIDs []string
 	if len(deflated) > MaxShardSize {
-		shardIDs, err = shardAuthDB(ctx, replicationState.AuthDBRev, deflated, MaxShardSize)
+		shardIDs, err = shardAuthDB(ctx, replicationState.AuthDBRev, deflated, MaxShardSize, dryRun)
 		if err != nil {
 			return errors.Annotate(err, "error sharding AuthDB").Err()
 		}
@@ -1388,7 +1392,7 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Check for an existing snapshot at this revision.
 		authDBSnapshot := &AuthDBSnapshot{
-			Kind: "AuthDBSnapshot",
+			Kind: entityKind("AuthDBSnapshot", dryRun),
 			ID:   replicationState.AuthDBRev,
 		}
 		err := datastore.Get(ctx, authDBSnapshot)
@@ -1420,7 +1424,7 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 	// Update AuthDBSnapshotLatest, if necessary.
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		latest := &AuthDBSnapshotLatest{
-			Kind: "AuthDBSnapshotLatest",
+			Kind: entityKind("AuthDBSnapshotLatest", dryRun),
 			ID:   "latest",
 		}
 		err := datastore.Get(ctx, latest)
@@ -1448,9 +1452,9 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 //
 // Returns datastore.ErrNoSuchEntity if the AuthDBSnapshotLatest is not present.
 // Returns an annotated error for other errors.
-func GetAuthDBSnapshotLatest(ctx context.Context) (*AuthDBSnapshotLatest, error) {
+func GetAuthDBSnapshotLatest(ctx context.Context, dryRun bool) (*AuthDBSnapshotLatest, error) {
 	authDBSnapshotLatest := &AuthDBSnapshotLatest{
-		Kind: "AuthDBSnapshotLatest",
+		Kind: entityKind("AuthDBSnapshotLatest", dryRun),
 		ID:   "latest",
 	}
 
@@ -1775,8 +1779,8 @@ func GetAllAuthProjectRealmsMeta(ctx context.Context) ([]*AuthProjectRealmsMeta,
 //
 // Returns:
 //   - the IDs of the shards that the blob was sequentially written to.
-func shardAuthDB(ctx context.Context, authDBRev int64, blob []byte, maxSize int) ([]string, error) {
-	logging.Debugf(ctx, "sharding AuthDB Rev %d", authDBRev)
+func shardAuthDB(ctx context.Context, authDBRev int64, blob []byte, maxSize int, dryRun bool) ([]string, error) {
+	logging.Debugf(ctx, "sharding AuthDB Rev %d (dry run: %s)", authDBRev, dryRun)
 
 	var shard []byte
 	shardIDs := []string{}
@@ -1788,7 +1792,7 @@ func shardAuthDB(ctx context.Context, authDBRev int64, blob []byte, maxSize int)
 		shard, blob = blob[:maxSize], blob[maxSize:]
 		shardID := fmt.Sprintf("%d:%s", authDBRev, hex.EncodeToString(shard))
 		authDBShard := &AuthDBShard{
-			Kind: "AuthDBShard",
+			Kind: entityKind("AuthDBShard", dryRun),
 			ID:   shardID,
 			Blob: shard,
 		}
@@ -1812,11 +1816,11 @@ func shardAuthDB(ctx context.Context, authDBRev int64, blob []byte, maxSize int)
 // Returns datastore.ErrNoSuchEntity if an AuthDBShard is not present.
 // Returns an annotated error for other errors.
 // Returns the merged AuthDB blob on success.
-func unshardAuthDB(ctx context.Context, shardIDs []string) ([]byte, error) {
+func unshardAuthDB(ctx context.Context, shardIDs []string, dryRun bool) ([]byte, error) {
 	shards := make([]*AuthDBShard, len(shardIDs))
 	for index, id := range shardIDs {
 		shards[index] = &AuthDBShard{
-			Kind: "AuthDBShard",
+			Kind: entityKind("AuthDBShard", dryRun),
 			ID:   id,
 		}
 	}
@@ -1895,6 +1899,16 @@ func (snapshot *AuthDBSnapshot) ToProto() *rpcpb.Snapshot {
 		AuthDbDeflated: snapshot.AuthDBDeflated,
 		CreatedTs:      timestamppb.New(snapshot.CreatedTS),
 	}
+}
+
+// entityKind is a helper function to construct the Kind field for
+// datastore entities, given the base Kind and dry run flag.
+func entityKind(kind string, dryRun bool) string {
+	if dryRun {
+		return DryRunPrefix + kind
+	}
+
+	return kind
 }
 
 // /////////////////////////////////////////////////////////////////////

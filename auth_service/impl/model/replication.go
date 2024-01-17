@@ -86,17 +86,10 @@ func replicate(ctx context.Context, authDBRev int64, dryRun bool) error {
 		return errors.Annotate(err, "failed to pack AuthDB").Err()
 	}
 
-	// Exit early for dry runs.
-	if dryRun {
-		logging.Infof(ctx, "(dry run) replicating AuthDB Rev %d - blob size %d and last modified %s",
-			replicationState.AuthDBRev, len(authDBBlob), replicationState.ModifiedTS)
-		return nil
-	}
-
 	// Put the blob into datastore. Also updates pointer to the latest
 	// stored blob. This is used by the endpoint at
 	// /auth_service/api/v1/authdb/revisions/<rev|"latest">
-	if err := StoreAuthDBSnapshot(ctx, replicationState, authDBBlob); err != nil {
+	if err := StoreAuthDBSnapshot(ctx, replicationState, authDBBlob, dryRun); err != nil {
 		return errors.Annotate(err, "failed to store AuthDBSnapshot to datastore").Err()
 	}
 
