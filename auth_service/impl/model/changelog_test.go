@@ -42,7 +42,7 @@ import (
 func testAuthDBGroupChange(ctx context.Context, target string, changeType ChangeType, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:       "AuthDBChange",
-		Parent:     ChangeLogRevisionKey(ctx, authDBRev),
+		Parent:     ChangeLogRevisionKey(ctx, authDBRev, false),
 		Class:      []string{"AuthDBChange", "AuthDBGroupChange"},
 		ChangeType: changeType,
 		Target:     target,
@@ -62,7 +62,7 @@ func testAuthDBGroupChange(ctx context.Context, target string, changeType Change
 func testAuthDBIPAllowlistChange(ctx context.Context, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:           "AuthDBChange",
-		Parent:         ChangeLogRevisionKey(ctx, authDBRev),
+		Parent:         ChangeLogRevisionKey(ctx, authDBRev, false),
 		Class:          []string{"AuthDBChange", "AuthDBIPWhitelistChange"},
 		ChangeType:     3000,
 		Comment:        "comment",
@@ -83,7 +83,7 @@ func testAuthDBIPAllowlistChange(ctx context.Context, authDBRev int64) *AuthDBCh
 func testAuthDBIPAllowlistAssignmentChange(ctx context.Context, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:        "AuthDBChange",
-		Parent:      ChangeLogRevisionKey(ctx, authDBRev),
+		Parent:      ChangeLogRevisionKey(ctx, authDBRev, false),
 		Class:       []string{"AuthDBChange", "AuthDBIPWhitelistAssignmentChange"},
 		ChangeType:  5100,
 		Comment:     "comment",
@@ -104,7 +104,7 @@ func testAuthDBIPAllowlistAssignmentChange(ctx context.Context, authDBRev int64)
 func testAuthDBConfigChange(ctx context.Context, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:              "AuthDBChange",
-		Parent:            ChangeLogRevisionKey(ctx, authDBRev),
+		Parent:            ChangeLogRevisionKey(ctx, authDBRev, false),
 		Class:             []string{"AuthDBChange", "AuthDBConfigChange"},
 		ChangeType:        7000,
 		Comment:           "comment",
@@ -125,7 +125,7 @@ func testAuthDBConfigChange(ctx context.Context, authDBRev int64) *AuthDBChange 
 func testAuthRealmsGlobalsChange(ctx context.Context, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:             "AuthDBChange",
-		Parent:           ChangeLogRevisionKey(ctx, authDBRev),
+		Parent:           ChangeLogRevisionKey(ctx, authDBRev, false),
 		Class:            []string{"AuthDBChange", "AuthRealmsGlobalsChange"},
 		ChangeType:       9000,
 		Comment:          "comment",
@@ -145,7 +145,7 @@ func testAuthRealmsGlobalsChange(ctx context.Context, authDBRev int64) *AuthDBCh
 func testAuthProjectRealmsChange(ctx context.Context, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
 		Kind:         "AuthDBChange",
-		Parent:       ChangeLogRevisionKey(ctx, authDBRev),
+		Parent:       ChangeLogRevisionKey(ctx, authDBRev, false),
 		Class:        []string{"AuthDBChange", "AuthProjectRealmsChange"},
 		ChangeType:   10200,
 		Comment:      "comment",
@@ -247,9 +247,9 @@ func TestGenerateChanges(t *testing.T) {
 
 		//////////////////////////////////////////////////////////
 		// Helper functions
-		getChanges := func(ctx context.Context, authDBRev int64) []*AuthDBChange {
-			ancestor := constructLogRevisionKey(ctx, authDBRev)
-			query := datastore.NewQuery("AuthDBChange").Ancestor(ancestor)
+		getChanges := func(ctx context.Context, authDBRev int64, dryRun bool) []*AuthDBChange {
+			ancestor := constructLogRevisionKey(ctx, authDBRev, dryRun)
+			query := datastore.NewQuery(entityKind("AuthDBChange", dryRun)).Ancestor(ancestor)
 			changes := []*AuthDBChange{}
 			datastore.Run(ctx, query, func(change *AuthDBChange) {
 				changes = append(changes, change)
@@ -281,7 +281,7 @@ func TestGenerateChanges(t *testing.T) {
 			sort.Slice(actualChanges, func(i, j int) bool {
 				return actualChanges[i].ChangeType < actualChanges[j].ChangeType
 			})
-			SoMsg(msg, getChanges(ctx, authDBRev), ShouldResemble, actualChanges)
+			SoMsg(msg, getChanges(ctx, authDBRev, false), ShouldResemble, actualChanges)
 		}
 		//////////////////////////////////////////////////////////
 
@@ -317,7 +317,7 @@ func TestGenerateChanges(t *testing.T) {
 				sort.Slice(expectedStoredChanges, func(i, j int) bool {
 					return expectedStoredChanges[i].ChangeType < expectedStoredChanges[j].ChangeType
 				})
-				So(getChanges(ctx, 2), ShouldResemble, expectedStoredChanges)
+				So(getChanges(ctx, 2, false), ShouldResemble, expectedStoredChanges)
 			})
 
 			Convey("AuthGroup Owners / Description changed", func() {
@@ -867,6 +867,26 @@ func TestGenerateChanges(t *testing.T) {
 			// Changelog for rev 1 has already been generated, so a task
 			// should not have been added.
 			So(taskScheduler.Tasks(), ShouldHaveLength, 7)
+		})
+
+		Convey("dry run of changelog generation works", func() {
+			agDryRun := makeAuthGroup(ctx, "group-dry-run")
+			_, err := CreateAuthGroup(ctx, agDryRun, false, "Go pRPC API", false)
+			So(err, ShouldBeNil)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+			_, err = generateChanges(ctx, 1, true)
+			So(err, ShouldBeNil)
+
+			// Check the changelog was created in dry run mode.
+			actualChanges := getChanges(ctx, 1, true)
+			So(actualChanges, ShouldHaveLength, 1)
+			So(actualChanges[0].Kind, ShouldEqual, "V2AuthDBChange")
+			So(actualChanges[0].Parent, ShouldEqual, ChangeLogRevisionKey(ctx, 1, true))
+			So(actualChanges[0].ChangeType, ShouldEqual, ChangeGroupCreated)
+			So(actualChanges[0].Owners, ShouldEqual, AdminGroup)
+
+			// Check there were no changes written with dry run mode off.
+			So(getChanges(ctx, 1, false), ShouldBeEmpty)
 		})
 	})
 }

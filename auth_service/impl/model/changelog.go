@@ -232,22 +232,22 @@ type AuthDBChange struct {
 }
 
 // ChangeLogRootKey returns the root key of an entity group with change log.
-func ChangeLogRootKey(ctx context.Context) *datastore.Key {
-	return datastore.NewKey(ctx, "AuthDBLog", "v1", 0, nil)
+func ChangeLogRootKey(ctx context.Context, dryRun bool) *datastore.Key {
+	return datastore.NewKey(ctx, entityKind("AuthDBLog", dryRun), "v1", 0, nil)
 }
 
 // ChangeLogRevisionKey returns the key of entity subgroup that keeps AuthDB
 // change log for a revision.
-func ChangeLogRevisionKey(ctx context.Context, authDBRev int64) *datastore.Key {
-	return datastore.NewKey(ctx, "AuthDBLogRev", "", authDBRev, ChangeLogRootKey(ctx))
+func ChangeLogRevisionKey(ctx context.Context, authDBRev int64, dryRun bool) *datastore.Key {
+	return datastore.NewKey(ctx, entityKind("AuthDBLogRev", dryRun), "", authDBRev, ChangeLogRootKey(ctx, dryRun))
 }
 
-func constructLogRevisionKey(ctx context.Context, authDBRev int64) *datastore.Key {
+func constructLogRevisionKey(ctx context.Context, authDBRev int64, dryRun bool) *datastore.Key {
 	if authDBRev != 0 {
-		return ChangeLogRevisionKey(ctx, authDBRev)
+		return ChangeLogRevisionKey(ctx, authDBRev, dryRun)
 	}
 
-	return ChangeLogRootKey(ctx)
+	return ChangeLogRootKey(ctx, dryRun)
 }
 
 // ChangeID returns the ID of an AuthDBChange entity based on its properties.
@@ -269,7 +269,7 @@ func ChangeID(ctx context.Context, change *AuthDBChange) (string, error) {
 //
 // Returns an annotated error.
 func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pageSize int32, pageToken string) (changes []*AuthDBChange, nextPageToken string, err error) {
-	ancestor := constructLogRevisionKey(ctx, authDBRev)
+	ancestor := constructLogRevisionKey(ctx, authDBRev, false)
 	logging.Infof(ctx, "Ancestor: %v", ancestor)
 
 	query := datastore.NewQuery("AuthDBChange").Ancestor(ancestor).Order("-__key__")
@@ -403,9 +403,9 @@ type diffFunc = func(context.Context, string, datastore.PropertyMap, datastore.P
 // given AuthDB revision.
 //
 // Note: if the AuthDBLogRev is not found, this will return (nil, nil).
-func getAuthDBLogRev(ctx context.Context, authDBRev int64) (*AuthDBLogRev, error) {
+func getAuthDBLogRev(ctx context.Context, authDBRev int64, dryRun bool) (*AuthDBLogRev, error) {
 	logRev := &AuthDBLogRev{}
-	if populated := datastore.PopulateKey(logRev, ChangeLogRevisionKey(ctx, authDBRev)); !populated {
+	if populated := datastore.PopulateKey(logRev, ChangeLogRevisionKey(ctx, authDBRev, dryRun)); !populated {
 		return nil, errors.New("failed getting AuthDBLogRev; problem setting key")
 	}
 
@@ -427,7 +427,7 @@ func getAuthDBLogRev(ctx context.Context, authDBRev int64) (*AuthDBLogRev, error
 // thus no AuthDBChange's were added to the datastore, this will return
 // (nil, nil).
 func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*AuthDBChange, error) {
-	existingLogRev, err := getAuthDBLogRev(ctx, authDBRev)
+	existingLogRev, err := getAuthDBLogRev(ctx, authDBRev, dryRun)
 	if err != nil {
 		return nil, err
 	}
@@ -494,13 +494,16 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 	}
 
 	if dryRun {
-		logging.Infof(ctx, "dryRun: changes generated %v", changes)
-		return changes, nil
+		// Update each AuthDBChange Kind and Parent for dry run mode.
+		for _, c := range changes {
+			c.Kind = entityKind(c.Kind, dryRun)
+			c.Parent = constructLogRevisionKey(ctx, authDBRev, dryRun)
+		}
 	}
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Check if the changelog was processed concurrently.
-		existingLogRev, err := getAuthDBLogRev(ctx, authDBRev)
+		existingLogRev, err := getAuthDBLogRev(ctx, authDBRev, dryRun)
 		if err != nil {
 			return err
 		}
@@ -513,14 +516,20 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 
 		// Save the changelog and mark it as processed.
 		logRev := &AuthDBLogRev{
-			Kind:       "AuthDBLogRev",
+			Kind:       entityKind("AuthDBLogRev", dryRun),
 			ID:         authDBRev,
-			Parent:     ChangeLogRootKey(ctx),
+			Parent:     ChangeLogRootKey(ctx, dryRun),
 			When:       clock.Now(ctx).UTC(),
 			AppVersion: info.ImageVersion(ctx),
 		}
 		if err := datastore.Put(ctx, changes, logRev); err != nil {
 			return err
+		}
+
+		if dryRun {
+			// In dry run mode, skip attempting to trigger changelog
+			// generation for previous revision.
+			return nil
 		}
 
 		// Enqueue a task to process previous revision if not yet done.
@@ -529,7 +538,7 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 			return nil
 		}
 		prevAuthDBRev := authDBRev - 1
-		existingPrevLogRev, err := getAuthDBLogRev(ctx, prevAuthDBRev)
+		existingPrevLogRev, err := getAuthDBLogRev(ctx, prevAuthDBRev, dryRun)
 		if err != nil {
 			// Non-fatal, just log the error; this enqueuing is for redundancy.
 			logging.Errorf(
@@ -562,7 +571,7 @@ func diffLists(old, new []string) ([]string, []string) {
 
 // Populates the fields common to all AuthDBChanges; returns the populated AuthDBChange for convenience.
 func populateCommonFields(ctx context.Context, ct ChangeType, target string, authDBRev int64, class string, a *AuthDBChange) *AuthDBChange {
-	a.Parent = constructLogRevisionKey(ctx, authDBRev)
+	a.Parent = constructLogRevisionKey(ctx, authDBRev, false)
 	a.Kind = "AuthDBChange"
 	a.ID = fmt.Sprintf("%s!%d", target, ct)
 	a.Class = []string{"AuthDBChange", class}

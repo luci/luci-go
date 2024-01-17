@@ -42,7 +42,7 @@ func TestChangeLogsServer(t *testing.T) {
 			&model.AuthDBChange{
 				Kind:           "AuthDBChange",
 				ID:             "AuthIPWhitelist$a!3000",
-				Parent:         model.ChangeLogRevisionKey(ctx, 10000),
+				Parent:         model.ChangeLogRevisionKey(ctx, 10000, false),
 				Class:          []string{"AuthDBChange", "AuthDBIPWhitelistChange"},
 				ChangeType:     3000,
 				Comment:        "comment",
@@ -56,7 +56,7 @@ func TestChangeLogsServer(t *testing.T) {
 			&model.AuthDBChange{
 				Kind:              "AuthDBChange",
 				ID:                "AuthGlobalConfig$test!7000",
-				Parent:            model.ChangeLogRevisionKey(ctx, 10000),
+				Parent:            model.ChangeLogRevisionKey(ctx, 10000, false),
 				Class:             []string{"AuthDBChange", "AuthDBConfigChange"},
 				ChangeType:        7000,
 				Comment:           "comment",
@@ -70,7 +70,7 @@ func TestChangeLogsServer(t *testing.T) {
 			&model.AuthDBChange{
 				Kind:             "AuthDBChange",
 				ID:               "AuthRealmsGlobals$globals!9000",
-				Parent:           model.ChangeLogRevisionKey(ctx, 10020),
+				Parent:           model.ChangeLogRevisionKey(ctx, 10020, false),
 				Class:            []string{"AuthDBChange", "AuthRealmsGlobalsChange"},
 				ChangeType:       9000,
 				Comment:          "comment",
