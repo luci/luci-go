@@ -381,6 +381,123 @@ func TestBotLevel(t *testing.T) {
 	})
 }
 
+func TestTaskLevel(t *testing.T) {
+	const (
+		unknownID    identity.Identity = "user:unknown@example.com"
+		adminID      identity.Identity = "user:admin@example.com"
+		authorizedID identity.Identity = "user:authorized@example.com"
+	)
+
+	t.Parallel()
+
+	ctx := context.Background()
+
+	cfg := mockedConfig(&configpb.AuthSettings{
+		AdminsGroup: "admins",
+	}, map[string]string{
+		"visible-pool": "project:visible-pool-realm",
+		"hidden-pool":  "project:hidden-pool-realm",
+	}, map[string][]string{
+		"visible-bot": {"visible-pool", "hidden-pool"},
+		"hidden-bot":  {"hidden-pool"},
+	})
+
+	db := authtest.NewFakeDB(
+		authtest.MockMembership(adminID, "admins"),
+		authtest.MockPermission(authorizedID, "project:visible-task-realm", PermTasksCancel),
+		authtest.MockPermission(authorizedID, "project:visible-pool-realm", PermPoolsCancelTask),
+	)
+
+	checkCanCancel := func(caller identity.Identity, info TaskAuthInfo) bool {
+		info.TaskID = "65aba3a3e6b99310"
+		chk := Checker{cfg: cfg, db: db, caller: caller}
+		res := chk.CheckTaskPerm(ctx, info, PermTasksCancel)
+		So(res.InternalError, ShouldBeFalse)
+		return res.Permitted
+	}
+
+	Convey("Unknown", t, func() {
+		So(checkCanCancel(unknownID, TaskAuthInfo{
+			Realm:     "project:visible-task-realm",
+			Pool:      "visible-pool",
+			Submitter: authorizedID,
+		}), ShouldBeFalse)
+	})
+
+	Convey("Submitter", t, func() {
+		So(checkCanCancel(unknownID, TaskAuthInfo{
+			Realm:     "project:doesnt-matter",
+			Pool:      "doesnt-matter",
+			Submitter: unknownID,
+		}), ShouldBeTrue)
+	})
+
+	Convey("Admin", t, func() {
+		So(checkCanCancel(adminID, TaskAuthInfo{
+			Realm:     "project:doesnt-matter",
+			Pool:      "doesnt-matter",
+			Submitter: unknownID,
+		}), ShouldBeTrue)
+	})
+
+	Convey("Via task realm", t, func() {
+		So(checkCanCancel(authorizedID, TaskAuthInfo{
+			Realm:     "project:visible-task-realm",
+			Pool:      "doesnt-matter",
+			Submitter: unknownID,
+		}), ShouldBeTrue)
+
+		So(checkCanCancel(authorizedID, TaskAuthInfo{
+			Realm:     "project:hidden-task-realm",
+			Pool:      "doesnt-matter",
+			Submitter: unknownID,
+		}), ShouldBeFalse)
+	})
+
+	Convey("Via pool realm", t, func() {
+		So(checkCanCancel(authorizedID, TaskAuthInfo{
+			Realm:     "project:doesnt-matter",
+			Pool:      "visible-pool",
+			Submitter: unknownID,
+		}), ShouldBeTrue)
+
+		So(checkCanCancel(authorizedID, TaskAuthInfo{
+			Realm:     "project:doesnt-matter",
+			Pool:      "hidden-pool",
+			Submitter: unknownID,
+		}), ShouldBeFalse)
+	})
+
+	Convey("Via bot realm", t, func() {
+		So(checkCanCancel(authorizedID, TaskAuthInfo{
+			Realm:     "project:doesnt-matter",
+			BotID:     "visible-bot",
+			Submitter: unknownID,
+		}), ShouldBeTrue)
+
+		So(checkCanCancel(authorizedID, TaskAuthInfo{
+			Realm:     "project:doesnt-matter",
+			BotID:     "hidden-bot",
+			Submitter: unknownID,
+		}), ShouldBeFalse)
+	})
+
+	Convey("Error message", t, func() {
+		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
+		res := chk.CheckTaskPerm(ctx, TaskAuthInfo{
+			TaskID:    "65aba3a3e6b99310",
+			Realm:     "project:doesnt-matter",
+			BotID:     "hidden-bot",
+			Submitter: unknownID,
+		}, PermTasksCancel)
+		So(res.InternalError, ShouldBeFalse)
+		err := res.ToGrpcErr()
+		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		So(err, ShouldErrLike, `the caller "user:authorized@example.com" doesn't have `+
+			`permission "swarming.tasks.cancel" for the task "65aba3a3e6b99310"`)
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // allPermissions returns all registered Swarming permissions.

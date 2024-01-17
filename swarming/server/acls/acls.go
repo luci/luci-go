@@ -17,6 +17,7 @@ package acls
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -328,16 +329,89 @@ func (chk *Checker) CheckAnyPoolsPerm(ctx context.Context, pools []string, perm 
 
 // CheckTaskPerm checks if the caller has a permission in a specific task.
 //
+// Only accepts permissions targeting a single existing task: PermTasksGet and
+// PermTasksCancel. Panics if asked to check any other permission.
+//
 // It checks individual task ACL (based on task realm), as well as task's pool
-// permissions (via CheckPoolPerm).
+// ACL. The idea is that the caller can either "own" the task or "own" the bot
+// pool it was scheduled to run on. E.g. for a task to be visible, the caller
+// either needs PermTasksGet in the task's realm, or PermPoolsListTasks in the
+// bot pool realm. This function checks both.
 func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm realms.Permission) CheckResult {
-	// TODO(vadimsh): Implement.
-	// Check submitter == caller.
-	// Check the server level permission.
-	// Check the task realm permission.
-	// Check the assigned pool permission.
-	// Check bot's pool permissions.
-	return chk.CheckServerPerm(ctx, perm)
+	// Look up a matching pool level permission to check it in the task's pool.
+	var poolPerm realms.Permission
+	switch perm {
+	case PermTasksGet:
+		poolPerm = PermPoolsListTasks
+	case PermTasksCancel:
+		poolPerm = PermPoolsCancelTask
+	default:
+		panic(fmt.Sprintf("not a task-level permission %q", perm))
+	}
+
+	// Whoever submitted the task has full control over it.
+	if task.Submitter == chk.caller {
+		return CheckResult{Permitted: true}
+	}
+
+	// If have a server-level permission, no need to check anything else. Note
+	// that on the server level task<->pool permission pairs like PermTasksGet and
+	// PermPoolsListTasks are treated identically, so it is sufficient to check
+	// only `perm` (and skip checking `poolPerm`: the outcome will be the same).
+	if res := chk.CheckServerPerm(ctx, perm); res.Permitted || res.InternalError {
+		return res
+	}
+
+	// Check if the caller has the permission in the task's own realm.
+	switch yes, err := chk.db.HasPermission(ctx, chk.caller, perm, task.Realm, nil); {
+	case err != nil:
+		logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, task.Realm, err)
+		return CheckResult{InternalError: true}
+	case yes:
+		return CheckResult{Permitted: true}
+	}
+
+	// Check if the caller has the matching permission in the task's assigned
+	// pool. If the task has no pool assigned but instead was scheduled to run on
+	// a concrete bot (happens for termination tasks), check if the caller has
+	// the permission in this bot's pool.
+	//
+	// Note that when both Pool and BotID fields are set, Pool should take
+	// precedence, since the pool is what we check when submitting tasks (i.e. for
+	// a new task with dimensions `{"pool": ..., "bot": ...}` only "pool" is being
+	// used in permission checks and "bot" is completely unrestricted). Checking
+	// pool here as well results in more consistent behavior.
+	//
+	// Note that it is forbidden to submit arbitrary tasks without a pool through
+	// the public API. They can be submitted only by the Swarming server
+	// internally.
+	var poolsToCheck []string
+	if task.Pool != "" {
+		poolsToCheck = []string{task.Pool}
+	} else if task.BotID != "" {
+		poolsToCheck = chk.cfg.BotGroup(task.BotID).Pools()
+	}
+	if len(poolsToCheck) != 0 {
+		oneAllowed := false
+		ok := chk.visitRealms(ctx, poolsToCheck, poolPerm, func(_ string, allowed bool) bool {
+			oneAllowed = oneAllowed || allowed
+			return !oneAllowed
+		})
+		switch {
+		case !ok:
+			return CheckResult{InternalError: true}
+		case oneAllowed:
+			return CheckResult{Permitted: true}
+		}
+	}
+
+	// TODO(vadimsh): Make the error message more informative.
+	return CheckResult{
+		err: status.Errorf(
+			codes.PermissionDenied,
+			"the caller %q doesn't have permission %q for the task %q",
+			chk.caller, perm, task.TaskID),
+	}
 }
 
 // CheckBotPerm checks if the caller has a permission in a specific bot.

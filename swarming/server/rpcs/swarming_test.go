@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -43,7 +45,9 @@ func TestSwarmingServer(t *testing.T) {
 			authorizedID identity.Identity = "user:authorized@example.com"
 			submitterID  identity.Identity = "user:submitter@example.com"
 
-			taskID = "65aba3a3e6b99310"
+			allowedTaskID   = "65aba3a3e6b99310"
+			forbiddenTaskID = "65aba3a3e6b99410"
+			unknownTaskID   = "65aba3a3e6b99510"
 		)
 
 		configs := MockedConfigs{
@@ -61,10 +65,6 @@ func TestSwarmingServer(t *testing.T) {
 					{
 						Name:  []string{"hidden-pool-1", "hidden-pool-2"},
 						Realm: "project:hidden-realm",
-					},
-					{
-						Name:  []string{"task-pool"},
-						Realm: "project:task-pool-realm",
 					},
 				},
 			},
@@ -99,44 +99,39 @@ func TestSwarmingServer(t *testing.T) {
 			db.AddMocks(authtest.MockPermission(authorizedID, "project:visible-realm", perm))
 		}
 
+		expectedVisiblePools := []string{
+			"visible-pool-1",
+			"visible-pool-2",
+		}
+
 		ctx := memory.Use(context.Background())
 
-		key, err := model.TaskIDToRequestKey(ctx, taskID)
-		So(err, ShouldBeNil)
-		So(datastore.Put(ctx, &model.TaskRequest{
-			Key:           key,
-			Realm:         "project:task-realm",
-			Authenticated: submitterID,
-			TaskSlices: []model.TaskSlice{
-				{
-					Properties: model.TaskProperties{
-						Dimensions: map[string][]string{
-							"pool": {"task-pool"},
-						},
-					},
-				},
-			},
-		}), ShouldBeNil)
+		createFakeTask(ctx, allowedTaskID, "project:task-realm", "visible-pool-1", submitterID)
+		createFakeTask(ctx, forbiddenTaskID, "project:hidden-realm", "hidden-pool-1", unknownID)
 
 		srv := SwarmingServer{}
 
-		call := func(caller identity.Identity, botID, taskID string, tags []string) *apipb.ClientPermissions {
+		callWithErr := func(caller identity.Identity, botID, taskID string, tags []string) (*apipb.ClientPermissions, error) {
 			ctx := MockRequestState(ctx, MockedRequestState{
 				Caller:  caller,
 				AuthDB:  db,
 				Configs: configs,
 			})
-			resp, err := srv.GetPermissions(ctx, &apipb.PermissionsRequest{
+			return srv.GetPermissions(ctx, &apipb.PermissionsRequest{
 				BotId:  botID,
 				TaskId: taskID,
 				Tags:   tags,
 			})
+		}
+
+		call := func(caller identity.Identity, botID, taskID string, tags []string) *apipb.ClientPermissions {
+			resp, err := callWithErr(caller, botID, taskID, tags)
 			So(err, ShouldBeNil)
 			return resp
 		}
 
 		Convey("Admin", func() {
-			So(call(adminID, "", taskID, nil), ShouldResembleProto, &apipb.ClientPermissions{
+			So(call(adminID, "", allowedTaskID, nil), ShouldResembleProto, &apipb.ClientPermissions{
 				DeleteBot:         true,
 				DeleteBots:        true,
 				TerminateBot:      true,
@@ -148,14 +143,12 @@ func TestSwarmingServer(t *testing.T) {
 				ListBots: []string{
 					"hidden-pool-1",
 					"hidden-pool-2",
-					"task-pool",
 					"visible-pool-1",
 					"visible-pool-2",
 				},
 				ListTasks: []string{
 					"hidden-pool-1",
 					"hidden-pool-2",
-					"task-pool",
 					"visible-pool-1",
 					"visible-pool-2",
 				},
@@ -163,7 +156,7 @@ func TestSwarmingServer(t *testing.T) {
 		})
 
 		Convey("Unknown", func() {
-			So(call(unknownID, "", taskID, nil), ShouldResembleProto, &apipb.ClientPermissions{
+			So(call(unknownID, "", allowedTaskID, nil), ShouldResembleProto, &apipb.ClientPermissions{
 				// All empty.
 			})
 		})
@@ -175,8 +168,8 @@ func TestSwarmingServer(t *testing.T) {
 					CancelTask:  true,
 					CancelTasks: true,
 					DeleteBots:  true,
-					ListBots:    []string{"visible-pool-1", "visible-pool-2"},
-					ListTasks:   []string{"visible-pool-1", "visible-pool-2"},
+					ListBots:    expectedVisiblePools,
+					ListTasks:   expectedVisiblePools,
 				},
 			)
 		})
@@ -185,14 +178,34 @@ func TestSwarmingServer(t *testing.T) {
 			So(call(authorizedID, "", "", []string{"pool:hidden-pool-1"}),
 				ShouldResembleProto,
 				&apipb.ClientPermissions{
-					ListBots:  []string{"visible-pool-1", "visible-pool-2"},
-					ListTasks: []string{"visible-pool-1", "visible-pool-2"},
+					ListBots:  expectedVisiblePools,
+					ListTasks: expectedVisiblePools,
 				},
 			)
 		})
 
 		Convey("Accessing task", func() {
-			// TODO(vadimsh): Add a test once CheckTaskPerm is implemented.
+			So(call(authorizedID, "", allowedTaskID, nil),
+				ShouldResembleProto,
+				&apipb.ClientPermissions{
+					CancelTask: true,
+					ListBots:   expectedVisiblePools,
+					ListTasks:  expectedVisiblePools,
+				},
+			)
+
+			So(call(authorizedID, "", forbiddenTaskID, nil),
+				ShouldResembleProto,
+				&apipb.ClientPermissions{
+					ListBots:  expectedVisiblePools,
+					ListTasks: expectedVisiblePools,
+				},
+			)
+
+			// We allow leaking existence of a task ID for better error message. Task
+			// ID is mostly random and it doesn't have any private bits in it.
+			_, err := callWithErr(authorizedID, "", unknownTaskID, nil)
+			So(err, ShouldHaveGRPCStatus, codes.NotFound)
 		})
 
 		Convey("Accessing bot", func() {
@@ -201,18 +214,37 @@ func TestSwarmingServer(t *testing.T) {
 				&apipb.ClientPermissions{
 					DeleteBot:    true,
 					TerminateBot: true,
-					ListBots:     []string{"visible-pool-1", "visible-pool-2"},
-					ListTasks:    []string{"visible-pool-1", "visible-pool-2"},
+					ListBots:     expectedVisiblePools,
+					ListTasks:    expectedVisiblePools,
 				},
 			)
 
 			So(call(authorizedID, "hidden-bot", "", nil),
 				ShouldResembleProto,
 				&apipb.ClientPermissions{
-					ListBots:  []string{"visible-pool-1", "visible-pool-2"},
-					ListTasks: []string{"visible-pool-1", "visible-pool-2"},
+					ListBots:  expectedVisiblePools,
+					ListTasks: expectedVisiblePools,
 				},
 			)
 		})
 	})
+}
+
+func createFakeTask(ctx context.Context, taskID, realm, pool string, submitterID identity.Identity) {
+	key, err := model.TaskIDToRequestKey(ctx, taskID)
+	So(err, ShouldBeNil)
+	So(datastore.Put(ctx, &model.TaskRequest{
+		Key:           key,
+		Realm:         realm,
+		Authenticated: submitterID,
+		TaskSlices: []model.TaskSlice{
+			{
+				Properties: model.TaskProperties{
+					Dimensions: map[string][]string{
+						"pool": {pool},
+					},
+				},
+			},
+		},
+	}), ShouldBeNil)
 }
