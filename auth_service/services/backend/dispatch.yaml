@@ -1,0 +1,8 @@
+dispatch:
+# Add override of routing rules so that TQ tasks enqueued to the
+# process-auth-db-change and replication queues by either the Python or
+# Go version of Auth Service are served by the Go version.
+- url: "*/internal/tasks/t/process-auth-db-change/*"
+  service: backendv2
+- url: "*/internal/tasks/t/replication/*"
+  service: backendv2
