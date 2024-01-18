@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Rpc } from '@/proto_utils/types';
+
 export type PrpcMethod<Req, Ret> = (req: Req) => Promise<Ret>;
 
 export type PrpcMethodRequest<T> = T extends PrpcMethod<infer Req, infer _Res>
@@ -30,10 +32,6 @@ export type PrpcServiceMethodKeys<S> = keyof {
 } &
   // Limit to string keys.
   string;
-
-interface Rpc {
-  request(service: string, method: string, data: unknown): Promise<unknown>;
-}
 
 export interface PrpcQueryBaseOptions<S, MK, Req> {
   /**

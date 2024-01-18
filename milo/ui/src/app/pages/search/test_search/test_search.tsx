@@ -15,9 +15,9 @@
 import Box from '@mui/material/Box';
 import { useParams } from 'react-router-dom';
 
-import { SearchInput } from '@/common/components/search_input';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
+import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
