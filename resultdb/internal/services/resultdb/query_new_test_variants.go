@@ -116,6 +116,7 @@ func findNewTests(ctx context.Context, baselineProject, baselineID string, allIn
 		return nil, nil
 	}
 
+	// Status 5 == SKIPPED.
 	st := spanner.NewStatement(`
 		SELECT DISTINCT
 			tr.TestId,
@@ -124,8 +125,9 @@ func findNewTests(ctx context.Context, baselineProject, baselineID string, allIn
 			SELECT
 				TestId,
 				VariantHash,
+				Status,
 			FROM TestResults
-			WHERE InvocationId IN UNNEST(@allInvs)
+			WHERE Status != 5 AND InvocationId IN UNNEST(@allInvs)
 		) tr
 		LEFT JOIN (
 			SELECT

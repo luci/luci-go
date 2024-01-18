@@ -393,6 +393,8 @@ func TestE2E(t *testing.T) {
 			insert.TestResults("inv1", "C", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
 			insert.TestResults("inv2", "D", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
 			insert.TestResults("inv3", "E", v, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			// This is Skipped, so F should not be in the final set.
+			insert.TestResults("inv1", "F", v, pb.TestStatus_SKIP),
 		)...)
 
 		// BaselineTestVariants (meaning that they were run previously with a successful run)

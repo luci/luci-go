@@ -208,5 +208,25 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res, ShouldResemble, exp)
 		})
+
+		Convey(`Mark skipped test should be skipped`, func() {
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				[]*spanner.Mutation{insert.Invocation("inv4", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"})},
+				insert.TestResults("inv4", "testId8002", pbutil.Variant("a", "b"), pb.TestStatus_SKIP),
+			)...)
+
+			err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv4"))
+			So(err, ShouldBeNil)
+
+			exp := &btv.BaselineTestVariant{
+				Project:     "testproject",
+				BaselineID:  "try:linux-rel",
+				TestID:      "testId8002",
+				VariantHash: pbutil.VariantHash(pbutil.Variant("a", "b")),
+			}
+
+			_, err = btv.Read(span.Single(ctx), exp.Project, exp.BaselineID, exp.TestID, exp.VariantHash)
+			So(err, ShouldErrLike, btv.NotFound)
+		})
 	})
 }
