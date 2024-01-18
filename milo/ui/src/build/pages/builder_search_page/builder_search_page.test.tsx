@@ -97,19 +97,19 @@ describe('BuilderSearch', () => {
       </FakeContextProvider>,
     );
 
-    fireEvent.change(screen.getByTestId('filter-input'), {
+    fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'builder' },
     });
     act(() => jest.advanceTimersByTime(10));
     expect(screen.queryAllByTestId('builder-data').length).toBe(0);
 
-    fireEvent.change(screen.getByTestId('filter-input'), {
+    fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'builder-id' },
     });
     act(() => jest.advanceTimersByTime(10));
     expect(screen.queryAllByTestId('builder-data').length).toBe(0);
 
-    fireEvent.change(screen.getByTestId('filter-input'), {
+    fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'builder-id-with-suffix' },
     });
     act(() => jest.advanceTimersByTime(300));
@@ -120,14 +120,14 @@ describe('BuilderSearch', () => {
     expect(screen.getByText('builder-id-with-suffix')).toBeInTheDocument();
 
     // Using another filter.
-    fireEvent.change(screen.getByTestId('filter-input'), {
+    fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'another-builder' },
     });
     act(() => jest.advanceTimersByTime(10));
     expect(screen.getAllByTestId('builder-data').length).toBe(1);
     expect(screen.getByText('builder-id-with-suffix')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByTestId('filter-input'), {
+    fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'another-builder-id' },
     });
     act(() => jest.runAllTimers());

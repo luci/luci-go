@@ -14,7 +14,6 @@
 
 import { Alert, Link, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
-import { ChangeEvent } from 'react';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
@@ -32,16 +31,16 @@ export const ProjectSearch = () => {
   const searchQuery = searchParams.get('q') || '';
   const authState = useAuthState();
 
-  const handleSearchQueryChange = (
-    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
-  ) => {
-    const pendingSearchQuery = e.target.value;
-    if (pendingSearchQuery === '') {
-      searchParams.delete('q');
-    } else {
-      searchParams.set('q', pendingSearchQuery);
-    }
-    setSearchParams(searchParams);
+  const handleSearchQueryChange = (newSearchQuery: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newSearchQuery === '') {
+        next.delete('q');
+      } else {
+        next.set('q', newSearchQuery);
+      }
+      return next;
+    });
   };
 
   return (
@@ -49,8 +48,9 @@ export const ProjectSearch = () => {
       <PageMeta title="Projects" selectedPage={UiPage.ProjectSearch} />
       <SearchInput
         placeholder="Filter projects"
-        onInputChange={handleSearchQueryChange}
+        onValueChange={handleSearchQueryChange}
         value={searchQuery}
+        initDelayMs={100}
         // This is the sole purpose of the page. It's OK to autofocus.
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus

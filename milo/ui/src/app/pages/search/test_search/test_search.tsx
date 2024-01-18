@@ -13,13 +13,11 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
-import { ChangeEvent, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useDebounce } from 'react-use';
 
+import { SearchInput } from '@/common/components/search_input';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
-import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -31,28 +29,17 @@ export const TestSearch = () => {
   const { project } = useParams();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const searchQuery = searchParams.get('q') || '';
-  const [pendingSearchQuery, setPendingSearchQuery] = useState(searchQuery);
 
-  useDebounce(
-    () => {
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        if (pendingSearchQuery === '') {
-          next.delete('q');
-        } else {
-          next.set('q', pendingSearchQuery);
-        }
-        return next;
-      });
-    },
-    600,
-    [pendingSearchQuery],
-  );
-
-  const handleSearchQueryChange = (
-    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
-  ) => {
-    setPendingSearchQuery(e.target.value);
+  const handleSearchQueryChange = (newSearchQuery: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newSearchQuery === '') {
+        next.delete('q');
+      } else {
+        next.set('q', newSearchQuery);
+      }
+      return next;
+    });
   };
 
   const selectedProject = project || DEFAULT_TEST_PROJECT;
@@ -66,8 +53,9 @@ export const TestSearch = () => {
       />
       <SearchInput
         placeholder="Search tests in the specified project"
-        onInputChange={handleSearchQueryChange}
-        value={pendingSearchQuery}
+        onValueChange={handleSearchQueryChange}
+        value={searchQuery}
+        initDelayMs={600}
       />
       <Box sx={{ mt: 5 }}>
         <TestList searchQuery={searchQuery} project={selectedProject} />

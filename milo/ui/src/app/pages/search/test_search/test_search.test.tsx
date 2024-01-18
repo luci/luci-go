@@ -75,7 +75,7 @@ describe('TestSearch', () => {
         <TestSearch />
       </FakeContextProvider>,
     );
-    fireEvent.change(screen.getByTestId('filter-input'), {
+    fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'query' },
     });
 
@@ -100,12 +100,12 @@ describe('TestSearch', () => {
         <TestSearch />
       </FakeContextProvider>,
     );
-    fireEvent.change(screen.getByTestId('filter-input'), {
+    fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'test_id' },
     });
     expect(screen.queryByText('test_id_1')).not.toBeInTheDocument();
     expect(screen.queryByText('test_id_2')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByTestId('filter-input'), {
+    fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'test_id_2' },
     });
     act(() => jest.advanceTimersByTime(600));

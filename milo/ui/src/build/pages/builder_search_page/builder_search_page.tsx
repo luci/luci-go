@@ -13,8 +13,6 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
-import { ChangeEvent, useState } from 'react';
-import { useDebounce } from 'react-use';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
@@ -27,25 +25,17 @@ import { BuilderList } from './builder_list';
 export const BuilderSearch = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const searchQuery = searchParams.get('q') || '';
-  const [pendingSearchQuery, setPendingSearchQuery] = useState(searchQuery);
 
-  useDebounce(
-    () => {
-      if (pendingSearchQuery === '') {
-        searchParams.delete('q');
+  const handleSearchQueryChange = (newSearchQuery: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newSearchQuery === '') {
+        next.delete('q');
       } else {
-        searchParams.set('q', pendingSearchQuery);
+        next.set('q', newSearchQuery);
       }
-      setSearchParams(searchParams);
-    },
-    300,
-    [pendingSearchQuery],
-  );
-
-  const handleSearchQueryChange = (
-    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
-  ) => {
-    setPendingSearchQuery(e.target.value);
+      return next;
+    });
   };
 
   return (
@@ -53,8 +43,9 @@ export const BuilderSearch = () => {
       <PageMeta title="Builder search" selectedPage={UiPage.BuilderSearch} />
       <SearchInput
         placeholder="Search builders"
-        onInputChange={handleSearchQueryChange}
-        value={pendingSearchQuery}
+        onValueChange={(v) => handleSearchQueryChange(v)}
+        value={searchQuery}
+        initDelayMs={300}
       />
       <Box sx={{ mt: 5 }}>
         <BuilderList searchQuery={searchQuery} />
