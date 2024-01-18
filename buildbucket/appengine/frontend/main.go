@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
+	"go.chromium.org/luci/buildbucket/appengine/internal/redirect"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -162,6 +163,7 @@ func main() {
 		cron.RegisterHandler("update_project_config", config.UpdateProjectCfg)
 		cron.RegisterHandler("reset_expired_leases", buildcron.ResetExpiredLeases)
 		cron.RegisterHandler("remove_inactive_builder_stats", buildercron.RemoveInactiveBuilderStats)
+		redirect.InstallHandlers(srv.Routes)
 
 		// PubSub push handler processing messages
 		oidcMW := router.NewMiddlewareChain(
