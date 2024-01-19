@@ -207,6 +207,18 @@ func testAuthProjectRealms(ctx context.Context, projectName string) *AuthProject
 	}
 }
 
+func testAuthProjectRealmsMeta(ctx context.Context, projectName string, cfgRev string) *AuthProjectRealmsMeta {
+	return &AuthProjectRealmsMeta{
+		Kind:         "AuthProjectRealmsMeta",
+		ID:           "meta",
+		Parent:       projectRealmsKey(ctx, projectName),
+		ConfigRev:    cfgRev,
+		PermsRev:     "permissions.cfg:123",
+		ConfigDigest: "test config digest",
+		ModifiedTS:   testCreatedTS,
+	}
+}
+
 func testAuthDBSnapshotSharded(ctx context.Context, rev int64, shardCount int) (*AuthDBSnapshot, []byte, error) {
 	snapshot := &AuthDBSnapshot{
 		Kind:         "AuthDBSnapshot",
@@ -1476,6 +1488,132 @@ func TestAuthRealmsConfig(t *testing.T) {
 		So(actual, ShouldResembleProto, []*AuthProjectRealms{
 			projectRealmsA,
 			projectRealmsB,
+		})
+	})
+
+	Convey("Testing UpdateAuthProjectRealms", t, func() {
+		permissionsRev := "permissions.cfg:abc"
+		proj1Realms := &protocol.Realms{
+			Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
+			Realms: []*protocol.Realm{
+				{
+					Name: "proj1:@root",
+					Bindings: []*protocol.Binding{
+						{
+							// Permissions p2, z, p1.
+							Permissions: []uint32{0, 1, 2},
+							Principals:  []string{"group:gr1"},
+						},
+					},
+				},
+			},
+		}
+		expandedRealms := []*ExpandedRealms{
+			{
+				CfgRev: &RealmsCfgRev{
+					ProjectID:    "proj1",
+					ConfigRev:    "a1b2c3",
+					ConfigDigest: "test config digest",
+					PermsRev:     "ignored-perms.cfg:321",
+				},
+				Realms: proj1Realms,
+			},
+		}
+		expectedRealms, err := proto.Marshal(proj1Realms)
+		So(err, ShouldBeNil)
+
+		Convey("created for a new project", func() {
+			ctx, ts := getCtx()
+
+			// Check updating realms for a new project works.
+			err := UpdateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
+			So(err, ShouldBeNil)
+			So(ts.Tasks(), ShouldHaveLength, 2)
+			// Check the newly added project realms are as expected.
+			authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
+			So(err, ShouldBeNil)
+			So(authProjectRealms.ID, ShouldEqual, "proj1")
+			So(authProjectRealms.Realms, ShouldResembleProto, expectedRealms)
+			authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
+			So(err, ShouldBeNil)
+			So(authProjectRealmsMeta, ShouldResembleProto, &AuthProjectRealmsMeta{
+				Kind:         "AuthProjectRealmsMeta",
+				ID:           "meta",
+				Parent:       projectRealmsKey(ctx, "proj1"),
+				ConfigRev:    "a1b2c3",
+				PermsRev:     permissionsRev,
+				ConfigDigest: "test config digest",
+				ModifiedTS:   testCreatedTS,
+			})
+		})
+
+		Convey("updated for an existing project", func() {
+			ctx, ts := getCtx()
+
+			originalAuthProjectRealms := testAuthProjectRealms(ctx, "proj1")
+			originalAuthProjectRealmsMeta := testAuthProjectRealmsMeta(ctx, "proj1", "abc123")
+			So(datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), ShouldBeNil)
+
+			// Check updating realms for an existing project works.
+			err = UpdateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
+			So(err, ShouldBeNil)
+			So(ts.Tasks(), ShouldHaveLength, 2)
+			// Check the newly added project realms are as expected.
+			authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
+			So(err, ShouldBeNil)
+			So(authProjectRealms.ID, ShouldEqual, "proj1")
+			So(authProjectRealms.Realms, ShouldResembleProto, expectedRealms)
+			authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
+			So(err, ShouldBeNil)
+			So(authProjectRealmsMeta, ShouldResembleProto, &AuthProjectRealmsMeta{
+				Kind:         "AuthProjectRealmsMeta",
+				ID:           "meta",
+				Parent:       projectRealmsKey(ctx, "proj1"),
+				ConfigRev:    expandedRealms[0].CfgRev.ConfigRev,
+				PermsRev:     permissionsRev,
+				ConfigDigest: expandedRealms[0].CfgRev.ConfigDigest,
+				ModifiedTS:   testCreatedTS,
+			})
+		})
+
+		Convey("updating with dry run mode changes nothing", func() {
+			Convey("for a new project", func() {
+				ctx, ts := getCtx()
+
+				// Check updating realms for a new project succeeds but doesn't
+				// create an AuthProjectRealms or AuthProjectRealmsMeta entity.
+				err := UpdateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
+				So(err, ShouldBeNil)
+				So(ts.Tasks(), ShouldHaveLength, 0)
+				authProjectRealms, err := GetAllAuthProjectRealms(ctx)
+				So(err, ShouldBeNil)
+				So(authProjectRealms, ShouldBeEmpty)
+				authProjectRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
+				So(err, ShouldBeNil)
+				So(authProjectRealmsMeta, ShouldBeEmpty)
+			})
+
+			Convey("for an existing project", func() {
+				ctx, ts := getCtx()
+
+				originalAuthProjectRealms := testAuthProjectRealms(ctx, "proj1")
+				originalAuthProjectRealmsMeta := testAuthProjectRealmsMeta(ctx, "proj1", "abc123")
+				So(datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), ShouldBeNil)
+
+				// Check updating realms for a new project succeeds but doesn't
+				// update the AuthProjectRealms or AuthProjectRealmsMeta entity.
+				err = UpdateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
+				So(err, ShouldBeNil)
+				So(ts.Tasks(), ShouldHaveLength, 0)
+
+				// Check the newly added project realms are unchanged.
+				authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
+				So(err, ShouldBeNil)
+				So(authProjectRealms, ShouldResembleProto, originalAuthProjectRealms)
+				authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
+				So(err, ShouldBeNil)
+				So(authProjectRealmsMeta, ShouldResembleProto, originalAuthProjectRealmsMeta)
+			})
 		})
 	})
 

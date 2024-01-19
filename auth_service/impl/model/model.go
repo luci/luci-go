@@ -1731,9 +1731,15 @@ func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 			currentMeta.ModifiedTS = now
 			metas = append(metas, currentMeta)
 		}
-		if err := datastore.Put(ctx, metas); err != nil {
-			return errors.Annotate(err, "failed trying to put AuthProjectRealmsMeta").Err()
+
+		if dryRun {
+			logging.Infof(ctx, "(dry run) updating metadata for project realms")
+		} else {
+			if err := datastore.Put(ctx, metas); err != nil {
+				return errors.Annotate(err, "failed trying to put AuthProjectRealmsMeta").Err()
+			}
 		}
+
 		return nil
 	})
 }
