@@ -22,7 +22,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "go.chromium.org/luci/tree_status/proto/v1";
 
 service TreeStatus {
-  // List all status values for a tree in chronological order.
+  // List all status values for a tree in reverse chronological order.
   rpc ListStatus(ListStatusRequest) returns (ListStatusResponse) {};
 
   // Get a status for a tree.
@@ -74,7 +74,8 @@ message Status {
   GeneralState general_state = 2;
   // The message explaining details about the status.  This may contain HTML,
   // it is the responsibility of the caller to sanitize the HTML before display.
-  // Maximum length of 1024 bytes.
+  // Maximum length of 1024 bytes.  Must be a valid UTF-8 string in normalized form
+  // C without any non-printable runes.
   string message = 3;
   // The email address of the user who added this.  May be empty if
   // the reader does not have permission to see personal data.  Will also be

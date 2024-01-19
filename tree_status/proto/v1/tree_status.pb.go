@@ -173,7 +173,8 @@ type Status struct {
 	GeneralState GeneralState `protobuf:"varint,2,opt,name=general_state,json=generalState,proto3,enum=luci.tree_status.v1.GeneralState" json:"general_state,omitempty"`
 	// The message explaining details about the status.  This may contain HTML,
 	// it is the responsibility of the caller to sanitize the HTML before display.
-	// Maximum length of 1024 bytes.
+	// Maximum length of 1024 bytes.  Must be a valid UTF-8 string in normalized form
+	// C without any non-printable runes.
 	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	// The email address of the user who added this.  May be empty if
 	// the reader does not have permission to see personal data.  Will also be
@@ -662,7 +663,7 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TreeStatusClient interface {
-	// List all status values for a tree in chronological order.
+	// List all status values for a tree in reverse chronological order.
 	ListStatus(ctx context.Context, in *ListStatusRequest, opts ...grpc.CallOption) (*ListStatusResponse, error)
 	// Get a status for a tree.
 	// Use the resource alias 'latest' to get just the current status.
@@ -742,7 +743,7 @@ func (c *treeStatusClient) CreateStatus(ctx context.Context, in *CreateStatusReq
 
 // TreeStatusServer is the server API for TreeStatus service.
 type TreeStatusServer interface {
-	// List all status values for a tree in chronological order.
+	// List all status values for a tree in reverse chronological order.
 	ListStatus(context.Context, *ListStatusRequest) (*ListStatusResponse, error)
 	// Get a status for a tree.
 	// Use the resource alias 'latest' to get just the current status.

@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package v1 contains the proto definitions for the tree status PRPC API.
-package v1
+package rpc
 
-//go:generate cproto
-//go:generate svcdec -type TreeStatusServer
+import (
+	"testing"
+
+	"go.chromium.org/luci/tree_status/internal/testutil"
+)
+
+func TestMain(m *testing.M) {
+	testutil.SpannerTestMain(m)
+}

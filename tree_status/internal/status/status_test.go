@@ -16,6 +16,7 @@ package status
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"cloud.google.com/go/spanner"
@@ -26,16 +27,72 @@ import (
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestValidation(t *testing.T) {
+	Convey("Validate", t, func() {
+		Convey("valid", func() {
+			err := Validate(NewStatusBuilder().Build())
+			So(err, ShouldBeNil)
+		})
+		Convey("tree_name", func() {
+			Convey("must be specified", func() {
+				err := Validate(NewStatusBuilder().WithTreeName("").Build())
+				So(err, ShouldErrLike, "tree: must be specified")
+			})
+			Convey("must match format", func() {
+				err := Validate(NewStatusBuilder().WithTreeName("INVALID").Build())
+				So(err, ShouldErrLike, "tree: expected format")
+			})
+		})
+		Convey("id", func() {
+			Convey("must be specified", func() {
+				err := Validate(NewStatusBuilder().WithStatusID("").Build())
+				So(err, ShouldErrLike, "id: must be specified")
+			})
+			Convey("must match format", func() {
+				err := Validate(NewStatusBuilder().WithStatusID("INVALID").Build())
+				So(err, ShouldErrLike, "id: expected format")
+			})
+		})
+		Convey("general_state", func() {
+			Convey("must be specified", func() {
+				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState_GENERAL_STATE_UNSPECIFIED).Build())
+				So(err, ShouldErrLike, "general_state: must be specified")
+			})
+			Convey("must be a valid enum value", func() {
+				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState(100)).Build())
+				So(err, ShouldErrLike, "general_state: invalid enum value")
+			})
+		})
+		Convey("message", func() {
+			Convey("must be specified", func() {
+				err := Validate(NewStatusBuilder().WithMessage("").Build())
+				So(err, ShouldErrLike, "message: must be specified")
+			})
+			Convey("must not exceed length", func() {
+				err := Validate(NewStatusBuilder().WithMessage(strings.Repeat("a", 1025)).Build())
+				So(err, ShouldErrLike, "message: longer than 1024 bytes")
+			})
+			Convey("invalid utf-8 string", func() {
+				err := Validate(NewStatusBuilder().WithMessage("\xbd").Build())
+				So(err, ShouldErrLike, "message: not a valid utf8 string")
+			})
+			// TODO: unicode tests
+
+		})
+	})
+}
 
 func TestStatusTable(t *testing.T) {
 	Convey("Create", t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		status := newStatusBuilder().Build()
+		status := NewStatusBuilder().Build()
 
-		ts, err := span.Apply(ctx, []*spanner.Mutation{
-			Create(ctx, status, status.CreateUser),
-		})
+		m, err := Create(status, status.CreateUser)
+		So(err, ShouldBeNil)
+		ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 		status.CreateTime = ts.UTC()
 
 		So(err, ShouldBeNil)
@@ -47,7 +104,7 @@ func TestStatusTable(t *testing.T) {
 	Convey("Read", t, func() {
 		Convey("Single", func() {
 			ctx := testutil.SpannerTestContext(t)
-			status := newStatusBuilder().CreateInDB(ctx)
+			status := NewStatusBuilder().CreateInDB(ctx)
 
 			fetched, err := Read(span.Single(ctx), "chromium", status.StatusID)
 
@@ -57,7 +114,7 @@ func TestStatusTable(t *testing.T) {
 
 		Convey("NotPresent", func() {
 			ctx := testutil.SpannerTestContext(t)
-			_ = newStatusBuilder().CreateInDB(ctx)
+			_ = NewStatusBuilder().CreateInDB(ctx)
 
 			_, err := Read(span.Single(ctx), "chromium", "1234")
 
@@ -68,8 +125,8 @@ func TestStatusTable(t *testing.T) {
 	Convey("ReadLatest", t, func() {
 		Convey("Exists", func() {
 			ctx := testutil.SpannerTestContext(t)
-			_ = newStatusBuilder().WithMessage("older").CreateInDB(ctx)
-			expected := newStatusBuilder().WithMessage("newer").CreateInDB(ctx)
+			_ = NewStatusBuilder().WithMessage("older").CreateInDB(ctx)
+			expected := NewStatusBuilder().WithMessage("newer").CreateInDB(ctx)
 
 			fetched, err := ReadLatest(span.Single(ctx), "chromium")
 
@@ -99,8 +156,8 @@ func TestStatusTable(t *testing.T) {
 
 		Convey("Single page", func() {
 			ctx := testutil.SpannerTestContext(t)
-			older := newStatusBuilder().WithMessage("older").CreateInDB(ctx)
-			newer := newStatusBuilder().WithMessage("newer").CreateInDB(ctx)
+			older := NewStatusBuilder().WithMessage("older").CreateInDB(ctx)
+			newer := NewStatusBuilder().WithMessage("newer").CreateInDB(ctx)
 
 			actual, hasNextPage, err := List(span.Single(ctx), "chromium", nil)
 
@@ -112,8 +169,8 @@ func TestStatusTable(t *testing.T) {
 
 		Convey("Paginated", func() {
 			ctx := testutil.SpannerTestContext(t)
-			older := newStatusBuilder().WithMessage("older").CreateInDB(ctx)
-			newer := newStatusBuilder().WithMessage("newer").CreateInDB(ctx)
+			older := NewStatusBuilder().WithMessage("older").CreateInDB(ctx)
+			newer := NewStatusBuilder().WithMessage("newer").CreateInDB(ctx)
 
 			firstPage, hasSecondPage, err1 := List(span.Single(ctx), "chromium", &ListOptions{Offset: 0, Limit: 1})
 			secondPage, hasThirdPage, err2 := List(span.Single(ctx), "chromium", &ListOptions{Offset: 1, Limit: 1})
@@ -132,7 +189,7 @@ type StatusBuilder struct {
 	status Status
 }
 
-func newStatusBuilder() *StatusBuilder {
+func NewStatusBuilder() *StatusBuilder {
 	id, err := GenerateID()
 	So(err, ShouldBeNil)
 	return &StatusBuilder{status: Status{
@@ -143,6 +200,21 @@ func newStatusBuilder() *StatusBuilder {
 		CreateUser:    "user1",
 		CreateTime:    spanner.CommitTimestamp,
 	}}
+}
+
+func (b *StatusBuilder) WithTreeName(treeName string) *StatusBuilder {
+	b.status.TreeName = treeName
+	return b
+}
+
+func (b *StatusBuilder) WithStatusID(id string) *StatusBuilder {
+	b.status.StatusID = id
+	return b
+}
+
+func (b *StatusBuilder) WithGeneralStatus(state pb.GeneralState) *StatusBuilder {
+	b.status.GeneralStatus = state
+	return b
 }
 
 func (b *StatusBuilder) WithMessage(message string) *StatusBuilder {
@@ -156,11 +228,11 @@ func (b *StatusBuilder) Build() *Status {
 }
 
 func (b *StatusBuilder) CreateInDB(ctx context.Context) *Status {
-	status := b.Build()
-	ts, err := span.Apply(ctx, []*spanner.Mutation{
-		Create(ctx, status, status.CreateUser),
-	})
+	s := b.Build()
+	m, err := Create(s, s.CreateUser)
 	So(err, ShouldBeNil)
-	status.CreateTime = ts.UTC()
-	return status
+	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
+	So(err, ShouldBeNil)
+	s.CreateTime = ts.UTC()
+	return s
 }

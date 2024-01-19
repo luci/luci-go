@@ -24,7 +24,7 @@
 -- compactions.
 CREATE TABLE Status (
   -- The name of the tree.
-  TreeName STRING(32) NOT NULL,
+  TreeName STRING(63) NOT NULL,
   -- The unique identifier for the status. This is a randomly generated
   -- 128-bit ID, encoded as 32 lowercase hexadecimal characters.
   StatusId STRING(32) NOT NULL,

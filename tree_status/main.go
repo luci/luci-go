@@ -50,7 +50,7 @@ func main() {
 		})
 		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
 
-		pb.RegisterTreeStatusServer(srv, &rpc.TreeStatusServer{})
+		pb.RegisterTreeStatusServer(srv, rpc.NewTreeStatusServer())
 		return nil
 	})
 }

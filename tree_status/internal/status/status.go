@@ -19,9 +19,14 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
+	"regexp"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"cloud.google.com/go/spanner"
+	"golang.org/x/text/unicode/norm"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
@@ -29,6 +34,13 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	pb "go.chromium.org/luci/tree_status/proto/v1"
+)
+
+const (
+	// TreeNameExpression is a partial regular expression that validates tree identifiers.
+	TreeNameExpression = `[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?`
+	// StatusIDExpression is a partial regular expression that validates status identifiers.
+	StatusIDExpression = `[0-9a-f]{32}`
 )
 
 // NotExistsErr is returned when the requested object was not found in the database.
@@ -54,12 +66,89 @@ type Status struct {
 	CreateTime time.Time
 }
 
+// Validate validates a status value.
+// It ignores the CreateUser and CreateTime fields.
+// Reported field names are as they appear in the RPC documentation rather than the Go struct.
+func Validate(status *Status) error {
+	if err := validateTreeName(status.TreeName); err != nil {
+		return errors.Annotate(err, "tree").Err()
+	}
+	if err := validateID(status.StatusID); err != nil {
+		return errors.Annotate(err, "id").Err()
+	}
+	if err := validateGeneralStatus(status.GeneralStatus); err != nil {
+		return errors.Annotate(err, "general_state").Err()
+	}
+	if err := validateMessage(status.Message); err != nil {
+		return errors.Annotate(err, "message").Err()
+	}
+	return nil
+}
+
+var treeNameRE = regexp.MustCompile(`^` + TreeNameExpression + `$`)
+
+func validateTreeName(treeName string) error {
+	if treeName == "" {
+		return errors.Reason("must be specified").Err()
+	}
+	if !treeNameRE.MatchString(treeName) {
+		return errors.Reason("expected format: %s", treeNameRE).Err()
+	}
+	return nil
+}
+
+var statusIDRE = regexp.MustCompile(`^` + StatusIDExpression + `$`)
+
+func validateID(id string) error {
+	if id == "" {
+		return errors.Reason("must be specified").Err()
+	}
+	if !statusIDRE.MatchString(id) {
+		return errors.Reason("expected format: %s", statusIDRE).Err()
+	}
+	return nil
+}
+
+func validateGeneralStatus(state pb.GeneralState) error {
+	if state == pb.GeneralState_GENERAL_STATE_UNSPECIFIED {
+		return errors.Reason("must be specified").Err()
+	}
+	if _, ok := pb.GeneralState_name[int32(state)]; !ok {
+		return errors.Reason("invalid enum value").Err()
+	}
+	return nil
+}
+
+func validateMessage(message string) error {
+	if message == "" {
+		return errors.Reason("must be specified").Err()
+	}
+	if len(message) > 1024 {
+		return errors.Reason("longer than 1024 bytes").Err()
+	}
+	if !utf8.ValidString(message) {
+		return errors.Reason("not a valid utf8 string").Err()
+	}
+	if !norm.NFC.IsNormalString(message) {
+		return errors.Reason("not in unicode normalized form C").Err()
+	}
+	for i, rune := range message {
+		if !unicode.IsPrint(rune) {
+			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
+		}
+	}
+	return nil
+}
+
 // Create creates a status entry in the Spanner Database.
 // Must be called with an active RW transaction in the context.
 // CreateUser and CreateTime in the passed in status will be ignored
 // in favour of the commit time and the currentUser argument.
-func Create(ctx context.Context, status *Status, currentUser string) *spanner.Mutation {
-	// TODO: validate status before writing it.
+func Create(status *Status, currentUser string) (*spanner.Mutation, error) {
+	if err := Validate(status); err != nil {
+		return nil, err
+	}
+
 	row := map[string]any{
 		"TreeName":      status.TreeName,
 		"StatusId":      status.StatusID,
@@ -68,7 +157,7 @@ func Create(ctx context.Context, status *Status, currentUser string) *spanner.Mu
 		"CreateUser":    currentUser,
 		"CreateTime":    spanner.CommitTimestamp,
 	}
-	return spanner.InsertOrUpdateMap("Status", row)
+	return spanner.InsertOrUpdateMap("Status", row), nil
 }
 
 // Read retrieves a status update from the database given the exact time the status update was made.
