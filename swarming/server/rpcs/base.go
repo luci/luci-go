@@ -30,12 +30,37 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
 var requestStateCtxKey = "swarming.rpcs.RequestState"
+
+// SwarmingServer implements Swarming gRPC service.
+//
+// It is a collection of various RPCs that didn't fit other services. Individual
+// RPCs are implemented in swarming_*.go files.
+type SwarmingServer struct {
+	apipb.UnimplementedSwarmingServer
+}
+
+// BotsServer implements Bots gRPC service.
+//
+// It exposes methods to view and manipulate state of Swarming bots. Individual
+// RPCs are implemented in bots_*.go files.
+type BotsServer struct {
+	apipb.UnimplementedBotsServer
+}
+
+// TasksServer implements Tasks gRPC service.
+//
+// It exposes methods to view and manipulate state of Swarming tasks. Individual
+// RPCs are implemented in tasks_*.go files.
+type TasksServer struct {
+	apipb.UnimplementedTasksServer
+}
 
 // RequestState carries stated scoped to a single RPC handler.
 //

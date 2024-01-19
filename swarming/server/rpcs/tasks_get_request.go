@@ -24,6 +24,19 @@ import (
 	"go.chromium.org/luci/swarming/server/model"
 )
 
+// GetRequest fetches a model.TaskRequest for a given apipb.TaskIdRequest.
+func (*TasksServer) GetRequest(ctx context.Context, req *apipb.TaskIdRequest) (*apipb.TaskRequestResponse, error) {
+	taskRequest, err := FetchTaskRequest(ctx, req.TaskId)
+	if err != nil {
+		return nil, err
+	}
+	res := State(ctx).ACL.CheckTaskPerm(ctx, taskRequest.TaskAuthInfo(), acls.PermTasksGet)
+	if !res.Permitted {
+		return nil, res.ToGrpcErr()
+	}
+	return taskRequestToResponse(ctx, req, taskRequest)
+}
+
 // taskRequestToResponse converts a model.TaskRequest to apipb.TaskRequestResponse.
 func taskRequestToResponse(ctx context.Context, req *apipb.TaskIdRequest, taskRequest *model.TaskRequest) (*apipb.TaskRequestResponse, error) {
 	// Create the list of task slices.
@@ -56,17 +69,4 @@ func taskRequestToResponse(ctx context.Context, req *apipb.TaskIdRequest, taskRe
 		RbeInstance:          taskRequest.RBEInstance,
 		Resultdb:             taskRequest.ResultDB.ToProto(),
 	}, nil
-}
-
-// GetRequest fetches a model.TaskRequest for a given apipb.TaskIdRequest.
-func (*TasksServer) GetRequest(ctx context.Context, req *apipb.TaskIdRequest) (*apipb.TaskRequestResponse, error) {
-	taskRequest, err := FetchTaskRequest(ctx, req.TaskId)
-	if err != nil {
-		return nil, err
-	}
-	res := State(ctx).ACL.CheckTaskPerm(ctx, taskRequest.TaskAuthInfo(), acls.PermTasksGet)
-	if !res.Permitted {
-		return nil, res.ToGrpcErr()
-	}
-	return taskRequestToResponse(ctx, req, taskRequest)
 }

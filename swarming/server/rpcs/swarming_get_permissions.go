@@ -24,13 +24,6 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 )
 
-// SwarmingServer implements Swarming gRPC service.
-//
-// It is a collection of various RPCs that didn't fit other services.
-type SwarmingServer struct {
-	apipb.UnimplementedSwarmingServer
-}
-
 // GetPermissions implements the corresponding RPC method.
 func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.PermissionsRequest) (*apipb.ClientPermissions, error) {
 	state := State(ctx)
