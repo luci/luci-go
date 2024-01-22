@@ -647,7 +647,7 @@ func TestCreateBackendTask(t *testing.T) {
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}
 			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
-			So(err, ShouldErrLike, "creating backend task for build 1 has expired after 8m0s")
+			So(err, ShouldErrLike, "creating backend task for build 1 with requestID request_id has expired after 8m0s")
 			So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
 		})

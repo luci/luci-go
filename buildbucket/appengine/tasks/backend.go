@@ -339,7 +339,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 		if dsPutErr != nil {
 			return dsPutErr
 		}
-		return tq.Fatal.Apply(errors.Reason("creating backend task for build %d has expired after %s", buildID, runTaskGiveUpTimeout.String()).Err())
+		return tq.Fatal.Apply(errors.Reason("creating backend task for build %d with requestID %s has expired after %s", buildID, requestID, runTaskGiveUpTimeout.String()).Err())
 	}
 
 	// Initialize a TaskCreator for creating the backend task.
