@@ -158,7 +158,7 @@ func (p *ExecutionPlan) Add(ctx context.Context, pkg actions.Package, preExecFn 
 // with any reasonable time window (e.g. 1 hour) is highly unlikely to remove
 // packages just dereferenced and may be IncRef within seconds. And even if it's
 // happened, the caller can retry the process.
-func (p *ExecutionPlan) Execute(ctx context.Context, tempDir string, execFn Executor) (err error) {
+func (p *ExecutionPlan) Execute(ctx context.Context, tempDir string, execFn Executor) error {
 	if p.executed {
 		return ErrExecutionPlanExecuted
 	}
@@ -201,7 +201,7 @@ func (p *ExecutionPlan) Execute(ctx context.Context, tempDir string, execFn Exec
 		p.availables = append(p.availables, pkg)
 	}
 
-	return
+	return nil
 }
 
 // Release releases all packages referenced by the build plan.
@@ -282,6 +282,21 @@ func (b *Builder) Build(ctx context.Context, buildTempDir string, g generators.G
 // BuildAll triggers the standard workflow converting []generators.Generator to
 // []actions.Package which are available in the storage.
 func (b *Builder) BuildAll(ctx context.Context, buildTempDir string, gs []generators.Generator) ([]actions.Package, error) {
+	pkgs, err := b.GeneratePackages(ctx, gs)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := b.BuildPackages(ctx, buildTempDir, pkgs); err != nil {
+		return nil, err
+	}
+
+	return pkgs, nil
+}
+
+// GeneratePackages triggers the standard workflow converting
+// []generators.Generator to []actions.Package without building them.
+func (b *Builder) GeneratePackages(ctx context.Context, gs []generators.Generator) ([]actions.Package, error) {
 	// generators.Generator -> *core.Action
 	var acts []*core.Action
 	for _, g := range gs {
@@ -303,17 +318,23 @@ func (b *Builder) BuildAll(ctx context.Context, buildTempDir string, gs []genera
 		pkgs = append(pkgs, pkg)
 	}
 
+	return pkgs, nil
+}
+
+// BuildPackages builds the packages and make all packages available in the
+// storage.
+func (b *Builder) BuildPackages(ctx context.Context, buildTempDir string, pkgs []actions.Package) error {
 	// Make actions.Package available
 	plan := NewExecutionPlan(ctx)
 	defer plan.Release()
 	for _, pkg := range pkgs {
 		if err := plan.Add(ctx, pkg, b.preExecFn); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	if err := plan.Execute(ctx, buildTempDir, b.execFn); err != nil {
-		return nil, err
+		return err
 	}
 
-	return pkgs, nil
+	return nil
 }
