@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/klauspost/compress/zlib"
 
@@ -132,4 +133,49 @@ func SortStringPairs(pairs []*apipb.StringPair) {
 			return pairs[i].Value < pairs[j].Value
 		}
 	})
+}
+
+// dimensionsFlatToPb converts a list of k:v pairs into []*apipb.StringListPair.
+func dimensionsFlatToPb(flat []string) []*apipb.StringListPair {
+	// In the vast majority of cases `flat` is already sorted and we can skip
+	// unnecessary maps and resorting. Start with the assumption it is sorted and
+	// fallback to a generic implementation if we notice a violation.
+	var out []*apipb.StringListPair
+	for _, kv := range flat {
+		k, v, _ := strings.Cut(kv, ":")
+		if len(out) == 0 {
+			out = append(out, &apipb.StringListPair{
+				Key:   k,
+				Value: []string{v},
+			})
+			continue
+		}
+		switch prev := out[len(out)-1]; {
+		case k == prev.Key:
+			switch prevV := prev.Value[len(prev.Value)-1]; {
+			case v == prevV:
+				// Skip the duplicate.
+			case v > prevV:
+				prev.Value = append(prev.Value, v)
+			default: // v < prevV => the `flat` is not sorted in ascending order
+				return dimensionsFlatToPbSlow(flat)
+			}
+		case k > prev.Key:
+			out = append(out, &apipb.StringListPair{
+				Key:   k,
+				Value: []string{v},
+			})
+		default: // i.e. k < prev.Key => the `flat` is not sorted in ascending order
+			return dimensionsFlatToPbSlow(flat)
+		}
+	}
+	return out
+}
+
+// dimensionsFlatToPbSlow is the same as dimensionsFlatToPb, but it doesn't rely
+// on `flat` being presorted.
+func dimensionsFlatToPbSlow(flat []string) []*apipb.StringListPair {
+	sortedCopy := append(make([]string, 0, len(flat)), flat...)
+	sort.Strings(sortedCopy)
+	return dimensionsFlatToPb(sortedCopy)
 }

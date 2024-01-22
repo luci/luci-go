@@ -112,7 +112,7 @@ func TestSwarmingServer(t *testing.T) {
 		srv := SwarmingServer{}
 
 		callWithErr := func(caller identity.Identity, botID, taskID string, tags []string) (*apipb.ClientPermissions, error) {
-			ctx := MockRequestState(ctx, MockedRequestState{
+			ctx := MockRequestState(ctx, &MockedRequestState{
 				Caller:  caller,
 				AuthDB:  db,
 				Configs: configs,

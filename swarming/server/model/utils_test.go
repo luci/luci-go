@@ -21,7 +21,10 @@ import (
 
 	"go.chromium.org/luci/gae/service/datastore"
 
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestToJSONProperty(t *testing.T) {
@@ -84,6 +87,72 @@ func TestFromJSONProperty(t *testing.T) {
 		var v map[string]string
 		So(FromJSONProperty(datastore.MkProperty(deflate([]byte(`{"a":"b"}`))), &v), ShouldBeNil)
 		So(v, ShouldResemble, map[string]string{"a": "b"})
+	})
+}
+
+func TestDimensionsFlatToPb(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		flat []string
+		list []*apipb.StringListPair
+	}
+	cases := []testCase{
+		{
+			flat: nil,
+			list: nil,
+		},
+		{
+			flat: []string{"a:1"},
+			list: []*apipb.StringListPair{
+				{Key: "a", Value: []string{"1"}},
+			},
+		},
+		{
+			flat: []string{"a:1", "a:1"},
+			list: []*apipb.StringListPair{
+				{Key: "a", Value: []string{"1"}},
+			},
+		},
+		{
+			flat: []string{"a:1", "a:2"},
+			list: []*apipb.StringListPair{
+				{Key: "a", Value: []string{"1", "2"}},
+			},
+		},
+		{
+			flat: []string{"a:2", "a:1"},
+			list: []*apipb.StringListPair{
+				{Key: "a", Value: []string{"1", "2"}},
+			},
+		},
+		{
+			flat: []string{"a:1", "b:2"},
+			list: []*apipb.StringListPair{
+				{Key: "a", Value: []string{"1"}},
+				{Key: "b", Value: []string{"2"}},
+			},
+		},
+		{
+			flat: []string{"a:1", "a:2", "b:1", "b:2"},
+			list: []*apipb.StringListPair{
+				{Key: "a", Value: []string{"1", "2"}},
+				{Key: "b", Value: []string{"1", "2"}},
+			},
+		},
+		{
+			flat: []string{"b:1", "b:2", "a:1", "a:2"},
+			list: []*apipb.StringListPair{
+				{Key: "a", Value: []string{"1", "2"}},
+				{Key: "b", Value: []string{"1", "2"}},
+			},
+		},
+	}
+
+	Convey("Works", t, func() {
+		for _, cs := range cases {
+			So(dimensionsFlatToPb(cs.flat), ShouldResembleProto, cs.list)
+		}
 	})
 }
 

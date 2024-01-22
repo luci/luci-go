@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
@@ -37,6 +38,9 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+// DefaultFakeCaller is used in unit tests by default as the caller identity.
+const DefaultFakeCaller identity.Identity = "user:test@example.com"
 
 // MockedConfig is a bundle of configs to use in tests.
 type MockedConfigs struct {
@@ -51,6 +55,55 @@ type MockedRequestState struct {
 	Caller  identity.Identity
 	AuthDB  *authtest.FakeDB
 	Configs MockedConfigs
+}
+
+// NewMockedRequestState creates a new empty request state that can be mutated
+// by calling its various methods before it is passed to MockRequestState.
+func NewMockedRequestState() *MockedRequestState {
+	return &MockedRequestState{
+		Caller: DefaultFakeCaller,
+		AuthDB: authtest.NewFakeDB(),
+		Configs: MockedConfigs{
+			Settings: &configpb.SettingsCfg{},
+			Pools:    &configpb.PoolsCfg{},
+			Bots: &configpb.BotsCfg{
+				TrustedDimensions: []string{"pool"},
+			},
+			Scripts: map[string]string{},
+		},
+	}
+}
+
+// MockPool adds a new pool to the mocked request state.
+func (s *MockedRequestState) MockPool(name, realm string) *configpb.Pool {
+	pb := &configpb.Pool{
+		Name:  []string{name},
+		Realm: realm,
+	}
+	s.Configs.Pools.Pool = append(s.Configs.Pools.Pool, pb)
+	return pb
+}
+
+// MockBot adds a bot in some pool.
+func (s *MockedRequestState) MockBot(botID, pool string) *configpb.BotGroup {
+	pb := &configpb.BotGroup{
+		BotId:      []string{botID},
+		Dimensions: []string{"pool:" + pool},
+		Auth: []*configpb.BotAuth{
+			{
+				RequireLuciMachineToken: true,
+			},
+		},
+	}
+	s.Configs.Bots.BotGroup = append(s.Configs.Bots.BotGroup, pb)
+	return pb
+}
+
+// MockPerm mocks a permission the caller will have in some realm.
+func (s *MockedRequestState) MockPerm(realm string, perm ...realms.Permission) {
+	for _, p := range perm {
+		s.AuthDB.AddMocks(authtest.MockPermission(s.Caller, realm, p))
+	}
 }
 
 // MockConfig puts configs in datastore and loads then into cfg.Provider.
@@ -95,7 +148,7 @@ func MockConfigs(ctx context.Context, configs MockedConfigs) *cfg.Provider {
 // MockRequestState prepares a full mock of a per-RPC request state.
 //
 // Panics if it is invalid.
-func MockRequestState(ctx context.Context, state MockedRequestState) context.Context {
+func MockRequestState(ctx context.Context, state *MockedRequestState) context.Context {
 	ctx = auth.WithState(ctx, &authtest.FakeState{
 		Identity: state.Caller,
 		FakeDB:   state.AuthDB,
