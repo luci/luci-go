@@ -134,6 +134,11 @@ message BackendSetting {
 
     // The setting for syncing backend tasks.
     BuildSyncSetting build_sync_setting = 2;
+
+    // If set to true, visiting "cr-buildbucket.appspot.com/build/<build_id>"
+    // will be redirected to the corresponding task page instead of the Milo
+    // build page.
+    bool RedirectToTaskPage = 3;
   }
 
   // The corresponding backend should be a `TaskBackendLite` implementation,

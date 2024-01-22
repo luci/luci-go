@@ -66,6 +66,7 @@ func TestHandleViewBuild(t *testing.T) {
 					Builder: "builder",
 				},
 			},
+			BackendTarget: "foo",
 		}
 		bucket := &model.Bucket{ID: "bucket", Parent: model.ProjectKey(ctx, "project")}
 		So(datastore.Put(ctx, build, bucket), ShouldBeNil)
@@ -143,6 +144,71 @@ func TestHandleViewBuild(t *testing.T) {
 			handleViewBuild(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusFound)
 			So(rsp.Header().Get("Location"), ShouldEqual, "https://milo.com/b/123")
+		})
+
+		Convey("RedirectToTaskPage", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: userID,
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+				),
+			})
+
+			settingsCfg := &pb.SettingsCfg{
+				Swarming: &pb.SwarmingSettings{
+					MiloHostname: "milo.com",
+				},
+				Backends: []*pb.BackendSetting{
+					{
+						Target: "foo",
+						Mode: &pb.BackendSetting_FullMode_{
+							FullMode: &pb.BackendSetting_FullMode{
+								RedirectToTaskPage: true,
+							},
+						},
+					},
+				},
+			}
+			So(config.SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
+			bInfra := &model.BuildInfra{
+				Build: datastore.KeyForObj(ctx, build),
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Id:     "task1",
+								Target: "foo",
+							},
+						},
+					},
+				},
+			}
+
+			Convey("task.Link is populated", func() {
+				bInfra.Proto.Backend.Task.Link = "https://fake-task-page-link"
+				So(datastore.Put(ctx, bInfra), ShouldBeNil)
+				rctx.Request = (&http.Request{}).WithContext(ctx)
+				rctx.Params = httprouter.Params{
+					{Key: "BuildID", Value: "123"},
+				}
+
+				handleViewBuild(rctx)
+				So(rsp.Code, ShouldEqual, http.StatusFound)
+				So(rsp.Header().Get("Location"), ShouldEqual, "https://fake-task-page-link")
+			})
+
+			Convey("task.Link is not populated", func() {
+				bInfra.Proto.Backend.Task.Link = ""
+				So(datastore.Put(ctx, bInfra), ShouldBeNil)
+				rctx.Request = (&http.Request{}).WithContext(ctx)
+				rctx.Params = httprouter.Params{
+					{Key: "BuildID", Value: "123"},
+				}
+
+				handleViewBuild(rctx)
+				So(rsp.Code, ShouldEqual, http.StatusFound)
+				So(rsp.Header().Get("Location"), ShouldEqual, "https://milo.com/b/123")
+			})
 		})
 	})
 }

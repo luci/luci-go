@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -96,6 +97,23 @@ func getBuildURL(ctx context.Context, bld *model.Build) (string, error) {
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
 		return "", err
+	}
+
+	if bld.BackendTarget != "" {
+		for _, backendSetting := range globalCfg.Backends {
+			if backendSetting.Target == bld.BackendTarget {
+				if backendSetting.GetFullMode().GetRedirectToTaskPage() {
+					bInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
+					if err := datastore.Get(ctx, bInfra); err != nil {
+						return "", err
+					}
+					if bInfra.Proto.Backend.GetTask().GetLink() != "" {
+						return bInfra.Proto.Backend.Task.Link, nil
+					}
+					logging.Errorf(ctx, "build %d had GetRedirectToTaskPage set to true but no task link was found", bld.ID)
+				}
+			}
+		}
 	}
 	return fmt.Sprintf("https://%s/b/%d", globalCfg.Swarming.MiloHostname, bld.ID), nil
 }
