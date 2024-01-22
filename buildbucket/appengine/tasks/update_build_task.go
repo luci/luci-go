@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/api/pubsub/v1"
@@ -262,6 +263,11 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 		return errors.Annotate(err, "invalid BuildTaskUpdate").Err()
 	}
 	logging.Infof(ctx, "Received an BuildTaskUpdate message for build %q", req.BuildId)
+
+	// TODO(b/288158829): remove it once the root cause for the Skia failure is found.
+	if strings.Contains(req.subscription, "skia") {
+		logging.Debugf(ctx, "BuildTaskUpdate.Task: %v", req.BuildTaskUpdate.Task)
+	}
 
 	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildInfraKind)
 	if err != nil {

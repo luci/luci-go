@@ -356,6 +356,12 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 
 	// Create a backend task via RunTask
 	taskResp, err := backend.RunTask(ctx, taskReq)
+
+	// TODO(b/288158829): remove it once the root cause for the Skia failure is found.
+	if bld.Proto.Builder.Project == "skia" {
+		logging.Debugf(ctx, "RunTaskResponse from skia: %v", taskResp)
+	}
+
 	now := clock.Now(ctx)
 	if err != nil {
 		// Give up if HTTP 500s are happening continuously. Otherwise re-throw the
