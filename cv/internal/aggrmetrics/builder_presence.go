@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/metrics"
@@ -68,31 +69,45 @@ func (t *builderPresenceAggregator) report(ctx context.Context, projects []strin
 	return err
 }
 
+func reportBuilder(ctx context.Context, env *common.Env, cgName, project, bname string, cfg *cfgpb.Verifiers_Tryjob_Builder) error {
+	bid, err := bbutil.ParseBuilderID(bname)
+	if err != nil {
+		return err
+	}
+	def := &tryjob.Definition{
+		Backend: &tryjob.Definition_Buildbucket_{
+			Buildbucket: &tryjob.Definition_Buildbucket{
+				Builder: bid,
+				Host:    chromeinfra.BuildbucketHost,
+			},
+		},
+	}
+	tryjob.RunWithBuilderMetricsTarget(ctx, env, def, func(ctx context.Context) {
+		metrics.Public.TryjobBuilderPresence.Set(ctx, true,
+			project,
+			cgName,
+			cfg.GetIncludableOnly(),
+			len(cfg.GetLocationFilters()) > 0,
+			cfg.GetExperimentPercentage() > 0,
+		)
+	})
+	return nil
+}
+
 func reportBuilders(ctx context.Context, env *common.Env, project string, cg *prjcfg.ConfigGroup) error {
 	cgName := cg.Content.GetName()
 	for _, b := range cg.Content.GetVerifiers().GetTryjob().GetBuilders() {
-		builderID, err := bbutil.ParseBuilderID(b.GetName())
-		if err != nil {
+		if err := reportBuilder(ctx, env, cgName, project, b.GetName(), b); err != nil {
 			return err
 		}
-		// Synthesize definition.
-		def := &tryjob.Definition{
-			Backend: &tryjob.Definition_Buildbucket_{
-				Buildbucket: &tryjob.Definition_Buildbucket{
-					Host:    chromeinfra.BuildbucketHost,
-					Builder: builderID,
-				},
-			},
+		// If the tryjob builder is configured with an equivalent builder,
+		// report the equivalent builder with all the configs of
+		// the tryjob builder, including incluable_only, config_group, etc.
+		if eqb := b.GetEquivalentTo(); eqb != nil {
+			if err := reportBuilder(ctx, env, cgName, project, eqb.GetName(), b); err != nil {
+				return err
+			}
 		}
-		tryjob.RunWithBuilderMetricsTarget(ctx, env, def, func(ctx context.Context) {
-			metrics.Public.TryjobBuilderPresence.Set(ctx, true,
-				project,
-				cgName,
-				b.GetIncludableOnly(),
-				len(b.GetLocationFilters()) > 0,
-				b.GetExperimentPercentage() > 0,
-			)
-		})
 	}
 	return nil
 }

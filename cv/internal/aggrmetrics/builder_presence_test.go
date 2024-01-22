@@ -189,5 +189,34 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 			mustReport("prj-0", "prj-1", "prj-2")
 			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, builderCount)
 		})
+
+		Convey("With EquivalentTo", func() {
+			const eqBuilderName = "eq_test_builder"
+			eqb := &tryjob.Definition{
+				Backend: &tryjob.Definition_Buildbucket_{
+					Buildbucket: &tryjob.Definition_Buildbucket{
+						Host: chromeinfra.BuildbucketHost,
+						Builder: &bbpb.BuilderID{
+							Project: lProject,
+							Bucket:  bucketName,
+							Builder: eqBuilderName,
+						},
+					},
+				},
+			}
+			builder.EquivalentTo = &cfgpb.Verifiers_Tryjob_EquivalentBuilder{
+				Name: bbutil.FormatBuilderID(eqb.GetBuildbucket().GetBuilder()),
+			}
+			prjcfgtest.Update(ctx, lProject, config)
+			mustReport(lProject)
+
+			// both tryjobs should be reported.
+			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), ShouldBeTrue)
+			})
+			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, eqb, func(ctx context.Context) {
+				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), ShouldBeTrue)
+			})
+		})
 	})
 }
