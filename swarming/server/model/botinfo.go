@@ -363,6 +363,23 @@ type BotEvent struct {
 	Dimensions []string `gae:"dimensions_flat"`
 }
 
+// ToProto converts BotEvent to apipb.BotEventResponse.
+func (e *BotEvent) ToProto() *apipb.BotEventResponse {
+	return &apipb.BotEventResponse{
+		Ts:              timestamppb.New(e.Timestamp),
+		EventType:       string(e.EventType),
+		Message:         e.Message,
+		Dimensions:      dimensionsFlatToPb(e.Dimensions),
+		State:           string(e.State),
+		ExternalIp:      e.ExternalIP,
+		AuthenticatedAs: string(e.AuthenticatedAs),
+		Version:         e.Version,
+		Quarantined:     e.Quarantined,
+		MaintenanceMsg:  e.Maintenance,
+		TaskId:          e.TaskID,
+	}
+}
+
 // BotEventsQuery prepares a query that fetches BotEvent entities for a bot.
 //
 // Most recent events are returned first.
