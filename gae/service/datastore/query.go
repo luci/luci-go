@@ -844,204 +844,235 @@ func checkComparable(field string, pt PropertyType) error {
 	return nil
 }
 
-// min returns the minimum of two ints
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}
+// All cmp* functions below return -1 if a < b, 0 if a == b, 1 if a > b.
 
-// lessBool returns true if a is false and b is true
-func lessBool(a, b bool) bool {
-	// false < true
-	return !a && b
-}
-
-// Less returns true if a < b. It's just an order, there is nothing particular
-// about this.
-func (a *Query) Less(b *Query) bool {
-	var aStart, bStart, aEnd, bEnd string
-	if a.start != nil {
-		aStart = a.start.String()
-	}
-	if a.end != nil {
-		aEnd = a.end.String()
-	}
-	if b.start != nil {
-		bStart = b.start.String()
-	}
-	if b.end != nil {
-		bEnd = b.end.String()
-	}
+func cmpInteger(a, b int) int {
 	switch {
-	case b.project != nil || a.project != nil:
-		// If either of the queries have projection
-		if a.project == nil {
-			// if a.project == nil and b.project != nil
-			return true
-		}
-		if b.project == nil {
-			// if b.project == nil and a.project != nil
-			return false
-		}
-		// Compare only unique projections in both
-		common := a.project.Intersect(b.project)
-		aUniq := a.project.Difference(common).ToSortedSlice()
-		bUniq := b.project.Difference(common).ToSortedSlice()
-		// Compare the projections in order
-		for i := 0; i < min(len(aUniq), len(bUniq)); i++ {
-			if aUniq[i] != bUniq[i] { // Should always be true?
-				return aUniq[i] < bUniq[i]
-			}
-		}
-		if len(aUniq) != len(bUniq) {
-			return len(aUniq) < len(bUniq)
-		}
-	case a.distinct != b.distinct:
-		// true only if a.distinct is false and b.distinct is true
-		return lessBool(a.distinct, b.distinct)
-	case a.kind != b.kind:
-		return a.kind < b.kind
-	case a.eqFilts != nil && b.eqFilts != nil:
-		// If both the queries have equality filters. Then compare the
-		// filters in sorted order
-		filtKeys := stringset.New(len(a.eqFilts) + len(b.eqFilts))
-		// Collect keys from a
-		for k := range a.eqFilts {
-			filtKeys.Add(k)
-		}
-		// Collect keys from b
-		for k := range b.eqFilts {
-			filtKeys.Add(k)
-		}
-		// Get them sorted
-		keysSlice := filtKeys.ToSortedSlice()
-		// Now for the comparison
-		for _, k := range keysSlice {
-			aVal, aOk := a.eqFilts[k]
-			bVal, bOk := b.eqFilts[k]
-			if aOk && bOk {
-				// Need to compare the values
-				minCount := min(len(aVal), len(bVal))
-				if minCount == 0 {
-					// This should prob never happen
-					return len(aVal) < len(bVal)
-				}
-				// Sort the values into a new slice, this should
-				// preserve the original order in query. It should
-				// not really matter. But a comparator should
-				// not modify the underlying data
-				aSorted := make([]Property, 0, len(aVal))
-				bSorted := make([]Property, 0, len(bVal))
-				for _, v := range aVal {
-					aSorted = append(aSorted, v)
-				}
-				for _, v := range bVal {
-					bSorted = append(bSorted, v)
-				}
-				sort.Slice(aSorted, func(i, j int) bool {
-					return aSorted[i].Less(&aSorted[j])
-				})
-				sort.Slice(bSorted, func(i, j int) bool {
-					return bSorted[i].Less(&bSorted[j])
-				})
-				// Compare the sorted values
-				for i := 0; i < minCount; i++ {
-					cmp := aSorted[i].Compare(&bSorted[i])
-					if cmp == 0 {
-						// Same val in both
-						continue
-					}
-					return cmp < 0
-				}
-				// If b has more values then return true
-				if len(aVal) != len(bVal) {
-					return len(aVal) < len(bVal)
-				}
-			}
-			if aOk != bOk {
-				// If b has the key and a doesn't, return true
-				return !aOk && bOk
-			}
-		}
-	case (a.eqFilts != nil) != (b.eqFilts != nil):
-		// return true if b has eqFilts but a doesn't
-		return lessBool(a.eqFilts != nil, b.eqFilts != nil)
-	case a.ineqFiltProp != "" && b.ineqFiltProp != "":
-		// If inequality filters are set. Compare them similar to string
-		// property op{<|>|<=|>=} value being compared lexicographicaly.
-		if a.ineqFiltProp == b.ineqFiltProp {
-			// If both were doing a less than ... comparison
-			if a.ineqFiltHighSet && b.ineqFiltHighSet {
-				// If less than ... was the comparison
-				if a.ineqFiltHighIncl == b.ineqFiltHighIncl {
-					// If both were doing same comparison
-					return a.ineqFiltHigh.Less(&b.ineqFiltHigh)
-				} else {
-					// If b was doing less than or equals.
-					return b.ineqFiltHighIncl
-				}
-			}
-			// If both were doing a greater than ... comparison
-			if a.ineqFiltLowSet && b.ineqFiltLowSet {
-				// If greater than ... was the comparison
-				if a.ineqFiltLowIncl == b.ineqFiltLowIncl {
-					// If both were doing same comparison
-					return a.ineqFiltLow.Less(&b.ineqFiltLow)
-				} else {
-					// If b was doing greater than or equals.
-					return b.ineqFiltLowIncl
-				}
-			}
-			// If a was doing a < and b was doing a >
-			return a.ineqFiltHighSet && b.ineqFiltLowSet
-		} else {
-			return a.ineqFiltProp < b.ineqFiltProp
-		}
-	case a.ineqFiltProp != "" || b.ineqFiltProp != "":
-		// If only one of the queries have inequality filters
-		return a.ineqFiltProp == ""
-	case b.order != nil || a.order != nil:
-		// If order is set in one of the queries
-		for i := 0; i < min(len(b.order), len(a.order)); i++ {
-			// compare both in order
-			if a.order[i].Property != b.order[i].Property {
-				return a.order[i].Property < b.order[i].Property
-			}
-			// Also compare descending flag
-			if a.order[i].Descending != b.order[i].Descending {
-				return !a.order[i].Descending && b.order[i].Descending
-			}
-		}
-		// true if b has more indexes
-		return len(a.order) < len(b.order)
-	case a.limit != nil && b.limit != nil && *a.limit != *b.limit:
-		// If limits are set on both a and b, compare limits
-		return *a.limit < *b.limit
-	case a.limit != nil || b.limit != nil:
-		// If only one of the limits is not set
-		return a.limit == nil
-	case a.offset != nil && b.offset != nil && *a.offset != *b.offset:
-		// If offset are set on both a and b, compare offset
-		return *a.offset < *b.offset
-	case a.offset != nil || b.offset != nil:
-		// If only one of the offsets is not set
-		return a.offset == nil
-	case a.firestoreMode != b.firestoreMode:
-		// true only if a.firestoreMode is false and b.firestoreMode is true
-		return lessBool(a.firestoreMode, b.firestoreMode)
-	case a.eventualConsistency != b.eventualConsistency:
-		// true only if a.eventualConsistency is false and b.eventualConsistency is true
-		return lessBool(a.eventualConsistency, b.eventualConsistency)
-	case a.keysOnly != b.keysOnly:
-		// true only if a.keysOnly is false and b.keysOnly is true
-		return lessBool(a.keysOnly, b.keysOnly)
-	// Compare cursors
-	case aEnd != bEnd:
-		return aEnd < bEnd
-	case aStart != bStart:
-		return aStart < bStart
+	case a == b:
+		return 0
+	case a < b:
+		return -1
+	default:
+		return 1
 	}
+}
+
+func cmpStringSet(a, b stringset.Set) int {
+	// Quick check for the most common case to skip heavy calls below.
+	if a.Len() == 0 && b.Len() == 0 {
+		return 0
+	}
+
+	// Compare as math sets: discard common elements and then compare remainders
+	// lexicographically.
+	common := a.Intersect(b)
+	auniq := a.Difference(common).ToSortedSlice()
+	buniq := b.Difference(common).ToSortedSlice()
+
+	for i := 0; i < len(auniq) && i < len(buniq); i++ {
+		switch {
+		case auniq[i] < buniq[i]:
+			return -1
+		case auniq[i] > buniq[i]:
+			return 1
+		}
+	}
+
+	return cmpInteger(len(auniq), len(buniq))
+}
+
+func cmpStr(a, b string) int {
+	switch {
+	case a == b:
+		return 0
+	case a < b:
+		return -1
+	default:
+		return 1
+	}
+}
+
+func cmpBoolean(a, b bool) int {
+	switch {
+	case a == b:
+		return 0
+	case !a:
+		return -1
+	default:
+		return 1
+	}
+}
+
+func cmpMapsOfPropertySlice(a, b map[string]PropertySlice) int {
+	// Compare maps in the sorted order of keys.
+	cap := len(a)
+	if len(b) > cap {
+		cap = len(b)
+	}
+	keys := stringset.New(cap)
+	for k := range a {
+		keys.Add(k)
+	}
+	for k := range b {
+		keys.Add(k)
+	}
+	for _, key := range keys.ToSortedSlice() {
+		if cmp := cmpPropertySliceSet(a[key], b[key]); cmp != 0 {
+			return cmp
+		}
+	}
+	return cmpInteger(len(a), len(b))
+}
+
+func cmpPropertySliceSet(a, b PropertySlice) int {
+	// Quick checks for common cases.
+	switch {
+	case len(a) == 0 && len(b) == 0:
+		return 0
+	case len(a) == 0 && len(b) != 0:
+		return -1
+	case len(a) != 0 && len(b) == 0:
+		return 1
+	}
+
+	asorted := a.Slice()
+	sort.Sort(asorted)
+
+	bsorted := b.Slice()
+	sort.Sort(bsorted)
+
+	for i := 0; i < len(asorted) && i < len(bsorted); i++ {
+		if cmp := asorted[i].Compare(&bsorted[i]); cmp != 0 {
+			return cmp
+		}
+	}
+
+	return cmpInteger(len(asorted), len(bsorted))
+}
+
+func cmpIneqOp(a *Property, aincl, aset bool, b *Property, bincl, bset bool) int {
+	switch {
+	case !aset && !bset:
+		// If both are unset, don't bother comparing properties. They are null.
+		return 0
+	case !aset && bset:
+		// If only 'b' set, then a < b.
+		return -1
+	case aset && !bset:
+		// If only 'a' set, then a > b.
+		return 1
+	default:
+		// If both are set, compare the rest of the fields.
+		if cmp := a.Compare(b); cmp != 0 {
+			return cmp
+		}
+		return cmpBoolean(aincl, bincl)
+	}
+}
+
+func cmpIndexColumnList(a, b []IndexColumn) int {
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if cmp := cmpStr(a[i].Property, b[i].Property); cmp != 0 {
+			return cmp
+		}
+		if cmp := cmpBoolean(a[i].Descending, b[i].Descending); cmp != 0 {
+			return cmp
+		}
+	}
+	return cmpInteger(len(a), len(b))
+}
+
+func cmpOptionalInt32(a, b *int32) int {
+	switch {
+	case a == nil && b == nil:
+		return 0
+	case a == nil && b != nil:
+		return -1
+	case a != nil && b == nil:
+		return 1
+	default:
+		switch {
+		case *a == *b:
+			return 0
+		case *a < *b:
+			return -1
+		default:
+			return 1
+		}
+	}
+}
+
+func cmpCursor(a, b Cursor) int {
+	var astr string
+	if a != nil {
+		astr = a.String()
+	}
+	var bstr string
+	if b != nil {
+		bstr = b.String()
+	}
+	return cmpStr(astr, bstr)
+}
+
+// Less returns true if a < b. It is used for local sorting of lists of queries,
+// there is nothing datastore specific about this.
+func (a *Query) Less(b *Query) bool {
+	// For concreteness compare query components in the same order they would
+	// appear in a GQL query string. Things that do not show up in GQL are
+	// compared last. Note this should cover every field in queryFields struct.
+	//
+	// See https://cloud.google.com/datastore/docs/reference/gql_reference
+	if cmp := cmpStringSet(a.project, b.project); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpStr(a.kind, b.kind); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpBoolean(a.distinct, b.distinct); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpMapsOfPropertySlice(a.eqFilts, b.eqFilts); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpStr(a.ineqFiltProp, b.ineqFiltProp); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpIneqOp(
+		&a.ineqFiltLow, a.ineqFiltLowIncl, a.ineqFiltLowSet,
+		&b.ineqFiltLow, b.ineqFiltLowIncl, b.ineqFiltLowSet,
+	); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpIneqOp(
+		&a.ineqFiltHigh, a.ineqFiltHighIncl, a.ineqFiltHighSet,
+		&b.ineqFiltHigh, b.ineqFiltHighIncl, b.ineqFiltHighSet,
+	); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpIndexColumnList(a.order, b.order); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpOptionalInt32(a.limit, b.limit); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpOptionalInt32(a.offset, b.offset); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpCursor(a.start, b.start); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpCursor(a.end, b.end); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpBoolean(a.keysOnly, b.keysOnly); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpBoolean(a.firestoreMode, b.firestoreMode); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpBoolean(a.eventualConsistency, b.eventualConsistency); cmp != 0 {
+		return cmp < 0
+	}
+	// They are equal, which means `a < b` is false.
 	return false
 }

@@ -169,21 +169,25 @@ func TestDatastoreQueriesLess(t *testing.T) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").Project("conrad")
 
+			// [] vs ["conrad"]
 			So(q.Less(q1), ShouldBeTrue)
 			So(q1.Less(q), ShouldBeFalse)
 
 			q = q.Project("turanga")
 
+			// ["turanga"] vs ["conrad"]
 			So(q.Less(q1), ShouldBeFalse)
 			So(q1.Less(q), ShouldBeTrue)
 
 			q1 = q1.Project("turanga")
 
+			// ["turanga"] vs ["conrad", "turanga"]
 			So(q.Less(q1), ShouldBeTrue)
 			So(q1.Less(q), ShouldBeFalse)
 
 			q = q.Project("zoidberg")
 
+			// ["turanga", "zoidberg"] vs ["conrad", "turanga"]
 			So(q.Less(q1), ShouldBeFalse)
 			So(q1.Less(q), ShouldBeTrue)
 		})
@@ -337,6 +341,17 @@ func TestDatastoreQueriesLess(t *testing.T) {
 			So(q1.Less(q), ShouldBeFalse)
 		})
 
+		Convey("Composite comparison", func() {
+			a := NewQuery("Foo").Project("conrad").Distinct(false)
+			b := NewQuery("Foo").Project("conrad").Distinct(true)
+			So(a.Less(b), ShouldBeTrue)
+			So(b.Less(a), ShouldBeFalse)
+
+			a = NewQuery("Foo").Eq("Prop", "val").Offset(100)
+			b = NewQuery("Foo").Eq("Prop", "val").Offset(200)
+			So(a.Less(b), ShouldBeTrue)
+			So(b.Less(a), ShouldBeFalse)
+		})
 	})
 }
 
