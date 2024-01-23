@@ -67,7 +67,7 @@ func (q *FinalizedQuery) Kind() string {
 
 // EventuallyConsistent returns true iff this query will be eventually
 // consistent. This is true when the query is a non-ancestor query, or when it's
-// an ancestory query with the 'EventualConsistency(true)' option set.
+// an ancestor query with the 'EventualConsistency(true)' option set.
 func (q *FinalizedQuery) EventuallyConsistent() bool {
 	return q.eventuallyConsistent
 }
@@ -75,15 +75,10 @@ func (q *FinalizedQuery) EventuallyConsistent() bool {
 // Project is the list of fields that this query projects on, or empty if this
 // is not a projection query.
 func (q *FinalizedQuery) Project() []string {
-	if len(q.project) == 0 {
-		return nil
-	}
-	ret := make([]string, len(q.project))
-	copy(ret, q.project)
-	return ret
+	return q.project
 }
 
-// Distinct returnst true iff this is a distinct projection query. It will never
+// Distinct returns true iff this is a distinct projection query. It will never
 // be true for non-projection queries.
 func (q *FinalizedQuery) Distinct() bool {
 	return q.distinct
@@ -116,9 +111,7 @@ func (q *FinalizedQuery) Offset() (int32, bool) {
 // Orders returns the sort orders that this query will use, including all orders
 // implied by the projections, and the implicit __key__ order at the end.
 func (q *FinalizedQuery) Orders() []IndexColumn {
-	ret := make([]IndexColumn, len(q.orders))
-	copy(ret, q.orders)
-	return ret
+	return q.orders
 }
 
 // Bounds returns the start and end Cursors. One or both may be nil. The Cursors
@@ -145,13 +138,7 @@ func (q *FinalizedQuery) Ancestor() *Key {
 // is present in the result, it's guaranteed to have 1 value in the
 // PropertySlice which is of type *Key.
 func (q *FinalizedQuery) EqFilters() map[string]PropertySlice {
-	ret := make(map[string]PropertySlice, len(q.eqFilts))
-	for k, v := range q.eqFilts {
-		newV := make(PropertySlice, len(v))
-		copy(newV, v)
-		ret[k] = newV
-	}
-	return ret
+	return q.eqFilts
 }
 
 // IneqFilterProp returns the inequality filter property name, if one is used
