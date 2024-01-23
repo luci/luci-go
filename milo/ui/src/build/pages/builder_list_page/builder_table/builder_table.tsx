@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { formatBuilderId } from '@/build/tools/build_utils';
+import { TableVirtuoso } from 'react-virtuoso';
+
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
 import { BuilderRow } from './builder_row';
+import { BuilderTableContextProvider } from './context';
 
 export interface BuilderTableProps {
   readonly builders: readonly BuilderID[];
@@ -27,23 +29,20 @@ export interface BuilderTableProps {
 
 export function BuilderTable({ builders, numOfBuilds }: BuilderTableProps) {
   return (
-    <table css={{ width: '100%' }}>
-      <tbody
+    <BuilderTableContextProvider numOfBuilds={numOfBuilds}>
+      <TableVirtuoso
+        useWindowScroll
+        components={{
+          TableRow: BuilderRow,
+        }}
+        data={builders}
+        fixedItemHeight={40}
         css={{
-          // Apply checkered style to the rows.
-          '& > tr:nth-of-type(odd)': {
-            background: 'var(--block-background-color)',
+          '& table': {
+            width: '100%',
           },
         }}
-      >
-        {builders.map((b) => (
-          <BuilderRow
-            key={formatBuilderId(b)}
-            builder={b}
-            numOfBuilds={numOfBuilds}
-          />
-        ))}
-      </tbody>
-    </table>
+      />
+    </BuilderTableContextProvider>
   );
 }

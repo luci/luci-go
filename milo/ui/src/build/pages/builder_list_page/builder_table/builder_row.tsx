@@ -31,13 +31,21 @@ const Row = styled('tr')({
 });
 
 export interface BuilderRowProps {
-  readonly builder: BuilderID;
-  readonly numOfBuilds: number;
+  readonly 'data-index': number;
+  readonly item: BuilderID;
 }
 
-export function BuilderRow({ builder }: BuilderRowProps) {
+export function BuilderRow({
+  'data-index': index,
+  item: builder,
+}: BuilderRowProps) {
   return (
-    <Row>
+    <Row
+      css={{
+        // Apply checkered style to the rows.
+        background: index % 2 === 1 ? 'var(--block-background-color)' : '',
+      }}
+    >
       <td>
         <Link href={getBuilderURLPath(builder)}>
           {builder.project}/{builder.bucket}/{builder.builder}
