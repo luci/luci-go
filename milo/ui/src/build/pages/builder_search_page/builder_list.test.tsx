@@ -14,8 +14,6 @@
 
 import { act, cleanup, render } from '@testing-library/react';
 
-import { BuilderListDisplay } from '@/build/pages/builder_search_page/builder_list_display';
-import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
 import {
   ListBuildersResponse,
   MiloInternalClientImpl,
@@ -23,19 +21,12 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuilderList } from './builder_list';
+import { BuilderListDisplay } from './builder_list_display';
 
-jest.mock('@/common/hooks/prpc_query', () => {
+jest.mock('./builder_list_display', () => {
   return createSelectiveSpiesFromModule<
-    typeof import('@/common/hooks/prpc_query')
-  >('@/common/hooks/prpc_query', ['useInfinitePrpcQuery']);
-});
-
-jest.mock('@/build/pages/builder_search_page/builder_list_display', () => {
-  return createSelectiveSpiesFromModule<
-    typeof import('@/build/pages/builder_search_page/builder_list_display')
-  >('@/build/pages/builder_search_page/builder_list_display', [
-    'BuilderListDisplay',
-  ]);
+    typeof import('./builder_list_display')
+  >('./builder_list_display', ['BuilderListDisplay']);
 });
 
 const builderPages: { [pageToken: string]: ListBuildersResponse } = {
@@ -74,13 +65,11 @@ const builderPages: { [pageToken: string]: ListBuildersResponse } = {
 };
 
 describe('BuilderList', () => {
-  let useInfinitePrpcQuerySpy: jest.MockedFunction<typeof useInfinitePrpcQuery>;
   let listBuilderMock: jest.SpyInstance;
   let builderListDisplaySpy: jest.MockedFunctionDeep<typeof BuilderListDisplay>;
 
   beforeEach(() => {
     jest.useFakeTimers();
-    useInfinitePrpcQuerySpy = jest.mocked(useInfinitePrpcQuery);
     listBuilderMock = jest
       .spyOn(MiloInternalClientImpl.prototype, 'ListBuilders')
       .mockImplementation(async ({ pageToken }) => {
@@ -104,18 +93,6 @@ describe('BuilderList', () => {
     await act(() => jest.runAllTimersAsync());
     await act(() => jest.runAllTimersAsync());
 
-    expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
-      host: '',
-      insecure: location.protocol === 'http:',
-      ClientImpl: MiloInternalClientImpl,
-      method: 'ListBuilders',
-      request: {
-        project: '',
-        group: '',
-        pageSize: expect.anything(),
-        pageToken: '',
-      },
-    });
     // All the pages should've been be loaded.
     expect(listBuilderMock).toHaveBeenCalledTimes(3);
     expect(builderListDisplaySpy).toHaveBeenLastCalledWith(

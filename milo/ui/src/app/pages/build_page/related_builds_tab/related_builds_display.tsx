@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useQueries } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { OutputBuild } from '@/build/types';
-import { usePrpcQueries } from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   BuildsClientImpl,
   SearchBuildsRequest,
@@ -50,16 +51,19 @@ export function RelatedBuildsDisplay({ buildTags }: RelatedBuildsDisplayProps) {
         !t.value?.startsWith('commit/git/'),
     ) || [];
 
-  const responses = usePrpcQueries({
+  const client = usePrpcServiceClient({
     host: SETTINGS.buildbucket.host,
     ClientImpl: BuildsClientImpl,
-    method: 'SearchBuilds',
-    requests: buildsets.map((tag) =>
-      SearchBuildsRequest.fromPartial({
-        predicate: { tags: [tag] as readonly StringPair[] },
-        fields: RELATED_BUILDS_FIELD_MASK,
-        pageSize: 1000,
-      }),
+  });
+  const responses = useQueries({
+    queries: buildsets.map((tag) =>
+      client.SearchBuilds.query(
+        SearchBuildsRequest.fromPartial({
+          predicate: { tags: [tag] as readonly StringPair[] },
+          fields: RELATED_BUILDS_FIELD_MASK,
+          pageSize: 1000,
+        }),
+      ),
     ),
   });
 

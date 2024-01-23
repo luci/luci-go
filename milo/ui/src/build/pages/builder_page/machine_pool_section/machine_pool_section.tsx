@@ -15,10 +15,11 @@
 import { GrpcError } from '@chopsui/prpc-client';
 import styled from '@emotion/styled';
 import { Alert, AlertTitle, CircularProgress, Link } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { StringPair } from '@/common/services/common';
 import { getSwarmingBotListURL } from '@/common/tools/url_utils';
 import {
@@ -53,41 +54,42 @@ export function MachinePoolSection({
 }: MachinePoolSectionProps) {
   const [botListExpanded, setBotListExpanded] = useState(false);
 
-  const { data, error, isError, isSuccess, isLoading } = usePrpcQuery({
+  const client = usePrpcServiceClient({
     host: swarmingHost,
     ClientImpl: BotsClientImpl,
-    method: 'ListBots',
-    request: BotsRequest.fromPartial({
-      limit: PAGE_SIZE,
-      dimensions,
-    }),
-    options: {
-      select: (res) => {
-        const bots = res.items?.filter((b) => !b.deleted) || [];
+  });
+  const { data, error, isError, isSuccess, isLoading } = useQuery({
+    ...client.ListBots.query(
+      BotsRequest.fromPartial({
+        limit: PAGE_SIZE,
+        dimensions,
+      }),
+    ),
+    select: (res) => {
+      const bots = res.items?.filter((b) => !b.deleted) || [];
 
-        // TODO(weiweilin): We do not iterate over all pages because that could
-        // potentially be very slow and expensive. As a result, the stats is not
-        // accurate when there are multiple pages. We should use a `GetStats` RPC
-        // when it becomes available.
-        const stats = {
-          [BotStatus.Idle]: 0,
-          [BotStatus.Busy]: 0,
-          [BotStatus.Quarantined]: 0,
-          [BotStatus.Dead]: 0,
-          // Delete bots have been filtered out. Declare it regardless to pass
-          // type checking.
-          [BotStatus.Deleted]: 0,
-        };
-        for (const bot of bots) {
-          const status = getBotStatus(bot as DeepNonNullable<typeof bot>);
-          stats[status]++;
-        }
-        return {
-          bots,
-          stats,
-          hasNextPage: Boolean(res.cursor),
-        };
-      },
+      // TODO(weiweilin): We do not iterate over all pages because that could
+      // potentially be very slow and expensive. As a result, the stats is not
+      // accurate when there are multiple pages. We should use a `GetStats` RPC
+      // when it becomes available.
+      const stats = {
+        [BotStatus.Idle]: 0,
+        [BotStatus.Busy]: 0,
+        [BotStatus.Quarantined]: 0,
+        [BotStatus.Dead]: 0,
+        // Delete bots have been filtered out. Declare it regardless to pass
+        // type checking.
+        [BotStatus.Deleted]: 0,
+      };
+      for (const bot of bots) {
+        const status = getBotStatus(bot as DeepNonNullable<typeof bot>);
+        stats[status]++;
+      }
+      return {
+        bots,
+        stats,
+        hasNextPage: Boolean(res.cursor),
+      };
     },
   });
 

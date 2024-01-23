@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import { CircularProgress, Link } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { extractProject } from '@/common/tools/utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import {
@@ -29,18 +30,21 @@ export interface ViewsSectionProps {
 }
 
 export function ViewsSection({ builderId }: ViewsSectionProps) {
-  const { data, error, isError, isLoading } = usePrpcQuery({
+  const client = usePrpcServiceClient({
     host: '',
     insecure: location.protocol === 'http:',
     ClientImpl: MiloInternalClientImpl,
-    method: 'QueryConsoles',
-    request: QueryConsolesRequest.fromPartial({
-      predicate: {
-        builder: builderId,
-      },
-      pageSize: PAGE_SIZE,
-    }),
   });
+  const { data, error, isError, isLoading } = useQuery(
+    client.QueryConsoles.query(
+      QueryConsolesRequest.fromPartial({
+        predicate: {
+          builder: builderId,
+        },
+        pageSize: PAGE_SIZE,
+      }),
+    ),
+  );
 
   if (isError) {
     throw error;

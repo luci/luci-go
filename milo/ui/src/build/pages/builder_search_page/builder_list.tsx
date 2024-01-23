@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { groupBy, mapValues } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   ListBuildersRequest,
   MiloInternalClientImpl,
@@ -28,16 +29,19 @@ interface BuilderListProps {
 }
 
 export function BuilderList({ searchQuery }: BuilderListProps) {
+  const client = usePrpcServiceClient({
+    host: '',
+    insecure: location.protocol === 'http:',
+    ClientImpl: MiloInternalClientImpl,
+  });
   const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
-    useInfinitePrpcQuery({
-      host: '',
-      insecure: location.protocol === 'http:',
-      ClientImpl: MiloInternalClientImpl,
-      method: 'ListBuilders',
-      request: ListBuildersRequest.fromPartial({
-        pageSize: 10000,
-      }),
-    });
+    useInfiniteQuery(
+      client.ListBuilders.queryPaged(
+        ListBuildersRequest.fromPartial({
+          pageSize: 10000,
+        }),
+      ),
+    );
 
   if (isError) {
     throw error;

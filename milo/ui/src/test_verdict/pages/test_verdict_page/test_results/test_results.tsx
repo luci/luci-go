@@ -16,8 +16,9 @@ import { GrpcError, ProtocolError } from '@chopsui/prpc-client';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Divider from '@mui/material/Divider';
+import { useQuery } from '@tanstack/react-query';
 
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   ClusterRequest_TestResult,
   ClustersClientImpl,
@@ -49,18 +50,17 @@ export function TestResults({ results }: Props) {
       !r.result.expected &&
       ![TestStatus.PASS, TestStatus.SKIP].includes(r.result.status),
   );
+
+  const client = usePrpcServiceClient({
+    ClientImpl: ClustersClientImpl,
+    host: SETTINGS.luciAnalysis.host,
+  });
   const {
     data: clustersResponse,
     error,
     isError,
-  } = usePrpcQuery({
-    ClientImpl: ClustersClientImpl,
-    host: SETTINGS.luciAnalysis.host,
-    method: 'Cluster',
-    options: {
-      enabled: !!project,
-    },
-    request: {
+  } = useQuery({
+    ...client.Cluster.query({
       // The request is only enabled if the project is set.
       project: project!,
       testResults: filteredResults.map((r) =>
@@ -71,7 +71,8 @@ export function TestResults({ results }: Props) {
           },
         }),
       ),
-    },
+    }),
+    enabled: !!project,
   });
 
   const isReqError =

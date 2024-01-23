@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { Alerts } from '@/monitoring/components/alerts';
 import { configuredTrees } from '@/monitoring/util/config';
 import {
@@ -34,17 +34,18 @@ export const MonitoringPage = () => {
   const { tree: treeName } = useParams();
   const tree = configuredTrees.filter((t) => t.name == treeName)?.[0];
 
-  const alerts = usePrpcQuery({
+  const client = usePrpcServiceClient({
     host: SETTINGS.sheriffOMatic.host,
     ClientImpl: AlertsClientImpl,
-    method: 'ListAlerts',
-    request: ListAlertsRequest.fromPartial({
-      parent: `trees/${treeName}`,
-    }),
-    options: {
-      refetchInterval: 60000,
-      enabled: !!(treeName && tree),
-    },
+  });
+  const alerts = useQuery({
+    ...client.ListAlerts.query(
+      ListAlertsRequest.fromPartial({
+        parent: `trees/${treeName}`,
+      }),
+    ),
+    refetchInterval: 60000,
+    enabled: !!(treeName && tree),
   });
   // TODO(b/319315200): This doesn't work - replace with RPC when available.
   const { data: annotations } = useQuery({

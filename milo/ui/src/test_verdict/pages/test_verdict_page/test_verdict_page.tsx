@@ -14,6 +14,7 @@
 
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
+import { useQuery } from '@tanstack/react-query';
 import { upperFirst } from 'lodash-es';
 import { useParams } from 'react-router-dom';
 
@@ -22,7 +23,7 @@ import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { PageMeta } from '@/common/components/page_meta';
 import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { UiPage } from '@/common/constants/view';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   BatchGetTestVariantsRequest,
   ResultDBClientImpl,
@@ -43,25 +44,28 @@ export function TestVerdictPage() {
     );
   }
 
+  const client = usePrpcServiceClient({
+    host: SETTINGS.resultdb.host,
+    ClientImpl: ResultDBClientImpl,
+  });
   const {
     data: results,
     error,
     isError,
     isLoading,
-  } = usePrpcQuery({
-    ClientImpl: ResultDBClientImpl,
-    host: SETTINGS.resultdb.host,
-    method: 'BatchGetTestVariants',
-    request: BatchGetTestVariantsRequest.fromPartial({
-      invocation: `invocations/${invID}`,
-      testVariants: Object.freeze([
-        {
-          testId: testID!,
-          variantHash: vHash,
-        },
-      ]),
-    }),
-  });
+  } = useQuery(
+    client.BatchGetTestVariants.query(
+      BatchGetTestVariantsRequest.fromPartial({
+        invocation: `invocations/${invID}`,
+        testVariants: Object.freeze([
+          {
+            testId: testID!,
+            variantHash: vHash,
+          },
+        ]),
+      }),
+    ),
+  );
 
   if (isError) {
     throw error;

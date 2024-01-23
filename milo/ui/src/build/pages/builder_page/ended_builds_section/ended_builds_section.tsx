@@ -14,12 +14,13 @@
 
 import { Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
+import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { OutputBuild } from '@/build/types';
-import { usePrpcQuery } from '@/common/hooks/prpc_query';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
@@ -71,24 +72,26 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
 
   const headingRef = useRef<HTMLHeadingElement>(null);
 
-  const { data, error, isError, isLoading, isPreviousData } = usePrpcQuery({
+  const client = usePrpcServiceClient({
     host: SETTINGS.buildbucket.host,
     ClientImpl: BuildsClientImpl,
-    method: 'SearchBuilds',
-    request: SearchBuildsRequest.fromPartial({
-      predicate: {
-        builder: builderId,
-        includeExperimental: true,
-        status: Status.ENDED_MASK,
-        createTime: {
-          endTime: createdBefore?.toISO(),
-        },
+  });
+  const req = SearchBuildsRequest.fromPartial({
+    predicate: {
+      builder: builderId,
+      includeExperimental: true,
+      status: Status.ENDED_MASK,
+      createTime: {
+        endTime: createdBefore?.toISO(),
       },
-      pageSize,
-      pageToken,
-      fields: FIELD_MASK,
-    }),
-    options: { keepPreviousData: true },
+    },
+    pageSize,
+    pageToken,
+    fields: FIELD_MASK,
+  });
+  const { data, error, isError, isLoading, isPreviousData } = useQuery({
+    ...client.SearchBuilds.query(req),
+    keepPreviousData: true,
   });
 
   if (isError) {

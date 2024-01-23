@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UseQueryResult } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 
-import { usePrpcQueries } from '@/common/hooks/prpc_query';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import {
   BuildsClientImpl,
@@ -28,6 +26,7 @@ import {
   StringPair,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { NEVER_PROMISE } from '@/testing_tools/utils';
 
 import { RelatedBuildTable } from './related_build_table';
 import {
@@ -48,12 +47,6 @@ function createMockBuild(id: string): Build {
   });
 }
 
-jest.mock('@/common/hooks/prpc_query', () => {
-  return createSelectiveMockFromModule<
-    typeof import('@/common/hooks/prpc_query')
-  >('@/common/hooks/prpc_query', ['usePrpcQueries']);
-});
-
 jest.mock('./related_build_table', () => {
   return createSelectiveSpiesFromModule<typeof import('./related_build_table')>(
     './related_build_table',
@@ -62,27 +55,22 @@ jest.mock('./related_build_table', () => {
 });
 
 describe('RelatedBuildsDisplay', () => {
-  let usePrpcQueriesMock: jest.MockedFunction<
-    typeof usePrpcQueries<BuildsClientImpl, 'SearchBuilds'>
-  >;
+  let searchBuildsMock: jest.SpiedFunction<BuildsClientImpl['SearchBuilds']>;
   let relatedBuildsTableSpy: jest.MockedFunction<typeof RelatedBuildTable>;
   beforeEach(() => {
     jest.useFakeTimers();
     relatedBuildsTableSpy = jest.mocked(RelatedBuildTable);
-    usePrpcQueriesMock = jest.mocked(
-      usePrpcQueries<BuildsClientImpl, 'SearchBuilds'>,
-    );
+    searchBuildsMock = jest.spyOn(BuildsClientImpl.prototype, 'SearchBuilds');
   });
 
   afterEach(() => {
     cleanup();
     jest.useRealTimers();
-    usePrpcQueriesMock.mockReset();
+    searchBuildsMock.mockReset();
     relatedBuildsTableSpy.mockReset();
   });
 
   it('no buildset', async () => {
-    usePrpcQueriesMock.mockReturnValue([]);
     render(
       <FakeContextProvider>
         <RelatedBuildsDisplay
@@ -90,12 +78,7 @@ describe('RelatedBuildsDisplay', () => {
         />
       </FakeContextProvider>,
     );
-    expect(usePrpcQueriesMock).toHaveBeenCalledWith({
-      host: SETTINGS.buildbucket.host,
-      ClientImpl: BuildsClientImpl,
-      method: 'SearchBuilds',
-      requests: [],
-    });
+    expect(searchBuildsMock).not.toHaveBeenCalled();
 
     expect(
       screen.getByText('No other builds found with the same buildset'),
@@ -103,28 +86,23 @@ describe('RelatedBuildsDisplay', () => {
   });
 
   it('can dedupe builds', async () => {
-    usePrpcQueriesMock.mockReturnValue([
-      {
-        data: SearchBuildsResponse.fromPartial({
+    searchBuildsMock.mockImplementation(async (req) => {
+      if (req.predicate?.tags[0].value === 'commit/gitiles/1234') {
+        return SearchBuildsResponse.fromPartial({
           builds: [
             createMockBuild('00001'),
             createMockBuild('00002'),
           ] as ReadonlyArray<Build>,
-        }),
-        isError: false,
-        isLoading: false,
-      } as UseQueryResult<SearchBuildsResponse>,
-      {
-        data: SearchBuildsResponse.fromPartial({
-          builds: [
-            createMockBuild('00002'),
-            createMockBuild('00003'),
-          ] as ReadonlyArray<Build>,
-        }),
-        isError: false,
-        isLoading: false,
-      } as UseQueryResult<SearchBuildsResponse>,
-    ]);
+        });
+      }
+
+      return SearchBuildsResponse.fromPartial({
+        builds: [
+          createMockBuild('00002'),
+          createMockBuild('00003'),
+        ] as ReadonlyArray<Build>,
+      });
+    });
     render(
       <FakeContextProvider>
         <RelatedBuildsDisplay
@@ -138,38 +116,37 @@ describe('RelatedBuildsDisplay', () => {
         />
       </FakeContextProvider>,
     );
-    expect(usePrpcQueriesMock).toHaveBeenCalledWith({
-      host: SETTINGS.buildbucket.host,
-      ClientImpl: BuildsClientImpl,
-      method: 'SearchBuilds',
-      requests: [
-        SearchBuildsRequest.fromPartial({
-          fields: RELATED_BUILDS_FIELD_MASK,
-          pageSize: 1000,
-          predicate: {
-            tags: [
-              {
-                key: 'buildset',
-                value: 'commit/gitiles/1234',
-              },
-            ] as ReadonlyArray<StringPair>,
-          },
-        }),
-        SearchBuildsRequest.fromPartial({
-          fields: RELATED_BUILDS_FIELD_MASK,
-          pageSize: 1000,
-          predicate: {
-            tags: [
-              {
-                key: 'buildset',
-                value: 'commit/gitiles/5678',
-              },
-            ] as ReadonlyArray<StringPair>,
-          },
-        }),
-      ],
-    });
+    expect(searchBuildsMock).toHaveBeenCalledTimes(2);
+    expect(searchBuildsMock).toHaveBeenCalledWith(
+      SearchBuildsRequest.fromPartial({
+        fields: RELATED_BUILDS_FIELD_MASK,
+        pageSize: 1000,
+        predicate: {
+          tags: [
+            {
+              key: 'buildset',
+              value: 'commit/gitiles/1234',
+            },
+          ] as ReadonlyArray<StringPair>,
+        },
+      }),
+    );
+    expect(searchBuildsMock).toHaveBeenCalledWith(
+      SearchBuildsRequest.fromPartial({
+        fields: RELATED_BUILDS_FIELD_MASK,
+        pageSize: 1000,
+        predicate: {
+          tags: [
+            {
+              key: 'buildset',
+              value: 'commit/gitiles/5678',
+            },
+          ] as ReadonlyArray<StringPair>,
+        },
+      }),
+    );
 
+    await act(() => jest.runAllTimersAsync());
     await act(() => jest.runAllTimersAsync());
 
     expect(relatedBuildsTableSpy).toHaveBeenCalledWith(
@@ -186,23 +163,18 @@ describe('RelatedBuildsDisplay', () => {
   });
 
   it('one query is loading', async () => {
-    usePrpcQueriesMock.mockReturnValue([
-      {
-        data: SearchBuildsResponse.fromPartial({
+    searchBuildsMock.mockImplementation(async (req) => {
+      if (req.predicate?.tags[0].value === 'commit/git/1234') {
+        return SearchBuildsResponse.fromPartial({
           builds: [
             createMockBuild('00001'),
             createMockBuild('00002'),
           ] as ReadonlyArray<Build>,
-        }),
-        isError: false,
-        isLoading: false,
-      } as UseQueryResult<SearchBuildsResponse>,
-      {
-        data: undefined,
-        isError: false,
-        isLoading: true,
-      } as UseQueryResult<SearchBuildsResponse>,
-    ]);
+        });
+      }
+
+      return NEVER_PROMISE;
+    });
     render(
       <FakeContextProvider>
         <RelatedBuildsDisplay
