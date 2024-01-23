@@ -134,20 +134,10 @@ export const BuildPage = observer(() => {
             css={{
               backgroundColor: 'var(--block-background-color)',
               padding: '6px 16px',
-              fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
-              fontSize: '14px',
               display: 'flex',
             }}
           >
-            <div
-              css={{
-                flex: '0 auto',
-                fontSize: '0px',
-                '& > *': {
-                  fontSize: '14px',
-                },
-              }}
-            >
+            <div css={{ flex: '0 auto' }}>
               <span css={{ color: 'var(--light-text-color)' }}>Build </span>
               <Link component={RouterLink} to={getProjectURLPath(project)}>
                 {project}

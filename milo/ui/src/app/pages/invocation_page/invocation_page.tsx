@@ -64,8 +64,6 @@ export const InvocationPage = observer(() => {
         css={{
           backgroundColor: 'var(--block-background-color)',
           padding: '6px 16px',
-          fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
-          fontSize: '14px',
           display: 'flex',
         }}
       >

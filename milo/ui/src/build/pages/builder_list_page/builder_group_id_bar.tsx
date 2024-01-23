@@ -26,20 +26,10 @@ export function BuilderGroupIdBar({ project }: ProjectIdBarProps) {
       css={{
         backgroundColor: 'var(--block-background-color)',
         padding: '6px 16px',
-        fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
-        fontSize: '14px',
         display: 'flex',
       }}
     >
-      <div
-        css={{
-          flex: '0 auto',
-          fontSize: '0px',
-          '& > *': {
-            fontSize: '14px',
-          },
-        }}
-      >
+      <div css={{ flex: '0 auto' }}>
         <Link href={getProjectURLPath(project)}>{project}</Link>
         <span> / </span>
         <span>builders</span>

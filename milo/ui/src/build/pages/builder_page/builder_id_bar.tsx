@@ -37,20 +37,10 @@ export function BuilderIdBar({ builderId, healthStatus }: BuilderIdBarProps) {
       css={{
         backgroundColor: 'var(--block-background-color)',
         padding: '6px 16px',
-        fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
-        fontSize: '14px',
         display: 'flex',
       }}
     >
-      <div
-        css={{
-          flex: '0 auto',
-          fontSize: '0px',
-          '& > *': {
-            fontSize: '14px',
-          },
-        }}
-      >
+      <div css={{ flex: '0 auto' }}>
         <span css={{ color: 'var(--light-text-color)' }}>Builder </span>
         <a href={getProjectURLPath(builderId.project)}>{builderId.project}</a>
         <span> / </span>

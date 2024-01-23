@@ -128,8 +128,6 @@ export const TestHistoryPage = observer(() => {
           width: '100%',
           backgroundColor: 'var(--block-background-color)',
           padding: '6px 16px',
-          fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
-          fontSize: '14px',
         }}
       >
         <TestIdLabel projectOrRealm={projectOrRealm} testId={testId} />

@@ -17,7 +17,7 @@ body {
   margin: 0;
   padding: 0px;
   color: var(--default-text-color);
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: "Google Sans", "Helvetica Neue", sans-serif;
   font-size: 14px;
   letter-spacing: 0.25px;
 }
