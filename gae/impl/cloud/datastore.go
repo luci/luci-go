@@ -320,7 +320,7 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 	for field, props := range fq.EqFilters() {
 		if field != "__ancestor__" {
 			for _, prop := range props {
-				nq = nq.Filter(fmt.Sprintf("%s =", field), nativeFilter(prop))
+				nq = nq.FilterField(field, "=", nativeFilter(prop))
 			}
 		}
 	}
@@ -328,11 +328,10 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 	// Inequality filters.
 	if ineq := fq.IneqFilterProp(); ineq != "" {
 		if field, op, prop := fq.IneqFilterLow(); field != "" {
-			nq = nq.Filter(fmt.Sprintf("%s %s", field, op), nativeFilter(prop))
+			nq = nq.FilterField(field, op, nativeFilter(prop))
 		}
-
 		if field, op, prop := fq.IneqFilterHigh(); field != "" {
-			nq = nq.Filter(fmt.Sprintf("%s %s", field, op), nativeFilter(prop))
+			nq = nq.FilterField(field, op, nativeFilter(prop))
 		}
 	}
 

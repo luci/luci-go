@@ -368,11 +368,12 @@ func TestDatastore(t *testing.T) {
 					"EmptySlice":  ds.PropertySlice(nil),
 
 					"SingleEntity": mkp(ds.PropertyMap{
-						"$id":    mkpNI("inner"),
-						"$kind":  mkpNI("Inner"),
-						"$key":   mkpNI(ds.MakeKey(c, "Inner", "inner")),
-						"prop":   mkp(1),
-						"deeper": mkp(ds.PropertyMap{"deep": mkp(123)}),
+						"$id":     mkpNI("inner"),
+						"$kind":   mkpNI("Inner"),
+						"$key":    mkpNI(ds.MakeKey(c, "Inner", "inner")),
+						"$parent": mkpNI(nil),
+						"prop":    mkp(1),
+						"deeper":  mkp(ds.PropertyMap{"deep": mkp(123)}),
 					}),
 					"SliceOfEntities": mkp(
 						ds.PropertyMap{"prop": mkp(2)},
@@ -418,6 +419,15 @@ func TestDatastore(t *testing.T) {
 					{"$kind": mkp("Test"), "$id": mkp("quuz"), "$parent": mkp(ds.MakeKey(c, "Test", "baz"))},
 				}), ShouldBeNil)
 
+				withAllMeta := func(pm ds.PropertyMap) ds.PropertyMap {
+					prop := pm["$key"].(ds.Property)
+					key := prop.Value().(*ds.Key)
+					pm["$id"] = mkpNI(key.StringID())
+					pm["$kind"] = mkpNI(key.Kind())
+					pm["$parent"] = mkpNI(key.Parent())
+					return pm
+				}
+
 				q := ds.NewQuery("Test")
 
 				Convey(`Can query for entities with FooBar == true.`, func() {
@@ -426,8 +436,8 @@ func TestDatastore(t *testing.T) {
 					So(ds.GetAll(c, q, &results), ShouldBeNil)
 
 					So(results, ShouldResemble, []ds.PropertyMap{
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "bar")), "FooBar": mkp(true)},
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)},
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "bar")), "FooBar": mkp(true)}),
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)}),
 					})
 				})
 
@@ -437,10 +447,10 @@ func TestDatastore(t *testing.T) {
 					So(ds.GetAll(c, q, &results), ShouldBeNil)
 
 					So(results, ShouldResemble, []ds.PropertyMap{
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))},
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))},
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)},
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "qux"))},
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))}),
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))}),
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)}),
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "qux"))}),
 					})
 				})
 
@@ -450,9 +460,9 @@ func TestDatastore(t *testing.T) {
 					So(ds.GetAll(c, q, &results), ShouldBeNil)
 
 					So(results, ShouldResemble, []ds.PropertyMap{
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz"))},
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))},
-						{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))},
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz"))}),
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))}),
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))}),
 					})
 				})
 
