@@ -18,6 +18,9 @@ import { styled } from '@mui/system';
 import { getBuilderURLPath } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
+import { BuilderStats } from './builder_stats';
+import { RecentBuilds } from './recent_builds';
+
 const Row = styled('tr')({
   height: '40px',
   '& > td': {
@@ -31,12 +34,12 @@ const Row = styled('tr')({
 });
 
 export interface BuilderRowProps {
-  readonly 'data-index': number;
+  readonly 'data-item-index': number;
   readonly item: BuilderID;
 }
 
 export function BuilderRow({
-  'data-index': index,
+  'data-item-index': index,
   item: builder,
 }: BuilderRowProps) {
   return (
@@ -51,8 +54,12 @@ export function BuilderRow({
           {builder.project}/{builder.bucket}/{builder.builder}
         </Link>
       </td>
-      <td>{/* TODO: render builder stats */}</td>
-      <td>{/* TODO: render recent builds */}</td>
+      <td>
+        <BuilderStats builder={builder} />
+      </td>
+      <td>
+        <RecentBuilds builder={builder} />
+      </td>
     </Row>
   );
 }

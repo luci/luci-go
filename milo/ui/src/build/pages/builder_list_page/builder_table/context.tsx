@@ -14,6 +14,14 @@
 
 import { ReactNode, createContext, useContext } from 'react';
 
+import {
+  DecoratedClient,
+  usePrpcServiceClient,
+} from '@/common/hooks/prpc_query';
+import { BatchedBuildsClientImpl } from '@/proto_utils/batched_builds_client';
+
+const BuildsClientCtx =
+  createContext<DecoratedClient<BatchedBuildsClientImpl> | null>(null);
 const NumOfBuildsCtx = createContext<number | null>(null);
 
 export interface BuilderTableContextProviderProps {
@@ -25,11 +33,28 @@ export function BuilderTableContextProvider({
   numOfBuilds,
   children,
 }: BuilderTableContextProviderProps) {
+  const buildsClient = usePrpcServiceClient({
+    host: SETTINGS.buildbucket.host,
+    ClientImpl: BatchedBuildsClientImpl,
+  });
+
   return (
-    <NumOfBuildsCtx.Provider value={numOfBuilds}>
-      {children}
-    </NumOfBuildsCtx.Provider>
+    <BuildsClientCtx.Provider value={buildsClient}>
+      <NumOfBuildsCtx.Provider value={numOfBuilds}>
+        {children}
+      </NumOfBuildsCtx.Provider>
+    </BuildsClientCtx.Provider>
   );
+}
+
+export function useBuildsClient() {
+  const ctx = useContext(BuildsClientCtx);
+  if (ctx === null) {
+    throw new Error(
+      'useBuildsClient can only be used within BuilderTableContextProvider',
+    );
+  }
+  return ctx;
 }
 
 export function useNumOfBuilds() {
