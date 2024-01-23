@@ -87,7 +87,7 @@ func (qm *Manager) CreditTryjobQuota(ctx context.Context) (*quotapb.OpResult, er
 
 // RunQuotaAccountID returns the account id of the run quota for the given run.
 func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
-	return qm.qapp.AccountID(r.ID.LUCIProject(), r.ConfigGroupID.Name(), r.CreatedBy.Email(), runResource)
+	return qm.qapp.AccountID(r.ID.LUCIProject(), r.ConfigGroupID.Name(), r.BilledTo.Email(), runResource)
 }
 
 // runQuotaOp updates the run quota for the given run state by the given delta.
@@ -116,7 +116,6 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delt
 	}
 
 	// When server/quota does not have the policyId already, rewrite the policy and retry the op.
-
 	var opResponse *quotapb.ApplyOpsResponse
 	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), makeRetryFactory(), func() (err error) {
 		opResponse, err = srvquota.ApplyOps(ctx, requestID(r.ID, opID), durationpb.New(accountLifeTime), quotaOp)
@@ -194,7 +193,7 @@ func (qm *Manager) findRunPolicy(ctx context.Context, r *run.Run) (*quotapb.Poli
 	}
 
 	policyConfigID := policyConfigID(project, r.ConfigGroupID.Hash())
-	user := r.CreatedBy
+	user := r.BilledTo
 	for _, userLimit := range config.GetUserLimits() {
 		runLimit := userLimit.GetRun()
 		if runLimit == nil {

@@ -99,6 +99,7 @@ func (rs *RunState) DeepCopy() *RunState {
 			EndTime:                           rs.EndTime,
 			Owner:                             rs.Owner,
 			CreatedBy:                         rs.CreatedBy,
+			BilledTo:                          rs.BilledTo,
 			ConfigGroupID:                     rs.ConfigGroupID,
 			Options:                           proto.Clone(rs.Options).(*run.Options),
 			Submission:                        proto.Clone(rs.Submission).(*run.Submission),

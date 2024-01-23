@@ -39,12 +39,12 @@ func (exe *Executor) creditQuota(ctx context.Context) (string, error) {
 	// Credit back run quota when the run ends.
 	switch quotaOp, err := exe.QM.CreditRunQuota(ctx, exe.Run); {
 	case err == nil && quotaOp != nil:
-		logging.Debugf(ctx, "Run quota credited back to %q; new balance: %d", exe.Run.CreatedBy.Email(), quotaOp.GetNewBalance())
+		logging.Debugf(ctx, "Run quota credited back to %q; new balance: %d", exe.Run.BilledTo.Email(), quotaOp.GetNewBalance())
 		// continue to pick the next pending run to start for the run creator
 	case err == nil:
 		// no quota operation executed means no run quota limit has been specified
 		// for the user.
-		return fmt.Sprintf("run quota limit is not specified for user %q", exe.Run.CreatedBy.Email()), nil
+		return fmt.Sprintf("run quota limit is not specified for user %q", exe.Run.BilledTo.Email()), nil
 	case err == quota.ErrQuotaApply:
 		return "", errors.Annotate(err, "QM.CreditRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
 	case err != nil:

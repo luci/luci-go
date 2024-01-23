@@ -83,7 +83,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			Run: &run.Run{
 				ID:            common.MakeRunID(lProject, clock.Now(ctx).Add(-1*time.Hour), 1, []byte("deadbeef")),
 				Status:        run.Status_SUCCEEDED,
-				CreatedBy:     userIdentity,
+				BilledTo:      userIdentity,
 				Mode:          run.FullRun,
 				ConfigGroupID: configGroupID,
 			},
@@ -102,7 +102,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				CreatedBy:     userIdentity,
+				BilledTo:      userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -118,7 +118,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				CreatedBy:     userIdentity,
+				BilledTo:      userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -127,7 +127,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			qm.quotaSpecified = false
 			summary, err := executor.Do(ctx)
 			So(err, ShouldBeNil)
-			So(summary, ShouldEqual, fmt.Sprintf("run quota limit is not specified for user %q", r.CreatedBy.Email()))
+			So(summary, ShouldEqual, fmt.Sprintf("run quota limit is not specified for user %q", r.BilledTo.Email()))
 			So(qm.creditQuotaCalledWith, ShouldResemble, common.RunIDs{executor.Run.ID})
 			So(rm.notifyStarted, ShouldBeEmpty)
 		})
@@ -135,7 +135,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID("another-proj", runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				CreatedBy:     userIdentity,
+				BilledTo:      userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -150,7 +150,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				CreatedBy:     userIdentity,
+				BilledTo:      userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: prjcfg.MakeConfigGroupID("another-config-group", "hash"),
@@ -165,7 +165,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				CreatedBy:     identity.Identity(fmt.Sprintf("%s:%s", identity.User, "another-user@example.com")),
+				BilledTo:      identity.Identity(fmt.Sprintf("%s:%s", identity.User, "another-user@example.com")),
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -180,7 +180,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			depRun := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime.Add(-1*time.Minute), 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				CreatedBy:     identity.Identity(fmt.Sprintf("%s:%s", identity.User, "another-user@example.com")),
+				BilledTo:      identity.Identity(fmt.Sprintf("%s:%s", identity.User, "another-user@example.com")),
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -188,7 +188,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 				Status:        run.Status_PENDING,
-				CreatedBy:     userIdentity,
+				BilledTo:      userIdentity,
 				Mode:          run.FullRun,
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
@@ -209,7 +209,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				runs[i] = &run.Run{
 					ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("deadbeef")),
 					Status:        run.Status_PENDING,
-					CreatedBy:     userIdentity,
+					BilledTo:      userIdentity,
 					Mode:          run.FullRun,
 					CreateTime:    runCreateTime,
 					ConfigGroupID: configGroupID,
@@ -249,7 +249,7 @@ func (qm *mockQM) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 		AppId:        "cv",
 		Realm:        r.ID.LUCIProject(),
 		Namespace:    r.ConfigGroupID.Name(),
-		Name:         r.CreatedBy.Email(),
+		Name:         r.BilledTo.Email(),
 		ResourceType: "mock-runs",
 	}
 }

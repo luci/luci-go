@@ -130,13 +130,13 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 
 	// Run quota should be debited from the creator before the run is started.
 	// When run quota isn't available, the run is left in the pending state.
-	pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.CreatedBy.Email())
+	pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.BilledTo.Email())
 	switch quotaOp, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
 	case err == nil && quotaOp != nil:
-		rs.LogInfof(ctx, logEntryLabelRunQuotaBalanceMessage, "Run quota debited from %s; balance: %d", rs.Run.CreatedBy.Email(), quotaOp.GetNewBalance())
-	case err == quota.ErrQuotaApply && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
+		rs.LogInfof(ctx, logEntryLabelRunQuotaBalanceMessage, "Run quota debited from %s; balance: %d", rs.Run.BilledTo.Email(), quotaOp.GetNewBalance())
+	case errors.Unwrap(err) == quota.ErrQuotaApply && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
 		// run quota isn't currently available for the user; leave the run in pending.
-		logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.CreatedBy.Email(), rs.Run.ID)
+		logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.BilledTo.Email(), rs.Run.ID)
 
 		// Post pending message to all gerrit CLs for this run if not posted already.
 		if !rs.QuotaExhaustionMsgLongOpRequested {
@@ -167,7 +167,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		}
 
 		return &Result{State: rs, PreserveEvents: true}, nil
-	case err == quota.ErrQuotaApply:
+	case errors.Unwrap(err) == quota.ErrQuotaApply:
 		return nil, errors.Annotate(err, "QM.DebitRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
 	case err != nil:
 		return nil, errors.Annotate(err, "QM.DebitRunQuota").Tag(transient.Tag).Err()

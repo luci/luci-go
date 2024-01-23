@@ -167,7 +167,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
@@ -184,7 +184,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
@@ -205,7 +205,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
 			So(err, ShouldBeNil)
@@ -225,7 +225,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
@@ -245,7 +245,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
@@ -265,7 +265,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, err := qm.DebitRunQuota(ctx, r)
@@ -297,7 +297,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, err := qm.CreditRunQuota(ctx, r)
@@ -329,7 +329,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, err := qm.runQuotaOp(ctx, r, "foo1", -1)
@@ -377,7 +377,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, err := qm.runQuotaOp(ctx, r, "", -1)
@@ -397,7 +397,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			Convey("quota underflow", func() {
@@ -451,7 +451,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, err := qm.runQuotaOp(ctx, r, "", -1)
@@ -544,7 +544,7 @@ func TestManager(t *testing.T) {
 			r := &run.Run{
 				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			}
 
 			res, err := qm.runQuotaOp(ctx, r, "foo", -1)

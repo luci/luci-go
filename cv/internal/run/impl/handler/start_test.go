@@ -105,6 +105,7 @@ func TestStart(t *testing.T) {
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 				Mode:          run.DryRun,
 				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
 			},
 		}
 		h, deps := makeTestHandler(&ct)
@@ -217,7 +218,7 @@ func TestStart(t *testing.T) {
 			So(len(ops), ShouldEqual, 1)
 			So(ops, ShouldContainKey, "1-1")
 			So(ops["1-1"].GetPostGerritMessage(), ShouldResembleProto, &run.OngoingLongOps_Op_PostGerritMessage{
-				Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.CreatedBy.Email()),
+				Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.BilledTo.Email()),
 			})
 			So(ct.TSMonSentValue(
 				ctx,
