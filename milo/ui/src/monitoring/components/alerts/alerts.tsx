@@ -45,7 +45,7 @@ export const Alerts = ({ tree, alerts, bugs, annotations }: AlertsProps) => {
   // Add any bugs associated with issues that are not in the hotlist.
   // TODO: This probably needs to be pushed higher up so the details can be queried from Buganizer.
   for (const bug of Object.keys(categories.bugAlerts)) {
-    if (bugs.filter((b) => b.number == bug).length == 0) {
+    if (bugs.filter((b) => b.number === bug).length === 0) {
       bugs.push(bugFromId(bug));
     }
   }
@@ -90,12 +90,12 @@ export const Alerts = ({ tree, alerts, bugs, annotations }: AlertsProps) => {
         Bugs
       </Typography>
       {/* TODO: Get hotlist name */}
-      {bugs.length == 0 ? (
+      {bugs.length === 0 ? (
         <Typography>There are currently no bugs in the hotlist.</Typography>
       ) : null}
       {bugs.map((bug) => {
         const numAlerts = categories.bugAlerts[bug.number]?.length || 0;
-        if (filter != '' && numAlerts == 0) {
+        if (filter !== '' && numAlerts === 0) {
           return null;
         }
         return (
@@ -109,7 +109,7 @@ export const Alerts = ({ tree, alerts, bugs, annotations }: AlertsProps) => {
           />
         );
       })}
-      {filter != '' && Object.keys(categories.bugAlerts).length == 0 && (
+      {filter !== '' && Object.keys(categories.bugAlerts).length === 0 && (
         <Typography>
           No alerts associated with bugs match your search filter, try changing
           or removing the search filter.
@@ -159,7 +159,7 @@ const categorizeAlerts = (
     }
     const builder = alert.extension?.builders?.[0];
     const failureCount =
-      builder && builder.first_failure_build_number == 0
+      builder && builder.first_failure_build_number === 0
         ? undefined
         : builder.latest_failure_build_number -
           builder.first_failure_build_number +

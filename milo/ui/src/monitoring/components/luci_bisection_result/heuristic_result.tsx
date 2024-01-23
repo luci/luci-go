@@ -30,7 +30,7 @@ interface HeuristicResultProps {
 
 export const HeuristicResult = ({ heuristicResult }: HeuristicResultProps) => {
   const suspects = heuristicResult?.suspects ?? [];
-  if (suspects.length == 0) {
+  if (suspects.length === 0) {
     return (
       <>
         LUCI Bisection couldn&apos;t find any heuristic suspect for this

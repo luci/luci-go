@@ -95,7 +95,7 @@ export const BugGroup = ({
                 <Chip
                   sx={{ marginLeft: '8px' }}
                   label={`P${bug.priority}`}
-                  variant={bug.priority == 0 ? 'filled' : 'outlined'}
+                  variant={bug.priority === 0 ? 'filled' : 'outlined'}
                   color={bug.priority < 2 ? 'primary' : undefined}
                 />
               ) : null}

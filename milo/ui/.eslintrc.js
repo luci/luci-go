@@ -80,6 +80,9 @@ module.exports = {
     // Note that we should still generally use camelcase.
     camelcase: 0,
 
+    // `==` may perform type conversion in some cases and is unintuitive.
+    eqeqeq: ['error', 'always'],
+
     // We need to import Lit component definition file separately as a
     // side-effect (e.g. `import './a_component'`) because type-only imports
     // (e.g. `import { AComponent } from './a_component'`) may get optimized

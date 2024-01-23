@@ -66,7 +66,7 @@ export const CulpritSection = ({
 };
 
 function getCulpritDisplayUrl(c: Culprit) {
-  if (c.review_title == '' || c.review_title == null) {
+  if (c.review_title === '' || c.review_title === null) {
     return c.review_url;
   }
   return c.review_title;

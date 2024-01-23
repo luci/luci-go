@@ -32,7 +32,7 @@ import {
 
 export const MonitoringPage = () => {
   const { tree: treeName } = useParams();
-  const tree = configuredTrees.filter((t) => t.name == treeName)?.[0];
+  const tree = configuredTrees.filter((t) => t.name === treeName)?.[0];
 
   const client = usePrpcServiceClient({
     host: SETTINGS.sheriffOMatic.host,

@@ -77,7 +77,7 @@ export function ListAnalysesTable() {
       keepPreviousData: true,
       onSuccess: (response) => {
         // Record the page token for the next page of analyses
-        if (response.nextPageToken != null) {
+        if (response.nextPageToken !== null) {
           const nextPageStartIndex = (page + 1) * pageSize;
           setPageTokens(
             new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
@@ -130,7 +130,7 @@ export function ListAnalysesTable() {
     );
   }
 
-  if (analyses.length == 0) {
+  if (analyses.length === 0) {
     return (
       <span className="data-placeholder" data-testid="list-analyses-table">
         No analyses

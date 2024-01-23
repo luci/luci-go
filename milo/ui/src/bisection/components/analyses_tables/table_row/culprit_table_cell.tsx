@@ -109,7 +109,7 @@ export function CulpritsTableCell({
   culprits,
   status,
 }: CulpritsTableCellProps) {
-  if (culprits == null || culprits.length == 0) {
+  if (!culprits?.length) {
     return (
       <TableCell>
         <span className="data-placeholder">

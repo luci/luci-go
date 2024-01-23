@@ -89,7 +89,7 @@ const INACTION_REASONS_WITH_REVERT_LINK: CulpritInactionReason[] = [
 ];
 
 function CulpritActionTableCell({ action }: CulpritActionTableCellProps) {
-  if (action == null) {
+  if (!action) {
     return <TableCell></TableCell>;
   }
 
@@ -236,7 +236,7 @@ const CulpritTableRow = ({ culprit }: CulpritTableRowProps) => {
 };
 
 export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
-  if (!culprits || culprits.length == 0) {
+  if (!culprits || culprits.length === 0) {
     return (
       <span className="data-placeholder" data-testid="culprits-table">
         No culprit found

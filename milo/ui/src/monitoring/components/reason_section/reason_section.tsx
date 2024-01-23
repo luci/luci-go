@@ -84,7 +84,7 @@ const codeSearchLink = (t: AlertReasonTestJson): string => {
     // test.package.TestClass#testMethod. For now, just split around the #
     const split = t.test_name.split('#');
 
-    if (split.length == 2) {
+    if (split.length === 2) {
       query = split[0] + ' function:' + split[1];
     }
   }
@@ -140,11 +140,11 @@ const TestFailureRow = ({
   failureBBID,
 }: TestFailureRowProps) => {
   const currentRate =
-    test.cur_counts.total_results == 0
+    test.cur_counts.total_results === 0
       ? undefined
       : 1 - test.cur_counts.unexpected_results / test.cur_counts.total_results;
   const previousRate =
-    test.prev_counts.total_results == 0
+    test.prev_counts.total_results === 0
       ? undefined
       : 1 -
         test.prev_counts.unexpected_results / test.prev_counts.total_results;
@@ -217,4 +217,4 @@ const chromiumSrcTrees = [
   'chrome_browser_release',
 ];
 const isChromiumSrc = (tree: string): boolean =>
-  chromiumSrcTrees.indexOf(tree) != -1;
+  chromiumSrcTrees.indexOf(tree) !== -1;

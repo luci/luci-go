@@ -29,7 +29,7 @@ interface LuciBisectionResultSectionProps {
 export const LuciBisectionResultSection = ({
   result,
 }: LuciBisectionResultSectionProps) => {
-  if (result == null) {
+  if (result === null) {
     return <></>;
   }
 

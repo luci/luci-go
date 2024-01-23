@@ -72,7 +72,7 @@ export const BugMenu = ({
                 unlinkBugMutation.mutateAsync().finally(() => onClose());
               }}
             >
-              Unlink bug {alerts.length != 1 && 'from all alerts'}
+              Unlink bug {alerts.length !== 1 && 'from all alerts'}
             </MenuItem>
             <Divider />
           </>

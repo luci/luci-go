@@ -46,7 +46,7 @@ interface RerunProps {
 export function NthSectionAnalysisTable({
   result,
 }: NthSectionAnalysisTableProps) {
-  if (result == null || result == undefined) {
+  if (result === null || result === undefined) {
     return (
       <span className="data-placeholder">There is no nthsection analysis</span>
     );
@@ -124,7 +124,7 @@ export function NthSectionAnalysisDetail({
 }
 
 export function NthSectionAnalysisRerunsTable({ reruns }: RerunProps) {
-  if (!reruns || reruns.length == 0) {
+  if (!reruns || reruns.length === 0) {
     return <span className="data-placeholder">No reruns found</span>;
   }
   return (

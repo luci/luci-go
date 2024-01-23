@@ -15,7 +15,7 @@
 export const getCommitShortHash = (
   commitID: string | null | undefined,
 ): string => {
-  if (commitID == null) {
+  if (commitID === null || commitID === undefined) {
     return '';
   }
 

@@ -58,7 +58,7 @@ export const ProjectSearch = () => {
       <Box sx={{ m: 5 }}>
         <ProjectList searchQuery={searchQuery} />
       </Box>
-      {authState.identity == ANONYMOUS_IDENTITY && (
+      {authState.identity === ANONYMOUS_IDENTITY && (
         <Alert severity="info">
           {"Can't see the project you expected? Try "}
           <Link

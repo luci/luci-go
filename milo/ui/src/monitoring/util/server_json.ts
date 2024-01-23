@@ -26,7 +26,7 @@ export const treeJsonFromName = (treeName: string): TreeJson | null => {
   const text = document.getElementById('trees-json')?.innerText;
   if (!text) return null;
   const trees = JSON.parse(JSON.parse(text));
-  return trees.filter((t: TreeJson) => t.name == treeName)?.[0];
+  return trees.filter((t: TreeJson) => t.name === treeName)?.[0];
 };
 
 // TODO: AlertJson fields were added based on example data.  There may be missing or incorrect fields.
@@ -282,10 +282,10 @@ export const bugFromJson = (bug: BugJson, priorityField: string): Bug => {
     link: `https://crbug.com/${number}`,
     summary: bug.summary,
     priority: parseInt(
-      bug.field_values.filter((f) => f.field == priorityField)?.[0]?.value,
+      bug.field_values.filter((f) => f.field === priorityField)?.[0]?.value,
     ),
     status: bug.status.status,
-    labels: bug.labels.map((l) => l.label).filter((l) => l != queueLabel),
+    labels: bug.labels.map((l) => l.label).filter((l) => l !== queueLabel),
   };
 };
 

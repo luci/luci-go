@@ -95,5 +95,5 @@ export const getSeverityTooltip = function (alertType: number) {
 };
 
 export const isTrooperAlertType = function (alertType: string) {
-  return TrooperAlertTypes.indexOf(alertType) != -1;
+  return TrooperAlertTypes.indexOf(alertType) !== -1;
 };

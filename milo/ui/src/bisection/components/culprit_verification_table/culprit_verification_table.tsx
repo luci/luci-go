@@ -37,7 +37,7 @@ function getRows(suspects: Suspect[]) {
 }
 
 export function CulpritVerificationTable({ suspects }: Props) {
-  if (suspects.length == 0) {
+  if (suspects.length === 0) {
     return (
       <span className="data-placeholder">No culprit verification results</span>
     );

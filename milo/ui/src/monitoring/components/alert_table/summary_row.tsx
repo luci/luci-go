@@ -60,7 +60,7 @@ export const AlertSummaryRow = ({
     alert.extension?.reason?.tests?.[0].test_name,
   );
   const failureCount =
-    builder.first_failure_build_number == 0
+    builder.first_failure_build_number === 0
       ? undefined
       : builder.latest_failure_build_number -
         builder.first_failure_build_number +
@@ -98,7 +98,7 @@ export const AlertSummaryRow = ({
             {failureCount} build{failureCount > 1 && 's'}:{' '}
           </>
         )}
-        {builder.first_failure_url != '' ? (
+        {builder.first_failure_url !== '' ? (
           <Link
             href={builder.first_failure_url}
             target="_blank"
@@ -110,7 +110,7 @@ export const AlertSummaryRow = ({
         ) : (
           'Unknown'
         )}
-        {builder.latest_failure_build_number !=
+        {builder.latest_failure_build_number !==
         builder.first_failure_build_number ? (
           <>
             {' - '}
@@ -126,7 +126,7 @@ export const AlertSummaryRow = ({
         ) : null}
       </TableCell>
       <TableCell>
-        {builder.first_failure_url == '' ? (
+        {builder.first_failure_url === '' ? (
           'Unknown'
         ) : (
           <Link
