@@ -545,74 +545,70 @@ func (q *Query) finalizeImpl() (*FinalizedQuery, error) {
 		ancestor = slice[0].Value().(*Key)
 	}
 
-	err := func() error {
+	if q.kind == "" { // kindless query checks
+		if q.ineqFiltProp != "" && q.ineqFiltProp != "__key__" {
+			return nil, fmt.Errorf(
+				"kindless queries can only filter on __key__, got %q", q.ineqFiltProp)
+		}
+		allowedEqs := 0
+		if ancestor != nil {
+			allowedEqs = 1
+		}
+		if len(q.eqFilts) > allowedEqs {
+			return nil, fmt.Errorf("kindless queries may not have any equality filters")
+		}
+		for _, o := range q.order {
+			if o.Property != "__key__" || o.Descending {
+				return nil, fmt.Errorf("invalid order for kindless query: %#v", o)
+			}
+		}
+	}
 
-		if q.kind == "" { // kindless query checks
-			if q.ineqFiltProp != "" && q.ineqFiltProp != "__key__" {
-				return fmt.Errorf(
-					"kindless queries can only filter on __key__, got %q", q.ineqFiltProp)
+	if q.keysOnly && q.project != nil && q.project.Len() > 0 {
+		return nil, errors.New("cannot project a keysOnly query")
+	}
+
+	if q.ineqFiltProp != "" {
+		if len(q.order) > 0 && q.order[0].Property != q.ineqFiltProp {
+			return nil, fmt.Errorf(
+				"first sort order must match inequality filter: %q v %q",
+				q.order[0].Property, q.ineqFiltProp)
+		}
+		if q.ineqFiltLowSet && q.ineqFiltHighSet {
+			if q.ineqFiltHigh.Less(&q.ineqFiltLow) ||
+				(q.ineqFiltHigh.Equal(&q.ineqFiltLow) &&
+					(!q.ineqFiltLowIncl || !q.ineqFiltHighIncl)) {
+				return nil, ErrNullQuery
 			}
-			allowedEqs := 0
-			if ancestor != nil {
-				allowedEqs = 1
+		}
+		if q.ineqFiltProp == "__key__" {
+			if q.ineqFiltLowSet {
+				if ancestor != nil && !q.ineqFiltLow.Value().(*Key).HasAncestor(ancestor) {
+					return nil, fmt.Errorf(
+						"inequality filters on __key__ must be descendants of the __ancestor__")
+				}
 			}
-			if len(q.eqFilts) > allowedEqs {
-				return fmt.Errorf("kindless queries may not have any equality filters")
-			}
-			for _, o := range q.order {
-				if o.Property != "__key__" || o.Descending {
-					return fmt.Errorf("invalid order for kindless query: %#v", o)
+			if q.ineqFiltHighSet {
+				if ancestor != nil && !q.ineqFiltHigh.Value().(*Key).HasAncestor(ancestor) {
+					return nil, fmt.Errorf(
+						"inequality filters on __key__ must be descendants of the __ancestor__")
 				}
 			}
 		}
+	}
 
-		if q.keysOnly && q.project != nil && q.project.Len() > 0 {
-			return errors.New("cannot project a keysOnly query")
-		}
-
-		if q.ineqFiltProp != "" {
-			if len(q.order) > 0 && q.order[0].Property != q.ineqFiltProp {
-				return fmt.Errorf(
-					"first sort order must match inequality filter: %q v %q",
-					q.order[0].Property, q.ineqFiltProp)
+	if q.project != nil {
+		var err error
+		q.project.Iter(func(p string) bool {
+			if _, iseq := q.eqFilts[p]; iseq {
+				err = fmt.Errorf("cannot project on equality filter field: %s", p)
+				return false
 			}
-			if q.ineqFiltLowSet && q.ineqFiltHighSet {
-				if q.ineqFiltHigh.Less(&q.ineqFiltLow) ||
-					(q.ineqFiltHigh.Equal(&q.ineqFiltLow) &&
-						(!q.ineqFiltLowIncl || !q.ineqFiltHighIncl)) {
-					return ErrNullQuery
-				}
-			}
-			if q.ineqFiltProp == "__key__" {
-				if q.ineqFiltLowSet {
-					if ancestor != nil && !q.ineqFiltLow.Value().(*Key).HasAncestor(ancestor) {
-						return fmt.Errorf(
-							"inequality filters on __key__ must be descendants of the __ancestor__")
-					}
-				}
-				if q.ineqFiltHighSet {
-					if ancestor != nil && !q.ineqFiltHigh.Value().(*Key).HasAncestor(ancestor) {
-						return fmt.Errorf(
-							"inequality filters on __key__ must be descendants of the __ancestor__")
-					}
-				}
-			}
+			return true
+		})
+		if err != nil {
+			return nil, err
 		}
-
-		err := error(nil)
-		if q.project != nil {
-			q.project.Iter(func(p string) bool {
-				if _, iseq := q.eqFilts[p]; iseq {
-					err = fmt.Errorf("cannot project on equality filter field: %s", p)
-					return false
-				}
-				return true
-			})
-		}
-		return err
-	}()
-	if err != nil {
-		return nil, err
 	}
 
 	ret := &FinalizedQuery{
