@@ -22,7 +22,7 @@ import {
 
 import { SearchInput } from './search_input';
 
-describe('<SearchInput>', () => {
+describe('<SearchInput />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -186,5 +186,31 @@ describe('<SearchInput>', () => {
     expect(searchInputEle).toHaveValue('new-val-2');
     expect(onValueChangeSpy).toHaveBeenCalledTimes(2);
     expect(onValueChangeSpy).toHaveBeenNthCalledWith(2, 'new-val-2');
+  });
+
+  it('can focus with shortcut', async () => {
+    const onValueChangeSpy = jest.fn((_newValue: string) => {});
+    render(
+      <SearchInput
+        value=""
+        focusShortcut="/"
+        onValueChange={onValueChangeSpy}
+        initDelayMs={1000}
+      />,
+    );
+    const searchInputEle = screen.getByTestId('search-input');
+    expect(searchInputEle).not.toHaveFocus();
+
+    await act(() => jest.runAllTimersAsync());
+    fireEvent.keyDown(window, {
+      key: '/',
+      code: 'Slash',
+      charCode: '/'.charCodeAt(0),
+    });
+    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
+
+    expect(searchInputEle).toHaveFocus();
+    expect(onValueChangeSpy).not.toHaveBeenCalled();
   });
 });

@@ -18,7 +18,7 @@ import FormControl from '@mui/material/FormControl';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
 import { useRef, useState } from 'react';
-import { useDebounce, useLatest } from 'react-use';
+import { useDebounce, useKey, useLatest } from 'react-use';
 
 export interface SearchInputProps {
   readonly placeholder?: string;
@@ -28,6 +28,10 @@ export interface SearchInputProps {
    */
   readonly onValueChange: (newValue: string) => void;
   readonly autoFocus?: boolean;
+  /**
+   * When defined, focus on the input box when the user presses the key.
+   */
+  readonly focusShortcut?: string;
   /**
    * `onValueChange` will only be invoked `initDelayMs`ms after the user stops
    * editing. Only the initial value is respected. Updating this value has no
@@ -40,12 +44,34 @@ export function SearchInput({
   placeholder,
   value,
   autoFocus,
+  focusShortcut,
   initDelayMs = 0,
   onValueChange,
 }: SearchInputProps) {
   const [pendingValue, setPendingValue] = useState(value);
   const valueRef = useRef(value);
   const previousUpdateValueRef = useRef(value);
+
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  useKey(
+    (e) => {
+      if (e.key !== focusShortcut) {
+        return false;
+      }
+
+      // Get the tag name of the event target in case its enclosed in shadow
+      // DOM.
+      const tagName =
+        (e.composedPath()[0] as Partial<HTMLElement>).tagName || '';
+      // Do not react to events from input related elements.
+      return !['INPUT', 'SELECT', 'TEXTAREA'].includes(tagName);
+    },
+    // Set timeout so that the input box do not record the key that triggered
+    // the focus.
+    () => setTimeout(() => inputRef.current?.focus(), 0),
+    {},
+    [focusShortcut],
+  );
 
   if (value !== valueRef.current) {
     valueRef.current = value;
@@ -100,6 +126,7 @@ export function SearchInput({
           autoFocus={autoFocus}
           variant="outlined"
           size="small"
+          inputRef={inputRef}
           inputProps={{
             'data-testid': 'search-input',
           }}
