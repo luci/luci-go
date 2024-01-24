@@ -39,7 +39,7 @@ const builders = Array(25)
   .map((_, i) =>
     BuilderID.fromPartial({
       project: 'proj',
-      bucket: 'bucket',
+      bucket: `bucket${i}`,
       builder: `builder${i}`,
     }),
   );
@@ -61,7 +61,7 @@ const pages: { [key: string]: ListBuildersResponse } = {
   }),
 };
 
-describe('<BuilderListPage>', () => {
+describe('<BuilderListPage />', () => {
   let listBuildersSpy: jest.SpiedFunction<BuildersClientImpl['ListBuilders']>;
   let builderTableMock: jest.MockedFunction<typeof BuilderTable>;
 
@@ -75,6 +75,7 @@ describe('<BuilderListPage>', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    listBuildersSpy.mockReset();
   });
 
   it('should render correctly', async () => {
@@ -102,6 +103,34 @@ describe('<BuilderListPage>', () => {
       {
         builders: builders,
         numOfBuilds: 12,
+      },
+      expect.anything(),
+    );
+  });
+
+  it('should filter builders', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/p/:project/builders"
+        routerOptions={{
+          initialEntries: ['/p/proj/builders?q=1/builder1'],
+        }}
+      >
+        <BuilderListPage />
+      </FakeContextProvider>,
+    );
+
+    // Load all pages automatically.
+    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
+    expect(listBuildersSpy).toHaveBeenCalledTimes(3);
+
+    expect(builderTableMock).toHaveBeenCalledWith(
+      {
+        builders: builders.filter(
+          (b) => b.bucket.startsWith('1') && b.builder.startsWith('builder1'),
+        ),
+        numOfBuilds: 25,
       },
       expect.anything(),
     );
