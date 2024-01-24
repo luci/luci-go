@@ -11,7 +11,7 @@ package vpython;
 // Represents a Python PEP425 tag.
 message PEP425Tag {
   // Python is the PEP425 python tag (e.g., "cp27").
-  string python  = 1;
+  string python = 1;
   // ABI is the PEP425 "python ABI" tag (e.g., "cp27mu", "none").
   string abi = 2;
   // Platform is the PEP425 "python platform" tag (e.g., "linux_x86_64",

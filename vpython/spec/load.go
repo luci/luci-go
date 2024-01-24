@@ -22,12 +22,12 @@ import (
 	"runtime"
 	"strings"
 
-	"go.chromium.org/luci/vpython/api/vpython"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	cproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/system/filesystem"
+
+	"go.chromium.org/luci/vpython/api/vpython"
 )
 
 // DefaultPartnerSuffix is the default filesystem suffix for a script's partner
@@ -219,28 +219,28 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	}
 
 	// Assume the path is a directory until we're sure it's not, then get its directory component
-	curr_path := mainScript
-	info, err := os.Stat(curr_path)
+	currPath := mainScript
+	info, err := os.Stat(currPath)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "error stat-ing file: %s", curr_path).Err()
+		return nil, "", errors.Annotate(err, "error stat-ing file: %s", currPath).Err()
 	}
 
 	if !info.IsDir() {
-		switch spec, err := l.parseFrom(curr_path); {
+		switch spec, err := l.parseFrom(currPath); {
 		case err != nil:
-			return nil, "", errors.Annotate(err, "failed to parse inline spec from: %s", curr_path).Err()
+			return nil, "", errors.Annotate(err, "failed to parse inline spec from: %s", currPath).Err()
 
 		case spec != nil:
-			logging.Infof(c, "Loaded inline spec from: %s", curr_path)
-			return spec, curr_path, nil
+			logging.Infof(c, "Loaded inline spec from: %s", currPath)
+			return spec, currPath, nil
 		}
 
 		// Scan starting from directory containing the main script
-		curr_path = filepath.Dir(curr_path)
+		currPath = filepath.Dir(currPath)
 	}
 
 	// Common: Try and identify a common specification file.
-	switch path, err := l.findCommonWalkingFrom(curr_path); {
+	switch path, err := l.findCommonWalkingFrom(currPath); {
 	case err != nil:
 		return nil, "", err
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vpython
+package application
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func createEnvBlock(envv []string) *uint16 {
 	return &utf16.Encode([]rune(string(b)))[0]
 }
 
-func execImpl(c context.Context, argv []string, env environ.Env, dir string, setupFn func() error) error {
+func execImpl(c context.Context, argv []string, env environ.Env, dir string) error {
 	// As of go 1.17, handles to be passed to subprocesses via Cmd.Run must be explicitly
 	// specified. To keep the expected behavior of letting Python inherit all inheritable
 	// file handles, we instead use syscall directly, based on the Go 1.16 implementation
@@ -107,14 +107,6 @@ func execImpl(c context.Context, argv []string, env environ.Env, dir string, set
 		dirp, err = syscall.UTF16PtrFromString(procAttr.Dir)
 		if err != nil {
 			return err
-		}
-	}
-
-	// At this point, ANY ERROR will be fatal (panic). We assume that each
-	// operation may permanently alter our runtime environment.
-	if setupFn != nil {
-		if err := setupFn(); err != nil {
-			panic(err)
 		}
 	}
 

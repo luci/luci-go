@@ -10,7 +10,6 @@ package vpython;
 
 import "go.chromium.org/luci/vpython/api/vpython/pep425.proto";
 
-
 // Spec is a "vpython" environment specification.
 message Spec {
   // The Python version to use. This should be of the form:

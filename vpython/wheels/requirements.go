@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package wheel
+package wheels
 
 import (
 	"fmt"
@@ -23,12 +23,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Name is a parsed Python wheel name, defined here:
+// WheelName is a parsed Python wheel name, defined here:
 // https://www.python.org/dev/peps/pep-0427/#file-name-convention
 //
 // {distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-\
 // {platform tag}.whl .
-type Name struct {
+type wheelName struct {
 	Distribution string
 	Version      string
 	BuildTag     string
@@ -37,7 +37,7 @@ type Name struct {
 	PlatformTag  string
 }
 
-func (wn *Name) String() string {
+func (wn *wheelName) String() string {
 	parts := make([]string, 0, 6)
 	parts = append(parts, []string{
 		wn.Distribution,
@@ -55,7 +55,7 @@ func (wn *Name) String() string {
 }
 
 // ParseName parses a wheel Name from its filename.
-func ParseName(v string) (wn Name, err error) {
+func parseName(v string) (wn wheelName, err error) {
 	base := strings.TrimSuffix(v, ".whl")
 	if len(base) == len(v) {
 		err = errors.New("missing .whl suffix")
@@ -86,14 +86,14 @@ func ParseName(v string) (wn Name, err error) {
 
 // ScanDir identifies all wheel files in the immediate directory dir and
 // returns their parsed wheel names.
-func ScanDir(dir string) ([]Name, error) {
+func scanDir(dir string) ([]wheelName, error) {
 	globPattern := filepath.Join(dir, "*.whl")
 	matches, err := filepath.Glob(globPattern)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to list wheel directory: %s", globPattern).Err()
 	}
 
-	names := make([]Name, 0, len(matches))
+	names := make([]wheelName, 0, len(matches))
 	for _, match := range matches {
 		switch st, err := os.Stat(match); {
 		case err != nil:
@@ -106,7 +106,7 @@ func ScanDir(dir string) ([]Name, error) {
 		default:
 			// A ".whl" file.
 			name := filepath.Base(match)
-			wheelName, err := ParseName(name)
+			wheelName, err := parseName(name)
 			if err != nil {
 				return nil, errors.Annotate(err, "failed to parse wheel from %s: %s", dir, name).Err()
 			}
@@ -121,7 +121,7 @@ func ScanDir(dir string) ([]Name, error) {
 //
 // The generated requirements will request the exact wheel senver version (using
 // "==").
-func WriteRequirementsFile(path string, wheels []Name) (err error) {
+func writeRequirementsFile(path string, wheels []wheelName) (err error) {
 	fd, err := os.Create(path)
 	if err != nil {
 		return errors.Annotate(err, "failed to create requirements file").Err()
@@ -134,10 +134,10 @@ func WriteRequirementsFile(path string, wheels []Name) (err error) {
 	}()
 
 	// Emit a series of "Distribution==Version" strings.
-	seen := make(map[Name]struct{}, len(wheels))
+	seen := make(map[wheelName]struct{}, len(wheels))
 	for _, wheel := range wheels {
 		// Only mention a given Distribution/Version once.
-		archetype := Name{
+		archetype := wheelName{
 			Distribution: wheel.Distribution,
 			Version:      wheel.Version,
 		}

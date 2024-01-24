@@ -15,7 +15,7 @@
 //go:build unix
 // +build unix
 
-package vpython
+package application
 
 import (
 	"context"
@@ -26,19 +26,11 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 )
 
-func execImpl(c context.Context, argv []string, env environ.Env, dir string, setupFn func() error) error {
+func execImpl(c context.Context, argv []string, env environ.Env, dir string) error {
 	// Change directory.
 	if dir != "" {
 		if err := os.Chdir(dir); err != nil {
 			return errors.Annotate(err, "failed to chdir to %q", dir).Err()
-		}
-	}
-
-	// At this point, ANY ERROR will be fatal (panic). We assume that each
-	// operation may permanently alter our runtime environment.
-	if setupFn != nil {
-		if err := setupFn(); err != nil {
-			panic(err)
 		}
 	}
 

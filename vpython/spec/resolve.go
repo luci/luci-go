@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vpython
+package spec
 
 import (
 	"context"
@@ -20,13 +20,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"go.chromium.org/luci/vpython/api/vpython"
-	"go.chromium.org/luci/vpython/python"
-	"go.chromium.org/luci/vpython/spec"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
+
+	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/python"
 )
 
 // IsUserError is tagged into errors caused by bad user inputs (e.g. modules or
@@ -35,49 +34,9 @@ var IsUserError = errors.BoolTag{
 	Key: errors.NewTagKey("this error occurred due to a user input."),
 }
 
-// Options is the set of options to use to construct and execute a VirtualEnv
-// Python application.
-type Options struct {
-	// The Python command-line to execute. Must not be nil.
-	CommandLine *python.CommandLine
-
-	// DefaultSpec is the default specification to use, if no specification was
-	// supplied or probed.
-	DefaultSpec vpython.Spec
-
-	// SpecLoader is the spec.Loader to use to load a specification file for a
-	// given script.
-	//
-	// The empty value is a valid default spec.Loader.
-	SpecLoader spec.Loader
-
-	// WorkDir is the Python working directory. If empty, the current working
-	// directory will be used.
-	//
-	// If EnvRoot is empty, WorkDir will be used as the base environment root.
-	WorkDir string
-
-	EnvConfig struct {
-		Spec *vpython.Spec
-	}
-}
-
 // ResolveSpec resolves the configured environment specification. The resulting
 // spec is installed into o's EnvConfig.Spec field.
-func (o *Options) ResolveSpec(c context.Context) (err error) {
-	if o.CommandLine == nil {
-		panic("a CommandLine must be specified")
-	}
-
-	// If a spec is explicitly provided, we're done.
-	if o.EnvConfig.Spec != nil {
-		return nil
-	}
-
-	o.EnvConfig.Spec = &o.DefaultSpec
-
-	target := o.CommandLine.Target
-
+func ResolveSpec(c context.Context, l *Loader, target python.Target, workDir string) (*vpython.Spec, error) {
 	// If there's no target, then we're dropping to an interactive shell
 	_, interactive := target.(python.NoTarget)
 
@@ -103,14 +62,14 @@ func (o *Options) ResolveSpec(c context.Context) (err error) {
 	// command-line, or loading a module. Regardless, try to resolve the spec
 	// from the CWD.
 	if interactive || isCommandTarget || loadFromStdin || isModuleTarget {
-		spec, path, err := o.SpecLoader.LoadForScript(c, o.WorkDir, false)
+		spec, path, err := l.LoadForScript(c, workDir, false)
 		if err != nil {
-			return errors.Annotate(err, "failed to load spec for script: %s", target).Err()
+			return nil, errors.Annotate(err, "failed to load spec for script: %s", target).Err()
 		}
 		if spec != nil {
-			relpath, err := filepath.Rel(o.WorkDir, path)
+			relpath, err := filepath.Rel(workDir, path)
 			if err != nil {
-				return errors.Annotate(err, "failed to get relative path for %s", path).Err()
+				return nil, errors.Annotate(err, "failed to get relative path for %s", path).Err()
 			}
 
 			if interactive {
@@ -121,8 +80,7 @@ func (o *Options) ResolveSpec(c context.Context) (err error) {
 				fmt.Fprintf(os.Stderr, "Reading from stdin, loading vpython spec from %s\n", relpath)
 			}
 
-			o.EnvConfig.Spec = spec
-			return nil
+			return spec, nil
 		}
 	}
 
@@ -134,13 +92,13 @@ func (o *Options) ResolveSpec(c context.Context) (err error) {
 
 		// Resolve to absolute script path.
 		if err := filesystem.AbsPath(&script.Path); err != nil {
-			return errors.Annotate(err, "failed to get absolute path of: %s", target).Err()
+			return nil, errors.Annotate(err, "failed to get absolute path of: %s", target).Err()
 		}
 
 		// Confirm that the script path actually exists.
 		st, err := os.Stat(script.Path)
 		if err != nil {
-			return IsUserError.Apply(err)
+			return nil, IsUserError.Apply(err)
 		}
 
 		// If the script is a directory, then we assume that we're doing a module
@@ -150,21 +108,20 @@ func (o *Options) ResolveSpec(c context.Context) (err error) {
 
 	// If it's a script, try resolving from filesystem first.
 	if isScriptTarget {
-		spec, _, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
+		spec, _, err := l.LoadForScript(c, script.Path, isModule)
 		if err != nil {
 			kind := "script"
 			if isModule {
 				kind = "module"
 			}
-			return errors.Annotate(err, "failed to load spec for %s: %s", kind, target).Err()
+			return nil, errors.Annotate(err, "failed to load spec for %s: %s", kind, target).Err()
 		}
 		if spec != nil {
-			o.EnvConfig.Spec = spec
-			return nil
+			return spec, nil
 		}
 	}
 
 	// If standard resolution doesn't yield a spec, fall back on our default spec.
 	logging.Infof(c, "Unable to resolve specification path. Using default specification.")
-	return nil
+	return nil, nil
 }

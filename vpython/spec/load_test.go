@@ -21,10 +21,11 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/testfs"
-	"go.chromium.org/luci/vpython/api/vpython"
+	"google.golang.org/protobuf/encoding/prototext"
 
-	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/common/testing/testfs"
+
+	"go.chromium.org/luci/vpython/api/vpython"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -40,7 +41,7 @@ func TestLoadForScript(t *testing.T) {
 			{Name: "baz/qux", Version: "2"},
 		},
 	}
-	goodSpecData := proto.MarshalTextString(goodSpec)
+	goodSpecData := prototext.Format(goodSpec)
 	badSpecData := "foo: bar"
 
 	l := Loader{
@@ -79,7 +80,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("foo/bar.vpython"))
 		})
 
@@ -114,7 +115,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("pants.py.vpython"))
 		})
 
@@ -155,7 +156,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("foo/bar/baz/__main__.py"))
 		})
 
@@ -177,7 +178,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("pants.py"))
 		})
 
@@ -203,7 +204,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("pants.py"))
 		})
 
@@ -257,7 +258,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("common.vpython"))
 		})
 
@@ -273,7 +274,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("ohaithere.friend"))
 		})
 
@@ -301,7 +302,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("common.vpython"))
 		})
 
@@ -315,7 +316,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			So(err, ShouldBeNil)
-			So(spec, ShouldResemble, goodSpec)
+			So(spec, ShouldResembleProto, goodSpec)
 			So(path, ShouldEqual, makePath("common.vpython"))
 		})
 

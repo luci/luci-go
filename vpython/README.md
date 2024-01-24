@@ -136,31 +136,10 @@ The reason for this is that `vpython` identifies which wheels to install by
 scanning the contents of the CIPD package, and if multiple versions appear,
 there is no clear guidance about which should be used.
 
-### Mac OSX
-
-Use the `m` ABI suffix and the `macosx_...` platform. `vpython` installs wheels
-with the `--force` flag, so slight binary incompatibilities (e.g., specific OSX
-versions) can be glossed over.
-
-    coverage-4.3.4-cp27-cp27m-macosx_10_10_x86_64.whl
-
-### Linux
-
-Use wheels with the `mu` ABI suffix and the `manylinux1` platform. For example:
-
-    coverage-4.3.4-cp27-cp27mu-manylinux1_x86_64.whl
-
-### Windows
-
-Use wheels with the `cp27m` or `none` ABI tag. For example:
-
-    coverage-4.3.4-cp27-cp27m-win_amd64.whl
-
-
 ## Setup and Invocation
 
-`vpython` can be invoked by replacing `python` in the command-line with
-`vpython`.
+`vpython` can be invoked by replacing `python3` in the command-line with
+`vpython3`.
 
 `vpython` works with a default Python environment out of the box. To add
 vendored packages, you need to define an environment specification file that
@@ -170,20 +149,14 @@ An environment specification file is a text protobuf defined as `Spec`
 [here](./api/vpython/spec.proto). An example is:
 
 ```
-# Any 2.7 interpreter will do.
-python_version: "2.7"
+# Any 3.11 interpreter will do.
+python_version: "3.11"
 
-# Include "numpy" for the current architecture.
-wheel {
-  name: "infra/python/wheels/numpy/${platform}-${arch}"
-  version: "version:1.11.0"
-}
-
-# Include "coverage" for the current architecture.
-wheel {
-  name: "infra/python/wheels/coverage/${platform}-${arch}"
-  version: "version:4.1"
-}
+# Include "cffi" for the current architecture.
+wheel: <
+  name: "infra/python/wheels/cffi/${vpython_platform}"
+  version: "version:1.14.5.chromium.7"
+>
 ```
 
 This specification can be supplied in one of four ways:
@@ -217,22 +190,22 @@ the overhead of downloading and/or resolving a package multiple times.
 
 #### Command-line.
 
-`vpython` is a natural replacement for `python` in the command line:
+`vpython3` is a natural replacement for `pytho3n` in the command line:
 
 ```sh
-python ./foo/bar/baz.py -d --flag value arg arg whatever
+python3 ./foo/bar/baz.py -d --flag value arg arg whatever
 ```
 
 Becomes:
 ```sh
-vpython ./foo/bar/baz.py -d --flag value arg arg whatever
+vpython3 ./foo/bar/baz.py -d --flag value arg arg whatever
 ```
 
 The `vpython` tool accepts its own command-line arguments. In this case, use
 a `--` separator to differentiate between `vpython` options and `python` options:
 
 ```sh
-vpython -vpython-spec /path/to/spec.vpython -- ./foo/bar/baz.py
+vpython3 -vpython-spec /path/to/spec.vpython -- ./foo/bar/baz.py
 ```
 
 #### Shebang (POSIX)
@@ -241,7 +214,7 @@ If your script uses implicit specification (file or inline), replacing `python`
 with `vpython` in your shebang line will automatically work.
 
 ```sh
-#!/usr/bin/env vpython
+#!/usr/bin/env vpython3
 ```
 
 ## Configuration
@@ -252,8 +225,6 @@ These are the following:
 *   `VPYTHON_BYPASS`: If set to `manually managed python not supported by chrome
     operations`, vpython will do nothing and will instead directly invoke the
     next `python` on PATH. Will have no effect if it's set to anything else.
-*   `VPYTHON_CLEAR_PYTHONPATH`: If set, vpython will clear the PYTHONPATH env
-    var prior to launching the Python interpreter.
 *   `VPYTHON_DEFAULT_SPEC`: Specifies path to a vpython spec file that will be
     used if none is provided or found through probing.
 *   `VPYTHON_LOG_TRACE`: Specifies log level of vpython. Can also be specified
@@ -261,12 +232,3 @@ These are the following:
 *   `VPYTHON_VIRTUALENV_ROOT`: Specifies the VirtualEnv root. Default is
     `~/.vpython-root`. Can also be specified via the "-vpython-root" cmd-line
     flag.
-
-### Advanced configurations
-
-The following env vars are implementation details of vpython and should rarely
-be set by users directly:
-
-*   `VPYTHON_CHECK_WRAPPER`: If set, vpython will immediately exit with a
-    non-zero return code. Useful to determine if a given binary is a "vpython"
-    wrapper.

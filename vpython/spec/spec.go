@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package spec contains implementation for search, parse, normalize vpython
+// spec.
 package spec
 
 import (
 	"sort"
 
-	"go.chromium.org/luci/vpython/api/vpython"
-
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/vpython/api/vpython"
 )
 
 // NormalizeSpec normalizes the specification Message such that two messages
