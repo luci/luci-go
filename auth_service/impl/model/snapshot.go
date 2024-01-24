@@ -115,7 +115,7 @@ func (s *Snapshot) ToAuthDBProto() (*protocol.AuthDB, error) {
 			Members:     v.Members,
 			Globs:       v.Globs,
 			Nested:      v.Nested,
-			Description: v.Description,
+			Description: setStringField(v.Description),
 			CreatedTs:   v.CreatedTS.UnixNano() / 1000,
 			CreatedBy:   v.CreatedBy,
 			ModifiedTs:  v.ModifiedTS.UnixNano() / 1000,
@@ -129,7 +129,7 @@ func (s *Snapshot) ToAuthDBProto() (*protocol.AuthDB, error) {
 		allowlists[i] = &protocol.AuthIPWhitelist{
 			Name:        v.ID,
 			Subnets:     v.Subnets,
-			Description: v.Description,
+			Description: setStringField(v.Description),
 			CreatedTs:   v.CreatedTS.UnixNano() / 1000,
 			CreatedBy:   v.CreatedBy,
 			ModifiedTs:  v.ModifiedTS.UnixNano() / 1000,
@@ -143,16 +143,25 @@ func (s *Snapshot) ToAuthDBProto() (*protocol.AuthDB, error) {
 	}
 
 	return &protocol.AuthDB{
-		OauthClientId:            s.GlobalConfig.OAuthClientID,
-		OauthClientSecret:        s.GlobalConfig.OAuthClientSecret,
+		OauthClientId:            setStringField(s.GlobalConfig.OAuthClientID),
+		OauthClientSecret:        setStringField(s.GlobalConfig.OAuthClientSecret),
 		OauthAdditionalClientIds: s.GlobalConfig.OAuthAdditionalClientIDs,
-		TokenServerUrl:           s.GlobalConfig.TokenServerURL,
+		TokenServerUrl:           setStringField(s.GlobalConfig.TokenServerURL),
 		SecurityConfig:           s.GlobalConfig.SecurityConfig,
 		Groups:                   groups,
 		IpWhitelists:             allowlists,
 		Realms:                   realms,
 		IpWhitelistAssignments:   nil, // TODO
 	}, nil
+}
+
+// setStringField returns a non-empty string, given a string; it
+// defaults to the string value "empty".
+func setStringField(value string) string {
+	if value != "" {
+		return value
+	}
+	return "empty"
 }
 
 // ToAuthDB converts the snapshot to an authdb.SnapshotDB.

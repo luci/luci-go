@@ -662,6 +662,12 @@ func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 
 	switch err := datastore.Get(ctx, authGroup); {
 	case err == nil:
+		// Set the Owners field to the admin group if it's empty, which may
+		// happen if the group was created by the Python version of
+		// Auth Service.
+		if authGroup.Owners == "" {
+			authGroup.Owners = AdminGroup
+		}
 		return authGroup, nil
 	case err == datastore.ErrNoSuchEntity:
 		return nil, err
@@ -670,7 +676,7 @@ func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 	}
 }
 
-// GetAllAuthGroups returs all the AuthGroups from the datastore.
+// GetAllAuthGroups returns all the AuthGroups from the datastore.
 //
 // Returns an annotated error.
 func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
@@ -679,6 +685,14 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 	err := datastore.GetAll(ctx, query, &authGroups)
 	if err != nil {
 		return nil, errors.Annotate(err, "error getting all AuthGroup entities").Err()
+	}
+	for _, authGroup := range authGroups {
+		// Set the Owners field to the admin group if it's empty, which may
+		// happen if the group was created by the Python version of
+		// Auth Service.
+		if authGroup.Owners == "" {
+			authGroup.Owners = AdminGroup
+		}
 	}
 	return authGroups, nil
 }
