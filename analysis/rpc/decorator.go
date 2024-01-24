@@ -31,6 +31,8 @@ const luciAnalysisAccessGroup = "luci-analysis-access"
 // to see the details of the user who last created/modified entities.
 const auditUsersAccessGroup = "googlers"
 
+const googlerOnlyGroup = "googlers"
+
 const luciAnalysisAdminGroup = "service-luci-analysis-admins"
 
 // Checks if this call is allowed, returns an error if it is.

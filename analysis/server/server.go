@@ -37,6 +37,7 @@ import (
 	bugscron "go.chromium.org/luci/analysis/internal/bugs/cron"
 	"go.chromium.org/luci/analysis/internal/bugs/monorail/migration"
 	migrationpb "go.chromium.org/luci/analysis/internal/bugs/monorail/migration/proto"
+	"go.chromium.org/luci/analysis/internal/changepoints"
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -93,6 +94,11 @@ func Main(init func(srv *luciserver.Server) error) {
 			return errors.Annotate(err, "creating analysis client").Err()
 		}
 
+		cpc, err := changepoints.NewClient(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return errors.Annotate(err, "creating changepoint client").Err()
+		}
+
 		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
 		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
 		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
@@ -102,6 +108,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
 		analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer())
 		migrationpb.RegisterMonorailMigrationServer(srv, migration.NewMonorailMigrationServer())
+		analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
 
 		// GAE crons.
 		updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, srv.Options.Prod)
