@@ -19,7 +19,6 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
-	"google.golang.org/grpc/codes"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
@@ -219,7 +218,7 @@ func TestMakeTryjobInvocations(t *testing.T) {
 			})
 		})
 
-		Convey("Error if builder is not seen in the config", func() {
+		Convey("Skip if builder is not seen in the config", func() {
 			r.Tryjobs = &run.Tryjobs{
 				State: &tryjob.ExecutionState{
 					Requirement: &tryjob.Requirement{
@@ -254,8 +253,8 @@ func TestMakeTryjobInvocations(t *testing.T) {
 				},
 			}
 			ti, err := makeTryjobInvocations(ctx, r)
-			So(err, ShouldHaveGRPCStatus, codes.DataLoss, "is triggered by LUCI CV but can NOT be found in the config")
-			So(ti, ShouldBeNil)
+			So(err, ShouldBeNil)
+			So(ti, ShouldBeEmpty)
 		})
 
 		Convey("Omit empty attempt", func() {

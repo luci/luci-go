@@ -60,7 +60,9 @@ func makeTryjobInvocations(ctx context.Context, r *run.Run) ([]*apiv0pb.TryjobIn
 			builderName := bbutil.FormatBuilderID(definition.GetBuildbucket().GetBuilder())
 			builderConfig, ok := builderByName[builderName]
 			if !ok {
-				return nil, appstatus.Errorf(codes.DataLoss, "builder %q is triggered by LUCI CV but can NOT be found in the config", builderName)
+				// Error out once the TODO above is implemented
+				logging.Warningf(ctx, "builder %q is triggered by LUCI CV but can NOT be found in the config. Skip including the builder in the response", builderName)
+				continue
 			}
 			ti.BuilderConfig = builderConfig
 		default:
