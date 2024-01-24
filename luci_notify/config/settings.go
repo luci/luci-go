@@ -121,3 +121,12 @@ func updateSettings(c context.Context) error {
 		return datastore.Put(c, &newSettings)
 	}, nil)
 }
+
+func FetchSettings(ctx context.Context) (*notifypb.Settings, error) {
+	settings := Settings{}
+	err := datastore.Get(ctx, &settings)
+	if err != nil {
+		return nil, errors.Annotate(err, "loading existing config").Err()
+	}
+	return &settings.Settings, nil
+}

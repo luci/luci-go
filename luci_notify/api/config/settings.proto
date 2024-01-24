@@ -17,4 +17,12 @@ message Settings {
   //
   // Required.
   string milo_host = 1;
+
+  // luci_tree_status_host is the hostname of the LUCI tree status app
+  // to use for closing and opening trees.
+  //
+  // e.g. luci-tree-status.appspot.com
+  //
+  // Required.
+  string luci_tree_status_host = 2;
 }

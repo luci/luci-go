@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
+
 	"go.chromium.org/luci/luci_notify/common"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -22,16 +22,15 @@ import (
 	"sort"
 	"testing"
 
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/caching"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/caching"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"

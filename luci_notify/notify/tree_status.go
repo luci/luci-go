@@ -22,18 +22,23 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
+
+	"go.chromium.org/luci/luci_notify/config"
 )
 
 const botUsername = "luci-notify@appspot.gserviceaccount.com"
@@ -49,15 +54,38 @@ type treeStatus struct {
 
 type treeStatusClient interface {
 	getStatus(c context.Context, host string) (*treeStatus, error)
-	postStatus(c context.Context, host, message string, prevKey int64) error
+	postStatus(c context.Context, host, message string, prevKey int64, treeName string, status config.TreeCloserStatus) error
 }
 
 type httpTreeStatusClient struct {
 	getFunc  func(context.Context, string) ([]byte, error)
 	postFunc func(context.Context, string) error
+	client   tspb.TreeStatusClient
+}
+
+func NewHTTPTreeStatusClient(ctx context.Context, luciTreeStatusHost string) (*httpTreeStatusClient, error) {
+	transport, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+	if err != nil {
+		return nil, err
+	}
+	rpcOpts := prpc.DefaultOptions()
+	rpcOpts.Insecure = lhttp.IsLocalHost(luciTreeStatusHost)
+	prpcClient := &prpc.Client{
+		C:                     &http.Client{Transport: transport},
+		Host:                  luciTreeStatusHost,
+		Options:               rpcOpts,
+		MaxConcurrentRequests: 100,
+	}
+
+	return &httpTreeStatusClient{
+		getFunc:  getHttp,
+		postFunc: postHttp,
+		client:   tspb.NewTreeStatusPRPCClient(prpcClient),
+	}, nil
 }
 
 func (ts *httpTreeStatusClient) getStatus(c context.Context, host string) (*treeStatus, error) {
+	// TODO(mwarton): transition to the new tree status app RPC after the migration.
 	respJSON, err := ts.getFunc(c, fmt.Sprintf("https://%s/current?format=json", host))
 	if err != nil {
 		return nil, err
@@ -96,8 +124,12 @@ func (ts *httpTreeStatusClient) getStatus(c context.Context, host string) (*tree
 	}, nil
 }
 
-func (ts *httpTreeStatusClient) postStatus(c context.Context, host, message string, prevKey int64) error {
-	logging.Infof(c, "Updating status for %s: %q", host, message)
+func (ts *httpTreeStatusClient) postStatus(ctx context.Context, host, message string, prevKey int64, treeName string, status config.TreeCloserStatus) error {
+	// During the tree status migration, we will update both the old (HTTP) status
+	// and the new (PRPC) status.  We always attempt to update both despite whatever
+	// errors may occur.
+	// TODO(mwarton): Remove the HTTP post after the migration.
+	logging.Infof(ctx, "Updating status for %s: %q", host, message)
 
 	q := url.Values{}
 	q.Add("message", message)
@@ -109,7 +141,33 @@ func (ts *httpTreeStatusClient) postStatus(c context.Context, host, message stri
 		RawQuery: q.Encode(),
 	}
 
-	return ts.postFunc(c, u.String())
+	httpErr := ts.postFunc(ctx, u.String())
+
+	generalState := tspb.GeneralState_OPEN
+	if status == config.Closed {
+		generalState = tspb.GeneralState_CLOSED
+	}
+	request := &tspb.CreateStatusRequest{
+		Parent: fmt.Sprintf("trees/%s/status", treeName),
+		Status: &tspb.Status{
+			GeneralState: generalState,
+			Message:      message,
+		},
+	}
+	_, prpcErr := ts.client.CreateStatus(ctx, request)
+
+	// If the PRPC worked, we don't really mind what the status of the HTTP request was, as
+	// we expect it to start failing during the migration.
+	if prpcErr == nil {
+		if httpErr != nil {
+			logging.Infof(ctx, "Error updating status by HTTP: %s", httpErr)
+		}
+		return nil
+	}
+	// Log any PRPC errors, but allow HTTP success to override us during the migration.
+	logging.Errorf(ctx, "Error updating status by PRPC: %s", prpcErr)
+	return httpErr
+
 }
 
 func getHttp(c context.Context, url string) ([]byte, error) {
@@ -171,8 +229,16 @@ func UpdateTreeStatus(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	return transient.Tag.Apply(
-		updateTrees(ctx, &httpTreeStatusClient{getHttp, postHttp}))
+	settings, err := config.FetchSettings(ctx)
+	if err != nil {
+		return errors.Annotate(err, "fetching settings").Err()
+	}
+	client, err := NewHTTPTreeStatusClient(ctx, settings.LuciTreeStatusHost)
+	if err != nil {
+		return errors.Annotate(err, "creating tree status client").Err()
+	}
+
+	return transient.Tag.Apply(updateTrees(ctx, client))
 }
 
 // updateTrees fetches all TreeClosers from datastore, uses this to determine if
@@ -249,7 +315,7 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 			host, treeClosers := host, treeClosers
 			ch <- func() error {
 				c := logging.SetField(c, "tree-status-host", host)
-				return updateHost(c, ts, host, treeClosers, closingEnabledProjects)
+				return updateHost(c, ts, host, treeClosers, closingEnabledProjects, treeNameOrDefault(treeClosers))
 			}
 		}
 	})
@@ -264,11 +330,28 @@ func groupTreeClosers(treeClosers []*config.TreeCloser) map[string][]*config.Tre
 	return byHost
 }
 
+func treeNameOrDefault(treeClosers []*config.TreeCloser) string {
+	for _, closer := range treeClosers {
+		if closer.TreeCloser.TreeName != "" {
+			return closer.TreeCloser.TreeName
+		}
+	}
+	for _, closer := range treeClosers {
+		if closer.TreeStatusHost != "" {
+			return strings.TrimSuffix(strings.TrimSuffix(closer.TreeStatusHost, ".appspot.com"), "-status")
+		}
+		if closer.TreeCloser.TreeStatusHost != "" {
+			return strings.TrimSuffix(strings.TrimSuffix(closer.TreeCloser.TreeStatusHost, ".appspot.com"), "-status")
+		}
+	}
+	panic("Should not have gotten here, invalid project configuration contains neither host nor tree name")
+}
+
 func tcProject(tc *config.TreeCloser) string {
 	return tc.BuilderKey.Parent().StringID()
 }
 
-func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set) error {
+func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set, treeName string) error {
 	treeStatus, err := ts.getStatus(c, host)
 	if err != nil {
 		return err
@@ -368,7 +451,7 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 	}
 
 	if anyEnabled {
-		return ts.postStatus(c, host, message, treeStatus.key)
+		return ts.postStatus(c, host, message, treeStatus.key, treeName, newStatus)
 	}
 	logging.Infof(c, "Would update status for %s to %q", host, message)
 	return nil

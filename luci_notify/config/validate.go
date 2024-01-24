@@ -27,9 +27,9 @@ import (
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/luci_notify/mailtmpl"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
 
 // init registers validators for the project config and email template files.
@@ -155,6 +155,11 @@ func validateProjectConfig(ctx *validation.Context, projectCfg *notifypb.Project
 // validateSettings returns an error if the service configuration violates any
 // of the requirements in the proto definition.
 func validateSettings(ctx *validation.Context, settings *notifypb.Settings) {
+	if settings.LuciTreeStatusHost != "" {
+		if validation.ValidateHostname(settings.LuciTreeStatusHost) != nil {
+			ctx.Errorf(invalidFieldError, "luci_tree_status_host")
+		}
+	}
 	switch {
 	case settings.MiloHost == "":
 		ctx.Errorf(requiredFieldError, "milo_host")

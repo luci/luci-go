@@ -28,6 +28,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
@@ -44,9 +46,6 @@ import (
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/mailtmpl"
-
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 var validRecipientSuffixes = []string{"@chromium.org", "@grotations.appspotmail.com", "@google.com"}

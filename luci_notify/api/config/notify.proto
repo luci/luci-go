@@ -147,7 +147,10 @@ message Notification {
 // TreeCloser represents an action which closes a tree, by interfacing with an
 // instance of the tree-status app.
 message TreeCloser {
-  // The hostname of the tree-status instance which this rule opens and closes.
+  // DEPRECATED: The hostname of the tree-status instance which this rule opens and closes.
+  // This is being replaced by the tree_name field below.  For the migration period,
+  // well known values of this field will be automatically translated to values of
+  // the tree_name field.
   string tree_status_host = 1;
 
   // Close the tree only on builds which had a failing step matching this
@@ -162,6 +165,16 @@ message TreeCloser {
   // Refers to which project template name to use to format this email.
   // If not present, "default_tree_status" will be used.
   string template = 4;
+
+  // The identifier of the tree to close.
+  // Must match the regexp [a-z](?:[a-z0-9-]{0,61}[a-z0-9])?.
+  //
+  // Once tree_status_host field is removed, this field will be required.
+  // If this field is not provided, a value will be created based on the list of
+  // known status app instances as at 2024-01-01.
+  // ie. if this field is empty but tree_status_host is 'https://chromium-status.appspot.com'
+  // This field will be given the value 'chromium'.
+  string tree_name = 5;
 }
 
 // Builder references a buildbucket builder in the current project.

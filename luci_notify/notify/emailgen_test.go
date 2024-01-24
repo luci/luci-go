@@ -18,11 +18,10 @@ import (
 	"context"
 	"testing"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
-
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"

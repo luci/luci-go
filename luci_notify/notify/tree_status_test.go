@@ -16,17 +16,21 @@ package notify
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	grpc "google.golang.org/grpc"
+
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
+
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/config"
@@ -53,7 +57,7 @@ func (ts *fakeTreeStatusClient) getStatus(c context.Context, host string) (*tree
 	return nil, errors.New(fmt.Sprintf("No status for host %s", host))
 }
 
-func (ts *fakeTreeStatusClient) postStatus(c context.Context, host, message string, prevKey int64) error {
+func (ts *fakeTreeStatusClient) postStatus(c context.Context, host, message string, prevKey int64, treeName string, status config.TreeCloserStatus) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -67,15 +71,18 @@ func (ts *fakeTreeStatusClient) postStatus(c context.Context, host, message stri
 	key := ts.nextKey
 	ts.nextKey++
 
-	var status config.TreeCloserStatus
+	var messageStatus config.TreeCloserStatus
 	if strings.Contains(message, "close") {
-		status = config.Closed
+		messageStatus = config.Closed
 	} else {
-		status = config.Open
+		messageStatus = config.Open
+	}
+	if messageStatus != status {
+		return errors.Reason("message status does not match provided status").Err()
 	}
 
 	ts.statusForHosts[host] = treeStatus{
-		"buildbot@chromium.org", message, key, status, time.Now(),
+		"buildbot@chromium.org", message, key, messageStatus, time.Now(),
 	}
 	return nil
 }
@@ -617,7 +624,8 @@ func TestHttpTreeStatusClient(t *testing.T) {
 			return nil
 		}
 
-		ts := httpTreeStatusClient{get, post}
+		fakePrpcClient := &fakePRPCTreeStatusClient{}
+		ts := httpTreeStatusClient{get, post, fakePrpcClient}
 
 		Convey("getStatus, open tree", func() {
 			status, err := ts.getStatus(c, "chromium-status.appspot.com")
@@ -648,11 +656,31 @@ func TestHttpTreeStatusClient(t *testing.T) {
 		})
 
 		Convey("postStatus", func() {
-			err := ts.postStatus(c, "dart-status.appspot.com", "open for business", 1234)
+			err := ts.postStatus(c, "dart-status.appspot.com", "open for business", 1234, "dart", config.Open)
 			So(err, ShouldBeNil)
 
 			So(postUrls, ShouldHaveLength, 1)
 			So(postUrls[0], ShouldEqual, "https://dart-status.appspot.com/?last_status_key=1234&message=open+for+business")
+			So(fakePrpcClient.latestStatus, ShouldNotBeNil)
+			So(fakePrpcClient.latestStatus.Message, ShouldEqual, "open for business")
+			So(fakePrpcClient.latestStatus.GeneralState, ShouldEqual, tspb.GeneralState_OPEN)
 		})
 	})
+}
+
+type fakePRPCTreeStatusClient struct {
+	latestStatus *tspb.Status
+}
+
+func (c *fakePRPCTreeStatusClient) ListStatus(ctx context.Context, in *tspb.ListStatusRequest, opts ...grpc.CallOption) (*tspb.ListStatusResponse, error) {
+	return nil, errors.Reason("Not implemented").Err()
+}
+
+func (c *fakePRPCTreeStatusClient) GetStatus(ctx context.Context, in *tspb.GetStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {
+	return nil, errors.Reason("Not implemented").Err()
+}
+
+func (c *fakePRPCTreeStatusClient) CreateStatus(ctx context.Context, in *tspb.CreateStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {
+	c.latestStatus = in.Status
+	return in.Status, nil
 }

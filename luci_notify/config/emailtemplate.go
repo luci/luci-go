@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"regexp"
 
-	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	configInterface "go.chromium.org/luci/config"
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
