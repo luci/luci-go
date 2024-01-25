@@ -2029,7 +2029,8 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 		authDBBlob := []byte("test-authdb-blob")
 		expectedDeflated, err := zlib.Compress(authDBBlob)
 		So(err, ShouldBeNil)
-		expectedHexDigest := hex.EncodeToString(authDBBlob)
+		blobChecksum := sha256.Sum256(authDBBlob)
+		expectedHexDigest := hex.EncodeToString(blobChecksum[:])
 
 		// Store the AuthDBSnapshot.
 		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), authDBBlob, dryRun)
@@ -2117,7 +2118,8 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 		authDBBlob := []byte("test-authdb-blob")
 		expectedDeflated, err := zlib.Compress(authDBBlob)
 		So(err, ShouldBeNil)
-		expectedHexDigest := hex.EncodeToString(authDBBlob)
+		blobChecksum := sha256.Sum256(authDBBlob)
+		expectedHexDigest := hex.EncodeToString(blobChecksum[:])
 
 		// Store the AuthDBSnapshot in dry run mode.
 		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 12), authDBBlob, true)

@@ -45,7 +45,7 @@ func EnqueueReplicationTask(ctx context.Context, authdbrev int64) error {
 
 func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask, dryRun bool) error {
 	authDBRev := task.GetAuthDbRev()
-	logging.Infof(ctx, "replicating AuthDB for Rev %d (dry run: %s)", authDBRev, dryRun)
+	logging.Infof(ctx, "replicating AuthDB for Rev %d (dry run: %v)", authDBRev, dryRun)
 
 	if err := replicate(ctx, authDBRev, dryRun); err != nil {
 		if !dryRun && transient.Tag.In(err) {

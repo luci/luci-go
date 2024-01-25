@@ -18,6 +18,7 @@ package model
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	stderrors "errors"
@@ -1379,10 +1380,11 @@ func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool, dryRun boo
 //   - authDBBlob: serialized protocol.ReplicationPushRequest message
 //     (has AuthDB inside).
 func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationState, authDBBlob []byte, dryRun bool) (err error) {
-	logging.Debugf(ctx, "Storing AuthDB Rev %d (dry run: %s)", replicationState.AuthDBRev, dryRun)
+	logging.Debugf(ctx, "storing AuthDB Rev %d (dry run: %v)", replicationState.AuthDBRev, dryRun)
 
 	// Get the SHA256 hex digest of the AuthDB blob (before compression).
-	blobHexDigest := hex.EncodeToString(authDBBlob)
+	blobChecksum := sha256.Sum256(authDBBlob)
+	blobHexDigest := hex.EncodeToString(blobChecksum[:])
 
 	// Get the deflated serialized protocol.ReplicationPushRequest message.
 	deflated, err := zlib.Compress(authDBBlob)
@@ -1800,7 +1802,7 @@ func GetAllAuthProjectRealmsMeta(ctx context.Context) ([]*AuthProjectRealmsMeta,
 // Returns:
 //   - the IDs of the shards that the blob was sequentially written to.
 func shardAuthDB(ctx context.Context, authDBRev int64, blob []byte, maxSize int, dryRun bool) ([]string, error) {
-	logging.Debugf(ctx, "sharding AuthDB Rev %d (dry run: %s)", authDBRev, dryRun)
+	logging.Debugf(ctx, "sharding AuthDB Rev %d (dry run: %v)", authDBRev, dryRun)
 
 	var shard []byte
 	shardIDs := []string{}
@@ -1810,7 +1812,8 @@ func shardAuthDB(ctx context.Context, authDBRev int64, blob []byte, maxSize int,
 		}
 
 		shard, blob = blob[:maxSize], blob[maxSize:]
-		shardID := fmt.Sprintf("%d:%s", authDBRev, hex.EncodeToString(shard))
+		shardChecksum := sha256.Sum256(shard)
+		shardID := fmt.Sprintf("%d:%s", authDBRev, hex.EncodeToString(shardChecksum[:]))
 		authDBShard := &AuthDBShard{
 			Kind: entityKind("AuthDBShard", dryRun),
 			ID:   shardID,
