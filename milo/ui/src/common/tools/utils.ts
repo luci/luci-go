@@ -24,12 +24,15 @@ export function genFeedbackUrl(errMsg?: string, stacktrace?: string) {
     'Please enter a description of the problem, with repro steps if applicable.';
 
   const searchParams = new URLSearchParams({
-    template: 'Build Infrastructure',
-    components: 'Infra>LUCI>UserInterface',
-    labels: 'Pri-2,Type-Bug',
-    comment: feedbackComment,
+    // ... > LUCI Test > LUCI UI > Public
+    component: '1499823',
+    type: 'BUG',
+    priority: 'P2',
+    severity: 'S2',
+    inProd: 'true',
+    description: feedbackComment,
   });
-  return `https://bugs.chromium.org/p/chromium/issues/entry?${searchParams}`;
+  return `https://b.corp.google.com/createIssue?${searchParams}`;
 }
 
 /**
