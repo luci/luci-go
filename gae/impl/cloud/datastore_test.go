@@ -417,6 +417,9 @@ func TestDatastore(t *testing.T) {
 					{"$kind": mkp("Test"), "$id": mkp("qux")},
 					{"$kind": mkp("Test"), "$id": mkp("quux"), "$parent": mkp(ds.MakeKey(c, "Test", "baz"))},
 					{"$kind": mkp("Test"), "$id": mkp("quuz"), "$parent": mkp(ds.MakeKey(c, "Test", "baz"))},
+					// Entities for checking IN query.
+					{"$kind": mkp("AAA"), "$id": mkp("e1"), "Slice": mkp("a", "b")},
+					{"$kind": mkp("AAA"), "$id": mkp("e2"), "Slice": mkp("a", "c")},
 				}), ShouldBeNil)
 
 				withAllMeta := func(pm ds.PropertyMap) ds.PropertyMap {
@@ -463,6 +466,18 @@ func TestDatastore(t *testing.T) {
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))}),
+					})
+				})
+
+				// TODO(vadimsh): Unfortunately Cloud Datastore emulator doesn't
+				// support IN queries, see https://cloud.google.com/datastore/docs/tools/datastore-emulator#known_issues
+				SkipConvey(`Can use IN in queries`, func() {
+					var results []*ds.Key
+					q := ds.NewQuery("AAA").In("Slice", "b", "c").KeysOnly(true)
+					So(ds.GetAll(c, q, &results), ShouldBeNil)
+					So(results, ShouldResemble, []*ds.Key{
+						ds.MakeKey(c, "AAA", "e1"),
+						ds.MakeKey(c, "AAA", "e2"),
 					})
 				})
 

@@ -82,6 +82,7 @@ type queryFields struct {
 	project stringset.Set
 
 	eqFilts map[string]PropertySlice
+	inFilts map[string][]PropertySlice
 
 	ineqFiltProp     string
 	ineqFiltLow      Property
@@ -128,6 +129,18 @@ func (q *Query) mod(cb func(*Query)) *Query {
 			newV := make(PropertySlice, len(v))
 			copy(newV, v)
 			ret.eqFilts[k] = newV
+		}
+	}
+	if len(q.inFilts) > 0 {
+		ret.inFilts = make(map[string][]PropertySlice, len(q.inFilts))
+		for k, v := range q.inFilts {
+			// Note that we never mutate individual `v` elements (which are property
+			// slices), so there's no need to deep-clone them. We only need to clone
+			// the top container slice (i.e. `v` itself), since we do mutate it in
+			// In(...) by appending more elements to it.
+			newV := make([]PropertySlice, len(v))
+			copy(newV, v)
+			ret.inFilts[k] = newV
 		}
 	}
 	cb(&ret)
@@ -288,7 +301,9 @@ func (q *Query) End(c Cursor) *Query {
 //
 // So a query with `.Eq("thing", 1, 2)` will only return entities where the
 // field "thing" is multiply defined and contains both a value of 1 and a value
-// of 2.
+// of 2. If the field is singular, such check will never pass. To query for
+// entities with a field matching any one of values use `.In("thing", 1, 2)`
+// filter instead.
 //
 // `Eq("thing", 1).Eq("thing", 2)` and `.Eq("thing", 1, 2)` have identical
 // meaning.
@@ -510,6 +525,37 @@ func (q *Query) Gte(field string, value any) *Query {
 	})
 }
 
+// In imposes a 'is-in-a-set' equality restriction on the Query.
+//
+// Equality filters interact with multiply-defined properties by ensuring that
+// the given field has /at least one/ value which is equal to the specified
+// constraint. So a query with `.In("thing", 1, 2)` will return entities
+// where at least one value of the field "thing" is either 1 or 2.
+//
+// Multiple `In` filters on the same property are AND-ed together, e.g.
+// `.In("thing", 1, 2).In("thing", 3, 4)` will return entities whose repeated
+// "thing" field has a value equal to 1 or 2 AND another value equal to 3 or 4.
+func (q *Query) In(field string, values ...any) *Query {
+	return q.mod(func(q *Query) {
+		if q.reserved(field) {
+			return
+		}
+		props := make(PropertySlice, len(values))
+		for idx, value := range values {
+			if q.err = props[idx].SetValue(value, ShouldIndex); q.err != nil {
+				return
+			}
+			if q.err = checkComparable(field, props[idx].Type()); q.err != nil {
+				return
+			}
+		}
+		if q.inFilts == nil {
+			q.inFilts = make(map[string][]PropertySlice, 1)
+		}
+		q.inFilts[field] = append(q.inFilts[field], props)
+	})
+}
+
 // ClearFilters clears all equality and inequality filters from the Query. It
 // does not clear the Ancestor filter if one is defined.
 func (q *Query) ClearFilters() *Query {
@@ -520,6 +566,7 @@ func (q *Query) ClearFilters() *Query {
 		} else {
 			q.eqFilts = nil
 		}
+		q.inFilts = nil
 		q.ineqFiltLowSet = false
 		q.ineqFiltHighSet = false
 	})
@@ -554,7 +601,7 @@ func (q *Query) finalizeImpl() (*FinalizedQuery, error) {
 		if ancestor != nil {
 			allowedEqs = 1
 		}
-		if len(q.eqFilts) > allowedEqs {
+		if len(q.eqFilts) > allowedEqs || len(q.inFilts) > 0 {
 			return nil, fmt.Errorf("kindless queries may not have any equality filters")
 		}
 		for _, o := range q.order {
@@ -600,7 +647,9 @@ func (q *Query) finalizeImpl() (*FinalizedQuery, error) {
 	if q.project != nil {
 		var err error
 		q.project.Iter(func(p string) bool {
-			if _, iseq := q.eqFilts[p]; iseq {
+			_, iseq := q.eqFilts[p]
+			_, isin := q.inFilts[p]
+			if iseq || isin {
 				err = fmt.Errorf("cannot project on equality filter field: %s", p)
 				return false
 			}
@@ -608,6 +657,14 @@ func (q *Query) finalizeImpl() (*FinalizedQuery, error) {
 		})
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	for _, slices := range q.inFilts {
+		for _, set := range slices {
+			if len(set) == 0 {
+				return nil, ErrNullQuery
+			}
 		}
 	}
 
@@ -623,6 +680,7 @@ func (q *Query) finalizeImpl() (*FinalizedQuery, error) {
 		end:                  q.end,
 
 		eqFilts: q.eqFilts,
+		inFilts: q.inFilts,
 
 		ineqFiltProp:     q.ineqFiltProp,
 		ineqFiltLow:      q.ineqFiltLow,
@@ -742,6 +800,15 @@ func (q *Query) String() string {
 		}
 		for _, v := range vals {
 			p("Filter(%q == %s)", prop, v.GQL())
+		}
+	}
+	for prop, slices := range q.inFilts {
+		for _, vals := range slices {
+			gql := make([]string, len(vals))
+			for i, v := range vals {
+				gql[i] = v.GQL()
+			}
+			p("Filter(%q in [%s])", prop, strings.Join(gql, ", "))
 		}
 	}
 	if q.ineqFiltProp != "" {
@@ -899,7 +966,17 @@ func cmpBoolean(a, b bool) int {
 	}
 }
 
-func cmpMapsOfPropertySlice(a, b map[string]PropertySlice) int {
+func cmpEqFilters(a, b map[string]PropertySlice) int {
+	// Quick checks for common cases.
+	switch {
+	case len(a) == 0 && len(b) == 0:
+		return 0
+	case len(a) == 0 && len(b) != 0:
+		return -1
+	case len(a) != 0 && len(b) == 0:
+		return 1
+	}
+
 	// Compare maps in the sorted order of keys.
 	cap := len(a)
 	if len(b) > cap {
@@ -914,6 +991,44 @@ func cmpMapsOfPropertySlice(a, b map[string]PropertySlice) int {
 	}
 	for _, key := range keys.ToSortedSlice() {
 		if cmp := cmpPropertySliceSet(a[key], b[key]); cmp != 0 {
+			return cmp
+		}
+	}
+	return cmpInteger(len(a), len(b))
+}
+
+func cmpInFilters(a, b map[string][]PropertySlice) int {
+	// Quick checks for common cases.
+	switch {
+	case len(a) == 0 && len(b) == 0:
+		return 0
+	case len(a) == 0 && len(b) != 0:
+		return -1
+	case len(a) != 0 && len(b) == 0:
+		return 1
+	}
+
+	// Compare maps in the sorted order of keys. Compare values lexicographically.
+	cap := len(a)
+	if len(b) > cap {
+		cap = len(b)
+	}
+	keys := stringset.New(cap)
+	for k := range a {
+		keys.Add(k)
+	}
+	for k := range b {
+		keys.Add(k)
+	}
+	for _, key := range keys.ToSortedSlice() {
+		alist := a[key]
+		blist := b[key]
+		for i := 0; i < len(alist) && i < len(blist); i++ {
+			if cmp := cmpPropertySliceSet(alist[i], blist[i]); cmp != 0 {
+				return cmp
+			}
+		}
+		if cmp := cmpInteger(len(alist), len(blist)); cmp != 0 {
 			return cmp
 		}
 	}
@@ -1027,7 +1142,10 @@ func (a *Query) Less(b *Query) bool {
 	if cmp := cmpBoolean(a.distinct, b.distinct); cmp != 0 {
 		return cmp < 0
 	}
-	if cmp := cmpMapsOfPropertySlice(a.eqFilts, b.eqFilts); cmp != 0 {
+	if cmp := cmpEqFilters(a.eqFilts, b.eqFilts); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := cmpInFilters(a.inFilts, b.inFilts); cmp != 0 {
 		return cmp < 0
 	}
 	if cmp := cmpStr(a.ineqFiltProp, b.ineqFiltProp); cmp != 0 {

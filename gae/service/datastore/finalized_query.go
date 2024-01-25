@@ -43,6 +43,7 @@ type FinalizedQuery struct {
 	orders  []IndexColumn
 
 	eqFilts map[string]PropertySlice
+	inFilts map[string][]PropertySlice
 
 	ineqFiltProp     string
 	ineqFiltLow      Property
@@ -139,6 +140,14 @@ func (q *FinalizedQuery) Ancestor() *Key {
 // PropertySlice which is of type *Key.
 func (q *FinalizedQuery) EqFilters() map[string]PropertySlice {
 	return q.eqFilts
+}
+
+// InFilters returns all "in" equality filters. The map key is the field name
+// and the value is a list of filters on that field's value that should be
+// AND'ed together. Individual filters are represented by a non-empty
+// PropertySlice with allowed values.
+func (q *FinalizedQuery) InFilters() map[string][]PropertySlice {
+	return q.inFilts
 }
 
 // IneqFilterProp returns the inequality filter property name, if one is used
@@ -271,6 +280,20 @@ func (q *FinalizedQuery) GQL() string {
 				}
 			}
 		}
+	}
+	if len(q.inFilts) > 0 {
+		inFilts := make([]string, 0, len(q.inFilts))
+		for prop, slices := range q.inFilts {
+			for _, slice := range slices {
+				gql := make([]string, len(slice))
+				for i, v := range slice {
+					gql[i] = v.GQL()
+				}
+				inFilts = append(inFilts, fmt.Sprintf("%s IN ARRAY(%s)", gqlQuoteName(prop), strings.Join(gql, ", ")))
+			}
+		}
+		sort.Strings(inFilts)
+		filts = append(filts, inFilts...)
 	}
 	if q.ineqFiltProp != "" {
 		for _, f := range [](func() (p, op string, v Property)){q.IneqFilterLow, q.IneqFilterHigh} {

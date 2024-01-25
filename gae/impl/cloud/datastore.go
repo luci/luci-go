@@ -324,6 +324,15 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 			}
 		}
 	}
+	for field, slices := range fq.InFilters() {
+		for _, slice := range slices {
+			native := make([]any, len(slice))
+			for idx, prop := range slice {
+				native[idx] = nativeFilter(prop)
+			}
+			nq = nq.FilterField(field, "in", native)
+		}
+	}
 
 	// Inequality filters.
 	if ineq := fq.IneqFilterProp(); ineq != "" {

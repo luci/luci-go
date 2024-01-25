@@ -176,6 +176,10 @@ func (d *rdsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB
 func (d *rdsImpl) fixQuery(fq *ds.FinalizedQuery) (*datastore.Query, error) {
 	ret := datastore.NewQuery(fq.Kind())
 
+	if len(fq.InFilters()) > 0 {
+		return nil, errors.New("IN filters are not supported by GAEv1 datastore implementation")
+	}
+
 	start, end := fq.Bounds()
 	if start != nil {
 		ret = ret.Start(start.(datastore.Cursor))

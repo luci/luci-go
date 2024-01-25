@@ -227,6 +227,33 @@ func TestDatastoreQueriesLess(t *testing.T) {
 			So(q.Less(q1), ShouldBeFalse)
 			So(q1.Less(q), ShouldBeTrue)
 		})
+		Convey("Compare In filter", func() {
+			// Equal. Order of filter and values doesn't matter.
+			q1 := NewQuery("Foo").In("p2", "x", "y").In("p1", "a", "b")
+			q2 := NewQuery("Foo").In("p1", "a", "b").In("p2", "y", "x")
+			So(q1.Less(q2), ShouldBeFalse)
+			So(q2.Less(q1), ShouldBeFalse)
+
+			q1 = NewQuery("Foo").In("prop", "a")
+			q2 = NewQuery("Foo").In("prop", "b")
+			So(q1.Less(q2), ShouldBeTrue)
+			So(q2.Less(q1), ShouldBeFalse)
+
+			q1 = NewQuery("Foo").In("prop", "a")
+			q2 = NewQuery("Foo").In("prop", "a", "b")
+			So(q1.Less(q2), ShouldBeTrue)
+			So(q2.Less(q1), ShouldBeFalse)
+
+			q1 = NewQuery("Foo").In("prop", "a")
+			q2 = NewQuery("Foo").In("prop", "a").In("prop", "b")
+			So(q1.Less(q2), ShouldBeTrue)
+			So(q2.Less(q1), ShouldBeFalse)
+
+			q1 = NewQuery("Foo").In("prop", "a")
+			q2 = NewQuery("Foo").In("prop", "a").In("another", "a")
+			So(q1.Less(q2), ShouldBeTrue)
+			So(q2.Less(q1), ShouldBeFalse)
+		})
 		Convey("Compare inequality", func() {
 			// "... turanga < 10 ..." compare "... turanga < 24 ..."
 			q := NewQuery("Foo").Lt("turanga", "10")
@@ -508,6 +535,11 @@ var queryTests = []queryTest{
 		"",
 		errString("cannot project"), nil},
 
+	{"equality filter projected field (in)",
+		nq().Project("foo").In("foo", 10),
+		"",
+		errString("cannot project"), nil},
+
 	{"kindless with non-__key__ filters",
 		nq("").Lt("face", 25.3),
 		"",
@@ -525,6 +557,11 @@ var queryTests = []queryTest{
 
 	{"kindless with equality filters",
 		nq("").Eq("hello", 1),
+		"",
+		errString("may not have any equality"), nil},
+
+	{"kindless with equality filters (in)",
+		nq("").In("hello", 1),
 		"",
 		errString("may not have any equality"), nil},
 
@@ -632,11 +669,22 @@ var queryTests = []queryTest{
 		func(err error) { So(err, ShouldEqual, ErrNullQuery) },
 		nil},
 
+	{"can build an empty query (in)",
+		nq().In("prop"),
+		"",
+		func(err error) { So(err, ShouldEqual, ErrNullQuery) },
+		nil},
+
 	{"reject pseudofield $id",
 		nq().Lt("$id", 10),
 		"",
 		func(err error) { So(err, ShouldErrLike, "rejecting field") },
 		nil},
+
+	{"IN filters",
+		nq().In("str", "a", "b").In("str", "c").In("int", 1, 2),
+		"SELECT * FROM `Foo` WHERE `int` IN ARRAY(1, 2) AND `str` IN ARRAY(\"a\", \"b\") AND `str` IN ARRAY(\"c\") ORDER BY `__key__`",
+		nil, nil},
 }
 
 func TestQueries(t *testing.T) {

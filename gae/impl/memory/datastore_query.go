@@ -179,6 +179,10 @@ func reduce(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool) (*reducedQuery,
 			MaxQueryComponents, num)
 	}
 
+	if len(fq.InFilters()) > 0 {
+		return nil, fmt.Errorf("IN filters are not implemented yet")
+	}
+
 	ret := &reducedQuery{
 		kc:           kc,
 		kind:         fq.Kind(),
