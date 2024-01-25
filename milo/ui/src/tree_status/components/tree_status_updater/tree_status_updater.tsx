@@ -46,7 +46,7 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
     mutationFn: (request: CreateStatusRequest) => {
       const client = new TreeStatusClientImpl(
         new PrpcClient({
-          host: SETTINGS.treeStatus.host,
+          host: SETTINGS.luciTreeStatus.host,
           insecure: false,
           getAuthToken,
         }),

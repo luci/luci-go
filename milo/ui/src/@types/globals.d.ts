@@ -42,7 +42,7 @@ declare const SETTINGS: {
   readonly sheriffOMatic: {
     readonly host: string;
   };
-  readonly treeStatus: {
+  readonly luciTreeStatus: {
     readonly host: string;
   };
 };

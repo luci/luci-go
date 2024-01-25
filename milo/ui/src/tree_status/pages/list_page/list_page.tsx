@@ -30,7 +30,7 @@ import { TreeStatusUpdater } from '@/tree_status/components/tree_status_updater'
 export const TreeStatusListPage = () => {
   const { tree: treeName } = useParams();
   const treeStatusClient = usePrpcServiceClient({
-    host: SETTINGS.treeStatus.host,
+    host: SETTINGS.luciTreeStatus.host,
     ClientImpl: TreeStatusClientImpl,
   });
   const status = useQuery({

@@ -69,7 +69,7 @@ configJSVars.SETTINGS = Object.freeze({
   sheriffOMatic: {
     host: assertNonNullable(process.env['VITE_SHERIFF_O_MATIC_HOST']),
   },
-  treeStatus: {
+  luciTreeStatus: {
     host: assertNonNullable(process.env['VITE_TREE_STATUS_HOST']),
   },
 });
