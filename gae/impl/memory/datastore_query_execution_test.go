@@ -201,6 +201,9 @@ var queryExecutionTests = []qExTest{
 				{q: nq("Kind").Eq("Extra", "waffle"), get: []ds.PropertyMap{
 					stage1Data[2], stage1Data[3],
 				}},
+				{q: nq("Kind").In("Extra", "waffle"), get: []ds.PropertyMap{
+					stage1Data[2], stage1Data[3],
+				}},
 
 				// get ziggy with it
 				{q: nq("Kind").Eq("Extra", "waffle").Eq("Val", 100), get: []ds.PropertyMap{

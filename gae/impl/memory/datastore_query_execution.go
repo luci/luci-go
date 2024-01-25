@@ -192,7 +192,10 @@ func countQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head m
 func executeNamespaceQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, head memStore, cb ds.RawRunCB) error {
 	// these objects have no properties, so any filters on properties cause an
 	// empty result.
-	if len(fq.EqFilters()) > 0 || len(fq.Project()) > 0 || len(fq.Orders()) > 1 {
+	if len(fq.EqFilters()) > 0 ||
+		len(fq.InFilters()) > 0 ||
+		len(fq.Project()) > 0 ||
+		len(fq.Orders()) > 1 {
 		return nil
 	}
 	if !(fq.IneqFilterProp() == "" || fq.IneqFilterProp() == "__key__") {

@@ -179,10 +179,6 @@ func reduce(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool) (*reducedQuery,
 			MaxQueryComponents, num)
 	}
 
-	if len(fq.InFilters()) > 0 {
-		return nil, fmt.Errorf("IN filters are not implemented yet")
-	}
-
 	ret := &reducedQuery{
 		kc:           kc,
 		kind:         fq.Kind(),
@@ -197,6 +193,20 @@ func reduce(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool) (*reducedQuery,
 			sVals.Add(string(ds.Serialize.ToBytes(v)))
 		}
 		ret.eqFilters[prop] = sVals
+	}
+
+	// Only trivial IN filters with a single value are supported right now. They
+	// are identical to EQ filters: In("prop", "a") <=> Eq("prop", "a").
+	for prop, slices := range fq.InFilters() {
+		for _, vals := range slices {
+			if len(vals) != 1 {
+				return nil, fmt.Errorf("non-trivial IN filters are not implemented yet")
+			}
+			if ret.eqFilters[prop] == nil {
+				ret.eqFilters[prop] = stringset.New(1)
+			}
+			ret.eqFilters[prop].Add(string(ds.Serialize.ToBytes(vals[0])))
+		}
 	}
 
 	startD, endD := GetBinaryBounds(fq)
