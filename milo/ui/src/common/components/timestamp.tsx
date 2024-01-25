@@ -61,7 +61,7 @@ function renderTooltip(
 }
 
 export interface TimestampProps {
-  readonly datetime: DateTime;
+  readonly datetime: DateTime | undefined;
   /**
    * Defaults to `LONG_TIME_FORMAT`;
    */
@@ -80,6 +80,10 @@ export interface TimestampProps {
  * Shows duration and addition timezone on hover.
  */
 export function Timestamp(props: TimestampProps) {
+  if (props.datetime === undefined) {
+    return <span>No timestamp available</span>;
+  }
+
   const datetime = props.datetime;
   const format = props.format ?? LONG_TIME_FORMAT;
   const extraZones = props.extra?.zones ?? DEFAULT_EXTRA_ZONE_CONFIGS;

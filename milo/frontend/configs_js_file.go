@@ -36,12 +36,13 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 	settings := config.GetSettings(c.Request.Context())
 	// Reassign to make exposing props explicit.
 	settings = &configpb.Settings{
-		Swarming:      settings.Swarming,
-		Buildbucket:   settings.Buildbucket,
-		Resultdb:      settings.Resultdb,
-		LuciAnalysis:  settings.LuciAnalysis,
-		LuciBisection: settings.LuciBisection,
-		SheriffOMatic: settings.SheriffOMatic,
+		Swarming:       settings.Swarming,
+		Buildbucket:    settings.Buildbucket,
+		Resultdb:       settings.Resultdb,
+		LuciAnalysis:   settings.LuciAnalysis,
+		LuciBisection:  settings.LuciBisection,
+		SheriffOMatic:  settings.SheriffOMatic,
+		LuciTreeStatus: settings.LuciTreeStatus,
 	}
 
 	header := c.Writer.Header()

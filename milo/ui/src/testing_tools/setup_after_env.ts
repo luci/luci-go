@@ -69,6 +69,9 @@ configJSVars.SETTINGS = Object.freeze({
   sheriffOMatic: {
     host: assertNonNullable(process.env['VITE_SHERIFF_O_MATIC_HOST']),
   },
+  treeStatus: {
+    host: assertNonNullable(process.env['VITE_TREE_STATUS_HOST']),
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by

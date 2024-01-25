@@ -107,4 +107,10 @@ message Settings {
     string host = 1;
   }
   LuciBisection sheriff_o_matic = 9;
+
+  message LuciTreeStatus {
+    // host is the hostname of the LUCI Tree Status instance we're pointing to (eg. luci-tree-status.appspot.com).
+    string host = 1;
+  }
+  LuciTreeStatus luci_tree_status = 10;
 }

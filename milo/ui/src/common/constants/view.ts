@@ -32,6 +32,7 @@ export enum UiPage {
   ChromiumDash = 'chromium-dash',
   ReleaseNotes = 'release-notes',
   TestVerdict = 'test-verdict',
+  TreeStatus = 'tree-status',
 }
 
 export enum CommonColors {

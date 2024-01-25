@@ -218,6 +218,10 @@ export const routes: RouteObject[] = [
         path: 'p/:project/builders',
         lazy: () => import('@/build/pages/builder_list_page'),
       },
+      {
+        path: 'tree-status/:tree',
+        lazy: () => import('@/tree_status/pages/list_page'),
+      },
     ],
   },
 ];

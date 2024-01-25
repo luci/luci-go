@@ -33,4 +33,5 @@ export const PAGE_LABEL_MAP = Object.freeze({
   [UiPage.ChromiumDash]: 'ChromiumDash',
   [UiPage.ReleaseNotes]: "What's new",
   [UiPage.TestVerdict]: 'Test verdict',
+  [UiPage.TreeStatus]: 'Tree status',
 });

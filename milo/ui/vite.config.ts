@@ -69,6 +69,9 @@ function getLocalDevConfigsJs(env: Record<string, string>) {
     sheriffOMatic: {
       host: env['VITE_SHERIFF_O_MATIC_HOST'],
     },
+    treeStatus: {
+      host: env['VITE_TREE_STATUS_HOST'],
+    },
   };
 
   const localDevConfigsJs =
