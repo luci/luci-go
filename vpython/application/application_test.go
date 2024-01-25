@@ -16,10 +16,16 @@ package application
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"os"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/filesystem"
+
+	"go.chromium.org/luci/vpython/api/vpython"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -81,6 +87,36 @@ func TestParseArguments(t *testing.T) {
 			err := parseArgs("-vpython-root", "root", "vpython-test")
 			So(err, ShouldBeNil)
 			So(app.CIPDCacheDir, ShouldStartWith, "something")
+		})
+
+		Convey("Test spec load", func() {
+			Convey("not found", func() {
+				wd, err := os.Getwd()
+				So(err, ShouldBeNil)
+				defer os.Chdir(wd)
+				err = os.Chdir(t.TempDir())
+				So(err, ShouldBeNil)
+
+				// CommonFilesystemBarrier for spec loader
+				err = filesystem.Touch(".gclient", time.Time{}, fs.ModePerm)
+				So(err, ShouldBeNil)
+
+				err = parseArgs()
+				So(err, ShouldBeNil)
+
+				Convey("default", func() {
+					app.VpythonSpec = &vpython.Spec{PythonVersion: "something"}
+					err = app.LoadSpec(ctx)
+					So(err, ShouldBeNil)
+					So(app.VpythonSpec.GetPythonVersion(), ShouldEqual, "something")
+				})
+
+				Convey("no default", func() {
+					err = app.LoadSpec(ctx)
+					So(err, ShouldBeNil)
+					So(app.VpythonSpec, ShouldNotBeNil)
+				})
+			})
 		})
 	})
 }

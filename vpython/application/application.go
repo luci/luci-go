@@ -253,6 +253,11 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 
 // LoadSpec searches and load vpython spec from path or script.
 func (a *Application) LoadSpec(ctx context.Context) error {
+	// default spec
+	if a.VpythonSpec == nil {
+		a.VpythonSpec = &vpythonAPI.Spec{}
+	}
+
 	if a.SpecPath != "" {
 		var sp vpythonAPI.Spec
 		if err := spec.Load(a.SpecPath, &sp); err != nil {
