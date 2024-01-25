@@ -59,6 +59,26 @@ const (
 	BotEventTaskUpdate    BotEventType = "task_update"
 )
 
+// BotStateEnum is used to represent state of the bot in datastore.
+//
+// See comment for BotCommon.Composite. Individual values should not leak in any
+// public APIs, it is an implementation detail.
+type BotStateEnum int64
+
+// Possible categories of bot state.
+const (
+	BotStateBusy             BotStateEnum = 1 << 0
+	BotStateIdle             BotStateEnum = 1 << 1
+	BotStateQuarantined      BotStateEnum = 1 << 2
+	BotStateHealthy          BotStateEnum = 1 << 3
+	BotStateUnused1          BotStateEnum = 1 << 4
+	BotStateUnused2          BotStateEnum = 1 << 5
+	BotStateDead             BotStateEnum = 1 << 6
+	BotStateAlive            BotStateEnum = 1 << 7
+	BotStateInMaintenance    BotStateEnum = 1 << 8
+	BotStateNotInMaintenance BotStateEnum = 1 << 9
+)
+
 // BotRoot is an entity group root of entities representing a single bot.
 //
 // Presence of this entity indicates there are BotEvent entities for this bot.
@@ -202,18 +222,18 @@ type BotInfo struct {
 	// The slice always have 4 items, with following meaning:
 	//
 	// Composite[0] is one of:
-	//    IN_MAINTENANCE     = 1 << 8  # 256
-	//    NOT_IN_MAINTENANCE = 1 << 9  # 512
+	//    BotStateInMaintenance    = 1 << 8  # 256
+	//    BotStateNotInMaintenance = 1 << 9  # 512
 	// Composite[1] is one of:
-	//    DEAD  = 1 << 6  # 64
-	//    ALIVE = 1 << 7  # 128
+	//    BotStateDead  = 1 << 6  # 64
+	//    BotStateAlive = 1 << 7  # 128
 	// Composite[2] is one of:
-	//    QUARANTINED = 1 << 2  # 4
-	//    HEALTHY     = 1 << 3  # 8
+	//    BotStateQuarantined = 1 << 2  # 4
+	//    BotStateHealthy     = 1 << 3  # 8
 	// Composite[3] is one of:
-	//    BUSY = 1 << 0  # 1
-	//    IDLE = 1 << 1  # 2
-	Composite []int64 `gae:"composite"`
+	//    BotStateBusy = 1 << 0  # 1
+	//    BotStateIdle = 1 << 1  # 2
+	Composite []BotStateEnum `gae:"composite"`
 
 	// FirstSeen is when the bot was seen for the first time.
 	FirstSeen time.Time `gae:"first_seen_ts,noindex"`
@@ -242,43 +262,25 @@ func (b *BotInfo) BotID() string {
 
 // IsDead is true if this bot is considered dead.
 func (b *BotInfo) IsDead() bool {
-	// TODO(vadimsh): Check only b.Composite[1].
-	for _, v := range b.Composite {
-		switch v {
-		case 128:
-			return false
-		case 64:
-			return true
-		}
-	}
-	return false
+	return len(b.Composite) > 1 && b.Composite[1] == BotStateDead
 }
 
 // IsInMaintenance is true if this bot is in maintenance.
 func (b *BotInfo) IsInMaintenance() bool {
-	// TODO(vadimsh): Check only b.Composite[0].
-	for _, v := range b.Composite {
-		switch v {
-		case 512:
-			return false
-		case 256:
-			return true
-		}
-	}
-	return false
+	return len(b.Composite) > 0 && b.Composite[0] == BotStateInMaintenance
 }
 
 // GetStatus returns the bot status.
 func (b *BotInfo) GetStatus() string {
 	for _, v := range b.Composite {
 		switch v {
-		case 256:
+		case BotStateInMaintenance:
 			return "maintenance"
-		case 4:
+		case BotStateQuarantined:
 			return "quarantined"
-		case 64:
+		case BotStateDead:
 			return "dead"
-		case 1:
+		case BotStateBusy:
 			return "running"
 		}
 	}

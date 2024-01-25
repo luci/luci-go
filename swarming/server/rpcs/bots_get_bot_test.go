@@ -74,10 +74,15 @@ func TestGetBot(t *testing.T) {
 		&model.BotInfo{
 			Key:        model.BotInfoKey(ctx, "alive-bot"),
 			Dimensions: []string{"a:1", "b:2"},
-			Composite:  []int64{512, 128, 8, 1},
-			FirstSeen:  testTime,
-			TaskName:   "task-name",
-			BotCommon:  fakeBotCommon("alive-bot"),
+			Composite: []model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateAlive,
+				model.BotStateHealthy,
+				model.BotStateBusy,
+			},
+			FirstSeen: testTime,
+			TaskName:  "task-name",
+			BotCommon: fakeBotCommon("alive-bot"),
 		},
 		&model.BotEvent{
 			Key:        datastore.NewKey(ctx, "BotEvent", "", 200, model.BotRootKey(ctx, "deleted-bot")),
