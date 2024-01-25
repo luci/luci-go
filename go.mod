@@ -1,3 +1,15 @@
+// ****WARNING****
+// After modifying this file, a manual roll in infra.git might be needed.
+// If so, run `go mod tidy` in:
+//     https://chromium.googlesource.com/infra/infra/+/refs/heads/main/go/src/infra/
+// Once the go.mod file in infra.git is synced up with this one, another manual roll
+// might be needed for infra_internal.git.
+// Similarly, run `go mod tidy` in:
+//     https://chrome-internal.googlesource.com/infra/infra_internal/+/refs/heads/main/go/
+// This is due to the dependency of luci-go => infra => infra_internal.
+// This is not an exhaustive list of all downstream repos/ manual rolls, it is merely the ones
+// the LUCI team is aware of and can make updates to.
+
 module go.chromium.org/luci
 
 go 1.21
