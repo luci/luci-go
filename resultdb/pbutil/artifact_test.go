@@ -129,3 +129,18 @@ func TestArtifactId(t *testing.T) {
 
 	})
 }
+
+func TestIsTextArtifact(t *testing.T) {
+	t.Parallel()
+	Convey("IsTextArtifact", t, func() {
+		Convey("empty content type", func() {
+			So(IsTextArtifact(""), ShouldBeFalse)
+		})
+		Convey("text artifact", func() {
+			So(IsTextArtifact("text/plain"), ShouldBeTrue)
+		})
+		Convey("non text artifact", func() {
+			So(IsTextArtifact("image/png"), ShouldBeFalse)
+		})
+	})
+}

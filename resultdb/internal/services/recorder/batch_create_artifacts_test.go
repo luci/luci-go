@@ -460,3 +460,135 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		})
 	})
 }
+
+func TestFilterAndThrottle(t *testing.T) {
+	Convey("Filter artifact", t, func() {
+		artReqs := []*artifactCreationRequest{
+			{
+				testID:      "test1",
+				contentType: "",
+			},
+			{
+				testID:      "test2",
+				contentType: "text/plain",
+			},
+			{
+				testID:      "test3",
+				contentType: "image/png",
+			},
+			{
+				testID:      "test4",
+				contentType: "text/html",
+			},
+		}
+		results := filterTextArtifactRequests(artReqs)
+		So(results, ShouldResemble, []*artifactCreationRequest{
+			{
+				testID:      "test2",
+				contentType: "text/plain",
+			},
+			{
+				testID:      "test4",
+				contentType: "text/html",
+			},
+		})
+	})
+
+	Convey("Throttle artifact", t, func() {
+		ctx := context.Background()
+		artReqs := []*artifactCreationRequest{
+			{
+				testID:     "test",
+				artifactID: "artifact38", // Hash value 0
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact158", // Hash value 99
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact230", // Hash value 32
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact232", // Hash value 54
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact341", // Hash value 91
+			},
+		}
+		// 0%.
+		results, err := throttleArtifactsForBQ(ctx, artReqs, 0)
+		So(err, ShouldBeNil)
+		So(results, ShouldResemble, []*artifactCreationRequest{})
+
+		// 1%.
+		results, err = throttleArtifactsForBQ(ctx, artReqs, 1)
+		So(err, ShouldBeNil)
+		So(results, ShouldResemble, []*artifactCreationRequest{
+			{
+				testID:     "test",
+				artifactID: "artifact38", // Hash value 0
+			},
+		})
+
+		// 33%.
+		results, err = throttleArtifactsForBQ(ctx, artReqs, 33)
+		So(err, ShouldBeNil)
+		So(results, ShouldResemble, []*artifactCreationRequest{
+			{
+				testID:     "test",
+				artifactID: "artifact38", // Hash value 0
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact230", // Hash value 32
+			},
+		})
+
+		// 90%.
+		results, err = throttleArtifactsForBQ(ctx, artReqs, 90)
+		So(err, ShouldBeNil)
+		So(results, ShouldResemble, []*artifactCreationRequest{
+			{
+				testID:     "test",
+				artifactID: "artifact38", // Hash value 0
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact230", // Hash value 32
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact232", // Hash value 54
+			},
+		})
+
+		// 100%.
+		results, err = throttleArtifactsForBQ(ctx, artReqs, 100)
+		So(err, ShouldBeNil)
+		So(results, ShouldResemble, []*artifactCreationRequest{
+			{
+				testID:     "test",
+				artifactID: "artifact38", // Hash value 0
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact158", // Hash value 99
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact230", // Hash value 32
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact232", // Hash value 54
+			},
+			{
+				testID:     "test",
+				artifactID: "artifact341", // Hash value 91
+			},
+		})
+	})
+}

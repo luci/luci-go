@@ -35,6 +35,7 @@ var (
 	invocationArtifactNameRe      = regexpf("^%s$", invocationArtifactNamePattern)
 	testResultArtifactNameRe      = regexpf("^%s$", testResultArtifactNamePattern)
 	artifactNameRe                = regexpf("^%s|%s$", testResultArtifactNamePattern, invocationArtifactNamePattern)
+	textArtifactContentTypeRe     = regexpf("^text/*")
 )
 
 // ValidateArtifactID returns a non-nil error if id is invalid.
@@ -116,4 +117,15 @@ func InvocationArtifactName(invocationID, artifactID string) string {
 // ValidateResultID and ValidateArtifactID.
 func TestResultArtifactName(invocationID, testID, resulID, artifactID string) string {
 	return fmt.Sprintf("invocations/%s/tests/%s/results/%s/artifacts/%s", invocationID, url.PathEscape(testID), resulID, url.PathEscape(artifactID))
+}
+
+// IsTextArtifact returns true if the content type represents a text-based artifact.
+// Note: As the artifact content type field is optional, it is possible that
+// a text artifact was uploaded to ResultDB without a content type. In such case,
+// this function will return false.
+//
+// We rather miss some text artifact than wrongly classify a non-text artifact as
+// text artifact.
+func IsTextArtifact(contentType string) bool {
+	return textArtifactContentTypeRe.MatchString(contentType)
 }

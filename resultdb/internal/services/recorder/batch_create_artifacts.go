@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"hash/fnv"
 	"mime"
 
 	"cloud.google.com/go/spanner"
@@ -353,6 +354,10 @@ func allowedBucketsForUser(ctx context.Context, project, user string) (allowedBu
 }
 
 // BatchCreateArtifacts implements pb.RecorderServer.
+// This functions uploads the artifacts to RBE-CAS.
+// If the artifact is a text-based artifact, it will also get uploaded to BigQuery.
+// We have a percentage control to determine how many percent of artifacts got
+// uploaded to BigQuery.
 func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
 	token, err := extractUpdateToken(ctx)
 	if err != nil {
@@ -417,6 +422,29 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		return nil, err
 	}
 
+	// Upload text artifact to BQ.
+	shouldUpload, err := shouldUploadToBQ(ctx)
+	if err != nil {
+		// Just log here, the feature is still in experiment, and we do not want
+		// to disturb the main flow.
+		err = errors.Annotate(err, "getting should upload to BQ").Err()
+		logging.Errorf(ctx, err.Error())
+	} else {
+		if shouldUpload {
+			// Just disable the logging for now because the feature is disabled.
+			// We will enable back when we enable the export.
+			// logging.Infof(ctx, "Uploading artifacts to BQ is disabled")
+		} else {
+			err = processBQUpload(ctx, artsToCreate)
+			if err != nil {
+				// Just log here, the feature is still in experiment, and we do not want
+				// to disturb the main flow.
+				err = errors.Annotate(err, "processBQUpload").Err()
+				logging.Errorf(ctx, err.Error())
+			}
+		}
+	}
+
 	// Return all the artifacts to indicate that they were created.
 	ret := &pb.BatchCreateArtifactsResponse{Artifacts: make([]*pb.Artifact, len(arts))}
 	for i, a := range arts {
@@ -428,4 +456,76 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		}
 	}
 	return ret, nil
+}
+
+// processBQUpload filters text artifacts and upload to BigQuery.
+func processBQUpload(ctx context.Context, artifactRequests []*artifactCreationRequest) error {
+	textArtifactRequests := filterTextArtifactRequests(artifactRequests)
+	percent, err := percentOfArtifactsToBQ(ctx)
+	if err != nil {
+		return errors.Annotate(err, "getting percent of artifact to upload to BQ").Err()
+	}
+	textArtifactRequests, err = throttleArtifactsForBQ(ctx, textArtifactRequests, percent)
+	if err != nil {
+		return errors.Annotate(err, "throttle artifacts for bq").Err()
+	} else {
+		err = uploadArtifactsToBQ(ctx, textArtifactRequests)
+		if err != nil {
+			return errors.Annotate(err, "uploadArtifactsToBQ").Err()
+		}
+	}
+	return nil
+}
+
+// filterTextArtifactRequests filters only text artifacts.
+func filterTextArtifactRequests(artifactRequests []*artifactCreationRequest) []*artifactCreationRequest {
+	results := []*artifactCreationRequest{}
+	for _, req := range artifactRequests {
+		if pbutil.IsTextArtifact(req.contentType) {
+			results = append(results, req)
+		}
+	}
+	return results
+}
+
+// throttleArtifactsForBQ limits the artifacts being to BigQuery based on percentage.
+// It will allow us to roll out the feature slowly.
+func throttleArtifactsForBQ(ctx context.Context, artifactRequests []*artifactCreationRequest, percent int) ([]*artifactCreationRequest, error) {
+	results := []*artifactCreationRequest{}
+	for _, req := range artifactRequests {
+		hashStr := fmt.Sprintf("%s%s", req.testID, req.artifactID)
+		hashVal := hash64([]byte(hashStr))
+		if hashVal%100 < uint64(percent) {
+			results = append(results, req)
+		}
+	}
+	return results, nil
+}
+
+// hash64 returns a hash value (uint64) for a given string.
+func hash64(bt []byte) uint64 {
+	hasher := fnv.New64a()
+	hasher.Write(bt)
+	return hasher.Sum64()
+}
+
+// percentOfArtifactsToBQ returns how many percents of artifact to be uploaded.
+// Return value is an integer between [0, 100].
+func percentOfArtifactsToBQ(ctx context.Context) (int, error) {
+	// TODO (nqmtuan): Read from config.
+	return 1, nil
+}
+
+// shouldUploadToBQ returns true if we should upload artifacts to BigQuery.
+// Note: Although we can also disable upload by setting percentOfArtifactsToBQ = 0,
+// but it will also run some BQ exporter code.
+// Disable shouldUploadToBQ flag will run no exporter code, therefore it is the safer option.
+func shouldUploadToBQ(ctx context.Context) (bool, error) {
+	// TODO (nqmtuan): Read from config.
+	return true, nil
+}
+
+func uploadArtifactsToBQ(ctx context.Context, req []*artifactCreationRequest) error {
+	// TODO (nqmtuan): Implement this.
+	return nil
 }
