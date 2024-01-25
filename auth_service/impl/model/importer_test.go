@@ -24,8 +24,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/auth_service/impl/info"
-	"go.chromium.org/luci/auth_service/testsupport"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -33,10 +34,10 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/testsupport"
+
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/stringset"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

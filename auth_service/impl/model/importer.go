@@ -25,8 +25,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/encoding/prototext"
+
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -34,7 +35,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 
-	"google.golang.org/protobuf/encoding/prototext"
+	"go.chromium.org/luci/auth_service/api/configspb"
 )
 
 // Imports groups from some external tar.gz bundle or plain text list.

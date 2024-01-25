@@ -25,9 +25,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
-	"go.chromium.org/luci/auth_service/api/taskspb"
-	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -37,6 +34,10 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/api/taskspb"
+	"go.chromium.org/luci/auth_service/impl/info"
 )
 
 // ChangeType is the enum for AuthDBChange.ChangeType.
