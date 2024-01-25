@@ -78,9 +78,9 @@ type Gitiles struct {
 	Ref     bigquery.NullString
 }
 
-// ReadChangepoints reads changepoints of the current week from BigQuery.
-// TODO: Allow reading changepoints for any week.
-func (c *Client) ReadChangepoints(ctx context.Context, project string) ([]*ChangepointRow, error) {
+// ReadChangepoints reads changepoints of a certain week from BigQuery.
+// The week parameter can be at any time of that week. A week is defined by Sunday to Satureday in UTC.
+func (c *Client) ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*ChangepointRow, error) {
 	query := `
 		-- TODO: extract this SQL into a new view to avoid the keeping multiple copies of this view around.
 		WITH merged_table AS (
@@ -148,12 +148,13 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string) ([]*Chang
 		-- Only keep regressions. A regression is a special changepoint when the later segment has a higher unexpected verdict rate than the earlier segment.
 		-- In the future, we might want to return all changepoints to show fixes in the UI.
 		WHERE segment.unexpected_verdict_rate - segment.previous_unexpected_verdict_rate > 0
-		AND segment.segment.start_hour >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), WEEK(SUNDAY))
+		AND TIMESTAMP_TRUNC(segment.segment.start_hour, WEEK(SUNDAY)) =  TIMESTAMP_TRUNC(@week, WEEK(SUNDAY))
 	`
 	q := c.client.Query(query)
 	q.DefaultDatasetID = "internal"
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "project", Value: project},
+		{Name: "week", Value: week},
 	}
 	job, err := q.Run(ctx)
 	if err != nil {

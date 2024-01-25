@@ -249,3 +249,11 @@ enum PresubmitRunStatus {
   // The run was canceled.
   PRESUBMIT_RUN_STATUS_CANCELED = 3;
 }
+
+// Represents a range of numeric values, e.g. unexpected verdict rates.
+message NumericRange {
+  // The inclusive lower bound included in the range.
+  float lower_bound = 1;
+  // The inclusive upper bound included in the range.
+  float upper_bound = 2;
+}

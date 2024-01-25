@@ -71,7 +71,6 @@ func TestChangepointsServer(t *testing.T) {
 					Identity:       "user:someone@google.com",
 					IdentityGroups: []string{"googlers", "luci-analysis-access"},
 				})
-				// Group 1.
 				cp1 := makeChangepointRow(1, 2, 4)
 				cp2 := makeChangepointRow(2, 2, 3)
 				client.ReadChangepointsResult = []*changepoints.ChangepointRow{cp1, cp2}
@@ -91,8 +90,8 @@ func TestChangepointsServer(t *testing.T) {
 					CanonicalChangepoint: &pb.Changepoint{
 						Project:     "chromium",
 						TestId:      "test1",
-						VariantHash: "varianthash",
-						RefHash:     "refhash",
+						VariantHash: "5097aaaaaaaaaaaa",
+						RefHash:     "b920ffffffffffff",
 						Ref: &pb.SourceRef{
 							System: &pb.SourceRef_Gitiles{
 								Gitiles: &pb.GitilesRef{
@@ -170,38 +169,96 @@ func TestChangepointsServer(t *testing.T) {
 				})
 			})
 		})
-	})
-}
 
-func TestGroupChangepoints(t *testing.T) {
-	t.Parallel()
-	Convey("TestGroupChangepoints", t, func() {
-		// Group 1 - test id num gap less than the TestIDGroupingThreshold in the same group.
-		cp1 := makeChangepointRow(4, 100, 200)
-		cp2 := makeChangepointRow(30, 160, 261) // 41 commits, 40.6% overlap with cp1
-		cp3 := makeChangepointRow(90, 100, 200)
-		cp4 := makeChangepointRow(1, 100, 300) // large regression range.
-		// Group 2 - same test id group, but different regression range with group 1.
-		cp5 := makeChangepointRow(2, 161, 263) // 40 commits. 39.6% overlap wtih cp 1.
-		cp6 := makeChangepointRow(3, 161, 264)
-		// Group 4 - different id group
-		cp7 := makeChangepointRow(1000, 100, 200)
-		cp8 := makeChangepointRow(1001, 100, 200)
-		// Group 5 - same test variant can't be in the same group more than once.
-		cp9 := makeChangepointRow(1001, 120, 230)
+		Convey("QueryChangepointsInGroup", func() {
+			Convey("unauthorised requests are rejected", func() {
+				req := &pb.QueryChangepointsInGroupRequest{
+					Project: "chromium",
+				}
 
-		groups := changepoints.GroupChangepoints([]*changepoints.ChangepointRow{cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9})
-		So(groups, ShouldResemble, [][]*changepoints.ChangepointRow{
-			{cp1, cp3, cp2, cp4},
-			{cp5, cp6},
-			{cp7, cp8},
-			{cp9},
+				res, err := server.QueryChangepointsInGroup(ctx, req)
+				So(err, ShouldErrLike, `not a member of googlers`)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(res, ShouldBeNil)
+			})
+			Convey("invalid requests are rejected", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@google.com",
+					IdentityGroups: []string{"googlers", "luci-analysis-access"},
+				})
+				req := &pb.QueryChangepointsInGroupRequest{}
+
+				res, err := server.QueryChangepointsInGroup(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(res, ShouldBeNil)
+			})
+
+			Convey("e2e", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@google.com",
+					IdentityGroups: []string{"googlers", "luci-analysis-access"},
+				})
+				// Group1.
+				cp1 := makeChangepointRow(1, 2, 4)
+				cp2 := makeChangepointRow(2, 2, 3)
+				// Group2.
+				cp3 := makeChangepointRow(1, 2, 20)
+				cp4 := makeChangepointRow(2, 2, 20)
+				// Group3.
+				cp5 := makeChangepointRow(1, 20, 40)
+				cp6 := makeChangepointRow(2, 20, 30)
+				client.ReadChangepointsResult = []*changepoints.ChangepointRow{cp1, cp2, cp3, cp4, cp5, cp6}
+				req := &pb.QueryChangepointsInGroupRequest{
+					Project: "chromium",
+					GroupKey: &pb.QueryChangepointsInGroupRequest_ChangepointIdentifier{
+						TestId:               "test2",
+						VariantHash:          "5097aaaaaaaaaaaa",
+						RefHash:              "b920ffffffffffff",
+						NominalStartPosition: 20, // Match group 3.
+						StartHour:            timestamppb.New(time.Unix(100, 0)),
+					},
+				}
+
+				Convey("group found", func() {
+					Convey("with no predicates", func() {
+						res, err := server.QueryChangepointsInGroup(ctx, req)
+						So(err, ShouldBeNil)
+						So(res.Changepoints, ShouldHaveLength, 2)
+						So(res.Changepoints[0].TestId, ShouldEqual, "test1")
+						So(res.Changepoints[0].NominalStartPosition, ShouldEqual, cp5.NominalStartPosition)
+						So(res.Changepoints[1].TestId, ShouldEqual, "test2")
+						So(res.Changepoints[1].NominalStartPosition, ShouldEqual, cp6.NominalStartPosition)
+					})
+
+					Convey("with predicates", func() {
+						req.Predicate = &pb.ChangepointPredicate{
+							TestIdPrefix: "test2",
+						}
+
+						res, err := server.QueryChangepointsInGroup(ctx, req)
+						So(err, ShouldBeNil)
+						So(res.Changepoints, ShouldHaveLength, 1)
+						So(res.Changepoints[0].TestId, ShouldEqual, "test2")
+						So(res.Changepoints[0].NominalStartPosition, ShouldEqual, cp6.NominalStartPosition)
+					})
+				})
+
+				Convey("group not found", func() {
+					req.GroupKey.NominalStartPosition = 100 // no match.
+
+					res, err := server.QueryChangepointsInGroup(ctx, req)
+					So(err, ShouldHaveGRPCStatus, codes.NotFound)
+					So(res, ShouldBeNil)
+				})
+			})
 		})
 	})
 }
 
-func TestValidateQueryChangepointGroupSummariesRequest(t *testing.T) {
+func TestValidateRequest(t *testing.T) {
 	t.Parallel()
+
 	Convey("validateQueryChangepointGroupSummariesRequest", t, func() {
 		req := &pb.QueryChangepointGroupSummariesRequest{
 			Project: "chromium",
@@ -222,25 +279,80 @@ func TestValidateQueryChangepointGroupSummariesRequest(t *testing.T) {
 			err := validateQueryChangepointGroupSummariesRequest(req)
 			So(err, ShouldErrLike, "project: unspecified")
 		})
-		Convey("invalid test prefix", func() {
+		Convey("invalid predicate", func() {
 			req.Predicate.TestIdPrefix = "\xFF"
 			err := validateQueryChangepointGroupSummariesRequest(req)
 			So(err, ShouldErrLike, "test_id_prefix: not a valid utf8 string")
 		})
+	})
+
+	Convey("validateQueryChangepointsInGroupRequest", t, func() {
+		req := &pb.QueryChangepointsInGroupRequest{
+			Project: "chromium",
+			GroupKey: &pb.QueryChangepointsInGroupRequest_ChangepointIdentifier{
+				TestId:               "testid",
+				VariantHash:          "5097aaaaaaaaaaaa",
+				RefHash:              "b920ffffffffffff",
+				NominalStartPosition: 1,
+				StartHour:            timestamppb.New(time.Unix(1000, 0)),
+			},
+			Predicate: &pb.ChangepointPredicate{},
+		}
+		Convey("valid", func() {
+			err := validateQueryChangepointsInGroupRequest(req)
+			So(err, ShouldBeNil)
+		})
+		Convey("no project", func() {
+			req.Project = ""
+			err := validateQueryChangepointsInGroupRequest(req)
+			So(err, ShouldErrLike, "project: unspecified")
+		})
+		Convey("no group key", func() {
+			req.GroupKey = nil
+			err := validateQueryChangepointsInGroupRequest(req)
+			So(err, ShouldErrLike, "group_key: unspecified")
+		})
+		Convey("invalid group key", func() {
+			req.GroupKey.TestId = "\xFF"
+			err := validateQueryChangepointsInGroupRequest(req)
+			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
+		})
+	})
+
+	Convey("validateChangepointPredicate", t, func() {
+		Convey("invalid test prefix", func() {
+			predicate := &pb.ChangepointPredicate{
+				TestIdPrefix: "\xFF",
+			}
+			err := validateChangepointPredicate(predicate)
+			So(err, ShouldErrLike, "test_id_prefix: not a valid utf8 string")
+		})
 		Convey("invalid lower bound", func() {
-			req.Predicate.UnexpectedVerdictRateChangeRange.LowerBound = 2
-			err := validateQueryChangepointGroupSummariesRequest(req)
+			predicate := &pb.ChangepointPredicate{
+				UnexpectedVerdictRateChangeRange: &pb.NumericRange{
+					LowerBound: 2,
+				},
+			}
+			err := validateChangepointPredicate(predicate)
 			So(err, ShouldErrLike, "unexpected_verdict_rate_change_range_range: lower_bound: should between 0 and 1")
 		})
 		Convey("invalid upper bound", func() {
-			req.Predicate.UnexpectedVerdictRateChangeRange.UpperBound = 2
-			err := validateQueryChangepointGroupSummariesRequest(req)
+			predicate := &pb.ChangepointPredicate{
+				UnexpectedVerdictRateChangeRange: &pb.NumericRange{
+					UpperBound: 2,
+				},
+			}
+			err := validateChangepointPredicate(predicate)
 			So(err, ShouldErrLike, "unexpected_verdict_rate_change_range_range: upper_bound:  should between 0 and 1")
 		})
 		Convey("upper bound smaller than lower bound", func() {
-			req.Predicate.UnexpectedVerdictRateChangeRange.UpperBound = 0.1
-			req.Predicate.UnexpectedVerdictRateChangeRange.LowerBound = 0.2
-			err := validateQueryChangepointGroupSummariesRequest(req)
+			predicate := &pb.ChangepointPredicate{
+				UnexpectedVerdictRateChangeRange: &pb.NumericRange{
+					UpperBound: 0.1,
+					LowerBound: 0.2,
+				},
+			}
+			err := validateChangepointPredicate(predicate)
 			So(err, ShouldErrLike, "unexpected_verdict_rate_change_range_range: upper_bound must greater or equal to lower_bound")
 		})
 	})
@@ -251,7 +363,7 @@ func makeChangepointRow(TestIDNum, lowerBound, upperBound int64) *changepoints.C
 		Project:     "chromium",
 		TestIDNum:   TestIDNum,
 		TestID:      fmt.Sprintf("test%d", TestIDNum),
-		VariantHash: "varianthash",
+		VariantHash: "5097aaaaaaaaaaaa",
 		Ref: &changepoints.Ref{
 			Gitiles: &changepoints.Gitiles{
 				Host:    bigquery.NullString{Valid: true, StringVal: "host"},
@@ -259,7 +371,7 @@ func makeChangepointRow(TestIDNum, lowerBound, upperBound int64) *changepoints.C
 				Ref:     bigquery.NullString{Valid: true, StringVal: "ref"},
 			},
 		},
-		RefHash:                      "refhash",
+		RefHash:                      "b920ffffffffffff",
 		UnexpectedVerdictRateCurrent: 0,
 		UnexpectedVerdictRateAfter:   0.99,
 		UnexpectedVerdictRateBefore:  0.3,
@@ -274,6 +386,6 @@ type fakeChangepointClient struct {
 	ReadChangepointsResult []*changepoints.ChangepointRow
 }
 
-func (f *fakeChangepointClient) ReadChangepoints(ctx context.Context, project string) ([]*changepoints.ChangepointRow, error) {
+func (f *fakeChangepointClient) ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*changepoints.ChangepointRow, error) {
 	return f.ReadChangepointsResult, nil
 }

@@ -39,3 +39,20 @@ func (s *DecoratedChangepoints) QueryChangepointGroupSummaries(ctx context.Conte
 	}
 	return
 }
+
+func (s *DecoratedChangepoints) QueryChangepointsInGroup(ctx context.Context, req *QueryChangepointsInGroupRequest) (rsp *QueryChangepointsInGroupResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryChangepointsInGroup", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryChangepointsInGroup(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryChangepointsInGroup", rsp, err)
+	}
+	return
+}

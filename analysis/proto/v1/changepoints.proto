@@ -20,6 +20,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 
 // This service currently only return changepoints which have an increase in unexpected verdict rate, aka. Regression.
 // In the future, it may be extended for obtaining groups which have a decreased unexpected verdict rate aka. fixes.
@@ -29,6 +30,10 @@ service Changepoints {
   // TODO: Add pagination to this RPC so that more changepoint history can be seen.
   rpc QueryChangepointGroupSummaries(QueryChangepointGroupSummariesRequest) returns (
     QueryChangepointGroupSummariesResponse) {};
+  // Query the changepoints in a particular group.
+  // TODO: Implement pagination, currently just return at most 1000 changepoints.
+  rpc QueryChangepointsInGroup(QueryChangepointsInGroupRequest) returns (
+    QueryChangepointsInGroupResponse) {}
 }
 
 message QueryChangepointGroupSummariesRequest {
@@ -37,14 +42,6 @@ message QueryChangepointGroupSummariesRequest {
   // A filter to be applied to each changepoint in the groups.
   // If all changepoints in a group are filtered out, this group will not be returned.
   ChangepointPredicate predicate = 2;
-}
-
-// Represents a range of numeric values, e.g. unexpected verdict rates.
-message NumericRange {
-   // The inclusive lower bound included in the range.
-   float lower_bound = 1;
-   // The inclusive upper bound included in the range.
-   float upper_bound = 2;
 }
 
 // Represent a function Changepoint -> bool
@@ -57,7 +54,6 @@ message ChangepointPredicate {
   // eg. {lower_bound:0.1, upper_bound:0.9} means keep changepoint which has a unexpected verdict rate increase >= 10% and <= 90%.
   NumericRange unexpected_verdict_rate_change_range = 2;
 }
-
 
 message QueryChangepointGroupSummariesResponse {
   // A list of changepoint group summaries.
@@ -111,6 +107,38 @@ message ChangepointGroupStatistics {
   }
   // The amount of change in unexpected verdict rate before and after the changepoint.
   RateChangeBuckets unexpected_verdict_rate_change = 5;
+}
+
+message QueryChangepointsInGroupRequest {
+  // The LUCI project. Mandatory field.
+  string project = 1;
+  // We consider two changepoints matches if
+  //   * their test_id, variant_hash, ref_hash are exactly the same,
+  //           AND
+  //   *  nominal_start_position is within the other changepoint's 99% confidence interval (inclusive).
+  // Most of the time there should be only one matching changepoint.
+  // However, in rare cases adjacent segments can have an overlapping 99% confidence interval.
+  // It makes it possible that more than one changepoint matches. In this case, we select the one with the closest nominal start position.
+  message ChangepointIdentifier {
+    string test_id = 1;
+    string variant_hash = 2;
+    string ref_hash = 3;
+    int64 nominal_start_position = 4;
+    // The nominal start hour of this changepoint in UTC.
+    // This is used to locate a week in UTC (Saturday to Sunday) to generate changepoint groups.
+    google.protobuf.Timestamp start_hour = 5;
+  }
+
+  // Identify a group with this changepoint. Mandatory field.
+  ChangepointIdentifier group_key = 2;
+  // A filter to be applied to each changepoint.
+  ChangepointPredicate predicate = 3;
+}
+
+// TODO: Implement pagination, currently just return at most 1000 changepoints.
+message QueryChangepointsInGroupResponse {
+  // A list of changepoints in a group.
+  repeated Changepoint changepoints = 1;
 }
 
 
