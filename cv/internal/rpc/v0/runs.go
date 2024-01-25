@@ -80,6 +80,7 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 		EndTime:    common.Time2PBNillable(r.EndTime),
 		Owner:      string(r.Owner),
 		CreatedBy:  string(r.CreatedBy),
+		BilledTo:   string(r.BilledTo),
 		Cls:        gcls,
 		Tryjobs:    constructLegacyTryjobs(ctx, r),
 		Submission: submission,

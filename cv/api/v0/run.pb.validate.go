@@ -184,6 +184,8 @@ func (m *Run) validate(all bool) error {
 
 	// no validation rules for CreatedBy
 
+	// no validation rules for BilledTo
+
 	for idx, item := range m.GetCls() {
 		_, _ = idx, item
 

@@ -29,7 +29,7 @@ import "go.chromium.org/luci/cv/api/v0/tryjob.proto";
 // - No backward compatibility guaranteed.
 // - Please contact CV maintainers at luci-eng@ before using this message.
 message Run {
-  // Next tag: 14.
+  // Next tag: 16.
 
   // ID of the Run.
   //
@@ -132,6 +132,9 @@ message Run {
   // of the Gerrit CL which has the latest triggering timestamp (e.g. latest
   // CQ+2 vote).
   string created_by = 13;
+  // This is the identity string of the user whose run quota is consumed for the
+  // run start.
+  string billed_to = 15;
   // The Gerrit changes involved in this Run.
   repeated GerritChange cls = 10;
 
