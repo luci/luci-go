@@ -199,6 +199,41 @@ func TestTakeSnapshot(t *testing.T) {
 				},
 				Realms: expectedMergedRealmsProto,
 			})
+
+			Convey("empty string fields are set to `empty`", func() {
+				sparseGlobalConfig := &AuthGlobalConfig{
+					Kind:                     "AuthGlobalConfig",
+					ID:                       "root",
+					AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
+				}
+				sparseAuthGroup1 := testAuthGroup(ctx, "group-1")
+				sparseAuthGroup1.Description = ""
+				sparseSnapshot := &Snapshot{
+					ReplicationState: testAuthReplicationState(ctx, 12345),
+					GlobalConfig:     sparseGlobalConfig,
+					Groups: []*AuthGroup{
+						sparseAuthGroup1,
+						testAuthGroup(ctx, "group-2"),
+					},
+				}
+
+				expectedGroup1 := groupProto("group-1")
+				expectedGroup1.Description = "empty"
+				authDBProto, err := sparseSnapshot.ToAuthDBProto()
+				So(err, ShouldBeNil)
+				So(authDBProto, ShouldResembleProto, &protocol.AuthDB{
+					OauthClientId:     "empty",
+					OauthClientSecret: "empty",
+					TokenServerUrl:    "empty",
+					Groups: []*protocol.AuthGroup{
+						expectedGroup1,
+						groupProto("group-2"),
+					},
+					Realms: &protocol.Realms{
+						ApiVersion: RealmsAPIVersion,
+					},
+				})
+			})
 		})
 
 		Convey("ToAuthDB", func() {

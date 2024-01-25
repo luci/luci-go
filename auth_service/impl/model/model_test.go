@@ -291,18 +291,38 @@ func TestGetAuthGroup(t *testing.T) {
 	t.Parallel()
 
 	Convey("Testing GetAuthGroup", t, func() {
-		ctx := memory.Use(context.Background())
+		Convey("returns group if it exists", func() {
+			ctx := memory.Use(context.Background())
 
-		authGroup := testAuthGroup(ctx, "test-auth-group-1")
+			// Group doesn't exist yet.
+			_, err := GetAuthGroup(ctx, "test-auth-group-1")
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
-		_, err := GetAuthGroup(ctx, "test-auth-group-1")
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			// Put the group in datastore.
+			authGroup := testAuthGroup(ctx, "test-auth-group-1")
+			So(datastore.Put(ctx, authGroup), ShouldBeNil)
 
-		So(datastore.Put(ctx, authGroup), ShouldBeNil)
+			// Group should be returned now that it exists.
+			actual, err := GetAuthGroup(ctx, "test-auth-group-1")
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, authGroup)
+		})
 
-		actual, err := GetAuthGroup(ctx, "test-auth-group-1")
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, authGroup)
+		Convey("returned group always has Owners", func() {
+			ctx := memory.Use(context.Background())
+
+			// Put a group without Owners in datastore.
+			authGroup := testAuthGroup(ctx, "test-auth-group-1")
+			authGroup.Owners = ""
+			So(datastore.Put(ctx, authGroup), ShouldBeNil)
+
+			// Returned group should have Owners set to AdminGroup.
+			actual, err := GetAuthGroup(ctx, "test-auth-group-1")
+			So(err, ShouldBeNil)
+			expected := testAuthGroup(ctx, "test-auth-group-1")
+			expected.Owners = AdminGroup
+			So(actual, ShouldResembleProto, expected)
+		})
 	})
 }
 
@@ -310,23 +330,46 @@ func TestGetAllAuthGroups(t *testing.T) {
 	t.Parallel()
 
 	Convey("Testing GetAllAuthGroups", t, func() {
-		ctx := memory.Use(context.Background())
+		Convey("returns groups alphabetically", func() {
+			ctx := memory.Use(context.Background())
 
-		// Out of order alphabetically by ID.
-		So(datastore.Put(ctx,
-			testAuthGroup(ctx, "test-auth-group-3"),
-			testAuthGroup(ctx, "test-auth-group-1"),
-			testAuthGroup(ctx, "test-auth-group-2"),
-		), ShouldBeNil)
+			// Out of order alphabetically by ID.
+			So(datastore.Put(ctx,
+				testAuthGroup(ctx, "test-auth-group-3"),
+				testAuthGroup(ctx, "test-auth-group-1"),
+				testAuthGroup(ctx, "test-auth-group-2"),
+			), ShouldBeNil)
 
-		actualAuthGroups, err := GetAllAuthGroups(ctx)
-		So(err, ShouldBeNil)
+			actualAuthGroups, err := GetAllAuthGroups(ctx)
+			So(err, ShouldBeNil)
 
-		// Returned in alphabetical order.
-		So(actualAuthGroups, ShouldResemble, []*AuthGroup{
-			testAuthGroup(ctx, "test-auth-group-1"),
-			testAuthGroup(ctx, "test-auth-group-2"),
-			testAuthGroup(ctx, "test-auth-group-3"),
+			// Returned in alphabetical order.
+			So(actualAuthGroups, ShouldResemble, []*AuthGroup{
+				testAuthGroup(ctx, "test-auth-group-1"),
+				testAuthGroup(ctx, "test-auth-group-2"),
+				testAuthGroup(ctx, "test-auth-group-3"),
+			})
+		})
+
+		Convey("returned groups always has Owners", func() {
+			ctx := memory.Use(context.Background())
+
+			authGroup1 := testAuthGroup(ctx, "test-auth-group-1")
+			authGroup1.Owners = ""
+			So(datastore.Put(ctx,
+				authGroup1,
+				testAuthGroup(ctx, "test-auth-group-2"),
+			), ShouldBeNil)
+
+			actualAuthGroups, err := GetAllAuthGroups(ctx)
+			So(err, ShouldBeNil)
+
+			expectedAuthGroup1 := testAuthGroup(ctx, "test-auth-group-1")
+			expectedAuthGroup1.Owners = AdminGroup
+			So(actualAuthGroups, ShouldResembleProto, []*AuthGroup{
+				expectedAuthGroup1,
+				testAuthGroup(ctx, "test-auth-group-2"),
+			})
 		})
 	})
 }
