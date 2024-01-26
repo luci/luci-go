@@ -346,9 +346,9 @@ export class Method {
   // `authorization` will be used as a value of Authorization header. `traceID`
   // is used to populate X-Cloud-Trace-Context header.
   async invoke(
-    request: string,
-    authorization: string,
-    traceID?: string
+      request: string,
+      authorization: string,
+      traceID?: string,
   ): Promise<string> {
     const resp: object = await invokeMethod(
         this.service, this.name, request, authorization, traceID,
@@ -708,7 +708,7 @@ const invokeMethod = async <T, >(
     headers.set('Authorization', authorization);
   }
   if (traceID) {
-    headers.set('X-Cloud-Trace-Context', `${traceID}/1;o=1`)
+    headers.set('X-Cloud-Trace-Context', `${traceID}/1;o=1`);
   }
 
   const response = await fetch(`/prpc/${service}/${method}`, {

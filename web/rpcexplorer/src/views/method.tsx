@@ -18,11 +18,13 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import FormControlLabel from '@mui/material/FormControlLabel'
-import FormGroup from '@mui/material/FormGroup'
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
+import Link from '@mui/material/Link';
 import Switch from '@mui/material/Switch';
+import Tooltip from '@mui/material/Tooltip';
 
 import { useGlobals } from '../context/globals';
 
@@ -38,6 +40,13 @@ import { ResponseEditor } from '../components/response_editor';
 import { generateTraceID } from '../data/prpc';
 
 
+interface TraceInfo {
+  duration: number;
+  traceID: string;
+  traceURL: string;
+}
+
+
 const Method = () => {
   const { serviceName, methodName } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,7 +55,7 @@ const Method = () => {
   const [tracingOn, setTracingOn] = useState(false);
   const [running, setRunning] = useState(false);
   const [response, setResponse] = useState('');
-  const [traceInfo, setTraceInfo] = useState('');
+  const [traceInfo, setTraceInfo] = useState<TraceInfo | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   // Request editor is used via imperative methods since it can be too sluggish
@@ -122,11 +131,11 @@ const Method = () => {
 
     // Deactivate the UI while the request is running.
     setRunning(true);
-    setTraceInfo('');
+    setTraceInfo(null);
     setError(null);
 
     // Prepare trace ID if asked to trace the request.
-    let traceID = tracingOn ? generateTraceID() : '';
+    const traceID = tracingOn ? generateTraceID() : '';
     let started = Date.now();
 
     // Grabs the authentication header and invokes the method.
@@ -155,8 +164,12 @@ const Method = () => {
         .finally(() => {
           // Always show tracing info if asked, even on errors.
           if (traceID) {
-            let duration = Date.now() - started;
-            setTraceInfo(`Done in ${duration} ms. Trace ID is ${traceID}.`);
+            setTraceInfo({
+              duration: Date.now() - started,
+              traceID: traceID,
+              traceURL: 'https://console.cloud.google.com/' +
+                  `traces/list?tid=${traceID}`,
+            });
           }
           // Reactivate the UI.
           setRunning(false);
@@ -202,19 +215,29 @@ const Method = () => {
 
       <Grid item xs={2}>
         <FormGroup>
-          <FormControlLabel control={
-            <Switch
-              checked={tracingOn}
-              onChange={(_, checked) => setTracingOn(checked)}
-            />
-          } label="Trace" />
+          <Tooltip title={
+            'Attach Cloud Trace trace ID to the request. ' +
+            'Only works if the backend is configured to upload tracing data ' +
+            'to Cloud Trace.'
+          }>
+            <FormControlLabel control={
+              <Switch
+                checked={tracingOn}
+                onChange={(_, checked) => setTracingOn(checked)}
+              />
+            } label="Trace" />
+          </Tooltip>
         </FormGroup>
       </Grid>
 
       {traceInfo &&
         <Grid item xs={12}>
           <Alert variant="outlined" icon={false} severity="info">
-            {traceInfo}
+            {`Done in ${traceInfo.duration} ms. Trace ID is `}
+            <Link target="_blank" rel="noreferrer" href={traceInfo.traceURL}>
+              {traceInfo.traceID}
+            </Link>
+            {'.'}
           </Alert>
         </Grid>
       }
