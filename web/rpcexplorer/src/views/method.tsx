@@ -18,8 +18,11 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import FormControlLabel from '@mui/material/FormControlLabel'
+import FormGroup from '@mui/material/FormGroup'
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
+import Switch from '@mui/material/Switch';
 
 import { useGlobals } from '../context/globals';
 
@@ -32,14 +35,18 @@ import { OAuthError } from '../data/oauth';
 import { RequestEditor, RequestEditorRef } from '../components/request_editor';
 import { ResponseEditor } from '../components/response_editor';
 
+import { generateTraceID } from '../data/prpc';
+
 
 const Method = () => {
   const { serviceName, methodName } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { descriptors, tokenClient } = useGlobals();
   const [authMethod, setAuthMethod] = useState(AuthMethod.load());
+  const [tracingOn, setTracingOn] = useState(false);
   const [running, setRunning] = useState(false);
   const [response, setResponse] = useState('');
+  const [traceInfo, setTraceInfo] = useState('');
   const [error, setError] = useState<Error | null>(null);
 
   // Request editor is used via imperative methods since it can be too sluggish
@@ -115,6 +122,12 @@ const Method = () => {
 
     // Deactivate the UI while the request is running.
     setRunning(true);
+    setTraceInfo('');
+    setError(null);
+
+    // Prepare trace ID if asked to trace the request.
+    let traceID = tracingOn ? generateTraceID() : '';
+    let started = Date.now();
 
     // Grabs the authentication header and invokes the method.
     const authAndInvoke = async () => {
@@ -124,7 +137,8 @@ const Method = () => {
           authorization = `Bearer ${await tokenClient.accessToken()}`;
         }
       }
-      return await method.invoke(normalizedReq, authorization);
+      started = Date.now(); // restart the timer after getting a token
+      return await method.invoke(normalizedReq, authorization, traceID);
     };
     authAndInvoke()
         .then((response) => {
@@ -139,7 +153,12 @@ const Method = () => {
           }
         })
         .finally(() => {
-          // Reactive the UI.
+          // Always show tracing info if asked, even on errors.
+          if (traceID) {
+            let duration = Date.now() - started;
+            setTraceInfo(`Done in ${duration} ms. Trace ID is ${traceID}.`);
+          }
+          // Reactivate the UI.
           setRunning(false);
         });
   };
@@ -170,7 +189,7 @@ const Method = () => {
         </Button>
       </Grid>
 
-      <Grid item xs={10}>
+      <Grid item xs={8}>
         <Box>
           <AuthSelector
             selected={authMethod}
@@ -181,6 +200,24 @@ const Method = () => {
         </Box>
       </Grid>
 
+      <Grid item xs={2}>
+        <FormGroup>
+          <FormControlLabel control={
+            <Switch
+              checked={tracingOn}
+              onChange={(_, checked) => setTracingOn(checked)}
+            />
+          } label="Trace" />
+        </FormGroup>
+      </Grid>
+
+      {traceInfo &&
+        <Grid item xs={12}>
+          <Alert variant="outlined" icon={false} severity="info">
+            {traceInfo}
+          </Alert>
+        </Grid>
+      }
       {error &&
         <Grid item xs={12}>
           <ErrorAlert error={error} />

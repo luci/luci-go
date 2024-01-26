@@ -343,10 +343,15 @@ export class Method {
 
   // Invokes this method, returns prettified JSON response as a string.
   //
-  // `authorization` will be used as a value of Authorization header.
-  async invoke(request: string, authorization: string): Promise<string> {
+  // `authorization` will be used as a value of Authorization header. `traceID`
+  // is used to populate X-Cloud-Trace-Context header.
+  async invoke(
+    request: string,
+    authorization: string,
+    traceID?: string
+  ): Promise<string> {
     const resp: object = await invokeMethod(
-        this.service, this.name, request, authorization,
+        this.service, this.name, request, authorization, traceID,
     );
     return JSON.stringify(resp, null, 2);
   }
@@ -359,6 +364,18 @@ export const loadDescriptors = async (): Promise<Descriptors> => {
       'discovery.Discovery', 'Describe', '{}', '',
   );
   return new Descriptors(resp.description, resp.services);
+};
+
+
+// Generates a tracing ID for Cloud Trace.
+//
+// See https://cloud.google.com/trace/docs/setup#force-trace.
+export const generateTraceID = (): string => {
+  let output = '';
+  for (let i = 0; i < 32; ++i) {
+    output += (Math.floor(Math.random() * 16)).toString(16);
+  }
+  return output;
 };
 
 
@@ -682,12 +699,16 @@ const invokeMethod = async <T, >(
   method: string,
   body: string,
   authorization: string,
+  traceID?: string,
 ): Promise<T> => {
   const headers = new Headers();
   headers.set('Accept', 'application/json; charset=utf-8');
   headers.set('Content-Type', 'application/json; charset=utf-8');
   if (authorization) {
     headers.set('Authorization', authorization);
+  }
+  if (traceID) {
+    headers.set('X-Cloud-Trace-Context', `${traceID}/1;o=1`)
   }
 
   const response = await fetch(`/prpc/${service}/${method}`, {
