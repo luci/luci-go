@@ -18,11 +18,14 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
@@ -31,6 +34,23 @@ import (
 var retentionPeriod = 540 * 24 * time.Hour // ~= 1.5 years
 
 // wipeoutRun wipes out the given run if it is no longer in retention period.
+func registerWipeoutRunTask(tqd *tq.Dispatcher) {
+	tqd.RegisterTaskClass(tq.TaskClass{
+		ID:           "wipeout-run",
+		Queue:        "data-retention",
+		Prototype:    &WipeoutRunTask{},
+		Kind:         tq.NonTransactional,
+		Quiet:        true,
+		QuietOnError: true,
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			task := payload.(*WipeoutRunTask)
+			err := wipeoutRun(ctx, common.RunID(task.GetId()))
+			return common.TQifyError(ctx, err)
+		},
+	})
+}
+
+// wipeoutRun wipes out the given run if run is no longer in retention period.
 //
 // No-op if it doesn't exists or is still in the retention period.
 func wipeoutRun(ctx context.Context, runID common.RunID) error {

@@ -89,6 +89,10 @@ queue:
   rate: 30/s
   target: default
 
+- name: data-retention
+  rate: 30/s
+  target: default
+
 ###############################################################################
 # Special queues not critical for production.
 # They aren't alerted upon.
