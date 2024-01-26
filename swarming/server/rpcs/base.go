@@ -38,6 +38,13 @@ import (
 
 var requestStateCtxKey = "swarming.rpcs.RequestState"
 
+const (
+	// Default size of a single page of results for listing queries.
+	defaultPageSize = 100
+	// Maximum allowed size of a single page of results for listing queries.
+	maxPageSize = 1000
+)
+
 // SwarmingServer implements Swarming gRPC service.
 //
 // It is a collection of various RPCs that didn't fit other services. Individual
@@ -118,6 +125,20 @@ func State(ctx context.Context) *RequestState {
 		panic("no RequestState in the context")
 	}
 	return state
+}
+
+// ValidateLimit validates a page size limit in listing queries.
+func ValidateLimit(val int32) (int32, error) {
+	if val == 0 {
+		val = defaultPageSize
+	}
+	switch {
+	case val < 0:
+		return val, errors.Reason("must be positive, got %d", val).Err()
+	case val > maxPageSize:
+		return val, errors.Reason("must be less or equal to %d, got %d", maxPageSize, val).Err()
+	}
+	return val, nil
 }
 
 // FetchTaskRequest fetches a task request given its ID.

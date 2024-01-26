@@ -36,15 +36,9 @@ func (*BotsServer) ListBotEvents(ctx context.Context, req *apipb.BotEventsReques
 		return nil, status.Errorf(codes.InvalidArgument, "bot_id is required")
 	}
 
-	// Forbid completely unlimited queries, they will OOM the server.
-	if req.Limit == 0 {
-		req.Limit = 100
-	}
-	switch {
-	case req.Limit < 0:
-		return nil, status.Errorf(codes.InvalidArgument, "limit must be positive, got %d", req.Limit)
-	case req.Limit > 1000:
-		return nil, status.Errorf(codes.InvalidArgument, "limit must not be more than 1000, got %d", req.Limit)
+	var err error
+	if req.Limit, err = ValidateLimit(req.Limit); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid limit: %s", err)
 	}
 
 	var cursor datastore.Cursor
@@ -75,7 +69,7 @@ func (*BotsServer) ListBotEvents(ctx context.Context, req *apipb.BotEventsReques
 
 	out := &apipb.BotEventsResponse{}
 
-	err := datastore.Run(ctx, q, func(ev *model.BotEvent, cb datastore.CursorCB) error {
+	err = datastore.Run(ctx, q, func(ev *model.BotEvent, cb datastore.CursorCB) error {
 		out.Items = append(out.Items, ev.ToProto())
 		if len(out.Items) == int(req.Limit) {
 			cursor, err := cb()
