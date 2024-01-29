@@ -18,15 +18,81 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestScheduleWipeoutRuns(t *testing.T) {
+	t.Parallel()
+
+	Convey("Schedule wipeout run tasks", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+		registerWipeoutRunTask(ct.TQDispatcher)
+
+		// Test Scenario: Create a lot of runs under 2 LUCI Projects (1 disabled).
+		// Making sure the tasks are scheduled for all runs that are out of
+		// retention period.
+
+		cfg := &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{{
+				Name: "main",
+			}},
+		}
+		const projFoo = "foo"
+		const projDisabled = "disabled"
+		prjcfgtest.Create(ctx, projFoo, cfg)
+		prjcfgtest.Create(ctx, projDisabled, cfg)
+		prjcfgtest.Disable(ctx, projDisabled)
+
+		createNRunsBetween := func(proj string, n int, start, end time.Time) []*run.Run {
+			So(n, ShouldBeGreaterThan, 0)
+			So(end, ShouldHappenAfter, start)
+			runs := make([]*run.Run, n)
+			for i := range runs {
+				createTime := start.Add(time.Duration(mathrand.Int63n(ctx, int64(end.Sub(start)))))
+				runs[i] = &run.Run{
+					ID:         common.MakeRunID(proj, createTime, 1, []byte("deadbeef")),
+					CreateTime: createTime,
+				}
+			}
+			So(datastore.Put(ctx, runs), ShouldBeNil)
+			return runs
+		}
+
+		cutOff := ct.Clock.Now().UTC().Add(-retentionPeriod)
+		var allRuns []*run.Run
+		allRuns = append(allRuns, createNRunsBetween(projFoo, 1000, cutOff.Add(-time.Hour), cutOff.Add(time.Hour))...)
+		allRuns = append(allRuns, createNRunsBetween(projDisabled, 500, cutOff.Add(-time.Minute), cutOff.Add(time.Minute))...)
+
+		var expectedRuns common.RunIDs
+		for _, r := range allRuns {
+			if r.CreateTime.Before(cutOff) {
+				expectedRuns.InsertSorted(r.ID)
+			}
+		}
+
+		err := scheduleWipeoutRuns(ctx, ct.TQDispatcher)
+		So(err, ShouldBeNil)
+		So(ct.TQ.Tasks(), ShouldHaveLength, len(expectedRuns))
+		var actualRuns common.RunIDs
+		for _, task := range ct.TQ.Tasks() {
+			So(task.ETA, ShouldHappenWithin, 16*time.Hour, ct.Clock.Now())
+			actualRuns.InsertSorted(common.RunID(task.Payload.(*WipeoutRunTask).GetId()))
+		}
+		So(actualRuns, ShouldResemble, expectedRuns)
+	})
+}
 
 func TestWipeoutRun(t *testing.T) {
 	t.Parallel()

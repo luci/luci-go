@@ -16,22 +16,100 @@ package retention
 
 import (
 	"context"
+	"math"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/runquery"
 )
 
-var retentionPeriod = 540 * 24 * time.Hour // ~= 1.5 years
+// scheduleWipeoutRuns schedules tasks to wipe out old runs that are out of the
+// retention period.
+//
+// The tasks will be uniformly distributed over the next 16 hours.
+// TODO(yiwzhang): change it to 1 hour after the first execution that needs
+// to delete ~1 million runs.
+func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
+	// data retention should work for disabled projects as well
+	projects, err := prjcfg.GetAllProjectIDs(ctx, false)
+	if err != nil {
+		return err
+	}
+
+	cutoff := clock.Now(ctx).Add(-retentionPeriod).UTC()
+
+	eg, ectx := errgroup.WithContext(ctx) // for cloud task scheduling
+	eg.SetLimit(10)
+	poolErr := parallel.WorkPool(min(8, len(projects)), func(workCh chan<- func() error) {
+		for _, proj := range projects {
+			proj := proj
+			workCh <- func() error {
+				runs, err := findRunsToWipeoutForProject(ctx, proj, cutoff)
+				switch {
+				case err != nil:
+					return errors.Annotate(err, "failed to find runs to wipe out for project %q", proj).Tag(transient.Tag).Err()
+				case len(runs) == 0:
+					return nil
+				}
+				logging.Infof(ctx, "scheduling wipeoutRun task for %d runs in project %q", len(runs), proj)
+				for _, runID := range runs {
+					runID := runID
+					eg.Go(func() error {
+						ctx := logging.SetField(ectx, "run", string(runID))
+						return retry.Retry(ctx, retry.Default, func() error {
+							return tqd.AddTask(ctx, &tq.Task{
+								Title: string(runID),
+								Payload: &WipeoutRunTask{
+									Id: string(runID),
+								},
+								Delay: common.DistributeOffset(16*time.Hour, string(runID)),
+							})
+						}, nil)
+					})
+				}
+				return nil
+			}
+		}
+	})
+	if poolErr != nil {
+		_ = eg.Wait()
+		return poolErr
+	}
+	return eg.Wait()
+}
+
+func findRunsToWipeoutForProject(ctx context.Context, proj string, cutoff time.Time) (common.RunIDs, error) {
+	// cutoffRunID is a non-existing run ID used for range query purpose
+	// only. All the runs in the query result should be created strictly
+	// before the cutoff time.
+	cutoffRunID := common.MakeRunID(proj, cutoff, math.MaxInt, []byte("whatever"))
+	qb := runquery.ProjectQueryBuilder{
+		Project: proj,
+	}.Before(cutoffRunID)
+	keys, err := qb.GetAllRunKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ret := make(common.RunIDs, len(keys))
+	for i, key := range keys {
+		ret[i] = common.RunID(key.StringID())
+	}
+	return ret, nil
+}
 
 // wipeoutRun wipes out the given run if it is no longer in retention period.
 func registerWipeoutRunTask(tqd *tq.Dispatcher) {

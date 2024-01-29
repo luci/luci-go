@@ -60,6 +60,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
 	"go.chromium.org/luci/cv/internal/quota"
+	"go.chromium.org/luci/cv/internal/retention"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	rpcv0 "go.chromium.org/luci/cv/internal/rpc/v0"
@@ -166,6 +167,7 @@ func main() {
 		cron.RegisterHandler("kick-bb-pubsub-listeners", func(ctx context.Context) error {
 			return kickNewListenersFn(ctx)
 		})
+		retention.RegisterCrons(&tq.Default)
 
 		// The service has no general-use UI, so just redirect to the RPC Explorer.
 		srv.Routes.GET("/", nil, func(c *router.Context) {
