@@ -10,3 +10,9 @@ cron:
 - description: Update permissions and realms configs from luci-config.
   url: /internal/cron/update-realms
   schedule: every 1 minutes
+
+# Temporary cron to regularly compare entities created by both
+# versions of Auth Service (v1 in Python and v2 in Go) for validation.
+- description: Compare generated snapshots and changelogs for validation.
+  url: /internal/cron/auth-service-v2-validation
+  schedule: every 20 minutes

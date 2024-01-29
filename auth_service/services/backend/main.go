@@ -134,6 +134,13 @@ func main() {
 			return nil
 		})
 
+		// TODO: Remove comparison code once we have fully rolled out Auth
+		// Service v2 (b/321019030).
+		cron.RegisterHandler("auth-service-v2-validation", func(ctx context.Context) error {
+			logging.Infof(ctx, "starting comparison of V2 entities for validation")
+			return model.CompareV2Entities(ctx)
+		})
+
 		return nil
 	})
 }
