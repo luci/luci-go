@@ -19,6 +19,7 @@ import {
   render,
   screen,
 } from '@testing-library/react';
+import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { UiPage } from '@/common/constants/view';
 import {
@@ -28,9 +29,9 @@ import {
 } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { BuilderSearch } from './builder_search_page';
+import { BuilderSearchPage } from './builder_search_page';
 
-describe('BuilderSearch', () => {
+describe('<BuilderSearchPage />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -43,49 +44,47 @@ describe('BuilderSearch', () => {
   it('should throttle search requests', async () => {
     jest
       .spyOn(MiloInternalClientImpl.prototype, 'ListBuilders')
-      .mockImplementation((_: ListBuildersRequest) => {
-        return Promise.resolve(
-          ListBuildersResponse.fromPartial({
-            builders: Object.freeze([
-              {
-                id: {
-                  bucket: 'test_bucket',
-                  builder: 'builder',
-                  project: 'chromium',
-                },
+      .mockImplementation(async (_: ListBuildersRequest) =>
+        ListBuildersResponse.fromPartial({
+          builders: Object.freeze([
+            {
+              id: {
+                bucket: 'test_bucket',
+                builder: 'builder',
+                project: 'chromium',
               },
-              {
-                id: {
-                  bucket: 'test_bucket',
-                  builder: 'builder-id',
-                  project: 'chromium',
-                },
+            },
+            {
+              id: {
+                bucket: 'test_bucket',
+                builder: 'builder-id',
+                project: 'chromium',
               },
-              {
-                id: {
-                  bucket: 'test_bucket',
-                  builder: 'builder-id-with-suffix',
-                  project: 'chromium',
-                },
+            },
+            {
+              id: {
+                bucket: 'test_bucket',
+                builder: 'builder-id-with-suffix',
+                project: 'chromium',
               },
-              {
-                id: {
-                  bucket: 'test_bucket',
-                  builder: 'another-builder',
-                  project: 'chromium',
-                },
+            },
+            {
+              id: {
+                bucket: 'test_bucket',
+                builder: 'another-builder',
+                project: 'chromium',
               },
-              {
-                id: {
-                  bucket: 'test_bucket',
-                  builder: 'another-builder-id',
-                  project: 'chromium',
-                },
+            },
+            {
+              id: {
+                bucket: 'test_bucket',
+                builder: 'another-builder-id',
+                project: 'chromium',
               },
-            ]),
-          }),
-        );
-      });
+            },
+          ]),
+        }),
+      );
 
     render(
       <FakeContextProvider
@@ -93,29 +92,33 @@ describe('BuilderSearch', () => {
           selectedPage: UiPage.Builders,
         }}
       >
-        <BuilderSearch />
+        <VirtuosoMockContext.Provider
+          value={{ viewportHeight: 1000, itemHeight: 1 }}
+        >
+          <BuilderSearchPage />
+        </VirtuosoMockContext.Provider>
       </FakeContextProvider>,
     );
 
     fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'builder' },
     });
-    act(() => jest.advanceTimersByTime(10));
-    expect(screen.queryAllByTestId('builder-data').length).toBe(0);
+    await act(() => jest.advanceTimersByTimeAsync(10));
+    expect(screen.queryAllByTestId('builder-data').length).toBe(5);
 
     fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'builder-id' },
     });
-    act(() => jest.advanceTimersByTime(10));
-    expect(screen.queryAllByTestId('builder-data').length).toBe(0);
+    await act(() => jest.advanceTimersByTimeAsync(10));
+    expect(screen.queryAllByTestId('builder-data').length).toBe(5);
 
     fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'builder-id-with-suffix' },
     });
-    act(() => jest.advanceTimersByTime(300));
-    expect(screen.queryAllByTestId('builder-data').length).toBe(0);
+    await act(() => jest.advanceTimersByTimeAsync(200));
+    expect(screen.queryAllByTestId('builder-data').length).toBe(5);
 
-    await screen.findByText('chromium/test_bucket');
+    await act(() => jest.advanceTimersByTimeAsync(200));
     expect(screen.getAllByTestId('builder-data').length).toBe(1);
     expect(screen.getByText('builder-id-with-suffix')).toBeInTheDocument();
 
@@ -123,7 +126,7 @@ describe('BuilderSearch', () => {
     fireEvent.change(screen.getByTestId('search-input'), {
       target: { value: 'another-builder' },
     });
-    act(() => jest.advanceTimersByTime(10));
+    await act(() => jest.advanceTimersByTimeAsync(10));
     expect(screen.getAllByTestId('builder-data').length).toBe(1);
     expect(screen.getByText('builder-id-with-suffix')).toBeInTheDocument();
 

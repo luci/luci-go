@@ -64,8 +64,10 @@ const builderPages: { [pageToken: string]: ListBuildersResponse } = {
   }),
 };
 
-describe('BuilderList', () => {
-  let listBuilderMock: jest.SpyInstance;
+describe('<BuilderList />', () => {
+  let listBuilderMock: jest.SpiedFunction<
+    MiloInternalClientImpl['ListBuilders']
+  >;
   let builderListDisplaySpy: jest.MockedFunctionDeep<typeof BuilderListDisplay>;
 
   beforeEach(() => {
@@ -75,11 +77,14 @@ describe('BuilderList', () => {
       .mockImplementation(async ({ pageToken }) => {
         return builderPages[pageToken || ''];
       });
-    builderListDisplaySpy = jest.mocked(BuilderListDisplay);
+    builderListDisplaySpy = jest
+      .mocked(BuilderListDisplay)
+      .mockImplementation(() => <></>);
   });
   afterEach(() => {
     cleanup();
     jest.useRealTimers();
+    listBuilderMock.mockReset();
   });
 
   it('e2e', async () => {
@@ -111,7 +116,6 @@ describe('BuilderList', () => {
             { project: 'proj2', bucket: 'bucket1', builder: 'builder2' },
           ],
         },
-        isLoading: false,
       },
       expect.anything(),
     );
@@ -138,7 +142,6 @@ describe('BuilderList', () => {
             { project: 'proj2', bucket: 'bucket1', builder: 'builder2' },
           ],
         },
-        isLoading: false,
       },
       expect.anything(),
     );
@@ -160,7 +163,6 @@ describe('BuilderList', () => {
             { project: 'proj2', bucket: 'bucket1', builder: 'builder2' },
           ],
         },
-        isLoading: false,
       },
       expect.anything(),
     );

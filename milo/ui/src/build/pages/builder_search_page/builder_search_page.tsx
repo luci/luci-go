@@ -22,7 +22,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 
 import { BuilderList } from './builder_list';
 
-export const BuilderSearch = () => {
+export function BuilderSearchPage() {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const searchQuery = searchParams.get('q') || '';
 
@@ -52,11 +52,11 @@ export const BuilderSearch = () => {
       </Box>
     </Box>
   );
-};
+}
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.
   <RecoverableErrorBoundary key="builder-search">
-    <BuilderSearch />
+    <BuilderSearchPage />
   </RecoverableErrorBoundary>
 );

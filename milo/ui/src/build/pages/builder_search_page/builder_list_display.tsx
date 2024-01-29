@@ -12,45 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link, Typography } from '@mui/material';
+import { Link, Typography, styled } from '@mui/material';
+import { memo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
+import { GroupedVirtuoso } from 'react-virtuoso';
 
 import { getBuilderURLPath } from '@/common/tools/url_utils';
-import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
-interface BuilderListDisplayProps {
+const ItemContainer = styled('div')({
+  height: '20px',
+  marginLeft: '20px',
+});
+
+const GroupContainer = styled('div')({
+  height: '30px',
+  padding: '15px 0',
+});
+
+export interface BuilderListDisplayProps {
   readonly groupedBuilders: {
     readonly [x: string]: readonly BuilderID[];
   };
-  readonly isLoading: boolean;
 }
 
-export function BuilderListDisplay({
+export const BuilderListDisplay = memo(function BuilderListDisplay({
   groupedBuilders,
-  isLoading,
 }: BuilderListDisplayProps) {
+  const groups = Object.entries(groupedBuilders);
+  const groupCounts = groups.map(([_, builders]) => builders.length);
+  const flattenedBuilders = groups.flatMap(([_, builders]) => builders);
   return (
-    <>
-      {Object.entries(groupedBuilders).map(([bucketId, builders]) => (
-        <Box key={bucketId} data-testid="builder-data">
-          <Typography variant="h6">{bucketId}</Typography>
-          <ul>
-            {builders?.map((builder) => (
-              <li key={builder.builder}>
-                <Link component={RouterLink} to={getBuilderURLPath(builder)}>
-                  {builder.builder}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Box>
-      ))}
-      {isLoading && (
-        <Typography component="span">
-          Loading <DotSpinner />
-        </Typography>
-      )}
-    </>
+    <GroupedVirtuoso
+      useWindowScroll
+      components={{
+        Item: ItemContainer,
+        Group: GroupContainer,
+      }}
+      groupCounts={groupCounts}
+      groupContent={(index) => {
+        return <Typography variant="h6">{groups[index][0]}</Typography>;
+      }}
+      itemContent={(index) => {
+        const builder = flattenedBuilders[index];
+        return (
+          <Link
+            component={RouterLink}
+            to={getBuilderURLPath(builder)}
+            data-testid="builder-data"
+          >
+            {builder.builder}
+          </Link>
+        );
+      }}
+    />
   );
-}
+});

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box, CircularProgress } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { groupBy, mapValues } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
@@ -86,9 +87,13 @@ export function BuilderList({ searchQuery }: BuilderListProps) {
   }, [fetchNextPage, isLoading, hasNextPage, data?.pages.length]);
 
   return (
-    <BuilderListDisplay
-      groupedBuilders={groupedBuilders}
-      isLoading={isLoading}
-    />
+    <>
+      <BuilderListDisplay groupedBuilders={groupedBuilders} />
+      {isLoading && (
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <CircularProgress />
+        </Box>
+      )}
+    </>
   );
 }
