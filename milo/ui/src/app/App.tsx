@@ -24,7 +24,6 @@ import {
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useRef, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { Workbox } from 'workbox-window';
 
 import releaseNotes from '@root/RELEASE_NOTES.md?raw';
 
@@ -90,7 +89,6 @@ export interface AppProps {
    */
   readonly initOpts: {
     readonly isDevEnv: boolean;
-    readonly enableUiSW: boolean;
   };
 }
 
@@ -112,19 +110,7 @@ export function App({ initOpts }: AppProps) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__STORE = store;
 
-      const { isDevEnv, enableUiSW } = firstInitOpts.current;
-
-      if (navigator.serviceWorker && enableUiSW) {
-        // vite-plugin-pwa hosts the service worker in a different route in dev
-        // mode.
-        // See https://vite-pwa-org.netlify.app/guide/development.html#injectmanifest-strategy
-        const uiSwUrl = isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js';
-        const workbox = new Workbox(
-          createStaticTrustedURL('ui-sw-js-static', uiSwUrl),
-          { type: isDevEnv ? 'module' : 'classic' },
-        );
-        workbox.register();
-      }
+      const { isDevEnv } = firstInitOpts.current;
       if (
         navigator.serviceWorker &&
         !document.cookie.includes('showNewBuildPage=false')

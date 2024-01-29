@@ -22,11 +22,16 @@ import { assertNonNullable } from '@/generic_libs/tools/utils';
 import '@/proto_utils/duration_patch';
 
 import { App } from './App';
+import { initUiSW } from './init_sw';
 
 /**
  * Whether the UI service worker should be enabled.
  */
 declare const ENABLE_UI_SW: boolean;
+
+if (navigator.serviceWorker && ENABLE_UI_SW) {
+  initUiSW({ dev: import.meta.env.DEV });
+}
 
 initDefaultTrustedTypesPolicy();
 
@@ -36,11 +41,7 @@ configure({ enforceActions: 'never' });
 
 const container = assertNonNullable(document.getElementById('app-root'));
 const root = createRoot(container);
-root.render(
-  <App
-    initOpts={{ isDevEnv: import.meta.env.DEV, enableUiSW: ENABLE_UI_SW }}
-  />,
-);
+root.render(<App initOpts={{ isDevEnv: import.meta.env.DEV }} />);
 
 Settings.throwOnInvalid = true;
 declare module 'luxon' {

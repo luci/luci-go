@@ -195,7 +195,9 @@ export default defineConfig(({ mode }) => {
         }),
       },
       {
-        name: 'inject-prefetches-in-html',
+        // We cannot implement this as a virtual module or a replace variable
+        // plugin because we need all the modules to be generated.
+        name: 'preload-modules-handle',
         transformIndexHtml: (html, ctx) => {
           const jsChunks = Object.keys(ctx.bundle || {})
             // Prefetch all JS files so users are less likely to run into errors
@@ -204,23 +206,28 @@ export default defineConfig(({ mode }) => {
             .filter((name) => name.match(/^immutable\/.+\.js$/))
             // Don't need to prefetch the entry file since it's loaded as a
             // script tag already.
-            .filter((name) => name !== ctx.chunk?.fileName);
+            .filter((name) => name !== ctx.chunk?.fileName)
+            .map((name) => `/ui/${name}`);
 
           // Sort the chunks to ensure the generated prefetch tags are
           // deterministic.
           jsChunks.sort();
 
+          const preloadScript = `
+            function preloadModules() {
+              ${jsChunks.map((c) => `import('${c}');\n`).join('')}
+            }
+          `;
+
           return {
             html,
-            tags: jsChunks.map((chunkName) => ({
-              tag: 'link',
-              attrs: {
-                rel: 'prefetch',
-                href: `/ui/${chunkName}`,
-                as: 'script',
+            tags: [
+              {
+                tag: 'script',
+                children: preloadScript,
+                injectTo: 'head',
               },
-              injectTo: 'head',
-            })),
+            ],
           };
         },
       },
