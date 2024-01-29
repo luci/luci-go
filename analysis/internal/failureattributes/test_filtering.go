@@ -110,7 +110,22 @@ var projectAttributionRule = map[string]attributionRule{
 	"chromeos": {
 		attributionWindowDays: 14,
 		failureFilterSQL:      `NOT r.expected AND tv.change_verifier_run IS NULL`,
-		partitionSQL:          `tv.test_id, STRING(tv.variant.board), tv.sources.gitiles_commit.ref`,
+		// Ideally, the skipped test results should be attributed to failures that
+		// caused them. i.e. failures in the same milestone if there are enough
+		// samples, or failures in the previous milestone otherwise. But given that
+		// luci-analysis does not know whether the testing filtering was activated
+		// from failures from which milestone, it's hard to write a query that
+		// can attribute correctly.
+		//
+		// Instead, we attribute skipped test results to failures in the any
+		// milestone. This is only an issue when
+		// 1. the test is failing in a previous milestone for a different root
+		// cause, and
+		// 2. the failures in the other milestone did not trigger test filtering
+		// themselves (therefore already marked as "triggered test filtering").
+		// Hopefully, this should be very rare. And we can adjust the attribution
+		// logic further if this become an issue.
+		partitionSQL: `tv.test_id, STRING(tv.variant.board)`,
 		runFilterSQL: `tv.change_verifier_run IS NOT NULL AND r.expected AND r.status='SKIP' ` +
 			`AND r.skip_reason='AUTOMATICALLY_DISABLED_FOR_FLAKINESS'`,
 		runCountSQL: `r.name`,
