@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/auth_service/impl/info"
 )
 
 // Main launches a server with some default modules and configuration installed.
@@ -41,6 +43,9 @@ func Main(modules []module.Module, cb func(srv *server.Server) error) {
 	}, modules...)
 
 	server.Main(opts, modules, func(srv *server.Server) error {
+		// Inject app version into the root context so request handlers can use it.
+		srv.Context = info.SetImageVersion(srv.Context, srv.Options.ImageVersion())
+
 		srv.RunInBackground("authdb", authDBProvider.RefreshPeriodically)
 		return cb(srv)
 	})
