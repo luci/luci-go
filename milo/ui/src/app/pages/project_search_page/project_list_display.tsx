@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ProjectListItem } from '@/common/services/milo_internal';
+import { ProjectListItem } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { ProjectCard } from './project_card';
 
-interface ProjectListDisplayProps {
-  readonly projects: ProjectListItem[];
+export interface ProjectListDisplayProps {
+  readonly projects: readonly ProjectListItem[];
   readonly onSelectProjectNotification: (projectId: string) => void;
   readonly variant?: 'large' | 'small';
 }

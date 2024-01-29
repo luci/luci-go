@@ -17,7 +17,7 @@ import type { RouteObject } from 'react-router-dom';
 export const routes: RouteObject[] = [
   {
     index: true,
-    lazy: () => import('@/app/pages/search/project_search'),
+    lazy: () => import('@/app/pages/project_search_page'),
   },
   {
     path: 'login',

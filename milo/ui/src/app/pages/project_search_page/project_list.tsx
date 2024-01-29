@@ -13,31 +13,39 @@
 // limitations under the License.
 
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useLocalStorage } from 'react-use';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query/use_infinite_prpc_query';
-import { MiloInternal } from '@/common/services/milo_internal';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import {
+  ListProjectsRequest,
+  MiloInternalClientImpl,
+  ProjectListItem,
+} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { ProjectListDisplay } from './project_list_display';
 
-interface ProjectListProps {
+const RECENTLY_SELECTED_PROJECTS_KEY = 'recentlySelectedProjects';
+
+export interface ProjectListProps {
   readonly searchQuery: string;
 }
 
-const RECENTLY_SELECTED_PROJECTS_KEY = 'recentlySelectedProjects';
-
 export function ProjectList({ searchQuery }: ProjectListProps) {
+  const client = usePrpcServiceClient({
+    host: '',
+    insecure: location.protocol === 'http:',
+    ClientImpl: MiloInternalClientImpl,
+  });
   const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
-    useInfinitePrpcQuery({
-      host: '',
-      insecure: location.protocol === 'http:',
-      Service: MiloInternal,
-      method: 'listProjects',
-      request: {
-        pageSize: 10000,
-      },
-    });
+    useInfiniteQuery(
+      client.ListProjects.query(
+        ListProjectsRequest.fromPartial({
+          pageSize: 10000,
+        }),
+      ),
+    );
 
   if (isError) {
     throw error;
@@ -82,7 +90,8 @@ export function ProjectList({ searchQuery }: ProjectListProps) {
     () =>
       recentProjectIds.map(
         (id) =>
-          projects.find(([project, _]) => project.id === id)?.[0] || { id },
+          projects.find(([project, _]) => project.id === id)?.[0] ||
+          ProjectListItem.fromPartial({ id }),
       ),
     [projects, recentProjectIds],
   );

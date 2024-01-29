@@ -26,7 +26,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 
 import { ProjectList } from './project_list';
 
-export const ProjectSearch = () => {
+export function ProjectSearchPage() {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const searchQuery = searchParams.get('q') || '';
   const authState = useAuthState();
@@ -94,11 +94,11 @@ export const ProjectSearch = () => {
       </Typography>
     </Box>
   );
-};
+}
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.
   <RecoverableErrorBoundary key="project-search">
-    <ProjectSearch />
+    <ProjectSearchPage />
   </RecoverableErrorBoundary>
 );

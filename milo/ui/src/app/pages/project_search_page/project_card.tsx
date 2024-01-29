@@ -22,8 +22,8 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { ProjectListItem } from '@/common/services/milo_internal';
 import { getProjectURLPath } from '@/common/tools/url_utils';
+import { ProjectListItem } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 const ProjectCardContainer = styled(Card)({
   '& .MuiCardActionArea-root': {
@@ -98,7 +98,7 @@ const ProjectCardContainer = styled(Card)({
   },
 });
 
-interface ProjectCardProps {
+export interface ProjectCardProps {
   readonly project: ProjectListItem;
   readonly onSelectProjectNotification: (projectId: string) => void;
   readonly variant?: 'large' | 'small';
