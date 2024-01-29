@@ -48,9 +48,13 @@ type CL struct {
 	// It's not indexed to avoid hot areas in the index.
 	UpdateTime time.Time `gae:",noindex"`
 
-	// TODO(tandrii): implement deletion of the oldest entities via additional
-	// indexed field based on UpdateTime but with entropy in the lowest bits to
-	// avoid hotspots.
+	// RetentionKey is for data retention purpose.
+	//
+	// It is indexed and tries to avoid hot areas in the index. The format is
+	// `{shard_key}/{unix_time_of_UpdateTime}`. Shard key is the last 2
+	// digit of CLID with left padded zero. Unix timestamp is a 10 digit integer
+	// with left padded zero if necessary.
+	RetentionKey string
 
 	// Snapshot is the latest known state of a CL. It may be and often is
 	// behind the source of truth, which is the code review site (e.g. Gerrit).
@@ -107,6 +111,23 @@ func (cl *CL) ToUpdatedEvent() *CLUpdatedEvent {
 		Clid:     int64(cl.ID),
 		Eversion: cl.EVersion,
 	}
+}
+
+// DO NOT decrease the shard. It will cause olds CLs that are out of retention
+// period in the shard not getting wiped out.
+const retentionKeyShards = 100
+
+// UpdateRetentionKey updates the RetentionKey of the CL.
+//
+// Panics if the CL.ID and/or CL.UpdateTime is absent.
+func (cl *CL) UpdateRetentionKey() {
+	switch {
+	case cl.ID == 0:
+		panic(errors.New("clid is not set"))
+	case cl.UpdateTime.IsZero():
+		panic(errors.New("cl.UpdateTime is not set"))
+	}
+	cl.RetentionKey = fmt.Sprintf("%02d/%010d", cl.ID%retentionKeyShards, cl.UpdateTime.Unix())
 }
 
 // ToUpdatedEvents returns CLUpdatedEvents from a slice of CLs.
@@ -180,6 +201,7 @@ func (eid ExternalID) MustCreateIfNotExists(ctx context.Context) *CL {
 		if err := datastore.AllocateIDs(ctx, cl); err != nil {
 			return err
 		}
+		cl.UpdateRetentionKey()
 		m := clMap{ExternalID: eid, InternalID: cl.ID}
 		return datastore.Put(ctx, &m, cl)
 	}, nil)

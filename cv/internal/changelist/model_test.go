@@ -16,6 +16,7 @@ package changelist
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -40,8 +41,6 @@ func TestCL(t *testing.T) {
 		epoch := datastore.RoundTime(testclock.TestRecentTimeUTC)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
-		const luciProject = "luci-project"
-
 		eid, err := GobID("x-review.example.com", 12)
 		So(err, ShouldBeNil)
 
@@ -58,7 +57,8 @@ func TestCL(t *testing.T) {
 			// ID must be autoset to non-0 value.
 			So(cl.ID, ShouldNotEqual, 0)
 			So(cl.EVersion, ShouldEqual, 1)
-			So(cl.UpdateTime, ShouldResemble, epoch)
+			So(cl.UpdateTime, ShouldEqual, epoch)
+			So(cl.RetentionKey, ShouldEqual, fmt.Sprintf("%02d/%010d", cl.ID%retentionKeyShards, epoch.Unix()))
 
 			Convey("ExternalID.Get loads existing CL", func() {
 				cl2, err := eid.Load(ctx)

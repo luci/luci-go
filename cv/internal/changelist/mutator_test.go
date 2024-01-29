@@ -82,7 +82,8 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(cl.ExternalID, ShouldResemble, eid)
 				So(cl.EVersion, ShouldEqual, 1)
-				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
+				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now())
+				So(cl.RetentionKey, ShouldNotBeEmpty)
 				So(cl.Snapshot, ShouldResembleProto, s)
 
 				execBatchOnCLUpdatedTask()
@@ -129,6 +130,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.ExternalID, ShouldResemble, eid)
 				So(cl.EVersion, ShouldEqual, 2)
 				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
+				So(cl.RetentionKey, ShouldNotBeEmpty)
 				So(cl.Snapshot, ShouldResembleProto, s2)
 				So(tj.clsNotified[0], ShouldEqual, cl.ID)
 
@@ -154,6 +156,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.ExternalID, ShouldResemble, eid)
 				So(cl.EVersion, ShouldEqual, priorCL.EVersion)
 				So(cl.UpdateTime, ShouldEqual, priorCL.UpdateTime)
+				So(cl.RetentionKey, ShouldEqual, priorCL.RetentionKey)
 
 				So(pm.byProject, ShouldBeEmpty)
 				So(rm.byRun, ShouldBeEmpty)
@@ -189,6 +192,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.ExternalID, ShouldResemble, eid)
 				So(cl.EVersion, ShouldEqual, 2)
 				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
+				So(cl.RetentionKey, ShouldNotBeEmpty)
 				So(cl.Snapshot, ShouldResembleProto, s2)
 
 				execBatchOnCLUpdatedTask()
@@ -214,6 +218,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.ExternalID, ShouldResemble, eid)
 				So(cl.EVersion, ShouldEqual, priorCL.EVersion)
 				So(cl.UpdateTime, ShouldEqual, priorCL.UpdateTime)
+				So(cl.RetentionKey, ShouldEqual, priorCL.RetentionKey)
 
 				expectNoNotifications()
 			})
@@ -333,7 +338,8 @@ func TestMutatorBatch(t *testing.T) {
 					So(dsCLs[i].IncompleteRuns.ContainsSorted(run3), ShouldBeTrue)
 					So(dsCLs[i].ID, ShouldEqual, resCLs[i].ID)
 					So(dsCLs[i].EVersion, ShouldEqual, resCLs[i].EVersion)
-					So(dsCLs[i].UpdateTime, ShouldResemble, resCLs[i].UpdateTime)
+					So(dsCLs[i].UpdateTime, ShouldEqual, resCLs[i].UpdateTime)
+					So(dsCLs[i].RetentionKey, ShouldEqual, resCLs[i].RetentionKey)
 					So(dsCLs[i].IncompleteRuns, ShouldResemble, resCLs[i].IncompleteRuns)
 					eversions[dsCLs[i].ID] = dsCLs[i].EVersion
 				}
@@ -517,7 +523,7 @@ func TestMutatorConcurrent(t *testing.T) {
 				for i := 0; i < R; i++ {
 					// Make this thing a little more robust against flakiness and sleep for a millisecond
 					// every so often.
-					if i % 1000 == 0 {
+					if i%1000 == 0 {
 						time.Sleep(1 * time.Millisecond)
 					}
 					_, err = m.Upsert(ctx, lProject, eid, func(cl *CL) error {

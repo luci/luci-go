@@ -361,16 +361,17 @@ func (clm *CLMutation) finalize(ctx context.Context) {
 
 	switch {
 	case clm.id != clm.CL.ID:
-		panic(fmt.Errorf("CL.ID must be not be modified"))
+		panic(fmt.Errorf("CL.ID must not be modified"))
 	case clm.externalID != clm.CL.ExternalID:
-		panic(fmt.Errorf("CL.ExternalID must be not be modified"))
+		panic(fmt.Errorf("CL.ExternalID must not be modified"))
 	case clm.priorEversion != clm.CL.EVersion:
-		panic(fmt.Errorf("CL.EVersion must be not be modified"))
+		panic(fmt.Errorf("CL.EVersion must not be modified"))
 	case !clm.priorUpdateTime.Equal(clm.CL.UpdateTime):
-		panic(fmt.Errorf("CL.UpdateTime must be not be modified"))
+		panic(fmt.Errorf("CL.UpdateTime must not be modified"))
 	}
 	clm.CL.EVersion++
 	clm.CL.UpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+	clm.CL.UpdateRetentionKey()
 }
 
 // BeginBatch starts a batch of CL mutations within the same Datastore

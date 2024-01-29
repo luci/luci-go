@@ -152,12 +152,7 @@ func TestEndRun(t *testing.T) {
 
 			// it should have removed the ended Run, but not the other
 			// ongoing Run from the CL entity.
-			So(cl, ShouldResemble, changelist.CL{
-				ID:             clid,
-				IncompleteRuns: common.RunIDs{rids[1]},
-				EVersion:       4,
-				UpdateTime:     ct.Clock.Now().UTC(),
-			})
+			So(cl.IncompleteRuns, ShouldResemble, common.RunIDs{rids[1]})
 			Convey("schedule CLUpdate for the removed Run", func() {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
 				pmtest.AssertReceivedRunFinished(ctx, rids[0], rs.Status)
