@@ -14,6 +14,10 @@
 
 package results
 
+import (
+	"reflect"
+)
+
 // A ResultBuilder builds a Result and has a fluent interface.
 type ResultBuilder struct {
 	result *Result
@@ -27,4 +31,19 @@ func NewResultBuilder() ResultBuilder {
 // Result returns the finished result from a builder.
 func (builder ResultBuilder) Result() *Result {
 	return builder.result
+}
+
+// SetName sets the name of a Result.
+func (builder ResultBuilder) SetName(comparison string, types ...reflect.Type) ResultBuilder {
+	if builder.result == nil {
+		builder.result = &Result{}
+	}
+	builder.result.failed = true
+	var typeNames []string
+	for _, typ := range types {
+		typeNames = append(typeNames, typ.String())
+	}
+	builder.result.header.comparison = comparison
+	builder.result.header.types = typeNames
+	return builder
 }

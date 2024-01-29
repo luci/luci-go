@@ -15,17 +15,61 @@
 package results
 
 import (
+	"reflect"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/typed"
 )
 
 // Check that calling NewResultBuilder does something remotely reasonable.
-func NewResultBuilder_SmokeTest(t *testing.T) {
+func TestNewResultBuilderSmokeTest(t *testing.T) {
 	t.Parallel()
 
 	res := NewResultBuilder().Result()
 	if diff := typed.Diff(res, nil); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+}
+
+// TestNewResultBuilder tests using a ResultBuilder to build a result.
+func TestNewResultBuilder(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		expected *Result
+		actual   *Result
+	}{
+		{
+			name:     "equal",
+			expected: NewResultBuilder().SetName("equal").Result(),
+			actual: &Result{
+				failed: true,
+				header: resultHeader{
+					comparison: "equal",
+				},
+			},
+		},
+		{
+			name:     "equal[int]",
+			expected: NewResultBuilder().SetName("equal", reflect.TypeOf(0)).Result(),
+			actual: &Result{
+				failed: true,
+				header: resultHeader{
+					comparison: "equal",
+					types:      []string{"int"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if diff := typed.Diff(tt.expected, tt.actual); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
 	}
 }

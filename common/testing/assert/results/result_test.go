@@ -17,7 +17,7 @@ package results
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"go.chromium.org/luci/common/testing/typed"
 )
 
 func TestResultOk(t *testing.T) {
@@ -52,7 +52,7 @@ func TestResultOk(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if diff := cmp.Diff(tt.input.Ok(), tt.ok); diff != "" {
+			if diff := typed.Diff(tt.input.Ok(), tt.ok); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
 		})
@@ -80,6 +80,38 @@ func TestResultEquals(t *testing.T) {
 			rhs:   &Result{},
 			equal: true,
 		},
+		{
+			name: "different headers",
+			lhs: &Result{
+				failed: true,
+				header: resultHeader{
+					comparison: "a",
+				},
+			},
+			rhs: &Result{
+				failed: true,
+				header: resultHeader{
+					comparison: "b",
+				},
+			},
+			equal: false,
+		},
+		{
+			name: "same headers",
+			lhs: &Result{
+				failed: true,
+				header: resultHeader{
+					comparison: "a",
+				},
+			},
+			rhs: &Result{
+				failed: true,
+				header: resultHeader{
+					comparison: "a",
+				},
+			},
+			equal: true,
+		},
 	}
 
 	for _, tt := range cases {
@@ -87,7 +119,7 @@ func TestResultEquals(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if diff := cmp.Diff(tt.lhs.Equal(tt.rhs), tt.equal); diff != "" {
+			if diff := typed.Diff(tt.lhs.Equal(tt.rhs), tt.equal); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
 		})

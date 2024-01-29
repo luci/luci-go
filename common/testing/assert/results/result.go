@@ -14,6 +14,10 @@
 
 package results
 
+import (
+	"reflect"
+)
+
 // Comparison takes in an item-to-be-compared and returns a Result.
 type Comparison[T any] func(T) *Result
 
@@ -22,6 +26,11 @@ type Comparison[T any] func(T) *Result
 // It represents a successful or failed comparison.
 type Result struct {
 	failed bool
+	// The header is a structural representation of the name of the test.
+	//
+	// For example equal[int, int] is a test name, consisting of "equal" and
+	// two "int" type parameters.
+	header resultHeader
 }
 
 // Ok returns whether a Result represents success or failure.
@@ -31,5 +40,13 @@ func (r *Result) Ok() bool {
 
 // Equal returns whether two Results are semantically equal or not.
 func (r *Result) Equal(s *Result) bool {
-	return r.Ok() == s.Ok()
+	if !r.Ok() && !s.Ok() {
+		return reflect.DeepEqual(r.header, s.header)
+	}
+	return r.Ok() && s.Ok()
+}
+
+type resultHeader struct {
+	comparison string
+	types      []string
 }
