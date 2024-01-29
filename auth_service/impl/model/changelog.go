@@ -875,7 +875,10 @@ func getStringSliceProp(pm datastore.PropertyMap, key string) []string {
 		return nil
 	}
 	for _, p := range ps {
-		vals = append(vals, p.Value().(string))
+		value, err := p.Project(datastore.PTString)
+		if err == nil {
+			vals = append(vals, value.(string))
+		}
 	}
 	return vals
 }

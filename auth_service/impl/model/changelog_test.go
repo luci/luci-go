@@ -892,3 +892,18 @@ func TestGenerateChanges(t *testing.T) {
 		})
 	})
 }
+
+func TestPropertyMapHelpers(t *testing.T) {
+	Convey("getStringSliceProp robustly returns strings", t, func() {
+		pm := datastore.PropertyMap{}
+		pm["testField"] = datastore.PropertySlice{
+			datastore.MkPropertyNI([]byte("test data first entry")),
+			datastore.MkPropertyNI("test data second entry"),
+		}
+
+		So(getStringSliceProp(pm, "testField"), ShouldEqual, []string{
+			"test data first entry",
+			"test data second entry",
+		})
+	})
+}
