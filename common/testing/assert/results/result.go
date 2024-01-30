@@ -46,6 +46,13 @@ func (r *Result) Equal(s *Result) bool {
 	return r.Ok() && s.Ok()
 }
 
+// Render pretty-prints the result as a list of lines.
+//
+// TODO(gregorynisbet): implement this for real.
+func (r *Result) Render() []string {
+	return nil
+}
+
 type resultHeader struct {
 	comparison string
 	types      []string
