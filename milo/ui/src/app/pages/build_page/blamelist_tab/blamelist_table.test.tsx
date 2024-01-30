@@ -14,11 +14,13 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { GitCommit } from '@/common/services/milo_internal';
+import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
+import { QueryBlamelistResponse } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { BlamelistTable } from './blamelist_table';
+import { OutputQueryBlamelistResponse } from './types';
 
-function makeCommit(id: string): GitCommit {
+function makeCommit(id: string): Commit {
   return {
     id,
     tree: '1234567890abcdef',
@@ -44,19 +46,22 @@ describe('BlamelistTable', () => {
       <BlamelistTable
         repoUrl="https://repo.url"
         pages={[
-          {
-            commits: [
+          QueryBlamelistResponse.fromPartial({
+            commits: Object.freeze([
               makeCommit('commit1'),
               makeCommit('commit2'),
               makeCommit('commit3'),
-            ],
-          },
-          {
-            commits: [makeCommit('commit4'), makeCommit('commit5')],
-          },
-          {
-            commits: [makeCommit('commit6')],
-          },
+            ]),
+          }) as OutputQueryBlamelistResponse,
+          QueryBlamelistResponse.fromPartial({
+            commits: Object.freeze([
+              makeCommit('commit4'),
+              makeCommit('commit5'),
+            ]),
+          }) as OutputQueryBlamelistResponse,
+          QueryBlamelistResponse.fromPartial({
+            commits: Object.freeze([makeCommit('commit6')]),
+          }) as OutputQueryBlamelistResponse,
         ]}
       />,
     );

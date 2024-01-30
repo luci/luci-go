@@ -14,7 +14,7 @@
 
 import { Dispatch, SetStateAction, createContext, useContext } from 'react';
 
-import { GitCommit } from '@/common/services/milo_internal';
+import { OutputCommit } from '@/gitiles/types';
 
 const RepoContext = createContext<string | null>(null);
 
@@ -47,7 +47,7 @@ export function useDefaultExpandedState() {
   return ctx;
 }
 
-const CommitContext = createContext<GitCommit | null>(null);
+const CommitContext = createContext<OutputCommit | null>(null);
 
 export const CommitProvider = CommitContext.Provider;
 

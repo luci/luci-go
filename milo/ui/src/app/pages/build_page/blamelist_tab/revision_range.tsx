@@ -14,14 +14,14 @@
 
 import { Link } from '@mui/material';
 
-import { GitilesCommit } from '@/common/services/common';
-import { GitCommit } from '@/common/services/milo_internal';
 import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
 
 export interface RevisionRangeProps {
   readonly blamelistPin: GitilesCommit;
   readonly commitCount: number;
-  readonly precedingCommit?: GitCommit | null;
+  readonly precedingCommit?: Commit;
 }
 
 export function RevisionRange({

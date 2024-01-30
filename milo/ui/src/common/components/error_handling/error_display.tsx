@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import { Alert, AlertTitle, Button } from '@mui/material';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 
+import { logging } from '@/common/tools/logging';
 import { genFeedbackUrl } from '@/common/tools/utils';
 
 export interface ErrorDisplayProps {
@@ -32,6 +33,11 @@ export function ErrorDisplay({
   instruction,
   onTryAgain,
 }: ErrorDisplayProps) {
+  useEffect(() => {
+    // Log the error to so we can inspect it in the browser console.
+    logging.error(error);
+  }, [error]);
+
   return (
     <Alert severity="error" sx={{ '& > .MuiAlert-message': { flexGrow: 1 } }}>
       <AlertTitle>Error</AlertTitle>

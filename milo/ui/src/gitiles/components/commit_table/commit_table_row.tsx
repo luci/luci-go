@@ -18,12 +18,12 @@ import markdownIt from 'markdown-it';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { GitCommit } from '@/common/services/milo_internal';
 import { bugLine } from '@/common/tools/markdown/plugins/bug_line';
 import { bugnizerLink } from '@/common/tools/markdown/plugins/bugnizer_link';
 import { crbugLink } from '@/common/tools/markdown/plugins/crbug_link';
 import { defaultTarget } from '@/common/tools/markdown/plugins/default_target';
 import { reviewerLine } from '@/common/tools/markdown/plugins/reviewer_line';
+import { OutputCommit } from '@/gitiles/types';
 
 import { CommitProvider, useDefaultExpandedState } from './context';
 
@@ -45,7 +45,7 @@ const SummaryContainer = styled(SanitizedHtml)({
 });
 
 export interface CommitTableRowProps {
-  readonly commit: GitCommit;
+  readonly commit: OutputCommit;
   readonly children: ReactNode;
 }
 

@@ -15,10 +15,8 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import {
-  CommitTreeDiffChangeType,
-  GitCommit,
-} from '@/common/services/milo_internal';
+import { OutputCommit } from '@/gitiles/types';
+import { Commit_TreeDiff_ChangeType } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { CommitTable } from './commit_table';
@@ -26,7 +24,7 @@ import { CommitTableBody } from './commit_table_body';
 import { CommitTableHead } from './commit_table_head';
 import { CommitTableRow } from './commit_table_row';
 
-const commit: GitCommit = {
+const commit: OutputCommit = {
   id: '1234567890abcdef',
   tree: '1234567890abcdef',
   parents: ['1234567890abcdee'],
@@ -43,7 +41,7 @@ const commit: GitCommit = {
   message: 'this is a commit\ndescription\n',
   treeDiff: [
     {
-      type: CommitTreeDiffChangeType.Modify,
+      type: Commit_TreeDiff_ChangeType.MODIFY,
       oldId: '1234567890abcdef',
       oldMode: 33188,
       oldPath: 'ash/style/combobox.cc',

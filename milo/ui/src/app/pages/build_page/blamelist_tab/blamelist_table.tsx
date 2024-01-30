@@ -15,7 +15,6 @@
 import { memo } from 'react';
 import { useLocalStorage } from 'react-use';
 
-import { QueryBlamelistResponse } from '@/common/services/milo_internal';
 import {
   AuthorContentCell,
   AuthorHeadCell,
@@ -33,11 +32,13 @@ import {
 } from '@/gitiles/components/commit_table';
 import { CommitTableBody } from '@/gitiles/components/commit_table/commit_table_body';
 
+import { OutputQueryBlamelistResponse } from './types';
+
 const BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY = 'blamelist-table-default-expanded';
 
 interface CommitTablePageProps {
   readonly prevCommitCount: number;
-  readonly page: QueryBlamelistResponse;
+  readonly page: OutputQueryBlamelistResponse;
 }
 
 // The table body can be large and expensive to render.
@@ -52,7 +53,7 @@ const CommitTablePage = memo(function CommitTablePage({
 }: CommitTablePageProps) {
   return (
     <>
-      {page.commits?.map((commit, i) => (
+      {page.commits.map((commit, i) => (
         <CommitTableRow key={i} commit={commit}>
           <NumContentCell num={prevCommitCount + i + 1} />
           <IdContentCell />
@@ -67,7 +68,7 @@ const CommitTablePage = memo(function CommitTablePage({
 
 export interface BlamelistTableProps {
   readonly repoUrl: string;
-  readonly pages: readonly QueryBlamelistResponse[];
+  readonly pages: readonly OutputQueryBlamelistResponse[];
 }
 
 export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
@@ -91,7 +92,7 @@ export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
       <CommitTableBody>
         {pages.map((page, i) => {
           const prevCount = commitCount;
-          commitCount += page.commits?.length || 0;
+          commitCount += page.commits.length;
           return (
             <CommitTablePage key={i} page={page} prevCommitCount={prevCount} />
           );

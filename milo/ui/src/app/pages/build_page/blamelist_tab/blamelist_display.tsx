@@ -13,15 +13,17 @@
 // limitations under the License.
 
 import { Button, CircularProgress } from '@mui/material';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { BuilderID } from '@/common/services/buildbucket';
-import { GitilesCommit } from '@/common/services/common';
-import { MiloInternal } from '@/common/services/milo_internal';
+import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import { QueryBlamelistRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { BlamelistTable } from './blamelist_table';
 import { RevisionRange } from './revision_range';
+import { OutputQueryBlamelistResponse } from './types';
 
 export interface BlamelistDisplayProps {
   readonly blamelistPin: GitilesCommit;
@@ -32,6 +34,7 @@ export function BlamelistDisplay({
   blamelistPin,
   builder,
 }: BlamelistDisplayProps) {
+  const client = useMiloInternalClient();
   const {
     data,
     error,
@@ -40,29 +43,27 @@ export function BlamelistDisplay({
     fetchNextPage,
     isLoading,
     isFetchingNextPage,
-  } = useInfinitePrpcQuery({
-    host: '',
-    insecure: location.protocol === 'http:',
-    Service: MiloInternal,
-    method: 'queryBlamelist',
-    request: {
-      gitilesCommit: blamelistPin,
-      builder,
-    },
-    options: {
-      // The query is expensive and the blamelist should be stable anyway.
-      refetchOnWindowFocus: false,
-    },
+  } = useInfiniteQuery({
+    ...client.QueryBlamelist.queryPaged(
+      QueryBlamelistRequest.fromPartial({
+        gitilesCommit: blamelistPin,
+        builder,
+      }),
+    ),
+    // The query is expensive and the blamelist should be stable anyway.
+    refetchOnWindowFocus: false,
   });
 
   if (isError) {
     throw error;
   }
 
+  const pages = (data?.pages || []) as readonly OutputQueryBlamelistResponse[];
   const isLoadingPage = isLoading || isFetchingNextPage;
-  const commitCount =
-    data?.pages.reduce((prev, page) => prev + (page.commits?.length || 0), 0) ||
-    0;
+  const commitCount = pages.reduce(
+    (prev, page) => prev + page.commits.length,
+    0,
+  );
 
   return (
     <>
@@ -71,16 +72,13 @@ export function BlamelistDisplay({
           blamelistPin={blamelistPin}
           commitCount={commitCount}
           precedingCommit={
-            hasNextPage
-              ? null
-              : data?.pages[data.pages.length - 1].precedingCommit
+            !hasNextPage && pages.length
+              ? pages[pages.length - 1].precedingCommit
+              : undefined
           }
         />
       </div>
-      <BlamelistTable
-        repoUrl={getGitilesRepoURL(blamelistPin)}
-        pages={data?.pages || []}
-      />
+      <BlamelistTable repoUrl={getGitilesRepoURL(blamelistPin)} pages={pages} />
       <div css={{ padding: '5px 10px' }}>
         <Button
           disabled={isLoadingPage || !hasNextPage}
