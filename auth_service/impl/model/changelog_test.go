@@ -262,7 +262,7 @@ func TestGenerateChanges(t *testing.T) {
 		// The fields in AuthDBChange to ignore when comparing results;
 		// these fields are not signficant to the test cases below.
 		ignoredAuthDBChangeFields := cmpopts.IgnoreFields(AuthDBChange{},
-			"Kind", "ID", "Parent", "Class", "Target", "Who", "When", "AppVersion")
+			"Kind", "ID", "Parent", "Class", "Target", "Who", "When", "Comment", "AppVersion")
 
 		validateChanges := func(ctx context.Context, msg string, authDBRev int64, actualChanges []*AuthDBChange, expectedChanges []*AuthDBChange) {
 			changeCount := len(expectedChanges)
@@ -295,6 +295,22 @@ func TestGenerateChanges(t *testing.T) {
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
+				// Check that common fields were set as expected; these fields
+				// are ignored for most other test cases.
+				So(actualChanges, ShouldResembleProto, []*AuthDBChange{{
+					ID:         "AuthGroup$group-1!1000",
+					Class:      []string{"AuthDBChange", "AuthDBGroupChange"},
+					ChangeType: ChangeGroupCreated,
+					Target:     "AuthGroup$group-1",
+					Kind:       "AuthDBChange",
+					Parent:     ChangeLogRevisionKey(ctx, 1, false),
+					AuthDBRev:  1,
+					Who:        "user:someone@example.com",
+					When:       testCreatedTS,
+					Comment:    "Go pRPC API",
+					AppVersion: "test-version",
+					Owners:     AdminGroup,
+				}})
 				validateChanges(ctx, "create group", 1, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupCreated,
 					Owners:     AdminGroup,

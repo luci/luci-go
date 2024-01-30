@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
 
@@ -371,7 +370,7 @@ func EnqueueProcessChangeTask(ctx context.Context, authdbrev int64) error {
 
 func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTask, dryRun bool) error {
 	authDBRev := task.GetAuthDbRev()
-	logging.Infof(ctx, "processing changes for AuthDB rev %d (dry run: %s)", authDBRev, dryRun)
+	logging.Infof(ctx, "processing changes for AuthDB rev %d (dry run: %v)", authDBRev, dryRun)
 
 	_, err := generateChanges(ctx, authDBRev, dryRun)
 	if err != nil {
@@ -483,6 +482,27 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 			if err != nil {
 				return err
 			}
+
+			// Set the fields common to all of the changes for this entity.
+			common := &AuthDBChange{
+				Kind:       entityKind("AuthDBChange", dryRun),
+				Parent:     constructLogRevisionKey(ctx, authDBRev, dryRun),
+				AuthDBRev:  getInt64Prop(pm, "auth_db_rev"),
+				Who:        getStringProp(pm, "modified_by"),
+				When:       getTimeProp(pm, "modified_ts"),
+				Comment:    getStringProp(pm, "auth_db_change_comment"),
+				AppVersion: getStringProp(pm, "auth_db_app_version"),
+			}
+			for _, c := range diffChanges {
+				c.Kind = common.Kind
+				c.Parent = common.Parent
+				c.AuthDBRev = common.AuthDBRev
+				c.Who = common.Who
+				c.When = common.When
+				c.Comment = common.Comment
+				c.AppVersion = common.AppVersion
+			}
+
 			changes = append(changes, diffChanges...)
 		} else {
 			return fmt.Errorf("history entity not supported %s", key.String())
@@ -492,14 +512,6 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 
 	if err != nil {
 		return nil, err
-	}
-
-	if dryRun {
-		// Update each AuthDBChange Kind and Parent for dry run mode.
-		for _, c := range changes {
-			c.Kind = entityKind(c.Kind, dryRun)
-			c.Parent = constructLogRevisionKey(ctx, authDBRev, dryRun)
-		}
 	}
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -570,43 +582,37 @@ func diffLists(old, new []string) ([]string, []string) {
 	return newss.Difference(oldss).ToSortedSlice(), oldss.Difference(newss).ToSortedSlice()
 }
 
-// Populates the fields common to all AuthDBChanges; returns the populated AuthDBChange for convenience.
-func populateCommonFields(ctx context.Context, ct ChangeType, target string, authDBRev int64, class string, a *AuthDBChange) *AuthDBChange {
-	a.Parent = constructLogRevisionKey(ctx, authDBRev, false)
-	a.Kind = "AuthDBChange"
+// setTargetTypeFields sets the target and change-type-related fields
+// in the given AuthDBChange, and returns it for convenience.
+func setTargetTypeFields(ctx context.Context, ct ChangeType, target, class string, a *AuthDBChange) *AuthDBChange {
 	a.ID = fmt.Sprintf("%s!%d", target, ct)
 	a.Class = []string{"AuthDBChange", class}
 	a.ChangeType = ct
 	a.Target = target
-	a.AuthDBRev = authDBRev
-	a.Who = string(auth.CurrentIdentity(ctx))
-	a.When = clock.Now(ctx).UTC()
-	a.AppVersion = info.ImageVersion(ctx)
 
 	return a
 }
 
 func diffGroups(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
 	changes := []*AuthDBChange{}
-	authDBRev := getInt64Prop(new, "auth_db_rev")
 	class := "AuthDBGroupChange"
 
 	if getBoolProp(new, "auth_db_deleted") {
 		if mems := getStringSliceProp(new, "members"); mems != nil {
-			changes = append(changes, populateCommonFields(ctx, ChangeGroupMembersRemoved, target, authDBRev, class, &AuthDBChange{Members: mems}))
+			changes = append(changes, setTargetTypeFields(ctx, ChangeGroupMembersRemoved, target, class, &AuthDBChange{Members: mems}))
 		}
 		if globs := getStringSliceProp(new, "globs"); globs != nil {
-			changes = append(changes, populateCommonFields(ctx, ChangeGroupGlobsRemoved, target, authDBRev, class, &AuthDBChange{Globs: globs}))
+			changes = append(changes, setTargetTypeFields(ctx, ChangeGroupGlobsRemoved, target, class, &AuthDBChange{Globs: globs}))
 		}
 		if nested := getStringSliceProp(new, "nested"); nested != nil {
-			changes = append(changes, populateCommonFields(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, &AuthDBChange{Nested: nested}))
+			changes = append(changes, setTargetTypeFields(ctx, ChangeGroupNestedRemoved, target, class, &AuthDBChange{Nested: nested}))
 		}
 		desc := getDescription(new)
 		owners := AdminGroup
 		if getProp(new, "owners") != nil {
 			owners = getStringProp(new, "owners")
 		}
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupDeleted, target, authDBRev, class, &AuthDBChange{OldDescription: desc, Owners: owners}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupDeleted, target, class, &AuthDBChange{OldDescription: desc, Owners: owners}))
 		return changes, nil
 	}
 
@@ -617,21 +623,21 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 			owners = getStringProp(new, "owners")
 		}
 
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupCreated, target, authDBRev, class, &AuthDBChange{Description: desc, Owners: owners}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupCreated, target, class, &AuthDBChange{Description: desc, Owners: owners}))
 		if mems := getStringSliceProp(new, "members"); mems != nil {
-			changes = append(changes, populateCommonFields(ctx, ChangeGroupMembersAdded, target, authDBRev, class, &AuthDBChange{Members: mems}))
+			changes = append(changes, setTargetTypeFields(ctx, ChangeGroupMembersAdded, target, class, &AuthDBChange{Members: mems}))
 		}
 		if globs := getStringSliceProp(new, "globs"); globs != nil {
-			changes = append(changes, populateCommonFields(ctx, ChangeGroupGlobsAdded, target, authDBRev, class, &AuthDBChange{Globs: globs}))
+			changes = append(changes, setTargetTypeFields(ctx, ChangeGroupGlobsAdded, target, class, &AuthDBChange{Globs: globs}))
 		}
 		if nested := getStringSliceProp(new, "nested"); nested != nil {
-			changes = append(changes, populateCommonFields(ctx, ChangeGroupNestedAdded, target, authDBRev, class, &AuthDBChange{Nested: nested}))
+			changes = append(changes, setTargetTypeFields(ctx, ChangeGroupNestedAdded, target, class, &AuthDBChange{Nested: nested}))
 		}
 		return changes, nil
 	}
 
 	if oldDesc, newDesc := getDescription(old), getDescription(new); oldDesc != newDesc {
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupDescriptionChanged, target, authDBRev, class, &AuthDBChange{Description: newDesc, OldDescription: oldDesc}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupDescriptionChanged, target, class, &AuthDBChange{Description: newDesc, OldDescription: oldDesc}))
 	}
 
 	oldOwners := AdminGroup
@@ -640,31 +646,31 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 	}
 	newOwners := getStringProp(new, "owners")
 	if oldOwners != newOwners {
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupOwnersChanged, target, authDBRev, class, &AuthDBChange{Owners: newOwners, OldOwners: oldOwners}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupOwnersChanged, target, class, &AuthDBChange{Owners: newOwners, OldOwners: oldOwners}))
 	}
 
 	added, removed := diffLists(getStringSliceProp(old, "members"), getStringSliceProp(new, "members"))
 	if len(added) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupMembersAdded, target, authDBRev, class, &AuthDBChange{Members: added}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupMembersAdded, target, class, &AuthDBChange{Members: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupMembersRemoved, target, authDBRev, class, &AuthDBChange{Members: removed}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupMembersRemoved, target, class, &AuthDBChange{Members: removed}))
 	}
 
 	added, removed = diffLists(getStringSliceProp(old, "globs"), getStringSliceProp(new, "globs"))
 	if len(added) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupGlobsAdded, target, authDBRev, class, &AuthDBChange{Globs: added}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupGlobsAdded, target, class, &AuthDBChange{Globs: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupGlobsRemoved, target, authDBRev, class, &AuthDBChange{Globs: removed}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupGlobsRemoved, target, class, &AuthDBChange{Globs: removed}))
 	}
 
 	added, removed = diffLists(getStringSliceProp(old, "nested"), getStringSliceProp(new, "nested"))
 	if len(added) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupNestedAdded, target, authDBRev, class, &AuthDBChange{Nested: added}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupNestedAdded, target, class, &AuthDBChange{Nested: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeGroupNestedRemoved, target, authDBRev, class, &AuthDBChange{Nested: removed}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupNestedRemoved, target, class, &AuthDBChange{Nested: removed}))
 	}
 
 	return changes, nil
@@ -672,43 +678,41 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 
 func diffIPAllowlists(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
 	changes := []*AuthDBChange{}
-	authDBRev := getInt64Prop(new, "auth_db_rev")
 	class := "AuthDBIPWhitelistChange"
 	if getBoolProp(new, "auth_db_deleted") {
 		d := getDescription(new)
-		changes = append(changes, populateCommonFields(ctx, ChangeIPALDeleted, target, authDBRev, class, &AuthDBChange{OldDescription: d}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeIPALDeleted, target, class, &AuthDBChange{OldDescription: d}))
 		if subnets := getStringSliceProp(new, "subnets"); subnets != nil {
-			changes = append(changes, populateCommonFields(ctx, ChangeIPALSubnetsRemoved, target, authDBRev, class, &AuthDBChange{Subnets: subnets}))
+			changes = append(changes, setTargetTypeFields(ctx, ChangeIPALSubnetsRemoved, target, class, &AuthDBChange{Subnets: subnets}))
 		}
 		return changes, nil
 	}
 
 	if old == nil {
 		d := getDescription(new)
-		changes = append(changes, populateCommonFields(ctx, ChangeIPALCreated, target, authDBRev, class, &AuthDBChange{Description: d}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeIPALCreated, target, class, &AuthDBChange{Description: d}))
 		if subnets := getStringSliceProp(new, "subnets"); subnets != nil {
-			changes = append(changes, populateCommonFields(ctx, ChangeIPALSubnetsAdded, target, authDBRev, class, &AuthDBChange{Subnets: subnets}))
+			changes = append(changes, setTargetTypeFields(ctx, ChangeIPALSubnetsAdded, target, class, &AuthDBChange{Subnets: subnets}))
 		}
 		return changes, nil
 	}
 
 	if getDescription(old) != getDescription(new) {
-		changes = append(changes, populateCommonFields(ctx, ChangeIPALDescriptionChanged, target, authDBRev, class, &AuthDBChange{Description: getDescription(new), OldDescription: getDescription(old)}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeIPALDescriptionChanged, target, class, &AuthDBChange{Description: getDescription(new), OldDescription: getDescription(old)}))
 	}
 
 	added, removed := diffLists(getStringSliceProp(old, "subnets"), getStringSliceProp(new, "subnets"))
 	if len(added) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeIPALSubnetsAdded, target, authDBRev, class, &AuthDBChange{Subnets: added}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeIPALSubnetsAdded, target, class, &AuthDBChange{Subnets: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeIPALSubnetsRemoved, target, authDBRev, class, &AuthDBChange{Subnets: removed}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeIPALSubnetsRemoved, target, class, &AuthDBChange{Subnets: removed}))
 	}
 	return changes, nil
 }
 
 func diffGlobalConfig(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
 	changes := []*AuthDBChange{}
-	authDBRev := getInt64Prop(new, "auth_db_rev")
 	class := "AuthGlobalConfigChange"
 	const (
 		OAuthClientID     = "oauth_client_id"
@@ -742,23 +746,23 @@ func diffGlobalConfig(ctx context.Context, target string, old, new datastore.Pro
 	newSecurityConfig := getByteSliceProp(new, SecurityConfig)
 
 	if prevClientID != newClientID || prevClientSecret != newClientSecret {
-		changes = append(changes, populateCommonFields(ctx, ChangeConfOauthClientChanged, target, authDBRev, class, &AuthDBChange{OauthClientID: newClientID, OauthClientSecret: newClientSecret}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeConfOauthClientChanged, target, class, &AuthDBChange{OauthClientID: newClientID, OauthClientSecret: newClientSecret}))
 	}
 
 	added, removed := diffLists(prevClientIDs, newClientIDs)
 	if len(added) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeConfClientIDsAdded, target, authDBRev, class, &AuthDBChange{OauthAdditionalClientIDs: added}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeConfClientIDsAdded, target, class, &AuthDBChange{OauthAdditionalClientIDs: added}))
 	}
 	if len(removed) > 0 {
-		changes = append(changes, populateCommonFields(ctx, ChangeConfClientIDsRemoved, target, authDBRev, class, &AuthDBChange{OauthAdditionalClientIDs: removed}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeConfClientIDsRemoved, target, class, &AuthDBChange{OauthAdditionalClientIDs: removed}))
 	}
 
 	if prevTokenServerURL != newTokenServerURL {
-		changes = append(changes, populateCommonFields(ctx, ChangeConfTokenServerURLChanged, target, authDBRev, class, &AuthDBChange{TokenServerURLNew: newTokenServerURL, TokenServerURLOld: prevTokenServerURL}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeConfTokenServerURLChanged, target, class, &AuthDBChange{TokenServerURLNew: newTokenServerURL, TokenServerURLOld: prevTokenServerURL}))
 	}
 
 	if !bytes.Equal(prevSecurityConfig, newSecurityConfig) {
-		changes = append(changes, populateCommonFields(ctx, ChangeConfSecurityConfigChanged, target, authDBRev, class, &AuthDBChange{SecurityConfigNew: newSecurityConfig, SecurityConfigOld: prevSecurityConfig}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeConfSecurityConfigChanged, target, class, &AuthDBChange{SecurityConfigNew: newSecurityConfig, SecurityConfigOld: prevSecurityConfig}))
 	}
 
 	return changes, nil
@@ -766,7 +770,6 @@ func diffGlobalConfig(ctx context.Context, target string, old, new datastore.Pro
 
 func diffRealmsGlobals(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
 	changes := []*AuthDBChange{}
-	authDBRev := getInt64Prop(new, "auth_db_rev")
 	class := "AuthDBRealmsGlobalsChange"
 
 	oldRealms, err := toAuthRealmsGlobals(old)
@@ -807,7 +810,7 @@ func diffRealmsGlobals(ctx context.Context, target string, old, new datastore.Pr
 		return changes, nil
 	}
 
-	changes = append(changes, populateCommonFields(ctx, ChangeRealmsGlobalsChanged, target, authDBRev, class,
+	changes = append(changes, setTargetTypeFields(ctx, ChangeRealmsGlobalsChanged, target, class,
 		&AuthDBChange{
 			PermissionsAdded:   added,
 			PermissionsChanged: changed,
