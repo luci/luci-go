@@ -23,9 +23,6 @@ import (
 func TestMetrics(t *testing.T) {
 	Convey(`Metrics`, t, func() {
 		Convey(`Metrics have unique sort orders`, func() {
-			// REVERT ME: Intentionally fail test to break tree for testing LUCI notify tree closure
-			So(true, ShouldEqual, false)
-
 			usedSortOrders := make(map[int]bool)
 			for _, m := range ComputedMetrics {
 				unique := !usedSortOrders[m.DefaultConfig.SortPriority]
