@@ -15,16 +15,24 @@
 package retention
 
 import (
-	"context"
-
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/tq"
+	"errors"
+	"time"
 )
 
-// RegisterCrons registers cron jobs for data retention.
-func RegisterCrons(tqd *tq.Dispatcher) {
-	registerWipeoutRunsTask(tqd)
-	cron.RegisterHandler("data-retention-runs", func(ctx context.Context) error {
-		return scheduleWipeoutRuns(ctx, tqd)
-	})
+var retentionPeriod = 540 * 24 * time.Hour // ~= 1.5 years
+
+// chunk splits []T into chunks of provided size.
+//
+// If the slice cannot be split evenly, the last chunk will contain all the
+// remaining elements. The provided size must be larger than 0.
+func chunk[T any](slice []T, size int) [][]T {
+	if size <= 0 {
+		panic(errors.New("size must be larger than 0"))
+	}
+	var chunks [][]T
+	for i := 0; i < len(slice); i += size {
+		end := min(i+size, len(slice))
+		chunks = append(chunks, slice[i:end])
+	}
+	return chunks
 }
