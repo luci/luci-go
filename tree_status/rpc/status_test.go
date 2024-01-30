@@ -77,6 +77,19 @@ func TestStatus(t *testing.T) {
 				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-tree-status-access")
 				So(status, ShouldBeNil)
 			})
+			Convey("Read latest when no status updates returns fallback", func() {
+				ctx = fakeAuth().withReadAccess().withAuditAccess().setInContext(ctx)
+
+				request := &pb.GetStatusRequest{
+					Name: "trees/chromium/status/latest",
+				}
+				status, err := server.GetStatus(ctx, request)
+
+				So(err, ShouldBeNil)
+				So(status.Name, ShouldEqual, "trees/chromium/status/fallback")
+				So(status.GeneralState, ShouldEqual, pb.GeneralState_OPEN)
+				So(status.Message, ShouldEqual, "Tree is open (fallback due to no status updates in past 140 days)")
+			})
 			Convey("Read latest", func() {
 				ctx = fakeAuth().withReadAccess().withAuditAccess().setInContext(ctx)
 				NewStatusBuilder().WithMessage("earliest").CreateInDB(ctx)

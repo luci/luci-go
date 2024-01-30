@@ -116,6 +116,10 @@ type GetStatusRequest struct {
 	// You can use 'latest' as the id to get the latest status for a tree,
 	// i.e. set the name to 'trees/{tree}/status/latest'.
 	//
+	// If you request the 'latest' status and no status updates are in the
+	// database (possibly due to the 140 day TTL), a fallback status will
+	// be returned with general_status OPEN.
+	//
 	// Format: trees/{tree}/status/{id}
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 }

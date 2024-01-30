@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -127,7 +128,13 @@ func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusReq
 	if id == "latest" {
 		latest, err := status.ReadLatest(span.Single(ctx), tree)
 		if errors.Is(err, status.NotExistsErr) {
-			return nil, notFoundError(err)
+			return &pb.Status{
+				Name:         fmt.Sprintf("trees/%s/status/fallback", tree),
+				GeneralState: pb.GeneralState_OPEN,
+				Message:      "Tree is open (fallback due to no status updates in past 140 days)",
+				CreateUser:   "",
+				CreateTime:   timestamppb.New(time.Now()),
+			}, nil
 		} else if err != nil {
 			return nil, errors.Annotate(err, "reading latest status").Err()
 		}
