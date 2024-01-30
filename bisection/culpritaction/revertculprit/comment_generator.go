@@ -58,7 +58,7 @@ func compileFailureComment(ctx context.Context, suspect *model.Suspect, reason, 
 	// TODO(beining@): remove the hardcoded project name to support multiple LUCI projects.
 	analysisURL := util.ConstructCompileAnalysisURL("chromium", bbid)
 	buildURL := util.ConstructBuildURL(ctx, bbid)
-	bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL, suspect.ReviewUrl)
+	bugURL := util.ConstructBuganizerURLForAnalysis(analysisURL, suspect.ReviewUrl)
 	var b bytes.Buffer
 	err = compileCommentTemplate.ExecuteTemplate(&b, templateName, map[string]any{
 		"AnalysisURL": analysisURL,

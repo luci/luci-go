@@ -77,7 +77,7 @@ func TestRevertCulprit(t *testing.T) {
 
 		analysisURL := util.ConstructCompileAnalysisURL("chromium", failedBuild.Id)
 		buildURL := util.ConstructBuildURL(ctx, failedBuild.Id)
-		bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL,
+		bugURL := util.ConstructBuganizerURLForAnalysis(analysisURL,
 			"https://test-review.googlesource.com/c/chromium/test/+/876543")
 
 		// Set up mock Gerrit client

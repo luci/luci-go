@@ -47,22 +47,6 @@ func TestConstructBuildURL(t *testing.T) {
 	})
 }
 
-func TestConstructLUCIBisectionBugURL(t *testing.T) {
-	ctx := context.Background()
-
-	Convey("construct bug URL", t, func() {
-		bugURL := ConstructLUCIBisectionBugURL(ctx,
-			"https://luci-bisection.appspot.com/analysis/b/123456789876543",
-			"https://chromium-test-review.googlesource.com/c/chromium/test/src/+/1234567")
-		expectedBugURL := "https://bugs.chromium.org/p/chromium/issues/entry?" +
-			"comment=Analysis%3A+https%3A%2F%2Fluci-bisection.appspot.com%2Fanalysis%2Fb%2F123456789876543&" +
-			"components=Tools%3ETest%3EFindit&labels=LUCI-Bisection-Wrong%2CPri-3%2CType-Bug&" +
-			"status=Available&summary=Wrongly+blamed+" +
-			"https%3A%2F%2Fchromium-test-review.googlesource.com%2Fc%2Fchromium%2Ftest%2Fsrc%2F%2B%2F1234567"
-		So(bugURL, ShouldEqual, expectedBugURL)
-	})
-}
-
 func TestConstructGerritCodeReviewURL(t *testing.T) {
 	ctx := context.Background()
 

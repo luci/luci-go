@@ -42,24 +42,8 @@ func ConstructBuildURL(ctx context.Context, bbid int64) string {
 	return fmt.Sprintf("https://ci.chromium.org/b/%d", bbid)
 }
 
-// ConstructLUCIBisectionBugURL returns a link to create a bug against
-// LUCI Bisection for wrongly blamed commits.
-func ConstructLUCIBisectionBugURL(ctx context.Context, analysisURL string,
-	commitReviewURL string) string {
-	// TODO: update this URL to point to Buganizer
-
-	// Note: the default priority has been set to 3 = Not time critical
-	queryParams := url.Values{
-		"status":     {"Available"},
-		"components": {"Tools>Test>Findit"},
-		"labels":     {"LUCI-Bisection-Wrong,Pri-3,Type-Bug"},
-		"summary":    {fmt.Sprintf("Wrongly blamed %s", commitReviewURL)},
-		"comment":    {fmt.Sprintf("Analysis: %s", analysisURL)},
-	}
-
-	return "https://bugs.chromium.org/p/chromium/issues/entry?" + queryParams.Encode()
-}
-
+// ConstructBuganizerURLForAnalysis returns a link to create a bug against
+// LUCI Bisection for wrongly blamed commits
 func ConstructBuganizerURLForAnalysis(commitReviewURL string, analysisURL string) string {
 	queryParams := url.Values{
 		"title":       {fmt.Sprintf("Wrongly blamed %s", commitReviewURL)},
