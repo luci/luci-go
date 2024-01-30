@@ -18,10 +18,10 @@ package cv.internal.retention;
 
 option go_package = "go.chromium.org/luci/cv/internal/retention;retention";
 
-// WipeoutRunsTask wipes out given Runs and its descendent entities that
+// WipeoutRunTask wipes out a given Run and its descendent entities that
 // are out of the retention policy.
 //
 // Queue: "data-retention".
-message WipeoutRunsTask {
-  repeated string ids = 1;
+message WipeoutRunTask {
+  string id = 1;
 }

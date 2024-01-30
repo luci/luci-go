@@ -17,7 +17,6 @@ package retention
 import (
 	"context"
 	"math"
-	"sort"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -37,9 +36,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runquery"
 )
-
-// runsPerTask controls how many runs to wipeout per TQ task.
-const runsPerTask = 200
 
 // scheduleWipeoutRuns schedules tasks to wipe out old runs that are out of the
 // retention period.
@@ -69,22 +65,19 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 				case len(runs) == 0:
 					return nil
 				}
-				logging.Infof(ctx, "found %d runs to wipeout for project %q", len(runs), proj)
-				for _, runIDs := range chunk(runs, runsPerTask) {
-					runIDStrs := make(sort.StringSlice, len(runIDs))
-					for i, runID := range runIDs {
-						runIDStrs[i] = string(runID)
-					}
-					sort.Sort(runIDStrs)
-					task := &tq.Task{
-						Payload: &WipeoutRunsTask{
-							Ids: runIDStrs,
-						},
-						Delay: common.DistributeOffset(16*time.Hour, runIDStrs...),
-					}
+				logging.Infof(ctx, "scheduling wipeoutRun task for %d runs in project %q", len(runs), proj)
+				for _, runID := range runs {
+					runID := runID
 					eg.Go(func() error {
-						return retry.Retry(ectx, retry.Default, func() error {
-							return tqd.AddTask(ectx, task)
+						ctx := logging.SetField(ectx, "run", string(runID))
+						return retry.Retry(ctx, retry.Default, func() error {
+							return tqd.AddTask(ctx, &tq.Task{
+								Title: string(runID),
+								Payload: &WipeoutRunTask{
+									Id: string(runID),
+								},
+								Delay: common.DistributeOffset(16*time.Hour, string(runID)),
+							})
 						}, nil)
 					})
 				}
@@ -118,31 +111,20 @@ func findRunsToWipeoutForProject(ctx context.Context, proj string, cutoff time.T
 	return ret, nil
 }
 
-func registerWipeoutRunsTask(tqd *tq.Dispatcher) {
+// wipeoutRun wipes out the given run if it is no longer in retention period.
+func registerWipeoutRunTask(tqd *tq.Dispatcher) {
 	tqd.RegisterTaskClass(tq.TaskClass{
-		ID:           "wipeout-runs",
+		ID:           "wipeout-run",
 		Queue:        "data-retention",
-		Prototype:    &WipeoutRunsTask{},
+		Prototype:    &WipeoutRunTask{},
 		Kind:         tq.NonTransactional,
 		Quiet:        true,
 		QuietOnError: true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*WipeoutRunsTask)
-			err := wipeoutRuns(ctx, common.MakeRunIDs(task.GetIds()...))
+			task := payload.(*WipeoutRunTask)
+			err := wipeoutRun(ctx, common.RunID(task.GetId()))
 			return common.TQifyError(ctx, err)
 		},
-	})
-}
-
-// wipeoutRuns wipes out runs for the provided run IDs.
-func wipeoutRuns(ctx context.Context, runIDs common.RunIDs) error {
-	return parallel.WorkPool(min(10, len(runIDs)), func(workC chan<- func() error) {
-		for _, runID := range runIDs {
-			runID := runID
-			workC <- func() error {
-				return wipeoutRun(ctx, runID)
-			}
-		}
 	})
 }
 
@@ -186,6 +168,5 @@ func wipeoutRun(ctx context.Context, runID common.RunID) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to delete run entities and it's child entities in a transaction").Tag(transient.Tag).Err()
 	}
-	logging.Infof(ctx, "successfully wiped out run %s", runID)
 	return nil
 }

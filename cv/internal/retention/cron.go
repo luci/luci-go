@@ -16,14 +16,17 @@ package retention
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/tq"
 )
 
+var retentionPeriod = 540 * 24 * time.Hour // ~= 1.5 years
+
 // RegisterCrons registers cron jobs for data retention.
 func RegisterCrons(tqd *tq.Dispatcher) {
-	registerWipeoutRunsTask(tqd)
+	registerWipeoutRunTask(tqd)
 	cron.RegisterHandler("data-retention-runs", func(ctx context.Context) error {
 		return scheduleWipeoutRuns(ctx, tqd)
 	})
