@@ -34,6 +34,7 @@ protoc \
   --ts_proto_opt=removeEnumPrefix=true,unrecognizedEnum=false \
   --ts_proto_opt=useDate=string,useReadonlyTypes=true \
   \
+  ./go.chromium.org/luci/analysis/proto/v1/changepoints.proto \
   ./go.chromium.org/luci/analysis/proto/v1/clusters.proto \
   ./go.chromium.org/luci/analysis/proto/v1/test_history.proto \
   ./go.chromium.org/luci/bisection/proto/v1/analyses.proto \

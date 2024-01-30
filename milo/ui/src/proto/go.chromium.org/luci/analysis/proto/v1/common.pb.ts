@@ -442,6 +442,14 @@ export interface ClusterId {
   readonly id: string;
 }
 
+/** Represents a range of numeric values, e.g. unexpected verdict rates. */
+export interface NumericRange {
+  /** The inclusive lower bound included in the range. */
+  readonly lowerBound: number;
+  /** The inclusive upper bound included in the range. */
+  readonly upperBound: number;
+}
+
 function createBaseTimeRange(): TimeRange {
   return { earliest: undefined, latest: undefined };
 }
@@ -1138,6 +1146,80 @@ export const ClusterId = {
     const message = createBaseClusterId() as any;
     message.algorithm = object.algorithm ?? "";
     message.id = object.id ?? "";
+    return message;
+  },
+};
+
+function createBaseNumericRange(): NumericRange {
+  return { lowerBound: 0, upperBound: 0 };
+}
+
+export const NumericRange = {
+  encode(message: NumericRange, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.lowerBound !== 0) {
+      writer.uint32(13).float(message.lowerBound);
+    }
+    if (message.upperBound !== 0) {
+      writer.uint32(21).float(message.upperBound);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): NumericRange {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseNumericRange() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 13) {
+            break;
+          }
+
+          message.lowerBound = reader.float();
+          continue;
+        case 2:
+          if (tag !== 21) {
+            break;
+          }
+
+          message.upperBound = reader.float();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): NumericRange {
+    return {
+      lowerBound: isSet(object.lowerBound) ? globalThis.Number(object.lowerBound) : 0,
+      upperBound: isSet(object.upperBound) ? globalThis.Number(object.upperBound) : 0,
+    };
+  },
+
+  toJSON(message: NumericRange): unknown {
+    const obj: any = {};
+    if (message.lowerBound !== 0) {
+      obj.lowerBound = message.lowerBound;
+    }
+    if (message.upperBound !== 0) {
+      obj.upperBound = message.upperBound;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<NumericRange>, I>>(base?: I): NumericRange {
+    return NumericRange.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<NumericRange>, I>>(object: I): NumericRange {
+    const message = createBaseNumericRange() as any;
+    message.lowerBound = object.lowerBound ?? 0;
+    message.upperBound = object.upperBound ?? 0;
     return message;
   },
 };
