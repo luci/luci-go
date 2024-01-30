@@ -430,7 +430,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		err = errors.Annotate(err, "getting should upload to BQ").Err()
 		logging.Errorf(ctx, err.Error())
 	} else {
-		if shouldUpload {
+		if !shouldUpload {
 			// Just disable the logging for now because the feature is disabled.
 			// We will enable back when we enable the export.
 			// logging.Infof(ctx, "Uploading artifacts to BQ is disabled")
@@ -522,7 +522,7 @@ func percentOfArtifactsToBQ(ctx context.Context) (int, error) {
 // Disable shouldUploadToBQ flag will run no exporter code, therefore it is the safer option.
 func shouldUploadToBQ(ctx context.Context) (bool, error) {
 	// TODO (nqmtuan): Read from config.
-	return true, nil
+	return false, nil
 }
 
 func uploadArtifactsToBQ(ctx context.Context, req []*artifactCreationRequest) error {
