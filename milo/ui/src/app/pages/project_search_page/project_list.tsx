@@ -17,10 +17,9 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useLocalStorage } from 'react-use';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import {
   ListProjectsRequest,
-  MiloInternalClientImpl,
   ProjectListItem,
 } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
@@ -33,11 +32,7 @@ export interface ProjectListProps {
 }
 
 export function ProjectList({ searchQuery }: ProjectListProps) {
-  const client = usePrpcServiceClient({
-    host: '',
-    insecure: location.protocol === 'http:',
-    ClientImpl: MiloInternalClientImpl,
-  });
+  const client = useMiloInternalClient();
   const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
     useInfiniteQuery(
       client.ListProjects.query(

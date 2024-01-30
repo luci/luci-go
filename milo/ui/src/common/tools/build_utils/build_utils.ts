@@ -15,17 +15,20 @@
 import Mustache from 'mustache';
 
 import { Link } from '@/common/models/link';
-import { Build, BuildInfraSwarming } from '@/common/services/buildbucket';
 import { logging } from '@/common/tools/logging';
 import {
   getBuilderURLPath,
   getInvURLPath,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
+import {
+  Build,
+  BuildInfra_Swarming,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { getBotUrl } from '@/swarming/tools/utils';
 
 // getBotLink generates a link to a swarming bot.
-export function getBotLink(swarming: BuildInfraSwarming): Link | null {
+export function getBotLink(swarming: BuildInfra_Swarming): Link | null {
   for (const dim of swarming.botDimensions || []) {
     if (dim.key === 'id') {
       return {
@@ -133,7 +136,7 @@ const RE_BUG_URL =
  */
 export function renderBugUrlTemplate(
   urlTemplate: string,
-  build: Pick<Build, 'id' | 'builder'>,
+  build: DeepNonNullable<Pick<Build, 'id' | 'builder'>>,
   miloOrigin = window.location.origin,
 ) {
   let bugUrl = '';

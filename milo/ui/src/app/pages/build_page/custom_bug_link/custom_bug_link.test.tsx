@@ -14,32 +14,35 @@
 
 import { act, render, screen } from '@testing-library/react';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { MiloInternal } from '@/common/services/milo_internal';
+import { Project } from '@/proto/go.chromium.org/luci/milo/proto/projectconfig/project.pb';
+import {
+  GetProjectCfgRequest,
+  MiloInternalClientImpl,
+} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { CustomBugLink } from './custom_bug_link';
 
-jest.mock('@/common/hooks/legacy_prpc_query', () => {
-  return createSelectiveSpiesFromModule<
-    typeof import('@/common/hooks/legacy_prpc_query')
-  >('@/common/hooks/legacy_prpc_query', ['usePrpcQuery']);
-});
-
-describe('CustomBugLink', () => {
-  let usePrpcQueryMock: jest.MockedFunction<typeof usePrpcQuery>;
+describe('<CustomBugLink />', () => {
+  let getProjectCfgMock: jest.SpiedFunction<
+    MiloInternalClientImpl['GetProjectCfg']
+  >;
 
   beforeEach(() => {
     jest.useFakeTimers();
-    usePrpcQueryMock = jest.mocked(usePrpcQuery);
-    jest.spyOn(MiloInternal.prototype, 'getProjectCfg').mockResolvedValue({
-      bugUrlTemplate:
-        'https://b.corp.google.com/createIssue?description=builder%3A{{{milo_builder_url}}}build%3A{{{milo_build_url}}}',
-    });
+    getProjectCfgMock = jest
+      .spyOn(MiloInternalClientImpl.prototype, 'GetProjectCfg')
+      .mockResolvedValue(
+        Project.fromPartial({
+          bugUrlTemplate:
+            'https://b.corp.google.com/createIssue?description=builder%3A{{{milo_builder_url}}}build%3A{{{milo_build_url}}}',
+        }),
+      );
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    getProjectCfgMock.mockClear();
   });
 
   test('e2e', async () => {
@@ -51,14 +54,8 @@ describe('CustomBugLink', () => {
     await act(() => jest.runAllTimersAsync());
 
     // The query is sent even when `build` is not yet populated.
-    expect(usePrpcQueryMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        host: '',
-        insecure: location.protocol === 'http:',
-        Service: MiloInternal,
-        method: 'getProjectCfg',
-        request: { project: 'proj' },
-      }),
+    expect(getProjectCfgMock).toHaveBeenCalledWith(
+      GetProjectCfgRequest.fromPartial({ project: 'proj' }),
     );
     expect(screen.queryByText('File a bug')).not.toBeInTheDocument();
 

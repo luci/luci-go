@@ -15,13 +15,10 @@
 import { CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { extractProject } from '@/common/tools/utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
-import {
-  MiloInternalClientImpl,
-  QueryConsolesRequest,
-} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
+import { QueryConsolesRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 const PAGE_SIZE = 100;
 
@@ -30,11 +27,7 @@ export interface ViewsSectionProps {
 }
 
 export function ViewsSection({ builderId }: ViewsSectionProps) {
-  const client = usePrpcServiceClient({
-    host: '',
-    insecure: location.protocol === 'http:',
-    ClientImpl: MiloInternalClientImpl,
-  });
+  const client = useMiloInternalClient();
   const { data, error, isError, isLoading } = useQuery(
     client.QueryConsoles.query(
       QueryConsolesRequest.fromPartial({

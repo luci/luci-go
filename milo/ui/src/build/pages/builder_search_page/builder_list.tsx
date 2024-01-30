@@ -17,11 +17,8 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { groupBy, mapValues } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import {
-  ListBuildersRequest,
-  MiloInternalClientImpl,
-} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
+import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
+import { ListBuildersRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { BuilderListDisplay } from './builder_list_display';
 
@@ -30,11 +27,7 @@ interface BuilderListProps {
 }
 
 export function BuilderList({ searchQuery }: BuilderListProps) {
-  const client = usePrpcServiceClient({
-    host: '',
-    insecure: location.protocol === 'http:',
-    ClientImpl: MiloInternalClientImpl,
-  });
+  const client = useMiloInternalClient();
   const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
     useInfiniteQuery(
       client.ListBuilders.queryPaged(

@@ -14,38 +14,38 @@
 
 import { GrpcError } from '@chopsui/prpc-client';
 import { Link } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { Build } from '@/common/services/buildbucket';
-import { MiloInternal } from '@/common/services/milo_internal';
+import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { renderBugUrlTemplate } from '@/common/tools/build_utils';
 import { logging } from '@/common/tools/logging';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import { GetProjectCfgRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
-interface CustomBugLinkProps {
+export interface CustomBugLinkProps {
   readonly project: string;
   /**
    * The bug link will not be rendered until the build is populated.
    */
   // Making this optional allows the `GetProjectCfg` request to be sent without
   // waiting for the build query to resolve.
-  readonly build?: Pick<Build, 'id' | 'builder'>;
+  readonly build?: DeepNonNullable<Pick<Build, 'id' | 'builder'>>;
 }
 
 export function CustomBugLink({ project, build }: CustomBugLinkProps) {
-  const { data, error } = usePrpcQuery({
-    host: '',
-    insecure: location.protocol === 'http:',
-    Service: MiloInternal,
-    method: 'getProjectCfg',
-    request: { project },
-    options: {
-      select: (res) => {
-        if (!res.bugUrlTemplate || !build) {
-          return null;
-        }
-        return renderBugUrlTemplate(res.bugUrlTemplate, build);
-      },
+  const client = useMiloInternalClient();
+  const { data, error } = useQuery({
+    ...client.GetProjectCfg.query(
+      GetProjectCfgRequest.fromPartial({
+        project,
+      }),
+    ),
+    select: (res) => {
+      if (!res.bugUrlTemplate || !build) {
+        return null;
+      }
+      return renderBugUrlTemplate(res.bugUrlTemplate, build);
     },
   });
 
