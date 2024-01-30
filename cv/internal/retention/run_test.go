@@ -34,11 +34,11 @@ import (
 func TestScheduleWipeoutRuns(t *testing.T) {
 	t.Parallel()
 
-	Convey("Schedule wipeout run tasks", t, func() {
+	Convey("Schedule wipeout runs tasks", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
-		registerWipeoutRunTask(ct.TQDispatcher)
+		registerWipeoutRunsTask(ct.TQDispatcher)
 
 		// Test Scenario: Create a lot of runs under 2 LUCI Projects (1 disabled).
 		// Making sure the tasks are scheduled for all runs that are out of
@@ -84,11 +84,14 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 
 		err := scheduleWipeoutRuns(ctx, ct.TQDispatcher)
 		So(err, ShouldBeNil)
-		So(ct.TQ.Tasks(), ShouldHaveLength, len(expectedRuns))
 		var actualRuns common.RunIDs
 		for _, task := range ct.TQ.Tasks() {
 			So(task.ETA, ShouldHappenWithin, 16*time.Hour, ct.Clock.Now())
-			actualRuns.InsertSorted(common.RunID(task.Payload.(*WipeoutRunTask).GetId()))
+			ids := task.Payload.(*WipeoutRunsTask).GetIds()
+			So(len(ids), ShouldBeLessThanOrEqualTo, runsPerTask)
+			for _, id := range ids {
+				actualRuns.InsertSorted(common.RunID(id))
+			}
 		}
 		So(actualRuns, ShouldResemble, expectedRuns)
 	})

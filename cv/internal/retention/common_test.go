@@ -15,16 +15,31 @@
 package retention
 
 import (
-	"context"
+	"testing"
 
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/tq"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-// RegisterCrons registers cron jobs for data retention.
-func RegisterCrons(tqd *tq.Dispatcher) {
-	registerWipeoutRunsTask(tqd)
-	cron.RegisterHandler("data-retention-runs", func(ctx context.Context) error {
-		return scheduleWipeoutRuns(ctx, tqd)
+func TestChunk(t *testing.T) {
+	t.Parallel()
+
+	Convey("Chunk", t, func() {
+		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 3), ShouldResemble, [][]int{
+			{1, 2, 3},
+			{4, 5, 6},
+			{7, 8, 9},
+			{10},
+		})
+		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 2), ShouldResemble, [][]int{
+			{1, 2},
+			{3, 4},
+			{5, 6},
+			{7, 8},
+			{9, 10},
+		})
+		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 11), ShouldResemble, [][]int{
+			{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		})
+
 	})
 }
