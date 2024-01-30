@@ -21,6 +21,12 @@ const NEW_GROUP_PLACEHOLDER = "new!";
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
+// True if group name starts with '<something>/' prefix, where
+// <something> is a non-empty string.
+function isExternalGroupName(name) {
+  return name.indexOf('/') > 0;
+}
+
 // Trims group description to fit single line.
 const trimGroupDescription = (desc) => {
   'use strict';
@@ -145,6 +151,36 @@ const validators = {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+// ListGroupItem is a list item representing a single group. It is
+// intended to be used within a GroupChooser.
+class ListGroupItem {
+  constructor(group) {
+    this.isExternal = isExternalGroupName(group.name);
+
+    const template = document.querySelector('#group-scroller-row-template');
+
+    // Clone and grab elements to modify.
+    const clone = template.content.cloneNode(true);
+    const listEl = clone.querySelector('li');
+    const nameEl = clone.querySelector('p');
+    const descEl = clone.querySelector('small');
+
+    // Modify contents for the actual group name and description.
+    listEl.setAttribute('data-group-name', group.name);
+    nameEl.textContent = group.name;
+    descEl.textContent = trimGroupDescription(group.description);
+
+    this.element = listEl;
+  }
+
+  setExternalVisibility(showExternal) {
+    if (this.isExternal) {
+      this.element.style.display = showExternal ? 'block' : 'none';
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // GroupChooser is a scrollable list containing the auth service groups.
 class GroupChooser {
 
@@ -155,11 +191,37 @@ class GroupChooser {
     // Button for triggering create group workflow.
     this.createGroupBtn = document.querySelector("#create-group-btn");
 
-    // Set of known groups, used for checking group presence.
-    this.groupSet = new Set()
+    // The name of the selected group.
+    this.selectedGroupName = null;
 
-    // Mapping of group name -> HTML element.
+    // Sets of known groups, used for checking group presence and
+    // selecting a default group.
+    this.completeGroupSet = new Set();
+    this.internalOnlyGroupSet = new Set();
+
+    // Mapping of group name -> ListGroupItem.
     this.groupOptions = new Map();
+
+    // Checkbox for showing external groups.
+    this.showExternalCheckBox = document.querySelector("#external-check");
+    this.showExternalCheckBox.addEventListener("input", () => {
+      this.setExternalVisibility();
+
+      // If the currently selected group is no longer visible, change the
+      // selected group.
+      if (this.reselectionRequired()) {
+        this.selectDefault();
+      }
+    });
+  }
+
+  // getGroupSet is a helper to return the appropriate group set
+  // depending on the external checkbox.
+  getGroupSet() {
+    if (this.showExternalCheckBox.checked) {
+      return this.completeGroupSet;
+    }
+    return this.internalOnlyGroupSet;
   }
 
   // Loads list of groups from a server.
@@ -175,46 +237,55 @@ class GroupChooser {
       });
   }
 
+  reselectionRequired() {
+    return this.selectedGroupName && !this.isKnownGroup(this.selectedGroupName);
+  }
+
   // Checks if set of known groups contains queried group.
   isKnownGroup(groupName) {
-    return this.groupSet.has(groupName);
+    return this.getGroupSet().has(groupName);
   }
 
   // Sets groupList (group-chooser) element.
   setGroupList(groups) {
     // Adds list item to group-chooser.
     const addElement = (group) => {
-      const template = document.querySelector('#group-scroller-row-template');
+      const listItem = new ListGroupItem(group);
 
-      // Clone and grab elements to modify.
-      const clone = template.content.cloneNode(true);
-      const listEl = clone.querySelector('li');
-      const name = clone.querySelector('p');
-      const description = clone.querySelector('small');
+      // Add it to the group chooser.
+      this.element.appendChild(listItem.element);
 
-      // Modify contents and append to parent.
-      listEl.setAttribute('data-group-name', group.name);
-      name.textContent = group.name;
-      description.textContent = trimGroupDescription(group.description);
-      this.element.appendChild(clone);
-
-      // Keep a reference to the HTML element, so we can scroll to it later.
-      this.groupOptions.set(group.name, listEl);
-
-      listEl.addEventListener('click', () => {
+      // Add a listener for when a user chooses the group.
+      listItem.element.addEventListener('click', () => {
         this.setSelection(group.name);
       });
+
+      // Keep a reference to the ListGroupItem, so we can scroll to it
+      // later.
+      this.groupOptions.set(group.name, listItem);
+
+      // Maintain the group name sets, with and without external groups.
+      this.completeGroupSet.add(group.name);
+      if (!listItem.isExternal) {
+        this.internalOnlyGroupSet.add(group.name);
+      }
     };
 
     groups.map((group) => {
       addElement(group);
-      this.groupSet.add(group.name);
     });
+
+    this.setExternalVisibility();
   }
 
   // Adds the active class to the selected element,
   // highlighting the group clicked in the scroller.
   setSelection(name) {
+    if (this.selectedGroupName === name) {
+      return;
+    }
+
+    this.selectedGroupName = name;
     let selectionMade = false;
     const selectionChangedEvent = new CustomEvent('selectionChanged', {
       bubble: true,
@@ -239,11 +310,11 @@ class GroupChooser {
     }
   }
 
-  // Selects first group available.
+  // Selects first group visible.
   selectDefault() {
-    let elements = document.getElementsByClassName('list-group-item');
-    if (elements.length) {
-      this.setSelection(elements[0].dataset.groupName);
+    const groupSet = this.getGroupSet();
+    if (groupSet.size) {
+      this.setSelection(groupSet.values().next().value);
     }
   }
 
@@ -255,13 +326,21 @@ class GroupChooser {
     }
 
     let chooserRect = this.element.getBoundingClientRect();
-    let optionRect = groupOption.getBoundingClientRect();
+    let optionRect = groupOption.element.getBoundingClientRect();
 
     // Scroll to the selected group if it's not completely visible.
     if ((optionRect.top < chooserRect.top) || (optionRect.bottom > chooserRect.bottom)) {
       this.element.scrollTop += optionRect.top - chooserRect.top;
     }
   };
+
+  // setExternalVisibility sets the visibility of each group option in
+  // the chooser depending on whether external groups should be shown.
+  setExternalVisibility() {
+    this.groupOptions.forEach((listGroupItem, _) => {
+      listGroupItem.setExternalVisibility(this.showExternalCheckBox.checked);
+    });
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -573,7 +652,7 @@ window.onload = () => {
 
   // Allow selecting a group via search box.
   searchBox.element.addEventListener('input', () => {
-    var found = longestMatch(groupChooser.groupSet, searchBox.element.value);
+    var found = longestMatch(groupChooser.getGroupSet(), searchBox.element.value);
     if (found) {
       groupChooser.setSelection(found);
     }
