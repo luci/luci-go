@@ -855,12 +855,7 @@ func getProp(pm datastore.PropertyMap, key string) any {
 }
 
 func getDescription(pm datastore.PropertyMap) string {
-	switch getProp(pm, "description").(type) {
-	case string:
-		return getStringProp(pm, "description")
-	default:
-		return ""
-	}
+	return getStringProp(pm, "description")
 }
 
 func getDatastoreKey(pm datastore.PropertyMap) *datastore.Key {
@@ -887,11 +882,14 @@ func getStringSliceProp(pm datastore.PropertyMap, key string) []string {
 }
 
 func getStringProp(pm datastore.PropertyMap, key string) string {
-	value := getProp(pm, key)
-	if value == nil {
+	switch v := getProp(pm, key).(type) {
+	case string:
+		return v
+	case []byte:
+		return string(v)
+	default:
 		return ""
 	}
-	return value.(string)
 }
 
 func getInt64Prop(pm datastore.PropertyMap, key string) int64 {
