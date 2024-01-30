@@ -16,10 +16,16 @@ import { Alert, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 
+import {
+  getPageSize,
+  getPageToken,
+} from '@/build/pages/builder_page/ended_builds_section/search_param_utils';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
+import { ParamsPager } from '@/common/components/params_pager';
 import { UiPage } from '@/common/constants/view';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   ListStatusRequest,
   TreeStatusClientImpl,
@@ -29,6 +35,10 @@ import { TreeStatusUpdater } from '@/tree_status/components/tree_status_updater'
 
 export const TreeStatusListPage = () => {
   const { tree: treeName } = useParams();
+  const [searchParams, _] = useSyncedSearchParams();
+  const pageSize = getPageSize(searchParams);
+  const pageToken = getPageToken(searchParams);
+
   const treeStatusClient = usePrpcServiceClient({
     host: SETTINGS.luciTreeStatus.host,
     ClientImpl: TreeStatusClientImpl,
@@ -38,6 +48,8 @@ export const TreeStatusListPage = () => {
     ...treeStatusClient.ListStatus.query(
       ListStatusRequest.fromPartial({
         parent: `trees/${treeName}/status`,
+        pageSize,
+        pageToken,
       }),
     ),
     refetchInterval: 60000,
@@ -45,9 +57,6 @@ export const TreeStatusListPage = () => {
   });
   if (!treeName) {
     return <Alert severity="error">No tree name specified</Alert>;
-  }
-  if (status.isLoading) {
-    return <CircularProgress />;
   }
   if (status.isError) {
     throw status.error;
@@ -80,7 +89,9 @@ export const TreeStatusListPage = () => {
       <div style={{ marginTop: '40px', height: '0px' }} />
       <TreeStatusUpdater tree={treeName} />
       <div style={{ marginTop: '40px', height: '0px' }} />
-      {status.data.status.length === 0 ? (
+      {status.isLoading ? (
+        <CircularProgress />
+      ) : status.data.status.length === 0 ? (
         <Alert severity="warning">
           <strong>
             There are no status updates currently recorded for the {treeName}{' '}
@@ -94,6 +105,7 @@ export const TreeStatusListPage = () => {
       ) : (
         <TreeStatusTable status={status.data.status} />
       )}
+      <ParamsPager nextPageToken={status.data?.nextPageToken || ''} />
     </div>
   );
 };
