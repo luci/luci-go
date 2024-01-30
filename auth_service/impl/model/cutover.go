@@ -147,13 +147,12 @@ func getChangesForRevision(ctx context.Context, authDBRev int64, dryRun bool) ([
 // diffChangelogs returns the "functional" differences between the given
 // slices of AuthDBChanges.
 //
-// Fields ignored include unexported fields, and
-// * When.
+// Fields ignored include:
+// * Kind - there will be a V2 prefix; and
+// * Parent - there will be V2 prefixes.
 func diffChangelogs(changelogA, changelogB []*AuthDBChange) []string {
-	// The "When" field is not expected to be identical, as changelog
-	// tasks are processed from the task queue.
 	ignoredFields := cmpopts.IgnoreFields(AuthDBChange{},
-		"When")
+		"Kind", "Parent")
 
 	diffs := []string{}
 	changeCountA := len(changelogA)
@@ -257,7 +256,6 @@ func processSnapshot(authDBSnapshot *AuthDBSnapshot) (*protocol.ReplicationPushR
 //   - the AuthCodeVersion within the compressed serialized
 //     ReplicationPushRequest blob (this is expected to be "1.x.x" for
 //     the Python version and "2.x.x" for Go).
-
 func diffSnapshots(v1Snapshot, v2Snapshot *AuthDBSnapshot) ([]string, error) {
 	diffs := []string{}
 	diffTemplate := "field '%s': '%v' vs '%v'"
