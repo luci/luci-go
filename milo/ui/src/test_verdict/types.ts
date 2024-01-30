@@ -21,6 +21,7 @@
  * coercion (i.e. `object.nullable!`) everywhere.
  */
 
+import { ChangepointGroupSummary } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { ClusterResponse_ClusteredTestResult_ClusterEntry } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import {
   TestResultBundle,
@@ -46,4 +47,9 @@ export type OutputTestVerdict = NonNullableProps<TestVariant, 'variant'> & {
 export type OutputClusterEntry = NonNullableProps<
   ClusterResponse_ClusteredTestResult_ClusterEntry,
   'clusterId'
+>;
+
+export type OutputChangepointGroupSummary = DeepNonNullableProps<
+  ChangepointGroupSummary,
+  'canonicalChangepoint' | 'statistics'
 >;

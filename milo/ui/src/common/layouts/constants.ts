@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UiPage } from '../constants/view';
+import { UiPage } from '@/common/constants/view';
 
 export const drawerWidth = 250;
 
@@ -34,4 +34,5 @@ export const PAGE_LABEL_MAP = Object.freeze({
   [UiPage.ReleaseNotes]: "What's new",
   [UiPage.TestVerdict]: 'Test verdict',
   [UiPage.TreeStatus]: 'Tree status',
+  [UiPage.RecentRegressions]: 'Recent regressions',
 });
