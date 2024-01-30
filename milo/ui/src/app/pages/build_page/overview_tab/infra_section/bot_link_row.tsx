@@ -15,13 +15,20 @@
 import { MiloLink } from '@/common/components/link';
 import { BuildInfraSwarming } from '@/common/services/buildbucket';
 import { getBotLink } from '@/common/tools/build_utils';
+import { StringPair } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 export interface BotLinkRowProps {
   readonly swarming: BuildInfraSwarming;
 }
 
 export function BotLinkRow({ swarming }: BotLinkRowProps) {
-  const botLink = swarming ? getBotLink(swarming) : null;
+  const botLink = swarming
+    ? getBotLink({
+        botDimensions:
+          swarming.botDimensions?.map((d) => StringPair.fromPartial(d)) || [],
+        hostname: swarming.hostname,
+      })
+    : null;
 
   return (
     <tr>

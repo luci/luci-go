@@ -28,12 +28,14 @@ import {
 import { getBotUrl } from '@/swarming/tools/utils';
 
 // getBotLink generates a link to a swarming bot.
-export function getBotLink(swarming: BuildInfra_Swarming): Link | null {
-  for (const dim of swarming.botDimensions || []) {
+export function getBotLink(
+  swarming: Pick<BuildInfra_Swarming, 'botDimensions' | 'hostname'>,
+): Link | null {
+  for (const dim of swarming.botDimensions) {
     if (dim.key === 'id') {
       return {
-        label: dim.value || '',
-        url: getBotUrl(swarming.hostname, dim.value || ''),
+        label: dim.value,
+        url: getBotUrl(swarming.hostname, dim.value),
         ariaLabel: `swarming bot ${dim.value}`,
       };
     }
