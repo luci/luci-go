@@ -18,9 +18,9 @@ import (
 	"context"
 	"math"
 	"sort"
+	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/dispatcher"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -55,13 +57,39 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 	}
 
 	cutoff := clock.Now(ctx).Add(-retentionPeriod).UTC()
+	dc, err := dispatcher.NewChannel(ctx, &dispatcher.Options{
+		DropFn: dispatcher.DropFnQuiet,
+		Buffer: buffer.Options{
+			MaxLeases:     10,
+			BatchItemsMax: runsPerTask,
+			FullBehavior:  &buffer.InfiniteGrowth{},
+			Retry:         retry.Default,
+		},
+	}, func(b *buffer.Batch) error {
+		runIDStrs := make(sort.StringSlice, len(b.Data))
+		for i, item := range b.Data {
+			runIDStrs[i] = string(item.Item.(common.RunID))
+		}
+		sort.Sort(runIDStrs)
+		task := &tq.Task{
+			Payload: &WipeoutRunsTask{
+				Ids: runIDStrs,
+			},
+			Delay: common.DistributeOffset(16*time.Hour, runIDStrs...),
+		}
+		return tqd.AddTask(ctx, task)
+	})
+	if err != nil {
+		panic(errors.Annotate(err, "failed to create dispatcher to schedule wipeout tasks"))
+	}
 
-	eg, ectx := errgroup.WithContext(ctx) // for cloud task scheduling
-	eg.SetLimit(10)
+	var wg sync.WaitGroup
+	wg.Add(len(projects))
 	poolErr := parallel.WorkPool(min(8, len(projects)), func(workCh chan<- func() error) {
 		for _, proj := range projects {
 			proj := proj
 			workCh <- func() error {
+				defer wg.Done()
 				runs, err := findRunsToWipeoutForProject(ctx, proj, cutoff)
 				switch {
 				case err != nil:
@@ -70,33 +98,16 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 					return nil
 				}
 				logging.Infof(ctx, "found %d runs to wipeout for project %q", len(runs), proj)
-				for _, runIDs := range chunk(runs, runsPerTask) {
-					runIDStrs := make(sort.StringSlice, len(runIDs))
-					for i, runID := range runIDs {
-						runIDStrs[i] = string(runID)
-					}
-					sort.Sort(runIDStrs)
-					task := &tq.Task{
-						Payload: &WipeoutRunsTask{
-							Ids: runIDStrs,
-						},
-						Delay: common.DistributeOffset(16*time.Hour, runIDStrs...),
-					}
-					eg.Go(func() error {
-						return retry.Retry(ectx, retry.Default, func() error {
-							return tqd.AddTask(ectx, task)
-						}, nil)
-					})
+				for _, r := range runs {
+					dc.C <- r
 				}
 				return nil
 			}
 		}
 	})
-	if poolErr != nil {
-		_ = eg.Wait()
-		return poolErr
-	}
-	return eg.Wait()
+	wg.Wait()
+	dc.CloseAndDrain(ctx)
+	return poolErr
 }
 
 func findRunsToWipeoutForProject(ctx context.Context, proj string, cutoff time.Time) (common.RunIDs, error) {
