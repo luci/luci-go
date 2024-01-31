@@ -163,7 +163,7 @@ func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer
 		results = append(results, bqSegment)
 	}
 
-	// Add the finalizing segments.
+	// Add the finalized segments.
 	if tvb.FinalizedSegments != nil {
 		// More recent segments are on the back.
 		for i := len(tvb.FinalizedSegments.Segments) - 1; i >= 0; i-- {

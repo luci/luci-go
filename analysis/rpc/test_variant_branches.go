@@ -27,7 +27,9 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -35,10 +37,7 @@ import (
 // NewTestVariantBranchesServer returns a new pb.TestVariantBranchesServer.
 func NewTestVariantBranchesServer() pb.TestVariantBranchesServer {
 	return &pb.DecoratedTestVariantBranches{
-		// Currently, we only allow LUCI Analysis admins to use this API.
-		// In the future, if this end point is used for the UI, we should
-		// have proper ACL check.
-		Prelude:  checkAllowedAdminPrelude,
+		Prelude:  checkAllowedPrelude,
 		Service:  &testVariantBranchesServer{},
 		Postlude: gRPCifyAndLogPostlude,
 	}
@@ -49,8 +48,14 @@ type testVariantBranchesServer struct {
 }
 
 // Get fetches Spanner for test variant analysis.
-func (*testVariantBranchesServer) Get(ctx context.Context, req *pb.GetTestVariantBranchRequest) (*pb.TestVariantBranch, error) {
-	tvbk, err := validateGetTestVariantBranchRequest(req)
+func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTestVariantBranchRequest) (*pb.TestVariantBranchRaw, error) {
+	// Currently, we only allow LUCI Analysis admins to use this API.
+	// In the future, if this end point is used for the UI, we should
+	// have proper ACL check.
+	if err := checkAllowed(ctx, luciAnalysisAdminGroup); err != nil {
+		return nil, err
+	}
+	tvbk, err := validateGetRawTestVariantBranchRequest(req)
 	if err != nil {
 		return nil, invalidArgumentError(err)
 	}
@@ -70,14 +75,73 @@ func (*testVariantBranchesServer) Get(ctx context.Context, req *pb.GetTestVarian
 		return nil, appstatus.Error(codes.NotFound, "analysis not found")
 	}
 	// Convert to proto.
-	analysis, err := testVariantBranchToProto(tvbs[0])
+	analysis, err := toTestVariantBranchRawProto(tvbs[0])
 	if err != nil {
 		return nil, errors.Annotate(err, "build proto").Err()
 	}
 	return analysis, nil
 }
 
-func validateGetTestVariantBranchRequest(req *pb.GetTestVariantBranchRequest) (testvariantbranch.Key, error) {
+// BatchGet returns current state of segments for test variant branches.
+func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGetTestVariantBranchRequest) (*pb.BatchGetTestVariantBranchResponse, error) {
+	// Currently, we only allow Googlers to use this API.
+	// TODO: implement proper ACL check with realms.
+	if err := checkAllowed(ctx, googlerOnlyGroup); err != nil {
+		return nil, err
+	}
+	if err := validateBatchGetTestVariantBranchRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+	keys := make([]testvariantbranch.Key, 0, len(req.Names))
+	for _, name := range req.Names {
+		project, testID, variantHash, refHash, err := parseTestVariantBranchName(name)
+		if err != nil {
+			return nil, err
+		}
+		refHashBytes, err := hex.DecodeString(refHash)
+		if err != nil {
+			// This line is unreachable as ref hash should be validated already.
+			return nil, errors.Reason("ref hash must be an encoded hexadecimal string").Err()
+		}
+		keys = append(keys, testvariantbranch.Key{
+			Project:     project,
+			TestID:      testID,
+			VariantHash: variantHash,
+			RefHash:     testvariantbranch.RefHash(refHashBytes),
+		})
+	}
+
+	txn, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	tvbs, err := testvariantbranch.Read(txn, keys)
+	if err != nil {
+		return nil, errors.Annotate(err, "read test variant branch").Err()
+	}
+	tvbpbs := make([]*pb.TestVariantBranch, 0, len(req.Names))
+	var analysis changepoints.Analyzer
+	for _, tvb := range tvbs {
+		if tvb == nil {
+			tvbpbs = append(tvbpbs, nil)
+			continue
+		}
+		refHash := hex.EncodeToString(tvb.RefHash)
+		tvbpbs = append(tvbpbs, &pb.TestVariantBranch{
+			Name:        testVariantBranchName(tvb.Project, tvb.TestID, tvb.VariantHash, refHash),
+			Project:     tvb.Project,
+			TestId:      tvb.TestID,
+			VariantHash: tvb.VariantHash,
+			RefHash:     refHash,
+			Variant:     tvb.Variant,
+			Ref:         tvb.SourceRef,
+			Segments:    toSegmentsProto(tvb, analysis),
+		})
+	}
+	return &pb.BatchGetTestVariantBranchResponse{
+		TestVariantBranches: tvbpbs,
+	}, nil
+}
+
+func validateGetRawTestVariantBranchRequest(req *pb.GetRawTestVariantBranchRequest) (testvariantbranch.Key, error) {
 	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Name)
 	if err != nil {
 		return testvariantbranch.Key{}, errors.Annotate(err, "name").Err()
@@ -96,7 +160,7 @@ func validateGetTestVariantBranchRequest(req *pb.GetTestVariantBranchRequest) (t
 	}, nil
 }
 
-func testVariantBranchToProto(tvb *testvariantbranch.Entry) (*pb.TestVariantBranch, error) {
+func toTestVariantBranchRawProto(tvb *testvariantbranch.Entry) (*pb.TestVariantBranchRaw, error) {
 	var finalizedSegments *anypb.Any
 	var finalizingSegment *anypb.Any
 	var statistics *anypb.Any
@@ -128,7 +192,7 @@ func testVariantBranchToProto(tvb *testvariantbranch.Entry) (*pb.TestVariantBran
 	}
 
 	refHash := hex.EncodeToString(tvb.RefHash)
-	result := &pb.TestVariantBranch{
+	result := &pb.TestVariantBranchRaw{
 		Name:              testVariantBranchName(tvb.Project, tvb.TestID, tvb.VariantHash, refHash),
 		Project:           tvb.Project,
 		TestId:            tvb.TestID,
@@ -181,4 +245,113 @@ func toInputBufferProto(history inputbuffer.History) *pb.InputBuffer {
 		result.Verdicts = append(result.Verdicts, pv)
 	}
 	return result
+}
+
+// toSegmentsProto returns the proto segments.
+// The segments returned will be sorted, with the most recent segment
+// comes first.
+func toSegmentsProto(tvb *testvariantbranch.Entry, analysis changepoints.Analyzer) []*pb.Segment {
+	// Run analysis to get segments from the input buffer.
+	inputSegments := analysis.Run(tvb)
+	results := []*pb.Segment{}
+
+	// The index where the active segments starts.
+	// If there is a finalizing segment, then the we need to first combine it will
+	// the first segment from the input buffer.
+	activeStartIndex := 0
+	if tvb.FinalizingSegment != nil {
+		activeStartIndex = 1
+	}
+
+	// Add the active segments.
+	for i := len(inputSegments) - 1; i >= activeStartIndex; i-- {
+		inputSegment := inputSegments[i]
+		bqSegment := inputSegmentToBQSegment(inputSegment)
+		results = append(results, bqSegment)
+	}
+
+	// Add the finalizing segment.
+	if tvb.FinalizingSegment != nil {
+		bqSegment := combineSegment(tvb.FinalizingSegment, inputSegments[0])
+		results = append(results, bqSegment)
+	}
+
+	// Add the finalized segments.
+	if tvb.FinalizedSegments != nil {
+		// More recent segments are on the back.
+		for i := len(tvb.FinalizedSegments.Segments) - 1; i >= 0; i-- {
+			segment := tvb.FinalizedSegments.Segments[i]
+			bqSegment := segmentToBQSegment(segment)
+			results = append(results, bqSegment)
+		}
+	}
+
+	return results
+}
+
+// combineSegment constructs a finalizing segment from its finalized part in
+// the output buffer and its unfinalized part in the input buffer.
+func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Segment) *pb.Segment {
+	return &pb.Segment{
+		HasStartChangepoint:          finalizingSegment.HasStartChangepoint,
+		StartPosition:                finalizingSegment.StartPosition,
+		StartHour:                    timestamppb.New(finalizingSegment.StartHour.AsTime()),
+		StartPositionLowerBound_99Th: finalizingSegment.StartPositionLowerBound_99Th,
+		StartPositionUpperBound_99Th: finalizingSegment.StartPositionUpperBound_99Th,
+		EndPosition:                  inputSegment.EndPosition,
+		EndHour:                      timestamppb.New(inputSegment.EndHour.AsTime()),
+		Counts:                       countsToBQCounts(testvariantbranch.AddCounts(finalizingSegment.FinalizedCounts, inputSegment.Counts)),
+	}
+}
+
+func inputSegmentToBQSegment(segment *inputbuffer.Segment) *pb.Segment {
+	return &pb.Segment{
+		HasStartChangepoint:          segment.HasStartChangepoint,
+		StartPosition:                segment.StartPosition,
+		StartPositionLowerBound_99Th: segment.StartPositionLowerBound99Th,
+		StartPositionUpperBound_99Th: segment.StartPositionUpperBound99Th,
+		StartHour:                    timestamppb.New(segment.StartHour.AsTime()),
+		EndPosition:                  segment.EndPosition,
+		EndHour:                      timestamppb.New(segment.EndHour.AsTime()),
+		Counts:                       countsToBQCounts(segment.Counts),
+	}
+}
+
+func segmentToBQSegment(segment *cpb.Segment) *pb.Segment {
+	return &pb.Segment{
+		HasStartChangepoint:          segment.HasStartChangepoint,
+		StartPosition:                segment.StartPosition,
+		StartPositionLowerBound_99Th: segment.StartPositionLowerBound_99Th,
+		StartPositionUpperBound_99Th: segment.StartPositionUpperBound_99Th,
+		StartHour:                    timestamppb.New(segment.StartHour.AsTime()),
+		EndPosition:                  segment.EndPosition,
+		EndHour:                      timestamppb.New(segment.EndHour.AsTime()),
+		Counts:                       countsToBQCounts(segment.FinalizedCounts),
+	}
+}
+
+func countsToBQCounts(counts *cpb.Counts) *pb.Segment_Counts {
+	return &pb.Segment_Counts{
+		TotalVerdicts:      int32(counts.TotalVerdicts),
+		UnexpectedVerdicts: int32(counts.UnexpectedVerdicts),
+		FlakyVerdicts:      int32(counts.FlakyVerdicts),
+	}
+}
+
+func validateBatchGetTestVariantBranchRequest(req *pb.BatchGetTestVariantBranchRequest) error {
+	// MaxTestVariantBranch is the maximum number of test variant branches to be queried in one request.
+	const MaxTestVariantBranch = 100
+
+	if len(req.Names) == 0 {
+		return errors.Reason("names: unspecified").Err()
+	}
+	if len(req.Names) > MaxTestVariantBranch {
+		return errors.Reason("names: no more than %v may be queried at a time", MaxTestVariantBranch).Err()
+	}
+	for _, name := range req.Names {
+		if _, _, _, _, err := parseTestVariantBranchName(name); err != nil {
+			return errors.Annotate(err, "name %s", name).Err()
+		}
+	}
+	return nil
 }

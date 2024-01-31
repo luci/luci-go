@@ -24,21 +24,24 @@ import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
-// For reading test variant branch analyses from Spanner.
-// At the moment, this enables us to inspect the state of a test variant branch
-// analysis in Spanner (which cannot easily inspected using SQL queries,
-// because the data is encoded).
-// This is currently only for LUCI Analysis admin users.
-// In the future, it may be used for displaying the test variant branch
-// analyses in the UI, etc.
+
+// Provide methods to read changepoint analysis from spanner.
 service TestVariantBranches {
-  // Retrieves the current state of test variant branch analysis.
-  rpc Get(GetTestVariantBranchRequest) returns (
-    TestVariantBranch) {};
+  // Retrieves the raw state of test variant branch analysis.
+  // For reading test variant branch analyses from Spanner.
+  // This enables us to inspect the state of a test variant branch
+  // analysis in Spanner (which cannot easily inspected using SQL queries,
+  // because the data is encoded).
+  // This is currently only for LUCI Analysis admin users.
+  rpc GetRaw(GetRawTestVariantBranchRequest) returns (
+    TestVariantBranchRaw) {};
+  // Retrieves the current state of segments of test variant branch analysis in batches.
+  rpc BatchGet(BatchGetTestVariantBranchRequest) returns (
+    BatchGetTestVariantBranchResponse) {};
 }
 
 // A request message for `TestVariantBranches.Get` RPC.
-message GetTestVariantBranchRequest {
+message GetRawTestVariantBranchRequest {
   // The name of the test variant branch.
   // It MUST be of the form projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}
   // where:
@@ -51,8 +54,8 @@ message GetTestVariantBranchRequest {
     [(google.api.field_behavior) = REQUIRED];
 }
 
-// Represents changepoint analysis for a particular (project, test, variant, ref).
-message TestVariantBranch {
+// Represents changepoint analysis raw data for a particular (project, test, variant, ref) in spanner.
+message TestVariantBranchRaw {
   // The name of the test variant branch.
   // Of the form projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}
   // where:
@@ -172,4 +175,144 @@ message PositionVerdict {
     bool is_duplicate = 9;
   }
   repeated Run runs = 4;
+}
+
+// A request message for `TestVariantBranches.BatchGet` RPC.
+message BatchGetTestVariantBranchRequest {
+  // The name of the test variant branch.
+  // It MUST be of the form projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}
+  // where:
+  // PROJECT is the LUCI Project of the test variant branch analysis.
+  // URL_ESCAPED_TEST_ID is the test ID, escaped with
+  // https://golang.org/pkg/net/url/#PathEscape. See also https://aip.dev/122.
+  // VARIANT_HASH is the variant hash of the test variant analysis (16 lower-case-character hex string).
+  // REF_HASH is the identity of the branch of the analysis. It is a 16 lower-case-character hex string.
+   // Maximum of 100 can be retrieved, otherwise this RPC will return error.
+  repeated string names = 1
+    [(google.api.field_behavior) = REQUIRED];
+}
+
+message BatchGetTestVariantBranchResponse {
+  // The return list will have the same length and order as request names list.
+  // If a record is not found, the corresponding element will be set to nil.
+  repeated TestVariantBranch test_variant_branches = 1;
+}
+
+// Represents changepoint analysis for a particular (project, test, variant, ref).
+message TestVariantBranch {
+  // The name of the test variant branch.
+  // Of the form projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}
+  // where:
+  // PROJECT is the LUCI Project of the test variant branch analysis.
+  // URL_ESCAPED_TEST_ID is the test ID, escaped with
+  // https://golang.org/pkg/net/url/#PathEscape. See also https://aip.dev/122.
+  // VARIANT_HASH is the variant hash of the test variant analysis (16 lower-case-character hex string).
+  // REF_HASH is the identity of the branch of the analysis. It is a 16 lower-case-character hex string.
+  string name = 1;
+
+  // The LUCI Project. E.g. "chromium".
+  string project = 2;
+
+  // The identity of the test.
+  string test_id = 3;
+
+  // Hash of the variant, as 16 lowercase hexadecimal characters.
+  // E.g. "96c68dc946ab4068".
+  string variant_hash = 4;
+
+  // Hash of the source branch, as 16 lowercase hexadecimal characters.
+  string ref_hash = 5;
+
+  // key:value pairs to specify the way of running a particular test.
+  // e.g. a specific bucket, builder and a test suite.
+  luci.analysis.v1.Variant variant = 6;
+
+  // The branch in source control.
+  luci.analysis.v1.SourceRef ref = 7;
+
+  // The test history represented as a set of [start commit position,
+  // end commit position] segments, where segments have statistically
+  // different failure and/or flake rates. The segments are ordered so that
+  // the most recent segment appears first.
+  // If a client is only interested in the current failure/flake rate, they
+  // can just query the first segment.
+  repeated Segment segments = 8;
+}
+
+
+// Represents a period in history where the test had a consistent failure and
+// flake rate. Segments are separated by changepoints. Each segment captures
+// information about the changepoint which started it.
+// Same structure with bigquery proto here, but make a separate copy to allow it to evolve over time.
+// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/bq/test_variant_branch_row.proto;l=80
+message Segment {
+  // If set, means the segment commenced with a changepoint.
+  // If unset, means the segment began with the beginning of recorded
+  // history for the segment. (All recorded history for a test variant branch
+  // is deleted after 90 days of no results, so this means there were
+  // no results for at least 90 days before the segment.)
+  bool has_start_changepoint = 1;
+
+  // The nominal commit position at which the segment starts (inclusive).
+  // Guaranteed to be strictly greater than the end_position of the
+  // chronologically previous segment (if any).
+  // If this segment has a starting changepoint, this is the nominal position
+  // of the changepoint (when the new test behaviour started).
+  // If this segment does not have a starting changepoint, this is the
+  // simply the first commit position in the known history of the test.
+  int64 start_position = 2;
+
+  // The lower bound of the starting changepoint position in a 99% two-tailed
+  // confidence interval. Inclusive.
+  // Only set if has_start_changepoint is set.
+  int64 start_position_lower_bound_99th = 3;
+
+  // The upper bound of the starting changepoint position in a 99% two-tailed
+  // confidence interval. Inclusive.
+  // Only set if has_start_changepoint is set.
+  // When has_start_changepoint is set, the following invariant holds:
+  // previous_segment.start_position <= start_position_lower_bound_99th <= start_position <= start_position_upper_bound_99th
+  // where previous_segment refers to the chronologically previous segment.
+  int64 start_position_upper_bound_99th = 4;
+
+  // The earliest hour a test verdict at the indicated start_position
+  // was recorded. Gives an approximate upper bound on the timestamp the
+  // changepoint occurred, for systems which need to filter by date.
+  google.protobuf.Timestamp start_hour = 5;
+
+  // The nominal commit position at which the segment ends (inclusive).
+  // This is either the last recorded commit position in the test history
+  // (for this test variant branch), or the position of the last verdict
+  // seen before the next detected changepoint.
+  int64 end_position = 6;
+
+  // The earliest hour a test verdict at the indicated end_position
+  // was recorded. Gives an approximate lower bound on the  timestamp
+  // the changepoint occurred, for systems which need to filter by date.
+  google.protobuf.Timestamp end_hour = 7;
+
+  // Counts of verdicts over a time period. Includes only
+  // test verdicts for submitted code changes. This is defined as:
+  // (1) where the code under test was already submitted when the test ran
+  //       (e.g. postsubmit builders)
+  // (2) where the code under test was not submitted at the time the test ran,
+  //     but was submitted immediately after (e.g. because the tests ran as part
+  //     of a tryjob, the presubmit run the tryjob was triggered by succeeded,
+  //     and submitted code as a result).
+  //     Currently, when test results lead to CL submission via recycled CQ runs,
+  //     they are not counted.
+  // Statistics for test results and test runs can be added here when needed.
+  message Counts {
+    // The number of verdicts with only unexpected test results.
+    int32 unexpected_verdicts = 1;
+
+    // The number of verdicts with a mix of expected and unexpected test results.
+    int32 flaky_verdicts = 2;
+
+    // The total number of verdicts.
+    int32 total_verdicts = 3;
+  }
+
+  // Total number of test results/runs/verdicts in the segment.
+  Counts counts = 8;
 }

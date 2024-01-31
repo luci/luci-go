@@ -23,19 +23,36 @@ type DecoratedTestVariantBranches struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedTestVariantBranches) Get(ctx context.Context, req *GetTestVariantBranchRequest) (rsp *TestVariantBranch, err error) {
+func (s *DecoratedTestVariantBranches) GetRaw(ctx context.Context, req *GetRawTestVariantBranchRequest) (rsp *TestVariantBranchRaw, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "Get", req)
+		newCtx, err = s.Prelude(ctx, "GetRaw", req)
 		if err == nil {
 			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.Get(ctx, req)
+		rsp, err = s.Service.GetRaw(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(ctx, "Get", rsp, err)
+		err = s.Postlude(ctx, "GetRaw", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedTestVariantBranches) BatchGet(ctx context.Context, req *BatchGetTestVariantBranchRequest) (rsp *BatchGetTestVariantBranchResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchGet", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchGet(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchGet", rsp, err)
 	}
 	return
 }
