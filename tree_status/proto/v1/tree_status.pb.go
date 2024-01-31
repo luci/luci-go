@@ -118,7 +118,9 @@ type GetStatusRequest struct {
 	//
 	// If you request the 'latest' status and no status updates are in the
 	// database (possibly due to the 140 day TTL), a fallback status will
-	// be returned with general_status OPEN.
+	// be returned with general_state OPEN.  You can tell that the fallback
+	// status was returned by checking the name which will be
+	// 'trees/{tree}/status/fallback', which is otherwise not a valid name.
 	//
 	// Format: trees/{tree}/status/{id}
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
