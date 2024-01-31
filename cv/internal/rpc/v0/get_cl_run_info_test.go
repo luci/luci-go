@@ -60,11 +60,15 @@ func TestGetCLRunInfo(t *testing.T) {
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:admin@example.com",
-			IdentityGroups: []string{acls.V0APIAllowGroup},
+			IdentityGroups: []string{acls.V0APIAllowGroup, common.InstantTriggerDogfooderGroup},
 			UserExtra: &gerritauth.AssertedInfo{
 				Change: gerritauth.AssertedChange{
 					Host:         host,
 					ChangeNumber: 1,
+				},
+				User: gerritauth.AssertedUser{
+					AccountID:      12345,
+					PreferredEmail: "admin@example.com",
 				},
 			},
 		})
@@ -85,8 +89,14 @@ func TestGetCLRunInfo(t *testing.T) {
 						Host:         host,
 						ChangeNumber: 1,
 					},
+					User: gerritauth.AssertedUser{
+						AccountID:      12345,
+						PreferredEmail: "admin@example.com",
+					},
 				},
 			})
+			ct.ResetMockedAuthDB(ctx)
+			ct.AddMember("admin@example.com", common.InstantTriggerDogfooderGroup)
 			_, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
 			// NotFound because we haven't put anything in the datastore yet.
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
@@ -252,8 +262,32 @@ func TestGetCLRunInfo(t *testing.T) {
 					Runs:         []*apiv0pb.GetCLRunInfoResponse_RunInfo{},
 				},
 			})
-		})
 
-		// TODO(crbug.com/1486976): Create more tests as implementation progresses.
+			Convey("return empty response for non-dogfooder", func() {
+				ct.ResetMockedAuthDB(ctx)
+				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
+				So(err, ShouldBeNil)
+				So(resp.GetRunsAsOrigin(), ShouldBeEmpty)
+				So(resp.GetRunsAsDep(), ShouldBeEmpty)
+				So(resp.GetDepChangeInfos(), ShouldBeEmpty)
+			})
+			Convey("return empty response if user email is missing in jwt", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:admin@example.com",
+					IdentityGroups: []string{acls.V0APIAllowGroup, common.InstantTriggerDogfooderGroup},
+					UserExtra: &gerritauth.AssertedInfo{
+						Change: gerritauth.AssertedChange{
+							Host:         host,
+							ChangeNumber: 1,
+						},
+					},
+				})
+				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
+				So(err, ShouldBeNil)
+				So(resp.GetRunsAsOrigin(), ShouldBeEmpty)
+				So(resp.GetRunsAsDep(), ShouldBeEmpty)
+				So(resp.GetDepChangeInfos(), ShouldBeEmpty)
+			})
+		})
 	})
 }

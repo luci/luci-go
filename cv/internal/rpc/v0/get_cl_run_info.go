@@ -22,7 +22,9 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/gerritauth"
@@ -53,6 +55,19 @@ func (g *GerritIntegrationServer) GetCLRunInfo(ctx context.Context, req *apiv0pb
 		jwtChange := gerritInfo.Change
 		if jwtChange.Host+"-review.googlesource.com" != gc.GetHost() || jwtChange.ChangeNumber != gc.GetChange() {
 			return nil, appstatus.Errorf(codes.InvalidArgument, "JWT change does not match GerritChange %v: got %s/%d", gc, jwtChange.Host, jwtChange.ChangeNumber)
+		}
+
+		preferredEmail := gerritInfo.User.PreferredEmail
+		if preferredEmail == "" {
+			logging.Warningf(ctx, "jwt provided but user preferred email is missing")
+			return &apiv0pb.GetCLRunInfoResponse{}, nil
+		}
+		userID, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, preferredEmail))
+		if err != nil {
+			return nil, appstatus.Attachf(err, codes.InvalidArgument, "failed to construct user identity")
+		}
+		if !common.IsInstantTriggerDogfooder(ctx, userID) {
+			return &apiv0pb.GetCLRunInfoResponse{}, nil
 		}
 	}
 
