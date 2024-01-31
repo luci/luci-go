@@ -32,6 +32,8 @@ import (
 )
 
 func TestScheduleWipeoutRuns(t *testing.T) {
+	t.Parallel()
+
 	Convey("Schedule wipeout runs tasks", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
