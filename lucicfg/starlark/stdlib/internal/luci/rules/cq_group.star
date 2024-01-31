@@ -208,7 +208,11 @@ def _cq_group(
             default = cq.ACTION_NONE,
             required = False,
         ),
-        "trust_dry_runner_deps": trust_dry_runner_deps,
+        "trust_dry_runner_deps": validate.bool(
+            "trust_dry_runner_deps",
+            trust_dry_runner_deps,
+            required = False,
+        ),
         "allow_non_owner_dry_runner": validate.bool(
             "allow_non_owner_dry_runner",
             allow_non_owner_dry_runner,
