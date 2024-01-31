@@ -17,6 +17,13 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { BuilderTable } from '@/build/components/builder_table';
+import {
+  filterUpdater,
+  getFilter,
+  getNumOfBuilds,
+  numOfBuildsUpdater,
+} from '@/build/tools/search_param_utils';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
@@ -28,42 +35,7 @@ import {
   ListBuildersRequest,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
 
-import { BuilderGroupIdBar } from './builder_group_id_bar';
-import { BuilderTable } from './builder_table';
-
-const DEFAULT_NUM_OF_BUILDS = 25;
-
-function getNumOfBuilds(params: URLSearchParams) {
-  return Number(params.get('numOfBuilds')) || DEFAULT_NUM_OF_BUILDS;
-}
-
-function numOfBuildsUpdater(newNumOfBuilds: number) {
-  return (params: URLSearchParams) => {
-    const searchParams = new URLSearchParams(params);
-    if (newNumOfBuilds === DEFAULT_NUM_OF_BUILDS) {
-      searchParams.delete('numOfBuilds');
-    } else {
-      searchParams.set('numOfBuilds', String(newNumOfBuilds));
-    }
-    return searchParams;
-  };
-}
-
-function getFilter(params: URLSearchParams) {
-  return params.get('q') || '';
-}
-
-function filterUpdater(newSearchQuery: string) {
-  return (params: URLSearchParams) => {
-    const searchParams = new URLSearchParams(params);
-    if (newSearchQuery === '') {
-      searchParams.delete('q');
-    } else {
-      searchParams.set('q', newSearchQuery);
-    }
-    return searchParams;
-  };
-}
+import { BuilderListIdBar } from './builder_list_id_bar';
 
 export function BuilderListPage() {
   const { project } = useParams();
@@ -130,7 +102,7 @@ export function BuilderListPage() {
         selectedPage={UiPage.Builders}
         title={`${project} | Builders`}
       />
-      <BuilderGroupIdBar project={project} />
+      <BuilderListIdBar project={project} />
       <LinearProgress
         value={100}
         variant={isLoading ? 'indeterminate' : 'determinate'}
@@ -169,7 +141,7 @@ export function BuilderListPage() {
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="builders">
+  <RecoverableErrorBoundary key="builder-list">
     <BuilderListPage />
   </RecoverableErrorBoundary>
 );

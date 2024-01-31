@@ -14,6 +14,7 @@
 
 import { act, render } from '@testing-library/react';
 
+import { BuilderTable } from '@/build/components/builder_table';
 import {
   BuilderID,
   BuilderItem,
@@ -25,13 +26,11 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuilderListPage } from './builder_list_page';
-import { BuilderTable } from './builder_table';
 
-jest.mock('./builder_table', () =>
-  self.createSelectiveMockFromModule<typeof import('./builder_table')>(
-    './builder_table',
-    ['BuilderTable'],
-  ),
+jest.mock('@/build/components/builder_table', () =>
+  self.createSelectiveMockFromModule<
+    typeof import('@/build/components/builder_table')
+  >('@/build/components/builder_table', ['BuilderTable']),
 );
 
 const builders = Array(25)

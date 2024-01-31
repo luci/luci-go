@@ -15,6 +15,7 @@
 import styled from '@emotion/styled';
 import { CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { getBuilderURLPath } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
@@ -107,10 +108,18 @@ export function BuilderStats({ builder }: BuilderStatsProps) {
 
   return (
     <Container>
-      <Link href={builderLink} className="stats-badge pending-cell">
+      <Link
+        component={RouterLink}
+        to={builderLink}
+        className="stats-badge pending-cell"
+      >
         {data?.pendingBuildCount || 0} pending
       </Link>
-      <Link href={builderLink} className="stats-badge running-cell">
+      <Link
+        component={RouterLink}
+        to={builderLink}
+        className="stats-badge running-cell"
+      >
         {data?.runningBuildCount || 0} running
       </Link>
     </Container>

@@ -16,11 +16,11 @@ import { Link } from '@mui/material';
 
 import { getProjectURLPath } from '@/common/tools/url_utils';
 
-export interface ProjectIdBarProps {
+export interface BuilderListIdBarProps {
   readonly project: string;
 }
 
-export function BuilderGroupIdBar({ project }: ProjectIdBarProps) {
+export function BuilderListIdBar({ project }: BuilderListIdBarProps) {
   return (
     <div
       css={{

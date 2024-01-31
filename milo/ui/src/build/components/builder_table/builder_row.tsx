@@ -14,6 +14,7 @@
 
 import { Link } from '@mui/material';
 import { styled } from '@mui/system';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { getBuilderURLPath } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
@@ -50,7 +51,7 @@ export function BuilderRow({
       }}
     >
       <td>
-        <Link href={getBuilderURLPath(builder)}>
+        <Link component={RouterLink} to={getBuilderURLPath(builder)}>
           {builder.project}/{builder.bucket}/{builder.builder}
         </Link>
       </td>

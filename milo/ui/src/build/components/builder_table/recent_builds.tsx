@@ -15,6 +15,7 @@
 import styled from '@emotion/styled';
 import { CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
 import { SpecifiedBuildStatus } from '@/build/types';
@@ -113,9 +114,10 @@ export function RecentBuilds({ builder }: RecentBuildsProps) {
           BUILD_STATUS_CLASS_MAP[build.status as SpecifiedBuildStatus];
         return (
           <Link
+            component={RouterLink}
             key={build.id}
             className={`cell build ${statusClass}-cell`}
-            href={getBuildURLPathFromBuildId(build.id)}
+            to={getBuildURLPathFromBuildId(build.id)}
             target="_blank"
             rel="noreferrer"
           />
