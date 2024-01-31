@@ -117,8 +117,11 @@ func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 			return
 		}
 		cleanUser(r.GetUploader(), keepEmail)
-		r.Description = ""
-		// TODO(crbug/1260615): erase commit message after CQDaemon is gone.
+		r.Description = "" // patchset title.
+		if c := r.GetCommit(); c != nil {
+			c.Message = ""
+			c.Author = nil
+		}
 		r.Files = nil
 	}
 
