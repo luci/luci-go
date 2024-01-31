@@ -97,7 +97,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 	})
 }
 
-func TestWipeoutRun(t *testing.T) {
+func TestWipeoutRuns(t *testing.T) {
 	t.Parallel()
 
 	Convey("Wipeout", t, func() {
@@ -130,8 +130,7 @@ func TestWipeoutRun(t *testing.T) {
 				Run: datastore.KeyForObj(ctx, r),
 			}
 			So(datastore.Put(ctx, cl1, cl2, log), ShouldBeNil)
-			err := wipeoutRun(ctx, r.ID)
-			So(err, ShouldBeNil)
+			So(wipeoutRuns(ctx, common.RunIDs{r.ID}), ShouldBeNil)
 			So(datastore.Get(ctx, r), ShouldErrLike, datastore.ErrNoSuchEntity)
 			So(datastore.Get(ctx, cl1), ShouldErrLike, datastore.ErrNoSuchEntity)
 			So(datastore.Get(ctx, cl2), ShouldErrLike, datastore.ErrNoSuchEntity)
@@ -141,14 +140,12 @@ func TestWipeoutRun(t *testing.T) {
 		Convey("handle run doesn't exist", func() {
 			createTime := ct.Clock.Now().Add(-2 * retentionPeriod).UTC()
 			rid := common.MakeRunID(lProject, createTime, 1, []byte("deadbeef"))
-			err := wipeoutRun(ctx, rid)
-			So(err, ShouldBeNil)
+			So(wipeoutRuns(ctx, common.RunIDs{rid}), ShouldBeNil)
 		})
 
 		Convey("handle run should still be retained", func() {
 			r := makeRun(ct.Clock.Now().Add(-retentionPeriod / 2).UTC())
-			err := wipeoutRun(ctx, r.ID)
-			So(err, ShouldBeNil)
+			So(wipeoutRuns(ctx, common.RunIDs{r.ID}), ShouldBeNil)
 			So(datastore.Get(ctx, r), ShouldBeNil)
 		})
 	})

@@ -146,12 +146,22 @@ func registerWipeoutRunsTask(tqd *tq.Dispatcher) {
 }
 
 // wipeoutRuns wipes out runs for the provided run IDs.
+//
+// skip runs that do not exist or are still in retention period.
 func wipeoutRuns(ctx context.Context, runIDs common.RunIDs) error {
+	runs, err := run.LoadRunsFromIDs(runIDs...).DoIgnoreNotFound(ctx)
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "failed to load runs").Tag(transient.Tag).Err()
+	case len(runs) == 0:
+		return nil
+	}
+
 	return parallel.WorkPool(min(10, len(runIDs)), func(workC chan<- func() error) {
-		for _, runID := range runIDs {
-			runID := runID
+		for _, r := range runs {
+			r := r
 			workC <- func() error {
-				return wipeoutRun(ctx, runID)
+				return wipeoutRun(ctx, r)
 			}
 		}
 	})
@@ -159,17 +169,10 @@ func wipeoutRuns(ctx context.Context, runIDs common.RunIDs) error {
 
 // wipeoutRun wipes out the given run if run is no longer in retention period.
 //
-// No-op if it doesn't exists or is still in the retention period.
-func wipeoutRun(ctx context.Context, runID common.RunID) error {
-	ctx = logging.SetField(ctx, "run", string(runID))
-	r := &run.Run{ID: runID}
-	switch err := datastore.Get(ctx, r); {
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		logging.Warningf(ctx, "run does not exist")
-		return nil
-	case err != nil:
-		return errors.Annotate(err, "failed to load run").Tag(transient.Tag).Err()
-	case !r.CreateTime.Before(clock.Now(ctx).Add(-retentionPeriod)):
+// No-op if the run is still in the retention period.
+func wipeoutRun(ctx context.Context, r *run.Run) error {
+	ctx = logging.SetField(ctx, "run", string(r.ID))
+	if !r.CreateTime.Before(clock.Now(ctx).Add(-retentionPeriod)) {
 		// skip if it is still in the retention period.
 		logging.Warningf(ctx, "WipeoutRun: too young to wipe out: %s < %s",
 			clock.Now(ctx).Sub(r.CreateTime), retentionPeriod)
@@ -197,6 +200,6 @@ func wipeoutRun(ctx context.Context, runID common.RunID) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to delete run entities and it's child entities in a transaction").Tag(transient.Tag).Err()
 	}
-	logging.Infof(ctx, "successfully wiped out run %s", runID)
+	logging.Infof(ctx, "successfully wiped out run %s", r.ID)
 	return nil
 }
