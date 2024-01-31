@@ -221,7 +221,7 @@ luci.builder(
     executable = "main/recipe",
     triggering_policy = scheduler.newest_first(
         max_concurrent_invocations = 2,
-        pending_timeout = 3*24*time.hour,
+        pending_timeout = 3 * 24 * time.hour,
     ),
     repo = "https://newest-first.repo.example.com",
 )
@@ -482,6 +482,7 @@ luci.cq_group(
     allow_submit_with_open_deps = True,
     allow_owner_if_submittable = cq.ACTION_COMMIT,
     trust_dry_runner_deps = True,
+    allow_non_owner_dry_runner = True,
     tree_status_host = "tree-status.example.com",
     verifiers = [
         luci.cq_tryjob_verifier(
@@ -635,6 +636,7 @@ lucicfg.emit(
 #       allow_submit_with_open_deps: true
 #       allow_owner_if_submittable: COMMIT
 #       trust_dry_runner_deps: true
+#       allow_non_owner_dry_runner: true
 #     }
 #     tree_status {
 #       url: "https://tree-status.example.com"

@@ -1131,6 +1131,7 @@ def _cq_config_group(cq_group, project):
         allow_submit_with_open_deps = cq_group.props.allow_submit_with_open_deps,
         allow_owner_if_submittable = cq_group.props.allow_owner_if_submittable,
         trust_dry_runner_deps = cq_group.props.trust_dry_runner_deps,
+        allow_non_owner_dry_runner = cq_group.props.allow_non_owner_dry_runner,
     )
     if not gerrit_cq_ability.committer_list:
         error("at least one CQ_COMMITTER acl.entry must be specified (either here or in luci.project)", trace = cq_group.trace)

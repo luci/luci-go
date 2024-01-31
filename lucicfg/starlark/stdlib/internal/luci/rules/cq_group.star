@@ -31,6 +31,7 @@ def _cq_group(
         allow_submit_with_open_deps = None,
         allow_owner_if_submittable = None,
         trust_dry_runner_deps = None,
+        allow_non_owner_dry_runner = None,
         tree_status_host = None,
         retry_config = None,
         cancel_stale_tryjobs = None,  # @unused
@@ -89,6 +90,9 @@ def _cq_group(
         are owned by members of the `acl.CQ_COMMITER` role. This allows CQ dry
         run on CLs with unapproved dependencies owned by members of
         `acl.CQ_DRY_RUNNER` role.
+      allow_non_owner_dry_runner: allow members of the `acl.CQ_DRY_RUNNER` role
+        to trigger DRY_RUN CQ on CLs that are owned by someone else, if all the
+        CL dependencies are trusted.
       tree_status_host: a hostname of the project tree status app (if any). It
         is used by the CQ to check the tree status before committing a CL. If
         the tree is closed, then the CQ will wait until it is reopened.
@@ -205,6 +209,11 @@ def _cq_group(
             required = False,
         ),
         "trust_dry_runner_deps": trust_dry_runner_deps,
+        "allow_non_owner_dry_runner": validate.bool(
+            "allow_non_owner_dry_runner",
+            allow_non_owner_dry_runner,
+            required = False,
+        ),
         "tree_status_host": validate.hostname("tree_status_host", tree_status_host, required = False),
         "retry_config": cqimpl.validate_retry_config(
             "retry_config",
