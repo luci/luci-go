@@ -70,18 +70,18 @@ message ChangepointGroupSummary {
 
 message ChangepointGroupStatistics {
   // The number of test variant branches in this group.
-  int64 count = 1;
+  int32 count = 1;
   message RateDistribution {
     // Average unexpected verdict rate of all test variant branches in the group. This is a value between 0.0 and 1.0.
     // Consequently, this is an ‘average of averages’.
     float average = 1;
     message RateBuckets {
       // Counts the number of test variant branches with a unexpected verdict rate less than 5% (exclusive).
-      int64 count_less_5_percent = 1;
+      int32 count_less_5_percent = 1;
       // Counts the number of test variant branches with a unexpected verdict rate greater than or equal to 5%, but less than 95%.
-      int64 count_above_5_less_than_95_percent = 2;
+      int32 count_above_5_less_than_95_percent = 2;
       // Counts the number of test variant branches with a unexpected verdict rate equal to or greater than 95%.
-      int64 count_above_95_percent = 3;
+      int32 count_above_95_percent = 3;
     }
     // Count the number of changepoint that fall into each rate bucket.
     RateBuckets buckets = 2;
@@ -99,11 +99,11 @@ message ChangepointGroupStatistics {
   // TODO: we need to add buckets for unexpected verdict rate decrease when we support grouping fixes. Unexpected verdict rate decrease will be represented as negative number.
   message RateChangeBuckets {
     // Counts the number of test variant branches which saw their unexpected verdict rate increase by between 0% (inclusive) and 20% (exclusive).
-    int64 count_increased_0_to_20_percent = 1;
+    int32 count_increased_0_to_20_percent = 1;
     // Counts the number of test variant branches which saw their unexpected verdict rate increase by between 20% (inclusive) and 50% (exclusive).
-    int64 count_increased_20_to_50_percent = 2;
+    int32 count_increased_20_to_50_percent = 2;
     // Counts the number of test variant branches which saw their unexpected verdict rate increase by between 50% (inclusive) or more.
-    int64 count_increased_50_to_100_percent = 3;
+    int32 count_increased_50_to_100_percent = 3;
   }
   // The amount of change in unexpected verdict rate before and after the changepoint.
   RateChangeBuckets unexpected_verdict_rate_change = 5;

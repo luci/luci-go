@@ -239,7 +239,7 @@ func toChangepointGroupSummary(group []*changepoints.ChangepointRow) *pb.Changep
 	return &pb.ChangepointGroupSummary{
 		CanonicalChangepoint: toPBChangepoint(canonical),
 		Statistics: &pb.ChangepointGroupStatistics{
-			Count:                        int64(len(group)),
+			Count:                        int32(len(group)),
 			UnexpectedVerdictRateBefore:  aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedVerdictRateBefore }),
 			UnexpectedVerdictRateAfter:   aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedVerdictRateAfter }),
 			UnexpectedVerdictRateCurrent: aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedVerdictRateCurrent }),
