@@ -17,14 +17,16 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/gerritauth"
@@ -111,56 +113,38 @@ func queryDepChangeInfos(ctx context.Context, cl *changelist.CL) ([]*apiv0pb.Get
 
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.SetLimit(8)
-	infos := make([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo, len(cl.Snapshot.Deps))
-	for i, dep := range cl.Snapshot.Deps {
-		i, dep := i, dep // See https://go.dev/blog/loopvar-preview for why this is needed before Go 1.22.
+	infos := make([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo, 0, len(cl.Snapshot.Deps))
+	var infosMu sync.Mutex
+	for _, dep := range cl.Snapshot.Deps {
+		dep := dep // See https://go.dev/blog/loopvar-preview for why this is needed before Go 1.22.
 
 		eg.Go(func() error {
-			var wg sync.WaitGroup
-			wg.Add(2)
 			depClid := common.CLID(dep.Clid)
 
-			// Query for runs.
-			var runs []*run.Run
-			var errs errors.MultiError
-			var errsMu sync.Mutex
-			go func() {
-				defer wg.Done()
-				qb := runquery.CLQueryBuilder{CLID: depClid}
-				var err error
-				runs, _, err = qb.LoadRuns(ectx)
-				errsMu.Lock()
-				errs.MaybeAdd(err)
-				errsMu.Unlock()
-			}()
-
-			// Query for Gerrit CL info.
-			var depCl *changelist.CL
-			go func() {
-				defer wg.Done()
-				depCl = &changelist.CL{ID: depClid}
-				err := datastore.Get(ectx, depCl)
-				errsMu.Lock()
-				errs.MaybeAdd(err)
-				errsMu.Unlock()
-			}()
-
-			wg.Wait()
-			if err := common.MostSevereError(errs); err != nil {
+			depCl := &changelist.CL{ID: depClid}
+			if err := datastore.Get(ectx, depCl); err != nil {
 				return err
 			}
-
 			gerrit := depCl.Snapshot.GetGerrit()
-			if gerrit == nil {
+			switch {
+			case gerrit == nil:
 				return fmt.Errorf("dep CL %d has non-Gerrit snapshot", depClid)
+			case gerrit.GetInfo().GetStatus() != gerritpb.ChangeStatus_NEW:
+				return nil // only returns active CLs
 			}
 
+			// Query for runs.
+			qb := runquery.CLQueryBuilder{CLID: depClid}
+			runs, _, err := qb.LoadRuns(ectx)
+			if err != nil {
+				return nil
+			}
 			runInfo, err := populateRunInfo(ectx, filterOngoingRuns(runs))
 			if err != nil {
 				return err
 			}
-
-			infos[i] = &apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
+			infosMu.Lock()
+			infos = append(infos, &apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
 				GerritChange: &apiv0pb.GerritChange{
 					Host:     gerrit.Host,
 					Change:   gerrit.Info.Number,
@@ -168,14 +152,21 @@ func queryDepChangeInfos(ctx context.Context, cl *changelist.CL) ([]*apiv0pb.Get
 				},
 				Runs:        runInfo,
 				ChangeOwner: gerrit.Info.Owner.Email,
-			}
+			})
+			infosMu.Unlock()
 			return nil
 		})
 	}
-
 	if err := eg.Wait(); err != nil {
 		return nil, appstatus.Errorf(codes.Internal, "%s", err)
 	}
+
+	sort.Slice(infos, func(i, j int) bool {
+		if infos[i].GetGerritChange().GetHost() == infos[j].GetGerritChange().GetHost() {
+			return infos[i].GetGerritChange().GetChange() < infos[j].GetGerritChange().GetChange()
+		}
+		return strings.Compare(infos[i].GetGerritChange().GetHost(), infos[j].GetGerritChange().GetHost()) < 0
+	})
 	return infos, nil
 }
 

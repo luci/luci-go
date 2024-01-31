@@ -103,6 +103,8 @@ type GetCLRunInfoResponse struct {
 	//
 	// If the developer ends up voting CQ+1/+2 on this CL, these would be all the
 	// CLs that will be involved in the Run.
+	//
+	// Note that only active CLs will be returned.
 	DepChangeInfos []*GetCLRunInfoResponse_DepChangeInfo `protobuf:"bytes,3,rep,name=dep_change_infos,json=depChangeInfos,proto3" json:"dep_change_infos,omitempty"`
 }
 

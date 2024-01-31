@@ -194,6 +194,7 @@ func TestGetCLRunInfo(t *testing.T) {
 								Email: owner,
 							},
 							Number: gc.Change,
+							Status: gerritpb.ChangeStatus_NEW,
 						},
 					},
 				},
@@ -263,6 +264,21 @@ func TestGetCLRunInfo(t *testing.T) {
 				},
 			})
 
+			Convey("skip submitted dep", func() {
+				cl, err := changelist.MustGobID(deps[0].GetHost(), deps[0].GetChange()).Load(ctx)
+				So(err, ShouldBeNil)
+				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
+				So(err, ShouldBeNil)
+				So(resp.DepChangeInfos, ShouldResemble, []*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
+					{
+						GerritChange: deps[1],
+						ChangeOwner:  owner,
+						Runs:         []*apiv0pb.GetCLRunInfoResponse_RunInfo{},
+					},
+				})
+			})
 			Convey("return empty response for non-dogfooder", func() {
 				ct.ResetMockedAuthDB(ctx)
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
