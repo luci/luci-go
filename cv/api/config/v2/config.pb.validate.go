@@ -2608,6 +2608,8 @@ func (m *Verifiers_GerritCQAbility) validate(all bool) error {
 
 	// no validation rules for TrustDryRunnerDeps
 
+	// no validation rules for AllowNonOwnerDryRunner
+
 	if len(errors) > 0 {
 		return Verifiers_GerritCQAbilityMultiError(errors)
 	}

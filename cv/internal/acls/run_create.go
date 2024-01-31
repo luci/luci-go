@@ -34,10 +34,11 @@ import (
 )
 
 const (
-	okButDueToOthers     = "CV cannot start a Run due to errors in the following CL(s)."
-	ownerNotCommitter    = "CV cannot start a Run for `%s` because the user is not a committer."
-	ownerNotDryRunner    = "CV cannot start a Run for `%s` because the user is not a dry-runner."
-	notOwnerNotCommitter = "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer."
+	okButDueToOthers                 = "CV cannot start a Run due to errors in the following CL(s)."
+	ownerNotCommitter                = "CV cannot start a Run for `%s` because the user is not a committer."
+	ownerNotDryRunner                = "CV cannot start a Run for `%s` because the user is not a dry-runner."
+	notOwnerNotCommitter             = "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer."
+	notOwnerNotCommitterNotDryRunner = "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer nor a dry-runner."
 
 	notSubmittable           = "CV cannot start a Run because this CL is not submittable. " + submitReqHint
 	notSubmittableWithReqs   = "CV cannot start a Run because this CL is %s. " + submitReqHint
@@ -71,6 +72,7 @@ type runCreateChecker struct {
 	runModeDef              *cfgpb.Mode // if mode is not standard mode in CV
 	allowOwnerIfSubmittable cfgpb.Verifiers_GerritCQAbility_CQAction
 	trustDryRunnerDeps      bool
+	allowNonOwnerDryRunner  bool
 	commGroups              []string // committer groups
 	dryGroups               []string // dry-runner groups
 	newPatchsetGroups       []string // new patchset run groups
@@ -232,28 +234,55 @@ func (ck runCreateChecker) canCreateNewPatchsetRun(ctx context.Context) (evalRes
 }
 
 func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, error) {
-	switch isCommitter, err := ck.isCommitter(ctx, ck.triggerer); {
-	case err != nil:
+	isCommitter, err := ck.isCommitter(ctx, ck.triggerer)
+	if err != nil {
 		return no, err
-	case isCommitter && ck.triggerer == ck.owner:
-		// A committer can trigger a dry run on their own CL without CL being
-		// submittable.
-		return yes, nil
-	case isCommitter:
-		// In order for a committer to trigger a dry-run for someone else' CL, all
-		// the dependencies must be trusted dependencies.
-		return ck.canTrustDeps(ctx)
+	}
+	if isCommitter {
+		switch {
+		case ck.triggerer == ck.owner:
+			// A committer can trigger a dry run on their own CL
+			// without CL being submittable. We assume dependencies
+			// are trusted since they uploaded the CL.
+			return yes, nil
+		default:
+			// In order for a committer to trigger a dry-run for someone
+			// else's CL, all the dependencies must be trusted
+			// dependencies.
+			return ck.canTrustDeps(ctx)
+		}
 	}
 
-	// A non-committer can trigger a dry-run,
-	// if all of the following conditions are met.
+	// A non-committer can trigger a dry-run if they are a dry-runner.
+	isDryRunner, err := ck.isDryRunner(ctx, ck.triggerer)
+	if err != nil {
+		return no, err
+	}
+	if isDryRunner {
+		switch {
+		case ck.triggerer == ck.owner:
+			// A dry-runner can trigger a dry run on their own CL without CL being
+			// submittable. We assume dependencies are trusted since they uploaded
+			// the CL.
+			return yes, nil
+		case ck.allowNonOwnerDryRunner:
+			// A dry-runner can trigger a dry run on a CL they don't own if
+			// allowNonOwnerDryRunner is set. All dependencies must be trusted.
+			return ck.canTrustDeps(ctx)
+		default:
+			// Otherwise, a dry-runner cannot trigger a dry run on
+			// a CL they don't own.
+			return noWithReason(fmt.Sprintf(notOwnerNotCommitter, ck.triggererEmail)), nil
+		}
+	}
+
+	// One can trigger a dry-run without being a dry-runner or a committer,
+	// if all the following conditions are met:
 	//
 	// 1) triggerer == owner
-	// 2) triggerer is a dry-runner
-	//    OR
-	//    cg.AllowOwnerIfSubmittable in [COMMIT, DRY_RUN] AND
-	//      the CL is submittable in Gerrit.
-	// 3) all the deps are trusted.
+	// 2) cg.AllowOwnerIfSubmittable in [COMMIT, DRY_RUN]
+	// 3) The CL is submittable in Gerrit.
+	// 4) All the deps are trusted.
 	//
 	// A dep is trusted, if at least one of the following conditions are met.
 	// - the dep is one of the CLs included in the Run
@@ -262,25 +291,23 @@ func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, err
 	//
 	// For more context, crbug.com/692611 and go/cq-after-lgtm.
 	if ck.triggerer != ck.owner {
-		return noWithReason(fmt.Sprintf(notOwnerNotCommitter, ck.triggererEmail)), nil
-	}
-	isDryRunner, err := ck.isDryRunner(ctx, ck.triggerer)
-	if err != nil {
-		return no, err
-	}
-	if !isDryRunner {
-		switch ck.allowOwnerIfSubmittable {
-		case cfgpb.Verifiers_GerritCQAbility_DRY_RUN:
-		case cfgpb.Verifiers_GerritCQAbility_COMMIT:
-		default:
-			return noWithReason(fmt.Sprintf(ownerNotDryRunner, ck.triggererEmail)), nil
+		reason := notOwnerNotCommitter
+		if ck.allowNonOwnerDryRunner {
+			reason = notOwnerNotCommitterNotDryRunner
 		}
-		if !ck.submittable && !ck.submitted {
-			return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
-		}
-		return ck.canTrustDeps(ctx)
+		return noWithReason(fmt.Sprintf(reason, ck.triggererEmail)), nil
 	}
-	return yes, nil
+
+	switch ck.allowOwnerIfSubmittable {
+	case cfgpb.Verifiers_GerritCQAbility_DRY_RUN:
+	case cfgpb.Verifiers_GerritCQAbility_COMMIT:
+	default:
+		return noWithReason(fmt.Sprintf(ownerNotDryRunner, ck.triggererEmail)), nil
+	}
+	if !ck.submittable && !ck.submitted {
+		return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
+	}
+	return ck.canTrustDeps(ctx)
 }
 
 func (ck runCreateChecker) isDryRunner(ctx context.Context, id identity.Identity) (bool, error) {
@@ -362,6 +389,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 			runModeDef:              tr.GetModeDefinition(),
 			allowOwnerIfSubmittable: gVerifier.GetAllowOwnerIfSubmittable(),
 			trustDryRunnerDeps:      gVerifier.GetTrustDryRunnerDeps(),
+			allowNonOwnerDryRunner:  gVerifier.GetAllowNonOwnerDryRunner(),
 			commGroups:              gVerifier.GetCommitterList(),
 			dryGroups:               gVerifier.GetDryRunAccessList(),
 			newPatchsetGroups:       gVerifier.GetNewPatchsetRunAccessList(),

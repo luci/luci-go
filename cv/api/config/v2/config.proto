@@ -441,7 +441,7 @@ message Verifiers {
   Fake fake = 5;
 
 
-  // Next tag: 7.
+  // Next tag: 8.
   message GerritCQAbility {
     // Required. List of chrome-infra-auth groups, whose members are authorized
     // to trigger full CQ runs.
@@ -450,8 +450,11 @@ message Verifiers {
     repeated string committer_list = 1;
 
     // Optional, but strongly recommended. List of chrome-infra-auth groups,
-    // whose members are authorized to trigger CQ dry run on Gerrit CLs they own
-    // (not to be confused with OWNER files) even if CL hasn't been approved.
+    // whose members are authorized to trigger CQ dry run on Gerrit CLs.
+    //
+    // By default, they are allowed to trigger CQ dry runs on their own
+    // CLs only, but this can be relaxed, if `allow_non_owner_dry_runner`
+    // is set.
     //
     // Typically, such groups are named "project-<name>-tryjob-access".
     repeated string dry_run_access_list = 2;
@@ -506,6 +509,13 @@ message Verifiers {
     // This allows CQ dry run on CLs with unapproved dependencies owned by
     // members of `dry_run_access_list`.
     bool trust_dry_runner_deps = 6;
+
+    // Optional. Allow members of `dry_run_access_list` to trigger CQ dry run
+    // on Gerrit CLs they do not own, even if the CL hasn't been approved.
+    //
+    // By default, members of `dry_run_access_list` can only trigger CQ dry run
+    // on Gerrit CLs they own.
+    bool allow_non_owner_dry_runner = 7;
   }
 
   message TreeStatus {

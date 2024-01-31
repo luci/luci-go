@@ -160,6 +160,9 @@ func TestCheckRunCLs(t *testing.T) {
 		setTrustDryRunnerDeps := func(trust bool) {
 			cg.Content.Verifiers.GerritCqAbility.TrustDryRunnerDeps = trust
 		}
+		setAllowNonOwnerDryRunner := func(allow bool) {
+			cg.Content.Verifiers.GerritCqAbility.AllowNonOwnerDryRunner = allow
+		}
 
 		addSubmitReq := func(cl *changelist.CL, name string, st gerritpb.SubmitRequirementResultInfo_Status) {
 			ci := cl.Snapshot.Kind.(*changelist.Snapshot_Gerrit).Gerrit.Info
@@ -253,6 +256,10 @@ func TestCheckRunCLs(t *testing.T) {
 					// TrustDryRunnerDeps doesn't change the decision, either.
 					setTrustDryRunnerDeps(true)
 					mustFailWith(cl, "neither the CL owner nor a committer")
+
+					// AllowNonOwnerDryRunner doesn't change the decision, either.
+					setAllowNonOwnerDryRunner(true)
+					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Should fail always.
@@ -320,7 +327,7 @@ func TestCheckRunCLs(t *testing.T) {
 					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
-					// Only committers can trigger a dry-run for someone else' CL.
+					// Only committers can trigger a dry-run for someone else's CL.
 					addDryRunner(tr)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 					markCLSubmittable(cl)
@@ -333,6 +340,14 @@ func TestCheckRunCLs(t *testing.T) {
 					// TrustDryRunnerDeps doesn't change the decision, either.
 					setTrustDryRunnerDeps(true)
 					mustFailWith(cl, "neither the CL owner nor a committer")
+				})
+				Convey("triggerer is a dry-runner (with allow_non_owner_dry_runner)", func() {
+					// With allow_non_owner_dry_runner, dry-runners can trigger a dry-run for someone else's CL.
+					addDryRunner(tr)
+					setAllowNonOwnerDryRunner(true)
+					mustOK()
+					markCLSubmittable(cl)
+					mustOK()
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Only committers can trigger a dry-run for someone else' CL.
@@ -348,102 +363,115 @@ func TestCheckRunCLs(t *testing.T) {
 			})
 
 			Convey("w/ dependencies", func() {
-				// if triggerer is not the owner, but a committer, then
-				// untrusted deps should be checked.
+				// if triggerer is not the owner, but a
+				// committer/dry-runner, then untrusted deps
+				// should be checked.
 				tr, owner := "t@example.org", "o@example.org"
 				cl, _ := addCL(tr, owner, m)
-				addCommitter(tr)
 
 				dep1 := addDep(cl, "dep_owner1@example.org")
 				dep2 := addDep(cl, "dep_owner2@example.org")
 				dep1URL := dep1.ExternalID.MustURL()
 				dep2URL := dep2.ExternalID.MustURL()
 
-				Convey("untrusted", func() {
-					res := mustFailWith(cl, untrustedDeps)
-					So(res.Failure(cl), ShouldContainSubstring, dep1URL)
-					So(res.Failure(cl), ShouldContainSubstring, dep2URL)
-					// if the deps have no submit requirements, the rejection message
-					// shouldn't contain a warning for suspicious CLs.
-					So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
-
-					Convey("with TrustDryRunnerDeps", func() {
-						setTrustDryRunnerDeps(true)
-						mustFailWith(cl, untrustedDepsTrustDryRunnerDeps)
-					})
-
-					Convey("but dep2 satisfies all the SubmitRequirements", func() {
-						naReq(dep1, "Code-Review")
-						unsatisfiedReq(dep1, "Code-Owner")
-						satisfiedReq(dep2, "Code-Review")
-						satisfiedReq(dep2, "Code-Owner")
+				testCases := func() {
+					Convey("untrusted", func() {
 						res := mustFailWith(cl, untrustedDeps)
-						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
-							"- %s: not submittable, although submit requirements `Code-Review` and `Code-Owner` are satisfied",
-							dep2URL,
-						))
-						So(res.Failure(cl), ShouldContainSubstring, untrustedDepsSuspicious)
-					})
-
-					Convey("because all the deps have unsatisfied requirements", func() {
-						dep3 := addDep(cl, "dep_owner3@example.org")
-						dep3URL := dep3.ExternalID.MustURL()
-
-						unsatisfiedReq(dep1, "Code-Review")
-						unsatisfiedReq(dep2, "Code-Review")
-						unsatisfiedReq(dep2, "Code-Owner")
-						unsatisfiedReq(dep3, "Code-Review")
-						unsatisfiedReq(dep3, "Code-Owner")
-						unsatisfiedReq(dep3, "Code-Quiz")
-
-						res := mustFailWith(cl, untrustedDeps)
+						So(res.Failure(cl), ShouldContainSubstring, dep1URL)
+						So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+						// if the deps have no submit requirements, the rejection message
+						// shouldn't contain a warning for suspicious CLs.
 						So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
-						So(res.Failure(cl), ShouldContainSubstring,
-							dep1URL+": not satisfying the `Code-Review` submit requirement")
-						So(res.Failure(cl), ShouldContainSubstring,
-							dep2URL+": not satisfying the `Code-Review` and `Code-Owner` submit requirement")
-						So(res.Failure(cl), ShouldContainSubstring,
-							dep3URL+": not satisfying the `Code-Review`, `Code-Owner`, and `Code-Quiz` submit requirement")
+
+						Convey("with TrustDryRunnerDeps", func() {
+							setTrustDryRunnerDeps(true)
+							mustFailWith(cl, untrustedDepsTrustDryRunnerDeps)
+						})
+
+						Convey("but dep2 satisfies all the SubmitRequirements", func() {
+							naReq(dep1, "Code-Review")
+							unsatisfiedReq(dep1, "Code-Owner")
+							satisfiedReq(dep2, "Code-Review")
+							satisfiedReq(dep2, "Code-Owner")
+							res := mustFailWith(cl, untrustedDeps)
+							So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
+								"- %s: not submittable, although submit requirements `Code-Review` and `Code-Owner` are satisfied",
+								dep2URL,
+							))
+							So(res.Failure(cl), ShouldContainSubstring, untrustedDepsSuspicious)
+						})
+
+						Convey("because all the deps have unsatisfied requirements", func() {
+							dep3 := addDep(cl, "dep_owner3@example.org")
+							dep3URL := dep3.ExternalID.MustURL()
+
+							unsatisfiedReq(dep1, "Code-Review")
+							unsatisfiedReq(dep2, "Code-Review")
+							unsatisfiedReq(dep2, "Code-Owner")
+							unsatisfiedReq(dep3, "Code-Review")
+							unsatisfiedReq(dep3, "Code-Owner")
+							unsatisfiedReq(dep3, "Code-Quiz")
+
+							res := mustFailWith(cl, untrustedDeps)
+							So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
+							So(res.Failure(cl), ShouldContainSubstring,
+								dep1URL+": not satisfying the `Code-Review` submit requirement")
+							So(res.Failure(cl), ShouldContainSubstring,
+								dep2URL+": not satisfying the `Code-Review` and `Code-Owner` submit requirement")
+							So(res.Failure(cl), ShouldContainSubstring,
+								dep3URL+": not satisfying the `Code-Review`, `Code-Owner`, and `Code-Quiz` submit requirement")
+						})
 					})
-				})
-				Convey("trusted because it's apart of the Run", func() {
-					cls = append(cls, dep1, dep2)
-					trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
-					trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
-					mustOK()
-				})
-				Convey("trusted because of submittable", func() {
-					markCLSubmittable(dep1)
-					markCLSubmittable(dep2)
-					mustOK()
-				})
-				Convey("trusterd because they have been merged already", func() {
-					submitCL(dep1)
-					submitCL(dep2)
-					mustOK()
-				})
-				Convey("trusted because the owner is a committer", func() {
-					addCommitter("dep_owner1@example.org")
-					addCommitter("dep_owner2@example.org")
-					mustOK()
-				})
-				Convey("trusted because the owner is a dry-runner", func() {
-					addDryRunner("dep_owner1@example.org")
-					addDryRunner("dep_owner2@example.org")
+					Convey("trusted because it's apart of the Run", func() {
+						cls = append(cls, dep1, dep2)
+						trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
+						trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
+						mustOK()
+					})
+					Convey("trusted because of submittable", func() {
+						markCLSubmittable(dep1)
+						markCLSubmittable(dep2)
+						mustOK()
+					})
+					Convey("trusterd because they have been merged already", func() {
+						submitCL(dep1)
+						submitCL(dep2)
+						mustOK()
+					})
+					Convey("trusted because the owner is a committer", func() {
+						addCommitter("dep_owner1@example.org")
+						addCommitter("dep_owner2@example.org")
+						mustOK()
+					})
+					Convey("trusted because the owner is a dry-runner", func() {
+						addDryRunner("dep_owner1@example.org")
+						addDryRunner("dep_owner2@example.org")
 
-					// Not allowed without TrustDryRunnerDeps.
-					res := mustFailWith(cl, untrustedDeps)
-					So(res.Failure(cl), ShouldContainSubstring, dep1URL)
-					So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+						// Not allowed without TrustDryRunnerDeps.
+						res := mustFailWith(cl, untrustedDeps)
+						So(res.Failure(cl), ShouldContainSubstring, dep1URL)
+						So(res.Failure(cl), ShouldContainSubstring, dep2URL)
 
-					setTrustDryRunnerDeps(true)
-					mustOK()
+						setTrustDryRunnerDeps(true)
+						mustOK()
+					})
+					Convey("a mix of untrusted and trusted deps", func() {
+						addCommitter("dep_owner1@example.org")
+						res := mustFailWith(cl, untrustedDeps)
+						So(res.Failure(cl), ShouldNotContainSubstring, dep1URL)
+						So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+					})
+				}
+
+				Convey("committer", func() {
+					addCommitter(tr)
+					testCases()
 				})
-				Convey("a mix of untrusted and trusted deps", func() {
-					addCommitter("dep_owner1@example.org")
-					res := mustFailWith(cl, untrustedDeps)
-					So(res.Failure(cl), ShouldNotContainSubstring, dep1URL)
-					So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+
+				Convey("dry-runner (with allow_non_owner_dry_runner)", func() {
+					addDryRunner(tr)
+					setAllowNonOwnerDryRunner(true)
+					testCases()
 				})
 			})
 		})
