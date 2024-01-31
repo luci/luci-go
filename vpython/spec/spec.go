@@ -35,14 +35,6 @@ import (
 // NormalizeSpec will prune any Wheel entries that don't match the specified
 // tags, and will remove the match entries from any remaining Wheel entries.
 func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
-	// If we have a VirtualEnv package, validate and normalize it.
-	if pkg := spec.Virtualenv; pkg != nil {
-		if len(pkg.MatchTag) > 0 {
-			// The VirtualEnv package may not specify a match tag.
-			pkg.MatchTag = nil
-		}
-	}
-
 	// Apply match filters, prune any entries that don't match, and clear the
 	// MatchTag entries for those that do.
 	//
@@ -53,10 +45,6 @@ func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
 	pos := 0
 	packageVersions := make(map[string]string, len(spec.Wheel))
 	for _, w := range spec.Wheel {
-		if spec.Virtualenv != nil && spec.Virtualenv.Name == w.Name {
-			return errors.Reason("wheel %q cannot be the VirtualEnv package", w.Name).Err()
-		}
-
 		// If this package doesn't match the tag set, skip it.
 		if !PackageMatches(w, tags) {
 			continue

@@ -13,17 +13,10 @@ import "go.chromium.org/luci/vpython/api/vpython/pep425.proto";
 // Spec is a "vpython" environment specification.
 message Spec {
   // The Python version to use. This should be of the form:
-  // "Major[.Minor[.Patch]]"
+  // "Major[.Minor]"
   //
-  // If specified,
-  // - The Major version will be enforced absolutely. Python 3 will not be
-  //   preferred over Python 2 because '3' is greater than '2'.
-  // - The remaining versions, if specified, will be regarded as *minimum*
-  //   versions. In other words, if "2.7.4" is specified and the system has
-  //   "2.7.12", that will suffice. Similarly, "2.6" would accept a "2.7"
-  //   interpreter.
-  //
-  // If empty, the default Python interpreter ("python") will be used.
+  // If specified, the version will be enforced absolutely, otherwise vpython
+  // will pick a default version.
   string python_version = 1;
 
   // A definition for a remote package. The type of package depends on the
@@ -63,18 +56,15 @@ message Spec {
   }
   repeated Package wheel = 2;
 
-  // The VirtualEnv package.
+  // Optional specification-provided PEP425 verification tags.
   //
-  // This should be left empty to use the `vpython` default package
-  // (recommended).
-  Package virtualenv = 3;
-
-  // Specification-provided PEP425 verification tags.
-  //
-  // By default, verification will be performed against a default set of
-  // environment parameters. However, a given specification may offer its own
-  // set of PEP425 tags representing the systems that it wants to be verified
-  // against. Verification will pass only if the spec is valid (i.e. all wheels
-  // exist) for _all_ given PEP425Tags.
+  // Verification will pass only if:
+  // 1. a set of PEP425 tags representing the systems that it wants to be
+  // verified against is provided.
+  // 2. the spec is valid (i.e. all wheels exist) for _all_ given PEP425Tags.
   repeated vpython.PEP425Tag verify_pep425_tag = 4;
+
+  // Removed options.
+  reserved 3;
+  reserved "virtualenv";
 }
