@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/testing/typed"
 )
 
+// TestResultOk tests whether a result indicates a successful or failed result based on the internals of the Result object.
 func TestResultOk(t *testing.T) {
 	t.Parallel()
 
@@ -59,6 +60,7 @@ func TestResultOk(t *testing.T) {
 	}
 }
 
+// TestResultEquals tests comparing two results semantically for equality.
 func TestResultEquals(t *testing.T) {
 	t.Parallel()
 
@@ -120,6 +122,75 @@ func TestResultEquals(t *testing.T) {
 			t.Parallel()
 
 			if diff := typed.Diff(tt.lhs.Equal(tt.rhs), tt.equal); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
+}
+
+// TestResultRender tests rendering a result.
+func TestResultRender(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		result *Result
+		lines  []string
+	}{
+		{
+			name:   "empty",
+			result: nil,
+			lines:  nil,
+		},
+		{
+			name: "ok result",
+			result: &Result{
+				failed: false,
+			},
+			lines: nil,
+		},
+		{
+			name: "simple failure",
+			result: &Result{
+				failed: true,
+			},
+			lines: []string{
+				`Unknown Test FAILED`,
+			},
+		},
+		{
+			name: "failure with value",
+			result: &Result{
+				failed: true,
+				header: resultHeader{
+					comparison: "equal",
+					types:      []string{"int", "int"},
+				},
+				values: []value{
+					value{
+						name:  "left",
+						value: 4,
+					},
+					value{
+						name:  "right",
+						value: 7,
+					},
+				},
+			},
+			lines: []string{
+				`equal FAILED`,
+				`  left: 4`,
+				`  right: 7`,
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if diff := typed.Diff(tt.result.Render(), tt.lines); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
 		})

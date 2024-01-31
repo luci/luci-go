@@ -15,6 +15,7 @@
 package results
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -31,6 +32,8 @@ type Result struct {
 	// For example equal[int, int] is a test name, consisting of "equal" and
 	// two "int" type parameters.
 	header resultHeader
+
+	values []value
 }
 
 // Ok returns whether a Result represents success or failure.
@@ -48,9 +51,22 @@ func (r *Result) Equal(s *Result) bool {
 
 // Render pretty-prints the result as a list of lines.
 //
-// TODO(gregorynisbet): implement this for real.
+// TODO(gregorynisbet): Implement the diffing logic.
 func (r *Result) Render() []string {
-	return nil
+	if r.Ok() {
+		return nil
+	}
+	var lines []string
+	testName := "Unknown Test"
+	if r.header.comparison != "" {
+		testName = r.header.comparison
+	}
+	lines = append(lines, fmt.Sprintf("%s FAILED", testName))
+	for _, v := range r.values {
+		lines = append(lines, v.render()...)
+	}
+
+	return lines
 }
 
 type resultHeader struct {
