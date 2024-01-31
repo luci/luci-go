@@ -156,9 +156,6 @@ type Trigger struct {
 	// refuse starting Runs for users without the email.
 	Email string `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	// Gerrit account ID. Always known.
-	//
-	// Deprecated. It must be used only for serving migration.FetchActiveRuns.
-	// TODO(crbug/1225047): once CQDaemon is deleted, delete this field.
 	GerritAccountId int64 `protobuf:"varint,4,opt,name=gerrit_account_id,json=gerritAccountId,proto3" json:"gerrit_account_id,omitempty"`
 }
 

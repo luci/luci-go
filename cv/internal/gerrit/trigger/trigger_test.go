@@ -389,9 +389,10 @@ func TestFindNewPatchsetRunTrigger(t *testing.T) {
 					findNewPatchsetRunTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg, TriggerNewPatchsetRunAfterPS: cle.TriggerNewPatchsetRunAfterPS}),
 					la.ShouldResembleProto,
 					&run.Trigger{
-						Mode:  string(run.NewPatchsetRun),
-						Time:  timestamppb.New(ts2),
-						Email: owner.Email,
+						Mode:            string(run.NewPatchsetRun),
+						Time:            timestamppb.New(ts2),
+						Email:           owner.GetEmail(),
+						GerritAccountId: owner.GetAccountId(),
 					},
 				)
 			})

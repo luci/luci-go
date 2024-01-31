@@ -119,9 +119,10 @@ func findNewPatchsetRunTrigger(input *FindInput) *run.Trigger {
 	case input.TriggerNewPatchsetRunAfterPS >= currentRev.GetNumber():
 	default:
 		return &run.Trigger{
-			Mode:  string(run.NewPatchsetRun),
-			Email: input.ChangeInfo.Owner.Email,
-			Time:  currentRev.GetCreated(),
+			Mode:            string(run.NewPatchsetRun),
+			Email:           input.ChangeInfo.GetOwner().GetEmail(),
+			Time:            currentRev.GetCreated(),
+			GerritAccountId: input.ChangeInfo.GetOwner().GetAccountId(),
 		}
 	}
 	return nil

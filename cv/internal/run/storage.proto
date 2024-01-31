@@ -91,9 +91,6 @@ message Trigger {
   // refuse starting Runs for users without the email.
   string email = 3;
   // Gerrit account ID. Always known.
-  //
-  // Deprecated. It must be used only for serving migration.FetchActiveRuns.
-  // TODO(crbug/1225047): once CQDaemon is deleted, delete this field.
   int64 gerrit_account_id = 4;
 }
 
