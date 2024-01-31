@@ -32,16 +32,10 @@ import (
 )
 
 func TestScheduleWipeoutRuns(t *testing.T) {
-	// This test closed the tree, disabling parallelism. GoConvey also isn't safe to run
-	// in parallel in general, but that's beside the point.
-	// t.Parallel()
-
-	// TODO(gregorynisbet): Replace the use of the clock in this test with the LUCI testing clock.
-	SkipConvey("Schedule wipeout runs tasks", t, func() {
+	Convey("Schedule wipeout runs tasks", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
-
 		registerWipeoutRunsTask(ct.TQDispatcher)
 
 		// Test Scenario: Create a lot of runs under 2 LUCI Projects (1 disabled).
@@ -64,7 +58,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 			So(end, ShouldHappenAfter, start)
 			runs := make([]*run.Run, n)
 			for i := range runs {
-				createTime := start.Add(time.Duration(mathrand.Int63n(ctx, int64(end.Sub(start)))))
+				createTime := start.Add(time.Duration(mathrand.Int63n(ctx, int64(end.Sub(start))))).Truncate(time.Millisecond)
 				runs[i] = &run.Run{
 					ID:         common.MakeRunID(proj, createTime, 1, []byte("deadbeef")),
 					CreateTime: createTime,
