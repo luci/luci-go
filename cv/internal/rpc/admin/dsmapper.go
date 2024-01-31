@@ -55,6 +55,7 @@ func newDSMapper(ctrl *dsmapper.Controller) *dsMapper {
 	// TODO(crbug/1260615): remove descriptions once CQDaemon is gone.
 	s.register(&removeCLDescriptionsCOnfig, removeCLDescriptionsFactory)
 	s.register(&multiCLAnalysisConfig, multiCLAnalysisMapperFactory)
+	s.register(&backfillRetentionKey, backfillRetentionKeyFactory)
 
 	s.final = true
 	return s
