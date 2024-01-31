@@ -14,7 +14,7 @@
 
 import { act, render } from '@testing-library/react';
 
-import { BuilderTable } from '@/build/components/builder_table';
+import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
 import {
   BuilderID,
   BuilderItem,
@@ -27,10 +27,10 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { BuilderListPage } from './builder_list_page';
 
-jest.mock('@/build/components/builder_table', () =>
+jest.mock('@/build/components/filterable_builder_table', () =>
   self.createSelectiveMockFromModule<
-    typeof import('@/build/components/builder_table')
-  >('@/build/components/builder_table', ['BuilderTable']),
+    typeof import('@/build/components/filterable_builder_table')
+  >('@/build/components/filterable_builder_table', ['FilterableBuilderTable']),
 );
 
 const builders = Array(25)
@@ -62,11 +62,11 @@ const pages: { [key: string]: ListBuildersResponse } = {
 
 describe('<BuilderListPage />', () => {
   let listBuildersSpy: jest.SpiedFunction<BuildersClientImpl['ListBuilders']>;
-  let builderTableMock: jest.MockedFunction<typeof BuilderTable>;
+  let builderTableMock: jest.MockedFunction<typeof FilterableBuilderTable>;
 
   beforeEach(() => {
     jest.useFakeTimers();
-    builderTableMock = jest.mocked(BuilderTable);
+    builderTableMock = jest.mocked(FilterableBuilderTable);
     listBuildersSpy = jest
       .spyOn(BuildersClientImpl.prototype, 'ListBuilders')
       .mockImplementation(async (req) => pages[req.pageToken]);
@@ -75,6 +75,7 @@ describe('<BuilderListPage />', () => {
   afterEach(() => {
     jest.useRealTimers();
     listBuildersSpy.mockReset();
+    builderTableMock.mockReset();
   });
 
   it('should render correctly', async () => {
@@ -82,7 +83,7 @@ describe('<BuilderListPage />', () => {
       <FakeContextProvider
         mountedPath="/p/:project/builders"
         routerOptions={{
-          initialEntries: ['/p/proj/builders?numOfBuilds=12'],
+          initialEntries: ['/p/proj/builders'],
         }}
       >
         <BuilderListPage />
@@ -100,36 +101,7 @@ describe('<BuilderListPage />', () => {
 
     expect(builderTableMock).toHaveBeenCalledWith(
       {
-        builders: builders,
-        numOfBuilds: 12,
-      },
-      expect.anything(),
-    );
-  });
-
-  it('should filter builders', async () => {
-    render(
-      <FakeContextProvider
-        mountedPath="/p/:project/builders"
-        routerOptions={{
-          initialEntries: ['/p/proj/builders?q=1/builder1'],
-        }}
-      >
-        <BuilderListPage />
-      </FakeContextProvider>,
-    );
-
-    // Load all pages automatically.
-    await act(() => jest.runAllTimersAsync());
-    await act(() => jest.runAllTimersAsync());
-    expect(listBuildersSpy).toHaveBeenCalledTimes(3);
-
-    expect(builderTableMock).toHaveBeenCalledWith(
-      {
-        builders: builders.filter(
-          (b) => b.bucket.startsWith('1') && b.builder.startsWith('builder1'),
-        ),
-        numOfBuilds: 25,
+        builders,
       },
       expect.anything(),
     );
