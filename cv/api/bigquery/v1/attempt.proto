@@ -140,7 +140,10 @@ message GerritChange {
   SubmitStatus submit_status = 8;
 
   // The owner (email address) of the CL.
-  string owner = 9;
+  string owner = 9 [deprecated=true];
+
+  // Indicates whether the owner of the CL is bot or not.
+  bool is_owner_bot = 10;
 }
 
 enum Mode {
