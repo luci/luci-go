@@ -612,7 +612,7 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 		if getProp(new, "owners") != nil {
 			owners = getStringProp(new, "owners")
 		}
-		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupDeleted, target, class, &AuthDBChange{OldDescription: desc, Owners: owners}))
+		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupDeleted, target, class, &AuthDBChange{OldDescription: desc, OldOwners: owners}))
 		return changes, nil
 	}
 

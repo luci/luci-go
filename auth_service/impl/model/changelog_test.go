@@ -322,7 +322,7 @@ func TestGenerateChanges(t *testing.T) {
 				So(err, ShouldBeNil)
 				validateChanges(ctx, "delete group", 2, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupDeleted,
-					Owners:     AdminGroup,
+					OldOwners:  AdminGroup,
 				}})
 
 				// Check calling generateChanges for an already-processed
@@ -433,7 +433,7 @@ func TestGenerateChanges(t *testing.T) {
 					Members:    []string{"user:someone@example.com"},
 				}, {
 					ChangeType: ChangeGroupDeleted,
-					Owners:     AdminGroup,
+					OldOwners:  AdminGroup,
 				}})
 			})
 
@@ -487,7 +487,7 @@ func TestGenerateChanges(t *testing.T) {
 					Globs:      []string{"user:test-*@test.com"},
 				}, {
 					ChangeType: ChangeGroupDeleted,
-					Owners:     AdminGroup,
+					OldOwners:  AdminGroup,
 				}})
 			})
 
@@ -545,7 +545,7 @@ func TestGenerateChanges(t *testing.T) {
 					Nested:     []string{"group-2"},
 				}, {
 					ChangeType: ChangeGroupDeleted,
-					Owners:     AdminGroup,
+					OldOwners:  AdminGroup,
 				}})
 			})
 		})
