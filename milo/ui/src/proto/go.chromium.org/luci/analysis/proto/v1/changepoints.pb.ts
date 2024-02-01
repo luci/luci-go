@@ -46,7 +46,7 @@ export interface ChangepointGroupSummary {
 
 export interface ChangepointGroupStatistics {
   /** The number of test variant branches in this group. */
-  readonly count: string;
+  readonly count: number;
   /**
    * Unexpected verdict rate before the changepoint.
    * The per test variant branch, unexpected verdict rate is calculated as (count of unexpected verdict/count of all verdicts).
@@ -78,11 +78,11 @@ export interface ChangepointGroupStatistics_RateDistribution {
 
 export interface ChangepointGroupStatistics_RateDistribution_RateBuckets {
   /** Counts the number of test variant branches with a unexpected verdict rate less than 5% (exclusive). */
-  readonly countLess5Percent: string;
+  readonly countLess5Percent: number;
   /** Counts the number of test variant branches with a unexpected verdict rate greater than or equal to 5%, but less than 95%. */
-  readonly countAbove5LessThan95Percent: string;
+  readonly countAbove5LessThan95Percent: number;
   /** Counts the number of test variant branches with a unexpected verdict rate equal to or greater than 95%. */
-  readonly countAbove95Percent: string;
+  readonly countAbove95Percent: number;
 }
 
 /**
@@ -91,11 +91,11 @@ export interface ChangepointGroupStatistics_RateDistribution_RateBuckets {
  */
 export interface ChangepointGroupStatistics_RateChangeBuckets {
   /** Counts the number of test variant branches which saw their unexpected verdict rate increase by between 0% (inclusive) and 20% (exclusive). */
-  readonly countIncreased0To20Percent: string;
+  readonly countIncreased0To20Percent: number;
   /** Counts the number of test variant branches which saw their unexpected verdict rate increase by between 20% (inclusive) and 50% (exclusive). */
-  readonly countIncreased20To50Percent: string;
+  readonly countIncreased20To50Percent: number;
   /** Counts the number of test variant branches which saw their unexpected verdict rate increase by between 50% (inclusive) or more. */
-  readonly countIncreased50To100Percent: string;
+  readonly countIncreased50To100Percent: number;
 }
 
 export interface QueryChangepointsInGroupRequest {
@@ -479,7 +479,7 @@ export const ChangepointGroupSummary = {
 
 function createBaseChangepointGroupStatistics(): ChangepointGroupStatistics {
   return {
-    count: "0",
+    count: 0,
     unexpectedVerdictRateBefore: undefined,
     unexpectedVerdictRateAfter: undefined,
     unexpectedVerdictRateCurrent: undefined,
@@ -489,8 +489,8 @@ function createBaseChangepointGroupStatistics(): ChangepointGroupStatistics {
 
 export const ChangepointGroupStatistics = {
   encode(message: ChangepointGroupStatistics, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.count !== "0") {
-      writer.uint32(8).int64(message.count);
+    if (message.count !== 0) {
+      writer.uint32(8).int32(message.count);
     }
     if (message.unexpectedVerdictRateBefore !== undefined) {
       ChangepointGroupStatistics_RateDistribution.encode(message.unexpectedVerdictRateBefore, writer.uint32(18).fork())
@@ -523,7 +523,7 @@ export const ChangepointGroupStatistics = {
             break;
           }
 
-          message.count = longToString(reader.int64() as Long);
+          message.count = reader.int32();
           continue;
         case 2:
           if (tag !== 18) {
@@ -576,7 +576,7 @@ export const ChangepointGroupStatistics = {
 
   fromJSON(object: any): ChangepointGroupStatistics {
     return {
-      count: isSet(object.count) ? globalThis.String(object.count) : "0",
+      count: isSet(object.count) ? globalThis.Number(object.count) : 0,
       unexpectedVerdictRateBefore: isSet(object.unexpectedVerdictRateBefore)
         ? ChangepointGroupStatistics_RateDistribution.fromJSON(object.unexpectedVerdictRateBefore)
         : undefined,
@@ -594,8 +594,8 @@ export const ChangepointGroupStatistics = {
 
   toJSON(message: ChangepointGroupStatistics): unknown {
     const obj: any = {};
-    if (message.count !== "0") {
-      obj.count = message.count;
+    if (message.count !== 0) {
+      obj.count = Math.round(message.count);
     }
     if (message.unexpectedVerdictRateBefore !== undefined) {
       obj.unexpectedVerdictRateBefore = ChangepointGroupStatistics_RateDistribution.toJSON(
@@ -625,7 +625,7 @@ export const ChangepointGroupStatistics = {
   },
   fromPartial<I extends Exact<DeepPartial<ChangepointGroupStatistics>, I>>(object: I): ChangepointGroupStatistics {
     const message = createBaseChangepointGroupStatistics() as any;
-    message.count = object.count ?? "0";
+    message.count = object.count ?? 0;
     message.unexpectedVerdictRateBefore =
       (object.unexpectedVerdictRateBefore !== undefined && object.unexpectedVerdictRateBefore !== null)
         ? ChangepointGroupStatistics_RateDistribution.fromPartial(object.unexpectedVerdictRateBefore)
@@ -730,7 +730,7 @@ export const ChangepointGroupStatistics_RateDistribution = {
 };
 
 function createBaseChangepointGroupStatistics_RateDistribution_RateBuckets(): ChangepointGroupStatistics_RateDistribution_RateBuckets {
-  return { countLess5Percent: "0", countAbove5LessThan95Percent: "0", countAbove95Percent: "0" };
+  return { countLess5Percent: 0, countAbove5LessThan95Percent: 0, countAbove95Percent: 0 };
 }
 
 export const ChangepointGroupStatistics_RateDistribution_RateBuckets = {
@@ -738,14 +738,14 @@ export const ChangepointGroupStatistics_RateDistribution_RateBuckets = {
     message: ChangepointGroupStatistics_RateDistribution_RateBuckets,
     writer: _m0.Writer = _m0.Writer.create(),
   ): _m0.Writer {
-    if (message.countLess5Percent !== "0") {
-      writer.uint32(8).int64(message.countLess5Percent);
+    if (message.countLess5Percent !== 0) {
+      writer.uint32(8).int32(message.countLess5Percent);
     }
-    if (message.countAbove5LessThan95Percent !== "0") {
-      writer.uint32(16).int64(message.countAbove5LessThan95Percent);
+    if (message.countAbove5LessThan95Percent !== 0) {
+      writer.uint32(16).int32(message.countAbove5LessThan95Percent);
     }
-    if (message.countAbove95Percent !== "0") {
-      writer.uint32(24).int64(message.countAbove95Percent);
+    if (message.countAbove95Percent !== 0) {
+      writer.uint32(24).int32(message.countAbove95Percent);
     }
     return writer;
   },
@@ -762,21 +762,21 @@ export const ChangepointGroupStatistics_RateDistribution_RateBuckets = {
             break;
           }
 
-          message.countLess5Percent = longToString(reader.int64() as Long);
+          message.countLess5Percent = reader.int32();
           continue;
         case 2:
           if (tag !== 16) {
             break;
           }
 
-          message.countAbove5LessThan95Percent = longToString(reader.int64() as Long);
+          message.countAbove5LessThan95Percent = reader.int32();
           continue;
         case 3:
           if (tag !== 24) {
             break;
           }
 
-          message.countAbove95Percent = longToString(reader.int64() as Long);
+          message.countAbove95Percent = reader.int32();
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -789,24 +789,24 @@ export const ChangepointGroupStatistics_RateDistribution_RateBuckets = {
 
   fromJSON(object: any): ChangepointGroupStatistics_RateDistribution_RateBuckets {
     return {
-      countLess5Percent: isSet(object.countLess5Percent) ? globalThis.String(object.countLess5Percent) : "0",
+      countLess5Percent: isSet(object.countLess5Percent) ? globalThis.Number(object.countLess5Percent) : 0,
       countAbove5LessThan95Percent: isSet(object.countAbove5LessThan95Percent)
-        ? globalThis.String(object.countAbove5LessThan95Percent)
-        : "0",
-      countAbove95Percent: isSet(object.countAbove95Percent) ? globalThis.String(object.countAbove95Percent) : "0",
+        ? globalThis.Number(object.countAbove5LessThan95Percent)
+        : 0,
+      countAbove95Percent: isSet(object.countAbove95Percent) ? globalThis.Number(object.countAbove95Percent) : 0,
     };
   },
 
   toJSON(message: ChangepointGroupStatistics_RateDistribution_RateBuckets): unknown {
     const obj: any = {};
-    if (message.countLess5Percent !== "0") {
-      obj.countLess5Percent = message.countLess5Percent;
+    if (message.countLess5Percent !== 0) {
+      obj.countLess5Percent = Math.round(message.countLess5Percent);
     }
-    if (message.countAbove5LessThan95Percent !== "0") {
-      obj.countAbove5LessThan95Percent = message.countAbove5LessThan95Percent;
+    if (message.countAbove5LessThan95Percent !== 0) {
+      obj.countAbove5LessThan95Percent = Math.round(message.countAbove5LessThan95Percent);
     }
-    if (message.countAbove95Percent !== "0") {
-      obj.countAbove95Percent = message.countAbove95Percent;
+    if (message.countAbove95Percent !== 0) {
+      obj.countAbove95Percent = Math.round(message.countAbove95Percent);
     }
     return obj;
   },
@@ -820,27 +820,27 @@ export const ChangepointGroupStatistics_RateDistribution_RateBuckets = {
     object: I,
   ): ChangepointGroupStatistics_RateDistribution_RateBuckets {
     const message = createBaseChangepointGroupStatistics_RateDistribution_RateBuckets() as any;
-    message.countLess5Percent = object.countLess5Percent ?? "0";
-    message.countAbove5LessThan95Percent = object.countAbove5LessThan95Percent ?? "0";
-    message.countAbove95Percent = object.countAbove95Percent ?? "0";
+    message.countLess5Percent = object.countLess5Percent ?? 0;
+    message.countAbove5LessThan95Percent = object.countAbove5LessThan95Percent ?? 0;
+    message.countAbove95Percent = object.countAbove95Percent ?? 0;
     return message;
   },
 };
 
 function createBaseChangepointGroupStatistics_RateChangeBuckets(): ChangepointGroupStatistics_RateChangeBuckets {
-  return { countIncreased0To20Percent: "0", countIncreased20To50Percent: "0", countIncreased50To100Percent: "0" };
+  return { countIncreased0To20Percent: 0, countIncreased20To50Percent: 0, countIncreased50To100Percent: 0 };
 }
 
 export const ChangepointGroupStatistics_RateChangeBuckets = {
   encode(message: ChangepointGroupStatistics_RateChangeBuckets, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.countIncreased0To20Percent !== "0") {
-      writer.uint32(8).int64(message.countIncreased0To20Percent);
+    if (message.countIncreased0To20Percent !== 0) {
+      writer.uint32(8).int32(message.countIncreased0To20Percent);
     }
-    if (message.countIncreased20To50Percent !== "0") {
-      writer.uint32(16).int64(message.countIncreased20To50Percent);
+    if (message.countIncreased20To50Percent !== 0) {
+      writer.uint32(16).int32(message.countIncreased20To50Percent);
     }
-    if (message.countIncreased50To100Percent !== "0") {
-      writer.uint32(24).int64(message.countIncreased50To100Percent);
+    if (message.countIncreased50To100Percent !== 0) {
+      writer.uint32(24).int32(message.countIncreased50To100Percent);
     }
     return writer;
   },
@@ -857,21 +857,21 @@ export const ChangepointGroupStatistics_RateChangeBuckets = {
             break;
           }
 
-          message.countIncreased0To20Percent = longToString(reader.int64() as Long);
+          message.countIncreased0To20Percent = reader.int32();
           continue;
         case 2:
           if (tag !== 16) {
             break;
           }
 
-          message.countIncreased20To50Percent = longToString(reader.int64() as Long);
+          message.countIncreased20To50Percent = reader.int32();
           continue;
         case 3:
           if (tag !== 24) {
             break;
           }
 
-          message.countIncreased50To100Percent = longToString(reader.int64() as Long);
+          message.countIncreased50To100Percent = reader.int32();
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -885,27 +885,27 @@ export const ChangepointGroupStatistics_RateChangeBuckets = {
   fromJSON(object: any): ChangepointGroupStatistics_RateChangeBuckets {
     return {
       countIncreased0To20Percent: isSet(object.countIncreased0To20Percent)
-        ? globalThis.String(object.countIncreased0To20Percent)
-        : "0",
+        ? globalThis.Number(object.countIncreased0To20Percent)
+        : 0,
       countIncreased20To50Percent: isSet(object.countIncreased20To50Percent)
-        ? globalThis.String(object.countIncreased20To50Percent)
-        : "0",
+        ? globalThis.Number(object.countIncreased20To50Percent)
+        : 0,
       countIncreased50To100Percent: isSet(object.countIncreased50To100Percent)
-        ? globalThis.String(object.countIncreased50To100Percent)
-        : "0",
+        ? globalThis.Number(object.countIncreased50To100Percent)
+        : 0,
     };
   },
 
   toJSON(message: ChangepointGroupStatistics_RateChangeBuckets): unknown {
     const obj: any = {};
-    if (message.countIncreased0To20Percent !== "0") {
-      obj.countIncreased0To20Percent = message.countIncreased0To20Percent;
+    if (message.countIncreased0To20Percent !== 0) {
+      obj.countIncreased0To20Percent = Math.round(message.countIncreased0To20Percent);
     }
-    if (message.countIncreased20To50Percent !== "0") {
-      obj.countIncreased20To50Percent = message.countIncreased20To50Percent;
+    if (message.countIncreased20To50Percent !== 0) {
+      obj.countIncreased20To50Percent = Math.round(message.countIncreased20To50Percent);
     }
-    if (message.countIncreased50To100Percent !== "0") {
-      obj.countIncreased50To100Percent = message.countIncreased50To100Percent;
+    if (message.countIncreased50To100Percent !== 0) {
+      obj.countIncreased50To100Percent = Math.round(message.countIncreased50To100Percent);
     }
     return obj;
   },
@@ -919,9 +919,9 @@ export const ChangepointGroupStatistics_RateChangeBuckets = {
     object: I,
   ): ChangepointGroupStatistics_RateChangeBuckets {
     const message = createBaseChangepointGroupStatistics_RateChangeBuckets() as any;
-    message.countIncreased0To20Percent = object.countIncreased0To20Percent ?? "0";
-    message.countIncreased20To50Percent = object.countIncreased20To50Percent ?? "0";
-    message.countIncreased50To100Percent = object.countIncreased50To100Percent ?? "0";
+    message.countIncreased0To20Percent = object.countIncreased0To20Percent ?? 0;
+    message.countIncreased20To50Percent = object.countIncreased20To50Percent ?? 0;
+    message.countIncreased50To100Percent = object.countIncreased50To100Percent ?? 0;
     return message;
   },
 };

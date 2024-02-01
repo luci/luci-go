@@ -73,6 +73,12 @@ export interface GetStatusRequest {
    * You can use 'latest' as the id to get the latest status for a tree,
    * i.e. set the name to 'trees/{tree}/status/latest'.
    *
+   * If you request the 'latest' status and no status updates are in the
+   * database (possibly due to the 140 day TTL), a fallback status will
+   * be returned with general_state OPEN.  You can tell that the fallback
+   * status was returned by checking the name which will be
+   * 'trees/{tree}/status/fallback', which is otherwise not a valid name.
+   *
    * Format: trees/{tree}/status/{id}
    */
   readonly name: string;

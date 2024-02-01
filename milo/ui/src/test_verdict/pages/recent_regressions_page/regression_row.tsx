@@ -88,19 +88,16 @@ export function RegressionRow({ regression }: RegressionRowProps) {
       </NumberCell>
 
       <NumberCell sx={{ color: 'var(--failure-color)' }}>
-        {parseInt(
-          statistics.unexpectedVerdictRateChange.countIncreased50To100Percent,
-        ) || ''}
+        {statistics.unexpectedVerdictRateChange.countIncreased50To100Percent ||
+          ''}
       </NumberCell>
       <NumberCell sx={{ color: 'var(--warning-color)' }}>
-        {parseInt(
-          statistics.unexpectedVerdictRateChange.countIncreased20To50Percent,
-        ) || ''}
+        {statistics.unexpectedVerdictRateChange.countIncreased20To50Percent ||
+          ''}
       </NumberCell>
       <NumberCell sx={{ color: 'var(--success-color)' }}>
-        {parseInt(
-          statistics.unexpectedVerdictRateChange.countIncreased0To20Percent,
-        ) || ''}
+        {statistics.unexpectedVerdictRateChange.countIncreased0To20Percent ||
+          ''}
       </NumberCell>
 
       <ChartCell>

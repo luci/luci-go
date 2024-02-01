@@ -70,17 +70,17 @@ export function FailureRatePieChart({
       {
         label: '≥95%',
         color: 'var(--failure-color)',
-        count: parseInt(buckets.countAbove95Percent),
+        count: buckets.countAbove95Percent,
       },
       {
         label: '5~95%',
         color: 'var(--warning-color)',
-        count: parseInt(buckets.countAbove5LessThan95Percent),
+        count: buckets.countAbove5LessThan95Percent,
       },
       {
         label: '<5%',
         color: 'var(--success-color)',
-        count: parseInt(buckets.countLess5Percent),
+        count: buckets.countLess5Percent,
       },
     ];
     const arcs = pieGenerator(groups).map((p) =>
