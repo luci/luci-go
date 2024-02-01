@@ -46,9 +46,7 @@ const runsPerTask = 200
 // scheduleWipeoutRuns schedules tasks to wipe out old runs that are out of the
 // retention period.
 //
-// The tasks will be uniformly distributed over the next 16 hours.
-// TODO(yiwzhang): change it to 1 hour after the first execution that needs
-// to delete ~1 million runs.
+// The tasks will be uniformly distributed over the next 1 hour.
 func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 	// data retention should work for disabled projects as well
 	projects, err := prjcfg.GetAllProjectIDs(ctx, false)
@@ -75,7 +73,7 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 			Payload: &WipeoutRunsTask{
 				Ids: runIDStrs,
 			},
-			Delay: common.DistributeOffset(16*time.Hour, runIDStrs...),
+			Delay: common.DistributeOffset(1*time.Hour, runIDStrs...),
 		}
 		return tqd.AddTask(ctx, task)
 	})
