@@ -28,6 +28,14 @@ import {
 
 import { Rpc } from './types';
 
+export interface BatchedBuildsClientImplOpts {
+  readonly service?: string;
+  /**
+   * Maximum number of requests in a given batch request. Defaults to 200.
+   */
+  readonly maxBatchSize?: number;
+}
+
 /**
  * The same as `BuildsClientImpl` except that eligible RPC calls are batched
  * automatically.
@@ -38,14 +46,15 @@ export class BatchedBuildsClientImpl extends BuildsClientImpl {
     req: BatchRequest,
   ) => Promise<BatchResponse>;
 
-  constructor(rpc: Rpc, opts?: { service?: string }) {
+  constructor(rpc: Rpc, opts?: BatchedBuildsClientImplOpts) {
     super(rpc, opts);
+    const maxBatchSize = opts?.maxBatchSize || 200;
 
     this.autoBatchedBatch = batched({
       // eslint-disable-next-line new-cap
       fn: (req: BatchRequest) => super.Batch(req),
       combineParamSets([req1], [req2]) {
-        if (req1.requests.length + req2.requests.length > 200) {
+        if (req1.requests.length + req2.requests.length > maxBatchSize) {
           return {
             ok: false,
             value: null,

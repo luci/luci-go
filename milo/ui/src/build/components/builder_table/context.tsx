@@ -33,10 +33,13 @@ export function BuilderTableContextProvider({
   numOfBuilds,
   children,
 }: BuilderTableContextProviderProps) {
-  const buildsClient = usePrpcServiceClient({
-    host: SETTINGS.buildbucket.host,
-    ClientImpl: BatchedBuildsClientImpl,
-  });
+  const buildsClient = usePrpcServiceClient(
+    {
+      host: SETTINGS.buildbucket.host,
+      ClientImpl: BatchedBuildsClientImpl,
+    },
+    { maxBatchSize: 30 },
+  );
 
   return (
     <BuildsClientCtx.Provider value={buildsClient}>
