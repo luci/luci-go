@@ -27,7 +27,7 @@ queue:
   target: default
 
 - name: manage-run
-  rate: 30/s
+  rate: 90/s
   retry_parameters:
     min_backoff_seconds: 1
     max_backoff_seconds: 5
