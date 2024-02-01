@@ -168,7 +168,13 @@ class ListGroupItem {
     // Modify contents for the actual group name and description.
     listEl.setAttribute('data-group-name', group.name);
     nameEl.textContent = group.name;
-    descEl.textContent = trimGroupDescription(group.description);
+    descEl.textContent = this.isExternal ? 'External' : trimGroupDescription(group.description);
+    if (this.isExternal) {
+      listEl.classList.add('external-group');
+      const lockIcon = document.createElement('i');
+      lockIcon.classList.add('bi', 'bi-lock-fill', 'list-item-icon');
+      listEl.appendChild(lockIcon);
+    }
 
     this.element = listEl;
   }
@@ -522,6 +528,9 @@ class EditGroupForm extends GroupForm {
     super('#edit-group-form-template', groupName);
 
     this.groupEtag = "";
+
+    // Whether the group is external.
+    this.isExternal = false;
   }
 
   // Get group response and build the form.
@@ -547,25 +556,64 @@ class EditGroupForm extends GroupForm {
     groupClone.membersAndGlobs = membersAndGlobs.join('\n') + '\n';
     groupClone.nested = (groupClone.nested || []).join('\n') + '\n';
 
-    // TODO(cjacomet): Set up external group handling.
+    if (isExternalGroupName(group.name)) {
+      // Read-only UI for external groups.
+      this.becomeExternal();
+    }
+
     this.populateForm(groupClone);
+  }
+
+  becomeExternal() {
+    this.isExternal = true;
+
+    // Remove all but the members row.
+    this.form.querySelectorAll(':scope > *').forEach((e) => {
+      if (!e.classList.contains('external-group-info')) {
+        this.form.removeChild(e);
+      }
+    });
+
+    // Disable any inputs.
+    this.form.querySelectorAll('button, input, textarea').forEach((e) => {
+      e.setAttribute('disabled', true);
+    });
+
+    // Enlarge the members text area.
+    const membersAndGlobs = this.element.querySelector('#membersAndGlobs');
+    membersAndGlobs.setAttribute('rows', 30);
   }
 
   // Populates the form with the text lists of the group.
   populateForm(group) {
-    // Grab form fields.
+    // Grab heading and members form fields.
     const heading = this.element.querySelector('#group-heading');
+    const membersAndGlobs = this.element.querySelector('#membersAndGlobs');
+
+    // Modify group name and members.
+    heading.textContent = group.name;
+    membersAndGlobs.textContent = group.membersAndGlobs
+
+    // Exit early if the form is read-only.
+    if (this.isExternal) {
+      // Add ' (external)' to the group heading.
+      const externalSpan = document.createElement('span');
+      externalSpan.textContent = ' (external)';
+      externalSpan.style.color = 'gray';
+      heading.appendChild(externalSpan);
+
+      return;
+    }
+
+    // Grab remaining form fields.
     const description = this.element.querySelector('#description-box');
     const owners = this.element.querySelector('#owners-box');
-    const membersAndGlobs = this.element.querySelector('#membersAndGlobs');
     const nested = this.element.querySelector('#nested');
     const deleteBtn = this.element.querySelector('#delete-btn');
 
-    // Modify contents.
-    heading.textContent = group.name;
+    // Modify remaining contents.
     description.textContent = group.description;
     owners.textContent = group.owners;
-    membersAndGlobs.textContent = group.membersAndGlobs
     nested.textContent = group.nested;
 
     deleteBtn.addEventListener('click', () => {

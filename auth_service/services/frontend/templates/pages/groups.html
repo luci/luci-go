@@ -2,6 +2,23 @@
 
 {{define "content"}}
 
+<style>
+:not(.active).list-group-item.external-group,
+:not(.active).list-group-item.external-group:hover {
+  background-color: #eeeeee;
+}
+
+/* Vertically align icon */
+.list-item-icon {
+  position: absolute;
+  right: 10px;
+  min-height: 30px;
+  line-height: 30px;
+  top: 50%;
+  margin-top: -15px;
+}
+</style>
+
 <script type="text/javascript" src="/static/js/groups.js"></script>
 
 <template id="group-scroller-row-template">
@@ -96,7 +113,7 @@
       </div>
     </div>
     <hr>
-    <div class="row mb-3">
+    <div class="row mb-3 external-group-info">
       <label for="membersAndGlobs" class="col-2 col-form-label">Members</label>
       <div class="col">
         <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
