@@ -35,7 +35,7 @@ import (
 const (
 	treeCheckInterval          = time.Minute
 	clRefreshInterval          = 10 * time.Minute
-	tryjobRefreshInterval      = 150 * time.Second
+	tryjobRefreshInterval      = 20 * time.Minute
 	treeStatusFailureTimeLimit = 10 * time.Minute
 )
 
