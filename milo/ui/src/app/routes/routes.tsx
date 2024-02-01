@@ -190,7 +190,7 @@ export const routes: RouteObject[] = [
     children: [
       {
         path: 'task/:taskId',
-        lazy: () => import('@/swarming/views/swarming_build_page'),
+        lazy: () => import('@/swarming/pages/swarming_build_page'),
       },
     ],
   },
