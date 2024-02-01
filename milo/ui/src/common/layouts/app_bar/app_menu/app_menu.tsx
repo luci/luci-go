@@ -23,7 +23,7 @@ import MenuItem from '@mui/material/MenuItem';
 import { useState, MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 
-import { ReleaseNotesTooltip } from '@/app/components/release_notes';
+import { ReleaseNotesTooltip } from '@/core/components/release_notes';
 import { useSetShowPageConfig } from '@/common/components/page_config_state_provider';
 
 export function AppMenu() {

@@ -39,7 +39,7 @@ import { attachTags, hasTags } from '@/generic_libs/tools/tag';
 import {
   provideProject,
   provideTestTabUrl,
-} from '../test_results_tab/test_variants_table/context';
+} from '../../../test_verdict/legacy/test_results_tab/test_variants_table/context';
 
 function retryWithoutComputedInvId(
   err: ErrorEvent,

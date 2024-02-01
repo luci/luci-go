@@ -26,7 +26,7 @@ import {
 } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 
-import { TestVariantEntry } from '../../test_results_tab/test_variants_table/test_variant_entry';
+import { TestVariantEntry } from '../../../../test_verdict/legacy/test_results_tab/test_variants_table/test_variant_entry';
 
 const MAX_DISPLAYED_UNEXPECTED_TESTS = 10;
 

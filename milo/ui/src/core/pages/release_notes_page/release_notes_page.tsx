@@ -18,8 +18,8 @@ import { useEffect, useMemo } from 'react';
 import {
   renderReleaseNotes,
   useReleaseNotes,
-} from '@/app/components/release_notes';
-import { useMarkReleaseNotesRead } from '@/app/components/release_notes';
+} from '@/core/components/release_notes';
+import { useMarkReleaseNotesRead } from '@/core/components/release_notes';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { SanitizedHtml } from '@/common/components/sanitized_html';

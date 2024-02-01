@@ -17,15 +17,15 @@ import type { RouteObject } from 'react-router-dom';
 export const routes: RouteObject[] = [
   {
     index: true,
-    lazy: () => import('@/app/pages/project_search_page'),
+    lazy: () => import('@/core/pages/project_search_page'),
   },
   {
     path: 'login',
-    lazy: () => import('@/app/pages/login_page'),
+    lazy: () => import('@/core/pages/login_page'),
   },
   {
     path: 'search',
-    lazy: () => import('@/app/pages/search/search_redirection_loader'),
+    lazy: () => import('@/routes/search_loader/search_redirection_loader'),
   },
   {
     path: 'builder-search',
@@ -33,7 +33,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'p/:project/test-search',
-    lazy: () => import('@/app/pages/search/test_search'),
+    lazy: () => import('@/test_verdict/pages/test_search'),
   },
   {
     path: 'p/:project',
@@ -41,11 +41,11 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'p/:project/builders',
-    lazy: () => import('@/app/pages/builders_page'),
+    lazy: () => import('@/build/legacy/builders_page'),
   },
   {
     path: 'p/:project/g/:group/builders',
-    lazy: () => import('@/app/pages/builders_page'),
+    lazy: () => import('@/build/legacy/builders_page'),
   },
   {
     path: 'p/:project/builders/:bucket/:builder',
@@ -53,27 +53,27 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'b/:buildId/*?',
-    lazy: () => import('@/app/pages/build_page/build_page_short_link'),
+    lazy: () => import('@/build/legacy/build_page/build_page_short_link'),
   },
   {
     path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
-    lazy: () => import('@/app/pages/build_page'),
+    lazy: () => import('@/build/legacy/build_page'),
     children: [
       {
         index: true,
-        lazy: () => import('@/app/pages/build_page/build_default_tab'),
+        lazy: () => import('@/build/legacy/build_page/build_default_tab'),
       },
       {
         path: 'overview',
-        lazy: () => import('@/app/pages/build_page/overview_tab'),
+        lazy: () => import('@/build/legacy/build_page/overview_tab'),
       },
       {
         path: 'test-results',
-        lazy: () => import('@/app/pages/test_results_tab'),
+        lazy: () => import('@/test_verdict/legacy/test_results_tab'),
       },
       {
         path: 'steps',
-        lazy: () => import('@/app/pages/build_page/steps_tab'),
+        lazy: () => import('@/build/legacy/build_page/steps_tab'),
         children: [
           // Some old systems generate links to a step by
           // appending suffix to /steps/ (crbug/1204954).
@@ -83,71 +83,71 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'related-builds',
-        lazy: () => import('@/app/pages/build_page/related_builds_tab'),
+        lazy: () => import('@/build/legacy/build_page/related_builds_tab'),
       },
       {
         path: 'timeline',
-        lazy: () => import('@/app/pages/build_page/timeline_tab'),
+        lazy: () => import('@/build/legacy/build_page/timeline_tab'),
       },
       {
         path: 'blamelist',
-        lazy: () => import('@/app/pages/build_page/blamelist_tab'),
+        lazy: () => import('@/build/legacy/build_page/blamelist_tab'),
       },
     ],
   },
   {
     path: 'inv/:invId',
-    lazy: () => import('@/app/pages/invocation_page'),
+    lazy: () => import('@/test_verdict/legacy/invocation_page'),
     children: [
       {
         index: true,
         lazy: () =>
-          import('@/app/pages/invocation_page/invocation_default_tab'),
+          import('@/test_verdict/legacy/invocation_page/invocation_default_tab'),
       },
       {
         path: 'test-results',
-        lazy: () => import('@/app/pages/test_results_tab'),
+        lazy: () => import('@/test_verdict/legacy/test_results_tab'),
       },
       {
         path: 'invocation-details',
         lazy: () =>
-          import('@/app/pages/invocation_page/invocation_details_tab'),
+          import('@/test_verdict/legacy/invocation_page/invocation_details_tab'),
       },
     ],
   },
   {
     path: 'artifact',
-    lazy: () => import('@/app/pages/artifact/artifact_page_layout'),
+    lazy: () => import('@/test_verdict/legacy/artifact/artifact_page_layout'),
     children: [
       {
         path: 'text-diff/invocations/:invId/artifacts/:artifactId',
-        lazy: () => import('@/app/pages/artifact/text_diff_artifact_page'),
+        lazy: () => import('@/test_verdict/legacy/artifact/text_diff_artifact_page'),
       },
       {
         path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-        lazy: () => import('@/app/pages/artifact/text_diff_artifact_page'),
+        lazy: () => import('@/test_verdict/legacy/artifact/text_diff_artifact_page'),
       },
       {
         path: 'image-diff/invocations/:invId/artifacts/:artifactId',
-        lazy: () => import('@/app/pages/artifact/image_diff_artifact_page'),
+        lazy: () => import('@/test_verdict/legacy/artifact/image_diff_artifact_page'),
       },
       {
         path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-        lazy: () => import('@/app/pages/artifact/image_diff_artifact_page'),
+        lazy: () => import('@/test_verdict/legacy/artifact/image_diff_artifact_page'),
       },
       {
         path: 'raw/invocations/:invId/artifacts/:artifactId',
-        lazy: () => import('@/app/pages/artifact/raw_artifact_page'),
+        lazy: () => import('@/test_verdict/legacy/artifact/raw_artifact_page'),
       },
       {
         path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-        lazy: () => import('@/app/pages/artifact/raw_artifact_page'),
+        lazy: () => import('@/test_verdict/legacy/artifact/raw_artifact_page'),
       },
     ],
   },
   {
     path: 'test/:projectOrRealm/:testId',
-    lazy: () => import('@/app/pages/test_history_page'),
+    lazy: () => import('@/test_verdict/legacy/test_history_page'),
   },
   {
     path: 'bisection/*',
@@ -196,7 +196,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'doc/release-notes',
-    lazy: () => import('@/app/pages/release_notes_page'),
+    lazy: () => import('@/core/pages/release_notes_page'),
   },
   {
     path: 'labs',

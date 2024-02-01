@@ -45,7 +45,7 @@ import {
   getProjectURLPath,
 } from '@/common/tools/url_utils';
 
-import { CountIndicator } from '../test_results_tab/count_indicator';
+import { CountIndicator } from '../../../test_verdict/legacy/test_results_tab/count_indicator';
 
 import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';

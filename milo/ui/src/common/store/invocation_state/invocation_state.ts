@@ -25,7 +25,6 @@ import {
 import { fromPromise } from 'mobx-utils';
 import { createContext, useContext } from 'react';
 
-import { VariantGroup } from '@/app/pages/test_results_tab/test_variants_table/test_variants_table';
 import { NEVER_OBSERVABLE, NEVER_PROMISE } from '@/common/constants/legacy';
 import { TestLoader } from '@/common/models/test_loader';
 import {
@@ -48,6 +47,7 @@ import {
   unwrapObservable,
 } from '@/generic_libs/tools/mobx_utils';
 import { InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
+import { VariantGroup } from '@/test_verdict/legacy/test_results_tab/test_variants_table/test_variants_table';
 
 export class QueryInvocationError extends Error implements InnerTag {
   readonly [TAG_SOURCE]: Error;

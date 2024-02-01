@@ -155,15 +155,9 @@ with the following rules:
      * The name gives a clear signal that the modules should stay generic.
      * Separating from @/common makes it harder to accidentally
        add business logic to a generic module.
-   * The [@/app](./src/app) package.
-     * The contained modules do not belong to any domain and are not reusable
-       (e.g. login page, router definition), which also includes app entry files
-       (e.g. `@/app/main.tsx`, `@/app/ui_sw.tsx`).
-     * Comparing to @/common, [@/app](./src/app) can depend on
-       domain packages, while @/common cannot (because domain
-       packages depend on it instead).
-     * Makes the [./src](./src) directory cleaner since every module now belongs
-       to a package.
+   * The [@/core](./src/core) package.
+     * The contained modules are for core functionality such as login or
+       the landing page.
    * The [@/testing_tools](./src/testing_tools) package.
      * Contains utilities for writing unit tests.
      * Can import from other packages or be imported to other packages.
@@ -201,15 +195,13 @@ with the following rules:
 Note: At the moment (2023-09-14), some packages are in an inconsistent state.
 Some modules should be moved to other packages. Notable items include but not
 limited to
- * Some pages in [@/app/pages](./src/app/pages) should be moved to business
-   domain packages.
  * Some modules in @/common should be moved to business domain packages.
  * [@/bisection](./src/bisection) and other recently merged in projects should
    have common modules lifted to @/common.
 
 #### Graph illustration of the package relationships:
 ```ascii
-@/app                    ─┬─> @/build                        ─┬─> @/common           ─┬─> @/generic_libs
+@/core                    ─┬─> @/build                        ─┬─> @/common           ─┬─> @/generic_libs
   ├─■ ./pages             │     ├─■ ./pages                   │     ├─■ ./components  │     ├─■ ./components
   ├─■ ...other groups...  │     ├─■ ./components              │     ├─■ ./hooks       │     ├─■ ./hooks
   ├─■ ...entry files...   │     ├─■ ./hooks                   │     ├─■ ./tools       │     ├─■ ./tools

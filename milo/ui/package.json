@@ -4,7 +4,7 @@
   "description": "LUCI Milo UI",
   "repository": "https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/milo/ui",
   "license": "Apache-2.0",
-  "author": "chop-luci-test@google.com",
+  "author": "chops-luci-test@google.com",
   "files": [
     "src"
   ],
@@ -114,7 +114,6 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "patch-package": "^8.0.0",
-    "react-devtools": "^4.28.5",
     "rollup": "^3.29.4",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",

@@ -21,7 +21,7 @@ import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import { DEFAULT_TEST_PROJECT } from '../search_redirection_loader';
+import { DEFAULT_TEST_PROJECT } from '../../../routes/search_loader/search_redirection_loader';
 
 import { TestList } from './test_list';
 

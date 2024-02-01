@@ -22,7 +22,7 @@ import { assertNonNullable } from '@/generic_libs/tools/utils';
 import '@/proto_utils/duration_patch';
 
 import { App } from './App';
-import { initUiSW } from './init_sw';
+import { initUiSW } from './sw/init_sw';
 
 /**
  * Whether the UI service worker should be enabled.
