@@ -142,7 +142,8 @@ func main() {
 		srv.Routes.GET("/groups", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/groups.html", nil)
 		})
-		srv.Routes.GET("/groups/:groupName", mw, func(ctx *router.Context) {
+		// Note that external groups have "/" in their names.
+		srv.Routes.GET("/groups/*groupName", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/groups.html", nil)
 		})
 		srv.Routes.GET("/change_log", mw, func(ctx *router.Context) {

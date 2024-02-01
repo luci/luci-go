@@ -88,6 +88,21 @@ const getCurrentGroupInURL = () => {
   return '';
 }
 
+const setCurrentGroupInURL = (groupName) => {
+  if (getCurrentGroupInURL() != groupName) {
+    window.history.pushState({'group': groupName}, null, GROUP_ROOT_URL + groupName);
+  }
+}
+
+const onCurrentGroupInURLChange = (cb) => {
+  window.onpopstate = function(event) {
+    let s = event.state;
+    if (s && s.hasOwnProperty('group')) {
+      cb(s.group);
+    };
+  };
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Form Validation.
 
@@ -388,6 +403,9 @@ class ContentFrame {
 
     if (this.content) {
       this.element.appendChild(this.content.element);
+      if (this.content.groupName) {
+        setCurrentGroupInURL(this.content.groupName);
+      }
       // TODO(cjacomet): Trigger content shown handler.
     }
   }
@@ -682,6 +700,10 @@ window.onload = () => {
     groupChooser.setSelection(null);
   })
 
+  // Check the "Show external groups" checkbox if the group in the URL
+  // is an external group.
+  groupChooser.showExternalCheckBox.checked = isExternalGroupName(getCurrentGroupInURL());
+
   const jumpToCurrentGroup = (selectDefault) => {
     let current = getCurrentGroupInURL();
     if (current == NEW_GROUP_PLACEHOLDER) {
@@ -696,6 +718,12 @@ window.onload = () => {
 
   groupChooser.refetchGroups().then(() => {
     jumpToCurrentGroup(true);
+    onCurrentGroupInURLChange(() => {
+      jumpToCurrentGroup(false);
+    });
+  }, function(error) {
+    // TODO: replace this with an error modal.
+    console.log('error refetching groups:', error.text);
   });
 
   // Allow selecting a group via search box.
