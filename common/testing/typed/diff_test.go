@@ -48,7 +48,7 @@ func TestDiff(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		res := (Diff(tt.got, tt.want) == "")
+		res := (Diff(tt.want, tt.got) == "")
 		switch {
 		case res && !tt.ok:
 			t.Errorf("case %s unexpectedly true", tt.name)

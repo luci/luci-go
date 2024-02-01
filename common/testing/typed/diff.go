@@ -27,7 +27,7 @@ import (
 // protocmp.Transform() is necessary for any protocol buffer comparison, and it
 // correctly does nothing if the arguments that we pass in are hereditarily
 // non-protobufs. So, for developer convenience, let's just always add it.
-func Diff[T any](got T, want T, opts ...cmp.Option) string {
+func Diff[T any](want T, got T, opts ...cmp.Option) string {
 	opts = append(opts, protocmp.Transform())
-	return cmp.Diff(got, want, opts...)
+	return cmp.Diff(want, got, opts...)
 }
