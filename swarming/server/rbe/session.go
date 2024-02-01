@@ -54,6 +54,23 @@ func NewSessionServer(ctx context.Context, cc []grpc.ClientConnInterface, hmacSe
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Structs used by all handlers.
+
+// WorkerProperties are RBE worker properties unrelated to actual scheduling.
+//
+// They aren't validated by Swarming and just passed along to RBE. The RBE bots
+// obtain them via some external mechanism (e.g. the GCE metadata server).
+//
+// They are optional and currently used only on bots managed by RBE Worker
+// Provider.
+type WorkerProperties struct {
+	// PoolID will be used as `rbePoolID` bot session property.
+	PoolID string `json:"pool_id"`
+	// PoolVersion will be used as `rbePoolVersion` bot session property.
+	PoolVersion string `json:"pool_version"`
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // CreateBotSession handler.
 
 // CreateBotSessionRequest is a body of `/bot/rbe/session/create` request.
@@ -74,6 +91,9 @@ type CreateBotSessionRequest struct {
 
 	// BotVersion identifies the bot software. It is reported to RBE as is.
 	BotVersion string `json:"bot_version,omitempty"`
+
+	// WorkerProperties are passed to RBE as worker properties.
+	WorkerProperties *WorkerProperties `json:"worker_properties,omitempty"`
 }
 
 func (r *CreateBotSessionRequest) ExtractPollToken() []byte               { return r.PollToken }
@@ -82,8 +102,9 @@ func (r *CreateBotSessionRequest) ExtractDimensions() map[string][]string { retu
 
 func (r *CreateBotSessionRequest) ExtractDebugRequest() any {
 	return &CreateBotSessionRequest{
-		Dimensions: r.Dimensions,
-		BotVersion: r.BotVersion,
+		Dimensions:       r.Dimensions,
+		BotVersion:       r.BotVersion,
+		WorkerProperties: r.WorkerProperties,
 	}
 }
 
@@ -115,7 +136,7 @@ func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotS
 	// up any tasks yet (indicated by INITIALIZING status).
 	session, err := srv.rbe.CreateBotSession(ctx, &remoteworkers.CreateBotSessionRequest{
 		Parent:     r.PollState.RbeInstance,
-		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, body.BotVersion, nil),
+		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, body.BotVersion, body.WorkerProperties, nil),
 	})
 	if err != nil {
 		// Return the exact same gRPC error in a reply. This is fine, we trust the
@@ -198,6 +219,9 @@ type UpdateBotSessionRequest struct {
 	// BotVersion identifies the bot software. It is reported to RBE as is.
 	BotVersion string `json:"bot_version,omitempty"`
 
+	// WorkerProperties are passed to RBE as worker properties.
+	WorkerProperties *WorkerProperties `json:"worker_properties,omitempty"`
+
 	// The intended bot session status as stringy remoteworkers.BotStatus enum.
 	//
 	// Possible values:
@@ -231,11 +255,12 @@ func (r *UpdateBotSessionRequest) ExtractDimensions() map[string][]string { retu
 
 func (r *UpdateBotSessionRequest) ExtractDebugRequest() any {
 	return &UpdateBotSessionRequest{
-		Dimensions:  r.Dimensions,
-		BotVersion:  r.BotVersion,
-		Status:      r.Status,
-		Nonblocking: r.Nonblocking,
-		Lease:       r.Lease,
+		Dimensions:       r.Dimensions,
+		BotVersion:       r.BotVersion,
+		WorkerProperties: r.WorkerProperties,
+		Status:           r.Status,
+		Nonblocking:      r.Nonblocking,
+		Lease:            r.Lease,
 	}
 }
 
@@ -372,7 +397,7 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 
 	session, err := srv.rbe.UpdateBotSession(rpcCtx, &remoteworkers.UpdateBotSessionRequest{
 		Name:       r.SessionID,
-		BotSession: rbeBotSession(r.SessionID, botStatus, r.Dimensions, body.BotVersion, leaseIn),
+		BotSession: rbeBotSession(r.SessionID, botStatus, r.Dimensions, body.BotVersion, body.WorkerProperties, leaseIn),
 	})
 
 	if err != nil {
@@ -545,6 +570,7 @@ func rbeBotSession(
 	status remoteworkers.BotStatus,
 	dims map[string][]string,
 	botVersion string,
+	workerProps *WorkerProperties,
 	lease *remoteworkers.Lease,
 ) *remoteworkers.BotSession {
 	var props []*remoteworkers.Device_Property
@@ -579,6 +605,23 @@ func rbeBotSession(
 		return props[i].Key < props[j].Key
 	})
 
+	// These are used to associated the RBE worker with its worker provider pool.
+	var workerPropsList []*remoteworkers.Worker_Property
+	if workerProps != nil {
+		if workerProps.PoolID != "" {
+			workerPropsList = append(workerPropsList, &remoteworkers.Worker_Property{
+				Key:   "rbePoolID",
+				Value: workerProps.PoolID,
+			})
+		}
+		if workerProps.PoolVersion != "" {
+			workerPropsList = append(workerPropsList, &remoteworkers.Worker_Property{
+				Key:   "rbePoolVersion",
+				Value: workerProps.PoolVersion,
+			})
+		}
+	}
+
 	var leases []*remoteworkers.Lease
 	if lease != nil {
 		leases = []*remoteworkers.Lease{lease}
@@ -591,6 +634,7 @@ func rbeBotSession(
 		Status:  status,
 		Leases:  leases,
 		Worker: &remoteworkers.Worker{
+			Properties: workerPropsList,
 			Devices: []*remoteworkers.Device{
 				{
 					Handle:     "primary",

@@ -104,6 +104,10 @@ func TestSessionServer(t *testing.T) {
 						Status:  remoteworkers.BotStatus_INITIALIZING,
 						Version: "bot-version",
 						Worker: &remoteworkers.Worker{
+							Properties: []*remoteworkers.Worker_Property{
+								{Key: "rbePoolID", Value: "rbe-pool-id"},
+								{Key: "rbePoolVersion", Value: "rbe-pool-version"},
+							},
 							Devices: []*remoteworkers.Device{
 								{
 									Handle: "primary",
@@ -130,6 +134,10 @@ func TestSessionServer(t *testing.T) {
 					"ignored": {""}, // uses validated botsrv.Request.Dimensions instead
 				},
 				BotVersion: "bot-version",
+				WorkerProperties: &WorkerProperties{
+					PoolID:      "rbe-pool-id",
+					PoolVersion: "rbe-pool-version",
+				},
 			}, fakeRequest)
 
 			So(err, ShouldBeNil)
@@ -168,6 +176,10 @@ func TestSessionServer(t *testing.T) {
 						Status:  remoteworkers.BotStatus_OK,
 						Version: "bot-version",
 						Worker: &remoteworkers.Worker{
+							Properties: []*remoteworkers.Worker_Property{
+								{Key: "rbePoolID", Value: "rbe-pool-id"},
+								{Key: "rbePoolVersion", Value: "rbe-pool-version"},
+							},
 							Devices: []*remoteworkers.Device{
 								{
 									Handle: "primary",
@@ -195,6 +207,10 @@ func TestSessionServer(t *testing.T) {
 					"ignored": {""}, // uses validated botsrv.Request.Dimensions instead
 				},
 				BotVersion: "bot-version",
+				WorkerProperties: &WorkerProperties{
+					PoolID:      "rbe-pool-id",
+					PoolVersion: "rbe-pool-version",
+				},
 			}, fakeRequest)
 
 			So(err, ShouldBeNil)
