@@ -45,6 +45,7 @@ type accountInfo struct {
 	SecondaryEmails []string `json:"secondary_emails,omitempty"`
 	Username        string   `json:"username,omitempty"`
 	AccountID       int64    `json:"_account_id,omitempty"`
+	Tags            []string `json:"tags,omitempty"`
 }
 
 func (a *accountInfo) ToProto() *gerritpb.AccountInfo {
@@ -57,6 +58,7 @@ func (a *accountInfo) ToProto() *gerritpb.AccountInfo {
 		SecondaryEmails: a.SecondaryEmails,
 		Username:        a.Username,
 		AccountId:       a.AccountID,
+		Tags:            a.Tags,
 	}
 }
 

@@ -414,6 +414,13 @@ message AccountInfo {
 
   // The numeric ID of the account
   int64 account_id = 5;
+
+  // List of additional tags that this account has.
+  //
+  // The only current tag an account can have is SERVICE_USER.
+  // Only set if detailed account information is requested.
+  // See option DETAILED_ACCOUNTS
+  repeated string tags = 6;
 }
 
 // The GitPersonInfo entity contains information about the author/committer of a commit.

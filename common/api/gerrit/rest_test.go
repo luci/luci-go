@@ -182,6 +182,7 @@ func TestGetChange(t *testing.T) {
 					Email:           "jdoe@example.com",
 					SecondaryEmails: []string{"johndoe@chromium.org"},
 					Username:        "jdoe",
+					Tags:            []string{"SERVICE_USER"},
 				},
 				Project:         "example/repo",
 				Ref:             "refs/heads/master",
@@ -202,6 +203,7 @@ func TestGetChange(t *testing.T) {
 							Email:           "jdoe@example.com",
 							SecondaryEmails: []string{"johndoe@chromium.org"},
 							Username:        "jdoe",
+							Tags:            []string{"SERVICE_USER"},
 						},
 						Ref:         "refs/changes/123",
 						Created:     timestamppb.New(parseTime("2016-03-29T17:47:23.751000000Z")),
@@ -371,7 +373,8 @@ func TestGetChange(t *testing.T) {
 						"name":             "John Doe",
 						"email":            "jdoe@example.com",
 						"secondary_emails": ["johndoe@chromium.org"],
-						"username":         "jdoe"
+						"username":         "jdoe",
+						"tags":             ["SERVICE_USER"]
 					},
 					"created":   "2014-05-05 07:15:44.639000000",
 					"updated":   "2014-05-05 07:15:44.639000000",
@@ -393,7 +396,8 @@ func TestGetChange(t *testing.T) {
 								"name":             "John Doe",
 								"email":            "jdoe@example.com",
 								"secondary_emails": ["johndoe@chromium.org"],
-								"username":         "jdoe"
+								"username":         "jdoe",
+								"tags":             ["SERVICE_USER"]
 							},
 							"created": "2016-03-29 17:47:23.751000000",
 							"description": "first upload",
@@ -1115,6 +1119,7 @@ func TestRevertChange(t *testing.T) {
 					Email:           "jdoe@example.com",
 					SecondaryEmails: []string{"johndoe@chromium.org"},
 					Username:        "jdoe",
+					Tags:            []string{"SERVICE_USER"},
 				},
 				Project:   "example/repo",
 				Ref:       "refs/heads/master",
@@ -1151,7 +1156,8 @@ func TestRevertChange(t *testing.T) {
 						"name":             "John Doe",
 						"email":            "jdoe@example.com",
 						"secondary_emails": ["johndoe@chromium.org"],
-						"username":         "jdoe"
+						"username":         "jdoe",
+						"tags":             ["SERVICE_USER"]
 					},
 					"created":   "2014-05-05 07:15:44.639000000",
 					"updated":   "2014-05-05 07:15:44.639000000",
