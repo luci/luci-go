@@ -170,6 +170,16 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 	if h, ok := ctx.Value(&fakeHandlerKey).(handler.Handler); ok {
 		proc.handler = h
 	}
+
+	result, err := datastore.Exists(ctx, &run.Run{ID: runID})
+	switch {
+	case err != nil:
+		return transient.Tag.Apply(err)
+	case !result.Any():
+		logging.Warningf(ctx, "o/248732419: run %s is deleted in datastore but got manage-run task")
+		return nil
+	}
+
 	recipient := run.EventboxRecipient(ctx, runID)
 	postProcessFns, processErr := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
 	if processErr != nil {
