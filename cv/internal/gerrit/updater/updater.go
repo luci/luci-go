@@ -17,6 +17,8 @@ package updater
 import (
 	"context"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -99,6 +101,12 @@ func (u *updaterBackend) HasChanged(cvCurrent, backendCurrent *changelist.Snapsh
 	case cvInfo.GetUpdated().AsTime().After(backendInfo.GetUpdated().AsTime()):
 		// LUCI CV has more recent data. Most likely Gerrit is returning stale data.
 		return false
+	case !proto.Equal(cvInfo.GetOwner(), backendInfo.GetOwner()):
+		// TODO - crbug/1523301: Remove after Feb. 5 2024. This is temporarily added
+		// here to backfill owner's tag introduced https://crrev.com/c/5250717 so
+		// that LUCI CV will try to backfill CL entity with the owner's tag as much
+		// as possible.
+		return true
 	default:
 		// Gerrit doesn't support fractional second precision. Therefore, even if
 		// two change info have the exact same update timestamp. They could still
