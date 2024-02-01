@@ -42,9 +42,7 @@ type Tryjob struct {
 	// ExternalID is a Tryjob ID in external system, e.g. Buildbucket.
 	//
 	// There can be at most one Tryjob with a given ExternalID.
-	//
-	// Indexed.
-	ExternalID ExternalID
+	ExternalID ExternalID `gae:",noindex"` // Indexed in tryjobMap entities.
 	// EVersion is the entity version.
 	//
 	// It increments by one upon every successful modification.
@@ -81,9 +79,7 @@ type Tryjob struct {
 	Definition *Definition
 
 	// Status of the Tryjob.
-	//
-	// Indexed.
-	Status Status
+	Status Status `gae:",noindex"`
 
 	// Result of the Tryjob.
 	//
@@ -97,14 +93,10 @@ type Tryjob struct {
 	//
 	// May be unset if the Tryjob was not launched by CV (e.g. through Gerrit
 	// UI), in which case ReusedBy should have at least one Run.
-	//
-	// Indexed.
-	LaunchedBy common.RunID
+	LaunchedBy common.RunID `gae:",noindex"`
 
 	// ReusedBy are the Runs that are interested in the result of this Tryjob.
-	//
-	// Indexed.
-	ReusedBy common.RunIDs
+	ReusedBy common.RunIDs `gae:",noindex"`
 
 	// CLPatchsets is an array of CLPatchset that each identify a specific
 	// patchset in a specific CL.
