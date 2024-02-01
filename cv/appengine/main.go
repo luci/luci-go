@@ -167,7 +167,7 @@ func main() {
 		cron.RegisterHandler("kick-bb-pubsub-listeners", func(ctx context.Context) error {
 			return kickNewListenersFn(ctx)
 		})
-		retention.RegisterCrons(&tq.Default)
+		retention.RegisterCrons(&tq.Default, runNotifier)
 
 		// The service has no general-use UI, so just redirect to the RPC Explorer.
 		srv.Routes.GET("/", nil, func(c *router.Context) {

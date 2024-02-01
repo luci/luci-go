@@ -129,7 +129,7 @@ func findRunsToWipeoutForProject(ctx context.Context, proj string, cutoff time.T
 	return ret, nil
 }
 
-func registerWipeoutRunsTask(tqd *tq.Dispatcher) {
+func registerWipeoutRunsTask(tqd *tq.Dispatcher, rm rm) {
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           "wipeout-runs",
 		Queue:        "data-retention",
@@ -139,7 +139,7 @@ func registerWipeoutRunsTask(tqd *tq.Dispatcher) {
 		QuietOnError: true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*WipeoutRunsTask)
-			err := wipeoutRuns(ctx, common.MakeRunIDs(task.GetIds()...))
+			err := wipeoutRuns(ctx, common.MakeRunIDs(task.GetIds()...), rm)
 			return common.TQifyError(ctx, err)
 		},
 	})
@@ -148,7 +148,7 @@ func registerWipeoutRunsTask(tqd *tq.Dispatcher) {
 // wipeoutRuns wipes out runs for the provided run IDs.
 //
 // skip runs that do not exist or are still in retention period.
-func wipeoutRuns(ctx context.Context, runIDs common.RunIDs) error {
+func wipeoutRuns(ctx context.Context, runIDs common.RunIDs, rm rm) error {
 	runs, err := run.LoadRunsFromIDs(runIDs...).DoIgnoreNotFound(ctx)
 	switch {
 	case err != nil:
@@ -161,7 +161,7 @@ func wipeoutRuns(ctx context.Context, runIDs common.RunIDs) error {
 		for _, r := range runs {
 			r := r
 			workC <- func() error {
-				return wipeoutRun(ctx, r)
+				return wipeoutRun(ctx, r, rm)
 			}
 		}
 	})
@@ -170,12 +170,21 @@ func wipeoutRuns(ctx context.Context, runIDs common.RunIDs) error {
 // wipeoutRun wipes out the given run if run is no longer in retention period.
 //
 // No-op if the run is still in the retention period.
-func wipeoutRun(ctx context.Context, r *run.Run) error {
+func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	ctx = logging.SetField(ctx, "run", string(r.ID))
-	if !r.CreateTime.Before(clock.Now(ctx).Add(-retentionPeriod)) {
+	switch {
+	case !r.CreateTime.Before(clock.Now(ctx).Add(-retentionPeriod)):
 		// skip if it is still in the retention period.
 		logging.Warningf(ctx, "WipeoutRun: too young to wipe out: %s < %s",
 			clock.Now(ctx).Sub(r.CreateTime), retentionPeriod)
+		return nil
+	case !run.IsEnded(r.Status):
+		logging.Errorf(ctx, "run is eligible for wipeout but run is not ended yet. Poking the run to trigger run cancellation")
+		// Poke the non-ended run expecting the run will be cancelled by RunManager.
+		// The next cron job would likely wipeout the run.
+		if err := rm.PokeNow(ctx, r.ID); err != nil {
+			return errors.Annotate(err, "failed to poke run %s", r.ID).Tag(transient.Tag).Err()
+		}
 		return nil
 	}
 
@@ -189,7 +198,7 @@ func wipeoutRun(ctx context.Context, r *run.Run) error {
 	var toDelete []*datastore.Key
 	q := datastore.NewQuery("").Ancestor(runKey).KeysOnly(true)
 	if err := datastore.GetAll(ctx, q, &toDelete); err != nil {
-		return errors.Annotate(err, "failed to query all child entities of run").Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to query all child entities of run %s", r.ID).Tag(transient.Tag).Err()
 	}
 	toDelete = append(toDelete, runKey)
 
@@ -198,7 +207,7 @@ func wipeoutRun(ctx context.Context, r *run.Run) error {
 	}, nil)
 
 	if err != nil {
-		return errors.Annotate(err, "failed to delete run entities and it's child entities in a transaction").Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to delete run entity for run %s and its child entities in a transaction", r.ID).Tag(transient.Tag).Err()
 	}
 	logging.Infof(ctx, "successfully wiped out run %s", r.ID)
 	return nil

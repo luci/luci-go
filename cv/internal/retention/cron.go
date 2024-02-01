@@ -17,14 +17,21 @@ package retention
 import (
 	"context"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/tq"
 )
 
 // RegisterCrons registers cron jobs for data retention.
-func RegisterCrons(tqd *tq.Dispatcher) {
-	registerWipeoutRunsTask(tqd)
+func RegisterCrons(tqd *tq.Dispatcher, rm rm) {
+	registerWipeoutRunsTask(tqd, rm)
 	cron.RegisterHandler("data-retention-runs", func(ctx context.Context) error {
 		return scheduleWipeoutRuns(ctx, tqd)
 	})
+}
+
+// rm encapsulates communication between data retention jobs and run manager.
+type rm interface {
+	// PokeNow tells RunManager to check its own state immediately.
+	PokeNow(ctx context.Context, runID common.RunID) error
 }

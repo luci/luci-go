@@ -15,6 +15,8 @@
 package retention
 
 import (
+	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -38,7 +40,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
-		registerWipeoutRunsTask(ct.TQDispatcher)
+		registerWipeoutRunsTask(ct.TQDispatcher, &mockRM{})
 
 		// Test Scenario: Create a lot of runs under 2 LUCI Projects (1 disabled).
 		// Making sure the tasks are scheduled for all runs that are out of
@@ -106,10 +108,12 @@ func TestWipeoutRuns(t *testing.T) {
 		defer cancel()
 
 		const lProject = "infra"
+		mockRM := &mockRM{}
 		makeRun := func(createTime time.Time) *run.Run {
 			r := &run.Run{
 				ID:         common.MakeRunID(lProject, createTime, 1, []byte("deadbeef")),
 				CreateTime: createTime,
+				Status:     run.Status_SUCCEEDED,
 			}
 			So(datastore.Put(ctx, r), ShouldBeNil)
 			return r
@@ -130,7 +134,7 @@ func TestWipeoutRuns(t *testing.T) {
 				Run: datastore.KeyForObj(ctx, r),
 			}
 			So(datastore.Put(ctx, cl1, cl2, log), ShouldBeNil)
-			So(wipeoutRuns(ctx, common.RunIDs{r.ID}), ShouldBeNil)
+			So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
 			So(datastore.Get(ctx, r), ShouldErrLike, datastore.ErrNoSuchEntity)
 			So(datastore.Get(ctx, cl1), ShouldErrLike, datastore.ErrNoSuchEntity)
 			So(datastore.Get(ctx, cl2), ShouldErrLike, datastore.ErrNoSuchEntity)
@@ -140,13 +144,34 @@ func TestWipeoutRuns(t *testing.T) {
 		Convey("handle run doesn't exist", func() {
 			createTime := ct.Clock.Now().Add(-2 * retentionPeriod).UTC()
 			rid := common.MakeRunID(lProject, createTime, 1, []byte("deadbeef"))
-			So(wipeoutRuns(ctx, common.RunIDs{rid}), ShouldBeNil)
+			So(wipeoutRuns(ctx, common.RunIDs{rid}, mockRM), ShouldBeNil)
 		})
 
 		Convey("handle run should still be retained", func() {
 			r := makeRun(ct.Clock.Now().Add(-retentionPeriod / 2).UTC())
-			So(wipeoutRuns(ctx, common.RunIDs{r.ID}), ShouldBeNil)
+			So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
 			So(datastore.Get(ctx, r), ShouldBeNil)
 		})
+
+		Convey("Poke run if it is not ended", func() {
+			r := makeRun(ct.Clock.Now().Add(-2 * retentionPeriod).UTC())
+			r.Status = run.Status_PENDING
+			So(datastore.Put(ctx, r), ShouldBeNil)
+			So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
+			So(datastore.Get(ctx, r), ShouldBeNil)
+			So(mockRM.called, ShouldResemble, common.RunIDs{r.ID})
+		})
 	})
+}
+
+type mockRM struct {
+	called   common.RunIDs
+	calledMu sync.Mutex
+}
+
+func (rm *mockRM) PokeNow(ctx context.Context, runID common.RunID) error {
+	rm.calledMu.Lock()
+	rm.called = append(rm.called, runID)
+	rm.calledMu.Unlock()
+	return nil
 }
