@@ -29,9 +29,7 @@ import (
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"go.chromium.org/luci/common/bq"
-
-	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
+	"go.chromium.org/luci/resultdb/bqutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -40,9 +38,6 @@ import (
 const tableName = "text_artifacts"
 
 const partitionExpirationTime = 90 * 24 * time.Hour // 90 days.
-
-// schemaApplyer ensures BQ schema matches the row proto definitions.
-var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(5))
 
 const rowMessage = "luci.resultdb.bq.TextArtifactRow"
 
@@ -81,7 +76,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TextArtifactRow{})
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp}}
-	return bqexporter.GenerateSchema(fdset, rowMessage)
+	return bqutil.GenerateSchema(fdset, rowMessage)
 }
 
 func generateRowSchemaDescriptor() (*desc.DescriptorProto, error) {

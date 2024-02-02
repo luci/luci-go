@@ -31,6 +31,9 @@ import (
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -38,7 +41,6 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/span"
 )
 
 var textArtifactRowSchema bigquery.Schema
@@ -67,7 +69,7 @@ func generateArtifactRowSchema() (schema bigquery.Schema, err error) {
 	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdinv, fdsp}}
-	return GenerateSchema(fdset, artifactRowMessage)
+	return bqutil.GenerateSchema(fdset, artifactRowMessage)
 }
 
 // textArtifactRowInput is information required to generate a text artifact BigQuery row.
