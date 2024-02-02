@@ -18,7 +18,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 
-import { RecentRegressionTable } from './recent_regression_table';
+import { RecentRegressions } from './recent_regressions';
 
 export function RecentRegressionsPage() {
   const { project } = useParams();
@@ -33,7 +33,7 @@ export function RecentRegressionsPage() {
         title="recent regressions"
         project={project}
       ></PageMeta>
-      <RecentRegressionTable project={project} />
+      <RecentRegressions project={project} />
     </>
   );
 }

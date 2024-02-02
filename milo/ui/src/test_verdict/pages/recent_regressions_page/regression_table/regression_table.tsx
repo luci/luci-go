@@ -14,8 +14,6 @@
 
 import { Help } from '@mui/icons-material';
 import {
-  Box,
-  CircularProgress,
   Table,
   TableBody,
   TableCell,
@@ -24,10 +22,7 @@ import {
   Tooltip,
   styled,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 
-import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
-import { QueryChangepointGroupSummariesRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
 import { RegressionRow } from './regression_row';
@@ -77,35 +72,11 @@ const ChartCell = styled(TableCell)({
   paddingRight: '5px',
 });
 
-export interface RecentRegressionTableProps {
-  readonly project: string;
+export interface RegressionTableProps {
+  readonly regressions: readonly OutputChangepointGroupSummary[];
 }
 
-export function RecentRegressionTable({ project }: RecentRegressionTableProps) {
-  const client = useChangepointsClient();
-  const { data, isLoading, isError, error } = useQuery(
-    client.QueryChangepointGroupSummaries.query(
-      QueryChangepointGroupSummariesRequest.fromPartial({
-        project,
-      }),
-    ),
-  );
-
-  if (isError) {
-    throw error;
-  }
-
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  const groupSummaries =
-    data.groupSummaries as readonly OutputChangepointGroupSummary[];
-
+export function RegressionTable({ regressions }: RegressionTableProps) {
   return (
     <Table
       sx={{
@@ -191,8 +162,8 @@ export function RecentRegressionTable({ project }: RecentRegressionTableProps) {
         </TableRow>
       </TableHead>
       <TableBody>
-        {groupSummaries.map((groupSummary, i) => (
-          <RegressionRow key={i} regression={groupSummary} />
+        {regressions.map((regression, i) => (
+          <RegressionRow key={i} regression={regression} />
         ))}
       </TableBody>
     </Table>
