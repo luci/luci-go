@@ -14,7 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { GenericCulprit } from '@/bisection/types';
+import { GenericCulpritWithDetails } from '@/bisection/types';
 import { RerunStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 import {
   Culprit,
@@ -27,7 +27,7 @@ import { CulpritsTable } from './culprits_table';
 
 describe('<CulpritsTable />', () => {
   test('if culprit review link is displayed', async () => {
-    const mockCulprit = GenericCulprit.from(
+    const mockCulprit = GenericCulpritWithDetails.from(
       Culprit.fromPartial({
         commit: {
           host: 'testHost',
@@ -69,7 +69,7 @@ describe('<CulpritsTable />', () => {
       revertClUrl:
         'https://chromium-review.googlesource.com/placeholder/+/123457',
     });
-    const mockCulprit = GenericCulprit.from(
+    const mockCulprit = GenericCulpritWithDetails.from(
       Culprit.fromPartial({
         commit: {
           host: 'testHost',
@@ -129,7 +129,7 @@ describe('<CulpritsTable />', () => {
       revertClUrl:
         'https://chromium-review.googlesource.com/placeholder/+/123457',
     });
-    const mockCulprit = GenericCulprit.from(
+    const mockCulprit = GenericCulpritWithDetails.from(
       Culprit.fromPartial({
         commit: {
           host: 'testHost',
@@ -171,7 +171,7 @@ describe('<CulpritsTable />', () => {
     const inaction = CulpritAction.fromPartial({
       actionType: CulpritActionType.NO_ACTION,
     });
-    const mockCulprit = GenericCulprit.from(
+    const mockCulprit = GenericCulpritWithDetails.from(
       Culprit.fromPartial({
         commit: {
           host: 'testHost',
@@ -203,7 +203,7 @@ describe('<CulpritsTable />', () => {
   });
 
   test('if culprit verification details are displayed', async () => {
-    const mockCulprit = GenericCulprit.from(
+    const mockCulprit = GenericCulpritWithDetails.from(
       Culprit.fromPartial({
         commit: {
           host: 'testHost',

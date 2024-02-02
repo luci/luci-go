@@ -32,7 +32,7 @@ import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analy
 import { TestFailuresTable } from '@/bisection/components/test_table';
 import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
 import {
-  GenericCulprit,
+  GenericCulpritWithDetails,
   GenericNthSectionAnalysisResult,
   GenericSuspect,
 } from '@/bisection/types';
@@ -121,7 +121,7 @@ export function TestAnalysisDetailsPage() {
             Culprit Details
           </Typography>
           <CulpritsTable
-            culprits={[GenericCulprit.fromTest(analysis.culprit)]}
+            culprits={[GenericCulpritWithDetails.fromTest(analysis.culprit)]}
           />
         </div>
       )}

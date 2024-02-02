@@ -29,7 +29,7 @@ import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { displayRerunStatus } from '@/bisection/tools/info_display';
 import { linkToBuild } from '@/bisection/tools/link_constructors';
 import {
-  GenericCulprit,
+  GenericCulpritWithDetails,
   GenericSuspectVerificationDetails,
 } from '@/bisection/types';
 import {
@@ -188,7 +188,7 @@ export function VerificationDetailsTable({
 }
 
 export interface CulpritTableRowProps {
-  readonly culprit: GenericCulprit;
+  readonly culprit: GenericCulpritWithDetails;
 }
 
 export function CulpritTableRow({ culprit }: CulpritTableRowProps) {
@@ -198,7 +198,7 @@ export function CulpritTableRow({ culprit }: CulpritTableRowProps) {
     culpritDescription += `: ${reviewTitle}`;
   }
 
-  const culpritAction = culprit.culpritAction || [];
+  const culpritAction = culprit.culpritAction;
   let rowSpan = 1;
   if (culpritAction.length > rowSpan) {
     rowSpan = culpritAction.length;
@@ -240,7 +240,7 @@ export function CulpritTableRow({ culprit }: CulpritTableRowProps) {
 }
 
 export interface CulpritsTableProps {
-  readonly culprits: ReadonlyArray<GenericCulprit>;
+  readonly culprits: ReadonlyArray<GenericCulpritWithDetails>;
 }
 
 export function CulpritsTable({ culprits }: CulpritsTableProps) {

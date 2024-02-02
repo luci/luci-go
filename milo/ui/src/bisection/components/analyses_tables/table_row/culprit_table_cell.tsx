@@ -86,7 +86,7 @@ function CulpritSpan({ culprit }: CulpritSpanProps) {
         underline="always"
       >
         <Typography display="flex" variant="inherit">
-          {culprit.culpritAction?.map((action) => (
+          {culprit.culpritAction.map((action) => (
             <CulpritActionIcon
               actionType={action.actionType}
               key={action.actionType}

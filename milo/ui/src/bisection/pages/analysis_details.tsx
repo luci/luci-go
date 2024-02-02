@@ -32,12 +32,11 @@ import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysi
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table';
 import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
 import {
-  GenericCulprit,
+  GenericCulpritWithDetails,
   GenericNthSectionAnalysisResult,
   GenericSuspect,
 } from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { assertNonNullable } from '@/generic_libs/tools/utils';
 import {
   Analysis,
   QueryAnalysisRequest,
@@ -152,7 +151,7 @@ export function AnalysisDetailsPage() {
             Culprit Details
           </Typography>
           <CulpritsTable
-            culprits={analysis.culprits.map(GenericCulprit.from)}
+            culprits={analysis.culprits.map(GenericCulpritWithDetails.from)}
           />
         </div>
       )}
@@ -187,9 +186,10 @@ export function AnalysisDetailsPage() {
         </TabPanel>
         <TabPanel value={currentTab} name={AnalysisComponentTabs.NTH_SECTION}>
           <NthSectionAnalysisTable
-            result={GenericNthSectionAnalysisResult.from(
-              assertNonNullable(analysis.nthSectionResult),
-            )}
+            result={
+              analysis.nthSectionResult &&
+              GenericNthSectionAnalysisResult.from(analysis.nthSectionResult)
+            }
           />
         </TabPanel>
         <TabPanel

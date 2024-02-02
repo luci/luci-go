@@ -50,7 +50,7 @@ export function HeuristicAnalysisTable({
     );
   }
 
-  if (!result.suspects || result.suspects.length === 0) {
+  if (result.suspects.length === 0) {
     return (
       <span className="data-placeholder" data-testid="heuristic-analysis-table">
         No suspects found

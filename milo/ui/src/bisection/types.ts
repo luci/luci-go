@@ -112,7 +112,6 @@ export interface GenericCulprit {
   readonly reviewUrl: string;
   readonly reviewTitle: string;
   readonly culpritAction: readonly CulpritAction[];
-  readonly verificationDetails: GenericSuspectVerificationDetails;
 }
 
 export const GenericCulprit = {
@@ -122,9 +121,6 @@ export const GenericCulprit = {
       reviewUrl: culprit.reviewUrl,
       reviewTitle: culprit.reviewTitle,
       culpritAction: culprit.culpritAction,
-      verificationDetails: GenericSuspectVerificationDetails.from(
-        assertNonNullable(culprit.verificationDetails),
-      ),
     };
   },
   fromTest(culprit: TestCulprit): GenericCulprit {
@@ -133,6 +129,26 @@ export const GenericCulprit = {
       reviewUrl: culprit.reviewUrl,
       reviewTitle: culprit.reviewTitle,
       culpritAction: culprit.culpritAction,
+    };
+  },
+};
+
+export interface GenericCulpritWithDetails extends GenericCulprit {
+  readonly verificationDetails: GenericSuspectVerificationDetails;
+}
+
+export const GenericCulpritWithDetails = {
+  from(culprit: Culprit): GenericCulpritWithDetails {
+    return {
+      ...GenericCulprit.from(culprit),
+      verificationDetails: GenericSuspectVerificationDetails.from(
+        assertNonNullable(culprit.verificationDetails),
+      ),
+    };
+  },
+  fromTest(culprit: TestCulprit): GenericCulpritWithDetails {
+    return {
+      ...GenericCulprit.fromTest(culprit),
       verificationDetails: GenericSuspectVerificationDetails.fromTest(
         assertNonNullable(culprit.verificationDetails),
       ),
