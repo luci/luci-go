@@ -201,6 +201,13 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	toDelete = append(toDelete, runKey)
 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		switch err := datastore.Get(ctx, &run.Run{ID: r.ID}); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			// run has been deleted already.
+			return nil
+		case err != nil:
+			return err
+		}
 		return datastore.Delete(ctx, toDelete)
 	}, nil)
 
