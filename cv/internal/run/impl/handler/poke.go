@@ -19,17 +19,19 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/tryjob"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 const (
@@ -41,6 +43,12 @@ const (
 
 // Poke implements Handler interface.
 func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error) {
+	if !run.IsEnded(rs.Status) && clock.Since(ctx, rs.CreateTime) > common.MaxRunTotalDuration {
+		return impl.Cancel(ctx, rs, []string{
+			fmt.Sprintf("max run duration of %s has reached", common.MaxRunTotalDuration),
+		})
+	}
+
 	rs = rs.ShallowCopy()
 	if shouldCheckTree(ctx, rs.Status, rs.Submission) {
 		rs.CloneSubmission()

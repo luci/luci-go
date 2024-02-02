@@ -86,6 +86,7 @@ func TestPoke(t *testing.T) {
 				StartTime:     ct.Clock.Now().UTC().Add(-1 * time.Minute),
 				CLs:           common.CLIDs{gChange},
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				Status:        run.Status_RUNNING,
 				Mode:          run.DryRun,
 			},
 		}
@@ -137,6 +138,13 @@ func TestPoke(t *testing.T) {
 			So(res.PostProcessFn, ShouldBeNil)
 			So(deps.clUpdater.refreshedCLs, ShouldBeEmpty)
 		}
+
+		Convey("Cancels run exceeding max duration", func() {
+			ct.Clock.Add(2 * common.MaxRunTotalDuration)
+			res, err := h.Poke(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
+		})
 
 		Convey("Tree checks", func() {
 			Convey("Check Tree if condition matches", func() {

@@ -32,6 +32,12 @@ import (
 // RunKind is the Datastore entity kind for Run.
 const RunKind = "Run"
 
+// MaxRunTotalDuration is the max total duration of the Run.
+//
+// Total duration means end time - create time. Run will be cancelled after
+// the total duration is reached.
+const MaxRunTotalDuration = 10 * 24 * time.Hour // 10 days
+
 // RunID is an unique RunID to identify a Run in CV.
 //
 // RunID is string like `luciProject/inverseTS-1-hexHashDigest` consisting of
