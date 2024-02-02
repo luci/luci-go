@@ -314,7 +314,7 @@ export default defineConfig(({ mode }) => {
         //
         // [1]: https://github.com/rollup/rollup/issues/2756
         strategies: 'injectManifest',
-        srcDir: 'src/app',
+        srcDir: 'src/sw',
         filename: 'ui_sw.ts',
         outDir: 'out',
         devOptions: {
