@@ -19,14 +19,17 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import { nanoid } from 'nanoid';
 
+import { SUSPECT_CONFIDENCE_LEVEL_DISPLAY_MAP } from '@/bisection/constants';
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
-import { HeuristicSuspect } from '@/common/services/luci_bisection';
+import { HeuristicSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/heuristic.pb';
 
-interface Props {
-  suspect: HeuristicSuspect;
+export interface HeuristicAnalysisTableRowProps {
+  readonly suspect: HeuristicSuspect;
 }
 
-export function HeuristicAnalysisTableRow({ suspect }: Props) {
+export function HeuristicAnalysisTableRow({
+  suspect,
+}: HeuristicAnalysisTableRowProps) {
   const {
     gitilesCommit,
     reviewUrl,
@@ -39,7 +42,7 @@ export function HeuristicAnalysisTableRow({ suspect }: Props) {
   const reasons = justification.split('\n');
   const reasonCount = reasons.length;
 
-  let suspectDescription = getCommitShortHash(gitilesCommit.id);
+  let suspectDescription = getCommitShortHash(gitilesCommit!.id);
   if (reviewTitle) {
     suspectDescription += `: ${reviewTitle}`;
   }
@@ -58,7 +61,7 @@ export function HeuristicAnalysisTableRow({ suspect }: Props) {
           </Link>
         </TableCell>
         <TableCell rowSpan={reasonCount} className="overview-cell">
-          {confidenceLevel}
+          {SUSPECT_CONFIDENCE_LEVEL_DISPLAY_MAP[confidenceLevel]}
         </TableCell>
         <TableCell
           rowSpan={reasonCount}

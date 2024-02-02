@@ -19,18 +19,17 @@ import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
-import {
-  AnalysisStatus,
-  Culprit,
-  CulpritActionType,
-} from '@/common/services/luci_bisection';
+import { GenericCulprit } from '@/bisection/types';
+import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
+import { CulpritActionType } from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
+
 interface CulpritActionIconProps {
-  actionType: CulpritActionType;
+  readonly actionType: CulpritActionType;
 }
 
 function CulpritActionIcon({ actionType }: CulpritActionIconProps) {
   switch (actionType) {
-    case 'CULPRIT_AUTO_REVERTED':
+    case CulpritActionType.CULPRIT_AUTO_REVERTED:
       return (
         <ReplayIcon
           fontSize="small"
@@ -38,7 +37,7 @@ function CulpritActionIcon({ actionType }: CulpritActionIconProps) {
           data-testid="culprit-action-icon-auto-reverted"
         />
       );
-    case 'REVERT_CL_CREATED':
+    case CulpritActionType.REVERT_CL_CREATED:
       return (
         <ReplayIcon
           fontSize="small"
@@ -46,7 +45,7 @@ function CulpritActionIcon({ actionType }: CulpritActionIconProps) {
           data-testid="culprit-action-icon-revert-created"
         />
       );
-    case 'CULPRIT_CL_COMMENTED':
+    case CulpritActionType.CULPRIT_CL_COMMENTED:
       return (
         <CommentIcon
           fontSize="small"
@@ -54,7 +53,7 @@ function CulpritActionIcon({ actionType }: CulpritActionIconProps) {
           data-testid="culprit-action-icon-culprit-commented"
         />
       );
-    case 'EXISTING_REVERT_CL_COMMENTED':
+    case CulpritActionType.EXISTING_REVERT_CL_COMMENTED:
       return (
         <CommentIcon
           fontSize="small"
@@ -68,7 +67,7 @@ function CulpritActionIcon({ actionType }: CulpritActionIconProps) {
 }
 
 interface CulpritSpanProps {
-  culprit: Culprit;
+  readonly culprit: GenericCulprit;
 }
 
 function CulpritSpan({ culprit }: CulpritSpanProps) {
@@ -100,20 +99,21 @@ function CulpritSpan({ culprit }: CulpritSpanProps) {
   );
 }
 
-interface CulpritsTableCellProps {
-  culprits: Culprit[] | undefined;
-  status: AnalysisStatus;
+export interface CulpritsTableCellProps {
+  readonly culprits: readonly GenericCulprit[];
+  readonly status: AnalysisStatus;
 }
 
 export function CulpritsTableCell({
   culprits,
   status,
 }: CulpritsTableCellProps) {
-  if (!culprits?.length) {
+  if (!culprits.length) {
     return (
       <TableCell>
         <span className="data-placeholder">
-          {status === 'SUSPECTFOUND' && 'Suspect found (not verified)'}
+          {status === AnalysisStatus.SUSPECTFOUND &&
+            'Suspect found (not verified)'}
         </span>
       </TableCell>
     );
@@ -121,15 +121,9 @@ export function CulpritsTableCell({
 
   return (
     <TableCell>
-      {culprits.map(
-        (culprit) =>
-          culprit && (
-            <CulpritSpan
-              culprit={culprit}
-              key={culprit.reviewUrl}
-            ></CulpritSpan>
-          ),
-      )}
+      {culprits.map((culprit) => (
+        <CulpritSpan key={culprit.reviewUrl} culprit={culprit} />
+      ))}
     </TableCell>
   );
 }

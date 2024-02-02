@@ -24,13 +24,13 @@ import TableRow from '@mui/material/TableRow';
 import { DateTime } from 'luxon';
 
 import { Timestamp } from '@/common/components/timestamp';
-import { TestFailure } from '@/common/services/luci_bisection';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { getTestHistoryURLPath } from '@/common/tools/url_utils';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
+import { TestFailure } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
-interface TestFailuresTableProps {
-  testFailures?: TestFailure[];
+export interface TestFailuresTableProps {
+  readonly testFailures?: readonly TestFailure[];
 }
 
 export function TestFailuresTable({ testFailures }: TestFailuresTableProps) {
@@ -69,7 +69,7 @@ export function TestFailuresTable({ testFailures }: TestFailuresTableProps) {
 }
 
 interface TestFailureRowProps {
-  testFailure: TestFailure;
+  readonly testFailure: TestFailure;
 }
 
 function TestFailureRow({ testFailure }: TestFailureRowProps) {
@@ -94,11 +94,11 @@ function TestFailureRow({ testFailure }: TestFailureRowProps) {
           </Link>
         </TableCell>
         <TableCell>
-          {testFailure.variant.def['test_suite'] || 'unavailable'}
+          {testFailure.variant?.def['test_suite'] || 'unavailable'}
         </TableCell>
         <TableCell>
           <Timestamp
-            datetime={DateTime.fromISO(testFailure.startHour)}
+            datetime={DateTime.fromISO(testFailure.startHour!)}
             format={SHORT_TIME_FORMAT}
           />
         </TableCell>

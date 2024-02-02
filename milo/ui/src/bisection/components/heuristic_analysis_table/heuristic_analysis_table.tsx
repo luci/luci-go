@@ -22,18 +22,18 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import {
-  HeuristicAnalysisResult,
-  isAnalysisComplete,
-} from '@/common/services/luci_bisection';
+import { COMPLETE_STATUSES } from '@/bisection/constants';
+import { HeuristicAnalysisResult } from '@/proto/go.chromium.org/luci/bisection/proto/v1/heuristic.pb';
 
 import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row';
 
-interface Props {
-  result?: HeuristicAnalysisResult;
+export interface HeuristicAnalysisTableProps {
+  readonly result?: HeuristicAnalysisResult;
 }
 
-export function HeuristicAnalysisTable({ result }: Props) {
+export function HeuristicAnalysisTable({
+  result,
+}: HeuristicAnalysisTableProps) {
   if (!result) {
     return (
       <span className="data-placeholder" data-testid="heuristic-analysis-table">
@@ -42,7 +42,7 @@ export function HeuristicAnalysisTable({ result }: Props) {
     );
   }
 
-  if (!isAnalysisComplete(result.status)) {
+  if (!COMPLETE_STATUSES.includes(result.status)) {
     return (
       <span className="data-placeholder" data-testid="heuristic-analysis-table">
         Heuristic analysis is in progress
@@ -76,7 +76,7 @@ export function HeuristicAnalysisTable({ result }: Props) {
         <TableBody>
           {result.suspects.map((suspect) => (
             <HeuristicAnalysisTableRow
-              key={suspect.gitilesCommit.id}
+              key={suspect.gitilesCommit!.id}
               suspect={suspect}
             />
           ))}

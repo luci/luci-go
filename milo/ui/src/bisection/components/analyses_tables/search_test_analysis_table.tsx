@@ -19,31 +19,34 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useQuery } from '@tanstack/react-query';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { LUCIBisectionService } from '@/common/services/luci_bisection';
+import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
+import { GetTestAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { TestAnalysesTable } from './test_analyses_table';
 
-interface Props {
-  analysisId: number;
+export interface SearchTestAnalysisTableProps {
+  readonly analysisId: string;
 }
 
-export function SearchTestAnalysisTable({ analysisId }: Props) {
+export function SearchTestAnalysisTable({
+  analysisId,
+}: SearchTestAnalysisTableProps) {
+  const client = useAnalysesClient();
   const {
     isLoading,
     isError,
     data: analysis,
     error,
-  } = usePrpcQuery({
-    host: SETTINGS.luciBisection.host,
-    Service: LUCIBisectionService,
-    method: 'getTestAnalysis',
-    request: { analysisId: analysisId },
-    options: {
-      // only use the query if a Analysis ID has been provided
-      enabled: !!analysisId,
-    },
+  } = useQuery({
+    ...client.GetTestAnalysis.query(
+      GetTestAnalysisRequest.fromPartial({
+        analysisId,
+      }),
+    ),
+    // only use the query if a Analysis ID has been provided
+    enabled: !!analysisId,
   });
 
   if (isLoading) {

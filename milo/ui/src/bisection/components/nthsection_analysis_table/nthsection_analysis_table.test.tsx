@@ -14,11 +14,16 @@
 
 import { getAllByRole, render, screen } from '@testing-library/react';
 
-import { NthSectionAnalysisResult } from '@/common/services/luci_bisection';
+import { GenericNthSectionAnalysisResult } from '@/bisection/types';
+import {
+  AnalysisStatus,
+  RerunStatus,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
+import { NthSectionAnalysisResult } from '@/proto/go.chromium.org/luci/bisection/proto/v1/nthsection.pb';
 
 import { NthSectionAnalysisTable } from './nthsection_analysis_table';
 
-describe('Test NthSectionAnalysisTable component', () => {
+describe('<NthSectionAnalysisTable />', () => {
   test('if all information is displayed', async () => {
     const mockAnalysis = createMockAnalysis();
     render(<NthSectionAnalysisTable result={mockAnalysis} />);
@@ -39,60 +44,60 @@ describe('Test NthSectionAnalysisTable component', () => {
   });
 });
 
-function createMockAnalysis(): NthSectionAnalysisResult {
-  return {
-    startTime: '2022-09-06T07:13:16.398865Z',
-    endTime: '2022-09-06T07:13:16.893998Z',
-    status: 'SUSPECTFOUND',
-    suspect: {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'commit5',
-      },
-      reviewUrl: 'http://this/is/review/url',
-      reviewTitle: 'Review title',
-      verificationDetails: {
-        status: 'Vindicated',
-      },
-    },
-    reruns: [
-      {
-        bbid: '5555',
-        startTime: '2022-09-06T07:13:16.398865Z',
-        endTime: '2022-09-06T07:13:16.893998Z',
+function createMockAnalysis() {
+  return GenericNthSectionAnalysisResult.from(
+    NthSectionAnalysisResult.fromPartial({
+      startTime: '2022-09-06T07:13:16.398865Z',
+      endTime: '2022-09-06T07:13:16.893998Z',
+      status: AnalysisStatus.SUSPECTFOUND,
+      suspect: {
         commit: {
           host: 'testHost',
           project: 'testProject',
           ref: 'test/ref/dev',
           id: 'commit5',
         },
-        rerunResult: {
-          rerunStatus: 'RERUN_STATUS_FAILED',
+        reviewUrl: 'http://this/is/review/url',
+        reviewTitle: 'Review title',
+        verificationDetails: {
+          status: 'Vindicated',
         },
-        index: '5',
-        type: 'NthSection',
       },
-      {
-        bbid: '6666',
-        startTime: '2022-09-06T07:13:16.398865Z',
-        endTime: '2022-09-06T07:13:16.893998Z',
-        commit: {
-          host: 'testHost',
-          project: 'testProject',
-          ref: 'test/ref/dev',
-          id: 'commit6',
+      reruns: Object.freeze([
+        {
+          bbid: '5555',
+          startTime: '2022-09-06T07:13:16.398865Z',
+          endTime: '2022-09-06T07:13:16.893998Z',
+          commit: {
+            host: 'testHost',
+            project: 'testProject',
+            ref: 'test/ref/dev',
+            id: 'commit5',
+          },
+          rerunResult: {
+            rerunStatus: RerunStatus.FAILED,
+          },
+          index: '5',
+          type: 'NthSection',
         },
-        rerunResult: {
-          rerunStatus: 'RERUN_STATUS_PASSED',
+        {
+          bbid: '6666',
+          startTime: '2022-09-06T07:13:16.398865Z',
+          endTime: '2022-09-06T07:13:16.893998Z',
+          commit: {
+            host: 'testHost',
+            project: 'testProject',
+            ref: 'test/ref/dev',
+            id: 'commit6',
+          },
+          rerunResult: {
+            rerunStatus: RerunStatus.PASSED,
+          },
+          index: '6',
+          type: 'NthSection',
         },
-        index: '6',
-        type: 'NthSection',
-      },
-    ],
-    blameList: {
-      commits: [],
-    },
-  };
+      ]),
+      blameList: {},
+    }),
+  );
 }

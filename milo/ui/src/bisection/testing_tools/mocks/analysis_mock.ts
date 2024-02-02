@@ -16,14 +16,17 @@ import fetchMock from 'fetch-mock-jest';
 
 import {
   Analysis,
+  AnalysisRunStatus,
+  BuildFailureType,
   QueryAnalysisResponse,
-} from '@/common/services/luci_bisection';
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 
-export const createMockAnalysis = (id: string): Analysis => {
-  return {
+export function createMockAnalysis(id: string) {
+  return Analysis.fromPartial({
     analysisId: id,
-    status: 'FOUND',
-    runStatus: 'ENDED',
+    status: AnalysisStatus.FOUND,
+    runStatus: AnalysisRunStatus.ENDED,
     lastPassedBbid: '0',
     firstFailedBbid: id,
     createdTime: '2022-09-06T07:13:16.398865Z',
@@ -34,47 +37,42 @@ export const createMockAnalysis = (id: string): Analysis => {
       bucket: 'ci',
       builder: 'mock-builder-cc64',
     },
-    buildFailureType: 'COMPILE',
+    buildFailureType: BuildFailureType.COMPILE,
     heuristicResult: {
-      status: 'NOTFOUND',
+      status: AnalysisStatus.NOTFOUND,
     },
     nthSectionResult: {
-      status: 'RUNNING',
+      status: AnalysisStatus.RUNNING,
       remainingNthSectionRange: {
         lastPassed: {
           host: 'testHost',
           project: 'testProject',
           ref: 'test/ref/dev',
           id: 'abc123abc123',
-          position: '102',
+          position: 102,
         },
         firstFailed: {
           host: 'testHost',
           project: 'testProject',
           ref: 'test/ref/dev',
           id: 'def456def456',
-          position: '103',
+          position: 103,
         },
       },
       startTime: '2022-09-06T07:13:16.398865Z',
       endTime: '2022-09-06T07:13:16.398865Z',
-      reruns: [],
-      blameList: {
-        commits: [],
-      },
+      blameList: {},
     },
-  };
-};
+  });
+}
 
-const createMockQueryAnalysisResponse = (
-  analyses: Analysis[],
-): QueryAnalysisResponse => {
-  return {
+function createMockQueryAnalysisResponse(analyses: readonly Analysis[]) {
+  return QueryAnalysisResponse.fromPartial({
     analyses: analyses,
-  };
-};
+  });
+}
 
-export const mockQueryAnalysis = (mockAnalyses: Analysis[]) => {
+export function mockQueryAnalysis(mockAnalyses: readonly Analysis[]) {
   fetchMock.post(
     'https://' +
       SETTINGS.luciBisection.host +
@@ -84,13 +82,18 @@ export const mockQueryAnalysis = (mockAnalyses: Analysis[]) => {
         'X-Prpc-Grpc-Code': '0',
       },
       body:
-        ")]}'" + JSON.stringify(createMockQueryAnalysisResponse(mockAnalyses)),
+        ")]}'\n" +
+        JSON.stringify(
+          QueryAnalysisResponse.toJSON(
+            createMockQueryAnalysisResponse(mockAnalyses),
+          ),
+        ),
     },
     { overwriteRoutes: true },
   );
-};
+}
 
-export const mockErrorQueryingAnalysis = () => {
+export function mockErrorQueryingAnalysis() {
   fetchMock.post(
     'https://' +
       SETTINGS.luciBisection.host +
@@ -101,4 +104,4 @@ export const mockErrorQueryingAnalysis = () => {
       },
     },
   );
-};
+}

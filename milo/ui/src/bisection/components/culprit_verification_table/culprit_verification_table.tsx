@@ -22,21 +22,23 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import { Suspect } from '@/common/services/luci_bisection';
+import { GenericSuspect } from '@/bisection/types';
 
 import { CulpritVerificationTableRow } from './culprit_verification_table_row';
 
-interface Props {
-  suspects: Suspect[];
-}
-
-function getRows(suspects: Suspect[]) {
+function getRows(suspects: readonly GenericSuspect[]) {
   return suspects.map((suspect) => (
     <CulpritVerificationTableRow key={suspect.commit.id} suspect={suspect} />
   ));
 }
 
-export function CulpritVerificationTable({ suspects }: Props) {
+export interface CulpritVerificationTableProps {
+  readonly suspects: readonly GenericSuspect[];
+}
+
+export function CulpritVerificationTable({
+  suspects,
+}: CulpritVerificationTableProps) {
   if (suspects.length === 0) {
     return (
       <span className="data-placeholder">No culprit verification results</span>

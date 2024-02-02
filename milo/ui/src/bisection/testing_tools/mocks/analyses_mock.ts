@@ -17,22 +17,22 @@ import fetchMock from 'fetch-mock-jest';
 import {
   Analysis,
   ListAnalysesResponse,
-} from '@/common/services/luci_bisection';
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
-export const createMockListAnalysesResponse = (
-  analyses: Analysis[],
+export function createMockListAnalysesResponse(
+  analyses: readonly Analysis[],
   nextPageToken: string,
-): ListAnalysesResponse => {
-  return {
+) {
+  return ListAnalysesResponse.fromPartial({
     analyses: analyses,
     nextPageToken: nextPageToken,
-  };
-};
+  });
+}
 
-export const mockFetchAnalyses = (
-  mockAnalyses: Analysis[],
+export function mockFetchAnalyses(
+  mockAnalyses: readonly Analysis[],
   nextPageToken: string,
-) => {
+) {
   fetchMock.post(
     'https://' +
       SETTINGS.luciBisection.host +
@@ -42,16 +42,18 @@ export const mockFetchAnalyses = (
         'X-Prpc-Grpc-Code': '0',
       },
       body:
-        ")]}'" +
+        ")]}'\n" +
         JSON.stringify(
-          createMockListAnalysesResponse(mockAnalyses, nextPageToken),
+          ListAnalysesResponse.toJSON(
+            createMockListAnalysesResponse(mockAnalyses, nextPageToken),
+          ),
         ),
     },
     { overwriteRoutes: true },
   );
-};
+}
 
-export const mockErrorFetchingAnalyses = () => {
+export function mockErrorFetchingAnalyses() {
   fetchMock.post(
     'https://' +
       SETTINGS.luciBisection.host +
@@ -62,4 +64,4 @@ export const mockErrorFetchingAnalyses = () => {
       },
     },
   );
-};
+}

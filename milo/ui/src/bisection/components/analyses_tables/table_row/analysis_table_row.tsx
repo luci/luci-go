@@ -17,20 +17,25 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import { Link as RouterLink } from 'react-router-dom';
 
+import {
+  ANALYSIS_STATUS_DISPLAY_MAP,
+  BUILD_FAILURE_TYPE_DISPLAY_MAP,
+} from '@/bisection/constants';
 import { linkToBuilder } from '@/bisection/tools/link_constructors';
 import {
   getFormattedDuration,
   getFormattedTimestamp,
 } from '@/bisection/tools/timestamp_formatters';
-import { Analysis } from '@/common/services/luci_bisection';
+import { GenericCulprit } from '@/bisection/types';
+import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { CulpritsTableCell } from './culprit_table_cell';
 
-interface AnalysisTableProps {
-  analysis: Analysis;
+export interface AnalysisTableRowProps {
+  readonly analysis: Analysis;
 }
 
-export function AnalysisTableRow({ analysis }: AnalysisTableProps) {
+export function AnalysisTableRow({ analysis }: AnalysisTableRowProps) {
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
   return (
@@ -48,8 +53,10 @@ export function AnalysisTableRow({ analysis }: AnalysisTableProps) {
         </Link>
       </TableCell>
       <TableCell>{getFormattedTimestamp(analysis.createdTime)}</TableCell>
-      <TableCell>{analysis.status}</TableCell>
-      <TableCell>{analysis.buildFailureType}</TableCell>
+      <TableCell>{ANALYSIS_STATUS_DISPLAY_MAP[analysis.status]}</TableCell>
+      <TableCell>
+        {BUILD_FAILURE_TYPE_DISPLAY_MAP[analysis.buildFailureType]}
+      </TableCell>
       <TableCell>
         {getFormattedDuration(analysis.createdTime, analysis.endTime)}
       </TableCell>
@@ -67,7 +74,7 @@ export function AnalysisTableRow({ analysis }: AnalysisTableProps) {
         )}
       </TableCell>
       <CulpritsTableCell
-        culprits={analysis.culprits}
+        culprits={analysis.culprits.map(GenericCulprit.from)}
         status={analysis.status}
       />
     </TableRow>

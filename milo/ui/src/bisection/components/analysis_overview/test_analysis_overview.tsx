@@ -26,30 +26,33 @@ import {
   linkToBuilder,
   linkToCommit,
 } from '@/bisection/tools/link_constructors';
+import { GenericNthSectionAnalysisResult } from '@/bisection/types';
 import { DurationBadge } from '@/common/components/duration_badge';
 import { Timestamp } from '@/common/components/timestamp';
-import { TestAnalysis } from '@/common/services/luci_bisection';
+import { TestAnalysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
-import { nthsectionSuspectRange } from './common';
+import { nthSectionSuspectRange } from './common';
 
 function getSuspectRange(analysis: TestAnalysis): ExternalLink | null {
-  if (analysis.culprit) {
+  if (analysis.culprit?.commit) {
     return linkToCommit(analysis.culprit.commit);
   }
   return analysis.nthSectionResult
-    ? nthsectionSuspectRange(analysis.nthSectionResult)
+    ? nthSectionSuspectRange(
+        GenericNthSectionAnalysisResult.fromTest(analysis.nthSectionResult),
+      )
     : null;
 }
 
-interface Props {
-  analysis: TestAnalysis;
+export interface TestAnalysisOverviewProps {
+  readonly analysis: TestAnalysis;
 }
 
-export function TestAnalysisOverview({ analysis }: Props) {
-  const builderLink = linkToBuilder(analysis.builder);
+export function TestAnalysisOverview({ analysis }: TestAnalysisOverviewProps) {
+  const builderLink = linkToBuilder(analysis.builder!);
   const suspectRange = getSuspectRange(analysis);
   const failureStartHour = analysis.testFailures[0]
-    ? DateTime.fromISO(analysis.testFailures[0].startHour)
+    ? DateTime.fromISO(analysis.testFailures[0].startHour!)
     : null;
   const createTime = analysis.createdTime
     ? DateTime.fromISO(analysis.createdTime)

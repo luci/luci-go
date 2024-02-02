@@ -15,15 +15,17 @@
 import fetchMock from 'fetch-mock-jest';
 
 import {
+  AnalysisRunStatus,
   ListTestAnalysesResponse,
   TestAnalysis,
-} from '@/common/services/luci_bisection';
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 
-export const createMockTestAnalysis = (id: string): TestAnalysis => {
-  return {
+export function createMockTestAnalysis(id: string) {
+  return TestAnalysis.fromPartial({
     analysisId: id,
-    status: 'FOUND',
-    runStatus: 'ENDED',
+    status: AnalysisStatus.FOUND,
+    runStatus: AnalysisRunStatus.ENDED,
     createdTime: '2022-09-06T07:13:16.398865Z',
     endTime: '2022-09-06T07:13:16.893998Z',
     builder: {
@@ -31,7 +33,7 @@ export const createMockTestAnalysis = (id: string): TestAnalysis => {
       bucket: 'ci',
       builder: 'mock-builder-cc64',
     },
-    testFailures: [
+    testFailures: Object.freeze([
       {
         testId: 'test1',
         variant: {
@@ -42,50 +44,47 @@ export const createMockTestAnalysis = (id: string): TestAnalysis => {
         isPrimary: true,
         startHour: '2022-09-06T03:00:00Z',
       },
-    ],
-    sampleBbid: 1234,
+    ]),
+    sampleBbid: '1234',
     nthSectionResult: {
-      status: 'RUNNING',
+      status: AnalysisStatus.RUNNING,
       remainingNthSectionRange: {
         lastPassed: {
           host: 'testHost',
           project: 'testProject',
           ref: 'test/ref/dev',
           id: 'abc123abc123',
-          position: '102',
+          position: 102,
         },
         firstFailed: {
           host: 'testHost',
           project: 'testProject',
           ref: 'test/ref/dev',
           id: 'def456def456',
-          position: '103',
+          position: 103,
         },
       },
       startTime: '2022-09-06T07:13:16.398865Z',
       endTime: '2022-09-06T07:13:16.398865Z',
-      reruns: [],
-      blameList: {
-        commits: [],
-      },
+      blameList: {},
     },
-  };
-};
+  });
+}
 
-const createMockListTestAnalysesResponse = (
-  analyses: TestAnalysis[],
+function createMockListTestAnalysesResponse(
+  analyses: readonly TestAnalysis[],
   nextPageToken: string,
-): ListTestAnalysesResponse => {
-  return {
+) {
+  return ListTestAnalysesResponse.fromPartial({
     analyses,
     nextPageToken,
-  };
-};
+  });
+}
 
-export const mockListTestAnalyses = (
-  mockAnalyses: TestAnalysis[],
+export function mockListTestAnalyses(
+  mockAnalyses: readonly TestAnalysis[],
   nextPageToken: string,
-) => {
+) {
   fetchMock.post(
     'https://' +
       SETTINGS.luciBisection.host +
@@ -95,16 +94,18 @@ export const mockListTestAnalyses = (
         'X-Prpc-Grpc-Code': '0',
       },
       body:
-        ")]}'" +
+        ")]}'\n" +
         JSON.stringify(
-          createMockListTestAnalysesResponse(mockAnalyses, nextPageToken),
+          ListTestAnalysesResponse.toJSON(
+            createMockListTestAnalysesResponse(mockAnalyses, nextPageToken),
+          ),
         ),
     },
     { overwriteRoutes: true },
   );
-};
+}
 
-export const mockErrorListTestAnalyses = () => {
+export function mockErrorListTestAnalyses() {
   fetchMock.post(
     'https://' +
       SETTINGS.luciBisection.host +
@@ -115,9 +116,9 @@ export const mockErrorListTestAnalyses = () => {
       },
     },
   );
-};
+}
 
-export const mockGetTestAnalysis = (mockAnalysis: TestAnalysis) => {
+export function mockGetTestAnalysis(mockAnalysis: TestAnalysis) {
   fetchMock.post(
     'https://' +
       SETTINGS.luciBisection.host +
@@ -126,13 +127,13 @@ export const mockGetTestAnalysis = (mockAnalysis: TestAnalysis) => {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ")]}'" + JSON.stringify(mockAnalysis),
+      body: ")]}'\n" + JSON.stringify(TestAnalysis.toJSON(mockAnalysis)),
     },
     { overwriteRoutes: true },
   );
-};
+}
 
-export const mockErrorGetTestAnalysis = (rpcCode: number) => {
+export function mockErrorGetTestAnalysis(rpcCode: number) {
   fetchMock.post(
     'https://' +
       SETTINGS.luciBisection.host +
@@ -143,4 +144,4 @@ export const mockErrorGetTestAnalysis = (rpcCode: number) => {
       },
     },
   );
-};
+}

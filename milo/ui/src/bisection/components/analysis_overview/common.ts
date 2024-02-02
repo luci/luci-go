@@ -17,12 +17,12 @@ import {
   linkToCommit,
   linkToCommitRange,
 } from '@/bisection/tools/link_constructors';
-import { NthSectionAnalysisResult } from '@/common/services/luci_bisection';
+import { GenericNthSectionAnalysisResult } from '@/bisection/types';
 
-export function nthsectionSuspectRange(
-  result: NthSectionAnalysisResult,
+export function nthSectionSuspectRange(
+  result: GenericNthSectionAnalysisResult,
 ): ExternalLink | null {
-  if (result.suspect) {
+  if (result.suspect?.commit) {
     return linkToCommit(result.suspect.commit);
   }
   if (

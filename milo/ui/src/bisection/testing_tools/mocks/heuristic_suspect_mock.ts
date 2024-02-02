@@ -12,29 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HeuristicSuspect } from '@/common/services/luci_bisection';
+import {
+  HeuristicSuspect,
+  SuspectConfidenceLevel,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/heuristic.pb';
 
-export const createMockHeuristicSuspect = (
-  commitID: string,
-): HeuristicSuspect => {
-  return {
+export function createMockHeuristicSuspect(commitID: string) {
+  return HeuristicSuspect.fromPartial({
     gitilesCommit: {
       host: 'not.a.real.host',
       project: 'chromium',
       id: commitID,
       ref: 'ref/main',
-      position: '1',
+      position: 1,
     },
     reviewUrl: `https://chromium-review.googlesource.com/placeholder/+${commitID}`,
     reviewTitle: '[MyApp] Added new functionality to improve my app',
-    score: '15',
+    score: 15,
     justification:
       'The file "dir/a/b/x.cc" was added and it was in the failure log.\n' +
       'The file "content/util.c" was modified. It was related to the file obj/' +
       'content/util.o which was in the failure log.',
-    confidenceLevel: 'HIGH',
+    confidenceLevel: SuspectConfidenceLevel.HIGH,
     verificationDetails: {
       status: 'Vindicated',
     },
-  };
-};
+  });
+}

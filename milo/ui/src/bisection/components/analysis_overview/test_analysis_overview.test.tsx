@@ -15,10 +15,12 @@
 import { render, screen } from '@testing-library/react';
 
 import { createMockTestAnalysis } from '@/bisection/testing_tools/mocks/test_analysis_mock';
+import { TestAnalysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { SuspectVerificationStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 
 import { TestAnalysisOverview } from './test_analysis_overview';
 
-describe('Test AnalysisOverview component', () => {
+describe('<AnalysisOverview />', () => {
   test('if all analysis summary details are displayed', async () => {
     const mockAnalysis = createMockTestAnalysis('1');
 
@@ -60,9 +62,9 @@ describe('Test AnalysisOverview component', () => {
     const fieldLabel = screen.getByText(new RegExp('^(builder)$', 'i'));
     expect(fieldLabel).toBeInTheDocument();
     const builderText = fieldLabel.nextSibling?.textContent || '';
-    expect(builderText).toContain(mockAnalysis.builder.project);
-    expect(builderText).toContain(mockAnalysis.builder.bucket);
-    expect(builderText).toContain(mockAnalysis.builder.builder);
+    expect(builderText).toContain(mockAnalysis.builder!.project);
+    expect(builderText).toContain(mockAnalysis.builder!.bucket);
+    expect(builderText).toContain(mockAnalysis.builder!.builder);
 
     // check the suspect range is displayed correctly
     verifySuspectRangeLink(
@@ -73,23 +75,24 @@ describe('Test AnalysisOverview component', () => {
   });
 
   test('if there is a culprit for the analysis, then it should be the suspect range', async () => {
-    const mockAnalysis = createMockTestAnalysis('3');
-    mockAnalysis.culprit = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'ghi789ghi789',
-        position: '523',
+    const mockAnalysis = TestAnalysis.fromPartial({
+      ...createMockTestAnalysis('3'),
+      culprit: {
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'ghi789ghi789',
+          position: 523,
+        },
+        reviewTitle: 'Added new feature to improve testing',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/123456',
+        verificationDetails: {
+          status: SuspectVerificationStatus.CONFIRMED_CULPRIT,
+        },
       },
-      reviewTitle: 'Added new feature to improve testing',
-      reviewUrl:
-        'https://chromium-review.googlesource.com/placeholder/+/123456',
-      culpritAction: [],
-      verificationDetails: {
-        status: 'Confirmed Culprit',
-      },
-    };
+    });
 
     render(<TestAnalysisOverview analysis={mockAnalysis} />);
 
@@ -104,21 +107,27 @@ describe('Test AnalysisOverview component', () => {
 
   // eslint-disable-next-line jest/expect-expect
   test('if there is a culprit for only the nth section analysis, then it should be the suspect range', async () => {
-    const mockAnalysis = createMockTestAnalysis('4');
-    mockAnalysis.nthSectionResult!.suspect = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'jkl012jkl012',
-        position: '624',
+    let mockAnalysis = createMockTestAnalysis('4');
+    mockAnalysis = TestAnalysis.fromPartial({
+      ...mockAnalysis,
+      nthSectionResult: {
+        ...mockAnalysis.nthSectionResult,
+        suspect: {
+          commit: {
+            host: 'testHost',
+            project: 'testProject',
+            ref: 'test/ref/dev',
+            id: 'jkl012jkl012',
+            position: 624,
+          },
+          reviewUrl: 'http://this/is/review/url',
+          reviewTitle: 'Review title',
+          verificationDetails: {
+            status: SuspectVerificationStatus.UNDER_VERIFICATION,
+          },
+        },
       },
-      reviewUrl: 'http://this/is/review/url',
-      reviewTitle: 'Review title',
-      verificationDetails: {
-        status: 'Under Verification',
-      },
-    };
+    });
 
     render(<TestAnalysisOverview analysis={mockAnalysis} />);
 
@@ -134,8 +143,10 @@ describe('Test AnalysisOverview component', () => {
 
   // eslint-disable-next-line jest/expect-expect
   test('if there is no data for the suspect range, then the table cell should be empty', async () => {
-    const mockAnalysis = createMockTestAnalysis('5');
-    mockAnalysis.nthSectionResult = undefined;
+    const mockAnalysis = TestAnalysis.fromPartial({
+      ...createMockTestAnalysis('5'),
+      nthSectionResult: undefined,
+    });
 
     render(<TestAnalysisOverview analysis={mockAnalysis} />);
 

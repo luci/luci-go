@@ -16,13 +16,16 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import { render, screen } from '@testing-library/react';
 
+import { ANALYSIS_STATUS_DISPLAY_MAP } from '@/bisection/constants';
 import { createMockTestAnalysis } from '@/bisection/testing_tools/mocks/test_analysis_mock';
-import { TestAnalysis } from '@/common/services/luci_bisection';
+import { TestAnalysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { SuspectVerificationStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
+import { CulpritActionType } from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestAnalysisTableRow } from './test_analysis_table_row';
 
-describe('Test TestAnalysisTableRow component', () => {
+describe('<TestAnalysisTableRow />', () => {
   test('if analysis information is displayed', async () => {
     const mockAnalysis: TestAnalysis = createMockTestAnalysis('123');
 
@@ -55,7 +58,9 @@ describe('Test TestAnalysisTableRow component', () => {
     expect(screen.queryAllByText(startTimeFormat)).toHaveLength(1);
 
     // Check the status and failure type are displayed
-    expect(screen.getByText(mockAnalysis.status)).toBeInTheDocument();
+    expect(
+      screen.getByText(ANALYSIS_STATUS_DISPLAY_MAP[mockAnalysis.status]),
+    ).toBeInTheDocument();
 
     // Check the duration is displayed
     expect(screen.queryAllByTestId('duration')).toHaveLength(2);
@@ -63,9 +68,9 @@ describe('Test TestAnalysisTableRow component', () => {
     // Check there is a link to the builder
     const builderLink = screen.getByTestId('analysis_table_row_builder_link');
     expect(builderLink).toBeInTheDocument();
-    expect(builderLink.textContent).toContain(mockAnalysis.builder.project);
-    expect(builderLink.textContent).toContain(mockAnalysis.builder.bucket);
-    expect(builderLink.textContent).toContain(mockAnalysis.builder.builder);
+    expect(builderLink.textContent).toContain(mockAnalysis.builder!.project);
+    expect(builderLink.textContent).toContain(mockAnalysis.builder!.bucket);
+    expect(builderLink.textContent).toContain(mockAnalysis.builder!.builder);
     expect(builderLink.getAttribute('href')).not.toBe('');
 
     // Check there is no link for culprits
@@ -75,29 +80,31 @@ describe('Test TestAnalysisTableRow component', () => {
   });
 
   test('if culprit information is displayed', async () => {
-    const mockAnalysis: TestAnalysis = createMockTestAnalysis('125');
-    mockAnalysis.culprit = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'abc123abc123',
-        position: '307',
-      },
-      reviewTitle: 'Added new feature to improve testing',
-      reviewUrl:
-        'https://chromium-review.googlesource.com/placeholder/+/123456',
-      verificationDetails: {
-        status: 'Confirmed Culprit',
-      },
-      culpritAction: [
-        {
-          actionType: 'CULPRIT_AUTO_REVERTED',
-          revertClUrl:
-            'https://chromium-review.googlesource.com/placeholder/+/123457',
+    const mockAnalysis = TestAnalysis.fromPartial({
+      ...createMockTestAnalysis('125'),
+      culprit: {
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'abc123abc123',
+          position: 307,
         },
-      ],
-    };
+        reviewTitle: 'Added new feature to improve testing',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/123456',
+        verificationDetails: {
+          status: SuspectVerificationStatus.CONFIRMED_CULPRIT,
+        },
+        culpritAction: Object.freeze([
+          {
+            actionType: CulpritActionType.CULPRIT_AUTO_REVERTED,
+            revertClUrl:
+              'https://chromium-review.googlesource.com/placeholder/+/123457',
+          },
+        ]),
+      },
+    });
 
     render(
       <FakeContextProvider>

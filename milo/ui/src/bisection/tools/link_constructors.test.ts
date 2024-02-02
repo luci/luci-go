@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BuilderID, GitilesCommit } from '@/common/services/luci_bisection';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import {
   linkToBuild,
@@ -47,7 +48,7 @@ describe('Test link constructors', () => {
       project: 'mockProject',
       id: '123456abcdef',
       ref: 'ref/main',
-      position: '321',
+      position: 321,
     };
     expect(linkToCommit(mockCommit)).toStrictEqual({
       linkText: '123456a',
@@ -61,14 +62,14 @@ describe('Test link constructors', () => {
       project: 'mockProject',
       id: '123456abcdef',
       ref: 'ref/main',
-      position: '321',
+      position: 321,
     };
     const secondMockCommit: GitilesCommit = {
       host: 'mockHost',
       project: 'mockProject',
       id: '987654fedcba',
       ref: 'ref/main',
-      position: '654',
+      position: 654,
     };
     expect(linkToCommitRange(firstMockCommit, secondMockCommit)).toStrictEqual({
       linkText: '123456a ... 987654f',

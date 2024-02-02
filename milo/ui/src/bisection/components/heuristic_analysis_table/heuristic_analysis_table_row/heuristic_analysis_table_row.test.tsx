@@ -16,14 +16,14 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import { render, screen } from '@testing-library/react';
 
+import { SUSPECT_CONFIDENCE_LEVEL_DISPLAY_MAP } from '@/bisection/constants';
 import { createMockHeuristicSuspect } from '@/bisection/testing_tools/mocks/heuristic_suspect_mock';
-import { HeuristicSuspect } from '@/common/services/luci_bisection';
 
 import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row';
 
-describe('Test HeuristicAnalysisTableRow component', () => {
+describe('<HeuristicAnalysisTableRow />', () => {
   test('if the details for a heuristic suspect are displayed', async () => {
-    const mockSuspect: HeuristicSuspect = createMockHeuristicSuspect('ac52e3');
+    const mockSuspect = createMockHeuristicSuspect('ac52e3');
 
     render(
       <Table>
@@ -42,7 +42,11 @@ describe('Test HeuristicAnalysisTableRow component', () => {
     expect(suspectReviewLink.textContent).toContain(mockSuspect.reviewTitle);
 
     // Check confidence level, score and reasons are displayed
-    expect(screen.getByText(mockSuspect.confidenceLevel)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        SUSPECT_CONFIDENCE_LEVEL_DISPLAY_MAP[mockSuspect.confidenceLevel],
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText(mockSuspect.score)).toBeInTheDocument();
     const reasons = mockSuspect.justification.split('\n');
     reasons.forEach((reason) => {

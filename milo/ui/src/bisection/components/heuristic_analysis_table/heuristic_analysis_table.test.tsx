@@ -15,11 +15,12 @@
 import { render, screen } from '@testing-library/react';
 
 import { createMockHeuristicSuspect } from '@/bisection/testing_tools/mocks/heuristic_suspect_mock';
-import { HeuristicAnalysisResult } from '@/common/services/luci_bisection';
+import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
+import { HeuristicAnalysisResult } from '@/proto/go.chromium.org/luci/bisection/proto/v1/heuristic.pb';
 
 import { HeuristicAnalysisTable } from './heuristic_analysis_table';
 
-describe('Test HeuristicAnalysisTable component', () => {
+describe('<HeuristicAnalysisTable />', () => {
   test('if an appropriate message is displayed for no analysis', async () => {
     render(<HeuristicAnalysisTable />);
 
@@ -32,15 +33,15 @@ describe('Test HeuristicAnalysisTable component', () => {
   });
 
   test('if heuristic suspects are displayed', async () => {
-    const mockSuspects = [
+    const mockSuspects = Object.freeze([
       createMockHeuristicSuspect('ac52e3'),
       createMockHeuristicSuspect('673e20'),
-    ];
+    ]);
 
-    const mockHeuristicAnalysisResult: HeuristicAnalysisResult = {
-      status: 'SUSPECTFOUND',
+    const mockHeuristicAnalysisResult = HeuristicAnalysisResult.fromPartial({
+      status: AnalysisStatus.SUSPECTFOUND,
       suspects: mockSuspects,
-    };
+    });
 
     render(<HeuristicAnalysisTable result={mockHeuristicAnalysisResult} />);
 
@@ -50,10 +51,9 @@ describe('Test HeuristicAnalysisTable component', () => {
   });
 
   test('if an appropriate message is displayed for no suspects', async () => {
-    const mockHeuristicAnalysisResult: HeuristicAnalysisResult = {
-      status: 'NOTFOUND',
-      suspects: [],
-    };
+    const mockHeuristicAnalysisResult = HeuristicAnalysisResult.fromPartial({
+      status: AnalysisStatus.NOTFOUND,
+    });
     render(<HeuristicAnalysisTable result={mockHeuristicAnalysisResult} />);
 
     await screen.findByTestId('heuristic-analysis-table');
@@ -63,10 +63,9 @@ describe('Test HeuristicAnalysisTable component', () => {
   });
 
   test('if no misleading message is shown for an incomplete analysis', async () => {
-    const mockHeuristicAnalysisResult: HeuristicAnalysisResult = {
-      status: 'RUNNING',
-      suspects: [],
-    };
+    const mockHeuristicAnalysisResult = HeuristicAnalysisResult.fromPartial({
+      status: AnalysisStatus.RUNNING,
+    });
     render(<HeuristicAnalysisTable result={mockHeuristicAnalysisResult} />);
 
     await screen.findByTestId('heuristic-analysis-table');

@@ -29,64 +29,57 @@ import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { displayRerunStatus } from '@/bisection/tools/info_display';
 import { linkToBuild } from '@/bisection/tools/link_constructors';
 import {
-  Culprit,
+  GenericCulprit,
+  GenericSuspectVerificationDetails,
+} from '@/bisection/types';
+import {
   CulpritAction,
   CulpritActionType,
   CulpritInactionReason,
-  SuspectVerificationDetails,
-} from '@/common/services/luci_bisection';
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
 
-interface CulpritsTableProps {
-  culprits?: Culprit[];
-}
+const CULPRIT_ACTION_DESCRIPTIONS = Object.freeze({
+  [CulpritActionType.UNSPECIFIED]: '',
+  [CulpritActionType.NO_ACTION]:
+    'No actions have been performed by LUCI Bisection for this culprit',
+  [CulpritActionType.CULPRIT_AUTO_REVERTED]:
+    'This culprit has been auto-reverted',
+  [CulpritActionType.REVERT_CL_CREATED]:
+    'A revert CL has been created for this culprit',
+  [CulpritActionType.CULPRIT_CL_COMMENTED]:
+    'A comment was added on the original code review for this culprit',
+  [CulpritActionType.BUG_COMMENTED]: 'A comment was added on a related bug',
+  [CulpritActionType.EXISTING_REVERT_CL_COMMENTED]:
+    'A comment was added to the code review for an existing revert of this culprit',
+});
 
-interface CulpritTableRowProps {
-  culprit: Culprit;
-}
+const CULPRIT_INACTION_EXPLANATIONS = Object.freeze({
+  [CulpritInactionReason.UNSPECIFIED]: '',
+  [CulpritInactionReason.REVERTED_BY_BISECTION]:
+    'it has been reverted as the culprit of another LUCI Bisection analysis',
+  [CulpritInactionReason.REVERTED_MANUALLY]: 'it has already been reverted',
+  [CulpritInactionReason.REVERT_OWNED_BY_BISECTION]:
+    'the revert was created by another LUCI Bisection analysis',
+  [CulpritInactionReason.REVERT_HAS_COMMENT]:
+    'the revert already has a comment from another LUCI Bisection analysis',
+  [CulpritInactionReason.CULPRIT_HAS_COMMENT]:
+    'the culprit already has a comment from another LUCI Bisection analysis',
+  [CulpritInactionReason.ANALYSIS_CANCELED]: 'the analysis was canceled',
+  [CulpritInactionReason.ACTIONS_DISABLED]: 'actions on culprits are disabled',
+  [CulpritInactionReason.TEST_NO_LONGER_UNEXPECTED]:
+    'the test is no longer deterministically failing',
+});
+
+const INACTION_REASONS_WITH_REVERT_LINK = Object.freeze([
+  CulpritInactionReason.REVERTED_BY_BISECTION,
+  CulpritInactionReason.REVERTED_MANUALLY,
+  CulpritInactionReason.REVERT_OWNED_BY_BISECTION,
+  CulpritInactionReason.REVERT_HAS_COMMENT,
+]);
 
 interface CulpritActionTableCellProps {
-  action: CulpritAction | null | undefined;
+  readonly action: CulpritAction;
 }
-
-interface VerificationDetailsTableProps {
-  details: SuspectVerificationDetails;
-}
-
-const CULPRIT_ACTION_DESCRIPTIONS: Record<CulpritActionType, string> = {
-  CULPRIT_ACTION_TYPE_UNSPECIFIED: '',
-  NO_ACTION:
-    'No actions have been performed by LUCI Bisection for this culprit',
-  CULPRIT_AUTO_REVERTED: 'This culprit has been auto-reverted',
-  REVERT_CL_CREATED: 'A revert CL has been created for this culprit',
-  CULPRIT_CL_COMMENTED:
-    'A comment was added on the original code review for this culprit',
-  BUG_COMMENTED: 'A comment was added on a related bug',
-  EXISTING_REVERT_CL_COMMENTED:
-    'A comment was added to the code review for an existing revert of this culprit',
-};
-
-const CULPRIT_INACTION_EXPLANATIONS: Record<CulpritInactionReason, string> = {
-  CULPRIT_INACTION_REASON_UNSPECIFIED: '',
-  REVERTED_BY_BISECTION:
-    'it has been reverted as the culprit of another LUCI Bisection analysis',
-  REVERTED_MANUALLY: 'it has already been reverted',
-  REVERT_OWNED_BY_BISECTION:
-    'the revert was created by another LUCI Bisection analysis',
-  REVERT_HAS_COMMENT:
-    'the revert already has a comment from another LUCI Bisection analysis',
-  CULPRIT_HAS_COMMENT:
-    'the culprit already has a comment from another LUCI Bisection analysis',
-  ANALYSIS_CANCELED: 'the analysis was canceled',
-  ACTIONS_DISABLED: 'actions on culprits are disabled',
-  TEST_NO_LONGER_UNEXPECTED: 'the test is no longer deterministically failing',
-};
-
-const INACTION_REASONS_WITH_REVERT_LINK: CulpritInactionReason[] = [
-  'REVERTED_BY_BISECTION',
-  'REVERTED_MANUALLY',
-  'REVERT_OWNED_BY_BISECTION',
-  'REVERT_HAS_COMMENT',
-];
 
 function CulpritActionTableCell({ action }: CulpritActionTableCellProps) {
   if (!action) {
@@ -96,19 +89,19 @@ function CulpritActionTableCell({ action }: CulpritActionTableCellProps) {
   let linkText = '';
   let url = '';
   switch (action.actionType) {
-    case 'CULPRIT_AUTO_REVERTED':
-    case 'REVERT_CL_CREATED':
-    case 'EXISTING_REVERT_CL_COMMENTED':
+    case CulpritActionType.CULPRIT_AUTO_REVERTED:
+    case CulpritActionType.REVERT_CL_CREATED:
+    case CulpritActionType.EXISTING_REVERT_CL_COMMENTED:
       linkText = 'revert CL';
       url = action.revertClUrl || '';
       break;
-    case 'BUG_COMMENTED':
+    case CulpritActionType.BUG_COMMENTED:
       linkText = 'bug';
       url = action.bugUrl || '';
       break;
-    case 'NO_ACTION': {
+    case CulpritActionType.NO_ACTION: {
       const reason: CulpritInactionReason =
-        action.inactionReason || 'CULPRIT_INACTION_REASON_UNSPECIFIED';
+        action.inactionReason || CulpritInactionReason.UNSPECIFIED;
       if (INACTION_REASONS_WITH_REVERT_LINK.includes(reason)) {
         linkText = 'revert CL';
         url = action.revertClUrl || '';
@@ -121,7 +114,10 @@ function CulpritActionTableCell({ action }: CulpritActionTableCellProps) {
 
   const description = CULPRIT_ACTION_DESCRIPTIONS[action.actionType];
   let inactionExplanation = '';
-  if (action.actionType === 'NO_ACTION' && action.inactionReason) {
+  if (
+    action.actionType === CulpritActionType.NO_ACTION &&
+    action.inactionReason
+  ) {
     inactionExplanation =
       ' because ' + CULPRIT_INACTION_EXPLANATIONS[action.inactionReason];
   }
@@ -137,6 +133,10 @@ function CulpritActionTableCell({ action }: CulpritActionTableCellProps) {
       .
     </TableCell>
   );
+}
+
+export interface VerificationDetailsTableProps {
+  readonly details: GenericSuspectVerificationDetails;
 }
 
 export function VerificationDetailsTable({
@@ -159,7 +159,7 @@ export function VerificationDetailsTable({
                 underline="always"
               >
                 {displayRerunStatus(
-                  details.suspectRerun.rerunResult?.rerunStatus,
+                  details.suspectRerun.rerunResult.rerunStatus,
                 )}
               </Link>
             )}
@@ -176,7 +176,7 @@ export function VerificationDetailsTable({
                 underline="always"
               >
                 {displayRerunStatus(
-                  details.parentRerun.rerunResult?.rerunStatus,
+                  details.parentRerun.rerunResult.rerunStatus,
                 )}
               </Link>
             )}
@@ -187,7 +187,11 @@ export function VerificationDetailsTable({
   );
 }
 
-const CulpritTableRow = ({ culprit }: CulpritTableRowProps) => {
+export interface CulpritTableRowProps {
+  readonly culprit: GenericCulprit;
+}
+
+export function CulpritTableRow({ culprit }: CulpritTableRowProps) {
   const { commit, reviewUrl, reviewTitle } = culprit;
   let culpritDescription = getCommitShortHash(commit.id);
   if (reviewTitle) {
@@ -233,10 +237,14 @@ const CulpritTableRow = ({ culprit }: CulpritTableRowProps) => {
       ))}
     </>
   );
-};
+}
 
-export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
-  if (!culprits || culprits.length === 0) {
+export interface CulpritsTableProps {
+  readonly culprits: ReadonlyArray<GenericCulprit>;
+}
+
+export function CulpritsTable({ culprits }: CulpritsTableProps) {
+  if (culprits.length === 0) {
     return (
       <span className="data-placeholder" data-testid="culprits-table">
         No culprit found
@@ -271,4 +279,4 @@ export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
       </Table>
     </TableContainer>
   );
-};
+}

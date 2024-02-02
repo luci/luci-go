@@ -16,15 +16,20 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import { render, screen } from '@testing-library/react';
 
+import {
+  ANALYSIS_STATUS_DISPLAY_MAP,
+  BUILD_FAILURE_TYPE_DISPLAY_MAP,
+} from '@/bisection/constants';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
-import { Analysis } from '@/common/services/luci_bisection';
+import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { CulpritActionType } from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { AnalysisTableRow } from './analysis_table_row';
 
-describe('Test AnalysisTableRow component', () => {
+describe('<AnalysisTableRow />', () => {
   test('if analysis information is displayed', async () => {
-    const mockAnalysis: Analysis = createMockAnalysis('123');
+    const mockAnalysis = createMockAnalysis('123');
 
     render(
       <FakeContextProvider>
@@ -53,8 +58,14 @@ describe('Test AnalysisTableRow component', () => {
     expect(screen.queryAllByText(startTimeFormat)).toHaveLength(1);
 
     // Check the status and failure type are displayed
-    expect(screen.getByText(mockAnalysis.status)).toBeInTheDocument();
-    expect(screen.getByText(mockAnalysis.buildFailureType)).toBeInTheDocument();
+    expect(
+      screen.getByText(ANALYSIS_STATUS_DISPLAY_MAP[mockAnalysis.status]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        BUILD_FAILURE_TYPE_DISPLAY_MAP[mockAnalysis.buildFailureType],
+      ),
+    ).toBeInTheDocument();
 
     // Check the duration is displayed
     const durationFormat = new RegExp('^\\d{2}:[0-5]\\d:[0-5]\\d$');
@@ -75,8 +86,10 @@ describe('Test AnalysisTableRow component', () => {
   });
 
   test('if missing builder information is handled', async () => {
-    const mockAnalysis: Analysis = createMockAnalysis('124');
-    mockAnalysis.builder = undefined;
+    const mockAnalysis = {
+      ...createMockAnalysis('124'),
+      builder: undefined,
+    };
 
     render(
       <FakeContextProvider>
@@ -102,46 +115,48 @@ describe('Test AnalysisTableRow component', () => {
   });
 
   test('if culprit information is displayed', async () => {
-    const mockAnalysis: Analysis = createMockAnalysis('125');
-    mockAnalysis.culprits = [
-      {
-        commit: {
-          host: 'testHost',
-          project: 'testProject',
-          ref: 'test/ref/dev',
-          id: 'abc123abc123',
-          position: '307',
-        },
-        reviewTitle: 'Added new feature to improve testing',
-        reviewUrl:
-          'https://chromium-review.googlesource.com/placeholder/+/123456',
-        verificationDetails: {
-          status: 'Confirmed Culprit',
-        },
-        culpritAction: [
-          {
-            actionType: 'CULPRIT_AUTO_REVERTED',
-            revertClUrl:
-              'https://chromium-review.googlesource.com/placeholder/+/123457',
+    const mockAnalysis = Analysis.fromPartial({
+      ...createMockAnalysis('125'),
+      culprits: Object.freeze([
+        {
+          commit: {
+            host: 'testHost',
+            project: 'testProject',
+            ref: 'test/ref/dev',
+            id: 'abc123abc123',
+            position: 307,
           },
-        ],
-      },
-      {
-        commit: {
-          host: 'testHost',
-          project: 'testProject',
-          ref: 'test/ref/dev',
-          id: 'ghi789ghi789',
-          position: '523',
+          reviewTitle: 'Added new feature to improve testing',
+          reviewUrl:
+            'https://chromium-review.googlesource.com/placeholder/+/123456',
+          verificationDetails: {
+            status: 'Confirmed Culprit',
+          },
+          culpritAction: [
+            {
+              actionType: CulpritActionType.CULPRIT_AUTO_REVERTED,
+              revertClUrl:
+                'https://chromium-review.googlesource.com/placeholder/+/123457',
+            },
+          ],
         },
-        reviewTitle: 'Added new feature to improve testing again',
-        reviewUrl:
-          'https://chromium-review.googlesource.com/placeholder/+/234567',
-        verificationDetails: {
-          status: 'Confirmed Culprit',
+        {
+          commit: {
+            host: 'testHost',
+            project: 'testProject',
+            ref: 'test/ref/dev',
+            id: 'ghi789ghi789',
+            position: 523,
+          },
+          reviewTitle: 'Added new feature to improve testing again',
+          reviewUrl:
+            'https://chromium-review.googlesource.com/placeholder/+/234567',
+          verificationDetails: {
+            status: 'Confirmed Culprit',
+          },
         },
-      },
-    ];
+      ]),
+    });
 
     render(
       <FakeContextProvider>

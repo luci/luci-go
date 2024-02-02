@@ -21,12 +21,12 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import { TestAnalysis } from '@/common/services/luci_bisection';
+import { TestAnalysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { TestAnalysisTableRow } from './table_row';
 
-interface TestAnalysesTableProps {
-  analyses: TestAnalysis[];
+export interface TestAnalysesTableProps {
+  readonly analyses: readonly TestAnalysis[];
 }
 
 export function TestAnalysesTable({ analyses }: TestAnalysesTableProps) {

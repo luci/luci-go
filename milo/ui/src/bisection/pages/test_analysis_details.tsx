@@ -21,6 +21,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -29,9 +30,14 @@ import { CulpritVerificationTable } from '@/bisection/components/culprit_verific
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
 import { TestFailuresTable } from '@/bisection/components/test_table';
+import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
+import {
+  GenericCulprit,
+  GenericNthSectionAnalysisResult,
+  GenericSuspect,
+} from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { LUCIBisectionService } from '@/common/services/luci_bisection';
+import { GetTestAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { TabPanel } from './analysis_details';
 
@@ -57,19 +63,19 @@ export function TestAnalysisDetailsPage() {
     setCurrentTab(newTab);
   };
 
+  const client = useAnalysesClient();
   const {
     isLoading,
     isError,
     data: analysis,
     error,
-  } = usePrpcQuery({
-    host: SETTINGS.luciBisection.host,
-    Service: LUCIBisectionService,
-    method: 'getTestAnalysis',
-    request: {
-      analysisId: parseInt(id),
-    },
-  });
+  } = useQuery(
+    client.GetTestAnalysis.query(
+      GetTestAnalysisRequest.fromPartial({
+        analysisId: id,
+      }),
+    ),
+  );
 
   if (isError) {
     return (
@@ -114,7 +120,9 @@ export function TestAnalysisDetailsPage() {
           <Typography variant="h5" gutterBottom>
             Culprit Details
           </Typography>
-          <CulpritsTable culprits={[analysis.culprit]} />
+          <CulpritsTable
+            culprits={[GenericCulprit.fromTest(analysis.culprit)]}
+          />
         </div>
       )}
       <div className="section">
@@ -139,13 +147,22 @@ export function TestAnalysisDetailsPage() {
           />
         </Tabs>
         <TabPanel value={currentTab} name={AnalysisComponentTabs.NTH_SECTION}>
-          <NthSectionAnalysisTable result={analysis.nthSectionResult} />
+          <NthSectionAnalysisTable
+            result={
+              analysis.nthSectionResult &&
+              GenericNthSectionAnalysisResult.fromTest(
+                analysis.nthSectionResult,
+              )
+            }
+          />
         </TabPanel>
         <TabPanel
           value={currentTab}
           name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
         >
-          <CulpritVerificationTable suspects={suspect} />
+          <CulpritVerificationTable
+            suspects={suspect.map(GenericSuspect.fromTestCulprit)}
+          />
         </TabPanel>
       </div>
       {/* TODO: list the test failures. */}

@@ -20,12 +20,12 @@ import {
   mockQueryAnalysis,
 } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
-import { Analysis } from '@/common/services/luci_bisection';
+import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { SearchAnalysisTable } from './search_analysis_table';
 
-describe('Test SearchAnalysisTable component', () => {
+describe('<SearchAnalysisTable />', () => {
   afterEach(() => {
     fetchMock.mockClear();
     fetchMock.reset();

@@ -21,6 +21,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -29,23 +30,26 @@ import { CulpritVerificationTable } from '@/bisection/components/culprit_verific
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
 import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysis_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table';
+import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
+import {
+  GenericCulprit,
+  GenericNthSectionAnalysisResult,
+  GenericSuspect,
+} from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
+import { assertNonNullable } from '@/generic_libs/tools/utils';
 import {
   Analysis,
-  LUCIBisectionService,
-  Suspect,
-} from '@/common/services/luci_bisection';
+  QueryAnalysisRequest,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  name: string;
-  value: string;
+export interface TabPanelProps {
+  readonly name: string;
+  readonly value: string;
+  readonly children?: React.ReactNode;
 }
 
-export function TabPanel(props: TabPanelProps) {
-  const { children, value, name } = props;
-
+export function TabPanel({ value, name, children }: TabPanelProps) {
   return (
     <div hidden={value !== name} className="tab-panel">
       {value === name && <div className="tab-panel-contents">{children}</div>}
@@ -53,24 +57,12 @@ export function TabPanel(props: TabPanelProps) {
   );
 }
 
-function getSuspects(analysis: Analysis): Suspect[] {
+function getSuspects(analysis: Analysis): readonly GenericSuspect[] {
   const heuristicSuspects = analysis.heuristicResult?.suspects || [];
-  const suspects = heuristicSuspects.map((s) => ({
-    commit: s.gitilesCommit,
-    reviewUrl: s.reviewUrl,
-    reviewTitle: s.reviewTitle,
-    verificationDetails: s.verificationDetails,
-    type: 'Heuristic',
-  }));
+  const suspects = heuristicSuspects.map(GenericSuspect.fromHeuristic);
   const nthSectionSuspect = analysis.nthSectionResult?.suspect;
   if (nthSectionSuspect) {
-    suspects.push({
-      commit: nthSectionSuspect.commit,
-      reviewUrl: nthSectionSuspect.reviewUrl,
-      reviewTitle: nthSectionSuspect.reviewTitle,
-      verificationDetails: nthSectionSuspect.verificationDetails,
-      type: 'NthSection',
-    });
+    suspects.push(GenericSuspect.fromNthSection(nthSectionSuspect));
   }
   return suspects;
 }
@@ -97,34 +89,18 @@ export function AnalysisDetailsPage() {
     setCurrentTab(newTab);
   };
 
-  const {
-    isLoading,
-    isError,
-    isSuccess,
-    data: response,
-    error,
-  } = usePrpcQuery({
-    host: SETTINGS.luciBisection.host,
-    Service: LUCIBisectionService,
-    method: 'queryAnalysis',
-    request: {
-      buildFailure: {
-        bbid: bbid,
-        // TODO: update this once other failure types are analyzed
-        failedStepName: 'compile',
-      },
-    },
-  });
-
-  let analysis = null;
-  if (
-    isSuccess &&
-    response &&
-    response.analyses &&
-    response.analyses.length > 0
-  ) {
-    analysis = response.analyses[0];
-  }
+  const client = useAnalysesClient();
+  const { isLoading, isError, data, error } = useQuery(
+    client.QueryAnalysis.query(
+      QueryAnalysisRequest.fromPartial({
+        buildFailure: {
+          bbid: bbid,
+          // TODO: update this once other failure types are analyzed
+          failedStepName: 'compile',
+        },
+      }),
+    ),
+  );
 
   // TODO: display alert if the build ID queried is not the first failed build
   //       linked to the failure analysis
@@ -157,67 +133,74 @@ export function AnalysisDetailsPage() {
     );
   }
 
-  if (isSuccess && analysis) {
-    return (
-      <>
-        <div className="section">
-          <Typography variant="h5" gutterBottom>
-            Analysis Details
-          </Typography>
-          <AnalysisOverview analysis={analysis} />
-        </div>
-        {analysis.culprits && analysis.culprits.length > 0 && (
-          <div className="section">
-            <Typography variant="h5" gutterBottom>
-              Culprit Details
-            </Typography>
-            <CulpritsTable culprits={analysis.culprits} />
-          </div>
-        )}
-        <div className="section">
-          <Typography variant="h5" gutterBottom>
-            Analysis Components
-          </Typography>
-          <Tabs
-            value={currentTab}
-            onChange={handleTabChange}
-            aria-label="Analysis components tabs"
-            className="rounded-tabs"
-          >
-            <Tab
-              className="rounded-tab"
-              value={AnalysisComponentTabs.HEURISTIC}
-              label={AnalysisComponentTabs.HEURISTIC}
-            />
-            <Tab
-              className="rounded-tab"
-              value={AnalysisComponentTabs.NTH_SECTION}
-              label={AnalysisComponentTabs.NTH_SECTION}
-            />
-            <Tab
-              className="rounded-tab"
-              value={AnalysisComponentTabs.CULPRIT_VERIFICATION}
-              label={AnalysisComponentTabs.CULPRIT_VERIFICATION}
-            />
-          </Tabs>
-          <TabPanel value={currentTab} name={AnalysisComponentTabs.HEURISTIC}>
-            <HeuristicAnalysisTable result={analysis.heuristicResult} />
-          </TabPanel>
-          <TabPanel value={currentTab} name={AnalysisComponentTabs.NTH_SECTION}>
-            <NthSectionAnalysisTable result={analysis.nthSectionResult} />
-          </TabPanel>
-          <TabPanel
-            value={currentTab}
-            name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
-          >
-            <CulpritVerificationTable suspects={getSuspects(analysis)} />
-          </TabPanel>
-        </div>
-      </>
-    );
+  if (!data.analyses.length) {
+    return <></>;
   }
+  const analysis = data.analyses[0];
 
-  return <></>;
+  return (
+    <>
+      <div className="section">
+        <Typography variant="h5" gutterBottom>
+          Analysis Details
+        </Typography>
+        <AnalysisOverview analysis={analysis} />
+      </div>
+      {analysis.culprits.length > 0 && (
+        <div className="section">
+          <Typography variant="h5" gutterBottom>
+            Culprit Details
+          </Typography>
+          <CulpritsTable
+            culprits={analysis.culprits.map(GenericCulprit.from)}
+          />
+        </div>
+      )}
+      <div className="section">
+        <Typography variant="h5" gutterBottom>
+          Analysis Components
+        </Typography>
+        <Tabs
+          value={currentTab}
+          onChange={handleTabChange}
+          aria-label="Analysis components tabs"
+          className="rounded-tabs"
+        >
+          <Tab
+            className="rounded-tab"
+            value={AnalysisComponentTabs.HEURISTIC}
+            label={AnalysisComponentTabs.HEURISTIC}
+          />
+          <Tab
+            className="rounded-tab"
+            value={AnalysisComponentTabs.NTH_SECTION}
+            label={AnalysisComponentTabs.NTH_SECTION}
+          />
+          <Tab
+            className="rounded-tab"
+            value={AnalysisComponentTabs.CULPRIT_VERIFICATION}
+            label={AnalysisComponentTabs.CULPRIT_VERIFICATION}
+          />
+        </Tabs>
+        <TabPanel value={currentTab} name={AnalysisComponentTabs.HEURISTIC}>
+          <HeuristicAnalysisTable result={analysis.heuristicResult} />
+        </TabPanel>
+        <TabPanel value={currentTab} name={AnalysisComponentTabs.NTH_SECTION}>
+          <NthSectionAnalysisTable
+            result={GenericNthSectionAnalysisResult.from(
+              assertNonNullable(analysis.nthSectionResult),
+            )}
+          />
+        </TabPanel>
+        <TabPanel
+          value={currentTab}
+          name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
+        >
+          <CulpritVerificationTable suspects={getSuspects(analysis)} />
+        </TabPanel>
+      </div>
+    </>
+  );
 }
 
 export const element = (

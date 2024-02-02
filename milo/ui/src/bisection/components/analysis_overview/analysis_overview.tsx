@@ -21,6 +21,7 @@ import Typography from '@mui/material/Typography';
 
 import { PlainTable } from '@/bisection/components/plain_table';
 import { AnalysisStatusInfo } from '@/bisection/components/status_info';
+import { BUILD_FAILURE_TYPE_DISPLAY_MAP } from '@/bisection/constants';
 import {
   ExternalLink,
   linkToBuild,
@@ -28,24 +29,23 @@ import {
   linkToCommit,
 } from '@/bisection/tools/link_constructors';
 import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
-import { Analysis } from '@/common/services/luci_bisection';
+import { GenericNthSectionAnalysisResult } from '@/bisection/types';
+import {
+  Analysis,
+  AnalysisRunStatus,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { CulpritActionType } from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
 
-import { nthsectionSuspectRange } from './common';
-
-interface Props {
-  analysis: Analysis;
-}
+import { nthSectionSuspectRange } from './common';
 
 function getSuspectRange(analysis: Analysis): ExternalLink[] {
-  if (analysis.culprits && analysis.culprits.length > 0) {
-    const culpritLinks: ExternalLink[] = [];
-    analysis.culprits.forEach((culprit) => {
-      culpritLinks.push(linkToCommit(culprit.commit));
-    });
-    return culpritLinks;
+  if (analysis.culprits.length > 0) {
+    return analysis.culprits.map((culprit) => linkToCommit(culprit.commit!));
   }
   if (analysis.nthSectionResult) {
-    const link = nthsectionSuspectRange(analysis.nthSectionResult);
+    const link = nthSectionSuspectRange(
+      GenericNthSectionAnalysisResult.from(analysis.nthSectionResult),
+    );
     return link ? [link] : [];
   }
   return [];
@@ -59,7 +59,10 @@ function getBugLinks(analysis: Analysis): ExternalLink[] {
     analysis.culprits.forEach((culprit) => {
       if (culprit.culpritAction) {
         culprit.culpritAction.forEach((action) => {
-          if (action.actionType === 'BUG_COMMENTED' && action.bugUrl) {
+          if (
+            action.actionType === CulpritActionType.BUG_COMMENTED &&
+            action.bugUrl
+          ) {
             // TODO: construct short link text for bug
             bugLinks.push({
               linkText: action.bugUrl,
@@ -74,7 +77,11 @@ function getBugLinks(analysis: Analysis): ExternalLink[] {
   return bugLinks;
 }
 
-export function AnalysisOverview({ analysis }: Props) {
+export interface AnalysisOverviewProps {
+  readonly analysis: Analysis;
+}
+
+export function AnalysisOverview({ analysis }: AnalysisOverviewProps) {
   const buildLink = linkToBuild(analysis.firstFailedBbid);
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
@@ -127,7 +134,9 @@ export function AnalysisOverview({ analysis }: Props) {
             <TableCell variant="head">End time</TableCell>
             <TableCell>{getFormattedTimestamp(analysis.endTime)}</TableCell>
             <TableCell variant="head">Failure type</TableCell>
-            <TableCell>{analysis.buildFailureType}</TableCell>
+            <TableCell>
+              {BUILD_FAILURE_TYPE_DISPLAY_MAP[analysis.buildFailureType]}
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell variant="head">Status</TableCell>
@@ -137,7 +146,7 @@ export function AnalysisOverview({ analysis }: Props) {
                   a later build is successful. If analyses are canceled for
                   other reasons, we will need to store the cancelation reason
                   in the backend and update the UI here to display it.*/}
-              {analysis.runStatus === 'CANCELED' && (
+              {analysis.runStatus === AnalysisRunStatus.CANCELED && (
                 <Typography color="var(--greyed-out-text-color)">
                   (canceled because the builder started passing again)
                 </Typography>

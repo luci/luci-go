@@ -14,7 +14,10 @@
 
 import Typography from '@mui/material/Typography';
 
-import { AnalysisStatus, RerunStatus } from '@/common/services/luci_bisection';
+import {
+  AnalysisStatus,
+  RerunStatus,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 
 interface LabelProps {
   text: string;
@@ -22,61 +25,91 @@ interface LabelProps {
 }
 
 const RERUN_STATUS_LABELS: Record<RerunStatus, LabelProps> = {
-  RERUN_STATUS_UNSPECIFIED: {
+  [RerunStatus.UNSPECIFIED]: {
     text: 'Unknown',
     color: 'var(--default-text-color)',
   },
-  RERUN_STATUS_PASSED: { text: 'Passed', color: 'var(--success-color)' },
-  RERUN_STATUS_FAILED: { text: 'Failed', color: 'var(--failure-color)' },
-  RERUN_STATUS_IN_PROGRESS: {
+  [RerunStatus.PASSED]: {
+    text: 'Passed',
+    color: 'var(--success-color)',
+  },
+  [RerunStatus.FAILED]: {
+    text: 'Failed',
+    color: 'var(--failure-color)',
+  },
+  [RerunStatus.IN_PROGRESS]: {
     text: 'In progress',
     color: 'var(--started-color)',
   },
-  RERUN_STATUS_INFRA_FAILED: {
+  [RerunStatus.INFRA_FAILED]: {
     text: 'Infra failed',
     color: 'var(--critical-failure-color)',
   },
-  RERUN_STATUS_CANCELED: { text: 'Canceled', color: 'var(--canceled-color)' },
-  RERUN_STATUS_TEST_SKIPPED: {
+  [RerunStatus.CANCELED]: {
+    text: 'Canceled',
+    color: 'var(--canceled-color)',
+  },
+  [RerunStatus.TEST_SKIPPED]: {
     text: 'Test skipped',
     color: 'var(--critical-failure-color)',
   },
 };
 
 const ANALYSIS_STATUS_LABELS: Record<AnalysisStatus, LabelProps> = {
-  ANALYSIS_STATUS_UNSPECIFIED: {
+  [AnalysisStatus.UNSPECIFIED]: {
     text: 'Unknown',
     color: 'var(--default-text-color)',
   },
-  CREATED: { text: 'Created', color: 'var(--scheduled-color)' },
-  RUNNING: { text: 'Running', color: 'var(--started-color)' },
-  FOUND: { text: 'Culprit found', color: 'var(--success-color)' },
-  NOTFOUND: { text: 'Suspect not found', color: 'var(--failure-color)' },
-  SUSPECTFOUND: { text: 'Suspect found', color: 'var(--suspect-found-color)' },
-  ERROR: { text: 'Error', color: 'var(--critical-failure-color)' },
-  UNSUPPORTED: { text: 'Unsupported', color: 'var(--canceled-color)' },
-  DISABLED: { text: 'Disabled', color: 'var(--canceled-color)' },
-  INSUFFICENTDATA: {
+  [AnalysisStatus.CREATED]: {
+    text: 'Created',
+    color: 'var(--scheduled-color)',
+  },
+  [AnalysisStatus.RUNNING]: { text: 'Running', color: 'var(--started-color)' },
+  [AnalysisStatus.FOUND]: {
+    text: 'Culprit found',
+    color: 'var(--success-color)',
+  },
+  [AnalysisStatus.NOTFOUND]: {
+    text: 'Suspect not found',
+    color: 'var(--failure-color)',
+  },
+  [AnalysisStatus.SUSPECTFOUND]: {
+    text: 'Suspect found',
+    color: 'var(--suspect-found-color)',
+  },
+  [AnalysisStatus.ERROR]: {
+    text: 'Error',
+    color: 'var(--critical-failure-color)',
+  },
+  [AnalysisStatus.UNSUPPORTED]: {
+    text: 'Unsupported',
+    color: 'var(--canceled-color)',
+  },
+  [AnalysisStatus.DISABLED]: {
+    text: 'Disabled',
+    color: 'var(--canceled-color)',
+  },
+  [AnalysisStatus.INSUFFICENTDATA]: {
     text: 'Insufficient data',
     color: 'var(--canceled-color)',
   },
 };
 
-interface RerunStatusProps {
-  status: RerunStatus;
+export interface RerunStatusInfoProps {
+  readonly status: RerunStatus;
 }
 
-export function RerunStatusInfo({ status }: RerunStatusProps) {
+export function RerunStatusInfo({ status }: RerunStatusInfoProps) {
   const statusLabel = RERUN_STATUS_LABELS[status];
 
   return <Typography color={statusLabel.color}>{statusLabel.text}</Typography>;
 }
 
-interface AnalysisStatusProps {
+export interface AnalysisStatusInfoProps {
   status: AnalysisStatus;
 }
 
-export function AnalysisStatusInfo({ status }: AnalysisStatusProps) {
+export function AnalysisStatusInfo({ status }: AnalysisStatusInfoProps) {
   const statusLabel = ANALYSIS_STATUS_LABELS[status];
 
   return <Typography color={statusLabel.color}>{statusLabel.text}</Typography>;

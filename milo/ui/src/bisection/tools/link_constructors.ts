@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BuilderID, GitilesCommit } from '@/common/services/luci_bisection';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { getCommitShortHash } from './commit_formatters';
 

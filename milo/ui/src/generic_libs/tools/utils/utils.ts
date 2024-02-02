@@ -52,6 +52,14 @@ export function unwrapOrElse<T>(fn: () => T, onErr: (err: unknown) => T): T {
 /**
  * A utility function that replaces non-null assertion (e.g. `value!`) with a
  * runtime check.
+ *
+ * incorrect usage of `!` may lead to silent failures (e.g. `value!` might get
+ * displayed as `undefined`), or failures that are hard to trace (e.g. when
+ * `value!` is assigned to another variable and passed around, leading to errors
+ * in a place far away from the incorrect usage of `!`).
+ *
+ * This function makes incorrect non-null assertion fail immediately, avoiding
+ * the problems with `!` at the cost of being more verbose.
  */
 export function assertNonNullable<T>(value: T): NonNullable<T> {
   if (value === null || value === undefined) {

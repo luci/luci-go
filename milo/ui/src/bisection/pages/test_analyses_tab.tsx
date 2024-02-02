@@ -94,7 +94,7 @@ export function TestAnalysesTab() {
         />
       </Box>
       {searchID !== '' ? (
-        <SearchTestAnalysisTable analysisId={parseInt(searchID)} />
+        <SearchTestAnalysisTable analysisId={searchID} />
       ) : (
         <ListTestAnalysesTable />
       )}

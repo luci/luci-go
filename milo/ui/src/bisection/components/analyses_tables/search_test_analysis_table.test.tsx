@@ -21,12 +21,12 @@ import {
   mockErrorGetTestAnalysis,
   mockGetTestAnalysis,
 } from '@/bisection/testing_tools/mocks/test_analysis_mock';
-import { TestAnalysis } from '@/common/services/luci_bisection';
+import { TestAnalysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { SearchTestAnalysisTable } from './search_test_analysis_table';
 
-describe('Test SearchTestAnalysisTable component', () => {
+describe('<SearchTestAnalysisTable />', () => {
   afterEach(() => {
     fetchMock.mockClear();
     fetchMock.reset();
@@ -38,7 +38,7 @@ describe('Test SearchTestAnalysisTable component', () => {
 
     render(
       <FakeContextProvider>
-        <SearchTestAnalysisTable analysisId={123} />
+        <SearchTestAnalysisTable analysisId="123" />
       </FakeContextProvider>,
     );
 
@@ -57,7 +57,7 @@ describe('Test SearchTestAnalysisTable component', () => {
 
     render(
       <FakeContextProvider>
-        <SearchTestAnalysisTable analysisId={123} />
+        <SearchTestAnalysisTable analysisId="123" />
       </FakeContextProvider>,
     );
 
@@ -73,7 +73,7 @@ describe('Test SearchTestAnalysisTable component', () => {
 
     render(
       <FakeContextProvider>
-        <SearchTestAnalysisTable analysisId={123} />
+        <SearchTestAnalysisTable analysisId="123" />
       </FakeContextProvider>,
     );
 

@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PrimeSuspect } from '@/common/services/luci_bisection';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { AnalysesClientImpl } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
-export const createMockPrimeSuspect = (commitID: string): PrimeSuspect => {
-  return {
-    cl: {
-      commitID: commitID,
-      title: `Mock suspect CL ${commitID}`,
-      reviewURL: `https://chromium-review.googlesource.com/mock_suspect_summary/${commitID}`,
-    },
-    culpritStatus: 'VERIFYING',
-    accuseSource: 'Heuristic',
-  };
-};
+export function useAnalysesClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciBisection.host,
+    ClientImpl: AnalysesClientImpl,
+  });
+}

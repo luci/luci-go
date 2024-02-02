@@ -27,18 +27,19 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
+import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
 import {
   Analysis,
-  LUCIBisectionService,
-} from '@/common/services/luci_bisection';
+  ListAnalysesRequest,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { AnalysisTableRow } from './table_row';
 
-interface DisplayedRowsLabelProps {
-  from: number;
+export interface DisplayedRowsLabelProps {
+  readonly from: number;
 }
 
 export function ListAnalysesTable() {
@@ -58,6 +59,7 @@ export function ListAnalysesTable() {
     new Map<number, string>([[0, '']]),
   );
 
+  const client = useAnalysesClient();
   const {
     isLoading,
     isError,
@@ -65,29 +67,26 @@ export function ListAnalysesTable() {
     error,
     isFetching,
     isPreviousData,
-  } = usePrpcQuery({
-    host: SETTINGS.luciBisection.host,
-    Service: LUCIBisectionService,
-    method: 'listAnalyses',
-    request: {
-      pageSize: pageSize,
-      pageToken: pageTokens.get(page * pageSize) || '',
-    },
-    options: {
-      keepPreviousData: true,
-      onSuccess: (response) => {
-        // Record the page token for the next page of analyses
-        if (response.nextPageToken !== null) {
-          const nextPageStartIndex = (page + 1) * pageSize;
-          setPageTokens(
-            new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
-          );
-        }
-      },
+  } = useQuery({
+    ...client.ListAnalyses.query(
+      ListAnalysesRequest.fromPartial({
+        pageSize: pageSize,
+        pageToken: pageTokens.get(page * pageSize) || '',
+      }),
+    ),
+    keepPreviousData: true,
+    onSuccess: (response) => {
+      // Record the page token for the next page of analyses
+      if (response.nextPageToken !== null) {
+        const nextPageStartIndex = (page + 1) * pageSize;
+        setPageTokens(
+          new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
+        );
+      }
     },
   });
 
-  const analyses: Analysis[] = response?.analyses || [];
+  const analyses: readonly Analysis[] = response?.analyses || [];
 
   const handleChangePage = (_: React.MouseEvent | null, newPage: number) => {
     setPage(newPage);

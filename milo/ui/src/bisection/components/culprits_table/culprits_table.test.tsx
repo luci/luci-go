@@ -14,27 +14,36 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { Culprit, CulpritAction } from '@/common/services/luci_bisection';
+import { GenericCulprit } from '@/bisection/types';
+import { RerunStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
+import {
+  Culprit,
+  CulpritAction,
+  CulpritActionType,
+  CulpritInactionReason,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
 
 import { CulpritsTable } from './culprits_table';
 
-describe('Test CulpritsTable component', () => {
+describe('<CulpritsTable />', () => {
   test('if culprit review link is displayed', async () => {
-    const mockCulprit: Culprit = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'ghi789ghi789',
-        position: '523',
-      },
-      reviewTitle: 'Added new feature to improve testing again',
-      reviewUrl:
-        'https://chromium-review.googlesource.com/placeholder/+/234567',
-      verificationDetails: {
-        status: 'Confirmed Culprit',
-      },
-    };
+    const mockCulprit = GenericCulprit.from(
+      Culprit.fromPartial({
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'ghi789ghi789',
+          position: 523,
+        },
+        reviewTitle: 'Added new feature to improve testing again',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/234567',
+        verificationDetails: {
+          status: 'Confirmed Culprit',
+        },
+      }),
+    );
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
 
@@ -51,31 +60,33 @@ describe('Test CulpritsTable component', () => {
   });
 
   test('if culprit actions are displayed', async () => {
-    const bugAction: CulpritAction = {
-      actionType: 'BUG_COMMENTED',
+    const bugAction = CulpritAction.fromPartial({
+      actionType: CulpritActionType.BUG_COMMENTED,
       bugUrl: 'https://crbug.com/testProject/11223344',
-    };
-    const autoRevertAction: CulpritAction = {
-      actionType: 'CULPRIT_AUTO_REVERTED',
+    });
+    const autoRevertAction = CulpritAction.fromPartial({
+      actionType: CulpritActionType.CULPRIT_AUTO_REVERTED,
       revertClUrl:
         'https://chromium-review.googlesource.com/placeholder/+/123457',
-    };
-    const mockCulprit: Culprit = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'abc123abc123',
-        position: '307',
-      },
-      reviewTitle: 'Added new feature to improve testing',
-      reviewUrl:
-        'https://chromium-review.googlesource.com/placeholder/+/123456',
-      culpritAction: [bugAction, autoRevertAction],
-      verificationDetails: {
-        status: 'Confirmed Culprit',
-      },
-    };
+    });
+    const mockCulprit = GenericCulprit.from(
+      Culprit.fromPartial({
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'abc123abc123',
+          position: 307,
+        },
+        reviewTitle: 'Added new feature to improve testing',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/123456',
+        culpritAction: Object.freeze([bugAction, autoRevertAction]),
+        verificationDetails: {
+          status: 'Confirmed Culprit',
+        },
+      }),
+    );
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
 
@@ -112,28 +123,30 @@ describe('Test CulpritsTable component', () => {
   });
 
   test('if culprit inaction with reason is displayed', async () => {
-    const inaction: CulpritAction = {
-      actionType: 'NO_ACTION',
-      inactionReason: 'REVERTED_BY_BISECTION',
+    const inaction = CulpritAction.fromPartial({
+      actionType: CulpritActionType.NO_ACTION,
+      inactionReason: CulpritInactionReason.REVERTED_BY_BISECTION,
       revertClUrl:
         'https://chromium-review.googlesource.com/placeholder/+/123457',
-    };
-    const mockCulprit: Culprit = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'abc123abc123',
-        position: '307',
-      },
-      reviewTitle: 'Added new feature to improve testing',
-      reviewUrl:
-        'https://chromium-review.googlesource.com/placeholder/+/123456',
-      culpritAction: [inaction],
-      verificationDetails: {
-        status: 'Confirmed Culprit',
-      },
-    };
+    });
+    const mockCulprit = GenericCulprit.from(
+      Culprit.fromPartial({
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'abc123abc123',
+          position: 307,
+        },
+        reviewTitle: 'Added new feature to improve testing',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/123456',
+        culpritAction: Object.freeze([inaction]),
+        verificationDetails: {
+          status: 'Confirmed Culprit',
+        },
+      }),
+    );
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
 
@@ -155,25 +168,27 @@ describe('Test CulpritsTable component', () => {
   });
 
   test('if culprit inaction without reason is displayed', async () => {
-    const inaction: CulpritAction = {
-      actionType: 'NO_ACTION',
-    };
-    const mockCulprit: Culprit = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'abc123abc123',
-        position: '307',
-      },
-      reviewTitle: 'Added new feature to improve testing',
-      reviewUrl:
-        'https://chromium-review.googlesource.com/placeholder/+/123456',
-      culpritAction: [inaction],
-      verificationDetails: {
-        status: 'Confirmed Culprit',
-      },
-    };
+    const inaction = CulpritAction.fromPartial({
+      actionType: CulpritActionType.NO_ACTION,
+    });
+    const mockCulprit = GenericCulprit.from(
+      Culprit.fromPartial({
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'abc123abc123',
+          position: 307,
+        },
+        reviewTitle: 'Added new feature to improve testing',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/123456',
+        culpritAction: Object.freeze([inaction]),
+        verificationDetails: {
+          status: 'Confirmed Culprit',
+        },
+      }),
+    );
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
 
@@ -188,50 +203,53 @@ describe('Test CulpritsTable component', () => {
   });
 
   test('if culprit verification details are displayed', async () => {
-    const mockCulprit: Culprit = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'def456def456',
-        position: '298',
-      },
-      reviewTitle: 'Added new feature as requested',
-      reviewUrl: 'https://chromium-review.googlesource.com/placeholder/+/92345',
-      verificationDetails: {
-        status: 'Confirmed Culprit',
-        suspectRerun: {
-          startTime: '2022-09-06T07:13:16.398865Z',
-          endTime: '2022-09-06T07:13:18.398865Z',
-          bbid: '8877665544332211',
-          rerunResult: {
-            rerunStatus: 'RERUN_STATUS_FAILED',
-          },
-          commit: {
-            host: 'testHost',
-            project: 'testProject',
-            ref: 'test/ref/dev',
-            id: 'def456def456',
-          },
-          type: 'Culprit Verification',
+    const mockCulprit = GenericCulprit.from(
+      Culprit.fromPartial({
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'def456def456',
+          position: 298,
         },
-        parentRerun: {
-          startTime: '2022-09-06T07:16:16.398865Z',
-          endTime: '2022-09-06T07:16:31.398865Z',
-          bbid: '8765432187654321',
-          rerunResult: {
-            rerunStatus: 'RERUN_STATUS_PASSED',
+        reviewTitle: 'Added new feature as requested',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/92345',
+        verificationDetails: {
+          status: 'Confirmed Culprit',
+          suspectRerun: {
+            startTime: '2022-09-06T07:13:16.398865Z',
+            endTime: '2022-09-06T07:13:18.398865Z',
+            bbid: '8877665544332211',
+            rerunResult: {
+              rerunStatus: RerunStatus.FAILED,
+            },
+            commit: {
+              host: 'testHost',
+              project: 'testProject',
+              ref: 'test/ref/dev',
+              id: 'def456def456',
+            },
+            type: 'Culprit Verification',
           },
-          commit: {
-            host: 'testHost',
-            project: 'testProject',
-            ref: 'test/ref/dev',
-            id: 'def456def455',
+          parentRerun: {
+            startTime: '2022-09-06T07:16:16.398865Z',
+            endTime: '2022-09-06T07:16:31.398865Z',
+            bbid: '8765432187654321',
+            rerunResult: {
+              rerunStatus: RerunStatus.PASSED,
+            },
+            commit: {
+              host: 'testHost',
+              project: 'testProject',
+              ref: 'test/ref/dev',
+              id: 'def456def455',
+            },
+            type: 'Culprit Verification',
           },
-          type: 'Culprit Verification',
         },
-      },
-    };
+      }),
+    );
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
 

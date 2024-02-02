@@ -25,40 +25,38 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import { useQuery } from '@tanstack/react-query';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { LUCIBisectionService } from '@/common/services/luci_bisection';
+import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
+import { QueryAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { AnalysisTableRow } from './table_row';
 
-interface Props {
-  bbid: string | null | undefined;
+export interface SearchAnalysisTableProps {
+  readonly bbid: string;
 }
 
-export function SearchAnalysisTable({ bbid }: Props) {
+export function SearchAnalysisTable({ bbid }: SearchAnalysisTableProps) {
+  const client = useAnalysesClient();
   const {
     isLoading,
     isError,
     isSuccess,
     data: response,
     error,
-  } = usePrpcQuery({
-    host: SETTINGS.luciBisection.host,
-    Service: LUCIBisectionService,
-    method: 'queryAnalysis',
-    request: {
-      buildFailure: {
-        // This query is disabled when bbid is undefined.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        bbid: bbid!,
-        // TODO: update this once other failure types are analyzed
-        failedStepName: 'compile',
-      },
-    },
-    options: {
-      // only use the query if a Buildbucket ID has been provided
-      enabled: !!bbid,
-    },
+  } = useQuery({
+    ...client.QueryAnalysis.query(
+      QueryAnalysisRequest.fromPartial({
+        buildFailure: {
+          // This query is disabled when bbid is an empty string.
+          bbid,
+          // TODO: update this once other failure types are analyzed
+          failedStepName: 'compile',
+        },
+      }),
+    ),
+    // only use the query if a Buildbucket ID has been provided
+    enabled: !!bbid,
   });
 
   if (isLoading) {
@@ -87,12 +85,7 @@ export function SearchAnalysisTable({ bbid }: Props) {
 
   let analysis = null;
   let buildIsFirstFailed = false;
-  if (
-    isSuccess &&
-    response &&
-    response.analyses &&
-    response.analyses.length > 0
-  ) {
+  if (isSuccess && response.analyses.length > 0) {
     analysis = response.analyses[0];
     buildIsFirstFailed = analysis.firstFailedBbid === bbid;
   }

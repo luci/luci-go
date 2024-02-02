@@ -29,34 +29,28 @@ import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { EMPTY_LINK } from '@/bisection/tools/link_constructors';
 import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
 import {
-  NthSectionAnalysisResult,
-  SingleRerun,
-} from '@/common/services/luci_bisection';
+  GenericNthSectionAnalysisResult,
+  GenericSingleRerun,
+} from '@/bisection/types';
 
 import { NthSectionAnalysisTableRow } from './nthsection_analysis_table_row';
 
-interface NthSectionAnalysisTableProps {
-  result?: NthSectionAnalysisResult | null;
-}
-
-interface RerunProps {
-  reruns: SingleRerun[];
+export interface NthSectionAnalysisTableProps {
+  readonly result?: GenericNthSectionAnalysisResult;
 }
 
 export function NthSectionAnalysisTable({
   result,
 }: NthSectionAnalysisTableProps) {
-  if (result === null || result === undefined) {
+  if (!result) {
     return (
       <span className="data-placeholder">There is no nthsection analysis</span>
     );
   }
 
-  const reruns = result?.reruns ?? [];
+  const reruns = [...result.reruns];
   const sortedReruns = reruns.sort(
-    // All reruns used in Nth section analysis should have indicies.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (a, b) => parseInt(a.index!) - parseInt(b.index!),
+    (a, b) => parseInt(a.index) - parseInt(b.index),
   );
   return (
     <>
@@ -69,12 +63,10 @@ export function NthSectionAnalysisTable({
 }
 
 interface NthSectionAnalysisDetailProps {
-  result: NthSectionAnalysisResult;
+  readonly result: GenericNthSectionAnalysisResult;
 }
 
-export function NthSectionAnalysisDetail({
-  result,
-}: NthSectionAnalysisDetailProps) {
+function NthSectionAnalysisDetail({ result }: NthSectionAnalysisDetailProps) {
   const commitLink = EMPTY_LINK;
   const suspect = result.suspect;
   if (suspect) {
@@ -123,8 +115,14 @@ export function NthSectionAnalysisDetail({
   );
 }
 
-export function NthSectionAnalysisRerunsTable({ reruns }: RerunProps) {
-  if (!reruns || reruns.length === 0) {
+export interface NthSectionAnalysisRerunsTableProps {
+  readonly reruns: ReadonlyArray<GenericSingleRerun>;
+}
+
+export function NthSectionAnalysisRerunsTable({
+  reruns,
+}: NthSectionAnalysisRerunsTableProps) {
+  if (reruns.length === 0) {
     return <span className="data-placeholder">No reruns found</span>;
   }
   return (

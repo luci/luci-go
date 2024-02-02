@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import './analyses_table.css';
 
 import Alert from '@mui/material/Alert';
@@ -21,16 +22,33 @@ import TablePagination, {
   LabelDisplayedRowsArgs,
 } from '@mui/material/TablePagination';
 import Typography from '@mui/material/Typography';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
+import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
 import {
-  LUCIBisectionService,
+  ListTestAnalysesRequest,
   TestAnalysis,
-} from '@/common/services/luci_bisection';
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { TestAnalysesTable } from './test_analyses_table';
+
+const MASK = Object.freeze([
+  'analysis_id',
+  'created_time',
+  'start_time',
+  'end_time',
+  'status',
+  'run_status',
+  'builder',
+  'culprit.commit',
+  'culprit.review_url',
+  'culprit.review_title',
+  'culprit.culprit_action',
+  'test_failures.*.is_primary',
+  'test_failures.*.start_hour',
+]);
 
 export function ListTestAnalysesTable() {
   const { project } = useParams();
@@ -54,6 +72,7 @@ export function ListTestAnalysesTable() {
     new Map<number, string>([[0, '']]),
   );
 
+  const client = useAnalysesClient();
   const {
     isLoading,
     isError,
@@ -61,47 +80,28 @@ export function ListTestAnalysesTable() {
     error,
     isFetching,
     isPreviousData,
-  } = usePrpcQuery({
-    host: SETTINGS.luciBisection.host,
-    Service: LUCIBisectionService,
-    method: 'listTestAnalyses',
-    request: {
-      project: project,
-      pageSize: pageSize,
-      pageToken: pageTokens.get(page * pageSize) || '',
-      fields: {
-        paths: [
-          'analysis_id',
-          'created_time',
-          'start_time',
-          'end_time',
-          'status',
-          'run_status',
-          'builder',
-          'culprit.commit',
-          'culprit.review_url',
-          'culprit.review_title',
-          'culprit.culprit_action',
-          'test_failures.*.is_primary',
-          'test_failures.*.start_hour',
-        ],
-      },
-    },
-    options: {
-      keepPreviousData: true,
-      onSuccess: (response) => {
-        // Record the page token for the next page of analyses
-        if (response.nextPageToken) {
-          const nextPageStartIndex = (page + 1) * pageSize;
-          setPageTokens(
-            new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
-          );
-        }
-      },
+  } = useQuery({
+    ...client.ListTestAnalyses.query(
+      ListTestAnalysesRequest.fromPartial({
+        project: project,
+        pageSize: pageSize,
+        pageToken: pageTokens.get(page * pageSize) || '',
+        fields: MASK,
+      }),
+    ),
+    keepPreviousData: true,
+    onSuccess: (response) => {
+      // Record the page token for the next page of analyses
+      if (response.nextPageToken) {
+        const nextPageStartIndex = (page + 1) * pageSize;
+        setPageTokens(
+          new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
+        );
+      }
     },
   });
 
-  const analyses: TestAnalysis[] = response?.analyses || [];
+  const analyses: readonly TestAnalysis[] = response?.analyses || [];
 
   const handleChangePage = (_: React.MouseEvent | null, newPage: number) => {
     setPage(newPage);

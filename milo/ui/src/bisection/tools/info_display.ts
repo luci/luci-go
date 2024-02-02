@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AnalysisStatus, RerunStatus } from '@/common/services/luci_bisection';
+import {
+  AnalysisStatus,
+  RerunStatus,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 
 export function displayRerunStatus(rerunStatus: RerunStatus): string {
   switch (rerunStatus) {
-    case 'RERUN_STATUS_PASSED':
+    case RerunStatus.PASSED:
       return 'Passed';
-    case 'RERUN_STATUS_FAILED':
+    case RerunStatus.FAILED:
       return 'Failed';
-    case 'RERUN_STATUS_IN_PROGRESS':
+    case RerunStatus.IN_PROGRESS:
       return 'In Progress';
-    case 'RERUN_STATUS_INFRA_FAILED':
+    case RerunStatus.INFRA_FAILED:
       return 'Infra failed';
-    case 'RERUN_STATUS_CANCELED':
+    case RerunStatus.CANCELED:
       return 'Canceled';
   }
   return 'Unknown';
@@ -32,17 +35,17 @@ export function displayRerunStatus(rerunStatus: RerunStatus): string {
 
 export function displayStatus(status: AnalysisStatus): string {
   switch (status) {
-    case 'CREATED':
+    case AnalysisStatus.CREATED:
       return 'Created';
-    case 'RUNNING':
+    case AnalysisStatus.RUNNING:
       return 'Running';
-    case 'FOUND':
+    case AnalysisStatus.FOUND:
       return 'Culprit found';
-    case 'NOTFOUND':
+    case AnalysisStatus.NOTFOUND:
       return 'Suspect not found';
-    case 'SUSPECTFOUND':
+    case AnalysisStatus.SUSPECTFOUND:
       return 'Suspect found';
-    case 'ERROR':
+    case AnalysisStatus.ERROR:
       return 'Error';
   }
   return 'Unknown';

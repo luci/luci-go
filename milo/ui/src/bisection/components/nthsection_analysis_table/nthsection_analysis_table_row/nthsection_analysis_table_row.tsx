@@ -21,18 +21,16 @@ import TableRow from '@mui/material/TableRow';
 import { RerunStatusInfo } from '@/bisection/components/status_info';
 import { linkToBuild, linkToCommit } from '@/bisection/tools/link_constructors';
 import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
-import { SingleRerun } from '@/common/services/luci_bisection';
+import { GenericSingleRerun } from '@/bisection/types';
 
-interface Props {
-  rerun: SingleRerun;
+export interface NthSectionAnalysisTableRowProps {
+  readonly rerun: GenericSingleRerun;
 }
 
-// Display the default rerun type when rerun type information in missing.
-// Test analysis rpc doesn't return the rerun type because all rerun are "Nthsection" type.
-const DEFAULT_RERUN_TYPE = 'Nthsection';
-
-export function NthSectionAnalysisTableRow({ rerun }: Props) {
-  const { startTime, endTime, bbid, commit, index, type } = rerun;
+export function NthSectionAnalysisTableRow({
+  rerun,
+}: NthSectionAnalysisTableRowProps) {
+  const { startTime, endTime, bbid, commit, index, rerunResult, type } = rerun;
 
   const buildLink = linkToBuild(bbid);
   const commitLink = linkToCommit(commit);
@@ -54,9 +52,7 @@ export function NthSectionAnalysisTableRow({ rerun }: Props) {
           </Link>
         </TableCell>
         <TableCell>
-          <RerunStatusInfo
-            status={rerun.rerunResult.rerunStatus}
-          ></RerunStatusInfo>
+          <RerunStatusInfo status={rerunResult.rerunStatus}></RerunStatusInfo>
         </TableCell>
         <TableCell>
           <Link
@@ -68,7 +64,7 @@ export function NthSectionAnalysisTableRow({ rerun }: Props) {
             {buildLink.linkText}
           </Link>
         </TableCell>
-        <TableCell>{type || DEFAULT_RERUN_TYPE}</TableCell>
+        <TableCell>{type}</TableCell>
         <TableCell>{getFormattedTimestamp(startTime)}</TableCell>
         <TableCell>{getFormattedTimestamp(endTime)}</TableCell>
       </TableRow>

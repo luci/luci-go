@@ -14,14 +14,14 @@
 
 import { getAllByRole, render, screen } from '@testing-library/react';
 
-import { TestFailure } from '@/common/services/luci_bisection';
+import { TestFailure } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { TestFailuresTable } from './test_failures_table';
 
-describe('Test NthSectionAnalysisTable component', () => {
+describe('<NthSectionAnalysisTable />', () => {
   test('if all information is displayed', async () => {
-    const mockTestFailures: TestFailure[] = [
-      {
+    const mockTestFailures = [
+      TestFailure.fromPartial({
         testId: 'test1',
         variant: {
           def: { os: 'linux' },
@@ -30,8 +30,8 @@ describe('Test NthSectionAnalysisTable component', () => {
         isDiverged: false,
         isPrimary: true,
         startHour: '2023-10-05T17:00:00Z',
-      },
-      {
+      }),
+      TestFailure.fromPartial({
         testId: 'test2',
         variant: {
           def: { os: 'mac' },
@@ -40,7 +40,7 @@ describe('Test NthSectionAnalysisTable component', () => {
         isDiverged: true,
         isPrimary: false,
         startHour: '2023-10-05T17:00:00Z',
-      },
+      }),
     ];
     render(<TestFailuresTable testFailures={mockTestFailures} />);
 

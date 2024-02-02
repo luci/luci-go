@@ -14,12 +14,17 @@
 
 import { render, screen } from '@testing-library/react';
 
+import {
+  ANALYSIS_STATUS_DISPLAY_MAP,
+  BUILD_FAILURE_TYPE_DISPLAY_MAP,
+} from '@/bisection/constants';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
-import { Analysis } from '@/common/services/luci_bisection';
+import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { CulpritActionType } from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
 
 import { AnalysisOverview } from './analysis_overview';
 
-describe('Test AnalysisOverview component', () => {
+describe('<AnalysisOverview />', () => {
   test('if all analysis summary details are displayed', async () => {
     const mockAnalysis = createMockAnalysis('1');
 
@@ -37,9 +42,15 @@ describe('Test AnalysisOverview component', () => {
     expectedStaticFields.forEach(([label, property]) => {
       const fieldLabel = screen.getByText(new RegExp(`^(${label})$`, 'i'));
       expect(fieldLabel).toBeInTheDocument();
-      expect(fieldLabel.nextSibling?.textContent).toBe(
-        `${mockAnalysis[property as keyof Analysis]}`,
-      );
+      let valueContent = `${mockAnalysis[property as keyof Analysis]}`;
+      if (property === 'status') {
+        valueContent = ANALYSIS_STATUS_DISPLAY_MAP[mockAnalysis['status']];
+      }
+      if (property === 'buildFailureType') {
+        valueContent =
+          BUILD_FAILURE_TYPE_DISPLAY_MAP[mockAnalysis['buildFailureType']];
+      }
+      expect(fieldLabel.nextSibling?.textContent).toBe(valueContent);
     });
 
     const statusFieldLabel = screen.getByText('Status');
@@ -80,34 +91,36 @@ describe('Test AnalysisOverview component', () => {
   });
 
   test('if there is a culprit for the analysis, then it should be the suspect range', async () => {
-    const mockAnalysis = createMockAnalysis('3');
-    mockAnalysis.culprits = [
-      {
-        commit: {
-          host: 'testHost',
-          project: 'testProject',
-          ref: 'test/ref/dev',
-          id: 'ghi789ghi789',
-          position: '523',
-        },
-        reviewTitle: 'Added new feature to improve testing',
-        reviewUrl:
-          'https://chromium-review.googlesource.com/placeholder/+/123456',
-        culpritAction: [
-          {
-            actionType: 'BUG_COMMENTED',
-            bugUrl: 'https://crbug.com/testProject/11223344',
+    const mockAnalysis = Analysis.fromPartial({
+      ...createMockAnalysis('3'),
+      culprits: Object.freeze([
+        {
+          commit: {
+            host: 'testHost',
+            project: 'testProject',
+            ref: 'test/ref/dev',
+            id: 'ghi789ghi789',
+            position: 523,
           },
-          {
-            actionType: 'BUG_COMMENTED',
-            bugUrl: 'https://buganizer.corp.google.com/99887766',
+          reviewTitle: 'Added new feature to improve testing',
+          reviewUrl:
+            'https://chromium-review.googlesource.com/placeholder/+/123456',
+          culpritAction: Object.freeze([
+            {
+              actionType: CulpritActionType.BUG_COMMENTED,
+              bugUrl: 'https://crbug.com/testProject/11223344',
+            },
+            {
+              actionType: CulpritActionType.BUG_COMMENTED,
+              bugUrl: 'https://buganizer.corp.google.com/99887766',
+            },
+          ]),
+          verificationDetails: {
+            status: 'Confirmed Culprit',
           },
-        ],
-        verificationDetails: {
-          status: 'Confirmed Culprit',
         },
-      },
-    ];
+      ]),
+    });
 
     render(<AnalysisOverview analysis={mockAnalysis} />);
 
@@ -131,21 +144,27 @@ describe('Test AnalysisOverview component', () => {
 
   // eslint-disable-next-line jest/expect-expect
   test('if there is a culprit for only the nth section analysis, then it should be the suspect range', async () => {
-    const mockAnalysis = createMockAnalysis('4');
-    mockAnalysis.nthSectionResult!.suspect = {
-      commit: {
-        host: 'testHost',
-        project: 'testProject',
-        ref: 'test/ref/dev',
-        id: 'jkl012jkl012',
-        position: '624',
+    let mockAnalysis = createMockAnalysis('4');
+    mockAnalysis = Analysis.fromPartial({
+      ...mockAnalysis,
+      nthSectionResult: {
+        ...mockAnalysis.nthSectionResult,
+        suspect: {
+          commit: {
+            host: 'testHost',
+            project: 'testProject',
+            ref: 'test/ref/dev',
+            id: 'jkl012jkl012',
+            position: 624,
+          },
+          reviewUrl: 'http://this/is/review/url',
+          reviewTitle: 'Review title',
+          verificationDetails: {
+            status: 'Under Verification',
+          },
+        },
       },
-      reviewUrl: 'http://this/is/review/url',
-      reviewTitle: 'Review title',
-      verificationDetails: {
-        status: 'Under Verification',
-      },
-    };
+    });
 
     render(<AnalysisOverview analysis={mockAnalysis} />);
 
@@ -157,8 +176,10 @@ describe('Test AnalysisOverview component', () => {
 
   // eslint-disable-next-line jest/expect-expect
   test('if there is no data for the suspect range, then the table cell should be empty', async () => {
-    const mockAnalysis = createMockAnalysis('5');
-    mockAnalysis.nthSectionResult = undefined;
+    const mockAnalysis = Analysis.fromPartial({
+      ...createMockAnalysis('5'),
+      nthSectionResult: undefined,
+    });
 
     render(<AnalysisOverview analysis={mockAnalysis} />);
 
@@ -192,7 +213,7 @@ function verifySuspectRangeLinks(analysis: Analysis) {
     if (analysis.nthSectionResult.suspect) {
       expect(suspectRangeLinks).toHaveLength(1);
       const nthCulpritLink = suspectRangeLinks[0];
-      expect(analysis.nthSectionResult.suspect.commit.id).toContain(
+      expect(analysis.nthSectionResult.suspect.commit!.id).toContain(
         nthCulpritLink.textContent,
       );
       expect(nthCulpritLink.getAttribute('href')).not.toBe('');

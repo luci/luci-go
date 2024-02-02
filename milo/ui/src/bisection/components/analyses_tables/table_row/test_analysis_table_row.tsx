@@ -18,21 +18,23 @@ import TableRow from '@mui/material/TableRow';
 import { DateTime } from 'luxon';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { ANALYSIS_STATUS_DISPLAY_MAP } from '@/bisection/constants';
 import { linkToBuilder } from '@/bisection/tools/link_constructors';
+import { GenericCulprit } from '@/bisection/types';
 import { DurationBadge } from '@/common/components/duration_badge';
 import { Timestamp } from '@/common/components/timestamp';
-import { TestAnalysis } from '@/common/services/luci_bisection';
+import { TestAnalysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { CulpritsTableCell } from './culprit_table_cell';
 
-interface TestAnalysisTableRowProps {
-  analysis: TestAnalysis;
+export interface TestAnalysisTableRowProps {
+  readonly analysis: TestAnalysis;
 }
 
 export function TestAnalysisTableRow({ analysis }: TestAnalysisTableRowProps) {
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
-  const failureStartHour = analysis.testFailures[0]
+  const failureStartHour = analysis.testFailures[0]?.startHour
     ? DateTime.fromISO(analysis.testFailures[0].startHour)
     : null;
   const createTime = analysis.createdTime
@@ -64,7 +66,7 @@ export function TestAnalysisTableRow({ analysis }: TestAnalysisTableRowProps) {
           />
         )}
       </TableCell>
-      <TableCell>{analysis.status}</TableCell>
+      <TableCell>{ANALYSIS_STATUS_DISPLAY_MAP[analysis.status]}</TableCell>
       <TableCell>
         {totalDuration && (
           <DurationBadge
@@ -88,7 +90,9 @@ export function TestAnalysisTableRow({ analysis }: TestAnalysisTableRowProps) {
         )}
       </TableCell>
       <CulpritsTableCell
-        culprits={analysis.culprit ? [analysis.culprit] : []}
+        culprits={
+          analysis.culprit ? [GenericCulprit.fromTest(analysis.culprit)] : []
+        }
         status={analysis.status}
       />
     </TableRow>

@@ -20,13 +20,15 @@ import TableRow from '@mui/material/TableRow';
 
 import { VerificationDetailsTable } from '@/bisection/components/culprits_table';
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
-import { Suspect } from '@/common/services/luci_bisection';
+import { GenericSuspect } from '@/bisection/types';
 
-interface Props {
-  suspect: Suspect;
+export interface CulpritVerificationTableRowProps {
+  readonly suspect: GenericSuspect;
 }
 
-export function CulpritVerificationTableRow({ suspect }: Props) {
+export function CulpritVerificationTableRow({
+  suspect,
+}: CulpritVerificationTableRowProps) {
   const { commit, reviewUrl, reviewTitle, verificationDetails, type } = suspect;
 
   let suspectDescription = getCommitShortHash(commit.id);
