@@ -31,3 +31,38 @@ func Diff[T any](want T, got T, opts ...cmp.Option) string {
 	opts = append(opts, protocmp.Transform())
 	return cmp.Diff(want, got, opts...)
 }
+
+// Got supports the got-before-want style, it can be used as:
+//
+//	if diff := Got(1).Want(2).Options(...).Diff(); diff != "" {
+//	  ...
+//	}
+func Got[T any](got T) *diffBuilder[T] {
+	return &diffBuilder[T]{
+		got: got,
+	}
+}
+
+// diffBuilder builds a diff.
+type diffBuilder[T any] struct {
+	got     T
+	want    T
+	options []cmp.Option
+}
+
+// Want supplies the want argument to a builder.
+func (builder *diffBuilder[T]) Want(want T) *diffBuilder[T] {
+	builder.want = want
+	return builder
+}
+
+// Options supplies the optiosn argument to a builder
+func (builder *diffBuilder[T]) Options(options ...cmp.Option) *diffBuilder[T] {
+	builder.options = options
+	return builder
+}
+
+// Diff produces a diff from a diffbuilder.
+func (builder *diffBuilder[T]) Diff() string {
+	return Diff(builder.want, builder.got, builder.options...)
+}

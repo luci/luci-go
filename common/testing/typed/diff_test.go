@@ -57,3 +57,14 @@ func TestDiff(t *testing.T) {
 		}
 	}
 }
+
+// Test that the got-before-want syntax does what we intend it to.
+func TestGot(t *testing.T) {
+	t.Parallel()
+
+	diff := Got(4).Want(7).Diff()
+
+	if diff == "" {
+		t.Error("expected diff to be empty")
+	}
+}
