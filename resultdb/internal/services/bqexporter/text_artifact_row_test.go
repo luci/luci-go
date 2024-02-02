@@ -48,7 +48,7 @@ func TestGenerateArtifactBQRow(t *testing.T) {
 			content: "deadbeef",
 		}
 		row := input.row()
-		actual, ok := row.(*bqpb.TextArtifactRow)
+		actual, ok := row.(*bqpb.TextArtifactRowLegacy)
 		So(ok, ShouldBeTrue)
 		So(actual.Content, ShouldResemble, input.content)
 

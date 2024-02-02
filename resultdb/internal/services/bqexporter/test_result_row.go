@@ -58,7 +58,7 @@ func generateTestResultRowSchema() (schema bigquery.Schema, err error) {
 	fdfr, _ := descriptor.MessageDescriptorProto(&pb.FailureReason{})
 	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fds, fdfr, fdinv}}
-	return generateSchema(fdset, testResultRowMessage)
+	return GenerateSchema(fdset, testResultRowMessage)
 }
 
 // Row size limit is 5MB according to

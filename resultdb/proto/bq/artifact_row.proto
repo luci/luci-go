@@ -21,8 +21,11 @@ import "go.chromium.org/luci/resultdb/proto/bq/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
 
-// TextArtifactRow represents a row in a BigQuery table for a text artifact.
-message TextArtifactRow {
+// This proto is deprecated. This is used in the old BigQuery artifact export.
+// The reason we have not deleted it yet is that there still seems to be some tasks
+// running this exporter, so we need to check and verify those tasks.
+// TextArtifactRowLegacy represents a row in a BigQuery table for a text artifact.
+message TextArtifactRowLegacy {
   // Exported contains info of the exported invocation.
   //
   // Note: it's possible that this invocation is not the artifact's

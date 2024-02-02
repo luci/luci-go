@@ -44,7 +44,7 @@ import (
 var textArtifactRowSchema bigquery.Schema
 
 const (
-	artifactRowMessage = "luci.resultdb.bq.TextArtifactRow"
+	artifactRowMessage = "luci.resultdb.bq.TextArtifactRowLegacy"
 
 	// Row size limit is 5MB according to
 	// https://cloud.google.com/bigquery/quotas#streaming_inserts
@@ -63,11 +63,11 @@ func init() {
 }
 
 func generateArtifactRowSchema() (schema bigquery.Schema, err error) {
-	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TextArtifactRow{})
+	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TextArtifactRowLegacy{})
 	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdinv, fdsp}}
-	return generateSchema(fdset, artifactRowMessage)
+	return GenerateSchema(fdset, artifactRowMessage)
 }
 
 // textArtifactRowInput is information required to generate a text artifact BigQuery row.
@@ -84,7 +84,7 @@ func (i *textArtifactRowInput) row() proto.Message {
 	expRec := invocationProtoToRecord(i.exported)
 	parRec := invocationProtoToRecord(i.parent)
 
-	return &bqpb.TextArtifactRow{
+	return &bqpb.TextArtifactRowLegacy{
 		Exported:      expRec,
 		Parent:        parRec,
 		TestId:        testID,
@@ -267,7 +267,7 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 		return b.batchExportRows(ctx, ins, batchC, func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row) {
 			// Print up to 10 errors.
 			for i := 0; i < 10 && i < len(err); i++ {
-				a := rows[err[i].RowIndex].Message.(*bqpb.TextArtifactRow)
+				a := rows[err[i].RowIndex].Message.(*bqpb.TextArtifactRowLegacy)
 				var artifactName string
 				if a.TestId != "" {
 					artifactName = pbutil.TestResultArtifactName(a.Parent.Id, a.TestId, a.ResultId, a.ArtifactId)

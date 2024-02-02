@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/proto/google/descutil"
 )
 
-func generateSchema(fdset *desc.FileDescriptorSet, message string) (schema bigquery.Schema, err error) {
+func GenerateSchema(fdset *desc.FileDescriptorSet, message string) (schema bigquery.Schema, err error) {
 	conv := bq.SchemaConverter{
 		Desc:           fdset,
 		SourceCodeInfo: make(map[*desc.FileDescriptorProto]bq.SourceCodeInfoMap, len(fdset.File)),

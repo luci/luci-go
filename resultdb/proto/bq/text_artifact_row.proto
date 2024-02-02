@@ -1,0 +1,84 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.bq;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
+
+// TextArtifactRow represents a row in a BigQuery table `luci-resultdb.internal.text_artifacts`.
+message TextArtifactRow {
+  // The LUCI project that the artifact belongs to (e.g. chromium).
+  string project = 1;
+
+  // The LUCI Realm the the artifact exists under.
+  // Only contain the sub-realm (e.g. "try", instead of "chromium:try).
+  // The project is stored in the project field.
+  string realm = 2;
+
+  // The invocation ID of the parent invocation.
+  string invocation_id = 3;
+
+  // The test that the artifact belongs to.
+  // It will be empty if the artifact is an invocation-level artifact.
+  string test_id = 4;
+
+  // The result that the artifact belongs to.
+  // It will be empty if the artifact is an invocation-level artifact.
+  string result_id = 5;
+
+  // Id of the artifact.
+  // Refer to luci.resultdb.v1.Artifact.artifact_id for details.
+  string artifact_id = 6;
+
+  // The number of shards needed to store this artifact.
+  int32 num_shards = 7;
+
+  // Id of the artifact shard.
+  // Row size limit is 10MB according to
+  // https://cloud.google.com/bigquery/quotas#write-api-limits.
+  // The content itself will have a smaller limit because we will
+  // have other data in the row and overhead.
+  // If the size of the artifact content is larger than that, the data will be
+  // sharded at the nearest previous line break ("\r\n" first, if not exist
+  // then "\n" or "\r").
+  // If there is no line break (i.e. log is a single line), we will shard at
+  // the nearest white space, if in the rare case that there is no space, we will
+  // shard where the size limit is.
+  // shard_id is monotonically increasing and starts at 0.
+  int32 shard_id = 8;
+
+  // Optional. Content type of the artifact (e.g. text/plain).
+  string content_type = 9;
+
+  // Artifact shard content.
+  // Encoded as UTF-8.
+  string content = 10;
+
+  // Size of the artifact content in bytes.
+  // This is the sum of shard_content_size of all shards of the artifact.
+  int32 artifact_content_size = 11;
+
+  // Size of the shard content in bytes.
+  int32 shard_content_size = 12;
+
+  // Partition_time is used to partition the table.
+  // It is the time when the exported invocation was created in Spanner.
+  // It is NOT the time when the row is inserted into BigQuery table.
+  google.protobuf.Timestamp partition_time = 13;
+}
+
