@@ -23,8 +23,8 @@ import MenuItem from '@mui/material/MenuItem';
 import { useState, MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 
-import { ReleaseNotesTooltip } from '@/core/components/release_notes';
 import { useSetShowPageConfig } from '@/common/components/page_config_state_provider';
+import { ReleaseNotesTooltip } from '@/core/components/release_notes';
 
 export function AppMenu() {
   const setShowPageConfig = useSetShowPageConfig();

@@ -14,11 +14,11 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 
+import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 import {
   ReleaseNotesProvider,
   useHasNewRelease,
 } from '@/core/components/release_notes';
-import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 
 import { ReleaseNotesPage } from './release_notes_page';
 

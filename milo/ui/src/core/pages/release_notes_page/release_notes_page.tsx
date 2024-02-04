@@ -15,14 +15,14 @@
 import { Typography, styled } from '@mui/material';
 import { useEffect, useMemo } from 'react';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
+import { SanitizedHtml } from '@/common/components/sanitized_html';
+import { useMarkReleaseNotesRead } from '@/core/components/release_notes';
 import {
   renderReleaseNotes,
   useReleaseNotes,
 } from '@/core/components/release_notes';
-import { useMarkReleaseNotesRead } from '@/core/components/release_notes';
-import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
-import { SanitizedHtml } from '@/common/components/sanitized_html';
 
 const ReleaseNotesContainer = styled(SanitizedHtml)({
   '& *': {

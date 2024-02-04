@@ -102,7 +102,9 @@ export const routes: RouteObject[] = [
       {
         index: true,
         lazy: () =>
-          import('@/test_verdict/legacy/invocation_page/invocation_default_tab'),
+          import(
+            '@/test_verdict/legacy/invocation_page/invocation_default_tab'
+          ),
       },
       {
         path: 'test-results',
@@ -111,7 +113,9 @@ export const routes: RouteObject[] = [
       {
         path: 'invocation-details',
         lazy: () =>
-          import('@/test_verdict/legacy/invocation_page/invocation_details_tab'),
+          import(
+            '@/test_verdict/legacy/invocation_page/invocation_details_tab'
+          ),
       },
     ],
   },
@@ -121,19 +125,23 @@ export const routes: RouteObject[] = [
     children: [
       {
         path: 'text-diff/invocations/:invId/artifacts/:artifactId',
-        lazy: () => import('@/test_verdict/legacy/artifact/text_diff_artifact_page'),
+        lazy: () =>
+          import('@/test_verdict/legacy/artifact/text_diff_artifact_page'),
       },
       {
         path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-        lazy: () => import('@/test_verdict/legacy/artifact/text_diff_artifact_page'),
+        lazy: () =>
+          import('@/test_verdict/legacy/artifact/text_diff_artifact_page'),
       },
       {
         path: 'image-diff/invocations/:invId/artifacts/:artifactId',
-        lazy: () => import('@/test_verdict/legacy/artifact/image_diff_artifact_page'),
+        lazy: () =>
+          import('@/test_verdict/legacy/artifact/image_diff_artifact_page'),
       },
       {
         path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
-        lazy: () => import('@/test_verdict/legacy/artifact/image_diff_artifact_page'),
+        lazy: () =>
+          import('@/test_verdict/legacy/artifact/image_diff_artifact_page'),
       },
       {
         path: 'raw/invocations/:invId/artifacts/:artifactId',
