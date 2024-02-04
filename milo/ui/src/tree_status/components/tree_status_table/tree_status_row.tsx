@@ -20,6 +20,7 @@ import { Link, TableCell, TableRow } from '@mui/material';
 import { DateTime } from 'luxon';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { LinkifiedText } from '@/common/components/linkified_text';
 import { Timestamp } from '@/common/components/timestamp';
 import {
   GeneralState,
@@ -45,7 +46,9 @@ export function TreeStatusRow({ status }: TreeStatusRowProps) {
       <TableCell sx={fit}>
         <GeneralStateDisplay state={status.generalState} />
       </TableCell>
-      <TableCell>{status.message}</TableCell>
+      <TableCell>
+        <LinkifiedText text={status.message} />
+      </TableCell>
       <TableCell sx={fit}>
         <Timestamp datetime={createTime} />
       </TableCell>
