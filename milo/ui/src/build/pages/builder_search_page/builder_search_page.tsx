@@ -39,7 +39,7 @@ export function BuilderSearchPage() {
   };
 
   return (
-    <Box sx={{ px: 6, py: 5 }}>
+    <Box sx={{ px: 6, py: 2 }}>
       <PageMeta title="Builder search" selectedPage={UiPage.BuilderSearch} />
       <SearchInput
         placeholder="Search builders"

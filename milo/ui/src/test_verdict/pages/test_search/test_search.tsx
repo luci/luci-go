@@ -45,7 +45,7 @@ export const TestSearch = () => {
   const selectedProject = project || DEFAULT_TEST_PROJECT;
 
   return (
-    <Box sx={{ px: 6, py: 5 }}>
+    <Box sx={{ px: 6, py: 2 }}>
       <PageMeta
         title="Test search"
         project={selectedProject}

@@ -47,7 +47,7 @@ export const BaseLayout = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', pt: 7 }}>
+    <Box sx={{ display: 'flex', pt: 6.5 }}>
       <AppBar open={sidebarOpen} handleSidebarChanged={setSidebarOpen} />
       <Sidebar open={sidebarOpen} />
       <Main open={sidebarOpen}>

@@ -65,7 +65,7 @@ export const Sidebar = ({ open }: Props) => {
       role="complementary"
     >
       <Toolbar variant="dense" />
-      <List sx={{ mb: '40px' }}>
+      <List sx={{ mb: '40px', pt: 0 }}>
         {sidebarSections.map((sidebarSection) => (
           <Fragment key={sidebarSection.title}>
             <ListSubheader>{sidebarSection.title}</ListSubheader>
