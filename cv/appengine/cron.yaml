@@ -7,6 +7,10 @@ cron:
   target: default
   url: /internal/cron/data-retention-runs
   schedule: every day 02:00
+- description: Data retention job to wipe out old CLs.
+  target: default
+  url: /internal/cron/data-retention-cls
+  schedule: every day 17:00
 - description: Sweep transactionally created TQ tasks which would otherwise might be forgotten.
   target: default
   url: /internal/tasks/c/sweep

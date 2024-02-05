@@ -16,6 +16,12 @@ package changelist
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"sync"
+	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
@@ -212,4 +218,40 @@ func (s *Snapshot) IsSubmitted() (bool, error) {
 		return false, errors.New("non-Gerrit CLs not supported")
 	}
 	return g.GetInfo().GetStatus() == gerritpb.ChangeStatus_MERGED, nil
+}
+
+// QueryCLIDsUpdatedBefore queries all CLIDs updated before the given timestamp.
+//
+// This is mainly used for data retention purpose. Result CLIDs are sorted.
+func QueryCLIDsUpdatedBefore(ctx context.Context, before time.Time) (common.CLIDs, error) {
+	var ret common.CLIDs
+	var retMu sync.Mutex
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(10)
+	for shard := 0; shard < retentionKeyShards; shard++ {
+		shard := shard
+		eg.Go(func() error {
+			q := datastore.NewQuery("CL").
+				Lt("RetentionKey", fmt.Sprintf("%02d/%010d", shard, before.Unix())).
+				Gt("RetentionKey", fmt.Sprintf("%02d/", shard)).
+				KeysOnly(true)
+			var keys []*datastore.Key
+			switch err := datastore.GetAll(ectx, q, &keys); {
+			case err != nil:
+				return errors.Annotate(err, "failed to query CL keys").Tag(transient.Tag).Err()
+			case len(keys) > 0:
+				retMu.Lock()
+				for _, key := range keys {
+					ret = append(ret, common.CLID(key.IntID()))
+				}
+				retMu.Unlock()
+			}
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	sort.Sort(ret)
+	return ret, nil
 }

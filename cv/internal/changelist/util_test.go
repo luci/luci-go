@@ -15,10 +15,14 @@
 package changelist
 
 import (
+	"sort"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/auth/identity"
 
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -48,5 +52,46 @@ func TestOwnerIdentity(t *testing.T) {
 			_, err = s.OwnerIdentity()
 			So(err, ShouldErrLike, "CL x-review.example.com/101 owner email of account 1 is unknown")
 		})
+	})
+}
+
+func TestQueryCLIDsUpdatedBefore(t *testing.T) {
+	t.Parallel()
+
+	Convey("QueryCLIDsUpdatedBefore", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+
+		nextChangeNumber := 1
+		createNCLs := func(n int) []*CL {
+			cls := make([]*CL, n)
+			for i := range cls {
+				eid := MustGobID("example.com", int64(nextChangeNumber))
+				nextChangeNumber++
+				cls[i] = eid.MustCreateIfNotExists(ctx)
+			}
+			return cls
+		}
+
+		var allCLs []*CL
+		allCLs = append(allCLs, createNCLs(1000)...)
+		ct.Clock.Add(1 * time.Minute)
+		allCLs = append(allCLs, createNCLs(1000)...)
+		ct.Clock.Add(1 * time.Minute)
+		allCLs = append(allCLs, createNCLs(1000)...)
+
+		before := ct.Clock.Now().Add(-30 * time.Second)
+		var expected common.CLIDs
+		for _, cl := range allCLs {
+			if cl.UpdateTime.Before(before) {
+				expected = append(expected, cl.ID)
+			}
+		}
+		sort.Sort(expected)
+
+		actual, err := QueryCLIDsUpdatedBefore(ctx, before)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, expected)
 	})
 }

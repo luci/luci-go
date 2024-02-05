@@ -25,8 +25,12 @@ import (
 // RegisterCrons registers cron jobs for data retention.
 func RegisterCrons(tqd *tq.Dispatcher, rm rm) {
 	registerWipeoutRunsTask(tqd, rm)
+	registerWipeoutCLsTask(tqd)
 	cron.RegisterHandler("data-retention-runs", func(ctx context.Context) error {
 		return scheduleWipeoutRuns(ctx, tqd)
+	})
+	cron.RegisterHandler("data-retention-cls", func(ctx context.Context) error {
+		return scheduleWipeoutCLTasks(ctx, tqd)
 	})
 }
 

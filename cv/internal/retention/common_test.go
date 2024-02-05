@@ -12,23 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+package retention
 
-package cv.internal.retention;
+import (
+	"testing"
 
-option go_package = "go.chromium.org/luci/cv/internal/retention;retention";
+	. "github.com/smartystreets/goconvey/convey"
+)
 
-// WipeoutRunsTask wipes out given Runs and its descendent entities that
-// are out of the retention policy.
-//
-// Queue: "data-retention".
-message WipeoutRunsTask {
-  repeated string ids = 1;
-}
+func TestChunk(t *testing.T) {
+	t.Parallel()
 
-// WipeoutCLsTask wipes out given CLs that are out of the retention policy.
-//
-// Queue: "data-retention".
-message WipeoutCLsTask {
-  repeated int64 ids = 1;
+	Convey("Chunk", t, func() {
+		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 3), ShouldResemble, [][]int{
+			{1, 2, 3},
+			{4, 5, 6},
+			{7, 8, 9},
+			{10},
+		})
+		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 2), ShouldResemble, [][]int{
+			{1, 2},
+			{3, 4},
+			{5, 6},
+			{7, 8},
+			{9, 10},
+		})
+		So(chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 11), ShouldResemble, [][]int{
+			{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		})
+	})
 }
