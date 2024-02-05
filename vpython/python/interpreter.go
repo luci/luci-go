@@ -35,19 +35,10 @@ func (i *Interpreter) Normalize() error {
 // IsolateEnvironment mutates e to remove any environmental influence over
 // the Python interpreter.
 //
-// If keepPythonPath is true, PYTHONPATH will not be cleared. This is used
-// by the actual VirtualEnv Python invocation to preserve PYTHONPATH since it is
-// a form of user input.
-//
 // If e is nil, no operation will be performed.
-func IsolateEnvironment(e *environ.Env, keepPythonPath bool) {
+func IsolateEnvironment(e *environ.Env) {
 	if e == nil {
 		return
-	}
-
-	// Remove PYTHONPATH if instructed.
-	if !keepPythonPath {
-		e.Remove("PYTHONPATH")
 	}
 
 	// Remove PYTHONHOME from the environment. PYTHONHOME is used to set the

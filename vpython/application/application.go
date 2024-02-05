@@ -377,7 +377,7 @@ func (a *Application) ExecutePython(ctx context.Context) error {
 // ExecutePython.
 func (a *Application) GetExecCommand() *exec.Cmd {
 	env := environ.New(a.Environments)
-	python.IsolateEnvironment(&env, false)
+	python.IsolateEnvironment(&env)
 
 	cl := a.PythonCommandLine.Clone()
 	cl.AddSingleFlag("s")
