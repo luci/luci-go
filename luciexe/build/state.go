@@ -67,11 +67,10 @@ type State struct {
 	buildPbMu sync.RWMutex
 	// buildPb represents the live build.
 	buildPb *bbpb.Build
-	// buildPbVers updated/read with sync/atomic while holding buildPbMu in
-	// either WRITE/READ mode.
-	buildPbVers int64
+	// buildPbVers updated/read while holding buildPbMu in either WRITE/READ mode.
+	buildPbVers atomic.Int64
 	// buildPbVersSent only updated when buildPbMu is held in WRITE mode.
-	buildPbVersSent int64
+	buildPbVersSent atomic.Int64
 
 	sendCh dispatcher.Channel
 
@@ -305,7 +304,7 @@ func (s *State) excludeCopy(cb func() bool) {
 	}
 	changed := cb()
 	if changed && s != nil && s.sendCh.C != nil {
-		s.sendCh.C <- atomic.AddInt64(&s.buildPbVers, 1)
+		s.sendCh.C <- s.buildPbVers.Add(1)
 	}
 }
 
@@ -323,7 +322,7 @@ func (s *State) mutate(cb func() bool) {
 	}
 	changed := cb()
 	if changed && s != nil && s.sendCh.C != nil {
-		s.sendCh.C <- atomic.AddInt64(&s.buildPbVers, 1)
+		s.sendCh.C <- s.buildPbVers.Add(1)
 	}
 }
 

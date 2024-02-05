@@ -16,7 +16,6 @@ package build
 
 import (
 	"reflect"
-	"sync/atomic"
 
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
@@ -89,14 +88,14 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 				s.buildPbMu.Lock()
 				defer s.buildPbMu.Unlock()
 
-				// technically we don't need atomic here because copyExclusionMu is held
-				// in WRITE mode, but it's clearer to mirror usage directly.
-				vers := atomic.LoadInt64(&s.buildPbVers)
+				// Technically we don't need atomic here because copyExclusionMu is held
+				// in WRITE mode, but atomic.Int64 is cleaner and aligns on 32-bit ports.
+				vers := s.buildPbVers.Load()
 
-				if s.buildPbVersSent >= vers {
+				if s.buildPbVersSent.Load() >= vers {
 					return nil, 0
 				}
-				s.buildPbVersSent = vers
+				s.buildPbVersSent.Store(vers)
 
 				build := proto.Clone(s.buildPb).(*bbpb.Build)
 
