@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/internals"
+	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/pubsub"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/rpcs"
@@ -212,7 +213,7 @@ func main() {
 		}))
 
 		// Register gRPC server implementations.
-		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{})
+		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{BotQuerySplitMode: model.SplitOptimally})
 		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{})
 		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{})
 

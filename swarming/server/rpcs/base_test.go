@@ -39,8 +39,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// DefaultFakeCaller is used in unit tests by default as the caller identity.
-const DefaultFakeCaller identity.Identity = "user:test@example.com"
+const (
+	// DefaultFakeCaller is used in unit tests by default as the caller identity.
+	DefaultFakeCaller identity.Identity = "user:test@example.com"
+	// AdminFakeCaller is used in unit tests to make calls as an admin.
+	AdminFakeCaller identity.Identity = "user:admin@example.com"
+)
 
 // MockedConfig is a bundle of configs to use in tests.
 type MockedConfigs struct {
@@ -62,10 +66,16 @@ type MockedRequestState struct {
 func NewMockedRequestState() *MockedRequestState {
 	return &MockedRequestState{
 		Caller: DefaultFakeCaller,
-		AuthDB: authtest.NewFakeDB(),
+		AuthDB: authtest.NewFakeDB(
+			authtest.MockMembership(AdminFakeCaller, "tests-admin-group"),
+		),
 		Configs: MockedConfigs{
-			Settings: &configpb.SettingsCfg{},
-			Pools:    &configpb.PoolsCfg{},
+			Settings: &configpb.SettingsCfg{
+				Auth: &configpb.AuthSettings{
+					AdminsGroup: "tests-admin-group",
+				},
+			},
+			Pools: &configpb.PoolsCfg{},
 			Bots: &configpb.BotsCfg{
 				TrustedDimensions: []string{"pool"},
 			},
@@ -104,6 +114,13 @@ func (s *MockedRequestState) MockPerm(realm string, perm ...realms.Permission) {
 	for _, p := range perm {
 		s.AuthDB.AddMocks(authtest.MockPermission(s.Caller, realm, p))
 	}
+}
+
+// SetCaller returns a copy of the state with a different active caller.
+func (s *MockedRequestState) SetCaller(id identity.Identity) *MockedRequestState {
+	cpy := *s
+	cpy.Caller = id
+	return &cpy
 }
 
 // MockConfig puts configs in datastore and loads then into cfg.Provider.

@@ -59,6 +59,9 @@ type SwarmingServer struct {
 // RPCs are implemented in bots_*.go files.
 type BotsServer struct {
 	apipb.UnimplementedBotsServer
+
+	// BotQuerySplitMode controls how "finely" to split BotInfo queries.
+	BotQuerySplitMode model.SplitMode
 }
 
 // TasksServer implements Tasks gRPC service.
