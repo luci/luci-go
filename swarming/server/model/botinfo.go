@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -250,11 +251,6 @@ func BotInfoKey(ctx context.Context, botID string) *datastore.Key {
 	return datastore.NewKey(ctx, "BotInfo", "info", 0, BotRootKey(ctx, botID))
 }
 
-// BotInfoQuery prepares a query that fetches BotInfo entities.
-func BotInfoQuery() *datastore.Query {
-	return datastore.NewQuery("BotInfo")
-}
-
 // BotID extracts the bot ID from the entity key.
 func (b *BotInfo) BotID() string {
 	return b.Key.Parent().StringID()
@@ -320,6 +316,78 @@ func (b *BotInfo) ToProto() *apipb.BotInfo {
 		info.LastSeenTs = timestamppb.New(ts)
 	}
 	return info
+}
+
+// BotInfoQuery prepares a query that fetches BotInfo entities.
+func BotInfoQuery() *datastore.Query {
+	return datastore.NewQuery("BotInfo")
+}
+
+// FilterByDimensions limits the query to return bots matching these dimensions.
+//
+// For complex filters this may split the query into multiple queries that need
+// to run in parallel with their results merged. See SplitForQuery() in
+// DimensionsFilter for more details.
+func FilterByDimensions(q *datastore.Query, mode SplitMode, dims DimensionsFilter) []*datastore.Query {
+	split := dims.SplitForQuery(mode)
+	out := make([]*datastore.Query, 0, len(split))
+	for _, simpleFilter := range split {
+		simpleQ := q
+		for _, f := range simpleFilter.filters {
+			if len(f.values) == 1 {
+				simpleQ = simpleQ.Eq("dimensions_flat", fmt.Sprintf("%s:%s", f.key, f.values[0]))
+			} else {
+				pairs := make([]any, len(f.values))
+				for i, v := range f.values {
+					pairs[i] = fmt.Sprintf("%s:%s", f.key, v)
+				}
+				simpleQ = simpleQ.In("dimensions_flat", pairs...)
+			}
+		}
+		out = append(out, simpleQ)
+	}
+	return out
+}
+
+// FilterByState limits the query to return bots in particular state.
+func FilterByState(q *datastore.Query, state StateFilter) *datastore.Query {
+	switch state.Quarantined {
+	case apipb.NullableBool_NULL:
+		// Don't filter.
+	case apipb.NullableBool_TRUE:
+		q = q.Eq("composite", BotStateQuarantined)
+	case apipb.NullableBool_FALSE:
+		q = q.Eq("composite", BotStateHealthy)
+	}
+
+	switch state.InMaintenance {
+	case apipb.NullableBool_NULL:
+		// Don't filter.
+	case apipb.NullableBool_TRUE:
+		q = q.Eq("composite", BotStateInMaintenance)
+	case apipb.NullableBool_FALSE:
+		q = q.Eq("composite", BotStateNotInMaintenance)
+	}
+
+	switch state.IsBusy {
+	case apipb.NullableBool_NULL:
+		// Don't filter.
+	case apipb.NullableBool_TRUE:
+		q = q.Eq("composite", BotStateBusy)
+	case apipb.NullableBool_FALSE:
+		q = q.Eq("composite", BotStateIdle)
+	}
+
+	switch state.IsDead {
+	case apipb.NullableBool_NULL:
+		// Don't filter.
+	case apipb.NullableBool_TRUE:
+		q = q.Eq("composite", BotStateDead)
+	case apipb.NullableBool_FALSE:
+		q = q.Eq("composite", BotStateAlive)
+	}
+
+	return q
 }
 
 // BotEvent captures information about the bot during some state transition.
