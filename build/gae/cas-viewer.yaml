@@ -5,4 +5,5 @@ inputsdir: ../../casviewer
 
 build:
   - go_gae_bundle: ${inputsdir}/appengine/app.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/appengine
