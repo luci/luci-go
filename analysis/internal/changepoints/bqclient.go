@@ -82,73 +82,25 @@ type Gitiles struct {
 // The week parameter can be at any time of that week. A week is defined by Sunday to Satureday in UTC.
 func (c *Client) ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*ChangepointRow, error) {
 	query := `
-		-- TODO: extract this SQL into a new view to avoid the keeping multiple copies of this view around.
-		WITH merged_table AS (
-			SELECT *
-			FROM internal.test_variant_segment_updates
-			WHERE project = @project AND has_recent_unexpected_results = 1
-			UNION ALL
-			SELECT *
-			FROM internal.test_variant_segments
-			WHERE project = @project AND has_recent_unexpected_results = 1
-		),
-		merged_table_grouped AS (
-			SELECT
-				project, test_id, variant_hash, ref_hash,
-				ARRAY_AGG(m ORDER BY version DESC LIMIT 1)[OFFSET(0)] AS row
-			FROM merged_table m
-			GROUP BY project, test_id, variant_hash, ref_hash
-		),
-		segments_with_failure_rate AS (
-			SELECT
-				project,
-				test_id,
-				variant_hash,
-				ref_hash,
-				row.variant AS variant,
-				row.ref AS ref,
-				segment,
-				idx,
-				SAFE_DIVIDE(segment.counts.unexpected_verdicts, segment.counts.total_verdicts) AS unexpected_verdict_rate,
-				SAFE_DIVIDE(tv.row.segments[0].counts.unexpected_verdicts, tv.row.segments[0].counts.total_verdicts) AS latest_unexpected_verdict_rate,
-				SAFE_DIVIDE(tv.row.segments[idx+1].counts.unexpected_verdicts, tv.row.segments[idx+1].counts.total_verdicts) AS previous_unexpected_verdict_rate,
-				tv.row.segments[idx+1].end_position AS previous_nominal_end_position
-			FROM merged_table_grouped tv, UNNEST(row.segments) segment WITH OFFSET idx
-			-- TODO: Filter out test variant branches with more than 10 segments is a bit hacky, but it filter out oscillate test variant branches.
-			-- It would be good to find a more elegant solution, maybe explicitly expressing this as a filter on the RPC.
-			WHERE ARRAY_LENGTH(row.segments) >= 2 AND ARRAY_LENGTH(row.segments) <= 10
-			AND idx + 1 < ARRAY_LENGTH(tv.row.segments)
-		),
-		-- Obtain the alphabetical ranking for each test ID in this LUCI project.
-		test_id_ranking AS (
-			SELECT test_id, ROW_NUMBER() OVER (ORDER BY test_id) AS row_num
-			FROM internal.test_variant_segments
-			WHERE project = @project
-			GROUP BY test_id
-		)
 		SELECT
-			segment.project AS Project,
-			ranking.row_num AS TestIDNum,
-			segment.test_id AS TestID,
-			segment.variant_hash AS VariantHash,
-			segment.ref_hash AS RefHash,
-			segment.ref AS Ref,
-			segment.variant AS Variant,
-			segment.segment.start_hour AS StartHour,
-			segment.segment.start_position_lower_bound_99th AS LowerBound99th,
-			segment.segment.start_position AS NominalStartPosition,
-			segment.segment.start_position_upper_bound_99th AS UpperBound99th,
-			segment.unexpected_verdict_rate AS UnexpectedVerdictRateAfter,
-			segment.previous_unexpected_verdict_rate AS UnexpectedVerdictRateBefore,
-			segment.latest_unexpected_verdict_rate AS UnexpectedVerdictRateCurrent,
-			segment.previous_nominal_end_position as PreviousNominalEndPosition
-		FROM segments_with_failure_rate segment
-		LEFT JOIN test_id_ranking ranking
-		ON ranking.test_id = segment.test_id
-		-- Only keep regressions. A regression is a special changepoint when the later segment has a higher unexpected verdict rate than the earlier segment.
-		-- In the future, we might want to return all changepoints to show fixes in the UI.
-		WHERE segment.unexpected_verdict_rate - segment.previous_unexpected_verdict_rate > 0
-		AND TIMESTAMP_TRUNC(segment.segment.start_hour, WEEK(SUNDAY)) =  TIMESTAMP_TRUNC(@week, WEEK(SUNDAY))
+			project AS Project,
+			test_id_num AS TestIDNum,
+			test_id AS TestID,
+			variant_hash AS VariantHash,
+			ref_hash AS RefHash,
+			ref AS Ref,
+			variant AS Variant,
+			start_hour AS StartHour,
+			start_position_lower_bound_99th AS LowerBound99th,
+			start_position AS NominalStartPosition,
+			start_position_upper_bound_99th AS UpperBound99th,
+			unexpected_verdict_rate AS UnexpectedVerdictRateAfter,
+			previous_unexpected_verdict_rate AS UnexpectedVerdictRateBefore,
+			latest_unexpected_verdict_rate AS UnexpectedVerdictRateCurrent,
+			previous_nominal_end_position as PreviousNominalEndPosition
+		FROM test_variant_changepoints
+		WHERE project = @project
+			AND TIMESTAMP_TRUNC(start_hour, WEEK(SUNDAY)) =  TIMESTAMP_TRUNC(@week, WEEK(SUNDAY))
 	`
 	q := c.client.Query(query)
 	q.DefaultDatasetID = "internal"
