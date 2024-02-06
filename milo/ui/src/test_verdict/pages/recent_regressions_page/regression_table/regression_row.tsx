@@ -18,25 +18,23 @@ import { DateTime } from 'luxon';
 import { Timestamp } from '@/common/components/timestamp';
 import { getGitilesCommitURL } from '@/common/tools/gitiles_utils';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
+import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
 import { FailureRatePieChart } from './failure_rate_pie_chart';
 
 const TextCell = styled(TableCell)({
-  width: '1px',
   whiteSpace: 'nowrap',
   padding: '0 10px',
 });
 
 const NumberCell = styled(TableCell)({
-  width: '1px',
   fontWeight: 'bold',
   textAlign: 'center',
   padding: 0,
 });
 
 const ChartCell = styled(TableCell)({
-  width: '1px',
   textAlign: 'center',
   padding: 0,
 });
@@ -121,7 +119,23 @@ export function RegressionRow({ regression }: RegressionRowProps) {
 
       {/* TODO(b/321110247): link to the regression details page. */}
       <TextCell>details</TextCell>
-      <TextCell>{canonicalChangepoint.testId}</TextCell>
+      <TextCell sx={{ overflow: 'hidden' }}>
+        <div css={{ display: 'inline-grid', gridTemplateColumns: '1fr auto' }}>
+          <span
+            title={canonicalChangepoint.testId}
+            css={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {canonicalChangepoint.testId}
+          </span>
+          <CopyToClipboard
+            textToCopy={canonicalChangepoint.testId}
+            title="Copy test ID."
+          />
+        </div>
+      </TextCell>
     </TableRow>
   );
 }

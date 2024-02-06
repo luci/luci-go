@@ -14,7 +14,7 @@
 
 import { Help } from '@mui/icons-material';
 import {
-  Table,
+  Table as MuiTable,
   TableBody,
   TableCell,
   TableHead,
@@ -55,6 +55,26 @@ const CURRENT_STATUS_TOOLTIP = `\
   This is useful for determining whether this regression has been fixed.\
 `;
 
+const Table = styled(MuiTable)({
+  // Use fixed layout to ensure the table won't grow too wide due to long Test
+  // IDs.
+  tableLayout: 'fixed',
+  '& td,th': {
+    // Fix the font size so we can carefully pick the width of each column that
+    // works with the fixed layout.
+    fontSize: '14px',
+  },
+  '& thead': {
+    backgroundColor: 'var(--block-background-color)',
+  },
+  '& tbody tr:nth-of-type(2n)': {
+    backgroundColor: 'var(--block-background-color)',
+  },
+  '& th .MuiSvgIcon-root': {
+    verticalAlign: 'text-bottom',
+  },
+});
+
 const TextCell = styled(TableCell)({
   paddingLeft: '10px',
   paddingRight: '10px',
@@ -78,55 +98,49 @@ export interface RegressionTableProps {
 
 export function RegressionTable({ regressions }: RegressionTableProps) {
   return (
-    <Table
-      sx={{
-        '& thead': {
-          backgroundColor: 'var(--block-background-color)',
-        },
-        '& tbody tr:nth-of-type(2n)': {
-          backgroundColor: 'var(--block-background-color)',
-        },
-        '& th .MuiSvgIcon-root': {
-          verticalAlign: 'text-bottom',
-        },
-      }}
-    >
+    <Table width="100%">
       <TableHead>
         <TableRow>
-          <TextCell rowSpan={2}>Start Time</TextCell>
-          <TextCell rowSpan={2}>Blamelist</TextCell>
-          <NumberCell rowSpan={2}>Test Variant Count</NumberCell>
-          <TableCell colSpan={3} align="center">
+          <TextCell rowSpan={2} width="75px">
+            Start Time
+          </TextCell>
+          <TextCell rowSpan={2} width="130px">
+            Blamelist
+          </TextCell>
+          <NumberCell rowSpan={2} width="40px">
+            Test Variant Count
+          </NumberCell>
+          <TableCell colSpan={3} width="120px" align="center">
             Avg Failure Rate
             <Tooltip title={AVG_FAILURE_RATE_TOOLTIP}>
               <Help fontSize="small" />
             </Tooltip>
           </TableCell>
-          <TableCell colSpan={3} align="center">
+          <TableCell colSpan={3} width="150px" align="center">
             Failure Rate Increase
             <Tooltip title={FAILURE_RATE_DELTA_TOOLTIP}>
               <Help fontSize="small" />
             </Tooltip>
           </TableCell>
-          <ChartCell rowSpan={2}>
+          <ChartCell rowSpan={2} width="40px">
             Before Status
             <Tooltip title={BEFORE_STATUS_TOOLTIP}>
               <Help fontSize="small" />
             </Tooltip>
           </ChartCell>
-          <ChartCell rowSpan={2}>
+          <ChartCell rowSpan={2} width="40px">
             After Status
             <Tooltip title={AFTER_STATUS_TOOLTIP}>
               <Help fontSize="small" />
             </Tooltip>
           </ChartCell>
-          <ChartCell rowSpan={2}>
+          <ChartCell rowSpan={2} width="40px">
             Current Status
             <Tooltip title={CURRENT_STATUS_TOOLTIP}>
               <Help fontSize="small" />
             </Tooltip>
           </ChartCell>
-          <TextCell rowSpan={2}>
+          <TextCell rowSpan={2} width="40px">
             Details
             <Tooltip
               title={

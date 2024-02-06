@@ -14,11 +14,16 @@
 
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
-import { QueryChangepointGroupSummariesRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
+import {
+  ChangepointPredicate,
+  QueryChangepointGroupSummariesRequest,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
+import { RegressionFilters } from './regression_filters';
 import { RegressionTable } from './regression_table';
 
 export interface RecentRegressionsProps {
@@ -26,11 +31,16 @@ export interface RecentRegressionsProps {
 }
 
 export function RecentRegressions({ project }: RecentRegressionsProps) {
+  const [predicate, setPredicate] = useState(() =>
+    ChangepointPredicate.create(),
+  );
+
   const client = useChangepointsClient();
   const { data, isLoading, isError, error } = useQuery(
     client.QueryChangepointGroupSummaries.query(
       QueryChangepointGroupSummariesRequest.fromPartial({
         project,
+        predicate,
       }),
     ),
   );
@@ -39,19 +49,30 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
     throw error;
   }
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <RegressionTable
-      regressions={
-        data.groupSummaries as readonly OutputChangepointGroupSummary[]
-      }
-    />
+    <>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        sx={{ margin: '10px 20px' }}
+      >
+        <RegressionFilters
+          predicate={predicate}
+          onPredicateUpdate={(p) => setPredicate(p)}
+        />
+      </Box>
+      {isLoading ? (
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <CircularProgress />
+        </Box>
+      ) : (
+        <RegressionTable
+          regressions={
+            data.groupSummaries as readonly OutputChangepointGroupSummary[]
+          }
+        />
+      )}
+    </>
   );
 }
