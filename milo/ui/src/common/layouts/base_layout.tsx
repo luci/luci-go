@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { styled } from '@mui/material';
+import { LinearProgress, styled } from '@mui/material';
 import Box from '@mui/material/Box';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigation } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
 import { AppBar } from './app_bar';
@@ -42,16 +42,18 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
 export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
 
 export const BaseLayout = () => {
+  const navigation = useNavigation();
+
   const [sidebarOpen = true, setSidebarOpen] = useLocalStorage<boolean>(
     SIDE_BAR_OPEN_CACHE_KEY,
   );
 
   return (
-    <Box sx={{ display: 'flex', pt: 6.5 }}>
+    <Box sx={{ display: 'flex', pt: 6 }}>
       <AppBar open={sidebarOpen} handleSidebarChanged={setSidebarOpen} />
       <Sidebar open={sidebarOpen} />
       <Main open={sidebarOpen}>
-        <Outlet />
+        {navigation.state === 'loading' ? <LinearProgress /> : <Outlet />}
       </Main>
     </Box>
   );

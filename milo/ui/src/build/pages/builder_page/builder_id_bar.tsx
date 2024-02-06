@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
+import Link from '@mui/material/Link';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { BuilderID, HealthStatus } from '@/common/services/buildbucket';
 import { getProjectURLPath } from '@/common/tools/url_utils';
@@ -42,7 +44,9 @@ export function BuilderIdBar({ builderId, healthStatus }: BuilderIdBarProps) {
     >
       <div css={{ flex: '0 auto' }}>
         <span css={{ color: 'var(--light-text-color)' }}>Builder </span>
-        <a href={getProjectURLPath(builderId.project)}>{builderId.project}</a>
+        <Link component={RouterLink} to={getProjectURLPath(builderId.project)}>
+          {builderId.project}
+        </Link>
         <span> / </span>
         <span>{builderId.bucket}</span>
         <span> / </span>

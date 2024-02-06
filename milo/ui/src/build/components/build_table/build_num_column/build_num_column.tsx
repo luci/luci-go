@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Link, TableCell } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 
@@ -27,7 +28,7 @@ export function BuildNumContentCell() {
 
   return (
     <TableCell>
-      <Link href={getBuildURLPathFromBuildId(build.id)}>
+      <Link component={RouterLink} to={getBuildURLPathFromBuildId(build.id)}>
         {build.number ? build.number : 'b' + build.id}
       </Link>
     </TableCell>
