@@ -43,11 +43,11 @@ type grpcPort struct {
 // grpcService is a service registered via registerService.
 type grpcService struct {
 	desc *grpc.ServiceDesc
-	impl interface{}
+	impl any
 }
 
 // registerService exposes the given service over gRPC.
-func (p *grpcPort) registerService(desc *grpc.ServiceDesc, impl interface{}) {
+func (p *grpcPort) registerService(desc *grpc.ServiceDesc, impl any) {
 	p.m.Lock()
 	defer p.m.Unlock()
 	if p.server != nil {

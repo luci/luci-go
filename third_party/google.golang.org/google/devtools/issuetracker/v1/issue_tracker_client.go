@@ -2023,7 +2023,7 @@ type IssueCommentIterator struct {
 	// Response is the raw response for the current page.
 	// It must be cast to the RPC response type.
 	// Calling Next() or InternalFetch() updates this value.
-	Response interface{}
+	Response any
 
 	// InternalFetch is for use by the Google Cloud Libraries only.
 	// It is not part of the stable interface of this package.
@@ -2055,7 +2055,7 @@ func (it *IssueCommentIterator) bufLen() int {
 	return len(it.items)
 }
 
-func (it *IssueCommentIterator) takeBuf() interface{} {
+func (it *IssueCommentIterator) takeBuf() any {
 	b := it.items
 	it.items = nil
 	return b
@@ -2070,7 +2070,7 @@ type IssueIterator struct {
 	// Response is the raw response for the current page.
 	// It must be cast to the RPC response type.
 	// Calling Next() or InternalFetch() updates this value.
-	Response interface{}
+	Response any
 
 	// InternalFetch is for use by the Google Cloud Libraries only.
 	// It is not part of the stable interface of this package.
@@ -2102,7 +2102,7 @@ func (it *IssueIterator) bufLen() int {
 	return len(it.items)
 }
 
-func (it *IssueIterator) takeBuf() interface{} {
+func (it *IssueIterator) takeBuf() any {
 	b := it.items
 	it.items = nil
 	return b
@@ -2117,7 +2117,7 @@ type IssueUpdateIterator struct {
 	// Response is the raw response for the current page.
 	// It must be cast to the RPC response type.
 	// Calling Next() or InternalFetch() updates this value.
-	Response interface{}
+	Response any
 
 	// InternalFetch is for use by the Google Cloud Libraries only.
 	// It is not part of the stable interface of this package.
@@ -2149,7 +2149,7 @@ func (it *IssueUpdateIterator) bufLen() int {
 	return len(it.items)
 }
 
-func (it *IssueUpdateIterator) takeBuf() interface{} {
+func (it *IssueUpdateIterator) takeBuf() any {
 	b := it.items
 	it.items = nil
 	return b

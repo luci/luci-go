@@ -758,7 +758,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.UpdateMask.Paths[0] = "build.output.properties"
 				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				m, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+				m, err := structpb.NewStruct(map[string]any{"key": "value"})
 				So(err, ShouldBeNil)
 				So(b.Proto.Output.Properties, ShouldResembleProto, m)
 			})

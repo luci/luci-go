@@ -22,7 +22,7 @@ import (
 // gobName computes the serializable name for the Runner type.
 //
 // This is copied from gob.Register, minus the bug documented there.
-func gobName(value interface{}) string {
+func gobName(value any) string {
 	// Default to printed representation for unnamed types
 	rt := reflect.TypeOf(value)
 	if rt.Kind() == reflect.Interface || rt.Kind() == reflect.Func {

@@ -28,8 +28,8 @@ func TestDebugCompare(t *testing.T) {
 
 	cases := []struct {
 		name   string
-		left   interface{}
-		right  interface{}
+		left   any
+		right  any
 		result *Result
 	}{
 		{
@@ -68,7 +68,7 @@ func TestDebugCompare(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := DebugCompare[interface{}](tt.left, tt.right)
+			got := DebugCompare[any](tt.left, tt.right)
 			want := tt.result
 
 			if diff := typed.Got(got).Want(want).Options(cmp.AllowUnexported(Result{})).Diff(); diff != "" {

@@ -52,11 +52,11 @@ func TestVariantJSON(t *testing.T) {
 			So(result, ShouldEqual, "{}")
 		})
 		Convey(`non-empty`, func() {
-			values := make(map[string]interface{})
+			values := make(map[string]any)
 			values["stringkey"] = "abcdef\000\001\n"
 			values["numberkey"] = 123
 			values["boolkey"] = true
-			values["listkey"] = []interface{}{"a", 9, true}
+			values["listkey"] = []any{"a", 9, true}
 			pb, err := structpb.NewStruct(values)
 			So(err, ShouldBeNil)
 			result, err := MarshalStructPB(pb)

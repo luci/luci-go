@@ -25,7 +25,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func mustStruct(data map[string]interface{}) *structpb.Struct {
+func mustStruct(data map[string]any) *structpb.Struct {
 	ret, err := structpb.NewStruct(data)
 	if err != nil {
 		panic(err)
@@ -53,20 +53,20 @@ func TestPropertiesFlag(t *testing.T) {
 
 			So(f.Set("@"+file.Name()), ShouldBeNil)
 
-			So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+			So(props, ShouldResembleProto, mustStruct(map[string]any{
 				"in-file-1": "orig",
 				"in-file-2": "orig",
 			}))
 
 			Convey("Override", func() {
 				So(f.Set("in-file-2=override"), ShouldBeNil)
-				So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+				So(props, ShouldResembleProto, mustStruct(map[string]any{
 					"in-file-1": "orig",
 					"in-file-2": "override",
 				}))
 
 				So(f.Set("a=b"), ShouldBeNil)
-				So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+				So(props, ShouldResembleProto, mustStruct(map[string]any{
 					"in-file-1": "orig",
 					"in-file-2": "override",
 					"a":         "b",
@@ -76,13 +76,13 @@ func TestPropertiesFlag(t *testing.T) {
 
 		Convey("Name=Value", func() {
 			So(f.Set("foo=bar"), ShouldBeNil)
-			So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+			So(props, ShouldResembleProto, mustStruct(map[string]any{
 				"foo": "bar",
 			}))
 
 			Convey("JSON", func() {
 				So(f.Set("array=[1]"), ShouldBeNil)
-				So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+				So(props, ShouldResembleProto, mustStruct(map[string]any{
 					"foo":   "bar",
 					"array": []any{1},
 				}))
@@ -90,7 +90,7 @@ func TestPropertiesFlag(t *testing.T) {
 
 			Convey("Trims spaces", func() {
 				So(f.Set("array = [1]"), ShouldBeNil)
-				So(props, ShouldResembleProto, mustStruct(map[string]interface{}{
+				So(props, ShouldResembleProto, mustStruct(map[string]any{
 					"foo":   "bar",
 					"array": []any{1},
 				}))

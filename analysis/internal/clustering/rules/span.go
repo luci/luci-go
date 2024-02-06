@@ -270,7 +270,7 @@ func ReadDeltaAllProjects(ctx context.Context, sinceTime time.Time) ([]*Entry, e
 		return nil, errors.New("cannot query rule deltas from before project inception")
 	}
 	whereClause := `LastUpdated > @sinceTime`
-	params := map[string]interface{}{"sinceTime": sinceTime}
+	params := map[string]any{"sinceTime": sinceTime}
 
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {

@@ -171,7 +171,7 @@ func TestEndRun(t *testing.T) {
 		})
 
 		Convey("populate metrics for run events", func() {
-			fset1 := []interface{}{
+			fset1 := []any{
 				lProject, "main", string(run.DryRun),
 				apipb.Run_FAILED.String(), true,
 			}

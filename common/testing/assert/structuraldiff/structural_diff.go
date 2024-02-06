@@ -24,7 +24,7 @@ import (
 // DebugDump is an extremely abstraction-breaking function that will print a Go Value.
 //
 // It prints zero values and unexported fields and ignores user-defined methods for pretty-printing.
-func DebugDump(val interface{}) string {
+func DebugDump(val any) string {
 	config := &pretty.Config{
 		Compact:             false,
 		Diffable:            true,

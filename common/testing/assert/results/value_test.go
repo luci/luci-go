@@ -26,7 +26,7 @@ func TestRender(t *testing.T) {
 	cases := []struct {
 		name    string // name of the *test*
 		valName string // name of the *value*
-		value   interface{}
+		value   any
 		output  []string
 	}{
 		{

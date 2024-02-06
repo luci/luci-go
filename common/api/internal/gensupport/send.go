@@ -177,7 +177,7 @@ func sendAndRetry(ctx context.Context, client *http.Client, req *http.Request, r
 
 // DecodeResponse decodes the body of res into target. If there is no body,
 // target is unchanged.
-func DecodeResponse(target interface{}, res *http.Response) error {
+func DecodeResponse(target any, res *http.Response) error {
 	if res.StatusCode == http.StatusNoContent {
 		return nil
 	}

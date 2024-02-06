@@ -329,7 +329,7 @@ func (b *BugUpdater) updateBugManagementState(ctx context.Context, rs []ruleWith
 	return result, nil
 }
 
-func batch[K interface{}](items []K, batchSize int) [][]K {
+func batch[K any](items []K, batchSize int) [][]K {
 	if batchSize < 1 {
 		panic("batch size must be greater than 0")
 	}

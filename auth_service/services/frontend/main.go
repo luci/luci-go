@@ -248,7 +248,7 @@ func authorizeUIAccess(ctx *router.Context, next router.Handler) {
 func authorizeAPIAccess(ctx *router.Context, next router.Handler) {
 	jsonErr := func(err error, code int) {
 		w := ctx.Writer
-		if res, err := json.Marshal(map[string]interface{}{"text": err.Error()}); err == nil {
+		if res, err := json.Marshal(map[string]any{"text": err.Error()}); err == nil {
 			http.Error(w, string(res), code)
 		}
 	}

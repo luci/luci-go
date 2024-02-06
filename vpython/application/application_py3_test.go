@@ -99,7 +99,7 @@ func cmd(tb testing.TB, app *Application, env *python.Environment) *exec.Cmd {
 	return app.GetExecCommand()
 }
 
-func output(c *exec.Cmd) interface{} {
+func output(c *exec.Cmd) any {
 	var out strings.Builder
 	c.Stdout = &out
 	c.Stderr = &out

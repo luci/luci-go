@@ -315,7 +315,7 @@ func TestDetails(t *testing.T) {
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 			}
 			So(outPropInDB.Get(ctx), ShouldBeNil)
-			So(outPropInDB.Proto, ShouldResembleProto, mustStruct(map[string]interface{}{
+			So(outPropInDB.Proto, ShouldResembleProto, mustStruct(map[string]any{
 				"key": "value",
 			}))
 			So(outPropInDB.ChunkCount, ShouldEqual, 0)
@@ -336,7 +336,7 @@ func TestDetails(t *testing.T) {
 					Build: outProp.Build,
 				}
 				So(outPropInDB.Get(ctx), ShouldBeNil)
-				So(outPropInDB.Proto, ShouldResembleProto, mustStruct(map[string]interface{}{
+				So(outPropInDB.Proto, ShouldResembleProto, mustStruct(map[string]any{
 					"key":     "value",
 					"new_key": "new_value",
 				}))

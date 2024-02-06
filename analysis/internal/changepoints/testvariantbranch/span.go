@@ -188,7 +188,7 @@ func (tvb *Entry) PopulateFromSpannerRow(row *spanner.Row, hs *inputbuffer.Histo
 // Spanner table.
 func (tvb *Entry) ToMutation(hs *inputbuffer.HistorySerializer) (*spanner.Mutation, error) {
 	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "LastUpdated"}
-	values := []interface{}{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.RefHash, spanner.CommitTimestamp}
+	values := []any{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.RefHash, spanner.CommitTimestamp}
 
 	if tvb.IsNew {
 		// Variant needs to be updated only once.

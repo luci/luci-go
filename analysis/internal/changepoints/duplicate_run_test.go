@@ -92,7 +92,7 @@ func invocationMutation(project string, invID string, bbid int64) *spanner.Mutat
 	return spanner.Insert(
 		"Invocations",
 		[]string{"Project", "InvocationID", "IngestedInvocationID", "CreationTime"},
-		[]interface{}{
+		[]any{
 			project,
 			invID,
 			fmt.Sprintf("build-%d", bbid),
