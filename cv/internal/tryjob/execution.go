@@ -27,6 +27,9 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 )
 
+// TryjobExecutionLogKind is the kind name of executionLog entity.
+const TryjobExecutionLogKind = "TryjobExecutionLog"
+
 // executionState is a Datastore model which stores an `ExecutionState`
 // along with the associated metadata.
 type executionState struct {

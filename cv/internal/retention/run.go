@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runquery"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 // runsPerTask controls how many runs to wipeout per TQ task.
@@ -200,7 +201,15 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	}
 	toDelete = append(toDelete, runKey)
 
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	// A run may have a lot of log entities which may cause timeouts if removed
+	// within a transaction. Therefore, deleting them first before deleting the
+	// rest of the run related entities in a transaction.
+	toDelete, err := removeLogEntities(ctx, toDelete)
+	if err != nil {
+		return errors.Annotate(err, "failed to delete log entities of run %s", r.ID).Tag(transient.Tag).Err()
+	}
+
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		switch err := datastore.Get(ctx, &run.Run{ID: r.ID}); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 			// run has been deleted already.
@@ -216,4 +225,20 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	}
 	logging.Infof(ctx, "successfully wiped out run %s", r.ID)
 	return nil
+}
+
+func removeLogEntities(ctx context.Context, toDelete []*datastore.Key) (remaining []*datastore.Key, err error) {
+	var logKeys, remainingKeys []*datastore.Key
+	for _, key := range toDelete {
+		switch key.Kind() {
+		case run.RunLogKind, tryjob.TryjobExecutionLogKind:
+			logKeys = append(logKeys, key)
+		default:
+			remainingKeys = append(remainingKeys, key)
+		}
+	}
+	if err := datastore.Delete(ctx, logKeys); err != nil {
+		return nil, err
+	}
+	return remainingKeys, nil
 }

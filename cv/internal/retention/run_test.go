@@ -129,16 +129,31 @@ func TestWipeoutRuns(t *testing.T) {
 				ID:  2,
 				Run: datastore.KeyForObj(ctx, r),
 			}
-			log := &run.RunLog{
-				ID:  555,
-				Run: datastore.KeyForObj(ctx, r),
-			}
-			So(datastore.Put(ctx, cl1, cl2, log), ShouldBeNil)
-			So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
-			So(datastore.Get(ctx, r), ShouldErrLike, datastore.ErrNoSuchEntity)
-			So(datastore.Get(ctx, cl1), ShouldErrLike, datastore.ErrNoSuchEntity)
-			So(datastore.Get(ctx, cl2), ShouldErrLike, datastore.ErrNoSuchEntity)
-			So(datastore.Get(ctx, log), ShouldErrLike, datastore.ErrNoSuchEntity)
+			Convey("run and run cls", func() {
+				So(datastore.Put(ctx, cl1, cl2), ShouldBeNil)
+				So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
+				So(datastore.Get(ctx, r), ShouldErrLike, datastore.ErrNoSuchEntity)
+				So(datastore.Get(ctx, cl1), ShouldErrLike, datastore.ErrNoSuchEntity)
+				So(datastore.Get(ctx, cl2), ShouldErrLike, datastore.ErrNoSuchEntity)
+			})
+
+			Convey("with a lot of log", func() {
+				logs := make([]*run.RunLog, 5000)
+				for i := range logs {
+					logs[i] = &run.RunLog{
+						ID:  int64(i + 1000),
+						Run: datastore.KeyForObj(ctx, r),
+					}
+				}
+				So(datastore.Put(ctx, cl1, cl2, logs), ShouldBeNil)
+				So(wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), ShouldBeNil)
+				for _, log := range logs {
+					So(datastore.Get(ctx, log), ShouldErrLike, datastore.ErrNoSuchEntity)
+				}
+				So(datastore.Get(ctx, r), ShouldErrLike, datastore.ErrNoSuchEntity)
+				So(datastore.Get(ctx, cl1), ShouldErrLike, datastore.ErrNoSuchEntity)
+				So(datastore.Get(ctx, cl2), ShouldErrLike, datastore.ErrNoSuchEntity)
+			})
 		})
 
 		Convey("handle run doesn't exist", func() {
