@@ -51,6 +51,32 @@ const segmentsUnexpectedRealtimeQuery = `
 	WITH merged_table AS(
 		SELECT *
 		FROM internal.test_variant_segment_updates
+		WHERE has_recent_unexpected_results = 1
+		UNION ALL
+		SELECT *
+		FROM internal.test_variant_segments
+		WHERE has_recent_unexpected_results = 1
+	), merged_table_grouped AS(
+		SELECT
+			project, test_id, variant_hash, ref_hash,
+			ARRAY_AGG(m ORDER BY version DESC LIMIT 1)[OFFSET(0)] as row
+		FROM merged_table m
+		GROUP BY project, test_id, variant_hash, ref_hash
+	)
+	SELECT
+		project, test_id, variant_hash, ref_hash,
+		row.variant AS variant,
+		row.ref AS ref,
+		-- Omit has_recent_unexpected_results here as all rows have unexpected results.
+		row.segments AS segments,
+		row.version AS version
+	FROM merged_table_grouped`
+
+// TODO(beining@): update this to query from the internal.test_variant_segments_unexpected_realtime after its been created.
+const segmentsUnexpectedRealtimePerProjectQuery = `
+	WITH merged_table AS(
+		SELECT *
+		FROM internal.test_variant_segment_updates
 		WHERE project = "%[1]s" AND has_recent_unexpected_results = 1
 		UNION ALL
 		SELECT *
@@ -73,10 +99,17 @@ const segmentsUnexpectedRealtimeQuery = `
 	FROM merged_table_grouped`
 
 var datasetViewQueries = map[string]map[string]*bigquery.TableMetadata{
-	"internal": {"failure_association_rules": &bigquery.TableMetadata{
-		ViewQuery: rulesViewBaseQuery,
-		Labels:    map[string]string{bq.MetadataVersionKey: "2"},
-	}},
+	"internal": {
+		"failure_association_rules": &bigquery.TableMetadata{
+			ViewQuery: rulesViewBaseQuery,
+			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
+		},
+		"test_variant_segments_unexpected_realtime": &bigquery.TableMetadata{
+			Description: "Contains test variant histories segmented by change point analysis, limited to test variants with unexpected" +
+				" results in postsubmit in the last 90 days. See go/luci-test-variant-analysis-design.",
+			ViewQuery: segmentsUnexpectedRealtimeQuery,
+			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
+		}},
 }
 
 type makeTableMetadata func(luciProject string) *bigquery.TableMetadata
@@ -143,7 +176,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		if err := pbutil.ValidateProject(luciProject); err != nil {
 			panic(err)
 		}
-		viewQuery := fmt.Sprintf(segmentsUnexpectedRealtimeQuery, luciProject)
+		viewQuery := fmt.Sprintf(segmentsUnexpectedRealtimePerProjectQuery, luciProject)
 		return &bigquery.TableMetadata{
 			Description: "Contains test variant histories segmented by change point analysis, limited to test variants with unexpected" +
 				" results in postsubmit in the last 90 days. See go/luci-test-variant-analysis-design.",
