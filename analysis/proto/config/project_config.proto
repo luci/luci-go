@@ -656,6 +656,12 @@ message BuganizerProject {
   // Deprecated. No longer has any effect. Retained for textproto
   // compatibility only. Use bug_management.policies instead.
   repeated PriorityMapping priority_mappings = 3;
+
+  // Whether the LIMIT_VIEW_TRUSTED access level should be omitted
+  // on new auto-filed bugs and LIMIT_NONE access level should be set.
+  // This makes those bugs visible to all those who can see bugs
+  // in a given component.
+  bool file_without_limit_view_trusted = 4;
 }
 
 // Criteria used to determine test stability. This criteria is used
