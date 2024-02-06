@@ -28,10 +28,17 @@ import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builde
 
 export interface FilterableBuilderTableProps {
   readonly builders: readonly BuilderID[];
+  /**
+   * The maximum number of requests batched in a single
+   * `buildbucket.v2.Builds/Batch` RPC call. Defaults to the default value in
+   * `<BuilderTable />`.
+   */
+  readonly maxBatchSize?: number;
 }
 
 export function FilterableBuilderTable({
   builders,
+  maxBatchSize,
 }: FilterableBuilderTableProps) {
   const [searchParams, setSearchparams] = useSyncedSearchParams();
   const numOfBuilds = getNumOfBuilds(searchParams);
@@ -69,7 +76,11 @@ export function FilterableBuilderTable({
           initDelayMs={500}
         />
       </div>
-      <BuilderTable builders={filteredBuilders} numOfBuilds={numOfBuilds} />
+      <BuilderTable
+        builders={filteredBuilders}
+        numOfBuilds={numOfBuilds}
+        maxBatchSize={maxBatchSize}
+      />
       <div css={{ margin: '5px 5px' }}>
         <div>Showing {builders.length} builders.</div>
         <div>

@@ -26,11 +26,13 @@ const NumOfBuildsCtx = createContext<number | null>(null);
 
 export interface BuilderTableContextProviderProps {
   readonly numOfBuilds: number;
+  readonly maxBatchSize: number;
   readonly children: ReactNode;
 }
 
 export function BuilderTableContextProvider({
   numOfBuilds,
+  maxBatchSize,
   children,
 }: BuilderTableContextProviderProps) {
   const buildsClient = usePrpcServiceClient(
@@ -38,7 +40,7 @@ export function BuilderTableContextProvider({
       host: SETTINGS.buildbucket.host,
       ClientImpl: BatchedBuildsClientImpl,
     },
-    { maxBatchSize: 30 },
+    { maxBatchSize },
   );
 
   return (

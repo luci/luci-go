@@ -25,11 +25,23 @@ export interface BuilderTableProps {
    * Number of recent builds per builder row.
    */
   readonly numOfBuilds: number;
+  /**
+   * The maximum number of requests batched in a single
+   * `buildbucket.v2.Builds/Batch` RPC call. Defaults to 200.
+   */
+  readonly maxBatchSize?: number;
 }
 
-export function BuilderTable({ builders, numOfBuilds }: BuilderTableProps) {
+export function BuilderTable({
+  builders,
+  numOfBuilds,
+  maxBatchSize = 200,
+}: BuilderTableProps) {
   return (
-    <BuilderTableContextProvider numOfBuilds={numOfBuilds}>
+    <BuilderTableContextProvider
+      numOfBuilds={numOfBuilds}
+      maxBatchSize={maxBatchSize}
+    >
       <TableVirtuoso
         useWindowScroll
         components={{

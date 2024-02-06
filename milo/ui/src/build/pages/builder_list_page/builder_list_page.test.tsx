@@ -102,6 +102,7 @@ describe('<BuilderListPage />', () => {
     expect(builderTableMock).toHaveBeenCalledWith(
       {
         builders,
+        maxBatchSize: expect.anything(),
       },
       expect.anything(),
     );

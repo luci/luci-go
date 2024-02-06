@@ -78,7 +78,15 @@ export function BuilderListPage() {
         variant={isLoading ? 'indeterminate' : 'determinate'}
         color="primary"
       />
-      <FilterableBuilderTable builders={builders} />
+      <FilterableBuilderTable
+        builders={builders}
+        // Each builder table row needs 3 SearchBuilds RPC. So the number should
+        // be a multiple of 3 to achieve best results.
+        // 9 is picked to achieve a balance between HTTP/server overhead and
+        // RPC latency (< 1s). This can be adjust upwards once the SearchBuilds
+        // RPC is optimized to support the builder table.
+        maxBatchSize={9}
+      />
     </>
   );
 }

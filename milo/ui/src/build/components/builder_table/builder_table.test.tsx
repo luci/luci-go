@@ -39,7 +39,7 @@ const builders = Array(1000)
     }),
   );
 
-describe('<BuilderListPage>', () => {
+describe('<BuilderTable />', () => {
   let batchMock: jest.SpiedFunction<BuildsClientImpl['Batch']>;
 
   beforeEach(() => {
