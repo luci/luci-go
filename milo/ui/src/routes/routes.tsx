@@ -41,11 +41,11 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'p/:project/builders',
-    lazy: () => import('@/build/legacy/builders_page'),
+    lazy: () => import('@/build/pages/builder_list_page'),
   },
   {
     path: 'p/:project/g/:group/builders',
-    lazy: () => import('@/build/legacy/builders_page'),
+    lazy: () => import('@/build/pages/builder_group_page'),
   },
   {
     path: 'p/:project/builders/:bucket/:builder',
@@ -221,14 +221,6 @@ export const routes: RouteObject[] = [
       {
         path: 'monitoring/:tree',
         lazy: () => import('@/monitoring/pages/monitoring_page'),
-      },
-      {
-        path: 'p/:project/builders',
-        lazy: () => import('@/build/pages/builder_list_page'),
-      },
-      {
-        path: 'p/:project/g/:group/builders',
-        lazy: () => import('@/build/pages/builder_group_page'),
       },
       {
         path: 'tree-status/:tree',
