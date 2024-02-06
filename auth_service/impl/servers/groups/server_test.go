@@ -50,7 +50,10 @@ func TestGroupsServer(t *testing.T) {
 	etag := `W/"MjAyMi0wNy0wNFQxNTo0NTowMFo="`
 
 	Convey("ListGroups RPC call", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"testers"},
+		})
 
 		// Groups built from model.AuthGroup definition.
 		So(datastore.Put(ctx,
@@ -111,28 +114,31 @@ func TestGroupsServer(t *testing.T) {
 		expectedResp := &rpcpb.ListGroupsResponse{
 			Groups: []*rpcpb.AuthGroup{
 				{
-					Name:        "test-group-2",
-					Description: "This is another test group.",
-					Owners:      "test-group",
-					CreatedTs:   timestamppb.New(createdTime),
-					CreatedBy:   "user:test-user-2@example.com",
-					Etag:        etag,
+					Name:            "test-group-2",
+					Description:     "This is another test group.",
+					Owners:          "test-group",
+					CreatedTs:       timestamppb.New(createdTime),
+					CreatedBy:       "user:test-user-2@example.com",
+					CallerCanModify: false,
+					Etag:            etag,
 				},
 				{
-					Name:        "test-group-3",
-					Description: "This is yet another test group.",
-					Owners:      "testers",
-					CreatedTs:   timestamppb.New(createdTime),
-					CreatedBy:   "user:test-user-1@example.com",
-					Etag:        etag,
+					Name:            "test-group-3",
+					Description:     "This is yet another test group.",
+					Owners:          "testers",
+					CreatedTs:       timestamppb.New(createdTime),
+					CreatedBy:       "user:test-user-1@example.com",
+					CallerCanModify: true,
+					Etag:            etag,
 				},
 				{
-					Name:        "z-test-group",
-					Description: "This is a test group.",
-					Owners:      "testers",
-					CreatedTs:   timestamppb.New(createdTime),
-					CreatedBy:   "user:test-user-1@example.com",
-					Etag:        etag,
+					Name:            "z-test-group",
+					Description:     "This is a test group.",
+					Owners:          "testers",
+					CreatedTs:       timestamppb.New(createdTime),
+					CreatedBy:       "user:test-user-1@example.com",
+					CallerCanModify: true,
+					Etag:            etag,
 				},
 			},
 		}
@@ -143,7 +149,10 @@ func TestGroupsServer(t *testing.T) {
 	})
 
 	Convey("GetGroup RPC call", t, func() {
-		ctx := memory.Use(context.Background())
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"testers"},
+		})
 
 		request := &rpcpb.GetGroupRequest{
 			Name: "test-group",
@@ -188,11 +197,12 @@ func TestGroupsServer(t *testing.T) {
 			Nested: []string{
 				"group/tester",
 			},
-			Description: "This is a test group.",
-			Owners:      "testers",
-			CreatedTs:   timestamppb.New(createdTime),
-			CreatedBy:   "user:test-user-1@example.com",
-			Etag:        etag,
+			Description:     "This is a test group.",
+			Owners:          "testers",
+			CreatedTs:       timestamppb.New(createdTime),
+			CreatedBy:       "user:test-user-1@example.com",
+			CallerCanModify: true,
+			Etag:            etag,
 		}
 
 		actualGroupResponse, err := srv.GetGroup(ctx, request)

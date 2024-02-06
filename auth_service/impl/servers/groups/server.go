@@ -23,11 +23,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/auth"
 )
 
 // Server implements Groups server.
@@ -55,7 +57,9 @@ func (*Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGro
 
 	var groupList = make([]*rpcpb.AuthGroup, len(groups))
 	for idx, entity := range groups {
-		groupList[idx] = entity.ToProto(false)
+		g := entity.ToProto(false)
+		g.CallerCanModify = canCallerModify(ctx, entity)
+		groupList[idx] = g
 	}
 
 	return &rpcpb.ListGroupsResponse{
@@ -67,8 +71,10 @@ func (*Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGro
 func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*rpcpb.AuthGroup, error) {
 	switch group, err := model.GetAuthGroup(ctx, request.Name); {
 	case err == nil:
-		return group.ToProto(true), nil
-	case err == datastore.ErrNoSuchEntity:
+		g := group.ToProto(true)
+		g.CallerCanModify = canCallerModify(ctx, group)
+		return g, nil
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", request.Name)
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to fetch group %q: %s", request.Name, err)
@@ -185,4 +191,19 @@ func convertPrincipal(p *rpcpb.Principal) (graph.NodeKey, error) {
 	default:
 		return graph.NodeKey{}, status.Errorf(codes.InvalidArgument, "invalid principal kind")
 	}
+}
+
+// canCallerModify returns whether the current identity can modify the
+// given group.
+func canCallerModify(ctx context.Context, g *model.AuthGroup) bool {
+	if model.IsExternalAuthGroupName(g.ID) {
+		return false
+	}
+
+	isOwner, err := auth.IsMember(ctx, model.AdminGroup, g.Owners)
+	if err != nil {
+		logging.Errorf(ctx, "error checking group owner status: %w", err)
+		return false
+	}
+	return isOwner
 }

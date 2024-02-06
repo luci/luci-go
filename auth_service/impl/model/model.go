@@ -475,9 +475,9 @@ func GetReplicationState(ctx context.Context) (*AuthReplicationState, error) {
 	}
 }
 
-// isExternalAuthGroupName checks if the given name is a valid external auth group
+// IsExternalAuthGroupName checks if the given name is a valid external auth group
 // name. This also implies that the auth group is not editable.
-func isExternalAuthGroupName(name string) bool {
+func IsExternalAuthGroupName(name string) bool {
 	return strings.Contains(name, "/") && auth.IsValidGroupName(name)
 }
 
@@ -858,12 +858,12 @@ func findGroupDependencyCycle(ctx context.Context, group *AuthGroup) ([]string, 
 // ID, Description, Owners, Members, Globs, Nested.
 func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool, historicalComment string, dryRun bool) (*AuthGroup, error) {
 	if external {
-		if !isExternalAuthGroupName(group.ID) {
+		if !IsExternalAuthGroupName(group.ID) {
 			return nil, ErrInvalidName
 		}
 	} else {
 		// Check the supplied group name is valid, and not an external group.
-		if !auth.IsValidGroupName(group.ID) || isExternalAuthGroupName(group.ID) {
+		if !auth.IsValidGroupName(group.ID) || IsExternalAuthGroupName(group.ID) {
 			return nil, ErrInvalidName
 		}
 	}
@@ -1005,7 +1005,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	}
 
 	// External groups cannot be manually updated.
-	if isExternalAuthGroupName(groupUpdate.ID) && !fromExternal {
+	if IsExternalAuthGroupName(groupUpdate.ID) && !fromExternal {
 		return nil, errors.Annotate(ErrPermissionDenied, "cannot update external group").Err()
 	}
 
@@ -1129,7 +1129,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, externa
 	}
 
 	// External groups cannot be manually deleted.
-	if isExternalAuthGroupName(groupName) && !external {
+	if IsExternalAuthGroupName(groupName) && !external {
 		return errors.Annotate(ErrPermissionDenied, "cannot delete external group").Err()
 	}
 

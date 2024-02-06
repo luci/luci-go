@@ -101,6 +101,9 @@ message AuthGroup {
   google.protobuf.Timestamp created_ts = 7;  // e.g: "1972-01-01T10:00:20.021Z"
   string created_by = 8;                     // e.g: "user:test@example.com"
 
+  // Output only. Whether the caller can modify this group.
+  bool caller_can_modify = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
   // An opaque string that indicates the version of the group being edited.
   // This will be sent to the client in responses, and should be sent back
   // to the server for update and delete requests in order to protect against
