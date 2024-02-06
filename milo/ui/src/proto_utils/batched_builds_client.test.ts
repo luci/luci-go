@@ -125,6 +125,10 @@ describe('BatchedBuildsClientImpl', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    batchSpy.mockReset();
+    getBuildSpy.mockReset();
+    searchBuildsSpy.mockReset();
+    getBuildStatusSpy.mockReset();
   });
 
   it('can batch eligible requests together', async () => {
@@ -194,7 +198,7 @@ describe('BatchedBuildsClientImpl', () => {
 
     await jest.advanceTimersToNextTimerAsync();
     // The batch function should be called more than once.
-    expect(batchSpy).toHaveBeenCalledTimes(3);
+    expect(batchSpy).toHaveBeenCalledTimes(2);
 
     // The responses should be just like regular calls.
     expect(await Promise.all(getBuildCalls)).toEqual(

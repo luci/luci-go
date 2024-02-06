@@ -41,7 +41,7 @@ export interface BatchedBuildsClientImplOpts {
  * automatically.
  */
 export class BatchedBuildsClientImpl extends BuildsClientImpl {
-  readonly autoBatchedBatch: (
+  private readonly autoBatchedBatch: (
     opt: BatchOption,
     req: BatchRequest,
   ) => Promise<BatchResponse>;
