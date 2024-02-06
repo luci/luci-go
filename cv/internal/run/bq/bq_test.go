@@ -241,6 +241,7 @@ func TestMakeAttempt(t *testing.T) {
 						Mode:                       cvbqpb.Mode_FULL_RUN,
 						SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
 						Owner:                      "foobar@example.com",
+						IsOwnerBot:                 false,
 					},
 				},
 				Builds: []*cvbqpb.Build{
@@ -428,5 +429,25 @@ func TestMakeAttempt(t *testing.T) {
 			So(a.GetHasCustomRequirement(), ShouldBeTrue)
 		})
 
+		Convey("Owner is bot", func() {
+			Convey("tagged with service user", func() {
+				cl.Detail.GetGerrit().GetInfo().GetOwner().Tags = []string{"SERVICE_USER"}
+				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
+				So(err, ShouldBeNil)
+				So(a.GerritChanges[0].IsOwnerBot, ShouldBeTrue)
+			})
+			Convey("domain is prod.google.com", func() {
+				cl.Detail.GetGerrit().GetInfo().GetOwner().Email = "abc@prod.google.com"
+				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
+				So(err, ShouldBeNil)
+				So(a.GerritChanges[0].IsOwnerBot, ShouldBeTrue)
+			})
+			Convey("domain is gserviceaccount.com", func() {
+				cl.Detail.GetGerrit().GetInfo().GetOwner().Email = "xyz@proj-foo.iam.gserviceaccount.com"
+				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
+				So(err, ShouldBeNil)
+				So(a.GerritChanges[0].IsOwnerBot, ShouldBeTrue)
+			})
+		})
 	})
 }

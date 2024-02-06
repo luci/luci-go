@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	cvbq "go.chromium.org/luci/cv/internal/common/bq"
@@ -165,6 +167,7 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 		Mode:                       mode.BQAttemptMode(),
 		SubmitStatus:               cvbqpb.GerritChange_PENDING,
 		Owner:                      ci.GetOwner().GetEmail(),
+		IsOwnerBot:                 isCLOwnerBot(ci),
 	}
 
 	if mode == run.FullRun {
@@ -180,6 +183,23 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 		}
 	}
 	return gc
+}
+
+// decides whether CL owner is a bot or not.
+func isCLOwnerBot(ci *gerritpb.ChangeInfo) bool {
+	for _, tag := range ci.GetOwner().GetTags() {
+		if tag == "SERVICE_USER" {
+			return true
+		}
+	}
+	switch ownerEmail := strings.ToLower(ci.GetOwner().GetEmail()); {
+	case strings.HasSuffix(ownerEmail, "gserviceaccount.com"):
+		return true
+	case strings.HasSuffix(ownerEmail, "prod.google.com"):
+		return true
+	}
+
+	return false
 }
 
 // attemptStatus converts a Run status to Attempt status.
