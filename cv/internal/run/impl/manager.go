@@ -171,15 +171,6 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 		proc.handler = h
 	}
 
-	result, err := datastore.Exists(ctx, &run.Run{ID: runID})
-	switch {
-	case err != nil:
-		return transient.Tag.Apply(err)
-	case !result.Any():
-		logging.Warningf(ctx, "o/248732419: run %s is deleted in datastore but got manage-run task")
-		return nil
-	}
-
 	recipient := run.EventboxRecipient(ctx, runID)
 	postProcessFns, processErr := eventbox.ProcessBatch(ctx, recipient, proc, maxEventsPerBatch)
 	if processErr != nil {
@@ -189,6 +180,10 @@ func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 				return err
 			}
 			logging.Infof(ctx, "failed to acquire the lease for %q, revisit at %s", alreadyInLeaseErr.ResourceID, expireTime)
+			return ignoreErrTag.Apply(processErr)
+		}
+		if errors.Is(processErr, errRunMissing) {
+			logging.Errorf(ctx, "run %s is missing from datastore but got manage-run task. It's likely the run has been wiped out but something in LUCI CV is still scheduling tq task against the run.", runID)
 			return ignoreErrTag.Apply(processErr)
 		}
 		return processErr
@@ -215,14 +210,14 @@ type runProcessor struct {
 
 var _ eventbox.Processor = (*runProcessor)(nil)
 
+var errRunMissing = errors.New("requested run entity is missing")
+
 // LoadState is called to load the state before a transaction.
 func (rp *runProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox.EVersion, error) {
 	r := run.Run{ID: rp.runID}
 	switch err := datastore.Get(ctx, &r); {
 	case err == datastore.ErrNoSuchEntity:
-		err = errors.Reason("CRITICAL: requested run entity %q is missing in datastore.", rp.runID).Err()
-		common.LogError(ctx, err)
-		panic(err)
+		return nil, 0, errRunMissing
 	case err != nil:
 		return nil, 0, errors.Annotate(err, "failed to get Run %q", rp.runID).Tag(transient.Tag).Err()
 	}

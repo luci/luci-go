@@ -24,6 +24,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -468,6 +470,15 @@ func TestRunManager(t *testing.T) {
 			task := runtest.Tasks(ct.TQ.Tasks())[0]
 			So(task.ETA, ShouldResemble, clock.Now(ctx).UTC().Add(30*time.Second))
 			So(task.Payload, ShouldResembleProto, &eventpb.ManageRunTask{RunId: string(runID)})
+		})
+
+		Convey("Run is missing", func() {
+			So(datastore.Delete(ctx, &run.Run{ID: runID}), ShouldBeNil)
+			So(notifier.PokeNow(ctx, runID), ShouldBeNil)
+			ctx = memlogger.Use(ctx)
+			log := logging.Get(ctx).(*memlogger.MemLogger)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
+			So(log, memlogger.ShouldHaveLog, logging.Error, fmt.Sprintf("run %s is missing from datastore but got manage-run task", runID))
 		})
 	})
 }
