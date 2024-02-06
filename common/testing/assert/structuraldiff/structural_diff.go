@@ -23,13 +23,19 @@ import (
 
 // DebugDump is an extremely abstraction-breaking function that will print a Go Value.
 //
-// It prints zero values and unexported fields and ignores user-defined methods for pretty-printing.
+// It prints zero values and unexported field, but does NOT ignore user-defined methods for pretty-printing.
+// It SHOULD ignore user-defined methods for pretty-printing, but this causes issues with infinite recursion
+// when printing protos.
 func DebugDump(val any) string {
 	config := &pretty.Config{
 		Compact:             false,
 		Diffable:            true,
 		IncludeUnexported:   true,
-		PrintStringers:      false,
+		// I would prefer this to be false. I really would, but disabling this feature
+		// causes an infinite loop when printing stuff.
+		//
+		// Long-term, I'm going to write my own thing.
+		PrintStringers:      true,
 		PrintTextMarshalers: false,
 		SkipZeroFields:      false,
 		ShortList:           30,
