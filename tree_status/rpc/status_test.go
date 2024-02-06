@@ -505,10 +505,19 @@ func (b *StatusBuilder) Build() *status.Status {
 
 func (b *StatusBuilder) CreateInDB(ctx context.Context) *status.Status {
 	s := b.Build()
-	m, err := status.Create(s, s.CreateUser)
-	So(err, ShouldBeNil)
+	row := map[string]any{
+		"TreeName":      s.TreeName,
+		"StatusId":      s.StatusID,
+		"GeneralStatus": int64(s.GeneralStatus),
+		"Message":       s.Message,
+		"CreateUser":    s.CreateUser,
+		"CreateTime":    s.CreateTime,
+	}
+	m := spanner.InsertOrUpdateMap("Status", row)
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 	So(err, ShouldBeNil)
-	s.CreateTime = ts.UTC()
+	if s.CreateTime == spanner.CommitTimestamp {
+		s.CreateTime = ts.UTC()
+	}
 	return s
 }

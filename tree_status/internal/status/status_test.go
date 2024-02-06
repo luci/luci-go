@@ -18,6 +18,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 
@@ -222,6 +223,16 @@ func (b *StatusBuilder) WithMessage(message string) *StatusBuilder {
 	return b
 }
 
+func (b *StatusBuilder) WithCreateTime(createTime time.Time) *StatusBuilder {
+	b.status.CreateTime = createTime
+	return b
+}
+
+func (b *StatusBuilder) WithCreateUser(user string) *StatusBuilder {
+	b.status.CreateUser = user
+	return b
+}
+
 func (b *StatusBuilder) Build() *Status {
 	s := b.status
 	return &s
@@ -229,10 +240,19 @@ func (b *StatusBuilder) Build() *Status {
 
 func (b *StatusBuilder) CreateInDB(ctx context.Context) *Status {
 	s := b.Build()
-	m, err := Create(s, s.CreateUser)
-	So(err, ShouldBeNil)
+	row := map[string]any{
+		"TreeName":      s.TreeName,
+		"StatusId":      s.StatusID,
+		"GeneralStatus": int64(s.GeneralStatus),
+		"Message":       s.Message,
+		"CreateUser":    s.CreateUser,
+		"CreateTime":    s.CreateTime,
+	}
+	m := spanner.InsertOrUpdateMap("Status", row)
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 	So(err, ShouldBeNil)
-	s.CreateTime = ts.UTC()
+	if s.CreateTime == spanner.CommitTimestamp {
+		s.CreateTime = ts.UTC()
+	}
 	return s
 }

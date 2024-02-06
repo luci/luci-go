@@ -26,7 +26,8 @@ INTEGRATION_TESTS=1 go test ./...
 go run main.go \
   -cloud-project luci-tree-status-dev \
   -auth-service-host chrome-infra-auth-dev.appspot.com \
-  -spanner-database projects/luci-tree-status-dev/instances/dev/databases/luci-tree-status-dev
+  -spanner-database projects/luci-tree-status-dev/instances/dev/databases/luci-tree-status-dev \
+  -frontend-client-id 713057630411-eqah8ap1ptgnf4nnepk10sutqg0msiv1.apps.googleusercontent.com
 ```
 
 You can test the RPCs using the [rpcexplorer](http://127.0.0.1:8800/rpcexplorer).

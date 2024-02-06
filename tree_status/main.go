@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/tree_status/internal/span"
+	"go.chromium.org/luci/tree_status/internal/status"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 	"go.chromium.org/luci/tree_status/rpc"
 
@@ -51,6 +52,7 @@ func main() {
 		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
 
 		pb.RegisterTreeStatusServer(srv, rpc.NewTreeStatusServer())
+		cron.RegisterHandler("clear-status-users", status.ClearStatusUsers)
 		return nil
 	})
 }
