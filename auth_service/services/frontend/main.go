@@ -214,9 +214,14 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 			if err != nil {
 				return nil, err
 			}
+			isAdmin, err := auth.IsMember(ctx, model.AdminGroup)
+			if err != nil {
+				return nil, err
+			}
 			return templates.Args{
 				"AppVersion": opts.ImageVersion(),
 				"User":       auth.CurrentUser(ctx),
+				"IsAdmin":    isAdmin,
 				"LogoutURL":  logoutURL,
 				"XSRFToken":  token,
 			}, nil

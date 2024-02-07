@@ -170,6 +170,7 @@ const validators = {
 // intended to be used within a GroupChooser.
 class ListGroupItem {
   constructor(group) {
+    this.readOnly = !group.callerCanModify;
     this.isExternal = isExternalGroupName(group.name);
 
     const template = document.querySelector('#group-scroller-row-template');
@@ -184,8 +185,8 @@ class ListGroupItem {
     listEl.setAttribute('data-group-name', group.name);
     nameEl.textContent = group.name;
     descEl.textContent = this.isExternal ? 'External' : trimGroupDescription(group.description);
-    if (this.isExternal) {
-      listEl.classList.add('external-group');
+    if (this.readOnly) {
+      listEl.classList.add('read-only-group');
       const lockIcon = document.createElement('i');
       lockIcon.classList.add('bi', 'bi-lock-fill', 'list-item-icon');
       listEl.appendChild(lockIcon);
@@ -208,9 +209,6 @@ class GroupChooser {
   constructor(element) {
     // Root DOM element.
     this.element = document.querySelector(element);
-
-    // Button for triggering create group workflow.
-    this.createGroupBtn = document.querySelector("#create-group-btn");
 
     // The name of the selected group.
     this.selectedGroupName = null;
@@ -547,6 +545,9 @@ class EditGroupForm extends GroupForm {
 
     this.groupEtag = "";
 
+    // Whether the group form should be in read-only mode.
+    this.readOnly = false;
+
     // Whether the group is external.
     this.isExternal = false;
   }
@@ -574,15 +575,51 @@ class EditGroupForm extends GroupForm {
     groupClone.membersAndGlobs = membersAndGlobs.join('\n') + '\n';
     groupClone.nested = (groupClone.nested || []).join('\n') + '\n';
 
+    if (!group.callerCanModify) {
+      // Read-only UI if the caller has insufficient permissions.
+      this.makeReadOnly();
+    }
     if (isExternalGroupName(group.name)) {
       // Read-only UI for external groups.
-      this.becomeExternal();
+      this.makeReadOnly();
+      this.makeExternal();
     }
 
     this.populateForm(groupClone);
   }
 
-  becomeExternal() {
+  makeReadOnly() {
+    // Exit early if this has previously been called, as form elements
+    // have already been changed.
+    if (this.readOnly) {
+      return;
+    }
+    this.readOnly = true;
+
+    // Disable any inputs.
+    this.form.querySelectorAll('button, input, textarea').forEach((e) => {
+      e.setAttribute('disabled', true);
+    });
+
+    // Remove update/delete buttons.
+    const editBtn = this.element.querySelector('#edit-btn');
+    const deleteBtn = this.element.querySelector('#delete-btn');
+    this.form.removeChild(editBtn);
+    this.form.removeChild(deleteBtn);
+
+    // Add explaining text.
+    const insufficientPermDiv = document.createElement('div');
+    insufficientPermDiv.style.textAlign = 'center';
+    insufficientPermDiv.textContent = 'You do not have sufficient permissions to modify this group.';
+    this.form.appendChild(insufficientPermDiv);
+  }
+
+  makeExternal() {
+    // Exit early if this has previously been called, as form elements
+    // have already been changed.
+    if (this.isExternal) {
+      return;
+    }
     this.isExternal = true;
 
     // Remove all but the members row.
@@ -590,11 +627,6 @@ class EditGroupForm extends GroupForm {
       if (!e.classList.contains('external-group-info')) {
         this.form.removeChild(e);
       }
-    });
-
-    // Disable any inputs.
-    this.form.querySelectorAll('button, input, textarea').forEach((e) => {
-      e.setAttribute('disabled', true);
     });
 
     // Enlarge the members text area.
@@ -612,7 +644,7 @@ class EditGroupForm extends GroupForm {
     heading.textContent = group.name;
     membersAndGlobs.textContent = group.membersAndGlobs
 
-    // Exit early if the form is read-only.
+    // Exit early if the form is for an external group.
     if (this.isExternal) {
       // Add ' (external)' to the group heading.
       const externalSpan = document.createElement('span');
@@ -627,13 +659,18 @@ class EditGroupForm extends GroupForm {
     const description = this.element.querySelector('#description-box');
     const owners = this.element.querySelector('#owners-box');
     const nested = this.element.querySelector('#nested');
-    const deleteBtn = this.element.querySelector('#delete-btn');
 
     // Modify remaining contents.
     description.textContent = group.description;
     owners.textContent = group.owners;
     nested.textContent = group.nested;
 
+    // Exit early if the form is read-only.
+    if (this.readOnly) {
+      return;
+    }
+
+    const deleteBtn = this.element.querySelector('#delete-btn');
     deleteBtn.addEventListener('click', () => {
       let result = confirm(`Are you sure you want to delete ${group.name}?`)
       if (result) {
@@ -695,10 +732,14 @@ window.onload = () => {
     }
   });
 
-  groupChooser.createGroupBtn.addEventListener('click', (event) => {
-    startNewGroupFlow();
-    groupChooser.setSelection(null);
-  })
+  // Button for triggering create group workflow.
+  const createGroupBtn = document.querySelector("#create-group-btn");
+  if (createGroupBtn) {
+    createGroupBtn.addEventListener('click', (event) => {
+      startNewGroupFlow();
+      groupChooser.setSelection(null);
+    });
+  }
 
   // Check the "Show external groups" checkbox if the group in the URL
   // is an external group.

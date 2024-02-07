@@ -3,8 +3,8 @@
 {{define "content"}}
 
 <style>
-:not(.active).list-group-item.external-group,
-:not(.active).list-group-item.external-group:hover {
+:not(.active).list-group-item.read-only-group,
+:not(.active).list-group-item.read-only-group:hover {
   background-color: #eeeeee;
 }
 
@@ -128,7 +128,7 @@
       </div>
     </div>
     <hr>
-    <button type="submit" class="btn btn-primary">Update group</button>
+    <button id="edit-btn" type="submit" class="btn btn-primary">Update group</button>
     <button id="delete-btn" type="button" class="btn btn-danger">Delete group</button>
   </form>
 </template>
@@ -152,9 +152,11 @@
           </label>
         </div>
       </div>
+      {{if .IsAdmin}}
       <div class="col-auto my-2">
         <button type="button" class="btn btn-outline-primary" id="create-group-btn">Create</button>
       </div>
+      {{end}}
     </div>
     <div class="row">
       <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">
