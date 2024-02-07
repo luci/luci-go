@@ -14,9 +14,10 @@
 
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   ChangepointPredicate,
   QueryChangepointGroupSummariesRequest,
@@ -27,14 +28,33 @@ import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 import { RegressionFilters } from './regression_filters';
 import { RegressionTable } from './regression_table';
 
+function getPredicate(searchParams: URLSearchParams) {
+  const predicate = searchParams.get('cp') || '{}';
+  return ChangepointPredicate.fromJSON(JSON.parse(predicate));
+}
+
+function predicateUpdater(newPredicate: ChangepointPredicate) {
+  return (params: URLSearchParams) => {
+    const searchParams = new URLSearchParams(params);
+    const predicateStr = JSON.stringify(
+      ChangepointPredicate.toJSON(newPredicate),
+    );
+    if (predicateStr === '{}') {
+      searchParams.delete('cp');
+    } else {
+      searchParams.set('cp', predicateStr);
+    }
+    return searchParams;
+  };
+}
+
 export interface RecentRegressionsProps {
   readonly project: string;
 }
 
 export function RecentRegressions({ project }: RecentRegressionsProps) {
-  const [predicate, setPredicate] = useState(() =>
-    ChangepointPredicate.create(),
-  );
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const predicate = getPredicate(searchParams);
 
   const client = useChangepointsClient();
   const { data, isLoading, isError, error } = useQuery(
@@ -69,7 +89,7 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
       >
         <RegressionFilters
           predicate={predicate}
-          onPredicateUpdate={(p) => setPredicate(p)}
+          onPredicateUpdate={(p) => setSearchParams(predicateUpdater(p))}
         />
       </Box>
       {isLoading ? (
