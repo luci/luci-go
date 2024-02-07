@@ -127,6 +127,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			So(result, ShouldHaveLength, 1)
 			So(result, ShouldContainKey, defFoo)
 			eid := tryjob.MustBuildbucketID(bbHost, build.GetId())
+			result[defFoo].RetentionKey = "" // clear the retention key before comparison
 			So(result[defFoo], cvtesting.SafeShouldResemble, &tryjob.Tryjob{
 				ID:               tryjob.MustResolve(ctx, eid)[0],
 				ExternalID:       eid,
@@ -210,6 +211,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			So(result[defFoo].ExternalID, ShouldEqual, tryjob.MustBuildbucketID(bbHost, build.Id))
 			latest := &tryjob.Tryjob{ID: common.TryjobID(tj.ID)}
 			So(datastore.Get(ctx, latest), ShouldBeNil)
+			latest.RetentionKey = "" // clear the retention key before comparison
 			So(latest, cvtesting.SafeShouldResemble, &tryjob.Tryjob{
 				ID:               tj.ID,
 				ExternalID:       eid,

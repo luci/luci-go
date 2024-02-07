@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -814,11 +815,14 @@ func makeAttempt(tjID int64, status tryjob.Status, resultStatus tryjob.Result_St
 }
 
 func ensureTryjob(ctx context.Context, id int64, def *tryjob.Definition, status tryjob.Status, resultStatus tryjob.Result_Status) *tryjob.Tryjob {
+	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	tj := &tryjob.Tryjob{
-		ID:         common.TryjobID(id),
-		ExternalID: tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-id),
-		Definition: def,
-		Status:     status,
+		ID:               common.TryjobID(id),
+		ExternalID:       tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-id),
+		Definition:       def,
+		Status:           status,
+		EntityCreateTime: now,
+		EntityUpdateTime: now,
 		Result: &tryjob.Result{
 			Status: resultStatus,
 		},

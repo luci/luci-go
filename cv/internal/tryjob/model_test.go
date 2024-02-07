@@ -15,13 +15,47 @@
 package tryjob
 
 import (
+	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestTryjob(t *testing.T) {
+	t.Parallel()
+
+	Convey("Tryjob", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+
+		Convey("Populate RetentionKey", func() {
+			epoch := datastore.RoundTime(ct.Clock.Now().UTC())
+			tj := &Tryjob{
+				ID:               1,
+				EntityUpdateTime: epoch,
+			}
+			So(datastore.Put(ctx, tj), ShouldBeNil)
+			tj = &Tryjob{ID: 1}
+			So(datastore.Get(ctx, tj), ShouldBeNil)
+			So(tj.RetentionKey, ShouldEqual, fmt.Sprintf("01/%010d", epoch.Unix()))
+		})
+		Convey("Fill in EntityUpdateTime if it's missing", func() {
+			tj := &Tryjob{ID: 1}
+			So(datastore.Put(ctx, tj), ShouldBeNil)
+			tj = &Tryjob{ID: 1}
+			So(datastore.Get(ctx, tj), ShouldBeNil)
+			So(tj.EntityUpdateTime.IsZero(), ShouldBeFalse)
+			So(tj.RetentionKey, ShouldNotBeEmpty)
+		})
+	})
+}
 
 func TestCLPatchset(t *testing.T) {
 	t.Parallel()

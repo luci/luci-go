@@ -58,6 +58,14 @@ type Tryjob struct {
 	// .Result.UpdateTime.
 	EntityUpdateTime time.Time `gae:",noindex"`
 
+	// RetentionKey is for data retention purpose.
+	//
+	// It is indexed and tries to avoid hot areas in the index. The format is
+	// `{shard_key}/{unix_time_of_EntityUpdateTime}`. Shard key is the last 2
+	// digit of ID with left padded zero. Unix timestamp is a 10 digit integer
+	// with left padded zero if necessary.
+	RetentionKey string
+
 	// ReuseKey is used to quickly decide if this Tryjob can be reused by a run.
 	//
 	// Note that, even if reuse is allowed here, reuse is still subjected to
@@ -109,6 +117,28 @@ type Tryjob struct {
 
 	// UntriggeredReason is the reason why LUCI CV doesn't trigger the Tryjob.
 	UntriggeredReason string `gae:",noindex"`
+}
+
+// DO NOT decrease the shard. It will cause olds tryjobs that are out of
+// retention period in the shard not getting wiped out.
+const retentionKeyShards = 100
+
+var _ datastore.PropertyLoadSaver = (*Tryjob)(nil)
+
+// Save implements datastore.PropertyLoadSaver.
+//
+// Makes sure the EntityUpdateTime and RetentionKey are always updated.
+func (tj *Tryjob) Save(withMeta bool) (datastore.PropertyMap, error) {
+	if tj.EntityUpdateTime.IsZero() { // be defensive
+		tj.EntityUpdateTime = datastore.RoundTime(time.Now().UTC())
+	}
+	tj.RetentionKey = fmt.Sprintf("%02d/%010d", tj.ID%retentionKeyShards, tj.EntityUpdateTime.Unix())
+	return datastore.GetPLS(tj).Save(withMeta)
+}
+
+// Load implements datastore.PropertyLoadSaver.
+func (tj *Tryjob) Load(p datastore.PropertyMap) error {
+	return datastore.GetPLS(tj).Load(p)
 }
 
 // tryjobMap is intended to quickly determine if a given ExternalID is
