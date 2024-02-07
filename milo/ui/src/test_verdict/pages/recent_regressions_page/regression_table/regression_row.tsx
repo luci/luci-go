@@ -14,6 +14,7 @@
 
 import { Link, TableCell, TableRow, styled } from '@mui/material';
 import { DateTime } from 'luxon';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { Timestamp } from '@/common/components/timestamp';
 import { getGitilesCommitURL } from '@/common/tools/gitiles_utils';
@@ -21,6 +22,7 @@ import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
+import { useDetailsUrlPath } from './context';
 import { FailureRatePieChart } from './failure_rate_pie_chart';
 
 const TextCell = styled(TableCell)({
@@ -52,6 +54,7 @@ export function RegressionRow({ regression }: RegressionRowProps) {
   if (statistics.unexpectedVerdictRateCurrent.average > 0.5) {
     deltaColor = 'var(--failure-color)';
   }
+  const detailsUrlPath = useDetailsUrlPath(regression);
 
   return (
     <TableRow>
@@ -116,9 +119,11 @@ export function RegressionRow({ regression }: RegressionRowProps) {
           buckets={statistics.unexpectedVerdictRateCurrent.buckets}
         />
       </ChartCell>
-
-      {/* TODO(b/321110247): link to the regression details page. */}
-      <TextCell>details</TextCell>
+      <TextCell>
+        <Link component={RouterLink} to={detailsUrlPath}>
+          details
+        </Link>
+      </TextCell>
       <TextCell sx={{ overflow: 'hidden' }}>
         <div css={{ display: 'inline-grid', gridTemplateColumns: '1fr auto' }}>
           <span

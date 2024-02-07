@@ -53,3 +53,36 @@ export type OutputChangepointGroupSummary = DeepNonNullableProps<
   ChangepointGroupSummary,
   'canonicalChangepoint' | 'statistics'
 >;
+
+export interface ParsedTestVariantBranchName {
+  readonly project: string;
+  readonly testId: string;
+  readonly variantHash: string;
+  readonly refHash: string;
+}
+
+const TEST_VARIANT_BRANCH_NAME_RE =
+  /^projects\/(?<project>[^/]+)\/tests\/(?<urlEscapedTestId>[^/]+)\/variants\/(?<variantHash>[^/]+)\/refs\/(?<refHash>[^/]+)$/;
+
+export const ParsedTestVariantBranchName = {
+  fromString(name: string): ParsedTestVariantBranchName {
+    const match = TEST_VARIANT_BRANCH_NAME_RE.exec(name);
+    if (!match) {
+      throw new Error(`invalid TestVariantBranchName: ${name}`);
+    }
+    const { project, urlEscapedTestId, variantHash, refHash } =
+      match.groups || {};
+
+    return {
+      project,
+      testId: decodeURIComponent(urlEscapedTestId),
+      variantHash,
+      refHash,
+    };
+  },
+  toString(name: ParsedTestVariantBranchName): string {
+    const { project, testId, variantHash, refHash } = name;
+    const urlEscapedTestId = encodeURIComponent(testId);
+    return `projects/${project}/tests/${urlEscapedTestId}/variants/${variantHash}/refs/${refHash}`;
+  },
+};

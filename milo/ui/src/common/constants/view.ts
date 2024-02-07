@@ -34,6 +34,7 @@ export enum UiPage {
   TestVerdict = 'test-verdict',
   TreeStatus = 'tree-status',
   RecentRegressions = 'recent-regressions',
+  RegressionDetails = 'regression-details',
 }
 
 export enum CommonColors {

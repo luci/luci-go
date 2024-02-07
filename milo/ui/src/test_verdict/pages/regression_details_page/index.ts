@@ -12,5 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './regression_table';
-export * from './types';
+export * from './regression_details_page';

@@ -14,13 +14,14 @@
 
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
 import {
   ChangepointPredicate,
   QueryChangepointGroupSummariesRequest,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
+import { getRegressionDetailsURLPath } from '@/test_verdict/tools/url_utils';
 import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
 import { RegressionFilters } from './regression_filters';
@@ -49,6 +50,15 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
     throw error;
   }
 
+  const getDetailsUrlPath = useCallback(
+    (group: OutputChangepointGroupSummary) =>
+      getRegressionDetailsURLPath({
+        canonicalChangepoint: group.canonicalChangepoint,
+        predicate,
+      }),
+    [predicate],
+  );
+
   return (
     <>
       <Box
@@ -71,6 +81,7 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
           regressions={
             data.groupSummaries as readonly OutputChangepointGroupSummary[]
           }
+          getDetailsUrlPath={getDetailsUrlPath}
         />
       )}
     </>

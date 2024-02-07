@@ -12,5 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './regression_table';
-export * from './types';
+import { OutputChangepointGroupSummary } from '@/test_verdict/types';
+
+export type GetDetailsUrlPath = (
+  regression: OutputChangepointGroupSummary,
+) => string;

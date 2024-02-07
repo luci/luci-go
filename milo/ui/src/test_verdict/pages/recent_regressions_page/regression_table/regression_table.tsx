@@ -25,7 +25,9 @@ import {
 
 import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
+import { RegressionTableContextProvider } from './context';
 import { RegressionRow } from './regression_row';
+import { GetDetailsUrlPath } from './types';
 
 const AVG_FAILURE_RATE_TOOLTIP = `\
   The average of the average unexpected verdict rate of the test variants in the segments.\
@@ -94,92 +96,98 @@ const ChartCell = styled(TableCell)({
 
 export interface RegressionTableProps {
   readonly regressions: readonly OutputChangepointGroupSummary[];
+  readonly getDetailsUrlPath: GetDetailsUrlPath;
 }
 
-export function RegressionTable({ regressions }: RegressionTableProps) {
+export function RegressionTable({
+  regressions,
+  getDetailsUrlPath,
+}: RegressionTableProps) {
   return (
-    <Table width="100%">
-      <TableHead>
-        <TableRow>
-          <TextCell rowSpan={2} width="75px">
-            Start Time
-          </TextCell>
-          <TextCell rowSpan={2} width="130px">
-            Blamelist
-          </TextCell>
-          <NumberCell rowSpan={2} width="40px">
-            Test Variant Count
-          </NumberCell>
-          <TableCell colSpan={3} width="120px" align="center">
-            Avg Failure Rate
-            <Tooltip title={AVG_FAILURE_RATE_TOOLTIP}>
-              <Help fontSize="small" />
-            </Tooltip>
-          </TableCell>
-          <TableCell colSpan={3} width="150px" align="center">
-            Failure Rate Increase
-            <Tooltip title={FAILURE_RATE_DELTA_TOOLTIP}>
-              <Help fontSize="small" />
-            </Tooltip>
-          </TableCell>
-          <ChartCell rowSpan={2} width="40px">
-            Before Status
-            <Tooltip title={BEFORE_STATUS_TOOLTIP}>
-              <Help fontSize="small" />
-            </Tooltip>
-          </ChartCell>
-          <ChartCell rowSpan={2} width="40px">
-            After Status
-            <Tooltip title={AFTER_STATUS_TOOLTIP}>
-              <Help fontSize="small" />
-            </Tooltip>
-          </ChartCell>
-          <ChartCell rowSpan={2} width="40px">
-            Current Status
-            <Tooltip title={CURRENT_STATUS_TOOLTIP}>
-              <Help fontSize="small" />
-            </Tooltip>
-          </ChartCell>
-          <TextCell rowSpan={2} width="40px">
-            Details
-            <Tooltip
-              title={
-                'View the historical segments of all the test variants in this regression.'
-              }
+    <RegressionTableContextProvider getDetailsUrlPath={getDetailsUrlPath}>
+      <Table width="100%">
+        <TableHead>
+          <TableRow>
+            <TextCell rowSpan={2} width="75px">
+              Start Time
+            </TextCell>
+            <TextCell rowSpan={2} width="130px">
+              Blamelist
+            </TextCell>
+            <NumberCell rowSpan={2} width="40px">
+              Test Variant Count
+            </NumberCell>
+            <TableCell colSpan={3} width="120px" align="center">
+              Avg Failure Rate
+              <Tooltip title={AVG_FAILURE_RATE_TOOLTIP}>
+                <Help fontSize="small" />
+              </Tooltip>
+            </TableCell>
+            <TableCell colSpan={3} width="150px" align="center">
+              Failure Rate Increase
+              <Tooltip title={FAILURE_RATE_DELTA_TOOLTIP}>
+                <Help fontSize="small" />
+              </Tooltip>
+            </TableCell>
+            <ChartCell rowSpan={2} width="40px">
+              Before Status
+              <Tooltip title={BEFORE_STATUS_TOOLTIP}>
+                <Help fontSize="small" />
+              </Tooltip>
+            </ChartCell>
+            <ChartCell rowSpan={2} width="40px">
+              After Status
+              <Tooltip title={AFTER_STATUS_TOOLTIP}>
+                <Help fontSize="small" />
+              </Tooltip>
+            </ChartCell>
+            <ChartCell rowSpan={2} width="40px">
+              Current Status
+              <Tooltip title={CURRENT_STATUS_TOOLTIP}>
+                <Help fontSize="small" />
+              </Tooltip>
+            </ChartCell>
+            <TextCell rowSpan={2} width="40px">
+              Details
+              <Tooltip
+                title={
+                  'View the historical segments of all the test variants in this regression.'
+                }
+              >
+                <Help fontSize="small" />
+              </Tooltip>
+            </TextCell>
+            <TextCell rowSpan={2}>Sample Test ID</TextCell>
+          </TableRow>
+          <TableRow>
+            <NumberCell>Before</NumberCell>
+            <NumberCell>After</NumberCell>
+            <NumberCell>Delta</NumberCell>
+            <NumberCell
+              sx={{
+                color: 'var(--failure-color)',
+              }}
             >
-              <Help fontSize="small" />
-            </Tooltip>
-          </TextCell>
-          <TextCell rowSpan={2}>Sample Test ID</TextCell>
-        </TableRow>
-        <TableRow>
-          <NumberCell>Before</NumberCell>
-          <NumberCell>After</NumberCell>
-          <NumberCell>Delta</NumberCell>
-          <NumberCell
-            sx={{
-              color: 'var(--failure-color)',
-            }}
-          >
-            {'≥50%'}
-          </NumberCell>
-          <NumberCell sx={{ color: 'var(--warning-color)' }}>
-            {'20~50%'}
-          </NumberCell>
-          <NumberCell
-            sx={{
-              color: 'var(--success-color)',
-            }}
-          >
-            {'<20%'}
-          </NumberCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {regressions.map((regression, i) => (
-          <RegressionRow key={i} regression={regression} />
-        ))}
-      </TableBody>
-    </Table>
+              {'≥50%'}
+            </NumberCell>
+            <NumberCell sx={{ color: 'var(--warning-color)' }}>
+              {'20~50%'}
+            </NumberCell>
+            <NumberCell
+              sx={{
+                color: 'var(--success-color)',
+              }}
+            >
+              {'<20%'}
+            </NumberCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {regressions.map((regression, i) => (
+            <RegressionRow key={i} regression={regression} />
+          ))}
+        </TableBody>
+      </Table>
+    </RegressionTableContextProvider>
   );
 }

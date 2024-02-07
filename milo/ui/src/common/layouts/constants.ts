@@ -35,4 +35,5 @@ export const PAGE_LABEL_MAP = Object.freeze({
   [UiPage.TestVerdict]: 'Test verdict',
   [UiPage.TreeStatus]: 'Tree status',
   [UiPage.RecentRegressions]: 'Recent regressions',
+  [UiPage.RegressionDetails]: 'Regression details',
 });
