@@ -32,9 +32,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestListBots(t *testing.T) {
-	t.Parallel()
-
+// setupTestBots mocks a bunch of bots and pools.
+func setupTestBots(ctx context.Context) *MockedRequestState {
 	state := NewMockedRequestState()
 	state.Configs.Settings.BotDeathTimeoutSecs = 1234
 
@@ -44,10 +43,6 @@ func TestListBots(t *testing.T) {
 	state.MockPool("hidden-pool2", "project:hidden-realm")
 
 	state.MockPerm("project:visible-realm", acls.PermPoolsListBots)
-
-	ctx := memory.Use(context.Background())
-	datastore.GetTestable(ctx).AutoIndex(true)
-	datastore.GetTestable(ctx).Consistent(true)
 
 	type testBot struct {
 		id          string
@@ -64,7 +59,7 @@ func TestListBots(t *testing.T) {
 		id := pfx.id
 		for i := 0; i < num; i++ {
 			pfx.id = fmt.Sprintf("%s-%d", id, i)
-			pfx.dims = []string{fmt.Sprintf("idx:%d", i)}
+			pfx.dims = []string{fmt.Sprintf("idx:%d", i), fmt.Sprintf("dup:%d", i)}
 			testBots = append(testBots, pfx)
 		}
 	}
@@ -128,6 +123,18 @@ func TestListBots(t *testing.T) {
 			panic(err)
 		}
 	}
+
+	return state
+}
+
+func TestListBots(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.Use(context.Background())
+	datastore.GetTestable(ctx).AutoIndex(true)
+	datastore.GetTestable(ctx).Consistent(true)
+
+	state := setupTestBots(ctx)
 
 	callImpl := func(ctx context.Context, req *apipb.BotsRequest) (*apipb.BotInfoListResponse, error) {
 		return (&BotsServer{
