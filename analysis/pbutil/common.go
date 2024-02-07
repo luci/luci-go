@@ -223,6 +223,15 @@ func VariantToJSON(variant *pb.Variant) (string, error) {
 	return string(b), nil
 }
 
+// VariantFromJSON convert json string representation of the variant into protocol buffer.
+func VariantFromJSON(variant string) (*pb.Variant, error) {
+	v := map[string]string{}
+	if err := json.Unmarshal([]byte(variant), &v); err != nil {
+		return nil, err
+	}
+	return &pb.Variant{Def: v}, nil
+}
+
 // PresubmitRunModeFromString returns a pb.PresubmitRunMode corresponding
 // to a CV Run mode string.
 func PresubmitRunModeFromString(mode string) (pb.PresubmitRunMode, error) {

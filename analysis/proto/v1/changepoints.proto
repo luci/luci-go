@@ -143,6 +143,7 @@ message QueryChangepointsInGroupResponse {
 
 
 // Represent a changepoint of a test variant branch.
+// Next ID: 15.
 message Changepoint {
   // The LUCI Project. E.g. "chromium".
   string project = 1;
@@ -151,6 +152,9 @@ message Changepoint {
   // Hash of the variant, as 16 lowercase hexadecimal characters.
   // E.g. "96c68dc946ab4068".
   string variant_hash = 3;
+  // key:value pairs to specify the way of running a particular test.
+  // e.g. a specific bucket, builder and a test suite.
+  luci.analysis.v1.Variant variant = 14;
   // Hash of the source branch, as 16 lowercase hexadecimal characters.
   string ref_hash = 4;
   // The branch in source control.

@@ -74,7 +74,11 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 	for _, g := range groups {
 		filtered := filterAndSortChangepointsWithPredicate(g, request.Predicate)
 		if len(filtered) > 0 {
-			groupSummaries = append(groupSummaries, toChangepointGroupSummary(filtered))
+			groupSummary, err := toChangepointGroupSummary(filtered)
+			if err != nil {
+				return nil, errors.Annotate(err, "construct changepoint group summary proto").Err()
+			}
+			groupSummaries = append(groupSummaries, groupSummary)
 		}
 	}
 	// Sort the groups in start_hour DESC order. This sort is deterministic given the uniqueness of
@@ -124,7 +128,11 @@ func (c *changepointsServer) QueryChangepointsInGroup(ctx context.Context, req *
 	filteredCps := filterAndSortChangepointsWithPredicate(group, req.Predicate)
 	changepointsToReturn := make([]*pb.Changepoint, 0, len(filteredCps))
 	for _, t := range filteredCps {
-		changepointsToReturn = append(changepointsToReturn, toPBChangepoint(t))
+		cppb, err := toPBChangepoint(t)
+		if err != nil {
+			return nil, errors.Annotate(err, "construct changepoint proto").Err()
+		}
+		changepointsToReturn = append(changepointsToReturn, cppb)
 	}
 	if len(changepointsToReturn) > 1000 {
 		// Truncate to 1000 changepoints to avoid overloading the RPC.
@@ -232,12 +240,16 @@ func changepointGroupWithGroupKey(groups [][]*changepoints.ChangepointRow, group
 	return matchingGroup, true
 }
 
-func toChangepointGroupSummary(group []*changepoints.ChangepointRow) *pb.ChangepointGroupSummary {
+func toChangepointGroupSummary(group []*changepoints.ChangepointRow) (*pb.ChangepointGroupSummary, error) {
 	// Set the mimimum changepoint as the canonical changepoint to represent this group.
 	// Note, this canonical changepoint is different from the canonical changepoint used to create the group.
 	canonical := group[0]
+	canonicalpb, err := toPBChangepoint(canonical)
+	if err != nil {
+		return nil, errors.Annotate(err, "construct changepoint proto").Err()
+	}
 	return &pb.ChangepointGroupSummary{
-		CanonicalChangepoint: toPBChangepoint(canonical),
+		CanonicalChangepoint: canonicalpb,
 		Statistics: &pb.ChangepointGroupStatistics{
 			Count:                        int32(len(group)),
 			UnexpectedVerdictRateBefore:  aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedVerdictRateBefore }),
@@ -245,14 +257,19 @@ func toChangepointGroupSummary(group []*changepoints.ChangepointRow) *pb.Changep
 			UnexpectedVerdictRateCurrent: aggregateRate(group, func(tvr *changepoints.ChangepointRow) float64 { return tvr.UnexpectedVerdictRateCurrent }),
 			UnexpectedVerdictRateChange:  aggregateRateChange(group),
 		},
-	}
+	}, nil
 }
 
-func toPBChangepoint(cp *changepoints.ChangepointRow) *pb.Changepoint {
+func toPBChangepoint(cp *changepoints.ChangepointRow) (*pb.Changepoint, error) {
+	variant, err := pbutil.VariantFromJSON(cp.Variant.String())
+	if err != nil {
+		return nil, err
+	}
 	return &pb.Changepoint{
 		Project:     cp.Project,
 		TestId:      cp.TestID,
 		VariantHash: cp.VariantHash,
+		Variant:     variant,
 		RefHash:     cp.RefHash,
 		Ref: &pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{
@@ -268,7 +285,7 @@ func toPBChangepoint(cp *changepoints.ChangepointRow) *pb.Changepoint {
 		StartPositionUpperBound_99Th:      cp.UpperBound99th,
 		NominalStartPosition:              cp.NominalStartPosition,
 		PreviousSegmentNominalEndPosition: cp.PreviousNominalEndPosition,
-	}
+	}, nil
 }
 
 func validateQueryChangepointGroupSummariesRequest(req *pb.QueryChangepointGroupSummariesRequest) error {

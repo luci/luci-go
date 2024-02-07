@@ -91,7 +91,13 @@ func TestChangepointsServer(t *testing.T) {
 						Project:     "chromium",
 						TestId:      "test1",
 						VariantHash: "5097aaaaaaaaaaaa",
-						RefHash:     "b920ffffffffffff",
+						Variant: &pb.Variant{
+							Def: map[string]string{
+								"var":  "abc",
+								"varr": "xyx",
+							},
+						},
+						RefHash: "b920ffffffffffff",
 						Ref: &pb.SourceRef{
 							System: &pb.SourceRef_Gitiles{
 								Gitiles: &pb.GitilesRef{
@@ -364,6 +370,10 @@ func makeChangepointRow(TestIDNum, lowerBound, upperBound int64) *changepoints.C
 		TestIDNum:   TestIDNum,
 		TestID:      fmt.Sprintf("test%d", TestIDNum),
 		VariantHash: "5097aaaaaaaaaaaa",
+		Variant: bigquery.NullJSON{
+			JSONVal: "{\"var\":\"abc\",\"varr\":\"xyx\"}",
+			Valid:   true,
+		},
 		Ref: &changepoints.Ref{
 			Gitiles: &changepoints.Gitiles{
 				Host:    bigquery.NullString{Valid: true, StringVal: "host"},

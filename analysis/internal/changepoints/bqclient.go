@@ -52,6 +52,7 @@ type ChangepointRow struct {
 	TestIDNum   int64
 	TestID      string
 	VariantHash string
+	Variant     bigquery.NullJSON
 	// Point to a branch in the source control.
 	Ref     *Ref
 	RefHash string
