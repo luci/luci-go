@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/config/validation"
+
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
@@ -102,5 +103,21 @@ func validateProjectConfigRaw(ctx *validation.Context, content string) *configpb
 func validateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig) {
 	for i, allowList := range cfg.GcsAllowList {
 		validateGCSAllowlist(ctx, fmt.Sprintf("gcs_allow_list[%d]", i), allowList)
+	}
+}
+
+func validateServiceConfig(ctx *validation.Context, cfg *configpb.Config) {
+	if cfg.BqArtifactExportConfig == nil {
+		ctx.Errorf("missing BQ artifact export config")
+		return
+	}
+	validateBQArtifactExportConfig(ctx, cfg.BqArtifactExportConfig)
+}
+
+func validateBQArtifactExportConfig(ctx *validation.Context, cfg *configpb.BqArtifactExportConfig) {
+	ctx.Enter("bq_artifact_export_config")
+	defer ctx.Exit()
+	if cfg.ExportPercent < 0 || cfg.ExportPercent > 100 {
+		ctx.Errorf("export percent must be between 0 and 100")
 	}
 }

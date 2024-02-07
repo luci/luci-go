@@ -39,3 +39,12 @@ func CreatePlaceholderProjectConfig() *configpb.ProjectConfig {
 		GcsAllowList: createPlaceholderGcsAllowlist(),
 	}
 }
+
+func CreatePlaceHolderServiceConfig() *configpb.Config {
+	return &configpb.Config{
+		BqArtifactExportConfig: &configpb.BqArtifactExportConfig{
+			Enabled:       true,
+			ExportPercent: 50,
+		},
+	}
+}

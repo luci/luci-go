@@ -30,8 +30,9 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
-	configpb "go.chromium.org/luci/resultdb/proto/config"
 	"go.chromium.org/luci/server/caching"
+
+	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
 var projectCacheSlot = caching.RegisterCacheSlot()

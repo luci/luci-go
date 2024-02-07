@@ -80,7 +80,7 @@ func InitServer(srv *server.Server, opts Options) error {
 	}
 
 	// Serve cron jobs endpoints.
-	cron.RegisterHandler("read-config", config.UpdateProjects)
+	cron.RegisterHandler("read-config", config.UpdateConfig)
 
 	rdbSvr := &resultDBServer{
 		generateArtifactURL: contentServer.GenerateSignedURL,

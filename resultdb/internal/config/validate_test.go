@@ -19,12 +19,14 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/encoding/prototext"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config/validation"
+
 	configpb "go.chromium.org/luci/resultdb/proto/config"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProjectConfigValidator(t *testing.T) {
@@ -96,6 +98,53 @@ func TestProjectConfigValidator(t *testing.T) {
 					So(validate(cfg), ShouldBeNil)
 				})
 			})
+		})
+	})
+}
+
+func TestServiceConfigValidator(t *testing.T) {
+	t.Parallel()
+
+	validate := func(cfg *configpb.Config) error {
+		c := validation.Context{Context: context.Background()}
+		validateServiceConfig(&c, cfg)
+		return c.Finalize()
+	}
+
+	Convey("config template is valid", t, func() {
+		content, err := os.ReadFile(
+			"../../configs/service/template.cfg",
+		)
+		So(err, ShouldBeNil)
+		cfg := &configpb.Config{}
+		So(prototext.Unmarshal(content, cfg), ShouldBeNil)
+		So(validate(cfg), ShouldBeNil)
+	})
+
+	Convey("valid config is valid", t, func() {
+		cfg := CreatePlaceHolderServiceConfig()
+		So(validate(cfg), ShouldBeNil)
+	})
+
+	Convey("bq artifact export config", t, func() {
+		cfg := CreatePlaceHolderServiceConfig()
+		Convey("is nil", func() {
+			cfg.BqArtifactExportConfig = nil
+			So(validate(cfg), ShouldNotBeNil)
+		})
+
+		Convey("percentage smaller than 0", func() {
+			cfg.BqArtifactExportConfig = &configpb.BqArtifactExportConfig{
+				ExportPercent: -1,
+			}
+			So(validate(cfg), ShouldNotBeNil)
+		})
+
+		Convey("percentage bigger than 100", func() {
+			cfg.BqArtifactExportConfig = &configpb.BqArtifactExportConfig{
+				ExportPercent: 101,
+			}
+			So(validate(cfg), ShouldNotBeNil)
 		})
 	})
 }
