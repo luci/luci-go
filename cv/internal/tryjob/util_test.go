@@ -16,6 +16,7 @@ package tryjob
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -180,5 +181,46 @@ func TestSaveTryjobs(t *testing.T) {
 				})
 			})
 		})
+	})
+}
+
+func TestQueryTryjobIDsUpdatedBefore(t *testing.T) {
+	t.Parallel()
+
+	Convey("QueryTryjobIDsUpdatedBefore", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+
+		nextBuildID := int64(1)
+		createNTryjobs := func(n int) []*Tryjob {
+			tryjobs := make([]*Tryjob, n)
+			for i := range tryjobs {
+				eid := MustBuildbucketID("example.com", nextBuildID)
+				nextBuildID++
+				tryjobs[i] = eid.MustCreateIfNotExists(ctx)
+			}
+			return tryjobs
+		}
+
+		var allTryjobs []*Tryjob
+		allTryjobs = append(allTryjobs, createNTryjobs(1000)...)
+		ct.Clock.Add(1 * time.Minute)
+		allTryjobs = append(allTryjobs, createNTryjobs(1000)...)
+		ct.Clock.Add(1 * time.Minute)
+		allTryjobs = append(allTryjobs, createNTryjobs(1000)...)
+
+		before := ct.Clock.Now().Add(-30 * time.Second)
+		var expected common.TryjobIDs
+		for _, tj := range allTryjobs {
+			if tj.EntityUpdateTime.Before(before) {
+				expected = append(expected, tj.ID)
+			}
+		}
+		slices.Sort(expected)
+
+		actual, err := QueryTryjobIDsUpdatedBefore(ctx, before)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, expected)
 	})
 }

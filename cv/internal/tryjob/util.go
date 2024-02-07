@@ -17,6 +17,11 @@ package tryjob
 import (
 	"context"
 	"fmt"
+	"slices"
+	"sync"
+	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -173,7 +178,7 @@ func notifyRuns(ctx context.Context, tryjobs []*Tryjob, notifyFn NotifyTryjobsUp
 	}
 	for runID, tjIDs := range notifyTargets {
 		events := &TryjobUpdatedEvents{
-			Events: make([]*TryjobUpdatedEvent, tjIDs.Len()),
+			Events: make([]*TryjobUpdatedEvent, len(tjIDs)),
 		}
 		for i, tjID := range tjIDs {
 			events.Events[i] = &TryjobUpdatedEvent{
@@ -197,4 +202,41 @@ func LatestAttempt(execution *ExecutionState_Execution) *ExecutionState_Executio
 	default:
 		return execution.GetAttempts()[l-1]
 	}
+}
+
+// QueryTryjobIDsUpdatedBefore queries ID of all tryjobs updated before the
+// given timestamp.
+//
+// This is used for data retention purpose. Results are sorted.
+func QueryTryjobIDsUpdatedBefore(ctx context.Context, before time.Time) (common.TryjobIDs, error) {
+	var ret common.TryjobIDs
+	var retMu sync.Mutex
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(10)
+	for shard := 0; shard < retentionKeyShards; shard++ {
+		shard := shard
+		eg.Go(func() error {
+			q := datastore.NewQuery(TryjobKind).
+				Lt("RetentionKey", fmt.Sprintf("%02d/%010d", shard, before.Unix())).
+				Gt("RetentionKey", fmt.Sprintf("%02d/", shard)).
+				KeysOnly(true)
+			var keys []*datastore.Key
+			switch err := datastore.GetAll(ectx, q, &keys); {
+			case err != nil:
+				return errors.Annotate(err, "failed to query Tryjob keys").Tag(transient.Tag).Err()
+			case len(keys) > 0:
+				retMu.Lock()
+				for _, key := range keys {
+					ret = append(ret, common.TryjobID(key.IntID()))
+				}
+				retMu.Unlock()
+			}
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	slices.Sort(ret)
+	return ret, nil
 }
