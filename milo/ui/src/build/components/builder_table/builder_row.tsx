@@ -26,6 +26,7 @@ const Row = styled('tr')({
   height: '40px',
   '& > td': {
     padding: '5px',
+    borderBottom: '1px solid rgb(224, 224, 224)',
   },
   // All columns except the last one shrink to fit.
   '& > td:not(:last-of-type)': {
@@ -35,21 +36,12 @@ const Row = styled('tr')({
 });
 
 export interface BuilderRowProps {
-  readonly 'data-item-index': number;
   readonly item: BuilderID;
 }
 
-export function BuilderRow({
-  'data-item-index': index,
-  item: builder,
-}: BuilderRowProps) {
+export function BuilderRow({ item: builder }: BuilderRowProps) {
   return (
-    <Row
-      css={{
-        // Apply checkered style to the rows.
-        background: index % 2 === 1 ? 'var(--block-background-color)' : '',
-      }}
-    >
+    <Row>
       <td>
         <Link component={RouterLink} to={getBuilderURLPath(builder)}>
           {builder.project}/{builder.bucket}/{builder.builder}
