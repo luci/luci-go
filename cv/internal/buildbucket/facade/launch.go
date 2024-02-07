@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -329,16 +329,10 @@ func makeTags(r *run.Run, cls []*run.RunCL) (nonOpt, opt []*bbpb.StringPair, err
 }
 
 func sortTags(tags []*bbpb.StringPair) {
-	sort.Slice(tags, func(i, j int) bool {
-		switch strings.Compare(tags[i].GetKey(), tags[j].GetKey()) {
-		case 0:
-			return strings.Compare(tags[i].GetValue(), tags[j].GetValue()) < 0
-		case -1:
-			return true
-		case 1:
-			return false
-		default:
-			panic(fmt.Errorf("unreachable"))
+	slices.SortFunc(tags, func(a, b *bbpb.StringPair) int {
+		if res := strings.Compare(a.GetKey(), b.GetKey()); res != 0 {
+			return res
 		}
+		return strings.Compare(a.GetValue(), b.GetValue())
 	})
 }
