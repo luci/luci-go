@@ -79,6 +79,7 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 		// where for the purposes of this RPC, a flaky run counts as
 		// "expected" (as it has at least one expected result).
 		failPass := []testresults.RunStatus{testresults.Unexpected, testresults.Flaky}
+		failPassPass := []testresults.RunStatus{testresults.Unexpected, testresults.Flaky, testresults.Flaky}
 		pass := []testresults.RunStatus{testresults.Flaky}
 		fail := []testresults.RunStatus{testresults.Unexpected}
 		failFail := []testresults.RunStatus{testresults.Unexpected, testresults.Unexpected}
@@ -186,7 +187,7 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				// Should be distinct from source verdict 5 because both have
 				// IsDirty set, so we cannot confirm the soruces are identical.
 				invocationID: "sourceverdict7",
-				runStatuses:  failPass,
+				runStatuses:  failPassPass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 120,
@@ -320,10 +321,12 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				partitionTime: referenceTime.Add(-1 * day),
 				variant:       var1,
 				invocationID:  "sourceverdict17",
-				runStatuses:   failFail,
+				// Only one run should be used as the verdict relates to presubmit testing.
+				runStatuses: failPass,
 				sources: testresults.Sources{
-					RefHash:  onBranch,
-					Position: 140,
+					RefHash:     onBranch,
+					Changelists: changelists(pb.ChangelistOwnerKind_HUMAN, 888777),
+					Position:    140,
 				},
 			},
 		}
@@ -431,16 +434,26 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 			FailureRate: &pb.TestVariantStabilityAnalysis_FailureRate{
 				IsMet:                         true,
 				UnexpectedTestRuns:            8,
-				ConsecutiveUnexpectedTestRuns: 6,
+				ConsecutiveUnexpectedTestRuns: 5,
 				RecentVerdicts: []*pb.TestVariantStabilityAnalysis_FailureRate_RecentVerdict{
 					{
-						Position:       140,
-						Invocations:    []string{"sourceverdict17"},
-						UnexpectedRuns: 2,
-						TotalRuns:      2,
+						Position: 140,
+						Changelists: []*pb.Changelist{
+							{
+								Host:      "mygerrit-review.googlesource.com",
+								Change:    888777,
+								Patchset:  5,
+								OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+							},
+						},
+						Invocations: []string{"sourceverdict17"},
+						// Unexpected + expected run flattened down to only an unexpected run due to
+						// presubmit results only being allowed to contribute 1 test run.
+						UnexpectedRuns: 1,
+						TotalRuns:      1,
 					},
 					{
-						Position:       130,
+						Position:       130, // Query position.
 						Invocations:    []string{"sourceverdict16-part1", "sourceverdict16-part2"},
 						UnexpectedRuns: 4,
 						TotalRuns:      4,
@@ -453,22 +466,34 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 					{
 						Position:       128,
 						Invocations:    []string{"sourceverdict9-part1", "sourceverdict9-part2"},
-						TotalRuns:      3,
 						UnexpectedRuns: 2,
+						TotalRuns:      3,
 					},
 					{
 						Position:       120,
 						Invocations:    []string{"sourceverdict7"},
 						UnexpectedRuns: 1,
-						TotalRuns:      2,
+						TotalRuns:      2, // Verdict truncated to 2 runs to keep total runs on or before query position <= 10.
 					},
 				},
 			},
 			FlakeRate: &pb.TestVariantStabilityAnalysis_FlakeRate{
 				IsMet:            true,
 				TotalVerdicts:    9,
-				RunFlakyVerdicts: 5,
+				RunFlakyVerdicts: 6,
 				FlakeExamples: []*pb.TestVariantStabilityAnalysis_FlakeRate_VerdictExample{
+					{
+						Position: 140,
+						Changelists: []*pb.Changelist{
+							{
+								Host:      "mygerrit-review.googlesource.com",
+								Change:    888777,
+								Patchset:  5,
+								OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+							},
+						},
+						Invocations: []string{"sourceverdict17"},
+					},
 					{
 						Position:    128,
 						Invocations: []string{"sourceverdict9-part1", "sourceverdict9-part2"},

@@ -270,7 +270,8 @@ func truncateSourceVerdict(verdict *sourceVerdict, maxRuns int) *sourceVerdict {
 	excessRuns := (vc.ExpectedRuns + vc.UnexpectedRuns) - int64(maxRuns)
 	if excessRuns > 0 {
 		// Fairly share the runs to be removed between expected
-		// and unexpected runs.
+		// and unexpected runs. Round towards removing more
+		// expected runs than unexpected runs.
 		unexpectedRunsToRemove := excessRuns * vc.UnexpectedRuns / (vc.ExpectedRuns + vc.UnexpectedRuns)
 		expectedRunsToRemove := excessRuns - unexpectedRunsToRemove
 
@@ -377,6 +378,30 @@ func splitOn(verdicts []*sourceVerdict, sourcePosition int64) (on, other []*sour
 	return on, other
 }
 
+// filterSourceVerdicts filters source verdicts so that at most one
+// test run is present for each verdict obtained in presubmit.
+func filterSourceVerdictsForFailureRateCriteria(svs []*sourceVerdict) []*sourceVerdict {
+	result := make([]*sourceVerdict, 0, len(svs))
+	for _, sv := range svs {
+		item := &sourceVerdict{}
+		*item = *sv
+
+		if item.ChangelistChange.Valid && (item.UnexpectedRuns+item.ExpectedRuns) > 1 {
+			// For presubmit data, keep only one run, preferentially the unexpected run.
+			if item.UnexpectedRuns >= 1 {
+				item.UnexpectedRuns = 1
+				item.ExpectedRuns = 0
+			} else {
+				item.UnexpectedRuns = 0
+				item.ExpectedRuns = 1
+			}
+		}
+
+		result = append(result, item)
+	}
+	return result
+}
+
 // applyFailureRateCriteria applies the failure rate criteria to a test variant
 // at a given source position.
 //
@@ -389,15 +414,28 @@ func splitOn(verdicts []*sourceVerdict, sourcePosition int64) (on, other []*sour
 // ordered with the source verdict nearest the queried source position
 // appearing first.
 //
+// Both sets of examples should have had the following filtering applied:
+//   - At most one source verdict per distinct CL (for source verdicts
+//     testing CLs; no such restrictions apply to postsubmit data).
+//   - Source verdicts must not be for the same CL as is being considered for
+//     exoneration (if any).
+//   - Source verdicts must not be for CLs authored by automation.
+//
 // criteria defines the failure rate thresholds to apply.
 func applyFailureRateCriteria(beforeExamples, onOrAfterExamples []*sourceVerdict, sourcePosition int64, criteria *pb.TestStabilityCriteria_FailureRateCriteria) *pb.TestVariantStabilityAnalysis_FailureRate {
+	// Limit source verdicts from presubmit to contributing at most 1 run each.
+	// This is to avoid a single repeatedly retried bad CL from having an oversized
+	// influence on the exoneration decision.
+	beforeExamples = filterSourceVerdictsForFailureRateCriteria(beforeExamples)
+	onOrAfterExamples = filterSourceVerdictsForFailureRateCriteria(onOrAfterExamples)
+
 	onExamples, afterExamples := splitOn(onOrAfterExamples, sourcePosition)
 
 	onExamples = truncateSourceVerdicts(onExamples, 10)
 	onRuns := flattenSourceVerdictsToRuns(onExamples)
 
 	// The window size is 10, and the window will always contain any runs on the queried
-	// source position. Additional runs may come from before or after.
+	// source position. Additional runs may come from source positions before or after.
 	// Note: For the passed examples, the first example is the one nearest to the query
 	// position, so truncating keeps only the examples closest to the queried source position.
 	beforeExamples = truncateSourceVerdicts(beforeExamples, 10-len(onRuns))
@@ -631,7 +669,7 @@ func queryBuckets(buckets []*sourcePositionBucket, querySourcePosition int64, in
 	earliestSourcePositionAvailability := make([]time.Time, len(buckets))
 	earliestTime := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC)
 
-	// Start at the more recent (larger) commit position and work backwards
+	// Start at the more recent (larger) source position and work backwards
 	// to the past.
 	for i := len(buckets) - 1; i >= 0; i-- {
 		b := buckets[i]
@@ -651,7 +689,7 @@ func queryBuckets(buckets []*sourcePositionBucket, querySourcePosition int64, in
 		earliestSourcePositionAvailability[i] = earliestTime
 	}
 
-	// Find the nearest bucket that includes, or is prior to, the queried commit position.
+	// Find the nearest bucket that includes, or is prior to, the queried source position.
 	queryIndex := 0
 	for i, b := range buckets {
 		if b.StartSourcePosition > querySourcePosition {
@@ -753,7 +791,7 @@ func toPBFlakeRateVerdictExample(verdicts []*sourceVerdict) []*pb.TestVariantSta
 	return results
 }
 
-// sourcePositionBucket represents a range of commit positions for
+// sourcePositionBucket represents a range of source positions for
 // a given test variant.
 type sourcePositionBucket struct {
 	BucketKey int64
@@ -976,7 +1014,7 @@ SELECT
 		GROUP BY 1
 		ORDER BY BucketKey
 	) AS FlakeRateBuckets,
-	-- We do not yet know exactly the range of commit positions
+	-- We do not yet know exactly the range of source positions
 	-- that we will end up using for the flake rate criteria.
 	-- Get (up to) 10 examples of flake each side of the
 	-- query position, so that regardless of where the
