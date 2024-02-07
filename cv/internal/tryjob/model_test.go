@@ -57,6 +57,44 @@ func TestTryjob(t *testing.T) {
 	})
 }
 
+func TestDelete(t *testing.T) {
+	t.Parallel()
+
+	Convey("Delete", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+
+		tj := MustBuildbucketID("bb.example.com", 10).MustCreateIfNotExists(ctx)
+
+		Convey("Works", func() {
+			So(CondDelete(ctx, tj.ID, tj.EVersion), ShouldBeNil)
+			So(datastore.Get(ctx, &Tryjob{ID: tj.ID}), ShouldErrLike, datastore.ErrNoSuchEntity)
+			So(datastore.Get(ctx, &tryjobMap{ExternalID: tj.ExternalID}), ShouldErrLike, datastore.ErrNoSuchEntity)
+			Convey("Can handle deleted entity", func() {
+				// delete the same entity again
+				So(CondDelete(ctx, tj.ID, tj.EVersion), ShouldBeNil)
+			})
+		})
+		Convey("Works without external ID", func() {
+			prevExternalID := tj.ExternalID
+			tj.ExternalID = "" // not valid, but just for testing purpose.
+			So(datastore.Put(ctx, tj), ShouldBeNil)
+			So(CondDelete(ctx, tj.ID, tj.EVersion), ShouldBeNil)
+			So(datastore.Get(ctx, &Tryjob{ID: tj.ID}), ShouldErrLike, datastore.ErrNoSuchEntity)
+			So(datastore.Get(ctx, &tryjobMap{ExternalID: prevExternalID}), ShouldBeNil)
+		})
+		Convey("Returns error for invalid input", func() {
+			So(CondDelete(ctx, tj.ID, 0), ShouldErrLike, "expected EVersion must be larger than 0")
+		})
+		Convey("Returns error if condition mismatch", func() {
+			tj.EVersion = 15
+			So(datastore.Put(ctx, tj), ShouldBeNil)
+			So(CondDelete(ctx, tj.ID, tj.EVersion-1), ShouldErrLike, "request to delete tryjob")
+		})
+	})
+}
+
 func TestCLPatchset(t *testing.T) {
 	t.Parallel()
 

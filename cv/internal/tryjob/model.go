@@ -15,12 +15,14 @@
 package tryjob
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -139,6 +141,38 @@ func (tj *Tryjob) Save(withMeta bool) (datastore.PropertyMap, error) {
 // Load implements datastore.PropertyLoadSaver.
 func (tj *Tryjob) Load(p datastore.PropertyMap) error {
 	return datastore.GetPLS(tj).Load(p)
+}
+
+// CondDelete conditionally deletes Tryjob and corresponding tryjobMap entities.
+//
+// The deletion would only proceed if the loaded tryjob has the same EVersion
+// as the provided one. The deletion would happen in a transaction to make sure
+// the deletion of Tryjob and tryjobMap entities are atomic.
+func CondDelete(ctx context.Context, tjID common.TryjobID, expectedEVersion int64) error {
+	if expectedEVersion <= 0 {
+		return errors.New("expected EVersion must be larger than 0")
+	}
+
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		tj := &Tryjob{ID: tjID}
+		switch err := datastore.Get(ctx, tj); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			return nil // tryjob already gets deleted
+		case err != nil:
+			return errors.Annotate(err, "failed to load tryjob %d", tjID).Tag(transient.Tag).Err()
+		case tj.EVersion != expectedEVersion:
+			return errors.Reason("request to delete tryjob %d at EVersion: %d, got EVersion: %d", tjID, expectedEVersion, tj.EVersion).Err()
+		}
+		toDelete := []any{tj}
+		if tj.ExternalID != "" {
+			// some tryjobs might not have external ID populated.
+			toDelete = append(toDelete, &tryjobMap{ExternalID: tj.ExternalID})
+		}
+		if err := datastore.Delete(ctx, toDelete); err != nil {
+			return errors.Annotate(err, "failed to delete tryjob %d", tjID).Tag(transient.Tag).Err()
+		}
+		return nil
+	}, nil)
 }
 
 // tryjobMap is intended to quickly determine if a given ExternalID is
