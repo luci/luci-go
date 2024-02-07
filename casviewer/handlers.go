@@ -16,11 +16,10 @@ package casviewer
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"html/template"
-	"io/fs"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
@@ -35,8 +34,8 @@ import (
 	"go.chromium.org/luci/server/templates"
 )
 
-//go:embed templates
-var templatesFS embed.FS
+// Path to the templates dir from the executable.
+const templatePath = "templates"
 
 var permMintToken = realms.RegisterPermission("luci.serviceAccounts.mintToken")
 
@@ -57,9 +56,8 @@ func InstallHandlers(r *router.Router, cc *ClientCache, appVersion string) {
 
 // getTemplateBundles returns template Bundle with base args.
 func getTemplateBundle(appVersion string) *templates.Bundle {
-	fs, _ := fs.Sub(templatesFS, "templates")
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader(fs),
+		Loader:          templates.FileSystemLoader(os.DirFS(templatePath)),
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			return templates.Args{
