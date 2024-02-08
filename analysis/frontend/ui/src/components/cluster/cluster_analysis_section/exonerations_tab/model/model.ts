@@ -74,8 +74,8 @@ export const ChromiumCriteria: ExonerationCriteria = {
 };
 
 export const ChromeOSCriteria: ExonerationCriteria = {
-  runFlakyVerdicts1wd: 3,
-  runFlakyVerdicts5wd: 0,
+  runFlakyVerdicts1wd: 0,
+  runFlakyVerdicts5wd: 3,
   recentVerdictsWithUnexpectedRuns: 6,
   runFlakyPercentage1wd: 1,
 };
