@@ -60,7 +60,7 @@ var (
 		CountSQL: `CONCAT(f.sources.changelists[SAFE_OFFSET(0)].host, '/', f.sources.changelists[SAFE_OFFSET(0)].change)`,
 	}.Build()
 
-	// The number of failures on test variants which were configured to be
+	// The number of verdicts on test variants which were configured to be
 	// presubmit-blocking, which were exonerated (i.e. did not actually block
 	// presubmit) because infrastructure determined the test variant to be
 	// failing or too flaky at tip-of-tree. If this number is non-zero, it
@@ -68,8 +68,8 @@ var (
 	// not stable enough to do so, and should be fixed or made non-blocking.
 	CriticalFailuresExonerated = metricBuilder{
 		ID:                "critical-failures-exonerated",
-		HumanReadableName: "Presubmit-blocking Failures Exonerated",
-		Description:       "The number of failures on test variants which were configured to be presubmit-blocking, which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree.",
+		HumanReadableName: "Presubmit-blocking Verdicts Exonerated",
+		Description:       "The number of presubmit-blocking test verdicts which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree.",
 		DefaultConfig: Configuration{
 			SortPriority: 500,
 			IsDefault:    true,
@@ -80,6 +80,9 @@ var (
 		// and an unexpected failure, it will be exonerated for the unexpected pass.
 		// TODO(b/250541091): Temporarily exclude OCCURS_ON_MAINLINE.
 		FilterSQL: `f.build_critical AND (EXISTS (SELECT TRUE FROM UNNEST(f.exonerations) e WHERE e.Reason = 'OCCURS_ON_OTHER_CLS'))`,
+
+		// Distinct test verdicts.
+		CountSQL: `CONCAT(f.ingested_invocation_id, '/', f.test_id, '/', f.variant_hash)`,
 	}.Build()
 
 	// The number of test runs that failed. Test runs are generally
