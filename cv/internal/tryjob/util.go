@@ -17,7 +17,7 @@ package tryjob
 import (
 	"context"
 	"fmt"
-	"slices"
+	"sort"
 	"sync"
 	"time"
 
@@ -237,6 +237,6 @@ func QueryTryjobIDsUpdatedBefore(ctx context.Context, before time.Time) (common.
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-	slices.Sort(ret)
+	sort.Sort(ret)
 	return ret, nil
 }

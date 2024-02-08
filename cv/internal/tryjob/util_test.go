@@ -16,7 +16,7 @@ package tryjob
 
 import (
 	"context"
-	"slices"
+	"sort"
 	"testing"
 	"time"
 
@@ -217,7 +217,7 @@ func TestQueryTryjobIDsUpdatedBefore(t *testing.T) {
 				expected = append(expected, tj.ID)
 			}
 		}
-		slices.Sort(expected)
+		sort.Sort(expected)
 
 		actual, err := QueryTryjobIDsUpdatedBefore(ctx, before)
 		So(err, ShouldBeNil)

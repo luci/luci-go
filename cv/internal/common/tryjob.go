@@ -14,9 +14,7 @@
 
 package common
 
-import (
-	"slices"
-)
+import "sort"
 
 // TryjobID is a unique ID of a Tryjob used internally in CV.
 //
@@ -36,7 +34,7 @@ func (p *TryjobIDs) Dedupe() {
 	if len(ids) <= 1 {
 		return
 	}
-	slices.Sort(ids)
+	sort.Sort(ids)
 	n, prev, skipped := 0, ids[0], false
 	for _, id := range ids[1:] {
 		if id == prev {
@@ -50,6 +48,22 @@ func (p *TryjobIDs) Dedupe() {
 		prev = id
 	}
 	*p = ids[:n+1]
+}
+
+// Len is the number of elements in the collection.
+func (ids TryjobIDs) Len() int {
+	return len(ids)
+}
+
+// Less reports whether the element with
+// index i should sort before the element with index j.
+func (ids TryjobIDs) Less(i int, j int) bool {
+	return ids[i] < ids[j]
+}
+
+// Swap swaps the elements with indexes i and j.
+func (ids TryjobIDs) Swap(i int, j int) {
+	ids[i], ids[j] = ids[j], ids[i]
 }
 
 // ToInt64 returns a slice that contains all Tryjobs in int64 type.

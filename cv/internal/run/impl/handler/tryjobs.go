@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"slices"
+	"sort"
 	"text/template"
 	"time"
 
@@ -75,7 +75,7 @@ func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryj
 		return &Result{State: rs, PreserveEvents: true}, nil
 	default:
 		tryjobs.Dedupe()
-		slices.Sort(tryjobs)
+		sort.Sort(tryjobs)
 		rs = rs.ShallowCopy()
 		enqueueTryjobsUpdatedTask(ctx, rs, tryjobs)
 		return &Result{State: rs}, nil
