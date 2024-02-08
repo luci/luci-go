@@ -22,14 +22,14 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/dsmapper"
 
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 var backfillRetentionKey = dsmapper.JobConfig{
 	Mapper: "backfill-retention-key",
 	Query: dsmapper.Query{
-		Kind: "CL",
+		Kind: "Tryjob",
 	},
 	PageSize:   32,
 	ShardCount: 4,
@@ -40,33 +40,30 @@ var backfillRetentionKeyFactory = func(_ context.Context, j *dsmapper.Job, _ int
 		if len(keys) == 0 {
 			return nil
 		}
-		updated := 0
 		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			cls := make([]*changelist.CL, len(keys))
+			tryjobs := make([]*tryjob.Tryjob, len(keys))
 			for i, k := range keys {
-				cls[i] = &changelist.CL{
-					ID: common.CLID(k.IntID()),
+				tryjobs[i] = &tryjob.Tryjob{
+					ID: common.TryjobID(k.IntID()),
 				}
 			}
-			if err := datastore.Get(ctx, cls); err != nil {
-				return errors.Annotate(err, "failed to fetch CLs").Tag(transient.Tag).Err()
+			if err := datastore.Get(ctx, tryjobs); err != nil {
+				return errors.Annotate(err, "failed to fetch Tryjobs").Tag(transient.Tag).Err()
 			}
-			toUpdate := cls[:0]
-			for _, cl := range cls {
-				if cl.RetentionKey == "" {
-					cl.UpdateRetentionKey()
-					cl.EVersion++
-					toUpdate = append(toUpdate, cl)
+			toUpdate := tryjobs[:0] // reuse the slice
+			for _, tj := range tryjobs {
+				if tj.RetentionKey == "" {
+					tj.EVersion++
+					toUpdate = append(toUpdate, tj)
 				}
 			}
-			updated = len(toUpdate)
-			if updated == 0 {
+			if len(toUpdate) == 0 {
 				return nil
 			}
 			return datastore.Put(ctx, toUpdate)
 		}, nil)
 		if err != nil {
-			return errors.Annotate(err, "failed to update CLs").Tag(transient.Tag).Err()
+			return errors.Annotate(err, "failed to update Tryjobs").Tag(transient.Tag).Err()
 		}
 		return nil
 	}, nil
