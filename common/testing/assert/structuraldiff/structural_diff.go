@@ -15,6 +15,7 @@
 package structuraldiff
 
 import (
+	"bytes"
 	"reflect"
 
 	"github.com/kylelemons/godebug/pretty"
@@ -28,9 +29,9 @@ import (
 // when printing protos.
 func DebugDump(val any) string {
 	config := &pretty.Config{
-		Compact:             false,
-		Diffable:            true,
-		IncludeUnexported:   true,
+		Compact:           false,
+		Diffable:          true,
+		IncludeUnexported: true,
 		// I would prefer this to be false. I really would, but disabling this feature
 		// causes an infinite loop when printing stuff.
 		//
@@ -49,6 +50,20 @@ func DebugDump(val any) string {
 type Result struct {
 	diffs   []diffmatchpatch.Diff
 	message string
+}
+
+// String prints a result as a single string with no coloration.
+//
+// Sometimes you want colors, like when printing to a terminal, but by default you don't.
+// Regardless, stringifying with colors should be opt-in and should always be on.
+func (result *Result) String() string {
+	if result == nil {
+		return ""
+	}
+	if result.message != "" {
+		return result.message
+	}
+	return diffToString(result.diffs)
 }
 
 const sorry = `No difference between arguments but they are not equal.`
@@ -71,4 +86,19 @@ func DebugCompare[T any](left T, right T) *Result {
 	return &Result{
 		diffs: out,
 	}
+}
+
+// diffToString writes a sequence of diffs as a string without formatting.
+func diffToString(diffs []diffmatchpatch.Diff) string {
+	var buf bytes.Buffer
+	for _, diff := range diffs {
+		if diff.Type == diffmatchpatch.DiffEqual {
+			continue
+		}
+		_, _ = buf.WriteString(diff.Type.String())
+		_, _ = buf.WriteString(" ")
+		_, _ = buf.WriteString(diff.Text)
+		_, _ = buf.WriteString("\n")
+	}
+	return buf.String()
 }

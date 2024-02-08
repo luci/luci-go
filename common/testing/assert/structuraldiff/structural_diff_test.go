@@ -15,6 +15,7 @@
 package structuraldiff
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,6 +24,9 @@ import (
 	"go.chromium.org/luci/common/testing/typed"
 )
 
+// TestDebugCompare compares two values and checks to see if the result is what we expect.
+//
+// This test is sensitive to small changes in how the Result is represented.
 func TestDebugCompare(t *testing.T) {
 	t.Parallel()
 
@@ -72,6 +76,42 @@ func TestDebugCompare(t *testing.T) {
 			want := tt.result
 
 			if diff := typed.Got(got).Want(want).Options(cmp.AllowUnexported(Result{})).Diff(); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
+}
+
+// TestToString tests rendering a result as a string
+func TestToString(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		result *Result
+		output string
+	}{
+		{
+			name:   "empty",
+			result: nil,
+			output: "",
+		},
+		{
+			name:   "simple",
+			result: DebugCompare[string]("a", "b"),
+			output: strings.Join([]string{
+				"Delete a\n",
+				"Insert b\n",
+			}, ""),
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if diff := typed.Got(tt.result.String()).Want(tt.output).Diff(); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
 		})
