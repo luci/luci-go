@@ -156,6 +156,55 @@ func TestDimensionsFlatToPb(t *testing.T) {
 	})
 }
 
+func TestMapToStringListPair(t *testing.T) {
+	t.Parallel()
+
+	Convey("ok", t, func() {
+		m := map[string][]string{
+			"key2": []string{"val3", "val4"},
+			"key1": []string{"val1", "val2"},
+			"key3": []string{"val3", "val2"},
+		}
+		// Since iteration over a map randomizes the keys in Go, we need to
+		// assert that all the items are in the []*apipb.StringListPair and that
+		// the lengths match. If we compared tp an apipb.StringListPair type directly,
+		// the test would be flakey.
+		Convey("unsorted", func() {
+			spl := MapToStringListPair(m, false)
+			So(len(spl), ShouldEqual, len(m))
+			So(&apipb.StringListPair{
+				Key:   "key2",
+				Value: []string{"val3", "val4"},
+			}, ShouldBeIn, spl)
+			So(&apipb.StringListPair{
+				Key:   "key1",
+				Value: []string{"val1", "val2"},
+			}, ShouldBeIn, spl)
+			So(&apipb.StringListPair{
+				Key:   "key3",
+				Value: []string{"val3", "val2"},
+			}, ShouldBeIn, spl)
+		})
+
+		Convey("sorted", func() {
+			So(MapToStringListPair(m, true), ShouldEqual, []*apipb.StringListPair{
+				{Key: "key1", Value: []string{"val1", "val2"}},
+				{Key: "key2", Value: []string{"val3", "val4"}},
+				{Key: "key3", Value: []string{"val3", "val2"}},
+			})
+		})
+	})
+
+	Convey("empty", t, func() {
+		m := map[string][]string{}
+		So(MapToStringListPair(m, false), ShouldBeNil)
+	})
+	Convey("nil", t, func() {
+		So(MapToStringListPair(nil, false), ShouldBeNil)
+	})
+
+}
+
 func deflate(blob []byte) []byte {
 	out := bytes.NewBuffer(nil)
 	w := zlib.NewWriter(out)

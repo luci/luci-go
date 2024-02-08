@@ -17,7 +17,6 @@ package model
 import (
 	"context"
 	"reflect"
-	"sort"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
@@ -667,24 +666,8 @@ func (p *EnvPrefixes) FromProperty(prop datastore.Property) error {
 }
 
 // ToProto converts EnvPrefixes to []*apipb.StringListPair
-func (p *EnvPrefixes) ToProto() []*apipb.StringListPair {
-	if len(*p) == 0 {
-		return nil
-	}
-	// Need to first sort the keys of the map.
-	keys := make([]string, 0, len(*p))
-	for k := range *p {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	sp := make([]*apipb.StringListPair, len(keys))
-	for i, key := range keys {
-		sp[i] = &apipb.StringListPair{
-			Key:   key,
-			Value: (*p)[key],
-		}
-	}
-	return sp
+func (p EnvPrefixes) ToProto() []*apipb.StringListPair {
+	return MapToStringListPair((map[string][]string)(p), true)
 }
 
 // NewTaskRequestID generates an ID for a new task.

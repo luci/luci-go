@@ -179,3 +179,26 @@ func dimensionsFlatToPbSlow(flat []string) []*apipb.StringListPair {
 	sort.Strings(sortedCopy)
 	return dimensionsFlatToPb(sortedCopy)
 }
+
+// MapToStringListPair converts a map[string][]string to []*apipb.StringListPair.
+// If keySorting, sorting is applied to the keys.
+func MapToStringListPair(p map[string][]string, keySorting bool) []*apipb.StringListPair {
+	if len(p) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(p))
+	for k := range p {
+		keys = append(keys, k)
+	}
+	if keySorting {
+		sort.Strings(keys)
+	}
+	slp := make([]*apipb.StringListPair, len(keys))
+	for i, key := range keys {
+		slp[i] = &apipb.StringListPair{
+			Key:   key,
+			Value: p[key],
+		}
+	}
+	return slp
+}

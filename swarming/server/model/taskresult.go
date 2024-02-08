@@ -17,12 +17,18 @@ package model
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/packedintset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/acls"
 )
 
 const (
@@ -147,6 +153,17 @@ type ResultDBInfo struct {
 	Invocation string `gae:"invocation"`
 }
 
+// ToProto converts ResultDBInfo to an apipb.ResultDBInfo.
+func (p *ResultDBInfo) ToProto() *apipb.ResultDBInfo {
+	if p.Hostname == "" && p.Invocation == "" {
+		return nil
+	}
+	return &apipb.ResultDBInfo{
+		Hostname:   p.Hostname,
+		Invocation: p.Invocation,
+	}
+}
+
 // TaskResultSummary represents the overall result of a task.
 //
 // Parent is a TaskRequest. Key id is always 1.
@@ -257,13 +274,119 @@ type TaskResultSummary struct {
 	ExpirationDelay datastore.Optional[float64, datastore.Unindexed] `gae:"expiration_delay"`
 }
 
+// ToProto converts the TaskResultSummary struct to an apipb.TaskResultResponse type.
+//
+// Note: This function will not handle PerformanceStats due to the requirement of fetching
+// another datsatore entity. Please refer to TaskResultSummary.PerformanceStats to fetch them.
+func (p *TaskResultSummary) ToProto() *apipb.TaskResultResponse {
+	timeToTimestampPB := func(t datastore.Nullable[time.Time, datastore.Indexed]) *timestamppb.Timestamp {
+		if !t.IsSet() {
+			return nil
+		}
+		return timestamppb.New(t.Get())
+	}
+
+	var cipdPins *apipb.CipdPins
+	if pinsPb := p.CIPDPins.ToProto(); pinsPb != nil {
+		cipdPins = &apipb.CipdPins{
+			ClientPackage: pinsPb.GetClientPackage(),
+			Packages:      pinsPb.GetPackages(),
+		}
+	}
+
+	var missingCAS []*apipb.CASReference
+	if len(p.MissingCAS) != 0 {
+		missingCAS = make([]*apipb.CASReference, 0, len(p.MissingCAS))
+		for _, cas := range p.MissingCAS {
+			missingCAS = append(missingCAS, cas.ToProto())
+		}
+	}
+
+	var missingCIPD []*apipb.CipdPackage
+	if len(p.MissingCIPD) != 0 {
+		missingCIPD = make([]*apipb.CipdPackage, 0, len(p.MissingCIPD))
+		for _, pkg := range p.MissingCIPD {
+			missingCIPD = append(missingCIPD, pkg.ToProto())
+		}
+	}
+
+	return &apipb.TaskResultResponse{
+		TaskId:              RequestKeyToTaskID(p.TaskRequestKey(), AsRequest),
+		BotDimensions:       p.BotDimensions.ToProto(),
+		BotId:               p.BotID.Get(),
+		BotVersion:          p.BotVersion,
+		BotLogsCloudProject: p.BotLogsCloudProject,
+		CompletedTs:         timeToTimestampPB(p.Completed),
+		CostSavedUsd:        float32(p.CostSavedUSD),
+		CreatedTs:           timestamppb.New(p.Created),
+		DedupedFrom:         p.DedupedFrom,
+		Duration:            float32(p.DurationSecs.Get()),
+		ExitCode:            p.ExitCode.Get(),
+		Failure:             p.Failure,
+		ModifiedTs:          timestamppb.New(p.Modified),
+		CasOutputRoot:       p.CASOutputRoot.ToProto(),
+		ServerVersions:      p.ServerVersions,
+		StartedTs:           timeToTimestampPB(p.Started),
+		State:               p.State,
+		AbandonedTs:         timeToTimestampPB(p.Abandoned),
+		Name:                p.RequestName,
+		Tags:                p.Tags,
+		User:                p.RequestUser,
+		CipdPins:            cipdPins,
+		CurrentTaskSlice:    int32(p.CurrentTaskSlice),
+		ResultdbInfo:        p.ResultDBInfo.ToProto(),
+		MissingCas:          missingCAS,
+		MissingCipd:         missingCIPD,
+		CostsUsd:            p.CostsUSD(),
+		RunId:               p.TaskRunID(),
+	}
+}
+
+// CostsUSD converts the costUSD in TaskResultSummary to a []float32 containting that costUSD.
+func (p *TaskResultSummary) CostsUSD() []float32 {
+	if p.CostUSD == 0 {
+		return nil
+	}
+	return []float32{float32(p.CostUSD)}
+}
+
+// PerformanceStats fetches the performance stats from datastore and returns it in proto form.
+func (p *TaskResultSummary) PerformanceStats(ctx context.Context) (*apipb.PerformanceStats, error) {
+	ps := &PerformanceStats{Key: PerformanceStatsKey(ctx, p.TaskRequestKey())}
+	err := datastore.Get(ctx, ps)
+	if err != nil {
+		return nil, err
+	}
+	return ps.ToProto()
+}
+
+// TaskAuthInfo is information about the task for ACL checks.
+func (p *TaskResultSummary) TaskAuthInfo() acls.TaskAuthInfo {
+	return acls.TaskAuthInfo{
+		TaskID:    RequestKeyToTaskID(p.TaskRequestKey(), AsRequest),
+		Realm:     p.RequestRealm,
+		Pool:      p.RequestPool,
+		BotID:     p.RequestBotID,
+		Submitter: p.RequestAuthenticated,
+	}
+}
+
 // TaskRequestKey returns the parent task request key or panics if it is unset.
-func (e *TaskResultSummary) TaskRequestKey() *datastore.Key {
-	key := e.Key.Parent()
+func (p *TaskResultSummary) TaskRequestKey() *datastore.Key {
+	key := p.Key.Parent()
 	if key == nil || key.Kind() != "TaskRequest" {
-		panic(fmt.Sprintf("invalid TaskResultSummary key %q", e.Key))
+		panic(fmt.Sprintf("invalid TaskResultSummary key %q", p.Key))
 	}
 	return key
+}
+
+// TaskRunID returns the packed RunResult key for a swarming task.
+func (p *TaskResultSummary) TaskRunID() string {
+	// Returning nil if there was no attempt made.
+	if !p.TryNumber.IsSet() {
+		return ""
+	}
+	return RequestKeyToTaskID(p.TaskRequestKey(), AsRunResult)
 }
 
 // TaskResultSummaryKey construct a summary key given a task request key.
@@ -355,12 +478,44 @@ type PerformanceStats struct {
 	Cleanup OperationStats `gae:"cleanup,lsp,noindex"`
 }
 
+// ToProto converts the PerformanceStats struct to apipb.PerformanceStats.
+func (p *PerformanceStats) ToProto() (*apipb.PerformanceStats, error) {
+	isolatedDownload, err := p.IsolatedDownload.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	isolatedUpload, err := p.IsolatedUpload.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	return &apipb.PerformanceStats{
+		BotOverhead:          float32(p.BotOverheadSecs),
+		CacheTrim:            p.CacheTrim.ToProto(),
+		Cleanup:              p.Cleanup.ToProto(),
+		IsolatedDownload:     isolatedDownload,
+		IsolatedUpload:       isolatedUpload,
+		NamedCachesInstall:   p.NamedCachesInstall.ToProto(),
+		NamedCachesUninstall: p.NamedCachesUninstall.ToProto(),
+		PackageInstallation:  p.PackageInstallation.ToProto(),
+	}, nil
+}
+
 // OperationStats is performance stats of a particular operation.
 //
 // Stored as a unindexed subentity of PerformanceStats entity.
 type OperationStats struct {
 	// DurationSecs is how long the operation ran.
 	DurationSecs float64 `gae:"duration"`
+}
+
+// ToProto converts the OperationStats struct to apipb.OperationStats.
+func (p *OperationStats) ToProto() *apipb.OperationStats {
+	if p.DurationSecs == 0 {
+		return nil
+	}
+	return &apipb.OperationStats{
+		Duration: float32(p.DurationSecs),
+	}
 }
 
 // CASOperationStats is performance stats of a CAS operation.
@@ -385,6 +540,45 @@ type CASOperationStats struct {
 	//
 	// It is encoded in a special way, see packedintset.Unpack.
 	ItemsHot []byte `gae:"items_hot"`
+}
+
+// ToProto converts the CASOperationStats struct to apipb.CASOperationStats.
+func (p *CASOperationStats) ToProto() (*apipb.CASOperationStats, error) {
+	if reflect.DeepEqual(*p, CASOperationStats{}) {
+		return nil, nil
+	}
+	resp := &apipb.CASOperationStats{
+		Duration:           float32(p.DurationSecs),
+		InitialNumberItems: int32(p.InitialItems),
+		InitialSize:        p.InitialSize,
+	}
+	if p.ItemsCold != nil {
+		resp.ItemsCold = p.ItemsCold
+		itemsCold, err := packedintset.Unpack(p.ItemsCold)
+		if err != nil {
+			return nil, errors.Annotate(err, "unpacking cold items").Err()
+		}
+		resp.NumItemsCold = int64(len(itemsCold))
+		sum := int64(0)
+		for _, val := range itemsCold {
+			sum += val
+		}
+		resp.TotalBytesItemsCold = int64(sum)
+	}
+	if p.ItemsHot != nil {
+		resp.ItemsHot = p.ItemsHot
+		itemsHot, err := packedintset.Unpack(p.ItemsHot)
+		if err != nil {
+			return nil, errors.Annotate(err, "unpacking hot items").Err()
+		}
+		resp.NumItemsHot = int64(len(itemsHot))
+		sum := int64(0)
+		for _, val := range itemsHot {
+			sum += val
+		}
+		resp.TotalBytesItemsHot = int64(sum)
+	}
+	return resp, nil
 }
 
 // PerformanceStatsKey builds a PerformanceStats key given a task request key.

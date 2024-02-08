@@ -473,3 +473,8 @@ func (p *BotDimensions) ToProperty() (datastore.Property, error) {
 func (p *BotDimensions) FromProperty(prop datastore.Property) error {
 	return FromJSONProperty(prop, p)
 }
+
+// ToProto returns []apipb.StringListPair, sorted by keys.
+func (p BotDimensions) ToProto() []*apipb.StringListPair {
+	return MapToStringListPair((map[string][]string)(p), true)
+}
