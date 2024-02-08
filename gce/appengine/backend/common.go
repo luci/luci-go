@@ -132,7 +132,7 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.AuditProject{}, auditInstanceInZone, auditInstancesQueue, nil)
 	dsp.RegisterTask(&tasks.DrainVM{}, drainVMQueueHandler, drainVMQueue, nil)
 	dsp.RegisterTask(&tasks.InspectSwarming{}, inspectSwarming, inspectSwarmingQueue, nil)
-	dsp.RegisterTask(&tasks.DeleteStaleSwarmingBot{}, deleteStaleSwarmingBot, deleteStaleSwarmingBotQueue, nil)
+	dsp.RegisterTask(&tasks.DeleteStaleSwarmingBots{}, deleteStaleSwarmingBots, deleteStaleSwarmingBotsQueue, nil)
 }
 
 // gceKey is the key to a *compute.Service in the context.

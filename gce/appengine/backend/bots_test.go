@@ -778,7 +778,7 @@ func TestInspectSwarming(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			// ignoring vm-3-abcd as we didn't see it in datastore
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 		})
 		Convey("Delete dead or deleted bots", func() {
 			So(datastore.Put(c, &model.VM{
@@ -849,7 +849,7 @@ func TestInspectSwarming(t *testing.T) {
 				Swarming: "https://gce-swarming.appspot.com",
 			})
 			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 		})
 		Convey("HappyPath-2", func() {
 			So(datastore.Put(c, &model.VM{
@@ -919,8 +919,8 @@ func TestInspectSwarming(t *testing.T) {
 				Swarming: "https://gce-swarming.appspot.com",
 			})
 			So(err, ShouldBeNil)
-			// Two DeleteStaleSwarmingBot tasks and one inspectSwarming task with cursor
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
+			// One DeleteStaleSwarmingBots tasks and one inspectSwarming task with cursor
+			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
 		})
 
 	})

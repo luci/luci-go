@@ -122,3 +122,9 @@ message DeleteStaleSwarmingBot {
   // The first seen timestamp of the bot
   string firstSeenTs = 2;
 }
+
+// A task to delete bots that are stale in swarming
+message DeleteStaleSwarmingBots {
+  // The DeleteStaleSwarmingBot payload for the bot
+  repeated DeleteStaleSwarmingBot bots = 1;
+}

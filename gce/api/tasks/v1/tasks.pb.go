@@ -816,6 +816,55 @@ func (x *DeleteStaleSwarmingBot) GetFirstSeenTs() string {
 	return ""
 }
 
+// A task to delete bots that are stale in swarming
+type DeleteStaleSwarmingBots struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The DeleteStaleSwarmingBot payload for the bot
+	Bots []*DeleteStaleSwarmingBot `protobuf:"bytes,1,rep,name=bots,proto3" json:"bots,omitempty"`
+}
+
+func (x *DeleteStaleSwarmingBots) Reset() {
+	*x = DeleteStaleSwarmingBots{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DeleteStaleSwarmingBots) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteStaleSwarmingBots) ProtoMessage() {}
+
+func (x *DeleteStaleSwarmingBots) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteStaleSwarmingBots.ProtoReflect.Descriptor instead.
+func (*DeleteStaleSwarmingBots) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *DeleteStaleSwarmingBots) GetBots() []*DeleteStaleSwarmingBot {
+	if x != nil {
+		return x.Bots
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_rawDesc = []byte{
@@ -885,10 +934,15 @@ var file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_rawDesc = []byte{
 	0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69,
 	0x64, 0x12, 0x20, 0x0a, 0x0b, 0x66, 0x69, 0x72, 0x73, 0x74, 0x53, 0x65, 0x65, 0x6e, 0x54, 0x73,
 	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x66, 0x69, 0x72, 0x73, 0x74, 0x53, 0x65, 0x65,
-	0x6e, 0x54, 0x73, 0x42, 0x2d, 0x5a, 0x2b, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69,
-	0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x67, 0x63, 0x65, 0x2f,
-	0x61, 0x70, 0x69, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x61, 0x73,
-	0x6b, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x54, 0x73, 0x22, 0x4c, 0x0a, 0x17, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x74, 0x61,
+	0x6c, 0x65, 0x53, 0x77, 0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67, 0x42, 0x6f, 0x74, 0x73, 0x12, 0x31,
+	0x0a, 0x04, 0x62, 0x6f, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x74,
+	0x61, 0x73, 0x6b, 0x73, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x74, 0x61, 0x6c, 0x65,
+	0x53, 0x77, 0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67, 0x42, 0x6f, 0x74, 0x52, 0x04, 0x62, 0x6f, 0x74,
+	0x73, 0x42, 0x2d, 0x5a, 0x2b, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d,
+	0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x67, 0x63, 0x65, 0x2f, 0x61, 0x70,
+	0x69, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x76, 0x31, 0x3b, 0x74, 0x61, 0x73, 0x6b, 0x73,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -903,32 +957,34 @@ func file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_rawDescGZIP() []byte
 	return file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_goTypes = []interface{}{
-	(*CountVMs)(nil),               // 0: tasks.CountVMs
-	(*CreateInstance)(nil),         // 1: tasks.CreateInstance
-	(*DeleteBot)(nil),              // 2: tasks.DeleteBot
-	(*DestroyInstance)(nil),        // 3: tasks.DestroyInstance
-	(*CreateVM)(nil),               // 4: tasks.CreateVM
-	(*ExpandConfig)(nil),           // 5: tasks.ExpandConfig
-	(*ManageBot)(nil),              // 6: tasks.ManageBot
-	(*ReportQuota)(nil),            // 7: tasks.ReportQuota
-	(*TerminateBot)(nil),           // 8: tasks.TerminateBot
-	(*AuditProject)(nil),           // 9: tasks.AuditProject
-	(*DrainVM)(nil),                // 10: tasks.DrainVM
-	(*InspectSwarming)(nil),        // 11: tasks.InspectSwarming
-	(*DeleteStaleSwarmingBot)(nil), // 12: tasks.DeleteStaleSwarmingBot
-	(*v1.VM)(nil),                  // 13: config.VM
-	(*timestamppb.Timestamp)(nil),  // 14: google.protobuf.Timestamp
+	(*CountVMs)(nil),                // 0: tasks.CountVMs
+	(*CreateInstance)(nil),          // 1: tasks.CreateInstance
+	(*DeleteBot)(nil),               // 2: tasks.DeleteBot
+	(*DestroyInstance)(nil),         // 3: tasks.DestroyInstance
+	(*CreateVM)(nil),                // 4: tasks.CreateVM
+	(*ExpandConfig)(nil),            // 5: tasks.ExpandConfig
+	(*ManageBot)(nil),               // 6: tasks.ManageBot
+	(*ReportQuota)(nil),             // 7: tasks.ReportQuota
+	(*TerminateBot)(nil),            // 8: tasks.TerminateBot
+	(*AuditProject)(nil),            // 9: tasks.AuditProject
+	(*DrainVM)(nil),                 // 10: tasks.DrainVM
+	(*InspectSwarming)(nil),         // 11: tasks.InspectSwarming
+	(*DeleteStaleSwarmingBot)(nil),  // 12: tasks.DeleteStaleSwarmingBot
+	(*DeleteStaleSwarmingBots)(nil), // 13: tasks.DeleteStaleSwarmingBots
+	(*v1.VM)(nil),                   // 14: config.VM
+	(*timestamppb.Timestamp)(nil),   // 15: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_depIdxs = []int32{
-	13, // 0: tasks.CreateVM.attributes:type_name -> config.VM
-	14, // 1: tasks.CreateVM.created:type_name -> google.protobuf.Timestamp
-	2,  // [2:2] is the sub-list for method output_type
-	2,  // [2:2] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	14, // 0: tasks.CreateVM.attributes:type_name -> config.VM
+	15, // 1: tasks.CreateVM.created:type_name -> google.protobuf.Timestamp
+	12, // 2: tasks.DeleteStaleSwarmingBots.bots:type_name -> tasks.DeleteStaleSwarmingBot
+	3,  // [3:3] is the sub-list for method output_type
+	3,  // [3:3] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_init() }
@@ -1093,6 +1149,18 @@ func file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteStaleSwarmingBots); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1100,7 +1168,7 @@ func file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_gce_api_tasks_v1_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -44,6 +44,13 @@ const utcRFC3339 = "2006-01-02T15:04:05"
 // botListLimit is the maximum number of bots to list per query. It should be <= 1000.
 const botListLimit = 500
 
+// deleteStaleSwarmingBotBatchSize is set to 2 because it was found that on average the
+// deleteStaleSwarmingBot function took about 300ms to run and the queues are limited at
+// 500/s. This means we still have time left over in every run to process another bot.
+// It is possible to try with 3 bots, But might be a little too close and these numbers
+// are averages.
+const deleteStaleSwarmingBotBatchSize = 2
+
 // setConnected sets the Swarming bot as connected in the datastore if it isn't already.
 func setConnected(c context.Context, id, hostname string, at time.Time) error {
 	// Check dscache in case vm.Connected is set now, to avoid a costly transaction.
@@ -273,6 +280,7 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 			logging.Errorf(c, "InspectSwarming: failed to schedule inspect swarming task. %v", err)
 		}
 	}
+	batchPayload := &tasks.DeleteStaleSwarmingBots{}
 	for _, bot := range listRPCResp.Items {
 		qV := datastore.NewQuery("VM").Eq("hostname", bot.BotId)
 		if err := datastore.Run(c, qV, func(vm *model.VM) {
@@ -286,17 +294,27 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 					},
 				})
 			} else {
-				// Schedule a task to check and delete the bot if needed
-				inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
-					Payload: &tasks.DeleteStaleSwarmingBot{
-						Id:          vm.ID,
-						FirstSeenTs: bot.FirstSeenTs,
-					},
+				batchPayload.Bots = append(batchPayload.Bots, &tasks.DeleteStaleSwarmingBot{
+					Id:          vm.ID,
+					FirstSeenTs: bot.FirstSeenTs,
 				})
+				if len(batchPayload.GetBots()) == deleteStaleSwarmingBotBatchSize {
+					// Schedule a task to check and delete the bot if needed
+					inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
+						Payload: batchPayload,
+					})
+					batchPayload = &tasks.DeleteStaleSwarmingBots{}
+				}
 			}
 		}); err != nil {
 			logging.Debugf(c, "bot %s does not exist in datastore?", bot.BotId)
 		}
+	}
+	if len(batchPayload.GetBots()) > 0 {
+		// Schedule a task to check and delete the bot if needed
+		inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
+			Payload: batchPayload,
+		})
 	}
 	// Dispatch all the tasks
 	if len(inpectSwarmingSubtasks) > 0 {
@@ -456,19 +474,38 @@ func deleteVM(c context.Context, id, hostname string) error {
 	}, nil)
 }
 
-// deleteStaleSwarmingBotQueue is the name of the queue that deletes stale swarming bots
-const deleteStaleSwarmingBotQueue = "delete-stale-swarming-bot"
+// deleteStaleSwarmingBotsQueue is the name of the queue that deletes stale swarming bots in batches
+const deleteStaleSwarmingBotsQueue = "delete-stale-swarming-bots"
 
-// deleteStaleSwarmingBot manages the existing swarming bot
-func deleteStaleSwarmingBot(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.DeleteStaleSwarmingBot)
+func deleteStaleSwarmingBots(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.DeleteStaleSwarmingBots)
 	switch {
 	case !ok:
-		return errors.Reason("deleteStaleSwarmingBot: unexpected payload %q", payload).Err()
+		return errors.Reason("deleteStaleSwarmingBots: unexpected payload %q", payload).Err()
+	case task.GetBots() == nil:
+		return errors.Reason("deleteStaleSwarmingBots: No Bots to process").Err()
+	}
+	var errs []error
+	for _, dssb := range task.GetBots() {
+		if err := deleteStaleSwarmingBot(c, dssb); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return errors.NewMultiError(errs...).AsError()
+	}
+	return nil
+}
+
+// deleteStaleSwarmingBot manages the existing swarming bot
+func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBot) error {
+	switch {
+	case task == nil:
+		return errors.Reason("deleteStaleSwarmingBot: Bad input?").Err()
 	case task.GetId() == "":
-		return errors.Reason("deleteStaleSwarmingBot: ID is required").Err()
+		return errors.Reason("deleteStaleSwarmingBot: Missing bot id").Err()
 	case task.GetFirstSeenTs() == "":
-		return errors.Reason("deleteStaleSwarmingBot: FirstSeenTs is required").Err()
+		return errors.Reason("deleteStaleSwarmingBot: Missing timestamp").Err()
 	}
 	vm := &model.VM{
 		ID: task.GetId(),
