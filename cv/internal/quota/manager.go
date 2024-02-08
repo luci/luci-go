@@ -16,6 +16,8 @@ package quota
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"sync"
@@ -87,7 +89,9 @@ func (qm *Manager) CreditTryjobQuota(ctx context.Context) (*quotapb.OpResult, er
 
 // RunQuotaAccountID returns the account id of the run quota for the given run.
 func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
-	return qm.qapp.AccountID(r.ID.LUCIProject(), r.ConfigGroupID.Name(), r.BilledTo.Email(), runResource)
+	// The email is hashed using md5 for the account id to avoid PII.
+	emailHash := md5.Sum([]byte(r.BilledTo.Email()))
+	return qm.qapp.AccountID(r.ID.LUCIProject(), r.ConfigGroupID.Name(), hex.EncodeToString(emailHash[:]), runResource)
 }
 
 // runQuotaOp updates the run quota for the given run state by the given delta.

@@ -15,6 +15,8 @@
 package quota
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -577,6 +579,24 @@ func TestManager(t *testing.T) {
 				PreviousBalance:         4,
 				PreviousBalanceAdjusted: 4,
 				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
+			})
+		})
+
+		Convey("RunQuotaAccountID() hashes emailID", func() {
+			r := &run.Run{
+				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
+				BilledTo:      makeIdentity(tEmail),
+			}
+
+			emailHash := md5.Sum([]byte(tEmail))
+
+			So(qm.RunQuotaAccountID(r), ShouldResembleProto, &quotapb.AccountID{
+				AppId:        "cv",
+				Realm:        "chromium",
+				Namespace:    "infra",
+				Name:         hex.EncodeToString(emailHash[:]),
+				ResourceType: "runs",
 			})
 		})
 	})
