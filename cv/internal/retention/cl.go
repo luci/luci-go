@@ -40,8 +40,7 @@ const clsPerTask = 200
 // scheduleWipeoutCLTasks schedules tasks to wipe out old CLs that are out of
 // the retention period.
 //
-// The tasks will be uniformly distributed over the next 8 hours.
-// TODO(yiwzhang): change it to 1 hour after the first execution.
+// The tasks will be uniformly distributed over the next hour.
 func scheduleWipeoutCLTasks(ctx context.Context, tqd *tq.Dispatcher) error {
 	cls, err := changelist.QueryCLIDsUpdatedBefore(ctx, clock.Now(ctx).Add(-retentionPeriod))
 	switch {
@@ -63,7 +62,7 @@ func scheduleWipeoutCLTasks(ctx context.Context, tqd *tq.Dispatcher) error {
 				Payload: &WipeoutCLsTask{
 					Ids: common.CLIDsAsInt64s(chunk),
 				},
-				Delay: common.DistributeOffset(8*time.Hour, clidStrs...),
+				Delay: common.DistributeOffset(1*time.Hour, clidStrs...),
 			}
 			workCh <- func() error {
 				return retry.Retry(ctx, retry.Default, func() error {

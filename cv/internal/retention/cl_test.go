@@ -57,7 +57,7 @@ func TestScheduleWipeoutCLs(t *testing.T) {
 
 		var actualCLIDs common.CLIDs
 		for _, task := range ct.TQ.Tasks() {
-			So(task.ETA, ShouldHappenWithin, 8*time.Hour, ct.Clock.Now())
+			So(task.ETA, ShouldHappenWithin, 1*time.Hour, ct.Clock.Now())
 			ids := task.Payload.(*WipeoutCLsTask).GetIds()
 			So(len(ids), ShouldBeLessThanOrEqualTo, clsPerTask)
 			for _, id := range ids {
