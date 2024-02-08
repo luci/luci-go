@@ -31,13 +31,13 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// batchMaxBytes is the maximum number of row bytes to send in one
+// RowMaxBytes is the maximum number of row bytes to send in one
 // BigQuery Storage Write API - AppendRows request. As at writing, the
 // request size limit for this RPC is 10 MB:
 // https://cloud.google.com/bigquery/quotas#write-api-limits.
 // The maximum size of rows must be less than this as there are
 // some overheads in each request.
-const batchMaxBytes = 9 * 1000 * 1000 // 9 MB
+const RowMaxBytes = 9 * 1024 * 1024 // 9 MB
 
 // NewWriterClient returns a new BigQuery managedwriter client for use with the
 // given GCP project, that authenticates as ResultDB itself.
@@ -139,9 +139,9 @@ func batch(rows []proto.Message) ([][]proto.Message, error) {
 	for i, row := range rows {
 		// Assume 16 bytes of overhead per row not captured here.
 		rowSize := proto.Size(row) + 16
-		if (batchSizeInBytes + rowSize) > batchMaxBytes {
-			if rowSize > batchMaxBytes {
-				return nil, errors.Reason("a single row exceeds the maximum BigQuery AppendRows request size of %v bytes", batchMaxBytes).Err()
+		if (batchSizeInBytes + rowSize) > RowMaxBytes {
+			if rowSize > RowMaxBytes {
+				return nil, errors.Reason("a single row exceeds the maximum BigQuery AppendRows request size of %v bytes", RowMaxBytes).Err()
 			}
 			// Output batch from batchStartIndex (inclusive) to i (exclusive).
 			result = append(result, rows[batchStartIndex:i])

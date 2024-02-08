@@ -65,12 +65,15 @@ type TextArtifactRow struct {
 	// https://cloud.google.com/bigquery/quotas#write-api-limits.
 	// The content itself will have a smaller limit because we will
 	// have other data in the row and overhead.
-	// If the size of the artifact content is larger than that, the data will be
-	// sharded at the nearest previous line break ("\r\n" first, if not exist
-	// then "\n" or "\r").
-	// If there is no line break (i.e. log is a single line), we will shard at
-	// the nearest white space, if in the rare case that there is no space, we will
-	// shard where the size limit is.
+	// If the size of the artifact content is larger than the limit, the data will be
+	// sharded.
+	//
+	// When sharding, we try to keep the content size as close to the
+	// limit as possible, but we will also prefer sharding at line-break
+	// or white-space characters if such characters exist near the sharding
+	// position (within 1KB). Sharding will never break a multi-byte Unicode
+	// character.
+	//
 	// shard_id is monotonically increasing and starts at 0.
 	ShardId int32 `protobuf:"varint,8,opt,name=shard_id,json=shardId,proto3" json:"shard_id,omitempty"`
 	// Optional. Content type of the artifact (e.g. text/plain).

@@ -54,11 +54,11 @@ func TestBatch(t *testing.T) {
 		Convey(`Single row too large`, func() {
 			// 10 MB row.
 			row := &bqpb.TextArtifactRow{
-				TestId: strings.Repeat("a", 10*1000*1000),
+				TestId: strings.Repeat("a", 10*1024*1024),
 			}
 			rows := []proto.Message{row}
 			_, err := batch(rows)
-			So(err, ShouldErrLike, "a single row exceeds the maximum BigQuery AppendRows request size of 9000000 bytes")
+			So(err, ShouldErrLike, "a single row exceeds the maximum BigQuery AppendRows request size of 9437184 bytes")
 		})
 	})
 }

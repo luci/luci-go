@@ -21,30 +21,45 @@ import (
 	"fmt"
 	"hash/fnv"
 	"mime"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
+	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/resultdb/util"
 )
 
 // TODO(crbug.com/1177213) - make this configurable.
 const MaxBatchCreateArtifactSize = 10 * 1024 * 1024
+
+// MaxShardContentSize is the maximum content size in BQ row.
+// Artifacts content bigger than this size needs to be sharded.
+// Leave 10 KB for other fields, the rest is content.
+const MaxShardContentSize = bqutil.RowMaxBytes - 10*1024
+
+// LookbackWindow is used when chunking. It specifies how many bytes we should
+// look back to find new line/white space characters to split the chunks.
+const LookbackWindow = 1024
 
 type artifactCreationRequest struct {
 	testID      string
@@ -60,6 +75,12 @@ type artifactCreationRequest struct {
 	data []byte
 	// gcsURI is the location of the artifact content if it is stored in GCS.  If this is provided, data must be empty.
 	gcsURI string
+}
+
+type invocationInfo struct {
+	id         string
+	realm      string
+	createTime time.Time
 }
 
 // name returns the artifact name.
@@ -241,13 +262,15 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 // checkArtStates checks if the states of the associated invocation and artifacts are
 // compatible with creation of the artifacts. On success, it returns a list of
 // the artifactCreationRequests of which artifact don't have states in Spanner yet.
-func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) (reqs []*artifactCreationRequest, realm string, err error) {
+func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) (reqs []*artifactCreationRequest, invInfo *invocationInfo, err error) {
 	var invState pb.Invocation_State
+	var createTime time.Time
+	var realm string
 
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
 		return invocations.ReadColumns(ctx, invID, map[string]any{
-			"State": &invState, "Realm": &realm,
+			"State": &invState, "Realm": &realm, "CreateTime": &createTime,
 		})
 	})
 
@@ -258,11 +281,15 @@ func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactC
 
 	switch err := eg.Wait(); {
 	case err != nil:
-		return nil, "", err
+		return nil, nil, err
 	case invState != pb.Invocation_ACTIVE:
-		return nil, "", appstatus.Errorf(codes.FailedPrecondition, "%s is not active", invID.Name())
+		return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "%s is not active", invID.Name())
 	}
-	return reqs, realm, nil
+	return reqs, &invocationInfo{
+		id:         string(invID),
+		realm:      realm,
+		createTime: createTime,
+	}, nil
 }
 
 // createArtifactStates creates the states of given artifacts in Spanner.
@@ -376,11 +403,11 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	}
 
 	var artsToCreate []*artifactCreationRequest
-	var realm string
+	var invInfo *invocationInfo
 	func() {
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
-		artsToCreate, realm, err = checkArtStates(ctx, invID, arts)
+		artsToCreate, invInfo, err = checkArtStates(ctx, invID, arts)
 	}()
 	if err != nil {
 		return nil, err
@@ -389,6 +416,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		logging.Debugf(ctx, "Found no artifacts to create")
 		return &pb.BatchCreateArtifactsResponse{}, nil
 	}
+	realm := invInfo.realm
 	project, _ := realms.Split(realm)
 	user := auth.CurrentUser(ctx).Identity
 
@@ -435,7 +463,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 			// We will enable back when we enable the export.
 			// logging.Infof(ctx, "Uploading artifacts to BQ is disabled")
 		} else {
-			err = processBQUpload(ctx, artsToCreate)
+			err = processBQUpload(ctx, artsToCreate, invInfo)
 			if err != nil {
 				// Just log here, the feature is still in experiment, and we do not want
 				// to disturb the main flow.
@@ -459,7 +487,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 }
 
 // processBQUpload filters text artifacts and upload to BigQuery.
-func processBQUpload(ctx context.Context, artifactRequests []*artifactCreationRequest) error {
+func processBQUpload(ctx context.Context, artifactRequests []*artifactCreationRequest, invInfo *invocationInfo) error {
 	textArtifactRequests := filterTextArtifactRequests(artifactRequests)
 	percent, err := percentOfArtifactsToBQ(ctx)
 	if err != nil {
@@ -469,7 +497,7 @@ func processBQUpload(ctx context.Context, artifactRequests []*artifactCreationRe
 	if err != nil {
 		return errors.Annotate(err, "throttle artifacts for bq").Err()
 	} else {
-		err = uploadArtifactsToBQ(ctx, textArtifactRequests)
+		err = uploadArtifactsToBQ(ctx, textArtifactRequests, invInfo)
 		if err != nil {
 			return errors.Annotate(err, "uploadArtifactsToBQ").Err()
 		}
@@ -525,7 +553,45 @@ func shouldUploadToBQ(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func uploadArtifactsToBQ(ctx context.Context, req []*artifactCreationRequest) error {
-	// TODO (nqmtuan): Implement this.
+func uploadArtifactsToBQ(ctx context.Context, reqs []*artifactCreationRequest, invInfo *invocationInfo) error {
+	rowsToUpload := []*bqpb.TextArtifactRow{}
+	for _, req := range reqs {
+		rows, err := reqToProtos(ctx, req, invInfo, MaxShardContentSize, LookbackWindow)
+		if err != nil {
+			return errors.Annotate(err, "req to protos").Err()
+		}
+		rowsToUpload = append(rowsToUpload, rows...)
+	}
+	logging.Infof(ctx, "Uploading %d rows BQ", len(rowsToUpload))
+	if len(rowsToUpload) > 0 {
+		// TODO (nqmtuan): Upload rowsToUpload to bq.
+	}
 	return nil
+}
+
+func reqToProtos(ctx context.Context, req *artifactCreationRequest, invInfo *invocationInfo, maxSize int, lookbackWindow int) ([]*bqpb.TextArtifactRow, error) {
+	chunks, err := util.SplitToChunks(req.data, maxSize, lookbackWindow)
+	if err != nil {
+		return nil, errors.Annotate(err, "split to chunk").Err()
+	}
+	results := []*bqpb.TextArtifactRow{}
+	project, realm := realms.Split(invInfo.realm)
+	for i, chunk := range chunks {
+		results = append(results, &bqpb.TextArtifactRow{
+			Project:             project,
+			Realm:               realm,
+			InvocationId:        invInfo.id,
+			TestId:              req.testID,
+			ResultId:            req.resultID,
+			ArtifactId:          req.artifactID,
+			ContentType:         req.contentType,
+			NumShards:           int32(len(chunks)),
+			ShardId:             int32(i),
+			Content:             chunk,
+			ShardContentSize:    int32(len(chunk)),
+			ArtifactContentSize: int32(req.size),
+			PartitionTime:       timestamppb.New(invInfo.createTime),
+		})
+	}
+	return results, nil
 }

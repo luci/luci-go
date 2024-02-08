@@ -24,22 +24,26 @@ import (
 	"time"
 
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
-	. "github.com/smartystreets/goconvey/convey"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // fakeRBEClient mocks BatchUpdateBlobs.
@@ -588,6 +592,59 @@ func TestFilterAndThrottle(t *testing.T) {
 			{
 				testID:     "test",
 				artifactID: "artifact341", // Hash value 91
+			},
+		})
+	})
+}
+
+func TestReqToProto(t *testing.T) {
+	Convey("Artifact request to proto", t, func() {
+		ctx := context.Background()
+		req := &artifactCreationRequest{
+			testID:      "testid",
+			resultID:    "resultid",
+			artifactID:  "artifactid",
+			contentType: "text/plain",
+			size:        20,
+			data:        []byte("0123456789abcdefghij"),
+		}
+		invInfo := &invocationInfo{
+			id:         "invid",
+			realm:      "chromium:ci",
+			createTime: time.Unix(1000, 0),
+		}
+		results, err := reqToProtos(ctx, req, invInfo, 10, 10)
+		So(err, ShouldBeNil)
+		So(results, ShouldResembleProto, []*bqpb.TextArtifactRow{
+			{
+				Project:             "chromium",
+				Realm:               "ci",
+				InvocationId:        "invid",
+				TestId:              "testid",
+				ResultId:            "resultid",
+				ArtifactId:          "artifactid",
+				ContentType:         "text/plain",
+				NumShards:           2,
+				ShardId:             0,
+				Content:             "0123456789",
+				ShardContentSize:    10,
+				ArtifactContentSize: 20,
+				PartitionTime:       timestamppb.New(time.Unix(1000, 0)),
+			},
+			{
+				Project:             "chromium",
+				Realm:               "ci",
+				InvocationId:        "invid",
+				TestId:              "testid",
+				ResultId:            "resultid",
+				ArtifactId:          "artifactid",
+				ContentType:         "text/plain",
+				NumShards:           2,
+				ShardId:             1,
+				Content:             "abcdefghij",
+				ShardContentSize:    10,
+				ArtifactContentSize: 20,
+				PartitionTime:       timestamppb.New(time.Unix(1000, 0)),
 			},
 		})
 	})
