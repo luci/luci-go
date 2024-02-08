@@ -134,43 +134,46 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 			},
 		})
 
-		switch result, err := requirement.Compute(ctx, requirement.Input{
-			ConfigGroup: cgsMap[rs.ConfigGroupID.Name()].Content,
-			RunOwner:    rs.Owner,
-			CLs:         runCLs,
-			RunOptions:  rs.Options,
-			RunMode:     rs.Mode,
-		}); {
-		case err != nil:
-			return nil, err
-		case !result.OK():
-			whoms := rs.Mode.GerritNotifyTargets()
-			meta := reviewInputMeta{
-				message:        fmt.Sprintf("Config has changed while Run is still running.However, the Tryjob requirement became invalid. Detailed reason:\n\n%s", result.ComputationFailure.Reason()),
-				notify:         whoms,
-				addToAttention: whoms,
-				reason:         "Computing tryjob requirement failed",
+		if rs.Tryjobs != nil {
+			// Tryjob requirement could have been not populated yet because user
+			// quota has been exhausted and run start has been delayed
+			switch result, err := requirement.Compute(ctx, requirement.Input{
+				ConfigGroup: cgsMap[rs.ConfigGroupID.Name()].Content,
+				RunOwner:    rs.Owner,
+				CLs:         runCLs,
+				RunOptions:  rs.Options,
+				RunMode:     rs.Mode,
+			}); {
+			case err != nil:
+				return nil, err
+			case !result.OK():
+				whoms := rs.Mode.GerritNotifyTargets()
+				meta := reviewInputMeta{
+					message:        fmt.Sprintf("Config has changed while Run is still running.However, the Tryjob requirement became invalid. Detailed reason:\n\n%s", result.ComputationFailure.Reason()),
+					notify:         whoms,
+					addToAttention: whoms,
+					reason:         "Computing tryjob requirement failed",
+				}
+				metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
+				for _, cl := range rs.CLs {
+					metas[cl] = meta
+				}
+				scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
+				rs.LogInfof(ctx, "Tryjob Requirement Computation", "Failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
+				return &Result{State: rs}, nil
+			case proto.Equal(result.Requirement, rs.Tryjobs.GetRequirement()):
+				// No change to the requirement
+			case hasExecuteTryjobLongOp(rs):
+				// TODO(yiwzhang): implement the staging requirement instead of waiting
+				// for existing long op to complete.
+				return &Result{State: rs, PreserveEvents: true}, nil
+			default:
+				rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
+				rs.Tryjobs.Requirement = result.Requirement
+				rs.Tryjobs.RequirementVersion += 1
+				rs.Tryjobs.RequirementComputedAt = timestamppb.New(clock.Now(ctx).UTC())
+				enqueueRequirementChangedTask(ctx, rs)
 			}
-			metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
-			for _, cl := range rs.CLs {
-				metas[cl] = meta
-			}
-			scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
-			rs.LogInfof(ctx, "Tryjob Requirement Computation", "Failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
-			return &Result{State: rs}, nil
-		case proto.Equal(result.Requirement, rs.Tryjobs.GetRequirement()):
-			// No change to the requirement
-		case hasExecuteTryjobLongOp(rs):
-			// TODO(yiwzhang): implement the staging requirement instead of waiting
-			// for existing long op to complete.
-			return &Result{State: rs, PreserveEvents: true}, nil
-		default:
-			// rs.Tryjobs MUST be non-nil now because start should populate it.
-			rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
-			rs.Tryjobs.Requirement = result.Requirement
-			rs.Tryjobs.RequirementVersion += 1
-			rs.Tryjobs.RequirementComputedAt = timestamppb.New(clock.Now(ctx).UTC())
-			enqueueRequirementChangedTask(ctx, rs)
 		}
 
 		logging.Infof(ctx, "Upgrading to new ConfigGroupID %q", rs.ConfigGroupID)
