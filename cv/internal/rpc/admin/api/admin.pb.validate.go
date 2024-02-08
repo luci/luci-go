@@ -996,6 +996,8 @@ func (m *GetRunResponse) validate(all bool) error {
 
 	// no validation rules for CreatedBy
 
+	// no validation rules for BilledTo
+
 	// no validation rules for ConfigGroupId
 
 	for idx, item := range m.GetCls() {

@@ -685,6 +685,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		EndTime:             common.Time2PBNillable(r.EndTime),
 		Owner:               string(r.Owner),
 		CreatedBy:           string(r.CreatedBy),
+		BilledTo:            string(r.BilledTo),
 		ConfigGroupId:       string(r.ConfigGroupID),
 		Cls:                 cls,
 		Options:             r.Options,
