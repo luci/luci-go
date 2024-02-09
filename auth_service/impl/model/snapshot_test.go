@@ -178,7 +178,7 @@ func TestTakeSnapshot(t *testing.T) {
 				},
 			}
 
-			authDBProto, err := snap.ToAuthDBProto()
+			authDBProto, err := snap.ToAuthDBProto(false)
 			So(err, ShouldBeNil)
 			So(authDBProto, ShouldResembleProto, &protocol.AuthDB{
 				OauthClientId:     "test-client-id",
@@ -219,7 +219,7 @@ func TestTakeSnapshot(t *testing.T) {
 
 				expectedGroup1 := groupProto("group-1")
 				expectedGroup1.Description = "empty"
-				authDBProto, err := sparseSnapshot.ToAuthDBProto()
+				authDBProto, err := sparseSnapshot.ToAuthDBProto(false)
 				So(err, ShouldBeNil)
 				So(authDBProto, ShouldResembleProto, &protocol.AuthDB{
 					OauthClientId:     "empty",
@@ -237,7 +237,7 @@ func TestTakeSnapshot(t *testing.T) {
 		})
 
 		Convey("ToAuthDB", func() {
-			db, err := snap.ToAuthDB()
+			db, err := snap.ToAuthDB(false)
 			So(err, ShouldBeNil)
 			So(db.Rev, ShouldEqual, testAuthDBRev)
 		})

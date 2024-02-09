@@ -65,7 +65,7 @@ func TestMergeRealms(t *testing.T) {
 				},
 			}
 			projectRealms := []*AuthProjectRealms{}
-			merged, err := MergeRealms(realmsGlobals, projectRealms)
+			merged, err := MergeRealms(realmsGlobals, projectRealms, false)
 			So(err, ShouldBeNil)
 			So(merged, ShouldResembleProto, &protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
@@ -75,11 +75,6 @@ func TestMergeRealms(t *testing.T) {
 		})
 
 		Convey("permissions are remapped", func() {
-			realmsGlobals := &AuthRealmsGlobals{
-				PermissionsList: &permissions.PermissionsList{
-					Permissions: makeTestPermissions("luci.dev.p1", "luci.dev.p2"),
-				},
-			}
 			proj1Realms := &protocol.Realms{
 				Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
 				Realms: []*protocol.Realm{
@@ -111,9 +106,7 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj1", Realms: marshalled},
 			}
 
-			merged, err := MergeRealms(realmsGlobals, projectRealms)
-			So(err, ShouldBeNil)
-			So(merged, ShouldResembleProto, &protocol.Realms{
+			expectedRealms := &protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
 				Permissions: makeTestPermissions("luci.dev.p1", "luci.dev.p2"),
 				Realms: []*protocol.Realm{
@@ -133,6 +126,36 @@ func TestMergeRealms(t *testing.T) {
 						},
 					},
 				},
+			}
+
+			Convey("when using PermissionsList", func() {
+				realmsGlobals := &AuthRealmsGlobals{
+					PermissionsList: &permissions.PermissionsList{
+						Permissions: makeTestPermissions("luci.dev.p1", "luci.dev.p2"),
+					},
+				}
+
+				merged, err := MergeRealms(realmsGlobals, projectRealms, false)
+				So(err, ShouldBeNil)
+				So(merged, ShouldResembleProto, expectedRealms)
+			})
+
+			Convey("when using Permissions", func() {
+				luciDevP1, err := proto.Marshal(&protocol.Permission{
+					Name: "luci.dev.p1",
+				})
+				So(err, ShouldBeNil)
+				luciDevP2, err := proto.Marshal(&protocol.Permission{
+					Name: "luci.dev.p2",
+				})
+				So(err, ShouldBeNil)
+				realmsGlobals := &AuthRealmsGlobals{
+					Permissions: []string{string(luciDevP1), string(luciDevP2)},
+				}
+
+				merged, err := MergeRealms(realmsGlobals, projectRealms, true)
+				So(err, ShouldBeNil)
+				So(merged, ShouldResembleProto, expectedRealms)
 			})
 		})
 
@@ -198,7 +221,7 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj2", Realms: marshalledProj2},
 			}
 
-			merged, err := MergeRealms(realmsGlobals, projectRealms)
+			merged, err := MergeRealms(realmsGlobals, projectRealms, false)
 			So(err, ShouldBeNil)
 			So(merged, ShouldResembleProto, &protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
@@ -292,7 +315,7 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj2", Realms: marshalledProj2},
 			}
 
-			merged, err := MergeRealms(realmsGlobals, projectRealms)
+			merged, err := MergeRealms(realmsGlobals, projectRealms, false)
 			So(err, ShouldBeNil)
 			So(merged, ShouldResembleProto, &protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
@@ -345,7 +368,7 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj1", Realms: marshalled},
 			}
 
-			merged, err := MergeRealms(realmsGlobals, projectRealms)
+			merged, err := MergeRealms(realmsGlobals, projectRealms, false)
 			So(err, ShouldNotBeNil)
 			So(merged, ShouldBeNil)
 		})

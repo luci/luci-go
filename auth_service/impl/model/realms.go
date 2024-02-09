@@ -127,14 +127,28 @@ func conditionKey(cond *protocol.Condition) (string, error) {
 // * relabelling condition indices relative to the new set of all conditions.
 func MergeRealms(
 	realmsGlobals *AuthRealmsGlobals,
-	allAuthProjectRealms []*AuthProjectRealms) (*protocol.Realms, error) {
+	allAuthProjectRealms []*AuthProjectRealms,
+	useV1Perms bool) (*protocol.Realms, error) {
 	result := &protocol.Realms{
 		ApiVersion: RealmsAPIVersion,
 	}
 
 	var permissions []*protocol.Permission
-	if realmsGlobals != nil && realmsGlobals.PermissionsList != nil {
-		permissions = realmsGlobals.PermissionsList.GetPermissions()
+	if realmsGlobals != nil {
+		if useV1Perms {
+			// Use the permissions stored by the Python version of Auth Service.
+			permissions = make([]*protocol.Permission, len(realmsGlobals.Permissions))
+			for i, s := range realmsGlobals.Permissions {
+				tempProto := &protocol.Permission{}
+				err := proto.Unmarshal([]byte(s), tempProto)
+				if err != nil {
+					return nil, errors.Annotate(err, "error while unmarshalling stored permission proto").Err()
+				}
+				permissions[i] = tempProto
+			}
+		} else if realmsGlobals.PermissionsList != nil {
+			permissions = realmsGlobals.PermissionsList.GetPermissions()
+		}
 	}
 	result.Permissions = permissions
 

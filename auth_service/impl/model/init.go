@@ -29,6 +29,9 @@ func init() {
 	// Parse flags fron environment variables.
 	dryRunChangelog := ParseDryRunEnvVar(DryRunTQChangelogEnvVar)
 	dryRunReplication := ParseDryRunEnvVar(DryRunTQReplicationEnvVar)
+	// The permissions maintained by the Python version should be used
+	// instead if the update-realms cron is in dry run mode.
+	useV1Perms := ParseDryRunEnvVar(DryRunCronRealmsEnvVar)
 
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "process-change-task",
@@ -49,7 +52,7 @@ func init() {
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ReplicationTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
-			return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask), dryRunReplication)
+			return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask), dryRunReplication, useV1Perms)
 		},
 	})
 }
