@@ -2,8 +2,8 @@
   "schema": "1.0",
   "comment": "This file maps proto services/RPCs to the corresponding library clients/methods.",
   "language": "go",
-  "protoPackage": "go.chromium.org.luci.third_party.google.devtools.issuetracker.v1",
-  "libraryPackage": "go.chromium.org/luci/third_party/google.golang.org/google/devtools/issuetracker/v1",
+  "protoPackage": "google.devtools.issuetracker.v1",
+  "libraryPackage": "google.golang.org/google/devtools/issuetracker/v1",
   "services": {
     "IssueTracker": {
       "clients": {

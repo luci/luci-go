@@ -105,6 +105,11 @@ func (rg *RequestGenerator) PrepareNew(description *clustering.ClusterDescriptio
 
 	ruleLink := bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID)
 
+	accessLimit := issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED
+	if rg.buganizerCfg.FileWithoutLimitViewTrusted {
+		accessLimit = issuetracker.IssueAccessLimit_LIMIT_NONE
+	}
+
 	issue := &issuetracker.Issue{
 		IssueState: &issuetracker.IssueState{
 			ComponentId: componentID,
@@ -113,6 +118,9 @@ func (rg *RequestGenerator) PrepareNew(description *clustering.ClusterDescriptio
 			Priority:    toBuganizerPriority(priority),
 			Severity:    issuetracker.Issue_S2,
 			Title:       bugs.GenerateBugSummary(description.Title),
+			AccessLimit: &issuetracker.IssueAccessLimit{
+				AccessLevel: accessLimit,
+			},
 		},
 		IssueComment: &issuetracker.IssueComment{
 			Comment: rg.policyApplyer.NewIssueDescription(
@@ -166,6 +174,7 @@ func (rg *RequestGenerator) PrepareRuleAssociatedComment(ruleID string, issueID 
 		Comment: &issuetracker.IssueComment{
 			Comment: bugs.RuleAssociatedCommentary(ruleURL).ToComment(),
 		},
+		SignificanceOverride: issuetracker.EditSignificance_MINOR,
 	}, nil
 }
 

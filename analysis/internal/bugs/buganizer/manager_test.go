@@ -103,6 +103,9 @@ func TestBugManager(t *testing.T) {
 						},
 					},
 					HotlistIds: []int64{1001},
+					AccessLimit: &issuetracker.IssueAccessLimit{
+						AccessLevel: issuetracker.IssueAccessLimit_LIMIT_NONE,
+					},
 				},
 				CreatedTime:  timestamppb.New(clock.Now(ctx)),
 				ModifiedTime: timestamppb.New(clock.Now(ctx)),
@@ -320,6 +323,25 @@ func TestBugManager(t *testing.T) {
 				So(len(issue.Comments), ShouldEqual, 3)
 				So(issue.Comments[1].Comment, ShouldContainSubstring, "This bug was filed in the fallback component")
 				So(issue.Comments[2].Comment, ShouldStartWith, "Policy ID: policy-a")
+			})
+
+			Convey("With Limit View Trusted", func() {
+				// Check config is respected and we file with Limit View Trusted if the
+				// config option to file without it is not set.
+				buganizerCfg.FileWithoutLimitViewTrusted = false
+				bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+				So(err, ShouldBeNil)
+
+				response := bm.Create(ctx, createRequest)
+				So(response, ShouldResemble, bugs.BugCreateResponse{
+					ID: "1",
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
+						"policy-a": {},
+					},
+				})
+				So(len(fakeStore.Issues), ShouldEqual, 1)
+				issue := fakeStore.Issues[1]
+				So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED)
 			})
 		})
 		Convey("Update", func() {

@@ -26,6 +26,7 @@ func ChromeOSTestConfig() *configpb.BuganizerProject {
 		DefaultComponent: &configpb.BuganizerComponent{
 			Id: 1234567,
 		},
+		FileWithoutLimitViewTrusted: true,
 	}
 }
 

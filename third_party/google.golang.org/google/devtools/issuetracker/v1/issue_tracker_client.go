@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -317,7 +317,10 @@ func (c *Client) GetComponent(ctx context.Context, req *issuetrackerpb.GetCompon
 	return c.internalClient.GetComponent(ctx, req, opts...)
 }
 
-// ListIssues searches issues, and returns issues with their current state.
+// ListIssues searches issues in the search cache (which may be stale), then returns the
+// current state of the matched issues (which may no longer match
+// ListIssuesRequest.query and may no longer be in the order indicated by
+// ListIssuesRequest.order_by).
 func (c *Client) ListIssues(ctx context.Context, req *issuetrackerpb.ListIssuesRequest, opts ...gax.CallOption) *IssueIterator {
 	return c.internalClient.ListIssues(ctx, req, opts...)
 }
@@ -962,7 +965,10 @@ func (c *restClient) GetComponent(ctx context.Context, req *issuetrackerpb.GetCo
 	return resp, nil
 }
 
-// ListIssues searches issues, and returns issues with their current state.
+// ListIssues searches issues in the search cache (which may be stale), then returns the
+// current state of the matched issues (which may no longer match
+// ListIssuesRequest.query and may no longer be in the order indicated by
+// ListIssuesRequest.order_by).
 func (c *restClient) ListIssues(ctx context.Context, req *issuetrackerpb.ListIssuesRequest, opts ...gax.CallOption) *IssueIterator {
 	it := &IssueIterator{}
 	req = proto.Clone(req).(*issuetrackerpb.ListIssuesRequest)
@@ -1583,6 +1589,13 @@ func (c *restClient) CreateIssueComment(ctx context.Context, req *issuetrackerpb
 	}
 	baseUrl.Path += fmt.Sprintf("/v1/issues/%v/comments", req.GetIssueId())
 
+	params := url.Values{}
+	if req.GetSignificanceOverride() != 0 {
+		params.Add("significanceOverride", fmt.Sprintf("%v", req.GetSignificanceOverride()))
+	}
+
+	baseUrl.RawQuery = params.Encode()
+
 	// Build HTTP headers from client and context metadata.
 	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "issue_id", req.GetIssueId())}
 
@@ -2012,145 +2025,4 @@ func (c *restClient) GetAutomationAccess(ctx context.Context, req *issuetrackerp
 		return nil, e
 	}
 	return resp, nil
-}
-
-// IssueCommentIterator manages a stream of *issuetrackerpb.IssueComment.
-type IssueCommentIterator struct {
-	items    []*issuetrackerpb.IssueComment
-	pageInfo *iterator.PageInfo
-	nextFunc func() error
-
-	// Response is the raw response for the current page.
-	// It must be cast to the RPC response type.
-	// Calling Next() or InternalFetch() updates this value.
-	Response any
-
-	// InternalFetch is for use by the Google Cloud Libraries only.
-	// It is not part of the stable interface of this package.
-	//
-	// InternalFetch returns results from a single call to the underlying RPC.
-	// The number of results is no greater than pageSize.
-	// If there are no more results, nextPageToken is empty and err is nil.
-	InternalFetch func(pageSize int, pageToken string) (results []*issuetrackerpb.IssueComment, nextPageToken string, err error)
-}
-
-// PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
-func (it *IssueCommentIterator) PageInfo() *iterator.PageInfo {
-	return it.pageInfo
-}
-
-// Next returns the next result. Its second return value is iterator.Done if there are no more
-// results. Once Next returns Done, all subsequent calls will return Done.
-func (it *IssueCommentIterator) Next() (*issuetrackerpb.IssueComment, error) {
-	var item *issuetrackerpb.IssueComment
-	if err := it.nextFunc(); err != nil {
-		return item, err
-	}
-	item = it.items[0]
-	it.items = it.items[1:]
-	return item, nil
-}
-
-func (it *IssueCommentIterator) bufLen() int {
-	return len(it.items)
-}
-
-func (it *IssueCommentIterator) takeBuf() any {
-	b := it.items
-	it.items = nil
-	return b
-}
-
-// IssueIterator manages a stream of *issuetrackerpb.Issue.
-type IssueIterator struct {
-	items    []*issuetrackerpb.Issue
-	pageInfo *iterator.PageInfo
-	nextFunc func() error
-
-	// Response is the raw response for the current page.
-	// It must be cast to the RPC response type.
-	// Calling Next() or InternalFetch() updates this value.
-	Response any
-
-	// InternalFetch is for use by the Google Cloud Libraries only.
-	// It is not part of the stable interface of this package.
-	//
-	// InternalFetch returns results from a single call to the underlying RPC.
-	// The number of results is no greater than pageSize.
-	// If there are no more results, nextPageToken is empty and err is nil.
-	InternalFetch func(pageSize int, pageToken string) (results []*issuetrackerpb.Issue, nextPageToken string, err error)
-}
-
-// PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
-func (it *IssueIterator) PageInfo() *iterator.PageInfo {
-	return it.pageInfo
-}
-
-// Next returns the next result. Its second return value is iterator.Done if there are no more
-// results. Once Next returns Done, all subsequent calls will return Done.
-func (it *IssueIterator) Next() (*issuetrackerpb.Issue, error) {
-	var item *issuetrackerpb.Issue
-	if err := it.nextFunc(); err != nil {
-		return item, err
-	}
-	item = it.items[0]
-	it.items = it.items[1:]
-	return item, nil
-}
-
-func (it *IssueIterator) bufLen() int {
-	return len(it.items)
-}
-
-func (it *IssueIterator) takeBuf() any {
-	b := it.items
-	it.items = nil
-	return b
-}
-
-// IssueUpdateIterator manages a stream of *issuetrackerpb.IssueUpdate.
-type IssueUpdateIterator struct {
-	items    []*issuetrackerpb.IssueUpdate
-	pageInfo *iterator.PageInfo
-	nextFunc func() error
-
-	// Response is the raw response for the current page.
-	// It must be cast to the RPC response type.
-	// Calling Next() or InternalFetch() updates this value.
-	Response any
-
-	// InternalFetch is for use by the Google Cloud Libraries only.
-	// It is not part of the stable interface of this package.
-	//
-	// InternalFetch returns results from a single call to the underlying RPC.
-	// The number of results is no greater than pageSize.
-	// If there are no more results, nextPageToken is empty and err is nil.
-	InternalFetch func(pageSize int, pageToken string) (results []*issuetrackerpb.IssueUpdate, nextPageToken string, err error)
-}
-
-// PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
-func (it *IssueUpdateIterator) PageInfo() *iterator.PageInfo {
-	return it.pageInfo
-}
-
-// Next returns the next result. Its second return value is iterator.Done if there are no more
-// results. Once Next returns Done, all subsequent calls will return Done.
-func (it *IssueUpdateIterator) Next() (*issuetrackerpb.IssueUpdate, error) {
-	var item *issuetrackerpb.IssueUpdate
-	if err := it.nextFunc(); err != nil {
-		return item, err
-	}
-	item = it.items[0]
-	it.items = it.items[1:]
-	return item, nil
-}
-
-func (it *IssueUpdateIterator) bufLen() int {
-	return len(it.items)
-}
-
-func (it *IssueUpdateIterator) takeBuf() any {
-	b := it.items
-	it.items = nil
-	return b
 }
