@@ -540,8 +540,11 @@ func hash64(bt []byte) uint64 {
 // percentOfArtifactsToBQ returns how many percents of artifact to be uploaded.
 // Return value is an integer between [0, 100].
 func percentOfArtifactsToBQ(ctx context.Context) (int, error) {
-	// TODO (nqmtuan): Read from config.
-	return 1, nil
+	cfg, err := config.GetServiceConfig(ctx)
+	if err != nil {
+		return 0, errors.Annotate(err, "get service config").Err()
+	}
+	return int(cfg.GetBqArtifactExportConfig().GetExportPercent()), nil
 }
 
 // shouldUploadToBQ returns true if we should upload artifacts to BigQuery.
@@ -549,8 +552,11 @@ func percentOfArtifactsToBQ(ctx context.Context) (int, error) {
 // but it will also run some BQ exporter code.
 // Disable shouldUploadToBQ flag will run no exporter code, therefore it is the safer option.
 func shouldUploadToBQ(ctx context.Context) (bool, error) {
-	// TODO (nqmtuan): Read from config.
-	return false, nil
+	cfg, err := config.GetServiceConfig(ctx)
+	if err != nil {
+		return false, errors.Annotate(err, "get service config").Err()
+	}
+	return cfg.GetBqArtifactExportConfig().GetEnabled(), nil
 }
 
 func uploadArtifactsToBQ(ctx context.Context, reqs []*artifactCreationRequest, invInfo *invocationInfo) error {

@@ -35,11 +35,13 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
+	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -161,6 +163,14 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:test@test.com",
 		})
+
+		err = config.SetServiceConfig(ctx, &configpb.Config{
+			BqArtifactExportConfig: &configpb.BqArtifactExportConfig{
+				Enabled:       true,
+				ExportPercent: 100,
+			},
+		})
+		So(err, ShouldBeNil)
 
 		casClient := &fakeRBEClient{}
 		recorder := newTestRecorderServer()
