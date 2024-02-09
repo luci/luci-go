@@ -19,10 +19,10 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -781,47 +781,67 @@ func diffRealmsGlobals(ctx context.Context, target string, old, new datastore.Pr
 		return changes, err
 	}
 
-	oldNames, oldPermissions := extractPermissions(oldRealms)
-	newNames, newPermissions := extractPermissions(newRealms)
-
-	var added, changed []string
-	for _, name := range newNames {
-		newPerm := newPermissions[name]
-		oldPerm, ok := oldPermissions[name]
-		if !ok {
-			// Permission is not in previous version.
-			added = append(added, name)
-		} else if oldPerm != newPerm {
-			// Permission is different between versions.
-			changed = append(changed, name)
-		}
+	// Get changes for permissions maintained by Auth Service v1.
+	oldNames, oldPermissions, err := extractV1Permissions(oldRealms)
+	if err != nil {
+		return []*AuthDBChange{}, err
+	}
+	newNames, newPermissions, err := extractV1Permissions(newRealms)
+	if err != nil {
+		return []*AuthDBChange{}, err
+	}
+	authChange, isChanged := diffPermissions(ctx, oldNames, newNames, oldPermissions, newPermissions)
+	if isChanged {
+		setTargetTypeFields(ctx, ChangeRealmsGlobalsChanged, target, class, authChange)
+		changes = append(changes, authChange)
 	}
 
-	var removed []string
-	for _, name := range oldNames {
-		if _, ok := newPermissions[name]; !ok {
-			// Permission is not in the newer version.
-			removed = append(removed, name)
-		}
+	// Get changes for permissions maintained by Auth Service v2.
+	oldNames, oldPermissions = extractV2Permissions(oldRealms)
+	newNames, newPermissions = extractV2Permissions(newRealms)
+	authChange, isChanged = diffPermissions(ctx, oldNames, newNames, oldPermissions, newPermissions)
+	if isChanged {
+		setTargetTypeFields(ctx, ChangeRealmsGlobalsChanged, target, class, authChange)
+		changes = append(changes, authChange)
 	}
 
-	// No changes at all; permissions are identical.
-	if len(added) == 0 && len(changed) == 0 && len(removed) == 0 {
-		return changes, nil
-	}
-
-	changes = append(changes, setTargetTypeFields(ctx, ChangeRealmsGlobalsChanged, target, class,
-		&AuthDBChange{
-			PermissionsAdded:   added,
-			PermissionsChanged: changed,
-			PermissionsRemoved: removed,
-		}))
 	return changes, nil
 }
 
-// Returns the permission names (in ascending order) and a map of the permissions,
-// where the key is the permission name.
-func extractPermissions(a *AuthRealmsGlobals) ([]string, map[string]*protocol.Permission) {
+// extractV1Permissions returns the permissions maintained by
+// Auth Service v1 from the given AuthRealmsGlobals.
+//
+// Returns:
+// - permission names in their stored order; and
+// - a map of permissions, where the key is the permission name.
+func extractV1Permissions(a *AuthRealmsGlobals) ([]string, map[string]*protocol.Permission, error) {
+	if a == nil {
+		return []string{}, map[string]*protocol.Permission{}, nil
+	}
+
+	names := make([]string, len(a.Permissions))
+	permissionsByName := make(map[string]*protocol.Permission, len(a.Permissions))
+	for i, p := range a.Permissions {
+		permission := &protocol.Permission{}
+		err := proto.Unmarshal([]byte(p), permission)
+		if err != nil {
+			err = errors.Annotate(err, "error while unmarshalling stored Permissions").Err()
+			return []string{}, map[string]*protocol.Permission{}, err
+		}
+		name := permission.GetName()
+		names[i] = name
+		permissionsByName[name] = permission
+	}
+	return names, permissionsByName, nil
+}
+
+// extractV2Permissions returns the permissions maintained by
+// Auth Service v2 from the given AuthRealmsGlobals.
+//
+// Returns:
+// - permission names in their stored order; and
+// - a map of permissions, where the key is the permission name.
+func extractV2Permissions(a *AuthRealmsGlobals) ([]string, map[string]*protocol.Permission) {
 	if a == nil || a.PermissionsList == nil {
 		return []string{}, map[string]*protocol.Permission{}
 	}
@@ -834,8 +854,46 @@ func extractPermissions(a *AuthRealmsGlobals) ([]string, map[string]*protocol.Pe
 		names[i] = name
 		permissionsByName[name] = permission
 	}
-	sort.Strings(names)
 	return names, permissionsByName
+}
+
+// diffPermissions is a helper function to identify the differences
+// between the two sets of permissions.
+//
+// Returns an AuthDBChange if there was actually a difference, and
+// whether the permissions were different.
+func diffPermissions(ctx context.Context, oldNames, newNames []string, oldPerms, newPerms map[string]*protocol.Permission) (*AuthDBChange, bool) {
+	var added, changed []string
+	for _, name := range newNames {
+		newPerm := newPerms[name]
+		oldPerm, ok := oldPerms[name]
+		if !ok {
+			// Permission is not in previous version.
+			added = append(added, name)
+		} else if oldPerm != newPerm {
+			// Permission is different between versions.
+			changed = append(changed, name)
+		}
+	}
+
+	var removed []string
+	for _, name := range oldNames {
+		if _, ok := newPerms[name]; !ok {
+			// Permission is not in the newer version.
+			removed = append(removed, name)
+		}
+	}
+
+	// No changes at all; permissions are identical.
+	if len(added) == 0 && len(changed) == 0 && len(removed) == 0 {
+		return nil, false
+	}
+
+	return &AuthDBChange{
+		PermissionsAdded:   added,
+		PermissionsChanged: changed,
+		PermissionsRemoved: removed,
+	}, true
 }
 
 // /////////////////////////////////////////////////////////////////////
