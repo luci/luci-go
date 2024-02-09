@@ -92,23 +92,33 @@ func useInfo(c context.Context, base *serviceInstanceGlobalInfo) context.Context
 	})
 }
 
-func (i *infoService) AppID() string               { return maybe(i.ProjectID) }
-func (i *infoService) FullyQualifiedAppID() string { return maybe(i.ProjectID) }
-func (i *infoService) GetNamespace() string        { return i.namespace }
-func (i *infoService) IsDevAppServer() bool        { return i.IsDev }
+func (i *infoService) AppID() string { return maybe(i.ProjectID, "AppID needs nonempty ProjectID") }
+func (i *infoService) FullyQualifiedAppID() string {
+	return maybe(i.ProjectID, "FullyQualifiedAppID needs nonempty ProjectID")
+}
+func (i *infoService) GetNamespace() string { return i.namespace }
+func (i *infoService) IsDevAppServer() bool { return i.IsDev }
 
 func (*infoService) Datacenter() string             { panic(ErrNotImplemented) }
 func (*infoService) DefaultVersionHostname() string { panic(ErrNotImplemented) }
-func (i *infoService) InstanceID() string           { return maybe(i.infoState.InstanceID) }
-func (*infoService) IsOverQuota(err error) bool     { return false }
-func (*infoService) IsTimeoutError(err error) bool  { return false }
+func (i *infoService) InstanceID() string {
+	return maybe(i.infoState.InstanceID, "InstanceID cannot be empty")
+}
+func (*infoService) IsOverQuota(err error) bool    { return false }
+func (*infoService) IsTimeoutError(err error) bool { return false }
 func (*infoService) ModuleHostname(module, version, instance string) (string, error) {
 	return "", ErrNotImplemented
 }
-func (i *infoService) ModuleName() string   { return maybe(i.ServiceName) }
-func (i *infoService) RequestID() string    { return maybe(i.infoState.RequestID) }
+func (i *infoService) ModuleName() string {
+	return maybe(i.ServiceName, "ModuleName needs nonempty ServiceName")
+}
+func (i *infoService) RequestID() string {
+	return maybe(i.infoState.RequestID, "RequestID cannot be empty")
+}
 func (*infoService) ServerSoftware() string { panic(ErrNotImplemented) }
-func (i *infoService) VersionID() string    { return maybe(i.VersionName) }
+func (i *infoService) VersionID() string {
+	return maybe(i.VersionName, "VersionID requires nonempty VersionName")
+}
 
 func (i *infoService) ServiceAccount() (string, error) {
 	if i.ServiceAccountName != "" {
@@ -155,9 +165,16 @@ func (i *infoService) SignBytes(bytes []byte) (keyName string, signature []byte,
 
 func (*infoService) GetTestable() infoS.Testable { return nil }
 
-func maybe(v string) string {
+// maybe takes a string and panics if and only if it is empty.
+//
+// If the message is empty, we use the default messasge of ErrNotImplemented, otherwise we use another message
+// that is probably more informative.
+func maybe(v string, message string) string {
 	if v != "" {
 		return v
 	}
-	panic(ErrNotImplemented)
+	if message == "" {
+		panic(ErrNotImplemented)
+	}
+	panic(message)
 }
