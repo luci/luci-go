@@ -68,36 +68,36 @@ func TestIngestTarball(t *testing.T) {
 		return rw.Body.Bytes(), nil
 	}
 
-	ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
-		Identity: "user:test-user@example.com",
-	})
-	ctx = info.SetImageVersion(ctx, "test-version")
-	ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
-
-	datastore.Put(ctx, &model.GroupImporterConfig{
-		Kind: "GroupImporterConfig",
-		ID:   "config",
-		ConfigProto: `
-		tarball_upload {
-			name: "test_groups.tar.gz"
-			authorized_uploader: "test-user@example.com"
-			systems: "test"
-		}
-		`,
-		ConfigRevision: []byte("some-config-revision"),
-		ModifiedBy:     "some-user@example.com",
-		ModifiedTS:     time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
-	})
-
-	datastore.Put(ctx, &model.AuthDBSnapshotLatest{
-		Kind:         "AuthDBSnapshotLatest",
-		ID:           "latest",
-		AuthDBRev:    42,
-		AuthDBSha256: "test-sha",
-		ModifiedTS:   time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
-	})
-
 	Convey("Test tarball", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity: "user:test-user@example.com",
+		})
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		// Set up data for test cases.
+		So(datastore.Put(ctx, &model.GroupImporterConfig{
+			Kind: "GroupImporterConfig",
+			ID:   "config",
+			ConfigProto: `
+			tarball_upload {
+				name: "test_groups.tar.gz"
+				authorized_uploader: "test-user@example.com"
+				systems: "test"
+			}
+			`,
+			ConfigRevision: []byte("some-config-revision"),
+			ModifiedBy:     "some-user@example.com",
+			ModifiedTS:     time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.AuthDBSnapshotLatest{
+			Kind:         "AuthDBSnapshotLatest",
+			ID:           "latest",
+			AuthDBRev:    42,
+			AuthDBSha256: "test-sha",
+			ModifiedTS:   time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
+		}), ShouldBeNil)
+
 		Convey("Empty tarball", func() {
 			_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(nil)))
 			So(err, ShouldErrLike, "bad tarball: EOF")
@@ -114,8 +114,7 @@ func TestIngestTarball(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			actual := GroupsJSON{}
-
-			json.Unmarshal(res, &actual)
+			So(json.Unmarshal(res, &actual), ShouldBeNil)
 
 			expected := GroupsJSON{
 				Groups: []string{

@@ -246,7 +246,7 @@ func TestGenerateChanges(t *testing.T) {
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
-		datastore.Put(ctx, testAuthGroup(ctx, AdminGroup))
+		So(datastore.Put(ctx, testAuthGroup(ctx, AdminGroup)), ShouldBeNil)
 
 		//////////////////////////////////////////////////////////
 		// Helper functions
@@ -254,9 +254,10 @@ func TestGenerateChanges(t *testing.T) {
 			ancestor := constructLogRevisionKey(ctx, authDBRev, dryRun)
 			query := datastore.NewQuery(entityKind("AuthDBChange", dryRun)).Ancestor(ancestor)
 			changes := []*AuthDBChange{}
-			datastore.Run(ctx, query, func(change *AuthDBChange) {
+			err := datastore.Run(ctx, query, func(change *AuthDBChange) {
 				changes = append(changes, change)
 			})
+			So(err, ShouldBeNil)
 			return changes
 		}
 

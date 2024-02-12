@@ -199,7 +199,7 @@ func TestIngestTarball(t *testing.T) {
 
 	Convey("testing IngestTarball", t, func() {
 		Convey("unknown", func() {
-			datastore.Put(ctx, cfg)
+			So(datastore.Put(ctx, cfg), ShouldBeNil)
 			_, _, err := IngestTarball(ctx, "zzz", nil)
 			So(err, ShouldErrLike, "entry is nil")
 		})
@@ -248,7 +248,7 @@ func TestImportBundles(t *testing.T) {
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 		adminGroup := emptyAuthGroup(ctx, AdminGroup)
-		datastore.Put(ctx, adminGroup)
+		So(datastore.Put(ctx, adminGroup), ShouldBeNil)
 
 		aIdent, _ := identity.MakeIdentity("user:a@example.com")
 
@@ -354,7 +354,7 @@ func TestImportBundles(t *testing.T) {
 		Convey("Revision changes in between transactions", func() {
 			bundle, groupsBundled := makeGroupBundle("test", 500)
 			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, func() {
-				datastore.Put(ctx, testAuthReplicationState(ctx, 3))
+				So(datastore.Put(ctx, testAuthReplicationState(ctx, 3)), ShouldBeNil)
 			})
 			So(err, ShouldBeNil)
 			So(updatedGroups, ShouldResemble, groupsBundled)
