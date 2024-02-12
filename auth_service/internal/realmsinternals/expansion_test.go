@@ -17,13 +17,15 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/auth_service/api/configspb"
-	"go.chromium.org/luci/auth_service/internal/permissions"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/internal/permissions"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func testPermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {

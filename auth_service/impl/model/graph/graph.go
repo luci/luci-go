@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/auth/identity"
+
 	"go.chromium.org/luci/auth_service/impl/model"
 )
 

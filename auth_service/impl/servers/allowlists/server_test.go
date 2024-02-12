@@ -23,10 +23,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/impl/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

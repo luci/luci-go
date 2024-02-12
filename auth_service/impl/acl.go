@@ -15,9 +15,10 @@
 package impl
 
 import (
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/rpcacl"
+
+	"go.chromium.org/luci/auth_service/impl/model"
 )
 
 // TrustedServicesGroup defines a group whose members are allowed to subscribe

@@ -20,8 +20,8 @@ import (
 	"sort"
 	"strings"
 
-	"go.chromium.org/luci/auth_service/internal/configs/validation"
-	"go.chromium.org/luci/auth_service/internal/permissions"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	lucierr "go.chromium.org/luci/common/errors"
@@ -29,7 +29,8 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"google.golang.org/protobuf/proto"
+	"go.chromium.org/luci/auth_service/internal/configs/validation"
+	"go.chromium.org/luci/auth_service/internal/permissions"
 )
 
 var (

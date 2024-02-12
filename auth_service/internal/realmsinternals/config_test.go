@@ -21,16 +21,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/auth_service/impl/info"
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -41,6 +37,12 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/impl/model"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (

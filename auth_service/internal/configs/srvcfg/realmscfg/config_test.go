@@ -18,10 +18,10 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/proto/realms"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 

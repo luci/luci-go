@@ -17,12 +17,14 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/common/data/stringset"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config"
 	protocol "go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPermissionsDBGeneration(t *testing.T) {

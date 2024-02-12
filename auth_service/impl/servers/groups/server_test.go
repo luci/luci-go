@@ -21,18 +21,19 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
-	"go.chromium.org/luci/auth_service/impl/info"
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
-	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
+
+	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/impl/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

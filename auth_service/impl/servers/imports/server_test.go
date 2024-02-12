@@ -24,19 +24,20 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/auth_service/impl/info"
-	"go.chromium.org/luci/auth_service/impl/model"
-	"go.chromium.org/luci/auth_service/testsupport"
+	"github.com/julienschmidt/httprouter"
+
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
-	"github.com/julienschmidt/httprouter"
+	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/testsupport"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )

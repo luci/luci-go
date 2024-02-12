@@ -23,10 +23,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
+
+	"go.chromium.org/luci/auth_service/impl/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

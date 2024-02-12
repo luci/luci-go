@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+
 	"go.chromium.org/luci/auth_service/impl/model"
 
 	. "github.com/smartystreets/goconvey/convey"

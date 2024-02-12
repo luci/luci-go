@@ -17,10 +17,10 @@ package allowlistcfg
 import (
 	"context"
 
-	"go.chromium.org/luci/auth_service/api/configspb"
-
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
 )
 
 var cachedAllowlistCfg = cfgcache.Register(&cfgcache.Entry{

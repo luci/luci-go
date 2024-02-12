@@ -20,8 +20,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 )
 
 // Server implements Accounts server.

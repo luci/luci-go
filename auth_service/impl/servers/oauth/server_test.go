@@ -23,13 +23,13 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/auth_service/impl/model"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/router"
 
-	"google.golang.org/grpc/codes"
+	"go.chromium.org/luci/auth_service/impl/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

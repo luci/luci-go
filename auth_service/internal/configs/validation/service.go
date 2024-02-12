@@ -24,12 +24,13 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
 )
 
 // ipAllowlistNameRE is the regular expression for IP Allowlist Names.

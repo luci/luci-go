@@ -18,12 +18,14 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/auth_service/api/configspb"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigContext(t *testing.T) {

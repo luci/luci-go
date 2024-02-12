@@ -17,11 +17,12 @@ package permissions
 import (
 	"fmt"
 
-	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/common/data/stringset"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
 )
 
 // PermissionsDB is a representation of all defined roles, permissions

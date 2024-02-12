@@ -17,10 +17,10 @@ package importscfg
 import (
 	"context"
 
-	"go.chromium.org/luci/auth_service/api/configspb"
-
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
 )
 
 var cachedImportsCfg = cfgcache.Register(&cfgcache.Entry{

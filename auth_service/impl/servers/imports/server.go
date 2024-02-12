@@ -18,9 +18,10 @@ package imports
 import (
 	"encoding/json"
 
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/auth_service/impl/model"
 )
 
 type GroupsJSON struct {

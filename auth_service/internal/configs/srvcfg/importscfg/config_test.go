@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/auth_service/api/configspb"
-
 	"go.chromium.org/luci/gae/impl/memory"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
