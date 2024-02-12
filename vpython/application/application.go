@@ -227,6 +227,10 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 		return errors.Annotate(err, "failed to parse flags").Err()
 	}
 
+	if a.VpythonRoot, err = filepath.Abs(a.VpythonRoot); err != nil {
+		return errors.Annotate(err, "failed to get absolute vpython root path").Err()
+	}
+
 	// Set CIPD CacheDIR
 	if a.CIPDCacheDir == "" {
 		a.CIPDCacheDir = filepath.Join(a.VpythonRoot, "cipd")

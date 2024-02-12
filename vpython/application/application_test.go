@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -78,7 +79,9 @@ func TestParseArguments(t *testing.T) {
 		Convey("Test cipd cache dir", func() {
 			err := parseArgs("-vpython-root", "root", "vpython-test")
 			So(err, ShouldBeNil)
-			So(app.CIPDCacheDir, ShouldStartWith, "root")
+			wd, err := os.Getwd()
+			So(err, ShouldBeNil)
+			So(app.CIPDCacheDir, ShouldStartWith, filepath.Join(wd, "root"))
 		})
 
 		Convey("Test cipd cache dir with env", func() {
