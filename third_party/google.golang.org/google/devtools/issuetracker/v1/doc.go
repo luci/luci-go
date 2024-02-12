@@ -92,7 +92,7 @@
 // [Testing against Client Libraries]: https://pkg.go.dev/cloud.google.com/go#hdr-Testing
 // [Debugging Client Libraries]: https://pkg.go.dev/cloud.google.com/go#hdr-Debugging
 // [Inspecting errors]: https://pkg.go.dev/cloud.google.com/go#hdr-Inspecting_errors
-package issuetracker // import "google.golang.org/google/devtools/issuetracker/v1"
+package issuetracker
 
 import (
 	"context"
