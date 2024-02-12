@@ -18,12 +18,14 @@ package oauth
 import (
 	"encoding/json"
 
-	"go.chromium.org/luci/auth_service/impl/model"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/auth_service/impl/model"
 )
 
 // HandleLegacyOAuthEndpoint returns client_id and client_secret to support
@@ -36,7 +38,7 @@ func HandleLegacyOAuthEndpoint(ctx *router.Context) error {
 	var err error
 
 	switch globalCfgEntity, err = model.GetAuthGlobalConfig(c); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		errors.Log(c, err)
 		return status.Errorf(codes.Internal, "no Global Config entity found in datastore.")
 	case err != nil:
@@ -45,7 +47,7 @@ func HandleLegacyOAuthEndpoint(ctx *router.Context) error {
 	}
 
 	switch replicationStateEntity, err = model.GetReplicationState(c); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		errors.Log(c, err)
 		return status.Errorf(codes.Internal, "no Replication State entity found in datastore.")
 	case err != nil:

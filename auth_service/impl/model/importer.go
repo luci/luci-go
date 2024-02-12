@@ -108,7 +108,7 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 	switch err := datastore.Get(ctx, groupsCfg); {
 	case err == nil:
 		return groupsCfg, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting GroupImporterConfig").Err()
@@ -268,7 +268,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 	getAuthDBRevision := func(ctx context.Context) (int64, error) {
 		state, err := GetReplicationState(ctx)
 		switch {
-		case err == datastore.ErrNoSuchEntity:
+		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return 0, nil
 		case err != nil:
 			return -1, err
@@ -489,7 +489,7 @@ func extractTarArchive(r io.Reader) (map[string][]byte, error) {
 	tr := tar.NewReader(gzr)
 	for {
 		header, err := tr.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

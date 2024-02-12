@@ -23,12 +23,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/impl/model"
 )
 
 // Server implements AuthDB server.
@@ -58,7 +59,7 @@ func (*Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotReques
 	switch snapshot, err := model.GetAuthDBSnapshot(ctx, request.Revision, request.SkipBody, false); {
 	case err == nil:
 		return snapshot.ToProto(), nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "AuthDB revision %v not found", request.Revision)
 	default:
 		errStr := "unknown error while calling GetAuthDBSnapshot"
@@ -72,7 +73,7 @@ func getLatestRevision(ctx context.Context, request *rpcpb.GetSnapshotRequest) (
 	switch latest, err := model.GetAuthDBSnapshotLatest(ctx, false); {
 	case err == nil:
 		return latest.AuthDBRev, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return 0, status.Errorf(codes.NotFound, "AuthDBSnapshotLatest not found")
 	default:
 		errStr := "unknown error while calling GetAuthDBSnapshotLatest"

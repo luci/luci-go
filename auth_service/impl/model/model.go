@@ -468,7 +468,7 @@ func GetReplicationState(ctx context.Context) (*AuthReplicationState, error) {
 	switch err := datastore.Get(ctx, state); {
 	case err == nil:
 		return state, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthReplicationState").Err()
@@ -587,7 +587,7 @@ func runAuthDBChange(ctx context.Context, historicalComment string, f func(conte
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Get current AuthDB state and increment the revision.
 		state, err := GetReplicationState(ctx)
-		if err == datastore.ErrNoSuchEntity {
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
 			// This is the first entry into the AuthDB, so create a new state with rev 0.
 			state = &AuthReplicationState{
 				Kind:      "AuthReplicationState",
@@ -670,7 +670,7 @@ func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 			authGroup.Owners = AdminGroup
 		}
 		return authGroup, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthGroup").Err()
@@ -1189,7 +1189,7 @@ func GetAuthIPAllowlist(ctx context.Context, allowlistName string) (*AuthIPAllow
 	switch err := datastore.Get(ctx, authIPAllowlist); {
 	case err == nil:
 		return authIPAllowlist, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthIPAllowlist").Err()
@@ -1301,7 +1301,7 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 	switch err := datastore.Get(ctx, authGlobalConfig); {
 	case err == nil:
 		return authGlobalConfig, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthGlobalConfig").Err()
@@ -1316,7 +1316,7 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 func UpdateAuthGlobalConfig(ctx context.Context, oauthcfg *configspb.OAuthConfig, seccfg *protocol.SecurityConfig, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		rootAuthGlobalCfg, err := GetAuthGlobalConfig(ctx)
-		if err != nil && err != datastore.ErrNoSuchEntity {
+		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
 			return err
 		}
 
@@ -1364,7 +1364,7 @@ func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool, dryRun boo
 		}
 
 		return authDBSnapshot, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthDBSnapshot %d", rev).Err()
@@ -1477,7 +1477,7 @@ func GetAuthDBSnapshotLatest(ctx context.Context, dryRun bool) (*AuthDBSnapshotL
 	switch err := datastore.Get(ctx, authDBSnapshotLatest); {
 	case err == nil:
 		return authDBSnapshotLatest, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthDBSnapshotLatest").Err()
@@ -1493,7 +1493,7 @@ func GetAuthRealmsGlobals(ctx context.Context) (*AuthRealmsGlobals, error) {
 	switch err := datastore.Get(ctx, authRealmsGlobals); {
 	case err == nil:
 		return authRealmsGlobals, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthRealmsGlobals").Err()
@@ -1536,7 +1536,7 @@ func permsEqual(permsA, permsB []*protocol.Permission) bool {
 func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.PermissionsConfig, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		stored, err := GetAuthRealmsGlobals(ctx)
-		if err != nil && err != datastore.ErrNoSuchEntity {
+		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
 			return errors.Annotate(err, "error while fetching AuthRealmsGlobals entity").Err()
 		}
 
@@ -1619,7 +1619,7 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 	switch err := datastore.Get(ctx, authProjectRealms); {
 	case err == nil:
 		return authProjectRealms, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthProjectRealms %s", project).Err()
@@ -1699,7 +1699,7 @@ func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 		existing := []*AuthProjectRealms{}
 		for _, r := range eRealms {
 			currentProjectRealms, err := GetAuthProjectRealms(ctx, r.CfgRev.ProjectID)
-			if err != nil && err != datastore.ErrNoSuchEntity {
+			if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
 				return err
 			}
 			existing = append(existing, currentProjectRealms)
@@ -1769,7 +1769,7 @@ func GetAuthProjectRealmsMeta(ctx context.Context, project string) (*AuthProject
 	switch err := datastore.Get(ctx, authProjectRealmsMeta); {
 	case err == nil:
 		return authProjectRealmsMeta, nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthProjectRealmsMeta %s", project).Err()

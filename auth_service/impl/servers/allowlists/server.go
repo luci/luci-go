@@ -17,14 +17,16 @@ package allowlists
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // Server implements Allowlists server.
@@ -55,7 +57,7 @@ func (*Server) GetAllowlist(ctx context.Context, request *rpcpb.GetAllowlistRequ
 	switch allowlist, err := model.GetAuthIPAllowlist(ctx, request.Name); {
 	case err == nil:
 		return allowlist.ToProto(), nil
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such allowlist %q", request.Name)
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to fetch allowlist %q: %s", request.Name, err)
