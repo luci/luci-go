@@ -41,6 +41,10 @@ func (builder ResultBuilder) SetName(comparison string, types ...reflect.Type) R
 	builder.result.failed = true
 	var typeNames []string
 	for _, typ := range types {
+		if typ == nil {
+			typeNames = append(typeNames, "<nil>")
+			continue
+		}
 		typeNames = append(typeNames, typ.String())
 	}
 	builder.result.header.comparison = comparison

@@ -36,6 +36,12 @@ func TestEqual(t *testing.T) {
 			rhs:  nil,
 			ok:   true,
 		},
+		{
+			name: "nil vs non-nil",
+			lhs:  nil,
+			rhs:  7,
+			ok:   false,
+		},
 	}
 
 	for _, tt := range cases {
