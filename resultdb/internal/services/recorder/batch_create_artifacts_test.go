@@ -71,6 +71,15 @@ func (c *fakeRBEClient) mockResp(err error, cds ...codes.Code) {
 	}
 }
 
+type fakeBQClient struct {
+	Rows []*bqpb.TextArtifactRow
+}
+
+func (c *fakeBQClient) InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifactRow) error {
+	c.Rows = append(c.Rows, rows...)
+	return nil
+}
+
 func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 	newArtReq := func(parent, artID, contentType string) *pb.CreateArtifactRequest {
 		return &pb.CreateArtifactRequest{
@@ -177,9 +186,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		recorder.casClient = casClient
 		bReq := &pb.BatchCreateArtifactsRequest{}
 
-		appendArtReq := func(aID, content, cType string) {
+		appendArtReq := func(aID, content, cType, parent string) {
 			bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
-				Parent: "invocations/inv",
+				Parent: parent,
 				Artifact: &pb.Artifact{
 					ArtifactId: aID, Contents: []byte(content), ContentType: cType,
 				},
@@ -194,9 +203,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			})
 		}
 
-		fetchState := func(aID string) (size int64, hash string, contentType string, gcsURI string) {
+		fetchState := func(parentID, aID string) (size int64, hash string, contentType string, gcsURI string) {
 			testutil.MustReadRow(
-				ctx, "Artifacts", invocations.ID("inv").Key("", aID),
+				ctx, "Artifacts", invocations.ID("inv").Key(parentID, aID),
 				map[string]any{
 					"Size":        &size,
 					"RBECASHash":  &hash,
@@ -255,13 +264,17 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			})
 		})
 		Convey("works", func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			appendArtReq("art1", "c0ntent", "text/plain")
-			appendArtReq("art2", "c1ntent", "text/richtext")
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{
+				"CreateTime": time.Unix(10000, 0),
+			}))
+			appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv")
+			appendArtReq("art2", "c1ntent", "text/richtext", "invocations/inv/tests/test_id/results/result_id")
 			appendGcsArtReq("art3", 0, "text/plain", "gs://testbucket/art3")
 			appendGcsArtReq("art4", 500, "text/richtext", "gs://testbucket/art4")
 
 			casClient.mockResp(nil, codes.OK, codes.OK)
+			bqClient := &fakeBQClient{}
+			recorder.bqExportClient = bqClient
 
 			resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 			So(err, ShouldBeNil)
@@ -274,7 +287,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						SizeBytes:   7,
 					},
 					{
-						Name:        "invocations/inv/artifacts/art2",
+						Name:        "invocations/inv/tests/test_id/results/result_id/artifacts/art2",
 						ArtifactId:  "art2",
 						ContentType: "text/richtext",
 						SizeBytes:   7,
@@ -314,25 +327,25 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				},
 			})
 			// verify the Spanner states
-			size, hash, cType, gcsURI := fetchState("art1")
+			size, hash, cType, gcsURI := fetchState("", "art1")
 			So(size, ShouldEqual, int64(len("c0ntent")))
 			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c0ntent")))
 			So(cType, ShouldEqual, "text/plain")
 			So(gcsURI, ShouldEqual, "")
 
-			size, hash, cType, gcsURI = fetchState("art2")
+			size, hash, cType, gcsURI = fetchState("tr/test_id/result_id", "art2")
 			So(size, ShouldEqual, int64(len("c1ntent")))
 			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c1ntent")))
 			So(cType, ShouldEqual, "text/richtext")
 			So(gcsURI, ShouldEqual, "")
 
-			size, hash, cType, gcsURI = fetchState("art3")
+			size, hash, cType, gcsURI = fetchState("", "art3")
 			So(size, ShouldEqual, 0)
 			So(hash, ShouldEqual, "")
 			So(cType, ShouldEqual, "text/plain")
 			So(gcsURI, ShouldEqual, "gs://testbucket/art3")
 
-			size, hash, cType, gcsURI = fetchState("art4")
+			size, hash, cType, gcsURI = fetchState("", "art4")
 			So(size, ShouldEqual, 500)
 			So(hash, ShouldEqual, "")
 			So(cType, ShouldEqual, "text/richtext")
@@ -340,12 +353,45 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 			// RowCount metric should be increased by 4.
 			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 4)
+
+			// Verify the bigquery rows.
+			So(len(bqClient.Rows), ShouldEqual, 2)
+			So(bqClient.Rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
+				{
+					Project:             "testproject",
+					Realm:               "testrealm",
+					InvocationId:        "inv",
+					ArtifactId:          "art1",
+					ContentType:         "text/plain",
+					Content:             "c0ntent",
+					NumShards:           1,
+					ShardId:             0,
+					ShardContentSize:    7,
+					ArtifactContentSize: 7,
+					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
+				},
+				{
+					Project:             "testproject",
+					Realm:               "testrealm",
+					InvocationId:        "inv",
+					ArtifactId:          "art2",
+					ContentType:         "text/richtext",
+					Content:             "c1ntent",
+					NumShards:           1,
+					ShardId:             0,
+					ShardContentSize:    7,
+					ArtifactContentSize: 7,
+					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
+					TestId:              "test_id",
+					ResultId:            "result_id",
+				},
+			})
 		})
 
 		Convey("BatchUpdateBlobs fails", func() {
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			appendArtReq("art1", "c0ntent", "text/plain")
-			appendArtReq("art2", "c1ntent", "text/richtext")
+			appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv")
+			appendArtReq("art2", "c1ntent", "text/richtext", "invocations/inv")
 
 			Convey("Partly", func() {
 				casClient.mockResp(nil, codes.OK, codes.InvalidArgument)
@@ -366,7 +412,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		})
 
 		Convey("Token", func() {
-			appendArtReq("art1", "", "text/plain")
+			appendArtReq("art1", "", "text/plain", "invocations/inv")
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 			Convey("Missing", func() {
@@ -386,7 +432,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 			Convey("Finalized invocation", func() {
 				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
-				appendArtReq("art1", "c0ntent", "text/plain")
+				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv")
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
@@ -413,7 +459,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
-				appendArtReq("art1", "c0ntent", "text/plain")
+				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv")
 				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &pb.BatchCreateArtifactsResponse{})
@@ -426,7 +472,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					spanutil.InsertMap("Artifacts", art),
 				)
 
-				appendArtReq("art1", "c0ntent", "text/plain")
+				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv")
 				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different size")
@@ -448,7 +494,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					spanutil.InsertMap("Artifacts", gcsArt),
 				)
 
-				appendArtReq("art1", "c0ntent", "text/plain")
+				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different storage scheme")
 
@@ -457,7 +503,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different GCS URI")
 
-				appendArtReq("art1", "c0ntent", "text/plain")
+				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv")
 				bReq.Requests[0].Artifact.SizeBytes = 42
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different size")

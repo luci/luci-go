@@ -83,6 +83,11 @@ type invocationInfo struct {
 	createTime time.Time
 }
 
+// BQExportClient is the interface for exporting artifacts.
+type BQExportClient interface {
+	InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifactRow) error
+}
+
 // name returns the artifact name.
 func (a *artifactCreationRequest) name(invID invocations.ID) string {
 	if a.testID == "" {
@@ -463,7 +468,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 			// We will enable back when we enable the export.
 			// logging.Infof(ctx, "Uploading artifacts to BQ is disabled")
 		} else {
-			err = processBQUpload(ctx, artsToCreate, invInfo)
+			err = processBQUpload(ctx, s.bqExportClient, artsToCreate, invInfo)
 			if err != nil {
 				// Just log here, the feature is still in experiment, and we do not want
 				// to disturb the main flow.
@@ -487,7 +492,10 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 }
 
 // processBQUpload filters text artifacts and upload to BigQuery.
-func processBQUpload(ctx context.Context, artifactRequests []*artifactCreationRequest, invInfo *invocationInfo) error {
+func processBQUpload(ctx context.Context, client BQExportClient, artifactRequests []*artifactCreationRequest, invInfo *invocationInfo) error {
+	if client == nil {
+		return errors.New("bq export client should not be nil")
+	}
 	textArtifactRequests := filterTextArtifactRequests(artifactRequests)
 	percent, err := percentOfArtifactsToBQ(ctx)
 	if err != nil {
@@ -497,7 +505,7 @@ func processBQUpload(ctx context.Context, artifactRequests []*artifactCreationRe
 	if err != nil {
 		return errors.Annotate(err, "throttle artifacts for bq").Err()
 	} else {
-		err = uploadArtifactsToBQ(ctx, textArtifactRequests, invInfo)
+		err = uploadArtifactsToBQ(ctx, client, textArtifactRequests, invInfo)
 		if err != nil {
 			return errors.Annotate(err, "uploadArtifactsToBQ").Err()
 		}
@@ -559,7 +567,7 @@ func shouldUploadToBQ(ctx context.Context) (bool, error) {
 	return cfg.GetBqArtifactExportConfig().GetEnabled(), nil
 }
 
-func uploadArtifactsToBQ(ctx context.Context, reqs []*artifactCreationRequest, invInfo *invocationInfo) error {
+func uploadArtifactsToBQ(ctx context.Context, client BQExportClient, reqs []*artifactCreationRequest, invInfo *invocationInfo) error {
 	rowsToUpload := []*bqpb.TextArtifactRow{}
 	for _, req := range reqs {
 		rows, err := reqToProtos(ctx, req, invInfo, MaxShardContentSize, LookbackWindow)
@@ -570,7 +578,10 @@ func uploadArtifactsToBQ(ctx context.Context, reqs []*artifactCreationRequest, i
 	}
 	logging.Infof(ctx, "Uploading %d rows BQ", len(rowsToUpload))
 	if len(rowsToUpload) > 0 {
-		// TODO (nqmtuan): Upload rowsToUpload to bq.
+		err := client.InsertArtifactRows(ctx, rowsToUpload)
+		if err != nil {
+			return errors.Annotate(err, "insert artifact rows").Err()
+		}
 	}
 	return nil
 }

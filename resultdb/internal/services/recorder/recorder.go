@@ -24,11 +24,13 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
+	"go.chromium.org/luci/resultdb/internal/services/artifactexporter"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -43,6 +45,9 @@ type recorderServer struct {
 	// casClient is an instance of ContentAddressableStorageClient which is used for
 	// artifact batch operations.
 	casClient repb.ContentAddressableStorageClient
+
+	// bqExportClient is used for exporting artifacts to BigQuery.
+	bqExportClient BQExportClient
 }
 
 // Options is recorder server configuration.
@@ -66,10 +71,22 @@ func InitServer(srv *server.Server, opt Options) error {
 	if err != nil {
 		return err
 	}
+	bqClient, err := artifactexporter.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "create bq export client").Err()
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		err := bqClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up BigQuery export client: %s", err)
+		}
+	})
+
 	pb.RegisterRecorderServer(srv, &pb.DecoratedRecorder{
 		Service: &recorderServer{
-			Options:   &opt,
-			casClient: repb.NewContentAddressableStorageClient(conn),
+			Options:        &opt,
+			casClient:      repb.NewContentAddressableStorageClient(conn),
+			bqExportClient: bqClient,
 		},
 		Postlude: internal.CommonPostlude,
 	})

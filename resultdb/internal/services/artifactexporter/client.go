@@ -94,8 +94,8 @@ func (c *Client) EnsureSchema(ctx context.Context) error {
 	return nil
 }
 
-// Insert inserts the given rows in BigQuery.
-func (c *Client) Insert(ctx context.Context, rows []*bqpb.TextArtifactRow) error {
+// InsertArtifactRows inserts the given rows in BigQuery.
+func (c *Client) InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifactRow) error {
 	if err := c.EnsureSchema(ctx); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
