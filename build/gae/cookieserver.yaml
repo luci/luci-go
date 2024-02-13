@@ -9,4 +9,5 @@ sources:
 
 build:
   - go_gae_bundle: ${inputsdir}/cookieserver/service-cookieserver.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/cookieserver

@@ -5,4 +5,5 @@ inputsdir: ../../gce/appengine
 
 build:
   - go_gae_bundle: ${inputsdir}/frontend/app.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/frontend

@@ -12,4 +12,5 @@ build:
   # follows the symlinks in luci-go to pick up the built frontend code from
   # resultui/out.
   - go_gae_bundle: ${inputsdir}/app.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/milo

@@ -8,8 +8,11 @@ sources:
 
 build:
   - go_gae_bundle: ${inputsdir}/default/app.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/default
   - go_gae_bundle: ${inputsdir}/services/module-services.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/services
   - go_gae_bundle: ${inputsdir}/static/module-static.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/static
