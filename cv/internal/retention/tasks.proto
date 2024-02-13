@@ -32,3 +32,11 @@ message WipeoutRunsTask {
 message WipeoutCLsTask {
   repeated int64 ids = 1;
 }
+
+// WipeoutTryjobsTask wipes out given tryjobs that are out of the retention
+// policy.
+//
+// Queue: "data-retention".
+message WipeoutTryjobsTask {
+  repeated int64 ids = 1;
+}

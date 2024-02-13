@@ -17,20 +17,25 @@ package retention
 import (
 	"context"
 
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/cv/internal/common"
 )
 
 // RegisterCrons registers cron jobs for data retention.
 func RegisterCrons(tqd *tq.Dispatcher, rm rm) {
 	registerWipeoutRunsTask(tqd, rm)
 	registerWipeoutCLsTask(tqd)
+	registerWipeoutTryjobsTask(tqd)
 	cron.RegisterHandler("data-retention-runs", func(ctx context.Context) error {
 		return scheduleWipeoutRuns(ctx, tqd)
 	})
 	cron.RegisterHandler("data-retention-cls", func(ctx context.Context) error {
 		return scheduleWipeoutCLTasks(ctx, tqd)
+	})
+	cron.RegisterHandler("data-retention-tryjobs", func(ctx context.Context) error {
+		return scheduleWipeoutTryjobsTasks(ctx, tqd)
 	})
 }
 
