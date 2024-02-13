@@ -141,8 +141,15 @@ func mapFromMessage(pm proto.Message, path []string) (map[string]bigquery.Value,
 				pairs = append(pairs, kvPair{key.String(), value})
 				return true
 			})
-			slices.SortFunc(pairs, func(i, j kvPair) bool {
-				return i.key < j.key
+			slices.SortFunc(pairs, func(i, j kvPair) int {
+				switch {
+				case i.key == j.key:
+					return 0
+				case i.key < j.key:
+					return -1
+				default:
+					return 1
+				}
 			})
 
 			valueDesc := field.MapValue()

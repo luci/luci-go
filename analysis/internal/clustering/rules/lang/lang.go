@@ -535,16 +535,15 @@ func (e *stringExpr) evaluator(v *validator) stringEval {
 }
 
 var (
-	lex = lexer.MustSimple([]lexer.Rule{
-		{Name: "whitespace", Pattern: `\s+`, Action: nil},
-		{Name: "Keyword", Pattern: `(?i)(TRUE|FALSE|AND|OR|NOT|LIKE|IN)\b`, Action: nil},
-		{Name: "Ident", Pattern: `([a-zA-Z_][a-zA-Z0-9_]*)\b`, Action: nil},
-		{Name: "String", Pattern: stringLiteralPattern, Action: nil},
-		{Name: "Operators", Pattern: `!=|<>|[,()=]`, Action: nil},
+	lex = lexer.MustSimple([]lexer.SimpleRule{
+		{Name: "whitespace", Pattern: `\s+`},
+		{Name: "Keyword", Pattern: `(?i)(TRUE|FALSE|AND|OR|NOT|LIKE|IN)\b`},
+		{Name: "Ident", Pattern: `([a-zA-Z_][a-zA-Z0-9_]*)\b`},
+		{Name: "String", Pattern: stringLiteralPattern},
+		{Name: "Operators", Pattern: `!=|<>|[,()=]`},
 	})
 
-	parser = participle.MustBuild(
-		&boolExpr{},
+	parser = participle.MustBuild[boolExpr](
 		participle.Lexer(lex),
 		participle.Upper("Keyword"),
 		participle.Map(lowerMapper, "Ident"),
@@ -559,8 +558,8 @@ func lowerMapper(token lexer.Token) (lexer.Token, error) {
 // Parse parses a failure association rule from the specified text.
 // idents is the set of identifiers that are recognised by the application.
 func Parse(text string) (*Expr, error) {
-	expr := &boolExpr{}
-	if err := parser.ParseString("", text, expr); err != nil {
+	expr, err := parser.ParseString("", text)
+	if err != nil {
 		return nil, errors.Annotate(err, "syntax error").Err()
 	}
 

@@ -18,7 +18,7 @@ import (
 //   - its field name is present in nullFields.
 //
 // The JSON key for each selected field is taken from the field's json: struct tag.
-func MarshalJSON(schema any, forceSendFields, nullFields []string) ([]byte, error) {
+func MarshalJSON(schema interface{}, forceSendFields, nullFields []string) ([]byte, error) {
 	if len(forceSendFields) == 0 && len(nullFields) == 0 {
 		return json.Marshal(schema)
 	}
@@ -49,8 +49,8 @@ func MarshalJSON(schema any, forceSendFields, nullFields []string) ([]byte, erro
 	return json.Marshal(dataMap)
 }
 
-func schemaToMap(schema any, mustInclude, useNull map[string]bool, useNullMaps map[string]map[string]bool) (map[string]any, error) {
-	m := make(map[string]any)
+func schemaToMap(schema interface{}, mustInclude, useNull map[string]bool, useNullMaps map[string]map[string]bool) (map[string]interface{}, error) {
+	m := make(map[string]interface{})
 	s := reflect.ValueOf(schema)
 	st := s.Type()
 
@@ -82,7 +82,7 @@ func schemaToMap(schema any, mustInclude, useNull map[string]bool, useNullMaps m
 			continue
 		}
 
-		// If map fields are explicitly set to null, use a map[string]any.
+		// If map fields are explicitly set to null, use a map[string]interface{}.
 		if f.Type.Kind() == reflect.Map && useNullMaps[f.Name] != nil {
 			ms, ok := v.Interface().(map[string]string)
 			if !ok {
@@ -93,7 +93,7 @@ func schemaToMap(schema any, mustInclude, useNull map[string]bool, useNullMaps m
 				m[tag.apiName] = mi
 				continue
 			}
-			mi := map[string]any{}
+			mi := map[string]interface{}{}
 			for k, v := range ms {
 				mi[k] = v
 			}
@@ -127,8 +127,8 @@ func schemaToMap(schema any, mustInclude, useNull map[string]bool, useNullMaps m
 
 // initMapSlow uses reflection to build up a map object. This is slower than
 // the default behavior so it should be used only as a fallback.
-func initMapSlow(rv reflect.Value, fieldName string, useNullMaps map[string]map[string]bool) (map[string]any, error) {
-	mi := map[string]any{}
+func initMapSlow(rv reflect.Value, fieldName string, useNullMaps map[string]map[string]bool) (map[string]interface{}, error) {
+	mi := map[string]interface{}{}
 	iter := rv.MapRange()
 	for iter.Next() {
 		k, ok := iter.Key().Interface().(string)
@@ -202,7 +202,7 @@ func includeField(v reflect.Value, f reflect.StructField, mustInclude map[string
 		return false
 	}
 
-	// The "any" type is represented as an any.  If this interface
+	// The "any" type is represented as an interface{}.  If this interface
 	// is nil, there is no reasonable representation to send.  We ignore
 	// these fields, for the same reasons as given above for pointers.
 	if f.Type.Kind() == reflect.Interface && v.IsNil() {

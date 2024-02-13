@@ -48,16 +48,14 @@ const stringLiteralExpr = `[a-zA-Z_][a-zA-Z_0-9]*`
 var stringLiteralRE = regexp.MustCompile(`^` + stringLiteralExpr + `$`)
 
 var (
-	orderByLexer = lexer.MustSimple([]lexer.Rule{
-		{Name: "Spaces", Pattern: `[ ]+`, Action: nil},
-		{Name: "String", Pattern: `[a-zA-Z_][a-zA-Z_0-9]*`, Action: nil},
-		{Name: "QuotedString", Pattern: "`(``|[^`])*`", Action: nil},
-		{Name: "Operators", Pattern: "[.,]", Action: nil},
+	orderByLexer = lexer.MustSimple([]lexer.SimpleRule{
+		{Name: "Spaces", Pattern: `[ ]+`},
+		{Name: "String", Pattern: `[a-zA-Z_][a-zA-Z_0-9]*`},
+		{Name: "QuotedString", Pattern: "`(``|[^`])*`"},
+		{Name: "Operators", Pattern: "[.,]"},
 	})
 
-	orderByParser = participle.MustBuild(
-		&orderByList{},
-		participle.Lexer(orderByLexer))
+	orderByParser = participle.MustBuild[orderByList](participle.Lexer(orderByLexer))
 )
 
 // OrderBy represents a part of an AIP-132 order_by clause.
@@ -134,8 +132,8 @@ func ParseOrderBy(text string) ([]OrderBy, error) {
 		return nil, nil
 	}
 
-	expr := &orderByList{}
-	if err := orderByParser.ParseString("", text, expr); err != nil {
+	expr, err := orderByParser.ParseString("", text)
+	if err != nil {
 		return nil, errors.Annotate(err, "syntax error").Err()
 	}
 

@@ -24,6 +24,8 @@
 
 set -e
 
+cd $(dirname "${BASH_SOURCE[0]}")
+
 deps=(
   cloud.google.com/go/bigquery@latest
   cloud.google.com/go/bigtable@latest
@@ -49,6 +51,9 @@ deps=(
   github.com/google/go-cmp@latest
   github.com/google/tink/go@latest
   github.com/google/uuid@latest
+  github.com/googleapis/gax-go/v2@latest
+  github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace@latest
+  github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator@latest
   github.com/gorhill/cronexpr@latest
   github.com/jordan-wright/email@latest
   github.com/julienschmidt/httprouter@latest
@@ -67,6 +72,13 @@ deps=(
   github.com/smarty/assertions@latest
   github.com/smartystreets/goconvey@latest
   github.com/yosuke-furukawa/json5@latest
+  go.opentelemetry.io/contrib/detectors/gcp@latest
+  go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc@latest
+  go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace@latest
+  go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@latest
+  go.opentelemetry.io/otel/sdk@latest
+  go.opentelemetry.io/otel/trace@latest
+  go.opentelemetry.io/otel@latest
   go.starlark.net@latest
   golang.org/x/crypto@latest
   golang.org/x/net@latest
@@ -77,8 +89,11 @@ deps=(
   golang.org/x/time@latest
   golang.org/x/tools@latest
   google.golang.org/api@latest
-  google.golang.org/appengine@504804fb50  # "@latest" picks up quite old v1.6.7
+  google.golang.org/appengine@latest
   google.golang.org/genproto@latest
+  google.golang.org/genproto/googleapis/api@latest
+  google.golang.org/genproto/googleapis/bytestream@latest
+  google.golang.org/genproto/googleapis/rpc@latest
   google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
   google.golang.org/grpc@latest
   google.golang.org/protobuf@latest
@@ -96,3 +111,11 @@ done
 
 echo go mod tidy
 go mod tidy
+
+echo Updating vendored gensupport code
+../common/api/update_gensupport.sh
+echo Updating vendored googleapis protos
+../common/proto/googleapis/import.sh
+
+echo Checking googleapis modules at the same revision
+./check_googleapis_in_sync.py ../
