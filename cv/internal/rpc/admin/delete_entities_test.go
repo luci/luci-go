@@ -90,6 +90,6 @@ func TestDeleteEntities(t *testing.T) {
 
 type MockEntity struct {
 	// Kind must match the kind of `deleteEntityKind`.
-	_kind string `gae:"$kind,migration.ReportedTryjobs"`
+	_kind string `gae:"$kind,migration.VerifiedCQDRun"`
 	ID    string `gae:"$id"`
 }

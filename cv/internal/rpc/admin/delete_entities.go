@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/server/dsmapper"
 )
 
-const deleteEntityKind = "migration.ReportedTryjobs"
+const deleteEntityKind = "migration.VerifiedCQDRun"
 
 var deleteEntitiesKey = dsmapper.JobConfig{
 	Mapper: "delete-entities",
