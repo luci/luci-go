@@ -29,6 +29,8 @@ import (
 
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/common/system/environ"
+
+	"google.golang.org/protobuf/proto"
 )
 
 // ActionFilesCopyTransformer is the default transformer for
@@ -36,6 +38,19 @@ import (
 func ActionFilesCopyTransformer(a *core.ActionFilesCopy, deps []Package) (*core.Derivation, error) {
 	drv, err := ReexecDerivation(a, false)
 	if err != nil {
+		return nil, err
+	}
+
+	// Clone the action so we can remove path when regenerating the hash.
+	// If version is set, we don't need path to determine whether content
+	// changed. Recalculate the hash based on the assumption.
+	m := proto.Clone(a).(*core.ActionFilesCopy)
+	for _, f := range m.Files {
+		if l := f.GetLocal(); l.GetVersion() != "" && fs.FileMode(f.Mode).Type() != fs.ModeSymlink {
+			l.Path = ""
+		}
+	}
+	if drv.FixedOutput, err = sha256String(m); err != nil {
 		return nil, err
 	}
 

@@ -195,7 +195,7 @@ func ReexecDerivation(m proto.Message, hostEnv bool) (*core.Derivation, error) {
 	return &core.Derivation{
 		Args:        []string{self, string(b)},
 		Env:         env.Sorted(),
-		FixedOutput: reexecVersion + fixed,
+		FixedOutput: fixed,
 	}, nil
 }
 
@@ -205,5 +205,5 @@ func sha256String(m proto.Message) (string, error) {
 	if err := luciproto.StableHash(h, m); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s:%x", algo, h.Sum(nil)), nil
+	return fmt.Sprintf("%s%s:%x", reexecVersion, algo, h.Sum(nil)), nil
 }

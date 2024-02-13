@@ -33,6 +33,10 @@ type ImportTarget struct {
 	Mode    fs.FileMode
 
 	FollowSymlinks bool
+
+	// Tf true, the import target will be considered different if source path
+	// changed. Otherwise only Version will be take into account.
+	SourcePathDependent bool
 }
 
 // ImportTargets is used to import file/directory from host environment. The
@@ -79,6 +83,11 @@ func (i *ImportTargets) Generate(ctx context.Context, plats Platforms) (*core.Ac
 				}
 			}
 			ver = fmt.Sprintf("%x", h.Sum(nil))
+		}
+		// Append source path to version so the version in action changed if source
+		// path changed.
+		if ver != "" && v.SourcePathDependent {
+			ver = fmt.Sprintf("%s:%s", ver, v.Source)
 		}
 
 		// By default, create a symlink for the target.

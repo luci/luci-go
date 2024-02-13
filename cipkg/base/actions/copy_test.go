@@ -36,28 +36,76 @@ func TestProcessCopy(t *testing.T) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
-		copy := &core.ActionFilesCopy{
-			Files: map[string]*core.ActionFilesCopy_Source{
-				"test/file": {
-					Content: &core.ActionFilesCopy_Source_Local_{
-						Local: &core.ActionFilesCopy_Source_Local{Path: "something"},
+		Convey("ok", func() {
+			copy := &core.ActionFilesCopy{
+				Files: map[string]*core.ActionFilesCopy_Source{
+					"test/file": {
+						Content: &core.ActionFilesCopy_Source_Local_{
+							Local: &core.ActionFilesCopy_Source_Local{Path: "something"},
+						},
+						Mode: uint32(fs.ModeSymlink),
 					},
-					Mode: uint32(fs.ModeSymlink),
 				},
-			},
-		}
+			}
 
-		pkg, err := ap.Process("", pm, &core.Action{
-			Name: "copy",
-			Deps: []*core.Action{
-				{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
-			},
-			Spec: &core.Action_Copy{Copy: copy},
+			pkg, err := ap.Process("", pm, &core.Action{
+				Name: "copy",
+				Deps: []*core.Action{
+					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
+				},
+				Spec: &core.Action_Copy{Copy: copy},
+			})
+			So(err, ShouldBeNil)
+
+			checkReexecArg(pkg.Derivation.Args, copy)
+			So(environ.New(pkg.Derivation.Env).Get("something"), ShouldEqual, pkg.BuildDependencies[0].Handler.OutputDirectory())
 		})
-		So(err, ShouldBeNil)
 
-		checkReexecArg(pkg.Derivation.Args, copy)
-		So(environ.New(pkg.Derivation.Env).Get("something"), ShouldEqual, pkg.BuildDependencies[0].Handler.OutputDirectory())
+		// DerivationID shouldn't depend on path if version is set.
+		Convey("version", func() {
+			copy1 := &core.ActionFilesCopy{
+				Files: map[string]*core.ActionFilesCopy_Source{
+					"test/file": {
+						Content: &core.ActionFilesCopy_Source_Local_{
+							Local: &core.ActionFilesCopy_Source_Local{Path: "something", Version: "abc"},
+						},
+						Mode: uint32(fs.ModeDir),
+					},
+				},
+			}
+
+			pkg1, err := ap.Process("", pm, &core.Action{
+				Name: "copy",
+				Deps: []*core.Action{
+					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
+				},
+				Spec: &core.Action_Copy{Copy: copy1},
+			})
+			So(err, ShouldBeNil)
+
+			copy2 := &core.ActionFilesCopy{
+				Files: map[string]*core.ActionFilesCopy_Source{
+					"test/file": {
+						Content: &core.ActionFilesCopy_Source_Local_{
+							Local: &core.ActionFilesCopy_Source_Local{Path: "somethingelse", Version: "abc"},
+						},
+						Mode: uint32(fs.ModeDir),
+					},
+				},
+			}
+
+			pkg2, err := ap.Process("", pm, &core.Action{
+				Name: "copy",
+				Deps: []*core.Action{
+					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
+				},
+				Spec: &core.Action_Copy{Copy: copy2},
+			})
+			So(err, ShouldBeNil)
+
+			So(pkg1.Derivation.Args, ShouldNotEqual, pkg2.Derivation.Args)
+			So(pkg1.DerivationID, ShouldEqual, pkg2.DerivationID)
+		})
 	})
 }
 

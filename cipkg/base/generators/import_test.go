@@ -72,19 +72,68 @@ func TestImport(t *testing.T) {
 			err = f.Close()
 			So(err, ShouldBeNil)
 
-			g := ImportTargets{
-				Targets: map[string]ImportTarget{
-					"dir":  {Source: dir, Mode: fs.ModeDir},
-					"file": {Source: file},
-				},
-			}
-			a, err := g.Generate(ctx, plats)
-			So(err, ShouldBeNil)
-			imports := testutils.Assert[*core.Action_Copy](t, a.Spec)
-			So(imports.Copy.Files["dir"].GetLocal().Version, ShouldNotBeEmpty)
-			So(fs.FileMode(imports.Copy.Files["dir"].Mode).IsDir(), ShouldBeTrue)
-			So(imports.Copy.Files["file"].GetLocal().Version, ShouldNotBeEmpty)
-			So(fs.FileMode(imports.Copy.Files["file"].Mode).IsRegular(), ShouldBeTrue)
+			Convey("ok", func() {
+				g := ImportTargets{
+					Targets: map[string]ImportTarget{
+						"dir":  {Source: dir, Mode: fs.ModeDir},
+						"file": {Source: file},
+					},
+				}
+
+				a, err := g.Generate(ctx, plats)
+				So(err, ShouldBeNil)
+				imports := testutils.Assert[*core.Action_Copy](t, a.Spec)
+				So(imports.Copy.Files["dir"].GetLocal().Version, ShouldNotBeEmpty)
+				So(fs.FileMode(imports.Copy.Files["dir"].Mode).IsDir(), ShouldBeTrue)
+				So(imports.Copy.Files["file"].GetLocal().Version, ShouldNotBeEmpty)
+				So(fs.FileMode(imports.Copy.Files["file"].Mode).IsRegular(), ShouldBeTrue)
+			})
+			Convey("source path independent", func() {
+				g := ImportTargets{
+					Targets: map[string]ImportTarget{
+						"dir": {Source: dir, Mode: fs.ModeDir, Version: "123"},
+					},
+				}
+				a, err := g.Generate(ctx, plats)
+				So(err, ShouldBeNil)
+				imports1 := testutils.Assert[*core.Action_Copy](t, a.Spec)
+
+				err = os.Rename(dir, dir+".else")
+				So(err, ShouldBeNil)
+				g = ImportTargets{
+					Targets: map[string]ImportTarget{
+						"dir": {Source: dir + ".else", Mode: fs.ModeDir, Version: "123"},
+					},
+				}
+				a, err = g.Generate(ctx, plats)
+				So(err, ShouldBeNil)
+				imports2 := testutils.Assert[*core.Action_Copy](t, a.Spec)
+
+				So(imports1.Copy.Files["dir"].GetLocal().Version, ShouldEqual, imports2.Copy.Files["dir"].GetLocal().Version)
+			})
+			Convey("source path dependent", func() {
+				g := ImportTargets{
+					Targets: map[string]ImportTarget{
+						"dir": {Source: dir, Mode: fs.ModeDir, Version: "123", SourcePathDependent: true},
+					},
+				}
+				a, err := g.Generate(ctx, plats)
+				So(err, ShouldBeNil)
+				imports1 := testutils.Assert[*core.Action_Copy](t, a.Spec)
+
+				err = os.Rename(dir, dir+".else")
+				So(err, ShouldBeNil)
+				g = ImportTargets{
+					Targets: map[string]ImportTarget{
+						"dir": {Source: dir + ".else", Mode: fs.ModeDir, Version: "123", SourcePathDependent: true},
+					},
+				}
+				a, err = g.Generate(ctx, plats)
+				So(err, ShouldBeNil)
+				imports2 := testutils.Assert[*core.Action_Copy](t, a.Spec)
+
+				So(imports1.Copy.Files["dir"].GetLocal().Version, ShouldNotEqual, imports2.Copy.Files["dir"].GetLocal().Version)
+			})
 		})
 	})
 }
