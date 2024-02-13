@@ -56,6 +56,7 @@ func newDSMapper(ctrl *dsmapper.Controller) *dsMapper {
 	s.register(&removeCLDescriptionsCOnfig, removeCLDescriptionsFactory)
 	s.register(&multiCLAnalysisConfig, multiCLAnalysisMapperFactory)
 	s.register(&backfillRetentionKey, backfillRetentionKeyFactory)
+	s.register(&deleteEntitiesKey, deleteEntitiesFactory)
 
 	s.final = true
 	return s
