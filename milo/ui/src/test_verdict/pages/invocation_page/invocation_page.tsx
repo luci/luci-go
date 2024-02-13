@@ -22,6 +22,7 @@ import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { InvocationIdBar } from './invocation_id_bar';
+import { VerdictCountIndicator } from './verdict_count_indicator';
 
 export function InvocationPage() {
   const { invId } = useParams();
@@ -54,6 +55,8 @@ export function InvocationPage() {
           label="Test Results"
           value="test-results"
           to="test-results"
+          icon={<VerdictCountIndicator invName={invName} />}
+          iconPosition="end"
         />
         <AppRoutedTab label="Details" value="details" to="details" />
       </AppRoutedTabs>

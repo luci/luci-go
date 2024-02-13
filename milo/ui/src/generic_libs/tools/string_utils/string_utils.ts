@@ -34,3 +34,17 @@ export function getLongestCommonPrefix(strings: readonly string[]): string {
   }
   return baseStr.slice(0, commonPrefixLength);
 }
+
+/**
+ * Format number with a cap. If the number is greater than `cap`, display
+ * `${cap}+` instead. This is useful when displaying a large number in limited
+ * space.
+ */
+export function formatNum(num: number, hasMore: boolean, cap?: number) {
+  if (cap && num > cap) {
+    return `${cap}+`;
+  } else if (hasMore) {
+    return `${num}+`;
+  }
+  return `${num}`;
+}
