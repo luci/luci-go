@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"google.golang.org/grpc/status"
 
@@ -58,7 +59,7 @@ func handleViewLog(c *router.Context) {
 	if bld == nil {
 		return
 	}
-	stepName := c.Params.ByName("StepName")
+	stepName := strings.Trim(c.Params.ByName("StepName"), "/")
 	buildSteps := &model.BuildSteps{Build: datastore.KeyForObj(ctx, bld)}
 	switch err := datastore.Get(ctx, buildSteps); {
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
@@ -104,7 +105,7 @@ func findLogURL(stepName, logName string, steps []*pb.Step) string {
 // handleViewBuild redirects to Milo build page.
 func handleViewBuild(c *router.Context) {
 	ctx := c.Request.Context()
-	bID, err := strconv.Atoi(c.Params.ByName("BuildID"))
+	bID, err := strconv.Atoi(strings.Trim(c.Params.ByName("BuildID"), "/"))
 	if err != nil {
 		replyError(c, err, "invalid build id", http.StatusBadRequest)
 		return
