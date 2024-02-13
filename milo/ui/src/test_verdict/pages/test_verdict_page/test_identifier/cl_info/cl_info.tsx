@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import styled from '@emotion/styled';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
-import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import {
   getBuildURLPathFromBuildId,
   getGerritChangeURL,
@@ -26,26 +25,6 @@ import {
 import { GerritChange } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
 import { useInvocationID, useSources } from '../../context';
-
-const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} classes={{ popper: className }} />
-))(() => ({
-  [`& .${tooltipClasses.arrow}`]: {
-    color: '#f5f5f9',
-    '&::before': {
-      backgroundColor: 'white',
-      border: '1px solid #dadde9',
-    },
-  },
-  [`& .${tooltipClasses.tooltip}`]: {
-    backgroundColor: 'white',
-    color: 'rgba(0, 0, 0, 0.87)',
-    maxWidth: 220,
-    fontSize: '0.9rem',
-    border: '1px solid #dadde9',
-    boxShadow: '0px 5px 8px -3px rgba(0,0,0,0.73)',
-  },
-}));
 
 interface ChangelistLinkProps {
   changelist: GerritChange;

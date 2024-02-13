@@ -12,38 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Box,
-  Tooltip,
-  TooltipProps,
-  styled,
-  tooltipClasses,
-} from '@mui/material';
+import { Box } from '@mui/material';
 import { arc, pie } from 'd3';
 import { useMemo } from 'react';
 
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { ChangepointGroupStatistics_RateDistribution_RateBuckets } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
-
-const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} classes={{ popper: className }} />
-))(() => ({
-  [`& .${tooltipClasses.arrow}`]: {
-    color: '#f5f5f9',
-    '&::before': {
-      backgroundColor: 'white',
-      border: '1px solid #dadde9',
-    },
-  },
-  [`& .${tooltipClasses.tooltip}`]: {
-    backgroundColor: 'white',
-    color: 'rgba(0, 0, 0, 0.87)',
-    maxWidth: 600,
-    fontWeight: 400,
-    fontSize: '0.9rem',
-    border: '1px solid #dadde9',
-    boxShadow: '0px 5px 8px -3px rgba(0,0,0,0.73)',
-  },
-}));
 
 interface FailureRateGroup {
   readonly label: string;
