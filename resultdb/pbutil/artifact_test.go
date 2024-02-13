@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -125,6 +126,10 @@ func TestArtifactId(t *testing.T) {
 		Convey(`Unprintable`, func() {
 			err := ValidateArtifactID("unprintable \a.txt")
 			So(err, ShouldErrLike, "does not match")
+		})
+		Convey(`Starts with dot`, func() {
+			err := ValidateArtifactID(".arc.log")
+			So(err, ShouldBeNil)
 		})
 
 	})
