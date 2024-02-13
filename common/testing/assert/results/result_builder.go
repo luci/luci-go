@@ -57,3 +57,23 @@ func (builder ResultBuilder) Because(format string, args ...interface{}) ResultB
 	addValuef(builder.result, "Because", format, args...)
 	return builder
 }
+
+// Actual sets the actual field of a Result.
+func (builder ResultBuilder) Actual(actual interface{}) ResultBuilder{
+	if builder.result == nil {
+		builder.result = &Result{}
+	}
+	builder.result.failed = true
+	addValue(builder.result, "Actual", actual)
+	return builder
+}
+
+// Expected sets the expected field of a Result.
+func (builder ResultBuilder) Expected(actual interface{}) ResultBuilder{
+	if builder.result == nil {
+		builder.result = &Result{}
+	}
+	builder.result.failed = true
+	addValue(builder.result, "Expected", actual)
+	return builder
+}
