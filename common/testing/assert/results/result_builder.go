@@ -47,3 +47,13 @@ func (builder ResultBuilder) SetName(comparison string, types ...reflect.Type) R
 	builder.result.header.types = typeNames
 	return builder
 }
+
+// Because sets the because field of a Result.
+func (builder ResultBuilder) Because(format string, args ...interface{}) ResultBuilder{
+	if builder.result == nil {
+		builder.result = &Result{}
+	}
+	builder.result.failed = true
+	addValuef(builder.result, "Because", format, args...)
+	return builder
+}

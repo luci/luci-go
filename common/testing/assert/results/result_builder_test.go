@@ -73,3 +73,40 @@ func TestNewResultBuilder(t *testing.T) {
 		})
 	}
 }
+
+// TestBecause tests setting the because field of a Result.
+func TestBecause(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		format string
+		args   []interface{}
+		result *Result
+	}{
+		{
+			name:   "because",
+			format: "%s",
+			args:   []interface{}{7},
+			result: &Result{
+				failed: true,
+				values: []value{{
+					name:  "Because",
+					value: 7,
+				}},
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			expected := tt.result
+			actual := NewResultBuilder().Because(tt.format, tt.args...).Result()
+			if diff := typed.Diff(expected, actual); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
+}
