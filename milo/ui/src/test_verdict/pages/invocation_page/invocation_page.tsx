@@ -1,0 +1,69 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { LinearProgress } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
+
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta/page_meta';
+import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
+import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
+
+import { InvocationIdBar } from './invocation_id_bar';
+
+export function InvocationPage() {
+  const { invId } = useParams();
+  if (!invId) {
+    throw new Error('invariant violated: invId should be set');
+  }
+
+  const invName = 'invocations/' + invId;
+
+  const client = useResultDbClient();
+  const { data, error, isError, isLoading } = useQuery(
+    client.GetInvocation.query({ name: invName }),
+  );
+  if (isError) {
+    throw error;
+  }
+
+  const project = data?.realm.split(':', 2)[0] || '';
+
+  return (
+    <>
+      <PageMeta project={project} title={`inv: ${invId}`} />
+      <InvocationIdBar invName={invName} />
+      <LinearProgress
+        value={100}
+        variant={isLoading ? 'indeterminate' : 'determinate'}
+      />
+      <AppRoutedTabs>
+        <AppRoutedTab
+          label="Test Results"
+          value="test-results"
+          to="test-results"
+        />
+        <AppRoutedTab label="Details" value="details" to="details" />
+      </AppRoutedTabs>
+    </>
+  );
+}
+
+export const element = (
+  // See the documentation for `<LoginPage />` for why we handle error this way.
+  <RecoverableErrorBoundary key="invocation">
+    <InvocationPage />
+  </RecoverableErrorBoundary>
+);

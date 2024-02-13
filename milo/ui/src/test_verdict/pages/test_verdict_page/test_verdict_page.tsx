@@ -23,11 +23,8 @@ import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { PageMeta } from '@/common/components/page_meta';
 import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { UiPage } from '@/common/constants/view';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import {
-  BatchGetTestVariantsRequest,
-  ResultDBClientImpl,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputTestVerdict } from '@/test_verdict/types';
 
 import { TestVerdictProvider } from './context';
@@ -44,10 +41,7 @@ export function TestVerdictPage() {
     );
   }
 
-  const client = usePrpcServiceClient({
-    host: SETTINGS.resultdb.host,
-    ClientImpl: ResultDBClientImpl,
-  });
+  const client = useResultDbClient();
   const {
     data: results,
     error,

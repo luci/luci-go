@@ -236,6 +236,10 @@ export const routes: RouteObject[] = [
         path: 'p/:project/regressions/details',
         lazy: () => import('@/test_verdict/pages/regression_details_page'),
       },
+      {
+        path: 'inv/:invId',
+        lazy: () => import('@/test_verdict/pages/invocation_page'),
+      },
     ],
   },
 ];
