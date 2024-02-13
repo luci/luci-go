@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { useQuery } from 'react-query';
 
 import TabPanel from '@mui/lab/TabPanel';
 import Table from '@mui/material/Table';
@@ -27,19 +26,12 @@ import TableRow from '@mui/material/TableRow';
 
 import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
 import {
-  ChromeOSCriteria,
-  ChromiumCriteria,
-  ExoneratedTestVariant,
-  ExonerationCriteria,
   SortableField,
-  sortTestVariants,
-  testVariantFromAnalysis,
-} from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
+  sortTestVariantBranches,
+} from '@/components/cluster/cluster_analysis_section/exonerations_v2_tab/model/model';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import { getClustersService, getTestVariantsService } from '@/services/services';
-import { QueryTestVariantFailureRateRequest, TestVariantIdentifier } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
-import { prpcRetrier } from '@/tools/prpc_retrier';
 
+import useFetchExoneratedTestVariantBranches, { ExoneratedTestVariantBranch } from '@/hooks/use_fetch_exonerated_test_variant_branches';
 import { ClusterContext } from '../../cluster_context';
 import ExonerationsTableHead from './exonerations_table_head/exonerations_table_head';
 import ExonerationsTableRow from './exonerations_table_row/exonerations_table_row';
@@ -49,7 +41,7 @@ interface Props {
   value: string;
 }
 
-const ExonerationsTab = ({
+const ExonerationsV2Tab = ({
   value,
 }: Props) => {
   const {
@@ -58,54 +50,24 @@ const ExonerationsTab = ({
     id: clusterId,
   } = useContext(ClusterContext);
 
-  const [testVariants, setTestVariants] = useState<ExoneratedTestVariant[]>([]);
+  const [testVariantBranches, setTestVariants] = useState<ExoneratedTestVariantBranch[]>([]);
 
   const [sortField, setCurrentSortField] = useState<SortableField>('lastExoneration');
   const [isAscending, setIsAscending] = useState(false);
-  const [criteria] = useState<ExonerationCriteria>(project == 'chromeos' ? ChromeOSCriteria : ChromiumCriteria);
 
   const {
     isLoading,
     isSuccess,
-    data: unsortedTestVariants,
+    data: response,
     error,
-  } = useQuery(
-      ['exoneratedTestVariants', project, clusterAlgorithm, clusterId],
-      async () => {
-        const service = getClustersService();
-        const clusterResponse = await service.queryExoneratedTestVariants({
-          parent: `projects/${project}/clusters/${clusterAlgorithm}/${clusterId}/exoneratedTestVariants`,
-        });
-        const clusterExoneratedTestVariants = clusterResponse.testVariants;
-        if (clusterExoneratedTestVariants.length === 0) {
-          return [];
-        }
-        const tvRequest: QueryTestVariantFailureRateRequest = {
-          project: project,
-          testVariants: clusterExoneratedTestVariants.map((v) => {
-            return TestVariantIdentifier.create({
-              testId: v.testId,
-              variant: v.variant,
-            });
-          }),
-        };
-        const tvService = getTestVariantsService();
-        const tvResponse = await tvService.queryFailureRate(tvRequest);
-        return tvResponse.testVariants?.map((analyzedTV, i) => {
-          // QueryFailureRate returns test variants in the same order
-          // that they are requested.
-          const exoneratedTV = clusterExoneratedTestVariants[i];
-          return testVariantFromAnalysis(exoneratedTV, analyzedTV);
-        }) || [];
-      }, {
-        retry: prpcRetrier,
-      });
+  } = useFetchExoneratedTestVariantBranches(project, clusterAlgorithm, clusterId);
+
 
   useEffect(() => {
-    if (unsortedTestVariants) {
-      setTestVariants(sortTestVariants(criteria, unsortedTestVariants, sortField, isAscending));
+    if (response?.testVariantBranches !== undefined) {
+      setTestVariants(sortTestVariantBranches(response, sortField, isAscending));
     }
-  }, [criteria, unsortedTestVariants, sortField, isAscending]);
+  }, [response, sortField, isAscending]);
 
   const toggleSort = (field: SortableField) => {
     if (field === sortField) {
@@ -140,16 +102,16 @@ const ExonerationsTab = ({
               isAscending={isAscending}/>
             <TableBody>
               {
-                testVariants.map((tv) => (
+                testVariantBranches.map((tvb, i) => (
                   <ExonerationsTableRow
-                    criteria={criteria}
+                    criteria={response.criteria}
                     project={project}
-                    testVariant={tv}
-                    key={tv.key}/>
+                    testVariantBranch={tvb}
+                    key={i.toString()}/>
                 ))
               }
               {
-                testVariants.length == 0 && (
+                testVariantBranches.length == 0 && (
                   <TableRow>
                     <TableCell colSpan={6}>Hooray! There were no presubmit-blocking failures exonerated in the last week.</TableCell>
                   </TableRow>
@@ -163,4 +125,4 @@ const ExonerationsTab = ({
   );
 };
 
-export default ExonerationsTab;
+export default ExonerationsV2Tab;

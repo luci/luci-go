@@ -17,9 +17,12 @@ import fetchMock from 'fetch-mock-jest';
 import {
   Cluster,
   ClusterExoneratedTestVariant,
+  ClusterExoneratedTestVariantBranch,
   ClusterSummary,
   DistinctClusterFailure,
   GetClusterRequest,
+  QueryClusterExoneratedTestVariantBranchesRequest,
+  QueryClusterExoneratedTestVariantBranchesResponse,
   QueryClusterExoneratedTestVariantsRequest,
   QueryClusterExoneratedTestVariantsResponse,
   QueryClusterFailuresRequest,
@@ -179,6 +182,23 @@ export const getMockClusterExoneratedTestVariant = (id: string, exoneratedFailur
   };
 };
 
+export const getMockClusterExoneratedTestVariantBranch = (id: string, exoneratedFailures: number): ClusterExoneratedTestVariantBranch => {
+  return {
+    project: 'myproject',
+    testId: id,
+    variant: undefined,
+    sourceRef: {
+      gitiles: {
+        host: 'myproject.googlesource.com',
+        project: 'myproject/src',
+        ref: 'refs/heads/mybranch',
+      },
+    },
+    criticalFailuresExonerated: exoneratedFailures,
+    lastExoneration: '2052-01-02T03:04:05.678901234Z',
+  };
+};
+
 export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest, response: QueryClusterSummariesResponse, overwriteRoutes = true) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterSummaries',
@@ -241,6 +261,24 @@ export const mockQueryExoneratedTestVariants = (parent: string, testVariants: Cl
       'X-Prpc-Grpc-Code': '0',
     },
     body: ')]}\'\n' + JSON.stringify(QueryClusterExoneratedTestVariantsResponse.toJSON(response)),
+  }, { overwriteRoutes: true });
+};
+
+export const mockQueryExoneratedTestVariantBranches = (parent: string, testVariantBranches: ClusterExoneratedTestVariantBranch[]) => {
+  const request: QueryClusterExoneratedTestVariantBranchesRequest = {
+    parent: parent,
+  };
+  const response: QueryClusterExoneratedTestVariantBranchesResponse = {
+    testVariantBranches: testVariantBranches,
+  };
+  fetchMock.post({
+    url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryExoneratedTestVariantBranches',
+    body: QueryClusterExoneratedTestVariantBranchesRequest.toJSON(request) as object,
+  }, {
+    headers: {
+      'X-Prpc-Grpc-Code': '0',
+    },
+    body: ')]}\'\n' + JSON.stringify(QueryClusterExoneratedTestVariantBranchesResponse.toJSON(response)),
   }, { overwriteRoutes: true });
 };
 

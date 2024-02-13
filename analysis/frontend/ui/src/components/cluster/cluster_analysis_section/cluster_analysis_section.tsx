@@ -32,6 +32,7 @@ import OverviewTab from '@/components/cluster/cluster_analysis_section/overview_
 import ExonerationsTab from '@/components/cluster/cluster_analysis_section/exonerations_tab/exonerations_tab';
 
 import { ClusterContext } from '../cluster_context';
+import ExonerationsV2Tab from './exonerations_v2_tab/exonerations_v2_tab';
 
 
 const ClusterAnalysisSection = () => {
@@ -48,11 +49,15 @@ const ClusterAnalysisSection = () => {
     }, { replace: true });
   };
 
-  const exonerationsAvailable = project == 'chromium' || project == 'chrome' || project == 'chromeos';
+  const exonerationsV1Available = project == 'chromium' || project == 'chrome' || project == 'chromeos';
+  const exonerationsV2Available = project == 'chromeos';
 
   const validValues = ['overview', 'recent-failures'];
-  if (exonerationsAvailable) {
+  if (exonerationsV1Available) {
     validValues.push('exonerations');
+  }
+  if (exonerationsV2Available) {
+    validValues.push('exonerationsv2');
   }
 
   // Handle legacy URLs that used hash instead of search params.
@@ -83,7 +88,7 @@ const ClusterAnalysisSection = () => {
               <Tab label='Overview' value='overview' />
               <Tab label='Recent Failures' value='recent-failures' />
               {
-                exonerationsAvailable && (
+                (exonerationsV1Available) && (
                   <Tab label='Exonerations' value='exonerations' />
                 )
               }
@@ -92,8 +97,15 @@ const ClusterAnalysisSection = () => {
           <OverviewTab value='overview'/>
           <FailuresTab value='recent-failures'/>
           {
-            exonerationsAvailable && (
+            exonerationsV1Available && (
               <ExonerationsTab value='exonerations'/>
+            )
+          }
+          {
+            // Make tab available but have no label, so tab is only accessible if the user
+            // hacks the URL. This will remain the case until the feature is fully launched.
+            exonerationsV2Available && (
+              <ExonerationsV2Tab value='exonerationsv2'/>
             )
           }
         </TabContext>

@@ -19,6 +19,11 @@ import {
   TestVariantFailureRateAnalysis,
   QueryTestVariantFailureRateRequest,
   QueryTestVariantFailureRateResponse,
+  QueryTestVariantStabilityRequest_TestVariantPosition,
+  QueryTestVariantStabilityRequest,
+  QueryTestVariantStabilityResponse,
+  TestVariantStabilityAnalysis,
+  TestStabilityCriteria,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
 export const getMockTestVariantIdentifier = (id: string): TestVariantIdentifier => {
@@ -59,6 +64,54 @@ export const getMockTestVariantFailureRateAnalysis = (id: string): TestVariantFa
   });
 };
 
+export const getMockTestVariantPosition = (id: string): QueryTestVariantStabilityRequest_TestVariantPosition => {
+  return QueryTestVariantStabilityRequest_TestVariantPosition.create({
+    testId: id,
+    sources: {
+      gitilesCommit: {
+        host: 'myproject.googlesource.com',
+        project: 'myproject/src',
+        ref: 'refs/heads/mybranch',
+        commitHash: 'ff'.repeat(20),
+        position: '999999999999',
+      },
+    },
+  });
+};
+
+export const getMockTestVariantStabilityAnalysis = (id: string): TestVariantStabilityAnalysis => {
+  return TestVariantStabilityAnalysis.create({
+    testId: id,
+    failureRate: {
+      isMet: true,
+      unexpectedTestRuns: 101,
+      consecutiveUnexpectedTestRuns: 102,
+    },
+    flakeRate: {
+      isMet: false,
+      runFlakyVerdicts: 201,
+      totalVerdicts: 202,
+      startPosition: '301',
+      endPosition: '302',
+    },
+  });
+};
+
+export const getMockTestStabilityCriteria = (): TestStabilityCriteria => {
+  return TestStabilityCriteria.create({
+    failureRate: {
+      failureThreshold: 6,
+      consecutiveFailureThreshold: 3,
+    },
+    flakeRate: {
+      minWindow: 100,
+      flakeRateThreshold: 0.01,
+      flakeThreshold: 2,
+    },
+  });
+};
+
+
 export const mockQueryFailureRate = (request: QueryTestVariantFailureRateRequest, response: QueryTestVariantFailureRateResponse) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.TestVariants/QueryFailureRate',
@@ -68,5 +121,17 @@ export const mockQueryFailureRate = (request: QueryTestVariantFailureRateRequest
       'X-Prpc-Grpc-Code': '0',
     },
     body: ')]}\'\n' + JSON.stringify(QueryTestVariantFailureRateResponse.toJSON(response)),
+  }, { overwriteRoutes: true });
+};
+
+export const mockQueryStability = (request: QueryTestVariantStabilityRequest, response: QueryTestVariantStabilityResponse) => {
+  fetchMock.post({
+    url: 'http://localhost/prpc/luci.analysis.v1.TestVariants/QueryStability',
+    body: QueryTestVariantStabilityRequest.toJSON(request) as object,
+  }, {
+    headers: {
+      'X-Prpc-Grpc-Code': '0',
+    },
+    body: ')]}\'\n' + JSON.stringify(QueryTestVariantStabilityResponse.toJSON(response)),
   }, { overwriteRoutes: true });
 };

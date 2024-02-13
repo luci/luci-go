@@ -17,7 +17,7 @@ import {
   PresubmitRunId,
   Variant,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
-import { Changelist } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
+import { Changelist, SourceRef } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 
 import { variantAsPairs } from '../variant_tools';
 
@@ -74,6 +74,13 @@ export const testHistoryLink = (project: string, testId: string, partialVariant?
     return 'V:' + encodeURIComponent(vp.key || '') + '=' + encodeURIComponent(vp.value);
   }).join(' ');
   return `https://ci.chromium.org/ui/test/${encodeURIComponent(project)}/${encodeURIComponent(testId)}?q=${encodeURIComponent(query)}`;
+};
+
+export const sourceRefLink = (sourceRef: SourceRef) : string => {
+  if (sourceRef.gitiles) {
+    return `https://${sourceRef.gitiles.host}/${sourceRef.gitiles.project}/+log/${sourceRef.gitiles.ref}`;
+  }
+  return '';
 };
 
 // loginLink constructs a URL to login to LUCI Analysis, with a redirect to

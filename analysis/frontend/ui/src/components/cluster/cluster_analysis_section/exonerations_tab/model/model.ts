@@ -104,7 +104,7 @@ export const isFlakyCriteriaMet = (criteria: ExonerationCriteria, tv: Exonerated
 };
 
 export const isFailureCriteriaAlmostMet = (criteria: ExonerationCriteria, tv: ExoneratedTestVariant): boolean => {
-  if (isFlakyCriteriaMet(criteria, tv)) {
+  if (isFailureCriteriaMet(criteria, tv)) {
     return false;
   }
   if (criteria.recentVerdictsWithUnexpectedRuns > 1 && tv.recentVerdictsWithUnexpectedRuns >= Math.ceil(criteria.recentVerdictsWithUnexpectedRuns / 2)) {
