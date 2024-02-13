@@ -5,4 +5,5 @@ inputsdir: ../../bisection
 
 build:
   - go_gae_bundle: ${inputsdir}/app.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/bisection

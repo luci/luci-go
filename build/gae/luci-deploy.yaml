@@ -5,4 +5,5 @@ inputsdir: ../../deploy
 
 build:
   - go_gae_bundle: ${inputsdir}/service/app.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/service

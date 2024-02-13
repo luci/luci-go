@@ -7,8 +7,11 @@ build:
   - copy: ${inputsdir}/dispatch.yaml
     dest: ${contextdir}/dispatch.yaml
   - go_gae_bundle: ${inputsdir}/frontend/app.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/frontend
   - go_gae_bundle: ${inputsdir}/backend/service-backend.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/backend
   - go_gae_bundle: ${inputsdir}/verification/service-verification.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/verification

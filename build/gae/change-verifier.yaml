@@ -5,8 +5,11 @@ inputsdir: ../../cv
 
 build:
   - go_gae_bundle: ${inputsdir}/appengine/app.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/default
   - go_gae_bundle: ${inputsdir}/appengine/monitor/service-monitor.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/monitor
   - go_gae_bundle: ${inputsdir}/appengine/listener/service-listener.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/listener

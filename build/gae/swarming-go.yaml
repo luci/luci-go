@@ -8,6 +8,8 @@ sources:
 
 build:
   - go_gae_bundle: ${inputsdir}/cmd/service-default-go.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/cmd
   - go_gae_bundle: ${inputsdir}/monitor/service-monitor.yaml
+    go_gae_bundle_as_module: True
     dest: ${contextdir}/monitor
