@@ -17,10 +17,11 @@ syntax = "proto3";
 package luci.resultsink.v1;
 
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 
-// Maps from directory paths to extra tags to attach to TestResults.
+// Maps from directory paths to extra fields to attach to TestResults.
 // When converted to JSON format, it will look like below:
 //{
 //  "repos": {
@@ -28,29 +29,40 @@ option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 //      "dirs": {
 //        ".": {
 //          "tags": {
-//            "monorail_project": "chromium"
+//            "teamEmail": "team_email@chromium.org"
 //          }
 //        },
 //        "foo": {
 //          "tags": {
-//            "monorail_project": "chromium",
-//            "monorail_component": "Monorail>Component",
 //            "teamEmail": "team_email@chromium.org",
 //            "os": "WINDOWS"
+//          },
+//          "bug_component": {
+//            "issue_tracker": {
+//              "component_id": "17171717"
+//            }
 //          }
 //        }
 //      }
 //      "files": {
 //        "./file.txt": {
 //          "tags": {
-//            "monorail_project": "chromium",
-//            "monorail_component": "Monorail>Overridden>Component",
+//            "teamEmail": "other_email@chromium.org",
+//            "os": "WINDOWS"
+//          },
+//          "bug_component": {
+//            "issue_tracker": {
+//              "component_id": "123456"
+//            }
 //          }
 //        }
 //      }
 //    }
 //  }
 //}
+//
+// N.B. This message is called 'LocationTags' because it was previously
+// only used for tags, but this is no longer true.
 message LocationTags {
   // Map from directory paths in a repo to extra tags to attach to TestResults.
   message Repo {
@@ -71,12 +83,22 @@ message LocationTags {
     //
     // A key can be repeated.
     repeated luci.resultdb.v1.StringPair tags = 1;
+
+    // The issue tracker component associated with the test, if any.
+    // Bugs related to the test may be filed here.
+    // Populated to test_metadata.bug_component.
+    luci.resultdb.v1.BugComponent bug_component = 2;
   }
 
   // Extra tags to attach to TestResults for a file.
   message File {
     // A key can be repeated.
     repeated luci.resultdb.v1.StringPair tags = 1;
+
+    // The issue tracker component associated with the test, if any.
+    // Bugs related to the test may be filed here.
+    // Populated to test_metadata.bug_component.
+    luci.resultdb.v1.BugComponent bug_component = 2;
   }
 
   // The key is a Gitiles URL as the identifier for a repo.

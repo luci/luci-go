@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/sync/dispatcher"
@@ -95,9 +96,10 @@ func (c *testResultChannel) schedule(trs ...*sinkpb.TestResult) {
 	}
 }
 
-// setTestTags sets the test tags in tr by looking for the directory of
-// tr.TestMetadata.Location.FileName in the location tags file.
-func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
+// setLocationSpecificFields sets the test tags and bug component in tr
+// by looking for the directory of tr.TestMetadata.Location.FileName
+// in the location tags file.
+func (c *testResultChannel) setLocationSpecificFields(tr *sinkpb.TestResult) {
 	if c.cfg.LocationTags == nil || tr.TestMetadata.GetLocation().GetFileName() == "" {
 		return
 	}
@@ -107,6 +109,8 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 	}
 
 	tagKeySet := stringset.New(0)
+
+	var bugComponent *pb.BugComponent
 
 	// if a test result has a matching file location by file name, use the metadata
 	// associated with it first. Fill in the rest using directory metadata.
@@ -122,6 +126,10 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 		// Fill in keys from file definition so that they are not repeated.
 		for _, ft := range f.Tags {
 			tagKeySet.Add(ft.Key)
+		}
+
+		if bugComponent == nil {
+			bugComponent = f.BugComponent
 		}
 	}
 
@@ -140,12 +148,21 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 			for _, t := range d.Tags {
 				tagKeySet.Add(t.Key)
 			}
+
+			if bugComponent == nil {
+				bugComponent = d.BugComponent
+			}
 		}
 		if dir == "." {
 			// Have reached the root.
-			return
+			break
 		}
 		dir = path.Dir(dir)
+	}
+
+	// Use LocationTags-derived bug component if one is not already set.
+	if tr.TestMetadata.BugComponent == nil && bugComponent != nil {
+		tr.TestMetadata.BugComponent = proto.Clone(bugComponent).(*pb.BugComponent)
 	}
 }
 
@@ -155,7 +172,7 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
 		for i, d := range b.Data {
 			tr := d.Item.(*sinkpb.TestResult)
-			c.setTestTags(tr)
+			c.setLocationSpecificFields(tr)
 			tags := append(tr.GetTags(), c.cfg.BaseTags...)
 
 			// The test result variant will overwrite the value for the

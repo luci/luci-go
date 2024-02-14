@@ -331,6 +331,13 @@ func TestReportTestResults(t *testing.T) {
 			"feature", "feature3",
 			"monorail_component", "Monorail>Component>Sub",
 		)
+		subComponent := &pb.BugComponent{
+			System: &pb.BugComponent_IssueTracker{
+				IssueTracker: &pb.IssueTrackerComponent{
+					ComponentId: 222,
+				},
+			},
+		}
 
 		rootTags := pbutil.StringPairs(
 			"feature", "feature1",
@@ -338,6 +345,13 @@ func TestReportTestResults(t *testing.T) {
 			"teamEmail", "team_email@chromium.org",
 			"os", "WINDOWS",
 		)
+		rootComponent := &pb.BugComponent{
+			System: &pb.BugComponent_IssueTracker{
+				IssueTracker: &pb.IssueTrackerComponent{
+					ComponentId: 111,
+				},
+			},
+		}
 
 		Convey("with ServerConfig.LocationTags", func() {
 			cfg.LocationTags = &sinkpb.LocationTags{
@@ -345,10 +359,12 @@ func TestReportTestResults(t *testing.T) {
 					"https://chromium.googlesource.com/chromium/src": {
 						Dirs: map[string]*sinkpb.LocationTags_Dir{
 							".": {
-								Tags: rootTags,
+								Tags:         rootTags,
+								BugComponent: rootComponent,
 							},
 							"artifact_dir": {
-								Tags: subTags,
+								Tags:         subTags,
+								BugComponent: subComponent,
 							},
 						},
 					},
@@ -361,6 +377,7 @@ func TestReportTestResults(t *testing.T) {
 				"teamEmail", "team_email@chromium.org",
 				"os", "WINDOWS",
 			)...)
+			expectedTR.TestMetadata.BugComponent = subComponent
 			pbutil.SortStringPairs(expectedTR.Tags)
 			checkResults()
 		})
@@ -370,21 +387,31 @@ func TestReportTestResults(t *testing.T) {
 				"featureX", "featureY",
 				"monorail_component", "Monorail>File>Component",
 			)
+			overriddenComponent := &pb.BugComponent{
+				System: &pb.BugComponent_IssueTracker{
+					IssueTracker: &pb.IssueTrackerComponent{
+						ComponentId: 333,
+					},
+				},
+			}
 
 			cfg.LocationTags = &sinkpb.LocationTags{
 				Repos: map[string]*sinkpb.LocationTags_Repo{
 					"https://chromium.googlesource.com/chromium/src": {
 						Files: map[string]*sinkpb.LocationTags_File{
 							"artifact_dir/a_test.cc": {
-								Tags: overriddenTags,
+								Tags:         overriddenTags,
+								BugComponent: overriddenComponent,
 							},
 						},
 						Dirs: map[string]*sinkpb.LocationTags_Dir{
 							".": {
-								Tags: rootTags,
+								Tags:         rootTags,
+								BugComponent: rootComponent,
 							},
 							"artifact_dir": {
-								Tags: subTags,
+								Tags:         subTags,
+								BugComponent: subComponent,
 							},
 						},
 					},
@@ -399,6 +426,7 @@ func TestReportTestResults(t *testing.T) {
 				"teamEmail", "team_email@chromium.org",
 				"os", "WINDOWS",
 			)...)
+			expectedTR.TestMetadata.BugComponent = overriddenComponent
 			pbutil.SortStringPairs(expectedTR.Tags)
 
 			checkResults()
