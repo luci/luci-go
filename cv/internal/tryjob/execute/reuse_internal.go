@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -38,36 +39,21 @@ func (w *worker) findReuseInCV(ctx context.Context, definitions []*tryjob.Defini
 		return nil, nil
 	}
 
-	tryjobs := make([]*tryjob.Tryjob, 0, len(candidates))
-	for _, tj := range candidates {
-		tryjobs = append(tryjobs, tj)
+	defs := make([]*tryjob.Definition, 0, len(candidates))
+	tryjobIDs := make(common.TryjobIDs, 0, len(candidates))
+	for def, tj := range candidates {
+		defs = append(defs, def)
+		tryjobIDs = append(tryjobIDs, tj.ID)
 	}
-	var innerErr error
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
-		defer func() { innerErr = err }()
-		if err := datastore.Get(ctx, tryjobs); err != nil {
-			return errors.Annotate(err, "failed to load Tryjob entities").Tag(transient.Tag).Err()
-		}
-		toSave := tryjobs[:0]
-		for _, tj := range tryjobs {
-			// Be defensive. Tryjob may already include this Run if previous request
-			// failed in the middle.
-			if tj.ReusedBy.Index(w.run.ID) < 0 {
-				tj.ReusedBy = append(tj.ReusedBy, w.run.ID)
-				tj.EVersion++
-				tj.EntityUpdateTime = clock.Now(ctx).UTC()
-				toSave = append(toSave, tj)
-			}
-		}
-		return tryjob.SaveTryjobs(ctx, toSave, w.rm.NotifyTryjobsUpdated)
-	}, nil)
-	switch {
-	case innerErr != nil:
-		return nil, innerErr
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
+	tjs, err := w.addCurrentRunToReuse(ctx, tryjobIDs)
+	if err != nil {
+		return nil, err
 	}
-	return candidates, nil
+	ret := make(map[*tryjob.Definition]*tryjob.Tryjob, len(defs))
+	for i, def := range definitions {
+		ret[def] = tjs[i]
+	}
+	return ret, nil
 }
 
 // queryForCandidates makes a DS query to find Tryjob candidates for reuse that
@@ -125,4 +111,38 @@ func matchDefinitions(tj *tryjob.Tryjob, definitions []*tryjob.Definition) *tryj
 		}
 	}
 	return nil
+}
+
+func (w *worker) addCurrentRunToReuse(ctx context.Context, tjIDs common.TryjobIDs) ([]*tryjob.Tryjob, error) {
+	var tryjobs []*tryjob.Tryjob
+	var innerErr error
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		defer func() { innerErr = err }()
+		tryjobs = make([]*tryjob.Tryjob, len(tjIDs))
+		for i, id := range tjIDs {
+			tryjobs[i] = &tryjob.Tryjob{ID: id}
+		}
+		if err := datastore.Get(ctx, tryjobs); err != nil {
+			return errors.Annotate(err, "failed to load Tryjob entities").Tag(transient.Tag).Err()
+		}
+		toSave := tryjobs[:0]
+		for _, tj := range tryjobs {
+			// Be defensive. Tryjob may already include this Run if previous request
+			// failed in the middle.
+			if tj.ReusedBy.Index(w.run.ID) < 0 {
+				tj.ReusedBy = append(tj.ReusedBy, w.run.ID)
+				tj.EVersion++
+				tj.EntityUpdateTime = clock.Now(ctx).UTC()
+				toSave = append(toSave, tj)
+			}
+		}
+		return tryjob.SaveTryjobs(ctx, toSave, w.rm.NotifyTryjobsUpdated)
+	}, nil)
+	switch {
+	case innerErr != nil:
+		return nil, innerErr
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
+	}
+	return tryjobs, nil
 }
