@@ -43,6 +43,9 @@ const (
 
 // Poke implements Handler interface.
 func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error) {
+	if !run.IsEnded(rs.Status) && !rs.StartTime.IsZero() && clock.Since(ctx, rs.CreateTime) > 2*24*time.Hour {
+		logging.Warningf(ctx, "FIXME - crbug/40946713: run has been active for 2 days. This is likely caused by the referenced bug.")
+	}
 	if !run.IsEnded(rs.Status) && clock.Since(ctx, rs.CreateTime) > common.MaxRunTotalDuration {
 		return impl.Cancel(ctx, rs, []string{
 			fmt.Sprintf("max run duration of %s has reached", common.MaxRunTotalDuration),
