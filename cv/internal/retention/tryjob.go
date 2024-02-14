@@ -36,12 +36,12 @@ import (
 )
 
 // tryjobsPerTask controls how many tryjobs to wipeout per TQ task.
-const tryjobsPerTask = 1000
+const tryjobsPerTask = 800
 
 // scheduleWipeoutTryjobsTasks schedules tasks to wipe out old tryjobs that are
 // out of the retention period.
 //
-// The tasks will be uniformly distributed over the next 8 hours.
+// The tasks will be uniformly distributed over the next 7 hours.
 // TODO(yiwzhang): change it to 1 hour after the first execution.
 func scheduleWipeoutTryjobsTasks(ctx context.Context, tqd *tq.Dispatcher) error {
 	tryjobs, err := tryjob.QueryTryjobIDsUpdatedBefore(ctx, clock.Now(ctx).Add(-retentionPeriod))
@@ -62,9 +62,9 @@ func scheduleWipeoutTryjobsTasks(ctx context.Context, tqd *tq.Dispatcher) error 
 			}
 			task := &tq.Task{
 				Payload: &WipeoutTryjobsTask{
-					Ids: tryjobs.ToInt64(),
+					Ids: common.TryjobIDs(chunk).ToInt64(),
 				},
-				Delay: common.DistributeOffset(8*time.Hour, tryjobIDStrs...),
+				Delay: common.DistributeOffset(7*time.Hour, tryjobIDStrs...),
 			}
 			workCh <- func() error {
 				return retry.Retry(ctx, retry.Default, func() error {

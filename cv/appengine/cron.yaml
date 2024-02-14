@@ -16,7 +16,7 @@ cron:
 - description: Data retention job to wipe out old tryjobs.
   target: default
   url: /internal/cron/data-retention-tryjobs
-  schedule: every day 9:00
+  schedule: every day 11:00
   timezone: America/Los_Angeles
 - description: Sweep transactionally created TQ tasks which would otherwise might be forgotten.
   target: default

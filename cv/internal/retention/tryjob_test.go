@@ -39,8 +39,8 @@ func TestScheduleWipeoutTryjobs(t *testing.T) {
 		defer cancel()
 		registerWipeoutTryjobsTask(ct.TQDispatcher)
 
-		// create 1000 tryjobs with 1 minute interval.
-		tryjobs := make([]*tryjob.Tryjob, 1000)
+		// create tryjobs with 1 minute interval.
+		tryjobs := make([]*tryjob.Tryjob, 3*tryjobsPerTask)
 		for i := range tryjobs {
 			tryjobs[i] = tryjob.MustBuildbucketID("bb.example.com", int64(i+1000)).
 				MustCreateIfNotExists(ctx)
@@ -58,7 +58,7 @@ func TestScheduleWipeoutTryjobs(t *testing.T) {
 
 		var actualTryjobIDs common.TryjobIDs
 		for _, task := range ct.TQ.Tasks() {
-			So(task.ETA, ShouldHappenWithin, 8*time.Hour, ct.Clock.Now())
+			So(task.ETA, ShouldHappenWithin, 7*time.Hour, ct.Clock.Now())
 			ids := task.Payload.(*WipeoutTryjobsTask).GetIds()
 			So(len(ids), ShouldBeLessThanOrEqualTo, tryjobsPerTask)
 			for _, id := range ids {
