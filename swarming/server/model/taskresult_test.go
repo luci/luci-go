@@ -15,7 +15,9 @@
 package model
 
 import (
+	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -363,6 +365,104 @@ func TestTaskResult(t *testing.T) {
 			So(trs.TaskAuthInfo(), ShouldEqual, acls.TaskAuthInfo{
 				TaskID: "65aba3a3e6b99310",
 			})
+		})
+	})
+
+	Convey("GetOutput", t, func() {
+		ctx := memory.Use(context.Background())
+		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
+		So(err, ShouldBeNil)
+
+		Convey("ok; one chunk", func() {
+			numChunks := 1
+			trs := TaskResultSummary{
+				TaskResultCommon: TaskResultCommon{
+					StdoutChunks: int64(numChunks),
+				},
+				Key: TaskResultSummaryKey(ctx, reqKey),
+			}
+			expectedStr := strings.Repeat("0", ChunkSize)
+			PutMockTaskOutput(ctx, reqKey, numChunks)
+			out, err := trs.GetOutput(ctx, 0, 0)
+			So(err, ShouldBeNil)
+			So(out, ShouldEqual, []byte(expectedStr))
+		})
+		Convey("ok; one chunk; requested length exceeds chunk size", func() {
+			numChunks := 1
+			trs := TaskResultSummary{
+				TaskResultCommon: TaskResultCommon{
+					StdoutChunks: int64(numChunks),
+				},
+				Key: TaskResultSummaryKey(ctx, reqKey),
+			}
+			expectedStr := strings.Repeat("0", ChunkSize)
+			PutMockTaskOutput(ctx, reqKey, numChunks)
+			out, err := trs.GetOutput(ctx, ChunkSize*2, 0)
+			So(err, ShouldBeNil)
+			So(out, ShouldEqual, []byte(expectedStr))
+		})
+		Convey("ok; many chunks", func() {
+			numChunks := 3
+			trs := TaskResultSummary{
+				TaskResultCommon: TaskResultCommon{
+					StdoutChunks: int64(numChunks),
+				},
+				Key: TaskResultSummaryKey(ctx, reqKey),
+			}
+			PutMockTaskOutput(ctx, reqKey, numChunks)
+			expectedStr := strings.Repeat("0", ChunkSize) + strings.Repeat("1", ChunkSize) + strings.Repeat("2", ChunkSize)
+			out, err := trs.GetOutput(ctx, 0, 0)
+			So(err, ShouldBeNil)
+			So(out, ShouldEqual, []byte(expectedStr))
+		})
+		Convey("ok; partial output", func() {
+			numChunks := 2
+			trs := TaskResultSummary{
+				TaskResultCommon: TaskResultCommon{
+					StdoutChunks: int64(numChunks),
+				},
+				Key: TaskResultSummaryKey(ctx, reqKey),
+			}
+			PutMockTaskOutput(ctx, reqKey, numChunks)
+			out, err := trs.GetOutput(ctx, 100, 0)
+			So(err, ShouldBeNil)
+			So(len(out), ShouldEqual, 100)
+			So(out, ShouldEqual, []byte(strings.Repeat("0", 100)))
+		})
+		Convey("ok; partial output, with offset", func() {
+			numChunks := 6
+			trs := TaskResultSummary{
+				TaskResultCommon: TaskResultCommon{
+					StdoutChunks: int64(numChunks),
+				},
+				Key: TaskResultSummaryKey(ctx, reqKey),
+			}
+			PutMockTaskOutput(ctx, reqKey, numChunks)
+			expectedStr := strings.Repeat("2", 50) + strings.Repeat("3", 50)
+			out, err := trs.GetOutput(ctx, 100, ChunkSize*3-50)
+			So(err, ShouldBeNil)
+			So(len(out), ShouldEqual, 100)
+			So(out, ShouldEqual, []byte(expectedStr))
+		})
+		Convey("not ok; many chunks, one is missing", func() {
+			numChunks := 3
+			trs := TaskResultSummary{
+				TaskResultCommon: TaskResultCommon{
+					StdoutChunks: int64(numChunks + 1),
+				},
+				Key: TaskResultSummaryKey(ctx, reqKey),
+			}
+			PutMockTaskOutput(ctx, reqKey, numChunks)
+
+			expectedOutput := bytes.Join([][]byte{
+				bytes.Repeat([]byte("0"), ChunkSize),
+				bytes.Repeat([]byte("1"), ChunkSize),
+				bytes.Repeat([]byte("2"), ChunkSize),
+				bytes.Repeat([]byte("\x00"), ChunkSize),
+			}, nil)
+			out, err := trs.GetOutput(ctx, 0, 0)
+			So(err, ShouldBeNil)
+			So(out, ShouldEqual, expectedOutput)
 		})
 	})
 }

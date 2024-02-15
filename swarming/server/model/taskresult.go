@@ -15,11 +15,14 @@
 package model
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"time"
 
+	"github.com/klauspost/compress/zlib"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -348,6 +351,73 @@ func (p *TaskResultSummary) CostsUSD() []float32 {
 		return nil
 	}
 	return []float32{float32(p.CostUSD)}
+}
+
+// GetOutput returns the stdout content for the task.
+func (p *TaskResultSummary) GetOutput(ctx context.Context, length, offset int64) ([]byte, error) {
+	if p.StdoutChunks == 0 {
+		return nil, nil
+	}
+	if length == 0 {
+		// Fetch the whole content
+		length = p.StdoutChunks*ChunkSize - offset
+	}
+	firstChunk := offset / ChunkSize
+	end := offset + length
+	lastChunk := (end + ChunkSize - 1) / ChunkSize
+	if lastChunk > p.StdoutChunks {
+		lastChunk = p.StdoutChunks
+	}
+	toGet := make([]*TaskOutputChunk, lastChunk-firstChunk)
+	for i := firstChunk; i < lastChunk; i++ {
+		toGet[i-firstChunk] = &TaskOutputChunk{Key: TaskOutputChunkKey(ctx, p.TaskRequestKey(), i)}
+	}
+	handleChunk := func(chunk []byte, e error) ([]byte, error) {
+		switch {
+		case errors.Is(e, datastore.ErrNoSuchEntity):
+			return bytes.Repeat([]byte{'\x00'}, ChunkSize), nil
+		case e != nil:
+			return nil, e
+		}
+		r, err := zlib.NewReader(bytes.NewReader(chunk))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get zlib reader").Err()
+		}
+		decompressed, err := io.ReadAll(r)
+		if err != nil {
+			_ = r.Close()
+			return nil, errors.Annotate(err, "failed to read chunk").Err()
+		}
+		if err := r.Close(); err != nil {
+			return nil, errors.Annotate(err, "failed to close zlib reader").Err()
+		}
+		return decompressed, nil
+	}
+	var chunks [][]byte
+	err := datastore.Get(ctx, toGet)
+	for i := 0; i < len(toGet); i++ {
+		chunkErr := func(i int) error {
+			if merr, ok := err.(errors.MultiError); ok {
+				return merr[i]
+			}
+			return err
+		}
+		decmpChunk, err := handleChunk(toGet[i].Chunk, chunkErr(i))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to handle chunk").Err()
+		}
+		chunks = append(chunks, decmpChunk)
+	}
+	min := func(x, y int) int {
+		if x < y {
+			return x
+		}
+		return y
+	}
+	toReturn := bytes.Join(chunks, nil)
+	startOffset := offset % ChunkSize
+	endOffset := min(int(end-(firstChunk*ChunkSize)), len(toReturn))
+	return toReturn[startOffset:endOffset], nil
 }
 
 // PerformanceStats fetches the performance stats from datastore and returns it in proto form.
