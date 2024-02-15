@@ -50,7 +50,7 @@ func (w *worker) findReuseInCV(ctx context.Context, definitions []*tryjob.Defini
 		return nil, err
 	}
 	ret := make(map[*tryjob.Definition]*tryjob.Tryjob, len(defs))
-	for i, def := range definitions {
+	for i, def := range defs {
 		ret[def] = tjs[i]
 	}
 	return ret, nil
@@ -125,7 +125,7 @@ func (w *worker) addCurrentRunToReuse(ctx context.Context, tjIDs common.TryjobID
 		if err := datastore.Get(ctx, tryjobs); err != nil {
 			return errors.Annotate(err, "failed to load Tryjob entities").Tag(transient.Tag).Err()
 		}
-		toSave := tryjobs[:0]
+		var toSave []*tryjob.Tryjob
 		for _, tj := range tryjobs {
 			// Be defensive. Tryjob may already include this Run if previous request
 			// failed in the middle.
