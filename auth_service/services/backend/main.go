@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/securitycfg"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/validation"
 
 	"go.chromium.org/luci/auth_service/internal/permissions"
@@ -96,6 +97,12 @@ func main() {
 			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, dryRunCronConfig, historicalComment); err != nil {
 				return err
 			}
+
+			// settings.cfg handling
+			if err := settingscfg.Update(ctx); err != nil {
+				return err
+			}
+
 			return nil
 		})
 
