@@ -22,6 +22,8 @@ import { Timestamp } from '@/common/components/timestamp';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
+import { IncludedInvocationsTimeline } from './included_invocations_timeline';
+
 const Container = styled(Box)`
   margin: 10px;
 `;
@@ -96,6 +98,16 @@ export function DetailsTab() {
               ))}
             </tbody>
           </table>
+        </>
+      ) : (
+        <></>
+      )}
+      {invocation.includedInvocations.length ? (
+        <>
+          <h3>
+            Included Invocations ({invocation.includedInvocations.length}):
+          </h3>
+          <IncludedInvocationsTimeline invocation={invocation} />
         </>
       ) : (
         <></>

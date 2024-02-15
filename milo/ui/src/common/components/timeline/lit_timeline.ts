@@ -76,7 +76,7 @@ export interface TimelineBlock {
 }
 
 @customElement('milo-timeline')
-export class Timeline extends MobxLitElement {
+export class TimelineElement extends MobxLitElement {
   // The time to start the timeline.
   // Blocks that are not between startTime and endTime will be rendered as a blank row.
   @observable.ref startTime = DateTime.now();
