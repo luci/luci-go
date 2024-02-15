@@ -83,5 +83,9 @@ message TextArtifactRow {
   // It is the time when the exported invocation was created in Spanner.
   // It is NOT the time when the row is inserted into BigQuery table.
   google.protobuf.Timestamp partition_time = 13;
+
+  // String of the format <artifact_id>:<shard_id>.
+  // This is for the purpose of clustering.
+  string artifact_shard = 14;
 }
 

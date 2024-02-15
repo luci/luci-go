@@ -369,6 +369,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					ShardContentSize:    7,
 					ArtifactContentSize: 7,
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
+					ArtifactShard:       "art1:0",
 				},
 				{
 					Project:             "testproject",
@@ -384,6 +385,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
 					TestId:              "test_id",
 					ResultId:            "result_id",
+					ArtifactShard:       "art2:0",
 				},
 			})
 		})
@@ -686,6 +688,7 @@ func TestReqToProto(t *testing.T) {
 				ShardContentSize:    10,
 				ArtifactContentSize: 20,
 				PartitionTime:       timestamppb.New(time.Unix(1000, 0)),
+				ArtifactShard:       "artifactid:0",
 			},
 			{
 				Project:             "chromium",
@@ -701,6 +704,7 @@ func TestReqToProto(t *testing.T) {
 				ShardContentSize:    10,
 				ArtifactContentSize: 20,
 				PartitionTime:       timestamppb.New(time.Unix(1000, 0)),
+				ArtifactShard:       "artifactid:1",
 			},
 		})
 	})

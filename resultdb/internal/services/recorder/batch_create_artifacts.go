@@ -608,6 +608,7 @@ func reqToProtos(ctx context.Context, req *artifactCreationRequest, invInfo *inv
 			ShardContentSize:    int32(len(chunk)),
 			ArtifactContentSize: int32(req.size),
 			PartitionTime:       timestamppb.New(invInfo.createTime),
+			ArtifactShard:       fmt.Sprintf("%s:%d", req.artifactID, i),
 		})
 	}
 	return results, nil

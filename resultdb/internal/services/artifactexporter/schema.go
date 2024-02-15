@@ -65,7 +65,7 @@ func init() {
 		},
 		// Clustering on these fields will allow good compression rate and query performance.
 		Clustering: &bigquery.Clustering{
-			Fields: []string{"project", "test_id", "artifact_id", "shard_id", "invocation_id"},
+			Fields: []string{"project", "test_id", "artifact_shard", "invocation_id"},
 		},
 		// Relax ensures no fields are marked "required".
 		Schema: schema.Relax(),
