@@ -21,10 +21,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -227,18 +229,14 @@ var (
 	userD  = identity.Identity("user:userd@example.com")
 )
 
-func makeFakeAuthState(ctx context.Context) context.Context {
-	return auth.WithState(ctx, &authtest.FakeState{
+func TestGetDisallowedOwners(t *testing.T) {
+	ctx := auth.WithState(context.Background(), &authtest.FakeState{
 		FakeDB: authtest.NewFakeDB(
 			authtest.MockMembership(userA, group1),
 			authtest.MockMembership(userB, group1),
 			authtest.MockMembership(userD, group2),
 		),
 	})
-}
-
-func TestGetDisallowedOwners(t *testing.T) {
-	ctx := makeFakeAuthState(context.Background())
 	Convey("getDisallowedOwners", t, func() {
 		Convey("works", func() {
 			Convey("with no allowlists", func() {
@@ -263,7 +261,9 @@ func TestCompute(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
-		ctx = makeFakeAuthState(ctx)
+		ct.AddMember(userA.Email(), group1)
+		ct.AddMember(userB.Email(), group1)
+		ct.AddMember(userD.Email(), group2)
 
 		Convey("fail if IncludedTryjobs and OverriddenTryjobs are both provided", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
@@ -360,6 +360,24 @@ func TestCompute(t *testing.T) {
 						Builder: "test-proj/test/builder1",
 					},
 				})
+			})
+			Convey("but can trigger if owners have bb schedule permission", func() {
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+					builderConfigGenerator{
+						Name:      "test-proj/test/builder1",
+						Allowlist: group1,
+					}.generate()})
+				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
+				// Add a second CL, the owner of which is not authorized to trigger builder1
+				in.addCL(userD.Email())
+
+				for _, owner := range in.allCLOwnersSorted() {
+					ct.AddPermission(owner, bbperms.BuildsAdd, realms.Join("test-proj", "test"))
+				}
+
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				So(res.OK(), ShouldBeTrue)
 			})
 		})
 		Convey("with includable-only builder", func() {
@@ -461,12 +479,27 @@ func TestCompute(t *testing.T) {
 			})
 
 			Convey("authorized", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
-					Name:          "test-proj/test/builder1",
-					Allowlist:     "secret-group",
-					EquiName:      "test-proj/test/equibuilder",
-					EquiAllowlist: "", // Allow everyone
-				}.generate()})
+				var in *Input
+				Convey("through allowlist group", func() {
+					in = makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+						Name:          "test-proj/test/builder1",
+						Allowlist:     "secret-group",
+						EquiName:      "test-proj/test/equibuilder",
+						EquiAllowlist: "", // Allow everyone
+					}.generate()})
+				})
+				Convey("through buildbucket schedule permission", func() {
+					in = makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+						Name:          "test-proj/test/builder1",
+						Allowlist:     "secret-group",
+						EquiName:      "test-proj/test/equibuilder",
+						EquiAllowlist: "other-secret-group",
+					}.generate()})
+					for _, owner := range in.allCLOwnersSorted() {
+						ct.AddPermission(owner, bbperms.BuildsAdd, realms.Join("test-proj", "test"))
+					}
+				})
+
 				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:equibuilder")
 
 				res, err := Compute(ctx, *in)

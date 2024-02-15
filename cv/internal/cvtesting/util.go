@@ -52,6 +52,7 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 	serverauth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
@@ -539,6 +540,21 @@ func (t *Test) AddMember(email, group string) {
 		panic(err)
 	}
 	t.authDB.AddMocks(authtest.MockMembership(id, group))
+}
+
+// AddPermission grants permission to the member in the given realm.
+//
+// The email may omit domain. In that case, this method will add "@example.com"
+// as the domain name.
+func (t *Test) AddPermission(email string, perm realms.Permission, realm string) {
+	if _, err := mail.ParseAddress(email); err != nil {
+		email = fmt.Sprintf("%s@example.com", email)
+	}
+	id, err := identity.MakeIdentity(fmt.Sprintf("user:%s", email))
+	if err != nil {
+		panic(err)
+	}
+	t.authDB.AddMocks(authtest.MockPermission(id, realm, perm))
 }
 
 func (t *Test) ResetMockedAuthDB(ctx context.Context) {

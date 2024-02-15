@@ -31,8 +31,8 @@ func (itd *invalidTryjobDirectives) Reason() string {
 	return fmt.Sprintf("The tryjob directive %q is invalid. Canonical format is %s", itd.value, canonicalDirectiveFormat)
 }
 
-// unauthorizedIncludedTryjob is a computation failure where a user is not allowed to
-// trigger a certain builder.
+// unauthorizedIncludedTryjob is a computation failure where a user is not
+// allowed to trigger a certain builder.
 type unauthorizedIncludedTryjob struct {
 	Users   []string
 	Builder string

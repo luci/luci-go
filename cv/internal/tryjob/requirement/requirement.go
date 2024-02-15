@@ -21,10 +21,12 @@ import (
 	"sync/atomic"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/buildbucket"
@@ -286,11 +288,12 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptiona
 	}
 
 	if incl.Has(b.Name) {
-		switch disallowedOwners, err := getDisallowedOwners(ctx, owners, b.GetOwnerWhitelistGroup()...); {
+		switch disallowedOwners, err := canTriggerIncludedBuilder(ctx, owners, b.Name, b.GetOwnerWhitelistGroup()); {
 		case err != nil:
 			return skipBuilder, nil, err
 		case len(disallowedOwners) != 0:
-			// The requested builder is defined, but the owner is not allowed to include it.
+			// The requested builder is defined, but the owner is not allowed to
+			// include it.
 			return skipBuilder, &unauthorizedIncludedTryjob{
 				Users:   disallowedOwners,
 				Builder: b.Name,
@@ -302,8 +305,8 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptiona
 	}
 
 	if b.GetEquivalentTo() != nil && incl.Has(b.GetEquivalentTo().GetName()) {
-		if ownerAllowGroup := b.GetEquivalentTo().GetOwnerWhitelistGroup(); ownerAllowGroup != "" {
-			switch disallowedOwners, err := getDisallowedOwners(ctx, owners, ownerAllowGroup); {
+		if builderName, ownerAllowGroup := b.GetEquivalentTo().GetName(), b.GetEquivalentTo().GetOwnerWhitelistGroup(); ownerAllowGroup != "" {
+			switch disallowedOwners, err := canTriggerIncludedBuilder(ctx, owners, builderName, []string{ownerAllowGroup}); {
 			case err != nil:
 				return skipBuilder, nil, err
 			case len(disallowedOwners) != 0:
@@ -421,6 +424,38 @@ func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowList
 	return disallowed, nil
 }
 
+// If a builder is included via `Cq-Include-Trybots` footer, owners must either
+// be a member of provided allowlist groups or has direct schedule permission
+// to this builder.
+func canTriggerIncludedBuilder(ctx context.Context, clOwners []string, builderName string, allowlistGroups []string) (disallowedOwners []string, err error) {
+	disallowed, err := getDisallowedOwners(ctx, clOwners, allowlistGroups...)
+	switch {
+	case err != nil:
+		return nil, err
+	case len(disallowed) == 0:
+		return nil, nil // allowed
+	}
+
+	builderID, err := buildbucket.ParseBuilderID(builderName)
+	if err != nil {
+		return nil, err
+	}
+	realm := realms.Join(builderID.GetProject(), builderID.GetBucket())
+	for _, user := range disallowed {
+		id, err := identity.MakeIdentity(fmt.Sprintf("user:%s", user))
+		if err != nil {
+			return nil, err
+		}
+		switch allowed, err := auth.GetState(ctx).DB().HasPermission(ctx, id, bbperms.BuildsAdd, realm, nil); {
+		case err != nil:
+			return nil, err
+		case !allowed:
+			disallowedOwners = append(disallowedOwners, user)
+		}
+	}
+	return disallowedOwners, nil
+}
+
 func isBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_Builder) (bool, error) {
 	if len(b.GetOwnerWhitelistGroup()) > 0 {
 		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()...); {
@@ -431,7 +466,6 @@ func isBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifier
 		}
 	}
 	return true, nil
-
 }
 
 func isEquiBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_EquivalentBuilder) (bool, error) {
