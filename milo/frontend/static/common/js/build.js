@@ -211,12 +211,10 @@ $(document).ready(function() {
 `From Link: ${document.location.href}
 Please enter a description of the problem, with repro steps if applicable.
 `);
-    const url = `https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3ELUCI%3EUserInterface%3EResultUI&labels=Pri-2,Type-Bug&comment=${feedbackComment}`;
+    const url = `https://issuetracker.google.com/issues/new?component=1456503&type=BUG&priority=P2&severity=S2&inProd=true&description=${feedbackComment}`;
     window.open(url);
     e.preventDefault();
   });
-
-  setUpNewBuildPageSurvey();
 
   // Keep the new build page version up-to-date even when the user is using the
   // legacy build page.
@@ -229,60 +227,3 @@ Please enter a description of the problem, with repro steps if applicable.
       console.log('New build page SW registered: ', registration);
     });
 });
-
-/**
- * Asks users why they decided to opted out the new build page.
- */
-function setUpNewBuildPageSurvey() {
-  let apiKey = '';
-  if (['luci-milo.appspot.com', 'ci.chromium.org'].includes(window.location.hostname)) {
-    apiKey = 'AIzaSyDMYX77ySjK3Lib08BIjgvFn2Ur-rhAJvA';
-  } else if (['luci-milo-dev.appspot.com'].includes(window.location.hostname)) {
-    apiKey = 'AIzaSyD3f5TrWDSbkvWe2ZavVHg5QaLqsFnqZHE';
-  }
-
-  // Custom deployment, don't trigger feedback.
-  if (!apiKey) {
-    return;
-  }
-
-  const helpApi = window.help.service.Lazy.create(0, {apiKey, locale: 'en-US'});
-
-  // New build page doesn't support raw builds, no point asking for feedback
-  // here.
-  if (/^\/raw\//.test(window.location.pathname)) {
-    return;
-  }
-
-  const triggerId = /^\/old\//.test(window.location.pathname)
-    ? 'hB2DSG5tV0py7BkUcZm0XboqSd3F'
-    : 'WoXSyHEYJ0py7BkUcZm0Qk4cewfw';
-
-  helpApi.requestSurvey({
-    triggerId,
-    callback: (requestSurveyCallbackParam) => {
-      if (!requestSurveyCallbackParam.surveyData) {
-        return;
-      }
-
-      // Hide the feedback button temporarily.
-      document.querySelector('.__crdxFeedbackButton').style.display = 'none';
-
-      helpApi.presentSurvey({
-        surveyData: requestSurveyCallbackParam.surveyData,
-        colorScheme: 1,
-        customZIndex: 10000,
-        listener: {
-          surveyClosed: () => {
-            // Show the feedback button again.
-            document.querySelector('.__crdxFeedbackButton').style.display = '';
-          },
-          surveyPrompted: () => {
-            // Remove title so the instant tooltip won't show up.
-            document.querySelector('#google-hats-survey').title = '';
-          }
-        }
-      });
-    }
-  });
-}
