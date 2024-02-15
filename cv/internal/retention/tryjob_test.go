@@ -58,7 +58,7 @@ func TestScheduleWipeoutTryjobs(t *testing.T) {
 
 		var actualTryjobIDs common.TryjobIDs
 		for _, task := range ct.TQ.Tasks() {
-			So(task.ETA, ShouldHappenWithin, 7*time.Hour, ct.Clock.Now())
+			So(task.ETA, ShouldHappenWithin, wipeoutTasksDistInterval, ct.Clock.Now())
 			ids := task.Payload.(*WipeoutTryjobsTask).GetIds()
 			So(len(ids), ShouldBeLessThanOrEqualTo, tryjobsPerTask)
 			for _, id := range ids {

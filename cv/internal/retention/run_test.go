@@ -88,7 +88,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 		So(err, ShouldBeNil)
 		var actualRuns common.RunIDs
 		for _, task := range ct.TQ.Tasks() {
-			So(task.ETA, ShouldHappenWithin, 1*time.Hour, ct.Clock.Now())
+			So(task.ETA, ShouldHappenWithin, wipeoutTasksDistInterval, ct.Clock.Now())
 			ids := task.Payload.(*WipeoutRunsTask).GetIds()
 			So(len(ids), ShouldBeLessThanOrEqualTo, runsPerTask)
 			for _, id := range ids {

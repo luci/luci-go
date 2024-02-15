@@ -17,7 +17,6 @@ package retention
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -41,8 +40,7 @@ const tryjobsPerTask = 800
 // scheduleWipeoutTryjobsTasks schedules tasks to wipe out old tryjobs that are
 // out of the retention period.
 //
-// The tasks will be uniformly distributed over the next 7 hours.
-// TODO(yiwzhang): change it to 1 hour after the first execution.
+// The tasks will be uniformly distributed over the next 1 hours.
 func scheduleWipeoutTryjobsTasks(ctx context.Context, tqd *tq.Dispatcher) error {
 	tryjobs, err := tryjob.QueryTryjobIDsUpdatedBefore(ctx, clock.Now(ctx).Add(-retentionPeriod))
 	switch {
@@ -64,7 +62,7 @@ func scheduleWipeoutTryjobsTasks(ctx context.Context, tqd *tq.Dispatcher) error 
 				Payload: &WipeoutTryjobsTask{
 					Ids: common.TryjobIDs(chunk).ToInt64(),
 				},
-				Delay: common.DistributeOffset(7*time.Hour, tryjobIDStrs...),
+				Delay: common.DistributeOffset(wipeoutTasksDistInterval, tryjobIDStrs...),
 			}
 			workCh <- func() error {
 				return retry.Retry(ctx, retry.Default, func() error {

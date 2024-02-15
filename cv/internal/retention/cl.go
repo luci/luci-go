@@ -17,7 +17,6 @@ package retention
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -62,7 +61,7 @@ func scheduleWipeoutCLTasks(ctx context.Context, tqd *tq.Dispatcher) error {
 				Payload: &WipeoutCLsTask{
 					Ids: common.CLIDsAsInt64s(chunk),
 				},
-				Delay: common.DistributeOffset(1*time.Hour, clidStrs...),
+				Delay: common.DistributeOffset(wipeoutTasksDistInterval, clidStrs...),
 			}
 			workCh <- func() error {
 				return retry.Retry(ctx, retry.Default, func() error {

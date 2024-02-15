@@ -20,6 +20,9 @@ import (
 )
 
 var retentionPeriod = 540 * 24 * time.Hour // ~= 1.5 years
+// wipeoutTasksDistInterval defines the interval that wipeout tasks will be
+// evenly distributed.
+var wipeoutTasksDistInterval = 1 * time.Hour
 
 // chunk splits []T into chunks of provided size.
 //

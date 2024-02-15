@@ -74,7 +74,7 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 			Payload: &WipeoutRunsTask{
 				Ids: runIDStrs,
 			},
-			Delay: common.DistributeOffset(1*time.Hour, runIDStrs...),
+			Delay: common.DistributeOffset(wipeoutTasksDistInterval, runIDStrs...),
 		}
 		return tqd.AddTask(ctx, task)
 	})
