@@ -34,6 +34,15 @@ func TestCatch(t *testing.T) {
 		So(pv.Reason, ShouldEqual, "Everybody panic!")
 		So(pv.Stack, ShouldContainSubstring, "TestCatch")
 	})
+	Convey(`Body does not run with no panic`, t, func() {
+		didRun := false
+		func() {
+			defer Catch(func(*Panic) {
+				didRun = true
+			})
+		}()
+		So(didRun, ShouldBeFalse)
+	})
 }
 
 // Example is a very simple example of how to use Catch to recover from a panic
