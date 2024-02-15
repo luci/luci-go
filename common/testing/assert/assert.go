@@ -119,16 +119,9 @@ import (
 	"reflect"
 
 	"go.chromium.org/luci/common/data"
+	"go.chromium.org/luci/common/testing/assert/interfaces"
 	"go.chromium.org/luci/common/testing/assert/results"
 )
-
-// Keep this in sync with results.FakeTB.
-type testingTB interface {
-	Helper()
-	Log(...any)
-	Fail()
-	FailNow()
-}
 
 // Assert compares `actual` using `compare`, which is typically a closure over some
 // expected value.
@@ -143,7 +136,7 @@ type testingTB interface {
 //
 // `testingTB` is an interface which is a subset of testing.TB, but is
 // unexported to allow this package to be cleanly .-imported.
-func Assert[T any](t testingTB, actual any, compare results.Comparison[T]) {
+func Assert[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) {
 	t.Helper()
 
 	if !Check[T](t, actual, compare) {
@@ -162,7 +155,7 @@ func Assert[T any](t testingTB, actual any, compare results.Comparison[T]) {
 //
 // `testingTB` is an interface which is a subset of testing.TB, but is
 // unexported to allow this package to be cleanly .-imported.
-func Check[T any](t testingTB, actual any, compare results.Comparison[T]) bool {
+func Check[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) bool {
 	t.Helper()
 
 	actualTyped, ok := data.LosslessConvertTo[T](actual)

@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/assert/results"
+	"go.chromium.org/luci/common/testing/assert/testsupport"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -55,7 +56,7 @@ func TestCheck(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := Check(zeroTB{}, tt.input, tt.compare)
+			got := Check(testsupport.ZeroTB{}, tt.input, tt.compare)
 
 			if diff := typed.Diff(got, tt.ok); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
@@ -63,20 +64,3 @@ func TestCheck(t *testing.T) {
 		})
 	}
 }
-
-// zeroTB is a do nothing test implementation.
-//
-// Check and Assert both call methods on the test interface, and this can result in
-// really confusing error messages or the test being aborted early. In other to prevent this
-// we need to pass in an object that satisfies the test interface but doesn't do anything.
-type zeroTB struct{}
-
-func (zeroTB) Helper() {}
-
-func (zeroTB) Log(...any) {}
-
-func (zeroTB) Fail() {}
-
-func (zeroTB) FailNow() {}
-
-var _ testingTB = zeroTB{}
