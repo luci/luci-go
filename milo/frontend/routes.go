@@ -128,12 +128,22 @@ func Run(srv *server.Server, templatePath string) {
 	pusherID := identity.Identity(fmt.Sprintf("user:buildbucket-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
 
 	// PubSub subscription endpoints.
+	// TODO(b/40254169): remove this once v1 subscription is turned down.
 	r.POST("/push-handlers/buildbucket", pubsubMW, func(ctx *router.Context) {
 		if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
 			logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
 			ctx.Writer.WriteHeader(403)
 		} else {
 			buildbucket.PubSubHandler(ctx)
+		}
+	})
+	// PubSub subscription endpoints.
+	r.POST("/push-handlers/buildbucket_v2", pubsubMW, func(ctx *router.Context) {
+		if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
+			logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
+			ctx.Writer.WriteHeader(403)
+		} else {
+			buildbucket.V2PubSubHandler(ctx)
 		}
 	})
 
