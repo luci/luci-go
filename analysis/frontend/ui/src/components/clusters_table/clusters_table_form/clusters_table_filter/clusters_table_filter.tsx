@@ -48,10 +48,11 @@ const FilterHelp = () => {
         <li>cluster_id</li>
         <li>variant_hash</li>
         <li>test_run_id</li>
-        <li>presubmit_run_owner</li>
-        <li>tags</li>
+        <li>is_test_run_blocked</li>
+        <li>is_ingested_invocation_blocked</li>
       </ul>
     </p>
+    <p>You can also search based on particular variant or tag key/value pairs.  E.g. <b>tags.team_email:device-dev</b> or <b>variant.os:Ubuntu</b></p>
   </Typography>;
 };
 
