@@ -2364,3 +2364,19 @@ func TestRunMulti(t *testing.T) {
 		})
 	})
 }
+
+func TestCountMulti(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test CountMulti", t, func() {
+		c := info.Set(context.Background(), fakeInfo{})
+		fds2 := fakeDatastore2{}
+		c = SetRawFactory(c, fds2.factory())
+		count, err := CountMulti(c, []*Query{
+			NewQuery("Foo").Eq("values", "aa"),
+			NewQuery("Foo").Eq("values", "cc"),
+		})
+		So(err, ShouldBeNil)
+		So(count, ShouldEqual, 3)
+	})
+}

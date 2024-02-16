@@ -538,6 +538,29 @@ func Count(c context.Context, q *Query) (int64, error) {
 	return v, filterStop(err)
 }
 
+// CountMulti runs multiple queries in parallel and counts the total number of
+// unique entities produced by them.
+//
+// Unlike Count, this method doesn't support server-side aggregation. It always
+// does full keys-only queries. If you have only one query and don't care about
+// strong consistency, use `Count(c, q.EventualConsistency(true))`: it will use
+// the server-side aggregation which is orders of magnitude faster than the
+// local counting.
+func CountMulti(c context.Context, queries []*Query) (int64, error) {
+	var count int64
+	err := RunMulti(c, queries,
+		func(_ *Key) error {
+			// RunMulti already does deduplication, we just need to count unique hits.
+			count++
+			return nil
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // DecodeCursor converts a string returned by a Cursor into a Cursor instance.
 // It will return an error if the supplied string is not valid, or could not
 // be decoded by the implementation.
