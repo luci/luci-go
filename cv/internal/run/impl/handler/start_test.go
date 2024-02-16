@@ -185,10 +185,9 @@ func TestStart(t *testing.T) {
 				RequirementVersion:    1,
 				RequirementComputedAt: timestamppb.New(ct.Clock.Now().UTC()),
 			})
-			So(res.State.LogEntries, ShouldHaveLength, 3)
+			So(res.State.LogEntries, ShouldHaveLength, 2)
 			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldEqual, "Run quota debited from t@example.org; balance: 5")
-			So(res.State.LogEntries[1].GetInfo().GetMessage(), ShouldEqual, "LUCI CV is managing the Tryjobs for this Run")
-			So(res.State.LogEntries[2].GetStarted(), ShouldNotBeNil)
+			So(res.State.LogEntries[1].GetStarted(), ShouldNotBeNil)
 
 			So(res.State.NewLongOpIDs, ShouldHaveLength, 2)
 			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetExecuteTryjobs(), ShouldNotBeNil)

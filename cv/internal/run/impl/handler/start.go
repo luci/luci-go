@@ -188,7 +188,6 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 			RequirementVersion:    1,
 			RequirementComputedAt: timestamppb.New(clock.Now(ctx).UTC()),
 		}
-		rs.LogInfof(ctx, "Tryjob", "LUCI CV is managing the Tryjobs for this Run")
 		enqueueRequirementChangedTask(ctx, rs)
 	default:
 		whoms := rs.Mode.GerritNotifyTargets()
