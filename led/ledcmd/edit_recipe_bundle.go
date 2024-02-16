@@ -64,11 +64,6 @@ type EditRecipeBundleOpts struct {
 }
 
 const (
-	// A property that should be set to a boolean value. If true,
-	// edit-recipe-bundle will set the "led_cas_recipe_bundle" property
-	// instead of overwriting the build's payload.
-	LEDBuilderIsBootstrappedProperty = "led_builder_is_bootstrapped"
-
 	// In PropertyOnly mode or if the "led_builder_is_bootstrapped" property
 	// of the build is true, this property will be set with the CAS digest
 	// of the executable of the recipe bundle.
@@ -97,7 +92,7 @@ func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Defini
 	logging.Debugf(ctx, "using recipes.py: %q", recipesPy)
 
 	extraProperties := make(map[string]string)
-	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[LEDBuilderIsBootstrappedProperty].GetBoolValue()
+	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[job.LEDBuilderIsBootstrappedProperty].GetBoolValue()
 	if setRecipeBundleProperty {
 		// In property-only mode, we want to leave the original payload as is
 		// and just upload the recipe bundle as a brand new independent CAS

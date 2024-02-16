@@ -56,6 +56,11 @@ import (
 // TODO(crbug.com/1072117): Fix this, it's weird.
 const RecipeDirectory = "kitchen-checkout"
 
+// LEDBuilderIsBootstrappedProperty should be set to a boolean value. If true,
+// edit-recipe-bundle will set the "led_cas_recipe_bundle" property
+// instead of overwriting the build's payload.
+const LEDBuilderIsBootstrappedProperty = "led_builder_is_bootstrapped"
+
 type buildbucketEditor struct {
 	jd *Definition
 	bb *Buildbucket
@@ -391,10 +396,12 @@ func (bbe *buildbucketEditor) Properties(props map[string]string, auto bool) {
 	}
 	bbe.tweak(func() error {
 		toWrite := map[string]any{}
+		removed := make([]string, 0, len(props))
 
 		for k, v := range props {
 			if v == "" {
 				toWrite[k] = nil
+				removed = append(removed, k)
 			} else {
 				var obj any
 				if err := json.Unmarshal([]byte(v), &obj); err != nil {
@@ -405,6 +412,19 @@ func (bbe *buildbucketEditor) Properties(props map[string]string, auto bool) {
 				}
 				toWrite[k] = obj
 			}
+		}
+
+		if bbe.bb.BbagentArgs.Build.Input.Properties.GetFields()[LEDBuilderIsBootstrappedProperty].GetBoolValue() {
+			propCopy := map[string]any{}
+			for k, v := range toWrite {
+				if v == nil {
+					// removed properties are tracked by `removed`.
+					continue
+				}
+				propCopy[k] = v
+			}
+			toWrite["led_edited_properties"] = propCopy
+			toWrite["led_removed_properties"] = removed
 		}
 
 		bbe.bb.WriteProperties(toWrite)

@@ -50,7 +50,7 @@ func editPayloadWithCASRef(ctx context.Context, jd *job.Definition, opts *EditPa
 		return
 	}
 
-	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[LEDBuilderIsBootstrappedProperty].GetBoolValue()
+	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[job.LEDBuilderIsBootstrappedProperty].GetBoolValue()
 	if setRecipeBundleProperty {
 		m := &jsonpb.Marshaler{OrigName: true}
 		jsonCASRef, err := m.MarshalToString(casRef)
@@ -81,7 +81,7 @@ func editPayloadWithCASRef(ctx context.Context, jd *job.Definition, opts *EditPa
 
 // editPayloadWithCIPD overrides the job payload with given CIPD info.
 func editPayloadWithCIPD(ctx context.Context, jd *job.Definition, opts *EditPayloadOpts) (err error) {
-	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[LEDBuilderIsBootstrappedProperty].GetBoolValue()
+	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[job.LEDBuilderIsBootstrappedProperty].GetBoolValue()
 	if setRecipeBundleProperty {
 		return errors.Reason("cannot use CIPD info in property-only mode").Err()
 	}
