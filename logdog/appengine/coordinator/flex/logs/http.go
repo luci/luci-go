@@ -53,6 +53,9 @@ const (
 
 	// maxBackoff specifies the maximum amount of time to wait between two storage requests.
 	maxBackoff = time.Second * 30
+
+	// maxErrors is the maximum errors we may encounter while fetching a log before stopping.
+	maxErrors = 5
 )
 
 type header struct {
@@ -330,6 +333,7 @@ func fetch(c context.Context, ch chan<- logResp, params fetchParams) {
 
 	index := types.MessageIndex(0)
 	backoff := time.Second // How long to wait between fetch requests from storage.
+	errorsEncountered := 0
 	var err error
 	for {
 		// Get the terminal index from the LogStreamState again if we need to.
@@ -343,10 +347,20 @@ func fetch(c context.Context, ch chan<- logResp, params fetchParams) {
 
 		// Do the actual work.
 		nextIndex, err := fetchOnce(c, ch, index, params)
-		// Signal regardless of error.  Server will bail on error and flush otherwise.
-		// Important: if fetchOnce errors out, we still expect nextIndex to increment regardless,
-		// otherwise this may get stuck in an infinite loop.
+		// Signal regardless of error. Server will bail on error and flush otherwise.
 		ch <- logResp{err: err}
+
+		if err != nil {
+			errorsEncountered++
+			if errors.Is(err, storage.ErrDoesNotExist) || errorsEncountered >= maxErrors {
+				// Error is fatal or we have run out of our allowed error quota.
+				return
+			}
+			// We may be able to ride-through this error.
+			// Try to get the next message.
+			logging.WithError(err).Debugf(c, "got some error while fetching, incrementing index to %d", index)
+			nextIndex = nextIndex + 1
+		}
 
 		// Check if the log has finished streaming and if we're done.
 		if state.Terminated() && nextIndex > types.MessageIndex(state.TerminalIndex) {
@@ -368,13 +382,8 @@ func fetch(c context.Context, ch chan<- logResp, params fetchParams) {
 			backoff = maxBackoff
 		}
 		if index != nextIndex {
-			if err != nil {
-				// An error on one log entry means we want to try the next one asap.
-				backoff = 0
-			} else {
-				// If its a relatively active log stream, don't sleep too long.
-				backoff = time.Second
-			}
+			// If its a relatively active log stream, don't sleep too long.
+			backoff = time.Second
 		}
 		if tr := clock.Sleep(c, backoff); tr.Err != nil {
 			// If the user cancelled the request, bail out instead.
@@ -407,8 +416,6 @@ func fetchOnce(c context.Context, ch chan<- logResp, index types.MessageIndex, p
 	err := st.Get(c, req, func(e *storage.Entry) bool {
 		var le *logpb.LogEntry
 		if le, ierr = e.GetLogEntry(); ierr != nil {
-			// This log entry is bad, just try the next one blindly.
-			index++
 			return false
 		}
 		sidx, _ := e.GetStreamIndex() // GetLogEntry succeeded, so this must.
@@ -428,10 +435,6 @@ func fetchOnce(c context.Context, ch chan<- logResp, index types.MessageIndex, p
 		index = sidx + 1
 		return true
 	})
-	if err != nil {
-		index++
-		logging.WithError(err).Debugf(c, "got some error while fetching, incrementing index to %d", index)
-	}
 	// TODO(hinoka): Handle not found case.
 	if err == nil && ierr != nil {
 		err = ierr
