@@ -33,10 +33,9 @@ func TestCommon(t *testing.T) {
 		// This test is designed to break if LUCI CV extends the set of
 		// allowed values, without a corresponding update to LUCI Analysis.
 
-		// NEW_PATCHSET_RUN is not defined in the LUCI CV BigQuery schema
-		// but may be returned by the RPC. LUCI CV team advises that they
-		// plan a new BigQuery export that will include it.
-		modes := []string{"NEW_PATCHSET_RUN"}
+		// NEW_PATCHSET_RUN and CQ_MODE_MEGA_DRY_RUN is not defined in the
+		// LUCI CV BigQuery schema but may be returned by the RPC.
+		modes := []string{"NEW_PATCHSET_RUN", "CQ_MODE_MEGA_DRY_RUN"}
 		for _, mode := range bigquery.Mode_name {
 			modes = append(modes, mode)
 		}

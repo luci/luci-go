@@ -89,46 +89,47 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 	}
 
 	presubmitResultByBuildID := make(map[string]*ctlpb.PresubmitResult)
-	for _, tj := range run.Tryjobs {
-		b := tj.GetResult().GetBuildbucket()
-		if b == nil {
-			// Non build-bucket result.
-			continue
-		}
+	for _, tji := range run.TryjobInvocations {
+		for attemptIndex, attempt := range tji.Attempts {
+			b := attempt.GetResult().GetBuildbucket()
+			if b == nil {
+				// Non build-bucket result.
+				continue
+			}
+			if attempt.Reuse {
+				// Do not ingest re-used tryjobs.
+				// Builds should be ingested with the CV run that initiated
+				// them, not a CV run that re-used them.
+				// Tryjobs can also be marked re-used if they were user
+				// initiated through gerrit. In this case, the build would
+				// not have been tagged as being part of a CV run (e.g.
+				// through user_agent: cq), so it will not expect to be
+				// joined to a CV run.
+				continue
+			}
 
-		if tj.Reuse {
-			// Do not ingest re-used tryjobs.
-			// Builds should be ingested with the CV run that initiated
-			// them, not a CV run that re-used them.
-			// Tryjobs can also be marked re-used if they were user
-			// initiated through gerrit. In this case, the build would
-			// not have been tagged as being part of a CV run (e.g.
-			// through user_agent: cq), so it will not expect to be
-			// joined to a CV run.
-			continue
-		}
+			buildID := control.BuildID(bbHost, b.Id)
+			if _, ok := presubmitResultByBuildID[buildID]; ok {
+				logging.Warningf(ctx, "CV Run %s has build %s as tryjob multiple times, ignoring the second occurances", psRun.Id, buildID)
+				continue
+			}
 
-		buildID := control.BuildID(bbHost, b.Id)
-		if _, ok := presubmitResultByBuildID[buildID]; ok {
-			logging.Warningf(ctx, "CV Run %s has build %s as tryjob multiple times, ignoring the second occurances", psRun.Id, buildID)
-			continue
-		}
+			status, err := pbutil.PresubmitRunStatusFromLUCICV(run.Status)
+			if err != nil {
+				return project, false, errors.Annotate(err, "failed to parse run status").Err()
+			}
 
-		status, err := pbutil.PresubmitRunStatusFromLUCICV(run.Status)
-		if err != nil {
-			return project, false, errors.Annotate(err, "failed to parse run status").Err()
-		}
-
-		presubmitResultByBuildID[buildID] = &ctlpb.PresubmitResult{
-			PresubmitRunId: &pb.PresubmitRunId{
-				System: "luci-cv",
-				Id:     fmt.Sprintf("%s/%s", project, runID),
-			},
-			Status:       status,
-			Mode:         mode,
-			Owner:        owner,
-			CreationTime: run.CreateTime,
-			Critical:     tj.Critical,
+			presubmitResultByBuildID[buildID] = &ctlpb.PresubmitResult{
+				PresubmitRunId: &pb.PresubmitRunId{
+					System: "luci-cv",
+					Id:     fmt.Sprintf("%s/%s", project, runID),
+				},
+				Status:       status,
+				Mode:         mode,
+				Owner:        owner,
+				CreationTime: run.CreateTime,
+				Critical:     tji.Critical && attemptIndex == 0,
+			}
 		}
 	}
 

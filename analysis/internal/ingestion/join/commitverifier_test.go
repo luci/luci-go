@@ -102,7 +102,7 @@ func TestHandleCVRun(t *testing.T) {
 				Mode:       "FULL_RUN",
 				CreateTime: timestamppb.New(clock.Now(ctx)),
 				Owner:      "cl-owner@google.com",
-				Tryjobs: []*cvv0.Tryjob{
+				TryjobInvocations: []*cvv0.TryjobInvocation{
 					tryjob(buildOne.buildID),
 					tryjob(2), // This build has not been ingested yet.
 					tryjob(buildTwo.buildID),
@@ -184,12 +184,27 @@ func TestHandleCVRun(t *testing.T) {
 			Convey(`With re-used tryjob`, func() {
 				// Assume that this tryjob was created by another CV run,
 				// so should not be ingested with this CV run.
-				run.Tryjobs[0].Reuse = true
+				run.TryjobInvocations[0].Attempts[0].Reuse = true
 
 				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
 				So(sortTasks(tasks), ShouldResembleProto,
 					sortTasks(expectedTasks(expectedTaskTemplate, builds[1:])))
+			})
+			Convey(`With retried tryjob`, func() {
+				// Despite tryjob group being marked critical,
+				// build one should remain non-critical as it
+				// was retried by build 3.
+				run.TryjobInvocations[0].Attempts = []*cvv0.TryjobInvocation_Attempt{
+					tryjob(3).Attempts[0],
+					tryjob(buildOne.buildID).Attempts[0],
+				}
+				run.TryjobInvocations[0].Critical = true
+
+				processed, tasks := processCVRun(run)
+				So(processed, ShouldBeTrue)
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 			Convey(`Failing Run`, func() {
 				run.Status = cvv0.Run_FAILED
@@ -213,12 +228,16 @@ func TestHandleCVRun(t *testing.T) {
 	})
 }
 
-func tryjob(bID int64) *cvv0.Tryjob {
-	return &cvv0.Tryjob{
-		Result: &cvv0.Tryjob_Result{
-			Backend: &cvv0.Tryjob_Result_Buildbucket_{
-				Buildbucket: &cvv0.Tryjob_Result_Buildbucket{
-					Id: int64(bID),
+func tryjob(bID int64) *cvv0.TryjobInvocation {
+	return &cvv0.TryjobInvocation{
+		Attempts: []*cvv0.TryjobInvocation_Attempt{
+			{
+				Result: &cvv0.TryjobResult{
+					Backend: &cvv0.TryjobResult_Buildbucket_{
+						Buildbucket: &cvv0.TryjobResult_Buildbucket{
+							Id: int64(bID),
+						},
+					},
 				},
 			},
 		},

@@ -74,7 +74,7 @@ func ingestFinalization(ctx context.Context, buildID int64) error {
 }
 
 func ingestCVRun(ctx context.Context, buildIDs []int64) error {
-	var tryjobs []*cvv0.Tryjob
+	var tryjobs []*cvv0.TryjobInvocation
 	for _, id := range buildIDs {
 		tryjobs = append(tryjobs, tryjob(id))
 	}
@@ -84,7 +84,7 @@ func ingestCVRun(ctx context.Context, buildIDs []int64) error {
 		Status:     cvv0.Run_FAILED,
 		Owner:      "chromium-autoroll@skia-public.iam.gserviceaccount.com",
 		CreateTime: timestamppb.New(cvCreateTime),
-		Tryjobs:    tryjobs,
+		TryjobInvocations: tryjobs,
 		Cls: []*cvv0.GerritChange{
 			{
 				Host:     "chromium-review.googlesource.com",
