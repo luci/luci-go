@@ -79,7 +79,7 @@ func buildVENV(ctx context.Context, app *Application, venv generators.Generator)
 
 	// Release all the resources so the temporary vpython root directory can be
 	// removed on Windows.
-	app.Close()
+	app.close()
 }
 
 func cmd(tb testing.TB, app *Application, env *python.Environment) *exec.Cmd {

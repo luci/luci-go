@@ -137,9 +137,11 @@ type Application struct {
 	PythonCommandLine *python.CommandLine
 	PythonExecutable  string
 
-	// Close() is usually unnecessary since resources will be released after
+	// Use os.UserCacheDir by default.
+	userCacheDir func() (string, error)
+	// close() is usually unnecessary since resources will be released after
 	// process exited. However we need to release them manually in the tests.
-	Close func()
+	close func()
 }
 
 // Initialize logger first to make it available for all steps after.
@@ -148,7 +150,8 @@ func (a *Application) Initialize(ctx context.Context) context.Context {
 	if os.Getenv(LogTraceENV) != "" {
 		a.LogLevel = logging.Debug
 	}
-	a.Close = func() {}
+	a.close = func() {}
+	a.userCacheDir = os.UserCacheDir
 
 	ctx = gologger.StdConfig.Use(ctx)
 	return logging.SetLevel(ctx, a.LogLevel)
@@ -167,11 +170,12 @@ func (a *Application) ParseEnvs(ctx context.Context) (err error) {
 	if v, ok := e.Lookup(VirtualEnvRootENV); ok {
 		a.VpythonRoot = v
 	} else {
-		cdir, err := os.UserCacheDir()
+		cdir, err := a.userCacheDir()
 		if err != nil {
-			return errors.Annotate(err, "failed to get user home directory").Err()
+			logging.Infof(ctx, "failed to get user cache dir: %s", err)
+		} else {
+			a.VpythonRoot = filepath.Join(cdir, ".vpython-root")
 		}
-		a.VpythonRoot = filepath.Join(cdir, ".vpython-root")
 	}
 
 	// Get default spec path
@@ -227,6 +231,15 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 		return errors.Annotate(err, "failed to parse flags").Err()
 	}
 
+	if a.VpythonRoot == "" {
+		// Using temporary directory is only for a last resort and shouldn't be
+		// considered as part of the normal workflow.
+		// We won't be able to cleanup this temporary directory after execve.
+		logging.Warningf(ctx, "fallback to temporary directory for vpython root")
+		if a.VpythonRoot, err = os.MkdirTemp("", "vpython"); err != nil {
+			return errors.Annotate(err, "failed to create temporary vpython root").Err()
+		}
+	}
 	if a.VpythonRoot, err = filepath.Abs(a.VpythonRoot); err != nil {
 		return errors.Annotate(err, "failed to get absolute vpython root path").Err()
 	}
@@ -316,16 +329,7 @@ func (a *Application) LoadSpec(ctx context.Context) error {
 // BuildVENV builds the derivation for the venv and updates applications'
 // PythonExecutable to the python binary in the venv.
 func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor, venv generators.Generator) error {
-	root := a.VpythonRoot
-	if root == "" {
-		tmp, err := os.MkdirTemp("", "vpython")
-		if err != nil {
-			return errors.Annotate(err, "failed to create temporary vpython root").Err()
-		}
-		root = tmp
-	}
-
-	pm, err := workflow.NewLocalPackageManager(filepath.Join(root, "store"))
+	pm, err := workflow.NewLocalPackageManager(filepath.Join(a.VpythonRoot, "store"))
 	if err != nil {
 		return errors.Annotate(err, "failed to load storage").Err()
 	}
@@ -344,7 +348,7 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 		return errors.Annotate(err, "failed to generate venv derivation").Err()
 	}
 	workflow.MustIncRefRecursiveRuntime(pkg)
-	a.Close = func() {
+	a.close = func() {
 		workflow.MustDecRefRecursiveRuntime(pkg)
 	}
 

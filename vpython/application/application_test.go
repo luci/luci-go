@@ -15,6 +15,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -74,6 +75,16 @@ func TestParseArguments(t *testing.T) {
 			// Stop parsing arguments when seen --
 			err = parseArgs("--", "-vpython-test")
 			So(err, ShouldBeNil)
+		})
+
+		Convey("Test no user cache dir", func() {
+			app.userCacheDir = func() (string, error) { return "", errors.New("error") }
+
+			err := app.ParseEnvs(ctx)
+			So(err, ShouldBeNil)
+			err = app.ParseArgs(ctx)
+			So(err, ShouldBeNil)
+			So(app.VpythonRoot, ShouldNotBeEmpty)
 		})
 
 		Convey("Test cipd cache dir", func() {
