@@ -20,11 +20,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/impl/util/gs"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -78,6 +84,18 @@ func TestAuthorizeReader(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
+		// Set up mock GS client
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := gs.NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		// Set up settings config.
+		cfg := &configspb.SettingsCfg{
+			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
+		}
+		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+
 		Convey("disallows long emails", func() {
 			testEmail := strings.Repeat("a", MaxReaderEmailLength-12) + "@example.com"
 			So(AuthorizeReader(ctx, testEmail), ShouldErrLike,
@@ -99,10 +117,18 @@ func TestAuthorizeReader(t *testing.T) {
 			So(AuthorizeReader(ctx, "someone@example.com"), ShouldErrLike,
 				"soft limit on GCS ACL entries")
 			So(getRawReaders(ctx), ShouldHaveLength, MaxReaders)
-
 		})
 
 		Convey("email is recorded", func() {
+			// Define expected client calls.
+			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.db",
+				stringset.NewFromSlice("someone@example.com")).Times(1)
+			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.json",
+				stringset.NewFromSlice("someone@example.com")).Times(1)
+			mockClient.Client.EXPECT().Close().Times(1)
+
 			So(AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
 				{
@@ -114,6 +140,15 @@ func TestAuthorizeReader(t *testing.T) {
 			})
 
 			Convey("already authorized user is not duplicated", func() {
+				// Define expected client calls.
+				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+					"chrome-infra-auth-test.appspot.com/auth-db/V2latest.db",
+					stringset.NewFromSlice("someone@example.com")).Times(1)
+				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+					"chrome-infra-auth-test.appspot.com/auth-db/V2latest.json",
+					stringset.NewFromSlice("someone@example.com")).Times(1)
+				mockClient.Client.EXPECT().Close().Times(1)
+
 				So(AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 				So(getRawReaders(ctx), ShouldHaveLength, 1)
 			})
@@ -128,11 +163,32 @@ func TestDeauthorizeReader(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
+		// Set up mock GS client
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := gs.NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		// Set up settings config.
+		cfg := &configspb.SettingsCfg{
+			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
+		}
+		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+
 		// Add an authorized user.
 		So(datastore.Put(ctx, testReader(ctx, "someone@example.com")),
 			ShouldBeNil)
 
 		Convey("succeeds for non-authorized user", func() {
+			// Define expected client calls.
+			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.db",
+				stringset.NewFromSlice("someone@example.com")).Times(1)
+			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.json",
+				stringset.NewFromSlice("someone@example.com")).Times(1)
+			mockClient.Client.EXPECT().Close().Times(1)
+
 			So(DeauthorizeReader(ctx, "unknown@example.com"), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
 				testReader(ctx, "someone@example.com"),
@@ -140,6 +196,15 @@ func TestDeauthorizeReader(t *testing.T) {
 		})
 
 		Convey("removes the user", func() {
+			// Define expected client calls.
+			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.db",
+				stringset.New(0)).Times(1)
+			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.json",
+				stringset.New(0)).Times(1)
+			mockClient.Client.EXPECT().Close().Times(1)
+
 			So(DeauthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldBeEmpty)
 		})

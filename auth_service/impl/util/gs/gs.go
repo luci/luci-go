@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
@@ -128,6 +129,52 @@ func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revi
 	}
 
 	return nil
+}
+
+// UpdateReaders updates which users have read access to the latest
+// signed AuthDB and AuthDBRevision in Google Storage.
+func UpdateReaders(ctx context.Context, readers stringset.Set, dryRun bool) (retErr error) {
+	// Skip if the GS path is invalid.
+	gsPath, err := GetPath(ctx)
+	if err != nil {
+		return errors.Annotate(err, "error getting GS path").Err()
+	}
+	if !IsValidPath(gsPath) {
+		if gsPath == "" {
+			// Was not configured in settingcs.cfg; skip ACL update.
+			return nil
+		}
+		return fmt.Errorf("invalid GS path: %s", gsPath)
+	}
+
+	fileBaseName := "latest"
+	if dryRun {
+		fileBaseName = "V2latest"
+	}
+
+	client, err := newClient(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err := client.Close()
+		if retErr == nil {
+			retErr = err
+		}
+	}()
+
+	exts := []string{"db", "json"}
+	errs := errors.MultiError{}
+	for _, ext := range exts {
+		objectPath := fmt.Sprintf("%s/%s.%s", gsPath, fileBaseName, ext)
+		err := client.UpdateReadACL(ctx, objectPath, readers)
+		if err != nil {
+			logging.Errorf(ctx, "error updating ACLs for %s: %s", objectPath, err)
+			errs = append(errs, err)
+		}
+	}
+
+	return errs.AsError()
 }
 
 func newClient(ctx context.Context) (Client, error) {

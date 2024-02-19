@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/auth_service/impl/util/gs"
 )
 
 const (
@@ -90,7 +92,8 @@ func GetAuthorizedEmails(ctx context.Context) (stringset.Set, error) {
 	return emails, nil
 }
 
-// AuthorizeReader records the given email as an AuthDBReader.
+// AuthorizeReader records the given email as an AuthDBReader, then
+// updates Auth Service's Google Storage object ACLs.
 func AuthorizeReader(ctx context.Context, email string) error {
 	if len(email) >= MaxReaderEmailLength {
 		return fmt.Errorf("aborting reader authorization - email is too long: %s", email)
@@ -124,15 +127,31 @@ func AuthorizeReader(ctx context.Context, email string) error {
 		return err
 	}
 
-	return nil
+	return updateGSReaders(ctx)
 }
 
-// DeauthorizeReader removes the given email as an AuthDBReader.
+// DeauthorizeReader removes the given email as an AuthDBReader, then
+// updates Auth Service's Google Storage object ACLs.
 func DeauthorizeReader(ctx context.Context, email string) error {
 	err := datastore.Delete(ctx, authDBReaderKey(ctx, email))
 	if err != nil {
 		return errors.Annotate(err, "error deauthorizing reader").Err()
 	}
 
-	return nil
+	return updateGSReaders(ctx)
+}
+
+func updateGSReaders(ctx context.Context) error {
+	readers, err := GetAuthorizedEmails(ctx)
+	if err != nil {
+		return err
+	}
+
+	// TODO (b/321137485): Set dry run to false when rolling out AuthDB
+	// replication.
+	//
+	// For now, only set the read ACLs for V2-prefixed objects while
+	// still in development & testing.
+	dryRun := true
+	return gs.UpdateReaders(ctx, readers, dryRun)
 }

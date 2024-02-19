@@ -126,5 +126,24 @@ func TestGSCalls(t *testing.T) {
 			err := UploadAuthDB(ctx, signedAuthDB, rev, readers, false)
 			So(err, ShouldBeNil)
 		})
+
+		Convey("updating ACLs works", func() {
+			// Set up mock GS client
+			ctl := gomock.NewController(t)
+			defer ctl.Finish()
+			mockClient := NewMockedClient(ctx, ctl)
+			ctx = mockClient.Ctx
+
+			// Define expected client calls.
+			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+				"chrome-infra-auth-test.appspot.com/auth-db/latest.db",
+				readers).Times(1)
+			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+				"chrome-infra-auth-test.appspot.com/auth-db/latest.json",
+				readers).Times(1)
+			mockClient.Client.EXPECT().Close().Times(1)
+
+			So(UpdateReaders(ctx, readers, false), ShouldBeNil)
+		})
 	})
 }

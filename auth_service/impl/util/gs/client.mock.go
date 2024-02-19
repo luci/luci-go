@@ -10,6 +10,7 @@ import (
 
 	storage "cloud.google.com/go/storage"
 	gomock "github.com/golang/mock/gomock"
+	stringset "go.chromium.org/luci/common/data/stringset"
 )
 
 // MockClient is a mock of Client interface.
@@ -47,6 +48,20 @@ func (m *MockClient) Close() error {
 func (mr *MockClientMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockClient)(nil).Close))
+}
+
+// UpdateReadACL mocks base method.
+func (m *MockClient) UpdateReadACL(ctx context.Context, objectPath string, readers stringset.Set) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateReadACL", ctx, objectPath, readers)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateReadACL indicates an expected call of UpdateReadACL.
+func (mr *MockClientMockRecorder) UpdateReadACL(ctx, objectPath, readers interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateReadACL", reflect.TypeOf((*MockClient)(nil).UpdateReadACL), ctx, objectPath, readers)
 }
 
 // WriteFile mocks base method.

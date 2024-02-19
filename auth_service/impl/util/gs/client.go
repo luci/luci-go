@@ -24,6 +24,7 @@ import (
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
@@ -45,6 +46,10 @@ const (
 type Client interface {
 	// Close closes the connection to Google Storage.
 	Close() error
+
+	// UpdateReadACL updates the object ACLs to grant read access to the
+	// given readers; readers must be user emails.
+	UpdateReadACL(ctx context.Context, objectPath string, readers stringset.Set) error
 
 	// WriteFile writes the given data to the GS path with the object ACLs
 	// provided.
@@ -124,4 +129,54 @@ func (c *gsClient) WriteFile(ctx context.Context, objectPath, contentType string
 	}
 
 	return nil
+}
+
+func (c *gsClient) UpdateReadACL(ctx context.Context, objectPath string, readers stringset.Set) error {
+	if c.baseClient == nil {
+		return fmt.Errorf("aborting - no Google Storage client")
+	}
+
+	bucket, name, found := strings.Cut(objectPath, "/")
+	if !found {
+		return fmt.Errorf("aborting - invalid object path %s", objectPath)
+	}
+
+	acl := c.baseClient.Bucket(bucket).Object(name).ACL()
+
+	oldACL, err := acl.List(ctx)
+	if err != nil {
+		return errors.Annotate(err, "error listing ACLs").Err()
+	}
+	oldAccessors := stringset.New(len(oldACL))
+	oldReaders := stringset.New(len(oldACL))
+	for _, rule := range oldACL {
+		oldAccessors.Add(string(rule.Entity))
+		if rule.Role == storage.RoleReader {
+			oldReaders.Add(string(rule.Entity))
+		}
+	}
+
+	errs := errors.MultiError{}
+	// Only set read access for users that don't have any access to
+	// prevent overwriting existing roles to the reader role.
+	toAdd := readers.Difference(oldAccessors)
+	for reader := range toAdd {
+		user := storage.ACLEntity(fmt.Sprintf("user-%s", reader))
+		if err := acl.Set(ctx, user, storage.RoleReader); err != nil {
+			logging.Errorf(ctx, "error granting read access to %s for user %s", objectPath, user)
+			errs = append(errs, err)
+		}
+	}
+	// Revoke read access for users that currently have read access but
+	// aren't in readers.
+	toDelete := oldReaders.Difference(readers)
+	for reader := range toDelete {
+		user := storage.ACLEntity(fmt.Sprintf("user-%s", reader))
+		if err := acl.Delete(ctx, user); err != nil {
+			logging.Errorf(ctx, "error revoking read access to %s for user %s", objectPath, user)
+			errs = append(errs, err)
+		}
+	}
+
+	return errs.AsError()
 }
