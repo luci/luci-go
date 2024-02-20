@@ -90,7 +90,6 @@ func (s *server) Batch(c context.Context, req *logdog.BatchRequest) (*logdog.Bat
 
 func (s *server) processBatchEntry(c context.Context, e *logdog.BatchRequest_Entry, r *logdog.BatchResponse_Entry) {
 	enterSingleContext := func(c context.Context, req proto.Message, fn func(context.Context) error) error {
-		logging.Debugf(c, "Batch operation: %T", req)
 		c, err := maybeEnterProjectNamespace(c, req)
 		if err != nil {
 			return err

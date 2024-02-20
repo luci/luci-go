@@ -33,11 +33,6 @@ import (
 
 // LoadStream loads the log stream state.
 func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
-	log.Fields{
-		"project": req.Project,
-		"id":      req.Id,
-	}.Infof(c, "Loading log stream state.")
-
 	id := coordinator.HashID(req.Id)
 	if err := id.Normalize(); err != nil {
 		log.WithError(err).Errorf(c, "Invalid stream ID.")
@@ -49,7 +44,7 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 
 	if err := ds.Get(c, lst, ls); err != nil {
 		if anyNoSuchEntity(err) {
-			log.WithError(err).Errorf(c, "No such entity in datastore.")
+			log.WithError(err).Errorf(c, "No such entity in datastore (log stream).")
 
 			// The state isn't registered, so this stream does not exist.
 			return nil, status.Errorf(codes.NotFound, "Log stream was not found.")
@@ -69,14 +64,6 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 	resp.ArchivalKey = lst.ArchivalKey
 	resp.Age = durationpb.New(ds.RoundTime(clock.Now(c)).Sub(lst.Updated))
 
-	log.Fields{
-		"id":              lst.ID(),
-		"terminalIndex":   resp.State.TerminalIndex,
-		"archived":        resp.State.Archived,
-		"purged":          resp.State.Purged,
-		"age":             resp.Age.AsDuration(),
-		"archivalKeySize": len(resp.ArchivalKey),
-	}.Infof(c, "Successfully loaded log stream state.")
 	return &resp, nil
 }
 

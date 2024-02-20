@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
-	log "go.chromium.org/luci/common/logging"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
@@ -110,9 +109,6 @@ func New(settings ServerSettings) logdog.ServicesServer {
 func maybeEnterProjectNamespace(c context.Context, req proto.Message) (context.Context, error) {
 	if pbm, ok := req.(endpoints.ProjectBoundMessage); ok {
 		project := pbm.GetMessageProject()
-		log.Fields{
-			"project": project,
-		}.Debugf(c, "Request is entering project namespace.")
 		return c, coordinator.WithProjectNamespace(&c, project)
 	}
 	return c, nil

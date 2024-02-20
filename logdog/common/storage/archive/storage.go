@@ -138,11 +138,6 @@ func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb s
 		length = st.length()
 	)
 
-	log.Fields{
-		"offset": offset,
-		"length": length,
-		"path":   s.Stream,
-	}.Debugf(c, "Creating stream reader for range.")
 	storageReader, err := s.Client.NewReader(s.Stream, int64(offset), length)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create stream Reader.")

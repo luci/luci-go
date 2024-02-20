@@ -29,15 +29,6 @@ import (
 )
 
 func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*emptypb.Empty, error) {
-	log.Fields{
-		"project":       req.Project,
-		"id":            req.Id,
-		"complete":      req.Complete(),
-		"terminalIndex": req.TerminalIndex,
-		"logEntryCount": req.LogEntryCount,
-		"error":         req.Error,
-	}.Infof(c, "Received archival request.")
-
 	id := coordinator.HashID(req.Id)
 	if err := id.Normalize(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)

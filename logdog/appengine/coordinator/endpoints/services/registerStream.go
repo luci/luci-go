@@ -186,7 +186,6 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			}
 
 			// The stream is not yet registered.
-			log.Infof(c, "Registering new log stream.")
 
 			// Construct our LogStreamState.
 			now := clock.Now(c).UTC()
@@ -210,10 +209,6 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			// If our registration request included a terminal index, terminate the
 			// log stream state as well.
 			if req.TerminalIndex >= 0 {
-				log.Fields{
-					"terminalIndex": req.TerminalIndex,
-				}.Debugf(c, "Registration request included terminal index.")
-
 				lst.TerminalIndex = req.TerminalIndex
 				lst.TerminatedTime = now
 				preTerminated = true

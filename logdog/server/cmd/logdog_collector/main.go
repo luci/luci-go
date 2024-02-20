@@ -93,10 +93,6 @@ func runForever(ctx context.Context, coll *collector.Collector, sub *pubsub.Subs
 // processMessage returns true if the message should be ACK'd (deleted from
 // Pub/Sub) or false if the message should not be ACK'd.
 func processMessage(ctx context.Context, coll *collector.Collector, msg *pubsub.Message) bool {
-	logging.Fields{
-		"size": len(msg.Data),
-	}.Infof(ctx, "Received Pub/Sub Message.")
-
 	startTime := clock.Now(ctx)
 	err := coll.Process(ctx, msg.Data)
 	duration := clock.Now(ctx).Sub(startTime)
@@ -115,10 +111,6 @@ func processMessage(ctx context.Context, coll *collector.Collector, msg *pubsub.
 		return false
 
 	case err == nil:
-		logging.Fields{
-			"size":     len(msg.Data),
-			"duration": duration,
-		}.Infof(ctx, "Message successfully processed; ACKing.")
 		tsPubsubCount.Add(ctx, 1, "success")
 		return true
 

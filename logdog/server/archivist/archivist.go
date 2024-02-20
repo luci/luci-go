@@ -186,15 +186,9 @@ const storageBufferSize = types.MaxLogEntryDataSize * 64
 // If the supplied Context is Done, operation may terminate before completion,
 // returning the Context's error.
 func (a *Archivist) ArchiveTask(ctx context.Context, task *logdog.ArchiveTask) error {
-	logging.Debugf(ctx, "Received archival task.")
-
 	err := a.archiveTaskImpl(ctx, task)
 
 	failure := isFailure(err)
-	logging.Fields{
-		logging.ErrorKey: err,
-		"failure":        failure,
-	}.Infof(ctx, "Finished archive task.")
 
 	// Add a result metric.
 	tsCount.Add(ctx, 1, task.Project, !failure)
@@ -330,15 +324,6 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 		tsLogEntries.Add(ctx, float64(staged.logEntryCount), task.Project, streamType)
 		tsTotalLogEntries.Add(ctx, staged.logEntryCount, task.Project, streamType)
 	}
-
-	logging.Fields{
-		"streamURL":     ar.StreamUrl,
-		"indexURL":      ar.IndexUrl,
-		"terminalIndex": ar.TerminalIndex,
-		"logEntryCount": ar.LogEntryCount,
-		"hadError":      ar.Error,
-		"complete":      ar.Complete(),
-	}.Debugf(ctx, "Finished archival round. Reporting archive state.")
 
 	if _, err := a.Service.ArchiveStream(ctx, &ar); err != nil {
 		logging.WithError(err).Errorf(ctx, "Failed to report archive state.")
@@ -720,12 +705,6 @@ func (sa *stagedArchival) stage() (err error) {
 	if ss.logEntryCount == 0 {
 		// If our last log index was <0, then no logs were archived.
 		logging.Warningf(sa.ctx, "No log entries were archived.")
-	} else {
-		// Update our terminal index.
-		logging.Fields{
-			"terminalIndex": ss.lastIndex,
-			"logEntryCount": ss.logEntryCount,
-		}.Debugf(sa.ctx, "Finished archiving log stream.")
 	}
 
 	// Update our state with archival results.
@@ -762,7 +741,6 @@ func (sa *stagedArchival) finalize(ar *logdog.ArchiveStreamRequest) error {
 			}
 
 			taskC <- func() error {
-				logging.Infof(sa.ctx, "Renaming %s => %s", d.staged, d.final)
 				if err := sa.gsclient.Rename(d.staged, d.final); err != nil {
 					logging.Fields{
 						logging.ErrorKey: err,
