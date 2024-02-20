@@ -130,7 +130,6 @@ message Build {
     string summary_markdown = 2;
   }
 
-  reserved 5; // view_url
   reserved 13; // infra_failure_reason was moved into status_details.
   reserved 14; // cancel_reason was moved into status_details.
 
@@ -179,6 +178,9 @@ message Build {
 
   // Verified LUCI identity that created this build.
   string created_by = 4 [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // Redirect url for the build.
+  string view_url = 5;
 
   // Verified LUCI identity that canceled this build.
   //
