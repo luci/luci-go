@@ -146,6 +146,44 @@ func TestHandleViewBuild(t *testing.T) {
 			So(rsp.Header().Get("Location"), ShouldEqual, "https://milo.com/b/123")
 		})
 
+		Convey("build with view_url", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: userID,
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+				),
+			})
+
+			settingsCfg := &pb.SettingsCfg{
+				Swarming: &pb.SwarmingSettings{
+					MiloHostname: "milo.com",
+				},
+			}
+			So(config.SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
+			url := "https://another.com"
+			b := &model.Build{
+				ID: 300,
+				Proto: &pb.Build{
+					Id: 300,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					ViewUrl: url,
+				},
+			}
+			So(datastore.Put(ctx, b), ShouldBeNil)
+
+			rctx.Request = (&http.Request{}).WithContext(ctx)
+			rctx.Params = httprouter.Params{
+				{Key: "BuildID", Value: "300"},
+			}
+			handleViewBuild(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusFound)
+			So(rsp.Header().Get("Location"), ShouldEqual, url)
+		})
+
 		Convey("RedirectToTaskPage", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,

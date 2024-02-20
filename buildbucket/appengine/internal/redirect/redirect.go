@@ -162,9 +162,16 @@ func getBuild(c *router.Context, bID int) *model.Build {
 }
 
 func getBuildURL(ctx context.Context, bld *model.Build) (string, error) {
+	// For lagacy v1 case.
 	if bld.URL != "" {
 		return bld.URL, nil
 	}
+
+	// For V2 builds with view_url.
+	if bld.Proto.ViewUrl != "" {
+		return bld.Proto.ViewUrl, nil
+	}
+
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
 		return "", err
