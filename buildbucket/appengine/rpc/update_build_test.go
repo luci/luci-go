@@ -749,6 +749,16 @@ func TestUpdateBuild(t *testing.T) {
 			So(b.Proto.UpdateTime, ShouldResembleProto, timestamppb.New(t0.Add(time.Second)))
 		})
 
+		Convey("build.view_url", func() {
+			url := "https://redirect.com"
+			req.Build.ViewUrl = url
+			req.UpdateMask.Paths[0] = "build.view_url"
+			So(updateBuild(ctx, req), ShouldBeRPCOK)
+			b, err := common.GetBuild(ctx, req.Build.Id)
+			So(err, ShouldBeNil)
+			So(b.Proto.ViewUrl, ShouldEqual, url)
+		})
+
 		Convey("build.output.properties", func() {
 			props, err := structpb.NewStruct(map[string]any{"key": "value"})
 			So(err, ShouldBeNil)

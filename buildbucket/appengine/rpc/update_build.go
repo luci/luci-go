@@ -153,6 +153,7 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 			if err := validateSummaryMarkdown(req.Build.CancellationMarkdown); err != nil {
 				return errors.Annotate(err, "build.cancellation_markdown").Err()
 			}
+		case "build.view_url":
 		default:
 			return errors.Reason("unsupported path %q", p).Err()
 		}
