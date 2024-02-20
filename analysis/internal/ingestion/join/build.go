@@ -149,11 +149,24 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 		return false, fmt.Errorf("build has unknown status: %v", build.Status)
 	}
 
-	gerritChanges := build.GetInput().GetGerritChanges()
-
-	changelists, err := prepareChangelists(ctx, project, gerritChanges)
-	if err != nil {
-		return false, errors.Annotate(err, "prepare changelists").Err()
+	var changelists []*pb.Changelist
+	if project == "chromeos" {
+		// This path is being retained only to support Chrome OS's
+		// use of LUCI Analysis Exoneration v1, in the presence
+		// of inconsistently set test results sources in ResultDB.
+		// Deprecate once ChromeOS fixes this up and switches
+		// to exoneration v2.
+		//
+		// Chromium's use of LUCI Analysis Exoneration v1 does not
+		// require this as it consistently sets test result sources
+		// via ResultDB.
+		//
+		// Exoneration v2 only functions with sources set via ResultDB.
+		gerritChanges := build.GetInput().GetGerritChanges()
+		changelists, err = prepareChangelists(ctx, project, gerritChanges)
+		if err != nil {
+			return false, errors.Annotate(err, "prepare changelists").Err()
+		}
 	}
 
 	commit := build.Output.GetGitilesCommit()

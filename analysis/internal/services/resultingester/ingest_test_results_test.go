@@ -202,16 +202,16 @@ func TestIngestTestResults(t *testing.T) {
 					Status:       pb.BuildStatus_BUILD_STATUS_FAILURE,
 					Changelists: []*pb.Changelist{
 						{
-							Host:      "mygerrit-review.googlesource.com",
-							Change:    12345,
-							Patchset:  5,
-							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-						},
-						{
 							Host:      "anothergerrit.gerrit.instance",
 							Change:    77788,
 							Patchset:  19,
 							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+						},
+						{
+							Host:      "mygerrit-review.googlesource.com",
+							Change:    12345,
+							Patchset:  5,
+							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 						},
 					},
 					Commit: &bbpb.GitilesCommit{

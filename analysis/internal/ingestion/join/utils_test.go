@@ -25,14 +25,12 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/cv"
-	"go.chromium.org/luci/analysis/internal/gerrit"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
@@ -47,8 +45,6 @@ func ingestBuild(ctx context.Context, build *buildBuilder) error {
 		build.buildID: build.BuildProto(),
 	}
 	ctx = buildbucket.UseFakeClient(ctx, builds)
-
-	ctx = gerrit.UseFakeClient(ctx, build.GerritProtosByHost())
 
 	processed, err := JoinBuild(ctx, bbHost, "buildproject", build.buildID)
 	if err != nil {
@@ -79,11 +75,11 @@ func ingestCVRun(ctx context.Context, buildIDs []int64) error {
 		tryjobs = append(tryjobs, tryjob(id))
 	}
 	run := &cvv0.Run{
-		Id:         "projects/cvproject/runs/123e4567-e89b-12d3-a456-426614174000",
-		Mode:       "FULL_RUN",
-		Status:     cvv0.Run_FAILED,
-		Owner:      "chromium-autoroll@skia-public.iam.gserviceaccount.com",
-		CreateTime: timestamppb.New(cvCreateTime),
+		Id:                "projects/cvproject/runs/123e4567-e89b-12d3-a456-426614174000",
+		Mode:              "FULL_RUN",
+		Status:            cvv0.Run_FAILED,
+		Owner:             "chromium-autoroll@skia-public.iam.gserviceaccount.com",
+		CreateTime:        timestamppb.New(cvCreateTime),
 		TryjobInvocations: tryjobs,
 		Cls: []*cvv0.GerritChange{
 			{
@@ -235,29 +231,6 @@ func (b *buildBuilder) BuildProto() *bbpb.Build {
 	}
 }
 
-func (b *buildBuilder) GerritProtosByHost() map[string][]*gerritpb.ChangeInfo {
-	return map[string][]*gerritpb.ChangeInfo{
-		"myproject-review.googlesource.com": {
-			{
-				Number:  81818181,
-				Project: "my/src",
-				Owner: &gerritpb.AccountInfo{
-					Email: "some-account@my-bot.iam.gserviceaccount.com",
-				},
-			},
-		},
-		"otherproject-review.googlesource.com": {
-			{
-				Number:  71717171,
-				Project: "other/src",
-				Owner: &gerritpb.AccountInfo{
-					Email: "user@chromium.org",
-				},
-			},
-		},
-	}
-}
-
 func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 	var rdbHost string
 	if b.hasInvocation {
@@ -272,26 +245,6 @@ func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 		Bucket:       "bucket",
 		Builder:      "builder",
 		Status:       pb.BuildStatus_BUILD_STATUS_SUCCESS,
-		Changelists: []*pb.Changelist{
-			{
-				Host:      "do.not.query.untrusted.gerrit.instance",
-				Change:    92929292,
-				Patchset:  5656,
-				OwnerKind: pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
-			},
-			{
-				Host:      "myproject-review.googlesource.com",
-				Change:    81818181,
-				Patchset:  9292,
-				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-			},
-			{
-				Host:      "otherproject-review.googlesource.com",
-				Change:    71717171,
-				Patchset:  1212,
-				OwnerKind: pb.ChangelistOwnerKind_HUMAN,
-			},
-		},
 		Commit: &bbpb.GitilesCommit{
 			Host:     "coolproject-review.googlesource.com",
 			Project:  "coolproject/src",

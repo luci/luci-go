@@ -88,19 +88,6 @@ func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocat
 			OwnerKind: change.OwnerKind,
 		})
 	}
-	// TODO (b/258734241): This has been migrated to join-build task queue.
-	// Remove when old build completions flushed out.
-	// Store the tested changelists in sorted order. This ensures that for
-	// the same combination of CLs tested, the arrays are identical.
-	testresults.SortChangelists(changelists)
-
-	// TODO (b/258734241): This has been migrated to join-build task queue.
-	// Remove when old build completions flushed out.
-	// Truncate the list of changelists to avoid storing an excessive number.
-	// Apply truncation after sorting to ensure a stable set of changelists.
-	if len(changelists) > maximumCLs {
-		changelists = changelists[:maximumCLs]
-	}
 
 	ingestion := &IngestionContext{
 		Project:              proj,
@@ -246,6 +233,7 @@ func batchTestResults(ingestion *IngestionContext, testVariants []*rdbpb.TestVar
 					tr.Sources = sources
 				} else {
 					// Fall back to populating changelists from buildbucket build.
+					// TODO(meiring): Delete once ChromeOS switched to exoneration v2.
 					tr.Sources = testresults.Sources{
 						Changelists: ingestion.Changelists,
 					}
