@@ -23,7 +23,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -35,7 +34,7 @@ import (
 
 // CountBots implements the corresponding RPC method.
 func (srv *BotsServer) CountBots(ctx context.Context, req *apipb.BotsCountRequest) (*apipb.BotsCount, error) {
-	dims, err := model.NewDimensionsFilter(req.Dimensions)
+	dims, err := model.NewFilter(req.Dimensions)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid dimensions: %s", err)
 	}
@@ -110,17 +109,19 @@ func (srv *BotsServer) CountBots(ctx context.Context, req *apipb.BotsCountReques
 				if useAggregation {
 					// Note: len(queries) == 1 here, queries[0] is the only query to run.
 					count, err = datastore.Count(ectx, model.FilterByState(queries[0], filter).EventualConsistency(true))
-					if err != nil {
-						if !errors.Is(err, context.Canceled) {
-							logging.Errorf(ctx, "Error in BotInfo aggregation query with filter %v: %s", filter, err)
-						}
-						return err
-					}
 				} else {
-					count, err = countBotsLocally(ectx, queries, filter)
-					if err != nil {
-						return err // the error is already logged by countBotsLocally
+					// Apply the filter, enable firestore mode to run in the transaction.
+					filtered := make([]*datastore.Query, len(queries))
+					for i, q := range queries {
+						filtered[i] = model.FilterByState(q, filter).EventualConsistency(false).FirestoreMode(true)
 					}
+					count, err = datastore.CountMulti(ectx, filtered)
+				}
+				if err != nil {
+					if !errors.Is(err, context.Canceled) {
+						logging.Errorf(ctx, "Error in BotInfo query with filter %v: %s", filter, err)
+					}
+					return err
 				}
 				*res = int32(count)
 				return nil
@@ -142,55 +143,4 @@ func maybeTxn(ctx context.Context, txn bool, cb func(ctx context.Context) error)
 		return datastore.RunInTransaction(ctx, cb, &datastore.TransactionOptions{ReadOnly: true})
 	}
 	return cb(ctx)
-}
-
-// countBotsLocally runs multiple queries, joins their results skipping
-// duplicates, and counts the resulting number of bots.
-func countBotsLocally(ctx context.Context, queries []*datastore.Query, filter model.StateFilter) (int64, error) {
-	type msg struct {
-		botID string
-		done  bool
-	}
-	ch := make(chan msg, 100)
-
-	// Run queries in parallel and feed the results into the channel.
-	eg, ectx := errgroup.WithContext(ctx)
-	for _, subq := range queries {
-		subq := model.FilterByState(subq, filter).FirestoreMode(true)
-		eg.Go(func() error {
-			defer func() { ch <- msg{done: true} }()
-			err := datastore.RunBatch(ectx, 2500, subq, func(key *datastore.Key) error {
-				// This should not happen. But if we end up with entities like that,
-				// better to skip them than crash trying to deconstruct the key.
-				if key.Parent() == nil {
-					logging.Errorf(ctx, "Skipping bad BotInfo key: %s", key)
-				} else {
-					ch <- msg{botID: key.Parent().StringID()}
-				}
-				return nil
-			})
-			if err != nil && !errors.Is(err, context.Canceled) {
-				logging.Errorf(ctx, "Error in BotInfo keys-only query (%s): %s", subq, err)
-			}
-			return err
-		})
-	}
-
-	seen := stringset.New(0)
-	pending := len(queries)
-	for msg := range ch {
-		if msg.done {
-			pending--
-			if pending == 0 {
-				break
-			}
-		} else {
-			seen.Add(msg.botID)
-		}
-	}
-
-	if err := eg.Wait(); err != nil {
-		return 0, err
-	}
-	return int64(seen.Len()), nil
 }

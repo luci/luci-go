@@ -25,19 +25,19 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestDimensionsFilter(t *testing.T) {
+func TestFilter(t *testing.T) {
 	t.Parallel()
 
 	Convey("Ok", t, func() {
-		f, err := NewDimensionsFilter([]*apipb.StringPair{
+		f, err := NewFilter([]*apipb.StringPair{
 			{Key: "x", Value: "c|b|a"},
 			{Key: "x", Value: "y"},
 			{Key: "pool", Value: "P1"},
 			{Key: "pool", Value: "P1|P2|P3"},
 		})
 		So(err, ShouldBeNil)
-		So(f, ShouldResemble, DimensionsFilter{
-			filters: []dimensionFilter{
+		So(f, ShouldResemble, Filter{
+			filters: []perKeyFilter{
 				{key: "pool", values: []string{"P1"}},
 				{key: "pool", values: []string{"P1", "P2", "P3"}},
 				{key: "x", values: []string{"a", "b", "c"}},
@@ -49,15 +49,15 @@ func TestDimensionsFilter(t *testing.T) {
 
 	Convey("Errors", t, func() {
 		call := func(k, v string) error {
-			_, err := NewDimensionsFilter([]*apipb.StringPair{
+			_, err := NewFilter([]*apipb.StringPair{
 				{Key: k, Value: v},
 			})
 			return err
 		}
-		So(call("", "val"), ShouldErrLike, "bad dimension key")
-		So(call("  key", "val"), ShouldErrLike, "bad dimension key")
-		So(call("key", ""), ShouldErrLike, "invalid value")
-		So(call("key", "  val"), ShouldErrLike, "invalid value")
+		So(call("", "val"), ShouldErrLike, "bad key")
+		So(call("  key", "val"), ShouldErrLike, "bad key")
+		So(call("key", ""), ShouldErrLike, "bad value")
+		So(call("key", "  val"), ShouldErrLike, "bad value")
 	})
 
 	Convey("SplitForQuery", t, func() {
@@ -70,7 +70,7 @@ func TestDimensionsFilter(t *testing.T) {
 					Value: v,
 				})
 			}
-			in, err := NewDimensionsFilter(pairs)
+			in, err := NewFilter(pairs)
 			So(err, ShouldBeNil)
 
 			parts := in.SplitForQuery(mode)

@@ -21,11 +21,12 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-// SplitMode is a parameter for SplitForQuery method.
+// SplitMode is a parameter for SplitForQuery and Apply methods.
 type SplitMode int
 
 const (
@@ -44,13 +45,13 @@ const (
 	SplitCompletely SplitMode = 1
 )
 
-// DimensionsFilter represents a filter over the space of bot dimensions.
+// Filter represents a filter over the space of ["key:value"] tags.
 //
-// Conceptually it is a list of AND'ed together checks on values of dimensions.
-// Each such check compares each value of some particular dimension to a set
-// of allowed values (often just one). The same dimension key is allowed to show
-// up more than once. In that case there will be more than one filter on values
-// of this dimension (see the example below).
+// Conceptually it is a list of AND'ed together checks on values of tags. Each
+// such check compares each value of some particular tag to a set of allowed
+// values (often just one). The same tag key is allowed to show up more than
+// once. In that case there will be more than one filter on values of this tag
+// (see the example below).
 //
 // In API this filter is encoded by a list of `key:val1|val2|val3` pairs, where
 // keys are allowed to be repeated.
@@ -59,65 +60,49 @@ const (
 //
 //	["os:Linux", "os:Ubuntu", "zone:us-central|us-east"]
 //
-// Will match bots that report e.g. following dimensions:
+// Will match entities with following tags:
 //
-//	{
-//		"os": ["Linux", "Ubuntu", "Ubuntu-20"],
-//		"zone": ["us-central"],
-//	},
-//	{
-//		"os": ["Linux", "Ubuntu", "Ubuntu-22"],
-//		"zone": ["us-east"],
-//	}
+//	["os:Linux", "os:Ubuntu", "os:Ubuntu-20", "zone:us-central"]
+//	["os:Linux", "os:Ubuntu", "os:Ubuntu-22", "zone:us-easy"]
 //
-// But it will not match these bots:
+// But it will not match these entities:
 //
-//	{
-//		"os": ["Linux", "Debian"],
-//		"zone": ["us-central"],
-//	},
-//	{
-//		"os": ["Linux", "Ubuntu", "Ubuntu-22"],
-//		"zone": ["us-west"],
-//	}
-//
-// DimensionsFilters are used in various listing APIs, as well as when finding
-// bots to run a task on.
-type DimensionsFilter struct {
-	filters []dimensionFilter // sorted by key
+//	["os:Linux", "os:Debian", "zone:us-central"]
+//	["os:Linux", "os:Ubuntu", "os:Ubuntu-22", "zone:us-west"]
+type Filter struct {
+	filters []perKeyFilter // sorted by key
 }
 
-// dimensionFilter is a filter that checks the value of a single dimension is
-// in a set of allowed values.
-type dimensionFilter struct {
-	key    string   // the dimension to check
+// perKeyFilter is a filter that checks the value of a single tag key.
+type perKeyFilter struct {
+	key    string   // the tag key to check
 	values []string // allowed values (no dups, sorted)
 }
 
-// NewDimensionsFilter parses a list of `("key", "val1|val2|val2")` pairs.
+// NewFilter parses a list of `("key", "val1|val2|val2")` pairs.
 //
-// Empty filter is possible (if `dims` are empty).
-func NewDimensionsFilter(dims []*apipb.StringPair) (DimensionsFilter, error) {
-	filter := DimensionsFilter{
-		filters: make([]dimensionFilter, 0, len(dims)),
+// Empty filter is possible (if `tags` are empty).
+func NewFilter(tags []*apipb.StringPair) (Filter, error) {
+	filter := Filter{
+		filters: make([]perKeyFilter, 0, len(tags)),
 	}
 
-	for _, dim := range dims {
-		if strings.TrimSpace(dim.Key) != dim.Key || dim.Key == "" {
-			return filter, errors.Reason("bad dimension key %q", dim.Key).Err()
+	for _, tag := range tags {
+		if strings.TrimSpace(tag.Key) != tag.Key || tag.Key == "" {
+			return filter, errors.Reason("bad key %q", tag.Key).Err()
 		}
 
-		vals := strings.Split(dim.Value, "|")
+		vals := strings.Split(tag.Value, "|")
 		deduped := stringset.New(len(vals))
 		for _, val := range vals {
 			if strings.TrimSpace(val) != val || val == "" {
-				return filter, errors.Reason("bad dimension for key %q: invalid value %q", dim.Key, dim.Value).Err()
+				return filter, errors.Reason("bad value for key %q: %q", tag.Key, tag.Value).Err()
 			}
 			deduped.Add(val)
 		}
 
-		filter.filters = append(filter.filters, dimensionFilter{
-			key:    dim.Key,
+		filter.filters = append(filter.filters, perKeyFilter{
+			key:    tag.Key,
 			values: deduped.ToSortedSlice(),
 		})
 	}
@@ -130,7 +115,7 @@ func NewDimensionsFilter(dims []*apipb.StringPair) (DimensionsFilter, error) {
 }
 
 // Pools is a list of all pools mentioned in the filter (if any).
-func (f DimensionsFilter) Pools() []string {
+func (f Filter) Pools() []string {
 	pools := stringset.New(1) // there's usually only 1 pool
 	for _, f := range f.filters {
 		if f.key == "pool" {
@@ -144,8 +129,9 @@ func (f DimensionsFilter) Pools() []string {
 // used in datastore queries, with their results merged.
 //
 // The unsplit filter is generally too complex for the datastore query planner
-// to handle using existing indexes (an index on `dimensions_flat` and
-// a composite index on `(dimensions_flat, composite)` pair).
+// to handle using existing indexes (e.g. an index on `dimensions_flat` and
+// a composite index on `(dimensions_flat, composite)` pair when used for
+// BotInfo queries).
 //
 // Unfortunately due to datastore limits we can't just add all necessary
 // composite indexes (like `(dimensions_flat, dimensions_flat, composite)` one).
@@ -160,7 +146,7 @@ func (f DimensionsFilter) Pools() []string {
 // results locally. This is relatively expensive and scales poorly, but we need
 // to do that only for complex queries that use multiple OR property filters.
 // They are relatively rare.
-func (f DimensionsFilter) SplitForQuery(mode SplitMode) []DimensionsFilter {
+func (f Filter) SplitForQuery(mode SplitMode) []Filter {
 	// Count how many OR-ed property filters we have, find the smallest one. We'll
 	// use it as a "pivot" for splitting the original filter into smaller filters.
 	// That way we'll have the smallest number of splits.
@@ -185,22 +171,22 @@ func (f DimensionsFilter) SplitForQuery(mode SplitMode) []DimensionsFilter {
 		panic(fmt.Sprintf("unknown split mode %d", mode))
 	}
 	if multiValCount <= maxMultiVal {
-		return []DimensionsFilter{f}
+		return []Filter{f}
 	}
 
 	// Split into simpler filters around the pivot eliminating this particular OR.
 	// Keep simplifying the result recursively until we get a list of filters
 	// where each one can be handled by the datastore natively.
 	pivotVals := f.filters[pivotIdx].values
-	simplified := make([]DimensionsFilter, 0, len(pivotVals))
+	simplified := make([]Filter, 0, len(pivotVals))
 	for _, pivotVal := range pivotVals {
-		subfilter := DimensionsFilter{
-			filters: make([]dimensionFilter, 0, len(f.filters)),
+		subfilter := Filter{
+			filters: make([]perKeyFilter, 0, len(f.filters)),
 		}
 		for idx, filter := range f.filters {
 			if idx == pivotIdx {
 				// Pivot! Pivot!
-				subfilter.filters = append(subfilter.filters, dimensionFilter{
+				subfilter.filters = append(subfilter.filters, perKeyFilter{
 					key:    filter.key,
 					values: []string{pivotVal},
 				})
@@ -214,18 +200,30 @@ func (f DimensionsFilter) SplitForQuery(mode SplitMode) []DimensionsFilter {
 	return simplified
 }
 
-// StateFilter represents a filter over the possible bot states.
+// Apply applies this filter to a query, returning multiple queries.
 //
-// Each field is a filter on one aspect of the bot state with possible values
-// being TRUE (meaning "yes"), FALSE (meaning "no") and NULL (meaning "don't
-// care").
-type StateFilter struct {
-	// Quarantined filters bots based on whether they are quarantined.
-	Quarantined apipb.NullableBool
-	// InMaintenance filters bots based on whether they are in maintenance mode.
-	InMaintenance apipb.NullableBool
-	// IsDead filters bots based on whether they are connected or not.
-	IsDead apipb.NullableBool
-	// IsBusy filters bots based on whether they execute any task or not.
-	IsBusy apipb.NullableBool
+// Results of these queries must be merged locally (e.g. via datastore.RunMulti)
+// to get the final filtered result.
+//
+// `field` is the datastore entity field to apply the filter on. It should be
+// a multi-valued field with values of form "key:value".
+func (f Filter) Apply(q *datastore.Query, field string, mode SplitMode) []*datastore.Query {
+	split := f.SplitForQuery(mode)
+	out := make([]*datastore.Query, 0, len(split))
+	for _, simpleFilter := range split {
+		simpleQ := q
+		for _, f := range simpleFilter.filters {
+			if len(f.values) == 1 {
+				simpleQ = simpleQ.Eq(field, fmt.Sprintf("%s:%s", f.key, f.values[0]))
+			} else {
+				pairs := make([]any, len(f.values))
+				for i, v := range f.values {
+					pairs[i] = fmt.Sprintf("%s:%s", f.key, v)
+				}
+				simpleQ = simpleQ.In(field, pairs...)
+			}
+		}
+		out = append(out, simpleQ)
+	}
+	return out
 }

@@ -33,7 +33,7 @@ func TestBotInfoQuery(t *testing.T) {
 			IsBusy:        apipb.NullableBool_TRUE,
 		})
 
-		dims, err := NewDimensionsFilter([]*apipb.StringPair{
+		dims, err := NewFilter([]*apipb.StringPair{
 			{Key: "k1", Value: "v1|v2"},
 			{Key: "k2", Value: "v1|v2"},
 			{Key: "k3", Value: "v1"},

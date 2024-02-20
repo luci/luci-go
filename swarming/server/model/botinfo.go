@@ -16,7 +16,6 @@ package model
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -79,6 +78,22 @@ const (
 	BotStateInMaintenance    BotStateEnum = 1 << 8
 	BotStateNotInMaintenance BotStateEnum = 1 << 9
 )
+
+// StateFilter represents a filter over the possible bot states.
+//
+// Each field is a filter on one aspect of the bot state with possible values
+// being TRUE (meaning "yes"), FALSE (meaning "no") and NULL (meaning "don't
+// care").
+type StateFilter struct {
+	// Quarantined filters bots based on whether they are quarantined.
+	Quarantined apipb.NullableBool
+	// InMaintenance filters bots based on whether they are in maintenance mode.
+	InMaintenance apipb.NullableBool
+	// IsDead filters bots based on whether they are connected or not.
+	IsDead apipb.NullableBool
+	// IsBusy filters bots based on whether they execute any task or not.
+	IsBusy apipb.NullableBool
+}
 
 // BotRoot is an entity group root of entities representing a single bot.
 //
@@ -326,27 +341,10 @@ func BotInfoQuery() *datastore.Query {
 // FilterByDimensions limits the query to return bots matching these dimensions.
 //
 // For complex filters this may split the query into multiple queries that need
-// to run in parallel with their results merged. See SplitForQuery() in
-// DimensionsFilter for more details.
-func FilterByDimensions(q *datastore.Query, mode SplitMode, dims DimensionsFilter) []*datastore.Query {
-	split := dims.SplitForQuery(mode)
-	out := make([]*datastore.Query, 0, len(split))
-	for _, simpleFilter := range split {
-		simpleQ := q
-		for _, f := range simpleFilter.filters {
-			if len(f.values) == 1 {
-				simpleQ = simpleQ.Eq("dimensions_flat", fmt.Sprintf("%s:%s", f.key, f.values[0]))
-			} else {
-				pairs := make([]any, len(f.values))
-				for i, v := range f.values {
-					pairs[i] = fmt.Sprintf("%s:%s", f.key, v)
-				}
-				simpleQ = simpleQ.In("dimensions_flat", pairs...)
-			}
-		}
-		out = append(out, simpleQ)
-	}
-	return out
+// to run in parallel with their results merged. See SplitForQuery() in Filter
+// for more details.
+func FilterByDimensions(q *datastore.Query, mode SplitMode, dims Filter) []*datastore.Query {
+	return dims.Apply(q, "dimensions_flat", mode)
 }
 
 // FilterByState limits the query to return bots in particular state.
