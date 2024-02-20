@@ -138,7 +138,7 @@ message BackendSetting {
     // If set to true, visiting "cr-buildbucket.appspot.com/build/<build_id>"
     // will be redirected to the corresponding task page instead of the Milo
     // build page.
-    bool RedirectToTaskPage = 3;
+    bool redirect_to_task_page = 3;
   }
 
   // The corresponding backend should be a `TaskBackendLite` implementation,
