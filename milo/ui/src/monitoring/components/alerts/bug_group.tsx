@@ -52,6 +52,7 @@ export const BugGroup = ({
             style={{
               display: 'flex',
               justifyContent: 'space-between',
+              alignItems: 'center',
               width: '100%',
             }}
           >
@@ -67,10 +68,15 @@ export const BugGroup = ({
                 color={alerts && alerts.length > 0 ? 'primary' : undefined}
               />
             </Tooltip>
-            <Typography sx={{ flexShrink: '1' }}>
+            <Typography sx={{ flexShrink: '1', flexGrow: '1' }}>
               {/* TODO: copy button because can't highlight the text here. */}{' '}
-              <a href={bug.link} style={{ textDecoration: 'none' }}>
-                crbug.com/{bug.number}
+              <a
+                href={bug.link}
+                style={{ textDecoration: 'none' }}
+                target="_blank"
+                rel="noreferrer"
+              >
+                b/{bug.number}
               </a>{' '}
               {bug.summary !== undefined ? (
                 bug.summary

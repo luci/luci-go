@@ -35,6 +35,14 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5SMGXGB"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
-
+  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoad()"></script>
+  <script>
+    // Load GAPI client.
+    function gapiLoad(){
+      gapi.load('client', function(){
+        gapi.client.init({})
+      })
+    }
+  </script>
   <div id="app-root"></div>
 </body>

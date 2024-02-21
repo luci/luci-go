@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CircularProgress } from '@mui/material';
+import { Alert, CircularProgress, LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useIssueListQuery } from '@/common/hooks/gapi_query/corp_issuetracker';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { Alerts } from '@/monitoring/components/alerts';
 import { configuredTrees } from '@/monitoring/util/config';
@@ -33,6 +34,16 @@ import {
 export const MonitoringPage = () => {
   const { tree: treeName } = useParams();
   const tree = configuredTrees.filter((t) => t.name === treeName)?.[0];
+
+  const bugQuery = useIssueListQuery(
+    {
+      query: `hotlistid:${tree.hotlistId} status:open`,
+      orderBy: 'priority',
+    },
+    {
+      enabled: !!tree?.hotlistId,
+    },
+  );
 
   const client = usePrpcServiceClient({
     host: SETTINGS.sheriffOMatic.host,
@@ -65,6 +76,7 @@ export const MonitoringPage = () => {
     refetchInterval: 60000,
     enabled: !!(treeName && tree),
   });
+
   if (!treeName || !tree) {
     return (
       <>
@@ -79,11 +91,7 @@ export const MonitoringPage = () => {
       </>
     );
   }
-  // TODO(b/319315200): Get bugs from Buganizer.  Must be sorted by priority.
-  const bugQueue = { issues: [], extras: { priority_field: '' } };
-  const bugs = bugQueue.issues.map((i) =>
-    bugFromJson(i, bugQueue.extras.priority_field),
-  );
+  const bugs = bugQuery.data?.issues?.map((i) => bugFromJson(i)) || [];
 
   if (alerts.isLoading) {
     return <CircularProgress />;
@@ -92,14 +100,22 @@ export const MonitoringPage = () => {
     throw alerts.error;
   }
   return (
-    <Alerts
-      alerts={alerts.data.alerts.map(
-        (a) => JSON.parse(a.alertJson) as AlertJson,
-      )}
-      tree={tree}
-      bugs={bugs}
-      annotations={annotations || {}}
-    />
+    <>
+      {bugQuery.isLoading ? <LinearProgress /> : null}
+      {bugQuery.isError ? (
+        <Alert severity="error">
+          Failed to fetch bugs: {(bugQuery.error as Error).message}
+        </Alert>
+      ) : null}
+      <Alerts
+        alerts={alerts.data.alerts.map(
+          (a) => JSON.parse(a.alertJson) as AlertJson,
+        )}
+        tree={tree}
+        bugs={bugs}
+        annotations={annotations || {}}
+      />
+    </>
   );
 };
 

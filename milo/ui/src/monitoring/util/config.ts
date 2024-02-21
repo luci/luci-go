@@ -22,6 +22,7 @@ export const configuredTrees: TreeJson[] = [
     display_name: 'Android',
     bug_queue_label: 'sheriff-android',
     default_monorail_project_name: 'chromium',
+    hotlistId: '5562637',
   },
   {
     name: 'angle',
@@ -33,17 +34,20 @@ export const configuredTrees: TreeJson[] = [
     display_name: 'Chrome Browser Release',
     bug_queue_label: 'sheriff-chrome-release',
     default_monorail_project_name: 'chromium',
+    hotlistId: '5563460',
   },
   {
     name: 'chromeos',
     display_name: 'Chrome OS',
     default_monorail_project_name: 'chromium',
+    hotlistId: '895366',
   },
   {
     name: 'chromium',
     display_name: 'Chromium',
     bug_queue_label: 'sheriff-chromium',
     default_monorail_project_name: 'chromium',
+    hotlistId: '5563291',
   },
   {
     name: 'chromium.clang',
@@ -81,5 +85,10 @@ export const configuredTrees: TreeJson[] = [
     name: 'lacros_skylab',
     display_name: 'Lacros Skylab',
     default_monorail_project_name: 'chromium',
+  },
+  {
+    name: 'devtools_frontend',
+    display_name: 'Devtools Frontend',
+    hotlistId: '5674718',
   },
 ];

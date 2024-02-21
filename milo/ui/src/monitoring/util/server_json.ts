@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { IssueJson } from '@/common/hooks/gapi_query/corp_issuetracker';
 import { TestCulprit } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 export type TreesJson = TreeJson[];
@@ -21,6 +22,7 @@ export interface TreeJson {
   display_name: string;
   default_monorail_project_name?: string; // default to 'chromium' if undefined.
   bug_queue_label?: string;
+  hotlistId?: string;
 }
 
 export const treeJsonFromName = (treeName: string): TreeJson | null => {
@@ -159,62 +161,6 @@ export interface AnnotationBugDataJson {
   summary: string;
 }
 
-export interface BugQueueJson {
-  issues: BugJson[];
-  extras: {
-    priority_field: string;
-  };
-}
-
-export interface BugJson {
-  name: string;
-  summary: string;
-  state: number;
-  status: {
-    status: string;
-    derivation: number;
-  };
-  reporter: string;
-  owner?: {
-    user: string;
-    derivation: number;
-  };
-  labels: {
-    label: string;
-    derivation: number;
-  }[];
-  attachment_count?: number;
-  components?: {
-    component: string;
-    derivation: number;
-  }[];
-  cc_users?: {
-    user: string;
-    derivation: number;
-  }[];
-  field_values: {
-    field: string;
-    value: string;
-    derivation: number;
-  }[];
-  create_time: {
-    seconds: number;
-  };
-  modify_time: {
-    seconds: number;
-  };
-  component_modify_time: {
-    seconds: number;
-  };
-  status_modify_time: {
-    seconds: number;
-  };
-  owner_modify_time: {
-    seconds: number;
-  };
-  star_count: number;
-}
-
 export interface LuciBisectionResult {
   analysis?: LuciBisectionAnalysis;
   is_supported?: boolean;
@@ -282,28 +228,25 @@ export interface Bug {
   labels: string[];
 }
 
-export const bugFromJson = (bug: BugJson, priorityField: string): Bug => {
-  // TODO: Make this work for other projects and buganizer.
-  const queueLabel = 'Sheriff-Chromium';
-  const number = /[0-9]+/.exec(bug.name)?.[0] || '';
+export const bugFromJson = (issue: IssueJson): Bug => {
+  const number = issue.issueId;
   return {
     number: number,
-    link: `https://crbug.com/${number}`,
-    summary: bug.summary,
-    priority: parseInt(
-      bug.field_values.filter((f) => f.field === priorityField)?.[0]?.value,
-    ),
-    status: bug.status.status,
-    labels: bug.labels.map((l) => l.label).filter((l) => l !== queueLabel),
+    link: `http://b/${number}`,
+    summary: issue.issueState.title,
+    priority: parseInt(issue.issueState.priority.substring(1)),
+    status:
+      issue.issueState.status[0] +
+      issue.issueState.status.substring(1).toLowerCase(),
+    labels: [], // FIXME: what is the equivalent of labels for the UI?
   };
 };
 
 export const bugFromId = (bug: string): Bug => {
-  // TODO: Make this work for other projects and buganizer.
   return {
     number: bug,
     labels: [],
-    link: `https://crbug.com/${bug}`,
+    link: `http://b/${bug}`,
     priority: undefined,
     status: undefined,
     summary: undefined,

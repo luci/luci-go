@@ -24,7 +24,7 @@
     // type checking step.
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "types": ["vite/client", "@types/jest"],
+    "types": ["vite/client", "@types/jest", "@types/gapi"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
