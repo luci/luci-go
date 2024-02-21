@@ -71,6 +71,7 @@ type printRun struct {
 	steps      bool
 	id         bool
 	fields     string
+	eager      bool
 }
 
 func (r *printRun) RegisterDefaultFlags(p Params) {
@@ -106,6 +107,7 @@ func (r *printRun) RegisterFieldFlags() {
 
 		See: https://developers.google.com/protocol-buffers/docs/proto3#json
 	`, extraFieldsStr)))
+	r.Flags.BoolVar(&r.eager, "eager", false, "return upon the first finished build")
 }
 
 // FieldMask returns the field mask to use in buildbucket requests.
@@ -226,6 +228,13 @@ func (r *printRun) PrintAndDone(ctx context.Context, args []string, order runOrd
 			}
 		}
 		first = false
+		if r.eager {
+			// return upon the first build.
+			if !perfect {
+				return 1
+			}
+			return 0
+		}
 	}
 	if !perfect {
 		return 1
