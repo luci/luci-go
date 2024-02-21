@@ -243,6 +243,15 @@ func (f *fakeIssuesClient) ModifyIssues(ctx context.Context, in *mpb.ModifyIssue
 		if mergedDelta.Status != nil {
 			now := clock.Now(ctx)
 			issue.Issue.StatusModifyTime = timestamppb.New(now)
+
+			if _, ok := ClosedStatuses[mergedDelta.Status.Status]; ok {
+				if !issue.Issue.CloseTime.IsValid() {
+					// Close time is zero or unset. Set it.
+					issue.Issue.CloseTime = timestamppb.New(now)
+				}
+			} else {
+				issue.Issue.CloseTime = nil
+			}
 		}
 
 		// Currently only some amendments are created. Support for other

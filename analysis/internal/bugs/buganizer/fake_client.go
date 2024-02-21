@@ -138,7 +138,25 @@ func (fic *FakeClient) ModifyIssue(ctx context.Context, in *issuetracker.ModifyI
 		case "status":
 			if issue.IssueState.Status != in.Add.Status {
 				issue.IssueState.Status = in.Add.Status
-				issue.ModifiedTime = timestamppb.New(clock.Now(ctx))
+
+				now := timestamppb.New(clock.Now(ctx))
+				issue.ModifiedTime = now
+				if _, ok := ClosedStatuses[in.Add.Status]; ok {
+					if !issue.ResolvedTime.IsValid() {
+						// Resolved time is zero or unset. Set it.
+						issue.ResolvedTime = now
+					}
+				} else {
+					issue.ResolvedTime = nil
+				}
+				if in.Add.Status == issuetracker.Issue_VERIFIED {
+					if !issue.VerifiedTime.IsValid() {
+						// Verified time is zero or unset. Set it.
+						issue.VerifiedTime = now
+					}
+				} else {
+					issue.VerifiedTime = nil
+				}
 			}
 		case "priority":
 			if issue.IssueState.Priority != in.Add.Priority {

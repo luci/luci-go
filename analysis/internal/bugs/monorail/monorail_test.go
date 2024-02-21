@@ -151,6 +151,7 @@ func TestClient(t *testing.T) {
 			}
 			expectedData.Issue.Status = &mpb.Issue_StatusValue{Status: VerifiedStatus}
 			expectedData.Issue.StatusModifyTime = timestamppb.New(now)
+			expectedData.Issue.CloseTime = timestamppb.New(now)
 
 			read, err := c.GetIssue(ctx, issue1.Issue.Name)
 			So(err, ShouldBeNil)

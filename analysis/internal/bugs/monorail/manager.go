@@ -205,7 +205,10 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 				ShouldArchive:             false,
 				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
 			})
-			logging.Warningf(ctx, "Monorail issue %s not found, skipping.", req.Bug.ID)
+			logging.Fields{
+				"Project":       m.project,
+				"MonorailBugID": req.Bug.ID,
+			}.Warningf(ctx, "Monorail issue %s not found (project: %s), skipping.", req.Bug.ID, m.project)
 			continue
 		}
 
@@ -338,13 +341,13 @@ func shouldArchiveRule(issue *mpb.Issue, now time.Time, isManaging bool) bool {
 		// If LUCI Analysis is managing the bug,
 		// more than 30 days since the issue was verified.
 		return issue.Status.Status == VerifiedStatus &&
-			now.Sub(issue.StatusModifyTime.AsTime()).Hours() >= 30*24
+			now.Sub(issue.CloseTime.AsTime()).Hours() >= 30*24
 	} else {
 		// If the user is managing the bug,
 		// more than 30 days since the issue was closed.
 		_, ok := ClosedStatuses[issue.Status.Status]
 		return ok &&
-			now.Sub(issue.StatusModifyTime.AsTime()).Hours() >= 30*24
+			now.Sub(issue.CloseTime.AsTime()).Hours() >= 30*24
 	}
 }
 

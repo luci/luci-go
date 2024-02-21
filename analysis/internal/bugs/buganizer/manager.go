@@ -288,7 +288,10 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 				ShouldArchive:             false,
 				PolicyActivationsNotified: make(map[bugs.PolicyID]struct{}),
 			})
-			logging.Warningf(ctx, "Buganizer issue %s not found or we don't have permission to access it, skipping.", request.Bug.ID)
+			logging.Fields{
+				"Project":        bm.project,
+				"BuganizerBugID": request.Bug.ID,
+			}.Warningf(ctx, "Buganizer issue %s not found or we don't have permission to access it (project: %s), skipping.", request.Bug.ID, bm.project)
 			continue
 		}
 		updateResponse := bm.updateIssue(ctx, request, issue)
@@ -478,15 +481,15 @@ func shouldArchiveRule(ctx context.Context, issue *issuetracker.Issue, isManagin
 	if isManaging {
 		// If LUCI Analysis is managing the bug,
 		// more than 30 days since the issue was verified.
-		hourDiff := now.Sub(issue.ModifiedTime.AsTime()).Hours()
 		return issue.IssueState.Status == issuetracker.Issue_VERIFIED &&
-			hourDiff >= 30*24
+			issue.VerifiedTime.IsValid() &&
+			now.Sub(issue.VerifiedTime.AsTime()).Hours() >= 30*24
 	} else {
 		// If the user is managing the bug,
 		// more than 30 days since the issue was closed.
 		_, ok := ClosedStatuses[issue.IssueState.Status]
-		return ok &&
-			now.Sub(issue.ModifiedTime.AsTime()).Hours() >= 30*24
+		return ok && issue.ResolvedTime.IsValid() &&
+			now.Sub(issue.ResolvedTime.AsTime()).Hours() >= 30*24
 	}
 }
 

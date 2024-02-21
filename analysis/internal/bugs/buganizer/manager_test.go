@@ -790,10 +790,11 @@ func TestBugManager(t *testing.T) {
 				So(fakeStore.Issues[1].Issue.ModifiedTime, ShouldResembleProto, timestamppb.New(clock.Now(ctx)))
 			})
 			Convey("Rule not managing a bug archived after 30 days of the bug being in any closed state", func() {
-				tc.Add(time.Hour * 24 * 30)
-
 				bugsToUpdate[0].IsManagingBug = false
 				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_FIXED
+				fakeStore.Issues[1].Issue.ResolvedTime = timestamppb.New(tc.Now())
+
+				tc.Add(time.Hour * 24 * 30)
 
 				expectedResponse := []bugs.BugUpdateResponse{
 					{
@@ -812,13 +813,14 @@ func TestBugManager(t *testing.T) {
 				So(fakeStore.Issues[1].Issue.ModifiedTime, ShouldResembleProto, originalTime)
 			})
 			Convey("Rule managing a bug not archived after 30 days of the bug being in fixed state", func() {
-				tc.Add(time.Hour * 24 * 30)
-
 				// If LUCI Analysis is mangaging the bug state, the fixed state
 				// means the bug is still not verified. Do not archive the
 				// rule.
 				bugsToUpdate[0].IsManagingBug = true
 				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_FIXED
+				fakeStore.Issues[1].Issue.ResolvedTime = timestamppb.New(tc.Now())
+
+				tc.Add(time.Hour * 24 * 30)
 
 				So(verifyUpdateDoesNothing(), ShouldBeNil)
 			})

@@ -432,6 +432,8 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 	mgrCtx, cancel := bugs.Shorten(ctx, time.Minute)
 	defer cancel()
 
+	logging.Debugf(ctx, "Considering update of %v %s bugs in project %s", len(bugsToUpdate), system, b.project)
+
 	responses, err := manager.Update(mgrCtx, bugsToUpdate)
 	if err != nil {
 		// Catastrophic error, exit immediately.
@@ -465,6 +467,15 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 			rsp.ShouldArchive = false
 		}
 		if rsp.ShouldArchive || rsp.DisableRulePriorityUpdates || rsp.RuleAssociationNotified || len(rsp.PolicyActivationsNotified) > 0 {
+			logging.Fields{
+				"RuleID":                     bugsToUpdate[i].RuleID,
+				"BugID":                      bugsToUpdate[i].Bug.String(),
+				"Archive":                    rsp.ShouldArchive,
+				"DisableRulePriorityUpdates": rsp.DisableRulePriorityUpdates,
+				"RuleAssociationNotified":    rsp.RuleAssociationNotified,
+				"PolicyActivationsNotified":  rsp.PolicyActivationsNotified,
+			}.Debugf(ctx, "Preparing rule update for bug %s", bugsToUpdate[i].Bug.String())
+
 			updateRuleRequests = append(updateRuleRequests, updateRuleRequest{
 				RuleID:                     bugsToUpdate[i].RuleID,
 				BugID:                      bugsToUpdate[i].Bug,
