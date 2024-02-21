@@ -410,6 +410,23 @@ func Run(c context.Context, q *Query, cb any) error {
 func RunMulti(c context.Context, queries []*Query, cb any) error {
 	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
 
+	// A helper that passes an entity to the user callback.
+	var dispatchEntity func(key *Key, pm PropertyMap, ccb CursorCB) error
+	if isKey {
+		dispatchEntity = func(key *Key, _ PropertyMap, ccb CursorCB) error {
+			return rcb(reflect.ValueOf(key), ccb)
+		}
+	} else {
+		dispatchEntity = func(key *Key, pm PropertyMap, ccb CursorCB) error {
+			itm := mat.newElem()
+			if err := mat.setPM(itm, pm); err != nil {
+				return err
+			}
+			mat.setKey(itm, key)
+			return rcb(itm, ccb)
+		}
+	}
+
 	// Finalize queries and do some basic validation. At very least queries must
 	// use the same kind and ordering, otherwise putting their results in a single
 	// sorted heap makes no sense.
@@ -443,6 +460,45 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 		case order != overallOrder:
 			return fmt.Errorf("all RunMulti queries should use the same order, but got %q and %q", order, overallOrder)
 		}
+	}
+
+	// No queries to run => no results to return. This is an edge case.
+	if len(finalized) == 0 {
+		return nil
+	}
+
+	// If we have only one query, just run it directly without any extra
+	// synchronization overhead. Just make sure to use the correct cursor format.
+	// This is worth optimizing since running only one query is a very very
+	// common case.
+	if len(finalized) == 1 {
+		var err error
+		if hasCursorCB {
+			err = Raw(c).Run(finalized[0], func(key *Key, pm PropertyMap, cursorCB CursorCB) error {
+				return dispatchEntity(key, pm, func() (Cursor, error) {
+					cur, err := cursorCB()
+					if err != nil {
+						return nil, err
+					}
+					cursorStr := ""
+					if cur != nil {
+						cursorStr = cur.String()
+					}
+					return multiCursor{
+						curs: &multicursor.Cursors{
+							Version:     multiCursorVersion,
+							MagicNumber: multiCursorMagic,
+							Cursors:     []string{cursorStr},
+						},
+					}, nil
+				})
+			})
+		} else {
+			err = Raw(c).Run(finalized[0], func(key *Key, pm PropertyMap, _ CursorCB) error {
+				return dispatchEntity(key, pm, nil)
+			})
+		}
+		return filterStop(err)
 	}
 
 	// All iterators (active and exhausted) in some arbitrary order.
@@ -526,33 +582,10 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 		if err != nil {
 			return err
 		}
-		if added := seenKeys.Add(keyStr); !added {
-			continue
-		}
-		switch {
-		case isKey && hasCursorCB:
-			err = rcb(reflect.ValueOf(key), ccb)
-		case isKey && !hasCursorCB:
-			err = rcb(reflect.ValueOf(key), nil)
-		case !isKey && hasCursorCB:
-			itm := mat.newElem()
-			if err := mat.setPM(itm, pm); err != nil {
-				return err
+		if seenKeys.Add(keyStr) {
+			if err := dispatchEntity(key, pm, ccb); err != nil {
+				return filterStop(err)
 			}
-			mat.setKey(itm, key)
-			err = rcb(itm, ccb)
-		case !isKey && !hasCursorCB:
-			itm := mat.newElem()
-			if err := mat.setPM(itm, pm); err != nil {
-				return err
-			}
-			mat.setKey(itm, key)
-			err = rcb(itm, nil)
-		default:
-			return errors.New("datastore: Unexpected internal error.")
-		}
-		if err != nil {
-			return filterStop(err)
 		}
 	}
 	return nil
