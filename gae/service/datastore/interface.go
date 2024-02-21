@@ -21,6 +21,8 @@ import (
 	"reflect"
 	"sort"
 
+	"golang.org/x/sync/errgroup"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
@@ -400,27 +402,21 @@ func Run(c context.Context, q *Query, cb any) error {
 // Note: The cb is called for every unique entity (by *Key) that is retrieved
 // on the current run. It is possible to get the same entity twice over two
 // calls to RunMulti with different cursors.
+//
+// DANGER: Cursors are buggy when using Cloud Datastore production backend.
+// Paginated queries skip entities sitting on page boundaries. This doesn't
+// happen when using `impl/memory` and thus hard to spot in unit tests. See
+// queryIterator doc for more details.
 func RunMulti(c context.Context, queries []*Query, cb any) error {
-	c, cancel := context.WithCancel(c)
-	defer cancel()
-
-	kinds := stringset.New(len(queries))
-	// TODO(yuanjunh): validate queries.
-	// validate that they are all same type
-	for _, query := range queries {
-		kinds.Add(query.kind)
-	}
-	if kinds.Len() > 1 {
-		return fmt.Errorf("RunMulti doesn't support more than one kind. %v", kinds.ToSlice())
-	}
 	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
 
-	cursorMap := make(map[*FinalizedQuery]CursorCB)
-
-	iHeap := &iteratorHeap{}
-
-	// Add all queries into heap.
-	for _, q := range queries {
+	// Finalize queries and do some basic validation. At very least queries must
+	// use the same kind and ordering, otherwise putting their results in a single
+	// sorted heap makes no sense.
+	finalized := make([]*FinalizedQuery, len(queries))
+	overallKind := ""
+	overallOrder := ""
+	for i, q := range queries {
 		if isKey {
 			q = q.KeysOnly(true)
 		}
@@ -428,51 +424,96 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 		if err != nil {
 			return err
 		}
-		if err := iHeap.addQuery(c, fq); err != nil {
-			return err
-		}
-		if hasCursorCB {
-			// Assign a call back that returns the start cursor of the query
-			cursorMap[fq] = func() (Cursor, error) {
-				start, _ := fq.Bounds()
-				return start, nil
+		finalized[i] = fq
+		// Build a string identifying ordering of this query, e.g.
+		// "-field1,field2,__key__".
+		order := ""
+		for j, col := range fq.orders {
+			if j != 0 {
+				order += ","
 			}
+			order += col.String()
+		}
+		switch {
+		case i == 0:
+			overallKind = fq.kind
+			overallOrder = order
+		case fq.kind != overallKind:
+			return fmt.Errorf("all RunMulti queries should query the same kind, but got %q and %q", fq.kind, overallKind)
+		case order != overallOrder:
+			return fmt.Errorf("all RunMulti queries should use the same order, but got %q and %q", order, overallOrder)
 		}
 	}
+
+	// All iterators (active and exhausted) in some arbitrary order.
+	iterators := make([]*queryIterator, 0, len(finalized))
+
+	c, cancel := context.WithCancel(c)
+	eg, ectx := errgroup.WithContext(c)
+
+	// Make sure all spawned goroutines have fully stopped before returning.
+	defer func() {
+		// Signal all iterators to stop ASAP.
+		cancel()
+		// Wait for all of them to stop. Calling Next makes sure internal goroutines
+		// are not getting stuck trying to write to a channel that nothing is
+		// reading from (this blocks forever).
+		for _, iter := range iterators {
+			for done := false; !done; done, _ = iter.Next() {
+			}
+		}
+		// All goroutines should be stopping now. Wait until they are fully stopped.
+		_ = eg.Wait()
+	}()
+
+	// Launch all queries in parallel. Do it before ordering them as a heap, since
+	// to build a heap we need to have the first result from each query. We want
+	// all such first results to be fetched *in parallel*.
+	for _, fq := range finalized {
+		iterators = append(iterators, startQueryIterator(ectx, eg, fq))
+	}
+
+	// Wait for first items from all iterators. Gather all non-exhausted iterators
+	// to make a sorted heap out of them.
+	iHeap := make(iteratorHeap, 0, len(iterators))
+	for _, iter := range iterators {
+		switch done, err := iter.Next(); {
+		case err != nil:
+			return err // the defer will clean up everything
+		case !done:
+			iHeap = append(iHeap, iter)
+		}
+	}
+	heap.Init(&iHeap)
+
+	// ccb is the cursor callback for RunMulti. This grabs all the cursors for the
+	// queries involved and returns a single cursor. It is only executed if the
+	// user callback invokes it.
 	var ccb CursorCB
 	if hasCursorCB {
-		// ccb is the cursor callback for RunMulti. This grabs all the cursors for the
-		// queries involved and returns a single cursor. It is only executed if the
-		// user callback invokes it.
 		ccb = func() (Cursor, error) {
-			// Create a list of queries
-			var fqList []*FinalizedQuery
-			for finq := range cursorMap {
-				fqList = append(fqList, finq)
-			}
-			// Sort the list of queries
-			sort.Slice(fqList, func(i, j int) bool {
-				queryI := fqList[i].Original()
-				queryJ := fqList[j].Original()
+			// Sort the list of queries. It is OK to update `iterators` in-place here.
+			// It is only used in the defer, the order doesn't matter there.
+			sort.Slice(iterators, func(i, j int) bool {
+				queryI := iterators[i].Query()
+				queryJ := iterators[j].Query()
 				return queryI.Less(queryJ)
 			})
-			// Create the cursor
+			// Create the cursor. It points to all items currently sitting in heap.
+			// We'll need to refetch them all again to repopulate the heap when
+			// resuming the query.
 			var curs multicursor.Cursors
 			curs.MagicNumber = multiCursorMagic
 			curs.Version = multiCursorVersion
-			for _, finq := range fqList {
-				cb := cursorMap[finq]
-				cur := ""
-				if cb != nil {
-					c, err := cb()
-					if err != nil {
-						return nil, err
-					}
-					if c != nil {
-						cur = c.String()
-					}
+			for _, iter := range iterators {
+				switch cur, err := iter.CurrentCursor(); {
+				case err != nil:
+					return nil, err
+				case cur != nil:
+					curs.Cursors = append(curs.Cursors, cur.String())
+				default:
+					curs.Cursors = append(curs.Cursors, "")
 				}
-				curs.Cursors = append(curs.Cursors, cur)
 			}
 			return multiCursor{curs: &curs}, nil
 		}
@@ -481,12 +522,9 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 	// Merge query results.
 	seenKeys := stringset.New(128)
 	for iHeap.Len() > 0 {
-		pm, key, keyStr, fq, cursorCB, err := iHeap.nextData()
+		pm, key, keyStr, err := iHeap.nextData()
 		if err != nil {
 			return err
-		}
-		if hasCursorCB {
-			cursorMap[fq] = cursorCB
 		}
 		if added := seenKeys.Add(keyStr); !added {
 			continue
@@ -926,6 +964,8 @@ func filterStop(err error) error {
 }
 
 // a min heap for a slice of queryIterator.
+//
+// All iterators are in "not done" state.
 type iteratorHeap []*queryIterator
 
 var _ heap.Interface = &iteratorHeap{}
@@ -948,30 +988,27 @@ func (h *iteratorHeap) Pop() any {
 	return item
 }
 
-// nextData returns data of the peak queryIterator, advances the queryIterator and puts it back
-func (h *iteratorHeap) nextData() (pm PropertyMap, key *Key, keyStr string, query *FinalizedQuery, cursorCB CursorCB, err error) {
-	if h.Len() == 0 {
-		return
+// nextData returns data of the peak queryIterator, advances the queryIterator
+// and either removes it from the heap (if it has no results left) or adjusts
+// its position in the heap.
+//
+// Must be called only with a non-empty heap.
+func (h *iteratorHeap) nextData() (pm PropertyMap, key *Key, keyStr string, err error) {
+	if len(*h) == 0 {
+		panic("the heap is empty")
 	}
-	qi := heap.Pop(h).(*queryIterator)
-	key, pm, cursorCB = qi.CurrentItem()
+
+	qi := (*h)[0]
+	key, pm = qi.CurrentItem()
 	keyStr = qi.CurrentItemKey()
-	query = qi.FinalizedQuery()
 
-	if err = qi.Next(); err != nil {
-		err = filterStop(err)
-		return
+	var done bool
+	done, err = qi.Next()
+	if !done {
+		heap.Fix(h, 0)
+	} else {
+		heap.Remove(h, 0)
 	}
-	heap.Push(h, qi)
+
 	return
-}
-
-// addQuery runs the query and puts its queryIterator into the heap.
-func (h *iteratorHeap) addQuery(ctx context.Context, fq *FinalizedQuery) error {
-	qi := startQueryIterator(ctx, fq)
-	if err := qi.Next(); err != nil {
-		return filterStop(err)
-	}
-	heap.Push(h, qi)
-	return nil
 }

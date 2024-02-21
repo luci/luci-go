@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"testing"
 
+	"golang.org/x/sync/errgroup"
+
 	"go.chromium.org/luci/common/data/cmpbin"
 
 	"go.chromium.org/luci/gae/service/info"
@@ -30,6 +32,7 @@ import (
 
 func TestDatastoreQueryIterator(t *testing.T) {
 	t.Parallel()
+
 	Convey("queryIterator", t, func() {
 		Convey("normal", func() {
 			qi := queryIterator{
@@ -44,7 +47,6 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			key := MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
 			// populating results to the pipeline
 			go func() {
-				defer close(qi.itemCh)
 				qi.itemCh <- &rawQueryResult{
 					key: key,
 					data: PropertyMap{
@@ -55,13 +57,14 @@ func TestDatastoreQueryIterator(t *testing.T) {
 						"field2": MkProperty("aa1"),
 					},
 				}
+				qi.itemCh <- &rawQueryResult{}
 			}()
-			err := qi.Next()
+			done, err := qi.Next()
 			So(err, ShouldBeNil)
+			So(done, ShouldBeFalse)
 			So(qi.currentQueryResult, ShouldNotBeNil)
 
 			Convey("CurrentItemKey", func() {
-
 				itemKey := qi.CurrentItemKey()
 				expectedKey := MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
 				e := string(Serialize.ToBytes(expectedKey))
@@ -83,7 +86,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			})
 
 			Convey("CurrentItem", func() {
-				key, data, _ := qi.CurrentItem()
+				key, data := qi.CurrentItem()
 				expectedPM := PropertyMap{
 					"field1": PropertySlice{
 						MkProperty("1"),
@@ -96,8 +99,9 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			})
 
 			// end of results
-			err = qi.Next()
-			So(err, ShouldResemble, Stop)
+			done, err = qi.Next()
+			So(err, ShouldBeNil)
+			So(done, ShouldBeTrue)
 		})
 
 		Convey("invalid queryIterator", func() {
@@ -116,24 +120,24 @@ func TestDatastoreQueryIterator(t *testing.T) {
 					key:  nil,
 					data: PropertyMap{},
 				}
-				close(qi.itemCh)
 			}()
 
-			err := qi.Next()
+			done, err := qi.Next()
 			So(err, ShouldBeNil)
+			So(done, ShouldBeTrue)
 			So(qi.CurrentItemKey(), ShouldEqual, "")
 			itemOrder := qi.CurrentItemOrder()
 			So(itemOrder, ShouldEqual, "")
-			key, data, _ := qi.CurrentItem()
+			key, data := qi.CurrentItem()
 			So(key, ShouldBeNil)
 			So(data, ShouldResemble, PropertyMap{})
 		})
 	})
-
 }
 
 func TestStartQueryIterator(t *testing.T) {
 	t.Parallel()
+
 	Convey("start queryIterator", t, func() {
 		ctx := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
@@ -143,21 +147,25 @@ func TestStartQueryIterator(t *testing.T) {
 		fds.entities = 2
 		dq := NewQuery("Kind").Order("Value")
 
+		eg, ectx := errgroup.WithContext(ctx)
+
 		Convey("found", func() {
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
-			qi := startQueryIterator(ctx, fq)
+			qi := startQueryIterator(ectx, eg, fq)
 
-			err = qi.Next()
+			done, err := qi.Next()
 			So(err, ShouldBeNil)
+			So(done, ShouldBeFalse)
 			So(qi.currentQueryResult.key, ShouldResemble, MakeKey(ctx, "Kind", 1))
 			So(qi.currentQueryResult.data, ShouldResemble,
 				PropertyMap{
 					"Value": MkProperty(0),
 				})
 
-			err = qi.Next()
+			done, err = qi.Next()
 			So(err, ShouldBeNil)
+			So(done, ShouldBeFalse)
 			So(qi.currentQueryResult.key, ShouldResemble, MakeKey(ctx, "Kind", 2))
 			So(qi.currentQueryResult.data, ShouldResemble,
 				PropertyMap{
@@ -167,14 +175,15 @@ func TestStartQueryIterator(t *testing.T) {
 			order := qi.CurrentItemOrder()
 			So(qi.currentItemOrderCache, ShouldEqual, order)
 
-			err = qi.Next()
-			So(err, ShouldResemble, Stop)
+			done, err = qi.Next()
+			So(err, ShouldBeNil)
+			So(done, ShouldBeTrue)
 		})
 
 		Convey("cancel", func() {
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
-			qi := startQueryIterator(ctx, fq)
+			qi := startQueryIterator(ectx, eg, fq)
 
 			cancel()
 			<-ctx.Done() // wait till the cancellation propagates
@@ -182,18 +191,20 @@ func TestStartQueryIterator(t *testing.T) {
 			// This is to test the goroutine in startQueryIterator() is cancelled after the `cancel()`.
 			// So it asserts two possible scenarios: 1) qi.Next() directly returns a Stop signal.
 			// 2) qi.Next() retrieves at most one rawQueryResult and then returns a Stop signal.
-			err = qi.Next()
-			if err == nil {
+			done, err := qi.Next()
+			if !done {
 				So(qi.currentQueryResult, ShouldResemble, &rawQueryResult{
 					key: MakeKey(ctx, "Kind", 1),
 					data: PropertyMap{
 						"Value": MkProperty(0),
 					},
 				})
-				err = qi.Next()
-				So(err, ShouldResemble, Stop)
+				done, err = qi.Next()
+				So(err, ShouldEqual, context.Canceled)
+				So(done, ShouldBeTrue)
 			} else {
-				So(err, ShouldResemble, Stop)
+				So(err, ShouldEqual, context.Canceled)
+				So(done, ShouldBeTrue)
 			}
 		})
 
@@ -201,20 +212,22 @@ func TestStartQueryIterator(t *testing.T) {
 			fds.entities = 0
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
-			qi := startQueryIterator(ctx, fq)
+			qi := startQueryIterator(ectx, eg, fq)
 
-			err = qi.Next()
-			So(err, ShouldResemble, Stop)
+			done, err := qi.Next()
+			So(err, ShouldBeNil)
+			So(done, ShouldBeTrue)
 		})
 
 		Convey("errors from raw datastore", func() {
 			dq = dq.Eq("@err_single", "Query fail").Eq("@err_single_idx", 0)
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
-			qi := startQueryIterator(ctx, fq)
+			qi := startQueryIterator(ectx, eg, fq)
 
-			err = qi.Next()
+			done, err := qi.Next()
 			So(err, ShouldErrLike, "Query fail")
+			So(done, ShouldBeTrue)
 		})
 	})
 }

@@ -2346,7 +2346,7 @@ func TestRunMulti(t *testing.T) {
 					return nil
 				})
 				So(err, ShouldNotBeNil)
-				So(err, ShouldErrLike, "RunMulti doesn't support more than one kind")
+				So(err, ShouldErrLike, "should query the same kind")
 			})
 		})
 

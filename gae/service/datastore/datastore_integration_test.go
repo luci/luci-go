@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
 
 	"go.chromium.org/luci/gae/impl/memory"
@@ -254,8 +255,53 @@ func TestRunMulti(t *testing.T) {
 				err := datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
 					return nil
 				})
-				So(err, ShouldErrLike, "RunMulti doesn't support more than one kind")
+				So(err, ShouldErrLike, "should query the same kind")
 			})
+
+			Convey("Queries with different order", func() {
+				queries := []*datastore.Query{
+					datastore.NewQuery("Foo").Order("field1"),
+					datastore.NewQuery("Foo").Order("-field1"),
+				}
+
+				err := datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+					return nil
+				})
+				So(err, ShouldErrLike, "should use the same order")
+			})
+		})
+
+		Convey("context cancelation", func() {
+			ctx, cancel := context.WithCancel(ctx)
+
+			queries := []*datastore.Query{
+				datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
+				datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
+			}
+
+			err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+				cancel()
+				<-ctx.Done() // make sure it "propagates" everywhere
+				return nil
+			})
+			So(err, ShouldEqual, context.Canceled)
+		})
+
+		Convey("callback error", func() {
+			customErr := errors.New("boo")
+
+			queries := []*datastore.Query{
+				datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
+				datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
+			}
+
+			var keys []*datastore.Key
+			err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+				keys = append(keys, k)
+				return customErr
+			})
+			So(err, ShouldEqual, customErr)
+			So(keys, ShouldHaveLength, 1)
 		})
 	})
 }
