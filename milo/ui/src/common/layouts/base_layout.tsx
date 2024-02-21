@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { LinearProgress, styled } from '@mui/material';
+import { styled } from '@mui/material';
 import Box from '@mui/material/Box';
-import { Outlet, useNavigation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
 import { AppBar } from './app_bar';
@@ -42,8 +42,6 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
 export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
 
 export const BaseLayout = () => {
-  const navigation = useNavigation();
-
   const [sidebarOpen = true, setSidebarOpen] = useLocalStorage<boolean>(
     SIDE_BAR_OPEN_CACHE_KEY,
   );
@@ -53,7 +51,12 @@ export const BaseLayout = () => {
       <AppBar open={sidebarOpen} handleSidebarChanged={setSidebarOpen} />
       <Sidebar open={sidebarOpen} />
       <Main open={sidebarOpen}>
-        {navigation.state === 'loading' ? <LinearProgress /> : <Outlet />}
+        {/* Do not conditionally render the <Outlet /> base on the navigation
+         ** state. Otherwise the page state will be reset if a page navigates
+         ** to itself, which can happen when the query search param is updated.
+         ** In the worst case, this may lead to infinite reload if the query
+         ** search param is updated when the component is mounted. */}
+        <Outlet />
       </Main>
     </Box>
   );
