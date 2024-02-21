@@ -58,7 +58,11 @@ export function InvocationPage() {
           icon={<VerdictCountIndicator invName={invName} />}
           iconPosition="end"
         />
-        <AppRoutedTab label="Details" value="details" to="details" />
+        <AppRoutedTab
+          label="Invocation Details"
+          value="invocation-details"
+          to="invocation-details"
+        />
       </AppRoutedTabs>
     </>
   );

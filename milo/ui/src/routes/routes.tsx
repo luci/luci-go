@@ -112,10 +112,7 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'invocation-details',
-        lazy: () =>
-          import(
-            '@/test_verdict/legacy/invocation_page/invocation_details_tab'
-          ),
+        lazy: () => import('@/test_verdict/pages/invocation_page/details_tab'),
       },
     ],
   },
@@ -241,7 +238,7 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/test_verdict/pages/invocation_page'),
         children: [
           {
-            path: 'details',
+            path: 'invocation-details',
             lazy: () =>
               import('@/test_verdict/pages/invocation_page/details_tab'),
           },

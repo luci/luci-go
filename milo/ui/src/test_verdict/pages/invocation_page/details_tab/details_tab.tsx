@@ -117,11 +117,11 @@ export function DetailsTab() {
 }
 
 export function Component() {
-  useTabId('details');
+  useTabId('invocation-details');
 
   return (
     // See the documentation for `<LoginPage />` for why we handle error this way.
-    <RecoverableErrorBoundary key="details">
+    <RecoverableErrorBoundary key="invocation-details">
       <DetailsTab />
     </RecoverableErrorBoundary>
   );
