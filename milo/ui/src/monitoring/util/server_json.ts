@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { TestCulprit } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+
 export type TreesJson = TreeJson[];
 
 export interface TreeJson {
@@ -114,6 +116,7 @@ export interface AlertReasonTestJson {
   ref_hash: string;
   regression_end_position: number;
   regression_start_position: number;
+  luci_bisection_result?: LuciBisectionTestAnalysisResult;
 }
 
 export interface TestResultCountsJson {
@@ -216,6 +219,12 @@ export interface LuciBisectionResult {
   analysis?: LuciBisectionAnalysis;
   is_supported?: boolean;
   failed_bbid?: string;
+}
+
+export interface LuciBisectionTestAnalysisResult {
+  analysis_id: string;
+  status: string;
+  culprit?: TestCulprit;
 }
 
 export interface LuciBisectionAnalysis {

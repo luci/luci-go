@@ -126,6 +126,15 @@ const SimilarFailuresLink = ({ test }: SimilarFailuresLinkProps) => {
   );
 };
 
+const testBisectionLink = (t: AlertReasonTestJson): string => {
+  if (!t.luci_bisection_result) {
+    return '';
+  }
+  const project = encodeURIComponent(t.realm.split(':', 2)[0]);
+  const analysisID = t.luci_bisection_result?.analysis_id;
+  return `/ui/p/${project}/bisection/test-analysis/b/${analysisID}`;
+};
+
 interface TestFailureRowProps {
   test: AlertReasonTestJson;
   tree: TreeJson;
@@ -192,6 +201,14 @@ const TestFailureRow = ({
         <a href={historyLink(test)} target="_blank" rel="noreferrer">
           History
         </a>
+        {testBisectionLink(test) && (
+          <>
+            {' | '}
+            <a href={testBisectionLink(test)} target="_blank" rel="noreferrer">
+              bisection
+            </a>
+          </>
+        )}
         {' | '}
         <SimilarFailuresLink test={test} />
       </TableCell>
