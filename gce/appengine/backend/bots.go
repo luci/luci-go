@@ -17,20 +17,20 @@ package backend
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
-	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/memcache"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
@@ -50,6 +50,11 @@ const botListLimit = 500
 // It is possible to try with 3 bots, But might be a little too close and these numbers
 // are averages.
 const deleteStaleSwarmingBotBatchSize = 2
+
+// logGrpcError logs an error response from Swarming.
+func logGrpcError(c context.Context, name string, err error) {
+	logging.Errorf(c, "failure for %s: %s", name, err)
+}
 
 // setConnected sets the Swarming bot as connected in the datastore if it isn't already.
 func setConnected(c context.Context, id, hostname string, at time.Time) error {
@@ -114,7 +119,7 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 const minPendingForBotConnected = 10 * time.Minute
 
 // manageExistingBot manages an existing Swarming bot.
-func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm *model.VM) error {
+func manageExistingBot(c context.Context, bot *swarmingpb.BotInfo, vm *model.VM) error {
 	// A bot connected to Swarming may be executing workload.
 	// To destroy the instance, terminate the bot first to avoid interruptions.
 	// Termination can be skipped if the bot is deleted, dead, or already terminated.
@@ -135,26 +140,23 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 	// prior to sending an RPC to Swarming. Still, check it here to save a costly operation
 	// in setConnected, since manageExistingBot may be called thousands of times per minute.
 	if vm.Connected == 0 {
-		t, err := time.Parse(utcRFC3339, bot.FirstSeenTs)
-		if err != nil {
-			return errors.Annotate(err, "failed to parse bot connection time").Err()
-		}
-		if err := setConnected(c, vm.ID, vm.Hostname, t); err != nil {
+		if err := setConnected(c, vm.ID, vm.Hostname, bot.FirstSeenTs.AsTime()); err != nil {
 			return err
 		}
 	}
-	srv := getSwarming(c, vm.Swarming).Bot
 	// bot_terminate occurs when the bot starts the termination task and is normally followed
 	// by task_completed and bot_shutdown. Responses also include the full set of dimensions
 	// when the event was recorded. Limit response size by fetching only recent events, and only
 	// the type of each.
 	// A VM may be recreated multiple times with the same name, so it is important to only
 	// query swarming for events since the current VM's creation.
-	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Start(float64(vm.Created)).Limit(5).Do()
+	events, err := getSwarming(c, vm.Swarming).ListBotEvents(c, &swarmingpb.BotEventsRequest{
+		BotId: vm.Hostname,
+		Limit: 5,
+		Start: timestamppb.New(time.Unix(vm.Created, 0)),
+	})
 	if err != nil {
-		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, vm.Hostname, gerr)
-		}
+		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "failed to fetch bot events").Err()
 	}
 	for _, e := range events.Items {
@@ -204,15 +206,15 @@ func manageBot(c context.Context, payload proto.Message) error {
 	}
 
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
-	bot, err := getSwarming(c, vm.Swarming).Bot.Get(vm.Hostname).Context(c).Do()
+	bot, err := getSwarming(c, vm.Swarming).GetBot(c, &swarmingpb.BotRequest{
+		BotId: vm.Hostname,
+	})
 	if err != nil {
-		if gerr, ok := err.(*googleapi.Error); ok {
-			if gerr.Code == http.StatusNotFound {
-				logging.Debugf(c, "bot not found (%s)", vm.Hostname)
-				return manageMissingBot(c, vm)
-			}
-			logErrors(c, vm.Hostname, gerr)
+		if status.Code(err) == codes.NotFound {
+			logging.Debugf(c, "bot not found (%s)", vm.Hostname)
+			return manageMissingBot(c, vm)
 		}
+		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "failed to fetch bot").Err()
 	}
 	logging.Debugf(c, "found bot")
@@ -261,14 +263,10 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 		return errors.Reason("InspectSwarming: swarming is required").Err()
 	}
 	var inpectSwarmingSubtasks []*tq.Task
-	blc := getSwarming(c, task.GetSwarming()).Bots.List().Context(c)
-	// Add cursor if available
-	if task.Cursor != "" {
-		blc = blc.Cursor(task.Cursor)
-	}
-	// Process the maximum number of bots
-	blc.Limit(botListLimit)
-	listRPCResp, err := blc.Do()
+	listRPCResp, err := getSwarming(c, task.GetSwarming()).ListBots(c, &swarmingpb.BotsRequest{
+		Limit:  botListLimit,
+		Cursor: task.Cursor,
+	})
 	if err != nil {
 		return errors.Annotate(err, "InspectSwarming: failed to List instances from swarming").Err()
 	}
@@ -296,7 +294,7 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 			} else {
 				batchPayload.Bots = append(batchPayload.Bots, &tasks.DeleteStaleSwarmingBot{
 					Id:          vm.ID,
-					FirstSeenTs: bot.FirstSeenTs,
+					FirstSeenTs: bot.FirstSeenTs.AsTime().UTC().Format(utcRFC3339),
 				})
 				if len(batchPayload.GetBots()) == deleteStaleSwarmingBotBatchSize {
 					// Schedule a task to check and delete the bot if needed
@@ -376,16 +374,17 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		return nil
 	}
 	logging.Debugf(c, "terminating bot %q: %s", vm.Hostname, vm.Swarming)
-	srv := getSwarming(c, vm.Swarming)
-	if _, err := srv.Bot.Terminate(vm.Hostname).Context(c).Do(); err != nil {
-		if gerr, ok := err.(*googleapi.Error); ok {
-			if gerr.Code == http.StatusNotFound {
-				// Bot is already deleted.
-				logging.Debugf(c, "bot not found (%s)", vm.Hostname)
-				return nil
-			}
-			logErrors(c, vm.Hostname, gerr)
+	_, err := getSwarming(c, vm.Swarming).TerminateBot(c, &swarmingpb.TerminateRequest{
+		BotId:  vm.Hostname,
+		Reason: "GCE Provider",
+	})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			// Bot is already deleted.
+			logging.Debugf(c, "bot not found (%s)", vm.Hostname)
+			return nil
 		}
+		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "failed to terminate bot").Err()
 	}
 	if err := memcache.Set(c, mi.SetExpiration(time.Hour)); err != nil {
@@ -435,17 +434,16 @@ func deleteBot(c context.Context, payload proto.Message) error {
 		return errors.Reason("bot %q does not exist", task.Hostname).Err()
 	}
 	logging.Debugf(c, "deleting bot %q: %s", vm.Hostname, vm.Swarming)
-	srv := getSwarming(c, vm.Swarming).Bot
-	_, err := srv.Delete(vm.Hostname).Context(c).Do()
+	_, err := getSwarming(c, vm.Swarming).DeleteBot(c, &swarmingpb.BotRequest{
+		BotId: vm.Hostname,
+	})
 	if err != nil {
-		if gerr, ok := err.(*googleapi.Error); ok {
-			if gerr.Code == http.StatusNotFound {
-				// Bot is already deleted.
-				logging.Debugf(c, "bot not found (%s)", vm.Hostname)
-				return deleteVM(c, task.Id, vm.Hostname)
-			}
-			logErrors(c, vm.Hostname, gerr)
+		if status.Code(err) == codes.NotFound {
+			// Bot is already deleted.
+			logging.Debugf(c, "bot not found (%s)", vm.Hostname)
+			return deleteVM(c, task.Id, vm.Hostname)
 		}
+		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "failed to delete bot").Err()
 	}
 	return deleteVM(c, task.Id, vm.Hostname)
@@ -525,13 +523,13 @@ func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBo
 	// the type of each.
 	// A VM may be recreated multiple times with the same name, so it is important to only
 	// query swarming for events since the current VM's creation.
-	srv := getSwarming(c, vm.Swarming).Bot
-	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Start(float64(vm.Created)).Limit(5).Do()
+	events, err := getSwarming(c, vm.Swarming).ListBotEvents(c, &swarmingpb.BotEventsRequest{
+		BotId: vm.Hostname,
+		Limit: 5,
+		Start: timestamppb.New(time.Unix(vm.Created, 0)),
+	})
 	if err != nil {
-		var gerr *googleapi.Error
-		if errors.As(err, &gerr) {
-			logErrors(c, vm.Hostname, gerr)
-		}
+		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "deleteStaleSwarmingBot: failed to fetch bot events for %s", vm.Hostname).Err()
 	}
 	for _, e := range events.Items {

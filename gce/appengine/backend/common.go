@@ -18,17 +18,20 @@ package backend
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	computealpha "google.golang.org/api/compute/v0.alpha"
 	compute "google.golang.org/api/compute/v1"
 
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/gce/api/tasks/v1"
-	"go.chromium.org/luci/gce/appengine/model"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/gce/api/tasks/v1"
+	"go.chromium.org/luci/gce/appengine/model"
 )
 
 // Operation is a wrapper type over operation results in alpha and stable GCP operations.
@@ -168,32 +171,39 @@ func newCompute(c context.Context) ComputeService {
 	}
 }
 
-// swrKey is the key to a *swarming.Service in the context.
+// swrKey is the key to swarmingFactory in the context.
 var swrKey = "swr"
 
-// withSwarming returns a new context with the given *swarming.Service installed.
-func withSwarming(c context.Context, swr *swarming.Service) context.Context {
-	return context.WithValue(c, &swrKey, swr)
+// swarmingFactroy produces Swarming client connected to the given server.
+type swarmingFactory func(c context.Context, server string) swarmingpb.BotsClient
+
+// withSwarming returns a new context with the given swarming client factory.
+func withSwarming(c context.Context, factory swarmingFactory) context.Context {
+	return context.WithValue(c, &swrKey, factory)
 }
 
-// getSwarming returns the *swarming.Service installed in the current context.
-func getSwarming(c context.Context, url string) *swarming.Service {
-	swr := c.Value(&swrKey).(*swarming.Service)
-	swr.BasePath = url + "/_ah/api/swarming/v1/"
-	return swr
+// getSwarming returns the swarming client connected to the given server.
+//
+// Uses the factory in the context to construct it.
+func getSwarming(c context.Context, url string) swarmingpb.BotsClient {
+	return c.Value(&swrKey).(swarmingFactory)(c, url)
 }
 
-// newSwarming returns a new *swarming.Service. Panics on error.
-func newSwarming(c context.Context) *swarming.Service {
+// newSwarming produces a Swarming client connected to the given server.
+//
+// Panics on errors.
+func newSwarming(c context.Context, url string) swarmingpb.BotsClient {
 	t, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		panic(err)
 	}
-	swr, err := swarming.New(&http.Client{Transport: t})
-	if err != nil {
-		panic(err)
-	}
-	return swr
+	return swarmingpb.NewBotsClient(
+		&prpc.Client{
+			C:       &http.Client{Transport: t},
+			Host:    strings.TrimPrefix(url, "https://"),
+			Options: prpc.DefaultOptions(),
+		},
+	)
 }
 
 // InstallHandlers installs HTTP request handlers into the given router.
@@ -205,7 +215,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		defer cancel()
 		ctx = withDispatcher(ctx, dsp)
 		ctx = withCompute(ctx, newCompute(ctx))
-		ctx = withSwarming(ctx, newSwarming(ctx))
+		ctx = withSwarming(ctx, newSwarming)
 		c.Request = c.Request.WithContext(ctx)
 		next(c)
 	})

@@ -16,26 +16,31 @@ package backend
 
 import (
 	"context"
-	"net/http"
+	"fmt"
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/api/option"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
-	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+var someTimeAgo = timestamppb.New(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC))
 
 func TestDeleteBot(t *testing.T) {
 	t.Parallel()
@@ -43,10 +48,12 @@ func TestDeleteBot(t *testing.T) {
 	Convey("deleteBot", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		rt := &roundtripper.JSONRoundTripper{}
-		swr, err := swarming.New(&http.Client{Transport: rt})
-		So(err, ShouldBeNil)
-		c := withSwarming(withDispatcher(memory.Use(context.Background()), dsp), swr)
+
+		swr := &mockSwarmingBotsClient{}
+
+		c := withDispatcher(memory.Use(context.Background()), dsp)
+		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -79,16 +86,14 @@ func TestDeleteBot(t *testing.T) {
 			})
 
 			Convey("error", func() {
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusInternalServerError, nil
-				}
-				datastore.Put(c, &model.VM{
+				swr.err = status.Errorf(codes.Internal, "boom")
+				So(datastore.Put(c, &model.VM{
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
 					Lifetime: 1,
 					URL:      "url",
-				})
+				}), ShouldBeNil)
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id:       "id",
 					Hostname: "name",
@@ -97,23 +102,21 @@ func TestDeleteBot(t *testing.T) {
 				v := &model.VM{
 					ID: "id",
 				}
-				datastore.Get(c, v)
+				So(datastore.Get(c, v), ShouldBeNil)
 				So(v.Created, ShouldEqual, 1)
 				So(v.Hostname, ShouldEqual, "name")
 				So(v.URL, ShouldEqual, "url")
 			})
 
 			Convey("deleted", func() {
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusNotFound, nil
-				}
-				datastore.Put(c, &model.VM{
+				swr.err = status.Errorf(codes.NotFound, "not found")
+				So(datastore.Put(c, &model.VM{
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
 					Lifetime: 1,
 					URL:      "url",
-				})
+				}), ShouldBeNil)
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id:       "id",
 					Hostname: "name",
@@ -126,16 +129,14 @@ func TestDeleteBot(t *testing.T) {
 			})
 
 			Convey("deletes", func() {
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusOK, &swarming.SwarmingRpcsDeletedResponse{}
-				}
-				datastore.Put(c, &model.VM{
+				swr.deleteBotResponse = &swarmingpb.DeleteResponse{}
+				So(datastore.Put(c, &model.VM{
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
 					Lifetime: 1,
 					URL:      "url",
-				})
+				}), ShouldBeNil)
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id:       "id",
 					Hostname: "name",
@@ -157,10 +158,10 @@ func TestDeleteVM(t *testing.T) {
 		c := memory.Use(context.Background())
 
 		Convey("deletes", func() {
-			datastore.Put(c, &model.VM{
+			So(datastore.Put(c, &model.VM{
 				ID:       "id",
 				Hostname: "name",
-			})
+			}), ShouldBeNil)
 			So(deleteVM(c, "id", "name"), ShouldBeNil)
 			v := &model.VM{
 				ID: "id",
@@ -173,10 +174,10 @@ func TestDeleteVM(t *testing.T) {
 		})
 
 		Convey("replaced", func() {
-			datastore.Put(c, &model.VM{
+			So(datastore.Put(c, &model.VM{
 				ID:       "id",
 				Hostname: "name-2",
-			})
+			}), ShouldBeNil)
 			So(deleteVM(c, "id", "name-1"), ShouldBeNil)
 			v := &model.VM{
 				ID: "id",
@@ -193,10 +194,12 @@ func TestManageBot(t *testing.T) {
 	Convey("manageBot", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		rt := &roundtripper.JSONRoundTripper{}
-		swr, err := swarming.New(&http.Client{Transport: rt})
-		So(err, ShouldBeNil)
-		c := withSwarming(withDispatcher(memory.Use(context.Background()), dsp), swr)
+
+		swr := &mockSwarmingBotsClient{}
+
+		c := withDispatcher(memory.Use(context.Background()), dsp)
+		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -213,12 +216,12 @@ func TestManageBot(t *testing.T) {
 		})
 
 		Convey("valid", func() {
-			datastore.Put(c, &model.Config{
+			So(datastore.Put(c, &model.Config{
 				ID: "config",
 				Config: &config.Config{
 					CurrentAmount: 1,
 				},
-			})
+			}), ShouldBeNil)
 
 			Convey("deleted", func() {
 				err := manageBot(c, &tasks.ManageBot{
@@ -228,10 +231,10 @@ func TestManageBot(t *testing.T) {
 			})
 
 			Convey("creating", func() {
-				datastore.Put(c, &model.VM{
+				So(datastore.Put(c, &model.VM{
 					ID:     "id",
 					Config: "config",
-				})
+				}), ShouldBeNil)
 				err := manageBot(c, &tasks.ManageBot{
 					Id: "id",
 				})
@@ -239,14 +242,12 @@ func TestManageBot(t *testing.T) {
 			})
 
 			Convey("error", func() {
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusConflict, nil
-				}
-				datastore.Put(c, &model.VM{
+				swr.err = status.Errorf(codes.InvalidArgument, "unexpected error")
+				So(datastore.Put(c, &model.VM{
 					ID:     "id",
 					Config: "config",
 					URL:    "url",
-				})
+				}), ShouldBeNil)
 				err := manageBot(c, &tasks.ManageBot{
 					Id: "id",
 				})
@@ -255,17 +256,15 @@ func TestManageBot(t *testing.T) {
 
 			Convey("missing", func() {
 				Convey("deadline", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusNotFound, nil
-					}
-					datastore.Put(c, &model.VM{
+					swr.err = status.Errorf(codes.NotFound, "not found")
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Created:  1,
 						Hostname: "name",
 						Lifetime: 1,
 						URL:      "url",
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -279,17 +278,15 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("drained & new bots", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusNotFound, nil
-					}
-					datastore.Put(c, &model.VM{
+					swr.err = status.Errorf(codes.NotFound, "not found")
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Drained:  true,
 						Hostname: "name",
 						URL:      "url",
 						Created:  time.Now().Unix() - 100,
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -300,17 +297,15 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("timeout", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusNotFound, nil
-					}
-					datastore.Put(c, &model.VM{
+					swr.err = status.Errorf(codes.NotFound, "not found")
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Created:  1,
 						Hostname: "name",
 						Timeout:  1,
 						URL:      "url",
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -320,15 +315,13 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("wait", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusNotFound, nil
-					}
-					datastore.Put(c, &model.VM{
+					swr.err = status.Errorf(codes.NotFound, "not found")
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -338,20 +331,18 @@ func TestManageBot(t *testing.T) {
 
 			Convey("found", func() {
 				Convey("deleted", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:   "id",
-							Deleted: true,
-						}
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:   "id",
+						Deleted: true,
 					}
-					datastore.Put(c, &model.VM{
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
 						Created: time.Now().Unix() - 10000,
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -365,19 +356,17 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("deleted but newly created", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:   "id",
-							Deleted: true,
-						}
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:   "id",
+						Deleted: true,
 					}
-					datastore.Put(c, &model.VM{
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 						Created:  time.Now().Unix() - 10,
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -387,21 +376,19 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("dead", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:       "id",
-							FirstSeenTs: "2019-03-13T00:12:29.882948",
-							IsDead:      true,
-						}
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:       "id",
+						FirstSeenTs: someTimeAgo,
+						IsDead:      true,
 					}
-					datastore.Put(c, &model.VM{
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
 						Created: time.Now().Unix() - 10000,
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -415,20 +402,18 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("dead but newly created", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:       "id",
-							FirstSeenTs: "2019-03-13T00:12:29.882948",
-							IsDead:      true,
-						}
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:       "id",
+						FirstSeenTs: someTimeAgo,
+						IsDead:      true,
 					}
-					datastore.Put(c, &model.VM{
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 						Created:  time.Now().Unix() - 10,
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -438,23 +423,23 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("terminated", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusOK, map[string]any{
-							"bot_id":        "id",
-							"first_seen_ts": "2019-03-13T00:12:29.882948",
-							"items": []*swarming.SwarmingRpcsBotEvent{
-								{
-									EventType: "bot_terminate",
-								},
-							},
-						}
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:       "id",
+						FirstSeenTs: someTimeAgo,
 					}
-					datastore.Put(c, &model.VM{
+					swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{
+						Items: []*swarmingpb.BotEventResponse{
+							{
+								EventType: "bot_terminate",
+							},
+						},
+					}
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -469,20 +454,19 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("deadline", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:       "id",
-							FirstSeenTs: "2019-03-13T00:12:29.882948",
-						}
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:       "id",
+						FirstSeenTs: someTimeAgo,
 					}
-					datastore.Put(c, &model.VM{
+					swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{}
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Created:  1,
 						Lifetime: 1,
 						Hostname: "name",
 						URL:      "url",
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -497,19 +481,18 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("drained", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:       "id",
-							FirstSeenTs: "2019-03-13T00:12:29.882948",
-						}
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:       "id",
+						FirstSeenTs: someTimeAgo,
 					}
-					datastore.Put(c, &model.VM{
+					swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{}
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Drained:  true,
 						Hostname: "name",
 						URL:      "url",
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -524,18 +507,17 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("alive", func() {
-					rt.Handler = func(_ any) (int, any) {
-						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:       "id",
-							FirstSeenTs: "2019-03-13T00:12:29.882948",
-						}
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:       "id",
+						FirstSeenTs: someTimeAgo,
 					}
-					datastore.Put(c, &model.VM{
+					swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{}
+					So(datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-					})
+					}), ShouldBeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
@@ -558,10 +540,12 @@ func TestTerminateBot(t *testing.T) {
 	Convey("terminateBot", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		rt := &roundtripper.JSONRoundTripper{}
-		swr, err := swarming.New(&http.Client{Transport: rt})
-		So(err, ShouldBeNil)
-		c := withSwarming(withDispatcher(memory.Use(context.Background()), dsp), swr)
+
+		swr := &mockSwarmingBotsClient{}
+
+		c := withDispatcher(memory.Use(context.Background()), dsp)
+		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -594,10 +578,10 @@ func TestTerminateBot(t *testing.T) {
 			})
 
 			Convey("replaced", func() {
-				datastore.Put(c, &model.VM{
+				So(datastore.Put(c, &model.VM{
 					ID:       "id",
 					Hostname: "new",
-				})
+				}), ShouldBeNil)
 				err := terminateBot(c, &tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "old",
@@ -611,13 +595,11 @@ func TestTerminateBot(t *testing.T) {
 			})
 
 			Convey("error", func() {
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusInternalServerError, nil
-				}
-				datastore.Put(c, &model.VM{
+				swr.err = status.Errorf(codes.Internal, "internal error")
+				So(datastore.Put(c, &model.VM{
 					ID:       "id",
 					Hostname: "name",
-				})
+				}), ShouldBeNil)
 				err := terminateBot(c, &tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "name",
@@ -632,31 +614,26 @@ func TestTerminateBot(t *testing.T) {
 
 			Convey("terminates", func() {
 				c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
-				rpcsToSwarming := 0
-				rt.Handler = func(_ any) (int, any) {
-					rpcsToSwarming++
-					return http.StatusOK, &swarming.SwarmingRpcsTerminateResponse{}
-				}
-				datastore.Put(c, &model.VM{
+				swr.terminateBotResponse = &swarmingpb.TerminateResponse{}
+				So(datastore.Put(c, &model.VM{
 					ID:       "id",
 					Hostname: "name",
-				})
+				}), ShouldBeNil)
 				terminateTask := tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "name",
 				}
 				So(terminateBot(c, &terminateTask), ShouldBeNil)
-				So(rpcsToSwarming, ShouldEqual, 1)
+				So(swr.calls, ShouldEqual, 1)
 
 				Convey("wait 1 hour before sending another terminate task", func() {
 					c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC.Add(time.Hour-time.Second))
 					So(terminateBot(c, &terminateTask), ShouldBeNil)
-					So(rpcsToSwarming, ShouldEqual, 1)
+					So(swr.calls, ShouldEqual, 1)
 
 					c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC.Add(time.Hour))
 					So(terminateBot(c, &terminateTask), ShouldBeNil)
-					So(err, ShouldBeNil)
-					So(rpcsToSwarming, ShouldEqual, 2)
+					So(swr.calls, ShouldEqual, 2)
 				})
 			})
 		})
@@ -714,14 +691,16 @@ func TestInspectSwarming(t *testing.T) {
 	Convey("inspectSwarming", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		rt := &roundtripper.JSONRoundTripper{}
+
+		swr := &mockSwarmingBotsClient{}
+
 		c := withDispatcher(memory.Use(context.Background()), dsp)
-		swr, err := swarming.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
-		So(err, ShouldBeNil)
-		c = withSwarming(c, swr)
+		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 		datastore.GetTestable(c).Consistent(true)
+
 		Convey("BadInputs", func() {
 			Convey("nil", func() {
 				err := inspectSwarming(c, nil)
@@ -734,9 +713,7 @@ func TestInspectSwarming(t *testing.T) {
 		})
 
 		Convey("Swarming error", func() {
-			rt.Handler = func(_ any) (int, any) {
-				return http.StatusInternalServerError, nil
-			}
+			swr.err = status.Errorf(codes.Internal, "internal server error")
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
 			})
@@ -753,25 +730,23 @@ func TestInspectSwarming(t *testing.T) {
 				Hostname: "vm-2-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
 			}), ShouldBeNil)
-			rt.Handler = func(_ any) (int, any) {
-				return http.StatusOK, &swarming.SwarmingRpcsBotList{
-					Cursor: "",
-					Items: []*swarming.SwarmingRpcsBotInfo{
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-1-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-						},
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-2-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-						},
-						// We don't have a record for this bot in datastore
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-3-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-						},
+			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
+				Cursor: "",
+				Items: []*swarmingpb.BotInfo{
+					{
+						BotId:       "vm-1-abcd",
+						FirstSeenTs: someTimeAgo,
 					},
-				}
+					{
+						BotId:       "vm-2-abcd",
+						FirstSeenTs: someTimeAgo,
+					},
+					// We don't have a record for this bot in datastore
+					{
+						BotId:       "vm-3-abcd",
+						FirstSeenTs: someTimeAgo,
+					},
+				},
 			}
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
@@ -791,22 +766,20 @@ func TestInspectSwarming(t *testing.T) {
 				Hostname: "vm-2-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
 			}), ShouldBeNil)
-			rt.Handler = func(_ any) (int, any) {
-				return http.StatusOK, &swarming.SwarmingRpcsBotList{
-					Cursor: "",
-					Items: []*swarming.SwarmingRpcsBotInfo{
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-1-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-							IsDead:      true,
-						},
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-2-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-							Deleted:     true,
-						},
+			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
+				Cursor: "",
+				Items: []*swarmingpb.BotInfo{
+					{
+						BotId:       "vm-1-abcd",
+						FirstSeenTs: someTimeAgo,
+						IsDead:      true,
 					},
-				}
+					{
+						BotId:       "vm-2-abcd",
+						FirstSeenTs: someTimeAgo,
+						Deleted:     true,
+					},
+				},
 			}
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
@@ -830,20 +803,18 @@ func TestInspectSwarming(t *testing.T) {
 				Hostname: "vm-3-abcd",
 				Swarming: "https://vmleaser-swarming.appspot.com",
 			}), ShouldBeNil)
-			rt.Handler = func(_ any) (int, any) {
-				return http.StatusOK, &swarming.SwarmingRpcsBotList{
-					Cursor: "",
-					Items: []*swarming.SwarmingRpcsBotInfo{
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-1-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-						},
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-2-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-						},
+			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
+				Cursor: "",
+				Items: []*swarmingpb.BotInfo{
+					{
+						BotId:       "vm-1-abcd",
+						FirstSeenTs: someTimeAgo,
 					},
-				}
+					{
+						BotId:       "vm-2-abcd",
+						FirstSeenTs: someTimeAgo,
+					},
+				},
 			}
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
@@ -867,16 +838,14 @@ func TestInspectSwarming(t *testing.T) {
 				Hostname: "vm-3-abcd",
 				Swarming: "https://vmleaser-swarming.appspot.com",
 			}), ShouldBeNil)
-			rt.Handler = func(_ any) (int, any) {
-				return http.StatusOK, &swarming.SwarmingRpcsBotList{
-					Cursor: "",
-					Items: []*swarming.SwarmingRpcsBotInfo{
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-3-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-						},
+			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
+				Cursor: "",
+				Items: []*swarmingpb.BotInfo{
+					{
+						BotId:       "vm-3-abcd",
+						FirstSeenTs: someTimeAgo,
 					},
-				}
+				},
 			}
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://vmleaser-swarming.appspot.com",
@@ -900,20 +869,18 @@ func TestInspectSwarming(t *testing.T) {
 				Hostname: "vm-3-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
 			}), ShouldBeNil)
-			rt.Handler = func(_ any) (int, any) {
-				return http.StatusOK, &swarming.SwarmingRpcsBotList{
-					Cursor: "cursor",
-					Items: []*swarming.SwarmingRpcsBotInfo{
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-1-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-						},
-						&swarming.SwarmingRpcsBotInfo{
-							BotId:       "vm-2-abcd",
-							FirstSeenTs: "2023-01-02T15:04:05",
-						},
+			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
+				Cursor: "cursor",
+				Items: []*swarmingpb.BotInfo{
+					{
+						BotId:       "vm-1-abcd",
+						FirstSeenTs: someTimeAgo,
 					},
-				}
+					{
+						BotId:       "vm-2-abcd",
+						FirstSeenTs: someTimeAgo,
+					},
+				},
 			}
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
@@ -932,11 +899,12 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 	Convey("deleteStaleSwarmingBot", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		rt := &roundtripper.JSONRoundTripper{}
+
+		swr := &mockSwarmingBotsClient{}
+
 		c := withDispatcher(memory.Use(context.Background()), dsp)
-		swr, err := swarming.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
-		So(err, ShouldBeNil)
-		c = withSwarming(c, swr)
+		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 		datastore.GetTestable(c).Consistent(true)
@@ -988,10 +956,7 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
 					Swarming: "https://gce-swarming.appspot.com",
 				}), ShouldBeNil)
-				So(err, ShouldBeNil)
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusNotFound, nil
-				}
+				swr.err = status.Errorf(codes.NotFound, "not found")
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
 					Id:          "id-1",
 					FirstSeenTs: "onceUponATime",
@@ -1007,17 +972,14 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
 					Swarming: "https://gce-swarming.appspot.com",
 				}), ShouldBeNil)
-				So(err, ShouldBeNil)
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusOK, map[string]any{
-						"bot_id":        "vm-3-abcd",
-						"first_seen_ts": "2019-03-13T00:12:29.882948",
-						"items": []*swarming.SwarmingRpcsBotEvent{
-							{
-								EventType: "bot_terminate",
-							},
-						},
-					}
+				swr.getBotResponse = &swarmingpb.BotInfo{
+					BotId:       "vm-3-abcd",
+					FirstSeenTs: someTimeAgo,
+				}
+				swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{
+					Items: []*swarmingpb.BotEventResponse{
+						{EventType: "bot_terminate"},
+					},
 				}
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
 					Id:          "vm-3",
@@ -1035,13 +997,12 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					Lifetime: 99,
 					Created:  time.Now().Unix() - 100,
 				}), ShouldBeNil)
-				So(err, ShouldBeNil)
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusOK, map[string]any{
-						"bot_id":        "vm-3-abcd",
-						"first_seen_ts": "2019-03-13T00:12:29.882948",
-						"items":         []*swarming.SwarmingRpcsBotEvent{},
-					}
+				swr.getBotResponse = &swarmingpb.BotInfo{
+					BotId:       "vm-3-abcd",
+					FirstSeenTs: someTimeAgo,
+				}
+				swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{
+					Items: []*swarmingpb.BotEventResponse{},
 				}
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
 					Id:          "vm-3",
@@ -1060,13 +1021,12 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					Created:  time.Now().Unix(),
 					Drained:  true,
 				}), ShouldBeNil)
-				So(err, ShouldBeNil)
-				rt.Handler = func(_ any) (int, any) {
-					return http.StatusOK, map[string]any{
-						"bot_id":        "vm-3-abcd",
-						"first_seen_ts": "2019-03-13T00:12:29.882948",
-						"items":         []*swarming.SwarmingRpcsBotEvent{},
-					}
+				swr.getBotResponse = &swarmingpb.BotInfo{
+					BotId:       "vm-3-abcd",
+					FirstSeenTs: someTimeAgo,
+				}
+				swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{
+					Items: []*swarmingpb.BotEventResponse{},
 				}
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
 					Id:          "vm-3",
@@ -1078,4 +1038,48 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 		})
 
 	})
+}
+
+type mockSwarmingBotsClient struct {
+	err   error
+	calls int
+
+	deleteBotResponse     *swarmingpb.DeleteResponse
+	getBotResponse        *swarmingpb.BotInfo
+	listBotEventsResponse *swarmingpb.BotEventsResponse
+	terminateBotResponse  *swarmingpb.TerminateResponse
+	listBotsResponse      *swarmingpb.BotInfoListResponse
+
+	swarmingpb.BotsClient // "implements" remaining RPCs by nil panicking
+}
+
+func handleCall[R any](mc *mockSwarmingBotsClient, method string, resp *R) (*R, error) {
+	mc.calls++
+	if mc.err != nil {
+		return nil, mc.err
+	}
+	if resp == nil {
+		panic(fmt.Sprintf("unexpected call to %s", method))
+	}
+	return resp, nil
+}
+
+func (mc *mockSwarmingBotsClient) GetBot(context.Context, *swarmingpb.BotRequest, ...grpc.CallOption) (*swarmingpb.BotInfo, error) {
+	return handleCall(mc, "GetBot", mc.getBotResponse)
+}
+
+func (mc *mockSwarmingBotsClient) TerminateBot(context.Context, *swarmingpb.TerminateRequest, ...grpc.CallOption) (*swarmingpb.TerminateResponse, error) {
+	return handleCall(mc, "TerminateBot", mc.terminateBotResponse)
+}
+
+func (mc *mockSwarmingBotsClient) DeleteBot(context.Context, *swarmingpb.BotRequest, ...grpc.CallOption) (*swarmingpb.DeleteResponse, error) {
+	return handleCall(mc, "DeleteBot", mc.deleteBotResponse)
+}
+
+func (mc *mockSwarmingBotsClient) ListBotEvents(context.Context, *swarmingpb.BotEventsRequest, ...grpc.CallOption) (*swarmingpb.BotEventsResponse, error) {
+	return handleCall(mc, "ListBotEvents", mc.listBotEventsResponse)
+}
+
+func (mc *mockSwarmingBotsClient) ListBots(context.Context, *swarmingpb.BotsRequest, ...grpc.CallOption) (*swarmingpb.BotInfoListResponse, error) {
+	return handleCall(mc, "ListBots", mc.listBotsResponse)
 }
