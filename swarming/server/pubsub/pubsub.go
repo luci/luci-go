@@ -18,10 +18,12 @@ package pubsub
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
 
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
@@ -108,10 +110,17 @@ func handler[T any, M Message[T]](
 		return
 	}
 
+	bodyBlob, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		logging.Errorf(rctx, "Failed to read request body: %s", err)
+		ctx.Writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	// Deserialize the push message wrapper.
 	var body pushRequestBody
-	if err := json.NewDecoder(ctx.Request.Body).Decode(&body); err != nil {
-		logging.Errorf(rctx, "Bad push request body: %s", err)
+	if err := json.Unmarshal(bodyBlob, &body); err != nil {
+		logging.Errorf(rctx, "Bad push request body (%s):\n%s", err, bodyBlob)
 		ctx.Writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -119,32 +128,43 @@ func handler[T any, M Message[T]](
 	// Deserialize the message payload.
 	var msg T
 	if err := proto.Unmarshal(body.Message.Data, M(&msg)); err != nil {
-		logging.Errorf(rctx, "Failed to deserialize push message: %s", err)
+		logging.Errorf(rctx, "Failed to deserialize push message (%s):\n%s", err, bodyBlob)
 		ctx.Writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	// Pass to the handler and process the error.
-	err := cb(rctx, &msg, &Metadata{
+	// Pass to the handler.
+	md := Metadata{
 		MessageID:    body.Message.MessageID,
 		Subscription: body.Subscription,
 		PublishTime:  body.Message.PublishTime,
 		Attributes:   body.Message.Attributes,
 		Query:        ctx.Request.URL.Query(),
-	})
-	switch {
-	case err == nil:
-		// Success!
+	}
+	err = cb(rctx, &msg, &md)
+	if err == nil {
 		ctx.Writer.WriteHeader(http.StatusOK)
-	case transient.Tag.In(err):
+		return
+	}
+
+	if transient.Tag.In(err) {
 		// Transient error, trigger a retry by returning 5xx response.
 		logging.Errorf(rctx, "Transient error: %s", err)
 		ctx.Writer.WriteHeader(http.StatusInternalServerError)
-	default:
+	} else {
 		// Fatal error, do not trigger a retry by returning 2xx response.
 		logging.Errorf(rctx, "Fatal error: %s", err)
 		ctx.Writer.WriteHeader(http.StatusAccepted)
 	}
+
+	// Log details of the message that caused the error.
+	logging.Infof(rctx, "MessageID: %s", md.MessageID)
+	logging.Infof(rctx, "Subscription: %s", md.Subscription)
+	logging.Infof(rctx, "PublishTime: %s", md.PublishTime)
+	logging.Infof(rctx, "Attributes: %v", md.Attributes)
+	logging.Infof(rctx, "Query: %s", md.Query)
+	bodyPB, _ := prototext.Marshal(M(&msg))
+	logging.Infof(rctx, "Message body:\n%s", bodyPB)
 }
 
 // pushRequestBody is a JSON body of a messages of a wrapped push subscription.
