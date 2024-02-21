@@ -575,14 +575,42 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 		}
 	}
 
+	// If queries are ordered only by key, all duplicates will be returned from
+	// the heap one after another and we can use a simple check to skip them. This
+	// is important for CountMulti(...) that can be visiting tens of thousands
+	// of entities: storing them all in a hash map for deduplication is a waste of
+	// memory.
+	//
+	// Use a hash map for any other ordering. There may be weird results if this
+	// is running non-transactionally and two different subqueries see two
+	// different versions of the same entity (with different values of fields
+	// affecting the order). Such entity will appear twice in the output, with
+	// some other entities in between these appearances. A simple check will not
+	// detect such deduplication.
+	var seenKey func(keyStr string) bool
+	if overallOrder == "__key__" || overallOrder == "-__key__" {
+		lastSeen := ""
+		seenKey = func(keyStr string) bool {
+			if lastSeen == keyStr {
+				return true
+			}
+			lastSeen = keyStr
+			return false
+		}
+	} else {
+		seenKeys := stringset.New(128)
+		seenKey = func(keyStr string) bool {
+			return !seenKeys.Add(keyStr)
+		}
+	}
+
 	// Merge query results.
-	seenKeys := stringset.New(128)
 	for iHeap.Len() > 0 {
 		pm, key, keyStr, err := iHeap.nextData()
 		if err != nil {
 			return err
 		}
-		if seenKeys.Add(keyStr) {
+		if !seenKey(keyStr) {
 			if err := dispatchEntity(key, pm, ccb); err != nil {
 				return filterStop(err)
 			}
