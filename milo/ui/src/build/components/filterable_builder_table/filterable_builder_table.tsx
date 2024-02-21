@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Input } from '@mui/material';
+import { Box, Input } from '@mui/material';
 import { useMemo } from 'react';
 
 import { BuilderTable } from '@/build/components/builder_table';
@@ -67,7 +67,7 @@ export function FilterableBuilderTable({
 
   return (
     <>
-      <div css={{ margin: '10px' }}>
+      <Box sx={{ my: '10px', mx: 20 }}>
         <SearchInput
           placeholder="Press '/' to search builders."
           value={filter}
@@ -75,7 +75,7 @@ export function FilterableBuilderTable({
           onValueChange={(v) => setSearchparams(filterUpdater(v))}
           initDelayMs={500}
         />
-      </div>
+      </Box>
       <BuilderTable
         builders={filteredBuilders}
         numOfBuilds={numOfBuilds}

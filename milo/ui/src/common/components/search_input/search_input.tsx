@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import Search from '@mui/icons-material/Search';
-import Box from '@mui/material/Box';
 import FormControl from '@mui/material/FormControl';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
@@ -115,36 +114,28 @@ export function SearchInput({
   );
 
   return (
-    <Box sx={{ display: 'grid', mx: 20, gridTemplateColumns: '1fr' }}>
-      <FormControl>
-        <TextField
-          placeholder={placeholder}
-          value={pendingValue}
-          onChange={(e) => setPendingValue(e.target.value)}
-          // Let the caller decide whether `autoFocus` should be used or not.
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus={autoFocus}
-          variant="outlined"
-          size="small"
-          inputRef={inputRef}
-          inputProps={{
-            'data-testid': 'search-input',
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderTopLeftRadius: 0,
-              borderBottomLeftRadius: 0,
-            },
-          }}
-        />
-      </FormControl>
-    </Box>
+    <FormControl sx={{ width: '100%' }}>
+      <TextField
+        placeholder={placeholder}
+        value={pendingValue}
+        onChange={(e) => setPendingValue(e.target.value)}
+        // Let the caller decide whether `autoFocus` should be used or not.
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
+        variant="outlined"
+        size="small"
+        inputRef={inputRef}
+        inputProps={{
+          'data-testid': 'search-input',
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search />
+            </InputAdornment>
+          ),
+        }}
+      />
+    </FormControl>
   );
 }

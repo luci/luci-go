@@ -51,12 +51,14 @@ export const TestSearch = () => {
         project={selectedProject}
         selectedPage={UiPage.TestHistory}
       />
-      <SearchInput
-        placeholder="Search tests in the specified project"
-        onValueChange={handleSearchQueryChange}
-        value={searchQuery}
-        initDelayMs={600}
-      />
+      <Box sx={{ mx: 20 }}>
+        <SearchInput
+          placeholder="Search tests in the specified project"
+          onValueChange={handleSearchQueryChange}
+          value={searchQuery}
+          initDelayMs={600}
+        />
+      </Box>
       <Box sx={{ mt: 5 }}>
         <TestList searchQuery={searchQuery} project={selectedProject} />
       </Box>

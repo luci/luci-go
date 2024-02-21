@@ -46,15 +46,17 @@ export function ProjectSearchPage() {
   return (
     <Box sx={{ px: 6, py: 5, maxWidth: '950px', margin: '0 auto' }}>
       <PageMeta title="Projects" selectedPage={UiPage.ProjectSearch} />
-      <SearchInput
-        placeholder="Filter projects"
-        onValueChange={handleSearchQueryChange}
-        value={searchQuery}
-        initDelayMs={100}
-        // This is the sole purpose of the page. It's OK to autofocus.
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
-      />
+      <Box sx={{ mx: 20 }}>
+        <SearchInput
+          placeholder="Filter projects"
+          onValueChange={handleSearchQueryChange}
+          value={searchQuery}
+          initDelayMs={100}
+          // This is the sole purpose of the page. It's OK to autofocus.
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus
+        />
+      </Box>
       <Box sx={{ m: 5 }}>
         <ProjectList searchQuery={searchQuery} />
       </Box>

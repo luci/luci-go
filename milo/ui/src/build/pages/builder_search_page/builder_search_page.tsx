@@ -41,12 +41,14 @@ export function BuilderSearchPage() {
   return (
     <Box sx={{ px: 6, py: 2 }}>
       <PageMeta title="Builder search" selectedPage={UiPage.BuilderSearch} />
-      <SearchInput
-        placeholder="Search builders"
-        onValueChange={(v) => handleSearchQueryChange(v)}
-        value={searchQuery}
-        initDelayMs={300}
-      />
+      <Box sx={{ mx: 20 }}>
+        <SearchInput
+          placeholder="Search builders"
+          onValueChange={(v) => handleSearchQueryChange(v)}
+          value={searchQuery}
+          initDelayMs={300}
+        />
+      </Box>
       <Box sx={{ mt: 5 }}>
         <BuilderList searchQuery={searchQuery} />
       </Box>
