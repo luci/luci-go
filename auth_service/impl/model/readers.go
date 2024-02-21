@@ -73,6 +73,24 @@ func authDBReaderKey(ctx context.Context, email string) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthDBReader", email, 0, authDBReadersRootKey(ctx))
 }
 
+// IsAuthorizedReader returns whether the given email is authorized to
+// read the AuthDB from Google Storage.
+func IsAuthorizedReader(ctx context.Context, email string) (bool, error) {
+	reader := &AuthDBReader{
+		Kind:   "AuthDBReader",
+		Parent: authDBReadersRootKey(ctx),
+		ID:     email,
+	}
+	switch err := datastore.Get(ctx, reader); {
+	case err == nil:
+		return true, nil
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return false, nil
+	default:
+		return false, errors.Annotate(err, "error checking AuthDBReader email").Err()
+	}
+}
+
 // GetAuthorizedEmails returns the emails of all AuthDBReaders.
 func GetAuthorizedEmails(ctx context.Context) (stringset.Set, error) {
 	// Query for all AuthDBReader entities' keys.

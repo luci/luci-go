@@ -54,6 +54,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/servers/imports"
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
 	"go.chromium.org/luci/auth_service/impl/servers/oauth"
+	"go.chromium.org/luci/auth_service/services/frontend/subscription"
 
 	// Ensure registration of validation rules.
 	_ "go.chromium.org/luci/auth_service/internal/configs/validation"
@@ -156,6 +157,15 @@ func main() {
 		srv.Routes.GET("/lookup", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/lookup.html", nil)
 		})
+
+		// For PubSub subscriber and AuthDB Google Storage reader authorization.
+		//
+		// Note: the endpoint path is unchanged as there are no API changes,
+		// and it's specified in
+		// https://pkg.go.dev/go.chromium.org/luci/server/auth/service#AuthService.RequestAccess
+		srv.Routes.GET("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.CheckAccess))
+		srv.Routes.POST("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Subscribe))
+		srv.Routes.DELETE("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Unsubscribe))
 
 		// Legacy authdbrevision serving.
 		// TODO(cjacomet): Add smoke test for this endpoint

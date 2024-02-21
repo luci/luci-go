@@ -54,6 +54,31 @@ func getRawReaders(ctx context.Context) []*AuthDBReader {
 	return readers
 }
 
+func TestIsAuthorizedReader(t *testing.T) {
+	t.Parallel()
+
+	Convey("IsAuthorizedReader works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		// Set up an authorized user.
+		So(datastore.Put(ctx,
+			testReader(ctx, "someone@example.com"),
+		), ShouldBeNil)
+
+		Convey("true for authorized user", func() {
+			authorized, err := IsAuthorizedReader(ctx, "someone@example.com")
+			So(err, ShouldBeNil)
+			So(authorized, ShouldBeTrue)
+		})
+
+		Convey("false for not authorized user", func() {
+			authorized, err := IsAuthorizedReader(ctx, "somebody@example.com")
+			So(err, ShouldBeNil)
+			So(authorized, ShouldBeFalse)
+		})
+	})
+}
+
 func TestGetAuthorizedEmails(t *testing.T) {
 	t.Parallel()
 
