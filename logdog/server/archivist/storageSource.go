@@ -85,9 +85,7 @@ func (s *storageSource) NextLogEntry() (*logpb.LogEntry, error) {
 				"lastIndex":     s.lastIndex,
 			}.Warningf(s, "Log stream stopped before terminal index.")
 		} else {
-			log.Fields{
-				"lastIndex": s.lastIndex,
-			}.Debugf(s, "Encountered end of stream.")
+			// Encountered end of stream.
 		}
 
 		return nil, io.EOF

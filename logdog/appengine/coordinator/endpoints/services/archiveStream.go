@@ -108,7 +108,6 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 			return err
 		}
 
-		log.Infof(c, "Successfully marked stream as archived.")
 		return nil
 	}, nil)
 	if ierr != nil {

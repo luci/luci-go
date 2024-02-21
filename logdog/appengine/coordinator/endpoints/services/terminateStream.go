@@ -43,12 +43,6 @@ var (
 
 // TerminateStream is an idempotent stream state terminate operation.
 func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*emptypb.Empty, error) {
-	log.Fields{
-		"project":       req.Project,
-		"id":            req.Id,
-		"terminalIndex": req.TerminalIndex,
-	}.Infof(c, "Request to terminate log stream.")
-
 	if req.TerminalIndex < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Negative terminal index.")
 	}

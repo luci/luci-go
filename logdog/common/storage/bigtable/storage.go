@@ -337,15 +337,6 @@ func (w *rowWriter) flush(c context.Context, iface btIface, index types.MessageI
 	lastIndex := int64(index) + int64(flushCount) - 1
 	rk := newRowKey(string(project), string(path), lastIndex, int64(w.count))
 
-	log.Fields{
-		"rowKey":    rk,
-		"project":   project,
-		"path":      path,
-		"index":     index,
-		"lastIndex": lastIndex,
-		"count":     w.count,
-		"size":      w.buf.Len(),
-	}.Debugf(c, "Adding entries to BigTable.")
 	if err := iface.putLogData(c, rk, w.buf.Bytes()); err != nil {
 		return 0, err
 	}

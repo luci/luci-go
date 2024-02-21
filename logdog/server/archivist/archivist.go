@@ -561,11 +561,6 @@ func (sa *stagedArchival) makeStagingPaths(maxGSFilenameLength int) error {
 //
 // If stage fails, it may return a transient error.
 func (sa *stagedArchival) stage() (err error) {
-	logging.Fields{
-		"streamURL": sa.stream.staged,
-		"indexURL":  sa.index.staged,
-	}.Debugf(sa.ctx, "Staging log stream...")
-
 	// Group any transient errors that occur during cleanup. If we aren't
 	// returning a non-transient error, return a transient "terr".
 	var terr errors.MultiError

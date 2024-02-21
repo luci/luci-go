@@ -387,9 +387,8 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	// pushing every terminal index encountered regardless of cache state.
 	if h.be.Terminal {
 		tidx := types.MessageIndex(h.be.TerminalIndex)
-		log.Fields{
-			"value": tidx,
-		}.Debugf(ctx, "Bundle includes a terminal index.")
+
+		// Bundle includes terminal index.
 
 		if state.TerminalIndex < 0 {
 			state.TerminalIndex = tidx

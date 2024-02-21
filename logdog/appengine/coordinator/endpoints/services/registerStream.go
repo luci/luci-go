@@ -93,13 +93,6 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 	path = desc.Path()
 	logStreamID := coordinator.LogStreamID(path)
-	c = log.SetFields(c, log.Fields{
-		"project":       req.Project,
-		"path":          path,
-		"prospectiveID": logStreamID,
-		"terminalIndex": req.TerminalIndex,
-	})
-	log.Infof(c, "Registration request for log stream.")
 
 	if err := desc.Validate(true); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid log stream descriptor: %s", err)
