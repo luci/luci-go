@@ -454,4 +454,60 @@ CREATE TABLE BaselineTestVariants (
   -- Used to remove tests that have not been run longer than 72 hours.
   LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 ) PRIMARY KEY (Project, BaselineId, TestId, VariantHash),
-  ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 3 DAY))
+  ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 3 DAY));
+
+-- Stores temporary text artifacts, to be uploaded to BigQuery.
+CREATE TABLE TextArtifactRows (
+  -- The LUCI project that the artifact belongs to (e.g. chromium).
+  Project STRING(40) NOT NULL,
+
+  -- The LUCI Realm the the artifact exists under.
+  -- Only contain the sub-realm (e.g. "try", instead of "chromium:try).
+  -- The project is stored in the project field.
+  Realm STRING(64) NOT NULL,
+
+  -- The invocation ID of the parent invocation.
+  InvocationId STRING(MAX) NOT NULL,
+
+  -- The test that the artifact belongs to.
+  -- It will be empty if the artifact is an invocation-level artifact.
+  TestId STRING(MAX) NOT NULL,
+
+  -- The result that the artifact belongs to.
+  -- It will be empty if the artifact is an invocation-level artifact.
+  ResultId STRING(MAX) NOT NULL,
+
+  -- Unique identifier of the artifact within the parent.
+  -- May have slashes.
+  -- Example: "stdout" of a test result.
+  ArtifactId STRING(MAX) NOT NULL,
+
+  -- The number of shards needed to store this artifact.
+  NumShards Int64 NOT NULL,
+
+  -- The ID of the shard.
+  ShardId Int64 NOT NULL,
+
+  -- Media type of the artifact content.
+  ContentType STRING(MAX),
+
+  -- Artifact shard content.
+  -- Encoded as UTF-8.
+  Content STRING(MAX) NOT NULL,
+
+  -- Size of the artifact content in bytes.
+  -- This is the sum of shard_content_size of all shards of the artifact.
+  ArtifactContentSize Int64 NOT NULL,
+
+  -- Size of the shard content in bytes.
+  ShardContentSize Int64 NOT NULL,
+
+  -- The time the record was inserted in Spanner.
+  InsertionTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (Project, InvocationId, TestId, ResultId, ArtifactId, ShardId),
+  ROW DELETION POLICY (OLDER_THAN(InsertionTime, INTERVAL 7 DAY));
+
+-- Index of TextArtifactRows by insertion time.
+-- Used by a cron job to export to BigQuery.
+CREATE INDEX TextArtifactRowsByInsertionTime
+  ON TextArtifactRows (InsertionTime DESC);
