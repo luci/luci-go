@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -300,7 +301,7 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 			if err != nil {
 				return errors.Annotate(err, "fetching console output of %s", res.taskID).Err()
 			}
-			res.output = string(output.Output)
+			res.output = strings.ToValidUTF8(string(output.Output), "\uFFFD")
 			return nil
 		})
 	}
