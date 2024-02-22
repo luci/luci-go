@@ -66,13 +66,17 @@ const QUERY_CLIENT_CONFIG: QueryClientConfig = {
         return failureCount < 3;
       },
       refetchOnWindowFocus(query) {
-        // Do not refetch when the errors is non-transient.
+        // Do not refetch when there was an error.
         //
         // Components often occupy vastly different amount of screen space when
         // the query is loading comparing to when the query succeeded/failed.
         // Refetching a failed query (therefore no stale data is available) that
         // is destined to fail again can cause page-shifting with no benefit.
-        if (isNonTransientError(query.state.error)) {
+        //
+        // We do not attempt to check whether the error is non-transient here.
+        // If the query did not succeeded during normal retries, it's very
+        // unlikely to succeed now.
+        if (query.state.error) {
           return false;
         }
         // Keep the default refetch behavior otherwise.
