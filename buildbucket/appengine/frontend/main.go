@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
@@ -42,6 +43,8 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
+	// Store auth sessions in the datastore.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
@@ -81,6 +84,7 @@ func main() {
 		bqlog.NewModuleFromFlags(),
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
+		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
 		gaeemulation.NewModuleFromFlags(),
 		gerritauth.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
@@ -163,7 +167,7 @@ func main() {
 		cron.RegisterHandler("update_project_config", config.UpdateProjectCfg)
 		cron.RegisterHandler("reset_expired_leases", buildcron.ResetExpiredLeases)
 		cron.RegisterHandler("remove_inactive_builder_stats", buildercron.RemoveInactiveBuilderStats)
-		redirect.InstallHandlers(srv.Routes)
+		redirect.InstallHandlers(srv.Routes, router.NewMiddlewareChain(auth.Authenticate(srv.CookieAuth)))
 
 		// PubSub push handler processing messages
 		oidcMW := router.NewMiddlewareChain(

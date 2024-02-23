@@ -11,6 +11,9 @@ luci_gae_vars:
     VPC_CONNECTOR: projects/cr-buildbucket-dev/locations/us-central1/connectors/connector
     DS_CACHE: redis
     CONFIG_SERVICE_HOST: config.luci.app
+    OAUTH_CLIENT_ID: 1037694916935-kf96dqdbptp98pahigutgighdft4s9s9.apps.googleusercontent.com
+    OAUTH_CLIENT_SECRET: sm://oauth-client-secret
+    OAUTH_REDIRECT_URL: https://cr-buildbucket-dev.appspot.com/auth/openid/callback
   cr-buildbucket:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
     PROFILING_PROBABILITY: "0.02"
@@ -47,6 +50,9 @@ entrypoint: >
   -ds-connection-pool-size 8
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}
+  -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
+  -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
+  -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
 
 handlers:
 - url: /.*

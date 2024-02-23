@@ -41,10 +41,12 @@ import (
 )
 
 // InstallHandlers adds routes handlers which need redirections.
-func InstallHandlers(r *router.Router) {
-	r.GET("/build/*BuildID", nil, handleViewBuild)
-	r.GET("/builds/*BuildID", nil, handleViewBuild)
-	r.GET("/log/:BuildID/*StepName", nil, handleViewBuild)
+// TODO(b/326502532): may worth investing time on a possible future improvement
+// to make these handers more lightweight as said in b/326502532.
+func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
+	r.GET("/build/*BuildID", mw, handleViewBuild)
+	r.GET("/builds/*BuildID", mw, handleViewBuild)
+	r.GET("/log/:BuildID/*StepName", mw, handleViewBuild)
 }
 
 func handleViewLog(c *router.Context) {
