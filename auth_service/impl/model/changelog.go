@@ -395,6 +395,7 @@ var knownHistoricalEntities = map[string]diffFunc{
 	// either implement it in full or remove it from Python code base.
 	"AuthGlobalConfigHistory":  diffGlobalConfig,
 	"AuthRealmsGlobalsHistory": diffRealmsGlobals,
+	"AuthProjectRealmsHistory": diffProjectRealms,
 }
 
 type diffFunc = func(context.Context, string, datastore.PropertyMap, datastore.PropertyMap) ([]*AuthDBChange, error)
@@ -803,6 +804,73 @@ func diffRealmsGlobals(ctx context.Context, target string, old, new datastore.Pr
 	if isChanged {
 		setTargetTypeFields(ctx, ChangeRealmsGlobalsChanged, target, class, authChange)
 		changes = append(changes, authChange)
+	}
+
+	return changes, nil
+}
+
+func diffProjectRealms(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
+	class := "AuthProjectRealmsChange"
+	const (
+		Realms    = "realms"
+		ConfigRev = "config_rev"
+		PermsRev  = "perms_rev"
+	)
+
+	newConfigRev := getStringProp(new, ConfigRev)
+	newPermsRev := getStringProp(new, PermsRev)
+
+	if getBoolProp(new, "auth_db_deleted") {
+		change := setTargetTypeFields(
+			ctx, ChangeProjectRealmsRemoved, target, class,
+			&AuthDBChange{
+				ConfigRevOld: newConfigRev,
+				PermsRevOld:  newPermsRev,
+			})
+		return []*AuthDBChange{change}, nil
+	}
+
+	if old == nil {
+		change := setTargetTypeFields(
+			ctx, ChangeProjectRealmsCreated, target, class,
+			&AuthDBChange{
+				ConfigRevNew: newConfigRev,
+				PermsRevNew:  newPermsRev,
+			})
+		return []*AuthDBChange{change}, nil
+	}
+
+	oldRealms := getByteSliceProp(old, Realms)
+	newRealms := getByteSliceProp(new, Realms)
+	if bytes.Equal(oldRealms, newRealms) {
+		// The realms are identical; nothing log-worthy has changed.
+		return []*AuthDBChange{}, nil
+	}
+
+	// If here, then the project config changed, the permissions config
+	// changed, or both. Cautiously log a change even if the revisions are
+	// identical, as the realms are different.
+	changes := []*AuthDBChange{}
+	oldConfigRev := getStringProp(old, ConfigRev)
+	oldPermsRev := getStringProp(old, PermsRev)
+	configChanged := oldConfigRev != newConfigRev
+	permsChanged := oldPermsRev != newPermsRev
+	identicalRevisions := !configChanged && !permsChanged
+	if configChanged || identicalRevisions {
+		changes = append(changes, setTargetTypeFields(
+			ctx, ChangeProjectRealmsChanged, target, class,
+			&AuthDBChange{
+				ConfigRevOld: oldConfigRev,
+				ConfigRevNew: newConfigRev,
+			}))
+	}
+	if permsChanged {
+		changes = append(changes, setTargetTypeFields(
+			ctx, ChangeProjectRealmsReevaluated, target, class,
+			&AuthDBChange{
+				PermsRevOld: oldPermsRev,
+				PermsRevNew: newPermsRev,
+			}))
 	}
 
 	return changes, nil

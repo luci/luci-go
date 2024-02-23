@@ -156,7 +156,7 @@ func testAuthProjectRealmsChange(ctx context.Context, authDBRev int64) *AuthDBCh
 		ConfigRevNew: "",
 		PermsRevOld:  "auth_service_ver:100-00abc",
 		PermsRevNew:  "auth_service_ver:123-45abc",
-		Target:       "AuthProejctRealms$repo",
+		Target:       "AuthProjectRealms$repo",
 		When:         time.Date(2019, time.January, 11, 1, 0, 0, 0, time.UTC),
 		Who:          "user:test@example.com",
 		AppVersion:   "123-45abc",
@@ -789,6 +789,185 @@ func TestGenerateChanges(t *testing.T) {
 					ChangeType:        ChangeConfSecurityConfigChanged,
 					SecurityConfigNew: expectedNewConfig,
 				}})
+			})
+		})
+
+		Convey("AuthProjectRealms changes", func() {
+			proj1Realms := &protocol.Realms{
+				Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
+				Realms: []*protocol.Realm{
+					{
+						Name: "proj1:@root",
+						Bindings: []*protocol.Binding{
+							{
+								// Permissions p2, z, p1.
+								Permissions: []uint32{0, 1, 2},
+								Principals:  []string{"group:gr1"},
+							},
+						},
+					},
+				},
+			}
+
+			// Set up existing project realms.
+			expandedRealms := []*ExpandedRealms{
+				{
+					CfgRev: &RealmsCfgRev{
+						ProjectID:    "proj1",
+						ConfigRev:    "10001",
+						ConfigDigest: "test config digest",
+					},
+					Realms: proj1Realms,
+				},
+			}
+			err := UpdateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+			So(err, ShouldBeNil)
+
+			Convey("project realms created", func() {
+				expandedRealms := []*ExpandedRealms{
+					{
+						CfgRev: &RealmsCfgRev{
+							ProjectID:    "proj2",
+							ConfigRev:    "1",
+							ConfigDigest: "test config digest",
+						},
+					},
+				}
+
+				err := UpdateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				So(err, ShouldBeNil)
+
+				actualChanges, err := generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "project realms created", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:   ChangeProjectRealmsCreated,
+					ConfigRevNew: "1",
+					PermsRevNew:  "permissions.cfg:abc",
+				}})
+			})
+
+			Convey("project realms deleted", func() {
+				err = DeleteAuthProjectRealms(ctx, "proj1", false, "Go pRPC API")
+				So(err, ShouldBeNil)
+
+				actualChanges, err := generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "project realms removed", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:   ChangeProjectRealmsRemoved,
+					ConfigRevOld: "10001",
+					PermsRevOld:  "permissions.cfg:abc",
+				}})
+			})
+
+			Convey("project config superficially changed", func() {
+				// New config revision, but the resulting realms are identical.
+				updatedExpandedRealms := []*ExpandedRealms{
+					{
+						CfgRev: &RealmsCfgRev{
+							ProjectID:    "proj1",
+							ConfigRev:    "10002",
+							ConfigDigest: "test config digest",
+						},
+						Realms: proj1Realms,
+					},
+				}
+				err = UpdateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				So(err, ShouldBeNil)
+
+				actualChanges, err := generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				So(actualChanges, ShouldBeEmpty)
+			})
+
+			Convey("project config revision changed", func() {
+				updatedExpandedRealms := []*ExpandedRealms{
+					{
+						CfgRev: &RealmsCfgRev{
+							ProjectID:    "proj1",
+							ConfigRev:    "10002",
+							ConfigDigest: "test config digest",
+						},
+						Realms: nil,
+					},
+				}
+				err = UpdateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				So(err, ShouldBeNil)
+
+				actualChanges, err := generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "project realms changed", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:   ChangeProjectRealmsChanged,
+					ConfigRevOld: "10001",
+					ConfigRevNew: "10002",
+				}})
+			})
+
+			Convey("realms changed but revisions identical", func() {
+				updatedExpandedRealms := []*ExpandedRealms{
+					{
+						CfgRev: &RealmsCfgRev{
+							ProjectID:    "proj1",
+							ConfigRev:    "10001",
+							ConfigDigest: "test config digest",
+						},
+						Realms: nil,
+					},
+				}
+				err = UpdateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				So(err, ShouldBeNil)
+
+				actualChanges, err := generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "project realms changed", 2, actualChanges, []*AuthDBChange{{
+					ChangeType:   ChangeProjectRealmsChanged,
+					ConfigRevOld: "10001",
+					ConfigRevNew: "10001",
+				}})
+			})
+
+			Convey("both project config and permissions config changed", func() {
+				updatedProj1Realms := &protocol.Realms{
+					Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.p1"),
+					Realms: []*protocol.Realm{
+						{
+							Name: "proj1:@root",
+							Bindings: []*protocol.Binding{
+								{
+									// Permissions p2, p1.
+									Permissions: []uint32{0, 1},
+									Principals:  []string{"group:gr1"},
+								},
+							},
+						},
+					},
+				}
+				updatedExpandedRealms := []*ExpandedRealms{
+					{
+						CfgRev: &RealmsCfgRev{
+							ProjectID:    "proj1",
+							ConfigRev:    "10002",
+							ConfigDigest: "test config digest",
+						},
+						Realms: updatedProj1Realms,
+					},
+				}
+				err = UpdateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:def", false, "Go pRPC API")
+				So(err, ShouldBeNil)
+
+				actualChanges, err := generateChanges(ctx, 2, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "project realms changed and reevaluated", 2, actualChanges, []*AuthDBChange{
+					{
+						ChangeType:   ChangeProjectRealmsChanged,
+						ConfigRevOld: "10001",
+						ConfigRevNew: "10002",
+					},
+					{
+						ChangeType:  ChangeProjectRealmsReevaluated,
+						PermsRevOld: "permissions.cfg:abc",
+						PermsRevNew: "permissions.cfg:def",
+					},
+				})
 			})
 		})
 
