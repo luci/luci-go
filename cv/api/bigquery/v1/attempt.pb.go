@@ -393,14 +393,22 @@ type Attempt struct {
 	// cl_group_key will change but the equivalent_cl_group_key will stay the
 	// same.
 	EquivalentClGroupKey string `protobuf:"bytes,4,opt,name=equivalent_cl_group_key,json=equivalentClGroupKey,proto3" json:"equivalent_cl_group_key,omitempty"`
-	// The time when the Attempt started (trigger time of the last CL triggered).
+	// The time when the Attempt started.
+	//
+	// Note: this is the trigger time of the last CL triggered (i.e. the time
+	// user votes CQ+1 or +2) not the time LUCI CV started the run. Ideally, this
+	// should be named `create_time` and `actual_start_time` should be named
+	// `start_time`.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// The time when the Attempt started in LUCI CV.
+	// The time when the Attempt actually started in LUCI CV.
 	//
 	// In most cases, this should be very close to `start_time` as it only
-	// involves the processing delay of the CL. However, if the run can not be
-	// started immediately due to user running out of quota, then there could be
-	// a gap between `actual_start_time` and `start_time`.
+	// involves the overhead of LUCI CV getting data from Gerrit. However, if the
+	// run can not be started immediately due to user running out of quota, then
+	// there could be a gap between `actual_start_time` and `start_time`.
+	//
+	// The `actual_start_time` could be absent if the Attempt is not able to
+	// start (e.g. CL footer contains invalid tryjob directives)
 	ActualStartTime *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=actual_start_time,json=actualStartTime,proto3" json:"actual_start_time,omitempty"`
 	// The time when the Attempt ended (released by CQ).
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`

@@ -61,6 +61,9 @@ message Attempt {
   // involves the overhead of LUCI CV getting data from Gerrit. However, if the
   // run can not be started immediately due to user running out of quota, then
   // there could be a gap between `actual_start_time` and `start_time`.
+  //
+  // The `actual_start_time` could be absent if the Attempt is not able to
+  // start (e.g. CL footer contains invalid tryjob directives)
   google.protobuf.Timestamp actual_start_time = 13;
   // The time when the Attempt ended (released by CQ).
   google.protobuf.Timestamp end_time = 6;

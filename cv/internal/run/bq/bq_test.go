@@ -227,6 +227,7 @@ func TestMakeAttempt(t *testing.T) {
 				ClGroupKey:           "2fb6f02ce54ceef7",
 				EquivalentClGroupKey: "b5aefc068a978ddc",
 				StartTime:            timestamppb.New(epoch),
+				ActualStartTime:      timestamppb.New(epoch.Add(2 * time.Minute)),
 				EndTime:              timestamppb.New(epoch.Add(25 * time.Minute)),
 				Status:               cvbqpb.AttemptStatus_SUCCESS,
 				Substatus:            cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
@@ -418,6 +419,13 @@ func TestMakeAttempt(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_ABORTED)
 			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_MANUAL_CANCEL)
+		})
+
+		Convey("Empty actual start time", func() {
+			r.StartTime = time.Time{}
+			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
+			So(err, ShouldBeNil)
+			So(a.GetActualStartTime(), ShouldBeNil)
 		})
 
 		Convey("HasCustomRequirement", func() {

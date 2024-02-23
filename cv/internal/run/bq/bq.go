@@ -141,6 +141,9 @@ func makeAttempt(ctx context.Context, r *run.Run, cls []*run.RunCL) (*cvbqpb.Att
 		Builds:               builds,
 		HasCustomRequirement: len(r.Options.GetIncludedTryjobs()) > 0,
 	}
+	if !r.StartTime.IsZero() {
+		a.ActualStartTime = timestamppb.New(r.StartTime)
+	}
 	submittedSet := common.MakeCLIDsSet(r.Submission.GetSubmittedCls()...)
 	failedSet := common.MakeCLIDsSet(r.Submission.GetFailedCls()...)
 	a.GerritChanges = make([]*cvbqpb.GerritChange, len(cls))

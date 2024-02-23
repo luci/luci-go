@@ -103,6 +103,7 @@ func TestExportRunToBQ(t *testing.T) {
 					ClGroupKey:           "331ea2a6a5d5f3b3",
 					EquivalentClGroupKey: "47337d4707144297",
 					StartTime:            timestamppb.New(epoch),
+					ActualStartTime:      timestamppb.New(epoch.Add(time.Minute * 2)),
 					EndTime:              timestamppb.New(epoch.Add(25 * time.Minute)),
 					GerritChanges: []*cvbqpb.GerritChange{
 						{
