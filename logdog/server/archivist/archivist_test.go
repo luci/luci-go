@@ -251,7 +251,7 @@ func TestHandleArchive(t *testing.T) {
 		}
 
 		var clc *testCLClient
-		clcFactory := func(ctx context.Context, luciProject, clProject string) (CLClient, error) {
+		clcFactory := func(ctx context.Context, luciProject, clProject string, onError func(err error)) (CLClient, error) {
 			clc = &testCLClient{
 				clProject:   clProject,
 				luciProject: luciProject,
@@ -749,8 +749,8 @@ func TestHandleArchive(t *testing.T) {
 
 			Convey(`w/ CommonLabels`, func() {
 				var opts []cl.LoggerOption
-				ar.CLClientFactory = func(ctx context.Context, lp, cp string) (CLClient, error) {
-					clc, err := clcFactory(c, lp, cp)
+				ar.CLClientFactory = func(ctx context.Context, lp, cp string, onError func(err error)) (CLClient, error) {
+					clc, err := clcFactory(c, lp, cp, func(err error) {})
 					clc.(*testCLClient).loggerFn = func(n string, los ...cl.LoggerOption) *cl.Logger {
 						opts = los
 						return &cl.Logger{}
@@ -818,8 +818,8 @@ func TestHandleArchive(t *testing.T) {
 		})
 
 		Convey("Will ping", func() {
-			ar.CLClientFactory = func(ctx context.Context, lp, cp string) (CLClient, error) {
-				clc, err := clcFactory(c, lp, cp)
+			ar.CLClientFactory = func(ctx context.Context, lp, cp string, onError func(err error)) (CLClient, error) {
+				clc, err := clcFactory(c, lp, cp, func(err error) {})
 				clc.(*testCLClient).pingFn = func(context.Context) error {
 					return errors.New("Permission Denied")
 				}
@@ -832,8 +832,8 @@ func TestHandleArchive(t *testing.T) {
 			// override the loggerFn to hook the params for the logger constructor.
 			var logID string
 			var opts []cl.LoggerOption
-			ar.CLClientFactory = func(ctx context.Context, lp, cp string) (CLClient, error) {
-				clc, err := clcFactory(c, lp, cp)
+			ar.CLClientFactory = func(ctx context.Context, lp, cp string, onError func(err error)) (CLClient, error) {
+				clc, err := clcFactory(c, lp, cp, func(err error) {})
 				clc.(*testCLClient).loggerFn = func(l string, os ...cl.LoggerOption) *cl.Logger {
 					logID, opts = l, os
 					return &cl.Logger{}

@@ -260,7 +260,6 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 func googleStorageClient(ctx context.Context, luciProject string) (gs.Client, error) {
 	// TODO(vadimsh): Switch to AsProject + WithProject(project) once
 	// we are ready to roll out project scoped service accounts in Logdog.
-	logging.Debugf(ctx, "Creating new GCS client")
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get the authenticating transport").Err()
@@ -273,7 +272,7 @@ func googleStorageClient(ctx context.Context, luciProject string) (gs.Client, er
 }
 
 // cloudLoggingClient returns an authenticated Cloud Logging client instance.
-func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string) (archivist.CLClient, error) {
+func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, onError func(err error)) (archivist.CLClient, error) {
 	cred, err := auth.GetPerRPCCredentials(
 		ctx, auth.AsProject,
 		auth.WithScopes(auth.CloudOAuthScopes...),
@@ -282,13 +281,18 @@ func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string) (
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()
 	}
-	return cloudlogging.NewClient(
+	cl, err := cloudlogging.NewClient(
 		ctx, cloudProject,
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
 		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
 		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 	)
+	if err != nil {
+		return nil, err
+	}
+	cl.OnError = onError
+	return cl, nil
 }
 
 // Entry point.

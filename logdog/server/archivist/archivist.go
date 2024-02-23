@@ -174,7 +174,7 @@ type Archivist struct {
 	// CLClientFactory obtains a Cloud Logging client for log exports.
 	// `luciProject` is the ID of the LUCI project to export logs from, and
 	// `clProject` is the ID of the Google Cloud project to export logs to.
-	CLClientFactory func(ctx context.Context, luciProject, clProject string) (CLClient, error)
+	CLClientFactory func(ctx context.Context, luciProject, clProject string, onError func(err error)) (CLClient, error)
 }
 
 // storageBufferSize is the size, in bytes, of the LogEntry buffer that is used
@@ -445,7 +445,15 @@ func (a *Archivist) makeStagedArchival(ctx context.Context, project string, real
 		if err = gcloud.ValidateProjectID(st.CloudLoggingProjectID); err != nil {
 			return nil, errors.Annotate(err, "CloudLoggingProjectID %q", st.CloudLoggingProjectID).Err()
 		}
-		clc, err := a.CLClientFactory(ctx, project, st.CloudLoggingProjectID)
+		onError := func(err error) {
+			logging.Fields{
+				"luciProject":  project,
+				"cloudProject": st.CloudLoggingProjectID,
+				"path":         sa.path,
+			}.Errorf(ctx, "archiving log to Cloud Logging: %v", err)
+		}
+
+		clc, err := a.CLClientFactory(ctx, project, st.CloudLoggingProjectID, onError)
 		if err != nil {
 			logging.Fields{
 				logging.ErrorKey: err,
