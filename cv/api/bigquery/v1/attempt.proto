@@ -26,7 +26,7 @@ import "google/protobuf/timestamp.proto";
 // An attempt involves doing checks for one or more CLs that could
 // potentially be submitted together.
 //
-// Next ID: 13.
+// Next ID: 14.
 message Attempt {
   // The opaque key unique to this Attempt.
   string key = 1;
@@ -48,8 +48,20 @@ message Attempt {
   // same.
   string equivalent_cl_group_key = 4;
 
-  // The time when the Attempt started (trigger time of the last CL triggered).
+  // The time when the Attempt started.
+  //
+  // Note: this is the trigger time of the last CL triggered (i.e. the time
+  // user votes CQ+1 or +2) not the time LUCI CV started the run. Ideally, this
+  // should be named `create_time` and `actual_start_time` should be named
+  // `start_time`.
   google.protobuf.Timestamp start_time = 5;
+  // The time when the Attempt actually started in LUCI CV.
+  //
+  // In most cases, this should be very close to `start_time` as it only
+  // involves the overhead of LUCI CV getting data from Gerrit. However, if the
+  // run can not be started immediately due to user running out of quota, then
+  // there could be a gap between `actual_start_time` and `start_time`.
+  google.protobuf.Timestamp actual_start_time = 13;
   // The time when the Attempt ended (released by CQ).
   google.protobuf.Timestamp end_time = 6;
 
