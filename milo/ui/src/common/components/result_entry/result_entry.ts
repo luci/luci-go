@@ -396,7 +396,7 @@ ${errMsg}</pre
           <div class="duration ${durationUnits}" title=${duration}>
             ${compactDuration}
           </div>
-          run #${this.id}
+          result #${this.id}
           <span class=${this.testResult.expected ? 'expected' : 'unexpected'}>
             ${this.testResult.expected ? 'expectedly' : 'unexpectedly'}
             ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
