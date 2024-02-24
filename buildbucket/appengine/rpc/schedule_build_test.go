@@ -3763,6 +3763,7 @@ func TestScheduleBuild(t *testing.T) {
 			expectedBackendConfig.Fields["agent_binary_cipd_vers"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_vers"}}
 			expectedBackendConfig.Fields["agent_binary_cipd_server"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_server"}}
 			expectedBackendConfig.Fields["agent_binary_cipd_filename"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bbagent${EXECUTABLE_SUFFIX}"}}
+			expectedBackendConfig.Fields["task_name"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-0-project/bucket/builder"}}
 
 			So(buildResult.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
 				Caches: []*pb.CacheEntry{
@@ -4668,6 +4669,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+				expectedBackendConfig.Fields["task_name"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-0-project/bucket/builder"}}
 
 				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
@@ -4695,6 +4697,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 2}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "service_account"}}
+				expectedBackendConfig.Fields["task_name"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-0-project/bucket/builder"}}
 
 				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
@@ -4722,6 +4725,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 22}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+				expectedBackendConfig.Fields["task_name"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-0-project/bucket/builder"}}
 
 				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
@@ -4752,6 +4756,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+				expectedBackendConfig.Fields["task_name"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-0-project/bucket/builder"}}
 
 				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
@@ -4789,6 +4794,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+				expectedBackendConfig.Fields["task_name"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-0-project/bucket/builder"}}
 
 				So(b.Infra.Swarming, ShouldBeNil)
 				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
@@ -4824,6 +4830,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+				expectedBackendConfig.Fields["task_name"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-0-project/bucket/builder"}}
 
 				So(b.Infra.Backend, ShouldBeNil)
 				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
@@ -4851,6 +4858,7 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+				expectedBackendConfig.Fields["task_name"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-0-project/bucket/builder"}}
 
 				So(b.Infra.Backend, ShouldBeNil)
 				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
@@ -5752,7 +5760,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						Config: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"priority": structpb.NewNumberValue(30),
+								"priority":  structpb.NewNumberValue(30),
+								"task_name": structpb.NewStringValue("bb-0-project/bucket/builder"),
 							},
 						},
 						Hostname: "foo_hostname",
