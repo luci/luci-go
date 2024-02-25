@@ -28,9 +28,9 @@ luci_gae_vars:
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
     OAUTH_REDIRECT_URL: https://luci-logdog-dev.appspot.com/auth/openid/callback
     TINK_AEAD_KEY: sm://tink-aead-primary
-    BIGTABLE_PROJECT: luci-logdog
-    BIGTABLE_INSTANCE: luci-logdog
-    BIGTABLE_LOG_TABLE: test
+    BIGTABLE_PROJECT: luci-logdog-dev
+    BIGTABLE_INSTANCE: luci-logdog-dev
+    BIGTABLE_LOG_TABLE: log-storage-dev
 
 env_variables:
   AUTH_SERVICE_HOST: ${AUTH_SERVICE_HOST}
