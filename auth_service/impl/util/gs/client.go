@@ -150,9 +150,9 @@ func (c *gsClient) UpdateReadACL(ctx context.Context, objectPath string, readers
 	oldAccessors := stringset.New(len(oldACL))
 	oldReaders := stringset.New(len(oldACL))
 	for _, rule := range oldACL {
-		oldAccessors.Add(string(rule.Entity))
+		oldAccessors.Add(string(rule.Email))
 		if rule.Role == storage.RoleReader {
-			oldReaders.Add(string(rule.Entity))
+			oldReaders.Add(string(rule.Email))
 		}
 	}
 
