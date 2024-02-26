@@ -1,9 +1,0 @@
-queue:
-- name: email
-  rate: 5/s
-  retry_parameters:
-    task_retry_limit: 100
-    task_age_limit: 1d
-    min_backoff_seconds: 10
-    max_backoff_seconds: 320
-    max_doublings: 4
