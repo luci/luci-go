@@ -53,22 +53,9 @@ func TestCheckAccess(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
-		// Set up mock GS client
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
-		mockClient := gs.NewMockedClient(ctx, ctl)
-		ctx = mockClient.Ctx
-
 		// Set up settings config.
-		cfg := &configspb.SettingsCfg{
-			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
-		}
+		cfg := &configspb.SettingsCfg{}
 		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
-
-		// Set expected client calls for authorized user setup.
-		mockClient.Client.EXPECT().UpdateReadACL(
-			gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
-		mockClient.Client.EXPECT().Close().Times(1)
 
 		// Set up an authorized user.
 		So(model.AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
@@ -99,7 +86,7 @@ func TestCheckAccess(t *testing.T) {
 			}
 			err := CheckAccess(rctx)
 			So(err, ShouldBeNil)
-			expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":false}}`)
+			expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"","authorized":false}}`)
 			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
 		})
 
@@ -114,7 +101,7 @@ func TestCheckAccess(t *testing.T) {
 			}
 			err := CheckAccess(rctx)
 			So(err, ShouldBeNil)
-			expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":true}}`)
+			expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"","authorized":true}}`)
 			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
 		})
 	})
@@ -129,7 +116,6 @@ func TestSubscribe(t *testing.T) {
 
 		// Set up mock GS client
 		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		mockClient := gs.NewMockedClient(ctx, ctl)
 		ctx = mockClient.Ctx
 
@@ -148,7 +134,7 @@ func TestSubscribe(t *testing.T) {
 				Request: (&http.Request{}).WithContext(ctx),
 				Writer:  rw,
 			}
-			err := CheckAccess(rctx)
+			err := Subscribe(rctx)
 			So(err, ShouldErrLike, "error getting caller email")
 			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(rw.Body.Bytes(), ShouldBeEmpty)
@@ -156,9 +142,9 @@ func TestSubscribe(t *testing.T) {
 
 		Convey("authorizes a new user", func() {
 			// Set expected client calls from updating ACLs.
-			mockClient.Client.EXPECT().UpdateReadACL(
+			aclUpdate := mockClient.Client.EXPECT().UpdateReadACL(
 				gomock.Any(), gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2)
-			mockClient.Client.EXPECT().Close().Times(1)
+			mockClient.Client.EXPECT().Close().Times(1).After(aclUpdate)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -172,23 +158,34 @@ func TestSubscribe(t *testing.T) {
 			So(err, ShouldBeNil)
 			expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":true}}`)
 			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+		})
 
-			Convey("succeeds for already-authorized user", func() {
-				// Set expected client calls from updating ACLs.
+		Convey("succeeds for already-authorized user", func() {
+			// Set expected client calls for authorized user setup, then for
+			// authorizing.
+			gomock.InOrder(
 				mockClient.Client.EXPECT().UpdateReadACL(
-					gomock.Any(), gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2)
-				mockClient.Client.EXPECT().Close().Times(1)
+					gomock.Any(), gomock.Any(), stringset.NewFromSlice("somebody@example.com")).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1),
+				mockClient.Client.EXPECT().UpdateReadACL(
+					gomock.Any(), gomock.Any(), stringset.NewFromSlice("somebody@example.com")).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1))
 
-				rw := httptest.NewRecorder()
-				rctx := &router.Context{
-					Request: (&http.Request{}).WithContext(ctx),
-					Writer:  rw,
-				}
-				err := Subscribe(rctx)
-				So(err, ShouldBeNil)
-				expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":true}}`)
-				So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			// Set up an authorized user.
+			So(model.AuthorizeReader(ctx, "somebody@example.com"), ShouldBeNil)
+
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:somebody@example.com",
 			})
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Writer:  rw,
+			}
+			err := Subscribe(rctx)
+			So(err, ShouldBeNil)
+			expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":true}}`)
+			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
 		})
 	})
 }
@@ -202,7 +199,6 @@ func TestUnsubscribe(t *testing.T) {
 
 		// Set up mock GS client
 		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		mockClient := gs.NewMockedClient(ctx, ctl)
 		ctx = mockClient.Ctx
 
@@ -211,14 +207,6 @@ func TestUnsubscribe(t *testing.T) {
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
 		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
-
-		// Set expected client calls for authorized user setup.
-		mockClient.Client.EXPECT().UpdateReadACL(
-			gomock.Any(), gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2)
-		mockClient.Client.EXPECT().Close().Times(1)
-
-		// Set up an authorized user.
-		So(model.AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 
 		Convey("user must use email-based auth", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -229,17 +217,25 @@ func TestUnsubscribe(t *testing.T) {
 				Request: (&http.Request{}).WithContext(ctx),
 				Writer:  rw,
 			}
-			err := CheckAccess(rctx)
+			err := Unsubscribe(rctx)
 			So(err, ShouldErrLike, "error getting caller email")
 			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(rw.Body.Bytes(), ShouldBeEmpty)
 		})
 
 		Convey("revokes for authorized user", func() {
-			// Set expected client calls for deauthorizing.
-			mockClient.Client.EXPECT().UpdateReadACL(
-				gomock.Any(), gomock.Any(), stringset.Set{}).Times(2)
-			mockClient.Client.EXPECT().Close().Times(1)
+			// Set expected client calls for authorized user setup, then for
+			// deauthorizing.
+			gomock.InOrder(
+				mockClient.Client.EXPECT().UpdateReadACL(
+					gomock.Any(), gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1),
+				mockClient.Client.EXPECT().UpdateReadACL(
+					gomock.Any(), gomock.Any(), stringset.Set{}).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1))
+
+			// Set up an authorized user.
+			So(model.AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -253,23 +249,26 @@ func TestUnsubscribe(t *testing.T) {
 			So(err, ShouldBeNil)
 			expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":false}}`)
 			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+		})
 
-			Convey("succeeds for already-deauthorized user", func() {
-				// Set expected client calls from updating ACLs.
-				mockClient.Client.EXPECT().UpdateReadACL(
-					gomock.Any(), gomock.Any(), stringset.Set{}).Times(2)
-				mockClient.Client.EXPECT().Close().Times(1)
+		Convey("succeeds for non-authorized user", func() {
+			// Set expected client calls from updating ACLs.
+			aclUpdate := mockClient.Client.EXPECT().UpdateReadACL(
+				gomock.Any(), gomock.Any(), stringset.Set{}).Times(2)
+			mockClient.Client.EXPECT().Close().Times(1).After(aclUpdate)
 
-				rw := httptest.NewRecorder()
-				rctx := &router.Context{
-					Request: (&http.Request{}).WithContext(ctx),
-					Writer:  rw,
-				}
-				err := Unsubscribe(rctx)
-				So(err, ShouldBeNil)
-				expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":false}}`)
-				So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:somebody@example.com",
 			})
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Writer:  rw,
+			}
+			err := Unsubscribe(rctx)
+			So(err, ShouldBeNil)
+			expectedBlob := []byte(`{"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":false}}`)
+			So(rw.Body.Bytes(), ShouldEqual, expectedBlob)
 		})
 	})
 }

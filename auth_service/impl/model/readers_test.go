@@ -111,7 +111,6 @@ func TestAuthorizeReader(t *testing.T) {
 
 		// Set up mock GS client
 		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		mockClient := gs.NewMockedClient(ctx, ctl)
 		ctx = mockClient.Ctx
 
@@ -146,13 +145,10 @@ func TestAuthorizeReader(t *testing.T) {
 
 		Convey("email is recorded", func() {
 			// Define expected client calls.
-			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
-				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.db",
-				stringset.NewFromSlice("someone@example.com")).Times(1)
-			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
-				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.json",
-				stringset.NewFromSlice("someone@example.com")).Times(1)
-			mockClient.Client.EXPECT().Close().Times(1)
+			gomock.InOrder(
+				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+					gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1))
 
 			So(AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
@@ -166,13 +162,10 @@ func TestAuthorizeReader(t *testing.T) {
 
 			Convey("already authorized user is not duplicated", func() {
 				// Define expected client calls.
-				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
-					"chrome-infra-auth-test.appspot.com/auth-db/V2latest.db",
-					stringset.NewFromSlice("someone@example.com")).Times(1)
-				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
-					"chrome-infra-auth-test.appspot.com/auth-db/V2latest.json",
-					stringset.NewFromSlice("someone@example.com")).Times(1)
-				mockClient.Client.EXPECT().Close().Times(1)
+				gomock.InOrder(
+					mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+						gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
+					mockClient.Client.EXPECT().Close().Times(1))
 
 				So(AuthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 				So(getRawReaders(ctx), ShouldHaveLength, 1)
@@ -190,7 +183,6 @@ func TestDeauthorizeReader(t *testing.T) {
 
 		// Set up mock GS client
 		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		mockClient := gs.NewMockedClient(ctx, ctl)
 		ctx = mockClient.Ctx
 
@@ -206,13 +198,10 @@ func TestDeauthorizeReader(t *testing.T) {
 
 		Convey("succeeds for non-authorized user", func() {
 			// Define expected client calls.
-			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
-				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.db",
-				stringset.NewFromSlice("someone@example.com")).Times(1)
-			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
-				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.json",
-				stringset.NewFromSlice("someone@example.com")).Times(1)
-			mockClient.Client.EXPECT().Close().Times(1)
+			gomock.InOrder(
+				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+					gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1))
 
 			So(DeauthorizeReader(ctx, "unknown@example.com"), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
@@ -222,13 +211,10 @@ func TestDeauthorizeReader(t *testing.T) {
 
 		Convey("removes the user", func() {
 			// Define expected client calls.
-			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
-				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.db",
-				stringset.New(0)).Times(1)
-			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
-				"chrome-infra-auth-test.appspot.com/auth-db/V2latest.json",
-				stringset.New(0)).Times(1)
-			mockClient.Client.EXPECT().Close().Times(1)
+			gomock.InOrder(
+				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+					gomock.Any(), stringset.New(0)).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1))
 
 			So(DeauthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldBeEmpty)

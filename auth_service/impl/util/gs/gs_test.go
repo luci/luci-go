@@ -76,27 +76,38 @@ func TestIsValidPath(t *testing.T) {
 	})
 }
 
-func TestGSCalls(t *testing.T) {
+func TestUploadAuthDB(t *testing.T) {
 	t.Parallel()
 
-	Convey("Google Storage upload and ACL updates work", t, func() {
+	Convey("Uploading to Google Storage works", t, func() {
 		ctx := memory.Use(context.Background())
-
 		// Set up mock GS client
 		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		mockClient := NewMockedClient(ctx, ctl)
 		ctx = mockClient.Ctx
 
-		// Set up settings config.
-		cfg := &configspb.SettingsCfg{
-			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
+		signedAuthDB := &protocol.SignedAuthDB{}
+		rev := &protocol.AuthDBRevision{
+			PrimaryId: "chrome-infra-auth-test",
+			AuthDbRev: 1234,
 		}
-		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
-
 		readers := stringset.NewFromSlice("someone@example.com", "a@b.com")
 
-		Convey("uploading AuthDB works", func() {
+		Convey("exits early if not configured", func() {
+			// Set up settings config with no GS path.
+			So(settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), ShouldBeNil)
+			// There should be no client calls.
+			So(UploadAuthDB(ctx, signedAuthDB, rev, readers, false), ShouldBeNil)
+		})
+
+		Convey("uploads AuthDB and revision", func() {
+			// Set up settings config.
+			cfg := &configspb.SettingsCfg{
+				AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
+			}
+			So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+
+			// Define expected client calls.
 			expectedACLs := []storage.ACLRule{
 				{
 					Entity: storage.ACLEntity("user-a@b.com"),
@@ -107,41 +118,53 @@ func TestGSCalls(t *testing.T) {
 					Role:   storage.RoleReader,
 				},
 			}
-
-			// Define expected client calls.
-			mockClient.Client.EXPECT().WriteFile(gomock.Any(),
+			dbWrite := mockClient.Client.EXPECT().WriteFile(gomock.Any(),
 				"chrome-infra-auth-test.appspot.com/auth-db/latest.db",
 				"application/protobuf", gomock.Any(), expectedACLs).Times(1)
-			mockClient.Client.EXPECT().WriteFile(gomock.Any(),
+			revWrite := mockClient.Client.EXPECT().WriteFile(gomock.Any(),
 				"chrome-infra-auth-test.appspot.com/auth-db/latest.json",
 				"application/json", gomock.Any(), expectedACLs).Times(1)
-			mockClient.Client.EXPECT().Close().Times(1)
+			mockClient.Client.EXPECT().Close().Times(1).After(dbWrite).After(revWrite)
 
 			// Upload the AuthDB to GS.
-			signedAuthDB := &protocol.SignedAuthDB{}
-			rev := &protocol.AuthDBRevision{
-				PrimaryId: "chrome-infra-auth-test",
-				AuthDbRev: 1234,
-			}
-			err := UploadAuthDB(ctx, signedAuthDB, rev, readers, false)
-			So(err, ShouldBeNil)
+			So(UploadAuthDB(ctx, signedAuthDB, rev, readers, false), ShouldBeNil)
+		})
+	})
+}
+
+func TestUpdateReaders(t *testing.T) {
+	t.Parallel()
+
+	Convey("Google Storage ACL updates work", t, func() {
+		ctx := memory.Use(context.Background())
+		// Set up mock GS client
+		ctl := gomock.NewController(t)
+		mockClient := NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		readers := stringset.NewFromSlice("someone@example.com", "a@b.com")
+		Convey("exits early if not configured", func() {
+			// Set up settings config with no GS path.
+			So(settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), ShouldBeNil)
+			// There should be no client calls.
+			So(UpdateReaders(ctx, readers, false), ShouldBeNil)
 		})
 
-		Convey("updating ACLs works", func() {
-			// Set up mock GS client
-			ctl := gomock.NewController(t)
-			defer ctl.Finish()
-			mockClient := NewMockedClient(ctx, ctl)
-			ctx = mockClient.Ctx
+		Convey("updates both AuthDB and rev ACLs", func() {
+			// Set up settings config.
+			cfg := &configspb.SettingsCfg{
+				AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
+			}
+			So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
 
 			// Define expected client calls.
-			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+			dbUpdate := mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
 				"chrome-infra-auth-test.appspot.com/auth-db/latest.db",
 				readers).Times(1)
-			mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+			revUpdate := mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
 				"chrome-infra-auth-test.appspot.com/auth-db/latest.json",
 				readers).Times(1)
-			mockClient.Client.EXPECT().Close().Times(1)
+			mockClient.Client.EXPECT().Close().Times(1).After(dbUpdate).After(revUpdate)
 
 			So(UpdateReaders(ctx, readers, false), ShouldBeNil)
 		})
