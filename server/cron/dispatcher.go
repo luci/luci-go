@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -157,7 +158,7 @@ func (d *Dispatcher) InstallCronRoutes(r *router.Router, prefix string) {
 	})
 }
 
-// handlerIDs returns a list of registered handler IDs (in arbitrary order).
+// handlerIDs returns a sorted list of registered handler IDs.
 func (d *Dispatcher) handlerIDs() []string {
 	d.m.RLock()
 	defer d.m.RUnlock()
@@ -165,6 +166,7 @@ func (d *Dispatcher) handlerIDs() []string {
 	for id := range d.h {
 		ids = append(ids, id)
 	}
+	sort.Strings(ids)
 	return ids
 }
 

@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"net/http/httptest"
-	"sort"
 	"testing"
 	"time"
 
@@ -72,9 +71,7 @@ func TestDispatcher(t *testing.T) {
 		Convey("Handler IDs", func() {
 			d.RegisterHandler("h1", func(ctx context.Context) error { return nil })
 			d.RegisterHandler("h2", func(ctx context.Context) error { return nil })
-			ids := d.handlerIDs()
-			sort.Strings(ids)
-			So(ids, ShouldResemble, []string{"h1", "h2"})
+			So(d.handlerIDs(), ShouldResemble, []string{"h1", "h2"})
 		})
 
 		Convey("Works", func() {
