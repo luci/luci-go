@@ -850,6 +850,10 @@ message UserLimit {
         //
         // Required. Active Run is a Run that has started but not ended yet.
         Limit max_active = 1;
+
+        // Optional custom message appended to the end of the quota exhaustion
+        // message posted to gerrit.
+        string quota_exhaustion_msg = 7;
     }
     message Tryjob {
         // Maximum number of active tryjobs that the user can have at any

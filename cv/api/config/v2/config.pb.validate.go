@@ -3971,6 +3971,8 @@ func (m *UserLimit_Run) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for QuotaExhaustionMsg
+
 	if len(errors) > 0 {
 		return UserLimit_RunMultiError(errors)
 	}
