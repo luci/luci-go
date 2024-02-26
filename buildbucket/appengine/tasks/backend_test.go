@@ -277,9 +277,10 @@ func TestCreateBackendTask(t *testing.T) {
 
 		Convey("ok", func() {
 			build := &model.Build{
-				ID:       1,
-				BucketID: "project/bucket",
-				Project:  "project",
+				ID:        1,
+				BucketID:  "project/bucket",
+				Project:   "project",
+				BuilderID: "project/bucket",
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -385,6 +386,7 @@ func TestCreateBackendTask(t *testing.T) {
 							},
 						},
 					},
+					"task_name": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-1-project/bucket"}},
 				},
 			})
 			So(req.BuildbucketHost, ShouldEqual, "some unique host name")

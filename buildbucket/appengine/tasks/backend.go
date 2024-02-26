@@ -175,6 +175,13 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		return nil, err
 	}
 
+	// Add task name into backend config.
+	taskName := fmt.Sprintf("bb-%d-%s", build.ID, build.BuilderID)
+	if build.Proto.Number > 0 {
+		taskName = fmt.Sprintf("%s-%d", taskName, build.Proto.Number)
+	}
+	backend.Config.Fields["task_name"] = structpb.NewStringValue(taskName)
+
 	taskReq := &pb.RunTaskRequest{
 		BuildbucketHost:  infra.Proto.Buildbucket.Hostname,
 		Secrets:          secrets,

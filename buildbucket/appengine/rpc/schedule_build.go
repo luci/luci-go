@@ -1403,14 +1403,6 @@ func setInfraBackend(ctx context.Context, globalCfg *pb.SettingsCfg, build *pb.B
 	if config.Fields["priority"].GetNumberValue() == 0 || reqPriority > 0 {
 		config.Fields["priority"] = structpb.NewNumberValue(float64(priority))
 	}
-
-	// Add task name into config.
-	taskName := fmt.Sprintf("bb-%d-%s", build.Id, protoutil.FormatBuilderID(build.Builder))
-	if build.Number > 0 {
-		taskName = fmt.Sprintf("%s-%d", taskName, build.Number)
-	}
-	config.Fields["task_name"] = structpb.NewStringValue(taskName)
-
 	hostname, err := clients.ComputeHostnameFromTarget(backend.GetTarget(), globalCfg)
 	if err != nil {
 		logging.Warningf(ctx, err.Error())
