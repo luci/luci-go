@@ -550,26 +550,10 @@ type quotaManagerMock struct {
 	userLimit   *cfgpb.UserLimit
 	runQuotaErr error
 
-	debitRunQuotaCalls  int
-	creditRunQuotaCalls int
+	debitRunQuotaCalls int
 }
 
 func (qm *quotaManagerMock) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
 	qm.debitRunQuotaCalls++
 	return qm.runQuotaOp, qm.userLimit, qm.runQuotaErr
-}
-
-func (qm *quotaManagerMock) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
-	qm.creditRunQuotaCalls++
-	return qm.runQuotaOp, qm.userLimit, qm.runQuotaErr
-}
-
-func (qm *quotaManagerMock) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
-	return &quotapb.AccountID{
-		AppId:        "cv",
-		Realm:        r.ID.LUCIProject(),
-		Namespace:    r.ConfigGroupID.Name(),
-		Name:         r.CreatedBy.Email(),
-		ResourceType: "runs",
-	}
 }

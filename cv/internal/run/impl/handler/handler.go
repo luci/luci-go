@@ -119,8 +119,6 @@ type RM interface {
 // QM manages run and tryjob quotas.
 type QM interface {
 	DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error)
-	CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error)
-	RunQuotaAccountID(r *run.Run) *quotapb.AccountID
 }
 
 // CLUpdater encapsulates interaction with CL Updater by the Run events handler.
