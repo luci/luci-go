@@ -16,6 +16,7 @@ package frontend
 
 import (
 	"net/http"
+	"net/url"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -62,7 +63,23 @@ func (s *HTTPService) buildRawArtifactHandler(prefix string) func(ctx *router.Co
 			return appstatus.GRPCifyAndLog(ctx.Request.Context(), err)
 		}
 
-		http.Redirect(ctx.Writer, ctx.Request, artifact.FetchUrl, http.StatusFound)
+		fetchUrl := artifact.FetchUrl
+		parsedFetchUrl, err := url.Parse(fetchUrl)
+		if err != nil {
+			return errors.Annotate(err, "failed to parse artifact.fetchUrl").Err()
+		}
+		fetchUrlQuery := parsedFetchUrl.Query()
+		// Copy query params from request to fetch URL.
+		requestQuery := ctx.Request.URL.Query()
+		// We use two for loops as a query keycan have multiple values.
+		for key, values := range requestQuery {
+			for _, value := range values {
+				fetchUrlQuery.Add(key, value)
+			}
+		}
+		parsedFetchUrl.RawQuery = fetchUrlQuery.Encode()
+
+		http.Redirect(ctx.Writer, ctx.Request, parsedFetchUrl.String(), http.StatusFound)
 		return nil
 	}
 }

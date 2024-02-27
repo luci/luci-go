@@ -72,7 +72,7 @@ func TestRawArtifactHandler(t *testing.T) {
 					FetchUrl: "https://test.com/artifact/fetch/url",
 				}, nil)
 
-			url, err := url.Parse("/prefix/test/artifact/name")
+			url, err := url.Parse("/prefix/test/artifact/name?n=50000")
 			So(err, ShouldBeNil)
 
 			req := &http.Request{URL: url}
@@ -89,7 +89,7 @@ func TestRawArtifactHandler(t *testing.T) {
 
 			res := w.Result()
 			So(res.StatusCode, ShouldEqual, http.StatusFound)
-			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url")
+			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url?n=50000")
 		})
 
 		Convey(`with encoded character`, func() {
@@ -105,7 +105,7 @@ func TestRawArtifactHandler(t *testing.T) {
 					FetchUrl: "https://test.com/artifact/fetch/url",
 				}, nil)
 
-			url, err := url.Parse("/prefix/test/artifact%2fname")
+			url, err := url.Parse("/prefix/test/artifact%2fname?n=50000")
 			So(url.RawPath, ShouldNotBeEmpty)
 			So(err, ShouldBeNil)
 
@@ -120,7 +120,7 @@ func TestRawArtifactHandler(t *testing.T) {
 
 			res := w.Result()
 			So(res.StatusCode, ShouldEqual, http.StatusFound)
-			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url")
+			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url?n=50000")
 		})
 
 		Convey(`with encoded character but the URL.RawPath is not set`, func() {
@@ -136,7 +136,7 @@ func TestRawArtifactHandler(t *testing.T) {
 					FetchUrl: "https://test.com/artifact/fetch/url",
 				}, nil)
 
-			url, err := url.Parse("/prefix/test/artifact%20name")
+			url, err := url.Parse("/prefix/test/artifact%20name?n=50000")
 			So(err, ShouldBeNil)
 			So(url.RawPath, ShouldBeEmpty)
 
@@ -151,7 +151,40 @@ func TestRawArtifactHandler(t *testing.T) {
 
 			res := w.Result()
 			So(res.StatusCode, ShouldEqual, http.StatusFound)
-			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url")
+			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url?n=50000")
+		})
+
+		Convey(`with existing query search params`, func() {
+			resultdbMock.
+				EXPECT().
+				GetArtifact(
+					gomock.Any(),
+					&resultpb.GetArtifactRequest{
+						Name: "test/artifact/name",
+					},
+				).
+				Return(&resultpb.Artifact{
+					FetchUrl: "https://test.com/artifact/fetch/url?token=_12345",
+				}, nil)
+
+			url, err := url.Parse("/prefix/test/artifact/name?n=50000")
+			So(err, ShouldBeNil)
+
+			req := &http.Request{URL: url}
+			w := httptest.NewRecorder()
+			c := context.Background()
+			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
+			ctx := &router.Context{
+				Request: req.WithContext(c),
+				Writer:  w,
+			}
+
+			err = handler(ctx)
+			So(err, ShouldBeNil)
+
+			res := w.Result()
+			So(res.StatusCode, ShouldEqual, http.StatusFound)
+			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url?n=50000&token=_12345")
 		})
 	})
 }
