@@ -158,6 +158,12 @@ message GerritChange {
   string owner = 9 [deprecated=true];
 
   // Indicates whether the owner of the CL is bot or not.
+  //
+  // owner is considered as a bot if any of the following conditions are met:
+  //  - owner is in Gerrit Service Users group:
+  //    https://gerrit-review.googlesource.com/Documentation/access-control.html#service_users
+  //  - owner email ends with "gserviceaccount.com"
+  //  - owner email ends with "prod.google.com"
   bool is_owner_bot = 10;
 }
 

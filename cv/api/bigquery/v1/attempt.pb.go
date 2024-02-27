@@ -593,6 +593,12 @@ type GerritChange struct {
 	// Deprecated: Marked as deprecated in go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto.
 	Owner string `protobuf:"bytes,9,opt,name=owner,proto3" json:"owner,omitempty"`
 	// Indicates whether the owner of the CL is bot or not.
+	//
+	// owner is considered as a bot if any of the following conditions are met:
+	//   - owner is in Gerrit Service Users group:
+	//     https://gerrit-review.googlesource.com/Documentation/access-control.html#service_users
+	//   - owner email ends with "gserviceaccount.com"
+	//   - owner email ends with "prod.google.com"
 	IsOwnerBot bool `protobuf:"varint,10,opt,name=is_owner_bot,json=isOwnerBot,proto3" json:"is_owner_bot,omitempty"`
 }
 
