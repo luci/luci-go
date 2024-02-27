@@ -131,7 +131,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	// Run quota should be debited from the creator before the run is started.
 	// When run quota isn't available, the run is left in the pending state.
 	pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.BilledTo.Email())
-	switch quotaOp, _, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
+	switch quotaOp, userLimit, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
 	case err == nil && quotaOp != nil:
 		rs.LogInfof(ctx, logEntryLabelRunQuotaBalanceMessage, "Run quota debited from %s; balance: %d", rs.Run.BilledTo.Email(), quotaOp.GetNewBalance())
 	case errors.Unwrap(err) == quota.ErrQuotaApply && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
@@ -141,6 +141,11 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		// Post pending message to all gerrit CLs for this run if not posted already.
 		if !rs.QuotaExhaustionMsgLongOpRequested {
 			rs.QuotaExhaustionMsgLongOpRequested = true // Only enqueue once.
+
+			if userLimit.GetRun().GetQuotaExhaustionMsg() != "" {
+				pendingMsg = fmt.Sprintf("%s\n\n%s", pendingMsg, userLimit.GetRun().GetQuotaExhaustionMsg())
+			}
+
 			rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 				Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostMessageDuration)),
 				Work: &run.OngoingLongOps_Op_PostGerritMessage_{
