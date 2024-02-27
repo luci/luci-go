@@ -15,6 +15,7 @@
 package swarmingimpl
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -297,11 +298,12 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 	if wantConsoleOut {
 		eg.Go(func() error {
 			logging.Debugf(ctx, "%s: fetching console output", res.taskID)
-			output, err := svc.TaskOutput(ctx, res.taskID)
+			var output bytes.Buffer
+			_, err := svc.TaskOutput(ctx, res.taskID, &output)
 			if err != nil {
 				return errors.Annotate(err, "fetching console output of %s", res.taskID).Err()
 			}
-			res.output = strings.ToValidUTF8(string(output.Output), "\uFFFD")
+			res.output = strings.ToValidUTF8(output.String(), "\uFFFD")
 			return nil
 		})
 	}

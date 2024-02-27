@@ -17,6 +17,7 @@ package swarmingtest
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"go.chromium.org/luci/swarming/client/swarming"
@@ -31,7 +32,7 @@ type Client struct {
 	CancelTaskMock     func(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
 	CancelTasksMock    func(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingv2.TasksCancelResponse, error)
 	TaskRequestMock    func(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
-	TaskOutputMock     func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
+	TaskOutputMock     func(ctx context.Context, taskID string, out io.Writer) (swarmingv2.TaskState, error)
 	TaskResultMock     func(ctx context.Context, taskID string, fields *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error)
 	TaskResultsMock    func(ctx context.Context, taskIDs []string, fields *swarming.TaskResultFields) ([]swarming.ResultOrErr, error)
 	ListTaskStatesMock func(ctx context.Context, taskIDs []string) ([]swarmingv2.TaskState, error)
@@ -69,8 +70,8 @@ func (c *Client) TaskRequest(ctx context.Context, taskID string) (*swarmingv2.Ta
 	return c.TaskRequestMock(ctx, taskID)
 }
 
-func (c *Client) TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
-	return c.TaskOutputMock(ctx, taskID)
+func (c *Client) TaskOutput(ctx context.Context, taskID string, out io.Writer) (swarmingv2.TaskState, error) {
+	return c.TaskOutputMock(ctx, taskID, out)
 }
 
 func (c *Client) TaskResult(ctx context.Context, taskID string, fields *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {

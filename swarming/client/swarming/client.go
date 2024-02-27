@@ -15,9 +15,9 @@
 package swarming
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"sync"
@@ -87,7 +87,7 @@ type Client interface {
 	CancelTasks(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingv2.TasksCancelResponse, error)
 
 	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
-	TaskOutput(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error)
+	TaskOutput(ctx context.Context, taskID string, out io.Writer) (swarmingv2.TaskState, error)
 	TaskResult(ctx context.Context, taskID string, fields *TaskResultFields) (*swarmingv2.TaskResultResponse, error)
 	TaskResults(ctx context.Context, taskIDs []string, fields *TaskResultFields) ([]ResultOrErr, error)
 
@@ -408,31 +408,33 @@ func (s *swarmingServiceImpl) TaskResults(ctx context.Context, taskIDs []string,
 	return out, nil
 }
 
-func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string) (res *swarmingv2.TaskOutputResponse, err error) {
+func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string, out io.Writer) (state swarmingv2.TaskState, err error) {
 	// We fetch 160 chunks every time which amounts to a max of 16mb each time.
 	// Each chunk is 100kbs.
 	// See https://chromium.googlesource.com/infra/luci/luci-py/+/b517353c0df0b52b4bdda4231ff37e749dc627af/appengine/swarming/api_common.py#343
-	const outputLength = 160 * 100 * 1024
+	const perRequestLength = 160 * 100 * 1024
 
-	var output bytes.Buffer
+	var offset int64
 	for {
 		resp, err := s.tasksClient.GetStdout(ctx, &swarmingv2.TaskIdWithOffsetRequest{
-			Offset: int64(output.Len()),
-			Length: outputLength,
+			Offset: offset,
+			Length: perRequestLength,
 			TaskId: taskID,
 		})
 		if err != nil {
-			return nil, err
+			return state, err
 		}
-		output.Write(resp.Output)
-		// If there is less output bytes than length then we have reached the
-		// final output chunk and can stop looking for new data.
-		if len(resp.Output) < outputLength {
-			// Pass the final state we saw as the current output
-			return &swarmingv2.TaskOutputResponse{
-				State:  resp.State,
-				Output: output.Bytes(),
-			}, nil
+		state = resp.State
+		offset += int64(len(resp.Output))
+		if len(resp.Output) != 0 {
+			if _, err := out.Write(resp.Output); err != nil {
+				return state, err
+			}
+		}
+		// If there is less output bytes than what we requested, then we have
+		// reached the final output chunk and can stop looking for new data.
+		if len(resp.Output) < perRequestLength {
+			return state, nil
 		}
 	}
 }

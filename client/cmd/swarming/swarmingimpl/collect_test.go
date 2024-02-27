@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -118,10 +119,12 @@ func TestCollect(t *testing.T) {
 				return out, nil
 			},
 
-			TaskOutputMock: func(ctx context.Context, taskID string) (*swarmingv2.TaskOutputResponse, error) {
-				return &swarmingv2.TaskOutputResponse{
-					Output: []byte(fmt.Sprintf("Output of %s", taskID)),
-				}, mockedStdoutErr
+			TaskOutputMock: func(ctx context.Context, taskID string, out io.Writer) (swarmingv2.TaskState, error) {
+				if mockedStdoutErr != nil {
+					return 0, mockedStdoutErr
+				}
+				_, err := fmt.Fprintf(out, "Output of %s", taskID)
+				return swarmingv2.TaskState_COMPLETED, err
 			},
 
 			FilesFromCASMock: func(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
