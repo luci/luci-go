@@ -1,5 +1,11 @@
 # LUCI Notify
 
+## Running tests locally
+
+```
+INTEGRATION_TESTS=1 go test ./...
+```
+
 ## Release
 
 Releases for LUCI Notify are handled via LUCI CD. Configuration is in

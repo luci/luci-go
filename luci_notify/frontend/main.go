@@ -19,12 +19,20 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/grpc/prpc"
+	pb "go.chromium.org/luci/luci_notify/api/service/v1"
+	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/internal/span"
+	"go.chromium.org/luci/luci_notify/notify"
+	"go.chromium.org/luci/luci_notify/server"
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
@@ -32,14 +40,8 @@ import (
 	"go.chromium.org/luci/server/mailer"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	pb "go.chromium.org/luci/luci_notify/api/service/v1"
-	"go.chromium.org/luci/luci_notify/config"
-	"go.chromium.org/luci/luci_notify/notify"
-	"go.chromium.org/luci/luci_notify/server"
 )
 
 const (
@@ -71,12 +73,20 @@ func main() {
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		mailer.NewModuleFromFlags(),
+		spanmodule.NewModuleFromFlags(nil),
 		tq.NewModuleFromFlags(),
 	}
 
 	notify.InitDispatcher(&tq.Default)
 
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
+		srv.ConfigurePRPC(func(s *prpc.Server) {
+			s.AccessControl = prpc.AllowOriginAll
+			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+			s.HackFixFieldMasksForJSON = true
+		})
+		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
+
 		// Cron endpoints.
 		cron.RegisterHandler("update-config", config.UpdateHandler)
 		cron.RegisterHandler("update-tree-status", notify.UpdateTreeStatus)

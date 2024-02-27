@@ -5,14 +5,11 @@ app_engine_apis: true
 instance_class: F4_1G
 
 luci_gae_vars:
-  luci-notify:
-    AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
-    CONFIG_SERVICE_HOST: luci-config.appspot.com
-    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
   luci-notify-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     CONFIG_SERVICE_HOST: config.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+    SPANNER_DB: projects/luci-notify-dev/instances/dev/databases/luci-notify-dev
 
 handlers:
 # Pubsub Handler.  This is strictly necessary because the default module
@@ -33,3 +30,4 @@ entrypoint: >
   -auth-service-host ${AUTH_SERVICE_HOST}
   -ts-mon-account ${TS_MON_ACCOUNT}
   -config-service-host ${CONFIG_SERVICE_HOST}
+  -spanner-database ${SPANNER_DB}
