@@ -209,7 +209,7 @@ func TestStart(t *testing.T) {
 			}
 			deps.qm.userLimit = &cfgpb.UserLimit{
 				Run: &cfgpb.UserLimit_Run{
-					QuotaExhaustionMsg: "foo bar.",
+					ReachLimitMsg: "foo bar.",
 				},
 			}
 

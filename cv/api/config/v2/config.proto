@@ -853,7 +853,7 @@ message UserLimit {
 
         // Optional custom message appended to the end of the quota exhaustion
         // message posted to gerrit.
-        string quota_exhaustion_msg = 7;
+        string reach_limit_msg = 2;
     }
     message Tryjob {
         // Maximum number of active tryjobs that the user can have at any

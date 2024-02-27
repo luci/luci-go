@@ -142,8 +142,8 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		if !rs.QuotaExhaustionMsgLongOpRequested {
 			rs.QuotaExhaustionMsgLongOpRequested = true // Only enqueue once.
 
-			if userLimit.GetRun().GetQuotaExhaustionMsg() != "" {
-				pendingMsg = fmt.Sprintf("%s\n\n%s", pendingMsg, userLimit.GetRun().GetQuotaExhaustionMsg())
+			if userLimit.GetRun().GetReachLimitMsg() != "" {
+				pendingMsg = fmt.Sprintf("%s\n\n%s", pendingMsg, userLimit.GetRun().GetReachLimitMsg())
 			}
 
 			rs.EnqueueLongOp(&run.OngoingLongOps_Op{
