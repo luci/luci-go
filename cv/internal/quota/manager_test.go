@@ -158,10 +158,11 @@ func TestManager(t *testing.T) {
 			})
 		})
 
-		Convey("findRunPolicy() returns first valid run policy", func() {
+		Convey("findRunLimit() returns first valid user_limit", func() {
+			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
-				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				googlerLimit,
 				genUserLimit("partners-limit", 10, []string{"group:partners"}),
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
@@ -172,33 +173,16 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
+			res, err := findRunLimit(ctx, r)
 			So(err, ShouldBeNil)
-			So(isUnlimited, ShouldBeFalse)
-			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "googlers-limit"))
+			So(res, ShouldResembleProto, googlerLimit)
 		})
 
-		Convey("findRunPolicy() returns true for isUnlimited when the found policy is unlimited", func() {
-			cg.UserLimits = append(cg.UserLimits,
-				genUserLimit("googlers-limit", 0, []string{"group:googlers"}))
-			prjcfgtest.Update(ctx, lProject, cfg)
-
-			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
-				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
-				BilledTo:      makeIdentity(tEmail),
-			}
-
-			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
-			So(err, ShouldBeNil)
-			So(isUnlimited, ShouldBeTrue)
-			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "googlers-limit"))
-		})
-
-		Convey("findRunPolicy() works with user entry in principals", func() {
+		Convey("findRunLimit() works with user entry in principals", func() {
+			exampleLimit := genUserLimit("example-limit", 10, []string{"group:chromies", "user:t@example.org"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
-				genUserLimit("example-limit", 10, []string{"group:chromies", "user:t@example.org"}),
+				exampleLimit,
 				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
 				genUserLimit("partners-limit", 10, []string{"group:partners"}),
 			)
@@ -209,13 +193,12 @@ func TestManager(t *testing.T) {
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
 			}
-			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
+			res, err := findRunLimit(ctx, r)
 			So(err, ShouldBeNil)
-			So(isUnlimited, ShouldBeFalse)
-			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "example-limit"))
+			So(res, ShouldResembleProto, exampleLimit)
 		})
 
-		Convey("findRunPolicy() returns default policy if no valid policy is found", func() {
+		Convey("findRunLimit() returns default user_limit if no valid user_limit is found", func() {
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
 				genUserLimit("googlers-limit", 5, []string{"group:invalid"}),
@@ -230,13 +213,12 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
+			res, err := findRunLimit(ctx, r)
 			So(err, ShouldBeNil)
-			So(isUnlimited, ShouldBeFalse)
-			So(res.Key, ShouldResembleProto, runPolicyKey("infra", "default"))
+			So(res, ShouldResembleProto, genUserLimit("default", 5, nil)) // default name is overriden.
 		})
 
-		Convey("findRunPolicy() returns nil when no valid policy is found", func() {
+		Convey("findRunLimit() returns nil when no valid policy is found", func() {
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
 				genUserLimit("googlers-limit", 5, []string{"group:invalid"}),
@@ -250,9 +232,8 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, isUnlimited, err := qm.findRunPolicy(ctx, r)
+			res, err := findRunLimit(ctx, r)
 			So(err, ShouldBeNil)
-			So(isUnlimited, ShouldBeFalse)
 			So(res, ShouldBeNil)
 		})
 
