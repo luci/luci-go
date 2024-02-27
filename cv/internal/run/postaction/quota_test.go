@@ -254,15 +254,15 @@ func (qm *mockQM) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 	}
 }
 
-func (qm *mockQM) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
+func (qm *mockQM) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
 	qm.creditQuotaCalledWith = append(qm.creditQuotaCalledWith, r.ID)
 	if !qm.quotaSpecified {
-		return nil, nil
+		return nil, nil, nil
 	}
 	return &quotapb.OpResult{
 		PreviousBalance: 0,
 		NewBalance:      1,
 		AccountStatus:   quotapb.OpResult_ALREADY_EXISTS,
 		Status:          quotapb.OpResult_SUCCESS,
-	}, nil
+	}, nil, nil
 }

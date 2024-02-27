@@ -57,7 +57,7 @@ type Executor struct {
 // qm encapsulates interaction with Quota Manager by the post action executor.
 type qm interface {
 	RunQuotaAccountID(r *run.Run) *quotapb.AccountID
-	CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error)
+	CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error)
 }
 
 // rm encapsulates interaction with Run Manager by the post action executor.

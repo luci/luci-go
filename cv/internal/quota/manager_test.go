@@ -238,9 +238,10 @@ func TestManager(t *testing.T) {
 		})
 
 		Convey("DebitRunQuota() debits quota for a given run state", func() {
+			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
-				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				googlerLimit,
 				genUserLimit("partners-limit", 10, []string{"group:partners"}),
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
@@ -251,8 +252,9 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, err := qm.DebitRunQuota(ctx, r)
+			res, userLimit, err := qm.DebitRunQuota(ctx, r)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
@@ -270,9 +272,10 @@ func TestManager(t *testing.T) {
 		})
 
 		Convey("CreditRunQuota() credits quota for a given run state", func() {
+			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
-				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				googlerLimit,
 				genUserLimit("partners-limit", 10, []string{"group:partners"}),
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
@@ -283,8 +286,9 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, err := qm.CreditRunQuota(ctx, r)
+			res, userLimit, err := qm.CreditRunQuota(ctx, r)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    5,
 				AccountStatus: quotapb.OpResult_CREATED,
@@ -302,9 +306,10 @@ func TestManager(t *testing.T) {
 		})
 
 		Convey("runQuotaOp() updates the same account on multiple ops", func() {
+			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
-				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				googlerLimit,
 				genUserLimit("partners-limit", 10, []string{"group:partners"}),
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
@@ -315,8 +320,9 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, err := qm.runQuotaOp(ctx, r, "foo1", -1)
+			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo1", -1)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
@@ -332,8 +338,9 @@ func TestManager(t *testing.T) {
 				"SUCCESS",
 			), ShouldEqual, 1)
 
-			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
+			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,
@@ -353,8 +360,8 @@ func TestManager(t *testing.T) {
 		})
 
 		Convey("runQuotaOp() respects unlimited policy", func() {
-			cg.UserLimits = append(cg.UserLimits,
-				genUserLimit("googlers-limit", 0, []string{"group:googlers"}))
+			googlerLimit := genUserLimit("googlers-limit", 0, []string{"group:googlers"})
+			cg.UserLimits = append(cg.UserLimits, googlerLimit)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
@@ -363,8 +370,9 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, err := qm.runQuotaOp(ctx, r, "", -1)
+			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    -1,
 				AccountStatus: quotapb.OpResult_CREATED,
@@ -372,9 +380,8 @@ func TestManager(t *testing.T) {
 		})
 
 		Convey("runQuotaOp() bound checks", func() {
-			cg.UserLimits = append(cg.UserLimits,
-				genUserLimit("googlers-limit", 1, []string{"group:googlers"}),
-			)
+			googlerLimit := genUserLimit("googlers-limit", 1, []string{"group:googlers"})
+			cg.UserLimits = append(cg.UserLimits, googlerLimit)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
@@ -384,8 +391,9 @@ func TestManager(t *testing.T) {
 			}
 
 			Convey("quota underflow", func() {
-				res, err := qm.runQuotaOp(ctx, r, "debit", -2)
+				res, userLimit, err := qm.runQuotaOp(ctx, r, "debit", -2)
 				So(err, ShouldEqual, quota.ErrQuotaApply)
+				So(userLimit, ShouldResembleProto, googlerLimit)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
 					Status:        quotapb.OpResult_ERR_UNDERFLOW,
@@ -404,8 +412,9 @@ func TestManager(t *testing.T) {
 
 			Convey("quota overflow", func() {
 				// overflow doesn't err but gets capped.
-				res, err := qm.runQuotaOp(ctx, r, "credit", 10)
+				res, userLimit, err := qm.runQuotaOp(ctx, r, "credit", 10)
 				So(err, ShouldBeNil)
+				So(userLimit, ShouldResembleProto, googlerLimit)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
 					NewBalance:    1,
@@ -424,11 +433,10 @@ func TestManager(t *testing.T) {
 		})
 
 		Convey("runQuotaOp() on policy change", func() {
-			cg.UserLimits = append(cg.UserLimits,
-				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
-				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
-				genUserLimit("partners-limit", 2, []string{"group:partners"}),
-			)
+			chromiesLimit := genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"})
+			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
+			partnerLimit := genUserLimit("partners-limit", 2, []string{"group:partners"})
+			cg.UserLimits = append(cg.UserLimits, chromiesLimit, googlerLimit, partnerLimit)
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
@@ -437,8 +445,9 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, err := qm.runQuotaOp(ctx, r, "", -1)
+			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
@@ -453,8 +462,9 @@ func TestManager(t *testing.T) {
 
 				// This is not a real scenario within CV but just checks
 				// extreme examples.
-				res, err = qm.runQuotaOp(ctx, r, "", -2)
+				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -2)
 				So(err, ShouldEqual, quota.ErrQuotaApply)
+				So(userLimit, ShouldResembleProto, partnerLimit)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 1,
@@ -469,8 +479,9 @@ func TestManager(t *testing.T) {
 					IdentityGroups: []string{"partners"},
 				})
 
-				res, err = qm.runQuotaOp(ctx, r, "", -1)
+				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
 				So(err, ShouldBeNil)
+				So(userLimit, ShouldResembleProto, partnerLimit)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					NewBalance:              0,
 					PreviousBalance:         4,
@@ -486,8 +497,9 @@ func TestManager(t *testing.T) {
 					IdentityGroups: []string{"chromies"},
 				})
 
-				res, err = qm.runQuotaOp(ctx, r, "", -1)
+				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
 				So(err, ShouldBeNil)
+				So(userLimit, ShouldResembleProto, chromiesLimit)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					NewBalance:              8,
 					PreviousBalance:         4,
@@ -505,8 +517,9 @@ func TestManager(t *testing.T) {
 
 				// This is not a real scenario within CV but just checks
 				// extreme examples.
-				res, err = qm.runQuotaOp(ctx, r, "", 2)
+				res, userLimit, err = qm.runQuotaOp(ctx, r, "", 2)
 				So(err, ShouldBeNil)
+				So(userLimit, ShouldResembleProto, chromiesLimit)
 				So(res, ShouldResembleProto, &quotapb.OpResult{
 					NewBalance:              10,
 					PreviousBalance:         4,
@@ -517,9 +530,10 @@ func TestManager(t *testing.T) {
 		})
 
 		Convey("runQuotaOp() is idempotent", func() {
+			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
 				genUserLimit("chromies-limit", 10, []string{"group:chromies", "group:chrome-infra"}),
-				genUserLimit("googlers-limit", 5, []string{"group:googlers"}),
+				googlerLimit,
 				genUserLimit("partners-limit", 10, []string{"group:partners"}),
 			)
 			prjcfgtest.Update(ctx, lProject, cfg)
@@ -530,22 +544,25 @@ func TestManager(t *testing.T) {
 				BilledTo:      makeIdentity(tEmail),
 			}
 
-			res, err := qm.runQuotaOp(ctx, r, "foo", -1)
+			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo", -1)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			res, err = qm.runQuotaOp(ctx, r, "foo", -1)
+			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo", -1)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			})
 
-			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
+			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,
@@ -553,8 +570,9 @@ func TestManager(t *testing.T) {
 				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
 			})
 
-			res, err = qm.runQuotaOp(ctx, r, "foo2", -2)
+			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			So(err, ShouldBeNil)
+			So(userLimit, ShouldResembleProto, googlerLimit)
 			So(res, ShouldResembleProto, &quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,

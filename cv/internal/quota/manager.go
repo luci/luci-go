@@ -69,12 +69,12 @@ type SrvQuota interface {
 }
 
 // DebitRunQuota debits the run quota from a given user's account.
-func (qm *Manager) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
+func (qm *Manager) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
 	return qm.runQuotaOp(ctx, r, "debit", -1)
 }
 
 // CreditRunQuota credits the run quota into a given user's account.
-func (qm *Manager) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error) {
+func (qm *Manager) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
 	return qm.runQuotaOp(ctx, r, "credit", 1)
 }
 
@@ -96,12 +96,12 @@ func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 }
 
 // runQuotaOp updates the run quota for the given run state by the given delta.
-func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delta int64) (*quotapb.OpResult, error) {
+func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delta int64) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
 	userLimit, err := findRunLimit(ctx, r)
 
 	// userLimit == nil when no run user limit is configured for this user.
 	if err != nil || userLimit == nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	policyID := &quotapb.PolicyID{
@@ -153,7 +153,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delt
 		)
 
 		// On ErrQuotaApply, OpResult.Status stores the reason for failure.
-		return opResponse.Results[0], err
+		return opResponse.Results[0], userLimit, err
 	}
 
 	metrics.Internal.QuotaOp.Add(
@@ -167,7 +167,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delt
 		"UNKNOWN_ERROR",
 	)
 
-	return nil, err
+	return nil, userLimit, err
 }
 
 func makeRetryFactory() retry.Factory {

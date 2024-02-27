@@ -37,7 +37,7 @@ const CreditRunQuotaPostActionName = "credit-run-quota"
 
 func (exe *Executor) creditQuota(ctx context.Context) (string, error) {
 	// Credit back run quota when the run ends.
-	switch quotaOp, err := exe.QM.CreditRunQuota(ctx, exe.Run); {
+	switch quotaOp, _, err := exe.QM.CreditRunQuota(ctx, exe.Run); {
 	case err == nil && quotaOp != nil:
 		logging.Debugf(ctx, "Run quota credited back to %q; new balance: %d", exe.Run.BilledTo.Email(), quotaOp.GetNewBalance())
 		// continue to pick the next pending run to start for the run creator

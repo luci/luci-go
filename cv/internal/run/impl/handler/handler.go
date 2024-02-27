@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/server/quota/quotapb"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -117,8 +118,8 @@ type RM interface {
 
 // QM manages run and tryjob quotas.
 type QM interface {
-	DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error)
-	CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, error)
+	DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error)
+	CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error)
 	RunQuotaAccountID(r *run.Run) *quotapb.AccountID
 }
 
