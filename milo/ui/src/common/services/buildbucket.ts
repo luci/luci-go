@@ -313,6 +313,7 @@ export interface BuildInfraResultdb {
 export interface BuildInfraBackend {
   readonly config: { [key: string]: unknown };
   readonly task: Task;
+  readonly hostname: string;
 }
 
 export interface Task {

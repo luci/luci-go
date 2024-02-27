@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import Link from '@mui/material/Link';
+import { JSONPath as jsonpath } from 'jsonpath-plus';
 
 import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { StringPair } from '@/common/services/common';
@@ -20,7 +21,6 @@ import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { TestMetadata } from '@/common/services/resultdb';
 import { getCodeSourceUrl } from '@/common/tools/url_utils';
 import { extractProject } from '@/common/tools/utils';
-import { extractProperty } from '@/generic_libs/tools/utils';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 
 import { useTestMetadata } from './utils';
@@ -52,7 +52,12 @@ function propertiesToDisplay(
   }
   const pairs: StringPair[] = [];
   for (const item of propertiesCfg.displayItems) {
-    const value = extractProperty(testMetadata.properties, item.path);
+    const value = jsonpath<string | string[] | undefined>({
+      json: testMetadata.properties,
+      path: `$.${item.path}@string()`,
+      wrap: false,
+      preventEval: true,
+    });
     if (value && typeof value === 'string') {
       pairs.push({ key: item.displayName, value });
     }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { JSONPath as jsonpath } from 'jsonpath-plus';
+
 /**
  * Extend URL with some helper methods.
  */
@@ -209,17 +211,15 @@ export function extractProperty(
   properties: { [key: string]: unknown },
   path: string,
 ): unknown {
-  const pathTokens = path.split('.');
-  // We trust the object to have a valid (nested) property matching the `path`.
-  // If that's not the case, the triggered error is the exact same error we want
-  // anyway.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let cur: any = properties;
-  for (const token of pathTokens) {
-    if (!cur) {
-      return null;
-    }
-    cur = cur[token];
-  }
-  return cur || null;
+  // TODO: only here to make sure json path can be a drop-in replacement for
+  // extractProperty (verified by the unit test). Remove this function in the
+  // next CL.
+  return (
+    jsonpath<unknown>({
+      json: properties,
+      path: `$.${path}`,
+      wrap: false,
+      preventEval: true,
+    }) ?? null
+  );
 }

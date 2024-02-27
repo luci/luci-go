@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Icon, Link } from '@mui/material';
+import { JSONPath as jsonpath } from 'jsonpath-plus';
 
 import {
   BUILD_STATUS_COLOR_MAP,
@@ -20,6 +21,7 @@ import {
   BUILD_STATUS_ICON_MAP,
 } from '@/common/constants/legacy';
 import { BuildInfraBackend } from '@/common/services/buildbucket';
+import { getBotUrl } from '@/swarming/tools/utils';
 
 export interface BackendRowsProps {
   readonly backend: BuildInfraBackend;
@@ -27,7 +29,21 @@ export interface BackendRowsProps {
 
 export function BackendRows({ backend }: BackendRowsProps) {
   const task = backend.task;
-  const config = backend.config;
+
+  const botId = backend.task.id.target.startsWith('swarming://')
+    ? jsonpath<string | undefined>({
+        json: task.details,
+        path: '$.bot_dimensions.id[0]@string()',
+        wrap: false,
+        preventEval: true,
+      })
+    : undefined;
+  const serviceAccount = jsonpath<string | undefined>({
+    json: backend.config,
+    path: '$.service_account@string()',
+    wrap: false,
+    preventEval: true,
+  });
 
   return (
     <>
@@ -57,10 +73,24 @@ export function BackendRows({ backend }: BackendRowsProps) {
           )}
         </td>
       </tr>
-      {typeof config['service_account'] === 'string' && (
+      {botId && (
+        <tr>
+          <td>Backend Bot:</td>
+          <td>
+            <Link
+              href={getBotUrl(backend.hostname, botId)}
+              target="_blank"
+              rel="noopenner"
+            >
+              {botId}
+            </Link>
+          </td>
+        </tr>
+      )}
+      {serviceAccount && (
         <tr>
           <td>Service Account:</td>
-          <td>{config['service_account']}</td>
+          <td>{serviceAccount}</td>
         </tr>
       )}
     </>
