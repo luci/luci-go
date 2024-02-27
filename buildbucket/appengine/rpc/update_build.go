@@ -673,7 +673,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
 	_, err := validateToken(ctx, req.Build.Id, pb.TokenBody_BUILD)
 	if err != nil {
-		return nil, err
+		return nil, appstatus.Errorf(codes.Unauthenticated, "error in update_token: %s", err)
 	}
 	logging.Infof(ctx, "Received an UpdateBuild request for build %d", req.GetBuild().GetId())
 

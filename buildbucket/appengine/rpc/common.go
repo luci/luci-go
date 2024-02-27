@@ -303,7 +303,7 @@ func validateToken(ctx context.Context, bID int64, purpose pb.TokenBody_Purpose)
 	}
 	tok, err := buildtoken.ParseToTokenBody(ctx, buildTok, bID, purpose)
 	if err != nil {
-		return nil, errBadTokenAuth
+		return nil, err
 	}
 	return tok, nil
 }

@@ -703,6 +703,12 @@ func TestUpdateBuild(t *testing.T) {
 			}},
 		}
 
+		Convey("wrong purpose token", func() {
+			tk, _ = buildtoken.GenerateToken(ctx, 1, pb.TokenBody_START_BUILD)
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
+			So(updateBuild(ctx, req), ShouldErrLike, "invalid token")
+		})
+
 		Convey("open mask, empty request", func() {
 			validMasks := []struct {
 				name string
