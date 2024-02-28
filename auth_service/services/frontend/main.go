@@ -164,8 +164,8 @@ func main() {
 		// and it's specified in
 		// https://pkg.go.dev/go.chromium.org/luci/server/auth/service#AuthService.RequestAccess
 		srv.Routes.GET("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.CheckAccess))
-		srv.Routes.POST("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Subscribe))
-		srv.Routes.DELETE("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Unsubscribe))
+		srv.Routes.POST("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Authorize))
+		srv.Routes.DELETE("/auth_service/api/v1/authdb/subscription/authorization", apiMw, adaptGrpcErr(subscription.Deauthorize))
 
 		// Legacy authdbrevision serving.
 		// TODO(cjacomet): Add smoke test for this endpoint

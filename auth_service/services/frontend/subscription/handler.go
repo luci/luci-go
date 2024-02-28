@@ -13,8 +13,9 @@
 // limitations under the License.
 
 // Package subscription contains functionality to handle AuthDB access,
-// including PubSub subscriptions to AuthDB changes, and ACLs to the
-// AuthDB in Google Storage.
+// including authorization to subscribe to the Pubsub topic for AuthDB
+// change notifications, and updating ACLs to the AuthDB in Google Cloud
+// Storage.
 package subscription
 
 import (
@@ -31,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/util/gs"
+	"go.chromium.org/luci/auth_service/internal/pubsub"
 )
 
 type gsAccess struct {
@@ -39,8 +41,9 @@ type gsAccess struct {
 }
 
 type responseJSON struct {
-	// TODO: Add PubSub topic, and PubSub authorization status.
-	GS gsAccess `json:"gs"`
+	PubsubTopic      string   `json:"topic"`
+	PubsubAuthorized bool     `json:"authorized"`
+	GS               gsAccess `json:"gs"`
 }
 
 func callerEmail(ctx context.Context) (string, error) {
@@ -52,12 +55,15 @@ func callerEmail(ctx context.Context) (string, error) {
 	return caller.Email(), nil
 }
 
-// CheckAccess queries whether the caller is authorized to access the
-// AuthDB already.
+// CheckAccess queries whether the caller is authorized to:
+// - subscribe to AuthDB change notifications from Pubsub; and
+// - read the AuthDB from Google Cloud Storage.
 //
 // Response body:
 //
 //	{
+//		'topic': <full name of Pubsub topic for AuthDB change notifications>,
+//		'authorized': <true if the caller is allowed to subscribe to it>,
 //		'gs': {
 //			'auth_db_gs_path': <same as auth_db_gs_path in SettingsCfg proto>,
 //			'authorized': <true if the caller should be able to read GS files>
@@ -71,25 +77,34 @@ func CheckAccess(ctx *router.Context) error {
 		return errors.Annotate(err, "error getting caller email").Err()
 	}
 
-	isAuthorized, err := model.IsAuthorizedReader(c, email)
+	psAuthorized, err := pubsub.IsAuthorizedSubscriber(c, email)
+	if err != nil {
+		return errors.Annotate(err, "error checking Pubsub subscription").Err()
+	}
+
+	gsAuthorized, err := model.IsAuthorizedReader(c, email)
 	if err != nil {
 		return errors.Annotate(err, "error checking authorization status").Err()
 	}
 
-	return respond(ctx, isAuthorized)
+	return respond(ctx, psAuthorized, gsAuthorized)
 }
 
-// Subscribe authorizes the caller to access the AuthDB.
+// Authorize authorizes the caller to:
+// - subscribe to AuthDB change notifications from Pubsub; and
+// - read the AuthDB from Google Cloud Storage.
 //
 // Response body:
 //
 //	{
+//		'topic': <full name of Pubsub topic for AuthDB change notifications>,
+//		'authorized': true,
 //		'gs': {
 //			'auth_db_gs_path': <same as auth_db_gs_path in SettingsCfg proto>,
 //			'authorized': true
 //		}
 //	}
-func Subscribe(ctx *router.Context) error {
+func Authorize(ctx *router.Context) error {
 	c := ctx.Request.Context()
 
 	email, err := callerEmail(c)
@@ -97,25 +112,32 @@ func Subscribe(ctx *router.Context) error {
 		return errors.Annotate(err, "error getting caller email").Err()
 	}
 
-	if err := model.AuthorizeReader(c, email); err != nil {
-		return errors.Annotate(err, "error authorizing caller").Err()
+	if err := pubsub.AuthorizeSubscriber(c, email); err != nil {
+		return errors.Annotate(err, "error granting Pubsub subscriber role").Err()
 	}
 
-	return respond(ctx, true)
+	if err := model.AuthorizeReader(c, email); err != nil {
+		return errors.Annotate(err, "error granting Google Storage read access").Err()
+	}
+
+	return respond(ctx, true, true)
 }
 
-// Unsubscribe revokes the caller's authorization to access the AuthDB,
-// if it existed.
+// Deauthorize revokes the caller's authorization to:
+// - subscribe to AuthDB change notifications from Pubsub; and
+// - read the AuthDB from Google Cloud Storage.
 //
 // Response body:
 //
 //	{
+//		'topic': <full name of Pubsub topic for AuthDB change notifications>,
+//		'authorized': false,
 //		'gs': {
 //			'auth_db_gs_path': <same as auth_db_gs_path in SettingsCfg proto>,
 //			'authorized': false
 //		}
 //	}
-func Unsubscribe(ctx *router.Context) error {
+func Deauthorize(ctx *router.Context) error {
 	c := ctx.Request.Context()
 
 	email, err := callerEmail(c)
@@ -123,20 +145,27 @@ func Unsubscribe(ctx *router.Context) error {
 		return errors.Annotate(err, "error getting caller email").Err()
 	}
 
-	if err := model.DeauthorizeReader(c, email); err != nil {
-		return errors.Annotate(err, "error deauthorizing caller").Err()
+	if err := pubsub.DeauthorizeSubscriber(c, email); err != nil {
+		return errors.Annotate(err, "error revoking Pubsub subscriber role").Err()
 	}
 
-	return respond(ctx, false)
+	if err := model.DeauthorizeReader(c, email); err != nil {
+		return errors.Annotate(err, "error revoking Google Storage read access").Err()
+	}
+
+	return respond(ctx, false, false)
 }
 
-func respond(ctx *router.Context, gsAuthorized bool) error {
+func respond(ctx *router.Context, psAuthorized, gsAuthorized bool) error {
 	gsPath, err := gs.GetPath(ctx.Request.Context())
 	if err != nil {
 		return errors.Annotate(err, "error getting GS path from configs").Err()
 	}
 
+	topic := pubsub.GetAuthDBChangeTopic(ctx.Request.Context())
 	response := responseJSON{
+		PubsubTopic:      topic,
+		PubsubAuthorized: psAuthorized,
 		GS: gsAccess{
 			AuthDBGSPath: gsPath,
 			Authorized:   gsAuthorized,
