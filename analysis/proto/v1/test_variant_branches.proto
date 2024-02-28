@@ -19,13 +19,16 @@ package luci.analysis.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/common/proto/git/commit.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
+import "go.chromium.org/luci/analysis/proto/v1/test_verdict.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 
-// Provide methods to read changepoint analysis from spanner.
+// Provide methods to read data for test variant branches including
+// results from changepoint analysis, and test verdicts.
 service TestVariantBranches {
   // Retrieves the raw state of test variant branch analysis.
   // For reading test variant branch analyses from Spanner.
@@ -38,6 +41,8 @@ service TestVariantBranches {
   // Retrieves the current state of segments of test variant branch analysis in batches.
   rpc BatchGet(BatchGetTestVariantBranchRequest) returns (
     BatchGetTestVariantBranchResponse) {};
+  // Lists commits and the test verdicts at these commits, starting from a source position.
+  rpc QuerySourcePositions(QuerySourcePositionsRequest) returns (QuerySourcePositionsResponse) {};
 }
 
 // A request message for `TestVariantBranches.Get` RPC.
@@ -315,4 +320,49 @@ message Segment {
 
   // Total number of test results/runs/verdicts in the segment.
   Counts counts = 8;
+}
+
+message QuerySourcePositionsRequest {
+  // The LUCI project.
+  string project = 1;
+  // The identifier of a test.
+  string test_id = 2;
+  // The hash of the variant.
+  string variant_hash = 3;
+  // Hash of the source branch, as 16 lowercase hexadecimal characters.
+  string ref_hash = 4;
+  // The source position where to start listing from, inclusive.
+  int64 start_source_position = 5;
+  // The maximum number of commits to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 commits will be returned.
+  // The maximum value is 1,000; values above 1,000 will be coerced to 1,000.
+  int32 page_size = 6;
+  // A page token, received from a previous `QuerySourcePositions` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QuerySourcePositions` MUST
+  // match the call that provided the page token.
+  string page_token = 7;
+}
+
+message QuerySourcePositionsResponse {
+  // Source positions in descending order, start from the commit at start_source_position.
+  repeated SourcePosition source_positions = 1;
+  // A page token for next QuerySourcePositionsRequest to fetch the next page of commits.
+  string next_page_token = 2;
+}
+
+// SourcePosition contains the commit and the test verdicts at a source position for a test variant branch.
+message SourcePosition {
+  // Source position.
+  int64 position = 1;
+  // The git commit.
+  git.Commit commit = 2;
+  // Test verdicts at this source position.
+  // Test verdicts will be ordered by `partition_time` DESC.
+  // At most 20 verdicts will be returned here.
+  // Most of time, a test variant at the same source position has less than 20 verdicts.
+  repeated luci.analysis.v1.TestVerdict verdicts = 3;
 }

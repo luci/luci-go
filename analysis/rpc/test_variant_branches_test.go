@@ -16,20 +16,30 @@ package rpc
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 	"testing"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/gitiles"
+	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/testutil"
+	"go.chromium.org/luci/analysis/internal/testverdicts"
+	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,7 +50,8 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 	Convey("TestVariantAnalysesServer", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 
-		server := NewTestVariantBranchesServer()
+		tvc := testverdicts.FakeReadClient{}
+		server := NewTestVariantBranchesServer(&tvc)
 		Convey("GetRaw", func() {
 			Convey("permission denied", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -483,6 +494,308 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 					},
 				})
 			})
+		})
+
+		Convey("QuerySourcePositions", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "project:realm",
+						Permission: rdbperms.PermListTestResults,
+					},
+					{
+						Realm:      "project:realm",
+						Permission: rdbperms.PermListTestExonerations,
+					},
+				},
+				IdentityGroups: []string{"luci-analysis-access"},
+			})
+			var1 := pbutil.Variant("key1", "val1", "key2", "val1")
+			ref := &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host",
+						Project: "project",
+						Ref:     "ref",
+					},
+				},
+			}
+			refhash := hex.EncodeToString(pbutil.SourceRefHash(ref))
+			req := &pb.QuerySourcePositionsRequest{
+				Project:             "project",
+				TestId:              "testid",
+				VariantHash:         pbutil.VariantHash(var1),
+				RefHash:             refhash,
+				StartSourcePosition: 1100,
+				PageToken:           "",
+				PageSize:            111,
+			}
+
+			Convey("unauthorised requests are rejected", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{"luci-analysis-access"},
+				})
+				res, err := server.QuerySourcePositions(ctx, req)
+				So(err, ShouldErrLike, `caller does not have permission`, `in any realm in project "project"`)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(res, ShouldBeNil)
+			})
+
+			Convey("invalid requests are rejected", func() {
+				req.PageSize = -1
+				res, err := server.QuerySourcePositions(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(res, ShouldBeNil)
+			})
+
+			bqRef := &testverdicts.Ref{
+				Gitiles: &testverdicts.Gitiles{
+					Host:    bigquery.NullString{StringVal: "chromium.googlesource.com", Valid: true},
+					Project: bigquery.NullString{StringVal: "project", Valid: true},
+					Ref:     bigquery.NullString{StringVal: "ref", Valid: true},
+				},
+			}
+			Convey("no test verdicts that is close enough to start_source_position", func() {
+				tvc.CommitsWithVerdicts = []*testverdicts.CommitWithVerdicts{
+					// Verdict at position 10990.
+					// This is the smallest position that is greater than the requested position.
+					{
+						Position:     10990, // we need 10990 - 1100 + 111 (10001) commits from gitiles.
+						CommitHash:   "commithash",
+						Ref:          bqRef,
+						TestVerdicts: []*testverdicts.TestVerdict{},
+					},
+					// Verdict at position 1002.
+					{
+						Position:     1002,
+						CommitHash:   "commithash",
+						Ref:          bqRef,
+						TestVerdicts: []*testverdicts.TestVerdict{},
+					},
+				}
+
+				res, err := server.QuerySourcePositions(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldErrLike, `cannot find source positions because test verdicts is too sparse`)
+				So(err, ShouldHaveGRPCStatus, codes.NotFound)
+				So(res, ShouldBeNil)
+			})
+
+			Convey("no test verdicts after start_source_position", func() {
+				tvc.CommitsWithVerdicts = []*testverdicts.CommitWithVerdicts{
+					// Verdict at position 1002.
+					{
+						Position:     1002,
+						CommitHash:   "commithash",
+						Ref:          bqRef,
+						TestVerdicts: []*testverdicts.TestVerdict{},
+					},
+				}
+
+				res, err := server.QuerySourcePositions(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldErrLike, `no commit at or after the requested start position`)
+				So(err, ShouldHaveGRPCStatus, codes.NotFound)
+				So(res, ShouldBeNil)
+			})
+
+			Convey("e2e", func() {
+				tvc.CommitsWithVerdicts = []*testverdicts.CommitWithVerdicts{
+					// Verdict at position 1200.
+					// This is the smallest position that is greater than the requested position.
+					// We use its commit hash to query gitiles.
+					{
+						Position:     1200,
+						CommitHash:   "commithash",
+						Ref:          bqRef,
+						TestVerdicts: []*testverdicts.TestVerdict{},
+					},
+					// Verdict at position 1002.
+					// The caller doesn't have access to this verdict, this verdict will be excluded from the response.
+					{
+						Position:   1002,
+						CommitHash: "commithash",
+						Ref:        bqRef,
+						TestVerdicts: []*testverdicts.TestVerdict{
+							{
+								TestID:        "testid",
+								VariantHash:   pbutil.VariantHash(var1),
+								RefHash:       refhash,
+								InvocationID:  "invocation-123",
+								Status:        "EXPECTED",
+								PartitionTime: time.Unix(1000, 0),
+								PassedAvgDurationUsec: bigquery.NullFloat64{
+									Float64: 0.001,
+									Valid:   true,
+								},
+								Changelists: []*testverdicts.Changelist{},
+								HasAccess:   false,
+							},
+						},
+					},
+					// Verdict at position 1001.
+					// This is within the queried range, verdict will be included in the response.
+					{
+						Position:   1001,
+						CommitHash: "commithash",
+						Ref:        bqRef,
+						TestVerdicts: []*testverdicts.TestVerdict{
+							{
+								TestID:        "testid",
+								VariantHash:   pbutil.VariantHash(var1),
+								RefHash:       refhash,
+								InvocationID:  "invocation-123",
+								Status:        "EXPECTED",
+								PartitionTime: time.Unix(1000, 0),
+								PassedAvgDurationUsec: bigquery.NullFloat64{
+									Float64: 0.001,
+									Valid:   true,
+								},
+								Changelists: []*testverdicts.Changelist{},
+								HasAccess:   true,
+							},
+						},
+					},
+				}
+				makeCommit := func(i int32) *git.Commit {
+					return &git.Commit{
+						Id:      fmt.Sprintf("id %d", i),
+						Tree:    "tree",
+						Parents: []string{},
+						Author: &git.Commit_User{
+							Name:  "userX",
+							Email: "userx@google.com",
+							Time:  timestamppb.New(time.Unix(1000, 0)),
+						},
+						Committer: &git.Commit_User{
+							Name:  "userY",
+							Email: "usery@google.com",
+							Time:  timestamppb.New(time.Unix(1100, 0)),
+						},
+						Message: fmt.Sprintf("message %d", i),
+					}
+				}
+				ctx := gitiles.UseFakeClient(ctx, makeCommit)
+
+				res, err := server.QuerySourcePositions(ctx, req)
+				So(err, ShouldBeNil)
+				cwvs := []*pb.SourcePosition{}
+				for i := req.StartSourcePosition; i > req.StartSourcePosition-int64(req.PageSize); i-- {
+					cwv := &pb.SourcePosition{
+						Commit:   makeCommit(int32(i - req.StartSourcePosition + int64(req.PageSize))),
+						Position: i,
+					}
+					// Attach verdicts.
+					if i == 1001 {
+						cwv.Verdicts = []*pb.TestVerdict{{
+							TestId:            "testid",
+							VariantHash:       pbutil.VariantHash(var1),
+							InvocationId:      "invocation-123",
+							Status:            pb.TestVerdictStatus_EXPECTED,
+							PartitionTime:     timestamppb.New(time.Unix(1000, 0)),
+							PassedAvgDuration: durationpb.New(time.Duration(1) * time.Millisecond),
+							Changelists:       []*pb.Changelist{},
+						}}
+					}
+					cwvs = append(cwvs, cwv)
+				}
+				// Query commits 1100 to 990 (111 commits). Next page will start from 989.
+				nextPageToken := pagination.Token(fmt.Sprintf("%d", 989))
+				So(res, ShouldResembleProto, &pb.QuerySourcePositionsResponse{
+					SourcePositions: cwvs,
+					NextPageToken:   nextPageToken,
+				})
+			})
+
+		})
+
+	})
+}
+
+func TestValidateQuerySourcePositionsRequest(t *testing.T) {
+	t.Parallel()
+
+	Convey("validateQuerySourcePositionsRequest", t, func() {
+		ref := &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "host",
+					Project: "project",
+					Ref:     "ref",
+				},
+			},
+		}
+		refhash := hex.EncodeToString(pbutil.SourceRefHash(ref))
+		req := &pb.QuerySourcePositionsRequest{
+			Project:             "project",
+			TestId:              "testid",
+			VariantHash:         pbutil.VariantHash(pbutil.Variant("key1", "val1", "key2", "val1")),
+			RefHash:             refhash,
+			StartSourcePosition: 110,
+			PageToken:           "",
+			PageSize:            1,
+		}
+
+		Convey("valid", func() {
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("no project", func() {
+			req.Project = ""
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldErrLike, "project: unspecified")
+		})
+
+		Convey("invalid project", func() {
+			req.Project = "project:realm"
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldErrLike, `project: must match ^[a-z0-9\-]{1,40}$`)
+		})
+
+		Convey("no test id", func() {
+			req.TestId = ""
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldErrLike, "test_id: unspecified")
+		})
+
+		Convey("invalid test id", func() {
+			req.TestId = "\xFF"
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldErrLike, "test_id: not a valid utf8 string")
+		})
+
+		Convey("invalid variant hash", func() {
+			req.VariantHash = "invalid"
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldErrLike, "variant_hash", "must match ^[0-9a-f]{16}$")
+		})
+
+		Convey("invalid ref hash", func() {
+			req.RefHash = "invalid"
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldErrLike, "ref_hash:", "must match ^[0-9a-f]{16}$")
+		})
+
+		Convey("invalid start commit position", func() {
+			req.StartSourcePosition = 0
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldErrLike, "start_source_position: must be a positive number")
+		})
+
+		Convey("no page size", func() {
+			req.PageSize = 0
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("negative page size", func() {
+			req.PageSize = -1
+			err := validateQuerySourcePositionsRequest(req)
+			So(err, ShouldErrLike, "page_size", "negative")
 		})
 	})
 }

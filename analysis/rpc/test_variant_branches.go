@@ -18,33 +18,48 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strconv"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/appstatus"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/gitiles"
+	"go.chromium.org/luci/analysis/internal/pagination"
+	"go.chromium.org/luci/analysis/internal/perms"
+	"go.chromium.org/luci/analysis/internal/testverdicts"
+	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
+type TestVerdictClient interface {
+	ReadTestVerdictsPerSourcePosition(ctx context.Context, options testverdicts.ReadTestVerdictsPerSourcePositionOptions) ([]*testverdicts.CommitWithVerdicts, error)
+}
+
 // NewTestVariantBranchesServer returns a new pb.TestVariantBranchesServer.
-func NewTestVariantBranchesServer() pb.TestVariantBranchesServer {
+func NewTestVariantBranchesServer(tvc TestVerdictClient) pb.TestVariantBranchesServer {
 	return &pb.DecoratedTestVariantBranches{
 		Prelude:  checkAllowedPrelude,
-		Service:  &testVariantBranchesServer{},
+		Service:  &testVariantBranchesServer{testVerdictClient: tvc},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
 
 // testVariantBranchesServer implements pb.TestVariantAnalysesServer.
 type testVariantBranchesServer struct {
+	testVerdictClient TestVerdictClient
 }
 
 // Get fetches Spanner for test variant analysis.
@@ -352,6 +367,189 @@ func validateBatchGetTestVariantBranchRequest(req *pb.BatchGetTestVariantBranchR
 		if _, _, _, _, err := parseTestVariantBranchName(name); err != nil {
 			return errors.Annotate(err, "name %s", name).Err()
 		}
+	}
+	return nil
+}
+
+// QuerySourcePositions returns commits and the test verdicts at these commits, starting from a source position.
+func (s *testVariantBranchesServer) QuerySourcePositions(ctx context.Context, req *pb.QuerySourcePositionsRequest) (*pb.QuerySourcePositionsResponse, error) {
+	allowedRealms, err := perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateQuerySourcePositionsRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+	pageSize := int64(pageSizeLimiter.Adjust(req.PageSize))
+	startPosition := req.StartSourcePosition
+	if req.PageToken != "" {
+		startPosition, err = parseQuerySourcePositionsPageToken(req.PageToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+	options := testverdicts.ReadTestVerdictsPerSourcePositionOptions{
+		Project:       req.Project,
+		TestID:        req.TestId,
+		VariantHash:   req.VariantHash,
+		RefHash:       req.RefHash,
+		AllowedRealms: allowedRealms,
+		// This query aggregate over source position so that there is at most one row per source position.
+		// With the following setting of PositionMustGreater and NumCommits, the largest source position in the query result must
+		// greater than startPosition unless no such commit exists.
+		PositionMustGreater: startPosition - pageSize,
+		NumCommits:          pageSize,
+	}
+	commitsWithVerdicts, err := s.testVerdictClient.ReadTestVerdictsPerSourcePosition(ctx, options)
+	if err != nil {
+		return nil, errors.Annotate(err, "read test verdicts from BigQuery").Err()
+	}
+	// Gitiles log requires us to supply a commit hash to fetch a commit log.
+	// Ideally, if we know the commit hash of the requested startPosition, we can just
+	// call gitiles with that, and page (backwards) through the commit history.
+	// However, as test verdicts are spare, we may not have the commit hash for the given startPosition.
+	// Therefore, we need to find the commit which is the closest to the startPosition
+	// but equal to or after startPosition (call it closestAfterCommit), so that we can call gitiles with that commit hash.
+	// Commits starts from startPosition will be at offset (closestAfterCommitPosition - startPosition) in the gitiles response.
+	closestAfterCommitHash, offset, exist := closestAfterCommit(startPosition, commitsWithVerdicts)
+	if !exist {
+		return nil, appstatus.Errorf(codes.NotFound, "no commit at or after the requested start position")
+	}
+
+	// We want to get (pagesize + offset) commits start from the closestAfterCommit.
+	// One gitiles log call returns at most 10000 commits.
+	// It is unlikely that (pagesize + offset) will be greater than 10000, we just throw NotFound here if that happens.
+	requiredNumCommits := pageSize + offset
+	if requiredNumCommits > 10000 {
+		return nil, appstatus.Errorf(codes.NotFound, "cannot find source positions because test verdicts is too sparse")
+	}
+	ref := commitsWithVerdicts[0].Ref
+	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String())
+	if err != nil {
+		return nil, errors.Annotate(err, "create gitiles client").Err()
+	}
+	logReq := &gitilespb.LogRequest{
+		Project:    ref.Gitiles.Project.String(),
+		Committish: closestAfterCommitHash,
+		PageSize:   int32(requiredNumCommits),
+		TreeDiff:   true,
+	}
+	logRes, err := gitilesClient.Log(ctx, logReq)
+	if err != nil {
+		return nil, errors.Annotate(err, "gitiles log").Err()
+	}
+	// The response from gitiles contains commits from closestAfterCommit.
+	// Commit at the requested start position is at offset.
+	logs := logRes.Log[offset:]
+	res := []*pb.SourcePosition{}
+	for i, commit := range logs {
+		pos := startPosition - int64(i)
+		commitWithVerdicts := commitWithVerdictsAtSourcePosition(commitsWithVerdicts, pos)
+		tvspb := []*pb.TestVerdict{}
+		if commitWithVerdicts != nil {
+			tvspb = toVerdictsProto(commitWithVerdicts.TestVerdicts)
+		}
+		cwv := &pb.SourcePosition{
+			Commit:   commit,
+			Position: pos,
+			Verdicts: tvspb,
+		}
+		res = append(res, cwv)
+	}
+	// Page token contains the source position where next page should start from.
+	nextPageToken := pagination.Token(fmt.Sprintf("%d", startPosition-pageSize))
+	return &pb.QuerySourcePositionsResponse{
+		SourcePositions: res,
+		NextPageToken:   nextPageToken,
+	}, nil
+}
+
+func toVerdictsProto(bqVerdicts []*testverdicts.TestVerdict) []*pb.TestVerdict {
+	res := make([]*pb.TestVerdict, 0, len(bqVerdicts))
+	for _, tv := range bqVerdicts {
+		if !tv.HasAccess {
+			// The caller doesn't have access to this test verdict.
+			continue
+		}
+		tvpb := &pb.TestVerdict{
+			TestId:        tv.TestID,
+			VariantHash:   tv.VariantHash,
+			InvocationId:  tv.InvocationID,
+			Status:        pb.TestVerdictStatus(pb.TestVerdictStatus_value[tv.Status]),
+			PartitionTime: timestamppb.New(tv.PartitionTime),
+			Changelists:   []*pb.Changelist{},
+		}
+		if tv.PassedAvgDurationUsec.Valid {
+			tvpb.PassedAvgDuration = durationpb.New(time.Duration(int(tv.PassedAvgDurationUsec.Float64*1000)) * time.Millisecond)
+		}
+		for _, cl := range tv.Changelists {
+			tvpb.Changelists = append(tvpb.Changelists, &pb.Changelist{
+				Host:      cl.Host.String(),
+				Change:    cl.Change.Int64,
+				Patchset:  int32(cl.Patchset.Int64),
+				OwnerKind: pb.ChangelistOwnerKind(pb.ChangelistOwnerKind_value[cl.OwnerKind.String()]),
+			})
+		}
+		res = append(res, tvpb)
+	}
+	return res
+}
+
+// commitWithVerdictsAtSourcePosition find the testverdicts.CommitWithVerdicts at a certain source position.
+// It returns nil if not found.
+func commitWithVerdictsAtSourcePosition(commits []*testverdicts.CommitWithVerdicts, sourcePosition int64) *testverdicts.CommitWithVerdicts {
+	for _, commit := range commits {
+		if sourcePosition == commit.Position {
+			return commit
+		}
+	}
+	return nil
+}
+
+// closestAfterCommit returns the commit hash belongs to the commit in rows which is closest (or equal) to commit at pos and after pos.
+// This function assumes rows are sorted by source position ASC.
+func closestAfterCommit(pos int64, rows []*testverdicts.CommitWithVerdicts) (commitHash string, offset int64, exist bool) {
+	for _, r := range rows {
+		if r.Position >= pos {
+			return r.CommitHash, r.Position - pos, true
+		}
+	}
+	return "", 0, false
+}
+
+func parseQuerySourcePositionsPageToken(pageToken string) (int64, error) {
+	tokens, err := pagination.ParseToken(pageToken)
+	if err != nil {
+		return 0, invalidArgumentError(err)
+	}
+	if len(tokens) != 1 {
+		return 0, invalidArgumentError(err)
+	}
+	pos, err := strconv.Atoi(tokens[0])
+	if err != nil {
+		return 0, invalidArgumentError(err)
+	}
+	return int64(pos), nil
+}
+
+func validateQuerySourcePositionsRequest(req *pb.QuerySourcePositionsRequest) error {
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
+	}
+	if err := ValidateVariantHash(req.VariantHash); err != nil {
+		return errors.Annotate(err, "variant_hash").Err()
+	}
+	if err := ValidateRefHash(req.RefHash); err != nil {
+		return errors.Annotate(err, "ref_hash").Err()
+	}
+	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
+		return errors.Annotate(err, "page_size").Err()
+	}
+	if req.StartSourcePosition <= 0 {
+		return errors.Reason("start_source_position: must be a positive number").Err()
 	}
 	return nil
 }

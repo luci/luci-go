@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
 	"go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/views"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/analysis/rpc"
@@ -99,6 +100,11 @@ func Main(init func(srv *luciserver.Server) error) {
 			return errors.Annotate(err, "creating changepoint client").Err()
 		}
 
+		tvc, err := testverdicts.NewReadClient(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return errors.Annotate(err, "creating test verdicts read client").Err()
+		}
+
 		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
 		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
 		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
@@ -106,7 +112,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
 		analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
 		analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
-		analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer())
+		analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc))
 		migrationpb.RegisterMonorailMigrationServer(srv, migration.NewMonorailMigrationServer())
 		analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
 

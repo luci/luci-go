@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package testverdicts handles export of test verdicts to BigQuery.
+// Package testverdicts handles read and write test verdicts to BigQuery.
 package testverdicts
 
 import (
