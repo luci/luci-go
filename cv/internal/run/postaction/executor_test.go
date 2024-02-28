@@ -22,10 +22,13 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -264,6 +267,40 @@ func TestExecutePostActionOp(t *testing.T) {
 						"- cancelled: https://example.com/c/3",
 					}, "\n"),
 				)
+			})
+		})
+
+		Convey("if FailedPrecondition", func() {
+			// fake the ACL to return FailedPrecondition always for the CL.
+			ci := gf.CI(gChange1)
+			run := makeRunWithCLs(ci)
+			fakeResponseStatus := func(_ gf.Operation, _ string) *status.Status {
+				return status.New(codes.FailedPrecondition, "error")
+			}
+			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
+				c.ACLs = fakeResponseStatus
+			})
+
+			// ensure that the execution fails and no labels are voted.
+			configPostVote("label-1", 2)
+			exe := newExecutor(ctx, run)
+			_, err := exe.Do(ctx)
+			So(err, ShouldErrLike, "FailedPrecondition")
+			So(listLabels(gChange1), ShouldResemble, map[string]int32{})
+
+			Convey("skip the post action, if the CL abandoned", func() {
+				// mark the CL as abandoned.
+				cl := &changelist.CL{ID: run.CLs[0]}
+				So(datastore.Get(ctx, cl), ShouldBeNil)
+				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_ABANDONED
+				cl.EVersion++
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+
+				// give it another try
+				_, err := exe.Do(ctx)
+				So(err, ShouldBeNil)
+				// No vote should have been performed. (It can't be, anyways)
+				So(listLabels(gChange1), ShouldResemble, map[string]int32{})
 			})
 		})
 	})

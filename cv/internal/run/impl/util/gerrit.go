@@ -138,6 +138,9 @@ func MutateGerritCL(ctx context.Context, gf gerrit.Factory, rcl *run.RunCL, req 
 		case codes.NotFound:
 			// This is known to happen on new CLs or on recently created revisions.
 			return gerrit.ErrStaleData
+		case codes.FailedPrecondition:
+			// SetReview() returns FailedPrecondition, if the CL is abandoned.
+			return err
 		default:
 			err = gerrit.UnhandledError(ctx, err, "Gerrit.SetReview")
 			return err

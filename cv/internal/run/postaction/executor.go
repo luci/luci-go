@@ -20,12 +20,16 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/quota/quotapb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -143,8 +147,13 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 					if exe.IsCancelRequested() {
 						return errOpCancel
 					}
-					return util.MutateGerritCL(ctx, exe.GFactory, rcl, req, 2*time.Minute,
+					err := util.MutateGerritCL(ctx, exe.GFactory, rcl, req, 2*time.Minute,
 						fmt.Sprintf("post-action-%s", exe.Payload.GetName()))
+					if status.Code(err) == codes.FailedPrecondition && hasCLAbandoned(ctx, rcl) {
+						logging.Infof(ctx, "CL %d is abandoned; skip post action", rcl.ID)
+						return nil
+					}
+					return err
 				}, nil)
 				return nil
 			}
@@ -192,4 +201,16 @@ func (exe *Executor) voteSummary(ctx context.Context, rcls []*run.RunCL, errs er
 		}
 	}
 	return s.String()
+}
+
+// hasCLAbandoned fetches the latest snapshot of the CL and returns whether
+// the CL is abaondoned.
+func hasCLAbandoned(ctx context.Context, rcl *run.RunCL) bool {
+	latest := &changelist.CL{ID: rcl.ID}
+	if err := datastore.Get(ctx, latest); err != nil {
+		// return false so that the callsite can return the original error
+		// from SetReview().
+		return false
+	}
+	return latest.Snapshot.GetGerrit().GetInfo().GetStatus() == gerritpb.ChangeStatus_ABANDONED
 }
