@@ -1,0 +1,49 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.notifications.tasks;
+
+option go_package = "go.chromium.org/luci/swarming/server/notifications/taskspb;taskspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/swarming/proto/api_v2/swarming.proto";
+
+
+// A Cloud task for sending PubSub notification about the task completion.
+message PubSubNofityTask {
+  // Swarming Task ID.
+  string task_id = 1;
+
+  // The pubsub topic that the notification needs to be sent.
+  string topic = 2;
+
+  // Auth Token.
+  string auth_token = 3;
+
+  // The user provided data which will be sent back to users.
+  string userdata = 4;
+
+  // TaskResultSummary tags.
+  repeated string tags = 5;
+
+  // TaskResultSummary state.
+  swarming.v2.TaskState state = 6;
+
+  // The point in time when this Cloud task was enqueued.
+  google.protobuf.Timestamp start_time = 7;
+}
+
+// A Cloud task for sending updates to Buildbucket about the task status.
+message BuildbucketNofityTask {
+  // Swarming Task ID.
+  string task_id = 1;
+
+  // TaskResultSummary state.
+  swarming.v2.TaskState state = 2;
+
+  // int timestamp in nano seconds for when the update was made.
+  int64 update_id = 3;
+}
