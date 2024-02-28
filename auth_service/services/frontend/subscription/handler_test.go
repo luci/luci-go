@@ -35,8 +35,8 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/model"
-	"go.chromium.org/luci/auth_service/impl/util/gs"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
+	"go.chromium.org/luci/auth_service/internal/gs"
 	"go.chromium.org/luci/auth_service/internal/pubsub"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth_service/impl/model"
-	"go.chromium.org/luci/auth_service/impl/util/gs"
+	"go.chromium.org/luci/auth_service/internal/gs"
 	"go.chromium.org/luci/auth_service/internal/pubsub"
 )
 

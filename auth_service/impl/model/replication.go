@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/auth_service/api/taskspb"
-	"go.chromium.org/luci/auth_service/impl/util/gs"
+	"go.chromium.org/luci/auth_service/internal/gs"
 )
 
 // EnqueueReplicationTask adds a ReplicationTask task to the cloud task
