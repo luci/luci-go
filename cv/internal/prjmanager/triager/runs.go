@@ -647,11 +647,10 @@ func (rs *runStage) resolveDepRuns(ctx context.Context, rc *runcreator.Creator) 
 
 	var ideps []int64
 	switch cg := rs.pm.ConfigGroup(info.pcl.GetConfigGroupIndexes()[0]); {
-	case !common.IsMCEDogfooder(ctx, rc.CreatedBy),
-		rc.Mode != run.Mode(run.FullRun),
-		cg.Content.GetCombineCls() != nil:
-		// The CL is cqReady. Otherwise, `rc` wouldn't be created.
-		// If the triggerer is not a dogfooder, return true to let it go.
+	case rc.Mode != run.Mode(run.FullRun), cg.Content.GetCombineCls() != nil:
+		// The CL should be cqReady. Otherwise, `rc` wouldn't be created.
+		// Unless, it's with combine_cl, this should return true to let the run
+		// be created.
 		return true, nil
 	default:
 		ideps = rs.findImmediateHardDeps(info.pcl)

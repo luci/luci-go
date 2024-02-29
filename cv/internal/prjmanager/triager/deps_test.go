@@ -26,7 +26,6 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
-	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -216,7 +215,7 @@ func TestDepsTriage(t *testing.T) {
 				},
 				{
 					Clid: 32, ConfigGroupIndexes: []int32{singIdx},
-					Triggers: fullRun(epoch.Add(2 * time.Second)), // not happy about its dep.
+					Triggers: fullRun(epoch.Add(2 * time.Second)),
 					Deps:     []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
 				},
 				{
@@ -235,61 +234,21 @@ func TestDepsTriage(t *testing.T) {
 					lastCQVoteTriggered: epoch.Add(3 * time.Second),
 				})
 			})
-			Convey("full run doesn't allow any dep by default", func() {
+			Convey("full run with open-deps", func() {
 				pcl32 := sup.PCL(32)
-				td := do(pcl32, singIdx)
-				So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-					lastCQVoteTriggered: epoch.Add(3 * time.Second),
-					invalidDeps: &changelist.CLError_InvalidDeps{
-						SingleFullDeps: pcl32.GetDeps(),
-					},
-				})
-				So(td.OK(), ShouldBeFalse)
 
-				Convey("unless allow_submit_with_open_deps is true", func() {
-					sup.cgs[singIdx].Content.Verifiers = &cfgpb.Verifiers{
-						GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
-							AllowSubmitWithOpenDeps: true,
-						},
-					}
+				Convey("allowed if the deps are hard", func() {
+					td := do(pcl32, singIdx)
+					So(td.OK(), ShouldBeTrue)
+				})
+
+				Convey("not allowed if the deps are soft", func() {
+					// Soft dependency (ie via Cq-Depend) won't be submitted as part a
+					// single Submit gerrit RPC, so it can't be allowed.
+					pcl32.GetDeps()[0].Kind = changelist.DepKind_SOFT
 					td := do(pcl32, singIdx)
 					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 						lastCQVoteTriggered: epoch.Add(3 * time.Second),
-					})
-					So(td.OK(), ShouldBeTrue)
-
-					Convey("but not if dep is soft", func() {
-						// Soft dependency (ie via Cq-Depend) won't be submitted as part a
-						// single Submit gerrit RPC, so it can't be allowed.
-						pcl32.GetDeps()[0].Kind = changelist.DepKind_SOFT
-						td := do(pcl32, singIdx)
-						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-							lastCQVoteTriggered: epoch.Add(3 * time.Second),
-							invalidDeps: &changelist.CLError_InvalidDeps{
-								SingleFullDeps: pcl32.GetDeps(),
-							},
-						})
-						So(td.OK(), ShouldBeFalse)
-					})
-				})
-
-				Convey("unless the user is an MCE dogfooder and deps are HARD", func() {
-					// TODO(crbug/1470341) remove this test if chained cq votes
-					// is enabled by default.
-					pcl31 := sup.PCL(31)
-					pcl31.Triggers = nil
-					pcl32 := sup.PCL(32)
-					pcl32.Triggers.CqVoteTrigger.Email = "test@example.org"
-					ct.AddMember("test@example.org", common.MCEDogfooderGroup)
-
-					// triage with HARD dep. It should be good.
-					td := do(pcl32, singIdx)
-					So(td.OK(), ShouldBeTrue)
-					// triage with a SOFT dep. This should fail, as chained cq
-					// votes only support HARD deps.
-					pcl32.GetDeps()[0].Kind = changelist.DepKind_SOFT
-					td = do(pcl32, singIdx)
-					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
 						invalidDeps: &changelist.CLError_InvalidDeps{
 							SingleFullDeps: pcl32.GetDeps(),
 						},
@@ -301,7 +260,6 @@ func TestDepsTriage(t *testing.T) {
 
 		Convey("Full run with chained CQ votes", func() {
 			voter := "test@example.org"
-			ct.AddMember(voter, common.MCEDogfooderGroup)
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid: 31, ConfigGroupIndexes: []int32{singIdx},

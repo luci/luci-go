@@ -200,7 +200,6 @@ func TestTriage(t *testing.T) {
 
 		Convey("Chained CQ votes", func() {
 			now := ct.Clock.Now()
-			ct.AddMember(voter.GetEmail(), common.MCEDogfooderGroup)
 			depKind = changelist.DepKind_HARD
 			const cl31, cl32, cl33, cl34 = 31, 32, 33, 34
 
