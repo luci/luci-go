@@ -245,6 +245,22 @@ message ExecutionState {
     // All the critical Tryjobs in the execution state succeeded.
     SUCCEEDED = 3;
   }
+  // Failures describe why the Tryjobs execution fails.
+  message Failures {
+    // LaunchFailure describes why a Tryjob fails to launch. For example, CV
+    // doesn't have the permission to launch the Tryjob.
+    message LaunchFailure {
+      Definition definition = 1;
+      string reason = 2;
+    }
+    // UnsuccessfulResult contains the ID of the tryjob that ends with
+    // non-successful result status (i.e. Build failure).
+    message UnsuccessfulResult {
+      int64 tryjob_id = 1;
+    }
+    repeated LaunchFailure launch_failures = 1;
+    repeated UnsuccessfulResult unsuccessful_results = 2;
+  }
   // Executions track the execution state of all required Tryjobs.
   //
   // It is one to one mapped to `requirement.definitions`
@@ -262,7 +278,11 @@ message ExecutionState {
   string failure_reason = 4 [deprecated=true];
   // FailureReasonTmpl provides a user-readable explanation of the
   // failure, with template support.
-  string failure_reason_tmpl = 7;
+  string failure_reason_tmpl = 7 [deprecated=true];
+  // Failures describe why the Tryjob execution has failed.
+  //
+  // Must set if status == FAILED.
+  Failures failures = 8;
   // The time when the executions end with a terminal status
   google.protobuf.Timestamp end_time = 6;
 }

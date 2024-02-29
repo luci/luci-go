@@ -314,6 +314,14 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		if ok := e.canRetryAll(ctx, execState, failedIndices); !ok {
 			execState.Status = tryjob.ExecutionState_FAILED
 			execState.FailureReasonTmpl = composeReason(failedTryjobs)
+			if execState.Failures == nil {
+				execState.Failures = &tryjob.ExecutionState_Failures{}
+			}
+			for _, tj := range failedTryjobs {
+				execState.Failures.UnsuccessfulResults = append(execState.Failures.UnsuccessfulResults, &tryjob.ExecutionState_Failures_UnsuccessfulResult{
+					TryjobId: int64(tj.ID),
+				})
+			}
 			return execState, nil, nil
 		}
 		for _, idx := range failedIndices {
@@ -479,6 +487,15 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 		if len(criticalLaunchFailures) > 0 {
 			execState.Status = tryjob.ExecutionState_FAILED
 			execState.FailureReasonTmpl = composeLaunchFailureReason(criticalLaunchFailures)
+			if execState.Failures == nil {
+				execState.Failures = &tryjob.ExecutionState_Failures{}
+			}
+			for def, reason := range criticalLaunchFailures {
+				execState.Failures.LaunchFailures = append(execState.Failures.LaunchFailures, &tryjob.ExecutionState_Failures_LaunchFailure{
+					Definition: def,
+					Reason:     reason,
+				})
+			}
 			return execState, nil
 		}
 	}

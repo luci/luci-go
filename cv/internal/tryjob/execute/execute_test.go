@@ -242,7 +242,11 @@ func TestPrepExecutionPlan(t *testing.T) {
 							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY),
 						})
 						So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
-						So(execState.FailureReasonTmpl, ShouldContainSubstring, "Tryjob [test/bucket/foo](https://buildbucket.example.com/build/9223372036854775706) has failed")
+						So(execState.Failures, ShouldResembleProto, &tryjob.ExecutionState_Failures{
+							UnsuccessfulResults: []*tryjob.ExecutionState_Failures_UnsuccessfulResult{
+								{TryjobId: tjID},
+							},
+						})
 						So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
 							{
 								Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -357,7 +361,11 @@ func TestPrepExecutionPlan(t *testing.T) {
 					plan := prepPlan(execState, 101, 301)
 					So(plan.isEmpty(), ShouldBeTrue)
 					So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
-					So(execState.FailureReasonTmpl, ShouldContainSubstring, "Tryjob [test/bucket/builder1](https://buildbucket.example.com/build/9223372036854775706) has failed")
+					So(execState.Failures, ShouldResembleProto, &tryjob.ExecutionState_Failures{
+						UnsuccessfulResults: []*tryjob.ExecutionState_Failures_UnsuccessfulResult{
+							{TryjobId: 101},
+						},
+					})
 				})
 				Convey("Can retry multiple", func() {
 					ensureTryjob(ctx, 101, builder1Def, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
@@ -717,7 +725,14 @@ func TestExecutePlan(t *testing.T) {
 				So(attempt.GetExternalId(), ShouldBeEmpty)
 				So(attempt.GetStatus(), ShouldEqual, tryjob.Status_UNTRIGGERED)
 				So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
-				So(execState.FailureReasonTmpl, ShouldContainSubstring, "Failed to launch tryjob")
+				So(execState.Failures, ShouldResembleProto, &tryjob.ExecutionState_Failures{
+					LaunchFailures: []*tryjob.ExecutionState_Failures_LaunchFailure{
+						{
+							Definition: def,
+							Reason:     "received NotFound from buildbucket. message: builder another_proj/some_bucket/some_builder not found",
+						},
+					},
+				})
 				So(executor.stagedMetricReportFns, ShouldBeEmpty)
 			})
 		})

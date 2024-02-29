@@ -716,6 +716,35 @@ func (m *ExecutionState) validate(all bool) error {
 	// no validation rules for FailureReasonTmpl
 
 	if all {
+		switch v := interface{}(m.GetFailures()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ExecutionStateValidationError{
+					field:  "Failures",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ExecutionStateValidationError{
+					field:  "Failures",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFailures()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ExecutionStateValidationError{
+				field:  "Failures",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
 		switch v := interface{}(m.GetEndTime()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
@@ -2058,6 +2087,176 @@ var _ interface {
 	ErrorName() string
 } = ExecutionState_ExecutionValidationError{}
 
+// Validate checks the field values on ExecutionState_Failures with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ExecutionState_Failures) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ExecutionState_Failures with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ExecutionState_FailuresMultiError, or nil if none found.
+func (m *ExecutionState_Failures) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ExecutionState_Failures) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetLaunchFailures() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ExecutionState_FailuresValidationError{
+						field:  fmt.Sprintf("LaunchFailures[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ExecutionState_FailuresValidationError{
+						field:  fmt.Sprintf("LaunchFailures[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ExecutionState_FailuresValidationError{
+					field:  fmt.Sprintf("LaunchFailures[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetUnsuccessfulResults() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ExecutionState_FailuresValidationError{
+						field:  fmt.Sprintf("UnsuccessfulResults[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ExecutionState_FailuresValidationError{
+						field:  fmt.Sprintf("UnsuccessfulResults[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ExecutionState_FailuresValidationError{
+					field:  fmt.Sprintf("UnsuccessfulResults[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ExecutionState_FailuresMultiError(errors)
+	}
+
+	return nil
+}
+
+// ExecutionState_FailuresMultiError is an error wrapping multiple validation
+// errors returned by ExecutionState_Failures.ValidateAll() if the designated
+// constraints aren't met.
+type ExecutionState_FailuresMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ExecutionState_FailuresMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ExecutionState_FailuresMultiError) AllErrors() []error { return m }
+
+// ExecutionState_FailuresValidationError is the validation error returned by
+// ExecutionState_Failures.Validate if the designated constraints aren't met.
+type ExecutionState_FailuresValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ExecutionState_FailuresValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ExecutionState_FailuresValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ExecutionState_FailuresValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ExecutionState_FailuresValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ExecutionState_FailuresValidationError) ErrorName() string {
+	return "ExecutionState_FailuresValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ExecutionState_FailuresValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sExecutionState_Failures.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ExecutionState_FailuresValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ExecutionState_FailuresValidationError{}
+
 // Validate checks the field values on ExecutionState_Execution_Attempt with
 // the rules defined in the proto definition for this message. If any rules
 // are violated, the first error encountered is returned, or nil if there are
@@ -2199,6 +2398,250 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ExecutionState_Execution_AttemptValidationError{}
+
+// Validate checks the field values on ExecutionState_Failures_LaunchFailure
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *ExecutionState_Failures_LaunchFailure) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ExecutionState_Failures_LaunchFailure
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// ExecutionState_Failures_LaunchFailureMultiError, or nil if none found.
+func (m *ExecutionState_Failures_LaunchFailure) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ExecutionState_Failures_LaunchFailure) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetDefinition()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ExecutionState_Failures_LaunchFailureValidationError{
+					field:  "Definition",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ExecutionState_Failures_LaunchFailureValidationError{
+					field:  "Definition",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDefinition()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ExecutionState_Failures_LaunchFailureValidationError{
+				field:  "Definition",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Reason
+
+	if len(errors) > 0 {
+		return ExecutionState_Failures_LaunchFailureMultiError(errors)
+	}
+
+	return nil
+}
+
+// ExecutionState_Failures_LaunchFailureMultiError is an error wrapping
+// multiple validation errors returned by
+// ExecutionState_Failures_LaunchFailure.ValidateAll() if the designated
+// constraints aren't met.
+type ExecutionState_Failures_LaunchFailureMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ExecutionState_Failures_LaunchFailureMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ExecutionState_Failures_LaunchFailureMultiError) AllErrors() []error { return m }
+
+// ExecutionState_Failures_LaunchFailureValidationError is the validation error
+// returned by ExecutionState_Failures_LaunchFailure.Validate if the
+// designated constraints aren't met.
+type ExecutionState_Failures_LaunchFailureValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ExecutionState_Failures_LaunchFailureValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ExecutionState_Failures_LaunchFailureValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ExecutionState_Failures_LaunchFailureValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ExecutionState_Failures_LaunchFailureValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ExecutionState_Failures_LaunchFailureValidationError) ErrorName() string {
+	return "ExecutionState_Failures_LaunchFailureValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ExecutionState_Failures_LaunchFailureValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sExecutionState_Failures_LaunchFailure.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ExecutionState_Failures_LaunchFailureValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ExecutionState_Failures_LaunchFailureValidationError{}
+
+// Validate checks the field values on
+// ExecutionState_Failures_UnsuccessfulResult with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ExecutionState_Failures_UnsuccessfulResult) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// ExecutionState_Failures_UnsuccessfulResult with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in
+// ExecutionState_Failures_UnsuccessfulResultMultiError, or nil if none found.
+func (m *ExecutionState_Failures_UnsuccessfulResult) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ExecutionState_Failures_UnsuccessfulResult) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for TryjobId
+
+	if len(errors) > 0 {
+		return ExecutionState_Failures_UnsuccessfulResultMultiError(errors)
+	}
+
+	return nil
+}
+
+// ExecutionState_Failures_UnsuccessfulResultMultiError is an error wrapping
+// multiple validation errors returned by
+// ExecutionState_Failures_UnsuccessfulResult.ValidateAll() if the designated
+// constraints aren't met.
+type ExecutionState_Failures_UnsuccessfulResultMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ExecutionState_Failures_UnsuccessfulResultMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ExecutionState_Failures_UnsuccessfulResultMultiError) AllErrors() []error { return m }
+
+// ExecutionState_Failures_UnsuccessfulResultValidationError is the validation
+// error returned by ExecutionState_Failures_UnsuccessfulResult.Validate if
+// the designated constraints aren't met.
+type ExecutionState_Failures_UnsuccessfulResultValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ExecutionState_Failures_UnsuccessfulResultValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ExecutionState_Failures_UnsuccessfulResultValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ExecutionState_Failures_UnsuccessfulResultValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ExecutionState_Failures_UnsuccessfulResultValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ExecutionState_Failures_UnsuccessfulResultValidationError) ErrorName() string {
+	return "ExecutionState_Failures_UnsuccessfulResultValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ExecutionState_Failures_UnsuccessfulResultValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sExecutionState_Failures_UnsuccessfulResult.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ExecutionState_Failures_UnsuccessfulResultValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ExecutionState_Failures_UnsuccessfulResultValidationError{}
 
 // Validate checks the field values on ExecutionLogEntry_RequirementChanged
 // with the rules defined in the proto definition for this message. If any
