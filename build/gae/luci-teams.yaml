@@ -1,0 +1,9 @@
+name: luci-go/luci-teams
+extends: ../gae.yaml
+
+inputsdir: ../../teams
+
+build:
+  - go_gae_bundle: ${inputsdir}/app.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/teams

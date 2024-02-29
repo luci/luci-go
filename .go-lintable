@@ -67,6 +67,7 @@ paths =
     server
     standalone
     swarming
+    teams
     tokenserver
     tree_status
     vpython
