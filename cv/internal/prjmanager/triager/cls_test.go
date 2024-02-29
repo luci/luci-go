@@ -27,6 +27,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -437,9 +438,7 @@ func TestCLsTriage(t *testing.T) {
 							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_InvalidDeps_{
 									InvalidDeps: &changelist.CLError_InvalidDeps{
-										SingleFullDeps: []*changelist.Dep{
-											sup.PCL(3).GetDeps()[0],
-										},
+										SingleFullDeps: sup.PCL(3).GetDeps(),
 									},
 								},
 							},
@@ -452,12 +451,49 @@ func TestCLsTriage(t *testing.T) {
 						deps: &triagedDeps{
 							lastCQVoteTriggered: epoch,
 							invalidDeps: &changelist.CLError_InvalidDeps{
-								SingleFullDeps: []*changelist.Dep{
-									sup.PCL(3).GetDeps()[0],
+								SingleFullDeps: sup.PCL(3).GetDeps(),
+							},
+						},
+					},
+				})
+			})
+
+			Convey("CL1 submitted but still with Run, CL2 CQ+1 is OK, CL3 CQ+2 is purged", func() {
+				sup.PCL(1).Triggers = nil
+				sup.PCL(1).Submitted = true
+				// PCL(2) is still not submitted.
+				sup.PCL(3).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+				cls := do(&prjpb.Component{
+					Clids: []int64{1, 2, 3},
+					Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.FullRun)}},
+				})
+				So(cls[2].cqReady, ShouldBeTrue)
+				So(cls[2].deps, cvtesting.SafeShouldResemble, &triagedDeps{
+					submitted: []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_HARD}},
+				})
+				So(cls[3], shouldResembleTriagedCL, &clInfo{
+					pcl: sup.PCL(3),
+					triagedCL: triagedCL{
+						cqReady: false,
+						purgeReasons: []*prjpb.PurgeReason{{
+							ClError: &changelist.CLError{
+								Kind: &changelist.CLError_InvalidDeps_{
+									InvalidDeps: &changelist.CLError_InvalidDeps{
+										SingleFullDeps: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
+									},
 								},
 							},
-							needToTrigger: []*changelist.Dep{
-								{Clid: 2, Kind: changelist.DepKind_HARD},
+							ApplyTo: &prjpb.PurgeReason_Triggers{
+								Triggers: &run.Triggers{
+									CqVoteTrigger: fullRun(epoch),
+								},
+							},
+						}},
+						deps: &triagedDeps{
+							lastCQVoteTriggered: epoch.UTC(),
+							submitted:           []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
+							invalidDeps: &changelist.CLError_InvalidDeps{
+								SingleFullDeps: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
 							},
 						},
 					},
@@ -615,6 +651,7 @@ func TestCLsTriage(t *testing.T) {
 				return &changelist.Dep{Clid: clid, Kind: changelist.DepKind_HARD}
 			}
 			voter := "test@example.org"
+			ct.AddMember(voter, common.MCEDogfooderGroup)
 			sup.pb.Pcls = []*prjpb.PCL{
 				newCL(clid1),
 				newCL(clid2, Dep(clid1)),

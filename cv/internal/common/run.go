@@ -349,6 +349,22 @@ func MakeRunIDs(ids ...string) RunIDs {
 	return ret
 }
 
+// MCEDogfooderGroup is a CrIA group who signed up for dogfooding MCE.
+const MCEDogfooderGroup = "luci-cv-mce-dogfooders"
+
+// IsMCEDogfooder returns true if the user is an MCE dogfooder.
+//
+// TODO(ddoman): remove this function, once MCE dogfood is done.
+func IsMCEDogfooder(ctx context.Context, id identity.Identity) bool {
+	// if it fails to retrieve the authDB, then log the error and return false.
+	// this function will be removed, anyways.
+	ret, err := auth.GetState(ctx).DB().IsMember(ctx, id, []string{MCEDogfooderGroup})
+	if err != nil {
+		logging.Errorf(ctx, "IsMCEDogfooder: auth.IsMember: %s", err)
+	}
+	return ret
+}
+
 // InstantTriggerDogfooderGroup is the CrIA group who signed up for dogfooding
 // cros instant trigger.
 const InstantTriggerDogfooderGroup = "luci-cv-instant-trigger-dogfooders"

@@ -20,8 +20,12 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/logging"
+
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -195,32 +199,36 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 }
 
 func (t *triagedDeps) categorizeSingle(ctx context.Context, tr, dtr *run.Trigger, dep *changelist.Dep, cg *cfgpb.ConfigGroup) {
-	// TODO(yiwzhang) - remove ctx if instant trigger is launched and
-	// ctx is not used.
-
+	// TODO(crbug/1470341) once the dogfood process is done,
+	// enable chained cq votes by default, and remove all the unnecessary
+	// param "ctx".
+	var isMCEDogfooder bool
+	switch triggerer, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, tr.Email)); {
+	case err != nil:
+		// Log the error w/o handling it. Chained CQ votes will be turned on
+		// by default.
+		logging.Errorf(ctx, "categorizeSingle: MakeIdentity: %s", err)
+	default:
+		isMCEDogfooder = common.IsMCEDogfooder(ctx, triggerer)
+	}
 	// dependent is guaranteed non-nil.
 	switch mode := run.Mode(tr.GetMode()); {
-	case mode != run.FullRun:
-		// nothing to do
-	case dep.GetKind() != changelist.DepKind_HARD:
-		// If it's a soft dep, ensure that the dep is valid.
-		t.ensureInvalidDeps()
-		t.invalidDeps.SingleFullDeps = append(t.invalidDeps.SingleFullDeps, dep)
-
-	// The below are the cases where FullRun is triggered with HARD deps.
-	case cg.GetVerifiers().GetGerritCqAbility().GetAllowSubmitWithOpenDeps() && dep.GetKind() == changelist.DepKind_HARD:
-		// If configured, allow CV to submit the entire stack (HARD deps
-		// only) of changes.
-		return
-	default:
-		// Allow a FullRun with HARD-deps.
-		// However, if the deps don't have the same Trigger (CQ+2), put them
-		// into needToTrigger, which results in the Run creation to be
-		// postponed.
+	case mode == run.FullRun && isMCEDogfooder && dep.GetKind() == changelist.DepKind_HARD:
+		// If a dep has no or different (prob CQ+1) CQ vote, then schedule
+		// a trigger for CQ+2 on the dep, and postpone a run creation for
+		// this CL.
 		if tr.GetMode() != dtr.GetMode() {
 			t.needToTrigger = append(t.needToTrigger, dep)
 			return
 		}
+	case mode == run.FullRun:
+		if cg.GetVerifiers().GetGerritCqAbility().GetAllowSubmitWithOpenDeps() && dep.GetKind() == changelist.DepKind_HARD {
+			// If configured, allow CV to submit the entire stack (HARD deps
+			// only) of changes.
+			return
+		}
+		t.ensureInvalidDeps()
+		t.invalidDeps.SingleFullDeps = append(t.invalidDeps.SingleFullDeps, dep)
 	}
 }
 
