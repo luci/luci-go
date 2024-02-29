@@ -320,19 +320,26 @@ def _validate_run_limits(attr, val, *, default = None, required = False):
     """Validates that `val` was constructed via cq.run_limits(...)."""
     return validate.struct(attr, val, _run_limits_ctor, default = default, required = required)
 
-def _run_limits(max_active = None):
+def _run_limits(max_active = None, reach_limit_msg = None):
     """Constructs Run limits.
 
     All limit values must be > 0, or None if no limit.
 
     Args:
       max_active: Max number of ongoing Runs that there can be at any moment.
+      reach_limit_msg: If set, the value is appended to the message posted to Gerrit when a user hits their run limit.
     """
     return _run_limits_ctor(
         max_active = validate.int(
             "max_active",
             max_active,
             min = 1,
+            default = None,
+            required = False,
+        ),
+        reach_limit_msg = validate.string(
+            "reach_limit_msg",
+            reach_limit_msg,
             default = None,
             required = False,
         ),

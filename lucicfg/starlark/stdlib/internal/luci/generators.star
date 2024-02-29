@@ -1376,6 +1376,7 @@ def _cq_user_limit_run(limits):
         max_active = _cq_user_limit_limit(
             limits.max_active if limits != None else None,
         ),
+        reach_limit_msg = limits.reach_limit_msg if limits != None else None,
     )
 
 def _cq_user_limit_limit(limit):

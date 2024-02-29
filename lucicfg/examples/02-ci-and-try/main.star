@@ -99,7 +99,7 @@ luci.cq_group(
             name = "user_limits_for_foo_and_bar",
             users = ["foo@example.com"],
             groups = ["bar"],
-            run = cq.run_limits(max_active = 60),
+            run = cq.run_limits(max_active = 60, reach_limit_msg = "foobar"),
         ),
         cq.user_limit(
             name = "user_limits_for_committers",

@@ -3697,7 +3697,7 @@ find how user_limit(s) are used in cq_group(...).
 ### cq.run_limits {#cq.run-limits}
 
 ```python
-cq.run_limits(max_active = None)
+cq.run_limits(max_active = None, reach_limit_msg = None)
 ```
 
 
@@ -3709,6 +3709,7 @@ All limit values must be > 0, or None if no limit.
 #### Arguments {#cq.run-limits-args}
 
 * **max_active**: Max number of ongoing Runs that there can be at any moment.
+* **reach_limit_msg**: If set, the value is appended to the message posted to Gerrit when a user hits their run limit.
 
 
 
