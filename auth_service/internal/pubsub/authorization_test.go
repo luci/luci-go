@@ -21,6 +21,10 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+
+	"go.chromium.org/luci/auth_service/impl"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -132,6 +136,54 @@ func TestDeuthorizeSubscriber(t *testing.T) {
 			)
 
 			So(DeauthorizeSubscriber(ctx, "somebody@example.com"), ShouldBeNil)
+		})
+	})
+}
+
+func TestRevokeStaleAuthorization(t *testing.T) {
+	t.Parallel()
+
+	Convey("RevokeStaleAuthorization works", t, func() {
+		// Set up mock Pubsub client
+		ctl := gomock.NewController(t)
+		mockClient := NewMockedClient(context.Background(), ctl)
+		ctx := mockClient.Ctx
+
+		policy := StubPolicy("old.trusted@example.com")
+
+		Convey("revokes if not trusted", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockMembership("user:someone@example.com", impl.TrustedServicesGroup),
+				),
+			})
+
+			// Define expected client calls.
+			gomock.InOrder(
+				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
+				mockClient.Client.EXPECT().SetIAMPolicy(gomock.Any(), gomock.Any()).Times(1),
+				mockClient.Client.EXPECT().Close().Times(1),
+			)
+
+			So(RevokeStaleAuthorization(ctx), ShouldBeNil)
+		})
+
+		Convey("skips policy update if no changes required", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockMembership("user:old.trusted@example.com", impl.TrustedServicesGroup),
+				),
+			})
+
+			// Define expected client calls.
+			gomock.InOrder(
+				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
+				mockClient.Client.EXPECT().Close().Times(1),
+			)
+
+			So(RevokeStaleAuthorization(ctx), ShouldBeNil)
 		})
 	})
 }
