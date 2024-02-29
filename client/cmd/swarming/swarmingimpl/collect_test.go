@@ -17,6 +17,7 @@ package swarmingimpl
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -170,7 +171,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-			So(stdout, ShouldEqual, `{
+			So(sortJSON(stdout), ShouldEqual, `{
  "a0": {
   "output": "Output of a0",
   "outputs": [
@@ -239,7 +240,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-			So(stdout, ShouldEqual, `{
+			So(sortJSON(stdout), ShouldEqual, `{
  "a0": {
   "output": "Output of a0",
   "results": {
@@ -271,7 +272,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-			So(stdout, ShouldEqual, `{
+			So(sortJSON(stdout), ShouldEqual, `{
  "a0": {
   "error": "fetching console output of a0: boom",
   "results": {
@@ -301,7 +302,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-			So(stdout, ShouldEqual, `{
+			So(sortJSON(stdout), ShouldEqual, `{
  "a0": {
   "error": "fetching isolated output of a0: boom",
   "output": "Output of a0",
@@ -337,7 +338,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-			So(stdout, ShouldEqual, `{
+			So(sortJSON(stdout), ShouldEqual, `{
  "a0": {
   "error": "rpc_timeout",
   "results": {
@@ -371,7 +372,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-			So(stdout, ShouldEqual, `{
+			So(sortJSON(stdout), ShouldEqual, `{
  "a0": {
   "results": {
    "task_id": "a0",
@@ -412,7 +413,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-			So(stdout, ShouldEqual, `{
+			So(sortJSON(stdout), ShouldEqual, `{
  "a0": {
   "results": {
    "task_id": "a0",
@@ -441,10 +442,6 @@ func TestCollect(t *testing.T) {
 
 func TestCollectSummarizeResults(t *testing.T) {
 	t.Parallel()
-
-	runner := &collectImpl{
-		taskOutput: taskOutputAll,
-	}
 
 	Convey(`Generates json.`, t, func() {
 		result1 := &swarmingv2.TaskResultResponse{
@@ -532,31 +529,35 @@ func TestCollectSummarizeResults(t *testing.T) {
 			State:            swarmingv2.TaskState_RUNNING,
 		}
 
-		results := map[string]taskResult{
-			"task1": {
+		emitted := passThroughEmitter(func(sink *output.Sink) summaryEmitter {
+			return &defaultSummaryEmitter{
+				sink:           sink,
+				populateStdout: true,
+			}
+		}, []*taskResult{
+			{
 				taskID: "task1",
 				result: result1,
 				output: "Output",
 			},
-			"task2": {
+			{
 				taskID: "task2",
 				result: result2,
 				output: "Output",
 			},
-			"task3": {
+			{
 				taskID: "task3",
 				result: result3,
 				output: "Output",
 			},
-			"task4": {
+			{
 				taskID: "task4",
 				result: result4,
 				output: "Output",
 			},
-		}
-		summary, err := runner.summarizeResults(results)
-		So(err, ShouldBeNil)
-		expected := `{
+		})
+
+		So(emitted, ShouldEqual, `{
  "task1": {
   "output": "Output",
   "results": {
@@ -652,12 +653,7 @@ func TestCollectSummarizeResults(t *testing.T) {
   }
  }
 }
-`
-		var buf bytes.Buffer
-		sink := output.NewSink(&buf)
-		So(output.Map(sink, summary), ShouldBeNil)
-		So(sink.Finalize(), ShouldBeNil)
-		So(buf.String(), ShouldEqual, expected)
+`)
 	})
 }
 
@@ -665,13 +661,16 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Simple json.`, t, func() {
-		taskIDs := []string{"failed1", "finished", "failed2"}
-
-		results := map[string]taskResult{
-			"failed1": {
-				err: errors.New("boom"),
-			},
-			"finished": {
+		emitted := passThroughEmitter(func(sink *output.Sink) summaryEmitter {
+			return &legacySummaryEmitter{
+				sink:           sink,
+				populateStdout: true,
+				taskIDs:        []string{"failed1", "finished", "failed2"},
+				resultByID:     map[string]*taskResult{},
+			}
+		}, []*taskResult{
+			{
+				taskID: "finished",
 				result: &swarmingv2.TaskResultResponse{
 					State:    swarmingv2.TaskState_COMPLETED,
 					Duration: 1,
@@ -679,19 +678,17 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 				},
 				output: "Output",
 			},
-			"failed2": {
-				err: errors.New("boom"),
+			{
+				taskID: "failed1",
+				err:    errors.New("boom"),
 			},
-		}
+			{
+				taskID: "failed2",
+				err:    errors.New("boom"),
+			},
+		})
 
-		summary, err := summarizeResultsPython(taskIDs, results)
-		So(err, ShouldBeNil)
-
-		var buf bytes.Buffer
-		sink := output.NewSink(&buf)
-		So(output.JSON(sink, summary), ShouldBeNil)
-		So(sink.Finalize(), ShouldBeNil)
-		So(buf.String(), ShouldEqual, `{
+		So(emitted, ShouldEqual, `{
  "shards": [
   null,
   {
@@ -704,4 +701,28 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 }
 `)
 	})
+}
+
+func sortJSON(s string) string {
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(s), &top); err != nil {
+		panic(err)
+	}
+	blob, err := json.MarshalIndent(top, "", " ")
+	if err != nil {
+		panic(err)
+	}
+	return string(blob) + "\n"
+}
+
+func passThroughEmitter(emitter func(sink *output.Sink) summaryEmitter, results []*taskResult) string {
+	var buf bytes.Buffer
+	sink := output.NewSink(&buf)
+	em := emitter(sink)
+	for _, res := range results {
+		em.emit(res)
+	}
+	So(em.finish(), ShouldBeNil)
+	So(sink.Finalize(), ShouldBeNil)
+	return buf.String()
 }

@@ -377,63 +377,6 @@ func prepareOutputDir(outputDir, taskID string) (string, error) {
 	return dir, nil
 }
 
-// summarizeResultsPython generates a summary compatible with python's client.
-func summarizeResultsPython(taskIDs []string, results map[string]taskResult) (any, error) {
-	shards := make([]map[string]any, 0, len(results))
-
-	for _, taskID := range taskIDs {
-		result := results[taskID]
-		if result.result == nil {
-			// This means there was an error fetching the task. Note that python
-			// results format has no way to communicate errors. We just write `null`
-			// into the corresponding slot to indicate the task is not ready.
-			shards = append(shards, nil)
-			continue
-		}
-
-		// Convert TaskResultResponse proto to a free-form map[string]any to inject
-		// `output` as an extra field not present in the original proto.
-		buf, err := (protojson.MarshalOptions{UseProtoNames: true}).Marshal(result.result)
-		if err != nil {
-			return nil, err
-		}
-		var jsonResult map[string]any
-		if err := json.Unmarshal(buf, &jsonResult); err != nil {
-			return nil, err
-		}
-		jsonResult["output"] = result.output
-
-		// Report the completed task result.
-		shards = append(shards, jsonResult)
-	}
-
-	return map[string]any{"shards": shards}, nil
-}
-
-// summarizeResults generates a summary of the task results.
-func (cmd *collectImpl) summarizeResults(results map[string]taskResult) (map[string]*clipb.ResultSummaryEntry, error) {
-	summary := make(map[string]*clipb.ResultSummaryEntry, len(results))
-	for taskID, result := range results {
-		entry := &clipb.ResultSummaryEntry{
-			Results: result.result,
-			Outputs: result.outputs,
-		}
-		if result.err != nil {
-			entry.Error = result.err.Error()
-			if entry.Error == "" {
-				entry.Error = "unknown"
-			}
-		}
-		if result.result != nil {
-			if cmd.taskOutput.includesJSON() {
-				entry.Output = result.output
-			}
-		}
-		summary[taskID] = entry
-	}
-	return summary, nil
-}
-
 func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	// The context used for waiting for task completion.
 	var wctx context.Context
@@ -471,42 +414,148 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 		}()
 	})
 
-	// Wait for all fetchTaskResults(...) calls to complete.
-	resultByID := make(map[string]taskResult, len(cmd.taskIDs))
-	for i := 0; i < len(cmd.taskIDs); i++ {
-		res := <-resultsCh
-		resultByID[res.taskID] = res
+	// TODO(crbug.com/894045): Get rid of taskSummaryPython mode.
+	var emitter summaryEmitter
+	switch {
+	case extra.OutputJSON == "":
+		emitter = noopSummaryEmitter{}
+	case cmd.taskSummaryPython:
+		emitter = &legacySummaryEmitter{
+			sink:           sink,
+			populateStdout: cmd.taskOutput.includesJSON(),
+			taskIDs:        cmd.taskIDs,
+			resultByID:     make(map[string]*taskResult, len(cmd.taskIDs)),
+		}
+	default:
+		emitter = &defaultSummaryEmitter{
+			sink:           sink,
+			populateStdout: cmd.taskOutput.includesJSON(),
+		}
 	}
 
-	// Report results to stdout if requested. Preserve the order.
-	if cmd.taskOutput.includesConsole() {
-		for _, taskID := range cmd.taskIDs {
-			res := resultByID[taskID]
+	// Wait for all fetchTaskResults(...) calls to complete. Emit their output
+	// as soon as it is available.
+	emitter.start()
+	for i := 0; i < len(cmd.taskIDs); i++ {
+		res := <-resultsCh
+		if cmd.taskOutput.includesConsole() {
 			fmt.Fprintln(extra.Stdout, res.SummaryLine())
 			if res.output != "" {
 				fmt.Fprintln(extra.Stdout, res.output)
 			}
 		}
+		emitter.emit(&res)
 	}
+	return emitter.finish()
+}
 
-	// Don't bother assembling the summary if we aren't going to store it.
-	if extra.OutputJSON == "" {
-		return nil
+////////////////////////////////////////////////////////////////////////////////
+
+// summaryEmitters knows how to write task result entries to the JSON output.
+type summaryEmitter interface {
+	start()
+	emit(res *taskResult)
+	finish() error
+}
+
+type noopSummaryEmitter struct{}
+
+func (noopSummaryEmitter) start()               {}
+func (noopSummaryEmitter) emit(res *taskResult) {}
+func (noopSummaryEmitter) finish() error        { return nil }
+
+// The non-legacy summary format is an unordered dict. We can write entries
+// for it in any order. This allows us to "forget" them (and free memory
+// allocated for task's stdout) as soon as possible.
+type defaultSummaryEmitter struct {
+	sink           *output.Sink
+	populateStdout bool
+	err            error
+}
+
+func (e *defaultSummaryEmitter) start() {
+	e.err = output.StartMap(e.sink)
+}
+
+func (e *defaultSummaryEmitter) emit(res *taskResult) {
+	if e.err != nil {
+		return
 	}
+	entry := &clipb.ResultSummaryEntry{
+		Results: res.result,
+		Outputs: res.outputs,
+	}
+	if res.err != nil {
+		entry.Error = res.err.Error()
+		if entry.Error == "" {
+			entry.Error = "unknown"
+		}
+	}
+	if res.result != nil {
+		if e.populateStdout {
+			entry.Output = res.output
+		}
+	}
+	if err := output.MapEntry(e.sink, res.taskID, entry); err != nil {
+		e.err = errors.Annotate(err, "writing JSON output for task %q", res.taskID).Err()
+	}
+}
 
-	// TODO(crbug.com/894045): Python-compatible summary is actually the most
-	// commonly used now (used by recipes).
-	if cmd.taskSummaryPython {
-		summary, err := summarizeResultsPython(cmd.taskIDs, resultByID)
+func (e *defaultSummaryEmitter) finish() error {
+	return e.err
+}
+
+// Legacy Python summary is a list of proto message ordered in the same order
+// as `cmd.taskIDs`. We get results from the channel in some arbitrary order.
+// It means we'll generally have to buffer them all before we can write them.
+type legacySummaryEmitter struct {
+	sink           *output.Sink
+	populateStdout bool
+	taskIDs        []string // task IDs in order we need to write them
+	resultByID     map[string]*taskResult
+}
+
+func (e *legacySummaryEmitter) start() {
+	// All output is emitted in finish all at once.
+}
+
+func (e *legacySummaryEmitter) emit(res *taskResult) {
+	e.resultByID[res.taskID] = res
+}
+
+func (e *legacySummaryEmitter) finish() error {
+	shards := make([]map[string]any, 0, len(e.taskIDs))
+
+	for _, taskID := range e.taskIDs {
+		result := e.resultByID[taskID]
+		if result.result == nil {
+			// This means there was an error fetching the task. Note that python
+			// results format has no way to communicate errors. We just write `null`
+			// into the corresponding slot to indicate the task is not ready.
+			shards = append(shards, nil)
+			continue
+		}
+
+		// Convert TaskResultResponse proto to a free-form map[string]any to inject
+		// `output` as an extra field not present in the original proto.
+		buf, err := (protojson.MarshalOptions{UseProtoNames: true}).Marshal(result.result)
 		if err != nil {
 			return err
 		}
-		return output.JSON(sink, summary)
+		var jsonResult map[string]any
+		if err := json.Unmarshal(buf, &jsonResult); err != nil {
+			return err
+		}
+		if e.populateStdout {
+			jsonResult["output"] = result.output
+		} else {
+			jsonResult["output"] = ""
+		}
+		e.resultByID[taskID] = nil // release memory
+
+		// Report the completed task result.
+		shards = append(shards, jsonResult)
 	}
 
-	summary, err := cmd.summarizeResults(resultByID)
-	if err != nil {
-		return err
-	}
-	return output.Map(sink, summary)
+	return output.JSON(e.sink, map[string]any{"shards": shards})
 }
