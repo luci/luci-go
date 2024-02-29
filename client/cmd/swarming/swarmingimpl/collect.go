@@ -28,6 +28,7 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
@@ -112,6 +113,9 @@ type taskResult struct {
 	// err is set if an operational error occurred while doing RPCs to gather the
 	// task result, which includes errors received from the server.
 	err error
+
+	// summaryLogged is true if we already logged the task summary.
+	summaryLogged bool
 }
 
 // SummaryLine is a short summary of task state for logs.
@@ -123,6 +127,18 @@ func (t *taskResult) SummaryLine() string {
 		return fmt.Sprintf("%s: COMPLETED, exit code %d", t.taskID, t.result.ExitCode)
 	}
 	return fmt.Sprintf("%s: %s", t.taskID, t.result.State)
+}
+
+// logSummary logs the task summary if it hasn't been logged before.
+func (t *taskResult) logSummary(ctx context.Context) {
+	if !t.summaryLogged {
+		t.summaryLogged = true
+		if t.err != nil {
+			logging.Warningf(ctx, "%s", t.SummaryLine())
+		} else {
+			logging.Infof(ctx, "%s", t.SummaryLine())
+		}
+	}
 }
 
 // CmdCollect returns an object for the `collect` subcommand.
@@ -201,6 +217,8 @@ type collectImpl struct {
 	eager             bool
 	perf              bool
 	jsonInput         string
+
+	outputFetchConcurrency int
 }
 
 func (cmd *collectImpl) RegisterFlags(fs *flag.FlagSet) {
@@ -216,6 +234,8 @@ func (cmd *collectImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.outputDir, "output-dir", "", "Where to download isolated output to.")
 
 	fs.StringVar(&cmd.jsonInput, "requests-json", "", "Load the task IDs from a .json file as saved by \"trigger -json-output\".")
+
+	fs.IntVar(&cmd.outputFetchConcurrency, "output-fetch-concurrency", 4, "Limits how many concurrent result fetches are allowed (to avoid OOMs). 0 is unlimited.")
 }
 
 func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
@@ -282,7 +302,7 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 	// even bother to fetch the results.
 	if res.err != nil {
 		res.err = normalizeCtxErr(res.err)
-		logging.Warningf(ctx, "%s", res.SummaryLine())
+		res.logSummary(ctx)
 		return
 	}
 
@@ -291,15 +311,15 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 		return
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
+	eg, ectx := errgroup.WithContext(ctx)
 
 	// Fetch combined stderr/stdout (aka console) output if asked for it.
 	wantConsoleOut := cmd.taskOutput != taskOutputNone
 	if wantConsoleOut {
 		eg.Go(func() error {
-			logging.Debugf(ctx, "%s: fetching console output", res.taskID)
+			logging.Debugf(ectx, "%s: fetching console output", res.taskID)
 			var output bytes.Buffer
-			_, err := svc.TaskOutput(ctx, res.taskID, &output)
+			_, err := svc.TaskOutput(ectx, res.taskID, &output)
 			if err != nil {
 				return errors.Annotate(err, "fetching console output of %s", res.taskID).Err()
 			}
@@ -312,8 +332,8 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 	wantIsolatedOut := outputDir != "" && res.result.CasOutputRoot != nil
 	if wantIsolatedOut {
 		eg.Go(func() error {
-			logging.Debugf(ctx, "%s: fetching isolated output", res.taskID)
-			output, err := svc.FilesFromCAS(ctx, outputDir, &swarmingv2.CASReference{
+			logging.Debugf(ectx, "%s: fetching isolated output", res.taskID)
+			output, err := svc.FilesFromCAS(ectx, outputDir, &swarmingv2.CASReference{
 				CasInstance: res.result.CasOutputRoot.CasInstance,
 				Digest: &swarmingv2.Digest{
 					Hash:      res.result.CasOutputRoot.Digest.Hash,
@@ -330,17 +350,18 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 
 	if wantConsoleOut || wantIsolatedOut {
 		res.err = normalizeCtxErr(eg.Wait())
+		if res.err != nil && ctx.Err() != nil {
+			// When the root context expires, `res.err` may end up having all sorts of
+			// errors depending on what exactly was happening when the context
+			// expired. Use a cleaner context error in that case.
+			res.err = normalizeCtxErr(ctx.Err())
+		}
 		if res.err == nil {
 			logging.Debugf(ctx, "%s: finished fetching outputs", res.taskID)
 		}
 	}
 
-	// Log as soon as we are done with the task.
-	if res.err != nil {
-		logging.Warningf(ctx, "%s", res.SummaryLine())
-	} else {
-		logging.Infof(ctx, "%s", res.SummaryLine())
-	}
+	res.logSummary(ctx)
 }
 
 // normalizeCtxErr replaces context errors with ones that serialize to
@@ -402,14 +423,28 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 		WithPerf: cmd.perf,
 	}
 
+	// A limiter on number of concurrent fetches to avoid OOMs.
+	acquireSlot := func() error { return nil }
+	releaseSlot := func() {}
+	if cmd.outputFetchConcurrency > 0 {
+		sem := semaphore.NewWeighted(int64(cmd.outputFetchConcurrency))
+		acquireSlot = func() error { return sem.Acquire(ctx, 1) }
+		releaseSlot = func() { sem.Release(1) }
+	}
+
 	// Collect statuses of all tasks and start fetching their results as soon
 	// as they are available, in parallel. Fetch results using the root `ctx`
 	// (to not be affected by -timeout, which is a *waiting* timeout).
-	resultsCh := make(chan taskResult, len(cmd.taskIDs))
+	resultsCh := make(chan taskResult)
 	swarming.GetMany(wctx, svc, cmd.taskIDs, &fields, mode, func(taskID string, res *swarmingv2.TaskResultResponse, err error) {
 		go func() {
 			taskRes := taskResult{taskID: taskID, result: res, err: err}
-			cmd.fetchTaskResults(ctx, svc, &taskRes)
+			if acqErr := acquireSlot(); acqErr != nil {
+				taskRes.err = normalizeCtxErr(acqErr)
+			} else {
+				cmd.fetchTaskResults(ctx, svc, &taskRes)
+				releaseSlot()
+			}
 			resultsCh <- taskRes
 		}()
 	})
@@ -438,6 +473,7 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 	emitter.start()
 	for i := 0; i < len(cmd.taskIDs); i++ {
 		res := <-resultsCh
+		res.logSummary(ctx) // might be context cancellation, log it
 		if cmd.taskOutput.includesConsole() {
 			fmt.Fprintln(extra.Stdout, res.SummaryLine())
 			if res.output != "" {
