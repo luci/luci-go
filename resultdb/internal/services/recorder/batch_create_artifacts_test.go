@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -30,10 +29,12 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -72,10 +73,14 @@ func (c *fakeRBEClient) mockResp(err error, cds ...codes.Code) {
 }
 
 type fakeBQClient struct {
-	Rows []*bqpb.TextArtifactRow
+	Rows  []*bqpb.TextArtifactRow
+	Error error
 }
 
 func (c *fakeBQClient) InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifactRow) error {
+	if c.Error != nil {
+		return c.Error
+	}
 	c.Rows = append(c.Rows, rows...)
 	return nil
 }
@@ -388,6 +393,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					ArtifactShard:       "art2:0",
 				},
 			})
+			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 2)
 		})
 
 		Convey("BatchUpdateBlobs fails", func() {
@@ -524,6 +530,11 @@ func TestBatchCreateArtifacts(t *testing.T) {
 }
 
 func TestFilterAndThrottle(t *testing.T) {
+	ctx := context.Background()
+	// Setup tsmon
+	ctx, _ = tsmon.WithDummyInMemory(ctx)
+
+	invInfo := &invocationInfo{realm: "chromium:ci"}
 	Convey("Filter artifact", t, func() {
 		artReqs := []*artifactCreationRequest{
 			{
@@ -543,7 +554,7 @@ func TestFilterAndThrottle(t *testing.T) {
 				contentType: "text/html",
 			},
 		}
-		results := filterTextArtifactRequests(artReqs)
+		results := filterTextArtifactRequests(ctx, artReqs, invInfo)
 		So(results, ShouldResemble, []*artifactCreationRequest{
 			{
 				testID:      "test2",
@@ -554,10 +565,12 @@ func TestFilterAndThrottle(t *testing.T) {
 				contentType: "text/html",
 			},
 		})
+		So(artifactContentCounter.Get(ctx, "chromium", "text"), ShouldEqual, 2)
+		So(artifactContentCounter.Get(ctx, "chromium", "nontext"), ShouldEqual, 1)
+		So(artifactContentCounter.Get(ctx, "chromium", "empty"), ShouldEqual, 1)
 	})
 
 	Convey("Throttle artifact", t, func() {
-		ctx := context.Background()
 		artReqs := []*artifactCreationRequest{
 			{
 				testID:     "test",
@@ -581,12 +594,12 @@ func TestFilterAndThrottle(t *testing.T) {
 			},
 		}
 		// 0%.
-		results, err := throttleArtifactsForBQ(ctx, artReqs, 0)
+		results, err := throttleArtifactsForBQ(artReqs, 0)
 		So(err, ShouldBeNil)
 		So(results, ShouldResemble, []*artifactCreationRequest{})
 
 		// 1%.
-		results, err = throttleArtifactsForBQ(ctx, artReqs, 1)
+		results, err = throttleArtifactsForBQ(artReqs, 1)
 		So(err, ShouldBeNil)
 		So(results, ShouldResemble, []*artifactCreationRequest{
 			{
@@ -596,7 +609,7 @@ func TestFilterAndThrottle(t *testing.T) {
 		})
 
 		// 33%.
-		results, err = throttleArtifactsForBQ(ctx, artReqs, 33)
+		results, err = throttleArtifactsForBQ(artReqs, 33)
 		So(err, ShouldBeNil)
 		So(results, ShouldResemble, []*artifactCreationRequest{
 			{
@@ -610,7 +623,7 @@ func TestFilterAndThrottle(t *testing.T) {
 		})
 
 		// 90%.
-		results, err = throttleArtifactsForBQ(ctx, artReqs, 90)
+		results, err = throttleArtifactsForBQ(artReqs, 90)
 		So(err, ShouldBeNil)
 		So(results, ShouldResemble, []*artifactCreationRequest{
 			{
@@ -628,7 +641,7 @@ func TestFilterAndThrottle(t *testing.T) {
 		})
 
 		// 100%.
-		results, err = throttleArtifactsForBQ(ctx, artReqs, 100)
+		results, err = throttleArtifactsForBQ(artReqs, 100)
 		So(err, ShouldBeNil)
 		So(results, ShouldResemble, []*artifactCreationRequest{
 			{
@@ -707,5 +720,59 @@ func TestReqToProto(t *testing.T) {
 				ArtifactShard:       "artifactid:1",
 			},
 		})
+	})
+}
+
+func TestArtifactExportCounter(t *testing.T) {
+	Convey("BQ export error", t, func() {
+		ctx := context.Background()
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		client := &fakeBQClient{
+			Error: fmt.Errorf("Some error"),
+		}
+		invInfo := &invocationInfo{
+			id:         "invid",
+			realm:      "chromium:ci",
+			createTime: time.Unix(1000, 0),
+		}
+		reqs := []*artifactCreationRequest{
+			{
+				testID:      "testid",
+				resultID:    "resultid",
+				artifactID:  "artifactid",
+				contentType: "text/plain",
+				size:        20,
+				data:        []byte("0123456789abcdefghij"),
+			},
+		}
+		err := uploadArtifactsToBQ(ctx, client, reqs, invInfo)
+		So(err, ShouldNotBeNil)
+		So(artifactExportCounter.Get(ctx, "chromium", "failure_bq"), ShouldEqual, 1)
+	})
+
+	Convey("Input error", t, func() {
+		ctx := context.Background()
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		client := &fakeBQClient{
+			Error: errors.Annotate(fmt.Errorf("error"), "marshal proto").Tag(errors.BoolTag{Key: bqutil.InvalidRowTagKey}).Err(),
+		}
+		invInfo := &invocationInfo{
+			id:         "invid",
+			realm:      "chromium:ci",
+			createTime: time.Unix(1000, 0),
+		}
+		reqs := []*artifactCreationRequest{
+			{
+				testID:      "testid",
+				resultID:    "resultid",
+				artifactID:  "artifactid",
+				contentType: "text/plain",
+				size:        20,
+				data:        []byte("0123456789abcdefghij"),
+			},
+		}
+		err := uploadArtifactsToBQ(ctx, client, reqs, invInfo)
+		So(err, ShouldNotBeNil)
+		So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 1)
 	})
 }

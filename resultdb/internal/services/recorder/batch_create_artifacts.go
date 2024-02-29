@@ -32,6 +32,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
@@ -60,6 +62,37 @@ const MaxShardContentSize = bqutil.RowMaxBytes - 10*1024
 // LookbackWindow is used when chunking. It specifies how many bytes we should
 // look back to find new line/white space characters to split the chunks.
 const LookbackWindow = 1024
+
+var (
+	artifactExportCounter = metric.NewCounter(
+		"resultdb/artifacts/bqexport",
+		"The number of artifacts rows to export to BigQuery, grouped by project and status.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// The status of the export.
+		// Possible values:
+		// - "success": The export was successful.
+		// - "failure_input": There was an error with the input artifact
+		// (e.g. artifact contains invalid UTF-8 character).
+		// - "failure_bq": There was an error with BigQuery (e.g. throttling, load shedding),
+		// which made the artifact failed to export.
+		field.String("status"),
+	)
+
+	artifactContentCounter = metric.NewCounter(
+		"resultdb/artifacts/content",
+		"The number of artifacts for a particular content type.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// The status of the export.
+		// Possible values: "text", "nontext", "empty".
+		// We record the group instead of the actual value to prevent
+		// the explosion in cardinality.
+		field.String("content_type"),
+	)
+)
 
 type artifactCreationRequest struct {
 	testID      string
@@ -496,12 +529,12 @@ func processBQUpload(ctx context.Context, client BQExportClient, artifactRequest
 	if client == nil {
 		return errors.New("bq export client should not be nil")
 	}
-	textArtifactRequests := filterTextArtifactRequests(artifactRequests)
+	textArtifactRequests := filterTextArtifactRequests(ctx, artifactRequests, invInfo)
 	percent, err := percentOfArtifactsToBQ(ctx)
 	if err != nil {
 		return errors.Annotate(err, "getting percent of artifact to upload to BQ").Err()
 	}
-	textArtifactRequests, err = throttleArtifactsForBQ(ctx, textArtifactRequests, percent)
+	textArtifactRequests, err = throttleArtifactsForBQ(textArtifactRequests, percent)
 	if err != nil {
 		return errors.Annotate(err, "throttle artifacts for bq").Err()
 	} else {
@@ -514,11 +547,19 @@ func processBQUpload(ctx context.Context, client BQExportClient, artifactRequest
 }
 
 // filterTextArtifactRequests filters only text artifacts.
-func filterTextArtifactRequests(artifactRequests []*artifactCreationRequest) []*artifactCreationRequest {
+func filterTextArtifactRequests(ctx context.Context, artifactRequests []*artifactCreationRequest, invInfo *invocationInfo) []*artifactCreationRequest {
+	project, _ := realms.Split(invInfo.realm)
 	results := []*artifactCreationRequest{}
 	for _, req := range artifactRequests {
-		if pbutil.IsTextArtifact(req.contentType) {
-			results = append(results, req)
+		if req.contentType == "" {
+			artifactContentCounter.Add(ctx, 1, project, "empty")
+		} else {
+			if pbutil.IsTextArtifact(req.contentType) {
+				results = append(results, req)
+				artifactContentCounter.Add(ctx, 1, project, "text")
+			} else {
+				artifactContentCounter.Add(ctx, 1, project, "nontext")
+			}
 		}
 	}
 	return results
@@ -526,7 +567,7 @@ func filterTextArtifactRequests(artifactRequests []*artifactCreationRequest) []*
 
 // throttleArtifactsForBQ limits the artifacts being to BigQuery based on percentage.
 // It will allow us to roll out the feature slowly.
-func throttleArtifactsForBQ(ctx context.Context, artifactRequests []*artifactCreationRequest, percent int) ([]*artifactCreationRequest, error) {
+func throttleArtifactsForBQ(artifactRequests []*artifactCreationRequest, percent int) ([]*artifactCreationRequest, error) {
 	results := []*artifactCreationRequest{}
 	for _, req := range artifactRequests {
 		hashStr := fmt.Sprintf("%s%s", req.testID, req.artifactID)
@@ -580,7 +621,15 @@ func uploadArtifactsToBQ(ctx context.Context, client BQExportClient, reqs []*art
 	if len(rowsToUpload) > 0 {
 		err := client.InsertArtifactRows(ctx, rowsToUpload)
 		if err != nil {
+			// Data is invalid.
+			if _, ok := errors.TagValueIn(bqutil.InvalidRowTagKey, err); ok {
+				artifactExportCounter.Add(ctx, int64(len(rowsToUpload)), rowsToUpload[0].Project, "failure_input")
+			} else {
+				artifactExportCounter.Add(ctx, int64(len(rowsToUpload)), rowsToUpload[0].Project, "failure_bq")
+			}
 			return errors.Annotate(err, "insert artifact rows").Err()
+		} else {
+			artifactExportCounter.Add(ctx, int64(len(rowsToUpload)), rowsToUpload[0].Project, "success")
 		}
 	}
 	return nil

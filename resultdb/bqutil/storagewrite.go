@@ -42,6 +42,8 @@ import (
 // some overheads in each request.
 const RowMaxBytes = 9 * 1024 * 1024 // 9 MB
 
+var InvalidRowTagKey = errors.NewTagKey("InvalidRow")
+
 // NewWriterClient returns a new BigQuery managedwriter client for use with the
 // given GCP project, that authenticates as ResultDB itself.
 func NewWriterClient(ctx context.Context, gcpProject string) (*managedwriter.Client, error) {
@@ -103,7 +105,7 @@ func (s *Writer) AppendRowsWithDefaultStream(ctx context.Context, rows []proto.M
 func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedStream, rows []proto.Message) error {
 	batches, err := batch(rows)
 	if err != nil {
-		return errors.Annotate(err, "batching rows").Err()
+		return errors.Annotate(err, "batching rows").Tag(errors.BoolTag{Key: InvalidRowTagKey}).Err()
 	}
 	results := make([]*managedwriter.AppendResult, 0, len(batches))
 	for _, batch := range batches {
@@ -116,7 +118,7 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 				if artifactRow, ok := r.(*bqpb.TextArtifactRow); ok {
 					logging.Errorf(ctx, "Marshal failed for artifact row. Inv ID: %s. Test ID: %s. Artifact ID: %s. Shard ID: %d.", artifactRow.InvocationId, artifactRow.TestId, artifactRow.ArtifactId, artifactRow.ShardId)
 				}
-				return errors.Annotate(err, "marshal proto").Err()
+				return errors.Annotate(err, "marshal proto").Tag(errors.BoolTag{Key: InvalidRowTagKey}).Err()
 			}
 			encoded = append(encoded, b)
 		}
