@@ -17,14 +17,15 @@ package swarmingimpl
 import (
 	"context"
 	"flag"
+	"fmt"
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -76,7 +77,7 @@ func (cmd *botsImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-func (cmd *botsImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *botsImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	// TODO(vadimsh): Reuse from utils.
 	dims := make([]*swarmingv2.StringPair, 0, len(cmd.dimensions))
 	for k, v := range cmd.dimensions {
@@ -87,16 +88,27 @@ func (cmd *botsImpl) Execute(ctx context.Context, svc swarming.Client, extra bas
 	}
 
 	if cmd.count {
-		return svc.CountBots(ctx, dims)
+		count, err := svc.CountBots(ctx, dims)
+		if err != nil {
+			return err
+		}
+		return output.Proto(sink, count)
 	}
 
 	bots, err := svc.ListBots(ctx, dims)
-	if err != nil || !cmd.botIDOnly {
-		return bots, err
+	if err != nil {
+		return err
 	}
 
-	// Emit full JSON to -json-output and print only bot IDs to stdout.
-	return base.ListWithStdoutProjection(bots, func(bot *swarmingv2.BotInfo) string {
-		return bot.GetBotId()
-	}), nil
+	if cmd.botIDOnly {
+		for _, bot := range bots {
+			fmt.Fprintln(extra.Stdout, bot.GetBotId())
+		}
+		// Skip writing JSON to the stdout, since we already written to stdout.
+		if extra.OutputJSON == "-" {
+			return nil
+		}
+	}
+
+	return output.List(sink, bots)
 }

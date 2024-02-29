@@ -24,11 +24,11 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/sync/parallel"
-
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -81,9 +81,12 @@ func (cmd *spawnTasksImpl) ParseInputs(args []string, env subcommands.Env) error
 	return err
 }
 
-func (cmd *spawnTasksImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
-	results, merr := createNewTasks(ctx, svc, cmd.requests)
-	return &clipb.SpawnTasksOutput{Tasks: results}, merr
+func (cmd *spawnTasksImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
+	results, err := createNewTasks(ctx, svc, cmd.requests)
+	if err != nil {
+		return err
+	}
+	return output.Proto(sink, &clipb.SpawnTasksOutput{Tasks: results})
 }
 
 func processTasksStream(tasks io.Reader, env subcommands.Env) ([]*swarmingv2.NewTaskRequest, error) {

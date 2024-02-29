@@ -18,17 +18,17 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBotTasksParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdBotTasks,
 			append([]string{"-server", "example.com"}, argv...),
@@ -69,7 +69,7 @@ func TestListBotTasksOutput(t *testing.T) {
 	}
 
 	Convey(`Expected tasks are outputted`, t, func() {
-		_, _, code, stdout, _ := SubcommandTest(
+		_, code, stdout, _ := SubcommandTest(
 			context.Background(),
 			CmdBotTasks,
 			[]string{"-server", "example.com", "-id", botID},

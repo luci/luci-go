@@ -34,6 +34,8 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
@@ -42,8 +44,6 @@ import (
 	"go.chromium.org/luci/lucictx"
 	rdbcli "go.chromium.org/luci/resultdb/cli"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/runner"
@@ -104,10 +104,10 @@ func (cmd *reproduceImpl) ParseInputs(args []string, env subcommands.Env) error 
 	return nil
 }
 
-func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	tr, err := svc.TaskRequest(ctx, cmd.taskID)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get task request: %s", cmd.taskID).Err()
+		return errors.Annotate(err, "failed to get task request: %s", cmd.taskID).Err()
 	}
 
 	// In practice, later slices are less likely to assume that there is a named
@@ -116,10 +116,10 @@ func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Client, extr
 
 	execCmd, err := cmd.prepareTaskRequestEnvironment(ctx, properties, svc, extra.AuthFlags)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create command from task request").Err()
+		return errors.Annotate(err, "failed to create command from task request").Err()
 	}
 
-	return nil, cmd.executeTaskRequestCommand(ctx, tr, execCmd, extra.AuthFlags)
+	return cmd.executeTaskRequestCommand(ctx, tr, execCmd, extra.AuthFlags)
 }
 
 func (cmd *reproduceImpl) executeTaskRequestCommand(ctx context.Context, tr *swarmingv2.TaskRequestResponse, execCmd *exec.Cmd, auth base.AuthFlags) error {

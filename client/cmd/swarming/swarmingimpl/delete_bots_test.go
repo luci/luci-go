@@ -21,18 +21,18 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDeleteBotsParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdDeleteBots,
 			append([]string{"-server", "example.com"}, argv...),
@@ -72,7 +72,7 @@ func TestDeleteBots(t *testing.T) {
 		}
 
 		Convey(`Test deleting one bot`, func() {
-			_, _, code, _, _ := SubcommandTest(
+			_, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", "testbot123"},
@@ -83,7 +83,7 @@ func TestDeleteBots(t *testing.T) {
 		})
 
 		Convey(`Test deleting few bots`, func() {
-			_, _, code, _, _ := SubcommandTest(
+			_, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", "testbot123", "testbot456"},
@@ -94,7 +94,7 @@ func TestDeleteBots(t *testing.T) {
 		})
 
 		Convey(`Test when a bot can't be deleted`, func() {
-			_, err, code, _, _ := SubcommandTest(
+			err, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", failbotID},
@@ -106,7 +106,7 @@ func TestDeleteBots(t *testing.T) {
 		})
 
 		Convey(`stop deleting bots immediately when encounter a bot that can't be deleted`, func() {
-			_, err, code, _, _ := SubcommandTest(
+			err, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", "testbot123", "failingbotID", "testbot456", "testbot789"},
@@ -118,7 +118,7 @@ func TestDeleteBots(t *testing.T) {
 		})
 
 		Convey(`Test when bot wasn't deleted`, func() {
-			_, err, code, _, _ := SubcommandTest(
+			err, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdDeleteBots,
 				[]string{"-server", "example.com", "-f", "testbot123", "cannotdeletebotID", "testbot456", "testbot789"},

@@ -18,17 +18,17 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBotsParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdBots,
 			append([]string{"-server", "example.com"}, argv...),
@@ -90,7 +90,7 @@ func TestFileOutput(t *testing.T) {
 	}
 
 	Convey(`Count is correctly written out when -count is specified`, t, func() {
-		_, _, code, stdout, _ := SubcommandTest(
+		_, code, stdout, _ := SubcommandTest(
 			context.Background(),
 			CmdBots,
 			[]string{"-server", "example.com", "-count", "-dimension", "a=b", "-dimension", "c=d"},
@@ -106,7 +106,7 @@ func TestFileOutput(t *testing.T) {
 	})
 
 	Convey(`List bots is correctly outputted`, t, func() {
-		_, _, code, stdout, _ := SubcommandTest(
+		_, code, stdout, _ := SubcommandTest(
 			context.Background(),
 			CmdBots,
 			[]string{"-server", "example.com", "-dimension", "a=b", "-dimension", "c=d"},
@@ -125,7 +125,7 @@ func TestFileOutput(t *testing.T) {
 	})
 
 	Convey(`List bots is correctly outputted when -bare`, t, func() {
-		_, _, code, stdout, _ := SubcommandTest(
+		_, code, stdout, _ := SubcommandTest(
 			context.Background(),
 			CmdBots,
 			[]string{"-server", "example.com", "-dimension", "a=b", "-dimension", "c=d", "-bare"},

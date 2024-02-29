@@ -24,20 +24,19 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTerminateBotsParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdTerminateBot,
 			append([]string{"-server", "example.com"}, argv...),
@@ -128,7 +127,7 @@ func TestTerminateBots(t *testing.T) {
 		}
 
 		Convey(`Test terminating bot`, func() {
-			_, _, code, _, _ := SubcommandTest(
+			_, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "testbot123"},
@@ -139,7 +138,7 @@ func TestTerminateBots(t *testing.T) {
 		})
 
 		Convey(`Test when terminating bot fails`, func() {
-			_, err, code, _, _ := SubcommandTest(
+			err, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", failBotID},
@@ -151,7 +150,7 @@ func TestTerminateBots(t *testing.T) {
 		})
 
 		Convey(`Test terminating bot with waiting`, func() {
-			_, _, code, _, _ := SubcommandTest(
+			_, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "-wait", "testbot123"},
@@ -163,7 +162,7 @@ func TestTerminateBots(t *testing.T) {
 		})
 
 		Convey(`Test terminating bot with waiting and bot doesn't stop running immediately`, func() {
-			_, _, code, _, _ := SubcommandTest(
+			_, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "-wait", taskStillRunningBotID},
@@ -176,7 +175,7 @@ func TestTerminateBots(t *testing.T) {
 		})
 
 		Convey(`Test terminating bot when wait fails with error`, func() {
-			_, err, code, _, _ := SubcommandTest(
+			err, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "-wait", errorAtTaskBotID},
@@ -189,7 +188,7 @@ func TestTerminateBots(t *testing.T) {
 		})
 
 		Convey(`Other than status "complete" returned when terminating bot with wait`, func() {
-			_, err, code, _, _ := SubcommandTest(
+			err, code, _, _ := SubcommandTest(
 				ctx,
 				CmdTerminateBot,
 				[]string{"-server", "example.com", "-wait", statusNotCompletedBotID},

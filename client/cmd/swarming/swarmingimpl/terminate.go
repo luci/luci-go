@@ -20,10 +20,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -62,23 +62,23 @@ func (cmd *terminateImpl) ParseInputs(args []string, env subcommands.Env) error 
 	return nil
 }
 
-func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	res, err := svc.TerminateBot(ctx, cmd.botID, cmd.reason)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to terminate bot %s", cmd.botID).Err()
+		return errors.Annotate(err, "failed to terminate bot %s", cmd.botID).Err()
 	}
 
 	if cmd.wait {
 		logging.Infof(ctx, "Waiting for the bot to terminate...")
 		taskres, err := swarming.GetOne(ctx, svc, res.TaskId, nil, swarming.WaitAll)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed when polling task %s", res.TaskId).Err()
+			return errors.Annotate(err, "failed when polling task %s", res.TaskId).Err()
 		}
 		if taskres.State != swarmingv2.TaskState_COMPLETED {
-			return nil, errors.Reason("failed to terminate bot ID %s with task state %s", cmd.botID, taskres.State).Err()
+			return errors.Reason("failed to terminate bot ID %s with task state %s", cmd.botID, taskres.State).Err()
 		}
 	}
 
 	logging.Infof(ctx, "Successfully terminated %s", cmd.botID)
-	return nil, nil
+	return nil
 }

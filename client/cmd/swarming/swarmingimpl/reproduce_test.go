@@ -25,21 +25,20 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/common/system/environ"
-
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestReproduceParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdReproduce,
 			append([]string{"-server", "example.com"}, argv...),

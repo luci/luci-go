@@ -23,11 +23,10 @@ import (
 
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
+	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // TODO(vadimsh): Add a test for actually triggering stuff (calling NewTask).
@@ -206,7 +205,7 @@ func TestTriggerParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdTrigger,
 			append([]string{"-server", "example.com"}, argv...),

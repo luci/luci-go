@@ -23,12 +23,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var testSpawnEnv = subcommands.Env{
@@ -40,7 +40,7 @@ func TestSpawnTasksParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdSpawnTasks,
 			append([]string{"-server", "example.com"}, argv...),

@@ -22,6 +22,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
@@ -78,11 +79,11 @@ func (cmd *cancelTasksImpl) ParseInputs(args []string, env subcommands.Env) erro
 	return nil
 }
 
-func (cmd *cancelTasksImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
-	res, err := svc.CancelTasks(ctx, int32(cmd.limit), cmd.tags, cmd.killRunning, cmd.start, cmd.end)
+func (cmd *cancelTasksImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
+	_, err := svc.CancelTasks(ctx, int32(cmd.limit), cmd.tags, cmd.killRunning, cmd.start, cmd.end)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to cancel all tasks\n").Err()
+		return errors.Annotate(err, "failed to cancel all tasks\n").Err()
 	}
 	logging.Infof(ctx, "Cancel tasks request submitted without error.")
-	return res, nil
+	return nil
 }

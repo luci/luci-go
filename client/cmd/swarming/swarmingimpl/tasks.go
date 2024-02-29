@@ -20,10 +20,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/swarming/client/swarming"
 )
 
@@ -91,10 +91,20 @@ func (cmd *tasksImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-func (cmd *tasksImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *tasksImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	state, _ := stateMap(cmd.state)
+
 	if cmd.count {
-		return svc.CountTasks(ctx, cmd.start, state, cmd.tags)
+		count, err := svc.CountTasks(ctx, cmd.start, state, cmd.tags)
+		if err != nil {
+			return err
+		}
+		return output.Proto(sink, count)
 	}
-	return svc.ListTasks(ctx, int32(cmd.limit), cmd.start, state, cmd.tags)
+
+	list, err := svc.ListTasks(ctx, int32(cmd.limit), cmd.start, state, cmd.tags)
+	if err != nil {
+		return err
+	}
+	return output.List(sink, list)
 }

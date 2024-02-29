@@ -46,9 +46,8 @@ func (af *testAuthFlags) NewRBEClient(_ context.Context, _ string, _ string) (*r
 
 // SubcommandTest runs the subcommand in a test mode, mocking dependencies.
 //
-// Returns its result (whatever Execute returns), an error, exit code, and
-// captured stdout and stderr.
-func SubcommandTest(ctx context.Context, cmd func(base.AuthFlags) *subcommands.Command, args []string, env subcommands.Env, svc swarming.Client) (res any, err error, code int, stdout, stderr string) {
+// Returns an error, exit code, and captured stdout and stderr.
+func SubcommandTest(ctx context.Context, cmd func(base.AuthFlags) *subcommands.Command, args []string, env subcommands.Env, svc swarming.Client) (err error, code int, stdout, stderr string) {
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
 
@@ -62,12 +61,12 @@ func SubcommandTest(ctx context.Context, cmd func(base.AuthFlags) *subcommands.C
 						svc = &swarmingtest.Client{}
 					}
 					cr := cmd(&testAuthFlags{}).CommandRun().(*base.CommandRun)
-					cr.TestingMocks(ctx, svc, env, &res, &err, &stdoutBuf, &stderrBuf)
+					cr.TestingMocks(ctx, svc, env, &err, &stdoutBuf, &stderrBuf)
 					return cr
 				},
 			},
 		},
 	}, append([]string{"testing-cmd"}, args...))
 
-	return res, err, code, stdoutBuf.String(), stderrBuf.String()
+	return err, code, stdoutBuf.String(), stderrBuf.String()
 }

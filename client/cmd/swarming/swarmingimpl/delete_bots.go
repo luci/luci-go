@@ -21,10 +21,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/swarming/client/swarming"
 )
 
@@ -61,7 +61,7 @@ func (cmd *deleteBotsImpl) ParseInputs(args []string, env subcommands.Env) error
 	return nil
 }
 
-func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	if !cmd.force {
 		fmt.Println("Delete the following bots?")
 		for _, botID := range cmd.botIDs {
@@ -71,11 +71,11 @@ func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Client, ext
 		fmt.Println("Continue? [y/N] ")
 		_, err := fmt.Scan(&res)
 		if err != nil {
-			return nil, errors.Annotate(err, "error receiving your response").Err()
+			return errors.Annotate(err, "error receiving your response").Err()
 		}
 		if res != "y" && res != "Y" {
 			fmt.Println("canceled deleting bots, Goodbye")
-			return nil, nil
+			return nil
 		}
 	}
 
@@ -84,12 +84,12 @@ func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Client, ext
 		res, err := svc.DeleteBot(ctx, botID)
 		if err != nil {
 			logging.Errorf(ctx, "Failed deleting %s", botID)
-			return nil, err
+			return err
 		}
 		if !res.Deleted {
-			return nil, errors.Reason("bot %s was not deleted", botID).Err()
+			return errors.Reason("bot %s was not deleted", botID).Err()
 		}
 		logging.Infof(ctx, "Successfully deleted %s", botID)
 	}
-	return nil, nil
+	return nil
 }

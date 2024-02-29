@@ -30,13 +30,13 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -407,7 +407,7 @@ func summarizeResultsPython(taskIDs []string, results map[string]taskResult) (an
 		shards = append(shards, jsonResult)
 	}
 
-	return base.LegacyJSON(map[string]any{"shards": shards}), nil
+	return map[string]any{"shards": shards}, nil
 }
 
 // summarizeResults generates a summary of the task results.
@@ -434,7 +434,7 @@ func (cmd *collectImpl) summarizeResults(results map[string]taskResult) (map[str
 	return summary, nil
 }
 
-func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	// The context used for waiting for task completion.
 	var wctx context.Context
 	var wcancel context.CancelFunc
@@ -491,13 +491,22 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, extra 
 
 	// Don't bother assembling the summary if we aren't going to store it.
 	if extra.OutputJSON == "" {
-		return nil, nil
+		return nil
 	}
 
 	// TODO(crbug.com/894045): Python-compatible summary is actually the most
 	// commonly used now (used by recipes).
 	if cmd.taskSummaryPython {
-		return summarizeResultsPython(cmd.taskIDs, resultByID)
+		summary, err := summarizeResultsPython(cmd.taskIDs, resultByID)
+		if err != nil {
+			return err
+		}
+		return output.JSON(sink, summary)
 	}
-	return cmd.summarizeResults(resultByID)
+
+	summary, err := cmd.summarizeResults(resultByID)
+	if err != nil {
+		return err
+	}
+	return output.Map(sink, summary)
 }

@@ -18,18 +18,18 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarming "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCancelTaskParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdCancelTask,
 			append([]string{"-server", "example.com"}, argv...),
@@ -73,7 +73,7 @@ func TestCancelTask(t *testing.T) {
 		}
 
 		Convey(`Cancel task`, func() {
-			_, _, code, _, _ := SubcommandTest(
+			_, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdCancelTask,
 				[]string{"-server", "example.com", "task"},
@@ -84,7 +84,7 @@ func TestCancelTask(t *testing.T) {
 		})
 
 		Convey(`Cancel running task `, func() {
-			_, _, code, _, _ := SubcommandTest(
+			_, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdCancelTask,
 				[]string{"-server", "example.com", "-kill-running", "runningtask"},
@@ -96,7 +96,7 @@ func TestCancelTask(t *testing.T) {
 		})
 
 		Convey(`Cancel task was not OK`, func() {
-			_, err, code, _, _ := SubcommandTest(
+			err, code, _, _ := SubcommandTest(
 				context.Background(),
 				CmdCancelTask,
 				[]string{"-server", "example.com", failTaskID},

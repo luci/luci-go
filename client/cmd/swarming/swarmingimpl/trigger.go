@@ -29,14 +29,14 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -264,15 +264,15 @@ func (cmd *triggerImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	request, err := cmd.processTriggerOptions(cmd.cmd, extra.ServerURL)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to process trigger options").Err()
+		return errors.Annotate(err, "failed to process trigger options").Err()
 	}
 
 	result, err := svc.NewTask(ctx, request)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if extra.OutputJSON != "" {
@@ -287,9 +287,9 @@ func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Client, extra 
 	logging.Infof(ctx, "The task status:\n"+
 		"  %s/task?id=%s\n", extra.ServerURL, result.TaskId)
 
-	return &clipb.SpawnTasksOutput{
+	return output.Proto(sink, &clipb.SpawnTasksOutput{
 		Tasks: []*swarmingv2.TaskRequestMetadataResponse{result},
-	}, nil
+	})
 }
 
 func (cmd *triggerImpl) createTaskSliceForOptionalDimension(properties *swarmingv2.TaskProperties) (*swarmingv2.TaskSlice, error) {

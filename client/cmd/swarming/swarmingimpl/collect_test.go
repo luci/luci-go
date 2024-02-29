@@ -15,6 +15,7 @@
 package swarmingimpl
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -25,24 +26,24 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCollectParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdCollect,
 			append([]string{"-server", "example.com"}, argv...),
@@ -156,7 +157,7 @@ func TestCollect(t *testing.T) {
 				mockedState["a0"] = swarmingv2.TaskState_COMPLETED
 			}
 
-			res, _, code, _, _ := SubcommandTest(
+			_, code, stdout, _ := SubcommandTest(
 				ctx,
 				CmdCollect,
 				[]string{
@@ -169,9 +170,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-
-			json, _ := base.EncodeJSON(res)
-			So(string(json), ShouldEqual, `{
+			So(stdout, ShouldEqual, `{
  "a0": {
   "output": "Output of a0",
   "outputs": [
@@ -211,7 +210,8 @@ func TestCollect(t *testing.T) {
    "state": "COMPLETED"
   }
  }
-}`)
+}
+`)
 
 			// Check actually created output directories, even for tasks with no
 			// outputs.
@@ -226,7 +226,7 @@ func TestCollect(t *testing.T) {
 			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
 			mockedErr["a1"] = codes.PermissionDenied
 
-			res, _, code, _, _ := SubcommandTest(
+			_, code, stdout, _ := SubcommandTest(
 				ctx,
 				CmdCollect,
 				[]string{
@@ -239,9 +239,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-
-			json, _ := base.EncodeJSON(res)
-			So(string(json), ShouldEqual, `{
+			So(stdout, ShouldEqual, `{
  "a0": {
   "output": "Output of a0",
   "results": {
@@ -252,14 +250,15 @@ func TestCollect(t *testing.T) {
  "a1": {
   "error": "rpc error: code = PermissionDenied desc = some error"
  }
-}`)
+}
+`)
 		})
 
 		Convey(`Stdout fetch error`, func() {
 			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
 			mockedStdoutErr = errors.New("boom")
 
-			res, _, code, _, _ := SubcommandTest(
+			_, code, stdout, _ := SubcommandTest(
 				ctx,
 				CmdCollect,
 				[]string{
@@ -272,9 +271,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-
-			json, _ := base.EncodeJSON(res)
-			So(string(json), ShouldEqual, `{
+			So(stdout, ShouldEqual, `{
  "a0": {
   "error": "fetching console output of a0: boom",
   "results": {
@@ -282,7 +279,8 @@ func TestCollect(t *testing.T) {
    "state": "COMPLETED"
   }
  }
-}`)
+}
+`)
 		})
 
 		Convey(`CAS fetch error`, func() {
@@ -290,7 +288,7 @@ func TestCollect(t *testing.T) {
 			mockedHasCAS["a0"] = true
 			mockedCASErr = errors.New("boom")
 
-			res, _, code, _, _ := SubcommandTest(
+			_, code, stdout, _ := SubcommandTest(
 				ctx,
 				CmdCollect,
 				[]string{
@@ -303,9 +301,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-
-			json, _ := base.EncodeJSON(res)
-			So(string(json), ShouldEqual, `{
+			So(stdout, ShouldEqual, `{
  "a0": {
   "error": "fetching isolated output of a0: boom",
   "output": "Output of a0",
@@ -320,13 +316,14 @@ func TestCollect(t *testing.T) {
    "state": "COMPLETED"
   }
  }
-}`)
+}
+`)
 		})
 
 		Convey(`Timeout waiting`, func() {
 			mockedState["a0"] = swarmingv2.TaskState_PENDING
 
-			res, _, code, _, _ := SubcommandTest(
+			_, code, stdout, _ := SubcommandTest(
 				ctx,
 				CmdCollect,
 				[]string{
@@ -340,9 +337,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-
-			json, _ := base.EncodeJSON(res)
-			So(string(json), ShouldEqual, `{
+			So(stdout, ShouldEqual, `{
  "a0": {
   "error": "rpc_timeout",
   "results": {
@@ -350,7 +345,8 @@ func TestCollect(t *testing.T) {
    "state": "PENDING"
   }
  }
-}`)
+}
+`)
 		})
 
 		Convey(`No waiting`, func() {
@@ -361,7 +357,7 @@ func TestCollect(t *testing.T) {
 				panic("must not sleep")
 			}
 
-			res, _, code, _, _ := SubcommandTest(
+			_, code, stdout, _ := SubcommandTest(
 				ctx,
 				CmdCollect,
 				[]string{
@@ -375,9 +371,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-
-			json, _ := base.EncodeJSON(res)
-			So(string(json), ShouldEqual, `{
+			So(stdout, ShouldEqual, `{
  "a0": {
   "results": {
    "task_id": "a0",
@@ -390,7 +384,8 @@ func TestCollect(t *testing.T) {
    "state": "PENDING"
   }
  }
-}`)
+}
+`)
 		})
 
 		Convey(`Waiting any`, func() {
@@ -403,7 +398,7 @@ func TestCollect(t *testing.T) {
 				mockedState["a2"] = swarmingv2.TaskState_COMPLETED
 			}
 
-			res, _, code, _, _ := SubcommandTest(
+			_, code, stdout, _ := SubcommandTest(
 				ctx,
 				CmdCollect,
 				[]string{
@@ -417,9 +412,7 @@ func TestCollect(t *testing.T) {
 				nil, service,
 			)
 			So(code, ShouldEqual, 0)
-
-			json, _ := base.EncodeJSON(res)
-			So(string(json), ShouldEqual, `{
+			So(stdout, ShouldEqual, `{
  "a0": {
   "results": {
    "task_id": "a0",
@@ -440,7 +433,8 @@ func TestCollect(t *testing.T) {
    "state": "COMPLETED"
   }
  }
-}`)
+}
+`)
 		})
 	})
 }
@@ -657,9 +651,13 @@ func TestCollectSummarizeResults(t *testing.T) {
    "state": "RUNNING"
   }
  }
-}`
-		actual, _ := base.EncodeJSON(summary)
-		So(string(actual), ShouldEqual, expected)
+}
+`
+		var buf bytes.Buffer
+		sink := output.NewSink(&buf)
+		So(output.Map(sink, summary), ShouldBeNil)
+		So(sink.Finalize(), ShouldBeNil)
+		So(buf.String(), ShouldEqual, expected)
 	})
 }
 
@@ -689,8 +687,11 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 		summary, err := summarizeResultsPython(taskIDs, results)
 		So(err, ShouldBeNil)
 
-		actual, _ := base.EncodeJSON(summary)
-		So(string(actual), ShouldEqual, `{
+		var buf bytes.Buffer
+		sink := output.NewSink(&buf)
+		So(output.JSON(sink, summary), ShouldBeNil)
+		So(sink.Finalize(), ShouldBeNil)
+		So(buf.String(), ShouldEqual, `{
  "shards": [
   null,
   {
@@ -700,6 +701,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
   },
   null
  ]
-}`)
+}
+`)
 	})
 }

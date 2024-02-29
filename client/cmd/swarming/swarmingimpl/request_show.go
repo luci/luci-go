@@ -20,9 +20,9 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/common/errors"
-
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/swarming/client/swarming"
 )
 
@@ -58,10 +58,10 @@ func (cmd *requestShowImpl) ParseInputs(args []string, env subcommands.Env) erro
 	return nil
 }
 
-func (cmd *requestShowImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *requestShowImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	request, err := svc.TaskRequest(ctx, cmd.taskID)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get task request. task ID = %s", cmd.taskID).Err()
+		return errors.Annotate(err, "failed to get task request. task ID = %s", cmd.taskID).Err()
 	}
-	return request, nil
+	return output.Proto(sink, request)
 }

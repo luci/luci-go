@@ -32,13 +32,13 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/casclient"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
-
 	"go.chromium.org/luci/swarming/client/swarming"
 )
 
@@ -48,8 +48,8 @@ type Subcommand interface {
 	RegisterFlags(fs *flag.FlagSet)
 	// ParseInputs extracts information from flags, CLI args and environ.
 	ParseInputs(args []string, env subcommands.Env) error
-	// Execute executes the subcommand and returns a JSON-serializable output.
-	Execute(ctx context.Context, svc swarming.Client, extra Extra) (any, error)
+	// Execute executes the subcommand.
+	Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra Extra) error
 }
 
 // Extra is passed to an executing subcommand and it contains any additional
@@ -67,12 +67,11 @@ type Extra struct {
 
 	// OutputJSON is path to the file where the results will be stored, if any.
 	//
-	// It is empty is JSON results aren't being written anywhere. It can be
+	// It is empty if JSON results aren't being written anywhere. It can be
 	// literal `-` if results are written to stdout.
 	//
-	// No need to manually write anything to it. Whatever Execute(...) returns
-	// will be written here automatically. This value is exposed to allow to
-	// reference it in logs.
+	// No need to manually write anything to it. Instead write to `sink` passed
+	// to Execute. This value is exposed to allow to reference it in logs.
 	OutputJSON string
 
 	// Standard output stream, perhaps redirected somewhere.
@@ -195,18 +194,16 @@ type CommandRun struct {
 	testingStderr   io.Writer
 	testingStdout   io.Writer
 	testingEnv      subcommands.Env
-	testingResult   *any
 	testingErr      *error
 }
 
 // TestingMocks is used in tests to mock dependencies.
-func (cr *CommandRun) TestingMocks(ctx context.Context, svc swarming.Client, env subcommands.Env, res *any, err *error, stdout, stderr io.Writer) {
+func (cr *CommandRun) TestingMocks(ctx context.Context, svc swarming.Client, env subcommands.Env, err *error, stdout, stderr io.Writer) {
 	cr.testingContext = ctx
 	cr.testingSwarming = svc
 	cr.testingStdout = stdout
 	cr.testingStderr = stderr
 	cr.testingEnv = env
-	cr.testingResult = res
 	cr.testingErr = err
 }
 
@@ -320,6 +317,28 @@ func (cr *CommandRun) parseCommonFlags(env subcommands.Env) error {
 
 // exec executes the subcommand and stores the JSON output.
 func (cr *CommandRun) execute(ctx context.Context) error {
+	// Figure out where to stream JSON output.
+	var sink *output.Sink
+	var closeOutput func() error
+	switch cr.jsonOutput {
+	case "":
+		// Don't write JSON output at all.
+		sink = output.NewDiscardingSink()
+		closeOutput = func() error { return nil }
+	case "-":
+		// Write JSON output to stdout, but do not close it.
+		sink = output.NewSink(cr.stdout())
+		closeOutput = func() error { return nil }
+	default:
+		// Write JSON output to a file and close it.
+		jsonFile, err := os.Create(cr.jsonOutput)
+		if err != nil {
+			return errors.Annotate(err, "opening JSON output file for writing").Err()
+		}
+		sink = output.NewSink(jsonFile)
+		closeOutput = func() error { return jsonFile.Close() }
+	}
+
 	svc := cr.testingSwarming
 	if svc == nil {
 		cl, err := cr.authFlags.NewHTTPClient(ctx)
@@ -339,56 +358,37 @@ func (cr *CommandRun) execute(ctx context.Context) error {
 
 	started := clock.Now(ctx)
 
-	out, err := cr.impl.Execute(ctx, svc, Extra{
+	err := cr.impl.Execute(ctx, svc, sink, Extra{
 		AuthFlags:  cr.authFlags,
 		ServerURL:  cr.serverURL,
 		OutputJSON: cr.jsonOutput,
 		Stdout:     cr.stdout(),
 		Stderr:     cr.stderr(),
 	})
-	if cr.testingResult != nil {
-		*cr.testingResult = out
-	}
 	svc.Close(ctx)
+
+	// Close JSON output and figure out the final error.
+	closeErr := sink.Finalize()
+	if closeErr == nil {
+		closeErr = closeOutput()
+	} else {
+		_ = closeOutput() // prefer Finalize error as the main error
+	}
+	if closeErr != nil {
+		logging.Errorf(ctx, "Failed to finalize JSON output: %s", closeErr)
+		if err == nil {
+			err = errors.Annotate(closeErr, "finalizing JSON output").Err()
+		}
+	}
 
 	if cr.feats.MeasureDuration {
 		dt := clock.Since(ctx, started)
 		if err == nil {
-			logging.Infof(ctx, "The command completed successfully in %s", dt.Round(time.Millisecond))
+			logging.Infof(ctx, "The command completed in %s", dt.Round(time.Millisecond))
 		} else {
 			logging.Infof(ctx, "The command failed in %s", dt.Round(time.Millisecond))
 		}
 	}
 
-	stdoutProjection, _ := out.(*listWithProjection)
-
-	if err != nil || (cr.jsonOutput == "" && stdoutProjection == nil) {
-		return err
-	}
-
-	asJSON, err := EncodeJSON(out)
-	if err != nil {
-		return errors.Annotate(err, "the command succeeded but the result is not JSON-serializable").Err()
-	}
-
-	if cr.jsonOutput == "-" {
-		if stdoutProjection == nil {
-			logging.Debugf(ctx, "Writing the output as JSON to stdout")
-			fmt.Fprintln(cr.stdout(), string(asJSON))
-		}
-	} else {
-		logging.Debugf(ctx, "Writing the output as JSON to %s", cr.jsonOutput)
-		if err := os.WriteFile(cr.jsonOutput, asJSON, 0644); err != nil {
-			return errors.Annotate(err, "the command succeeded but the result could not be written to -json-output").Err()
-		}
-	}
-
-	// Write a list of strings to stdout as well if the command requested it.
-	if stdoutProjection != nil {
-		for i := 0; i < stdoutProjection.count; i++ {
-			fmt.Fprintln(cr.stdout(), stdoutProjection.stdoutLine(i))
-		}
-	}
-
-	return nil
+	return err
 }

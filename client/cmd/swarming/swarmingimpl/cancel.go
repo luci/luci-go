@@ -20,10 +20,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/base"
 	"go.chromium.org/luci/swarming/client/swarming"
 )
 
@@ -59,14 +59,14 @@ func (cmd *cancelImpl) ParseInputs(args []string, env subcommands.Env) error {
 	return nil
 }
 
-func (cmd *cancelImpl) Execute(ctx context.Context, svc swarming.Client, extra base.Extra) (any, error) {
+func (cmd *cancelImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	res, err := svc.CancelTask(ctx, cmd.taskID, cmd.killRunning)
 	if res != nil && !res.Canceled {
 		err = errors.Reason("task was not canceled. running=%v\n", res.WasRunning).Err()
 	}
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to cancel task %s\n", cmd.taskID).Err()
+		return errors.Annotate(err, "failed to cancel task %s\n", cmd.taskID).Err()
 	}
 	logging.Infof(ctx, "Canceled %s", cmd.taskID)
-	return nil, nil
+	return nil
 }

@@ -18,17 +18,17 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRequestShowParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdRequestShow,
 			append([]string{"-server", "example.com"}, argv...),
@@ -61,7 +61,7 @@ func TestRequestShow(t *testing.T) {
 	}
 
 	Convey(`Output is correct`, t, func() {
-		_, _, code, stdout, _ := SubcommandTest(
+		_, code, stdout, _ := SubcommandTest(
 			context.Background(),
 			CmdRequestShow,
 			[]string{"-server", "example.com", "aaaa"},

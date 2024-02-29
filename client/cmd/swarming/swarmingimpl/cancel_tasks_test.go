@@ -25,7 +25,7 @@ func TestCancelTasksParse(t *testing.T) {
 	t.Parallel()
 
 	expectErr := func(argv []string, errLike string) {
-		_, _, code, _, stderr := SubcommandTest(
+		_, code, _, stderr := SubcommandTest(
 			context.Background(),
 			CmdCancelTasks,
 			append([]string{"-server", "example.com"}, argv...),
