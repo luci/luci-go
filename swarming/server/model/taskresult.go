@@ -687,7 +687,96 @@ func TaskOutputChunkKey(ctx context.Context, taskReq *datastore.Key, idx int64) 
 		datastore.NewKey(ctx, "TaskOutput", "", 1, TaskRunResultKey(ctx, taskReq)))
 }
 
+// TaskResultSummaryQueryOptions are options to pass to the query.
+// Start, End, State and TagsFilter will filter the query respectively.
+// Sort specifies how to sort the tasks returned from the query.
+// TODO: add support for Cursor, Limit and IncludePerformanceStats boolean flag.
+type TaskResultSummaryQueryOptions struct {
+	Start      *timestamppb.Timestamp
+	End        *timestamppb.Timestamp
+	State      apipb.StateQuery
+	Sort       apipb.SortQuery
+	TagsFilter *Filter
+}
+
 // TaskResultSummaryQuery prepares a query that fetches TaskResultSummary entities.
 func TaskResultSummaryQuery() *datastore.Query {
 	return datastore.NewQuery("TaskResultSummary")
+}
+
+// GetTaskResultSummaryQueries generates a slice of datastore queries based on the provided filters.
+func GetTaskResultSummaryQueries(ctx context.Context, filters *TaskResultSummaryQueryOptions, splitMode SplitMode) ([]*datastore.Query, error) {
+	if (filters.Start != nil || filters.End != nil) && filters.Sort != apipb.SortQuery_QUERY_CREATED_TS {
+		return nil, errors.Reason("cannot both sort and use timestamp filtering").Err()
+	}
+	q := TaskResultSummaryQuery()
+	// For Start and End, the query transforms the provided timestamp filters into
+	// datastore.Key objects to compare entities. The Inequalities are inverted because
+	// keys are in reverse chronological order.
+	if filters.Start != nil {
+		startReqKey, err := TimestampToRequestKey(ctx, filters.Start.AsTime(), 0)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to create key from start time").Err()
+		}
+		q = q.Lte("__key__", TaskResultSummaryKey(ctx, startReqKey))
+	}
+	if filters.End != nil {
+		endReqKey, err := TimestampToRequestKey(ctx, filters.End.AsTime(), 0)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to create key from end time").Err()
+		}
+		q = q.Gte("__key__", TaskResultSummaryKey(ctx, endReqKey))
+	}
+	q = FilterByStateQuery(q, filters.State)
+	if filters.TagsFilter != nil && len(filters.TagsFilter.filters) > 0 {
+		if filters.Sort != apipb.SortQuery_QUERY_CREATED_TS {
+			// To sort by another index that is not CREATED_TS with tags present,
+			// some new indexing will need to be added.
+			return nil, errors.Reason("filtering by tags while sorting by %v is not supported", filters.Sort).Err()
+		}
+		return filters.TagsFilter.Apply(q, "tags", splitMode), nil
+	}
+	return []*datastore.Query{q}, nil
+}
+
+// FilterByStateQuery modifies the datastore query depending on the state filter.
+func FilterByStateQuery(q *datastore.Query, state apipb.StateQuery) *datastore.Query {
+	switch state {
+	case apipb.StateQuery_QUERY_PENDING:
+		q = q.Eq("state", apipb.TaskState_PENDING)
+	case apipb.StateQuery_QUERY_RUNNING:
+		q = q.Eq("state", apipb.TaskState_RUNNING)
+	case apipb.StateQuery_QUERY_PENDING_RUNNING:
+		// This assumes that no task has the state INVALID. Since the enum values
+		// for TaskState_PENDING = 32 and TaskState_RUNNING = 16, we can use Lte.
+		// Otherwise we would have to use
+		//   q = q.In("state", apipb.TaskState_PENDING, apipb.TaskState_RUNNING)
+		// which would add more complexity to the query.
+		q = q.Lte("state", apipb.TaskState_PENDING)
+	case apipb.StateQuery_QUERY_COMPLETED:
+		q = q.Eq("state", apipb.TaskState_COMPLETED)
+	case apipb.StateQuery_QUERY_COMPLETED_SUCCESS:
+		q = q.Eq("state", apipb.TaskState_COMPLETED).Eq("failure", false)
+	case apipb.StateQuery_QUERY_COMPLETED_FAILURE:
+		q = q.Eq("state", apipb.TaskState_COMPLETED).Eq("failure", true)
+	case apipb.StateQuery_QUERY_EXPIRED:
+		q = q.Eq("state", apipb.TaskState_EXPIRED)
+	case apipb.StateQuery_QUERY_TIMED_OUT:
+		q = q.Eq("state", apipb.TaskState_TIMED_OUT)
+	case apipb.StateQuery_QUERY_BOT_DIED:
+		q = q.Eq("state", apipb.TaskState_BOT_DIED)
+	case apipb.StateQuery_QUERY_CANCELED:
+		q = q.Eq("state", apipb.TaskState_CANCELED)
+	case apipb.StateQuery_QUERY_DEDUPED:
+		q = q.Eq("state", apipb.TaskState_COMPLETED).Eq("try_number", 0)
+	case apipb.StateQuery_QUERY_KILLED:
+		q = q.Eq("state", apipb.TaskState_KILLED)
+	case apipb.StateQuery_QUERY_NO_RESOURCE:
+		q = q.Eq("state", apipb.TaskState_NO_RESOURCE)
+	case apipb.StateQuery_QUERY_CLIENT_ERROR:
+		q = q.Eq("state", apipb.TaskState_CLIENT_ERROR)
+	default:
+		// default case is apipb.StateQuery_QUERY_ALL, where the query is unchanged.
+	}
+	return q
 }

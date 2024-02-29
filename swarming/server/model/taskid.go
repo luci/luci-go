@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -35,6 +36,11 @@ const (
 	AsRequest TaskIDVariant = 0
 	// AsRunResult instructs RequestKeyToTaskID to produce an ID ending with `1`.
 	AsRunResult TaskIDVariant = 1
+
+	// The world started on 2010-01-01 at 00:00:00 UTC. The rationale is that using
+	// EPOCH (1970) means that 40 years worth of keys are wasted.
+	// 1262304000 is the result of time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC).Unix()
+	BeginningOfTheWorld int64 = 1262304000
 )
 
 // RequestKeyToTaskID converts TaskRequest entity key to a string form used in
@@ -86,4 +92,21 @@ func TaskIDToRequestKey(ctx context.Context, taskID string) (*datastore.Key, err
 		return nil, errors.Annotate(err, "bad task ID").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 	return datastore.NewKey(ctx, "TaskRequest", "", num^taskRequestIDMask, nil), nil
+}
+
+// TimestampToRequestKey converts a timestamp to a request key.
+// Note that this function does NOT accept a task id. This functions is primarily
+// meant for limiting queries to a task creation range.
+func TimestampToRequestKey(ctx context.Context, timestamp time.Time, suffix int64) (*datastore.Key, error) {
+	if suffix < 0 || suffix > 0xffff {
+		return nil, errors.Reason("invalid suffix").Err()
+	}
+	unixts := timestamp.Unix()
+	if unixts < BeginningOfTheWorld {
+		return nil, errors.Reason("time %s is set to before %d", timestamp, BeginningOfTheWorld).Err()
+	}
+	delta := unixts - BeginningOfTheWorld
+	base := (delta * 1000) << 20
+	reqID := base | suffix<<4 | 0x1
+	return datastore.NewKey(ctx, "TaskRequest", "", reqID^taskRequestIDMask, nil), nil
 }

@@ -70,6 +70,9 @@ type BotsServer struct {
 // RPCs are implemented in tasks_*.go files.
 type TasksServer struct {
 	apipb.UnimplementedTasksServer
+
+	// TaskQuerySplitMode controls how "finely" to split TaskResultSummary queries.
+	TaskQuerySplitMode model.SplitMode
 }
 
 // RequestState carries stated scoped to a single RPC handler.
