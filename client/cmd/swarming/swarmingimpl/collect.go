@@ -434,20 +434,25 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 
 	// Collect statuses of all tasks and start fetching their results as soon
 	// as they are available, in parallel. Fetch results using the root `ctx`
-	// (to not be affected by -timeout, which is a *waiting* timeout).
+	// (to not be affected by -timeout, which is a *waiting* timeout). Call
+	// GetMany in a background goroutine in order to start reading from
+	// `resultsCh` below in parallel (to report results as soon as they are
+	// available).
 	resultsCh := make(chan taskResult)
-	swarming.GetMany(wctx, svc, cmd.taskIDs, &fields, mode, func(taskID string, res *swarmingv2.TaskResultResponse, err error) {
-		go func() {
-			taskRes := taskResult{taskID: taskID, result: res, err: err}
-			if acqErr := acquireSlot(); acqErr != nil {
-				taskRes.err = normalizeCtxErr(acqErr)
-			} else {
-				cmd.fetchTaskResults(ctx, svc, &taskRes)
-				releaseSlot()
-			}
-			resultsCh <- taskRes
-		}()
-	})
+	go func() {
+		swarming.GetMany(wctx, svc, cmd.taskIDs, &fields, mode, func(taskID string, res *swarmingv2.TaskResultResponse, err error) {
+			go func() {
+				taskRes := taskResult{taskID: taskID, result: res, err: err}
+				if acqErr := acquireSlot(); acqErr != nil {
+					taskRes.err = normalizeCtxErr(acqErr)
+				} else {
+					cmd.fetchTaskResults(ctx, svc, &taskRes)
+					releaseSlot()
+				}
+				resultsCh <- taskRes
+			}()
+		})
+	}()
 
 	// TODO(crbug.com/894045): Get rid of taskSummaryPython mode.
 	var emitter summaryEmitter
