@@ -711,10 +711,6 @@ func (m *ExecutionState) validate(all bool) error {
 
 	// no validation rules for Status
 
-	// no validation rules for FailureReason
-
-	// no validation rules for FailureReasonTmpl
-
 	if all {
 		switch v := interface{}(m.GetFailures()).(type) {
 		case interface{ ValidateAll() error }:

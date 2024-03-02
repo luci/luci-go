@@ -204,6 +204,8 @@ message Result {
 
 // ExecutionState is the state of executing Tryjobs requirement.
 message ExecutionState {
+  reserved 4; // failure_reason
+  reserved 7; // failure_reason_tmpl
   // Execution tracks the execution state of each individual Tryjob requirement.
   message Execution {
     // Attempt represents each attempt to complete an execution.
@@ -273,12 +275,6 @@ message ExecutionState {
   // FAILED if at least one Tryjob fails and cannot be retried,
   // or RUNNING otherwise.
   Status status = 3;
-  // FailureReason provides a user-readable explanation of the
-  // failure.
-  string failure_reason = 4 [deprecated=true];
-  // FailureReasonTmpl provides a user-readable explanation of the
-  // failure, with template support.
-  string failure_reason_tmpl = 7 [deprecated=true];
   // Failures describe why the Tryjob execution has failed.
   //
   // Must set if status == FAILED.

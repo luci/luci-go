@@ -395,7 +395,6 @@ func TestMakeAttempt(t *testing.T) {
 
 		Convey("Failed Tryjob", func() {
 			r.Tryjobs.GetState().Status = tryjob.ExecutionState_FAILED
-			r.Tryjobs.GetState().FailureReason = "some tryjobs have failed"
 			r.Status = run.Status_FAILED
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
 			So(err, ShouldBeNil)

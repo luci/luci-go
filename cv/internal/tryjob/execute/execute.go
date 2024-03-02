@@ -313,7 +313,6 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 	case hasFailed:
 		if ok := e.canRetryAll(ctx, execState, failedIndices); !ok {
 			execState.Status = tryjob.ExecutionState_FAILED
-			execState.FailureReasonTmpl = composeReason(failedTryjobs)
 			if execState.Failures == nil {
 				execState.Failures = &tryjob.ExecutionState_Failures{}
 			}
@@ -462,7 +461,6 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 			return nil, err
 		}
 
-		var criticalLaunchFailures map[*tryjob.Definition]string
 		project, configGroup := r.ID.LUCIProject(), r.ConfigGroupID.Name()
 		for i, tj := range tryjobs {
 			def, exec := definitions[i], executions[i]
@@ -477,25 +475,18 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 				})
 			}
 			if attempt.Status == tryjob.Status_UNTRIGGERED && def.GetCritical() {
-				if criticalLaunchFailures == nil {
-					criticalLaunchFailures = make(map[*tryjob.Definition]string)
+				if execState.Failures == nil {
+					execState.Failures = &tryjob.ExecutionState_Failures{}
 				}
-				criticalLaunchFailures[def] = tj.UntriggeredReason
+				execState.Failures.LaunchFailures = append(execState.Failures.LaunchFailures, &tryjob.ExecutionState_Failures_LaunchFailure{
+					Definition: def,
+					Reason:     tj.UntriggeredReason,
+				})
 			}
 		}
 
-		if len(criticalLaunchFailures) > 0 {
+		if execState.Failures != nil {
 			execState.Status = tryjob.ExecutionState_FAILED
-			execState.FailureReasonTmpl = composeLaunchFailureReason(criticalLaunchFailures)
-			if execState.Failures == nil {
-				execState.Failures = &tryjob.ExecutionState_Failures{}
-			}
-			for def, reason := range criticalLaunchFailures {
-				execState.Failures.LaunchFailures = append(execState.Failures.LaunchFailures, &tryjob.ExecutionState_Failures_LaunchFailure{
-					Definition: def,
-					Reason:     reason,
-				})
-			}
 			return execState, nil
 		}
 	}
