@@ -331,7 +331,8 @@ message QuerySourcePositionsRequest {
   string variant_hash = 3;
   // Hash of the source branch, as 16 lowercase hexadecimal characters.
   string ref_hash = 4;
-  // The source position where to start listing from, inclusive.
+  // The source position where to start listing from, in descending order (newest commit to older commits).
+  // This start source position will be the largest source position in the response.
   int64 start_source_position = 5;
   // The maximum number of commits to return.
   //
