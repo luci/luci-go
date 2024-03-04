@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -33,6 +32,7 @@ import (
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
@@ -529,6 +529,8 @@ func TestCollectSummarizeResults(t *testing.T) {
 			State:            swarmingv2.TaskState_RUNNING,
 		}
 
+		tmpDir := t.TempDir()
+
 		emitted := passThroughEmitter(func(sink *output.Sink) summaryEmitter {
 			return &defaultSummaryEmitter{
 				sink:           sink,
@@ -538,22 +540,22 @@ func TestCollectSummarizeResults(t *testing.T) {
 			{
 				taskID: "task1",
 				result: result1,
-				output: "Output",
+				output: fakeTextOutput(tmpDir, "Output"),
 			},
 			{
 				taskID: "task2",
 				result: result2,
-				output: "Output",
+				output: fakeTextOutput(tmpDir, "Output"),
 			},
 			{
 				taskID: "task3",
 				result: result3,
-				output: "Output",
+				output: fakeTextOutput(tmpDir, "Output"),
 			},
 			{
 				taskID: "task4",
 				result: result4,
-				output: "Output",
+				output: fakeTextOutput(tmpDir, "Output"),
 			},
 		})
 
@@ -661,6 +663,8 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Simple json.`, t, func() {
+		tmpDir := t.TempDir()
+
 		emitted := passThroughEmitter(func(sink *output.Sink) summaryEmitter {
 			return &legacySummaryEmitter{
 				sink:           sink,
@@ -676,7 +680,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 					Duration: 1,
 					ExitCode: 0,
 				},
-				output: "Output",
+				output: fakeTextOutput(tmpDir, "Output"),
 			},
 			{
 				taskID: "failed1",
@@ -716,13 +720,27 @@ func sortJSON(s string) string {
 }
 
 func passThroughEmitter(emitter func(sink *output.Sink) summaryEmitter, results []*taskResult) string {
+	var merr errors.MultiError
 	var buf bytes.Buffer
 	sink := output.NewSink(&buf)
 	em := emitter(sink)
+	em.start(&merr)
 	for _, res := range results {
-		em.emit(res)
+		em.emit(res, &merr)
 	}
-	So(em.finish(), ShouldBeNil)
+	em.finish(&merr)
+	So(merr, ShouldBeNil)
 	So(sink.Finalize(), ShouldBeNil)
 	return buf.String()
+}
+
+func fakeTextOutput(tmpDir string, text string) *textOutput {
+	file, err := os.CreateTemp(tmpDir, "swarming_collect_test_*.txt")
+	So(err, ShouldBeNil)
+	_, err = file.WriteString(text)
+	So(err, ShouldBeNil)
+	return &textOutput{
+		file: file,
+		temp: true,
+	}
 }

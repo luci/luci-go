@@ -15,14 +15,15 @@
 package swarmingimpl
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -42,52 +43,58 @@ import (
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
-type taskOutputOption int64
+type taskOutputOption []string
 
-const (
-	taskOutputNone    taskOutputOption = 0
-	taskOutputConsole taskOutputOption = 1 << 0
-	taskOutputJSON    taskOutputOption = 1 << 1
-	taskOutputAll     taskOutputOption = taskOutputConsole | taskOutputJSON
-)
+func (t taskOutputOption) includesJSON() bool {
+	return slices.Contains(t, "json")
+}
 
-func (t *taskOutputOption) String() string {
-	switch *t {
-	case taskOutputJSON:
-		return "json"
-	case taskOutputConsole:
-		return "console"
-	case taskOutputAll:
-		return "all"
-	case taskOutputNone:
-		fallthrough
-	default:
+func (t taskOutputOption) includesConsole() bool {
+	return slices.Contains(t, "console")
+}
+
+func (t taskOutputOption) includesDir() (path string, ok bool) {
+	for _, v := range t {
+		if v == "dir" {
+			return "", true
+		}
+		if path, ok := strings.CutPrefix(v, "dir:"); ok {
+			return path, true
+		}
+	}
+	return "", false
+}
+
+func (t taskOutputOption) String() string {
+	if len(t) == 0 {
 		return "none"
 	}
+	return strings.Join(t, ",")
 }
 
 func (t *taskOutputOption) Set(s string) error {
-	switch s {
-	case "json":
-		*t = taskOutputJSON
-	case "console":
-		*t = taskOutputConsole
-	case "all":
-		*t = taskOutputAll
-	case "", "none":
-		*t = taskOutputNone
+	if slices.Contains(*t, s) {
+		return nil
+	}
+	switch {
+	case s == "none" || s == "":
+		// Nothing.
+	case s == "console":
+		*t = append(*t, s)
+	case s == "json":
+		*t = append(*t, s)
+	case s == "dir" || strings.HasPrefix(s, "dir:"):
+		if _, yes := t.includesDir(); yes {
+			return errors.Reason("cannot have more than one \"dir\" destination").Err()
+		}
+		*t = append(*t, s)
+	case s == "all":
+		_ = t.Set("console")
+		_ = t.Set("json")
 	default:
-		return errors.Reason("invalid task output option: %s", s).Err()
+		return errors.Reason("invalid task output option").Err()
 	}
 	return nil
-}
-
-func (t *taskOutputOption) includesJSON() bool {
-	return (*t & taskOutputJSON) != 0
-}
-
-func (t *taskOutputOption) includesConsole() bool {
-	return (*t & taskOutputConsole) != 0
 }
 
 var taskIDRe = regexp.MustCompile("^[a-f0-9]+$")
@@ -103,8 +110,8 @@ type taskResult struct {
 	result *swarmingv2.TaskResultResponse
 
 	// output is the console output produced by the swarming task.
-	// output will only be populated if requested.
-	output string
+	// output will only be populated if requested (nil otherwise).
+	output *textOutput
 
 	// outputs is a list of file outputs from a task, downloaded from an isolate server.
 	// outputs will only be populated if requested.
@@ -141,6 +148,49 @@ func (t *taskResult) logSummary(ctx context.Context) {
 	}
 }
 
+// textOutput is a container for the fetched task's console output.
+//
+// Task console output can be huge (hundreds of megabytes). We store it in a
+// file to avoid OOMs. When `-task-output-stdout dir` is set, this is the final
+// output file returned to the caller. Otherwise it is some temporary file
+// deleted after we are done with it.
+//
+// Assumes `fetch` is called before `dump` and no calls are happening
+// concurrently.
+type textOutput struct {
+	file *os.File // the backing file open in RW mode
+	temp bool     // if true, delete the file after closing it
+}
+
+func (t *textOutput) close() error {
+	var merr errors.MultiError
+	merr.MaybeAdd(t.file.Close())
+	if t.temp {
+		merr.MaybeAdd(os.Remove(t.file.Name()))
+	}
+	return merr.AsError()
+}
+
+func (t *textOutput) fetch(ctx context.Context, svc swarming.Client, taskID string) error {
+	_, err := svc.TaskOutput(ctx, taskID, t.file)
+	return err
+}
+
+func (t *textOutput) dump(out io.Writer) (n int64, err error) {
+	if _, err := t.file.Seek(0, io.SeekStart); err != nil {
+		return 0, err
+	}
+	return io.Copy(out, t.file)
+}
+
+func (t *textOutput) dumpToUTF8() (string, error) {
+	var buf strings.Builder
+	if _, err := t.dump(&buf); err != nil {
+		return "", err
+	}
+	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
+}
+
 // CmdCollect returns an object for the `collect` subcommand.
 func CmdCollect(authFlags base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
@@ -175,15 +225,19 @@ waiting was aborted by SIGTERM, the "error" field will contain "rpc_canceled"
 value.
 
 Flag -task-output-stdout controls where to dump the console log of completed
-tasks. Its possible values:
+tasks. Can be specified multiple times to emit the log into multiple places.
+Its possible values:
   * "none" (default): don't fetch the console log at all.
-  * "console": dump the log only to stdout.
-  * "json": dump the log only into the JSON output (in "result.output" field).
-  * "all": dump the log to stdout and also into the JSON output.
+  * "console": dump the log to stdout.
+  * "json": dump the log into the JSON output (in "result.output" field).
+  * "dir:<path>": dump the log into <path>/<task-ID>.txt.
+  * "dir": dump the log into <output-dir>/<task-ID>.txt (see -output-dir flag).
+  * "all": a legacy alias for combination of "console" and "json".
 
-Flag -output-dir controls where to store isolated outputs of completed tasks.
-If it is unset (default), isolated outputs will not be fetched. Otherwise
-isolated outputs of a completed task with ID <task-ID> will be downloaded to
+Flag -output-dir controls where to store isolated outputs of completed tasks,
+as well as tasks' console log (when using "-task-output-stdout dir" flag). If it
+is unset (default), isolated outputs will not be fetched. Otherwise isolated
+outputs of a completed task with ID <task-ID> will be downloaded to
 <output-dir>/<task-ID> directory. If such directory already exists, it will be
 cleared first. If a task has no isolated outputs or it has not completed yet,
 its output directory will be empty. The JSON output will contain a list of
@@ -214,6 +268,7 @@ type collectImpl struct {
 	taskSummaryPython bool
 	taskOutput        taskOutputOption
 	outputDir         string
+	textOutputDir     string // where to store console output or "" for temp
 	eager             bool
 	perf              bool
 	jsonInput         string
@@ -230,12 +285,12 @@ func (cmd *collectImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&cmd.taskSummaryPython, "task-summary-python", false, "Generate python client compatible task summary json.")
 
 	fs.BoolVar(&cmd.perf, "perf", false, "Include performance statistics.")
-	fs.Var(&cmd.taskOutput, "task-output-stdout", "Where to output each task's console output (combined stderr and stdout). (none|json|console|all)")
-	fs.StringVar(&cmd.outputDir, "output-dir", "", "Where to download isolated output to.")
+	fs.Var(&cmd.taskOutput, "task-output-stdout", "Where to put each task's console output (combined stderr and stdout): none, json, console, dir[:<path>], all (a legacy alias for json+console). Can be specified multiple times.")
+	fs.StringVar(&cmd.outputDir, "output-dir", "", "Where to download outputs to.")
 
 	fs.StringVar(&cmd.jsonInput, "requests-json", "", "Load the task IDs from a .json file as saved by \"trigger -json-output\".")
 
-	fs.IntVar(&cmd.outputFetchConcurrency, "output-fetch-concurrency", 4, "Limits how many concurrent result fetches are allowed (to avoid OOMs). 0 is unlimited.")
+	fs.IntVar(&cmd.outputFetchConcurrency, "output-fetch-concurrency", 8, "Limits how many concurrent result fetches are allowed (to avoid OOMs). 0 is unlimited.")
 }
 
 func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
@@ -243,7 +298,24 @@ func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
 		return errors.Reason("negative timeout is not allowed").Err()
 	}
 	if !cmd.wait && cmd.timeout > 0 {
-		return errors.Reason("Do not specify -timeout with -wait=false.").Err()
+		return errors.Reason("do not specify -timeout with -wait=false").Err()
+	}
+
+	// Figure out where to store files with tasks' stdout.
+	var ok bool
+	cmd.textOutputDir, ok = cmd.taskOutput.includesDir()
+	if ok {
+		if cmd.textOutputDir == "" {
+			cmd.textOutputDir = cmd.outputDir
+		}
+		if cmd.textOutputDir == "" {
+			return errors.Reason(
+				"cannot figure out where to store task console output: " +
+					"either specify the directory as `-task-output-stdout dir:<path>` " +
+					"(if only console output is required) or pass `-output-dir` " +
+					"(if both text and isolated output are required)",
+			).Err()
+		}
 	}
 
 	// Collect all task IDs to wait on.
@@ -298,6 +370,16 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 		}
 	}
 
+	// If asked to fetch task's console output, prepare the storage file for it.
+	wantConsoleOut := len(cmd.taskOutput) != 0
+	if wantConsoleOut {
+		var outErr error
+		res.output, outErr = prepareTextOutput(cmd.textOutputDir, res.taskID)
+		if outErr != nil && res.err == nil {
+			res.err = outErr
+		}
+	}
+
 	// If failed to fetch the task status (or create the output directory), don't
 	// even bother to fetch the results.
 	if res.err != nil {
@@ -307,23 +389,19 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 	}
 
 	if res.result.State == swarmingv2.TaskState_PENDING || res.result.State == swarmingv2.TaskState_RUNNING {
-		logging.Infof(ctx, "%s", res.SummaryLine())
+		res.logSummary(ctx)
 		return
 	}
 
 	eg, ectx := errgroup.WithContext(ctx)
 
 	// Fetch combined stderr/stdout (aka console) output if asked for it.
-	wantConsoleOut := cmd.taskOutput != taskOutputNone
 	if wantConsoleOut {
 		eg.Go(func() error {
 			logging.Debugf(ectx, "%s: fetching console output", res.taskID)
-			var output bytes.Buffer
-			_, err := svc.TaskOutput(ectx, res.taskID, &output)
-			if err != nil {
+			if err := res.output.fetch(ectx, svc, res.taskID); err != nil {
 				return errors.Annotate(err, "fetching console output of %s", res.taskID).Err()
 			}
-			res.output = strings.ToValidUTF8(output.String(), "\uFFFD")
 			return nil
 		})
 	}
@@ -396,6 +474,27 @@ func prepareOutputDir(outputDir, taskID string) (string, error) {
 		return "", errors.Annotate(err, "failed to create directory: %s", dir).Err()
 	}
 	return dir, nil
+}
+
+// prepareTextOutput creates a file for storing task's console output.
+//
+// If `outputDir` is empty, will use a temporary file.
+func prepareTextOutput(outputDir, taskID string) (*textOutput, error) {
+	if outputDir == "" {
+		file, err := os.CreateTemp("", fmt.Sprintf("swarming_%s_*.txt", taskID))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to create a temp file for storing console output").Err()
+		}
+		return &textOutput{file: file, temp: true}, nil
+	}
+	if err := os.MkdirAll(outputDir, 0777); err != nil {
+		return nil, errors.Annotate(err, "failed to create directory: %s", outputDir).Err()
+	}
+	file, err := os.Create(filepath.Join(outputDir, taskID+".txt"))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create a file for storing console output").Err()
+	}
+	return &textOutput{file: file}, nil
 }
 
 func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
@@ -473,37 +572,57 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 		}
 	}
 
+	// All errors dealing with the output.
+	var outputErrs errors.MultiError
+
 	// Wait for all fetchTaskResults(...) calls to complete. Emit their output
 	// as soon as it is available.
-	emitter.start()
+	emitter.start(&outputErrs)
 	for i := 0; i < len(cmd.taskIDs); i++ {
 		res := <-resultsCh
 		res.logSummary(ctx) // might be context cancellation, log it
 		if cmd.taskOutput.includesConsole() {
 			fmt.Fprintln(extra.Stdout, res.SummaryLine())
-			if res.output != "" {
-				fmt.Fprintln(extra.Stdout, res.output)
+			if res.output != nil {
+				switch written, err := res.output.dump(extra.Stdout); {
+				case err != nil:
+					outputErrs.MaybeAdd(errors.Annotate(err, "emitting stdout of %q", res.taskID).Err())
+				case written != 0:
+					fmt.Fprintln(extra.Stdout)
+				}
 			}
 		}
-		emitter.emit(&res)
+		emitter.emit(&res, &outputErrs)
 	}
-	return emitter.finish()
+	emitter.finish(&outputErrs)
+
+	return outputErrs.AsError()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // summaryEmitters knows how to write task result entries to the JSON output.
+//
+// Takes ownership of *taskResult passed to it. Writes all errors into the
+// given MultiError.
 type summaryEmitter interface {
-	start()
-	emit(res *taskResult)
-	finish() error
+	start(merr *errors.MultiError)
+	emit(res *taskResult, merr *errors.MultiError)
+	finish(merr *errors.MultiError)
 }
 
+// Just closes outputs without reading them.
 type noopSummaryEmitter struct{}
 
-func (noopSummaryEmitter) start()               {}
-func (noopSummaryEmitter) emit(res *taskResult) {}
-func (noopSummaryEmitter) finish() error        { return nil }
+func (noopSummaryEmitter) start(merr *errors.MultiError) {}
+
+func (noopSummaryEmitter) emit(res *taskResult, merr *errors.MultiError) {
+	if res.output != nil {
+		merr.MaybeAdd(errors.Annotate(res.output.close(), "closing console output of %q", res.taskID).Err())
+	}
+}
+
+func (noopSummaryEmitter) finish(merr *errors.MultiError) {}
 
 // The non-legacy summary format is an unordered dict. We can write entries
 // for it in any order. This allows us to "forget" them (and free memory
@@ -511,40 +630,39 @@ func (noopSummaryEmitter) finish() error        { return nil }
 type defaultSummaryEmitter struct {
 	sink           *output.Sink
 	populateStdout bool
-	err            error
 }
 
-func (e *defaultSummaryEmitter) start() {
-	e.err = output.StartMap(e.sink)
+func (e *defaultSummaryEmitter) start(merr *errors.MultiError) {
+	merr.MaybeAdd(output.StartMap(e.sink))
 }
 
-func (e *defaultSummaryEmitter) emit(res *taskResult) {
-	if e.err != nil {
-		return
-	}
+func (e *defaultSummaryEmitter) emit(res *taskResult, merr *errors.MultiError) {
 	entry := &clipb.ResultSummaryEntry{
 		Results: res.result,
 		Outputs: res.outputs,
 	}
+
 	if res.err != nil {
 		entry.Error = res.err.Error()
 		if entry.Error == "" {
 			entry.Error = "unknown"
 		}
 	}
-	if res.result != nil {
-		if e.populateStdout {
-			entry.Output = res.output
-		}
+
+	if e.populateStdout && res.result != nil && res.output != nil {
+		var err error
+		entry.Output, err = res.output.dumpToUTF8()
+		merr.MaybeAdd(errors.Annotate(err, "reading task output %q", res.taskID).Err())
 	}
-	if err := output.MapEntry(e.sink, res.taskID, entry); err != nil {
-		e.err = errors.Annotate(err, "writing JSON output for task %q", res.taskID).Err()
+	if res.output != nil {
+		merr.MaybeAdd(errors.Annotate(res.output.close(), "closing console output of %q", res.taskID).Err())
 	}
+
+	err := output.MapEntry(e.sink, res.taskID, entry)
+	merr.MaybeAdd(errors.Annotate(err, "writing JSON output for task %q", res.taskID).Err())
 }
 
-func (e *defaultSummaryEmitter) finish() error {
-	return e.err
-}
+func (e *defaultSummaryEmitter) finish(merr *errors.MultiError) {}
 
 // Legacy Python summary is a list of proto message ordered in the same order
 // as `cmd.taskIDs`. We get results from the channel in some arbitrary order.
@@ -556,15 +674,15 @@ type legacySummaryEmitter struct {
 	resultByID     map[string]*taskResult
 }
 
-func (e *legacySummaryEmitter) start() {
+func (e *legacySummaryEmitter) start(merr *errors.MultiError) {
 	// All output is emitted in finish all at once.
 }
 
-func (e *legacySummaryEmitter) emit(res *taskResult) {
+func (e *legacySummaryEmitter) emit(res *taskResult, merr *errors.MultiError) {
 	e.resultByID[res.taskID] = res
 }
 
-func (e *legacySummaryEmitter) finish() error {
+func (e *legacySummaryEmitter) finish(merr *errors.MultiError) {
 	shards := make([]map[string]any, 0, len(e.taskIDs))
 
 	for _, taskID := range e.taskIDs {
@@ -581,22 +699,36 @@ func (e *legacySummaryEmitter) finish() error {
 		// `output` as an extra field not present in the original proto.
 		buf, err := (protojson.MarshalOptions{UseProtoNames: true}).Marshal(result.result)
 		if err != nil {
-			return err
+			merr.MaybeAdd(errors.Annotate(err, "JSON serializing results of %q", taskID).Err())
+			shards = append(shards, nil) // indicates there was an error
+			continue
 		}
 		var jsonResult map[string]any
 		if err := json.Unmarshal(buf, &jsonResult); err != nil {
-			return err
+			merr.MaybeAdd(errors.Annotate(err, "JSON deserializing results of %q", taskID).Err())
+			shards = append(shards, nil) // indicates there was an error
+			continue
 		}
-		if e.populateStdout {
-			jsonResult["output"] = result.output
-		} else {
-			jsonResult["output"] = ""
+
+		// Load output as UTF-8 and put into the JSON struct.
+		jsonResult["output"] = ""
+		if e.populateStdout && result.output != nil {
+			jsonResult["output"], err = result.output.dumpToUTF8()
+			merr.MaybeAdd(errors.Annotate(err, "reading task output %q", taskID).Err())
 		}
-		e.resultByID[taskID] = nil // release memory
 
 		// Report the completed task result.
 		shards = append(shards, jsonResult)
 	}
 
-	return output.JSON(e.sink, map[string]any{"shards": shards})
+	// Close all outputs, we don't need them anymore.
+	for _, res := range e.resultByID {
+		if res.output != nil {
+			merr.MaybeAdd(errors.Annotate(res.output.close(), "closing console output of %q", res.taskID).Err())
+		}
+	}
+
+	// Finally write the combined JSON summary for all shards.
+	err := output.JSON(e.sink, map[string]any{"shards": shards})
+	merr.MaybeAdd(errors.Annotate(err, "writing JSON summary").Err())
 }
