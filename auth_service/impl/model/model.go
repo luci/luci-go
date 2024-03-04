@@ -51,6 +51,14 @@ import (
 )
 
 const (
+	// AdminGroup defines a group whose members are allowed to create new groups.
+	AdminGroup = "administrators"
+
+	// TrustedServicesGroup defines a group whose members are allowed to
+	// subscribe to group change notifications and fetch all groups at
+	// once.
+	TrustedServicesGroup = "auth-trusted-services"
+
 	// Max size of AuthDBShard.Blob.
 	MaxShardSize = 900 * 1024 // 900 kB.
 
@@ -409,9 +417,6 @@ type AuthDBSnapshotLatest struct {
 	// CreatedTS is when this snapshot was created.
 	ModifiedTS time.Time `gae:"modified_ts,noindex"`
 }
-
-// AdminGroup defines a group whose members are allowed to create new groups.
-const AdminGroup = "administrators"
 
 var (
 	// ErrAlreadyExists is returned when an entity already exists.

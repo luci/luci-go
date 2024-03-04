@@ -285,11 +285,13 @@ func authorizeAPIAccess(ctx *router.Context, next router.Handler) {
 	}
 
 	if !ingest {
-		switch yes, err := auth.IsMember(ctx.Request.Context(), impl.TrustedServicesGroup, impl.AdminGroup); {
+		switch yes, err := auth.IsMember(ctx.Request.Context(), model.TrustedServicesGroup, model.AdminGroup); {
 		case err != nil:
 			jsonErr(errors.New("failed to check group membership"), http.StatusInternalServerError)
 		case !yes:
-			jsonErr(fmt.Errorf("%s is not a member of %s", auth.CurrentIdentity(ctx.Request.Context()), impl.TrustedServicesGroup),
+			jsonErr(fmt.Errorf("%s is not a member of %s or %s",
+				auth.CurrentIdentity(ctx.Request.Context()),
+				model.TrustedServicesGroup, model.AdminGroup),
 				http.StatusForbidden)
 		default:
 			next(ctx)

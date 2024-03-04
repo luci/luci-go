@@ -28,8 +28,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
-
-	"go.chromium.org/luci/auth_service/impl"
 )
 
 const (
@@ -143,8 +141,8 @@ func DeauthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 }
 
 // RevokeStaleAuthorization revokes the subscribing authorization for
-// all accounts that are no longer in the TrustedServicesGroup.
-func RevokeStaleAuthorization(ctx context.Context) (retErr error) {
+// all accounts that are no longer in the given trusted group.
+func RevokeStaleAuthorization(ctx context.Context, trustedGroup string) (retErr error) {
 	s := auth.GetState(ctx)
 	if s == nil {
 		return fmt.Errorf("error getting AuthDB")
@@ -183,10 +181,10 @@ func RevokeStaleAuthorization(ctx context.Context) (retErr error) {
 			continue
 		}
 
-		trusted, err := authDB.IsMember(ctx, authIdentity, []string{impl.TrustedServicesGroup})
+		trusted, err := authDB.IsMember(ctx, authIdentity, []string{trustedGroup})
 		if err != nil {
 			return errors.Annotate(err, "error checking %s membership for %s",
-				impl.TrustedServicesGroup, authIdentity).Err()
+				trustedGroup, authIdentity).Err()
 		}
 		if !trusted {
 			logging.Warningf(ctx, "revoking subscribing authorization for %s", iamIdentity)

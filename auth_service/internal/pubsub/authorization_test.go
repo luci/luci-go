@@ -24,8 +24,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/auth_service/impl"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -150,12 +148,13 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 		ctx := mockClient.Ctx
 
 		policy := StubPolicy("old.trusted@example.com")
+		trustedGroup := "trusted-group-name"
 
 		Convey("revokes if not trusted", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				FakeDB: authtest.NewFakeDB(
-					authtest.MockMembership("user:someone@example.com", impl.TrustedServicesGroup),
+					authtest.MockMembership("user:someone@example.com", trustedGroup),
 				),
 			})
 
@@ -166,14 +165,14 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(RevokeStaleAuthorization(ctx), ShouldBeNil)
+			So(RevokeStaleAuthorization(ctx, trustedGroup), ShouldBeNil)
 		})
 
 		Convey("skips policy update if no changes required", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				FakeDB: authtest.NewFakeDB(
-					authtest.MockMembership("user:old.trusted@example.com", impl.TrustedServicesGroup),
+					authtest.MockMembership("user:old.trusted@example.com", trustedGroup),
 				),
 			})
 
@@ -183,7 +182,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(RevokeStaleAuthorization(ctx), ShouldBeNil)
+			So(RevokeStaleAuthorization(ctx, trustedGroup), ShouldBeNil)
 		})
 	})
 }
