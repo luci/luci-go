@@ -11,6 +11,10 @@ cron:
   url: /internal/cron/update-realms
   schedule: every 1 minutes
 
+- description: Revoke all stale authorization for PubSub and Google Storage access.
+  url: /internal/cron/revoke-stale-authorization
+  schedule: every 30 minutes
+
 # Temporary cron to regularly compare entities created by both
 # versions of Auth Service (v1 in Python and v2 in Go) for validation.
 - description: Compare generated snapshots and changelogs for validation.

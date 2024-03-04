@@ -39,8 +39,10 @@ import (
 	"go.chromium.org/luci/auth_service/internal/configs/validation"
 
 	"go.chromium.org/luci/auth_service/internal/permissions"
+	"go.chromium.org/luci/auth_service/internal/pubsub"
 	"go.chromium.org/luci/auth_service/internal/realmsinternals"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
@@ -55,6 +57,7 @@ func main() {
 	// Parse flags from environment variables.
 	dryRunCronConfig := model.ParseDryRunEnvVar(model.DryRunCronConfigEnvVar)
 	dryRunCronRealms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
+	dryRunCronStaleAuth := model.ParseDryRunEnvVar(model.DryRunCronStaleAuthEnvVar)
 
 	impl.Main(modules, func(srv *server.Server) error {
 		cron.RegisterHandler("update-config", func(ctx context.Context) error {
@@ -136,6 +139,29 @@ func main() {
 			}
 			if !executeJobs(ctx, jobs, 2*time.Second) {
 				return fmt.Errorf("not all jobs succeeded when refreshing realms")
+			}
+
+			return nil
+		})
+
+		cron.RegisterHandler("revoke-stale-authorization", func(ctx context.Context) error {
+			// Only members of the below trusted group are eligible to:
+			// * be authorized to subscribe to PubSub notifications of AuthDB changes
+			// * be authorized to read the AuthDB from Google Storage.
+			// This cron revokes all stale authorizations for accounts that are no
+			// longer in the trusted group.
+			trustedGroup := model.TrustedServicesGroup
+
+			if err := pubsub.RevokeStaleAuthorization(ctx, trustedGroup, dryRunCronStaleAuth); err != nil {
+				err = errors.Annotate(err, "error revoking stale PubSub authorizations").Err()
+				logging.Errorf(ctx, err.Error())
+				return err
+			}
+
+			if err := model.RevokeStaleReaderAccess(ctx, trustedGroup, dryRunCronStaleAuth); err != nil {
+				err = errors.Annotate(err, "error revoking stale AuthDB reader access").Err()
+				logging.Errorf(ctx, err.Error())
+				return err
 			}
 
 			return nil

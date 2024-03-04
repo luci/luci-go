@@ -165,7 +165,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(RevokeStaleAuthorization(ctx, trustedGroup), ShouldBeNil)
+			So(RevokeStaleAuthorization(ctx, trustedGroup, false), ShouldBeNil)
 		})
 
 		Convey("skips policy update if no changes required", func() {
@@ -182,7 +182,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			So(RevokeStaleAuthorization(ctx, trustedGroup), ShouldBeNil)
+			So(RevokeStaleAuthorization(ctx, trustedGroup, false), ShouldBeNil)
 		})
 	})
 }

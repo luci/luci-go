@@ -267,7 +267,7 @@ func TestRevokeStaleReaderAccess(t *testing.T) {
 					gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			So(RevokeStaleReaderAccess(ctx, trustedGroup), ShouldBeNil)
+			So(RevokeStaleReaderAccess(ctx, trustedGroup, false), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
 				testReader(ctx, "someone@example.com"),
 			})
@@ -291,7 +291,7 @@ func TestRevokeStaleReaderAccess(t *testing.T) {
 				).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			So(RevokeStaleReaderAccess(ctx, trustedGroup), ShouldBeNil)
+			So(RevokeStaleReaderAccess(ctx, trustedGroup, false), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
 				testReader(ctx, "somebody@example.com"),
 				testReader(ctx, "someone@example.com"),

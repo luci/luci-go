@@ -174,7 +174,7 @@ func DeauthorizeReader(ctx context.Context, email string) error {
 // RevokeStaleReaderAccess deletes any AuthDBReaders that are no longer
 // in the given trusted group, then updates Auth Service's Google
 // Storage object ACLs.
-func RevokeStaleReaderAccess(ctx context.Context, trustedGroup string) error {
+func RevokeStaleReaderAccess(ctx context.Context, trustedGroup string, dryRun bool) error {
 	s := auth.GetState(ctx)
 	if s == nil {
 		return fmt.Errorf("error getting AuthDB")
@@ -205,6 +205,11 @@ func RevokeStaleReaderAccess(ctx context.Context, trustedGroup string) error {
 			logging.Warningf(ctx, "stale AuthDB reader access for %s", email)
 			toDelete = append(toDelete, readerKey)
 		}
+	}
+
+	if dryRun {
+		logging.Debugf(ctx, "dry run only - exiting before making any changes")
+		return nil
 	}
 
 	err = datastore.Delete(ctx, toDelete)
