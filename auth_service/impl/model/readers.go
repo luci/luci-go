@@ -19,10 +19,13 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/auth_service/internal/gs"
 )
@@ -73,6 +76,18 @@ func authDBReaderKey(ctx context.Context, email string) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthDBReader", email, 0, authDBReadersRootKey(ctx))
 }
 
+func getAllAuthDBReaders(ctx context.Context) ([]*datastore.Key, error) {
+	// Query for all AuthDBReader entities' keys.
+	q := datastore.NewQuery("AuthDBReader").Ancestor(authDBReadersRootKey(ctx)).KeysOnly(true)
+	var readerKeys []*datastore.Key
+	err := datastore.GetAll(ctx, q, &readerKeys)
+	if err != nil {
+		return []*datastore.Key{}, errors.Annotate(err, "error getting all AuthDBReader entities").Err()
+	}
+
+	return readerKeys, nil
+}
+
 // IsAuthorizedReader returns whether the given email is authorized to
 // read the AuthDB from Google Storage.
 func IsAuthorizedReader(ctx context.Context, email string) (bool, error) {
@@ -93,12 +108,9 @@ func IsAuthorizedReader(ctx context.Context, email string) (bool, error) {
 
 // GetAuthorizedEmails returns the emails of all AuthDBReaders.
 func GetAuthorizedEmails(ctx context.Context) (stringset.Set, error) {
-	// Query for all AuthDBReader entities' keys.
-	q := datastore.NewQuery("AuthDBReader").Ancestor(authDBReadersRootKey(ctx)).KeysOnly(true)
-	var readerKeys []*datastore.Key
-	err := datastore.GetAll(ctx, q, &readerKeys)
+	readerKeys, err := getAllAuthDBReaders(ctx)
 	if err != nil {
-		return stringset.New(0), errors.Annotate(err, "error getting all AuthDBReader entities").Err()
+		return stringset.New(0), err
 	}
 
 	// Get the emails from the ID field.
@@ -156,6 +168,54 @@ func DeauthorizeReader(ctx context.Context, email string) error {
 		return errors.Annotate(err, "error deauthorizing reader").Err()
 	}
 
+	return updateGSReaders(ctx)
+}
+
+// RevokeStaleReaderAccess deletes any AuthDBReaders that are no longer
+// in the given trusted group, then updates Auth Service's Google
+// Storage object ACLs.
+func RevokeStaleReaderAccess(ctx context.Context, trustedGroup string) error {
+	s := auth.GetState(ctx)
+	if s == nil {
+		return fmt.Errorf("error getting AuthDB")
+	}
+	authDB := s.DB()
+
+	readerKeys, err := getAllAuthDBReaders(ctx)
+	if err != nil {
+		return err
+	}
+
+	toDelete := []*datastore.Key{}
+	for _, readerKey := range readerKeys {
+		email := readerKey.StringID()
+		authIdentity, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
+		if err != nil {
+			// Non-fatal - just log the error.
+			logging.Errorf(ctx, err.Error())
+			continue
+		}
+
+		trusted, err := authDB.IsMember(ctx, authIdentity, []string{trustedGroup})
+		if err != nil {
+			return errors.Annotate(err, "error checking %s membership for %s",
+				trustedGroup, authIdentity).Err()
+		}
+		if !trusted {
+			logging.Warningf(ctx, "stale AuthDB reader access for %s", email)
+			toDelete = append(toDelete, readerKey)
+		}
+	}
+
+	err = datastore.Delete(ctx, toDelete)
+	if err != nil {
+		return errors.Annotate(err, "error deleting stale AuthDBReaders").Err()
+	}
+
+	// Update GS ACLs even if no readers were deleted. This is necessary
+	// to ensure GS ACLs are updated even if this function errors out
+	// while deleting AuthDBReaders - stale readers will be removed on a
+	// retry.
 	return updateGSReaders(ctx)
 }
 

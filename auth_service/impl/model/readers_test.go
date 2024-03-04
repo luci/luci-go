@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
@@ -218,6 +220,82 @@ func TestDeauthorizeReader(t *testing.T) {
 
 			So(DeauthorizeReader(ctx, "someone@example.com"), ShouldBeNil)
 			So(getRawReaders(ctx), ShouldBeEmpty)
+		})
+	})
+}
+
+func TestRevokeStaleReaderAccess(t *testing.T) {
+	t.Parallel()
+
+	Convey("RevokeStaleReaderAccess works", t, func() {
+		ctx := memory.Use(context.Background())
+		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
+
+		// Set up mock GS client
+		ctl := gomock.NewController(t)
+		mockClient := gs.NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		// Set up settings config.
+		cfg := &configspb.SettingsCfg{
+			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
+		}
+		So(settingscfg.SetConfig(ctx, cfg), ShouldBeNil)
+
+		// Add existing readers.
+		err := datastore.Put(ctx,
+			testReader(ctx, "someone@example.com"),
+			testReader(ctx, "somebody@example.com"),
+		)
+		So(err, ShouldBeNil)
+
+		// The group name for trusted accounts that are eligible to be
+		// readers.
+		trustedGroup := TrustedServicesGroup
+
+		Convey("revokes if not trusted", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockMembership("user:someone@example.com", trustedGroup),
+				),
+			})
+
+			// Define expected client calls.
+			gomock.InOrder(
+				mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),
+					gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1))
+
+			So(RevokeStaleReaderAccess(ctx, trustedGroup), ShouldBeNil)
+			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
+				testReader(ctx, "someone@example.com"),
+			})
+		})
+
+		Convey("updates ACLs even if there are no deletions", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockMembership("user:someone@example.com", trustedGroup),
+					authtest.MockMembership("user:somebody@example.com", trustedGroup),
+				),
+			})
+
+			// Define expected client calls.
+			gomock.InOrder(
+				mockClient.Client.EXPECT().UpdateReadACL(
+					gomock.Any(),
+					gomock.Any(),
+					stringset.NewFromSlice("someone@example.com", "somebody@example.com"),
+				).Times(2),
+				mockClient.Client.EXPECT().Close().Times(1))
+
+			So(RevokeStaleReaderAccess(ctx, trustedGroup), ShouldBeNil)
+			So(getRawReaders(ctx), ShouldResembleProto, []*AuthDBReader{
+				testReader(ctx, "somebody@example.com"),
+				testReader(ctx, "someone@example.com"),
+			})
 		})
 	})
 }
