@@ -11,6 +11,7 @@ Type=simple
 User={{.User}}
 LimitNOFILE=50000
 Environment=SWARMING_EXTERNAL_BOT_SETUP=1
+EnvironmentFile=-/etc/swarming/env
 ExecStart= {{.Python}} {{.BotCode}} start_bot
 
 [Install]
