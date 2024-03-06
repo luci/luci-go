@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/swarming/internal/notifications"
+	notificationspb "go.chromium.org/luci/swarming/internal/notifications"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/bq"
@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/internals"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/notifications"
 	"go.chromium.org/luci/swarming/server/pubsub"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/rpcs"
@@ -131,6 +132,16 @@ func main() {
 		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.ImageVersion())
 		rbeReservations.RegisterTQTasks(&tq.Default)
 
+		// Hanlders for TQ tasks about sending PubSub messages.
+		pubSubNotifier, err := notifications.NewPubSubNotifier(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return errors.Annotate(err, "failed to initialize the PubSubNotifier").Err()
+		}
+		pubSubNotifier.RegisterTQTasks(&tq.Default)
+		srv.RegisterCleanup(func(context.Context) {
+			pubSubNotifier.Stop()
+		})
+
 		// Handlers for TQ tasks involving bigquery export.
 		bq.RegisterTQTasks()
 
@@ -157,7 +168,7 @@ func main() {
 				Route:              "/pubsub/rbe/scheduler",
 				PushServiceAccount: fmt.Sprintf("rbe-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject),
 			},
-			func(ctx context.Context, m *notifications.SchedulerNotification, md *pubsub.Metadata) error {
+			func(ctx context.Context, m *notificationspb.SchedulerNotification, md *pubsub.Metadata) error {
 				projectID := md.Attributes["project_id"]
 				if projectID == "" {
 					return errors.New("no project_id message attribute")
