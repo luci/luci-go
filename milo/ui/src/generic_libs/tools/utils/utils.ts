@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { JSONPath as jsonpath } from 'jsonpath-plus';
-
 /**
  * Extend URL with some helper methods.
  */
@@ -195,31 +193,5 @@ export function createStaticTrustedURL<T extends string>(
     self.trustedTypes
       ?.createPolicy(policy, { createScriptURL: (_) => staticUrl })
       .createScriptURL('') || staticUrl
-  );
-}
-
-/**
- * Extract nested field with a path.
- * Path only support dot notation for object walking, eg "a.b" to access 1 in object {a:{b:1}}.
- * Returns null if path doesn't exist in the given object.
- *
- * @param properties an arbitrary object which will be extracted from.
- * @param path the path to the wanted field.
- * @returns the value at the end of the path.
- */
-export function extractProperty(
-  properties: { [key: string]: unknown },
-  path: string,
-): unknown {
-  // TODO: only here to make sure json path can be a drop-in replacement for
-  // extractProperty (verified by the unit test). Remove this function in the
-  // next CL.
-  return (
-    jsonpath<unknown>({
-      json: properties,
-      path: `$.${path}`,
-      wrap: false,
-      preventEval: true,
-    }) ?? null
   );
 }

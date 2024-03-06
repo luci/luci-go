@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { extractProperty, roundDown, roundUp, URLExt } from './utils';
+import { roundDown, roundUp, URLExt } from './utils';
 
 describe('URLExt', () => {
   let url: URLExt;
@@ -75,28 +75,5 @@ describe('roundUp/Down', () => {
     test("should return the number itself if it's smaller than any number in the list", () => {
       expect(roundDown(-1, list)).toStrictEqual(-1);
     });
-  });
-});
-
-describe('extractProperty', () => {
-  const obj = {
-    a: {
-      b: 'd',
-      c: ['e', 'f'],
-      d: { x: 'nested' },
-      '\u1200': 'unicode key',
-    },
-  };
-  test('should return non-null value if path is valid', () => {
-    expect(extractProperty(obj, 'a.b')).toStrictEqual('d');
-    expect(extractProperty(obj, 'a.c')).toStrictEqual(['e', 'f']);
-    expect(extractProperty(obj, 'a.d')).toStrictEqual({ x: 'nested' });
-    expect(extractProperty(obj, 'a.\u1200')).toStrictEqual('unicode key');
-  });
-  test('should return null if path is invalid', () => {
-    expect(extractProperty(obj, 'x')).toBeNull();
-    expect(extractProperty(obj, 'x.x')).toBeNull();
-    expect(extractProperty(obj, 'a.b.x')).toBeNull();
-    expect(extractProperty(obj, 'a.c.x')).toBeNull();
   });
 });
