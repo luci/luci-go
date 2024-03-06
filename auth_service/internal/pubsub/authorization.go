@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package pubsub contains Pubsub-related functionality, including:
-// - authorization of accounts to subscribe; and
-// - pushing of Pubsub notifications when the AuthDB changes.
 package pubsub
 
 import (
@@ -24,16 +21,11 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
-	gcps "go.chromium.org/luci/common/gcloud/pubsub"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 )
 
 const (
-	// The topic name for AuthDB changes.
-	AuthDBChangeTopicName = "auth-db-changed"
-
 	// The IAM role required for PubSub subscribing.
 	subscriberRole = "roles/pubsub.subscriber"
 
@@ -41,10 +33,6 @@ const (
 	serviceAccountPrefix = "serviceAccount:"
 	userPrefix           = "user:"
 )
-
-// mockedPubsubClientKey is the context key to indicate using a mocked
-// Pubsub client in tests.
-var mockedPubsubClientKey = "mock Pubsub client key for testing only"
 
 // IsAuthorizedSubscriber returns whether the account is authorized to
 // subscribe to Pubsub notifications of AuthDB changes.
@@ -205,31 +193,6 @@ func RevokeStaleAuthorization(ctx context.Context, trustedGroup string, dryRun b
 	}
 
 	return nil
-}
-
-// GetProject returns the app ID from the current context.
-func GetProject(ctx context.Context) string {
-	return info.AppID(ctx)
-}
-
-// GetAuthDBChangeTopic returns the full topic path for changes to the
-// AuthDB.
-func GetAuthDBChangeTopic(ctx context.Context) string {
-	return string(gcps.NewTopic(GetProject(ctx), AuthDBChangeTopicName))
-}
-
-// newClient creates a new Pubsub client.
-func newClient(ctx context.Context) (PubsubClient, error) {
-	if mockClient, ok := ctx.Value(&mockedPubsubClientKey).(*MockPubsubClient); ok {
-		// Return a mock Pubsub client for tests.
-		return mockClient, nil
-	}
-
-	client, err := newProdClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
 }
 
 func emailToIAMIdentity(email string) string {

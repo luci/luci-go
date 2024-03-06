@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 // PubsubClient abstracts functionality to connect with Pubsub.
@@ -37,22 +38,27 @@ type PubsubClient interface {
 
 	// SetIAMPolicy sets the IAM policy for the AuthDBChange topic.
 	SetIAMPolicy(ctx context.Context, policy *iam.Policy) error
+
+	// Publish publishes the message to the AuthDBChange topic.
+	Publish(ctx context.Context, msg *pubsub.Message) error
 }
 
 type prodClient struct {
 	baseClient *pubsub.Client
+	projectID  string
 }
 
 // newProdClient creates a new production Pubsub client (not a mock).
 func newProdClient(ctx context.Context) (*prodClient, error) {
-	project := GetProject(ctx)
-	client, err := pubsub.NewClient(ctx, project)
+	projectID := getProject(ctx)
+	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create PubSub client for project %s", project).Err()
+		return nil, errors.Annotate(err, "failed to create PubSub client for project %s", projectID).Err()
 	}
 
 	return &prodClient{
 		baseClient: client,
+		projectID:  projectID,
 	}, nil
 }
 
@@ -87,6 +93,44 @@ func (c *prodClient) SetIAMPolicy(ctx context.Context, policy *iam.Policy) error
 	err := c.baseClient.Topic(AuthDBChangeTopicName).IAM().SetPolicy(ctx, policy)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *prodClient) Publish(ctx context.Context, msg *pubsub.Message) (retErr error) {
+	if c.baseClient == nil {
+		return status.Error(codes.Internal, "aborting - no PubSub client")
+	}
+
+	topic := c.baseClient.Topic(AuthDBChangeTopicName)
+	ok, err := topic.Exists(ctx)
+	if err != nil {
+		return errors.Annotate(err, "error checking topic existence").Err()
+	}
+	if !ok {
+		// The topic doesn't exist; it must be created before we publish.
+		logging.Infof(ctx, "creating topic %s in project %s",
+			AuthDBChangeTopicName, c.projectID)
+		topic, err = c.baseClient.CreateTopic(ctx, AuthDBChangeTopicName)
+		if err != nil {
+			return errors.Annotate(err, "error creating topic %s in project %s",
+				AuthDBChangeTopicName, c.projectID).Err()
+		}
+	}
+
+	defer topic.Stop()
+	result := topic.Publish(ctx, msg)
+	if _, err := result.Get(ctx); err != nil {
+		switch status.Code(err) {
+		case codes.PermissionDenied:
+			return status.Errorf(codes.PermissionDenied,
+				"missing permission to publish PubSub message for project %s on topic %s",
+				c.projectID, AuthDBChangeTopicName)
+		default:
+			return status.Errorf(codes.Internal,
+				"error publishing Pubsub message: %s", err)
+		}
 	}
 
 	return nil

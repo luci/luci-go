@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/taskspb"
 	"go.chromium.org/luci/auth_service/internal/gs"
+	"go.chromium.org/luci/auth_service/internal/pubsub"
 )
 
 // EnqueueReplicationTask adds a ReplicationTask task to the cloud task
@@ -84,7 +85,7 @@ func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) er
 
 	// Pack the entire AuthDB into a blob to be stored in the datastore,
 	// Google Storage and directly pushed to Replicas.
-	replicationState, authDBBlob, err := packAuthDB(ctx, useV1Perms)
+	replicationState, revisionInfo, authDBBlob, err := packAuthDB(ctx, useV1Perms)
 	if err != nil {
 		return errors.Annotate(err, "failed to pack AuthDB").Err()
 	}
@@ -120,9 +121,15 @@ func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) er
 		}
 	}
 
+	// Notify PubSub subscribers that a new snapshot is available.
+	if err := pubsub.PublishAuthDBRevision(ctx, revisionInfo, dryRun); err != nil {
+		logging.Errorf(ctx, "error publishing PubSub message for revision %d: %s",
+			revisionInfo.AuthDbRev, err)
+		return err
+	}
+
 	// TODO(aredulla): implement remaining client types, i.e.
 	// * "direct push" replication
-	// * PubSub replication
 
 	return nil
 }
@@ -132,42 +139,45 @@ func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) er
 // Returns:
 //   - replicationState: the AuthReplicationState corresponding to the
 //     returned authDBBlob.
+//   - authDBRevision: the AuthDBRevision corresponding to the returned
+//     authDBBlob.
 //   - authDBBlob: serialized protocol.ReplicationPushRequest message
 //     (has AuthDB inside).
-func packAuthDB(ctx context.Context, useV1Perms bool) (*AuthReplicationState, []byte, error) {
+func packAuthDB(ctx context.Context, useV1Perms bool) (*AuthReplicationState, *protocol.AuthDBRevision, []byte, error) {
 	// Get the replication state.
 	replicationState, err := GetReplicationState(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
+	}
+	authDBRevision := &protocol.AuthDBRevision{
+		PrimaryId:  info.AppID(ctx),
+		AuthDbRev:  replicationState.AuthDBRev,
+		ModifiedTs: replicationState.ModifiedTS.UnixMicro(),
 	}
 
 	// Take a snapshot of the AuthDB.
 	snapshot, err := TakeSnapshot(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	authDBProto, err := snapshot.ToAuthDBProto(useV1Perms)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Serialize to binary proto message.
 	req := &protocol.ReplicationPushRequest{
-		Revision: &protocol.AuthDBRevision{
-			PrimaryId:  info.AppID(ctx),
-			AuthDbRev:  replicationState.AuthDBRev,
-			ModifiedTs: replicationState.ModifiedTS.UnixMicro(),
-		},
+		Revision:        authDBRevision,
 		AuthDb:          authDBProto,
 		AuthCodeVersion: AuthAPIVersion,
 	}
 	blob, err := proto.Marshal(req)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return replicationState, blob, nil
+	return replicationState, authDBRevision, blob, nil
 }
 
 func uploadToGS(ctx context.Context, replicationState *AuthReplicationState, authDBBlob, sig []byte, keyName string, dryRun bool) error {

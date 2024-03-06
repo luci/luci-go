@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	iam "cloud.google.com/go/iam"
+	pubsub "cloud.google.com/go/pubsub"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -62,6 +63,20 @@ func (m *MockPubsubClient) GetIAMPolicy(ctx context.Context) (*iam.Policy, error
 func (mr *MockPubsubClientMockRecorder) GetIAMPolicy(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIAMPolicy", reflect.TypeOf((*MockPubsubClient)(nil).GetIAMPolicy), ctx)
+}
+
+// Publish mocks base method.
+func (m *MockPubsubClient) Publish(ctx context.Context, msg *pubsub.Message) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Publish", ctx, msg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Publish indicates an expected call of Publish.
+func (mr *MockPubsubClientMockRecorder) Publish(ctx, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockPubsubClient)(nil).Publish), ctx, msg)
 }
 
 // SetIAMPolicy mocks base method.
