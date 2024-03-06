@@ -291,50 +291,62 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	}
 
 	result := make([]*pb.TestAnalysis, len(req.TestFailures))
-	// Find the test analysis to return for each test failure.
-	for i, tf := range req.TestFailures {
-		tfs, err := datastoreutil.GetTestFailures(ctx, req.Project, tf.TestId, tf.RefHash, tf.VariantHash)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "get test failures %s", err)
+	err = parallel.FanOutIn(func(workC chan<- func() error) {
+		for i, tf := range req.TestFailures {
+			// Assign to local variables.
+			i := i
+			tf := tf
+			workC <- func() error {
+				tfs, err := datastoreutil.GetTestFailures(ctx, req.Project, tf.TestId, tf.RefHash, tf.VariantHash)
+				if err != nil {
+					return errors.Annotate(err, "get test failures").Err()
+				}
+				if len(tfs) == 0 {
+					return nil
+				}
+				sort.Slice(tfs, func(i, j int) bool {
+					return tfs[i].RegressionStartPosition > tfs[j].RegressionStartPosition
+				})
+				latestTestFailure := tfs[0]
+				if latestTestFailure.IsDiverged {
+					// Do not return test analysis if diverged.
+					// Because diverged test failure is considered excluded from the test analyses.
+					return nil
+				}
+				changepointResult, ok := changePointResults[lucianalysis.TestVerdictKey{
+					TestID:      tf.TestId,
+					VariantHash: tf.VariantHash,
+					RefHash:     tf.RefHash,
+				}]
+				if !ok {
+					logging.Infof(ctx, "no changepoint analysis for test %s %s %s", tf.TestId, tf.VariantHash, tf.RefHash)
+					return nil
+				}
+				ongoing, reason := isTestFailureDeterministicallyOngoing(latestTestFailure, changepointResult)
+				// Do not return the test analysis if the failure is not ongoing.
+				if !ongoing {
+					logging.Infof(ctx, "no bisection returned for test %s %s %s because %s", tf.TestId, tf.VariantHash, tf.RefHash, reason)
+					return nil
+				}
+				// Return the test analysis that analyze this test failure.
+				tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, latestTestFailure.AnalysisKey.IntID())
+				if err != nil {
+					return errors.Annotate(err, "get test failure analysis").Err()
+				}
+				tfaProto, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, tfamask)
+				if err != nil {
+					return errors.Annotate(err, "convert test failure analysis to protobuf").Err()
+				}
+				result[i] = tfaProto
+				return nil
+			}
 		}
-		if len(tfs) == 0 {
-			continue
-		}
-		sort.Slice(tfs, func(i, j int) bool {
-			return tfs[i].RegressionStartPosition > tfs[j].RegressionStartPosition
-		})
-		latestTestFailure := tfs[0]
-		if latestTestFailure.IsDiverged {
-			// Do not return test analysis if diverged.
-			// Because diverged test failure is considered excluded from the test analyses.
-			continue
-		}
-		changepointResult, ok := changePointResults[lucianalysis.TestVerdictKey{
-			TestID:      tf.TestId,
-			VariantHash: tf.VariantHash,
-			RefHash:     tf.RefHash,
-		}]
-		if !ok {
-			logging.Infof(ctx, "no changepoint analysis for test %s %s %s", tf.TestId, tf.VariantHash, tf.RefHash)
-			continue
-		}
-		ongoing, reason := isTestFailureDeterministicallyOngoing(latestTestFailure, changepointResult)
-		// Do not return the test analysis if the failure is not ongoing.
-		if !ongoing {
-			logging.Infof(ctx, "no bisection returned for test %s %s %s because %s", tf.TestId, tf.VariantHash, tf.RefHash, reason)
-			continue
-		}
-		// Return the test analysis that analyze this test failure.
-		tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, latestTestFailure.AnalysisKey.IntID())
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "get test failure analysis %s", err)
-		}
-		tfaProto, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, tfamask)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "convert test failure analysis to protobuf %s", err)
-		}
-		result[i] = tfaProto
+	})
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
+
 	return &pb.BatchGetTestAnalysesResponse{
 		TestAnalyses: result,
 	}, nil
