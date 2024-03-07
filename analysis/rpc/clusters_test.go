@@ -303,10 +303,6 @@ func TestClusters(t *testing.T) {
 					Permission: perms.PermGetCluster,
 				},
 				{
-					Realm:      "testproject:@project",
-					Permission: perms.PermExpensiveClusterQueries,
-				},
-				{
 					Realm:      "testproject:realm1",
 					Permission: rdbperms.PermListTestResults,
 				},
@@ -336,13 +332,6 @@ func TestClusters(t *testing.T) {
 
 				response, err := server.Get(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
-			})
-			Convey("Not authorised to perform expensive queries", func() {
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
-
-				response, err := server.Get(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("With a valid request", func() {
@@ -624,10 +613,6 @@ func TestClusters(t *testing.T) {
 				},
 				{
 					Realm:      "testproject:@project",
-					Permission: perms.PermExpensiveClusterQueries,
-				},
-				{
-					Realm:      "testproject:@project",
 					Permission: perms.PermGetRule,
 				},
 				{
@@ -737,13 +722,6 @@ func TestClusters(t *testing.T) {
 
 				response, err := server.QueryClusterSummaries(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.list")
-				So(response, ShouldBeNil)
-			})
-			Convey("Not authorised to perform expensive queries", func() {
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
-
-				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to get rules", func() {
@@ -1127,9 +1105,6 @@ func TestClusters(t *testing.T) {
 			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 				Realm:      "testproject:@project",
 				Permission: perms.PermGetCluster,
-			}, authtest.RealmPermission{
-				Realm:      "testproject:@project",
-				Permission: perms.PermExpensiveClusterQueries,
 			})
 
 			request := &pb.QueryClusterFailuresRequest{
@@ -1140,13 +1115,6 @@ func TestClusters(t *testing.T) {
 
 				response, err := server.QueryClusterFailures(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
-			})
-			Convey("Not authorised to perform expensive queries", func() {
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
-
-				response, err := server.QueryClusterFailures(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to list test results in any realm", func() {
@@ -1380,9 +1348,6 @@ func TestClusters(t *testing.T) {
 			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 				Realm:      "testproject:@project",
 				Permission: perms.PermGetCluster,
-			}, authtest.RealmPermission{
-				Realm:      "testproject:@project",
-				Permission: perms.PermExpensiveClusterQueries,
 			})
 
 			request := &pb.QueryClusterExoneratedTestVariantsRequest{
@@ -1393,13 +1358,6 @@ func TestClusters(t *testing.T) {
 
 				response, err := server.QueryExoneratedTestVariants(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
-			})
-			Convey("Not authorised to perform expensive queries", func() {
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
-
-				response, err := server.QueryExoneratedTestVariants(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to list test results in any realm", func() {
@@ -1523,9 +1481,6 @@ func TestClusters(t *testing.T) {
 			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 				Realm:      "testproject:@project",
 				Permission: perms.PermGetCluster,
-			}, authtest.RealmPermission{
-				Realm:      "testproject:@project",
-				Permission: perms.PermExpensiveClusterQueries,
 			})
 
 			request := &pb.QueryClusterExoneratedTestVariantBranchesRequest{
@@ -1536,13 +1491,6 @@ func TestClusters(t *testing.T) {
 
 				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
-				So(response, ShouldBeNil)
-			})
-			Convey("Not authorised to perform expensive queries", func() {
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
-
-				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to list test results in any realm", func() {

@@ -103,12 +103,6 @@ var (
 	PermUpdateRule = realms.RegisterPermission("analysis.rules.update")
 )
 
-// Permissions used to control costs.
-var (
-	// Grants permission to perform expensive queries (that hit BigQuery).
-	PermExpensiveClusterQueries = realms.RegisterPermission("analysis.clusters.expensiveQueries")
-)
-
 // Permissions used to control access to test results.
 var ListTestResultsAndExonerations = []realms.Permission{
 	rdbperms.PermListTestResults,

@@ -172,7 +172,7 @@ func (c *clustersServer) Get(ctx context.Context, req *pb.GetClusterRequest) (*p
 		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
 	}
 
-	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
 		return nil, err
 	}
 
@@ -387,7 +387,7 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 	// where the user does not have perms.PermGetRule, but there is currently
 	// no point as the LUCI Analysis reader role currently always grants
 	// PermGetRule with PermListClusters.
-	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermListClusters, perms.PermExpensiveClusterQueries, perms.PermGetRule); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermListClusters, perms.PermGetRule); err != nil {
 		return nil, err
 	}
 	canSeeRuleDefinition, err := perms.HasProjectPermission(ctx, req.Project, perms.PermGetRuleDefinition)
@@ -575,7 +575,7 @@ func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.Query
 		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
 	}
 
-	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
 		return nil, err
 	}
 
@@ -684,7 +684,7 @@ func (c *clustersServer) QueryExoneratedTestVariants(ctx context.Context, req *p
 		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
 	}
 
-	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
 		return nil, err
 	}
 	opts := analysis.ReadClusterExoneratedTestVariantsOptions{
@@ -728,7 +728,7 @@ func (c *clustersServer) QueryExoneratedTestVariantBranches(ctx context.Context,
 		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
 	}
 
-	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
 		return nil, err
 	}
 	opts := analysis.ReadClusterExoneratedTestVariantBranchesOptions{
@@ -788,7 +788,7 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
 	}
 
-	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermExpensiveClusterQueries, perms.PermGetConfig); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetConfig); err != nil {
 		return nil, err
 	}
 
