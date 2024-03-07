@@ -16,6 +16,9 @@ The task notification pubsub message schema is:
 ```
 Attributes:
  - "dummy_task_id" (to deduplicate the message on the subscriber side)
+ - "project"
+ - "bucket"
+ - "builder"
 
 
 ## How to onboard

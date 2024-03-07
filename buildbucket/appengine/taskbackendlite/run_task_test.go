@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -65,6 +66,20 @@ func TestRunTask(t *testing.T) {
 			Secrets: &pb.BuildSecrets{
 				StartBuildToken: "token",
 			},
+			BackendConfig: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"tags": {
+						Kind: &structpb.Value_ListValue{
+							ListValue: &structpb.ListValue{
+								Values: []*structpb.Value{
+									{Kind: &structpb.Value_StringValue{StringValue: "buildbucket_bucket:infra/try"}},
+									{Kind: &structpb.Value_StringValue{StringValue: "builder:foo"}},
+								},
+							},
+						},
+					},
+				},
+			},
 		}
 		Convey("ok", func() {
 			res, err := srv.RunTask(ctx, req)
@@ -82,6 +97,9 @@ func TestRunTask(t *testing.T) {
 			So(psserver.Messages(), ShouldHaveLength, 1)
 			publishedMsg := psserver.Messages()[0]
 			So(publishedMsg.Attributes["dummy_task_id"], ShouldEqual, "123_request_id")
+			So(publishedMsg.Attributes["project"], ShouldEqual, "infra")
+			So(publishedMsg.Attributes["bucket"], ShouldEqual, "try")
+			So(publishedMsg.Attributes["builder"], ShouldEqual, "foo")
 			data := &TaskNotification{}
 			err = json.Unmarshal(publishedMsg.Data, data)
 			So(err, ShouldBeNil)
@@ -89,6 +107,66 @@ func TestRunTask(t *testing.T) {
 				BuildID:         "123",
 				StartBuildToken: "token",
 			})
+		})
+
+		Convey("nil BackendConfig", func() {
+			req.BackendConfig = nil
+
+			res, err := srv.RunTask(ctx, req)
+			So(err, ShouldBeNil)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.RunTaskResponse{
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "123_request_id",
+						Target: "target",
+					},
+					UpdateId: 1,
+				},
+			})
+
+			So(psserver.Messages(), ShouldHaveLength, 1)
+			publishedMsg := psserver.Messages()[0]
+			So(publishedMsg.Attributes["dummy_task_id"], ShouldEqual, "123_request_id")
+			So(publishedMsg.Attributes["project"], ShouldEqual, "")
+			So(publishedMsg.Attributes["bucket"], ShouldEqual, "")
+			So(publishedMsg.Attributes["builder"], ShouldEqual, "")
+		})
+
+		Convey("no builder related tags in req", func() {
+			req.BackendConfig = &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"tags": {
+						Kind: &structpb.Value_ListValue{
+							ListValue: &structpb.ListValue{
+								Values: []*structpb.Value{
+									{Kind: &structpb.Value_NumberValue{NumberValue: 10}},
+									{Kind: &structpb.Value_StringValue{StringValue: "any"}},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			res, err := srv.RunTask(ctx, req)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.RunTaskResponse{
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "123_request_id",
+						Target: "target",
+					},
+					UpdateId: 1,
+				},
+			})
+
+			So(psserver.Messages(), ShouldHaveLength, 1)
+			publishedMsg := psserver.Messages()[0]
+			So(publishedMsg.Attributes["dummy_task_id"], ShouldEqual, "123_request_id")
+			So(publishedMsg.Attributes["project"], ShouldEqual, "")
+			So(publishedMsg.Attributes["bucket"], ShouldEqual, "")
+			So(publishedMsg.Attributes["builder"], ShouldEqual, "")
 		})
 
 		Convey("duplicate req", func() {

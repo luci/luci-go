@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const (
@@ -113,10 +114,15 @@ func (t *TaskBackendLite) RunTask(ctx context.Context, req *pb.RunTaskRequest) (
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to compose pubsub message: %s", err)
 	}
+
+	proj, bucket, builder := extractBuilderInfo(req)
 	result := topic.Publish(ctx, &pubsub.Message{
 		Data: data,
 		Attributes: map[string]string{
 			"dummy_task_id": dummyTaskID, // can be used for deduplication on the subscriber side.
+			"project":       proj,
+			"bucket":        bucket,
+			"builder":       builder,
 		},
 	})
 	if _, err = result.Get(ctx); err != nil {
@@ -160,4 +166,19 @@ func (*TaskBackendLite) checkPerm(ctx context.Context) (string, error) {
 		return "", status.Errorf(codes.PermissionDenied, "The caller's user identity %q is not a project identity", user)
 	}
 	return user.Value(), nil
+}
+
+// extractBuilderInfo extracts this RunTaskRequest's project, bucket and
+// builder info. If any info doesn't appear, return the empty string.
+func extractBuilderInfo(req *pb.RunTaskRequest) (string, string, string) {
+	proj, bucket, builder := "", "", ""
+	for _, tag := range req.BackendConfig.GetFields()["tags"].GetListValue().GetValues() {
+		switch key, val, _ := strings.Cut(tag.GetStringValue(), ":"); {
+		case key == "builder":
+			builder = val
+		case key == "buildbucket_bucket":
+			proj, bucket, _ = protoutil.ParseBucketID(val)
+		}
+	}
+	return proj, bucket, builder
 }
