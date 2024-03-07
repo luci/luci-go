@@ -18,6 +18,10 @@ export const [provideProject, consumeProject] = createContextLink<
   string | undefined
 >();
 
+export const [provideInvId, consumeInvId] = createContextLink<
+  string | undefined
+>();
+
 /**
  * Test tab URL is used when generating links to a test.
  */

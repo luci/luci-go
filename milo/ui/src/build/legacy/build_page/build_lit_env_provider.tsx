@@ -35,11 +35,11 @@ import {
 } from '@/generic_libs/tools/error_handler';
 import { consumer, provider } from '@/generic_libs/tools/lit_context';
 import { attachTags, hasTags } from '@/generic_libs/tools/tag';
-
 import {
+  provideInvId,
   provideProject,
   provideTestTabUrl,
-} from '../../../test_verdict/legacy/test_results_tab/test_variants_table/context';
+} from '@/test_verdict/legacy/test_results_tab/test_variants_table/context';
 
 function retryWithoutComputedInvId(
   err: ErrorEvent,
@@ -130,6 +130,12 @@ export class BuildLitEnvProviderElement extends MobxExtLitElement {
     return this.store.buildPage.build?.data.builder.project;
   }
 
+  @provideInvId({ global: true })
+  @computed
+  get invId() {
+    return this.store.buildPage.invocationId || undefined;
+  }
+
   @provideTestTabUrl({ global: true })
   @computed
   get testTabUrl() {
@@ -172,6 +178,17 @@ export class BuildLitEnvProviderElement extends MobxExtLitElement {
         (project) => {
           // Emulate @property() update.
           this.updated(new Map([['project', project]]));
+        },
+        { fireImmediately: true },
+      ),
+    );
+
+    this.addDisposer(
+      reaction(
+        () => this.invId,
+        (invId) => {
+          // Emulate @property() update.
+          this.updated(new Map([['invId', invId]]));
         },
         { fireImmediately: true },
       ),

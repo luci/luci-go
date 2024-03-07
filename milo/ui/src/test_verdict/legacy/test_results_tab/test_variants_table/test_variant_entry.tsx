@@ -51,7 +51,7 @@ import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 import { getSortedTestVariantDef } from '@/test_verdict/tools/utils';
 
-import { consumeProject, consumeTestTabUrl } from './context';
+import { consumeInvId, consumeProject, consumeTestTabUrl } from './context';
 
 /**
  * Renders an expandable entry of the given test variant.
@@ -64,6 +64,7 @@ export class TestVariantEntryElement
 {
   @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @consumeProject() project: string | undefined;
+  @observable.ref @consumeInvId() invId: string | undefined;
   @observable.ref @consumeTestTabUrl() testTabUrl: string | undefined;
 
   @observable.ref variant!: TestVariant;

@@ -41,7 +41,7 @@ import {
   provideNotifier,
 } from '@/generic_libs/tools/observer_element';
 
-import { provideProject, provideTestTabUrl } from './context';
+import { provideInvId, provideProject, provideTestTabUrl } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
 const clusteringVersion = {
@@ -105,6 +105,9 @@ class TestVariantEntryTestContextElement extends LitElement {
 
   @provideProject()
   proj = 'proj';
+
+  @provideInvId()
+  inv = 'inv';
 
   @provideTestTabUrl()
   testTabUrl = 'https://test.com/test-results';

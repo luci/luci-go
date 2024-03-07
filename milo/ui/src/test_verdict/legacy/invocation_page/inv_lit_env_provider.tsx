@@ -25,6 +25,7 @@ import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { consumer, provider } from '@/generic_libs/tools/lit_context';
 
 import {
+  provideInvId,
   provideProject,
   provideTestTabUrl,
 } from '../test_results_tab/test_variants_table/context';
@@ -50,6 +51,12 @@ export class InvLitEnvProviderElement extends MobxExtLitElement {
   @computed
   get project() {
     return this.store.invocationPage.invocation.project ?? undefined;
+  }
+
+  @provideInvId({ global: true })
+  @computed
+  get invId() {
+    return this.store.invocationPage.invocation.invocationId ?? undefined;
   }
 
   @provideTestTabUrl({ global: true })
@@ -88,6 +95,17 @@ export class InvLitEnvProviderElement extends MobxExtLitElement {
         (project) => {
           // Emulate @property() update.
           this.updated(new Map([['project', project]]));
+        },
+        { fireImmediately: true },
+      ),
+    );
+
+    this.addDisposer(
+      reaction(
+        () => this.invId,
+        (invId) => {
+          // Emulate @property() update.
+          this.updated(new Map([['invId', invId]]));
         },
         { fireImmediately: true },
       ),
