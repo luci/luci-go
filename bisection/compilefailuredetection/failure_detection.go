@@ -88,7 +88,7 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 	logging.Infof(c, "AnalyzeBuild %d", bbid)
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"id", "builder", "input", "status", "steps", "number", "start_time", "end_time", "create_time", "infra.swarming.task_dimensions", "output.gitiles_commit"},
+			Paths: []string{"id", "builder", "input", "status", "steps", "number", "start_time", "end_time", "create_time", "infra.swarming.task_dimensions", "infra.backend.task_dimensions", "output.gitiles_commit"},
 		},
 	})
 	if err != nil {
@@ -407,10 +407,10 @@ func hasCompileStepStatus(c context.Context, build *buildbucketpb.Build, status 
 }
 
 func platformForBuild(c context.Context, build *buildbucketpb.Build) model.Platform {
-	if build.GetInfra() == nil || build.GetInfra().GetSwarming() == nil || build.GetInfra().GetSwarming().GetTaskDimensions() == nil {
+	dimens := util.GetTaskDimensions(build)
+	if dimens == nil {
 		return model.PlatformUnspecified
 	}
-	dimens := build.GetInfra().GetSwarming().GetTaskDimensions()
 	for _, d := range dimens {
 		if d.Key == "os" {
 			return model.PlatformFromOS(c, d.Value)

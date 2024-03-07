@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
@@ -113,7 +114,7 @@ func getRerunTags(c context.Context, bbid int64) []*buildbucketpb.StringPair {
 func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[string]any, dims map[string]string) (*structpb.Struct, []*buildbucketpb.RequestedDimension, error) {
 	mask := &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"input.properties", "builder", "infra.swarming.task_dimensions"},
+			Paths: []string{"input.properties", "builder", "infra.swarming.task_dimensions", "infra.backend.task_dimensions"},
 		},
 	}
 	build, err := buildbucket.GetBuild(c, bbid, mask)
@@ -177,8 +178,9 @@ func getRerunDimensions(c context.Context, build *buildbucketpb.Build, dims map[
 
 	// Only copy these dimensions from the analyzed builder to the rerun job request.
 	allowedDimensions := map[string]bool{"os": true, "gpu": true}
-	if build.GetInfra() != nil && build.GetInfra().GetSwarming() != nil && build.GetInfra().GetSwarming().GetTaskDimensions() != nil {
-		dimens := build.GetInfra().GetSwarming().GetTaskDimensions()
+
+	if dimens := util.GetTaskDimensions(build); dimens != nil {
+		dimens := util.GetTaskDimensions(build)
 		for _, d := range dimens {
 			if _, ok := allowedDimensions[d.Key]; ok {
 				result = append(result, &buildbucketpb.RequestedDimension{

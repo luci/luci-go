@@ -131,3 +131,36 @@ func TestGetSheriffRotationsForBuild(t *testing.T) {
 	})
 
 }
+
+func TestGetTaskDimensions(t *testing.T) {
+	dims := []*bbpb.RequestedDimension{
+		{
+			Key:   "dimen_key_1",
+			Value: "dimen_val_1",
+		},
+	}
+	Convey("from build on swarming", t, func() {
+		build := &bbpb.Build{
+			Infra: &bbpb.BuildInfra{
+				Swarming: &bbpb.BuildInfra_Swarming{
+					TaskDimensions: dims,
+				},
+			},
+		}
+		got := GetTaskDimensions(build)
+		So(got, ShouldResembleProto, dims)
+	})
+
+	Convey("from build on backend", t, func() {
+		build := &bbpb.Build{
+			Infra: &bbpb.BuildInfra{
+				Backend: &bbpb.BuildInfra_Backend{
+					TaskDimensions: dims,
+				},
+			},
+		}
+		got := GetTaskDimensions(build)
+		So(got, ShouldResembleProto, dims)
+	})
+
+}

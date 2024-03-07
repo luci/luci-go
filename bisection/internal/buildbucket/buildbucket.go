@@ -159,11 +159,12 @@ func CancelBuild(c context.Context, bbid int64, reason string) (*bbpb.Build, err
 func GetBuildTaskDimension(ctx context.Context, bbid int64) (*pb.Dimensions, error) {
 	build, err := GetBuild(ctx, bbid, &bbpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"infra.swarming.task_dimensions"},
+			Paths: []string{"infra.swarming.task_dimensions", "infra.backend.task_dimensions"},
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
-	return util.ToDimensionsPB(build.GetInfra().GetSwarming().GetTaskDimensions()), nil
+
+	return util.ToDimensionsPB(util.GetTaskDimensions(build)), nil
 }

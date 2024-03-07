@@ -100,3 +100,10 @@ func GetBuilderGroup(build *bbpb.Build) string {
 	}
 	return value.GetStringValue()
 }
+
+func GetTaskDimensions(build *bbpb.Build) []*bbpb.RequestedDimension {
+	if build.GetInfra().GetSwarming().GetTaskDimensions() != nil {
+		return build.GetInfra().GetSwarming().GetTaskDimensions()
+	}
+	return build.GetInfra().GetBackend().GetTaskDimensions()
+}

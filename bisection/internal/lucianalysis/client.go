@@ -80,7 +80,7 @@ WITH
       ANY_VALUE(g) AS regression_group,
       ANY_VALUE(v.buildbucket_build.id HAVING MAX v.partition_time) AS build_id,
       ANY_VALUE(REGEXP_EXTRACT(v.results[0].parent.id, r'^task-{{.SwarmingProject}}.appspot.com-([0-9a-f]+)$') HAVING MAX v.partition_time) AS swarming_run_id,
-      ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b.infra.swarming.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
+      ANY_VALUE(COALESCE(b2.infra.swarming.task_dimensions, b2.infra.backend.task_dimensions, b.infra.swarming.task_dimensions, b.infra.backend.task_dimensions) HAVING MAX v.partition_time) AS task_dimensions,
       ANY_VALUE(JSON_VALUE_ARRAY(b.input.properties, "$.sheriff_rotations") HAVING MAX v.partition_time) AS SheriffRotations,
       ANY_VALUE(JSON_VALUE(b.input.properties, "$.builder_group") HAVING MAX v.partition_time) AS BuilderGroup,
     FROM builder_regression_groups g
