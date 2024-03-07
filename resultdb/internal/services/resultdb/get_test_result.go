@@ -46,6 +46,9 @@ func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {
 }
 
 func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error) {
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
 	if err := verifyGetTestResultPermission(ctx, in.GetName()); err != nil {
 		return nil, err
 	}
@@ -53,8 +56,6 @@ func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResult
 		return nil, appstatus.BadRequest(err)
 	}
 
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 	tr, err := testresults.Read(ctx, in.Name)
 	if err != nil {
 		return nil, err

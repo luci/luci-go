@@ -61,6 +61,12 @@ func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
 
 // ListArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
 	invID, parentIDRegexp, err := parseParent(in.Parent)
 	if err != nil {
 		return nil, err
@@ -84,12 +90,12 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	}
 
 	// Read artifacts.
-	arts, token, err := q.FetchProtos(span.Single(ctx))
+	arts, token, err := q.FetchProtos(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	realm, err := invocations.ReadRealm(span.Single(ctx), invID)
+	realm, err := invocations.ReadRealm(ctx, invID)
 	if err != nil {
 		return nil, err
 	}

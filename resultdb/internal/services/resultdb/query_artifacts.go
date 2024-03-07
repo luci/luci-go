@@ -41,6 +41,12 @@ func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
 
 // QueryArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
 	if err := permissions.VerifyInvocationsByName(ctx, in.Invocations, rdbperms.PermListArtifacts); err != nil {
 		return nil, err
 	}
@@ -51,10 +57,6 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 
 	// Query is valid - increment the queryInvocationsCount metric
 	queryInvocationsCount.Add(ctx, 1, "QueryArtifacts", len(in.Invocations))
-
-	// Open a transaction.
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 
 	// Get the transitive closure.
 	invs := invocations.MustParseNames(in.Invocations)

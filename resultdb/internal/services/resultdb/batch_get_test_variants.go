@@ -54,6 +54,12 @@ func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) err
 
 // BatchGetTestVariants implements the RPC method of the same name.
 func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchGetTestVariantsRequest) (*pb.BatchGetTestVariantsResponse, error) {
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
 	if err := permissions.VerifyInvocationByName(ctx, in.Invocation, rdbperms.PermListTestResults, rdbperms.PermListTestExonerations); err != nil {
 		return nil, err
 	}
@@ -76,10 +82,6 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		variantIDs[key{TestID: tvID.TestId, VariantHash: tvID.VariantHash}] = struct{}{}
 		testIDs[i] = tvID.TestId
 	}
-
-	// Open a transaction.
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 
 	invs, err := graph.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(in.Invocation)))
 	if err != nil {

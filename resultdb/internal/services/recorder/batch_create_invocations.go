@@ -88,7 +88,7 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 	}
 
 	includedInvs.RemoveAll(idSet)
-	if err := permissions.VerifyInvocations(ctx, includedInvs, permIncludeInvocation); err != nil {
+	if err := permissions.VerifyInvocations(span.Single(ctx), includedInvs, permIncludeInvocation); err != nil {
 		return nil, err
 	}
 

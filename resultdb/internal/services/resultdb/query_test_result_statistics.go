@@ -29,6 +29,12 @@ import (
 
 // QueryTestResultStatistics implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
 	if err := permissions.VerifyInvocationsByName(ctx, in.Invocations, rdbperms.PermListTestResults); err != nil {
 		return nil, err
 	}
@@ -39,10 +45,6 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 
 	// Query is valid - increment the queryInvocationsCount metric
 	queryInvocationsCount.Add(ctx, 1, "QueryTestResultStatistics", len(in.Invocations))
-
-	// Open a transaction.
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 
 	// Get the transitive closure.
 	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))

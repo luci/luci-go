@@ -69,14 +69,16 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 	add := invocations.MustParseNames(in.AddInvocations)
 	remove := invocations.MustParseNames(in.RemoveInvocations)
 
-	// To include invocation A into invocation B, in addition to checking the
-	// update token for B in mutateInvocation below, verify that the caller has
-	// permission 'resultdb.invocation.include' on A's realm.
-	if err := permissions.VerifyInvocations(ctx, add, permIncludeInvocation); err != nil {
-		return nil, err
-	}
-
 	err := mutateInvocation(ctx, including, func(ctx context.Context) error {
+		// To include invocation A into invocation B, in addition to checking the
+		// update token for B in mutateInvocation below, verify that the caller has
+		// permission 'resultdb.invocation.include' on A's realm.
+		// Perform this check in the same transaction as the update to avoid
+		// TOC-TOU vulnerabilities.
+		if err := permissions.VerifyInvocations(ctx, add, permIncludeInvocation); err != nil {
+			return err
+		}
+
 		// Accumulate keys to remove in a single KeySet.
 		ks := spanner.KeySets()
 		for rInv := range remove {

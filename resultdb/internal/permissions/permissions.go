@@ -27,19 +27,20 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/span"
 )
 
 // VerifyInvocation checks if the caller has the specified permissions on the
 // realm that the invocation with the specified id belongs to.
-// There must not already be a transaction in the given context.
+// There must must be a valid Spanner transaction in the given context, which
+// may be a span.Single().
 func VerifyInvocation(ctx context.Context, id invocations.ID, permissions ...realms.Permission) error {
 	return VerifyInvocations(ctx, invocations.NewIDSet(id), permissions...)
 }
 
 // VerifyInvocations checks multiple invocations' realms for the specified
 // permissions.
-// There must not already be a transaction in the given context.
+// There must must be a valid Spanner transaction in the given context, which
+// may be a span.Single().
 func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions ...realms.Permission) (err error) {
 	if len(ids) == 0 {
 		return nil
@@ -47,7 +48,7 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 	ctx, ts := tracing.Start(ctx, "resultdb.permissions.VerifyInvocations")
 	defer func() { tracing.End(ts, err) }()
 
-	realms, err := invocations.ReadRealms(span.Single(ctx), ids)
+	realms, err := invocations.ReadRealms(ctx, ids)
 	if err != nil {
 		return err
 	}
@@ -66,7 +67,8 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 
 // VerifyInvocationsByName does the same as VerifyInvocations but accepts
 // invocation names instead of an invocations.IDSet.
-// There must not already be a transaction in the given context.
+// There must must be a valid Spanner transaction in the given context, which
+// may be a span.Single().
 func VerifyInvocationsByName(ctx context.Context, invNames []string, permissions ...realms.Permission) error {
 	ids, err := invocations.ParseNames(invNames)
 	if err != nil {
@@ -77,7 +79,8 @@ func VerifyInvocationsByName(ctx context.Context, invNames []string, permissions
 
 // VerifyInvocationByName does the same as VerifyInvocation but accepts
 // an invocation name instead of an invocations.ID.
-// There must not already be a transaction in the given context.
+// There must must be a valid Spanner transaction in the given context, which
+// may be a span.Single().
 func VerifyInvocationByName(ctx context.Context, invName string, permissions ...realms.Permission) error {
 	return VerifyInvocationsByName(ctx, []string{invName}, permissions...)
 }

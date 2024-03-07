@@ -43,6 +43,12 @@ func validateListTestExonerationsRequest(req *pb.ListTestExonerationsRequest) er
 
 // ListTestExonerations implements pb.ResultDBServer.
 func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTestExonerationsRequest) (*pb.ListTestExonerationsResponse, error) {
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
 	if err := permissions.VerifyInvocationByName(ctx, in.Invocation, rdbperms.PermListTestExonerations); err != nil {
 		return nil, err
 	}
@@ -57,8 +63,6 @@ func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTe
 		PageToken:     in.GetPageToken(),
 	}
 
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 	tes, tok, err := q.Fetch(ctx)
 	if err != nil {
 		return nil, err

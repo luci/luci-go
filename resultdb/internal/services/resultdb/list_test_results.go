@@ -43,6 +43,12 @@ func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
 
 // ListTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestResultsRequest) (*pb.ListTestResultsResponse, error) {
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
 	if err := permissions.VerifyInvocationByName(ctx, in.Invocation, rdbperms.PermListTestResults); err != nil {
 		return nil, err
 	}
@@ -55,9 +61,6 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 
 	q := testresults.Query{
 		PageSize:      pagination.AdjustPageSize(in.PageSize),

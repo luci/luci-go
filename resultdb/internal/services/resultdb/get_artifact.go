@@ -53,6 +53,9 @@ func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
 
 // GetArtifact implements pb.ResultDBServer.
 func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequest) (*pb.Artifact, error) {
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
 	if err := verifyReadArtifactPermission(ctx, in.Name); err != nil {
 		return nil, err
 	}
@@ -60,9 +63,6 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 	if err := validateGetArtifactRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 
 	art, err := artifacts.Read(ctx, in.Name)
 	if err != nil {

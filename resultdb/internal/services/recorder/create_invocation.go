@@ -28,13 +28,15 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/realms"
 )
 
 // TestMagicOverdueDeadlineUnixSecs is a magic value used by tests to set an
@@ -221,7 +223,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		return nil, appstatus.BadRequest(err)
 	}
 
-	if err := permissions.VerifyInvocations(ctx, includedInvs, permIncludeInvocation); err != nil {
+	if err := permissions.VerifyInvocations(span.Single(ctx), includedInvs, permIncludeInvocation); err != nil {
 		return nil, err
 	}
 

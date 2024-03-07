@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestVerifyInvocations(t *testing.T) {
@@ -54,63 +55,63 @@ func TestVerifyInvocations(t *testing.T) {
 
 		Convey("Access allowed", func() {
 			ids := invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"))
-			err := VerifyInvocations(ctx, ids, rdbperms.PermListArtifacts)
+			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts)
 			So(err, ShouldBeNil)
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"))
-			err = VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
+			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
 			So(err, ShouldBeNil)
 		})
 		Convey("Access denied", func() {
 			ids := invocations.NewIDSet(invocations.ID("i0"))
-			err := VerifyInvocations(ctx, ids, rdbperms.PermListArtifacts)
+			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 			So(err, ShouldErrLike, "resultdb.artifacts.list in realm of invocation i0")
 
 			ids = invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"))
-			err = VerifyInvocations(ctx, ids, rdbperms.PermListArtifacts, rdbperms.PermListTestExonerations)
+			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts, rdbperms.PermListTestExonerations)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 			So(err, ShouldErrLike, "resultdb.testExonerations.list in realm of invocation i1")
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"))
-			err = VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
+			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 			So(err, ShouldErrLike, "resultdb.artifacts.list in realm of invocation i3")
 		})
 		Convey("Duplicate invocations", func() {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3"))
-			err := VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
+			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
 			So(err, ShouldBeNil)
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3"))
-			err = VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
+			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 			So(err, ShouldErrLike, "resultdb.artifacts.list in realm of invocation i3")
 		})
 		Convey("Duplicate realms", func() {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3b"))
-			err := VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
+			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
 			So(err, ShouldBeNil)
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3b"))
-			err = VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
+			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 			So(err, ShouldErrLike, "resultdb.artifacts.list in realm of invocation i3")
 		})
 		Convey("Invocations do not exist", func() {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("iX"))
-			err := VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations)
+			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations)
 			So(err, ShouldHaveAppStatus, codes.NotFound)
 			So(err, ShouldErrLike, "invocations/iX not found")
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID(""))
-			err = VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations)
+			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations)
 			So(err, ShouldHaveAppStatus, codes.NotFound)
 			So(err, ShouldErrLike, "invocations/ not found")
 		})
 		Convey("No invocations", func() {
 			ids := invocations.NewIDSet()
-			err := VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
+			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
 			So(err, ShouldBeNil)
 		})
 	})
