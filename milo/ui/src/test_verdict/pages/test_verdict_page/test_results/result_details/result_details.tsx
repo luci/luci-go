@@ -19,6 +19,8 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { useResults } from '../context';
 import { getSelectedResultIndex } from '../utils';
 
+import { ResultDataProvider } from './context';
+import { ResultArtifacts } from './result_artifacts';
 import { ResultBasicInfo } from './result_basic_info';
 import { ResultTags } from './result_tags';
 
@@ -42,9 +44,19 @@ export function ResultDetails() {
   }
 
   return (
-    <Grid item container flexDirection="column">
-      <ResultBasicInfo result={result.result} />
-      {result.result.tags && <ResultTags tags={result.result.tags} />}
-    </Grid>
+    <ResultDataProvider result={result.result}>
+      <Grid
+        item
+        container
+        flexDirection="column"
+        sx={{
+          mb: 2,
+        }}
+      >
+        <ResultBasicInfo />
+        <ResultTags />
+        <ResultArtifacts />
+      </Grid>
+    </ResultDataProvider>
   );
 }

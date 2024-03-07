@@ -29,20 +29,48 @@ import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
 import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
-import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { useProject } from '../../../context';
 import { useClustersByResultId } from '../../context';
+import { ArtifactContentLink } from '../artifact_content_link';
+import { useCombinedArtifacts, useResult } from '../context';
 
-interface Props {
-  result: TestResult;
+import { ResultSummary } from './result_summary';
+
+interface LogArtifactsProps {
+  testhausLogs?: Artifact;
+  stainlessLogs?: Artifact;
 }
 
-export function ResultBasicInfo({ result }: Props) {
+function LogsArtifacts({ stainlessLogs, testhausLogs }: LogArtifactsProps) {
+  const bothExist = testhausLogs && stainlessLogs;
+  return (
+    <>
+      View logs in:&nbsp;
+      {testhausLogs && (
+        <>
+          <ArtifactContentLink artifact={testhausLogs} />
+        </>
+      )}
+      {bothExist && <>, </>}
+      {stainlessLogs && <ArtifactContentLink artifact={stainlessLogs} />}
+    </>
+  );
+}
+
+export function ResultBasicInfo() {
   const [expanded, setExpanded] = useState(true);
+  const result = useResult();
   const clustersByResultId = useClustersByResultId(result.resultId);
   const project = useProject();
+  const artifacts = useCombinedArtifacts();
+
+  const testhausLogs = artifacts.find((a) => a.artifactId === 'testhaus_logs');
+  const stainlessLogs = artifacts.find(
+    (a) => a.artifactId === 'stainless_logs',
+  );
 
   const parsedResultName = parseTestResultName(result.name);
   const swarmingTaskId = parseSwarmingTaskFromInvId(
@@ -86,7 +114,7 @@ export function ResultBasicInfo({ result }: Props) {
         </Grid>
       </AccordionSummary>
       <AccordionDetails>
-        <Grid container rowGap={2}>
+        <Grid container rowGap={1}>
           <Grid item container columnGap={1} alignItems="center">
             {result.duration && (
               <DurationBadge duration={parseProtoDuration(result.duration)} />
@@ -111,18 +139,14 @@ export function ResultBasicInfo({ result }: Props) {
           {result.failureReason && (
             <Grid item container columnGap={1} alignItems="center">
               <Grid item>
-                Failure reason
+                Failure reason&nbsp;
                 {reasonCluster && project && (
-                  <>
-                    (
-                    <Link
-                      target="_blank"
-                      href={makeClusterLink(project, reasonCluster.clusterId)}
-                    >
-                      similar failures
-                    </Link>
-                    )
-                  </>
+                  <Link
+                    target="_blank"
+                    href={makeClusterLink(project, reasonCluster.clusterId)}
+                  >
+                    (similar failures)
+                  </Link>
                 )}
                 :
               </Grid>
@@ -137,7 +161,25 @@ export function ResultBasicInfo({ result }: Props) {
               </Grid>
             </Grid>
           )}
-          {uniqueBugs && (
+          {result.summaryHtml && (
+            <Grid item container rowGap={1} direction="column">
+              <Grid item>Summary:</Grid>
+              <ResultSummary
+                summaryHtml={result.summaryHtml}
+                resultName={result.name}
+                invId={parsedResultName.invocationId}
+              />
+            </Grid>
+          )}
+          <Grid container item>
+            {(testhausLogs || stainlessLogs) && (
+              <LogsArtifacts
+                testhausLogs={testhausLogs}
+                stainlessLogs={stainlessLogs}
+              />
+            )}
+          </Grid>
+          {uniqueBugs && uniqueBugs.length > 0 && (
             <Grid item container columnGap={1}>
               Related bugs:
               {uniqueBugs.map((bug, i) => (
@@ -150,11 +192,6 @@ export function ResultBasicInfo({ result }: Props) {
               ))}
             </Grid>
           )}
-          {/** TODO(b/308716449): Display last successful patchset of the CL. */}
-          <Grid item container columnGap={1}>
-            Last successful CV run:
-            <Link href="#">PATCHSET 3 - Attempt 2</Link>
-          </Grid>
         </Grid>
       </AccordionDetails>
     </Accordion>

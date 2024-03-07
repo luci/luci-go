@@ -15,7 +15,6 @@
 import { GrpcError, ProtocolError } from '@chopsui/prpc-client';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
-import Divider from '@mui/material/Divider';
 import { useQuery } from '@tanstack/react-query';
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
@@ -33,7 +32,6 @@ import { useProject, useTestVerdict } from '../context';
 
 import { TestResultsProvider } from './context';
 import { ResultDetails } from './result_details';
-import { ResultLogs } from './result_logs';
 import { ResultsHeader } from './results_header';
 
 interface Props {
@@ -98,8 +96,6 @@ export function TestResults({ results }: Props) {
       )}
       <ResultsHeader />
       <ResultDetails />
-      <Divider orientation="horizontal" flexItem />
-      <ResultLogs />
     </TestResultsProvider>
   );
 }

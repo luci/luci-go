@@ -21,23 +21,21 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '@/generic_libs/components/dot_spinner';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
-import { Artifact } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
-import { reportRenderError } from '@/generic_libs/tools/error_handler';
-import { consumer } from '@/generic_libs/tools/lit_context';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
-import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
+import { toError, urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
-import {
-  consumeArtifacts,
-  consumeArtifactsFinalized,
-} from './artifact_provider';
+import { ON_TEST_RESULT_DATA_READY } from '../constants/event';
+import { getRawArtifactURLPath } from '../tools/url_utils';
+
+export interface TextArtifactEvent {
+  setData: (invName: string, resultName: string) => void;
+}
 
 /**
  * Renders a text artifact.
  */
 @customElement('text-artifact')
-@consumer
 export class TextArtifactElement extends MobxLitElement {
   static get properties() {
     return {
@@ -53,12 +51,10 @@ export class TextArtifactElement extends MobxLitElement {
   }
 
   @observable.ref
-  @consumeArtifacts()
-  artifacts!: Map<string, Artifact>;
+  resultName: string | undefined;
 
   @observable.ref
-  @consumeArtifactsFinalized()
-  finalized = false;
+  invName: string | undefined;
 
   @observable.ref _artifactId!: string;
   @computed get artifactId() {
@@ -78,11 +74,19 @@ export class TextArtifactElement extends MobxLitElement {
 
   @computed
   private get fetchUrl(): string {
-    const artifact = this.artifacts.get(
-      (this.invLevel ? 'inv-level/' : '') + this.artifactId,
+    if (!this.resultName || !this.invName) {
+      return '';
+    }
+
+    if (this.invLevel) {
+      return getRawArtifactURLPath(
+        `${this.invName}/artifacts/${this.artifactId}`,
+      );
+    }
+
+    return getRawArtifactURLPath(
+      `${this.resultName}/artifacts/${this.artifactId}`,
     );
-    // TODO(crbug/1206109): use permanent raw artifact URL.
-    return artifact ? artifact.fetchUrl : '';
   }
 
   @computed
@@ -102,30 +106,73 @@ export class TextArtifactElement extends MobxLitElement {
     return unwrapObservable(this.content$, null);
   }
 
+  eventTimeout: number | undefined;
+
   constructor() {
     super();
     makeObservable(this);
   }
 
-  protected render = reportRenderError(this, () => {
-    const label = this._invLevel ? 'Inv-level artifact' : 'Artifact';
+  protected createRenderRoot() {
+    return this;
+  }
 
-    if (this.finalized && this.fetchUrl === '') {
-      return html`<div>${label}: <i>${this.artifactId}</i> not found.</div>`;
+  connectedCallback(): void {
+    super.connectedCallback();
+    // This must be done in the connected callback as it needs
+    // to occur when the element is in the dom in order for the
+    // event to bubble up to the parent.
+    // The timeout is needed to ensure that the event is fired after
+    // parent React components are mounted and were able to
+    // register the event handlers
+    this.eventTimeout = window.setTimeout(
+      () =>
+        this.dispatchEvent(
+          new CustomEvent<TextArtifactEvent>(ON_TEST_RESULT_DATA_READY, {
+            detail: {
+              setData: (invName, resultName) => {
+                this.resultName = resultName;
+                this.invName = invName;
+                this.requestUpdate();
+              },
+            },
+            // Allows events to bubble up the tree,
+            // which can then be captured by React components.
+            bubbles: true,
+            // Allows the event to traverse shadowroot boundries.
+            composed: true,
+          }),
+        ),
+      0,
+    );
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+
+    clearTimeout(this.eventTimeout);
+  }
+
+  protected render() {
+    try {
+      const label = this._invLevel ? 'Inv-level artifact' : 'Artifact';
+
+      if (this.content === null) {
+        return html`<div id="load">
+          Loading <milo-dot-spinner></milo-dot-spinner>
+        </div>`;
+      }
+
+      if (this.content === '') {
+        return html`<div>${label}: <i>${this.artifactId}</i> is empty.</div>`;
+      }
+
+      return html`<pre>${this.content}</pre>`;
+    } catch (e: unknown) {
+      const error = toError(e);
+      return html`<span>An error occured: ${error.message}</span>`;
     }
-
-    if (this.content === null) {
-      return html`<div id="load">
-        Loading <milo-dot-spinner></milo-dot-spinner>
-      </div>`;
-    }
-
-    if (this.content === '') {
-      return html`<div>${label}: <i>${this.artifactId}</i> is empty.</div>`;
-    }
-
-    return html`<pre>${this.content}</pre>`;
-  });
+  }
 
   static styles = [
     commonStyles,

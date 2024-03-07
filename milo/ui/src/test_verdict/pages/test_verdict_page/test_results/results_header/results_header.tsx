@@ -38,21 +38,22 @@ import {
   getSelectedResultIndex,
 } from '../utils';
 
-function getRunStatusIcon(status: TestStatus) {
+function getRunStatusIcon(status: TestStatus, expected: boolean) {
+  const className = expected ? 'expected' : 'unexpected';
   switch (status) {
     case TestStatus.ABORT:
-      return <DoNotDisturbOnTotalSilenceIcon className="exonerated" />;
+      return <DoNotDisturbOnTotalSilenceIcon className={className} />;
     case TestStatus.CRASH:
-      return <BrokenImageIcon className="unexpected" />;
+      return <BrokenImageIcon className={className} />;
     case TestStatus.FAIL:
-      return <CancelIcon className="unexpected" />;
+      return <CancelIcon className={className} />;
     case TestStatus.PASS:
-      return <CheckCircleIcon className="expected" />;
+      return <CheckCircleIcon className={className} />;
     case TestStatus.SKIP:
-      return <DoNotDisturbIcon className="unexpectedly-skipped" />;
+      return <DoNotDisturbIcon className={className} />;
     case TestStatus.STATUS_UNSPECIFIED:
     default:
-      return <QuestionMarkIcon className="unspecified" />;
+      return <QuestionMarkIcon className={className} />;
   }
 }
 
@@ -96,7 +97,7 @@ export function ResultsHeader() {
     >
       <Tabs
         value={selectedResultIndex || 0}
-        aria-label="Test verdict runs"
+        aria-label="Test verdict results"
         sx={{
           minHeight: '30px',
         }}
@@ -108,10 +109,13 @@ export function ResultsHeader() {
               minHeight: 0,
             }}
             key={result.result.resultId}
-            icon={getRunStatusIcon(result.result.status)}
+            icon={getRunStatusIcon(
+              result.result.status,
+              result.result.expected,
+            )}
             iconPosition="end"
             title={getTitle(result.result)}
-            label={`Run ${i + 1}`}
+            label={`Result ${i + 1}`}
           />
         ))}
       </Tabs>

@@ -101,9 +101,12 @@ describe('<ResultsHeader />', () => {
         </TestResultsProvider>
       </FakeContextProvider>,
     );
-    await screen.findByText('Run 1');
+    await screen.findByText('Result 1');
 
-    expect(screen.getByText('Run 1')).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Result 1')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 
   it('given a selected result in the route, then should select that result', async () => {
@@ -118,8 +121,11 @@ describe('<ResultsHeader />', () => {
         </TestResultsProvider>
       </FakeContextProvider>,
     );
-    await screen.findByText('Run 1');
+    await screen.findByText('Result 1');
 
-    expect(screen.getByText('Run 2')).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Result 2')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 });

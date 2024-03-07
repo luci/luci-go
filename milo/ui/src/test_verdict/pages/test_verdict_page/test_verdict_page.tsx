@@ -85,6 +85,7 @@ export function TestVerdictPage() {
       container
       sx={{
         px: 3,
+        mt: 1,
       }}
       rowGap={1}
       flexDirection="column"

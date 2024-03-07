@@ -24,14 +24,11 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
-import { StringPair } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import { useResult } from '../context';
 
-interface Props {
-  tags: readonly StringPair[];
-}
-
-export function ResultTags({ tags }: Props) {
+export function ResultTags() {
   const [expanded, setExpanded] = useState(false);
+  const tags = useResult().tags;
   function handleExpand(isExpanded: boolean) {
     setExpanded(isExpanded);
   }

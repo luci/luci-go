@@ -19,17 +19,13 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
-import { fromPromise, IPromiseBasedObservable, PENDING } from 'mobx-utils';
+import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '@/common/components/associated_bugs_badge';
 import '@/generic_libs/components/expandable_entry';
 import '@/common/components/tags_entry';
-import './artifact_provider';
-import './image_diff_artifact';
-import './link_artifact';
-import './text_artifact';
-import './text_diff_artifact';
 import { makeClusterLink } from '@/analysis/tools/utils';
+import { ON_TEST_RESULT_DATA_READY } from '@/common/constants/event';
 import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants/legacy';
 import { Cluster } from '@/common/services/luci_analysis';
 import {
@@ -56,6 +52,12 @@ import { consumer } from '@/generic_libs/tools/lit_context';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
 import { unwrapOrElse } from '@/generic_libs/tools/utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
+
+import './image_diff_artifact';
+import './link_artifact';
+import '../text_artifact';
+import './text_diff_artifact';
+import { TextArtifactEvent } from '../text_artifact';
 
 /**
  * Renders an expandable entry of the given test result.
@@ -151,17 +153,6 @@ export class ResultEntryElement extends MobxLitElement {
     );
   }
 
-  @computed private get artifactsMapping() {
-    return new Map([
-      ...this.resultArtifacts.map(
-        (obj) => [obj.artifactId, obj] as [string, Artifact],
-      ),
-      ...this.invArtifacts.map(
-        (obj) => ['inv-level/' + obj.artifactId, obj] as [string, Artifact],
-      ),
-    ]);
-  }
-
   @computed private get stainlessLogArtifact() {
     return this.invArtifacts.find((a) => a.artifactId === 'stainless_logs');
   }
@@ -214,6 +205,29 @@ export class ResultEntryElement extends MobxLitElement {
     makeObservable(this);
   }
 
+  private handleResultDataReady = (e: Event) => {
+    (e as CustomEvent<TextArtifactEvent>).detail.setData(
+      this.parentInvId,
+      this.testResult.name,
+    );
+  };
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener(
+      ON_TEST_RESULT_DATA_READY,
+      this.handleResultDataReady,
+    );
+  }
+
+  disconnectedCallback(): void {
+    super.connectedCallback();
+    this.removeEventListener(
+      ON_TEST_RESULT_DATA_READY,
+      this.handleResultDataReady,
+    );
+  }
+
   private renderFailureReason() {
     const errMsg = this.testResult.failureReason?.primaryErrorMessage;
     if (!errMsg) {
@@ -246,7 +260,7 @@ ${errMsg}</pre
       if (this.testhausLogArtifact) {
         testhausLink = html`<milo-link-artifact
           .artifact=${this.testhausLogArtifact}
-          .label=${'Testhaus'}
+          .label="Testhaus"
         ></milo-link-artifact>`;
       }
       let delimiter = null;
@@ -257,7 +271,7 @@ ${errMsg}</pre
       if (this.stainlessLogArtifact) {
         stainlessLink = html`<milo-link-artifact
           .artifact=${this.stainlessLogArtifact}
-          .label=${'Stainless'}
+          .label="Stainless"
         ></milo-link-artifact>`;
       }
 
@@ -281,13 +295,7 @@ ${errMsg}</pre
         <span slot="header">Summary:</span>
         <div slot="content">
           <div id="summary-html" class="info-block">
-            <milo-artifact-provider
-              .artifacts=${this.artifactsMapping}
-              .finalized=${this.invArtifacts$.state !== PENDING &&
-              this.resultArtifacts$.state !== PENDING}
-            >
-              ${unsafeHTML(this.testResult.summaryHtml)}
-            </milo-artifact-provider>
+            ${unsafeHTML(this.testResult.summaryHtml)}
           </div>
           ${this.renderLogLinkArtifacts()}
         </div>

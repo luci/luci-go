@@ -14,7 +14,6 @@
 
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { ReactNode } from 'react';
 
 import {
   TestResult,
@@ -25,6 +24,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { FakeTestVerdictContextProvider } from '../../../testing_tools/fake_context';
 import { TestResultsProvider } from '../../context';
+import { ResultDataProvider } from '../context';
 
 import { ResultBasicInfo } from './result_basic_info';
 
@@ -63,18 +63,22 @@ describe('<ResultBasicInfo />', () => {
     },
   });
 
-  function renderBasicInfo(entry: ReactNode) {
+  function renderBasicInfo(result: TestResult) {
     return render(
       <FakeContextProvider>
         <FakeTestVerdictContextProvider>
-          <TestResultsProvider results={[]}>{entry}</TestResultsProvider>
+          <TestResultsProvider results={[]}>
+            <ResultDataProvider result={result}>
+              <ResultBasicInfo />
+            </ResultDataProvider>
+          </TestResultsProvider>
         </FakeTestVerdictContextProvider>
       </FakeContextProvider>,
     );
   }
 
   it('given error reason, should display error block', async () => {
-    renderBasicInfo(<ResultBasicInfo result={failedResult} />);
+    renderBasicInfo(failedResult);
     await screen.findByText('Details');
     expect(
       screen.getByText(
@@ -85,7 +89,7 @@ describe('<ResultBasicInfo />', () => {
   });
 
   it('given error reason, should be displayed instead of `Details` when collapsed', async () => {
-    renderBasicInfo(<ResultBasicInfo result={failedResult} />);
+    renderBasicInfo(failedResult);
 
     await screen.findByText('Details');
     await userEvent.click(screen.getByText('Details'));
@@ -100,7 +104,7 @@ describe('<ResultBasicInfo />', () => {
   });
 
   it('given a duration, then should be displayed and formatted correctly', async () => {
-    renderBasicInfo(<ResultBasicInfo result={failedResult} />);
+    renderBasicInfo(failedResult);
 
     await screen.findByText('Details');
 
@@ -126,7 +130,7 @@ describe('<ResultBasicInfo />', () => {
     });
 
     // act
-    renderBasicInfo(<ResultBasicInfo result={failedResult} />);
+    renderBasicInfo(failedResult);
 
     // verify
     expect(screen.getByText('659c82e40f213711')).toBeInTheDocument();
@@ -168,7 +172,9 @@ describe('<ResultBasicInfo />', () => {
       >
         <FakeTestVerdictContextProvider>
           <TestResultsProvider results={[]} clustersMap={clustersMap}>
-            <ResultBasicInfo result={failedResult} />
+            <ResultDataProvider result={failedResult}>
+              <ResultBasicInfo />
+            </ResultDataProvider>
           </TestResultsProvider>
         </FakeTestVerdictContextProvider>
       </FakeContextProvider>,
@@ -176,7 +182,8 @@ describe('<ResultBasicInfo />', () => {
 
     // verify
     await screen.findByText('Details');
-    expect(screen.getByText('similar failures')).toBeInTheDocument();
+    await (() =>
+      expect(screen.getByText('similar failures')).toBeInTheDocument());
   });
 
   it('given a list of clusters with bugs, should display a list of bugs', async () => {
@@ -233,7 +240,9 @@ describe('<ResultBasicInfo />', () => {
       >
         <FakeTestVerdictContextProvider>
           <TestResultsProvider results={[]} clustersMap={clustersMap}>
-            <ResultBasicInfo result={failedResult} />
+            <ResultDataProvider result={failedResult}>
+              <ResultBasicInfo />
+            </ResultDataProvider>
           </TestResultsProvider>
         </FakeTestVerdictContextProvider>
       </FakeContextProvider>,
@@ -241,7 +250,8 @@ describe('<ResultBasicInfo />', () => {
 
     // verify
     await screen.findByText('Details');
-    expect(screen.getByText('similar failures')).toBeInTheDocument();
+    await (() =>
+      expect(screen.getByText('similar failures')).toBeInTheDocument());
     expect(screen.getByText('Related bugs:')).toBeInTheDocument();
     expect(screen.getByText('b/123456')).toBeInTheDocument();
     expect(screen.getByText('b/1234567')).toBeInTheDocument();
