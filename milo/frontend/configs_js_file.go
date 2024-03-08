@@ -43,6 +43,7 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 		LuciBisection:  settings.LuciBisection,
 		SheriffOMatic:  settings.SheriffOMatic,
 		LuciTreeStatus: settings.LuciTreeStatus,
+		LuciNotify:     settings.LuciNotify,
 	}
 
 	header := c.Writer.Header()

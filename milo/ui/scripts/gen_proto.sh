@@ -41,6 +41,7 @@ protoc \
   ./go.chromium.org/luci/bisection/proto/v1/analyses.proto \
   ./go.chromium.org/luci/buildbucket/proto/builder_service.proto \
   ./go.chromium.org/luci/buildbucket/proto/builds_service.proto \
+  ./go.chromium.org/luci/luci_notify/api/service/v1/alerts.proto \
   ./go.chromium.org/luci/milo/proto/v1/rpc.proto \
   ./go.chromium.org/luci/resultdb/proto/v1/resultdb.proto \
   ./go.chromium.org/luci/swarming/proto/api_v2/swarming.proto \

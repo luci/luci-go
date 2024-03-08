@@ -45,6 +45,9 @@ declare const SETTINGS: {
   readonly luciTreeStatus: {
     readonly host: string;
   };
+  readonly luciNotify: {
+    readonly host: string;
+  };
 };
 
 /**

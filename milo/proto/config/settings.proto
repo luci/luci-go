@@ -106,11 +106,18 @@ message Settings {
     // host is the hostname of the Sheriff-O-Matic instance we're pointing to (eg. sheriff-o-matic.appspot.com).
     string host = 1;
   }
-  LuciBisection sheriff_o_matic = 9;
+  SheriffOMatic sheriff_o_matic = 9;
 
   message LuciTreeStatus {
     // host is the hostname of the LUCI Tree Status instance we're pointing to (eg. luci-tree-status.appspot.com).
     string host = 1;
   }
   LuciTreeStatus luci_tree_status = 10;
+
+  message LuciNotify {
+    // host is the hostname of the LUCI Notify instance we're pointing to (eg. luci-notify.appspot.com).
+    string host = 1;
+  }
+  LuciNotify luci_notify = 11;
+
 }

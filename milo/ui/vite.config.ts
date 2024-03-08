@@ -66,6 +66,9 @@ function getLocalDevConfigsJs(env: Record<string, string>) {
     luciBisection: {
       host: env['VITE_LUCI_BISECTION_HOST'],
     },
+    luciNotify: {
+      host: env['VITE_LUCI_NOTIFY_HOST'],
+    },
     sheriffOMatic: {
       host: env['VITE_SHERIFF_O_MATIC_HOST'],
     },

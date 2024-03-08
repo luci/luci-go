@@ -72,6 +72,9 @@ configJSVars.SETTINGS = Object.freeze({
   luciTreeStatus: {
     host: assertNonNullable(process.env['VITE_TREE_STATUS_HOST']),
   },
+  luciNotify: {
+    host: assertNonNullable(process.env['VITE_LUCI_NOTIFY_HOST']),
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by

@@ -2,7 +2,7 @@
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
-import { NumericRange } from "./common.pb";
+import { NumericRange, Variant } from "./common.pb";
 import { SourceRef } from "./sources.pb";
 
 export const protobufPackage = "luci.analysis.v1";
@@ -136,7 +136,10 @@ export interface QueryChangepointsInGroupResponse {
   readonly changepoints: readonly Changepoint[];
 }
 
-/** Represent a changepoint of a test variant branch. */
+/**
+ * Represent a changepoint of a test variant branch.
+ * Next ID: 15.
+ */
 export interface Changepoint {
   /** The LUCI Project. E.g. "chromium". */
   readonly project: string;
@@ -147,6 +150,13 @@ export interface Changepoint {
    * E.g. "96c68dc946ab4068".
    */
   readonly variantHash: string;
+  /**
+   * key:value pairs to specify the way of running a particular test.
+   * e.g. a specific bucket, builder and a test suite.
+   */
+  readonly variant:
+    | Variant
+    | undefined;
   /** Hash of the source branch, as 16 lowercase hexadecimal characters. */
   readonly refHash: string;
   /** The branch in source control. */
@@ -1219,6 +1229,7 @@ function createBaseChangepoint(): Changepoint {
     project: "",
     testId: "",
     variantHash: "",
+    variant: undefined,
     refHash: "",
     ref: undefined,
     startHour: undefined,
@@ -1239,6 +1250,9 @@ export const Changepoint = {
     }
     if (message.variantHash !== "") {
       writer.uint32(26).string(message.variantHash);
+    }
+    if (message.variant !== undefined) {
+      Variant.encode(message.variant, writer.uint32(114).fork()).ldelim();
     }
     if (message.refHash !== "") {
       writer.uint32(34).string(message.refHash);
@@ -1291,6 +1305,13 @@ export const Changepoint = {
           }
 
           message.variantHash = reader.string();
+          continue;
+        case 14:
+          if (tag !== 114) {
+            break;
+          }
+
+          message.variant = Variant.decode(reader, reader.uint32());
           continue;
         case 4:
           if (tag !== 34) {
@@ -1355,6 +1376,7 @@ export const Changepoint = {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
       variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
       refHash: isSet(object.refHash) ? globalThis.String(object.refHash) : "",
       ref: isSet(object.ref) ? SourceRef.fromJSON(object.ref) : undefined,
       startHour: isSet(object.startHour) ? globalThis.String(object.startHour) : undefined,
@@ -1381,6 +1403,9 @@ export const Changepoint = {
     }
     if (message.variantHash !== "") {
       obj.variantHash = message.variantHash;
+    }
+    if (message.variant !== undefined) {
+      obj.variant = Variant.toJSON(message.variant);
     }
     if (message.refHash !== "") {
       obj.refHash = message.refHash;
@@ -1414,6 +1439,9 @@ export const Changepoint = {
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
     message.variantHash = object.variantHash ?? "";
+    message.variant = (object.variant !== undefined && object.variant !== null)
+      ? Variant.fromPartial(object.variant)
+      : undefined;
     message.refHash = object.refHash ?? "";
     message.ref = (object.ref !== undefined && object.ref !== null) ? SourceRef.fromPartial(object.ref) : undefined;
     message.startHour = object.startHour ?? undefined;

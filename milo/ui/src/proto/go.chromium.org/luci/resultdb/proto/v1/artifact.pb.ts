@@ -32,7 +32,7 @@ export interface Artifact {
    * A local identifier of the artifact, unique within the parent resource.
    * MAY have slashes, but MUST NOT start with a slash.
    * SHOULD not use backslashes.
-   * Regex: ^[[:word:]]([[:print:]]{0,254}[[:word:]])?$
+   * Regex: ^(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,254}[[:word:]])?$
    */
   readonly artifactId: string;
   /**

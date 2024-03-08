@@ -79,6 +79,8 @@ export interface Build {
   readonly number: number;
   /** Verified LUCI identity that created this build. */
   readonly createdBy: string;
+  /** Redirect url for the build. */
+  readonly viewUrl: string;
   /**
    * Verified LUCI identity that canceled this build.
    *
@@ -1136,6 +1138,7 @@ function createBaseBuild(): Build {
     builderInfo: undefined,
     number: 0,
     createdBy: "",
+    viewUrl: "",
     canceledBy: "",
     createTime: undefined,
     startTime: undefined,
@@ -1180,6 +1183,9 @@ export const Build = {
     }
     if (message.createdBy !== "") {
       writer.uint32(34).string(message.createdBy);
+    }
+    if (message.viewUrl !== "") {
+      writer.uint32(42).string(message.viewUrl);
     }
     if (message.canceledBy !== "") {
       writer.uint32(186).string(message.canceledBy);
@@ -1302,6 +1308,13 @@ export const Build = {
           }
 
           message.createdBy = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.viewUrl = reader.string();
           continue;
         case 23:
           if (tag !== 186) {
@@ -1504,6 +1517,7 @@ export const Build = {
       builderInfo: isSet(object.builderInfo) ? Build_BuilderInfo.fromJSON(object.builderInfo) : undefined,
       number: isSet(object.number) ? globalThis.Number(object.number) : 0,
       createdBy: isSet(object.createdBy) ? globalThis.String(object.createdBy) : "",
+      viewUrl: isSet(object.viewUrl) ? globalThis.String(object.viewUrl) : "",
       canceledBy: isSet(object.canceledBy) ? globalThis.String(object.canceledBy) : "",
       createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
       startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
@@ -1550,6 +1564,9 @@ export const Build = {
     }
     if (message.createdBy !== "") {
       obj.createdBy = message.createdBy;
+    }
+    if (message.viewUrl !== "") {
+      obj.viewUrl = message.viewUrl;
     }
     if (message.canceledBy !== "") {
       obj.canceledBy = message.canceledBy;
@@ -1643,6 +1660,7 @@ export const Build = {
       : undefined;
     message.number = object.number ?? 0;
     message.createdBy = object.createdBy ?? "";
+    message.viewUrl = object.viewUrl ?? "";
     message.canceledBy = object.canceledBy ?? "";
     message.createTime = object.createTime ?? undefined;
     message.startTime = object.startTime ?? undefined;
