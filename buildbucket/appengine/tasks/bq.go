@@ -144,15 +144,15 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 // running on Swarming implemented backends.
 // TODO(crbug.com/1508416) Stop backfill after Buildbucket taskbackend
 // migration completes and all BQ queries are migrated away from Infra.Swarming.
-func tryBackfillSwarming(b *pb.Build) error {
+func tryBackfillSwarming(b *pb.Build) (err error) {
 	backend := b.Infra.Backend
 	if backend.GetTask().GetId().GetId() == "" {
 		// No backend task associated with the build, bail out.
-		return nil
+		return
 	}
 	if !strings.HasPrefix(backend.Task.Id.Target, "swarming://") {
 		// The build doesn't run on a Swarming implemented backend, bail out.
-		return nil
+		return
 	}
 
 	sw := &pb.BuildInfra_Swarming{
@@ -179,31 +179,8 @@ func tryBackfillSwarming(b *pb.Build) error {
 			}
 		}
 	}
-
-	var botDimensions map[string][]string
-	sw.BotDimensions = make([]*pb.StringPair, 0)
-	if backend.Task.Details != nil {
-		details := backend.Task.Details.GetFields()
-		if bds, ok := details["bot_dimensions"]; ok {
-			bdsJSON, err := bds.MarshalJSON()
-			if err != nil {
-				return errors.Annotate(err, "failed to marshal task details to JSON for build %d", b.Id).Err()
-			}
-			err = json.Unmarshal(bdsJSON, &botDimensions)
-			if err != nil {
-				return errors.Annotate(err, "failed to unmarshal task details JSON for build %d", b.Id).Err()
-			}
-
-			for k, vs := range botDimensions {
-				for _, v := range vs {
-					sw.BotDimensions = append(sw.BotDimensions, &pb.StringPair{Key: k, Value: v})
-				}
-			}
-			protoutil.SortStringPairs(sw.BotDimensions)
-		}
-	}
-
-	return nil
+	sw.BotDimensions, err = protoutil.BotDimensionsFromBackend(b)
+	return
 }
 
 // commonCacheToSwarmingCache returns the equivalent

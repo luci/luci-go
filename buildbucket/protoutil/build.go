@@ -15,11 +15,14 @@
 package protoutil
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/common/data/strpair"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -141,4 +144,45 @@ func MergeSummary(b *pb.Build) string {
 		return newSummary[:SummaryMarkdownMaxLength-3] + "..."
 	}
 	return newSummary
+}
+
+// BotDimensionsFromBackend retrieves bot dimensions from the backend task running the build.
+//
+// Exclusively for builds running on backend.
+func BotDimensionsFromBackend(b *pb.Build) ([]*pb.StringPair, error) {
+	details := b.GetInfra().GetBackend().GetTask().GetDetails().GetFields()
+	if len(details) == 0 {
+		return nil, nil
+	}
+
+	botDims := make([]*pb.StringPair, 0)
+	var botDimensions map[string][]string
+	if bds, ok := details["bot_dimensions"]; ok {
+		bdsJSON, err := bds.MarshalJSON()
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to marshal task details to JSON for build %d", b.Id).Err()
+		}
+		err = json.Unmarshal(bdsJSON, &botDimensions)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to unmarshal task details JSON for build %d", b.Id).Err()
+		}
+
+		for k, vs := range botDimensions {
+			for _, v := range vs {
+				botDims = append(botDims, &pb.StringPair{Key: k, Value: v})
+			}
+		}
+		SortStringPairs(botDims)
+	}
+	return botDims, nil
+}
+
+// BotDimensions retrieves bot dimensions from the backend task running the build.
+//
+// Supports both builds running on raw Swarming or backend.
+func BotDimensions(b *pb.Build) ([]*pb.StringPair, error) {
+	if b.GetInfra().GetSwarming().GetBotDimensions() != nil {
+		return b.GetInfra().GetSwarming().GetBotDimensions(), nil
+	}
+	return BotDimensionsFromBackend(b)
 }

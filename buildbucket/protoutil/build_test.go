@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -176,5 +177,77 @@ func TestMergeSummary(t *testing.T) {
 			}
 			So(MergeSummary(b), ShouldEqual, "summary\ncancellation")
 		})
+	})
+}
+
+func TestBotDimensions(t *testing.T) {
+	t.Parallel()
+
+	botDims := []*pb.StringPair{
+		{
+			Key:   "cpu",
+			Value: "x86",
+		},
+		{
+			Key:   "cpu",
+			Value: "x86-64",
+		},
+		{
+			Key:   "os",
+			Value: "Linux",
+		},
+	}
+
+	b := &pb.Build{
+		Infra: &pb.BuildInfra{},
+	}
+	Convey("build on swarming", t, func() {
+		b.Infra.Swarming = &pb.BuildInfra_Swarming{
+			BotDimensions: botDims,
+		}
+		actual, err := BotDimensions(b)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResembleProto, botDims)
+	})
+
+	Convey("build on backend", t, func() {
+		b.Infra.Backend = &pb.BuildInfra_Backend{
+			Task: &pb.Task{
+				Details: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"bot_dimensions": &structpb.Value{
+							Kind: &structpb.Value_StructValue{
+								StructValue: &structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"cpu": &structpb.Value{
+											Kind: &structpb.Value_ListValue{
+												ListValue: &structpb.ListValue{
+													Values: []*structpb.Value{
+														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+													},
+												},
+											},
+										},
+										"os": &structpb.Value{
+											Kind: &structpb.Value_ListValue{
+												ListValue: &structpb.ListValue{
+													Values: []*structpb.Value{
+														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		actual, err := BotDimensions(b)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResembleProto, botDims)
 	})
 }
