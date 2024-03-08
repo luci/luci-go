@@ -125,6 +125,11 @@ func (f Filter) Pools() []string {
 	return pools.ToSortedSlice()
 }
 
+// IsEmpty is true if this filter doesn't filter anything.
+func (f Filter) IsEmpty() bool {
+	return len(f.filters) == 0
+}
+
 // SplitForQuery splits this filter into several simpler filters that can be
 // used in datastore queries, with their results merged.
 //
@@ -146,6 +151,8 @@ func (f Filter) Pools() []string {
 // results locally. This is relatively expensive and scales poorly, but we need
 // to do that only for complex queries that use multiple OR property filters.
 // They are relatively rare.
+//
+// If the original filter is empty, returns one empty filter as the output.
 func (f Filter) SplitForQuery(mode SplitMode) []Filter {
 	// Count how many OR-ed property filters we have, find the smallest one. We'll
 	// use it as a "pivot" for splitting the original filter into smaller filters.
@@ -200,13 +207,16 @@ func (f Filter) SplitForQuery(mode SplitMode) []Filter {
 	return simplified
 }
 
-// Apply applies this filter to a query, returning multiple queries.
+// Apply applies this filter to a query, returning (potentially) multiple
+// queries.
 //
 // Results of these queries must be merged locally (e.g. via datastore.RunMulti)
 // to get the final filtered result.
 //
 // `field` is the datastore entity field to apply the filter on. It should be
 // a multi-valued field with values of form "key:value".
+//
+// If the filter is empty, returns a list with the original query as is.
 func (f Filter) Apply(q *datastore.Query, field string, mode SplitMode) []*datastore.Query {
 	split := f.SplitForQuery(mode)
 	out := make([]*datastore.Query, 0, len(split))

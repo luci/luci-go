@@ -19,6 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/gae/service/datastore"
+
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -60,6 +62,12 @@ func TestFilter(t *testing.T) {
 		So(call("key", "  val"), ShouldErrLike, "bad value")
 	})
 
+	Convey("Empty", t, func() {
+		f, err := NewFilter(nil)
+		So(err, ShouldBeNil)
+		So(f.IsEmpty(), ShouldBeTrue)
+	})
+
 	Convey("SplitForQuery", t, func() {
 		split := func(q string, mode SplitMode) []string {
 			var pairs []*apipb.StringPair
@@ -85,6 +93,21 @@ func TestFilter(t *testing.T) {
 			}
 			return out
 		}
+
+		Convey("Empty", func() {
+			f, err := NewFilter(nil)
+			So(err, ShouldBeNil)
+			for _, mode := range []SplitMode{SplitCompletely, SplitOptimally} {
+				out := f.SplitForQuery(mode)
+				So(out, ShouldHaveLength, 1)
+				So(out[0].IsEmpty(), ShouldBeTrue)
+
+				q := datastore.NewQuery("Something")
+				split := f.Apply(q, "doesntmatter", mode)
+				So(split, ShouldHaveLength, 1)
+				So(split[0] == q, ShouldBeTrue) // the exact same original query
+			}
+		})
 
 		Convey("SplitCompletely", func() {
 			// Already simple query.
