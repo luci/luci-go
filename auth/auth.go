@@ -35,6 +35,7 @@ import (
 	"context"
 	"net/http"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -242,6 +243,10 @@ type Options struct {
 	// When setting to true, make sure to specify a correct Audience if the
 	// default one is not appropriate.
 	//
+	// When using UserCredentialsMethod implicitly appends OAuthScopeEmail to the
+	// list of OAuth scopes, since this scope is needed to get ID tokens in this
+	// mode.
+	//
 	// Default: false.
 	UseIDTokens bool
 
@@ -447,7 +452,7 @@ type Options struct {
 // normalize and examine auth.Options before passing them to NewAuthenticator.
 func (opts *Options) PopulateDefaults() {
 	// Set the default scope, sort and dedup scopes.
-	if len(opts.Scopes) == 0 || opts.UseIDTokens {
+	if len(opts.Scopes) == 0 {
 		opts.Scopes = []string{OAuthScopeEmail} // also implies "openid"
 	}
 	opts.Scopes = normalizeScopes(opts.Scopes)
@@ -991,6 +996,12 @@ func (a *Authenticator) ensureInitialized() error {
 	case actingModeNone:
 		scopes = a.opts.Scopes
 		useIDTokens = a.opts.UseIDTokens
+		// To get ID tokens when using end-user credentials we need userinfo scope.
+		if useIDTokens && a.opts.Method == UserCredentialsMethod {
+			if !slices.Contains(scopes, OAuthScopeEmail) {
+				scopes = normalizeScopes(append(scopes, OAuthScopeEmail))
+			}
+		}
 	case actingModeIAM:
 		scopes = []string{OAuthScopeIAM}
 		useIDTokens = false // IAM uses OAuth tokens
