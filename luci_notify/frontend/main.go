@@ -28,11 +28,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
-	pb "go.chromium.org/luci/luci_notify/api/service/v1"
-	"go.chromium.org/luci/luci_notify/config"
-	"go.chromium.org/luci/luci_notify/internal/span"
-	"go.chromium.org/luci/luci_notify/notify"
-	"go.chromium.org/luci/luci_notify/server"
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
@@ -42,6 +37,13 @@ import (
 	"go.chromium.org/luci/server/router"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
+
+	pb "go.chromium.org/luci/luci_notify/api/service/v1"
+	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/internal/span"
+	"go.chromium.org/luci/luci_notify/notify"
+	"go.chromium.org/luci/luci_notify/rpc"
+	"go.chromium.org/luci/luci_notify/server"
 )
 
 const (
@@ -122,6 +124,8 @@ func main() {
 			Service: &server.TreeCloserServer{},
 			Prelude: checkAPIAccess,
 		})
+		pb.RegisterAlertsServer(srv, rpc.NewAlertsServer())
+
 		return nil
 	})
 }

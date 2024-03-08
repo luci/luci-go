@@ -6,6 +6,13 @@
 INTEGRATION_TESTS=1 go test ./...
 ```
 
+## Running a local server
+
+```
+cd frontend
+go run main.go --cloud-project luci-notify-dev --spanner-database projects/luci-notify-dev/instances/dev/databases/luci-notify-dev
+```
+
 ## Release
 
 Releases for LUCI Notify are handled via LUCI CD. Configuration is in

@@ -17,12 +17,24 @@ package alerts
 
 import (
 	"context"
+	"encoding/binary"
+	"fmt"
+	"hash/fnv"
 	"time"
 
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
+)
+
+const (
+	// StatusIDExpression is a partial regular expression that validates status identifiers.
+	// For now this is quite loose to handle Sheriff-o-matic keys which contain builder name
+	// strings, so could be any characters at all.
+	// Example SOM key: chromium$!chrome$!ci$!linux-chromeos-chrome$!browser_tests on Ubuntu-22.04$!8754809345790718177
+	// TODO: Once we switch away from sheriff-o-matic we should tighten this up.
+	AlertKeyExpression = `[^/]+`
 )
 
 // Alert mirrors the structure of alert values in the database.
@@ -158,4 +170,12 @@ func fromRow(row *spanner.Row) (*Alert, error) {
 		return nil, errors.Annotate(err, "reading ModifyTime column").Err()
 	}
 	return alert, nil
+}
+
+func (a *Alert) Etag() string {
+	h := fnv.New32a()
+	// Ignore errors here.
+	_ = binary.Write(h, binary.LittleEndian, a.Bug)
+	_ = binary.Write(h, binary.LittleEndian, a.SilenceUntil)
+	return fmt.Sprintf("W/\"%x\"", h.Sum32())
 }

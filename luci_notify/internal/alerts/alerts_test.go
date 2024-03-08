@@ -20,11 +20,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	. "github.com/smartystreets/goconvey/convey"
 
-	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/luci_notify/internal/testutil"
 	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/luci_notify/internal/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {

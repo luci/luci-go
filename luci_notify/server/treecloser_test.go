@@ -19,15 +19,17 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
 	apiconfig "go.chromium.org/luci/luci_notify/api/config"
 	pb "go.chromium.org/luci/luci_notify/api/service/v1"
 	"go.chromium.org/luci/luci_notify/config"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidateRequest(t *testing.T) {

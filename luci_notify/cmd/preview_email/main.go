@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+
 	"go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
