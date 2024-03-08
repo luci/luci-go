@@ -17,6 +17,7 @@ package casimpl
 import (
 	"context"
 	"flag"
+	"fmt"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
@@ -27,6 +28,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/profiling"
 )
+
+// Version is reported by "version" subcommand and put into logs.
+const Version = "cas 0.2.0"
 
 // AuthFlags is an interface to register auth flags and create RBE Client.
 type AuthFlags interface {
@@ -60,22 +64,16 @@ func (c *commonFlags) Init(authFlags AuthFlags) {
 }
 
 func (c *commonFlags) Parse() error {
-	if c.logConfig.Level == logging.Debug {
-		// extract glog flag used in remote-apis-sdks
-		logtostderr := flag.Lookup("logtostderr")
-		if logtostderr == nil {
-			return errors.Reason("logtostderr flag for glog not found").Err()
-		}
-		if err := logtostderr.Value.Set("true"); err != nil {
-			return errors.Annotate(err, "failed to set logstderr to true").Err()
-		}
-
-		v := flag.Lookup("v")
-		if v == nil {
-			return errors.Reason("v flag for glog not found").Err()
-		}
-		if err := v.Value.Set("9"); err != nil {
-			return errors.Annotate(err, "failed to set verbosity level to 9").Err()
+	verbosity := 0
+	switch c.logConfig.Level {
+	case logging.Debug:
+		verbosity = 9
+	case logging.Info:
+		verbosity = 2
+	}
+	if verbosity != 0 {
+		if err := enableGlogVerbosity(verbosity); err != nil {
+			return err
 		}
 	}
 
@@ -92,4 +90,23 @@ func (c *commonFlags) Parse() error {
 // ModifyContext implements cli.ContextModificator.
 func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
 	return c.logConfig.Set(ctx)
+}
+
+func enableGlogVerbosity(level int) error {
+	// extract glog flag used in remote-apis-sdks
+	logtostderr := flag.Lookup("logtostderr")
+	if logtostderr == nil {
+		return errors.Reason("logtostderr flag for glog not found").Err()
+	}
+	if err := logtostderr.Value.Set("true"); err != nil {
+		return errors.Annotate(err, "failed to set logstderr to true").Err()
+	}
+	v := flag.Lookup("v")
+	if v == nil {
+		return errors.Reason("v flag for glog not found").Err()
+	}
+	if err := v.Value.Set(fmt.Sprintf("%d", level)); err != nil {
+		return errors.Annotate(err, "failed to set verbosity level").Err()
+	}
+	return nil
 }

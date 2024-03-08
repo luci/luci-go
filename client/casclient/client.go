@@ -26,7 +26,6 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/contextmd"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
@@ -63,9 +62,9 @@ func New(ctx context.Context, addr string, instance string, opts auth.Options, r
 		}
 
 		dialParams = client.DialParams{
-			Service:            addr,
-			TransportCredsOnly: true,
-			DialOpts:           []grpc.DialOption{grpc.WithPerRPCCredentials(creds)},
+			Service:              addr,
+			UseExternalAuthToken: true,
+			ExternalPerRPCCreds:  &client.PerRPCCreds{Creds: creds},
 		}
 	}
 
@@ -148,11 +147,12 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 		return nil, err
 	}
 	dialParams := client.DialParams{
-		Service:            "remotebuildexecution.googleapis.com:443",
-		TransportCredsOnly: true,
+		Service:              "remotebuildexecution.googleapis.com:443",
+		UseExternalAuthToken: true,
+		ExternalPerRPCCreds:  &client.PerRPCCreds{Creds: creds},
 	}
 
-	cl, err := client.NewClient(ctx, instance, dialParams, Options(creds)...)
+	cl, err := client.NewClient(ctx, instance, dialParams, Options()...)
 	if err != nil {
 		logging.Errorf(ctx, "failed to create casclient: %+v", err)
 		return nil, errors.Annotate(err, "failed to create client").Err()
@@ -161,7 +161,7 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 }
 
 // Options returns CAS client options.
-func Options(creds credentials.PerRPCCredentials) []client.Opt {
+func Options() []client.Opt {
 	casConcurrency := runtime.NumCPU() * 2
 	if runtime.GOOS == "windows" {
 		// This is for better file write performance on Windows (http://b/171672371#comment6).
@@ -179,8 +179,12 @@ func Options(creds credentials.PerRPCCredentials) []client.Opt {
 	// large files.
 	rpcTimeouts["Write"] = 2 * time.Minute
 
+	// There's suspicion GetCapabilities sometimes takes longer than default
+	// 5 sec because it is the first call ever (and it needs to open the
+	// connection and refresh auth tokens). Give it more time.
+	rpcTimeouts["GetCapabilities"] = 30 * time.Second
+
 	return []client.Opt{
-		&client.PerRPCCreds{Creds: creds},
 		client.CASConcurrency(casConcurrency),
 		client.UtilizeLocality(true),
 		&client.TreeSymlinkOpts{

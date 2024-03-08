@@ -37,8 +37,8 @@ require (
 	github.com/alicebob/miniredis/v2 v2.31.1
 	github.com/armon/go-radix v1.0.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
-	github.com/bazelbuild/remote-apis v0.0.0-20230411132548-35aee1c4a425
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20230809203756-67f2ffbec0ef
+	github.com/bazelbuild/remote-apis v0.0.0-20240215191509-9ff14cecffe5
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20240304155856-a108ad8bbbf4
 	github.com/danjacques/gofslock v0.0.0-20240212154529-d899e02bfe22
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.1

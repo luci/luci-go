@@ -206,6 +206,8 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, c, env)
+	logging.Infof(ctx, "Starting %s", Version)
+
 	if err := c.parse(a, args); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)

@@ -38,8 +38,6 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-const version = "0.1"
-
 type authFlags struct {
 	flags       authcli.Flags
 	defaultOpts auth.Options
@@ -85,7 +83,8 @@ func getApplication() *cli.Application {
 			authcli.SubcommandInfo(authOpts, "whoami", false),
 			authcli.SubcommandLogin(authOpts, "login", false),
 			authcli.SubcommandLogout(authOpts, "logout", false),
-			versioncli.CmdVersion(version),
+
+			versioncli.CmdVersion(casimpl.Version),
 		},
 	}
 }
