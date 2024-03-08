@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/bigquery/storage/apiv1beta2/storagepb"
+	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"

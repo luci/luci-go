@@ -19,7 +19,7 @@ import (
 	"flag"
 	"time"
 
-	storage "cloud.google.com/go/bigquery/storage/apiv1beta2"
+	storage "cloud.google.com/go/bigquery/storage/apiv1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"

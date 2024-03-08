@@ -17,7 +17,7 @@ package bqlog
 import (
 	"context"
 
-	"cloud.google.com/go/bigquery/storage/apiv1beta2/storagepb"
+	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
 	gax "github.com/googleapis/gax-go/v2"
 	"google.golang.org/grpc/metadata"
 )
