@@ -136,13 +136,16 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		}
 		rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
 		whoms := rs.Mode.GerritNotifyTargets()
-		for _, id := range rs.CLs {
-			rims[id] = reviewInputMeta{
-				notify: whoms,
-				// Add the same set of group/people to the attention set.
-				addToAttention: whoms,
-				reason:         treeStatusCheckFailedReason,
-				message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+		meta := reviewInputMeta{
+			notify: whoms,
+			// Add the same set of group/people to the attention set.
+			addToAttention: whoms,
+			reason:         treeStatusCheckFailedReason,
+			message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+		}
+		for _, cl := range rs.CLs {
+			if !rs.HasRootCL() || rs.RootCL == cl {
+				rims[cl] = meta
 			}
 		}
 		scheduleTriggersReset(ctx, rs, rims, run.Status_FAILED)
@@ -301,7 +304,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		if err != nil {
 			return nil, err
 		}
-		impl.scheduleResetTriggersForNotSubmittedCLs(ctx, rs, allRunCLs, sc, cg)
+		impl.scheduleResetTriggersForNotSubmittedCLs(ctx, rs, allRunCLs, sc)
 		return &Result{State: rs}, nil
 	default:
 		panic(fmt.Errorf("impossible submission result %s", sc.GetResult()))
@@ -384,7 +387,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 			if err != nil {
 				return nil, err
 			}
-			impl.scheduleResetTriggersForNotSubmittedCLs(ctx, rs, allRunCLs, sc, cg)
+			impl.scheduleResetTriggersForNotSubmittedCLs(ctx, rs, allRunCLs, sc)
 			if err := releaseSubmitQueueIfTaken(ctx, rs, impl.RM); err != nil {
 				return nil, err
 			}
@@ -522,7 +525,7 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 	return nil
 }
 
-func (impl *Impl) scheduleResetTriggersForNotSubmittedCLs(ctx context.Context, rs *state.RunState, allRunCLs []*run.RunCL, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) {
+func (impl *Impl) scheduleResetTriggersForNotSubmittedCLs(ctx context.Context, rs *state.RunState, allRunCLs []*run.RunCL, sc *eventpb.SubmissionCompleted) {
 	whoms := rs.Mode.GerritNotifyTargets()
 	// Single-CL Run
 	if len(allRunCLs) == 1 {
@@ -552,6 +555,42 @@ func (impl *Impl) scheduleResetTriggersForNotSubmittedCLs(ctx context.Context, r
 	// Multi-CL Run
 	submitted, failed, pending := splitRunCLs(allRunCLs, rs.Submission, sc)
 	msgSuffix := makeSubmissionMsgSuffix(submitted, failed, pending)
+	// Multi-CL Run with root CL (i.e. instantly triggered multi-CL Run)
+	if rs.HasRootCL() {
+		meta := reviewInputMeta{
+			notify:         whoms,
+			addToAttention: whoms,
+			reason:         submissionFailureAttentionReason,
+		}
+		switch clFailures := sc.GetClFailures().GetFailures(); {
+		case len(clFailures) == 1 && clFailures[0].GetClid() == int64(rs.RootCL):
+			// this is the case where the only failed CL is the root CL.
+			meta.message = fmt.Sprintf("%s\n\n%s", sc.GetClFailures().GetFailures()[0].GetMessage(), msgSuffix)
+		case len(clFailures) > 0:
+			// Summarize a list of the failed CLs and post it onto the root CL.
+			var sb strings.Builder
+			sb.WriteString(partiallySubmittedMsgForRootCL)
+			failureMsgByCLID := map[common.CLID]string{}
+			for _, f := range sc.GetClFailures().GetFailures() {
+				failureMsgByCLID[common.CLID(f.GetClid())] = f.GetMessage()
+			}
+			for _, f := range failed {
+				fmt.Fprintf(&sb, "\n* %s: %s", f.ExternalID.MustURL(), failureMsgByCLID[f.ID])
+			}
+			fmt.Fprint(&sb, "\n\n")
+			fmt.Fprint(&sb, msgSuffix)
+			meta.message = sb.String()
+		case sc.GetTimeout():
+			meta.message = fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix)
+		default:
+			meta.message = fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
+		}
+		scheduleTriggersReset(ctx, rs, map[common.CLID]reviewInputMeta{
+			rs.RootCL: meta,
+		}, run.Status_FAILED)
+		return
+	}
+	// Multi-CL Run without root CL
 	metas := make(map[common.CLID]reviewInputMeta, len(failed)+len(pending))
 	switch {
 	case sc.GetClFailures() != nil:
@@ -731,11 +770,12 @@ func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.Submi
 // TODO(crbug/1302119): Replace terms like "Project admin" with dedicated
 // contact sourced from Project Config.
 const (
-	cvBugLink  = "https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3ELUCI%3EBuildService%3EPreSubmit%3ECV"
+	cvBugLink  = "https://issues.chromium.org/issues/new?component=1456237"
 	defaultMsg = "Submission of this CL failed due to unexpected internal " +
 		"error. Please contact LUCI team.\n\n" + cvBugLink
 	noneSubmittedMsgSuffixFmt = "None of the CLs in the Run has been " +
 		"submitted. CLs:\n* %s"
+	partiallySubmittedMsgForRootCL     = "Failed to submit the following CL(s):"
 	partiallySubmittedMsgForPendingCLs = "This CL is not submitted because " +
 		"submission has failed for the following CL(s) which this CL depends on."
 	partiallySubmittedMsgForSubmittedCLs = "This CL is submitted. However, " +

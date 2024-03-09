@@ -677,33 +677,61 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								},
 							}
-							runAndVerify([]struct {
-								clid int64
-								msg  string
-							}{
-								{
-									clid: 1,
-									msg:  "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
-								},
-								{
-									clid: 2,
-									msg:  "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
-								},
+							Convey("With root CL", func() {
+								rs.RootCL = 1
+								runAndVerify([]struct {
+									clid int64
+									msg  string
+								}{
+									{
+										clid: 1,
+										msg:  "Failed to submit the following CL(s):\n* https://x-review.example.com/c/2222: CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+									},
+								})
+							})
+							Convey("Without root CL", func() {
+								runAndVerify([]struct {
+									clid int64
+									msg  string
+								}{
+									{
+										clid: 1,
+										msg:  "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+									},
+									{
+										clid: 2,
+										msg:  "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+									},
+								})
 							})
 						})
 						Convey("Unclassified failure", func() {
-							runAndVerify([]struct {
-								clid int64
-								msg  string
-							}{
-								{
-									clid: 1,
-									msg:  timeoutMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
-								},
-								{
-									clid: 2,
-									msg:  timeoutMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
-								},
+							Convey("With root CL", func() {
+								rs.RootCL = 1
+								runAndVerify([]struct {
+									clid int64
+									msg  string
+								}{
+									{
+										clid: 1,
+										msg:  timeoutMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+									},
+								})
+							})
+							Convey("Without root CL", func() {
+								runAndVerify([]struct {
+									clid int64
+									msg  string
+								}{
+									{
+										clid: 1,
+										msg:  timeoutMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+									},
+									{
+										clid: 2,
+										msg:  timeoutMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+									},
+								})
 							})
 						})
 					})
@@ -723,34 +751,66 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								},
 							}
-							runAndVerify([]struct {
-								clid int64
-								msg  string
-							}{
-								{
-									clid: 1,
-									msg:  "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
-								},
+							Convey("With root CL", func() {
+								rs.RootCL = 1
+								runAndVerify([]struct {
+									clid int64
+									msg  string
+								}{
+									{
+										clid: 1,
+										msg:  "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+									},
+								})
+								// Not posting message to any other CLs at all.
+								reqs := selfSetReviewRequests()
+								So(reqs, ShouldBeEmpty)
 							})
-							// Verify posting message to the submitted CL about the failure
-							// on the dependent CLs
-							reqs := selfSetReviewRequests()
-							So(reqs, ShouldHaveLength, 1)
-							So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
-							assertNotify(reqs[0], 99, 100, 101)
-							assertAttentionSet(reqs[0], "failed to submit dependent CLs", 99, 100, 101)
-							So(reqs[0].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
+							Convey("Without root CL", func() {
+								runAndVerify([]struct {
+									clid int64
+									msg  string
+								}{
+									{
+										clid: 1,
+										msg:  "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+									},
+								})
+								// Verify posting message to the submitted CL about the failure
+								// on the dependent CLs
+								reqs := selfSetReviewRequests()
+								So(reqs, ShouldHaveLength, 1)
+								So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
+								assertNotify(reqs[0], 99, 100, 101)
+								assertAttentionSet(reqs[0], "failed to submit dependent CLs", 99, 100, 101)
+								So(reqs[0].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
+							})
 						})
 						Convey("Unclassified failure", func() {
-							runAndVerify([]struct {
-								clid int64
-								msg  string
-							}{
-								{
-									clid: 1,
-									msg:  timeoutMsg + "\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
-								},
+							Convey("With root CL", func() {
+								rs.RootCL = 1
+								runAndVerify([]struct {
+									clid int64
+									msg  string
+								}{
+									{
+										clid: 1,
+										msg:  timeoutMsg + "\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+									},
+								})
 							})
+							Convey("Without root CL", func() {
+								runAndVerify([]struct {
+									clid int64
+									msg  string
+								}{
+									{
+										clid: 1,
+										msg:  timeoutMsg + "\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+									},
+								})
+							})
+
 						})
 					})
 
@@ -868,34 +928,62 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								},
 							},
 						}
-						runAndVerify([]struct {
-							clid int64
-							msg  string
-						}{
-							{
-								clid: 1,
-								msg:  "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
-							},
-							{
-								clid: 2,
-								msg:  "Failed to submit this CL because of merge conflict\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
-							},
+						Convey("With root CL", func() {
+							rs.RootCL = 1
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 1,
+									msg:  "Failed to submit the following CL(s):\n* https://x-review.example.com/c/2222: Failed to submit this CL because of merge conflict\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
+							})
+						})
+						Convey("Without root CL", func() {
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 1,
+									msg:  "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
+								{
+									clid: 2,
+									msg:  "Failed to submit this CL because of merge conflict\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
+							})
 						})
 					})
 
 					Convey("Unclassified failure", func() {
-						runAndVerify([]struct {
-							clid int64
-							msg  string
-						}{
-							{
-								clid: 1,
-								msg:  defaultMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
-							},
-							{
-								clid: 2,
-								msg:  defaultMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
-							},
+						Convey("With root CL", func() {
+							rs.RootCL = 1
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 1,
+									msg:  defaultMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
+							})
+						})
+						Convey("Without root CL", func() {
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 1,
+									msg:  defaultMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
+								{
+									clid: 2,
+									msg:  defaultMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
+							})
 						})
 					})
 				})
