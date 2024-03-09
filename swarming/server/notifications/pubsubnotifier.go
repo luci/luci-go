@@ -26,13 +26,17 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications/taskspb"
 )
 
@@ -46,6 +50,8 @@ type PubSubNotifier struct {
 
 	// True if "Stop()" was called.
 	stopped bool
+
+	cloudProject string
 }
 
 // PubSubNotification defines the message schema for Swarming to send the task
@@ -71,7 +77,10 @@ func NewPubSubNotifier(ctx context.Context, cloudProj string) (*PubSubNotifier, 
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create a pubsub client for %s", cloudProj).Err()
 	}
-	return &PubSubNotifier{client: psClient}, nil
+	return &PubSubNotifier{
+		client:       psClient,
+		cloudProject: cloudProj,
+	}, nil
 }
 
 // Stop properly stops the PubSubNotifier.
@@ -101,6 +110,15 @@ func (ps *PubSubNotifier) RegisterTQTasks(disp *tq.Dispatcher) {
 		Queue:     "pubsub-go", // to replace "pubsub" taskqueue in Py.
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			return ps.handlePubSubNotifyTask(ctx, payload.(*taskspb.PubSubNofityTask))
+		},
+	})
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "buildbucket-notify-go",
+		Kind:      tq.NonTransactional,
+		Prototype: (*taskspb.BuildbucketNofityTask)(nil),
+		Queue:     "buildbucket-notify-go", // to replace "buildbucket-notify" taskqueue in Py.
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			return ps.handleBBNotifyTask(ctx, payload.(*taskspb.BuildbucketNofityTask))
 		},
 	})
 }
@@ -135,6 +153,90 @@ func (ps *PubSubNotifier) handlePubSubNotifyTask(ctx context.Context, t *taskspb
 	_, err = result.Get(ctx)
 	// TODO(b/325342884): Add a ts_mon_metric to record the pubsub latency.
 	return errors.Annotate(err, "failed to publish the msg to %s", t.Topic).Tag(transient.Tag).Err()
+}
+
+// handleBBNotifyTask sends a pubsub update to Buildbucket.
+func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.BuildbucketNofityTask) error {
+	taskReq, err := model.TaskIDToRequestKey(ctx, t.GetTaskId())
+	if err != nil {
+		return tq.Fatal.Apply(err)
+	}
+
+	buildTask := &model.BuildTask{Key: model.BuildTaskKey(ctx, taskReq)}
+	switch err := datastore.Get(ctx, buildTask); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return errors.Annotate(err, "cannot find BuildTask").Tag(tq.Fatal).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch BuildTask").Tag(transient.Tag).Err()
+	}
+
+	// Shouldn't make the update.
+	if buildTask.UpdateID > t.UpdateId {
+		return nil
+	}
+
+	resultSummary := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, taskReq)}
+	if err := datastore.Get(ctx, resultSummary); err != nil {
+		return errors.Annotate(err, "failed to fetch TaskResultSummary").Tag(transient.Tag).Err()
+	}
+
+	// construct bbpb.Task
+	botDims := buildTask.BotDimensions
+	if len(botDims) == 0 {
+		botDims = resultSummary.BotDimensions
+	}
+	bbTask := &bbpb.Task{
+		Id: &bbpb.TaskID{
+			Id:     model.RequestKeyToTaskID(taskReq, model.AsRequest),
+			Target: fmt.Sprintf("swarming://%s", ps.cloudProject),
+		},
+		UpdateId: t.UpdateId,
+		Details: &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bot_dimensions": {
+					Kind: &structpb.Value_StructValue{
+						StructValue: botDims.ToStructPB(),
+					},
+				},
+			},
+		},
+	}
+	setBBStatus(t.State, resultSummary.Failure, bbTask)
+	// no need to send update if the status is unchanged.
+	if buildTask.LatestTaskStatus == bbTask.Status {
+		return nil
+	}
+
+	// send the update msg via PubSub
+	cloudProj, topicID, err := parsePubSubTopicName(buildTask.PubSubTopic)
+	if err != nil {
+		return tq.Fatal.Apply(err)
+	}
+	topic, err := ps.getTopic(cloudProj, topicID)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+	bytes, err := proto.Marshal(&bbpb.BuildTaskUpdate{
+		BuildId: buildTask.BuildID,
+		Task:    bbTask,
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal BuildTaskUpdate").Tag(tq.Fatal).Err()
+	}
+	result := topic.Publish(ctx, &pubsub.Message{
+		Data: bytes,
+	})
+	if _, err = result.Get(ctx); err != nil {
+		return errors.Annotate(err, "failed to send buildbucket task update").Tag(transient.Tag).Err()
+	}
+
+	// update the BuildTask entity in Datastore
+	buildTask.LatestTaskStatus = bbTask.Status
+	buildTask.UpdateID = t.UpdateId
+	if len(buildTask.BotDimensions) == 0 {
+		buildTask.BotDimensions = botDims
+	}
+	return errors.Annotate(datastore.Put(ctx, buildTask), "failed to update BuildTask").Tag(transient.Tag).Err()
 }
 
 // getTopic returns the reference for a topic. If the topic is not in ps.topics

@@ -24,7 +24,16 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
+
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications/taskspb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -99,4 +108,134 @@ func setupTestPubsub(ctx context.Context, cloudProject string) (*pstest.Server, 
 		return nil, nil, err
 	}
 	return srv, client, nil
+}
+
+func TestHandleBBNotifyTask(t *testing.T) {
+	t.Parallel()
+
+	Convey("handleBBNotifyTask", t, func() {
+		ctx := memory.Use(context.Background())
+		psServer, psClient, err := setupTestPubsub(ctx, "bb")
+		So(err, ShouldBeNil)
+		defer func() {
+			_ = psClient.Close()
+			_ = psServer.Close()
+		}()
+
+		notifier := &PubSubNotifier{
+			client:       psClient,
+			cloudProject: "app",
+		}
+		bbTopic, err := psClient.CreateTopic(ctx, "bb-updates")
+		So(err, ShouldBeNil)
+
+		reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
+		So(err, ShouldBeNil)
+
+		buildTask := &model.BuildTask{
+			Key:              model.BuildTaskKey(ctx, reqKey),
+			BuildID:          "1",
+			BuildbucketHost:  "bb-host",
+			UpdateID:         100,
+			LatestTaskStatus: bbpb.Status_SCHEDULED,
+			PubSubTopic:      "projects/bb/topics/bb-updates",
+		}
+		resultSummary := &model.TaskResultSummary{
+			Key: model.TaskResultSummaryKey(ctx, reqKey),
+			TaskResultCommon: model.TaskResultCommon{
+				Failure:       false,
+				BotDimensions: model.BotDimensions{"dim": []string{"a", "b"}},
+			},
+		}
+		So(datastore.Put(ctx, buildTask, resultSummary), ShouldBeNil)
+
+		Convey("build task not exist", func() {
+			psTask := &taskspb.BuildbucketNofityTask{
+				TaskId:   "65aba3a3e6b00000",
+				State:    apipb.TaskState_RUNNING,
+				UpdateId: 101,
+			}
+			err := notifier.handleBBNotifyTask(ctx, psTask)
+			So(err, ShouldErrLike, "cannot find BuildTask")
+			So(tq.Fatal.In(err), ShouldBeTrue)
+		})
+
+		Convey("prior update id", func() {
+			psTask := &taskspb.BuildbucketNofityTask{
+				TaskId:   "65aba3a3e6b99310",
+				State:    apipb.TaskState_RUNNING,
+				UpdateId: 99,
+			}
+			err := notifier.handleBBNotifyTask(ctx, psTask)
+			So(err, ShouldBeNil)
+			So(psServer.Messages(), ShouldHaveLength, 0)
+		})
+
+		Convey("no state change", func() {
+			psTask := &taskspb.BuildbucketNofityTask{
+				TaskId:   "65aba3a3e6b99310",
+				State:    apipb.TaskState_PENDING,
+				UpdateId: 101,
+			}
+			err := notifier.handleBBNotifyTask(ctx, psTask)
+			So(err, ShouldBeNil)
+			So(psServer.Messages(), ShouldHaveLength, 0)
+		})
+
+		Convey("state change", func() {
+			psTask := &taskspb.BuildbucketNofityTask{
+				TaskId:   "65aba3a3e6b99310",
+				State:    apipb.TaskState_RUNNING,
+				UpdateId: 101,
+			}
+
+			err := notifier.handleBBNotifyTask(ctx, psTask)
+
+			So(err, ShouldBeNil)
+			So(psServer.Messages(), ShouldHaveLength, 1)
+			bbTopic.Stop()
+			publishedMsg := psServer.Messages()[0]
+			sentBBUpdate := &bbpb.BuildTaskUpdate{}
+			err = proto.Unmarshal(publishedMsg.Data, sentBBUpdate)
+			So(err, ShouldBeNil)
+			So(sentBBUpdate, ShouldResembleProto, &bbpb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &bbpb.Task{
+					Status: bbpb.Status_STARTED,
+					Id: &bbpb.TaskID{
+						Id:     "65aba3a3e6b99310",
+						Target: "swarming://app",
+					},
+					UpdateId: 101,
+					Details: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"bot_dimensions": {
+								Kind: &structpb.Value_StructValue{
+									StructValue: &structpb.Struct{
+										Fields: map[string]*structpb.Value{
+											"dim": {
+												Kind: &structpb.Value_ListValue{
+													ListValue: &structpb.ListValue{
+														Values: []*structpb.Value{
+															{Kind: &structpb.Value_StringValue{StringValue: "a"}},
+															{Kind: &structpb.Value_StringValue{StringValue: "b"}},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			updatedBuildTask := &model.BuildTask{Key: model.BuildTaskKey(ctx, reqKey)}
+			So(datastore.Get(ctx, updatedBuildTask), ShouldBeNil)
+			So(updatedBuildTask.LatestTaskStatus, ShouldEqual, bbpb.Status_STARTED)
+			So(updatedBuildTask.BotDimensions, ShouldEqual, resultSummary.BotDimensions)
+		})
+	})
 }

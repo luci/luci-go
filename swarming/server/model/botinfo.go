@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -476,4 +477,23 @@ func (p *BotDimensions) FromProperty(prop datastore.Property) error {
 // ToProto returns []apipb.StringListPair, sorted by keys.
 func (p BotDimensions) ToProto() []*apipb.StringListPair {
 	return MapToStringListPair((map[string][]string)(p), true)
+}
+
+// ToStructPB returns a structpb.Struct.
+func (p BotDimensions) ToStructPB() *structpb.Struct {
+	s := &structpb.Struct{
+		Fields: make(map[string]*structpb.Value, len(p)),
+	}
+	for key, valList := range p {
+		vals := make([]*structpb.Value, 0, len(valList))
+		for _, val := range valList {
+			vals = append(vals, &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: val}})
+		}
+		s.Fields[key] = &structpb.Value{
+			Kind: &structpb.Value_ListValue{
+				ListValue: &structpb.ListValue{Values: vals},
+			},
+		}
+	}
+	return s
 }
