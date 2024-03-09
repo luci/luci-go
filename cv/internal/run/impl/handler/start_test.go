@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -28,6 +27,11 @@ import (
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/server/quota"
+	"go.chromium.org/luci/server/quota/quotapb"
+
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -41,10 +45,8 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
 	"go.chromium.org/luci/cv/internal/tryjob"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
-	"go.chromium.org/luci/server/quota"
-	"go.chromium.org/luci/server/quota/quotapb"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestStart(t *testing.T) {
@@ -309,26 +311,44 @@ func TestStart(t *testing.T) {
 			}
 			// included a builder that doesn't exist
 			rs.Options.IncludedTryjobs = append(rs.Options.IncludedTryjobs, "fooproj/ci:bar_builder")
-			res, err := h.Start(ctx, rs)
-			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-
-			So(res.State.Status, ShouldEqual, run.Status_PENDING)
-			So(res.State.Tryjobs, ShouldBeNil)
-			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
-			op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-			So(op.GetResetTriggers(), ShouldNotBeNil)
-			So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
-			resetCLs := common.CLIDs{}
-			for _, req := range op.GetResetTriggers().GetRequests() {
-				resetCLs = append(resetCLs, common.CLID(req.Clid))
-			}
-			So(resetCLs, ShouldResemble, res.State.CLs)
-			So(res.State.LogEntries, ShouldHaveLength, 1)
-			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
-				Label:   "Tryjob Requirement Computation",
-				Message: "Failed to compute tryjob requirement. Reason: builder \"fooproj/ci/bar_builder\" is included but not defined in the LUCI project",
+			anotherCL := addCL(triggerer, owner)
+			rs.CLs = common.CLIDs{cl.ID, anotherCL.ID}
+			Convey("Reset triggers on all CLs", func() {
+				res, err := h.Start(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.State.Status, ShouldEqual, run.Status_PENDING)
+				So(res.State.Tryjobs, ShouldBeNil)
+				So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+				So(op.GetResetTriggers(), ShouldNotBeNil)
+				So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				resetCLs := common.CLIDs{}
+				for _, req := range op.GetResetTriggers().GetRequests() {
+					resetCLs = append(resetCLs, common.CLID(req.Clid))
+				}
+				So(resetCLs, ShouldResemble, res.State.CLs)
+				So(res.State.LogEntries, ShouldHaveLength, 1)
+				So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
+					Label:   "Tryjob Requirement Computation",
+					Message: "Failed to compute tryjob requirement. Reason: builder \"fooproj/ci/bar_builder\" is included but not defined in the LUCI project",
+				})
+			})
+			Convey("Only reset trigger on root CL", func() {
+				rs.RootCL = cl.ID
+				res, err := h.Start(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+				So(op.GetResetTriggers(), ShouldNotBeNil)
+				So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				resetCLs := common.CLIDs{}
+				for _, req := range op.GetResetTriggers().GetRequests() {
+					resetCLs = append(resetCLs, common.CLID(req.Clid))
+				}
+				So(resetCLs, ShouldResemble, common.CLIDs{rs.RootCL})
 			})
 		})
 
@@ -370,6 +390,24 @@ func TestStart(t *testing.T) {
 				},
 			)
 			So(resetOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+
+			Convey("Only reset trigger on root CL", func() {
+				anotherCL := addCL(triggerer, owner)
+				rs.CLs = common.CLIDs{cl.ID, anotherCL.ID}
+				rs.RootCL = cl.ID
+				res, err := h.Start(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+				So(op.GetResetTriggers(), ShouldNotBeNil)
+				So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				resetCLs := common.CLIDs{}
+				for _, req := range op.GetResetTriggers().GetRequests() {
+					resetCLs = append(resetCLs, common.CLID(req.Clid))
+				}
+				So(resetCLs, ShouldResemble, common.CLIDs{rs.RootCL})
+			})
 		})
 
 		statuses := []run.Status{

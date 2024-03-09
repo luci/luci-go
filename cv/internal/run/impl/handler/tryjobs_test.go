@@ -465,6 +465,56 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 				})
+
+				Convey("Only reset trigger on root CL", func() {
+					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
+							Status: tryjob.ExecutionState_FAILED,
+						}, 0, nil)
+					}, nil)
+					So(err, ShouldBeNil)
+					anotherCL := &run.RunCL{
+						ID:         1002,
+						Run:        datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
+						ExternalID: changelist.MustGobID(gHost, 1002),
+						Detail: &changelist.Snapshot{
+							LuciProject: lProject,
+							Kind: &changelist.Snapshot_Gerrit{
+								Gerrit: &changelist.Gerrit{
+									Host: gHost,
+									Info: gf.CI(1002),
+								},
+							},
+							Patchset: 2,
+						},
+					}
+					So(datastore.Put(ctx, anotherCL), ShouldBeNil)
+					rs.CLs = append(rs.CLs, anotherCL.ID)
+
+					rs.RootCL = anotherCL.ID
+					res, err := h.OnLongOpCompleted(ctx, rs, result)
+					So(err, ShouldBeNil)
+					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					for _, op := range res.State.OngoingLongOps.GetOps() {
+						So(op.GetResetTriggers(), ShouldNotBeNil)
+						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
+							{
+								Clid:    int64(anotherCL.ID),
+								Message: "Unexpected error when processing Tryjobs. Please retry. If retry continues to fail, please contact LUCI team.\n\n" + cvBugLink,
+								Notify: gerrit.Whoms{
+									gerrit.Whom_OWNER,
+									gerrit.Whom_CQ_VOTERS,
+								},
+								AddToAttention: gerrit.Whoms{
+									gerrit.Whom_OWNER,
+									gerrit.Whom_CQ_VOTERS,
+								},
+								AddToAttentionReason: "Run failed",
+							},
+						})
+						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+					}
+				})
 			})
 		})
 	})

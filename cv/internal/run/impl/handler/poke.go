@@ -65,13 +65,16 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 			}
 			rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
 			whoms := rs.Mode.GerritNotifyTargets()
-			for _, cid := range rs.CLs {
-				rims[common.CLID(cid)] = reviewInputMeta{
-					notify: whoms,
-					// Add the same set of group/people to the attention set.
-					addToAttention: whoms,
-					reason:         submissionFailureAttentionReason,
-					message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+			meta := reviewInputMeta{
+				notify: whoms,
+				// Add the same set of group/people to the attention set.
+				addToAttention: whoms,
+				reason:         submissionFailureAttentionReason,
+				message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+			}
+			for _, cl := range rs.CLs {
+				if !rs.HasRootCL() || rs.RootCL == cl {
+					rims[cl] = meta
 				}
 			}
 			scheduleTriggersReset(ctx, rs, rims, run.Status_FAILED)

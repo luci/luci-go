@@ -88,13 +88,16 @@ func (impl *Impl) onParentRunUnsuccessful(ctx context.Context, rs *state.RunStat
 	rs = rs.ShallowCopy()
 	rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
 	whoms := rs.Mode.GerritNotifyTargets()
+	meta := reviewInputMeta{
+		notify: whoms,
+		// Add the same set of group/people to the attention set.
+		addToAttention: whoms,
+		reason:         fmt.Sprintf("Cancelled this run because parent run %v", pr.Status),
+		message:        "Cancelled because an upstream CL run failed or was cancelled.",
+	}
 	for _, id := range rs.CLs {
-		rims[id] = reviewInputMeta{
-			notify: whoms,
-			// Add the same set of group/people to the attention set.
-			addToAttention: whoms,
-			reason:         fmt.Sprintf("Cancelled this run because parent run %v", pr.Status),
-			message:        "Cancelled because an upstream CL run failed or was cancelled.",
+		if !rs.HasRootCL() || rs.RootCL == id {
+			rims[id] = meta
 		}
 	}
 	scheduleTriggersReset(ctx, rs, rims, run.Status_CANCELLED)

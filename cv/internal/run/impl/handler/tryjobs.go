@@ -138,6 +138,9 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 
 		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
 		for _, cl := range cls {
+			if rs.HasRootCL() && cl.ID != rs.RootCL {
+				continue
+			}
 			var meta reviewInputMeta
 			switch {
 			case runStatus == run.Status_SUCCEEDED && rs.Mode == run.NewPatchsetRun:

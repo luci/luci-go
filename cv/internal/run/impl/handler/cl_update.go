@@ -80,6 +80,7 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		}
 	}
 
+	sort.Strings(cancellationReasons)
 	switch numCLsCausingCancellation := len(clsCausingCancellation); {
 	// If all CLs in this Run have been updated at the same time and cause
 	// Run cancellation, directly cancel the Run. Otherwise, if part of the
@@ -91,7 +92,11 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 	// CV needs to reset the trigger on A and C and then patiently wait for
 	// developers creating a new Run with all 3 CLs.
 	case numCLsCausingCancellation == len(rs.CLs):
-		sort.Strings(cancellationReasons)
+		return impl.Cancel(ctx, rs, cancellationReasons)
+	case rs.HasRootCL() && clsCausingCancellation.Has(rs.RootCL):
+		// if the root cl has caused the cancellation, there's no need to reset
+		// the trigger for all other CLs because they don't have trigger at all.
+		// Directly cancelling the run would be enough.
 		return impl.Cancel(ctx, rs, cancellationReasons)
 	case numCLsCausingCancellation > 0:
 		rs = rs.ShallowCopy()
@@ -102,9 +107,13 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 			notify:  rs.Mode.GerritNotifyTargets(),
 		}
 		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs)-numCLsCausingCancellation)
-		for _, clid := range rs.CLs {
-			if !clsCausingCancellation.Has(clid) {
-				metas[clid] = meta
+		if rs.HasRootCL() {
+			metas[rs.RootCL] = meta
+		} else {
+			for _, clid := range rs.CLs {
+				if !clsCausingCancellation.Has(clid) {
+					metas[clid] = meta
+				}
 			}
 		}
 		scheduleTriggersReset(ctx, rs, metas, run.Status_CANCELLED)
@@ -178,14 +187,16 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *pr
 		logging.Warningf(ctx, "%s has new ref %q => %q", clString, o, c)
 		return time.Time{}, fmt.Sprintf("the ref of %s has moved from %s to %s", cl.ExternalID.MustURL(), o, c)
 	}
-	o, c := rcl.Trigger, trigger.Find(&trigger.FindInput{
-		ChangeInfo:                   cl.Snapshot.GetGerrit().GetInfo(),
-		ConfigGroup:                  cg.Content,
-		TriggerNewPatchsetRunAfterPS: cl.TriggerNewPatchsetRunAfterPS,
-	})
-	if whatChanged := run.HasTriggerChanged(o, c, cl.ExternalID.MustURL()); whatChanged != "" {
-		logging.Infof(ctx, "%s has new trigger\nOLD: %s\nNEW: %s", clString, o, c)
-		return time.Time{}, whatChanged
+	if rcl.Trigger != nil {
+		o, c := rcl.Trigger, trigger.Find(&trigger.FindInput{
+			ChangeInfo:                   cl.Snapshot.GetGerrit().GetInfo(),
+			ConfigGroup:                  cg.Content,
+			TriggerNewPatchsetRunAfterPS: cl.TriggerNewPatchsetRunAfterPS,
+		})
+		if whatChanged := run.HasTriggerChanged(o, c, cl.ExternalID.MustURL()); whatChanged != "" {
+			logging.Infof(ctx, "%s has new trigger\nOLD: %s\nNEW: %s", clString, o, c)
+			return time.Time{}, whatChanged
+		}
 	}
 	return time.Time{}, ""
 }

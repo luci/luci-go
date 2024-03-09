@@ -156,7 +156,9 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 				}
 				metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
 				for _, cl := range rs.CLs {
-					metas[cl] = meta
+					if !rs.HasRootCL() || rs.RootCL == cl {
+						metas[cl] = meta
+					}
 				}
 				scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
 				rs.LogInfof(ctx, "Tryjob Requirement Computation", "Failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())

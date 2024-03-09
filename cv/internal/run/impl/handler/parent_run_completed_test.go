@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/gae/service/datastore"
+
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apipb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -27,7 +29,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-	"go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -84,7 +85,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 				CreateTime:    ct.Clock.Now().Add(-2 * time.Minute),
 				StartTime:     ct.Clock.Now().Add(-1 * time.Minute),
 				Mode:          run.DryRun,
-				CLs:           common.CLIDs{1},
+				CLs:           common.CLIDs{clid},
 				OngoingLongOps: &run.OngoingLongOps{
 					Ops: map[string]*run.OngoingLongOps_Op{
 						"11-22": {
@@ -153,6 +154,16 @@ func TestOnParentRunCompleted(t *testing.T) {
 			resetOp := longOp.GetResetTriggers()
 			So(resetOp.Requests, ShouldHaveLength, 1)
 			So(res.SideEffectFn, ShouldBeNil)
+			Convey("Reset trigger on root CL only", func() {
+				rs.CLs = append(rs.CLs, clid+1000)
+				rs.RootCL = clid
+				res, err := h.OnParentRunCompleted(ctx, rs)
+				So(err, ShouldBeNil)
+				longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+				resetOp := longOp.GetResetTriggers()
+				So(resetOp.Requests, ShouldHaveLength, 1)
+				So(resetOp.Requests[0].Clid, ShouldEqual, rs.RootCL)
+			})
 		})
 		Convey("One parent not done, should not submit", func() {
 			rs.DepRuns = common.RunIDs{success1, running}
@@ -163,6 +174,5 @@ func TestOnParentRunCompleted(t *testing.T) {
 			So(res.State, ShouldEqual, rs)
 			So(res.SideEffectFn, ShouldBeNil)
 		})
-
 	})
 }

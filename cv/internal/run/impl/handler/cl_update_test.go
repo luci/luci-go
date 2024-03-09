@@ -357,6 +357,13 @@ func TestOnCLsUpdated(t *testing.T) {
 					verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 						2: "Reset the trigger of this CL because the patchset of https://x-review.example.com/c/1 has changed from 5 to 6",
 					}, run.Status_CANCELLED)
+					Convey("Cancel directly if it is root CL causing cancellation", func() {
+						rs.RootCL = common.CLID(1)
+						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
+						So(err, ShouldBeNil)
+						So(res.State.Status, ShouldEqual, run.Status_CANCELLED)
+						So(isCurrentlyResettingTriggers(rs), ShouldBeFalse)
+					})
 				})
 
 				Convey("Approval was revoked", func() {
@@ -370,6 +377,14 @@ func TestOnCLsUpdated(t *testing.T) {
 							1: "CV cannot start a Run because this CL is not submittable.",
 							2: "CV cannot start a Run due to errors in the following CL(s).",
 						}, run.Status_FAILED)
+						Convey("Only reset trigger on root Cl", func() {
+							rs.RootCL = common.CLID(1)
+							res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
+							So(err, ShouldBeNil)
+							verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
+								1: "CV cannot start a Run because this CL is not submittable.",
+							}, run.Status_FAILED)
+						})
 					})
 					Convey("Both", func() {
 						updateCL(1, gf.CI(

@@ -101,6 +101,7 @@ func (rs *RunState) DeepCopy() *RunState {
 			CreatedBy:                         rs.CreatedBy,
 			BilledTo:                          rs.BilledTo,
 			ConfigGroupID:                     rs.ConfigGroupID,
+			RootCL:                            rs.RootCL,
 			Options:                           proto.Clone(rs.Options).(*run.Options),
 			Submission:                        proto.Clone(rs.Submission).(*run.Submission),
 			Tryjobs:                           proto.Clone(rs.Tryjobs).(*run.Tryjobs),

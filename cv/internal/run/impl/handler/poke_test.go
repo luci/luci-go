@@ -214,6 +214,16 @@ func TestPoke(t *testing.T) {
 						So(ct.Requests, ShouldHaveLength, 1)
 						So(ct.Requests[0].Message, ShouldContainSubstring, "Could not submit this CL because the tree status app at tree.example.com repeatedly returned failures")
 						So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+						Convey("Reset trigger on root CL only", func() {
+							rs.CLs = append(rs.CLs, cl.ID+1000)
+							rs.RootCL = cl.ID
+							res, err := h.Poke(ctx, rs)
+							So(err, ShouldBeNil)
+							So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+							ct := res.State.OngoingLongOps.Ops[res.State.NewLongOpIDs[0]].GetResetTriggers()
+							So(ct.Requests, ShouldHaveLength, 1)
+							So(ct.Requests[0].Clid, ShouldEqual, rs.RootCL)
+						})
 					})
 				})
 			})
