@@ -159,6 +159,19 @@ func TestRunBuilder(t *testing.T) {
 		owner, err := identity.MakeIdentity("user:owner@example.com")
 		So(err, ShouldBeNil)
 		trIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.User, triggerer.Email))
+		cls := []CL{
+			{
+				ID:               cl1.ID,
+				TriggerInfo:      cqVoteTriggerOf(cl1),
+				ExpectedEVersion: 1,
+				Snapshot:         cl1.Snapshot,
+			},
+			{
+				ID:               cl2.ID,
+				ExpectedEVersion: 1,
+				Snapshot:         cl2.Snapshot,
+			},
+		}
 		rb := Creator{
 			LUCIProject:              lProject,
 			ConfigGroupID:            prjcfg.ConfigGroupID("sha256:cafe/cq-group"),
@@ -169,21 +182,9 @@ func TestRunBuilder(t *testing.T) {
 			BilledTo:                 trIdentity,
 			Options:                  &run.Options{},
 			ExpectedIncompleteRunIDs: common.MakeRunIDs("expected/000-run"),
-			InputCLs: []CL{
-				{
-					ID:               cl1.ID,
-					TriggerInfo:      cqVoteTriggerOf(cl1),
-					ExpectedEVersion: 1,
-					Snapshot:         cl1.Snapshot,
-				},
-				{
-					ID:               cl2.ID,
-					ExpectedEVersion: 1,
-					TriggerInfo:      cqVoteTriggerOf(cl2),
-					Snapshot:         cl2.Snapshot,
-				},
-			},
-			DepRuns: common.RunIDs{"dead-beef"},
+			InputCLs:                 cls,
+			RootCL:                   cls[0],
+			DepRuns:                  common.RunIDs{"dead-beef"},
 		}
 
 		projectStateOffload := &prjmanager.ProjectStateOffload{
@@ -255,7 +256,7 @@ func TestRunBuilder(t *testing.T) {
 			})
 		})
 
-		const expectedRunID = "infra/9042331276854-1-afc7c13288093a6d"
+		const expectedRunID = "infra/9042331276854-1-13661a806e98be7e"
 
 		Convey("First test to fail: check ID assumption", func() {
 			// If this test fails due to change of runID scheme, update the constant
@@ -312,6 +313,7 @@ func TestRunBuilder(t *testing.T) {
 				CreateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				UpdateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				CLs:        common.CLIDs{cl1.ID, cl2.ID},
+				RootCL:     cl1.ID,
 				Status:     run.Status_PENDING,
 
 				CreationOperationID: rb.run.CreationOperationID,

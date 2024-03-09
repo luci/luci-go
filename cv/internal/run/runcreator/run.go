@@ -61,6 +61,10 @@ type Creator struct {
 	// field, and Run's RunCL entities will reference these InputCLs back.
 	// Required.
 	InputCLs []CL
+	// RootCL is the CL in `InputCLs` that triggers this Run in the combined mode.
+	//
+	// Optional.
+	RootCL CL
 	// Mode is the Run's mode. Required.
 	Mode run.Mode
 	// Definition of user defined run mode. Required if mode is not standard mode.
@@ -85,7 +89,7 @@ type Creator struct {
 	// attempt. Required.
 	//
 	// TODO(tandrii): for CV API, record this ID in a separate entity index by
-	// this ID for full idempotency of CV API.
+	// this ID for full idempotence of CV API.
 	OperationID string
 	// CreateTime is rounded by datastore.RoundTime and used as Run.CreateTime as
 	// well as RunID generation.
@@ -222,10 +226,26 @@ func (rb *Creator) prepare(now time.Time) {
 	case rb.OperationID == "":
 		panic("OperationID is required")
 	}
+	allCLIDs := common.CLIDsSet{}
 	for _, cl := range rb.InputCLs {
-		if cl.ExpectedEVersion == 0 || cl.ID == 0 || cl.Snapshot == nil || cl.TriggerInfo == nil {
-			panic("Each CL field is required")
+		switch {
+		case cl.ID == 0:
+			panic(errors.New("ID of the CL is required"))
+		case cl.ExpectedEVersion == 0:
+			panic(errors.New("expectedEversion of the CL is required"))
+		case cl.Snapshot == nil:
+			panic(errors.New("cl snapshot must not be nil"))
+		case rb.RootCL.ID == 0 && cl.TriggerInfo == nil:
+			panic(errors.New("cl trigger info is required"))
+		case rb.RootCL.ID != 0 && cl.ID == rb.RootCL.ID && cl.TriggerInfo == nil:
+			panic(errors.New("root cl trigger info is required"))
+		case allCLIDs.Has(cl.ID):
+			panic(errors.Reason("duplicate input CL ID %d", cl.ID).Err())
 		}
+		allCLIDs.Add(cl.ID)
+	}
+	if rb.RootCL.ID != 0 && !allCLIDs.Has(rb.RootCL.ID) {
+		panic(errors.Reason("root CL %d is missing in the input CLs", rb.RootCL.ID).Err())
 	}
 	if rb.CreateTime.IsZero() {
 		rb.CreateTime = now
@@ -407,6 +427,7 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 		// EndTime & StartTime intentionally left unset.
 
 		CLs:            ids,
+		RootCL:         rb.RootCL.ID,
 		ConfigGroupID:  rb.ConfigGroupID,
 		Mode:           rb.Mode,
 		ModeDefinition: rb.ModeDefinition,
