@@ -36,7 +36,6 @@ func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountReq
 	if req.Start == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "start timestamp is required")
 	}
-	// Set the End time if none is provided.
 	if req.End == nil {
 		req.End = timestamppb.New(clock.Now(ctx))
 	}
@@ -53,7 +52,6 @@ func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountReq
 	}
 	pools := tagsFilter.Pools()
 
-	// ACL Check
 	// If the caller has global permission, they can access all tasks
 	// Otherwise, they are required to provide a pool dimension to check ACL.
 	var res acls.CheckResult
@@ -66,43 +64,52 @@ func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountReq
 	if !res.Permitted {
 		return nil, res.ToGrpcErr()
 	}
-	queries, err := model.GetTaskResultSummaryQueries(
-		ctx,
-		&model.TaskResultSummaryQueryOptions{
-			Start:      req.Start,
-			End:        req.End,
-			State:      req.State,
-			TagsFilter: &tagsFilter,
-		},
-		srv.TaskQuerySplitMode,
+
+	// Limit to the requested time range. An error here means the time range
+	// itself is invalid.
+	query, err := model.FilterTasksByCreationTime(ctx,
+		model.TaskResultSummaryQuery(),
+		req.Start.AsTime(),
+		req.End.AsTime(),
 	)
 	if err != nil {
-		logging.Errorf(ctx, "Error creating TaskResultSummary query: %s", err)
-		return nil, status.Errorf(codes.Internal, "error in query creation")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid time range: %s", err)
 	}
-	// If we only have one query to run, we can make use of an aggregation query and
-	// utilize the datastore server-side counting. Otherwise, we need to count locally
-	// using datastore.CountMulti().
+
+	// Limit to the requested state, if any.
+	if req.State != apipb.StateQuery_QUERY_ALL {
+		query = model.FilterTasksByState(query, req.State)
+	}
+
+	// Filtering by tags may split the query into multiple queries we'll need to
+	// merge.
+	queries := model.FilterTasksByTags(query, srv.TaskQuerySplitMode, tagsFilter)
+
+	// If we only have one query to run, we can make use of an aggregation query
+	// and utilize the datastore server-side counting (this requires the query
+	// to be eventually consistent). Otherwise, we need to count locally using
+	// datastore.CountMulti().
 	useAggregation := len(queries) == 1
 	var count int64
 	if useAggregation {
 		count, err = datastore.Count(ctx, queries[0].EventualConsistency(true))
 	} else {
-		qs := make([]*datastore.Query, len(queries))
+		// FirestoreMode ensures all queries are strongly consistent. This allows
+		// them to be used in a transaction, which ensures a more accurate count.
 		for i, q := range queries {
-			// FirestoreMode ensures all quries are strongly consistent. This
-			// ensures a more accurate count.
-			qs[i] = q.FirestoreMode(true)
+			queries[i] = q.FirestoreMode(true).EventualConsistency(false)
 		}
 		err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			count, err = datastore.CountMulti(ctx, qs)
+			count, err = datastore.CountMulti(ctx, queries)
 			return err
 		}, &datastore.TransactionOptions{ReadOnly: true})
 	}
+
 	if err != nil {
 		logging.Errorf(ctx, "Error in TaskResultSummary query: %s", err)
-		return nil, status.Errorf(codes.Internal, "error in query")
+		return nil, status.Errorf(codes.Internal, "datastore error counting tasks")
 	}
+
 	return &apipb.TasksCount{
 		Count: int32(count),
 		Now:   timestamppb.New(clock.Now(ctx)),

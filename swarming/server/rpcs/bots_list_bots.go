@@ -63,13 +63,13 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 	// Split the dimensions filter into simpler filters supported natively by
 	// the datastore with existing indices. In most cases there will be only one.
 	q := model.BotInfoQuery().Limit(req.Limit)
-	q = model.FilterByState(q, model.StateFilter{
+	q = model.FilterBotsByState(q, model.StateFilter{
 		Quarantined:   req.Quarantined,
 		InMaintenance: req.InMaintenance,
 		IsDead:        req.IsDead,
 		IsBusy:        req.IsBusy,
 	})
-	multi := model.FilterByDimensions(q, srv.BotQuerySplitMode, dims)
+	multi := model.FilterBotsByDimensions(q, srv.BotQuerySplitMode, dims)
 	if req.Cursor != "" {
 		multi, err = datastore.ApplyCursorString(ctx, multi, req.Cursor)
 		if err != nil {

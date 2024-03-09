@@ -26,6 +26,15 @@ import (
 )
 
 // taskRequestIDMask is xored with TaskRequest entity ID.
+//
+// Xoring with it flips first 63 bits of int64 (i.e. all of them except the most
+// significant bit, which is used to represent a sign in int64: better to leave
+// it alone).
+//
+// This allows to derive datastore keys from timestamps, but order them in
+// reverse chronological order (most recent first). Without xoring we'd have
+// to create a special index (because keys by default are ordered in increasing
+// order).
 const taskRequestIDMask = 0x7fffffffffffffff
 
 // TaskIDVariant is an enum with possible variants of task ID encoding.
@@ -36,11 +45,21 @@ const (
 	AsRequest TaskIDVariant = 0
 	// AsRunResult instructs RequestKeyToTaskID to produce an ID ending with `1`.
 	AsRunResult TaskIDVariant = 1
+)
 
-	// The world started on 2010-01-01 at 00:00:00 UTC. The rationale is that using
-	// EPOCH (1970) means that 40 years worth of keys are wasted.
-	// 1262304000 is the result of time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC).Unix()
-	BeginningOfTheWorld int64 = 1262304000
+var (
+	// BeginningOfTheWorld is used as beginning of time when constructing request
+	// keys: number of milliseconds since BeginningOfTheWorld is part of the key.
+	//
+	// The world started on 2010-01-01 at 00:00:00 UTC. The rationale is that
+	// using the original Unix epoch (1970) results in 40 years worth of key space
+	// wasted.
+	//
+	// We allocate 43 bits in the key for storing the timestamp at millisecond
+	// precision. This makes this scheme good for 2**43 / 365 / 24 / 3600 / 1000,
+	// which 278 years. We'll have until 2010+278 = 2288 before we run out of
+	// key space. Should be good enough for now. Can be fixed later.
+	BeginningOfTheWorld = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
 )
 
 // RequestKeyToTaskID converts TaskRequest entity key to a string form used in
@@ -95,18 +114,18 @@ func TaskIDToRequestKey(ctx context.Context, taskID string) (*datastore.Key, err
 }
 
 // TimestampToRequestKey converts a timestamp to a request key.
-// Note that this function does NOT accept a task id. This functions is primarily
-// meant for limiting queries to a task creation range.
+//
+// Note that this function does NOT accept a task id. This functions is
+// primarily meant for limiting queries to a task creation time range.
 func TimestampToRequestKey(ctx context.Context, timestamp time.Time, suffix int64) (*datastore.Key, error) {
 	if suffix < 0 || suffix > 0xffff {
 		return nil, errors.Reason("invalid suffix").Err()
 	}
-	unixts := timestamp.Unix()
-	if unixts < BeginningOfTheWorld {
-		return nil, errors.Reason("time %s is set to before %d", timestamp, BeginningOfTheWorld).Err()
+	deltaMS := timestamp.Sub(BeginningOfTheWorld).Milliseconds()
+	if deltaMS < 0 {
+		return nil, errors.Reason("time %s is before epoch %s", timestamp, BeginningOfTheWorld).Err()
 	}
-	delta := unixts - BeginningOfTheWorld
-	base := (delta * 1000) << 20
+	base := deltaMS << 20
 	reqID := base | suffix<<4 | 0x1
 	return datastore.NewKey(ctx, "TaskRequest", "", reqID^taskRequestIDMask, nil), nil
 }

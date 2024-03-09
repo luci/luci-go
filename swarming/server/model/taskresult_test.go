@@ -615,97 +615,82 @@ func TestCASOperationStats(t *testing.T) {
 	})
 }
 
-func TestGetTaskResultSummaryQueries(t *testing.T) {
+func TestTaskResultSummaryQueries(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
 	testTime := time.Date(2023, 1, 1, 2, 3, 4, 0, time.UTC)
-	mode := SplitOptimally
 
-	Convey("ok; no tags", t, func() {
-		filters := TaskResultSummaryQueryOptions{
-			Start: timestamppb.New(testTime),
-			End:   timestamppb.New(testTime.Add(1 * time.Hour)),
-			State: apipb.StateQuery_QUERY_CANCELED,
-		}
-		queries, err := GetTaskResultSummaryQueries(ctx, &filters, mode)
+	Convey("FilterTasksByCreationTime: ok", t, func() {
+		q, err := FilterTasksByCreationTime(ctx,
+			TaskResultSummaryQuery(),
+			testTime,
+			testTime.Add(1*time.Hour),
+		)
 		So(err, ShouldBeNil)
-		So(len(queries), ShouldEqual, 1)
-		q, err := queries[0].Finalize()
+		fq, err := q.Finalize()
 		So(err, ShouldBeNil)
-		So(q.GQL(), ShouldEqual,
-			"SELECT * FROM `TaskResultSummary` "+
-				"WHERE "+
-				"`state` = 96 AND "+
-				"`__key__` >= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828791806, \"TaskResultSummary\", 1) AND "+
+		So(fq.GQL(), ShouldEqual,
+			"SELECT * FROM `TaskResultSummary` WHERE "+
+				"`__key__` > KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828791806, \"TaskResultSummary\", 1) AND "+
 				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
-				"ORDER BY `__key__`")
-
+				"ORDER BY `__key__`",
+		)
 	})
 
-	Convey("ok; with tags", t, func() {
+	Convey("FilterTasksByCreationTime: open end", t, func() {
+		q, err := FilterTasksByCreationTime(ctx,
+			TaskResultSummaryQuery(),
+			testTime,
+			time.Time{},
+		)
+		So(err, ShouldBeNil)
+		fq, err := q.Finalize()
+		So(err, ShouldBeNil)
+		So(fq.GQL(), ShouldEqual,
+			"SELECT * FROM `TaskResultSummary` WHERE "+
+				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
+				"ORDER BY `__key__`",
+		)
+	})
+
+	Convey("FilterTasksByCreationTime: bad time", t, func() {
+		_, err := FilterTasksByCreationTime(ctx,
+			TaskResultSummaryQuery(),
+			time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Time{},
+		)
+		So(err, ShouldErrLike, "invalid start time")
+	})
+
+	Convey("FilterTasksByState: running", t, func() {
+		q := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_RUNNING)
+		fq, err := q.Finalize()
+		So(err, ShouldBeNil)
+		So(fq.GQL(), ShouldEqual,
+			"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`")
+	})
+
+	Convey("FilterTasksByState: pending+running", t, func() {
+		q := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_PENDING_RUNNING)
+		fq, err := q.Finalize()
+		So(err, ShouldBeNil)
+		So(fq.GQL(), ShouldEqual,
+			"SELECT * FROM `TaskResultSummary` WHERE `state` <= 32 ORDER BY `state`, `__key__`")
+	})
+
+	Convey("FilterTasksByTags", t, func() {
 		tags := []*apipb.StringPair{
 			{Key: "pool", Value: "chromium.tests"},
 			{Key: "buildbucket_id", Value: "1"},
 			{Key: "os", Value: "ubuntu1|ubuntu2"},
 			{Key: "board", Value: "board1|board2"},
 		}
-		tagsFilter, err := NewFilter(tags)
+		filter, err := NewFilter(tags)
 		So(err, ShouldBeNil)
-		filters := TaskResultSummaryQueryOptions{
-			Start:      timestamppb.New(testTime),
-			End:        timestamppb.New(testTime.Add(1 * time.Hour)),
-			State:      apipb.StateQuery_QUERY_CANCELED,
-			Sort:       apipb.SortQuery_QUERY_CREATED_TS,
-			TagsFilter: &tagsFilter,
-		}
-		queries, err := GetTaskResultSummaryQueries(ctx, &filters, mode)
-		So(err, ShouldBeNil)
-		So(len(queries), ShouldEqual, 2)
-		q1, err := queries[0].Finalize()
-		So(err, ShouldBeNil)
-		So(q1.GQL(), ShouldEqual,
-			"SELECT * FROM `TaskResultSummary` "+
-				"WHERE "+
-				"`state` = 96 AND "+
-				"`tags` = \"board:board1\" AND "+
-				"`tags` = \"buildbucket_id:1\" AND "+
-				"`tags` = \"pool:chromium.tests\" AND "+
-				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") AND "+
-				"`__key__` >= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828791806, \"TaskResultSummary\", 1) AND "+
-				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
-				"ORDER BY `__key__`")
-		q2, err := queries[1].Finalize()
-		So(err, ShouldBeNil)
-		So(q2.GQL(), ShouldEqual,
-			"SELECT * FROM `TaskResultSummary` "+
-				"WHERE "+
-				"`state` = 96 AND "+
-				"`tags` = \"board:board2\" AND "+
-				"`tags` = \"buildbucket_id:1\" AND "+
-				"`tags` = \"pool:chromium.tests\" AND "+
-				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") AND "+
-				"`__key__` >= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828791806, \"TaskResultSummary\", 1) AND "+
-				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
-				"ORDER BY `__key__`")
-	})
 
-	Convey("ok; with tags; with state pending running", t, func() {
-		tags := []*apipb.StringPair{
-			{Key: "pool", Value: "chromium.tests"},
-			{Key: "buildbucket_id", Value: "1"},
-			{Key: "os", Value: "ubuntu1|ubuntu2"},
-			{Key: "board", Value: "board1|board2"},
-		}
-		tagsFilter, err := NewFilter(tags)
-		So(err, ShouldBeNil)
-		filters := TaskResultSummaryQueryOptions{
-			State:      apipb.StateQuery_QUERY_PENDING_RUNNING,
-			Sort:       apipb.SortQuery_QUERY_CREATED_TS,
-			TagsFilter: &tagsFilter,
-		}
-		queries, err := GetTaskResultSummaryQueries(ctx, &filters, mode)
-		So(err, ShouldBeNil)
+		queries := FilterTasksByTags(TaskResultSummaryQuery(), SplitOptimally, filter)
 		So(len(queries), ShouldEqual, 2)
+
 		q1, err := queries[0].Finalize()
 		So(err, ShouldBeNil)
 		So(q1.GQL(), ShouldEqual,
@@ -714,9 +699,10 @@ func TestGetTaskResultSummaryQueries(t *testing.T) {
 				"`tags` = \"board:board1\" AND "+
 				"`tags` = \"buildbucket_id:1\" AND "+
 				"`tags` = \"pool:chromium.tests\" AND "+
-				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") AND "+
-				"`state` <= 32 "+
-				"ORDER BY `state`, `__key__`")
+				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") "+
+				"ORDER BY `__key__`",
+		)
+
 		q2, err := queries[1].Finalize()
 		So(err, ShouldBeNil)
 		So(q2.GQL(), ShouldEqual,
@@ -725,52 +711,8 @@ func TestGetTaskResultSummaryQueries(t *testing.T) {
 				"`tags` = \"board:board2\" AND "+
 				"`tags` = \"buildbucket_id:1\" AND "+
 				"`tags` = \"pool:chromium.tests\" AND "+
-				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") AND "+
-				"`state` <= 32 "+
-				"ORDER BY `state`, `__key__`")
-	})
-
-	Convey("not ok; bad start time", t, func() {
-		filters := TaskResultSummaryQueryOptions{
-			Start: timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
-		}
-		query, err := GetTaskResultSummaryQueries(ctx, &filters, mode)
-		So(query, ShouldBeNil)
-		So(err, ShouldErrLike, "failed to create key from start time")
-	})
-
-	Convey("not ok; bad end time", t, func() {
-		filters := TaskResultSummaryQueryOptions{
-			End: timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
-		}
-		query, err := GetTaskResultSummaryQueries(ctx, &filters, mode)
-		So(query, ShouldBeNil)
-		So(err, ShouldErrLike, "failed to create key from end time")
-	})
-
-	Convey("not ok; bad sort", t, func() {
-		filters := TaskResultSummaryQueryOptions{
-			Start: timestamppb.New(time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)),
-			End:   timestamppb.New(testTime.Add(1 * time.Hour)),
-			Sort:  apipb.SortQuery_QUERY_ABANDONED_TS,
-		}
-		query, err := GetTaskResultSummaryQueries(ctx, &filters, mode)
-		So(query, ShouldBeNil)
-		So(err, ShouldErrLike, "cannot both sort and use timestamp filtering")
-	})
-
-	Convey("not ok; bad sort with tags", t, func() {
-		tags := []*apipb.StringPair{
-			{Key: "pool", Value: "chromium.tests"},
-		}
-		tagsFilter, err := NewFilter(tags)
-		So(err, ShouldBeNil)
-		filters := TaskResultSummaryQueryOptions{
-			Sort:       apipb.SortQuery_QUERY_ABANDONED_TS,
-			TagsFilter: &tagsFilter,
-		}
-		query, err := GetTaskResultSummaryQueries(ctx, &filters, mode)
-		So(query, ShouldBeNil)
-		So(err, ShouldErrLike, "filtering by tags while sorting by QUERY_ABANDONED_TS is not supported")
+				"`tags` IN ARRAY(\"os:ubuntu1\", \"os:ubuntu2\") "+
+				"ORDER BY `__key__`",
+		)
 	})
 }

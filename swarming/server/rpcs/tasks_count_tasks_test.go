@@ -161,7 +161,7 @@ func TestCountTasks(t *testing.T) {
 			}
 			resp, err := srv.CountTasks(MockRequestState(ctx, state), req)
 			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err, ShouldErrLike, "error in query")
+			So(err, ShouldErrLike, "datastore error counting tasks")
 			So(resp, ShouldBeNil)
 		})
 
@@ -175,8 +175,8 @@ func TestCountTasks(t *testing.T) {
 				Tags:  []string{"pool:example-pool"},
 			}
 			resp, err := srv.CountTasks(MockRequestState(ctx, state), req)
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err, ShouldErrLike, "error in query creation")
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid time range")
 			So(resp, ShouldBeNil)
 		})
 

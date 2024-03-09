@@ -277,10 +277,11 @@ type TaskResultSummary struct {
 	ExpirationDelay datastore.Optional[float64, datastore.Unindexed] `gae:"expiration_delay"`
 }
 
-// ToProto converts the TaskResultSummary struct to an apipb.TaskResultResponse type.
+// ToProto converts the TaskResultSummary struct to an apipb.TaskResultResponse.
 //
-// Note: This function will not handle PerformanceStats due to the requirement of fetching
-// another datsatore entity. Please refer to TaskResultSummary.PerformanceStats to fetch them.
+// Note: This function will not handle PerformanceStats due to the requirement
+// of fetching another datsatore entity. Please refer to PerformanceStats to
+// fetch them.
 func (p *TaskResultSummary) ToProto() *apipb.TaskResultResponse {
 	timeToTimestampPB := func(t datastore.Nullable[time.Time, datastore.Indexed]) *timestamppb.Timestamp {
 		if !t.IsSet() {
@@ -345,7 +346,8 @@ func (p *TaskResultSummary) ToProto() *apipb.TaskResultResponse {
 	}
 }
 
-// CostsUSD converts the costUSD in TaskResultSummary to a []float32 containting that costUSD.
+// CostsUSD converts the costUSD in TaskResultSummary to a []float32 containing
+// that costUSD.
 func (p *TaskResultSummary) CostsUSD() []float32 {
 	if p.CostUSD == 0 {
 		return nil
@@ -420,7 +422,7 @@ func (p *TaskResultSummary) GetOutput(ctx context.Context, length, offset int64)
 	return toReturn[startOffset:endOffset], nil
 }
 
-// PerformanceStats fetches the performance stats from datastore and returns it in proto form.
+// PerformanceStats fetches the performance stats from datastore.
 func (p *TaskResultSummary) PerformanceStats(ctx context.Context) (*apipb.PerformanceStats, error) {
 	ps := &PerformanceStats{Key: PerformanceStatsKey(ctx, p.TaskRequestKey())}
 	err := datastore.Get(ctx, ps)
@@ -687,60 +689,53 @@ func TaskOutputChunkKey(ctx context.Context, taskReq *datastore.Key, idx int64) 
 		datastore.NewKey(ctx, "TaskOutput", "", 1, TaskRunResultKey(ctx, taskReq)))
 }
 
-// TaskResultSummaryQueryOptions are options to pass to the query.
-// Start, End, State and TagsFilter will filter the query respectively.
-// Sort specifies how to sort the tasks returned from the query.
-// TODO: add support for Cursor, Limit and IncludePerformanceStats boolean flag.
-type TaskResultSummaryQueryOptions struct {
-	Start      *timestamppb.Timestamp
-	End        *timestamppb.Timestamp
-	State      apipb.StateQuery
-	Sort       apipb.SortQuery
-	TagsFilter *Filter
-}
-
-// TaskResultSummaryQuery prepares a query that fetches TaskResultSummary entities.
+// TaskResultSummaryQuery prepares a query that fetches TaskResultSummary
+// entities.
 func TaskResultSummaryQuery() *datastore.Query {
 	return datastore.NewQuery("TaskResultSummary")
 }
 
-// GetTaskResultSummaryQueries generates a slice of datastore queries based on the provided filters.
-func GetTaskResultSummaryQueries(ctx context.Context, filters *TaskResultSummaryQueryOptions, splitMode SplitMode) ([]*datastore.Query, error) {
-	if (filters.Start != nil || filters.End != nil) && filters.Sort != apipb.SortQuery_QUERY_CREATED_TS {
-		return nil, errors.Reason("cannot both sort and use timestamp filtering").Err()
-	}
-	q := TaskResultSummaryQuery()
-	// For Start and End, the query transforms the provided timestamp filters into
-	// datastore.Key objects to compare entities. The Inequalities are inverted because
-	// keys are in reverse chronological order.
-	if filters.Start != nil {
-		startReqKey, err := TimestampToRequestKey(ctx, filters.Start.AsTime(), 0)
+// FilterTasksByTags limits a TaskResultSummary query to return tasks matching
+// given tags filter.
+//
+// For complex filters this may split the query into multiple queries that need
+// to run in parallel with their results merged. See SplitForQuery() in Filter
+// for more details.
+func FilterTasksByTags(q *datastore.Query, mode SplitMode, tags Filter) []*datastore.Query {
+	return tags.Apply(q, "tags", mode)
+}
+
+// FilterTasksByCreationTime limits a TaskResultSummary or TaskRunResult query
+// to return tasks created within the given time range [start, end).
+//
+// Works only for queries ordered by key. Returns an error if timestamps are
+// outside of expected range (e.g. before BeginningOfTheWorld).
+//
+// Zero time means no limit on the corresponding side of the range.
+func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, end time.Time) (*datastore.Query, error) {
+	// Keys are ordered by timestamp. Transform the provided timestamps into keys
+	// to filter entities by key. The inequalities are inverted because keys are
+	// in reverse chronological order.
+	if !start.IsZero() {
+		startReqKey, err := TimestampToRequestKey(ctx, start, 0)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to create key from start time").Err()
+			return nil, errors.Annotate(err, "invalid start time").Err()
 		}
 		q = q.Lte("__key__", TaskResultSummaryKey(ctx, startReqKey))
 	}
-	if filters.End != nil {
-		endReqKey, err := TimestampToRequestKey(ctx, filters.End.AsTime(), 0)
+	if !end.IsZero() {
+		endReqKey, err := TimestampToRequestKey(ctx, end, 0)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to create key from end time").Err()
+			return nil, errors.Annotate(err, "invalid end time").Err()
 		}
-		q = q.Gte("__key__", TaskResultSummaryKey(ctx, endReqKey))
+		q = q.Gt("__key__", TaskResultSummaryKey(ctx, endReqKey))
 	}
-	q = FilterByStateQuery(q, filters.State)
-	if filters.TagsFilter != nil && len(filters.TagsFilter.filters) > 0 {
-		if filters.Sort != apipb.SortQuery_QUERY_CREATED_TS {
-			// To sort by another index that is not CREATED_TS with tags present,
-			// some new indexing will need to be added.
-			return nil, errors.Reason("filtering by tags while sorting by %v is not supported", filters.Sort).Err()
-		}
-		return filters.TagsFilter.Apply(q, "tags", splitMode), nil
-	}
-	return []*datastore.Query{q}, nil
+	return q, nil
 }
 
-// FilterByStateQuery modifies the datastore query depending on the state filter.
-func FilterByStateQuery(q *datastore.Query, state apipb.StateQuery) *datastore.Query {
+// FilterTasksByState limits a TaskResultSummary query to return tasks in
+// particular state.
+func FilterTasksByState(q *datastore.Query, state apipb.StateQuery) *datastore.Query {
 	switch state {
 	case apipb.StateQuery_QUERY_PENDING:
 		q = q.Eq("state", apipb.TaskState_PENDING)

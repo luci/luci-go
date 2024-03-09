@@ -104,7 +104,7 @@ func TestTimestampToRequestKey(t *testing.T) {
 		Convey("not ok; bad timestamp", func() {
 			in := timestamppb.New(time.Date(2000, 2, 9, 0, 0, 0, 0, time.UTC))
 			resp, err := TimestampToRequestKey(ctx, in.AsTime(), 0)
-			So(err, ShouldErrLike, "time 2000-02-09 00:00:00 +0000 UTC is set to before 1262304000")
+			So(err, ShouldErrLike, "time 2000-02-09 00:00:00 +0000 UTC is before epoch 2010-01-01 00:00:00 +0000 UTC")
 			So(resp, ShouldBeNil)
 		})
 

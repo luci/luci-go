@@ -338,17 +338,18 @@ func BotInfoQuery() *datastore.Query {
 	return datastore.NewQuery("BotInfo")
 }
 
-// FilterByDimensions limits the query to return bots matching these dimensions.
+// FilterBotsByDimensions limits a BotInfo query to return bots matching these
+// dimensions.
 //
 // For complex filters this may split the query into multiple queries that need
 // to run in parallel with their results merged. See SplitForQuery() in Filter
 // for more details.
-func FilterByDimensions(q *datastore.Query, mode SplitMode, dims Filter) []*datastore.Query {
+func FilterBotsByDimensions(q *datastore.Query, mode SplitMode, dims Filter) []*datastore.Query {
 	return dims.Apply(q, "dimensions_flat", mode)
 }
 
-// FilterByState limits the query to return bots in particular state.
-func FilterByState(q *datastore.Query, state StateFilter) *datastore.Query {
+// FilterBotsByState limits a BotInfo query to return bots in particular state.
+func FilterBotsByState(q *datastore.Query, state StateFilter) *datastore.Query {
 	switch state.Quarantined {
 	case apipb.NullableBool_NULL:
 		// Don't filter.

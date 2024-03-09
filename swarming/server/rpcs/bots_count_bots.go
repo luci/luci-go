@@ -68,7 +68,7 @@ func (srv *BotsServer) CountBots(ctx context.Context, req *apipb.BotsCountReques
 		{model.StateFilter{IsBusy: apipb.NullableBool_TRUE}, &out.Busy},
 	}
 
-	queries := model.FilterByDimensions(model.BotInfoQuery(), srv.BotQuerySplitMode, dims)
+	queries := model.FilterBotsByDimensions(model.BotInfoQuery(), srv.BotQuerySplitMode, dims)
 
 	// If there's only one query, we can upgrade it into an aggregation query and
 	// do counting completely on the datastore side. We can't do that though if we
@@ -108,12 +108,12 @@ func (srv *BotsServer) CountBots(ctx context.Context, req *apipb.BotsCountReques
 				var err error
 				if useAggregation {
 					// Note: len(queries) == 1 here, queries[0] is the only query to run.
-					count, err = datastore.Count(ectx, model.FilterByState(queries[0], filter).EventualConsistency(true))
+					count, err = datastore.Count(ectx, model.FilterBotsByState(queries[0], filter).EventualConsistency(true))
 				} else {
 					// Apply the filter, enable firestore mode to run in the transaction.
 					filtered := make([]*datastore.Query, len(queries))
 					for i, q := range queries {
-						filtered[i] = model.FilterByState(q, filter).EventualConsistency(false).FirestoreMode(true)
+						filtered[i] = model.FilterBotsByState(q, filter).EventualConsistency(false).FirestoreMode(true)
 					}
 					count, err = datastore.CountMulti(ectx, filtered)
 				}

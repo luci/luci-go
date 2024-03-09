@@ -26,7 +26,7 @@ func TestBotInfoQuery(t *testing.T) {
 	t.Parallel()
 
 	Convey("Filters", t, func() {
-		q := FilterByState(BotInfoQuery(), StateFilter{
+		q := FilterBotsByState(BotInfoQuery(), StateFilter{
 			Quarantined:   apipb.NullableBool_TRUE,
 			InMaintenance: apipb.NullableBool_TRUE,
 			IsDead:        apipb.NullableBool_TRUE,
@@ -40,7 +40,7 @@ func TestBotInfoQuery(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		qs := FilterByDimensions(q, SplitOptimally, dims)
+		qs := FilterBotsByDimensions(q, SplitOptimally, dims)
 		So(qs, ShouldHaveLength, 2)
 
 		q1, err := qs[0].Finalize()
