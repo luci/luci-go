@@ -260,9 +260,14 @@ func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGr
 	if len(runCLs) == 0 {
 		return true, nil
 	}
+	rootCL, rootTrigger := findRootCLAndTrigger(&rs.Run, cls, runCLs)
 	trs := make([]*run.Trigger, len(runCLs))
 	for i, r := range runCLs {
 		trs[i] = r.Trigger
+		if rootTrigger != nil {
+			// always use root CL trigger if available for all CLs
+			trs[i] = rootTrigger
+		}
 	}
 	switch aclResult, err := acls.CheckRunCreate(ctx, cg, trs, cls); {
 	case err != nil:
@@ -270,27 +275,72 @@ func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGr
 	case !aclResult.OK():
 		var b strings.Builder
 		b.WriteString("the Run does not pass eligibility checks. See reasons at:")
-		for cl := range aclResult {
-			fmt.Fprintf(&b, "\n  * %s", cl.ExternalID.MustURL())
-		}
-		rs.LogInfof(ctx, "Run failed", b.String())
-		metas := make(map[common.CLID]reviewInputMeta, len(cls))
-		for _, cl := range cls {
-			switch rs.Mode {
-			case run.NewPatchsetRun:
-				// silently
-				metas[cl.ID] = reviewInputMeta{}
-			default:
-				metas[cl.ID] = reviewInputMeta{
-					message:        aclResult.Failure(cl),
-					notify:         gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS},
-					addToAttention: gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS},
-					reason:         "CQ/CV Run failed",
-				}
+		if rootCL != nil {
+			fmt.Fprintf(&b, " %s", rootCL.ExternalID.MustURL())
+		} else {
+			for cl := range aclResult {
+				fmt.Fprintf(&b, "\n  * %s", cl.ExternalID.MustURL())
 			}
 		}
+		rs.LogInfof(ctx, "Run failed", b.String())
+		metas := computeMetasForFailedACLCheck(ctx, rs, aclResult, cls, rootCL)
 		scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
 		return false, nil
 	}
 	return true, nil
+}
+
+func findRootCLAndTrigger(r *run.Run, cls []*changelist.CL, rcls []*run.RunCL) (*changelist.CL, *run.Trigger) {
+	if !r.HasRootCL() {
+		return nil, nil
+	}
+	for i, cl := range cls {
+		if cl.ID == r.RootCL {
+			trigger := rcls[i].Trigger
+			if trigger == nil {
+				panic(fmt.Errorf("root CL %d dones't have an active trigger", r.RootCL))
+			}
+			return cl, trigger
+		}
+	}
+	panic(fmt.Errorf("can not find root CL %d in the provided CLs", r.RootCL))
+}
+
+func computeMetasForFailedACLCheck(ctx context.Context, rs *state.RunState, aclResult acls.CheckResult, cls []*changelist.CL, rootCL *changelist.CL) map[common.CLID]reviewInputMeta {
+	metas := make(map[common.CLID]reviewInputMeta, len(cls))
+	whoms := rs.Mode.GerritNotifyTargets()
+	switch {
+	case rs.Mode == run.NewPatchsetRun:
+		// don't need to notify any one if user is not eligible to create a
+		// a new patchset run.
+		for _, cl := range cls {
+			metas[cl.ID] = reviewInputMeta{}
+		}
+	case rs.HasRootCL() && aclResult.Has(rootCL) && len(aclResult) == 1:
+		// If only the root CL doesn't pass the eligibility check, simply relay
+		// the failure to the root CL.
+		metas[rs.RootCL] = reviewInputMeta{
+			message:        aclResult.Failure(rootCL),
+			notify:         whoms,
+			addToAttention: whoms,
+			reason:         "CQ/CV Run failed",
+		}
+	case rs.HasRootCL():
+		metas[rs.RootCL] = reviewInputMeta{
+			message:        fmt.Sprintf("can not start the Run due to following errors\n\n%s", aclResult.FailuresSummary()),
+			notify:         whoms,
+			addToAttention: whoms,
+			reason:         "CQ/CV Run failed",
+		}
+	default:
+		for _, cl := range cls {
+			metas[cl.ID] = reviewInputMeta{
+				message:        aclResult.Failure(cl),
+				notify:         gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS},
+				addToAttention: gerrit.Whoms{gerrit.Whom_OWNER, gerrit.Whom_CQ_VOTERS},
+				reason:         "CQ/CV Run failed",
+			}
+		}
+	}
+	return metas
 }

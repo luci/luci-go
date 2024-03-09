@@ -30,6 +30,12 @@ func (res CheckResult) OK() bool {
 	return len(res) == 0
 }
 
+// Has tells whether CheckResult contains the provided CL.
+func (res CheckResult) Has(cl *changelist.CL) bool {
+	_, ok := res[cl]
+	return ok
+}
+
 // Failure returns a failure message for a given RunCL.
 //
 // Returns an empty string, if the result was ok.

@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apipb "go.chromium.org/luci/cv/api/v1"
@@ -245,10 +244,12 @@ func TestCheckRunCreate(t *testing.T) {
 		ct := &cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
-		const clid = 1
+		const clid1 = 1
+		const clid2 = 2
 		const gHost = "x-review.example.com"
 		const gRepo = "luci-go"
-		const gChange = 123
+		const gChange1 = 123
+		const gChange2 = 234
 		const lProject = "infra"
 
 		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
@@ -261,14 +262,19 @@ func TestCheckRunCreate(t *testing.T) {
 							{Name: gRepo, RefRegexp: []string{"refs/heads/.+"}},
 						},
 					}},
+					Verifiers: &cfgpb.Verifiers{
+						GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+							CommitterList: []string{"committer-group"},
+						},
+					},
 				},
 			},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
+		So(err, ShouldBeNil)
 
 		cg := cgs[0]
 
-		ci := gf.CI(gChange, gf.CQ(+2))
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		rs := &state.RunState{
 			Run: run.Run{
@@ -277,41 +283,72 @@ func TestCheckRunCreate(t *testing.T) {
 				ConfigGroupID: prjcfg.MakeConfigGroupID("deadbeef", "main"),
 				CreateTime:    ct.Clock.Now().Add(-2 * time.Minute),
 				StartTime:     ct.Clock.Now().Add(-1 * time.Minute),
-				CLs:           common.CLIDs{1},
+				CLs:           common.CLIDs{clid1, clid2},
 			},
 		}
-		cl := changelist.CL{
-			ID:             clid,
-			ExternalID:     changelist.MustGobID(gHost, gChange),
-			IncompleteRuns: common.RunIDs{rid},
-			EVersion:       3,
-			UpdateTime:     ct.Clock.Now().UTC(),
-			Snapshot: &changelist.Snapshot{
-				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
-					Host: gHost,
-					Info: ci,
-				}},
-				LuciProject:        lProject,
-				ExternalUpdateTime: timestamppb.New(ct.Clock.Now()),
+		cls := []*changelist.CL{
+			{
+				ID:             clid1,
+				ExternalID:     changelist.MustGobID(gHost, gChange1),
+				IncompleteRuns: common.RunIDs{rid},
+				EVersion:       3,
+				UpdateTime:     ct.Clock.Now().UTC(),
+				Snapshot: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+						Host: gHost,
+						Info: gf.CI(gChange1,
+							gf.Owner("user-1"),
+							gf.Approve(),
+							gf.CQ(+2, rs.CreateTime, "user-1"),
+						),
+					}},
+					LuciProject:        lProject,
+					ExternalUpdateTime: timestamppb.New(ct.Clock.Now()),
+				},
+			},
+			{
+				ID:             clid2,
+				ExternalID:     changelist.MustGobID(gHost, gChange2),
+				IncompleteRuns: common.RunIDs{rid},
+				EVersion:       5,
+				UpdateTime:     ct.Clock.Now().UTC(),
+				Snapshot: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+						Host: gHost,
+						Info: gf.CI(gChange2,
+							gf.Owner("user-1"),
+							gf.Approve(),
+							gf.CQ(+2, rs.CreateTime, "user-1"),
+						),
+					}},
+					LuciProject:        lProject,
+					ExternalUpdateTime: timestamppb.New(ct.Clock.Now()),
+				},
 			},
 		}
-		triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg.Content})
-		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
-			Time:            timestamppb.New(testclock.TestRecentTimeUTC.Add(10 * time.Hour)),
-			Mode:            string(run.FullRun),
-			Email:           "user-1@example.com",
-			GerritAccountId: 1,
-		})
-		rcl := run.RunCL{
-			ID:         clid,
-			Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
-			ExternalID: cl.ExternalID,
-			Detail:     cl.Snapshot,
-			Trigger:    triggers.GetCqVoteTrigger(),
+		rcls := []*run.RunCL{
+			{
+				ID:         clid1,
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
+				ExternalID: cls[0].ExternalID,
+				Detail:     cls[0].Snapshot,
+				Trigger: trigger.Find(&trigger.FindInput{
+					ChangeInfo:  cls[0].Snapshot.GetGerrit().GetInfo(),
+					ConfigGroup: cg.Content,
+				}).GetCqVoteTrigger(),
+			},
+			{
+				ID:         clid2,
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
+				ExternalID: cls[1].ExternalID,
+				Detail:     cls[1].Snapshot,
+				Trigger: trigger.Find(&trigger.FindInput{
+					ChangeInfo:  cls[1].Snapshot.GetGerrit().GetInfo(),
+					ConfigGroup: cg.Content,
+				}).GetCqVoteTrigger(),
+			},
 		}
-		So(datastore.Put(ctx, &cl, &rcl), ShouldBeNil)
-		rcls, cls := []*run.RunCL{&rcl}, []*changelist.CL{&cl}
-		So(err, ShouldBeNil)
+		So(datastore.Put(ctx, cls, rcls), ShouldBeNil)
 
 		Convey("Returns empty metas for new patchset run", func() {
 			rs.Mode = run.NewPatchsetRun
@@ -319,25 +356,89 @@ func TestCheckRunCreate(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
-			So(rs.OngoingLongOps.Ops, ShouldContainKey, "1-1")
-			reqs := rs.OngoingLongOps.Ops["1-1"].GetResetTriggers().GetRequests()
-			So(reqs, ShouldHaveLength, 1)
-			So(reqs[0].Message, ShouldEqual, "")
-			So(reqs[0].AddToAttention, ShouldBeEmpty)
+			for _, op := range rs.OngoingLongOps.Ops {
+				reqs := op.GetResetTriggers().GetRequests()
+				So(reqs, ShouldHaveLength, 2)
+				So(reqs[0].Clid, ShouldEqual, clid1)
+				So(reqs[0].Message, ShouldEqual, "")
+				So(reqs[0].AddToAttention, ShouldBeEmpty)
+				So(reqs[1].Clid, ShouldEqual, clid2)
+				So(reqs[1].Message, ShouldEqual, "")
+				So(reqs[1].AddToAttention, ShouldBeEmpty)
+			}
 		})
 		Convey("Populates metas for other modes", func() {
-			rs.Mode = run.DryRun
+			rs.Mode = run.FullRun
 			ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
-			So(rs.OngoingLongOps.Ops, ShouldContainKey, "1-1")
-			reqs := rs.OngoingLongOps.Ops["1-1"].GetResetTriggers().GetRequests()
-			So(reqs, ShouldHaveLength, 1)
-			So(reqs[0].Message, ShouldEqual, "CV cannot start a Run for `user-1@example.com` because the user is neither the CL owner nor a committer.")
-			So(reqs[0].AddToAttention, ShouldResemble, []gerrit.Whom{
-				gerrit.Whom_OWNER,
-				gerrit.Whom_CQ_VOTERS})
+			for _, op := range rs.OngoingLongOps.Ops {
+				reqs := op.GetResetTriggers().GetRequests()
+				So(reqs, ShouldHaveLength, 2)
+				So(reqs[0].Clid, ShouldEqual, clid1)
+				So(reqs[0].Message, ShouldEqual, "CV cannot start a Run for `user-1@example.com` because the user is not a committer.")
+				So(reqs[0].AddToAttention, ShouldResemble, []gerrit.Whom{
+					gerrit.Whom_OWNER,
+					gerrit.Whom_CQ_VOTERS})
+				So(reqs[1].Clid, ShouldEqual, clid2)
+				So(reqs[1].Message, ShouldEqual, "CV cannot start a Run for `user-1@example.com` because the user is not a committer.")
+				So(reqs[1].AddToAttention, ShouldResemble, []gerrit.Whom{
+					gerrit.Whom_OWNER,
+					gerrit.Whom_CQ_VOTERS})
+			}
+		})
+
+		Convey("Populates metas if run has root CL", func() {
+			rs.Mode = run.FullRun
+			rs.RootCL = clid1
+			// make rootCL not submittable
+			cls[0].Snapshot.GetGerrit().Info = gf.CI(gChange1,
+				gf.Owner("user-1"),
+				gf.Disapprove(),
+				gf.CQ(+2, rs.CreateTime, "user-1"),
+			)
+			// Remove the trigger on second CL
+			cls[1].Snapshot.GetGerrit().Info = gf.CI(gChange2,
+				gf.Owner("user-1"),
+				gf.Approve(),
+			)
+			rcls[0].Detail = cls[0].Snapshot
+			rcls[1].Detail = cls[1].Snapshot
+			So(datastore.Put(ctx, cls, rcls), ShouldBeNil)
+
+			Convey("Only root CL fails the ACL check", func() {
+				ct.AddMember("user-1", "committer-group") // can create a full run on cl2 now
+				ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
+				So(err, ShouldBeNil)
+				So(ok, ShouldBeFalse)
+				So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
+				for _, op := range rs.OngoingLongOps.Ops {
+					reqs := op.GetResetTriggers().GetRequests()
+					So(reqs, ShouldHaveLength, 1)
+					So(reqs[0].Clid, ShouldEqual, clid1)
+					So(reqs[0].Message, ShouldContainSubstring, "CV cannot start a Run because this CL is not submittable")
+					So(reqs[0].AddToAttention, ShouldResemble, []gerrit.Whom{
+						gerrit.Whom_OWNER,
+						gerrit.Whom_CQ_VOTERS})
+				}
+			})
+
+			Convey("Non root CL also fails the ACL check", func() {
+				ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
+				So(err, ShouldBeNil)
+				So(ok, ShouldBeFalse)
+				So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
+				for _, op := range rs.OngoingLongOps.Ops {
+					reqs := op.GetResetTriggers().GetRequests()
+					So(reqs, ShouldHaveLength, 1)
+					So(reqs[0].Clid, ShouldEqual, clid1)
+					So(reqs[0].Message, ShouldContainSubstring, "can not start the Run due to following errors")
+					So(reqs[0].AddToAttention, ShouldResemble, []gerrit.Whom{
+						gerrit.Whom_OWNER,
+						gerrit.Whom_CQ_VOTERS})
+				}
+			})
 		})
 	})
 }

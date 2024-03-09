@@ -21,6 +21,14 @@ import (
 	"strconv"
 )
 
+// HasRootCL returns true if this Run has root CL specified.
+//
+// It means this run is instantly triggered Run in combined CLs mode (i.e.
+// multi-Cl mode).
+func (r *Run) HasRootCL() bool {
+	return r.RootCL != 0
+}
+
 // ComputeCLGroupKey constructs keys for ClGroupKey and the related
 // EquivalentClGroupKey.
 //
