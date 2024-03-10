@@ -236,6 +236,7 @@ func resolveOptions(request *http.Request, pathStr string) (options userOptions,
 	}
 	options.path = types.StreamPath(parts[1])
 	if err = options.path.Validate(); err != nil {
+		err = errors.Annotate(err, "invalid stream path %q", string(options.path)).Err()
 		return
 	}
 
@@ -523,11 +524,19 @@ func writeErrorPage(ctx *router.Context, err error, data logData) {
 		logging.WithError(ierr).Errorf(ctx.Request.Context(), "Error getting Login URL")
 		fallthrough
 	case codes.Internal:
+		logging.WithError(err).Errorf(ctx.Request.Context(), "handling logs request")
+
 		// Hide internal errors, expose all other errors.
 		ctx.Writer.WriteHeader(http.StatusInternalServerError)
 	default:
 		ierr = err
-		ctx.Writer.WriteHeader(grpcutil.CodeStatus(code))
+		code := grpcutil.CodeStatus(code)
+		if code >= 500 {
+			logging.WithError(err).Errorf(ctx.Request.Context(), "handling logs request")
+		} else {
+			logging.WithError(err).Warningf(ctx.Request.Context(), "handling logs request")
+		}
+		ctx.Writer.WriteHeader(code)
 	}
 	if data.options.isHTML() {
 		writeHTMLHeader(ctx, data)
@@ -763,7 +772,7 @@ func GetHandler(ctx *router.Context) {
 	// Start the fetcher and wait for fetched logs to arrive into ch.
 	data, err := startFetch(ctx.Request.Context(), ctx.Request, ctx.Params.ByName("path"))
 	if err != nil {
-		logging.WithError(err).Errorf(ctx.Request.Context(), "failed to start fetch")
+		err = errors.Annotate(err, "start fetch").Err()
 		writeErrorPage(ctx, err, data)
 		return
 	}
