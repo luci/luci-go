@@ -16,6 +16,7 @@ package bqexporter
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/spanner"
@@ -23,8 +24,10 @@ import (
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
@@ -85,6 +88,7 @@ type testResultRowInput struct {
 	tr         *pb.TestResult
 	sources    *pb.Sources
 	exonerated bool
+	insertTime time.Time
 }
 
 func (i *testResultRowInput) row() proto.Message {
@@ -110,6 +114,7 @@ func (i *testResultRowInput) row() proto.Message {
 		TestMetadata:  tr.TestMetadata,
 		FailureReason: tr.FailureReason,
 		Properties:    tr.Properties,
+		InsertTime:    timestamppb.New(i.insertTime),
 	}
 
 	if tr.Status == pb.TestStatus_SKIP {
@@ -181,6 +186,7 @@ func (b *bqExporter) queryTestResults(
 	rows := make([]rowInput, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	rowCount := 0
+	now := clock.Now(ctx).UTC()
 	err = q.Run(ctx, func(tr *pb.TestResult) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := testresults.MustParseName(tr.Name)
@@ -196,6 +202,7 @@ func (b *bqExporter) queryTestResults(
 			tr:         tr,
 			sources:    sources,
 			exonerated: exonerated,
+			insertTime: now,
 		})
 		batchSize += proto.Size(tr)
 		rowCount++

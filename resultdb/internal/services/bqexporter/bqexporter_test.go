@@ -24,8 +24,10 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -65,6 +67,7 @@ func (i *mockFailInserter) Put(ctx context.Context, src any) error {
 func TestExportToBigQuery(t *testing.T) {
 	Convey(`TestExportTestResultsToBigQuery`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
 		testutil.MustApply(ctx,
 			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{
 				"Realm":   "testproject:testrealm",
@@ -163,6 +166,7 @@ func TestExportToBigQuery(t *testing.T) {
 				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D")
 
 				So(tr.Name, ShouldEqual, pbutil.TestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId))
+				So(tr.InsertTime, ShouldEqual, timestamppb.New(testclock.TestTimeUTC))
 
 				if tr.TestId == "E" {
 					So(tr.Properties, ShouldResembleProto, &structpb.Struct{
