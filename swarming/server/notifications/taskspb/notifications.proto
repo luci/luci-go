@@ -13,7 +13,7 @@ import "go.chromium.org/luci/swarming/proto/api_v2/swarming.proto";
 
 
 // A Cloud task for sending PubSub notification about the task completion.
-message PubSubNofityTask {
+message PubSubNotifyTask {
   // Swarming Task ID.
   string task_id = 1;
 
@@ -37,7 +37,7 @@ message PubSubNofityTask {
 }
 
 // A Cloud task for sending updates to Buildbucket about the task status.
-message BuildbucketNofityTask {
+message BuildbucketNotifyTask {
   // Swarming Task ID.
   string task_id = 1;
 

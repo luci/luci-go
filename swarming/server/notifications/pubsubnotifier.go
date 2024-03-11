@@ -106,19 +106,19 @@ func (ps *PubSubNotifier) RegisterTQTasks(disp *tq.Dispatcher) {
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "pubsub-go",
 		Kind:      tq.NonTransactional,
-		Prototype: (*taskspb.PubSubNofityTask)(nil),
+		Prototype: (*taskspb.PubSubNotifyTask)(nil),
 		Queue:     "pubsub-go", // to replace "pubsub" taskqueue in Py.
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			return ps.handlePubSubNotifyTask(ctx, payload.(*taskspb.PubSubNofityTask))
+			return ps.handlePubSubNotifyTask(ctx, payload.(*taskspb.PubSubNotifyTask))
 		},
 	})
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "buildbucket-notify-go",
 		Kind:      tq.NonTransactional,
-		Prototype: (*taskspb.BuildbucketNofityTask)(nil),
+		Prototype: (*taskspb.BuildbucketNotifyTask)(nil),
 		Queue:     "buildbucket-notify-go", // to replace "buildbucket-notify" taskqueue in Py.
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			return ps.handleBBNotifyTask(ctx, payload.(*taskspb.BuildbucketNofityTask))
+			return ps.handleBBNotifyTask(ctx, payload.(*taskspb.BuildbucketNotifyTask))
 		},
 	})
 }
@@ -126,7 +126,7 @@ func (ps *PubSubNotifier) RegisterTQTasks(disp *tq.Dispatcher) {
 // handlePubSubNotifyTask sends the notification about a task completion.
 // For fatal errors, a tq.Fatal tag will be applied.
 // For retryable errors, a transient.Tag will be applied.
-func (ps *PubSubNotifier) handlePubSubNotifyTask(ctx context.Context, t *taskspb.PubSubNofityTask) error {
+func (ps *PubSubNotifier) handlePubSubNotifyTask(ctx context.Context, t *taskspb.PubSubNotifyTask) error {
 	cloudProj, topicID, err := parsePubSubTopicName(t.GetTopic())
 	if err != nil {
 		return tq.Fatal.Apply(err)
@@ -156,7 +156,7 @@ func (ps *PubSubNotifier) handlePubSubNotifyTask(ctx context.Context, t *taskspb
 }
 
 // handleBBNotifyTask sends a pubsub update to Buildbucket.
-func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.BuildbucketNofityTask) error {
+func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.BuildbucketNotifyTask) error {
 	taskReq, err := model.TaskIDToRequestKey(ctx, t.GetTaskId())
 	if err != nil {
 		return tq.Fatal.Apply(err)

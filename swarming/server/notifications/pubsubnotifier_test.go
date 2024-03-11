@@ -58,7 +58,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 		fooTopic, err := psClient.CreateTopic(ctx, "swarming-updates")
 		So(err, ShouldBeNil)
 
-		psTask := &taskspb.PubSubNofityTask{
+		psTask := &taskspb.PubSubNotifyTask{
 			TaskId:    "task_id_0",
 			Topic:     "projects/foo/topics/swarming-updates",
 			AuthToken: "auth_token",
@@ -150,7 +150,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 		So(datastore.Put(ctx, buildTask, resultSummary), ShouldBeNil)
 
 		Convey("build task not exist", func() {
-			psTask := &taskspb.BuildbucketNofityTask{
+			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b00000",
 				State:    apipb.TaskState_RUNNING,
 				UpdateId: 101,
@@ -161,7 +161,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 		})
 
 		Convey("prior update id", func() {
-			psTask := &taskspb.BuildbucketNofityTask{
+			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b99310",
 				State:    apipb.TaskState_RUNNING,
 				UpdateId: 99,
@@ -172,7 +172,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 		})
 
 		Convey("no state change", func() {
-			psTask := &taskspb.BuildbucketNofityTask{
+			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b99310",
 				State:    apipb.TaskState_PENDING,
 				UpdateId: 101,
@@ -183,7 +183,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 		})
 
 		Convey("state change", func() {
-			psTask := &taskspb.BuildbucketNofityTask{
+			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b99310",
 				State:    apipb.TaskState_RUNNING,
 				UpdateId: 101,
