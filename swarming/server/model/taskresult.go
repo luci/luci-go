@@ -572,6 +572,22 @@ func (p *PerformanceStats) ToProto() (*apipb.PerformanceStats, error) {
 	}, nil
 }
 
+// TaskRequestKey converts PerformanceStats key to a TaskRequest key.
+func (p *PerformanceStats) TaskRequestKey() *datastore.Key {
+	// It is safe to do multiple nested key.Parent calls
+	// A PerformanceStats key has the following ancestry:
+	// TaskRequest -> TaskResultSummary -> TaskRunResult -> PerformanceStats
+	// Each call to key.Parent() will return nil if there are no more parents.
+	// key.Parent() returns nil if it encounters a nil receiver.
+	// If this occurs we have enountered a programming error and so we will
+	// crash with a nice error message.
+	reqKey := p.Key.Parent().Parent().Parent()
+	if reqKey == nil || reqKey.Kind() != "TaskRequest" {
+		panic(fmt.Sprintf("Could not derive TaskRequest from PerformanceStats key %q", p.Key))
+	}
+	return reqKey
+}
+
 // OperationStats is performance stats of a particular operation.
 //
 // Stored as a unindexed subentity of PerformanceStats entity.
