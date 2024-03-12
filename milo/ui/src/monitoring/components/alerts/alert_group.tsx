@@ -22,7 +22,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import { AlertJson, TreeJson, BugId, Bug } from '@/monitoring/util/server_json';
+import { AlertJson, TreeJson, Bug } from '@/monitoring/util/server_json';
 
 import { AlertTable } from '../../components/alert_table';
 
@@ -33,7 +33,6 @@ interface AlertGroupProps {
   groupDescription: string;
   defaultExpanded: boolean;
   bugs: Bug[];
-  alertBugs: { [alertKey: string]: BugId[] };
 }
 // A collapsible group of alerts like 'consistent failures' or 'new failures'.
 // Similar to BugGroup, but is never associated with a bug.
@@ -44,11 +43,13 @@ export const AlertGroup = ({
   groupDescription,
   defaultExpanded,
   bugs,
-  alertBugs,
 }: AlertGroupProps) => {
   return (
     <Accordion defaultExpanded={defaultExpanded}>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        sx={{ '.MuiAccordionSummary-content': { alignItems: 'baseline' } }}
+      >
         <Tooltip
           title={`There are ${
             alerts ? alerts.length : 0
@@ -67,13 +68,8 @@ export const AlertGroup = ({
         </Typography>
       </AccordionSummary>
       <AccordionDetails>
-        {alerts.length > 1 ? (
-          <AlertTable
-            alertBugs={alertBugs}
-            alerts={alerts}
-            tree={tree}
-            bugs={bugs}
-          />
+        {alerts.length > 0 ? (
+          <AlertTable alerts={alerts} tree={tree} bugs={bugs} />
         ) : (
           <Typography sx={{ opacity: '50%' }}>
             No alerts are currently in the {groupName} group.

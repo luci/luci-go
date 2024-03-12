@@ -25,9 +25,17 @@ import {
   TableRow,
   Tooltip,
 } from '@mui/material';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
 
-import { AlertJson, TreeJson, BugId, Bug } from '@/monitoring/util/server_json';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { unwrapOrElse } from '@/generic_libs/tools/utils';
+import { AlertJson, TreeJson, Bug } from '@/monitoring/util/server_json';
+import {
+  AlertsClientImpl,
+  BatchUpdateAlertsRequest,
+  UpdateAlertRequest,
+} from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
 import { AlertDetailsRow } from './alert_details';
 import { BugMenu } from './bug_menu';
@@ -38,20 +46,41 @@ interface AlertTableProps {
   alerts: AlertJson[];
   bug?: Bug;
   bugs: Bug[];
-  alertBugs: { [alertKey: string]: BugId[] };
 }
 
 // An AlertTable shows a list of alerts.  There are usually several on the page at once.
-export const AlertTable = ({
-  tree,
-  alerts,
-  bug,
-  bugs,
-  alertBugs,
-}: AlertTableProps) => {
+export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [expanded, setExpanded] = useState({} as { [alert: string]: boolean });
   const [expandAll, setExpandAll] = useState(false);
+
+  const latestBuild = (alert: AlertJson): number | undefined => {
+    return alert.extension.builders?.[0].latest_failure_build_number;
+  };
+  const queryClient = useQueryClient();
+  const client = usePrpcServiceClient({
+    host: SETTINGS.luciNotify.host,
+    ClientImpl: AlertsClientImpl,
+  });
+  const silenceAllMutation = useMutation({
+    mutationFn: (alerts: AlertJson[]) => {
+      // eslint-disable-next-line new-cap
+      return client.BatchUpdateAlerts(
+        BatchUpdateAlertsRequest.fromPartial({
+          requests: alerts.map((a) =>
+            UpdateAlertRequest.fromPartial({
+              alert: {
+                name: `alerts/${a.key}`,
+                bug: a.bug || '0',
+                silenceUntil: `${latestBuild(a) || 0}`,
+              },
+            }),
+          ) as Readonly<UpdateAlertRequest[]>,
+        }),
+      );
+    },
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
   if (!alerts) {
     return null;
   }
@@ -59,7 +88,14 @@ export const AlertTable = ({
     setExpanded(Object.fromEntries(alerts.map((a) => [a.key, !expandAll])));
     setExpandAll(!expandAll);
   };
-
+  const isSilenced = (alert: AlertJson): boolean => {
+    const silenceUntil = unwrapOrElse(() => parseInt(alert.silenceUntil), () => 0);
+    return (latestBuild(alert) || 1) <= silenceUntil;
+  };
+  const sortedAlerts = [
+    ...alerts.filter((a) => !isSilenced(a)),
+    ...alerts.filter(isSilenced),
+  ];
   return (
     <Table size="small">
       <TableHead>
@@ -86,10 +122,9 @@ export const AlertTable = ({
                 alerts={alerts}
                 tree={tree}
                 bugs={bugs}
-                alertBugs={alertBugs}
               />
-              <Tooltip title="Snooze ALL alerts for 60 minutes">
-                <IconButton>
+              <Tooltip title="Snooze ALL alerts until the next build">
+                <IconButton onClick={() => silenceAllMutation.mutate(alerts)}>
                   <NotificationsPausedIcon />
                 </IconButton>
               </Tooltip>
@@ -98,7 +133,7 @@ export const AlertTable = ({
         </TableRow>
       </TableHead>
       <TableBody>
-        {alerts.map((alert) => {
+        {sortedAlerts.map((alert) => {
           // There should only be one builder, but we iterate the builders just in case.
           // It will result in some UI weirdness if there are ever more than one builder, but better
           // than not showing data.
@@ -118,7 +153,6 @@ export const AlertTable = ({
                       }}
                       tree={tree}
                       bugs={bugs}
-                      alertBugs={alertBugs}
                     />
                     {expanded[alert.key] && (
                       <AlertDetailsRow

@@ -19,15 +19,21 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsPausedIcon from '@mui/icons-material/NotificationsPaused';
 import { IconButton, TableCell, TableRow, Tooltip } from '@mui/material';
 import { Link } from '@mui/material';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   AlertBuilderJson,
   AlertJson,
   TreeJson,
-  BugId,
   Bug,
 } from '@/monitoring/util/server_json';
+import {
+  AlertsClientImpl,
+  BatchUpdateAlertsRequest,
+  UpdateAlertRequest,
+} from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
 import { BugMenu } from './bug_menu';
 
@@ -38,7 +44,6 @@ interface AlertSummaryRowProps {
   onExpand: () => void;
   tree: TreeJson;
   bugs: Bug[];
-  alertBugs: { [alertKey: string]: BugId[] };
 }
 // An expandable row in the AlertTable containing a summary of a single alert.
 export const AlertSummaryRow = ({
@@ -48,13 +53,42 @@ export const AlertSummaryRow = ({
   onExpand,
   tree,
   bugs,
-  alertBugs,
 }: AlertSummaryRowProps) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
+  const queryClient = useQueryClient();
+  const client = usePrpcServiceClient({
+    host: SETTINGS.luciNotify.host,
+    ClientImpl: AlertsClientImpl,
+  });
+  const silenceMutation = useMutation({
+    mutationFn: (build: string) => {
+      // eslint-disable-next-line new-cap
+      return client.BatchUpdateAlerts(
+        BatchUpdateAlertsRequest.fromPartial({
+          requests: [
+            UpdateAlertRequest.fromPartial({
+              alert: {
+                name: `alerts/${alert.key}`,
+                bug: alert.bug || '0',
+                silenceUntil: build,
+              },
+            }),
+          ] as Readonly<UpdateAlertRequest[]>,
+        }),
+      );
+    },
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
   const step = stepRe.exec(alert.title)?.[1];
   // TODO: snoozing.
-  const snoozed = false;
+  let silenceUntil = 0;
+  try {
+    silenceUntil = parseInt(alert.silenceUntil);
+  } catch {
+    // ignore
+  }
+  const silenced = builder.latest_failure_build_number <= silenceUntil;
   const numTestFailures = alert.extension?.reason?.num_failing_tests || 0;
   const firstTestFailureName = shortTestName(
     alert.extension?.reason?.tests?.[0].test_name,
@@ -67,7 +101,11 @@ export const AlertSummaryRow = ({
         1;
 
   return (
-    <TableRow hover onClick={() => onExpand()} sx={{ cursor: 'pointer' }}>
+    <TableRow
+      hover
+      onClick={() => onExpand()}
+      sx={{ cursor: 'pointer', opacity: silenced ? '0.5' : '1' }}
+    >
       <TableCell>
         <IconButton>
           {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
@@ -169,12 +207,18 @@ export const AlertSummaryRow = ({
             alerts={[alert]}
             tree={tree}
             bugs={bugs}
-            alertBugs={alertBugs}
           />
 
-          <Tooltip title="Snooze alert for 60 minutes">
-            <IconButton onClick={(e) => e.stopPropagation()}>
-              {snoozed ? <NotificationsIcon /> : <NotificationsPausedIcon />}
+          <Tooltip title="Silence alert until next build completes">
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                silenceMutation.mutate(
+                  silenced ? '0' : `${builder.latest_failure_build_number}`,
+                );
+              }}
+            >
+              {silenced ? <NotificationsIcon /> : <NotificationsPausedIcon />}
             </IconButton>
           </Tooltip>
         </div>

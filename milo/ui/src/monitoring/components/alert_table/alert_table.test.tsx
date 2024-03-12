@@ -23,12 +23,7 @@ import { AlertTable } from './alert_table';
 it('displays an alert', async () => {
   render(
     <FakeContextProvider>
-      <AlertTable
-        tree={configuredTrees[0]}
-        alerts={[alert]}
-        bugs={[]}
-        alertBugs={{}}
-      />
+      <AlertTable tree={configuredTrees[0]} alerts={[alert]} bugs={[]} />
     </FakeContextProvider>,
   );
   expect(screen.getByText('linux-rel')).toBeInTheDocument();
@@ -38,12 +33,7 @@ it('displays an alert', async () => {
 it('expands an alert on click', async () => {
   render(
     <FakeContextProvider>
-      <AlertTable
-        tree={configuredTrees[0]}
-        alerts={[alert]}
-        bugs={[]}
-        alertBugs={{}}
-      />
+      <AlertTable tree={configuredTrees[0]} alerts={[alert]} bugs={[]} />
     </FakeContextProvider>,
   );
   expect(screen.getByText('compile')).toBeInTheDocument();
@@ -132,4 +122,6 @@ const alert: AlertJson = {
       ],
     },
   },
+  bug: '0',
+  silenceUntil: '0',
 };

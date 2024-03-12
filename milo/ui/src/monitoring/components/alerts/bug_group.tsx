@@ -24,7 +24,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import { AlertJson, TreeJson, BugId, Bug } from '@/monitoring/util/server_json';
+import { AlertJson, TreeJson, Bug } from '@/monitoring/util/server_json';
 
 import { AlertTable } from '../../components/alert_table';
 
@@ -33,17 +33,10 @@ interface BugGroupProps {
   alerts: AlertJson[];
   tree: TreeJson;
   bugs: Bug[];
-  alertBugs: { [alertKey: string]: BugId[] };
 }
 // A collapsible group of failures that are associated with a bug.
 // Similar to AlertGroup, but displays bug information as well.
-export const BugGroup = ({
-  bug,
-  alerts,
-  tree,
-  bugs,
-  alertBugs,
-}: BugGroupProps) => {
+export const BugGroup = ({ bug, alerts, tree, bugs }: BugGroupProps) => {
   return (
     <>
       <Accordion defaultExpanded={false}>
@@ -110,12 +103,7 @@ export const BugGroup = ({
         </AccordionSummary>
         <AccordionDetails>
           {alerts && alerts.length ? (
-            <AlertTable
-              alertBugs={alertBugs}
-              alerts={alerts}
-              tree={tree}
-              bugs={bugs}
-            />
+            <AlertTable alerts={alerts} tree={tree} bugs={bugs} />
           ) : (
             <>
               <Typography sx={{ opacity: '50%' }}>

@@ -21,7 +21,7 @@ import { ReasonSection } from './reason_section';
 it('displays message when no test results', async () => {
   render(
     <ReasonSection
-      failureBBID="1234"
+      failureBuildUrl="https://ci.chromium.org/p/chromium/b/1234"
       tree={configuredTrees[0]}
       reason={{
         num_failing_tests: 0,
@@ -38,7 +38,7 @@ it('displays message when no test results', async () => {
 it('displays test info', async () => {
   render(
     <ReasonSection
-      failureBBID="1234"
+      failureBuildUrl="https://ci.chromium.org/p/chromium/b/1234"
       tree={configuredTrees[0]}
       reason={{
         num_failing_tests: 0,
@@ -70,6 +70,6 @@ it('displays test info', async () => {
   );
   expect(screen.getByText('test.Example')).toBeInTheDocument();
   expect(screen.getByText('0% Passing (0/10)')).toBeInTheDocument();
-  expect(screen.getByText('123450 - 123456')).toBeInTheDocument();
+  expect(screen.getByText('6 commits')).toBeInTheDocument();
   expect(screen.getByText('99% Passing (99/100)')).toBeInTheDocument();
 });

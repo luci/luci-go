@@ -27,8 +27,13 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { linkBug } from '@/monitoring/util/bug_annotations';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { AlertJson, TreeJson } from '@/monitoring/util/server_json';
+import {
+  AlertsClientImpl,
+  BatchUpdateAlertsRequest,
+  UpdateAlertRequest,
+} from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
 import { fileBugLink } from './file_bug_link';
 
@@ -39,10 +44,6 @@ interface FileBugDialogProps {
   onClose: () => void;
 }
 
-interface linkBugMutationData {
-  bugId: string;
-}
-
 export const FileBugDialog = ({
   alerts,
   tree,
@@ -51,30 +52,45 @@ export const FileBugDialog = ({
 }: FileBugDialogProps) => {
   const [bugId, setBugId] = useState('');
   const queryClient = useQueryClient();
-  const linkBugMutation = useMutation(
-    (data: linkBugMutationData): Promise<void> => {
-      return linkBug(tree, alerts, data.bugId);
+  const client = usePrpcServiceClient({
+    host: SETTINGS.luciNotify.host,
+    ClientImpl: AlertsClientImpl,
+  });
+  const linkBugMutation = useMutation({
+    mutationFn: (bug: string) => {
+      // eslint-disable-next-line new-cap
+      return client.BatchUpdateAlerts(
+        BatchUpdateAlertsRequest.fromPartial({
+          requests: alerts.map((a) => {
+            return UpdateAlertRequest.fromPartial({
+              alert: {
+                name: `alerts/${a.key}`,
+                bug: bug,
+                silenceUntil: a.silenceUntil,
+              },
+            });
+          }) as Readonly<UpdateAlertRequest[]>,
+        }),
+      );
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['annotations'] });
-        onClose();
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      onClose();
     },
-  );
+  });
   if (!tree) {
     return null;
   }
   if (linkBugMutation.isLoading) {
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>File a new bug</DialogTitle>
+      <DialogTitle>Link bug</DialogTitle>
       <CircularProgress></CircularProgress>
     </Dialog>;
   }
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>File a new bug</DialogTitle>
+      <DialogTitle>Link bug</DialogTitle>
       <DialogContent>
         {linkBugMutation.isError ? (
           <Alert severity="error">
@@ -82,7 +98,16 @@ export const FileBugDialog = ({
           </Alert>
         ) : null}
         <Typography>
-          Please use{' '}
+          To link a bug to this alert, please enter the bug ID in the box below.
+        </Typography>
+        <TextField
+          sx={{ marginTop: '10px' }}
+          label="Bug ID"
+          value={bugId}
+          onChange={(e) => setBugId(e.target.value)}
+        />
+        <Typography>
+          If you don&apos;t yet have a bug, please use{' '}
           <Link target="_blank" href={fileBugLink(tree, alerts)}>
             this link to create a bug
           </Link>{' '}
@@ -92,18 +117,10 @@ export const FileBugDialog = ({
           Once it is created, please copy the bug id into the box to link the
           bug.
         </Typography>
-        <TextField
-          sx={{ marginTop: '10px' }}
-          label="Bug ID"
-          value={bugId}
-          onChange={(e) => setBugId(e.target.value)}
-        />
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Close</Button>
-        <Button onClick={() => linkBugMutation.mutate({ bugId })}>
-          Link Bug
-        </Button>
+        <Button onClick={() => linkBugMutation.mutate(bugId)}>Link Bug</Button>
       </DialogActions>
     </Dialog>
   );

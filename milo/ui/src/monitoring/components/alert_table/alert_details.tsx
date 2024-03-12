@@ -35,9 +35,7 @@ export const AlertDetailsRow = ({ alert, tree, bug }: AlertDetailsRowProps) => {
           <ReasonSection
             tree={tree}
             reason={alert.extension.reason}
-            failureBBID={
-              '' + alert.extension.builders[0].latest_failure_build_number
-            }
+            failureBuildUrl={alert.extension.builders[0].latest_failure_url}
             bug={bug}
           ></ReasonSection>
           {alert.extension.luci_bisection_result ? (

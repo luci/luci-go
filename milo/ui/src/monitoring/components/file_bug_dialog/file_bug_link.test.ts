@@ -43,6 +43,8 @@ const alert: AlertJson = {
     tree_closer: false,
   },
   resolved: false,
+  bug: '0',
+  silenceUntil: '0',
 };
 
 describe('fileBugLink', () => {

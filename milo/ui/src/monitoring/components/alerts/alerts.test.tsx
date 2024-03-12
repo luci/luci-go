@@ -20,32 +20,21 @@ import { Bug } from '@/monitoring/util/server_json';
 import { Alerts } from './alerts';
 
 it('displays filter and alert groups', async () => {
-  render(
-    <Alerts tree={configuredTrees[0]} alerts={[]} bugs={[]} annotations={{}} />,
-  );
+  render(<Alerts tree={configuredTrees[0]} alerts={[]} bugs={[]} />);
   expect(screen.getByRole('textbox')).toBeInTheDocument();
   expect(screen.getByText('Consistent Failures')).toBeInTheDocument();
   expect(screen.getByText('New Failures')).toBeInTheDocument();
 });
 
 it('displays no bugs mesage', async () => {
-  render(
-    <Alerts tree={configuredTrees[0]} alerts={[]} bugs={[]} annotations={{}} />,
-  );
+  render(<Alerts tree={configuredTrees[0]} alerts={[]} bugs={[]} />);
   expect(
     screen.getByText('There are currently no bugs in the hotlist.'),
   ).toBeInTheDocument();
 });
 
 it('displays a group for a bug in the hotlist when there are no alerts', async () => {
-  render(
-    <Alerts
-      tree={configuredTrees[0]}
-      alerts={[]}
-      bugs={[hotlistBug]}
-      annotations={{}}
-    />,
-  );
+  render(<Alerts tree={configuredTrees[0]} alerts={[]} bugs={[hotlistBug]} />);
   expect(screen.getByText('Hotlist Bug')).toBeInTheDocument();
 });
 

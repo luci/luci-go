@@ -16,9 +16,14 @@ import { Alert, Divider, Menu, MenuItem, Snackbar } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { FileBugDialog } from '@/monitoring/components/file_bug_dialog/file_bug_dialog';
-import { linkBug, unlinkBug } from '@/monitoring/util/bug_annotations';
-import { AlertJson, Bug, BugId, TreeJson } from '@/monitoring/util/server_json';
+import { AlertJson, Bug, TreeJson } from '@/monitoring/util/server_json';
+import {
+  AlertsClientImpl,
+  BatchUpdateAlertsRequest,
+  UpdateAlertRequest,
+} from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
 interface BugMenuProps {
   anchorEl: HTMLElement | null;
@@ -26,7 +31,6 @@ interface BugMenuProps {
   tree: TreeJson;
   alerts: AlertJson[];
   bugs: Bug[];
-  alertBugs: { [alertKey: string]: BugId[] };
 }
 // TODO(b/319315200): Dialog to confirm multiple alert bug linking
 // TODO(b/319315200): Unlink before linking to another bug + dialog to confirm it
@@ -36,30 +40,35 @@ export const BugMenu = ({
   alerts,
   tree,
   bugs,
-  alertBugs,
 }: BugMenuProps) => {
   const [linkBugOpen, setLinkBugOpen] = useState(false);
   const open = Boolean(anchorEl) && !linkBugOpen;
   const queryClient = useQueryClient();
 
-  const isLinkedToBugs =
-    alerts.filter((a) => alertBugs[a.key]?.length > 0).length > 0;
+  const isLinkedToBugs = alerts.filter((a) => !!a.bug).length > 0;
 
+  const client = usePrpcServiceClient({
+    host: SETTINGS.luciNotify.host,
+    ClientImpl: AlertsClientImpl,
+  });
   const linkBugMutation = useMutation({
     mutationFn: (bug: string) => {
-      return linkBug(tree, alerts, bug);
+      // eslint-disable-next-line new-cap
+      return client.BatchUpdateAlerts(
+        BatchUpdateAlertsRequest.fromPartial({
+          requests: alerts.map((a) => {
+            return UpdateAlertRequest.fromPartial({
+              alert: {
+                name: `alerts/${a.key}`,
+                bug: bug,
+                silenceUntil: a.silenceUntil,
+              },
+            });
+          }) as Readonly<UpdateAlertRequest[]>,
+        }),
+      );
     },
-    onSuccess: () => queryClient.invalidateQueries(['annotations']),
-  });
-  const unlinkBugMutation = useMutation({
-    mutationFn: () => {
-      const promises: Promise<unknown>[] = [];
-      for (const alert of alerts) {
-        promises.push(unlinkBug(tree, alert, alertBugs[alert.key]));
-      }
-      return Promise.all(promises);
-    },
-    onSuccess: () => queryClient.invalidateQueries(['annotations']),
+    onSuccess: () => queryClient.invalidateQueries(),
   });
   return (
     <>
@@ -69,7 +78,7 @@ export const BugMenu = ({
             <MenuItem
               onClick={(e) => {
                 e.stopPropagation();
-                unlinkBugMutation.mutateAsync().finally(() => onClose());
+                linkBugMutation.mutateAsync('0').finally(() => onClose());
               }}
             >
               Unlink bug {alerts.length !== 1 && 'from all alerts'}
@@ -97,7 +106,7 @@ export const BugMenu = ({
             setLinkBugOpen(true);
           }}
         >
-          Create bug...
+          Other...
         </MenuItem>
       </Menu>
       <FileBugDialog
@@ -109,9 +118,9 @@ export const BugMenu = ({
           onClose();
         }}
       />
-      <Snackbar open={linkBugMutation.isError}>
+      <Snackbar open={linkBugMutation.isError} autoHideDuration={15000}>
         <Alert severity="error">
-          Error saving bug links: {linkBugMutation.error as string}
+          Error saving bug links: {(linkBugMutation.error as Error)?.message}
         </Alert>
       </Snackbar>
     </>

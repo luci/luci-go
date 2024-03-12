@@ -46,6 +46,15 @@ export interface AlertJson {
   type: string;
   extension: AlertExtensionJson;
   resolved: boolean;
+
+  // Extended fields: these come from LUCI Notify instead of Sheriff-o-Matic.
+  /** bug is the bug that this alert is associated with (if any). */
+  bug: string;
+  /**
+   * silenceUntil is the sequential build number that this alert should be silenced until completion of.
+   * i.e. The alert will be silenced while latestBuild <= silenceUntil.
+   */
+  silenceUntil: string;
 }
 
 // TODO: AlertExtensionJson fields were added based on example data.  There may be missing or incorrect fields.
@@ -134,31 +143,6 @@ export interface RegressionRangeJson {
   revisions: string[];
   revisions_with_results: null;
   url: string;
-}
-
-// TODO: AnnotationJson fields were added based on example data.  There may be missing or incorrect fields.
-export interface AnnotationJson {
-  KeyDigest: string;
-  ModificationTime: string;
-  Tree: string;
-  bug_data: { [id: number]: AnnotationBugDataJson };
-  bugs: BugId[];
-  comments: null;
-  group_id: string;
-  key: string;
-  snoozeTime: number | null;
-}
-
-export interface BugId {
-  id: number;
-  projectId: string;
-}
-
-export interface AnnotationBugDataJson {
-  id: string;
-  projectId: string;
-  status: string;
-  summary: string;
 }
 
 export interface LuciBisectionResult {

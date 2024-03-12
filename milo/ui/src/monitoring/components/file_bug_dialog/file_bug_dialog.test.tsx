@@ -31,5 +31,5 @@ it('renders', async () => {
       />
     </FakeContextProvider>,
   );
-  expect(screen.getByText('File a new bug')).toBeInTheDocument();
+  expect(screen.getByText('Link bug')).toBeInTheDocument();
 });

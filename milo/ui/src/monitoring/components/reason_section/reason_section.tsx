@@ -14,6 +14,7 @@
 
 import BugReportIcon from '@mui/icons-material/BugReport';
 import {
+  Link,
   Table,
   TableBody,
   TableCell,
@@ -30,7 +31,7 @@ import {
 } from '@/monitoring/util/server_json';
 
 interface ReasonSectionProps {
-  failureBBID: string;
+  failureBuildUrl: string;
   tree: TreeJson;
   reason: AlertReasonJson | null | undefined;
   bug?: Bug;
@@ -60,7 +61,7 @@ export const ReasonSection = (props: ReasonSectionProps) => {
               test={t}
               tree={props.tree}
               bug={props.bug}
-              failureBBID={props.failureBBID}
+              failureBuildUrl={props.failureBuildUrl}
             />
           ))}
           {props.reason.tests.length < props.reason.num_failing_tests && (
@@ -139,14 +140,14 @@ interface TestFailureRowProps {
   test: AlertReasonTestJson;
   tree: TreeJson;
   bug?: Bug;
-  failureBBID: string;
+  failureBuildUrl: string;
 }
 
 const TestFailureRow = ({
   test,
   tree,
   bug,
-  failureBBID,
+  failureBuildUrl,
 }: TestFailureRowProps) => {
   const currentRate =
     test.cur_counts.total_results === 0
@@ -169,10 +170,18 @@ const TestFailureRow = ({
     }
     return 'var(--started-bg-color)';
   };
-
+  const failureBuildId = /[0-9]+$/.exec(failureBuildUrl)?.[0];
   return (
     <TableRow hover>
-      <TableCell>{test.test_name}</TableCell>
+      <TableCell>
+        <Link
+          href={`${failureBuildUrl}/test-results?q=ID%3A${test.test_id}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {test.test_name}
+        </Link>
+      </TableCell>
       <TableCell sx={{ backgroundColor: cellColor(currentRate) }}>
         {currentRate === undefined
           ? 'No longer running'
@@ -181,7 +190,14 @@ const TestFailureRow = ({
             }/${test.cur_counts.total_results})`}
       </TableCell>
       <TableCell>
-        {test.regression_start_position} - {test.regression_end_position}
+        <Link
+          href={`https://crrev.com/${test.regression_start_position}..${test.regression_end_position}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {test.regression_end_position - test.regression_start_position}{' '}
+          commits
+        </Link>
       </TableCell>
       <TableCell sx={{ backgroundColor: cellColor(previousRate) }}>
         {previousRate === undefined
@@ -193,31 +209,35 @@ const TestFailureRow = ({
       </TableCell>
       <TableCell>
         {isChromiumSrc(tree.name) ? (
-          <a href={codeSearchLink(test)} target="_blank" rel="noreferrer">
+          <Link href={codeSearchLink(test)} target="_blank" rel="noreferrer">
             Code Search
-          </a>
+          </Link>
         ) : null}
         {' | '}
-        <a href={historyLink(test)} target="_blank" rel="noreferrer">
+        <Link href={historyLink(test)} target="_blank" rel="noreferrer">
           History
-        </a>
+        </Link>
         {testBisectionLink(test) && (
           <>
             {' | '}
-            <a href={testBisectionLink(test)} target="_blank" rel="noreferrer">
+            <Link
+              href={testBisectionLink(test)}
+              target="_blank"
+              rel="noreferrer"
+            >
               bisection
-            </a>
+            </Link>
           </>
         )}
         {' | '}
         <SimilarFailuresLink test={test} />
       </TableCell>
       <TableCell>
-        {isChromiumSrc(tree.name) ? (
+        {isChromiumSrc(tree.name) && failureBuildId ? (
           <DisableTestButton
             bug={bug}
             testID={test.test_id}
-            failureBBID={failureBBID}
+            failureBBID={failureBuildId}
           />
         ) : null}
       </TableCell>
