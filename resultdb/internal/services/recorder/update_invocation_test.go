@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -23,11 +24,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -38,7 +41,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestValidateUpdateInvocationRequest(t *testing.T) {
@@ -201,12 +203,120 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			Convey(`empty`, func() {
 				request.Invocation.BaselineId = ""
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: baseline_id: unspecified`)
+				So(err, ShouldBeNil)
 			})
 			Convey(`invalid`, func() {
 				request.Invocation.BaselineId = "try/linux-rel"
 				err := validateUpdateInvocationRequest(request, now)
 				So(err, ShouldErrLike, `invocation: baseline_id: does not match`)
+			})
+		})
+
+		Convey(`realm`, func() {
+			request.UpdateMask.Paths = []string{"realm"}
+
+			Convey(`empty`, func() {
+				request.Invocation.Realm = ""
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldErrLike, `invocation: realm: unspecified`)
+			})
+			Convey(`valid`, func() {
+				request.Invocation.Realm = "testproject:newrealm"
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldBeNil)
+			})
+			Convey(`invalid`, func() {
+				request.Invocation.Realm = "blah"
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldErrLike, `invocation: realm: bad global realm name "blah"`)
+			})
+		})
+	})
+}
+
+func TestValidateUpdateInvocationPermissions(t *testing.T) {
+	t.Parallel()
+	Convey(`TestValidateUpdateInvocationPermissions`, t, func() {
+		ctx := context.Background()
+		authState := &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				// permission required to set baseline
+				{Realm: "testproject:@project", Permission: permPutBaseline},
+				{Realm: "testproject:newrealm", Permission: permCreateInvocation},
+				{Realm: "testproject:newrealm", Permission: permIncludeInvocation},
+			},
+		}
+		ctx = auth.WithState(ctx, authState)
+
+		request := &pb.UpdateInvocationRequest{
+			Invocation: &pb.Invocation{
+				Name: "invocations/inv",
+			},
+			UpdateMask: &field_mask.FieldMask{Paths: []string{}},
+		}
+
+		existingRealm := "testproject:testrealm"
+
+		Convey(`realm`, func() {
+			request.UpdateMask.Paths = []string{"realm"}
+			request.Invocation.Realm = "testproject:newrealm"
+
+			Convey(`valid`, func() {
+				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				So(err, ShouldBeNil)
+			})
+			Convey(`no create access`, func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
+				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`)
+			})
+			Convey(`no include access`, func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
+				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`)
+			})
+			Convey(`change of project`, func() {
+				request.Invocation.Realm = "newproject:testrealm"
+				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument, `cannot change invocation realm to outside project "testproject"`)
+			})
+		})
+		Convey(`baseline_id`, func() {
+			request.UpdateMask.Paths = []string{"baseline_id"}
+			request.Invocation.BaselineId = "try:linux-rel"
+
+			Convey(`empty`, func() {
+				request.Invocation.BaselineId = ""
+				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				So(err, ShouldBeNil)
+			})
+			Convey(`no concurrent change to realm`, func() {
+				Convey(`valid`, func() {
+					err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+					So(err, ShouldBeNil)
+				})
+				Convey(`no access`, func() {
+					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
+					err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
+					So(err, ShouldBeNil)
+				})
+			})
+			Convey(`concurrent change to realm`, func() {
+				request.UpdateMask.Paths = append(request.UpdateMask.Paths, "realm")
+				request.Invocation.Realm = "testproject:newrealm"
+
+				Convey(`valid`, func() {
+					err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+					So(err, ShouldBeNil)
+				})
+				Convey(`no access`, func() {
+					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
+					err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
+					So(err, ShouldBeNil)
+				})
 			})
 		})
 	})
@@ -219,58 +329,70 @@ func TestUpdateInvocation(t *testing.T) {
 
 		recorder := newTestRecorderServer()
 
-		token, err := generateInvocationToken(ctx, "inv")
-		So(err, ShouldBeNil)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
-
-		validDeadline := pbutil.MustTimestampProto(start.Add(day))
-		validBigqueryExports := []*pb.BigQueryExport{
-			{
-				Project: "project",
-				Dataset: "dataset",
-				Table:   "table1",
-				ResultType: &pb.BigQueryExport_TestResults_{
-					TestResults: &pb.BigQueryExport_TestResults{},
-				},
-			},
-			{
-				Project: "project",
-				Dataset: "dataset",
-				Table:   "table2",
-				ResultType: &pb.BigQueryExport_TestResults_{
-					TestResults: &pb.BigQueryExport_TestResults{},
-				},
+		authState := &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:@project", Permission: permPutBaseline},
+				{Realm: "testproject:newrealm", Permission: permCreateInvocation},
+				{Realm: "testproject:newrealm", Permission: permIncludeInvocation},
 			},
 		}
-
-		updateMask := &field_mask.FieldMask{
-			Paths: []string{"deadline", "bigquery_exports", "properties", "source_spec"},
-		}
+		ctx = auth.WithState(ctx, authState)
 
 		Convey(`invalid request`, func() {
 			req := &pb.UpdateInvocationRequest{}
 			_, err := recorder.UpdateInvocation(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: invocation: name: unspecified`)
 		})
-
-		Convey(`no invocation`, func() {
+		Convey(`no update token`, func() {
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
-					Name:            "invocations/inv",
-					Deadline:        validDeadline,
-					BigqueryExports: validBigqueryExports,
+					Name:       "invocations/inv",
+					Properties: testutil.TestProperties(),
 				},
-				UpdateMask: updateMask,
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
+			}
+			_, err := recorder.UpdateInvocation(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.Unauthenticated, `missing update-token metadata value in the request`)
+		})
+		Convey(`invalid update token`, func() {
+			token, err := generateInvocationToken(ctx, "inv2")
+			So(err, ShouldBeNil)
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:       "invocations/inv",
+					Properties: testutil.TestProperties(),
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
+			}
+			_, err = recorder.UpdateInvocation(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
+		})
+
+		token, err := generateInvocationToken(ctx, "inv")
+		So(err, ShouldBeNil)
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+
+		Convey("no invocation", func() {
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:       "invocations/inv",
+					Properties: testutil.TestProperties(),
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
 		})
 
 		// Insert the invocation.
-		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-		updateMask.Paths = append(updateMask.Paths, "baseline_id")
+		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{
+			"BaselineId": "existing-baseline",
+		}))
 
-		Convey("e2e no baseline permissions", func() {
+		Convey("baseline_id", func() {
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:       "invocations/inv",
@@ -278,22 +400,82 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"baseline_id"}},
 			}
+			Convey("without permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
 
-			inv, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldBeNil)
-			// the request does not permissions, so baseline should not be set and
-			// silently ignored.
-			So(inv.BaselineId, ShouldEqual, "")
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeNil)
+				// the caller does not have permissions, so baseline should
+				// be silently reset.
+				So(inv.BaselineId, ShouldEqual, "")
+			})
+			Convey("with permission", func() {
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeNil)
+				So(inv.BaselineId, ShouldEqual, "try:linux-rel")
+			})
+		})
+		Convey("realm", func() {
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:  "invocations/inv",
+					Realm: "testproject:newrealm",
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"realm"}},
+			}
+			Convey("without create invocation permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
+
+				_, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`)
+			})
+			Convey("without include invocation permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
+
+				_, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`)
+			})
+			Convey(`to new project`, func() {
+				req.Invocation.Realm = "newproject:testrealm"
+
+				_, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeRPCInvalidArgument, `cannot change invocation realm to outside project "testproject"`)
+			})
+			Convey(`valid`, func() {
+				// Regardless of permission to put baseline.
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
+
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeNil)
+				So(inv.Realm, ShouldEqual, "testproject:newrealm")
+				So(inv.BaselineId, ShouldEqual, "existing-baseline")
+			})
 		})
 
 		Convey("e2e", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:someone@example.com",
-				IdentityPermissions: []authtest.RealmPermission{
-					// permission required to set baseline
-					{Realm: "testproject:testrealm", Permission: permPutBaseline},
+			validDeadline := pbutil.MustTimestampProto(start.Add(day))
+			validBigqueryExports := []*pb.BigQueryExport{
+				{
+					Project: "project",
+					Dataset: "dataset",
+					Table:   "table1",
+					ResultType: &pb.BigQueryExport_TestResults_{
+						TestResults: &pb.BigQueryExport_TestResults{},
+					},
 				},
-			})
+				{
+					Project: "project",
+					Dataset: "dataset",
+					Table:   "table2",
+					ResultType: &pb.BigQueryExport_TestResults_{
+						TestResults: &pb.BigQueryExport_TestResults{},
+					},
+				},
+			}
+
+			updateMask := &field_mask.FieldMask{
+				Paths: []string{"deadline", "bigquery_exports", "properties", "source_spec", "baseline_id", "realm"},
+			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:            "invocations/inv",
@@ -304,6 +486,7 @@ func TestUpdateInvocation(t *testing.T) {
 						Sources: testutil.TestSourcesWithChangelistNumbers(431, 123),
 					},
 					BaselineId: "try:linux-rel",
+					Realm:      "testproject:newrealm",
 				},
 				UpdateMask: updateMask,
 			}
@@ -321,6 +504,7 @@ func TestUpdateInvocation(t *testing.T) {
 					Sources: testutil.TestSourcesWithChangelistNumbers(123, 431),
 				},
 				BaselineId: "try:linux-rel",
+				Realm:      "testproject:newrealm",
 			}
 			So(inv.Name, ShouldEqual, expected.Name)
 			So(inv.State, ShouldEqual, pb.Invocation_ACTIVE)
@@ -328,6 +512,7 @@ func TestUpdateInvocation(t *testing.T) {
 			So(inv.Properties, ShouldResembleProto, expected.Properties)
 			So(inv.SourceSpec, ShouldResembleProto, expected.SourceSpec)
 			So(inv.BaselineId, ShouldEqual, expected.BaselineId)
+			So(inv.Realm, ShouldEqual, expected.Realm)
 
 			// Read from the database.
 			actual := &pb.Invocation{
@@ -344,6 +529,7 @@ func TestUpdateInvocation(t *testing.T) {
 				"Sources":         &compressedSources,
 				"InheritSources":  &actual.SourceSpec.Inherit,
 				"BaselineId":      &actual.BaselineId,
+				"Realm":           &actual.Realm,
 			})
 			actual.Properties = &structpb.Struct{}
 			err = proto.Unmarshal(compressedProperties, actual.Properties)
@@ -354,4 +540,14 @@ func TestUpdateInvocation(t *testing.T) {
 			So(actual, ShouldResembleProto, expected)
 		})
 	})
+}
+
+func removePermission(perms []authtest.RealmPermission, permission realms.Permission) []authtest.RealmPermission {
+	var result []authtest.RealmPermission
+	for _, p := range perms {
+		if p.Permission != permission {
+			result = append(result, p)
+		}
+	}
+	return result
 }

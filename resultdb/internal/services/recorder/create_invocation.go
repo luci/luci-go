@@ -172,7 +172,21 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if !strings.HasPrefix(in.InvocationId, "u-") {
-		switch allowed, err := auth.HasPermission(ctx, permCreateWithReservedID, realm, nil); {
+		// Ensure the integrity of invocation names with reserved IDs
+		// by ensuring the caller is a trusted service.
+
+		// After creation, the caller may attempt to update the invocation
+		// to another subrealm of the same project.
+		// Check we are trusted to create invocations with reserved ID
+		// in <project>:@root to cover all realms this invocation could
+		// eventually end up in.
+
+		// Find the root realm <project>:@root. If the caller has the permission
+		// in this realm, it has permission in every realm of the project.
+		project, _ := realms.Split(realm)
+		rootRealm := realms.Join(project, realms.RootRealm)
+
+		switch allowed, err := auth.HasPermission(ctx, permCreateWithReservedID, rootRealm, nil); {
 		case err != nil:
 			return err
 		case !allowed:
@@ -181,6 +195,9 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if len(inv.GetBigqueryExports()) > 0 {
+		// Note: This check is effectively pointless now, as it is
+		// possible to update an invocation after creation with whatever exports
+		// you want (without incurring any permission check).
 		switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, realm, nil); {
 		case err != nil:
 			return err
@@ -190,7 +207,20 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if inv.GetProducerResource() != "" {
-		switch allowed, err := auth.HasPermission(ctx, permSetProducerResource, realm, nil); {
+		// Ensure the integrity of the producer resource by ensuring the
+		// caller is a trusted service.
+
+		// After creation, the caller may attempt to update the invocation
+		// to another subrealm of the project.
+		// Check we are trusted to set producer resource in <project>:@root
+		// to cover all realms this invocation could eventually end up in.
+
+		// Find the root realm <project>:@root. If the caller has the permission
+		// in this realm, it has permission in every realm of the project.
+		project, _ := realms.Split(realm)
+		rootRealm := realms.Join(project, realms.RootRealm)
+
+		switch allowed, err := auth.HasPermission(ctx, permSetProducerResource, rootRealm, nil); {
 		case err != nil:
 			return err
 		case !allowed:
@@ -199,11 +229,16 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if inv.BaselineId != "" {
-		switch allowed, err := auth.HasPermission(ctx, permPutBaseline, realm, nil); {
+		// Baselines are project-scoped resources. Find the project-scoped
+		// realm <project>:@project and check authorisation to write to it.
+		project, _ := realms.Split(realm)
+		projectRealm := realms.Join(project, realms.ProjectRealm)
+
+		switch allowed, err := auth.HasPermission(ctx, permPutBaseline, projectRealm, nil); {
 		case err != nil:
 			return err
 		case !allowed:
-			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set baseline ids in realm %q`, inv.GetRealm())
+			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to write to test baseline in realm %q`, projectRealm)
 		}
 	}
 

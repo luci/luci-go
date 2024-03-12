@@ -96,7 +96,7 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:ci", Permission: permCreateInvocation},
-					{Realm: "chromium:ci", Permission: permCreateWithReservedID},
+					{Realm: "chromium:@root", Permission: permCreateWithReservedID},
 				},
 			})
 			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
@@ -129,7 +129,7 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:ci", Permission: permCreateInvocation},
-					{Realm: "chromium:ci", Permission: permSetProducerResource},
+					{Realm: "chromium:@root", Permission: permSetProducerResource},
 				},
 			})
 			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
@@ -197,7 +197,7 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:try", Permission: permCreateInvocation},
-					{Realm: "chromium:try", Permission: permPutBaseline},
+					{Realm: "chromium:@project", Permission: permPutBaseline},
 				},
 			})
 			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
@@ -223,7 +223,7 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 					BaselineId: "try:linux-rel",
 				},
 			})
-			So(err, ShouldErrLike, `does not have permission to set baseline ids`)
+			So(err, ShouldErrLike, `does not have permission to write to test baseline`)
 		})
 		Convey(`creation disallowed`, func() {
 			ctx = auth.WithState(context.Background(), &authtest.FakeState{
@@ -369,12 +369,12 @@ func TestCreateInvocation(t *testing.T) {
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: permCreateInvocation},
-				{Realm: "testproject:testrealm", Permission: permCreateWithReservedID},
+				{Realm: "testproject:@root", Permission: permCreateWithReservedID},
 				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
-				{Realm: "testproject:testrealm", Permission: permSetProducerResource},
+				{Realm: "testproject:@root", Permission: permSetProducerResource},
 				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
 				{Realm: "testproject:createonly", Permission: permCreateInvocation},
-				{Realm: "testproject:testrealm", Permission: permPutBaseline},
+				{Realm: "testproject:@project", Permission: permPutBaseline},
 			},
 		})
 

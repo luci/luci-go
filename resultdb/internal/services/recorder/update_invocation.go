@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -72,8 +74,18 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 			}
 
 		case "baseline_id":
-			if err := pbutil.ValidateBaselineID(req.Invocation.BaselineId); err != nil {
-				return errors.Annotate(err, "invocation: baseline_id").Err()
+			if req.Invocation.BaselineId != "" {
+				if err := pbutil.ValidateBaselineID(req.Invocation.BaselineId); err != nil {
+					return errors.Annotate(err, "invocation: baseline_id").Err()
+				}
+			}
+
+		case "realm":
+			if req.Invocation.Realm == "" {
+				return errors.Annotate(errors.Reason("unspecified").Err(), "invocation: realm").Err()
+			}
+			if err := realms.ValidateRealmName(req.Invocation.Realm, realms.GlobalScope); err != nil {
+				return errors.Annotate(err, "invocation: realm").Err()
 			}
 
 		default:
@@ -84,12 +96,89 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 	return nil
 }
 
-func validateUpdateBaselinePermissions(ctx context.Context, realm string) error {
-	switch allowed, err := auth.HasPermission(ctx, permPutBaseline, realm, nil); {
+func validateUpdateInvocationPermissions(ctx context.Context, existingRealm string, req *pb.UpdateInvocationRequest) error {
+	// Note: Permission to update the invocation itself is verified by
+	// checking the update-token, which occurs in mutateInvocation(...).
+
+	realm := existingRealm
+	project, _ := realms.Split(existingRealm)
+
+	// If there is a change of realm being attempted, verify it first, as
+	// further fields must be validated against this new realm, not the old one.
+	if slices.Contains(req.UpdateMask.GetPaths(), "realm") {
+		realm = req.Invocation.GetRealm()
+		newProject, _ := realms.Split(realm)
+		if project != newProject {
+			// The new realm should be within the same LUCI Project.
+			//
+			// This ensures the configured BigQuery exports will still
+			// be performed with the same project-scoped service account,
+			// and the baseline we are writing to is still the same.
+			return appstatus.Errorf(codes.InvalidArgument, `cannot change invocation realm to outside project %q`, project)
+		}
+		if err := validateUpdateRealmPermissions(ctx, realm); err != nil {
+			return err
+		}
+	}
+
+	for _, path := range req.UpdateMask.GetPaths() {
+		switch path {
+		case "baseline_id":
+			if req.Invocation.BaselineId != "" {
+				if err := validateUpdateBaselinePermissions(ctx, realm); err != nil {
+					// TODO: Return an error to the caller instead of swallowing the error.
+					logging.Warningf(ctx, "Silently swallowing permission error on %s: %s", req.Invocation.Name, err)
+
+					// Silently reset the baseline ID on the invocation instead.
+					req.Invocation.BaselineId = ""
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func validateUpdateRealmPermissions(ctx context.Context, newRealm string) error {
+	// Instead of updating the realm of an invocation from A to B, we could
+	// have defined a new invocation in realm B, and included that invocation
+	// in the current invocation.
+	//
+	// Both activities would result in:
+	// - an invocation existing in realm B (with test results + artifacts being
+	//   uploaded to that realm).
+	// - test results in realm B being included in invocations that include
+	//   the current invocation.
+	//
+	// Based on the principle of "same activity, same risk, same rules",
+	// we apply the same permission checks below.
+
+	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, newRealm, nil); {
 	case err != nil:
 		return err
 	case !allowed:
-		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission to set baseline ids in realm %s`, realm)
+		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission to create invocations in realm %q (required to update invocation realm)`, newRealm)
+	}
+
+	switch allowed, err := auth.HasPermission(ctx, permIncludeInvocation, newRealm, nil); {
+	case err != nil:
+		return err
+	case !allowed:
+		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission to include invocations in realm %q (required to update invocation realm)`, newRealm)
+	}
+	return nil
+}
+
+func validateUpdateBaselinePermissions(ctx context.Context, realm string) error {
+	// The baseline is a project-scoped resource, so we should check the
+	// realm <project>:@project.
+	project, _ := realms.Split(realm)
+	projectRealm := realms.Join(project, realms.ProjectRealm)
+
+	switch allowed, err := auth.HasPermission(ctx, permPutBaseline, projectRealm, nil); {
+	case err != nil:
+		return err
+	case !allowed:
+		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission to write to test baseline in realm %s`, projectRealm)
 	}
 	return nil
 }
@@ -106,6 +195,12 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		var err error
 		if ret, err = invocations.Read(ctx, invID); err != nil {
+			return err
+		}
+		// Perform validation and permission checks in the same transaction
+		// as the update, to prevent the possibility of permission check bypass
+		// (TOC/TOU bug) in the event of an update-update race.
+		if err := validateUpdateInvocationPermissions(ctx, ret.Realm, in); err != nil {
 			return err
 		}
 
@@ -140,14 +235,14 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.SourceSpec = in.Invocation.SourceSpec
 
 			case "baseline_id":
-				if err := validateUpdateBaselinePermissions(ctx, ret.Realm); err != nil {
-					// log the error and silently skip setting baseline id
-					logging.Warningf(ctx, "Silently swallowing permission error %s", err)
-					continue
-				}
 				baselineID := in.Invocation.BaselineId
 				values["BaselineId"] = baselineID
 				ret.BaselineId = baselineID
+
+			case "realm":
+				realm := in.Invocation.Realm
+				values["Realm"] = realm
+				ret.Realm = realm
 
 			default:
 				panic("impossible")
