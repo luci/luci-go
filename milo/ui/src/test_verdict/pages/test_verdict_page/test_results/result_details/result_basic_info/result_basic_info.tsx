@@ -119,9 +119,11 @@ export function ResultBasicInfo() {
             {result.duration && (
               <DurationBadge duration={parseProtoDuration(result.duration)} />
             )}
+            {result.duration && swarmingTaskId !== null && (
+              <Divider orientation="vertical" />
+            )}
             {swarmingTaskId !== null && (
               <>
-                <Divider orientation="vertical" />
                 Swarming Task:
                 <Link
                   href={getSwarmingTaskURL(

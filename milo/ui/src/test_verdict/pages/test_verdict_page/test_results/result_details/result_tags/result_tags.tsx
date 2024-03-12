@@ -52,7 +52,7 @@ export function ResultTags() {
           }}
         >
           {tags.map(
-            (entry, i) => `${i > 0 && ', '} ${entry.key} = ${entry.value}`,
+            (entry, i) => `${i > 0 ? ', ' : ''} ${entry.key} = ${entry.value}`,
           )}
         </Typography>
       </AccordionSummary>

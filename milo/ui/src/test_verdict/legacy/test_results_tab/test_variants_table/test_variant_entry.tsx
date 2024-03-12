@@ -85,6 +85,19 @@ export class TestVariantEntryElement
   @observable.ref private shouldRenderContent = false;
 
   @computed
+  private get testVerdictPageUrl() {
+    if (!this.project || !this.invId || !this.invId.startsWith('build-')) {
+      return '';
+    }
+
+    return `/ui/labs/p/${this.project}/inv/${
+      this.invId
+    }/test/${encodeURIComponent(this.variant.testId)}/variant/${
+      this.variant.variantHash
+    }`;
+  }
+
+  @computed
   private get shortName() {
     if (this.variant.testMetadata?.name) {
       return this.variant.testMetadata.name;
@@ -278,14 +291,20 @@ export class TestVariantEntryElement
         ${this.variantDef.length !== 0 ? '|' : ''}
         <span class="greyed-out">
           ${this.variantDef.map(
-            ([k, v]) => html`
-              <span class="kv">
+            ([k, v]) =>
+              html` <span class="kv">
                 <span class="kv-key">${k}</span>
                 <span class="kv-value">${v}</span>
-              </span>
-            `,
+              </span>`,
           )}
         </span>
+        ${this.testVerdictPageUrl
+          ? html` |
+              <a href=${this.testVerdictPageUrl} target="_blank">
+                view in new test verdict page</a
+              >`
+          : ''}
+        <span></span>
       </div>
       ${this.variant.results?.length === RESULT_LIMIT
         ? html`<div id="result-limit-warning">

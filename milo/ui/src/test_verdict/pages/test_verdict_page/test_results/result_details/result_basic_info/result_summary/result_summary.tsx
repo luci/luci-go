@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Grid from '@mui/material/Grid';
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { TextArtifactEvent } from '@/common/components/text_artifact';
@@ -30,7 +30,7 @@ interface Props {
 export function ResultSummary({ summaryHtml, resultName, invId }: Props) {
   const mainRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     function handleGetTextArtifactData(e: Event) {
       (e as CustomEvent<TextArtifactEvent>).detail.setData(
         `invocations/${invId}`,
@@ -64,7 +64,7 @@ export function ResultSummary({ summaryHtml, resultName, invId }: Props) {
         sx={{
           backgroundColor: 'var(--block-background-color)',
           paddingX: 1,
-          maxHeight: '500px',
+          maxHeight: '54vh',
           overflowX: 'auto',
           whiteSpace: 'pre-wrap',
           '& pre': {

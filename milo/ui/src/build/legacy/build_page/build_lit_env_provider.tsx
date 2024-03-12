@@ -133,7 +133,9 @@ export class BuildLitEnvProviderElement extends MobxExtLitElement {
   @provideInvId({ global: true })
   @computed
   get invId() {
-    return this.store.buildPage.invocationId || undefined;
+    const invName =
+      this.store.buildPage.build?.data.infra?.resultdb?.invocation;
+    return invName ? invName.slice('invocations/'.length) : undefined;
   }
 
   @provideTestTabUrl({ global: true })

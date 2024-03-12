@@ -52,7 +52,7 @@ export function CLInfo() {
           px: 0.5,
         }}
       >
-        {sources && sources.changelists && (
+        {sources && sources.changelists.length > 0 && (
           <>
             CL: <ChangelistLink changelist={sources.changelists[0]} />
             {sources.changelists.length > 1 && (

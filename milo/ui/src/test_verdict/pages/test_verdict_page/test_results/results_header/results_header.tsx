@@ -21,6 +21,7 @@ import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import Grid from '@mui/material/Grid';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
+import Tooltip from '@mui/material/Tooltip';
 import { useEffectOnce } from 'react-use';
 
 import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants/test';
@@ -63,8 +64,10 @@ function getTitle(result: TestResult) {
   }`;
 }
 
-function getFirstFailedResult(results: readonly TestResultBundle[]) {
-  return results.findIndex((e) => !e.result?.expected) ?? 0;
+function getDefaultTestResult(results: readonly TestResultBundle[]) {
+  // The default result is either the first failed result or the first result.
+  const firstFailedIndex = results.findIndex((e) => !e.result?.expected);
+  return firstFailedIndex >= 0 ? firstFailedIndex : 0;
 }
 
 export function ResultsHeader() {
@@ -74,7 +77,7 @@ export function ResultsHeader() {
 
   useEffectOnce(() => {
     if (selectedResultIndex === null) {
-      updateSelectedTabIndex(getFirstFailedResult(results));
+      updateSelectedTabIndex(getDefaultTestResult(results));
     }
   });
 
@@ -104,19 +107,19 @@ export function ResultsHeader() {
         onChange={(_, newValue: number) => updateSelectedTabIndex(newValue)}
       >
         {results.map((result, i) => (
-          <Tab
-            sx={{
-              minHeight: 0,
-            }}
-            key={result.result.resultId}
-            icon={getRunStatusIcon(
-              result.result.status,
-              result.result.expected,
-            )}
-            iconPosition="end"
-            title={getTitle(result.result)}
-            label={`Result ${i + 1}`}
-          />
+          <Tooltip title={getTitle(result.result)} key={result.result.resultId}>
+            <Tab
+              sx={{
+                minHeight: 0,
+              }}
+              icon={getRunStatusIcon(
+                result.result.status,
+                result.result.expected,
+              )}
+              iconPosition="end"
+              label={`Result ${i + 1}`}
+            />
+          </Tooltip>
         ))}
       </Tabs>
     </Grid>

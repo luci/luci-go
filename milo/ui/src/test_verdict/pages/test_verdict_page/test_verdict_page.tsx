@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Divider } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useQuery } from '@tanstack/react-query';
@@ -106,6 +107,7 @@ export function TestVerdictPage() {
       >
         <TestIdentifier />
         <VerdictInfo />
+        <Divider orientation="horizontal" />
         {verdict.results && <TestResults results={verdict.results} />}
       </TestVerdictProvider>
     </Grid>
