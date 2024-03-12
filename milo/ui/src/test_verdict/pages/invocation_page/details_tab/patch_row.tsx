@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export interface StringPair {
-  readonly key: string;
-  readonly value?: string;
+import { GerritClLink } from '@/common/components/gerrit_cl_link';
+import { GerritChange } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+
+export interface PatchRowProps {
+  readonly gerritChange: GerritChange;
 }
 
-export interface GitilesCommit {
-  readonly host: string;
-  readonly project: string;
-  readonly id?: string;
-  readonly ref?: string;
-  readonly position?: number | string;
-}
-
-export interface GerritChange {
-  readonly host: string;
-  readonly project: string;
-  readonly change: string;
-  readonly patchset: string;
+export function PatchRow({ gerritChange }: PatchRowProps) {
+  return (
+    <tr>
+      <td>Patch:</td>
+      <td>
+        <GerritClLink cl={gerritChange} />
+      </td>
+    </tr>
+  );
 }

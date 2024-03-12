@@ -14,41 +14,36 @@
 
 import { Box, CircularProgress, styled } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { Timestamp } from '@/common/components/timestamp';
+import { PropertyViewer } from '@/common/components/property_viewer';
+import {
+  PropertyViewerConfig,
+  PropertyViewerConfigInstance,
+} from '@/common/store/user_config/build_config';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { invocation_StateToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { IncludedInvocationsTimeline } from './included_invocations_timeline';
+import { SourceSpecSection } from './source_spec_section';
+import { StringRow } from './string_row';
+import { TimestampRow } from './timestamp_row';
 
 const Container = styled(Box)`
   margin: 10px;
 `;
-
-interface TimestampRowProps {
-  readonly label: string;
-  readonly dateISO?: string;
-}
-
-function TimestampRow({ label, dateISO }: TimestampRowProps) {
-  return (
-    <tr>
-      <td>{label}:</td>
-      <td>
-        {dateISO ? <Timestamp datetime={DateTime.fromISO(dateISO)} /> : 'N/A'}
-      </td>
-    </tr>
-  );
-}
 
 export function DetailsTab() {
   const { invId } = useParams();
   if (!invId) {
     throw new Error('invariant violated: invId should be set');
   }
+  const [propertyViewerConfig, _] = useState<PropertyViewerConfigInstance>(
+    PropertyViewerConfig.create({}),
+  );
 
   const client = useResultDbClient();
   const {
@@ -74,6 +69,18 @@ export function DetailsTab() {
 
   return (
     <Container>
+      <h3>General</h3>
+      <table>
+        <tbody>
+          <StringRow
+            label="State"
+            value={invocation_StateToJSON(invocation.state)}
+          />
+          <StringRow label="Realm" value={invocation.realm} />
+          <StringRow label="Created By" value={invocation.createdBy} />
+          <StringRow label="Baseline" value={invocation.baselineId || 'N/A'} />
+        </tbody>
+      </table>
       <h3>Timing</h3>
       <table>
         <tbody>
@@ -85,6 +92,21 @@ export function DetailsTab() {
           <TimestampRow label="Deadline" dateISO={invocation.deadline} />
         </tbody>
       </table>
+      {invocation.sourceSpec && (
+        <>
+          <h3>Source Specification</h3>
+          <SourceSpecSection sourceSpec={invocation.sourceSpec} />
+        </>
+      )}
+      {invocation.properties !== undefined && (
+        <>
+          <h3>Properties</h3>
+          <PropertyViewer
+            properties={invocation.properties}
+            config={propertyViewerConfig}
+          />
+        </>
+      )}
       {invocation.tags.length ? (
         <>
           <h3>Tags</h3>

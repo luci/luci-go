@@ -70,4 +70,34 @@ describe('<DetailsTab />', () => {
       '00:00:00 Sun, Feb 03 2002 UTC',
     );
   });
+
+  it('general invocation properties are displayed', async () => {
+    getInvocationMock.mockResolvedValue(
+      Invocation.fromPartial({
+        state: Invocation_State.ACTIVE,
+        realm: 'chromium:try',
+        createdBy: 'project:chromium',
+        baselineId: 'try:my-builder',
+      }),
+    );
+    render(
+      <FakeContextProvider
+        mountedPath="inv/:invId"
+        routerOptions={{ initialEntries: ['/inv/inv-id'] }}
+      >
+        <DetailsTab />
+      </FakeContextProvider>,
+    );
+    await act(() => jest.runAllTimersAsync());
+    expect(screen.getByText('State:').nextSibling).toHaveTextContent('ACTIVE');
+    expect(screen.getByText('Realm:').nextSibling).toHaveTextContent(
+      'chromium:try',
+    );
+    expect(screen.getByText('Created By:').nextSibling).toHaveTextContent(
+      'project:chromium',
+    );
+    expect(screen.getByText('Baseline:').nextSibling).toHaveTextContent(
+      'try:my-builder',
+    );
+  });
 });

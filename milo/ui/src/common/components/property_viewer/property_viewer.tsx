@@ -78,7 +78,6 @@ export function PropertyViewer({
       css={{
         '& .CodeMirror-scroll': {
           minWidth: '400px',
-          maxWidth: '1000px',
           minHeight: '100px',
           maxHeight: '600px',
         },
