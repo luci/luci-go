@@ -77,7 +77,12 @@ func (c *prodClient) GetIAMPolicy(ctx context.Context) (*iam.Policy, error) {
 		return nil, status.Error(codes.Internal, "aborting - no PubSub client")
 	}
 
-	p, err := c.baseClient.Topic(AuthDBChangeTopicName).IAM().Policy(ctx)
+	topic, err := c.ensureTopic(ctx, AuthDBChangeTopicName)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := topic.IAM().Policy(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +95,12 @@ func (c *prodClient) SetIAMPolicy(ctx context.Context, policy *iam.Policy) error
 		return status.Error(codes.Internal, "aborting - no PubSub client")
 	}
 
-	err := c.baseClient.Topic(AuthDBChangeTopicName).IAM().SetPolicy(ctx, policy)
+	topic, err := c.ensureTopic(ctx, AuthDBChangeTopicName)
 	if err != nil {
+		return err
+	}
+
+	if err := topic.IAM().SetPolicy(ctx, policy); err != nil {
 		return err
 	}
 
@@ -103,22 +112,13 @@ func (c *prodClient) Publish(ctx context.Context, msg *pubsub.Message) (retErr e
 		return status.Error(codes.Internal, "aborting - no PubSub client")
 	}
 
-	topic := c.baseClient.Topic(AuthDBChangeTopicName)
-	ok, err := topic.Exists(ctx)
+	topic, err := c.ensureTopic(ctx, AuthDBChangeTopicName)
 	if err != nil {
-		return errors.Annotate(err, "error checking topic existence").Err()
-	}
-	if !ok {
-		// The topic doesn't exist; it must be created before we publish.
-		logging.Infof(ctx, "creating topic %s in project %s",
-			AuthDBChangeTopicName, c.projectID)
-		topic, err = c.baseClient.CreateTopic(ctx, AuthDBChangeTopicName)
-		if err != nil {
-			return errors.Annotate(err, "error creating topic %s in project %s",
-				AuthDBChangeTopicName, c.projectID).Err()
-		}
+		return err
 	}
 
+	// Clean up any goroutines that will be created from calling
+	// topic.Publish(...), using topic.Stop().
 	defer topic.Stop()
 	result := topic.Publish(ctx, msg)
 	if _, err := result.Get(ctx); err != nil {
@@ -134,4 +134,30 @@ func (c *prodClient) Publish(ctx context.Context, msg *pubsub.Message) (retErr e
 	}
 
 	return nil
+}
+
+// ensureTopic returns the PubSub topic with the given name, attempting
+// to create it if necessary.
+func (c *prodClient) ensureTopic(ctx context.Context, name string) (*pubsub.Topic, error) {
+	if c.baseClient == nil {
+		return nil, status.Error(codes.Internal, "aborting - no PubSub client")
+	}
+
+	topic := c.baseClient.Topic(name)
+	ok, err := topic.Exists(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "error checking topic existence").Err()
+	}
+	if !ok {
+		// The topic doesn't exist; it must be created.
+		logging.Infof(ctx, "creating topic %s in project %s",
+			name, c.projectID)
+		topic, err = c.baseClient.CreateTopic(ctx, name)
+		if err != nil {
+			return nil, errors.Annotate(err, "error creating topic %s in project %s",
+				name, c.projectID).Err()
+		}
+	}
+
+	return topic, nil
 }
