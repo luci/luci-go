@@ -15,31 +15,70 @@
 package should
 
 import (
+	"math"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/typed"
 )
 
-// TestEqual checks whether two things are equal.
-func TestEqual(t *testing.T) {
+// TestEqualInt checks whether two ints are equal.
+func TestEqualInt(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
 		name string
-		lhs  interface{}
-		rhs  interface{}
+		lhs  int
+		rhs  int
 		ok   bool
 	}{
 		{
-			name: "empty",
-			lhs:  nil,
-			rhs:  nil,
+			name: "not equal",
+			lhs:  9,
+			rhs:  8,
+			ok:   false,
+		},
+		{
+			name: "equal",
+			lhs:  7,
+			rhs:  7,
+			ok:   true,
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := Equal(tt.lhs)(tt.rhs) == nil
+			want := tt.ok
+			if diff := typed.Got(got).Want(want).Diff(); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
+}
+
+// TestEqualFloat checks whether two ints are equal.
+func TestEqualFloat(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		lhs  float64
+		rhs  float64
+		ok   bool
+	}{
+		{
+			name: "NaNs are equal",
+			lhs:  math.NaN(),
+			rhs:  math.NaN(),
 			ok:   true,
 		},
 		{
-			name: "nil vs non-nil",
-			lhs:  nil,
-			rhs:  7,
+			name: "NaN isn't equal to any non-NaN value",
+			lhs:  math.NaN(),
+			rhs:  7.0,
 			ok:   false,
 		},
 	}

@@ -21,18 +21,17 @@ import (
 )
 
 // Equal checks whether two objects are equal.
-func Equal[T any](expected T) results.Comparison[any] {
+func Equal[T comparable](expected T) results.Comparison[T] {
 	cmpName := "should.Equal"
 	rtype := reflect.TypeOf(expected)
 
-	return func(actual any) (ret *results.Result) {
-		if reflect.TypeOf(actual) != rtype {
-			return results.NewResultBuilder().
-				SetName(cmpName, rtype).
-				Because("Type of actual does not match (is `%T`)", actual).
-				Result()
-		}
-		if reflect.DeepEqual(actual, expected) {
+	return func(actual T) (ret *results.Result) {
+		// The weird-looking second condition is for floats.
+		// NaN doesn't compare equal to itself.
+		//
+		// I don't know whether it's better to paper over this footgun in the way that
+		// I have or go with the simpler code `actual == expected`.
+		if actual == expected || (actual != actual && expected != expected) {
 			return nil
 		}
 
