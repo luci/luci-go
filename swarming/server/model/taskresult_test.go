@@ -53,7 +53,7 @@ func TestResultDBInfo(t *testing.T) {
 	})
 }
 
-func TestTaskResult(t *testing.T) {
+func TestTaskResultSummary(t *testing.T) {
 	t.Parallel()
 	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
@@ -99,6 +99,22 @@ func TestTaskResult(t *testing.T) {
 					Hostname:   "results.api.example.dev",
 					Invocation: "inv123",
 				},
+				MissingCIPD: []CIPDPackage{
+					{
+						PackageName: "package",
+						Version:     "version",
+						Path:        "path",
+					},
+				},
+				MissingCAS: []CASReference{
+					{
+						CASInstance: "cas-instance2",
+						Digest: CASDigest{
+							Hash:      "hash",
+							SizeBytes: int64(100),
+						},
+					},
+				},
 			},
 			Key:                  TaskResultSummaryKey(ctx, reqKey),
 			BotID:                datastore.NewUnindexedOptional("bot123"),
@@ -119,97 +135,21 @@ func TestTaskResult(t *testing.T) {
 			ExpirationDelay:      datastore.NewUnindexedOptional(0.0),
 		}
 
-		// Can round-trip.
-		So(datastore.Put(ctx, &fullyPopulated), ShouldBeNil)
-		loaded := TaskResultSummary{Key: TaskResultSummaryKey(ctx, reqKey)}
-		So(datastore.Get(ctx, &loaded), ShouldBeNil)
-		So(loaded, ShouldResemble, fullyPopulated)
-	})
+		Convey("Can round trip", func() {
+			So(datastore.Put(ctx, &fullyPopulated), ShouldBeNil)
+			loaded := TaskResultSummary{Key: fullyPopulated.Key}
+			So(datastore.Get(ctx, &loaded), ShouldBeNil)
+			So(loaded, ShouldResemble, fullyPopulated)
+		})
 
-	Convey("ToProto", t, func() {
-		ctx := memory.Use(context.Background())
-
-		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
-
-		Convey("ok", func() {
-			trs := TaskResultSummary{
-				TaskResultCommon: TaskResultCommon{
-					State:               apipb.TaskState_COMPLETED,
-					Modified:            testTime,
-					BotVersion:          "bot_version_123",
-					BotDimensions:       BotDimensions{"os": []string{"linux"}, "cpu": []string{"x86_64"}},
-					BotIdleSince:        datastore.NewUnindexedOptional(testTime.Add(-30 * time.Minute)),
-					BotLogsCloudProject: "example-cloud-project",
-					ServerVersions:      []string{"v1.0"},
-					CurrentTaskSlice:    1,
-					Started:             datastore.NewIndexedNullable(testTime.Add(-1 * time.Hour)),
-					Completed:           datastore.NewIndexedNullable(testTime),
-					DurationSecs:        datastore.NewUnindexedOptional(3600.0),
-					ExitCode:            datastore.NewUnindexedOptional(int64(0)),
-					Failure:             false,
-					InternalFailure:     false,
-					StdoutChunks:        10,
-					CASOutputRoot: CASReference{
-						CASInstance: "cas-instance",
-						Digest: CASDigest{
-							Hash:      "cas-hash",
-							SizeBytes: 1024,
-						},
-					},
-					CIPDPins: CIPDInput{
-						Server: "https://example.cipd.server",
-						ClientPackage: CIPDPackage{
-							PackageName: "client_pkg",
-							Version:     "1.0.0",
-							Path:        "client",
-						},
-					},
-					ResultDBInfo: ResultDBInfo{
-						Hostname:   "results.api.example.dev",
-						Invocation: "inv123",
-					},
-					MissingCIPD: []CIPDPackage{
-						{
-							PackageName: "package",
-							Version:     "version",
-							Path:        "path",
-						},
-					},
-					MissingCAS: []CASReference{
-						{
-							CASInstance: "cas-instance2",
-							Digest: CASDigest{
-								Hash:      "hash",
-								SizeBytes: int64(100),
-							},
-						},
-					},
-				},
-				Key:                  TaskResultSummaryKey(ctx, reqKey),
-				BotID:                datastore.NewUnindexedOptional("bot123"),
-				Created:              testTime.Add(-2 * time.Hour),
-				Tags:                 []string{"tag1", "tag2"},
-				RequestName:          "example-request",
-				RequestUser:          "user@example.com",
-				RequestPriority:      50,
-				RequestAuthenticated: "authenticated-user@example.com",
-				RequestRealm:         "example-realm",
-				RequestPool:          "example-pool",
-				RequestBotID:         "bot123",
-				PropertiesHash:       datastore.NewIndexedOptional([]byte("prop-hash")),
-				TryNumber:            datastore.NewIndexedNullable(int64(1)),
-				CostUSD:              0.05,
-				CostSavedUSD:         0.00,
-				DedupedFrom:          "",
-				ExpirationDelay:      datastore.NewUnindexedOptional(0.0),
-			}
-			So(trs.ToProto(), ShouldResembleProto, &apipb.TaskResultResponse{
+		Convey("ToProto", func() {
+			So(fullyPopulated.ToProto(), ShouldResembleProto, &apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
 					{Key: "os", Value: []string{"linux"}},
 				},
 				BotId:               "bot123",
+				BotIdleSinceTs:      timestamppb.New(testTime.Add(-30 * time.Minute)),
 				BotLogsCloudProject: "example-cloud-project",
 				BotVersion:          "bot_version_123",
 				CasOutputRoot: &apipb.CASReference{
@@ -262,20 +202,21 @@ func TestTaskResult(t *testing.T) {
 				User:           "user@example.com",
 			})
 		})
-		Convey("mostly empty", func() {
+
+		Convey("ToProto: mostly empty", func() {
 			trs := TaskResultSummary{
 				TaskResultCommon: TaskResultCommon{
 					Modified: testTime,
 				},
 				Created: testTime.Add(-2 * time.Hour),
-				Key:     TaskResultSummaryKey(ctx, reqKey)}
+				Key:     TaskResultSummaryKey(ctx, reqKey),
+			}
 			So(trs.ToProto(), ShouldResembleProto, &apipb.TaskResultResponse{
 				CreatedTs:  timestamppb.New(testTime.Add(-2 * time.Hour)),
 				ModifiedTs: timestamppb.New(testTime),
 				TaskId:     "65aba3a3e6b99310",
 			})
 		})
-
 	})
 
 	Convey("CostsUSD", t, func() {
@@ -463,6 +404,146 @@ func TestTaskResult(t *testing.T) {
 			out, err := trs.GetOutput(ctx, 0, 0)
 			So(err, ShouldBeNil)
 			So(out, ShouldEqual, expectedOutput)
+		})
+	})
+}
+
+func TestTaskRunResult(t *testing.T) {
+	t.Parallel()
+	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
+
+	Convey("With Datastore", t, func() {
+		ctx := memory.Use(context.Background())
+
+		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
+		So(err, ShouldBeNil)
+
+		fullyPopulated := TaskRunResult{
+			TaskResultCommon: TaskResultCommon{
+				State:               apipb.TaskState_COMPLETED,
+				Modified:            testTime,
+				BotVersion:          "bot_version_123",
+				BotDimensions:       BotDimensions{"os": []string{"linux"}, "cpu": []string{"x86_64"}},
+				BotIdleSince:        datastore.NewUnindexedOptional(testTime.Add(-30 * time.Minute)),
+				BotLogsCloudProject: "example-cloud-project",
+				ServerVersions:      []string{"v1.0"},
+				CurrentTaskSlice:    1,
+				Started:             datastore.NewIndexedNullable(testTime.Add(-1 * time.Hour)),
+				Completed:           datastore.NewIndexedNullable(testTime),
+				DurationSecs:        datastore.NewUnindexedOptional(3600.0),
+				ExitCode:            datastore.NewUnindexedOptional(int64(0)),
+				Failure:             false,
+				InternalFailure:     false,
+				StdoutChunks:        10,
+				CASOutputRoot: CASReference{
+					CASInstance: "cas-instance",
+					Digest: CASDigest{
+						Hash:      "cas-hash",
+						SizeBytes: 1024,
+					},
+				},
+				CIPDPins: CIPDInput{
+					Server: "https://example.cipd.server",
+					ClientPackage: CIPDPackage{
+						PackageName: "client_pkg",
+						Version:     "1.0.0",
+						Path:        "client",
+					},
+				},
+				ResultDBInfo: ResultDBInfo{
+					Hostname:   "results.api.example.dev",
+					Invocation: "inv123",
+				},
+				MissingCIPD: []CIPDPackage{
+					{
+						PackageName: "package",
+						Version:     "version",
+						Path:        "path",
+					},
+				},
+				MissingCAS: []CASReference{
+					{
+						CASInstance: "cas-instance2",
+						Digest: CASDigest{
+							Hash:      "hash",
+							SizeBytes: int64(100),
+						},
+					},
+				},
+			},
+			Key:       TaskRunResultKey(ctx, reqKey),
+			BotID:     "some-bot-id",
+			CostUSD:   123.456,
+			Killing:   true,
+			DeadAfter: datastore.NewUnindexedOptional(testTime.Add(time.Hour)),
+		}
+
+		Convey("Can round-trip", func() {
+			So(datastore.Put(ctx, &fullyPopulated), ShouldBeNil)
+			loaded := TaskRunResult{Key: fullyPopulated.Key}
+			So(datastore.Get(ctx, &loaded), ShouldBeNil)
+			So(loaded, ShouldResemble, fullyPopulated)
+		})
+
+		Convey("ToProto", func() {
+			So(fullyPopulated.ToProto(), ShouldResembleProto, &apipb.TaskResultResponse{
+				BotDimensions: []*apipb.StringListPair{
+					{Key: "cpu", Value: []string{"x86_64"}},
+					{Key: "os", Value: []string{"linux"}},
+				},
+				BotId:               "some-bot-id",
+				BotIdleSinceTs:      timestamppb.New(testTime.Add(-30 * time.Minute)),
+				BotLogsCloudProject: "example-cloud-project",
+				BotVersion:          "bot_version_123",
+				CasOutputRoot: &apipb.CASReference{
+					CasInstance: "cas-instance",
+					Digest: &apipb.Digest{
+						Hash:      "cas-hash",
+						SizeBytes: 1024,
+					},
+				},
+				CipdPins: &apipb.CipdPins{
+					ClientPackage: &apipb.CipdPackage{
+						PackageName: "client_pkg",
+						Version:     "1.0.0",
+						Path:        "client",
+					},
+				},
+				CompletedTs:      timestamppb.New(testTime),
+				CostsUsd:         []float32{123.456},
+				CreatedTs:        nil, // TODO
+				CurrentTaskSlice: int32(1),
+				Duration:         float32(3600),
+				MissingCas: []*apipb.CASReference{
+					{
+						CasInstance: "cas-instance2",
+						Digest: &apipb.Digest{
+							Hash:      "hash",
+							SizeBytes: int64(100),
+						},
+					},
+				},
+				MissingCipd: []*apipb.CipdPackage{
+					{
+						PackageName: "package",
+						Version:     "version",
+						Path:        "path",
+					},
+				},
+				ModifiedTs: timestamppb.New(testTime),
+				Name:       "", // TODO
+				ResultdbInfo: &apipb.ResultDBInfo{
+					Hostname:   "results.api.example.dev",
+					Invocation: "inv123",
+				},
+				RunId:          "65aba3a3e6b99311",
+				ServerVersions: []string{"v1.0"},
+				StartedTs:      timestamppb.New(testTime.Add(-1 * time.Hour)),
+				State:          apipb.TaskState_COMPLETED,
+				Tags:           nil, // TODO
+				TaskId:         "65aba3a3e6b99310",
+				User:           "", // TODO
+			})
 		})
 	})
 }

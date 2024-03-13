@@ -218,6 +218,7 @@ func TestGetResult(t *testing.T) {
 				BotId:               "bot123",
 				BotLogsCloudProject: "example-cloud-project",
 				BotVersion:          "bot_version_123",
+				BotIdleSinceTs:      timestamppb.New(testTime.Add(-30 * time.Minute)),
 				CasOutputRoot: &apipb.CASReference{
 					CasInstance: "cas-instance",
 					Digest: &apipb.Digest{
@@ -272,6 +273,7 @@ func TestGetResult(t *testing.T) {
 				BotId:               "bot123",
 				BotLogsCloudProject: "example-cloud-project",
 				BotVersion:          "bot_version_123",
+				BotIdleSinceTs:      timestamppb.New(testTime.Add(-30 * time.Minute)),
 				CasOutputRoot: &apipb.CASReference{
 					CasInstance: "cas-instance",
 					Digest: &apipb.Digest{
@@ -340,6 +342,7 @@ func TestGetResult(t *testing.T) {
 				BotId:               "bot123",
 				BotLogsCloudProject: "example-cloud-project",
 				BotVersion:          "bot_version_123",
+				BotIdleSinceTs:      timestamppb.New(testTime.Add(-30 * time.Minute)),
 				CasOutputRoot: &apipb.CASReference{
 					CasInstance: "cas-instance",
 					Digest: &apipb.Digest{

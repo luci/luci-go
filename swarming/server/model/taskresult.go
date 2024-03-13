@@ -148,6 +148,82 @@ type TaskResultCommon struct {
 	LegacyOutputsRef LegacyProperty `gae:"outputs_ref"`
 }
 
+// toProto populates as much of apipb.TaskResultResponse as it can.
+//
+// It is used as part of TaskRunResult.ToProto and TaskResultSummary.ToProto.
+//
+// Fields that still need to be populated by the caller:
+//   - BotId
+//   - CostSavedUsd
+//   - CostsUsd
+//   - CreatedTs
+//   - DedupedFrom
+//   - Name
+//   - PerformanceStats
+//   - RunId
+//   - Tags
+//   - TaskId
+//   - User
+func (p *TaskResultCommon) toProto() *apipb.TaskResultResponse {
+	type timestamp interface {
+		IsSet() bool
+		Get() time.Time
+	}
+	timeToTimestampPB := func(t timestamp) *timestamppb.Timestamp {
+		if !t.IsSet() {
+			return nil
+		}
+		return timestamppb.New(t.Get())
+	}
+
+	var cipdPins *apipb.CipdPins
+	if pinsPb := p.CIPDPins.ToProto(); pinsPb != nil {
+		cipdPins = &apipb.CipdPins{
+			ClientPackage: pinsPb.GetClientPackage(),
+			Packages:      pinsPb.GetPackages(),
+		}
+	}
+
+	var missingCAS []*apipb.CASReference
+	if len(p.MissingCAS) != 0 {
+		missingCAS = make([]*apipb.CASReference, 0, len(p.MissingCAS))
+		for _, cas := range p.MissingCAS {
+			missingCAS = append(missingCAS, cas.ToProto())
+		}
+	}
+
+	var missingCIPD []*apipb.CipdPackage
+	if len(p.MissingCIPD) != 0 {
+		missingCIPD = make([]*apipb.CipdPackage, 0, len(p.MissingCIPD))
+		for _, pkg := range p.MissingCIPD {
+			missingCIPD = append(missingCIPD, pkg.ToProto())
+		}
+	}
+
+	return &apipb.TaskResultResponse{
+		AbandonedTs:         timeToTimestampPB(p.Abandoned),
+		BotDimensions:       p.BotDimensions.ToProto(),
+		BotIdleSinceTs:      timeToTimestampPB(p.BotIdleSince),
+		BotLogsCloudProject: p.BotLogsCloudProject,
+		BotVersion:          p.BotVersion,
+		CasOutputRoot:       p.CASOutputRoot.ToProto(),
+		CipdPins:            cipdPins,
+		CompletedTs:         timeToTimestampPB(p.Completed),
+		CurrentTaskSlice:    int32(p.CurrentTaskSlice),
+		Duration:            float32(p.DurationSecs.Get()),
+		ExitCode:            p.ExitCode.Get(),
+		Failure:             p.Failure,
+		InternalFailure:     p.InternalFailure,
+		MissingCas:          missingCAS,
+		MissingCipd:         missingCIPD,
+		ModifiedTs:          timestamppb.New(p.Modified),
+		ResultdbInfo:        p.ResultDBInfo.ToProto(),
+		ServerVersions:      p.ServerVersions,
+		StartedTs:           timeToTimestampPB(p.Started),
+		State:               p.State,
+	}
+}
+
 // ResultDBInfo contains invocation ID of the task.
 type ResultDBInfo struct {
 	// Hostname is the ResultDB service hostname e.g. "results.api.cr.dev".
@@ -192,6 +268,9 @@ type TaskResultSummary struct {
 	// Created is a timestamp when the task was submitted.
 	//
 	// The index is used in task listing queries to order by this property.
+	//
+	// TODO(vadimsh): Is the index actually used? Entity keys encode the same
+	// information.
 	Created time.Time `gae:"created_ts"`
 
 	// Tags are copied from the corresponding TaskRequest entity.
@@ -280,70 +359,22 @@ type TaskResultSummary struct {
 // ToProto converts the TaskResultSummary struct to an apipb.TaskResultResponse.
 //
 // Note: This function will not handle PerformanceStats due to the requirement
-// of fetching another datsatore entity. Please refer to PerformanceStats to
+// of fetching another datastore entity. Please refer to PerformanceStats to
 // fetch them.
 func (p *TaskResultSummary) ToProto() *apipb.TaskResultResponse {
-	timeToTimestampPB := func(t datastore.Nullable[time.Time, datastore.Indexed]) *timestamppb.Timestamp {
-		if !t.IsSet() {
-			return nil
-		}
-		return timestamppb.New(t.Get())
-	}
-
-	var cipdPins *apipb.CipdPins
-	if pinsPb := p.CIPDPins.ToProto(); pinsPb != nil {
-		cipdPins = &apipb.CipdPins{
-			ClientPackage: pinsPb.GetClientPackage(),
-			Packages:      pinsPb.GetPackages(),
-		}
-	}
-
-	var missingCAS []*apipb.CASReference
-	if len(p.MissingCAS) != 0 {
-		missingCAS = make([]*apipb.CASReference, 0, len(p.MissingCAS))
-		for _, cas := range p.MissingCAS {
-			missingCAS = append(missingCAS, cas.ToProto())
-		}
-	}
-
-	var missingCIPD []*apipb.CipdPackage
-	if len(p.MissingCIPD) != 0 {
-		missingCIPD = make([]*apipb.CipdPackage, 0, len(p.MissingCIPD))
-		for _, pkg := range p.MissingCIPD {
-			missingCIPD = append(missingCIPD, pkg.ToProto())
-		}
-	}
-
-	return &apipb.TaskResultResponse{
-		TaskId:              RequestKeyToTaskID(p.TaskRequestKey(), AsRequest),
-		BotDimensions:       p.BotDimensions.ToProto(),
-		BotId:               p.BotID.Get(),
-		BotVersion:          p.BotVersion,
-		BotLogsCloudProject: p.BotLogsCloudProject,
-		CompletedTs:         timeToTimestampPB(p.Completed),
-		CostSavedUsd:        float32(p.CostSavedUSD),
-		CreatedTs:           timestamppb.New(p.Created),
-		DedupedFrom:         p.DedupedFrom,
-		Duration:            float32(p.DurationSecs.Get()),
-		ExitCode:            p.ExitCode.Get(),
-		Failure:             p.Failure,
-		ModifiedTs:          timestamppb.New(p.Modified),
-		CasOutputRoot:       p.CASOutputRoot.ToProto(),
-		ServerVersions:      p.ServerVersions,
-		StartedTs:           timeToTimestampPB(p.Started),
-		State:               p.State,
-		AbandonedTs:         timeToTimestampPB(p.Abandoned),
-		Name:                p.RequestName,
-		Tags:                p.Tags,
-		User:                p.RequestUser,
-		CipdPins:            cipdPins,
-		CurrentTaskSlice:    int32(p.CurrentTaskSlice),
-		ResultdbInfo:        p.ResultDBInfo.ToProto(),
-		MissingCas:          missingCAS,
-		MissingCipd:         missingCIPD,
-		CostsUsd:            p.CostsUSD(),
-		RunId:               p.TaskRunID(),
-	}
+	pb := p.TaskResultCommon.toProto()
+	pb.BotId = p.BotID.Get()
+	pb.CostSavedUsd = float32(p.CostSavedUSD)
+	pb.CostsUsd = p.CostsUSD()
+	pb.CreatedTs = timestamppb.New(p.Created)
+	pb.DedupedFrom = p.DedupedFrom
+	pb.Name = p.RequestName
+	pb.PerformanceStats = nil // will have to be filled in later
+	pb.RunId = p.TaskRunID()
+	pb.Tags = p.Tags
+	pb.TaskId = RequestKeyToTaskID(p.TaskRequestKey(), AsRequest)
+	pb.User = p.RequestUser
+	return pb
 }
 
 // CostsUSD converts the costUSD in TaskResultSummary to a []float32 containing
@@ -511,6 +542,36 @@ type TaskRunResult struct {
 // TaskRunResultKey constructs a task run result key given a task request key.
 func TaskRunResultKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
 	return datastore.NewKey(ctx, "TaskRunResult", "", 1, TaskResultSummaryKey(ctx, taskReq))
+}
+
+// TaskRequestKey returns the parent task request key or panics if it is unset.
+func (p *TaskRunResult) TaskRequestKey() *datastore.Key {
+	key := p.Key.Parent().Parent()
+	if key == nil || key.Kind() != "TaskRequest" {
+		panic(fmt.Sprintf("invalid TaskRunResult key %q", p.Key))
+	}
+	return key
+}
+
+// ToProto converts the TaskRunResult struct to an apipb.TaskResultResponse.
+//
+// Note: This function will not handle PerformanceStats due to the requirement
+// of fetching another datastore entity. Please refer to PerformanceStats to
+// fetch them.
+func (p *TaskRunResult) ToProto() *apipb.TaskResultResponse {
+	pb := p.TaskResultCommon.toProto()
+	pb.BotId = p.BotID
+	pb.CostSavedUsd = 0 // the task is running, it doesn't save any cost
+	pb.CostsUsd = []float32{float32(p.CostUSD)}
+	pb.CreatedTs = nil        // TODO
+	pb.DedupedFrom = ""       // the task is running, not deduped
+	pb.Name = ""              // TODO
+	pb.PerformanceStats = nil // will need to be filled in later
+	pb.RunId = RequestKeyToTaskID(p.TaskRequestKey(), AsRunResult)
+	pb.Tags = nil // TODO
+	pb.TaskId = RequestKeyToTaskID(p.TaskRequestKey(), AsRequest)
+	pb.User = "" // TODO
+	return pb
 }
 
 // PerformanceStats contains various timing and performance information about
