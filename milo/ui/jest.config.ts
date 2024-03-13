@@ -43,6 +43,13 @@ const config: Config = {
     '^@/(.*)': '<rootDir>/src/$1',
     '^@root/(.*)': '<rootDir>/$1',
   },
+  // Adding the `<rootDir>/node_modules` entry enforced package
+  // which are added using npm-link to resolve their dependencies
+  // from the parent/importer's node_modules directory
+  // before trying their own.
+  // This prevents issues of importing a module multiple times and having
+  // multiple versions of the same library such as React.
+  moduleDirectories: ['<rootDir>/node_modules', 'node_modules'],
 };
 
 export default config;
