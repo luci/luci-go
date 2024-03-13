@@ -64,10 +64,12 @@ func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Con
 	}
 	if err := datastore.RunInTransaction(c, func(c context.Context) error {
 		var priorAmount int32
+		var priorDUTs map[string]*emptypb.Empty
 		switch err := datastore.Get(c, cfg); {
 		case err == nil:
 			// Don't forget potentially custom amount set via Update RPC.
 			priorAmount = cfg.Config.CurrentAmount
+			priorDUTs = cfg.Config.GetDuts()
 		case err == datastore.ErrNoSuchEntity:
 			priorAmount = 0
 		default:
@@ -75,6 +77,7 @@ func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Con
 		}
 		cfg.Config = req.Config
 		cfg.Config.CurrentAmount = priorAmount
+		cfg.Config.Duts = priorDUTs
 		if err := datastore.Put(c, cfg); err != nil {
 			return errors.Annotate(err, "failed to store config").Err()
 		}

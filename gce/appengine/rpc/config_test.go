@@ -210,6 +210,79 @@ func TestConfig(t *testing.T) {
 						Prefix: "prefix",
 					})
 				})
+
+				Convey("update doesn't erase DUTs", func() {
+					So(datastore.Put(c, &model.Config{
+						ID: "id",
+						Config: &config.Config{
+							Duts: map[string]*emptypb.Empty{
+								"dut-1": {},
+								"dut-2": {},
+							},
+							Owner: []string{
+								"owners",
+							},
+							Prefix: "prefix",
+						},
+					}), ShouldBeNil)
+
+					cfg, err := srv.Ensure(c, &config.EnsureRequest{
+						Id: "id",
+						Config: &config.Config{
+							Amount: &config.Amount{
+								Max: 100,
+								Min: 50,
+							},
+							Attributes: &config.VM{
+								Disk: []*config.Disk{
+									{},
+								},
+								MachineType: "type",
+								NetworkInterface: []*config.NetworkInterface{
+									{},
+								},
+								Project: "project",
+								Zone:    "zone",
+							},
+							Lifetime: &config.TimePeriod{
+								Time: &config.TimePeriod_Seconds{
+									Seconds: 3600,
+								},
+							},
+							Prefix: "prefix",
+						},
+					})
+					So(err, ShouldBeNil)
+					So(cfg, ShouldResembleProto, &config.Config{
+						Amount: &config.Amount{
+							Max: 100,
+							Min: 50,
+						},
+						CurrentAmount: 0,
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{},
+							},
+							MachineType: "type",
+							Project:     "project",
+							NetworkInterface: []*config.NetworkInterface{
+								{},
+							},
+							Zone: "zone",
+						},
+						Lifetime: &config.TimePeriod{
+							Time: &config.TimePeriod_Seconds{
+								Seconds: 3600,
+							},
+						},
+						Prefix: "prefix",
+						// Same as before.
+						Duts: map[string]*emptypb.Empty{
+							"dut-1": {},
+							"dut-2": {},
+						},
+					})
+				})
 			})
 		})
 
