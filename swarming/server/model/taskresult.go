@@ -772,6 +772,11 @@ func TaskResultSummaryQuery() *datastore.Query {
 	return datastore.NewQuery("TaskResultSummary")
 }
 
+// TaskRunResultQuery prepares a query that fetches TaskRunResult entities.
+func TaskRunResultQuery() *datastore.Query {
+	return datastore.NewQuery("TaskRunResult")
+}
+
 // FilterTasksByTags limits a TaskResultSummary query to return tasks matching
 // given tags filter.
 //
@@ -790,6 +795,27 @@ func FilterTasksByTags(q *datastore.Query, mode SplitMode, tags Filter) []*datas
 //
 // Zero time means no limit on the corresponding side of the range.
 func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, end time.Time) (*datastore.Query, error) {
+	if start.IsZero() && end.IsZero() {
+		return q, nil
+	}
+
+	// Need to use correct key constructors to limit the key range **precisely**
+	// to what is being asked. This is important for handling tasks that sit on
+	// the edge of the filtered range.
+	var keyCB func(context.Context, *datastore.Key) *datastore.Key
+	f, err := q.Finalize()
+	if err != nil {
+		panic(fmt.Sprintf("weird query: %v", q))
+	}
+	switch f.Kind() {
+	case "TaskResultSummary":
+		keyCB = TaskResultSummaryKey
+	case "TaskRunResult":
+		keyCB = TaskRunResultKey
+	default:
+		panic(fmt.Sprintf("FilterTasksByCreationTime is used with a query over kind %q", f.Kind()))
+	}
+
 	// Keys are ordered by timestamp. Transform the provided timestamps into keys
 	// to filter entities by key. The inequalities are inverted because keys are
 	// in reverse chronological order.
@@ -798,16 +824,34 @@ func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, e
 		if err != nil {
 			return nil, errors.Annotate(err, "invalid start time").Err()
 		}
-		q = q.Lte("__key__", TaskResultSummaryKey(ctx, startReqKey))
+		q = q.Lte("__key__", keyCB(ctx, startReqKey))
 	}
 	if !end.IsZero() {
 		endReqKey, err := TimestampToRequestKey(ctx, end, 0)
 		if err != nil {
 			return nil, errors.Annotate(err, "invalid end time").Err()
 		}
-		q = q.Gt("__key__", TaskResultSummaryKey(ctx, endReqKey))
+		q = q.Gt("__key__", keyCB(ctx, endReqKey))
 	}
 	return q, nil
+}
+
+// FilterTasksByTimestampField orders the query by a timestamp stored in the
+// given field, filtering based on it as well.
+//
+// Tasks will be returned in the descending order (i.e. the most recent first).
+//
+// The filter range is [start, end). Zero time means no limit on the
+// corresponding side of the range.
+func FilterTasksByTimestampField(q *datastore.Query, field string, start, end time.Time) *datastore.Query {
+	q = q.Order("-" + field)
+	if !start.IsZero() {
+		q = q.Gte(field, start)
+	}
+	if !end.IsZero() {
+		q = q.Lt(field, end)
+	}
+	return q
 }
 
 // FilterTasksByState limits a TaskResultSummary query to return tasks in
