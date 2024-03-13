@@ -17,19 +17,43 @@ package pubsub
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
-// PublishAuthDBRevision publishes a message, notifying subscribers
-// there's another revision of the AuthDB available.
-func PublishAuthDBRevision(ctx context.Context, rev *protocol.AuthDBRevision, dryRun bool) (retErr error) {
+// PublishAuthDBRevision notifies subscribers there's another revision
+// of the AuthDB available.
+//
+// Publishing is skipped if:
+// - the AuthDBRevision is invalid; or
+// - the app server is a local development server; or
+// - dryRun is true.
+func PublishAuthDBRevision(ctx context.Context, rev *protocol.AuthDBRevision, dryRun bool) error {
+	if rev == nil {
+		return fmt.Errorf("invalid AuthDBRevision - aborting")
+	}
+
+	// Skip publishing if this is a local development server.
+	if info.IsDevAppServer(ctx) {
+		logging.Debugf(ctx, "on dev server - skipping PubSub publishing for AuthDB rev: %d",
+			rev.AuthDbRev)
+		return nil
+	}
+
+	return publish(ctx, rev, dryRun)
+}
+
+// publish constructs the pubsub.Message. If dryRun is false, the
+// message is then published.
+func publish(ctx context.Context, rev *protocol.AuthDBRevision, dryRun bool) (retErr error) {
 	pushReq := &protocol.ReplicationPushRequest{
 		Revision: rev,
 	}
@@ -55,9 +79,9 @@ func PublishAuthDBRevision(ctx context.Context, rev *protocol.AuthDBRevision, dr
 		},
 	}
 
-	logging.Debugf(ctx, "(dry run: %v) publishing PubSub message: %+v", dryRun, msg)
 	// Skip publishing if dryRun is enabled.
 	if dryRun {
+		logging.Debugf(ctx, "(dry run: %v) constructed PubSub message: %+v", dryRun, msg)
 		return nil
 	}
 

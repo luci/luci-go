@@ -29,14 +29,36 @@ import (
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPublishAuthDBRevision(t *testing.T) {
 	t.Parallel()
 
+	testAppID := "chrome-infra-auth-test"
 	Convey("PublishAuthDBRevision works", t, func() {
-		testAppID := "chrome-infra-auth-test"
-		ctx := memory.UseWithAppID(context.Background(), "dev~"+testAppID)
+
+		Convey("returns error for invalid revision", func() {
+			ctx := context.Background()
+			So(PublishAuthDBRevision(ctx, nil, false), ShouldErrLike, "invalid AuthDBRevision")
+		})
+
+		Convey("skips publishing for local dev server", func() {
+			ctx := memory.UseWithAppID(context.Background(), "dev~"+testAppID)
+
+			testModifiedTS := time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC)
+			testRev := &protocol.AuthDBRevision{
+				PrimaryId:  info.AppID(ctx),
+				AuthDbRev:  123,
+				ModifiedTs: testModifiedTS.UnixMicro(),
+			}
+			err := PublishAuthDBRevision(ctx, testRev, false)
+			So(err, ShouldBeNil)
+		})
+	})
+
+	Convey("publish works", t, func() {
+		ctx := memory.UseWithAppID(context.Background(), testAppID)
 		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 			cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
 				AppID:              testAppID,
@@ -62,7 +84,7 @@ func TestPublishAuthDBRevision(t *testing.T) {
 			AuthDbRev:  123,
 			ModifiedTs: testModifiedTS.UnixMicro(),
 		}
-		err := PublishAuthDBRevision(ctx, testRev, false)
+		err := publish(ctx, testRev, false)
 		So(err, ShouldBeNil)
 	})
 }
