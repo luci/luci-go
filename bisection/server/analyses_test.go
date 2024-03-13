@@ -21,11 +21,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/bisection/internal/lucianalysis"
-	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util/testutil"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -35,6 +30,11 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
+
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -18,6 +18,16 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/model"
@@ -27,16 +37,6 @@ import (
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
-
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // BotUpdatesServer implements the LUCI Bisection proto service for BotUpdates.

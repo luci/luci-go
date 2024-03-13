@@ -20,12 +20,17 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
-	_ "go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
@@ -34,14 +39,11 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
-	"go.chromium.org/luci/server/tq"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
+	_ "go.chromium.org/luci/bisection/culpritaction/revertculprit"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func TestUpdateAnalysisProgress(t *testing.T) {

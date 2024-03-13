@@ -21,15 +21,11 @@ import (
 	"sort"
 	"strconv"
 
-	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
-	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
-	"go.chromium.org/luci/bisection/internal/lucianalysis"
-	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/bisection/util/datastoreutil"
-	"go.chromium.org/luci/bisection/util/loggingutil"
-	"go.chromium.org/luci/bisection/util/protoutil"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -39,10 +35,16 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
+	"go.chromium.org/luci/bisection/util/protoutil"
 )
 
 var listAnalysesPageTokenVault = dscursor.NewVault([]byte("luci.bisection.v1.ListAnalyses"))

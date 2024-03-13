@@ -18,6 +18,15 @@ package updatetestrerun
 
 import (
 	"context"
+	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/model"
@@ -28,12 +37,11 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+)
+
+var (
+	// Returned the result for primary failure is not found.
+	ErrPrimaryFailureResultNotFound = fmt.Errorf("no result for primary failure")
 )
 
 // Update is for updating test failure analysis given the request from recipe.
@@ -96,6 +104,12 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 		e = testfailureanalysis.UpdateAnalysisStatusWhenError(ctx, tfa)
 		if e != nil {
 			logging.Errorf(ctx, "UpdateAnalysisStatusWhenRerunError %s", e.Error())
+		}
+		if errors.Is(err, ErrPrimaryFailureResultNotFound) {
+			// If the primary failure is not found, we consider it as InvalidArgument
+			// instead of Internal, because there is nothing wrong with the service.
+			// Returning internal error here will cause the PRPC to retry.
+			return status.Errorf(codes.InvalidArgument, errors.Annotate(err, "update rerun").Err().Error())
 		}
 		return status.Errorf(codes.Internal, errors.Annotate(err, "update rerun").Err().Error())
 	}
@@ -311,7 +325,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 	// We expect primary failure to have result.
 	primaryResult := findTestResult(ctx, recipeResults, primary.TestID, primary.VariantHash)
 	if primaryResult == nil {
-		return errors.New("no result for primary failure")
+		return ErrPrimaryFailureResultNotFound
 	}
 
 	// We are bisecting from expected -> unexpected, so we consider

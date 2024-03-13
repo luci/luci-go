@@ -21,29 +21,30 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/bisection/culpritverification"
-	"go.chromium.org/luci/bisection/internal/buildbucket"
-	"go.chromium.org/luci/bisection/internal/config"
-	"go.chromium.org/luci/bisection/model"
-	"go.chromium.org/luci/bisection/util/testutil"
-	"go.chromium.org/luci/server/tq"
-
-	configpb "go.chromium.org/luci/bisection/proto/config"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	tpb "go.chromium.org/luci/bisection/task/proto"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/bisection/culpritverification"
+	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	tpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUpdate(t *testing.T) {
@@ -245,7 +246,7 @@ func TestUpdate(t *testing.T) {
 
 			err := Update(ctx, req)
 			So(err, ShouldNotBeNil)
-			So(status.Convert(err).Code(), ShouldEqual, codes.Internal)
+			So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
 			So(err.Error(), ShouldContainSubstring, "no result for primary failure")
 			datastore.GetTestable(ctx).CatchupIndexes()
 			err = datastore.Get(ctx, rerun)
