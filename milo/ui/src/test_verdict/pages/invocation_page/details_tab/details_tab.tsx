@@ -92,12 +92,10 @@ export function DetailsTab() {
           <TimestampRow label="Deadline" dateISO={invocation.deadline} />
         </tbody>
       </table>
-      {invocation.sourceSpec && (
-        <>
-          <h3>Source Specification</h3>
-          <SourceSpecSection sourceSpec={invocation.sourceSpec} />
-        </>
-      )}
+      <>
+        <h3>Source Specification</h3>
+        <SourceSpecSection sourceSpec={invocation.sourceSpec} />
+      </>
       {invocation.properties !== undefined && (
         <>
           <h3>Properties</h3>

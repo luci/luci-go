@@ -20,13 +20,18 @@ import { SourceSpec } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invoc
 import { GitilesCommitRow } from './gitiles_commit_row';
 
 export interface SourceSpecSectionProps {
-  readonly sourceSpec: SourceSpec;
+  readonly sourceSpec: SourceSpec | undefined;
 }
 
 export function SourceSpecSection({ sourceSpec }: SourceSpecSectionProps) {
   return (
     <>
-      {sourceSpec.sources && (
+      {sourceSpec === undefined && (
+        <>
+          <p>Sources have not been specified for this invocation.</p>
+        </>
+      )}
+      {sourceSpec?.sources && (
         <>
           <table>
             <tbody>
@@ -56,7 +61,7 @@ export function SourceSpecSection({ sourceSpec }: SourceSpecSectionProps) {
           </table>
         </>
       )}
-      {sourceSpec.inherit && (
+      {sourceSpec?.inherit && (
         <p>
           This invocation inherits its sources from its including (parent)
           invocation.
