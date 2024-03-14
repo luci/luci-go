@@ -35,6 +35,7 @@ require (
 	github.com/alecthomas/participle/v2 v2.1.0
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a
 	github.com/alicebob/miniredis/v2 v2.31.1
+	github.com/apache/beam/sdks/v2 v2.54.0
 	github.com/armon/go-radix v1.0.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20240215191509-9ff14cecffe5
@@ -103,6 +104,16 @@ require (
 )
 
 require (
+	github.com/docker/distribution v2.8.2+incompatible // indirect
+	github.com/docker/docker v24.0.7+incompatible // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/go-units v0.5.0 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
+	gopkg.in/retry.v1 v1.0.3 // indirect
+)
+
+require (
 	cloud.google.com/go v0.112.0 // indirect
 	cloud.google.com/go/compute v1.24.0 // indirect
 	cloud.google.com/go/longrunning v0.5.5 // indirect
@@ -132,7 +143,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
-	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lyft/protoc-gen-star/v2 v2.0.3 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

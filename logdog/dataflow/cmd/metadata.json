@@ -1,0 +1,24 @@
+{
+  "name": "Backfill ExpireAt",
+  "description": "An Apache Beam batch pipeline that backfills the ExpireAt properties of logdog datastore entities",
+  "parameters": [
+      {
+          "name": "cloud-project",
+          "label": "The cloud project to perform this operation in.",
+          "helpText": "Either luci-logdog or luci-logdog-dev.",
+          "isOptional": false
+      },
+      {
+          "name": "entity-shards",
+          "label": "The number of shards per namespace per datastore entity type when outputting entities.",
+          "helpText": "Defaults to 1048576.",
+          "isOptional": true
+      },
+      {
+          "name": "commit",
+          "label": "Whether to commit the updates.",
+          "helpText": "Performs a dry run when this is not set.",
+          "isOptional": true
+      }
+  ]
+}
