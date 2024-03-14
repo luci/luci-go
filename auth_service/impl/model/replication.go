@@ -128,8 +128,21 @@ func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) er
 		return err
 	}
 
-	// TODO(aredulla): implement remaining client types, i.e.
-	// * "direct push" replication
+	// Get last known replica states.
+	staleReplicas, err := getAllStaleReplicas(ctx, replicationState.AuthDBRev)
+	if err != nil {
+		logging.Errorf(ctx, "error getting all stale AuthReplicaStates: %s", err)
+		return err
+	}
+
+	if len(staleReplicas) == 0 {
+		logging.Infof(ctx, "all replicas are up-to-date")
+		return nil
+	}
+
+	// TODO(b/304806939): implement AuthDB replication via "direct push"
+	// to the stale replicas.
+	logging.Debugf(ctx, "%d stale replicas need to be updated", len(staleReplicas))
 
 	return nil
 }
