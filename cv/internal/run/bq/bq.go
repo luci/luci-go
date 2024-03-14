@@ -147,8 +147,22 @@ func makeAttempt(ctx context.Context, r *run.Run, cls []*run.RunCL) (*cvbqpb.Att
 	submittedSet := common.MakeCLIDsSet(r.Submission.GetSubmittedCls()...)
 	failedSet := common.MakeCLIDsSet(r.Submission.GetFailedCls()...)
 	a.GerritChanges = make([]*cvbqpb.GerritChange, len(cls))
+	var rootCL *run.RunCL
+	if r.HasRootCL() {
+		for _, cl := range cls {
+			if cl.ID == r.RootCL {
+				rootCL = cl
+			}
+		}
+		if rootCL == nil {
+			return nil, errors.Reason("can not find root CL %d from run CLs", r.RootCL).Err()
+		}
+	}
 	for i, cl := range cls {
 		a.GerritChanges[i] = toGerritChange(cl, submittedSet, failedSet, r.Mode)
+		if r.HasRootCL() {
+			a.GerritChanges[i].TriggerTime = rootCL.Trigger.GetTime()
+		}
 	}
 	a.Status, a.Substatus = attemptStatus(ctx, r)
 	return a, nil
@@ -166,11 +180,14 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 		Change:                     ci.Number,
 		Patchset:                   int64(detail.Patchset),
 		EarliestEquivalentPatchset: int64(detail.MinEquivalentPatchset),
-		TriggerTime:                cl.Trigger.Time,
 		Mode:                       mode.BQAttemptMode(),
 		SubmitStatus:               cvbqpb.GerritChange_PENDING,
 		Owner:                      ci.GetOwner().GetEmail(),
 		IsOwnerBot:                 isCLOwnerBot(ci),
+	}
+
+	if triggerTime := cl.Trigger.GetTime(); triggerTime != nil {
+		gc.TriggerTime = triggerTime
 	}
 
 	if mode == run.FullRun {

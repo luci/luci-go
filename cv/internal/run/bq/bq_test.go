@@ -456,5 +456,64 @@ func TestMakeAttempt(t *testing.T) {
 				So(a.GerritChanges[0].IsOwnerBot, ShouldBeTrue)
 			})
 		})
+
+		Convey("Multi CL Run with root CL", func() {
+			anotherCL := &run.RunCL{
+				ID:         cl.ID + 1,
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
+				ExternalID: changelist.MustGobID(gHost, gChange+1),
+				Detail: &changelist.Snapshot{
+					LuciProject:           lProject,
+					Patchset:              gPatchset + 1,
+					MinEquivalentPatchset: gEquiPatchset + 1,
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: &gerritpb.ChangeInfo{
+								Number:  gChange + 1,
+								Project: gRepo,
+								Ref:     gRef,
+								Owner: &gerritpb.AccountInfo{
+									Name:  "Foo Bar",
+									Email: "foobar@example.com",
+								},
+							},
+						},
+					},
+				},
+				Trigger: nil, // empty trigger for readability
+			}
+			r.CLs = append(r.CLs, anotherCL.ID)
+			r.RootCL = cl.ID
+			r.Submission.Cls = append(r.Submission.Cls, int64(anotherCL.ID))
+			r.Submission.SubmittedCls = append(r.Submission.SubmittedCls, int64(anotherCL.ID))
+			So(datastore.Put(ctx, anotherCL, r), ShouldBeNil)
+			a, err := makeAttempt(ctx, r, []*run.RunCL{cl, anotherCL})
+			So(err, ShouldBeNil)
+			So(a.GetGerritChanges(), ShouldResembleProto, []*cvbqpb.GerritChange{
+				{
+					Host:                       gHost,
+					Project:                    gRepo,
+					Change:                     gChange,
+					Patchset:                   gPatchset,
+					EarliestEquivalentPatchset: gEquiPatchset,
+					TriggerTime:                timestamppb.New(epoch),
+					Mode:                       cvbqpb.Mode_FULL_RUN,
+					SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
+					Owner:                      "foobar@example.com",
+				},
+				{
+					Host:                       gHost,
+					Project:                    gRepo,
+					Change:                     gChange + 1,
+					Patchset:                   gPatchset + 1,
+					EarliestEquivalentPatchset: gEquiPatchset + 1,
+					TriggerTime:                timestamppb.New(epoch),
+					Mode:                       cvbqpb.Mode_FULL_RUN,
+					SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
+					Owner:                      "foobar@example.com",
+				},
+			})
+		})
 	})
 }
