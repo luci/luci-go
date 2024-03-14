@@ -84,6 +84,9 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 	poolError := parallel.WorkPool(min(len(op.rcls), 8), func(work chan<- func() error) {
 		for i, rcl := range op.rcls {
 			i, rcl := i, rcl
+			if op.Run.HasRootCL() && rcl.ID != op.Run.RootCL {
+				continue
+			}
 			work <- func() error {
 				switch posted, err := op.doCL(ctx, rcl); {
 				case err != nil:
@@ -235,6 +238,9 @@ func (op *PostStartMessageOp) hasStartMessagePosted(rcl *run.RunCL, ci *gerritpb
 }
 
 func (op *PostStartMessageOp) makeSetReviewReq(rcl *run.RunCL) (*gerritpb.SetReviewRequest, error) {
+	// TODO(yiwzhang): for root CL, include link to all RunCLs in the start
+	// message so that user would have a full view understanding what's included
+	// in the run and what's not.
 	humanMsg := usertext.OnRunStartedGerritMessage(op.Run, op.cfg, op.Env)
 	bd := botdata.BotData{
 		Action:      botdata.Start,

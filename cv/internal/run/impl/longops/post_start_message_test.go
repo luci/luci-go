@@ -68,10 +68,6 @@ func TestPostStartMessage(t *testing.T) {
 
 		ensureCL := func(ci *gerritpb.ChangeInfo) (*changelist.CL, *run.RunCL) {
 			triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
-			So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
-			if triggers.GetCqVoteTrigger() == nil {
-				panic(fmt.Errorf("CL %d must be triggered", ci.GetNumber()))
-			}
 
 			if ct.GFake.Has(gHost, int(ci.GetNumber())) {
 				ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
@@ -171,7 +167,32 @@ func TestPostStartMessage(t *testing.T) {
 			So(res.GetPostStartMessage().GetTime().AsTime(), ShouldHappenWithin, time.Second, ci.GetMessages()[0].GetDate().AsTime())
 		})
 
-		Convey("Happy path with multiple CLs", func() {
+		Convey("Happy path with multiple CLs for runs with root CL", func() {
+			r := makeRunWithCLs(
+				&run.Run{Mode: run.DryRun},
+				gf.CI(gChange1),
+				gf.CI(gChange2, gf.CQ(+1)),
+			)
+			r.RootCL = r.CLs[1]
+			So(datastore.Put(ctx, r), ShouldBeNil)
+			op := makeOp(r)
+
+			res, err := op.Do(ctx)
+			So(err, ShouldBeNil)
+			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+
+			ci1 := ct.GFake.GetChange(gHost, gChange1).Info
+			So(ci1.GetMessages(), ShouldBeEmpty)
+			ci2 := ct.GFake.GetChange(gHost, gChange2).Info
+			So(ci2.GetMessages(), ShouldHaveLength, 1)
+			So(ci2, gf.ShouldLastMessageContain, "Dry run: CV is trying the patch.\n\nFollow status at:")
+			bd, ok := botdata.Parse(ci2.GetMessages()[0])
+			So(ok, ShouldBeTrue)
+			So(bd.Action, ShouldEqual, botdata.Start)
+			So(res.GetPostStartMessage().GetTime().AsTime(), ShouldHappenWithin, time.Second, ci2.GetMessages()[0].GetDate().AsTime())
+		})
+
+		Convey("Happy path with multiple CLs for run without root CL", func() {
 			op := makeOp(makeRunWithCLs(
 				&run.Run{Mode: run.DryRun},
 				gf.CI(gChange1, gf.CQ(+1)),
