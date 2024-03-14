@@ -19,17 +19,19 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/model"
 	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
@@ -406,9 +408,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 				Id:       "end_commit_hash",
 				Position: 199,
 			},
-			SampleBbid:       8000,
-			StartFailureRate: 0,
-			EndFailureRate:   1.0,
+			SampleBbid: 8000,
 			TestFailures: []*pb.TestFailure{
 				{
 					TestId:      "testID1",
@@ -419,8 +419,10 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 							"key1": "val1",
 						},
 					},
-					IsPrimary: true,
-					StartHour: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					IsPrimary:                 true,
+					StartHour:                 timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					StartUnexpectedResultRate: 0,
+					EndUnexpectedResultRate:   1,
 				},
 				{
 					TestId:      "testID2",
@@ -431,8 +433,10 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 							"key2": "val2",
 						},
 					},
-					IsDiverged: true,
-					StartHour:  timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					IsDiverged:                true,
+					StartHour:                 timestamppb.New(time.Unix(int64(100), 0).UTC()),
+					StartUnexpectedResultRate: 0,
+					EndUnexpectedResultRate:   1,
 				},
 			},
 			NthSectionResult: &pb.TestNthSectionAnalysisResult{

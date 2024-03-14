@@ -412,9 +412,7 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 					Id:       "end_commit_hash",
 					Position: 199,
 				},
-				SampleBbid:       8000,
-				StartFailureRate: 0,
-				EndFailureRate:   1.0,
+				SampleBbid: 8000,
 				TestFailures: []*pb.TestFailure{
 					{
 						TestId:      "testID1",
@@ -425,8 +423,10 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 								"key1": "val1",
 							},
 						},
-						IsPrimary: true,
-						StartHour: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+						IsPrimary:                 true,
+						StartHour:                 timestamppb.New(time.Unix(int64(100), 0).UTC()),
+						StartUnexpectedResultRate: 0,
+						EndUnexpectedResultRate:   1,
 					},
 					{
 						TestId:      "testID2",
@@ -437,8 +437,10 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 								"key2": "val2",
 							},
 						},
-						IsDiverged: true,
-						StartHour:  timestamppb.New(time.Unix(int64(100), 0).UTC()),
+						IsDiverged:                true,
+						StartHour:                 timestamppb.New(time.Unix(int64(100), 0).UTC()),
+						StartUnexpectedResultRate: 0,
+						EndUnexpectedResultRate:   1,
 					},
 				},
 				NthSectionResult: &pb.TestNthSectionAnalysisResult{

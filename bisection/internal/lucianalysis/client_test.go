@@ -52,15 +52,20 @@ func TestUpdateAnalysisStatus(t *testing.T) {
       ANY_VALUE(ref) AS Ref,
       nominal_lower AS RegressionStartPosition,
       nominal_upper AS RegressionEndPosition,
-      ANY_VALUE(previous_failure_rate) AS StartPositionFailureRate,
-      ANY_VALUE(current_failure_rate) AS EndPositionFailureRate,
-      ARRAY_AGG(STRUCT(test_id AS TestId, variant_hash AS VariantHash,variant AS Variant) ORDER BY test_id, variant_hash) AS TestVariants,
+      ARRAY_AGG(STRUCT(
+        test_id AS TestId,
+        variant_hash AS VariantHash,
+        variant AS Variant,
+        previous_failure_rate as StartPositionUnexpectedResultRate,
+        current_failure_rate as EndPositionUnexpectedResultRate
+        ) ORDER BY test_id, variant_hash) AS TestVariants,
       ANY_VALUE(segments[0].start_hour) AS StartHour,
       ANY_VALUE(segments[0].end_hour) AS EndHour
     FROM segments_with_failure_rate
     WHERE
       current_failure_rate = 1
-      AND previous_failure_rate = 0
+      -- The passing tail is allowed to be slightly non-deterministic, with failure rate less than 0.5%.
+      AND previous_failure_rate < 0.005
       AND segments[0].counts.unexpected_passed_results = 0
       AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
       -- We only consider test failures with non-skipped result in the last 24 hour.
@@ -130,15 +135,20 @@ LIMIT 5000`)
       ANY_VALUE(ref) AS Ref,
       nominal_lower AS RegressionStartPosition,
       nominal_upper AS RegressionEndPosition,
-      ANY_VALUE(previous_failure_rate) AS StartPositionFailureRate,
-      ANY_VALUE(current_failure_rate) AS EndPositionFailureRate,
-      ARRAY_AGG(STRUCT(test_id AS TestId, variant_hash AS VariantHash,variant AS Variant) ORDER BY test_id, variant_hash) AS TestVariants,
+      ARRAY_AGG(STRUCT(
+        test_id AS TestId,
+        variant_hash AS VariantHash,
+        variant AS Variant,
+        previous_failure_rate as StartPositionUnexpectedResultRate,
+        current_failure_rate as EndPositionUnexpectedResultRate
+        ) ORDER BY test_id, variant_hash) AS TestVariants,
       ANY_VALUE(segments[0].start_hour) AS StartHour,
       ANY_VALUE(segments[0].end_hour) AS EndHour
     FROM segments_with_failure_rate
     WHERE
       current_failure_rate = 1
-      AND previous_failure_rate = 0
+      -- The passing tail is allowed to be slightly non-deterministic, with failure rate less than 0.5%.
+      AND previous_failure_rate < 0.005
       AND segments[0].counts.unexpected_passed_results = 0
       AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
       -- We only consider test failures with non-skipped result in the last 24 hour.

@@ -394,9 +394,9 @@ type TestFailure struct {
 	RegressionStartPosition int64 `gae:"regression_start_position"`
 	// End commit position of the regression range inclusive.
 	RegressionEndPosition int64 `gae:"regression_end_position"`
-	// Expected failure rate at regression_start_position, between 0 and 1 inclusive.
+	// The unexpected test result rate at regression_start_position, between 0 and 1 inclusive.
 	StartPositionFailureRate float64 `gae:"start_position_failure_rate"`
-	// Expected failure rate at regression_end_position, between 0 and 1 inclusive.
+	// The unexpected test result rate at regression_end_position, between 0 and 1 inclusive.
 	EndPositionFailureRate float64 `gae:"end_position_failure_rate"`
 	// When run multiple test variants in a bisection build, the bisection path
 	// follows the test variant of the primary test failure.

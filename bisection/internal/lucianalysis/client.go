@@ -58,15 +58,20 @@ WITH
       ANY_VALUE(ref) AS Ref,
       nominal_lower AS RegressionStartPosition,
       nominal_upper AS RegressionEndPosition,
-      ANY_VALUE(previous_failure_rate) AS StartPositionFailureRate,
-      ANY_VALUE(current_failure_rate) AS EndPositionFailureRate,
-      ARRAY_AGG(STRUCT(test_id AS TestId, variant_hash AS VariantHash,variant AS Variant) ORDER BY test_id, variant_hash) AS TestVariants,
+      ARRAY_AGG(STRUCT(
+        test_id AS TestId,
+        variant_hash AS VariantHash,
+        variant AS Variant,
+        previous_failure_rate as StartPositionUnexpectedResultRate,
+        current_failure_rate as EndPositionUnexpectedResultRate
+        ) ORDER BY test_id, variant_hash) AS TestVariants,
       ANY_VALUE(segments[0].start_hour) AS StartHour,
       ANY_VALUE(segments[0].end_hour) AS EndHour
     FROM segments_with_failure_rate
     WHERE
       current_failure_rate = 1
-      AND previous_failure_rate = 0
+      -- The passing tail is allowed to be slightly non-deterministic, with failure rate less than 0.5%.
+      AND previous_failure_rate < 0.005
       AND segments[0].counts.unexpected_passed_results = 0
       AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
       -- We only consider test failures with non-skipped result in the last 24 hour.
@@ -184,18 +189,16 @@ func (c *Client) Close() error {
 // BuilderRegressionGroup contains a list of test variants
 // which use the same builder and have the same regression range.
 type BuilderRegressionGroup struct {
-	Bucket                   bigquery.NullString
-	Builder                  bigquery.NullString
-	RefHash                  bigquery.NullString
-	Ref                      *Ref
-	RegressionStartPosition  bigquery.NullInt64
-	RegressionEndPosition    bigquery.NullInt64
-	StartPositionFailureRate float64
-	EndPositionFailureRate   float64
-	TestVariants             []*TestVariant
-	StartHour                bigquery.NullTimestamp
-	EndHour                  bigquery.NullTimestamp
-	SheriffRotations         []bigquery.NullString
+	Bucket                  bigquery.NullString
+	Builder                 bigquery.NullString
+	RefHash                 bigquery.NullString
+	Ref                     *Ref
+	RegressionStartPosition bigquery.NullInt64
+	RegressionEndPosition   bigquery.NullInt64
+	TestVariants            []*TestVariant
+	StartHour               bigquery.NullTimestamp
+	EndHour                 bigquery.NullTimestamp
+	SheriffRotations        []bigquery.NullString
 }
 
 type Ref struct {
@@ -208,9 +211,11 @@ type Gitiles struct {
 }
 
 type TestVariant struct {
-	TestID      bigquery.NullString
-	VariantHash bigquery.NullString
-	Variant     bigquery.NullJSON
+	TestID                            bigquery.NullString
+	VariantHash                       bigquery.NullString
+	Variant                           bigquery.NullJSON
+	StartPositionUnexpectedResultRate float64
+	EndPositionUnexpectedResultRate   float64
 }
 
 func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, filter *configpb.FailureIngestionFilter) ([]*BuilderRegressionGroup, error) {

@@ -76,13 +76,6 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 		result.TestFailures = TestFailureBundleToPb(ctx, bundle, tfMask)
 	}
 	primary := bundle.Primary()
-
-	if tfaMask.MustIncludes("start_failure_rate") == mask.IncludeEntirely {
-		result.StartFailureRate = float32(primary.StartPositionFailureRate)
-	}
-	if tfaMask.MustIncludes("end_failure_rate") == mask.IncludeEntirely {
-		result.EndFailureRate = float32(primary.EndPositionFailureRate)
-	}
 	// It doesn't make sense to return commit information partially.
 	// We don't check mask.IncludePartially here.
 	if tfaMask.MustIncludes("start_commit") == mask.IncludeEntirely {
@@ -315,6 +308,12 @@ func testFailureToPb(ctx context.Context, tf *model.TestFailure, tfMask *mask.Ma
 	}
 	if tfMask.MustIncludes("start_hour") == mask.IncludeEntirely {
 		result.StartHour = timestamppb.New(tf.StartHour)
+	}
+	if tfMask.MustIncludes("start_unexpected_result_rate") == mask.IncludeEntirely {
+		result.StartUnexpectedResultRate = float32(tf.StartPositionFailureRate)
+	}
+	if tfMask.MustIncludes("end_unexpected_result_rate") == mask.IncludeEntirely {
+		result.EndUnexpectedResultRate = float32(tf.EndPositionFailureRate)
 	}
 	return result
 }

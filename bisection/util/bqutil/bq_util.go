@@ -21,14 +21,15 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
+
 	"go.chromium.org/luci/bisection/model"
 	bqpb "go.chromium.org/luci/bisection/proto/bq"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/protoutil"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/mask"
 )
 
 // TestFailureAnalysisToBqRow returns a TestAnalysisRow for a TestFailureAnalysis.
@@ -71,8 +72,6 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 
 	result.TestFailures = protoutil.TestFailureBundleToPb(ctx, bundle, tfMask)
 	primary := bundle.Primary()
-	result.StartFailureRate = float32(primary.StartPositionFailureRate)
-	result.EndFailureRate = float32(primary.EndPositionFailureRate)
 	result.StartGitilesCommit = &buildbucketpb.GitilesCommit{
 		Host:     primary.Ref.GetGitiles().GetHost(),
 		Project:  primary.Ref.GetGitiles().GetProject(),

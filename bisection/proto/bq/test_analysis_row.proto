@@ -29,6 +29,7 @@ option go_package = "go.chromium.org/luci/bisection/proto/bq;bqpb";
 // and all the culprit actions have been taken.
 // It means once a row has been exported, its data is immutable.
 message TestAnalysisRow {
+  reserved 13, 14; // Deleted
   // The project of the analysis.
   string project = 1;
   // ID to identify this analysis, same as the one in Datastore.
@@ -54,10 +55,6 @@ message TestAnalysisRow {
   buildbucket.v2.GitilesCommit start_gitiles_commit = 11;
   // The end commit of the regression range (inclusive).
   buildbucket.v2.GitilesCommit end_gitiles_commit = 12;
-  // The start failure rate of the failures.
-  float start_failure_rate = 13;
-  // The end failure rate of the failures.
-  float end_failure_rate = 14;
   // Sample build bucket ID where the primary test failure failed.
   int64 sample_bbid = 15;
   // Details of nthsection analysis, including the reruns.
