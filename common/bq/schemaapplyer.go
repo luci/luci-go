@@ -282,6 +282,9 @@ func ensureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, opt
 	case ok && apiErr.Code == http.StatusForbidden:
 		// No read table permission.
 		return err
+	case ok && apiErr.Code == http.StatusBadRequest:
+		// Bad table name, etc.
+		return err
 	case err != nil:
 		return transient.Tag.Apply(err)
 	}
@@ -306,6 +309,9 @@ func createBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) e
 	case ok && apiErr.Code == http.StatusConflict:
 		// Table just got created. This is fine.
 		return nil
+	case ok && (apiErr.Code == http.StatusNotFound || apiErr.Code == http.StatusBadRequest):
+		// Dataset or project not found, bad table name, etc.
+		return err
 	case ok && apiErr.Code == http.StatusForbidden:
 		// No create table permission.
 		return err
