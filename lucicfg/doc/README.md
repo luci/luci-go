@@ -2761,6 +2761,12 @@ Defines a dynamic builder template for a dynamic bucket.
 
 ## ACLs
 
+### Permissions and roles in LUCI Realms {#realm-roles-doc}
+
+See [permissions.cfg](https://source.corp.google.com/h/chromium/infra/infra_superproject/+/main:data/config/configs/chrome-infra-auth/permissions.cfg)
+(sorry, internal only) for permissions and roles in LUCI Realms.
+
+
 ### Roles {#roles-doc}
 
 Below is the table with role constants that can be passed as `roles` in
