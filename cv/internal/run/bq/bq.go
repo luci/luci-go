@@ -182,7 +182,6 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 		EarliestEquivalentPatchset: int64(detail.MinEquivalentPatchset),
 		Mode:                       mode.BQAttemptMode(),
 		SubmitStatus:               cvbqpb.GerritChange_PENDING,
-		Owner:                      ci.GetOwner().GetEmail(),
 		IsOwnerBot:                 isCLOwnerBot(ci),
 	}
 

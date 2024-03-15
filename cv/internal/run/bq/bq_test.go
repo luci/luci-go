@@ -241,7 +241,6 @@ func TestMakeAttempt(t *testing.T) {
 						TriggerTime:                timestamppb.New(epoch),
 						Mode:                       cvbqpb.Mode_FULL_RUN,
 						SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
-						Owner:                      "foobar@example.com",
 						IsOwnerBot:                 false,
 					},
 				},
@@ -500,7 +499,6 @@ func TestMakeAttempt(t *testing.T) {
 					TriggerTime:                timestamppb.New(epoch),
 					Mode:                       cvbqpb.Mode_FULL_RUN,
 					SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
-					Owner:                      "foobar@example.com",
 				},
 				{
 					Host:                       gHost,
@@ -511,7 +509,6 @@ func TestMakeAttempt(t *testing.T) {
 					TriggerTime:                timestamppb.New(epoch),
 					Mode:                       cvbqpb.Mode_FULL_RUN,
 					SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
-					Owner:                      "foobar@example.com",
 				},
 			})
 		})
