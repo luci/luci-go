@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GerritClLink } from '@/common/components/gerrit_cl_link';
 import { GerritChange } from '@/common/services/common';
+import { ChangelistLink } from '@/gitiles/components/changelist_link';
 
 export interface PatchRowProps {
   readonly gerritChange: GerritChange;
@@ -24,7 +24,7 @@ export function PatchRow({ gerritChange }: PatchRowProps) {
     <tr>
       <td>Patch:</td>
       <td>
-        <GerritClLink cl={gerritChange} />
+        <ChangelistLink changelist={gerritChange} />
       </td>
     </tr>
   );

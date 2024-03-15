@@ -14,7 +14,7 @@
 
 import { Fragment } from 'react';
 
-import { GerritClLink } from '@/common/components/gerrit_cl_link';
+import { ChangelistLink } from '@/gitiles/components/changelist_link';
 import { SourceSpec } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 
 import { GitilesCommitRow } from './gitiles_commit_row';
@@ -45,7 +45,7 @@ export function SourceSpecSection({ sourceSpec }: SourceSpecSectionProps) {
                     {sourceSpec.sources.changelists.map((cl, i) => (
                       <Fragment key={i}>
                         {i > 0 ? `, ` : ``}
-                        <GerritClLink cl={cl} />
+                        <ChangelistLink changelist={cl} />
                       </Fragment>
                     ))}
                   </td>

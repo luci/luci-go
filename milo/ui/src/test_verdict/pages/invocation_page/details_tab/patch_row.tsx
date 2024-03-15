@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GerritClLink } from '@/common/components/gerrit_cl_link';
+import { ChangelistLink } from '@/gitiles/components/changelist_link';
 import { GerritChange } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
 export interface PatchRowProps {
@@ -24,7 +24,7 @@ export function PatchRow({ gerritChange }: PatchRowProps) {
     <tr>
       <td>Patch:</td>
       <td>
-        <GerritClLink cl={gerritChange} />
+        <ChangelistLink changelist={gerritChange} />
       </td>
     </tr>
   );

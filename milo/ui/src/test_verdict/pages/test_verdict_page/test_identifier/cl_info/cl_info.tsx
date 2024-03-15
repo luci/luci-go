@@ -18,25 +18,10 @@ import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import {
-  getBuildURLPathFromBuildId,
-  getGerritChangeURL,
-} from '@/common/tools/url_utils';
-import { GerritChange } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
+import { ChangelistLink } from '@/gitiles/components/changelist_link';
 
 import { useInvocationID, useSources } from '../../context';
-
-interface ChangelistLinkProps {
-  changelist: GerritChange;
-}
-
-export function ChangelistLink({ changelist }: ChangelistLinkProps) {
-  return (
-    <Link target="_blank" href={getGerritChangeURL(changelist)}>
-      {changelist.change}/{changelist.patchset}
-    </Link>
-  );
-}
 
 export function CLInfo() {
   const sources = useSources();

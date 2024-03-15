@@ -16,7 +16,7 @@ import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { Box, IconButton, TableCell, styled } from '@mui/material';
 import { Fragment } from 'react';
 
-import { GerritClLink } from '@/common/components/gerrit_cl_link';
+import { ChangelistLink } from '@/gitiles/components/changelist_link';
 
 import {
   useBuild,
@@ -106,7 +106,7 @@ export function GerritChangesContentCell() {
                   , <br />
                 </>
               )}
-              <GerritClLink cl={c} />
+              <ChangelistLink changelist={c} />
             </Fragment>
           ))}
         </ChangesContainer>

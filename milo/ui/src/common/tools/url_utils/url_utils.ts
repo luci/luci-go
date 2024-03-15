@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Build, BuilderID } from '@/common/services/buildbucket';
-import { GerritChange } from '@/common/services/common';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 import { Variant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
@@ -59,10 +58,6 @@ export function getLegacyBuildURLPath(
   return `/old/p/${builder.project}/builders/${
     builder.bucket
   }/${encodeURIComponent(builder.builder)}/${buildNumOrId}`;
-}
-
-export function getGerritChangeURL(change: GerritChange): string {
-  return `https://${change.host}/c/${change.change}/${change.patchset}`;
 }
 
 export function getSwarmingTaskURL(hostname: string, taskId: string): string {

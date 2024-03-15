@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import {
+  GerritChange,
+  GitilesCommit,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 export function getGitilesHostURL(commit: Pick<GitilesCommit, 'host'>) {
   return `https://${commit.host}`;
@@ -54,4 +57,8 @@ export function getGitilesCommitLabel(
   }
 
   return '';
+}
+
+export function getGerritChangeURL(change: GerritChange): string {
+  return `https://${change.host}/c/${change.change}/${change.patchset}`;
 }

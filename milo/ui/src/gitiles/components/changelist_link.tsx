@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
 
 import { Link } from '@mui/material';
 
-import { GerritChange } from '@/common/services/common';
-import { getGerritChangeURL } from '@/common/tools/url_utils';
+import { getGerritChangeURL } from '@/gitiles/tools/utils';
+import { GerritChange } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
-interface Props {
-  readonly cl: GerritChange;
+export interface ChangelistLinkProps {
+  readonly changelist: GerritChange;
 }
 
-export function GerritClLink({ cl }: Props) {
+export function ChangelistLink({ changelist }: ChangelistLinkProps) {
   return (
-    <Link key={cl.change} href={getGerritChangeURL(cl)}>
-      CL {cl.change} (ps #{cl.patchset})
+    <Link href={getGerritChangeURL(changelist)}>
+      {changelist.change}#{changelist.patchset}
     </Link>
   );
 }
