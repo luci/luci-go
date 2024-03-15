@@ -335,6 +335,8 @@ func PlatformForPEP425Tag(t *vpython.PEP425Tag) template.Platform {
 			return template.Platform{OS: "linux", Arch: "mips32"}
 		case "mips64":
 			return template.Platform{OS: "linux", Arch: "mips64"}
+		case "riscv64":
+			return template.Platform{OS: "linux", Arch: "riscv64"}
 		default:
 			// All remaining "arm*" get the "armv6l" CIPD platform.
 			if strings.HasPrefix(cpu, "arm") {
