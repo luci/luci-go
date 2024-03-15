@@ -12,16 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GitilesCommit } from '@/common/services/common';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+export function getGitilesHostURL(commit: Pick<GitilesCommit, 'host'>) {
+  return `https://${commit.host}`;
+}
 
 export function getGitilesRepoURL(
   commit: Pick<GitilesCommit, 'host' | 'project'>,
 ) {
-  return `https://${commit.host}/${commit.project}`;
+  return `${getGitilesHostURL(commit)}/${commit.project}`;
 }
 
-export function getGitilesCommitURL(commit: GitilesCommit): string {
-  return `${getGitilesRepoURL(commit)}/+/${commit.id || commit.ref}`;
+export function getGitilesCommitURL(
+  commit:
+    | Pick<GitilesCommit, 'host' | 'project' | 'ref'>
+    | Pick<GitilesCommit, 'host' | 'project' | 'id'>,
+): string {
+  const commitish =
+    ('id' in commit && commit.id) || ('ref' in commit && commit.ref);
+  return `${getGitilesRepoURL(commit)}/+/${commitish}`;
 }
 
 export function getGitilesCommitLabel(

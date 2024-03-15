@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CommitLink } from '@/gitiles/components/commit_link';
+import { Link } from '@mui/material';
+
+import { HtmlTooltip } from '@/common/components/html_tooltip';
+import {
+  getGitilesCommitLabel,
+  getGitilesCommitURL,
+} from '@/gitiles/tools/utils';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
-export interface RevisionRowProps {
+import { CommitLinkTooltip } from './commit_link_tooltip';
+
+export interface CommitLinkProps {
   readonly commit: GitilesCommit;
 }
 
-export function RevisionRow({ commit }: RevisionRowProps) {
+export function CommitLink({ commit }: CommitLinkProps) {
   return (
-    <tr>
-      <td>Revision:</td>
-      <td>
-        <CommitLink commit={commit} />
-      </td>
-    </tr>
+    <HtmlTooltip title={<CommitLinkTooltip commit={commit} />}>
+      <Link href={getGitilesCommitURL(commit)}>
+        {getGitilesCommitLabel(commit)}
+      </Link>
+    </HtmlTooltip>
   );
 }

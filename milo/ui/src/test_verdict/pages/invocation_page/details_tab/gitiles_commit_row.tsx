@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getGitilesCommitURL } from '@/common/tools/gitiles_utils';
+import { CommitLink } from '@/gitiles/components/commit_link';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
 export interface GitilesCommitRowProps {
@@ -25,19 +25,13 @@ export function GitilesCommitRow({ commit }: GitilesCommitRowProps) {
     project: commit.project,
     id: commit.commitHash,
     ref: commit.ref,
-    position: commit.position,
+    position: parseInt(commit.position),
   };
   return (
     <tr>
       <td>Revision:</td>
       <td>
-        <a
-          href={getGitilesCommitURL(gitilesCommit)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {`${commit.ref} CP #${commit.position}`}
-        </a>
+        <CommitLink commit={gitilesCommit} />
       </td>
     </tr>
   );

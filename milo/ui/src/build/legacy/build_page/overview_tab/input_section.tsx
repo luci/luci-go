@@ -15,6 +15,7 @@
 import { observer } from 'mobx-react-lite';
 
 import { useStore } from '@/common/store';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { PatchRow } from './patch_row';
 import { RevisionRow } from './revision_row';
@@ -31,7 +32,9 @@ export const InputSection = observer(() => {
       <h3>Input</h3>
       <table>
         <tbody>
-          {input.gitilesCommit && <RevisionRow commit={input.gitilesCommit} />}
+          {input.gitilesCommit && (
+            <RevisionRow commit={GitilesCommit.fromJSON(input.gitilesCommit)} />
+          )}
           {(input.gerritChanges || []).map((gc, i) => (
             <PatchRow key={i} gerritChange={gc} />
           ))}

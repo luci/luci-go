@@ -15,6 +15,7 @@
 import { observer } from 'mobx-react-lite';
 
 import { useStore } from '@/common/store';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { RevisionRow } from './revision_row';
 
@@ -30,7 +31,7 @@ export const OutputSection = observer(() => {
       <h3>Output</h3>
       <table>
         <tbody>
-          <RevisionRow commit={output.gitilesCommit} />
+          <RevisionRow commit={GitilesCommit.fromJSON(output.gitilesCommit)} />
         </tbody>
       </table>
     </>

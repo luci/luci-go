@@ -25,8 +25,8 @@ import { useId, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
-import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { BlamelistDisplay } from './blamelist_display';
@@ -75,7 +75,7 @@ export const BlamelistTab = observer(() => {
         </Select>
       </FormControl>
       <BlamelistDisplay
-        blamelistPin={GitilesCommit.fromPartial(selectedBlamelistPin)}
+        blamelistPin={GitilesCommit.fromJSON(selectedBlamelistPin)}
         builder={build.data.builder}
       />
     </>

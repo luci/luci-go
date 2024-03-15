@@ -55,13 +55,13 @@ import { InvocationState } from '@/common/store/invocation_state';
 import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
 import { UserConfig } from '@/common/store/user_config';
-import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
 import {
   aliveFlow,
   keepAliveComputed,
   unwrapObservable,
 } from '@/generic_libs/tools/mobx_utils';
 import { attachTags, InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
+import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 
 export const enum SearchTarget {
   Builders,

@@ -12,26 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getGitilesCommitURL } from './gitiles_utils';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+import { getGitilesCommitURL } from './utils';
 
 describe('getGitilesCommitURL', () => {
   it('should work for commit with id', () => {
     expect(
-      getGitilesCommitURL({
-        host: 'gitiles.host',
-        project: 'proj',
-        id: '1234',
-      }),
+      getGitilesCommitURL(
+        GitilesCommit.fromPartial({
+          host: 'gitiles.host',
+          project: 'proj',
+          id: '1234',
+        }),
+      ),
     ).toStrictEqual('https://gitiles.host/proj/+/1234');
   });
 
   it('should work for commit with ref', () => {
     expect(
-      getGitilesCommitURL({
-        host: 'gitiles.host',
-        project: 'proj',
-        ref: 'ref/HEAD/1234',
-      }),
+      getGitilesCommitURL(
+        GitilesCommit.fromPartial({
+          host: 'gitiles.host',
+          project: 'proj',
+          ref: 'ref/HEAD/1234',
+        }),
+      ),
     ).toStrictEqual('https://gitiles.host/proj/+/ref/HEAD/1234');
   });
 });

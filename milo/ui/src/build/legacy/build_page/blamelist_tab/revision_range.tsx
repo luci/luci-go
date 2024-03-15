@@ -14,7 +14,7 @@
 
 import { Link } from '@mui/material';
 
-import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
+import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
 

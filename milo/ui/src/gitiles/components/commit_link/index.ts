@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableCell } from '@mui/material';
-
-import { getAssociatedGitilesCommit } from '@/build/tools/build_utils';
-import { CommitLink } from '@/gitiles/components/commit_link';
-
-import { useBuild } from './context';
-
-export function CommitHeadCell() {
-  return <TableCell width="1px">Commit</TableCell>;
-}
-
-export function CommitContentCell() {
-  const build = useBuild();
-  const commit = getAssociatedGitilesCommit(build);
-
-  return (
-    <TableCell>{commit ? <CommitLink commit={commit} /> : 'N/A'}</TableCell>
-  );
-}
+export * from './commit_link';

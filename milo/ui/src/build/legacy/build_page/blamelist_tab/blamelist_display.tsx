@@ -16,7 +16,7 @@ import { Button, CircularProgress } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
-import { getGitilesRepoURL } from '@/common/tools/gitiles_utils';
+import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { QueryBlamelistRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';

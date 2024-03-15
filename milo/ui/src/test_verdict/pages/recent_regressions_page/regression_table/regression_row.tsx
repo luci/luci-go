@@ -17,9 +17,9 @@ import { DateTime } from 'luxon';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { Timestamp } from '@/common/components/timestamp';
-import { getGitilesCommitURL } from '@/common/tools/gitiles_utils';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
+import { getGitilesCommitURL } from '@/gitiles/tools/utils';
 import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
 import { useDetailsUrlPath } from './context';
