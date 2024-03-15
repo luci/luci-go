@@ -49,11 +49,10 @@ func checkIsHex(s string, minLen int) error {
 //
 // Empty maps and lists are stored as nulls.
 func ToJSONProperty(val any) (datastore.Property, error) {
-	if val == nil {
-		return datastore.MkPropertyNI(nil), nil
-	}
 	blob, err := json.Marshal(val)
-	if bytes.Equal(blob, []byte("{}")) || bytes.Equal(blob, []byte("[]")) {
+	if bytes.Equal(blob, []byte("{}")) ||
+		bytes.Equal(blob, []byte("[]")) ||
+		bytes.Equal(blob, []byte("null")) {
 		return datastore.MkPropertyNI(nil), nil
 	}
 	return datastore.MkPropertyNI(string(blob)), err
@@ -71,7 +70,7 @@ func FromJSONProperty(prop datastore.Property, val any) error {
 		return err
 	}
 	blob, _ := propVal.([]byte)
-	if len(blob) == 0 {
+	if len(blob) == 0 || bytes.Equal(blob, []byte("null")) {
 		return nil
 	}
 

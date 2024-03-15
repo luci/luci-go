@@ -54,6 +54,13 @@ func TestToJSONProperty(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(p.Type(), ShouldEqual, datastore.PTNull)
 	})
+
+	Convey("With typed nil", t, func() {
+		var m map[string]string
+		p, err := ToJSONProperty(m)
+		So(err, ShouldBeNil)
+		So(p.Type(), ShouldEqual, datastore.PTNull)
+	})
 }
 
 func TestFromJSONProperty(t *testing.T) {
@@ -68,6 +75,12 @@ func TestFromJSONProperty(t *testing.T) {
 	Convey("Empty", t, func() {
 		var v map[string]string
 		So(FromJSONProperty(datastore.MkProperty(""), &v), ShouldBeNil)
+		So(v, ShouldResemble, map[string]string(nil))
+	})
+
+	Convey("Null", t, func() {
+		var v map[string]string
+		So(FromJSONProperty(datastore.MkProperty("null"), &v), ShouldBeNil)
 		So(v, ShouldResemble, map[string]string(nil))
 	})
 
