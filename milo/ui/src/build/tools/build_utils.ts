@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  BuilderID,
-  BuildbucketStatus,
-  Build,
-} from '@/common/services/buildbucket';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { OutputBuild } from '../types';
 
@@ -25,21 +23,21 @@ export function formatBuilderId(builderId: BuilderID) {
 }
 
 export const FAILURE_STATUSES = Object.freeze([
-  BuildbucketStatus.Failure,
-  BuildbucketStatus.InfraFailure,
+  Status.FAILURE,
+  Status.INFRA_FAILURE,
 ]);
 
 export const TERMINAL_STATUSES = Object.freeze([
-  BuildbucketStatus.Success,
+  Status.SUCCESS,
   ...FAILURE_STATUSES,
-  BuildbucketStatus.Canceled,
+  Status.CANCELED,
 ]);
 
-export function isFailureStatus(status: BuildbucketStatus) {
+export function isFailureStatus(status: Status) {
   return FAILURE_STATUSES.includes(status);
 }
 
-export function isTerminalStatus(status: BuildbucketStatus) {
+export function isTerminalStatus(status: Status) {
   return TERMINAL_STATUSES.includes(status);
 }
 

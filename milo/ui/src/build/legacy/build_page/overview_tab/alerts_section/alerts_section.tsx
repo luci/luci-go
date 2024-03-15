@@ -21,7 +21,7 @@ import {
   isTerminalStatus,
 } from '@/build/tools/build_utils';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { parseProtoDurationStr } from '@/common/tools/time_utils';
+import { parseProtoDuration } from '@/common/tools/time_utils';
 
 import { useBuild } from '../../context';
 
@@ -35,7 +35,7 @@ export function AlertsSection() {
     build.gracePeriod && build.cancelTime && !isTerminalStatus(build.status);
   const scheduledCancelTime = scheduledToBeCanceled
     ? DateTime.fromISO(build.cancelTime)
-        .plus(parseProtoDurationStr(build.gracePeriod))
+        .plus(parseProtoDuration(build.gracePeriod))
         // Add min_update_interval (currently always 30s).
         // TODO(crbug/1299302): read min_update_interval from buildbucket.
         .plus({ seconds: 30 })
