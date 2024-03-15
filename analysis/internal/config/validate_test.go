@@ -482,7 +482,7 @@ func TestProjectConfigValidator(t *testing.T) {
 							},
 						},
 						{
-							MetricId: metrics.BuildsFailedDueToFlakyTests.ID.String(),
+							MetricId: metrics.BuildsWithTestRunsFailedDueToFlakyTests.ID.String(),
 							ActivationThreshold: &configpb.MetricThreshold{
 								OneDay: proto.Int64(50),
 							},
