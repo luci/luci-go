@@ -186,3 +186,16 @@ func BotDimensions(b *pb.Build) ([]*pb.StringPair, error) {
 	}
 	return BotDimensionsFromBackend(b)
 }
+
+// MustBotDimensions retrieves bot dimensions from the backend task running the build.
+//
+// Supports both builds running on raw Swarming or backend.
+//
+// panic on error.
+func MustBotDimensions(b *pb.Build) []*pb.StringPair {
+	botDims, err := BotDimensions(b)
+	if err != nil {
+		panic(err)
+	}
+	return botDims
+}

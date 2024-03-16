@@ -205,9 +205,7 @@ func TestBotDimensions(t *testing.T) {
 		b.Infra.Swarming = &pb.BuildInfra_Swarming{
 			BotDimensions: botDims,
 		}
-		actual, err := BotDimensions(b)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResembleProto, botDims)
+		So(MustBotDimensions(b), ShouldResembleProto, botDims)
 	})
 
 	Convey("build on backend", t, func() {
@@ -246,8 +244,6 @@ func TestBotDimensions(t *testing.T) {
 				},
 			},
 		}
-		actual, err := BotDimensions(b)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResembleProto, botDims)
+		So(MustBotDimensions(b), ShouldResembleProto, botDims)
 	})
 }
