@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
@@ -132,8 +133,12 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
 				So(cl.RetentionKey, ShouldNotBeEmpty)
 				So(cl.Snapshot, ShouldResembleProto, s2)
-				So(tj.clsNotified[0], ShouldEqual, cl.ID)
-
+				So(tj.clsNotified, ShouldHaveLength, 1)
+				for clid, content := range tj.clsNotified {
+					So(clid, ShouldEqual, cl.ID)
+					So(content.prevMinEquiPS, ShouldEqual, s1.GetMinEquivalentPatchset())
+					So(content.curMinEquiPS, ShouldEqual, s2.GetMinEquivalentPatchset())
+				}
 				execBatchOnCLUpdatedTask()
 				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
 					lProject: {cl.ID: cl.EVersion},
@@ -202,7 +207,35 @@ func TestMutatorSingleCL(t *testing.T) {
 					lProject:        {cl.ID: cl.EVersion},
 				})
 				So(rm.byRun, ShouldBeEmpty)
-				So(tj.clsNotified[0], ShouldEqual, cl.ID)
+				So(tj.clsNotified, ShouldHaveLength, 1)
+				for clid, content := range tj.clsNotified {
+					So(clid, ShouldEqual, cl.ID)
+					So(content.prevMinEquiPS, ShouldEqual, s1.GetMinEquivalentPatchset())
+					So(content.curMinEquiPS, ShouldEqual, s2.GetMinEquivalentPatchset())
+				}
+			})
+
+			Convey("schedule tryjob cancel for abandoned CL", func() {
+				s1 := makeSnapshot(lProject, ct.Clock.Now())
+				cl := eid.MustCreateIfNotExists(ctx)
+				cl.Snapshot = s1
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+
+				ct.Clock.Add(time.Second)
+				s2 := makeSnapshot(lProject, ct.Clock.Now())
+				s2.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_ABANDONED
+				cl, err := m.Update(ctx, lProject, cl.ID, func(cl *CL) error {
+					cl.Snapshot = s2
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(cl.Snapshot, ShouldResembleProto, s2)
+				So(tj.clsNotified, ShouldHaveLength, 1)
+				for clid, content := range tj.clsNotified {
+					So(clid, ShouldEqual, cl.ID)
+					So(content.prevMinEquiPS, ShouldEqual, s2.GetMinEquivalentPatchset())
+					So(content.curMinEquiPS, ShouldEqual, s2.GetPatchset()+1)
+				}
 			})
 
 			Convey("skips an actual update", func() {
@@ -361,7 +394,7 @@ func TestMutatorBatch(t *testing.T) {
 				assertNotified(pm.byProject[lProjectAlt], expectedAltProject)
 				assertNotified(rm.byRun[run1], expectedRun1)
 				assertNotified(rm.byRun[run2], expectedRun2)
-				So(tj.clsNotified.Set(), ShouldBeEmpty)
+				So(tj.clsNotified, ShouldBeEmpty)
 			}
 
 			Convey("BeginBatch + FinalizeBatch", func() {
@@ -626,13 +659,27 @@ func (r *rmMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, events 
 }
 
 type tjMock struct {
-	clsNotified common.CLIDs
-	mutex       sync.Mutex
+	clsNotified map[common.CLID]struct {
+		prevMinEquiPS, curMinEquiPS int32
+	}
+	mutex sync.Mutex
 }
 
 func (t *tjMock) ScheduleCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32, eta time.Time) error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
-	t.clsNotified = append(t.clsNotified, clid)
+	if t.clsNotified == nil {
+		t.clsNotified = make(map[common.CLID]struct {
+			prevMinEquiPS int32
+			curMinEquiPS  int32
+		})
+	}
+	t.clsNotified[clid] = struct {
+		prevMinEquiPS int32
+		curMinEquiPS  int32
+	}{
+		prevMinEquiPS: prevMinEquivalentPatchset,
+		curMinEquiPS:  currentMinEquivalentPatchset,
+	}
 	return nil
 }

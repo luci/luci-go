@@ -70,18 +70,20 @@ func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 }
 
 // ScheduleCancelStale schedules a task at the given `eta` that cancels the
-// tryjobs associated with the given CL that are considered stale.
+// tryjobs that involes the patchset of a CL that is larger than or equal to
+// `gtePatchset` and smaller than `ltPatchset`.
 //
 // Passing zero `eta` will schedule the task immediately.
-func (n *Notifier) ScheduleCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32, eta time.Time) error {
-	if prevMinEquivalentPatchset < currentMinEquivalentPatchset {
+func (n *Notifier) ScheduleCancelStale(ctx context.Context, clid common.CLID, gtePatchset, ltPatchset int32, eta time.Time) error {
+	if gtePatchset < ltPatchset {
+		// TODO(yiwzhang): rename the task field to `gtePatchset` and `ltPatchset`.
 		err := n.Bindings.tqd.AddTask(ctx, &tq.Task{
 			Payload: &CancelStaleTryjobsTask{
 				Clid:                     int64(clid),
-				PreviousMinEquivPatchset: prevMinEquivalentPatchset,
-				CurrentMinEquivPatchset:  currentMinEquivalentPatchset,
+				PreviousMinEquivPatchset: gtePatchset,
+				CurrentMinEquivPatchset:  ltPatchset,
 			},
-			Title: fmt.Sprintf("clid/%d/prev/%d/cur/%d", clid, prevMinEquivalentPatchset, currentMinEquivalentPatchset),
+			Title: fmt.Sprintf("clid/%d/prev/%d/cur/%d", clid, gtePatchset, ltPatchset),
 			ETA:   eta,
 		})
 		if err != nil {

@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -92,7 +93,7 @@ type rmNotifier interface {
 }
 
 type tjNotifier interface {
-	ScheduleCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32, eta time.Time) error
+	ScheduleCancelStale(ctx context.Context, clid common.CLID, gtePatchset, ltPatchset int32, eta time.Time) error
 }
 
 // ErrStopMutation is a special error used by MutateCallback to signal that no
@@ -447,11 +448,30 @@ func (m *Mutator) dispatchBatchNotify(ctx context.Context, muts ...*CLMutation) 
 		for _, r := range mut.CL.IncompleteRuns {
 			batch.Runs[string(r)] = batch.Runs[string(r)].append(e)
 		}
-		if mut.CL.Snapshot != nil && mut.priorMinEquivalentPatchset != 0 && mut.priorMinEquivalentPatchset < mut.CL.Snapshot.GetMinEquivalentPatchset() {
+
+		switch {
+		case mut.CL.Snapshot == nil: // do nothing if snapshot is not avaiable
+		case mut.priorMinEquivalentPatchset != 0 && mut.priorMinEquivalentPatchset < mut.CL.Snapshot.GetMinEquivalentPatchset():
 			// add 1 second delay to allow run to finalize so that Tryjobs can be
 			// cancelled right away.
 			eta := clock.Now(ctx).UTC().Add(1 * time.Second)
 			if err := m.tj.ScheduleCancelStale(ctx, mut.id, mut.priorMinEquivalentPatchset, mut.CL.Snapshot.GetMinEquivalentPatchset(), eta); err != nil {
+				return err
+			}
+		case mut.CL.Snapshot.GetGerrit().GetInfo().GetStatus() == gerritpb.ChangeStatus_ABANDONED:
+			// Cancelling Tryjobs if CL is abandoned. The basic idea is that when
+			// CL is abandoned, LUCI CV needs to cancel any Tryjob that runs between
+			// the current minimum equivalent patchset and the curent latest patchset.
+			// It assumes tryjobs for all patchsets before the current minimum
+			// equivalent patchset have been cancelled by the swtich case above.
+
+			// add 1 second delay to allow run to finalize so that Tryjobs can be
+			// cancelled right away.
+			eta := clock.Now(ctx).UTC().Add(1 * time.Second)
+			if err := m.tj.ScheduleCancelStale(ctx, mut.id,
+				mut.CL.Snapshot.GetMinEquivalentPatchset(),
+				mut.CL.Snapshot.GetPatchset()+1,
+				eta); err != nil {
 				return err
 			}
 		}
