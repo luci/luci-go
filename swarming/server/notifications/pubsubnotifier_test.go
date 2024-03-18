@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/pubsub/pstest"
@@ -26,13 +27,17 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications/taskspb"
 
@@ -45,6 +50,9 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 
 	Convey("send pubsub", t, func() {
 		ctx := context.Background()
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		now := time.Date(2024, time.January, 1, 1, 1, 1, 1, time.UTC)
+		ctx, _ = testclock.UseTime(ctx, now)
 		psServer, psClient, err := setupTestPubsub(ctx, "foo")
 		So(err, ShouldBeNil)
 		defer func() {
@@ -63,6 +71,8 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 			Topic:     "projects/foo/topics/swarming-updates",
 			AuthToken: "auth_token",
 			Userdata:  "user_data",
+			State:     apipb.TaskState_BOT_DIED,
+			StartTime: timestamppb.New(now.Add(-100 * time.Millisecond).UTC()), // make the latency to be 100ms.
 		}
 
 		Convey("invalid topic", func() {
@@ -75,6 +85,9 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 			So(fooTopic.Delete(ctx), ShouldBeNil)
 			err := notifier.handlePubSubNotifyTask(ctx, psTask)
 			So(err, ShouldErrLike, `failed to publish the msg to projects/foo/topics/swarming-updates`, "NotFound")
+			pushedTsmonData := metrics.TaskStatusChangePubsubLatency.Get(ctx, "", psTask.State.String(), 404)
+			So(pushedTsmonData.Count(), ShouldEqual, 1)
+			So(pushedTsmonData.Sum(), ShouldAlmostEqual, float64(100))
 		})
 
 		Convey("ok", func() {
@@ -90,6 +103,9 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 				TaskID:   "task_id_0",
 				Userdata: "user_data",
 			})
+			pushedTsmonData := metrics.TaskStatusChangePubsubLatency.Get(ctx, "", psTask.State.String(), 200)
+			So(pushedTsmonData.Count(), ShouldEqual, 1)
+			So(pushedTsmonData.Sum(), ShouldAlmostEqual, float64(100))
 		})
 	})
 }

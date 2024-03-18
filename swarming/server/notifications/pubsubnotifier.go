@@ -25,17 +25,23 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications/taskspb"
 )
@@ -151,7 +157,21 @@ func (ps *PubSubNotifier) handlePubSubNotifyTask(ctx context.Context, t *taskspb
 	}
 	result := topic.Publish(ctx, psMsg)
 	_, err = result.Get(ctx)
-	// TODO(b/325342884): Add a ts_mon_metric to record the pubsub latency.
+
+	// Publish to TsMon pubsub latency metric.
+	now := clock.Now(ctx).UTC().UnixMilli()
+	startTimeMilli := t.StartTime.AsTime().UnixMilli()
+	latency := now - startTimeMilli
+	if latency < 0 {
+		logging.Warningf(ctx, "ts_mon_metric pubsub latency %dms (%d - %d) is negative. Setting latency to 0", latency, now, startTimeMilli)
+		latency = 0
+	}
+	pool := strpair.ParseMap(t.Tags).Get("pool")
+	httpCode := grpcutil.CodeStatus(status.Code(err))
+	status := t.State.String()
+	logging.Debugf(ctx, "Updating TsMon pubsub metric with latency: %dms, httpCode: %d, status: %s, pool: %s", latency, httpCode, status, pool)
+	metrics.TaskStatusChangePubsubLatency.Add(ctx, float64(latency), pool, status, httpCode)
+
 	return errors.Annotate(err, "failed to publish the msg to %s", t.Topic).Tag(transient.Tag).Err()
 }
 
