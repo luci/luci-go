@@ -2158,6 +2158,12 @@ var testCases = []testCase{
 		want: &B2{B: myBlob("rawr")},
 	},
 	{
+		desc:     "protos encoding: NULL property deserializes into nil",
+		src:      PropertyMap{"Msg": mpNI(nil)},
+		loadInto: &WithProtoDefault{Msg: &testprotos.Msg{}},
+		want:     &WithProtoDefault{},
+	},
+	{
 		desc: "protos encoding: default is nocompression until 16KiB",
 		src:  &WithProtoDefault{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
 		want: PropertyMap{

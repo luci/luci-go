@@ -112,6 +112,12 @@ func protoToProperty(pb proto.Message, opt protoOption) (prop Property, err erro
 }
 
 func protoFromProperty(field reflect.Value, prop Property, opt protoOption) error {
+	// Python can write NULL properties for empty blobs. Treat them as missing.
+	if prop.Type() == PTNull {
+		field.SetZero()
+		return nil
+	}
+
 	pm, _ := field.Interface().(proto.Message)
 	data, err := prop.Project(PTBytes)
 	if err != nil {
