@@ -29,6 +29,7 @@ import (
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/resultdb/bqutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -69,6 +70,7 @@ func init() {
 		},
 		// Relax ensures no fields are marked "required".
 		Schema: schema.Relax(),
+		Labels: map[string]string{bq.MetadataVersionKey: "1"},
 	}
 }
 

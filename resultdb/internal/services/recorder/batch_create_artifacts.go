@@ -609,9 +609,14 @@ func shouldUploadToBQ(ctx context.Context) (bool, error) {
 }
 
 func uploadArtifactsToBQ(ctx context.Context, client BQExportClient, reqs []*artifactCreationRequest, invInfo *invocationInfo) error {
+	statuses, err := testStatusesForArtifacts(ctx, reqs, invocations.ID(invInfo.id))
+	if err != nil {
+		return errors.Annotate(err, "test statuses for artifacts").Err()
+	}
 	rowsToUpload := []*bqpb.TextArtifactRow{}
-	for _, req := range reqs {
-		rows, err := reqToProtos(ctx, req, invInfo, MaxShardContentSize, LookbackWindow)
+	for i, req := range reqs {
+		status := statuses[i]
+		rows, err := reqToProtos(ctx, req, invInfo, status, MaxShardContentSize, LookbackWindow)
 		if err != nil {
 			return errors.Annotate(err, "req to protos").Err()
 		}
@@ -635,7 +640,72 @@ func uploadArtifactsToBQ(ctx context.Context, client BQExportClient, reqs []*art
 	return nil
 }
 
-func reqToProtos(ctx context.Context, req *artifactCreationRequest, invInfo *invocationInfo, maxSize int, lookbackWindow int) ([]*bqpb.TextArtifactRow, error) {
+// testStatusesForArtifacts queries Spanner for test result statuses.
+// Return a slice of status, with the same order as reqs.
+// For invocation-level artifacts, the status will be TestStatus_STATUS_UNSPECIFIED.
+func testStatusesForArtifacts(ctx context.Context, reqs []*artifactCreationRequest, invID invocations.ID) ([]pb.TestStatus, error) {
+	type testIDResultIDKey struct {
+		TestID   string
+		ResultID string
+	}
+
+	txn, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	keys := []spanner.Key{}
+	for _, req := range reqs {
+		// We only query status for test-level artifacts.
+		if req.testID != "" && req.resultID != "" {
+			keys = append(keys, invID.Key(req.testID, req.resultID))
+		}
+	}
+
+	// Create the keyset.
+	keyset := spanner.KeySetFromKeys(keys...)
+	cols := []string{"TestId", "ResultId", "Status"}
+	statusMap := map[testIDResultIDKey]pb.TestStatus{}
+
+	err := span.Read(txn, "TestResults", keyset, cols).Do(
+		func(row *spanner.Row) error {
+			var b spanutil.Buffer
+			var testID string
+			var resultID string
+			var status pb.TestStatus
+			if err := b.FromSpanner(row, &testID, &resultID, &status); err != nil {
+				return errors.Annotate(err, "read values from spanner").Err()
+			}
+			key := testIDResultIDKey{
+				TestID:   testID,
+				ResultID: resultID,
+			}
+			statusMap[key] = status
+			return nil
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]pb.TestStatus, len(reqs))
+	for i, req := range reqs {
+		results[i] = pb.TestStatus_STATUS_UNSPECIFIED
+		// If this is test-level artifact.
+		if req.testID != "" && req.resultID != "" {
+			key := testIDResultIDKey{
+				TestID:   req.testID,
+				ResultID: req.resultID,
+			}
+			status, found := statusMap[key]
+			if found {
+				results[i] = status
+			}
+		}
+	}
+	return results, nil
+}
+
+func reqToProtos(ctx context.Context, req *artifactCreationRequest, invInfo *invocationInfo, status pb.TestStatus, maxSize int, lookbackWindow int) ([]*bqpb.TextArtifactRow, error) {
 	chunks, err := util.SplitToChunks(req.data, maxSize, lookbackWindow)
 	if err != nil {
 		return nil, errors.Annotate(err, "split to chunk").Err()
@@ -658,7 +728,15 @@ func reqToProtos(ctx context.Context, req *artifactCreationRequest, invInfo *inv
 			ArtifactContentSize: int32(req.size),
 			PartitionTime:       timestamppb.New(invInfo.createTime),
 			ArtifactShard:       fmt.Sprintf("%s:%d", req.artifactID, i),
+			TestStatus:          testStatusToString(status),
 		})
 	}
 	return results, nil
+}
+
+func testStatusToString(status pb.TestStatus) string {
+	if status == pb.TestStatus_STATUS_UNSPECIFIED {
+		return ""
+	}
+	return pb.TestStatus_name[int32(status)]
 }

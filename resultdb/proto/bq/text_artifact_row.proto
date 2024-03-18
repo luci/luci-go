@@ -87,5 +87,10 @@ message TextArtifactRow {
   // String of the format <artifact_id>:<shard_id>.
   // This is for the purpose of clustering.
   string artifact_shard = 14;
+
+  // Status of the test result that contains the artifact.
+  // See luci.resultdb.v1.TestStatus for possible values.
+  // For invocation-level artifact, an this will be an empty string.
+  string test_status = 15;
 }
 

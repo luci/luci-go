@@ -88,7 +88,7 @@ var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(1))
 
 func (c *Client) EnsureSchema(ctx context.Context) error {
 	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
-	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
+	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.UpdateMetadata()); err != nil {
 		return errors.Annotate(err, "ensuring text artifacts table").Err()
 	}
 	return nil

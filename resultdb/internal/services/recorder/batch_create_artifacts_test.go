@@ -272,10 +272,14 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{
 				"CreateTime": time.Unix(10000, 0),
 			}))
+			testutil.MustApply(ctx, insert.TestResults("inv", "test_id", &pb.Variant{}, pb.TestStatus_PASS)...)
+			testutil.MustApply(ctx, insert.TestResults("inv", "test_id_1", &pb.Variant{}, pb.TestStatus_FAIL)...)
+
 			appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv")
-			appendArtReq("art2", "c1ntent", "text/richtext", "invocations/inv/tests/test_id/results/result_id")
+			appendArtReq("art2", "c1ntent", "text/richtext", "invocations/inv/tests/test_id/results/0")
 			appendGcsArtReq("art3", 0, "text/plain", "gs://testbucket/art3")
 			appendGcsArtReq("art4", 500, "text/richtext", "gs://testbucket/art4")
+			appendArtReq("art5", "c5ntent", "text/richtext", "invocations/inv/tests/test_id_1/results/0")
 
 			casClient.mockResp(nil, codes.OK, codes.OK)
 			bqClient := &fakeBQClient{}
@@ -292,7 +296,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						SizeBytes:   7,
 					},
 					{
-						Name:        "invocations/inv/tests/test_id/results/result_id/artifacts/art2",
+						Name:        "invocations/inv/tests/test_id/results/0/artifacts/art2",
 						ArtifactId:  "art2",
 						ContentType: "text/richtext",
 						SizeBytes:   7,
@@ -308,6 +312,12 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						ArtifactId:  "art4",
 						ContentType: "text/richtext",
 						SizeBytes:   500,
+					},
+					{
+						Name:        "invocations/inv/tests/test_id_1/results/0/artifacts/art5",
+						ArtifactId:  "art5",
+						ContentType: "text/richtext",
+						SizeBytes:   7,
 					},
 				},
 			})
@@ -329,6 +339,13 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						},
 						Data: []byte("c1ntent"),
 					},
+					{
+						Digest: &repb.Digest{
+							Hash:      compHash("c5ntent"),
+							SizeBytes: int64(len("c5ntent")),
+						},
+						Data: []byte("c5ntent"),
+					},
 				},
 			})
 			// verify the Spanner states
@@ -338,9 +355,15 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			So(cType, ShouldEqual, "text/plain")
 			So(gcsURI, ShouldEqual, "")
 
-			size, hash, cType, gcsURI = fetchState("tr/test_id/result_id", "art2")
+			size, hash, cType, gcsURI = fetchState("tr/test_id/0", "art2")
 			So(size, ShouldEqual, int64(len("c1ntent")))
 			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c1ntent")))
+			So(cType, ShouldEqual, "text/richtext")
+			So(gcsURI, ShouldEqual, "")
+
+			size, hash, cType, gcsURI = fetchState("tr/test_id_1/0", "art5")
+			So(size, ShouldEqual, int64(len("c5ntent")))
+			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c5ntent")))
 			So(cType, ShouldEqual, "text/richtext")
 			So(gcsURI, ShouldEqual, "")
 
@@ -356,11 +379,11 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			So(cType, ShouldEqual, "text/richtext")
 			So(gcsURI, ShouldEqual, "gs://testbucket/art4")
 
-			// RowCount metric should be increased by 4.
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 4)
+			// RowCount metric should be increased by 5.
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 5)
 
 			// Verify the bigquery rows.
-			So(len(bqClient.Rows), ShouldEqual, 2)
+			So(len(bqClient.Rows), ShouldEqual, 3)
 			So(bqClient.Rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
 				{
 					Project:             "testproject",
@@ -375,6 +398,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					ArtifactContentSize: 7,
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
 					ArtifactShard:       "art1:0",
+					TestStatus:          "",
 				},
 				{
 					Project:             "testproject",
@@ -389,11 +413,29 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					ArtifactContentSize: 7,
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
 					TestId:              "test_id",
-					ResultId:            "result_id",
+					ResultId:            "0",
 					ArtifactShard:       "art2:0",
+					TestStatus:          "PASS",
+				},
+				{
+					Project:             "testproject",
+					Realm:               "testrealm",
+					InvocationId:        "inv",
+					ArtifactId:          "art5",
+					ContentType:         "text/richtext",
+					Content:             "c5ntent",
+					NumShards:           1,
+					ShardId:             0,
+					ShardContentSize:    7,
+					ArtifactContentSize: 7,
+					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
+					TestId:              "test_id_1",
+					ResultId:            "0",
+					ArtifactShard:       "art5:0",
+					TestStatus:          "FAIL",
 				},
 			})
-			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 2)
+			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 3)
 		})
 
 		Convey("BatchUpdateBlobs fails", func() {
@@ -684,7 +726,7 @@ func TestReqToProto(t *testing.T) {
 			realm:      "chromium:ci",
 			createTime: time.Unix(1000, 0),
 		}
-		results, err := reqToProtos(ctx, req, invInfo, 10, 10)
+		results, err := reqToProtos(ctx, req, invInfo, pb.TestStatus_PASS, 10, 10)
 		So(err, ShouldBeNil)
 		So(results, ShouldResembleProto, []*bqpb.TextArtifactRow{
 			{
@@ -702,6 +744,7 @@ func TestReqToProto(t *testing.T) {
 				ArtifactContentSize: 20,
 				PartitionTime:       timestamppb.New(time.Unix(1000, 0)),
 				ArtifactShard:       "artifactid:0",
+				TestStatus:          "PASS",
 			},
 			{
 				Project:             "chromium",
@@ -718,6 +761,7 @@ func TestReqToProto(t *testing.T) {
 				ArtifactContentSize: 20,
 				PartitionTime:       timestamppb.New(time.Unix(1000, 0)),
 				ArtifactShard:       "artifactid:1",
+				TestStatus:          "PASS",
 			},
 		})
 	})
@@ -725,7 +769,7 @@ func TestReqToProto(t *testing.T) {
 
 func TestArtifactExportCounter(t *testing.T) {
 	Convey("BQ export error", t, func() {
-		ctx := context.Background()
+		ctx := testutil.SpannerTestContext(t)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		client := &fakeBQClient{
 			Error: fmt.Errorf("Some error"),
@@ -751,7 +795,7 @@ func TestArtifactExportCounter(t *testing.T) {
 	})
 
 	Convey("Input error", t, func() {
-		ctx := context.Background()
+		ctx := testutil.SpannerTestContext(t)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		client := &fakeBQClient{
 			Error: errors.Annotate(fmt.Errorf("error"), "marshal proto").Tag(errors.BoolTag{Key: bqutil.InvalidRowTagKey}).Err(),
