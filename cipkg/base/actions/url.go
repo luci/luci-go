@@ -47,6 +47,10 @@ func ActionURLFetchExecutor(ctx context.Context, a *core.ActionURLFetch, out str
 	if err != nil {
 		return
 	}
+	if resp.StatusCode/100 > 3 {
+		err = errors.New(resp.Status)
+		return
+	}
 	defer joinErr(resp.Body.Close)
 
 	f, err := os.Create(filepath.Join(out, "file"))

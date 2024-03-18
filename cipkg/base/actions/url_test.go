@@ -23,6 +23,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"go.chromium.org/luci/cipkg/core"
@@ -58,6 +59,13 @@ func TestExecuteURL(t *testing.T) {
 		out := t.TempDir()
 
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if status := r.URL.Query().Get("status"); status != "" {
+				i, err := strconv.ParseInt(status, 0, 0)
+				if err != nil {
+					panic(err)
+				}
+				w.WriteHeader(int(i))
+			}
 			fmt.Fprint(w, "something")
 		}))
 		defer s.Close()
@@ -78,6 +86,16 @@ func TestExecuteURL(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(string(b), ShouldEqual, "something")
 			}
+		})
+
+		Convey("Test download file failed", func() {
+			a := &core.ActionURLFetch{
+				Url: s.URL + "?status=404",
+			}
+
+			err := ActionURLFetchExecutor(ctx, a, out)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "404")
 		})
 
 		Convey("Test download file with hash verify", func() {
