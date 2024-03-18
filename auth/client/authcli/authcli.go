@@ -481,8 +481,14 @@ func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
 			)
 			c.Flags.StringVar(
 				&c.jsonOutput, "json-output", "",
-				`Path to a JSON file to write {"token": "...", expiry: <unix_ts>} into.`+
-					"\nUse \"-\" for standard output.")
+				`Path to a JSON file to write the token into. Use "-" for standard output.`)
+			c.Flags.StringVar(
+				&c.jsonFormat, "json-format", "luci",
+				"The format to be used when writing the token to a JSON file ('luci', 'reclient' or 'bazel').\n"+
+					"The 'luci' format is {\"token\": \"...\", expiry: <unix_ts>}.\n"+
+					"The 'reclient' format is similar, but uses the textual Unix date format for the expiry.\n"+
+					"The 'bazel' format is defined in Bazel's credential helper design:\n"+
+					"https://github.com/bazelbuild/proposals/blob/main/designs/2022-06-07-bazel-credential-helpers.md")
 			return c
 		},
 	}
@@ -492,6 +498,7 @@ type tokenRun struct {
 	commandRunBase
 	lifetime   time.Duration
 	jsonOutput string
+	jsonFormat string
 }
 
 func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands.Env) (exitCode int) {
@@ -502,6 +509,10 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 	}
 	if c.lifetime > 30*time.Minute {
 		fmt.Fprintf(os.Stderr, "Requested -lifetime (%s) must not exceed 30m.\n", c.lifetime)
+		return ExitCodeInvalidInput
+	}
+	if c.jsonFormat != "luci" && c.jsonFormat != "reclient" && c.jsonFormat != "bazel" {
+		fmt.Fprintf(os.Stderr, "Unknown -json-format %q, must be 'luci', 'reclient' or 'bazel'.\n", c.jsonFormat)
 		return ExitCodeInvalidInput
 	}
 
@@ -537,10 +548,23 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 				}
 			}()
 		}
-		data := struct {
-			Token  string `json:"token"`
-			Expiry int64  `json:"expiry"`
-		}{token.AccessToken, token.Expiry.Unix()}
+		var data interface{}
+		switch c.jsonFormat {
+		case "luci":
+			data = struct {
+				Token  string `json:"token"`
+				Expiry int64  `json:"expiry"`
+			}{token.AccessToken, token.Expiry.Unix()}
+		case "reclient":
+			data = struct {
+				Token  string `json:"token"`
+				Expiry string `json:"expiry"`
+			}{token.AccessToken, token.Expiry.UTC().Format(time.UnixDate)}
+		case "bazel":
+			data = struct {
+				Headers map[string]string `json:"headers"`
+			}{map[string]string{"Authorization": "Bearer " + token.AccessToken}}
+		}
 		if err = json.NewEncoder(out).Encode(data); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return ExitCodeInternalError
