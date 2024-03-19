@@ -239,6 +239,9 @@ func TestTaskResultSummary(t *testing.T) {
 		Convey("ok", func() {
 			trs := TaskResultSummary{
 				Key: TaskResultSummaryKey(ctx, reqKey),
+				TaskResultCommon: TaskResultCommon{
+					State: apipb.TaskState_COMPLETED,
+				},
 			}
 			ps := PerformanceStats{
 				Key:                  PerformanceStatsKey(ctx, reqKey),
@@ -252,7 +255,13 @@ func TestTaskResultSummary(t *testing.T) {
 				IsolatedUpload:       CASOperationStats{DurationSecs: 7},
 			}
 			So(datastore.Put(ctx, &trs, &ps), ShouldBeNil)
-			resp, err := trs.PerformanceStats(ctx)
+
+			statsKey := trs.PerformanceStatsKey(ctx)
+			So(statsKey, ShouldNotBeNil)
+			stats := &PerformanceStats{Key: statsKey}
+			So(datastore.Get(ctx, stats), ShouldBeNil)
+
+			resp, err := stats.ToProto()
 			So(err, ShouldBeNil)
 			So(resp, ShouldEqual, &apipb.PerformanceStats{
 				BotOverhead:          float32(1),
@@ -264,15 +273,6 @@ func TestTaskResultSummary(t *testing.T) {
 				IsolatedDownload:     &apipb.CASOperationStats{Duration: float32(7)},
 				IsolatedUpload:       &apipb.CASOperationStats{Duration: float32(7)},
 			})
-		})
-
-		Convey("nil", func() {
-			trs := TaskResultSummary{
-				Key: TaskResultSummaryKey(ctx, reqKey),
-			}
-			resp, err := trs.PerformanceStats(ctx)
-			So(err, ShouldErrLike, "datastore: no such entity")
-			So(resp, ShouldBeNil)
 		})
 	})
 

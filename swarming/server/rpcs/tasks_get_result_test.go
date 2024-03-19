@@ -22,8 +22,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -52,7 +50,7 @@ func TestGetResult(t *testing.T) {
 			Key:     reqKey,
 			TxnUUID: "txn-uuid",
 			TaskSlices: []model.TaskSlice{
-				model.TaskSlice{
+				{
 					Properties: model.TaskProperties{
 						Idempotent: true,
 						Dimensions: model.TaskDimensions{
@@ -328,55 +326,6 @@ func TestGetResult(t *testing.T) {
 			_, err := srv.GetResult(ctx, req)
 			So(err, ShouldHaveGRPCStatus, codes.NotFound)
 			So(err, ShouldErrLike, "no such task")
-		})
-		Convey("log error fetching performance stats", func() {
-			ctx = memlogger.Use(ctx)
-			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99310", IncludePerformanceStats: true}
-			resp, err := srv.GetResult(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &apipb.TaskResultResponse{
-				BotDimensions: []*apipb.StringListPair{
-					{Key: "cpu", Value: []string{"x86_64"}},
-					{Key: "os", Value: []string{"linux"}},
-				},
-				BotId:               "bot123",
-				BotLogsCloudProject: "example-cloud-project",
-				BotVersion:          "bot_version_123",
-				BotIdleSinceTs:      timestamppb.New(testTime.Add(-30 * time.Minute)),
-				CasOutputRoot: &apipb.CASReference{
-					CasInstance: "cas-instance",
-					Digest: &apipb.Digest{
-						Hash:      "cas-hash",
-						SizeBytes: 1024,
-					},
-				},
-				CipdPins: &apipb.CipdPins{
-					ClientPackage: &apipb.CipdPackage{
-						PackageName: "client_pkg",
-						Version:     "1.0.0",
-						Path:        "client",
-					},
-				},
-				CompletedTs:      timestamppb.New(testTime),
-				CostsUsd:         []float32{0.05},
-				CreatedTs:        timestamppb.New(testTime.Add(-2 * time.Hour)),
-				CurrentTaskSlice: 1,
-				Duration:         float32(3600),
-				ModifiedTs:       timestamppb.New(testTime),
-				Name:             "example-request",
-				ResultdbInfo: &apipb.ResultDBInfo{
-					Hostname:   "results.api.example.dev",
-					Invocation: "inv123",
-				},
-				RunId:          "65aba3a3e6b99311",
-				ServerVersions: []string{"v1.0"},
-				StartedTs:      timestamppb.New(testTime.Add(-1 * time.Hour)),
-				State:          apipb.TaskState_COMPLETED,
-				Tags:           []string{"tag1", "tag2"},
-				TaskId:         "65aba3a3e6b99310",
-				User:           "user@example.com",
-			})
-			So(ctx, memlogger.ShouldHaveLog, logging.Error, "Error fetching PerformanceStats for task 65aba3a3e6b99310: datastore: no such entity")
 		})
 
 		Convey("requestor does not have ACLs", func() {

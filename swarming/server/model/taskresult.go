@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"reflect"
 	"time"
 
 	"github.com/klauspost/compress/zlib"
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/packedintset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
@@ -453,14 +453,28 @@ func (p *TaskResultSummary) GetOutput(ctx context.Context, length, offset int64)
 	return toReturn[startOffset:endOffset], nil
 }
 
-// PerformanceStats fetches the performance stats from datastore.
-func (p *TaskResultSummary) PerformanceStats(ctx context.Context) (*apipb.PerformanceStats, error) {
-	ps := &PerformanceStats{Key: PerformanceStatsKey(ctx, p.TaskRequestKey())}
-	err := datastore.Get(ctx, ps)
-	if err != nil {
-		return nil, err
+// PerformanceStatsKey returns PerformanceStats entity key or nil.
+//
+// It returns a non-nil key if the performance stats entity can **potentially**
+// exist (e.g. the task has finished running and reported its stats). It returns
+// nil if the performance stats entity definitely doesn't exist.
+//
+// If the task was dedupped, returns the key of the performance stats of the
+// original task that actually ran.
+func (p *TaskResultSummary) PerformanceStatsKey(ctx context.Context) *datastore.Key {
+	switch {
+	case p.DedupedFrom != "":
+		reqKey, err := TaskIDToRequestKey(ctx, p.DedupedFrom)
+		if err != nil {
+			logging.Errorf(ctx, "Broken DedupedFrom %q in %s", p.DedupedFrom, p.Key)
+			return nil
+		}
+		return PerformanceStatsKey(ctx, reqKey)
+	case !ranAndDidNotCrash(p.State):
+		return nil
+	default:
+		return PerformanceStatsKey(ctx, p.TaskRequestKey())
 	}
-	return ps.ToProto()
 }
 
 // TaskAuthInfo is information about the task for ACL checks.
@@ -553,6 +567,18 @@ func (p *TaskRunResult) TaskRequestKey() *datastore.Key {
 	return key
 }
 
+// PerformanceStatsKey returns PerformanceStats entity key or nil.
+//
+// It returns a non-nil key if the performance stats entity can **potentially**
+// exist (e.g. the task has finished running and reported its stats). It returns
+// nil if the performance stats entity definitely doesn't exist.
+func (p *TaskRunResult) PerformanceStatsKey(ctx context.Context) *datastore.Key {
+	if !ranAndDidNotCrash(p.State) {
+		return nil
+	}
+	return PerformanceStatsKey(ctx, p.TaskRequestKey())
+}
+
 // ToProto converts the TaskRunResult struct to an apipb.TaskResultResponse.
 //
 // Note: This function will not handle PerformanceStats due to the requirement
@@ -633,20 +659,9 @@ func (p *PerformanceStats) ToProto() (*apipb.PerformanceStats, error) {
 	}, nil
 }
 
-// TaskRequestKey converts PerformanceStats key to a TaskRequest key.
-func (p *PerformanceStats) TaskRequestKey() *datastore.Key {
-	// It is safe to do multiple nested key.Parent calls
-	// A PerformanceStats key has the following ancestry:
-	// TaskRequest -> TaskResultSummary -> TaskRunResult -> PerformanceStats
-	// Each call to key.Parent() will return nil if there are no more parents.
-	// key.Parent() returns nil if it encounters a nil receiver.
-	// If this occurs we have enountered a programming error and so we will
-	// crash with a nice error message.
-	reqKey := p.Key.Parent().Parent().Parent()
-	if reqKey == nil || reqKey.Kind() != "TaskRequest" {
-		panic(fmt.Sprintf("Could not derive TaskRequest from PerformanceStats key %q", p.Key))
-	}
-	return reqKey
+// PerformanceStatsKey builds a PerformanceStats key given a task request key.
+func PerformanceStatsKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
+	return datastore.NewKey(ctx, "PerformanceStats", "", 1, TaskRunResultKey(ctx, taskReq))
 }
 
 // OperationStats is performance stats of a particular operation.
@@ -691,9 +706,15 @@ type CASOperationStats struct {
 	ItemsHot []byte `gae:"items_hot"`
 }
 
+// IsEmpty is true if this struct is unpopulated.
+func (p *CASOperationStats) IsEmpty() bool {
+	return p.DurationSecs == 0 && p.InitialItems == 0 && p.InitialSize == 0 &&
+		len(p.ItemsCold) == 0 && len(p.ItemsHot) == 0
+}
+
 // ToProto converts the CASOperationStats struct to apipb.CASOperationStats.
 func (p *CASOperationStats) ToProto() (*apipb.CASOperationStats, error) {
-	if reflect.DeepEqual(*p, CASOperationStats{}) {
+	if p.IsEmpty() {
 		return nil, nil
 	}
 	resp := &apipb.CASOperationStats{
@@ -701,6 +722,10 @@ func (p *CASOperationStats) ToProto() (*apipb.CASOperationStats, error) {
 		InitialNumberItems: int32(p.InitialItems),
 		InitialSize:        p.InitialSize,
 	}
+	// TODO (crbug.com/329071986): Store precalculated sums in the stats. We only
+	// need to compute sum once since ItemsCold and ItemsHot never change once
+	// they are set and they generally can be pretty big, costing more compute
+	// power.
 	if p.ItemsCold != nil {
 		resp.ItemsCold = p.ItemsCold
 		itemsCold, err := packedintset.Unpack(p.ItemsCold)
@@ -728,11 +753,6 @@ func (p *CASOperationStats) ToProto() (*apipb.CASOperationStats, error) {
 		resp.TotalBytesItemsHot = int64(sum)
 	}
 	return resp, nil
-}
-
-// PerformanceStatsKey builds a PerformanceStats key given a task request key.
-func PerformanceStatsKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
-	return datastore.NewKey(ctx, "PerformanceStats", "", 1, TaskRunResultKey(ctx, taskReq))
 }
 
 // TaskOutputChunk represents a chunk of the task console output.

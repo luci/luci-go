@@ -45,6 +45,21 @@ func checkIsHex(s string, minLen int) error {
 	return nil
 }
 
+// ranAndDidNotCrash is true if the state indicates the task has run on a bot
+// and potentially terminated in some graceful way (i.e. it managed to report
+// the final result).
+func ranAndDidNotCrash(state apipb.TaskState) bool {
+	switch state {
+	case apipb.TaskState_COMPLETED,
+		apipb.TaskState_TIMED_OUT,
+		apipb.TaskState_KILLED,
+		apipb.TaskState_CLIENT_ERROR:
+		return true
+	default:
+		return false
+	}
+}
+
 // ToJSONProperty serializes a value into a JSON blob property.
 //
 // Empty maps and lists are stored as nulls.

@@ -34,8 +34,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func createTaskRequest(key *datastore.Key, testTime time.Time) model.TaskRequest {
-	taskSlice := func(val string, exp time.Time) model.TaskSlice {
+func createTaskRequest(key *datastore.Key, testTime time.Time) *model.TaskRequest {
+	taskSlice := func(val string, exp time.Duration) model.TaskSlice {
 		return model.TaskSlice{
 			Properties: model.TaskProperties{
 				Idempotent: true,
@@ -95,16 +95,16 @@ func createTaskRequest(key *datastore.Key, testTime time.Time) model.TaskRequest
 					LimitTotalCommittedMemory: 789,
 				},
 			},
-			ExpirationSecs:  int64(exp.Sub(testTime).Seconds()),
+			ExpirationSecs:  int64(exp.Seconds()),
 			WaitForCapacity: true,
 		}
 	}
-	return model.TaskRequest{
+	return &model.TaskRequest{
 		Key:     key,
 		TxnUUID: "txn-uuid",
 		TaskSlices: []model.TaskSlice{
-			taskSlice("a", testTime.Add(10*time.Minute)),
-			taskSlice("b", testTime.Add(20*time.Minute)),
+			taskSlice("a", 10*time.Minute),
+			taskSlice("b", 20*time.Minute),
 		},
 		Created:              testTime,
 		Expiration:           testTime.Add(20 * time.Minute),
@@ -130,11 +130,8 @@ func createTaskRequest(key *datastore.Key, testTime time.Time) model.TaskRequest
 	}
 }
 
-func createTaskResultCommon(testTime time.Time) model.TaskResultCommon {
-	nullT := datastore.NewIndexedNullable(testTime)
-	nullT.Unset()
-
-	return model.TaskResultCommon{
+func createTaskResultCommon(testTime time.Time) *model.TaskResultCommon {
+	return &model.TaskResultCommon{
 		State:      apipb.TaskState_RUNNING,
 		Modified:   testTime,
 		BotVersion: "some-version",
@@ -150,8 +147,7 @@ func createTaskResultCommon(testTime time.Time) model.TaskResultCommon {
 		CurrentTaskSlice:    1,
 		Started:             datastore.NewIndexedNullable(testTime),
 		Completed:           datastore.NewIndexedNullable(testTime),
-		Abandoned:           nullT,
-		DurationSecs:        datastore.NewUnindexedOptional(10.),
+		DurationSecs:        datastore.NewUnindexedOptional(10.456),
 		ExitCode:            datastore.NewUnindexedOptional(int64(0)),
 		Failure:             false,
 		InternalFailure:     false,
@@ -195,131 +191,111 @@ func createPerformanceStats() *model.PerformanceStats {
 			DurationSecs: x,
 		}
 	}
-	cos := func(x float64) model.CASOperationStats {
-		s := int64(x)
-		hot, _ := packedintset.Pack([]int64{s + 1, s + 2})
-		cold, _ := packedintset.Pack([]int64{s + 1, s + 2, s + 3})
+	cos := func(dur float64, cold, hot []int64) model.CASOperationStats {
+		hotPacked, _ := packedintset.Pack(hot)
+		coldPacked, _ := packedintset.Pack(cold)
 		return model.CASOperationStats{
-			DurationSecs: x,
-			ItemsHot:     hot,
-			ItemsCold:    cold,
+			DurationSecs: dur,
+			ItemsHot:     hotPacked,
+			ItemsCold:    coldPacked,
 			InitialItems: 10,
 			InitialSize:  20,
 		}
 	}
 
 	return &model.PerformanceStats{
-		BotOverheadSecs:      8.,
-		CacheTrim:            os(1.),
-		PackageInstallation:  os(1.),
-		NamedCachesInstall:   os(1.),
-		NamedCachesUninstall: os(1.),
-		IsolatedDownload:     cos(1.),
-		IsolatedUpload:       cos(1.),
-		Cleanup:              os(1.),
+		BotOverheadSecs:      123.,
+		CacheTrim:            os(1.5),
+		PackageInstallation:  os(2.5),
+		NamedCachesInstall:   os(3.5),
+		NamedCachesUninstall: os(4.5),
+		IsolatedDownload:     cos(5.5, []int64{1, 2}, []int64{4, 5, 6}),
+		IsolatedUpload:       cos(6.5, []int64{7, 8}, []int64{9, 10, 11}),
+		Cleanup:              os(7.5),
 	}
 }
 
-func createBQPerformanceStats() *bqpb.TaskPerformance {
+func createBQPerformanceStats(costUSD float32) *bqpb.TaskPerformance {
+	casStats := func(items []int64) *bqpb.CASEntriesStats {
+		sum := int64(0)
+		for _, i := range items {
+			sum += i
+		}
+		return &bqpb.CASEntriesStats{
+			NumItems:        int64(len(items)),
+			TotalBytesItems: sum,
+			Items:           nil, // not actually exported
+		}
+	}
+
+	casSetup := &bqpb.CASOverhead{
+		Duration: secondsFloat(5.5),
+		Cold:     casStats([]int64{1, 2}),
+		Hot:      casStats([]int64{4, 5, 6}),
+	}
+
+	casTeardown := &bqpb.CASOverhead{
+		Duration: secondsFloat(6.5),
+		Cold:     casStats([]int64{7, 8}),
+		Hot:      casStats([]int64{9, 10, 11}),
+	}
+
 	return &bqpb.TaskPerformance{
-		CostUsd:       10.,
-		OtherOverhead: seconds(int64(1)),
-		TotalOverhead: seconds(int64(8)),
+		CostUsd:       costUSD,
+		OtherOverhead: secondsFloat(91.5),
+		TotalOverhead: secondsFloat(123.),
 		Setup: &bqpb.TaskOverheadStats{
-			Duration: seconds(1),
-			Hot: &bqpb.CASEntriesStats{
-				NumItems:        2,
-				TotalBytesItems: 5,
-			},
-			Cold: &bqpb.CASEntriesStats{
-				NumItems:        3,
-				TotalBytesItems: 9,
-			},
+			Duration: casSetup.Duration,
+			Hot:      casSetup.Hot,
+			Cold:     casSetup.Cold,
 		},
 		Teardown: &bqpb.TaskOverheadStats{
-			Duration: seconds(1),
-			Hot: &bqpb.CASEntriesStats{
-				NumItems:        2,
-				TotalBytesItems: 5,
-			},
-			Cold: &bqpb.CASEntriesStats{
-				NumItems:        3,
-				TotalBytesItems: 9,
-			},
+			Duration: casTeardown.Duration,
+			Hot:      casTeardown.Hot,
+			Cold:     casTeardown.Cold,
 		},
 		SetupOverhead: &bqpb.TaskSetupOverhead{
-			Duration: seconds(4),
+			Duration: secondsFloat(13),
 			CacheTrim: &bqpb.CacheTrimOverhead{
-				Duration: seconds(1),
+				Duration: secondsFloat(1.5),
 			},
 			Cipd: &bqpb.CIPDOverhead{
-				Duration: seconds(1),
+				Duration: secondsFloat(2.5),
 			},
 			NamedCache: &bqpb.NamedCacheOverhead{
-				Duration: seconds(1),
+				Duration: secondsFloat(3.5),
 			},
-			Cas: &bqpb.CASOverhead{
-				Duration: seconds(1),
-				Hot: &bqpb.CASEntriesStats{
-					NumItems:        2,
-					TotalBytesItems: 5,
-				},
-				Cold: &bqpb.CASEntriesStats{
-					NumItems:        3,
-					TotalBytesItems: 9,
-				},
-			},
+			Cas: casSetup,
 		},
 		TeardownOverhead: &bqpb.TaskTeardownOverhead{
-			Duration: seconds(3),
-			Cas: &bqpb.CASOverhead{
-				Duration: seconds(1),
-				Hot: &bqpb.CASEntriesStats{
-					NumItems:        2,
-					TotalBytesItems: 5,
-				},
-				Cold: &bqpb.CASEntriesStats{
-					NumItems:        3,
-					TotalBytesItems: 9,
-				},
-			},
+			Duration: secondsFloat(18.5),
+			Cas:      casTeardown,
 			NamedCache: &bqpb.NamedCacheOverhead{
-				Duration: seconds(1),
+				Duration: secondsFloat(4.5),
 			},
 			Cleanup: &bqpb.CleanupOverhead{
-				Duration: seconds(1),
+				Duration: secondsFloat(7.5),
 			},
 		},
 	}
 }
 
-func createTaskResultSummary(testTime time.Time) *model.TaskResultSummary {
-	return &model.TaskResultSummary{
-		Created:          testTime,
-		TaskResultCommon: createTaskResultCommon(testTime),
-		Tags:             []string{"t1", "t2"},
-		TryNumber:        datastore.NewIndexedNullable(int64(1)),
-		CostUSD:          10.,
-		CostSavedUSD:     0,
-	}
-}
-
-func createBQTaskResultSummary(taskID string, testTime time.Time) *bqpb.TaskResult {
+// createBQTaskResultBase creates *bqpb.TaskResult matching TaskResultCommon.
+//
+// Following fields are not populated: RunId, TryNumber, Performance.
+func createBQTaskResultBase(taskID string, testTime time.Time) *bqpb.TaskResult {
 	return &bqpb.TaskResult{
-		TaskId:           "65aba3a3e6b99310",
-		RunId:            "65aba3a3e6b99311",
+		TaskId:           taskID,
 		CreateTime:       timestamppb.New(testTime),
 		State:            bqpb.TaskState_RUNNING,
 		StateCategory:    bqpb.TaskStateCategory_CATEGORY_RUNNING,
 		Request:          createBQTaskRequest(taskID, testTime),
-		Performance:      createBQPerformanceStats(),
 		ServerVersions:   []string{"foo", "bar"},
 		CurrentTaskSlice: 0,
 		StartTime:        timestamppb.New(testTime),
 		EndTime:          timestamppb.New(testTime),
-		Duration:         seconds(10.),
+		Duration:         secondsFloat(10.456),
 		ExitCode:         int64(0),
-		TryNumber:        int32(1),
 		CipdPins: &bqpb.CIPDPins{
 			Server: "some-cipd-server",
 			ClientPackage: &bqpb.CIPDPackage{
@@ -380,7 +356,7 @@ func createBQTaskResultSummary(taskID string, testTime time.Time) *bqpb.TaskResu
 }
 
 func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
-	taskSlice := func(val string, exp time.Time) *bqpb.TaskSlice {
+	taskSlice := func(val string, exp time.Duration) *bqpb.TaskSlice {
 		return &bqpb.TaskSlice{
 			Properties: &bqpb.TaskProperties{
 				Idempotent: true,
@@ -394,9 +370,9 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 						Values: []string{val},
 					},
 				},
-				ExecutionTimeout: seconds(123),
-				GracePeriod:      seconds(456),
-				IoTimeout:        seconds(789),
+				ExecutionTimeout: secondsInt(123),
+				GracePeriod:      secondsInt(456),
+				IoTimeout:        secondsInt(789),
 				Command:          []string{"run", val},
 				RelativeCwd:      "./rel/cwd",
 				Env: []*bqpb.StringPair{
@@ -448,15 +424,15 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 					ContainmentType: bqpb.Containment_NOT_SPECIFIED,
 				},
 			},
-			Expiration:      seconds(int64(exp.Sub(testTime).Seconds())),
+			Expiration:      secondsInt(int64(exp.Seconds())),
 			WaitForCapacity: true,
 		}
 	}
 	return &bqpb.TaskRequest{
 		TaskId: taskID,
 		TaskSlices: []*bqpb.TaskSlice{
-			taskSlice("a", testTime.Add(10*time.Minute)),
-			taskSlice("b", testTime.Add(20*time.Minute)),
+			taskSlice("a", 10*time.Minute),
+			taskSlice("b", 20*time.Minute),
 		},
 		Name:             "name",
 		CreateTime:       timestamppb.New(testTime),
@@ -467,7 +443,7 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 		ServiceAccount:   "service-account",
 		Realm:            "realm",
 		Priority:         123,
-		BotPingTolerance: seconds(456),
+		BotPingTolerance: secondsInt(456),
 		PubsubNotification: &bqpb.PubSub{
 			Topic:    "pubsub-topic",
 			Userdata: "pubsub-user-data",
@@ -487,7 +463,7 @@ func TestTaskRequestConversion(t *testing.T) {
 		So(err, ShouldBeNil)
 		sampleRequest := createTaskRequest(key, testTime)
 		expected := createBQTaskRequest(taskID, testTime)
-		actual := taskRequest(&sampleRequest)
+		actual := taskRequest(sampleRequest)
 		So(actual, ShouldResembleProto, expected)
 	})
 
@@ -503,284 +479,146 @@ func TestTaskRequestConversion(t *testing.T) {
 		// Set this list to zero too
 		expected := createBQTaskRequest(taskID, testTime)
 		expected.TaskSlices[0].Properties.EnvPaths = make([]*bqpb.StringListPair, 0)
-		actual := taskRequest(&sampleRequest)
+		actual := taskRequest(sampleRequest)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResembleProto, expected)
 	})
 }
 
-func TestTaskResultConversion(t *testing.T) {
+func TestPerformanceStatsConversion(t *testing.T) {
 	t.Parallel()
-	var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
-	Convey(`Convert completed task with performance stats`, t, func() {
-		ctx := memory.Use(context.Background())
-		taskID := "65aba3a3e6b99310"
-		key, err := model.TaskIDToRequestKey(ctx, taskID)
-		So(err, ShouldBeNil)
-		req := createTaskRequest(key, testTime)
-		So(datastore.Put(ctx, &req), ShouldBeNil)
-		trs := createTaskResultSummary(testTime)
-		trs.Key = model.TaskResultSummaryKey(ctx, key)
-		So(datastore.Put(ctx, trs), ShouldBeNil)
-		perf := createPerformanceStats()
-		perf.Key = model.PerformanceStatsKey(ctx, key)
-		So(datastore.Put(ctx, perf), ShouldBeNil)
-		expected := []*bqpb.TaskResult{createBQTaskResultSummary(taskID, testTime)}
-		actual, err := taskResults(ctx, []*model.TaskResultSummary{trs})
-		So(err, ShouldBeNil)
-		So(actual, ShouldHaveLength, 1)
-		So(actual, ShouldResembleProto, expected)
+	Convey("Works", t, func() {
+		got := performanceStats(createPerformanceStats(), 123.456)
+		want := createBQPerformanceStats(123.456)
+		So(got, ShouldResembleProto, want)
+	})
+}
+
+func TestTaskResultCommonConversion(t *testing.T) {
+	t.Parallel()
+
+	testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
+	ctx := memory.Use(context.Background())
+
+	taskID := "65aba3a3e6b99310"
+	key, err := model.TaskIDToRequestKey(ctx, taskID)
+	if err != nil {
+		panic(err)
+	}
+
+	Convey("Full", t, func() {
+		res := createTaskResultCommon(testTime)
+		got := taskResultCommon(res, createTaskRequest(key, testTime))
+		want := createBQTaskResultBase(taskID, testTime)
+		So(got, ShouldResembleProto, want)
 	})
 
-	Convey(`Do not fail if performance stats "expected" but missing`, t, func() {
-		ctx := memory.Use(context.Background())
-		var expected []*bqpb.TaskResult
+	Convey("Internal error", t, func() {
+		res := createTaskResultCommon(testTime)
+		res.InternalFailure = true
+		got := taskResultCommon(res, createTaskRequest(key, testTime))
 
-		var km *datastore.Key
-		{
-			taskID := "55aba3a3e6b99310"
-			runID := "55aba3a3e6b99311"
-			key, err := model.TaskIDToRequestKey(ctx, taskID)
-			So(err, ShouldBeNil)
-			req := createTaskRequest(key, testTime)
-			So(datastore.Put(ctx, &req), ShouldBeNil)
-			trs := createTaskResultSummary(testTime)
-			km = model.TaskResultSummaryKey(ctx, key)
-			trs.Key = km
-			trs.CostUSD = 0
-			So(datastore.Put(ctx, trs), ShouldBeNil)
-			bpb := createBQTaskResultSummary(taskID, testTime)
-			bpb.Performance = nil
-			bpb.TaskId = taskID
-			bpb.RunId = runID
-			expected = append(expected, bpb)
+		want := createBQTaskResultBase(taskID, testTime)
+		want.State = bqpb.TaskState_RAN_INTERNAL_FAILURE
+		want.StateCategory = bqpb.TaskStateCategory_CATEGORY_TRANSIENT_DONE
+
+		So(got, ShouldResembleProto, want)
+	})
+}
+
+func TestTaskResultSummaryConversion(t *testing.T) {
+	t.Parallel()
+
+	testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
+	ctx := memory.Use(context.Background())
+
+	taskID := "65aba3a3e6b99310"
+	key, err := model.TaskIDToRequestKey(ctx, taskID)
+	if err != nil {
+		panic(err)
+	}
+
+	Convey("Not dedupped", t, func() {
+		summary := &model.TaskResultSummary{
+			Created:          testTime,
+			TaskResultCommon: *createTaskResultCommon(testTime),
+			TryNumber:        datastore.NewIndexedNullable(int64(1)),
+			CostUSD:          123.456,
 		}
 
-		var kf *datastore.Key
-		{
-			taskID := "65aba3a3e6b99310"
-			key, err := model.TaskIDToRequestKey(ctx, taskID)
-			So(err, ShouldBeNil)
-			req := createTaskRequest(key, testTime)
-			So(datastore.Put(ctx, &req), ShouldBeNil)
-			trs := createTaskResultSummary(testTime)
-			kf = model.TaskResultSummaryKey(ctx, key)
-			trs.Key = kf
-			So(datastore.Put(ctx, trs), ShouldBeNil)
-			bpb := createBQTaskResultSummary(taskID, testTime)
-			perf := createPerformanceStats()
-			perf.Key = model.PerformanceStatsKey(ctx, req.Key)
-			So(datastore.Put(ctx, perf), ShouldBeNil)
-			expected = append(expected, bpb)
-		}
+		got := taskResultSummary(
+			summary,
+			createTaskRequest(key, testTime),
+			createPerformanceStats(),
+		)
 
-		sums := []*model.TaskResultSummary{
-			{
-				Key: km,
-			},
-			{
-				Key: kf,
-			},
-		}
-		So(datastore.Get(ctx, sums), ShouldBeNil)
-		actual, err := taskResults(ctx, sums)
-		So(err, ShouldBeNil)
-		So(actual, ShouldHaveLength, 2)
-		So(actual, ShouldResembleProto, expected)
+		want := createBQTaskResultBase(taskID, testTime)
+		want.RunId = taskID[:len(taskID)-1] + "1"
+		want.TryNumber = 1
+		want.Performance = createBQPerformanceStats(123.456)
+
+		So(got, ShouldResembleProto, want)
 	})
 
-	Convey(`Convert deduped tasks`, t, func() {
-		ctx := memory.Use(context.Background())
-		// Create initial task
-		ogTaskID := "65aba3a3e6b99310"
-		var task *model.TaskResultSummary
-		{
-			taskID := ogTaskID
-			key, err := model.TaskIDToRequestKey(ctx, taskID)
-			So(err, ShouldBeNil)
-			req := createTaskRequest(key, testTime)
-			So(datastore.Put(ctx, &req), ShouldBeNil)
-			task = createTaskResultSummary(testTime)
-			task.Key = model.TaskResultSummaryKey(ctx, key)
-			So(datastore.Put(ctx, task), ShouldBeNil)
-			perf := createPerformanceStats()
-			perf.Key = model.PerformanceStatsKey(ctx, req.Key)
-			So(datastore.Put(ctx, perf), ShouldBeNil)
+	Convey("Dedupped", t, func() {
+		const dedupedFrom = "65aba3a3e6b00001"
+
+		summary := &model.TaskResultSummary{
+			Created:          testTime,
+			TaskResultCommon: *createTaskResultCommon(testTime),
+			TryNumber:        datastore.NewIndexedNullable(int64(0)),
+			DedupedFrom:      dedupedFrom,
+			CostSavedUSD:     111.111,
 		}
 
-		// Create deduped task from initial task
-		dedupTaskID := "45aba3a3e6c99310"
-		var dedupedTask *model.TaskResultSummary
-		{
-			taskID := dedupTaskID
-			key, err := model.TaskIDToRequestKey(ctx, taskID)
-			So(err, ShouldBeNil)
-			req := createTaskRequest(key, testTime)
-			So(datastore.Put(ctx, &req), ShouldBeNil)
-			dedupedTask = createTaskResultSummary(testTime)
-			dedupedTask.Key = model.TaskResultSummaryKey(ctx, key)
-			dedupedTask.DedupedFrom = model.RequestKeyToTaskID(task.TaskRequestKey(), model.AsRunResult)
-			dedupedTask.TryNumber = datastore.NewIndexedNullable(int64(0))
-			So(datastore.Put(ctx, dedupedTask), ShouldBeNil)
-		}
+		got := taskResultSummary(
+			summary,
+			createTaskRequest(key, testTime),
+			createPerformanceStats(),
+		)
 
-		// Both tasks should share same performance stats
-		ogBQ := createBQTaskResultSummary(ogTaskID, testTime)
-		dedupedBQ := createBQTaskResultSummary(dedupTaskID, testTime)
-		dedupedBQ.TaskId = dedupTaskID
-		dedupedBQ.RunId = model.RequestKeyToTaskID(task.TaskRequestKey(), model.AsRunResult)
-		dedupedBQ.DedupedFrom = ogBQ.RunId
-		dedupedBQ.State = bqpb.TaskState_DEDUPED
-		dedupedBQ.StateCategory = bqpb.TaskStateCategory_CATEGORY_NEVER_RAN_DONE
-		dedupedBQ.TryNumber = 0
-		expected := []*bqpb.TaskResult{
-			ogBQ,
-			dedupedBQ,
-		}
-		actual, err := taskResults(ctx, []*model.TaskResultSummary{task, dedupedTask})
-		So(err, ShouldBeNil)
-		So(actual, ShouldHaveLength, 2)
-		So(actual, ShouldResembleProto, expected)
+		want := createBQTaskResultBase(taskID, testTime)
+		want.DedupedFrom = dedupedFrom
+		want.RunId = dedupedFrom
+		want.TryNumber = 0
+		want.Performance = createBQPerformanceStats(0.0)
+		want.State = bqpb.TaskState_DEDUPED
+		want.StateCategory = bqpb.TaskStateCategory_CATEGORY_NEVER_RAN_DONE
+
+		So(got, ShouldResembleProto, want)
 	})
+}
 
-	Convey(`Convert expired task`, t, func() {
-		ctx := memory.Use(context.Background())
-		taskID := "65aba3a3e6b99310"
-		key, err := model.TaskIDToRequestKey(ctx, taskID)
-		So(err, ShouldBeNil)
-		req := createTaskRequest(key, testTime)
-		So(datastore.Put(ctx, &req), ShouldBeNil)
-		task := &model.TaskResultSummary{
-			Key:     model.TaskResultSummaryKey(ctx, key),
-			Created: testTime,
-			TaskResultCommon: model.TaskResultCommon{
-				State:               apipb.TaskState_EXPIRED,
-				Modified:            testTime,
-				BotVersion:          "some-version",
-				BotLogsCloudProject: "some-cloud-project",
-				ServerVersions:      []string{"foo", "bar"},
-				Completed:           datastore.NewIndexedNullable(testTime),
-				Abandoned:           datastore.NewIndexedNullable(testTime),
-				Failure:             false,
-				InternalFailure:     false,
-				ResultDBInfo: model.ResultDBInfo{
-					Hostname:   "some-rdb-hostname",
-					Invocation: "some-rdb-invocation",
-				},
-			},
-		}
-		So(datastore.Put(ctx, task), ShouldBeNil)
+func TestTaskRunResultConversion(t *testing.T) {
+	t.Parallel()
 
-		bqTask := &bqpb.TaskResult{
-			TaskId:         taskID,
-			Request:        createBQTaskRequest(taskID, testTime),
-			CreateTime:     timestamppb.New(testTime),
-			State:          bqpb.TaskState_EXPIRED,
-			StateCategory:  bqpb.TaskStateCategory_CATEGORY_NEVER_RAN_DONE,
-			ServerVersions: []string{"foo", "bar"},
-			EndTime:        timestamppb.New(testTime),
-			AbandonTime:    timestamppb.New(testTime),
-			ResultdbInfo: &bqpb.ResultDBInfo{
-				Hostname:   "some-rdb-hostname",
-				Invocation: "some-rdb-invocation",
-			},
-		}
-		expected := []*bqpb.TaskResult{bqTask}
-		actual, err := taskResults(ctx, []*model.TaskResultSummary{task})
-		So(err, ShouldBeNil)
-		So(actual, ShouldHaveLength, 1)
-		So(actual, ShouldResembleProto, expected)
-	})
+	testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
+	ctx := memory.Use(context.Background())
 
-	Convey(`Convert task with internal error`, t, func() {
-		ctx := memory.Use(context.Background())
-		taskID := "65aba3a3e6b99310"
-		runID := "65aba3a3e6b99311"
-		key, err := model.TaskIDToRequestKey(ctx, taskID)
-		So(err, ShouldBeNil)
-		req := createTaskRequest(key, testTime)
-		So(datastore.Put(ctx, &req), ShouldBeNil)
-		task := &model.TaskResultSummary{
-			Key:       model.TaskResultSummaryKey(ctx, key),
-			Created:   testTime,
-			TryNumber: datastore.NewIndexedNullable(int64(1)),
-			CostUSD:   1.,
-			TaskResultCommon: model.TaskResultCommon{
-				State:        apipb.TaskState_KILLED,
-				BotIdleSince: datastore.NewUnindexedOptional(testTime),
-				BotDimensions: model.BotDimensions{
-					"os":   {"unix", "linux"},
-					"cpu":  {"intel", "x86"},
-					"pool": {"try:ci", "try:test"},
-					"id":   {"bot1"},
-				},
-				ExitCode:            datastore.NewUnindexedOptional(int64(-1)),
-				Modified:            testTime,
-				BotVersion:          "some-version",
-				BotLogsCloudProject: "some-cloud-project",
-				ServerVersions:      []string{"foo", "bar"},
-				Completed:           datastore.NewIndexedNullable(testTime),
-				Abandoned:           datastore.NewIndexedNullable(testTime),
-				Failure:             true,
-				InternalFailure:     true,
-				ResultDBInfo: model.ResultDBInfo{
-					Hostname:   "some-rdb-hostname",
-					Invocation: "some-rdb-invocation",
-				},
-			},
-		}
-		So(datastore.Put(ctx, task), ShouldBeNil)
+	taskID := "65aba3a3e6b99310"
+	key, err := model.TaskIDToRequestKey(ctx, taskID)
+	if err != nil {
+		panic(err)
+	}
 
-		bqTask := &bqpb.TaskResult{
-			TaskId:         taskID,
-			RunId:          runID,
-			Request:        createBQTaskRequest(taskID, testTime),
-			TryNumber:      1,
-			ExitCode:       -1,
-			CreateTime:     timestamppb.New(testTime),
-			State:          bqpb.TaskState_RAN_INTERNAL_FAILURE,
-			StateCategory:  bqpb.TaskStateCategory_CATEGORY_TRANSIENT_DONE,
-			ServerVersions: []string{"foo", "bar"},
-			EndTime:        timestamppb.New(testTime),
-			AbandonTime:    timestamppb.New(testTime),
-			Performance: &bqpb.TaskPerformance{
-				CostUsd: 1.,
-			},
-			Bot: &bqpb.Bot{
-				Dimensions: []*bqpb.StringListPair{
-					{
-						Key:    "cpu",
-						Values: []string{"intel", "x86"},
-					},
-					{
-						Key:    "id",
-						Values: []string{"bot1"},
-					},
-					{
-						Key:    "os",
-						Values: []string{"linux", "unix"},
-					},
-					{
-						Key:    "pool",
-						Values: []string{"try:ci", "try:test"},
-					},
-				},
-				BotId: "bot1",
-				Pools: []string{"try:ci", "try:test"},
-				Info: &bqpb.BotInfo{
-					IdleSinceTs: timestamppb.New(testTime),
-				},
-			},
-			ResultdbInfo: &bqpb.ResultDBInfo{
-				Hostname:   "some-rdb-hostname",
-				Invocation: "some-rdb-invocation",
-			},
+	Convey("Works", t, func() {
+		res := &model.TaskRunResult{
+			TaskResultCommon: *createTaskResultCommon(testTime),
+			CostUSD:          123.456,
 		}
-		expected := []*bqpb.TaskResult{bqTask}
-		actual, err := taskResults(ctx, []*model.TaskResultSummary{task})
-		So(err, ShouldBeNil)
-		So(actual, ShouldHaveLength, 1)
-		So(actual, ShouldResembleProto, expected)
+
+		got := taskRunResult(
+			res,
+			createTaskRequest(key, testTime),
+			createPerformanceStats(),
+		)
+
+		want := createBQTaskResultBase(taskID, testTime)
+		want.RunId = taskID[:len(taskID)-1] + "1"
+		want.TryNumber = 1
+		want.Performance = createBQPerformanceStats(123.456)
+
+		So(got, ShouldResembleProto, want)
 	})
 }
