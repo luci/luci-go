@@ -17,8 +17,9 @@ package model
 import (
 	"context"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // BuildTask stores the Buildbucket related fields.
@@ -45,10 +46,11 @@ type BuildTask struct {
 	// updates (state changes) have occurred. A timestamp measured in ms is used.
 	UpdateID int64 `gae:"update_id,noindex"`
 
-	// LatestTaskStatus is a the latest build status sent to Buildbucket.
+	// LatestTaskStatus is a the latest status sent to Buildbucket.
 	//
-	// It is converted from TaskRunResult.State.
-	LatestTaskStatus bbpb.Status `gae:"latest_task_status,noindex"`
+	// It is a TaskRunResult.State, but will be converted to Buildbucket status
+	// when sending out the update.
+	LatestTaskStatus apipb.TaskState `gae:"latest_task_status,noindex"`
 
 	// PubSubTopic is the pubsub topic name that will be used to send
 	// UpdateBuildTask messages to Buildbucket.

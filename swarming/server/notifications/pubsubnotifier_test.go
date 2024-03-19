@@ -153,7 +153,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 			BuildID:          "1",
 			BuildbucketHost:  "bb-host",
 			UpdateID:         100,
-			LatestTaskStatus: bbpb.Status_SCHEDULED,
+			LatestTaskStatus: apipb.TaskState_PENDING,
 			PubSubTopic:      "projects/bb/topics/bb-updates",
 		}
 		resultSummary := &model.TaskResultSummary{
@@ -180,10 +180,11 @@ func TestHandleBBNotifyTask(t *testing.T) {
 			psTask := &taskspb.BuildbucketNotifyTask{
 				TaskId:   "65aba3a3e6b99310",
 				State:    apipb.TaskState_RUNNING,
-				UpdateId: 99,
+				UpdateId: 99, // update id < prior update id
 			}
-			err := notifier.handleBBNotifyTask(ctx, psTask)
-			So(err, ShouldBeNil)
+			So(notifier.handleBBNotifyTask(ctx, psTask), ShouldBeNil)
+			psTask.UpdateId = 100 // update id == prior update id
+			So(notifier.handleBBNotifyTask(ctx, psTask), ShouldBeNil)
 			So(psServer.Messages(), ShouldHaveLength, 0)
 		})
 
@@ -250,7 +251,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 
 			updatedBuildTask := &model.BuildTask{Key: model.BuildTaskKey(ctx, reqKey)}
 			So(datastore.Get(ctx, updatedBuildTask), ShouldBeNil)
-			So(updatedBuildTask.LatestTaskStatus, ShouldEqual, bbpb.Status_STARTED)
+			So(updatedBuildTask.LatestTaskStatus, ShouldEqual, apipb.TaskState_RUNNING)
 			So(updatedBuildTask.BotDimensions, ShouldEqual, resultSummary.BotDimensions)
 		})
 	})

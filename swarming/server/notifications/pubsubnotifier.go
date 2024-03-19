@@ -191,7 +191,7 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 	}
 
 	// Shouldn't make the update.
-	if buildTask.UpdateID > t.UpdateId {
+	if buildTask.UpdateID >= t.UpdateId || buildTask.LatestTaskStatus == t.State {
 		return nil
 	}
 
@@ -222,10 +222,6 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 		},
 	}
 	setBBStatus(t.State, resultSummary.Failure, bbTask)
-	// no need to send update if the status is unchanged.
-	if buildTask.LatestTaskStatus == bbTask.Status {
-		return nil
-	}
 
 	// send the update msg via PubSub
 	cloudProj, topicID, err := parsePubSubTopicName(buildTask.PubSubTopic)
@@ -251,7 +247,7 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 	}
 
 	// update the BuildTask entity in Datastore
-	buildTask.LatestTaskStatus = bbTask.Status
+	buildTask.LatestTaskStatus = t.State
 	buildTask.UpdateID = t.UpdateId
 	if len(buildTask.BotDimensions) == 0 {
 		buildTask.BotDimensions = botDims
