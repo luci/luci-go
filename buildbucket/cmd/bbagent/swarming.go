@@ -44,9 +44,6 @@ func readBuildSecrets(ctx context.Context) (*bbpb.BuildSecrets, error) {
 // `build.infra.swarming` using values from `SWARMING_*` environment
 // variables.
 func populateSwarmingInfoFromEnv(build *bbpb.Build, env environ.Env) {
-	if build.GetInfra().GetBackend() != nil {
-		return
-	}
 	if build.Infra == nil {
 		build.Infra = &bbpb.BuildInfra{}
 	}
