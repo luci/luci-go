@@ -331,6 +331,35 @@ func UpdateWithOptions(ctx context.Context, stmt spanner.Statement, opts spanner
 	return MustRW(ctx).UpdateWithOptions(ctx, stmt, opts)
 }
 
+// BatchWrite applies a list of mutation groups in a collection of efficient
+// transactions.
+//
+// See https://pkg.go.dev/cloud.google.com/go/spanner#Client.BatchWrite for
+// details.
+//
+// Must be used outside of any transactions since it launches transactions
+// itself and nested transactions are not supported. Panics if the context is
+// transactional.
+func BatchWrite(ctx context.Context, mgs []*spanner.MutationGroup) *spanner.BatchWriteResponseIterator {
+	return BatchWriteWithOptions(ctx, mgs, batchWriteOptionsFromContext(ctx))
+}
+
+// BatchWriteWithOptions applies a list of mutation groups in a collection of
+// efficient transactions.
+//
+// See https://pkg.go.dev/cloud.google.com/go/spanner#Client.BatchWrite for
+// details.
+//
+// Must be used outside of any transactions since it launches transactions
+// itself and nested transactions are not supported. Panics if the context is
+// transactional.
+func BatchWriteWithOptions(ctx context.Context, mgs []*spanner.MutationGroup, opts spanner.BatchWriteOptions) *spanner.BatchWriteResponseIterator {
+	if getTxnState(ctx) != nil {
+		panic("BatchWrite cannot be used in a transaction: it launches transactions itself")
+	}
+	return client(ctx).BatchWriteWithOptions(ctx, mgs, opts)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var (
@@ -451,5 +480,16 @@ func readOptionsFromContext(ctx context.Context) *spanner.ReadOptions {
 	return &spanner.ReadOptions{
 		Priority:   opts.Priority,
 		RequestTag: opts.Tag,
+	}
+}
+
+func batchWriteOptionsFromContext(ctx context.Context) spanner.BatchWriteOptions {
+	opts, ok := ctx.Value(&requestOptionsContextKey).(*RequestOptions)
+	if !ok {
+		return spanner.BatchWriteOptions{}
+	}
+	return spanner.BatchWriteOptions{
+		Priority:       opts.Priority,
+		TransactionTag: opts.Tag,
 	}
 }
