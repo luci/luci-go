@@ -16,29 +16,9 @@ syntax = "proto3";
 
 package luci.bisection.config;
 
-import "go.chromium.org/luci/bisection/proto/config/project_config.proto";
-
 option go_package = "go.chromium.org/luci/bisection/proto/config;configpb";
 
-// Config is the service-wide configuration data for LUCI Bisection
-// TODO(beining): Remove this global config, use the project_config.proto for project-specific config.
+// Config is the service-wide configuration data for LUCI Bisection.
 message Config {
-  // Configuration data for Gerrit integration for compile failures.
-  // TODO (nqmtuan): Rename this to make clear that this is only used for
-  // compile failures.
-  GerritConfig gerrit_config = 1;
-  // Configuration data for compile failure analysis.
-  // TODO (nqmtuan): Rename this to CompileFailureAnalysisConfig.
-  AnalysisConfig analysis_config = 2;
-  // Configuration data for test failure analysis.
-  TestAnalysisConfig test_analysis_config = 3;
-}
 
-// GerritConfig is the configuration data for running analysis
-message AnalysisConfig {
-  // Whether we should run culprit verification
-  bool culprit_verification_enabled = 1;
-
-  // Whether we should run nthsection analysis
-  bool nthsection_enabled = 2;
 }
