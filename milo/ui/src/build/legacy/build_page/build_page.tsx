@@ -194,12 +194,6 @@ export const BuildPage = observer(() => {
               hideWhenInactive={!store.buildPage.canReadFullBuild}
             />
             <AppRoutedTab
-              label="Steps & Logs"
-              value="steps"
-              to="steps"
-              hideWhenInactive={!store.buildPage.canReadFullBuild}
-            />
-            <AppRoutedTab
               label="Related Builds"
               value="related-builds"
               to="related-builds"
