@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestResetTriggers(t *testing.T) {
@@ -72,7 +73,6 @@ func TestResetTriggers(t *testing.T) {
 				So(ci.GetNumber(), ShouldBeGreaterThan, 0)
 				So(ci.GetNumber(), ShouldBeLessThan, 1000)
 				triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
-				So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 				So(ct.GFake.Has(gHost, int(ci.GetNumber())), ShouldBeFalse)
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
 				cl := changelist.MustGobID(gHost, ci.GetNumber()).MustCreateIfNotExists(ctx)
@@ -108,9 +108,12 @@ func TestResetTriggers(t *testing.T) {
 		}
 
 		makeOp := func(r *run.Run) *ResetTriggersOp {
-			reqs := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, len(r.CLs))
-			for i, clid := range r.CLs {
-				reqs[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
+			reqs := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, 0, len(r.CLs))
+			for _, clid := range r.CLs {
+				if r.HasRootCL() && clid != r.RootCL {
+					continue
+				}
+				req := &run.OngoingLongOps_Op_ResetTriggers_Request{
 					Clid:    int64(clid),
 					Message: fmt.Sprintf("reset message for CL %d", clid),
 					Notify: gerrit.Whoms{
@@ -123,6 +126,7 @@ func TestResetTriggers(t *testing.T) {
 					},
 					AddToAttentionReason: fmt.Sprintf("attention reason for CL %d", clid),
 				}
+				reqs = append(reqs, req)
 			}
 
 			return &ResetTriggersOp{
@@ -181,6 +185,34 @@ func TestResetTriggers(t *testing.T) {
 		testHappyPath("single", 1, 1)
 		testHappyPath("serial", 4, 1)
 		testHappyPath("concurrent", 80, 8)
+
+		Convey("works when some cl doesn't have trigger", func() {
+			cis := []*gerritpb.ChangeInfo{
+				gf.CI(1, gf.CQ(+1), gf.Updated(runCreateTime.Add(-1*time.Minute))),
+				// 1 is the root CL so no trigger on 2
+				gf.CI(2, gf.Updated(runCreateTime.Add(-1*time.Minute))),
+			}
+			r, clids := initRunAndCLs(cis)
+			r.RootCL = clids[0]
+			op := makeOp(r)
+			res, err := op.Do(ctx)
+			So(err, ShouldBeNil)
+			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
+			results := res.GetResetTriggers().GetResults()
+			So(results, ShouldHaveLength, 1)
+			for _, result := range results {
+				So(result.GetId(), ShouldEqual, clids[0])
+				assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
+			}
+			Convey("error if requesting to reset CL without trigger", func() {
+				op := makeOp(r)
+				So(op.Op.GetResetTriggers().GetRequests(), ShouldHaveLength, 1)
+				// switch to the CL without trigger
+				op.Op.GetResetTriggers().GetRequests()[0].Clid = int64(clids[1])
+				_, err := op.Do(ctx)
+				So(err, ShouldErrLike, "requested trigger reset on CL 2 that doesn't have trigger at all")
+			})
+		})
 
 		// TODO(crbug/1297723): re-enable this test after fixing the flake.
 		SkipConvey("Retry on alreadyInLease failure", func() {

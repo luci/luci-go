@@ -170,7 +170,9 @@ func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 		}
 		triggers = make(map[common.CLID]*run.Triggers, len(runCLs))
 		for _, runCL := range runCLs {
-			triggers[runCL.ID] = triggers[runCL.ID].WithTrigger(runCL.Trigger)
+			if runCL.Trigger != nil {
+				triggers[runCL.ID] = triggers[runCL.ID].WithTrigger(runCL.Trigger)
+			}
 		}
 		return nil
 	})
@@ -187,9 +189,13 @@ func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 	luciProject := op.Run.ID.LUCIProject()
 	for i := range requests {
 		cl, req := clsToReset[i], requests[i]
+		tr, ok := triggers[cl.ID]
+		if !ok {
+			return errors.Reason("requested trigger reset on CL %d that doesn't have trigger at all", cl.ID).Err()
+		}
 		op.inputs[i] = trigger.ResetInput{
 			CL:                cl,
-			Triggers:          triggers[cl.ID],
+			Triggers:          tr,
 			LUCIProject:       luciProject,
 			Message:           req.Message,
 			Requester:         "Trigger Reset",
