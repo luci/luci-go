@@ -27,11 +27,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
-
-	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 )
 
 // RowMaxBytes is the maximum number of row bytes to send in one
@@ -113,11 +110,6 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 		for _, r := range batch {
 			b, err := proto.Marshal(r)
 			if err != nil {
-				// Some artifact rows failed to be marshalled for some reasons, logging will give more info.
-				// TODO (nqmtuan): Remove this log when we find out the reason.
-				if artifactRow, ok := r.(*bqpb.TextArtifactRow); ok {
-					logging.Errorf(ctx, "Marshal failed for artifact row. Inv ID: %s. Test ID: %s. Artifact ID: %s. Shard ID: %d.", artifactRow.InvocationId, artifactRow.TestId, artifactRow.ArtifactId, artifactRow.ShardId)
-				}
 				return errors.Annotate(err, "marshal proto").Tag(errors.BoolTag{Key: InvalidRowTagKey}).Err()
 			}
 			encoded = append(encoded, b)

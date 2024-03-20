@@ -22,6 +22,7 @@ import (
 	"hash/fnv"
 	"mime"
 	"time"
+	"unicode/utf8"
 
 	"cloud.google.com/go/spanner"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
@@ -613,8 +614,19 @@ func uploadArtifactsToBQ(ctx context.Context, client BQExportClient, reqs []*art
 	if err != nil {
 		return errors.Annotate(err, "test statuses for artifacts").Err()
 	}
+
+	project, _ := realms.Split(invInfo.realm)
 	rowsToUpload := []*bqpb.TextArtifactRow{}
 	for i, req := range reqs {
+		// Some artifacts uploaded contains invalid Unicode.
+		// If it is the case, we will just skip those artifacts and log a warning.
+		// We do not use logging.Error because it will make it harder
+		// to review the log viewer for the logs we are concerned about.
+		if !utf8.Valid(req.data) {
+			logging.Warningf(ctx, "Invalid UTF-8 content. Inv ID: %s. Test ID: %s. Artifact ID: %s.", invInfo.id, req.testID, req.artifactID)
+			artifactExportCounter.Add(ctx, 1, project, "failure_input")
+			continue
+		}
 		status := statuses[i]
 		rows, err := reqToProtos(ctx, req, invInfo, status, MaxShardContentSize, LookbackWindow)
 		if err != nil {

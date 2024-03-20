@@ -819,4 +819,39 @@ func TestArtifactExportCounter(t *testing.T) {
 		So(err, ShouldNotBeNil)
 		So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 1)
 	})
+
+	Convey("Invalid unicode", t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		client := &fakeBQClient{}
+		invInfo := &invocationInfo{
+			id:         "invid",
+			realm:      "chromium:ci",
+			createTime: time.Unix(1000, 0),
+		}
+		reqs := []*artifactCreationRequest{
+			{
+				testID:      "testid",
+				resultID:    "resultid",
+				artifactID:  "artifactid",
+				contentType: "text/plain",
+				size:        20,
+				// Invalid Unicode.
+				data: []byte{0xFF, 0xFE},
+			},
+			{
+				testID:      "testid",
+				resultID:    "resultid",
+				artifactID:  "artifactid_1",
+				contentType: "text/plain",
+				size:        20,
+				data:        []byte("content"),
+			},
+		}
+		err := uploadArtifactsToBQ(ctx, client, reqs, invInfo)
+		So(err, ShouldBeNil)
+		So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 1)
+		So(len(client.Rows), ShouldEqual, 1)
+		So(client.Rows[0].ArtifactId, ShouldEqual, "artifactid_1")
+	})
 }
