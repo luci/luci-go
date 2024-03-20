@@ -469,6 +469,7 @@ func TestReportTestResults(t *testing.T) {
 						ContentType: "text/plain",
 						Contents:    []byte("a sample artifact"),
 						SizeBytes:   int64(len("a sample artifact")),
+						TestStatus:  pb.TestStatus_PASS,
 					})
 				})
 			})

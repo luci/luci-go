@@ -32,9 +32,10 @@ import (
 )
 
 type uploadTask struct {
-	art     *sinkpb.Artifact
-	artName string
-	size    int64 // content size
+	art        *sinkpb.Artifact
+	artName    string
+	size       int64 // content size
+	testStatus pb.TestStatus
 }
 
 // newUploadTask constructs an uploadTask for the artifact.
@@ -42,11 +43,12 @@ type uploadTask struct {
 // If FilePath is set on the artifact, this calls os.Stat to obtain the file information,
 // and may return an error if the Stat call fails. e.g., permission denied, not found.
 // It also returns an error if the artifact file path is a directory.
-func newUploadTask(name string, art *sinkpb.Artifact) (*uploadTask, error) {
+func newUploadTask(name string, art *sinkpb.Artifact, testStatus pb.TestStatus) (*uploadTask, error) {
 	ret := &uploadTask{
-		art:     art,
-		artName: name,
-		size:    int64(len(art.GetContents())),
+		art:        art,
+		artName:    name,
+		size:       int64(len(art.GetContents())),
+		testStatus: testStatus,
 	}
 
 	// Find and save the content size on uploadTask creation, so that the task scheduling
@@ -84,6 +86,7 @@ func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 			SizeBytes:   t.size,
 			Contents:    t.art.GetContents(),
 			GcsUri:      t.art.GetGcsUri(),
+			TestStatus:  t.testStatus,
 		},
 	}
 

@@ -180,7 +180,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		for id, a := range tr.GetArtifacts() {
 			updateArtifactContentType(a)
 			n := pbutil.TestResultArtifactName(s.cfg.invocationID, tr.TestId, tr.ResultId, id)
-			t, err := newUploadTask(n, a)
+			t, err := newUploadTask(n, a, tr.Status)
 
 			// newUploadTask can return an error if os.Stat() fails.
 			if err != nil {
@@ -227,7 +227,7 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 		if err := validateArtifact(a); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
 		}
-		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a)
+		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a, pb.TestStatus_STATUS_UNSPECIFIED)
 		// newUploadTask can return an error if os.Stat() fails.
 		if err != nil {
 			// TODO(crbug.com/1124868) - once all test harnesses are fixed, return 4xx on

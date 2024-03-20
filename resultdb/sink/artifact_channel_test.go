@@ -47,15 +47,15 @@ func TestArtifactChannel(t *testing.T) {
 			batchCh <- in
 			return nil, nil
 		}
-		createTask := func(name, content string) *uploadTask {
+		createTask := func(name, content string, status pb.TestStatus) *uploadTask {
 			art := testArtifactWithContents([]byte(content))
-			task, err := newUploadTask(name, art)
+			task, err := newUploadTask(name, art, status)
 			So(err, ShouldBeNil)
 			return task
 		}
 
 		Convey("with a small artifact", func() {
-			task := createTask("invocations/inv/artifacts/art1", "content")
+			task := createTask("invocations/inv/artifacts/art1", "content", pb.TestStatus_PASS)
 			ac := newArtifactChannel(ctx, &cfg)
 			ac.schedule(task)
 			ac.closeAndDrain(ctx)
@@ -69,6 +69,7 @@ func TestArtifactChannel(t *testing.T) {
 						ContentType: task.art.ContentType,
 						SizeBytes:   int64(len("content")),
 						Contents:    []byte("content"),
+						TestStatus:  pb.TestStatus_PASS,
 					},
 				}},
 			})
@@ -78,9 +79,9 @@ func TestArtifactChannel(t *testing.T) {
 			cfg.MaxBatchableArtifactSize = 10
 			ac := newArtifactChannel(ctx, &cfg)
 
-			t1 := createTask("invocations/inv/artifacts/art1", "1234")
-			t2 := createTask("invocations/inv/artifacts/art2", "5678")
-			t3 := createTask("invocations/inv/artifacts/art3", "9012")
+			t1 := createTask("invocations/inv/artifacts/art1", "1234", pb.TestStatus_PASS)
+			t2 := createTask("invocations/inv/artifacts/art2", "5678", pb.TestStatus_FAIL)
+			t3 := createTask("invocations/inv/artifacts/art3", "9012", pb.TestStatus_CRASH)
 			ac.schedule(t1)
 			ac.schedule(t2)
 			ac.schedule(t3)
@@ -97,6 +98,7 @@ func TestArtifactChannel(t *testing.T) {
 							ContentType: t1.art.ContentType,
 							SizeBytes:   int64(len("1234")),
 							Contents:    []byte("1234"),
+							TestStatus:  pb.TestStatus_PASS,
 						},
 					},
 					// art2
@@ -107,6 +109,7 @@ func TestArtifactChannel(t *testing.T) {
 							ContentType: t2.art.ContentType,
 							SizeBytes:   int64(len("5678")),
 							Contents:    []byte("5678"),
+							TestStatus:  pb.TestStatus_FAIL,
 						},
 					},
 				},
@@ -123,6 +126,7 @@ func TestArtifactChannel(t *testing.T) {
 							ContentType: t3.art.ContentType,
 							SizeBytes:   int64(len("9012")),
 							Contents:    []byte("9012"),
+							TestStatus:  pb.TestStatus_CRASH,
 						},
 					},
 				},
@@ -133,7 +137,7 @@ func TestArtifactChannel(t *testing.T) {
 			cfg.MaxBatchableArtifactSize = 10
 			ac := newArtifactChannel(ctx, &cfg)
 
-			t1 := createTask("invocations/inv/artifacts/art1", "content-foo-bar")
+			t1 := createTask("invocations/inv/artifacts/art1", "content-foo-bar", pb.TestStatus_ABORT)
 			ac.schedule(t1)
 			ac.closeAndDrain(ctx)
 
@@ -163,15 +167,15 @@ func TestUploadTask(t *testing.T) {
 		defer os.Remove(fArt.GetFilePath())
 
 		Convey("works", func() {
-			t, err := newUploadTask(name, fArt)
+			t, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
 			So(err, ShouldBeNil)
-			So(t, ShouldResemble, &uploadTask{art: fArt, artName: name, size: int64(len("content"))})
+			So(t, ShouldResemble, &uploadTask{art: fArt, artName: name, size: int64(len("content")), testStatus: pb.TestStatus_PASS})
 		})
 
 		Convey("fails", func() {
 			// stat error
 			So(os.Remove(fArt.GetFilePath()), ShouldBeNil)
-			_, err := newUploadTask(name, fArt)
+			_, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
 			So(err, ShouldErrLike, "querying file info")
 
 			// is a directory
@@ -179,7 +183,7 @@ func TestUploadTask(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer os.RemoveAll(path)
 			fArt.Body.(*sinkpb.Artifact_FilePath).FilePath = path
-			_, err = newUploadTask(name, fArt)
+			_, err = newUploadTask(name, fArt, pb.TestStatus_PASS)
 			So(err, ShouldErrLike, "is a directory")
 		})
 	})
@@ -192,7 +196,7 @@ func TestUploadTask(t *testing.T) {
 		})
 		fArt.ContentType = "plain/text"
 		defer os.Remove(fArt.GetFilePath())
-		ut, err := newUploadTask(name, fArt)
+		ut, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
 		So(err, ShouldBeNil)
 
 		Convey("works", func() {
@@ -205,6 +209,7 @@ func TestUploadTask(t *testing.T) {
 					ContentType: "plain/text",
 					SizeBytes:   int64(len("content")),
 					Contents:    []byte("content"),
+					TestStatus:  pb.TestStatus_PASS,
 				},
 			})
 		})

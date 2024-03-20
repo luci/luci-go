@@ -73,7 +73,7 @@ func TestArtifactUploader(t *testing.T) {
 			defer os.Remove(art.GetFilePath())
 
 			Convey("works", func() {
-				ut, err := newUploadTask(name, art)
+				ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
 				So(err, ShouldBeNil)
 				So(uploader.StreamUpload(ctx, ut, token), ShouldBeNil)
 
@@ -87,7 +87,7 @@ func TestArtifactUploader(t *testing.T) {
 			})
 
 			Convey("fails if file doesn't exist", func() {
-				ut, err := newUploadTask(name, art)
+				ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
 				So(err, ShouldBeNil)
 				So(os.Remove(art.GetFilePath()), ShouldBeNil)
 
@@ -99,7 +99,7 @@ func TestArtifactUploader(t *testing.T) {
 		Convey("Upload w/ contents", func() {
 			art := testArtifactWithContents([]byte(content))
 			art.ContentType = contentType
-			ut, err := newUploadTask(name, art)
+			ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
 			So(err, ShouldBeNil)
 			So(uploader.StreamUpload(ctx, ut, token), ShouldBeNil)
 
@@ -115,7 +115,7 @@ func TestArtifactUploader(t *testing.T) {
 		Convey("Upload w/ gcs not supported by stream upload", func() {
 			art := testArtifactWithGcs(gcsURI)
 			art.ContentType = contentType
-			ut, err := newUploadTask(name, art)
+			ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
 			So(err, ShouldBeNil)
 
 			// StreamUpload does not support gcsUri upload
@@ -125,7 +125,7 @@ func TestArtifactUploader(t *testing.T) {
 		Convey("Batch Upload w/ gcs", func() {
 			art := testArtifactWithGcs(gcsURI)
 			art.ContentType = contentType
-			ut, err := newUploadTask(name, art)
+			ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
 			ut.size = 5 * 1024 * 1024
 			So(err, ShouldBeNil)
 
@@ -146,7 +146,7 @@ func TestArtifactUploader(t *testing.T) {
 			func() {
 				art := testArtifactWithGcs(gcsURI)
 				art.ContentType = contentType
-				ut, err := newUploadTask(name, art)
+				ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
 				ut.size = 15 * 1024 * 1024
 				So(err, ShouldBeNil)
 
@@ -166,17 +166,17 @@ func TestArtifactUploader(t *testing.T) {
 				})
 				art1.ContentType = contentType
 				defer os.Remove(art1.GetFilePath())
-				ut1, err := newUploadTask(name, art1)
+				ut1, err := newUploadTask(name, art1, pb.TestStatus_STATUS_UNSPECIFIED)
 				So(err, ShouldBeNil)
 
 				art2 := testArtifactWithContents([]byte(content))
 				art2.ContentType = contentType
-				ut2, err := newUploadTask(name, art2)
+				ut2, err := newUploadTask(name, art2, pb.TestStatus_STATUS_UNSPECIFIED)
 				So(err, ShouldBeNil)
 
 				art3 := testArtifactWithGcs(gcsURI)
 				art3.ContentType = contentType
-				ut3, err := newUploadTask(name, art3)
+				ut3, err := newUploadTask(name, art3, pb.TestStatus_STATUS_UNSPECIFIED)
 				ut3.size = 5 * 1024 * 1024
 				So(err, ShouldBeNil)
 
