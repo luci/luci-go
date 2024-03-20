@@ -52,10 +52,12 @@ func ShouldContainErr(actual any, expected ...any) string {
 	}
 
 	switch expected[0].(type) {
-	case string:
-	case error:
 	case errors.MultiError:
-		return fmt.Sprintf("expected value must not be a MultiError")
+		return "expected value must not be a MultiError"
+	case string:
+		// Do nothing.
+	case error:
+		// Do nothing.
 	default:
 		if expected[0] != nil {
 			return fmt.Sprintf("unexpected argument type %T, expected string or error", expected[0])
