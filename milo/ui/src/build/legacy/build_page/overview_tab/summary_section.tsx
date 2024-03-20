@@ -16,10 +16,7 @@ import { observer } from 'mobx-react-lite';
 import { useMemo } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import {
-  BUILD_STATUS_CLASS_MAP,
-  BUILD_STATUS_DISPLAY_MAP,
-} from '@/common/constants/legacy';
+import { BUILD_STATUS_DISPLAY_MAP } from '@/common/constants/legacy';
 import { useStore } from '@/common/store';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
@@ -40,30 +37,33 @@ export const SummarySection = observer(() => {
   }
 
   return (
-    <div
-      css={{
-        padding: '0 10px',
-        clear: 'both',
-        overflowWrap: 'break-word',
-        '& pre': {
-          whiteSpace: 'pre-wrap',
+    <>
+      <h3>Summary</h3>
+      <div
+        css={{
+          padding: '5px 10px',
+          clear: 'both',
           overflowWrap: 'break-word',
-          fontSize: '12px',
-        },
-        '& *': {
-          marginBlock: '10px',
-        },
-      }}
-      className={`${BUILD_STATUS_CLASS_MAP[build.data.status]}-bg`}
-    >
-      {summaryHtml ? (
-        <SanitizedHtml html={summaryHtml} />
-      ) : (
-        <div css={{ fontWeight: 500 }}>
-          Build{' '}
-          {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'status unknown'}
-        </div>
-      )}
-    </div>
+          '& pre': {
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'break-word',
+            fontSize: '12px',
+          },
+          '& *': {
+            marginBlock: '10px',
+          },
+          backgroundColor: 'var(--block-background-color)',
+        }}
+      >
+        {summaryHtml ? (
+          <SanitizedHtml html={summaryHtml} />
+        ) : (
+          <div css={{ fontWeight: 500 }}>
+            Build{' '}
+            {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'status unknown'}
+          </div>
+        )}
+      </div>
+    </>
   );
 });

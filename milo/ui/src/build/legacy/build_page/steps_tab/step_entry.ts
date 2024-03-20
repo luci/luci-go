@@ -15,7 +15,6 @@
 import '@material/mwc-icon';
 import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
@@ -102,9 +101,9 @@ export class BuildPageStepEntryElement
     return html`
       <div
         id="summary"
-        class="${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg"
         style=${styleMap({
           display: this.step.summary ? '' : 'none',
+          backgroundColor: 'var(--block-background-color)',
         })}
       >
         ${this.step.summary?.cloneNode(true)}
@@ -253,14 +252,7 @@ export class BuildPageStepEntryElement
             ${BUILD_STATUS_ICON_MAP[this.step.status]}
           </mwc-icon>
           ${this.renderDuration()}
-          <div
-            id="header-text"
-            class=${classMap({
-              [`${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg`]:
-                this.step.status !== BuildbucketStatus.Success &&
-                !(this.expanded && this.step.summary),
-            })}
-          >
+          <div id="header-text">
             <b>${this.step.index + 1}. ${this.step.selfName}</b>
             <milo-pin-toggle
               .pinned=${this.step.isPinned}
