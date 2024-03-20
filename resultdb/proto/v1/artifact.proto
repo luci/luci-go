@@ -18,6 +18,7 @@ package luci.resultdb.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
@@ -27,7 +28,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // An invocation-level artifact might be related to tests, or it might not, for
 // example it may be used to store build step logs when streaming support is
 // added.
-// Next id: 9.
+// Next id: 10.
 message Artifact {
   // Can be used to refer to this artifact.
   // Format:
@@ -74,4 +75,12 @@ message Artifact {
 
   // The GCS URI of the artifact if it's stored in GCS.  If specified, `contents` must be empty.
   string gcs_uri = 8;
+
+  // Status of the test result that the artifact belongs to.
+  // This is only applicable for test-level artifacts, not invocation-level artifacts.
+  // We need this field because when an artifact is created (for example, with BatchCreateArtifact),
+  // the containing test result may or may not be created yet, as they
+  // are created in different channels from result sink.
+  // Having the test status here allows setting the correct status of artifact in BigQuery.
+  TestStatus test_status = 9;
 }

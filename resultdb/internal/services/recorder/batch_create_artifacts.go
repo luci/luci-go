@@ -109,6 +109,8 @@ type artifactCreationRequest struct {
 	data []byte
 	// gcsURI is the location of the artifact content if it is stored in GCS.  If this is provided, data must be empty.
 	gcsURI string
+	// status of the artifact's parent test result.
+	testStatus pb.TestStatus
 }
 
 type invocationInfo struct {
@@ -184,6 +186,7 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest) (invocations.ID, 
 		testID:      testID,
 		resultID:    resultID,
 		gcsURI:      req.Artifact.GcsUri,
+		testStatus:  req.Artifact.TestStatus,
 	}, nil
 }
 
@@ -610,14 +613,9 @@ func shouldUploadToBQ(ctx context.Context) (bool, error) {
 }
 
 func uploadArtifactsToBQ(ctx context.Context, client BQExportClient, reqs []*artifactCreationRequest, invInfo *invocationInfo) error {
-	statuses, err := testStatusesForArtifacts(ctx, reqs, invocations.ID(invInfo.id))
-	if err != nil {
-		return errors.Annotate(err, "test statuses for artifacts").Err()
-	}
-
 	project, _ := realms.Split(invInfo.realm)
 	rowsToUpload := []*bqpb.TextArtifactRow{}
-	for i, req := range reqs {
+	for _, req := range reqs {
 		// Some artifacts uploaded contains invalid Unicode.
 		// If it is the case, we will just skip those artifacts and log a warning.
 		// We do not use logging.Error because it will make it harder
@@ -627,8 +625,7 @@ func uploadArtifactsToBQ(ctx context.Context, client BQExportClient, reqs []*art
 			artifactExportCounter.Add(ctx, 1, project, "failure_input")
 			continue
 		}
-		status := statuses[i]
-		rows, err := reqToProtos(ctx, req, invInfo, status, MaxShardContentSize, LookbackWindow)
+		rows, err := reqToProtos(ctx, req, invInfo, req.testStatus, MaxShardContentSize, LookbackWindow)
 		if err != nil {
 			return errors.Annotate(err, "req to protos").Err()
 		}
@@ -650,71 +647,6 @@ func uploadArtifactsToBQ(ctx context.Context, client BQExportClient, reqs []*art
 		}
 	}
 	return nil
-}
-
-// testStatusesForArtifacts queries Spanner for test result statuses.
-// Return a slice of status, with the same order as reqs.
-// For invocation-level artifacts, the status will be TestStatus_STATUS_UNSPECIFIED.
-func testStatusesForArtifacts(ctx context.Context, reqs []*artifactCreationRequest, invID invocations.ID) ([]pb.TestStatus, error) {
-	type testIDResultIDKey struct {
-		TestID   string
-		ResultID string
-	}
-
-	txn, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
-
-	keys := []spanner.Key{}
-	for _, req := range reqs {
-		// We only query status for test-level artifacts.
-		if req.testID != "" && req.resultID != "" {
-			keys = append(keys, invID.Key(req.testID, req.resultID))
-		}
-	}
-
-	// Create the keyset.
-	keyset := spanner.KeySetFromKeys(keys...)
-	cols := []string{"TestId", "ResultId", "Status"}
-	statusMap := map[testIDResultIDKey]pb.TestStatus{}
-
-	err := span.Read(txn, "TestResults", keyset, cols).Do(
-		func(row *spanner.Row) error {
-			var b spanutil.Buffer
-			var testID string
-			var resultID string
-			var status pb.TestStatus
-			if err := b.FromSpanner(row, &testID, &resultID, &status); err != nil {
-				return errors.Annotate(err, "read values from spanner").Err()
-			}
-			key := testIDResultIDKey{
-				TestID:   testID,
-				ResultID: resultID,
-			}
-			statusMap[key] = status
-			return nil
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	results := make([]pb.TestStatus, len(reqs))
-	for i, req := range reqs {
-		results[i] = pb.TestStatus_STATUS_UNSPECIFIED
-		// If this is test-level artifact.
-		if req.testID != "" && req.resultID != "" {
-			key := testIDResultIDKey{
-				TestID:   req.testID,
-				ResultID: req.resultID,
-			}
-			status, found := statusMap[key]
-			if found {
-				results[i] = status
-			}
-		}
-	}
-	return results, nil
 }
 
 func reqToProtos(ctx context.Context, req *artifactCreationRequest, invInfo *invocationInfo, status pb.TestStatus, maxSize int, lookbackWindow int) ([]*bqpb.TextArtifactRow, error) {
