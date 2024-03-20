@@ -22,3 +22,12 @@ export const BUILD_STATUS_CLASS_MAP = Object.freeze({
   [BuildStatus.INFRA_FAILURE]: 'infra-failure',
   [BuildStatus.CANCELED]: 'canceled',
 });
+
+export const BUILD_STATUS_DISPLAY_MAP = Object.freeze({
+  [BuildStatus.SCHEDULED]: 'scheduled',
+  [BuildStatus.STARTED]: 'running',
+  [BuildStatus.SUCCESS]: 'succeeded',
+  [BuildStatus.FAILURE]: 'failed',
+  [BuildStatus.INFRA_FAILURE]: 'infra failed',
+  [BuildStatus.CANCELED]: 'canceled',
+});

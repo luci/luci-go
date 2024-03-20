@@ -30,7 +30,6 @@ import { usePageSpecificConfig } from '@/common/components/page_config_state_pro
 import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import {
-  BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_COLOR_THEME_MAP,
   BUILD_STATUS_DISPLAY_MAP,
 } from '@/common/constants/legacy';
@@ -38,7 +37,6 @@ import { UiPage } from '@/common/constants/view';
 import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
-import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 import {
   getBuilderURLPath,
   getLegacyBuildURLPath,
@@ -166,51 +164,6 @@ export const BuildPage = observer(() => {
             >
               Switch to the legacy build page
             </Link>
-            <div
-              css={{
-                marginLeft: 'auto',
-                flex: '0 auto',
-              }}
-            >
-              {build && (
-                <>
-                  <i
-                    className={`status ${
-                      BUILD_STATUS_CLASS_MAP[build.data.status]
-                    }`}
-                  >
-                    {BUILD_STATUS_DISPLAY_MAP[build.data.status] ||
-                      'unknown status'}{' '}
-                  </i>
-                  {(() => {
-                    switch (build.data.status) {
-                      case BuildbucketStatus.Scheduled:
-                        return `since ${build.createTime.toFormat(
-                          LONG_TIME_FORMAT,
-                        )}`;
-                      case BuildbucketStatus.Started:
-                        return `since ${build.startTime!.toFormat(
-                          LONG_TIME_FORMAT,
-                        )}`;
-                      case BuildbucketStatus.Canceled:
-                        return `after ${displayDuration(
-                          build.endTime!.diff(build.createTime),
-                        )} by ${build.data.canceledBy || 'unknown'}`;
-                      case BuildbucketStatus.Failure:
-                      case BuildbucketStatus.InfraFailure:
-                      case BuildbucketStatus.Success:
-                        return `after ${displayDuration(
-                          build.endTime!.diff(
-                            build.startTime || build.createTime,
-                          ),
-                        )}`;
-                      default:
-                        return '';
-                    }
-                  })()}
-                </>
-              )}
-            </div>
           </div>
           <LinearProgress
             value={100}
@@ -233,6 +186,12 @@ export const BuildPage = observer(() => {
               }
               icon={<CountIndicator />}
               iconPosition="end"
+            />
+            <AppRoutedTab
+              label="Infra"
+              value="infra"
+              to="infra"
+              hideWhenInactive={!store.buildPage.canReadFullBuild}
             />
             <AppRoutedTab
               label="Steps & Logs"

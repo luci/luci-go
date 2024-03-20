@@ -68,6 +68,10 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/build/legacy/build_page/overview_tab'),
       },
       {
+        path: 'infra',
+        lazy: () => import('@/build/legacy/build_page/infra_tab'),
+      },
+      {
         path: 'test-results',
         lazy: () => import('@/test_verdict/legacy/test_results_tab'),
       },

@@ -23,62 +23,54 @@ export const enum Dialog {
   RetryBuild,
 }
 
-export interface ActionsSectionProps {
+export interface ActionButtonProps {
   openDialog: (dialog: Dialog) => void;
 }
 
-export const ActionsSection = observer(
-  ({ openDialog }: ActionsSectionProps) => {
-    const store = useStore();
-    const build = store.buildPage.build;
+export const ActionButton = observer(({ openDialog }: ActionButtonProps) => {
+  const store = useStore();
+  const build = store.buildPage.build;
 
-    if (!build) {
-      return <></>;
-    }
+  if (!build) {
+    return <></>;
+  }
 
-    const canRetry = store.buildPage.canRetry;
+  const canRetry = store.buildPage.canRetry;
 
-    if (build.endTime) {
-      return (
-        <>
-          <h3>Actions</h3>
-          <div
-            title={
-              canRetry ? '' : 'You have no permission to retry this build.'
-            }
-          >
-            <Button
-              onClick={() => openDialog(Dialog.RetryBuild)}
-              disabled={!canRetry}
-            >
-              Retry Build
-            </Button>
-          </div>
-        </>
-      );
-    }
-
-    const canCancel = build.cancelTime === null && store.buildPage.canCancel;
-    let tooltip = '';
-    if (!canCancel) {
-      tooltip =
-        build.cancelTime === null
-          ? 'You have no permission to cancel this build.'
-          : 'The build is already scheduled to be canceled.';
-    }
-
+  if (build.endTime) {
     return (
-      <>
-        <h3>Actions</h3>
-        <div title={tooltip}>
-          <Button
-            onClick={() => openDialog(Dialog.CancelBuild)}
-            disabled={!canCancel}
-          >
-            Cancel Build
-          </Button>
-        </div>
-      </>
+      // Use a span to display tooltip with button is disabled.
+      <span
+        title={canRetry ? '' : 'You have no permission to retry this build.'}
+      >
+        <Button
+          onClick={() => openDialog(Dialog.RetryBuild)}
+          disabled={!canRetry}
+        >
+          Retry Build
+        </Button>
+      </span>
     );
-  },
-);
+  }
+
+  const canCancel = build.cancelTime === null && store.buildPage.canCancel;
+  let tooltip = '';
+  if (!canCancel) {
+    tooltip =
+      build.cancelTime === null
+        ? 'You have no permission to cancel this build.'
+        : 'The build is already scheduled to be canceled.';
+  }
+
+  return (
+    // Use a span to display tooltip with button is disabled.
+    <span title={tooltip}>
+      <Button
+        onClick={() => openDialog(Dialog.CancelBuild)}
+        disabled={!canCancel}
+      >
+        Cancel Build
+      </Button>
+    </span>
+  );
+});
