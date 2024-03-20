@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// testsupport contains helpers for testing the assertion library.
+// Package testsupport contains helpers for testing the assertion library.
+//
+// This library is not intended for direct use. It is ONLY used to test the
+// inner workings of assert/should and similar libraries.
 package testsupport
 
 import (

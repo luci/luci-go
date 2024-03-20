@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package interfaces contains all the interfaces necessary for the different
-// components of the testing library like TestingTB.
+// Package should contains comparisons such as should.Equal.
 //
-// If you are just using the assert or should libraries, you shouldn't
-// need to worry about this package.
-package interfaces
-
-// Keep this in sync with results.FakeTB.
-type TestingTB interface {
-	Helper()
-	Log(...any)
-	Fail()
-	FailNow()
-}
+// These are meant to be used with the 'assert' library like:
+//
+//     import "testing"
+//     import . "go.chromium.org/luci/common/testing/assert"
+//     import "go.chromium.org/luci/common/testing/assert/should"
+//
+//     func TestSomething(t *testing.T) {
+//         Assert(t, something(), should.Equal("hello"))
+//     }
+package should

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package httpmitm contains an HTTP client that logs all incoming and outgoing
+// requests.
 package httpmitm
 
 import (
