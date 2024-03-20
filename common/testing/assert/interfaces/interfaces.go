@@ -19,6 +19,9 @@
 // need to worry about this package.
 package interfaces
 
+// TestingTB exposes a subset of the testing.T interface from the standard
+// library.
+//
 // Keep this in sync with results.FakeTB.
 type TestingTB interface {
 	Helper()

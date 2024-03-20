@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/assert/interfaces"
 )
 
-// zeroTB is a do nothing test implementation.
+// ZeroTB is a do nothing test implementation.
 //
 // Check and Assert both call methods on the test interface, and this can result in
 // really confusing error messages or the test being aborted early. In other to prevent this
