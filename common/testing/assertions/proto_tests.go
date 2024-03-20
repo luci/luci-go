@@ -104,10 +104,6 @@ func shouldResembleProtoUnmarshal(unmarshal func(string, proto.Message) error, a
 	return ShouldResembleProto(actual, expMsg)
 }
 
-var textPBMultiline = prototext.MarshalOptions{
-	Multiline: true,
-}
-
 // protoMessage returns V2 proto message, converting v1 on the fly.
 func protoMessage(a any) (proto.Message, bool) {
 	if m, ok := a.(proto.Message); ok {
