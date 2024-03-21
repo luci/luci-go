@@ -117,7 +117,7 @@ func (a *AuthDBProvider) RefreshPeriodically(ctx context.Context) {
 			return // the context is canceled
 		}
 		if _, err := a.GetAuthDB(ctx); err != nil {
-			logging.Warningf(ctx, "Failed to refresh AuthDB: %s", err)
+			logging.Errorf(ctx, "Failed to refresh AuthDB: %s", err)
 		}
 	}
 }

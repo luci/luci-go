@@ -37,7 +37,7 @@ func init() {
 		ID:        "process-change-task",
 		Prototype: (*taskspb.ProcessChangeTask)(nil),
 		Kind:      tq.Transactional,
-		Queue:     "process-auth-db-change",
+		Queue:     "changelog-generation",
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ProcessChangeTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
@@ -48,7 +48,7 @@ func init() {
 		ID:        "replication-task",
 		Prototype: (*taskspb.ReplicationTask)(nil),
 		Kind:      tq.Transactional,
-		Queue:     "replication",
+		Queue:     "auth-db-replication",
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ReplicationTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
