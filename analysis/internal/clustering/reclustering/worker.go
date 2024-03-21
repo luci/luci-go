@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
@@ -44,6 +45,11 @@ import (
 const (
 	// batchSize is the number of chunks to read from Spanner at a time.
 	batchSize = 10
+
+	// The maximum number of concurrent worker goroutines to use to
+	// fetch chunks from GCS for reclustering. More parallelism can
+	// improve performance, but increases the memory used by each task.
+	maxParallelism = 10
 
 	// TargetTaskDuration is the desired duration of a re-clustering task.
 	// If a task completes before the reclustering run has completed, a
@@ -204,34 +210,52 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 		return true, nil
 	}
 
+	// Obtain a recent ruleset of at least RulesVersion.
+	ruleset, err := Ruleset(ctx, t.task.Project, t.task.RulesVersion.AsTime())
+	if err != nil {
+		return false, errors.Annotate(err, "obtain ruleset").Err()
+	}
+
+	// Obtain a recent configuration of at least ConfigVersion.
+	cfg, err := compiledcfg.Project(ctx, t.task.Project, t.task.ConfigVersion.AsTime())
+	if err != nil {
+		return false, errors.Annotate(err, "obtain config").Err()
+	}
+
+	// Prepare updates for each chunk in the batch. Parallelise to
+	// allow us to fetch chunks from GCS faster.
+	updates := make([]*PendingUpdate, len(entries))
+	err = parallel.WorkPool(maxParallelism, func(c chan<- func() error) {
+		for i, entry := range entries {
+			// Capture value of loop variables.
+			i, entry := i, entry
+			c <- func() error {
+
+				// Read the test results from GCS.
+				chunk, err := t.worker.chunkStore.Get(ctx, t.task.Project, entry.ObjectID)
+				if err != nil {
+					return errors.Annotate(err, "read chunk").Err()
+				}
+
+				// Re-cluster the test results in spanner, then export
+				// the re-clustering to BigQuery for analysis.
+				update, err := PrepareUpdate(ctx, ruleset, cfg, chunk, entry)
+				if err != nil {
+					return errors.Annotate(err, "re-cluster chunk").Err()
+				}
+
+				updates[i] = update
+				return nil
+			}
+		}
+	})
+	if err != nil {
+		return false, err
+	}
+
 	pendingUpdates := NewPendingUpdates(ctx)
 
-	for i, entry := range entries {
-		// Read the test results from GCS.
-		chunk, err := t.worker.chunkStore.Get(ctx, t.task.Project, entry.ObjectID)
-		if err != nil {
-			return false, errors.Annotate(err, "read chunk").Err()
-		}
-
-		// Obtain a recent ruleset of at least RulesVersion.
-		ruleset, err := Ruleset(ctx, t.task.Project, t.task.RulesVersion.AsTime())
-		if err != nil {
-			return false, errors.Annotate(err, "obtain ruleset").Err()
-		}
-
-		// Obtain a recent configuration of at least ConfigVersion.
-		cfg, err := compiledcfg.Project(ctx, t.task.Project, t.task.ConfigVersion.AsTime())
-		if err != nil {
-			return false, errors.Annotate(err, "obtain config").Err()
-		}
-
-		// Re-cluster the test results in spanner, then export
-		// the re-clustering to BigQuery for analysis.
-		update, err := PrepareUpdate(ctx, ruleset, cfg, chunk, entry)
-		if err != nil {
-			return false, errors.Annotate(err, "re-cluster chunk").Err()
-		}
-
+	for i, update := range updates {
 		pendingUpdates.Add(update)
 
 		if pendingUpdates.ShouldApply(ctx) || (i == len(entries)-1) {
@@ -246,7 +270,7 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 			pendingUpdates = NewPendingUpdates(ctx)
 
 			// Advance our position only on successful commit.
-			t.currentChunkID = entry.ChunkID
+			t.currentChunkID = update.Chunk.ChunkID
 
 			if err := t.calculateAndReportProgress(ctx); err != nil {
 				return false, err

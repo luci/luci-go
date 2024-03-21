@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -285,7 +286,11 @@ func TestReclustering(t *testing.T) {
 			for _, state := range s.clusteringState {
 				chunkIDByObjectID[state.ObjectID] = state.ChunkID
 			}
-			chunkStore.GetCallack = func(objectID string) {
+			var m sync.Mutex
+			chunkStore.GetCallback = func(objectID string) {
+				m.Lock()
+				defer m.Unlock()
+
 				chunkID, ok := chunkIDByObjectID[objectID]
 
 				// Only simulate the update/update race once per chunk.
@@ -306,7 +311,9 @@ func TestReclustering(t *testing.T) {
 					}))
 					return nil
 				})
-				So(err, ShouldBeNil)
+				if err != nil {
+					panic(err)
+				}
 			}
 
 			// Run the worker with time advancing at 100 times speed,

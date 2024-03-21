@@ -36,7 +36,7 @@ type FakeClient struct {
 	// A callback function to be called during Get(...). This allows
 	// the test to change the environment during the processing of
 	// a particular chunk.
-	GetCallack func(objectID string)
+	GetCallback func(objectID string)
 }
 
 // NewFakeClient initialises a new FakeClient.
@@ -82,8 +82,8 @@ func (fc *FakeClient) Get(ctx context.Context, project, objectID string) (*cpb.C
 	if !ok {
 		return nil, fmt.Errorf("blob does not exist: %q", name)
 	}
-	if fc.GetCallack != nil {
-		fc.GetCallack(objectID)
+	if fc.GetCallback != nil {
+		fc.GetCallback(objectID)
 	}
 	return proto.Clone(content).(*cpb.Chunk), nil
 }
