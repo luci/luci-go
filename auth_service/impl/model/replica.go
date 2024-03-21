@@ -33,6 +33,32 @@ const (
 	ReplicaPushStatusFatalError
 )
 
+var (
+	FatalReplicaUpdateError = errors.New("fatal replica update error")
+)
+
+// ReplicaUpdateError wraps an error that occurred when attempting to
+// directly push a new AuthDB revision to a replica.
+type ReplicaUpdateError struct {
+	RootErr error
+	IsFatal bool
+}
+
+func (r *ReplicaUpdateError) Error() string {
+	return r.RootErr.Error()
+}
+
+func (r *ReplicaUpdateError) Unwrap() error {
+	return r.RootErr
+}
+
+func (r *ReplicaUpdateError) Is(target error) bool {
+	if target == FatalReplicaUpdateError {
+		return r.IsFatal
+	}
+	return false
+}
+
 // ReplicaPushStatus is an enum for the replica push attempt status.
 type ReplicaPushStatus int
 

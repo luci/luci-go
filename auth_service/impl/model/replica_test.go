@@ -16,8 +16,10 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -32,6 +34,35 @@ func testReplicaState(ctx context.Context, appID string, authDBRev int64) *AuthR
 		Parent:    replicasRootKey(ctx),
 		AuthDBRev: authDBRev,
 	}
+}
+
+func TestReplicaUpdateError(t *testing.T) {
+	t.Parallel()
+
+	Convey("custom ReplicaUpdateError works", t, func() {
+		Convey("unwrapping works", func() {
+			replicaErr := &ReplicaUpdateError{
+				RootErr: errors.Annotate(datastore.ErrNoSuchEntity, "annotated test error").Err(),
+				IsFatal: false,
+			}
+			// Check the root error can be identified when it is a non-fatal error.
+			So(errors.Is(replicaErr, FatalReplicaUpdateError), ShouldBeFalse)
+			So(errors.Is(replicaErr, datastore.ErrNoSuchEntity), ShouldBeTrue)
+
+			// Check the root error can be identified when it is a fatal error.
+			replicaErr.IsFatal = true
+			So(errors.Is(replicaErr, FatalReplicaUpdateError), ShouldBeTrue)
+			So(errors.Is(replicaErr, datastore.ErrNoSuchEntity), ShouldBeTrue)
+		})
+
+		Convey("returns error message", func() {
+			replicaErr := &ReplicaUpdateError{
+				RootErr: fmt.Errorf("custom test error"),
+				IsFatal: true,
+			}
+			So(replicaErr.Error(), ShouldEqual, "custom test error")
+		})
+	})
 }
 func TestGetAllStaleReplicas(t *testing.T) {
 	t.Parallel()
