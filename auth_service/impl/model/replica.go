@@ -187,3 +187,50 @@ func updateReplicaStateOnSuccess(ctx context.Context, replicaID string,
 	// updating the replica state in Datastore.
 	return storedReplicaRev, err
 }
+
+// updateReplicaStateOnFail updates an AuthReplicaState after a failed
+// attempt to push the AuthDB to a replica.
+//
+// Returns the replica's AuthDB revision as stored in Datastore after
+// any updates.
+func updateReplicaStateOnFail(ctx context.Context, replicaID string,
+	oldReplicaRev int64, started, finished time.Time, pushErr error) (int64, error) {
+	var storedReplicaRev int64
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Get currently stored replica state.
+		replica, err := getAuthReplicaState(ctx, replicaStateKey(ctx, replicaID))
+		if err != nil {
+			return err
+		}
+
+		storedReplicaRev = replica.AuthDBRev
+		if storedReplicaRev > oldReplicaRev {
+			// The replica state has already been modified by another task,
+			// which must have successfully updated the replica as the AuthDB
+			// revision is greater. So, don't mess with it.
+			return nil
+		}
+
+		// Update the push attempt fields to the last known state.
+		// Note: this does not advance the AuthDB revision for the replica,
+		// as the update failed.
+		replica.PushStartedTS = started
+		replica.PushFinishedTS = finished
+		replica.PushError = pushErr.Error()
+		if errors.Is(pushErr, FatalReplicaUpdateError) {
+			replica.PushStatus = ReplicaPushStatusFatalError
+		} else {
+			replica.PushStatus = ReplicaPushStatusTransientError
+		}
+
+		if err := datastore.Put(ctx, replica); err != nil {
+			return err
+		}
+
+		return nil
+	}, nil)
+
+	// Return the stored replica revision, even if there was an error
+	// updating the replica state in Datastore.
+	return storedReplicaRev, err
+}

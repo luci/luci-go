@@ -180,3 +180,78 @@ func TestUpdateReplicaStateOnSuccess(t *testing.T) {
 		})
 	})
 }
+
+func TestUpdateReplicaStateOnFail(t *testing.T) {
+	t.Parallel()
+
+	Convey("updateReplicaStateOnSuccess works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		started := testCreatedTS
+		finished := testModifiedTS
+		oldReplicaRev := int64(1000)
+		errMsg := "replica returned transient error"
+		pushErr := &ReplicaUpdateError{
+			RootErr: fmt.Errorf(errMsg),
+			IsFatal: false,
+		}
+
+		Convey("returns error for unknown replica", func() {
+			storedRev, err := updateReplicaStateOnFail(ctx, "dev~unknownApp",
+				oldReplicaRev, started, finished, pushErr)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			So(storedRev, ShouldEqual, 0)
+		})
+
+		Convey("exits early if the replica has a newer revision", func() {
+			testAppID := "dev~appA"
+			advancedRev := oldReplicaRev + 1
+			initialState := testReplicaState(ctx, testAppID, advancedRev)
+			So(datastore.Put(ctx, initialState), ShouldBeNil)
+
+			storedRev, err := updateReplicaStateOnFail(ctx, testAppID,
+				oldReplicaRev, started, finished, pushErr)
+			So(err, ShouldBeNil)
+			So(storedRev, ShouldEqual, advancedRev)
+
+			// Check the replica state was unchanged.
+			actual := &AuthReplicaState{
+				Kind:   "AuthReplicaState",
+				ID:     testAppID,
+				Parent: replicasRootKey(ctx),
+			}
+			So(datastore.Get(ctx, actual), ShouldBeNil)
+			So(actual, ShouldResemble, initialState)
+		})
+
+		Convey("updates last known state with error details", func() {
+			testAppID := "dev~appA"
+			initialState := testReplicaState(ctx, testAppID, oldReplicaRev)
+			So(datastore.Put(ctx, initialState), ShouldBeNil)
+
+			storedRev, err := updateReplicaStateOnFail(ctx, testAppID,
+				oldReplicaRev, started, finished, pushErr)
+			So(err, ShouldBeNil)
+			So(storedRev, ShouldEqual, oldReplicaRev)
+
+			// Check the replica state was updated.
+			actual := &AuthReplicaState{
+				Kind:   "AuthReplicaState",
+				ID:     testAppID,
+				Parent: replicasRootKey(ctx),
+			}
+			So(datastore.Get(ctx, actual), ShouldBeNil)
+			So(actual, ShouldResemble, &AuthReplicaState{
+				Kind:           "AuthReplicaState",
+				ID:             testAppID,
+				Parent:         replicasRootKey(ctx),
+				ReplicaURL:     initialState.ReplicaURL,
+				AuthDBRev:      oldReplicaRev,
+				PushStartedTS:  started,
+				PushFinishedTS: finished,
+				PushStatus:     ReplicaPushStatusTransientError,
+				PushError:      errMsg,
+			})
+		})
+	})
+}
