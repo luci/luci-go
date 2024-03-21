@@ -15,13 +15,9 @@
 package bq
 
 import (
-	"context"
-	"fmt"
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/swarming/server/bq/taskspb"
 )
 
 const (
@@ -40,54 +36,40 @@ const (
 	TaskResultSummaries = "task_results_summary"
 )
 
-// ExportSchedule stores the highest timestamp which has been exported to
-// bigquery for a specific type of data.
-// Tasks which are earlier than NextExport may have already been triggered.
-// Deduplication is done at the tq.Tasks level using DeduplicationKey.
+// ExportSchedule stores the per-table timestamp to start exporting events from.
 type ExportSchedule struct {
-	// Key is derived from `ExportType`. See exportScheduleKey.
-	Key *datastore.Key `gae:"$key"`
+	_extra datastore.PropertyMap `gae:"-,extra"`
+	_kind  string                `gae:"$kind,bq.ExportSchedule"`
 
-	// NextExport is a timestamp which represents the newest known export state
-	// time which has been created.
+	// ID is the BQ table name where events are exported to.
+	//
+	// It is one of the constants defined above, e.g. TaskRequests.
+	ID string `gae:"$id"`
+
+	// NextExport is a timestamp to start exporting events from.
+	//
+	// It is updated by scheduleExportTasks once it schedules TQ tasks that do
+	// actual export.
 	NextExport time.Time `gae:",noindex"`
 }
 
-func exportScheduleKey(ctx context.Context, tableName string) *datastore.Key {
-	return datastore.NewKey(ctx, "bq.ExportSchedule", tableName, 0, nil)
-}
-
-const exportStateKind = "bq.ExportState"
-
-// ExportState stores the name of the WriteStream associated with exporting
-// datastore data to a specific table for a time interval.
+// ExportState stores the name of the WriteStream associated with a particular
+// export task.
 type ExportState struct {
-	// Extra are entity properties that didn't match any declared ones below.
+	_extra datastore.PropertyMap `gae:"-,extra"`
+	_kind  string                `gae:"$kind,bq.ExportState"`
+
+	// ID is taskspb.ExportInterval.OperationId of the corresponding export task.
 	//
-	// Should normally be empty.
-	Extra datastore.PropertyMap `gae:"-,extra"`
+	// This ID is derived based on the destination table name and the time
+	// interval being exported.
+	ID string `gae:"$id"`
 
-	// Key is derived using exportStateKey(...).
-	// It designed to ensure that the same taskpb.CreateExportTask will always
-	// point to the same ExportState object.
-	// The key does not protect against duplicate values for duration changes
-	// or changes of the tableName.
-	Key *datastore.Key `gae:"$key"`
-
-	// WriteStreamName is name of the writestream being exported to.
-	// When empty, it means we have yet to start exporting this time interval.
+	// WriteStreamName is name of the BigQuery WriteStream being exported to.
+	//
+	// When empty, it means we have yet to start working on the export task.
+	//
 	// After the WriteStream has been committed, this can be checked using the
-	// bigquery managedwriter SDK.
+	// BigQuery managedwriter SDK.
 	WriteStreamName string `gae:",noindex"`
-
-	// CreatedAt is the time when the exportState was created. Used to determine
-	// when to "garbage collect" the ExportState.
-	CreatedAt time.Time `gae:""`
-}
-
-// exportStateKey derives a key based a hash derived from the string of the task
-func exportStateKey(ctx context.Context, task *taskspb.CreateExportTask) *datastore.Key {
-	tableID := tableID(task.CloudProject, task.Dataset, task.TableName)
-	text := fmt.Sprintf("%s:%d:%d", tableID, task.Start.AsTime().Unix(), task.Duration.AsDuration())
-	return datastore.NewKey(ctx, exportStateKind, text, 0, nil)
 }

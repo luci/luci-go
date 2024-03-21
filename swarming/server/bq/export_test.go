@@ -16,7 +16,6 @@ package bq
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -27,8 +26,8 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/tq"
-	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/swarming/server/bq/taskspb"
 
@@ -36,103 +35,39 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func init() {
-	RegisterTQTasks()
-}
-
-func TestExportStateCleanup(t *testing.T) {
-	t.Parallel()
-
-	Convey("With mocks", t, func() {
-		setup := func() (context.Context, testclock.TestClock, *tqtesting.Scheduler) {
-			ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-			ctx = memory.Use(ctx)
-			ctx, skdr := tq.TestingContext(ctx, nil)
-			return ctx, tc, skdr
-		}
-		Convey("cron deletes age(exportState.Created) >= 24hrs", func() {
-			const n = 200
-			ctx, tc, _ := setup()
-			datastore.GetTestable(ctx).AutoIndex(true)
-			datastore.GetTestable(ctx).Consistent(true)
-			now := tc.Now()
-			newest := now.Add(-2 * time.Hour)
-			oldest := now.Add(-48 * time.Hour)
-			ents := make([]*ExportState, 0, n*2)
-			for i := 0; i < n; i++ {
-				oldest = oldest.Add(-exportDuration)
-				ents = append(ents, &ExportState{
-					Key: exportStateKey(ctx, &taskspb.CreateExportTask{
-						Start:        timestamppb.New(oldest),
-						Duration:     durationpb.New(exportDuration),
-						CloudProject: "foo",
-						Dataset:      "bar",
-						TableName:    TaskRequests,
-					}),
-					CreatedAt: oldest,
-				})
-
-				newest = newest.Add(exportDuration)
-				ents = append(ents, &ExportState{
-					Key: exportStateKey(ctx, &taskspb.CreateExportTask{
-						Start:        timestamppb.New(newest),
-						Duration:     durationpb.New(exportDuration),
-						CloudProject: "foo",
-						Dataset:      "bar",
-						TableName:    TaskRequests,
-					}),
-					CreatedAt: newest,
-				})
-			}
-			So(datastore.Put(ctx, ents), ShouldBeNil)
-			So(CleanupExportState(ctx), ShouldBeNil)
-			q := datastore.NewQuery(exportStateKind)
-			count := 0
-			cu := now.Add(-maxExportStateAge)
-			err := datastore.Run(ctx, q, func(e *ExportState) error {
-				if e.CreatedAt.After(cu) {
-					count += 1
-					return nil
-				}
-				return fmt.Errorf("Too recent: %+v, co: %s, now: %s", e, cu, now)
-			})
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, n)
-		})
-	})
-}
-
-func TestCreateExportTask(t *testing.T) {
+func TestScheduleExportTasks(t *testing.T) {
 	t.Parallel()
 
 	// TODO(jonahhooper) Add custom error handler to test failure to schedule
 	// a task.
 	// See: https://crrev.com/c/5054492/11..14/swarming/server/bq/export.go#b97
 	Convey("With mocks", t, func() {
-		setup := func() (context.Context, testclock.TestClock, *tqtesting.Scheduler) {
-			ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-			ctx = memory.Use(ctx)
-			ctx, skdr := tq.TestingContext(ctx, nil)
-			return ctx, tc, skdr
-		}
-		Convey("Creates 4 ExportTasks", func() {
-			ctx, tc, skdr := setup()
-			cutoff := tc.Now().UTC().Add(-latestAge)
+		disp := &tq.Dispatcher{}
+		cron := &cron.Dispatcher{}
+		Register(disp, cron, "foo", "bar")
+
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx = memory.Use(ctx)
+		ctx, tasks := tq.TestingContext(ctx, disp)
+
+		Convey("Creates 4 export tasks", func() {
+			cutoff := tc.Now().UTC().Add(-minEventAge)
 			start := cutoff.Add(-time.Minute)
 			// It appears that datastore testing implementation strips away
 			// nanosecond time precision.
 			// Truncate by microsecond matches this behaviour in UTs
 			start = start.Truncate(time.Microsecond)
-			state := ExportSchedule{
-				Key:        exportScheduleKey(ctx, TaskRequests),
+			schedule := ExportSchedule{
+				ID:         TaskRequests,
 				NextExport: start,
 			}
-			err := datastore.Put(ctx, &state)
+			err := datastore.Put(ctx, &schedule)
 			So(err, ShouldBeNil)
-			err = ScheduleExportTasks(ctx, "foo", "bar", TaskRequests)
+			err = scheduleExportTasks(ctx, disp, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
-			expected := []*taskspb.CreateExportTask{
+			expected := []*taskspb.ExportInterval{
 				{
+					OperationId:  "task_requests:1454472126:15",
 					CloudProject: "foo",
 					Dataset:      "bar",
 					TableName:    TaskRequests,
@@ -140,6 +75,7 @@ func TestCreateExportTask(t *testing.T) {
 					Duration:     durationpb.New(exportDuration),
 				},
 				{
+					OperationId:  "task_requests:1454472141:15",
 					CloudProject: "foo",
 					Dataset:      "bar",
 					TableName:    TaskRequests,
@@ -147,6 +83,7 @@ func TestCreateExportTask(t *testing.T) {
 					Duration:     durationpb.New(exportDuration),
 				},
 				{
+					OperationId:  "task_requests:1454472156:15",
 					CloudProject: "foo",
 					Dataset:      "bar",
 					TableName:    TaskRequests,
@@ -154,6 +91,7 @@ func TestCreateExportTask(t *testing.T) {
 					Duration:     durationpb.New(exportDuration),
 				},
 				{
+					OperationId:  "task_requests:1454472171:15",
 					CloudProject: "foo",
 					Dataset:      "bar",
 					TableName:    TaskRequests,
@@ -161,10 +99,10 @@ func TestCreateExportTask(t *testing.T) {
 					Duration:     durationpb.New(exportDuration),
 				},
 			}
-			So(skdr.Tasks(), ShouldHaveLength, len(expected))
-			payloads := make([]*taskspb.CreateExportTask, len(expected))
-			for idx, tsk := range skdr.Tasks().Payloads() {
-				payloads[idx] = tsk.(*taskspb.CreateExportTask)
+			So(tasks.Tasks(), ShouldHaveLength, len(expected))
+			payloads := make([]*taskspb.ExportInterval, len(expected))
+			for idx, tsk := range tasks.Tasks().Payloads() {
+				payloads[idx] = tsk.(*taskspb.ExportInterval)
 			}
 			// We don't care about order and the test scheduler doesn't appear
 			// to return results in order all the time so sort results by time
@@ -172,43 +110,41 @@ func TestCreateExportTask(t *testing.T) {
 				return payloads[i].Start.AsTime().Before(payloads[j].Start.AsTime())
 			})
 			So(payloads, ShouldResembleProto, expected)
-			err = datastore.Get(ctx, &state)
+			err = datastore.Get(ctx, &schedule)
 			So(err, ShouldBeNil)
-			So(state.NextExport, ShouldEqual, start.Add(4*exportDuration))
+			So(schedule.NextExport, ShouldEqual, start.Add(4*exportDuration))
 		})
+
 		Convey("Creates 0 export tasks if ExportSchedule doesn't exist", func() {
-			ctx, tc, skdr := setup()
-			err := ScheduleExportTasks(ctx, "foo", "bar", TaskRequests)
+			err := scheduleExportTasks(ctx, disp, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
-			So(skdr.Tasks(), ShouldBeEmpty)
-			state := ExportSchedule{Key: exportScheduleKey(ctx, TaskRequests)}
-			err = datastore.Get(ctx, &state)
+			So(tasks.Tasks(), ShouldBeEmpty)
+			schedule := ExportSchedule{ID: TaskRequests}
+			err = datastore.Get(ctx, &schedule)
 			So(err, ShouldBeNil)
-			So(state.NextExport, ShouldEqual, tc.Now().Truncate(time.Minute))
+			So(schedule.NextExport, ShouldEqual, tc.Now().Add(-minEventAge).Truncate(time.Minute))
 		})
+
 		Convey("We cannot create more than 20 tasks at a time", func() {
-			ctx, tc, skdr := setup()
 			start := tc.Now().Add(-(2 + 10) * time.Minute).Truncate(time.Minute)
-			state := ExportSchedule{
-				Key:        exportScheduleKey(ctx, TaskRequests),
+			So(datastore.Put(ctx, &ExportSchedule{
+				ID:         TaskRequests,
 				NextExport: start,
-			}
-			So(datastore.Put(ctx, &state), ShouldBeNil)
-			err := ScheduleExportTasks(ctx, "foo", "bar", TaskRequests)
+			}), ShouldBeNil)
+			err := scheduleExportTasks(ctx, disp, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
-			So(skdr.Tasks(), ShouldHaveLength, 20)
+			So(tasks.Tasks(), ShouldHaveLength, 20)
 		})
+
 		Convey("We cannot schedule an exportTask in the future", func() {
-			ctx, tc, skdr := setup()
 			start := tc.Now().Add(5 * time.Minute)
-			state := ExportSchedule{
-				Key:        exportScheduleKey(ctx, TaskRequests),
+			So(datastore.Put(ctx, &ExportSchedule{
+				ID:         TaskRequests,
 				NextExport: start,
-			}
-			So(datastore.Put(ctx, &state), ShouldBeNil)
-			err := ScheduleExportTasks(ctx, "foo", "bar", TaskRequests)
+			}), ShouldBeNil)
+			err := scheduleExportTasks(ctx, disp, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
-			So(skdr.Tasks(), ShouldHaveLength, 0)
+			So(tasks.Tasks(), ShouldHaveLength, 0)
 		})
 	})
 }

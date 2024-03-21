@@ -142,24 +142,8 @@ func main() {
 			pubSubNotifier.Stop()
 		})
 
-		// Handlers for TQ tasks involving bigquery export.
-		bq.RegisterTQTasks()
-
-		cron.RegisterHandler("bq-export-cleanup", func(ctx context.Context) error {
-			return bq.CleanupExportState(ctx)
-		})
-
-		cron.RegisterHandler("bq-export", func(ctx context.Context) error {
-			if *bqExportDataset == "none" {
-				return nil
-			}
-			return bq.ScheduleExportTasks(
-				ctx,
-				srv.Options.CloudProject,
-				*bqExportDataset,
-				bq.TaskRequests,
-			)
-		})
+		// Handlers for TQ tasks and crons for BigQuery export.
+		bq.Register(&tq.Default, &cron.Default, srv.Options.CloudProject, *bqExportDataset)
 
 		// PubSub push handler for notifications from the RBE scheduler.
 		pubsub.InstallHandler(
