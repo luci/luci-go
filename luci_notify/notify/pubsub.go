@@ -302,6 +302,11 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 	// Get the revision history for the build-related commit.
 	commits, err := history(c, luciProject, gCommit.Host, gCommit.Project, builder.Revision, gCommit.Id)
 	if err != nil {
+		if status.Code(err) == codes.DeadlineExceeded {
+			// Retrieve git history might time out (b/327294463), don't perform notification and log a warning.
+			logging.Warningf(c, "retrieve git history timeout, maybe related to b/327294463 %v", err)
+			return nil
+		}
 		return errors.Annotate(err, "failed to retrieve git history for input commit").Err()
 	}
 	if len(commits) == 0 {
