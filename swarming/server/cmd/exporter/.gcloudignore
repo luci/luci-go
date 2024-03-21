@@ -25,4 +25,4 @@
 *.out
 
 # `go build .` output
-cmd
+exporter

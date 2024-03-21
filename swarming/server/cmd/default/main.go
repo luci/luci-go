@@ -82,6 +82,7 @@ func main() {
 		"If set, expose endpoints for running integration tests. Must be used locally only.",
 	)
 
+	// TODO(vadimsh): Remove once `exporter` is deployed.
 	bqExportDataset := flag.String(
 		"bq-export-dataset",
 		"none",

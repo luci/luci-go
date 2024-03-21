@@ -11,7 +11,7 @@ To run locally using fake bots and tasks (but with real Datastore and real RBE):
 
 ```
 # Terminal 1: launch the server locally and keep it running.
-cd server/cmd
+cd server/cmd/default
 go run main.go \
   -cloud-project chromium-swarm-dev \
   -shared-hmac-secret devsecret://aaaa \

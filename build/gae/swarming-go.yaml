@@ -7,9 +7,14 @@ sources:
   - ../../swarming
 
 build:
-  - go_gae_bundle: ${inputsdir}/cmd/service-default-go.yaml
+  - copy: ${inputsdir}/cmd/dispatch.yaml
+    dest: ${contextdir}/cmd/dispatch.yaml
+  - go_gae_bundle: ${inputsdir}/cmd/default/service-default-go.yaml
     go_gae_bundle_as_module: True
-    dest: ${contextdir}/cmd
-  - go_gae_bundle: ${inputsdir}/monitor/service-monitor.yaml
+    dest: ${contextdir}/cmd/default
+  - go_gae_bundle: ${inputsdir}/cmd/exporter/service-exporter.yaml
     go_gae_bundle_as_module: True
-    dest: ${contextdir}/monitor
+    dest: ${contextdir}/cmd/exporter
+  - go_gae_bundle: ${inputsdir}/cmd/monitor/service-monitor.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/cmd/monitor
