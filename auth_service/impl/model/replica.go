@@ -19,12 +19,23 @@
 package model
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
@@ -124,6 +135,72 @@ func GetAllStaleReplicas(ctx context.Context, authDBRev int64) ([]*AuthReplicaSt
 	}
 
 	return staleReplicas, nil
+}
+
+// ReplicateToReplica pushes a revision of the AuthDB to the given
+// replica, then updates the last known state of the replica.
+//
+// Returns an error if:
+// - the push to the replica cannot be considered successful; or
+// - there was an error updating the last known state of the replica.
+func ReplicateToReplica(ctx context.Context, r *AuthReplicaState,
+	authDBRev int64, authDBBlob []byte, keyName, encodedSig string) error {
+	if r == nil {
+		return nil
+	}
+
+	started := clock.Now(ctx)
+	pushResponse, pushErr := postToReplica(ctx, r.ReplicaURL, authDBBlob,
+		keyName, encodedSig)
+	finished := clock.Now(ctx)
+
+	// Eagerly update the known replica state as soon as the response is
+	// received, for either failed or successful update.
+	var storedRev int64
+	var dsErr error
+	if pushErr != nil {
+		logging.Errorf(ctx, "error pushing update to replica %s: %s",
+			r.ID, pushErr)
+		storedRev, dsErr = updateReplicaStateOnFail(ctx, r.ID, r.AuthDBRev,
+			started, finished, pushErr)
+	} else {
+		storedRev, dsErr = updateReplicaStateOnSuccess(ctx, r.ID,
+			started, finished, pushResponse.CurrentRevision,
+			pushResponse.AuthCodeVersion)
+	}
+	if dsErr != nil {
+		if errors.Is(dsErr, datastore.ErrNoSuchEntity) {
+			// The replica was removed from the known replicas, so we can
+			// consider this push successful.
+			logging.Debugf(ctx, "replica %s was removed", r.ID)
+			return nil
+		}
+
+		// There was an issue updating the last known state for the replica.
+		logging.Errorf(ctx,
+			"error updating AuthReplicaState for replica %s: %s",
+			r.ID, dsErr)
+		return &ReplicaUpdateError{
+			RootErr: dsErr,
+			IsFatal: false,
+		}
+	}
+
+	if pushErr != nil {
+		if storedRev > authDBRev {
+			// The current push failed, but some other concurrent push must
+			// have succeeded (because the last known state for the replica is
+			// more up-to-date than this push was attempting). Thus, we can
+			// consider this push successful too.
+			return nil
+		}
+
+		return pushErr
+	}
+
+	logging.Infof(ctx, "replica %s has been updated to AuthDB Rev %d",
+		r.ID, storedRev)
+	return nil
 }
 
 func getAuthReplicaState(ctx context.Context, key *datastore.Key) (*AuthReplicaState, error) {
@@ -233,4 +310,149 @@ func updateReplicaStateOnFail(ctx context.Context, replicaID string,
 	// Return the stored replica revision, even if there was an error
 	// updating the replica state in Datastore.
 	return storedReplicaRev, err
+}
+
+func postToReplica(ctx context.Context, replicaURL string, authDBBlob []byte,
+	keyName, encodedSig string) (*protocol.ReplicationPushResponse, error) {
+	replicaURL = strings.TrimRight(replicaURL, "/")
+	var schema string
+	if info.IsDevAppServer(ctx) {
+		schema = "http://"
+	} else {
+		schema = "https://"
+	}
+	if !strings.HasPrefix(replicaURL, schema) {
+		return nil, &ReplicaUpdateError{
+			RootErr: fmt.Errorf("replica URL is '%s'; must explicitly use schema '%s'",
+				replicaURL, schema),
+			IsFatal: true,
+		}
+	}
+
+	pushURL := replicaURL + "/auth/api/v1/internal/replication"
+	requestTarget, err := url.Parse(pushURL)
+	if err != nil {
+		return nil, &ReplicaUpdateError{
+			RootErr: errors.Annotate(err, "error parsing replica push URL '%s'", pushURL).Err(),
+			IsFatal: true,
+		}
+	}
+
+	// Pass signature via the headers.
+	headers := http.Header{
+		"Content-Type":          []string{"application/octet-stream"},
+		"X-URLFetch-Service-Id": []string{getURLFetchServiceID(ctx)},
+		"X-AuthDB-SigKey-v1":    []string{keyName},
+		"X-AuthDB-SigVal-v1":    []string{encodedSig},
+	}
+	// On dev appserver emulate X-Appengine-Inbound-Appid header.
+	if info.IsDevAppServer(ctx) {
+		headers.Add("X-Appengine-Inbound-Appid", info.AppID(ctx))
+	}
+
+	// This deadline corresponds to:
+	// - 60 sec for GAE foreground request; plus
+	// - 10 sec to account for URL Fetch lag.
+	c, cancel := clock.WithTimeout(ctx, 70*time.Second)
+	defer cancel()
+	client := &http.Client{
+		Transport: urlfetch.Get(c),
+		// Don't follow redirects (required for 'X-Appengine-Inbound-Appid'
+		// to work).
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	res, err := client.Do(&http.Request{
+		Method:        "POST",
+		URL:           requestTarget,
+		Header:        headers,
+		Body:          io.NopCloser(bytes.NewReader(authDBBlob)),
+		ContentLength: int64(len(authDBBlob)),
+	})
+	if err != nil {
+		return nil, &ReplicaUpdateError{
+			RootErr: err,
+			IsFatal: true,
+		}
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	// Any transport-level error is transient.
+	if res.StatusCode != 200 {
+		return nil, &ReplicaUpdateError{
+			RootErr: fmt.Errorf("push request failed with HTTP code %d", res.StatusCode),
+			IsFatal: false,
+		}
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, &ReplicaUpdateError{
+			RootErr: errors.Annotate(err, "failed to read response body").Err(),
+			IsFatal: true,
+		}
+	}
+
+	// Deserialize the response.
+	pushResponse := &protocol.ReplicationPushResponse{}
+	if err := proto.Unmarshal(body, pushResponse); err != nil {
+		return nil, &ReplicaUpdateError{
+			RootErr: errors.Annotate(err, "failed to unmarshal response").Err(),
+			IsFatal: true,
+		}
+	}
+
+	switch pushResponse.Status {
+	case protocol.ReplicationPushResponse_APPLIED:
+		// Do nothing; the update was successful.
+	case protocol.ReplicationPushResponse_SKIPPED:
+		// Do nothing; the replica had this (or a later) revision already.
+	case protocol.ReplicationPushResponse_FATAL_ERROR:
+		return nil, &ReplicaUpdateError{
+			RootErr: fmt.Errorf("replica returned fatal error (error code %d)",
+				pushResponse.ErrorCode),
+			IsFatal: true,
+		}
+	case protocol.ReplicationPushResponse_TRANSIENT_ERROR:
+		return nil, &ReplicaUpdateError{
+			RootErr: fmt.Errorf("replica returned transient error (error code %d)",
+				pushResponse.ErrorCode),
+			IsFatal: false,
+		}
+	default:
+		return nil, &ReplicaUpdateError{
+			RootErr: fmt.Errorf("unexpected response status: %d (error code %d)",
+				pushResponse.Status, pushResponse.ErrorCode),
+			IsFatal: true,
+		}
+	}
+
+	// The replica either applied or skipped the update; CurrentRevision
+	// should be included in the response.
+	if pushResponse.CurrentRevision == nil {
+		return nil, &ReplicaUpdateError{
+			RootErr: fmt.Errorf("incomplete response; missing CurrentRevision"),
+			IsFatal: true,
+		}
+	}
+
+	return pushResponse, nil
+}
+
+// getURLFetchServiceID returns a value for X-URLFetch-Service-Id header
+// for GAE <-> GAE calls.
+//
+// Usually it can be omitted. It is required in certain environments.
+func getURLFetchServiceID(ctx context.Context) string {
+	if info.IsDevAppServer(ctx) {
+		return "LOCAL"
+	}
+
+	hostnameParts := strings.Split(info.DefaultVersionHostname(ctx), ".")
+	if len(hostnameParts) >= 3 {
+		return strings.ToUpper(hostnameParts[len(hostnameParts)-2])
+	}
+
+	return "APPSPOT"
 }
