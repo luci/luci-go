@@ -129,7 +129,7 @@ func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) er
 	}
 
 	// Get last known replica states.
-	staleReplicas, err := getAllStaleReplicas(ctx, replicationState.AuthDBRev)
+	staleReplicas, err := GetAllStaleReplicas(ctx, replicationState.AuthDBRev)
 	if err != nil {
 		logging.Errorf(ctx, "error getting all stale AuthReplicaStates: %s", err)
 		return err

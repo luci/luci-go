@@ -20,10 +20,12 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
 // The possible values for the PushStatus field of AuthReplicaState.
@@ -104,9 +106,9 @@ func replicaStateKey(ctx context.Context, appID string) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthReplicaState", appID, 0, replicasRootKey(ctx))
 }
 
-// getAllStaleReplicas gets all the AuthReplicaState entities that are
+// GetAllStaleReplicas gets all the AuthReplicaState entities that are
 // behind the given authDBRev.
-func getAllStaleReplicas(ctx context.Context, authDBRev int64) ([]*AuthReplicaState, error) {
+func GetAllStaleReplicas(ctx context.Context, authDBRev int64) ([]*AuthReplicaState, error) {
 	query := datastore.NewQuery("AuthReplicaState").Ancestor(replicasRootKey(ctx))
 	var replicaStates []*AuthReplicaState
 	err := datastore.GetAll(ctx, query, &replicaStates)
@@ -122,4 +124,66 @@ func getAllStaleReplicas(ctx context.Context, authDBRev int64) ([]*AuthReplicaSt
 	}
 
 	return staleReplicas, nil
+}
+
+func getAuthReplicaState(ctx context.Context, key *datastore.Key) (*AuthReplicaState, error) {
+	replicaState := &AuthReplicaState{}
+	if populated := datastore.PopulateKey(replicaState, key); !populated {
+		return nil, fmt.Errorf("failed getting AuthReplicaState; problem setting key")
+	}
+
+	if err := datastore.Get(ctx, replicaState); err != nil {
+		return nil, err
+	}
+
+	return replicaState, nil
+}
+
+// updateReplicaStateOnSuccess updates an AuthReplicaState after a
+// successful direct push of the AuthDB.
+//
+// Returns the replica's AuthDB revision as stored in Datastore after
+// any updates.
+func updateReplicaStateOnSuccess(ctx context.Context, replicaID string,
+	started, finished time.Time, currentRevision *protocol.AuthDBRevision,
+	authCodeVersion string) (int64, error) {
+	var storedReplicaRev int64
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Get currently stored replica state. May be ahead of the state
+		// initially fetched when processing replication tasks. If missing,
+		// the replica was removed from the replication list (and shouldn't
+		// be added back).
+		replica, err := getAuthReplicaState(ctx, replicaStateKey(ctx, replicaID))
+		if err != nil {
+			return err
+		}
+
+		storedReplicaRev = replica.AuthDBRev
+		if storedReplicaRev >= currentRevision.AuthDbRev {
+			// The replica state has already been updated by another task;
+			// don't mess with it.
+			return nil
+		}
+
+		// Update the AuthReplicaState, including advancing the last known
+		// revision of the AuthDB for the replica.
+		replica.AuthDBRev = currentRevision.AuthDbRev
+		replica.RevModifiedTS = time.UnixMicro(currentRevision.ModifiedTs).UTC()
+		replica.AuthCodeVersion = authCodeVersion
+		replica.PushStartedTS = started
+		replica.PushFinishedTS = finished
+		replica.PushStatus = ReplicaPushStatusSuccess
+		replica.PushError = ""
+
+		if err := datastore.Put(ctx, replica); err != nil {
+			return err
+		}
+		storedReplicaRev = replica.AuthDBRev
+
+		return nil
+	}, nil)
+
+	// Return the stored replica revision, even if there was an error
+	// updating the replica state in Datastore.
+	return storedReplicaRev, err
 }

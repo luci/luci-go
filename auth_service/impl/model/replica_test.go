@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -67,11 +68,11 @@ func TestReplicaUpdateError(t *testing.T) {
 func TestGetAllStaleReplicas(t *testing.T) {
 	t.Parallel()
 
-	Convey("getAllStaleReplicas works", t, func() {
+	Convey("GetAllStaleReplicas works", t, func() {
 		Convey("succeeds even when empty", func() {
 			ctx := memory.Use(context.Background())
 
-			replicas, err := getAllStaleReplicas(ctx, 1000)
+			replicas, err := GetAllStaleReplicas(ctx, 1000)
 			So(err, ShouldBeNil)
 			So(replicas, ShouldBeEmpty)
 		})
@@ -91,7 +92,7 @@ func TestGetAllStaleReplicas(t *testing.T) {
 
 			// Check the replicas returned were limited to stale ones, and are
 			// in ascending order of the app ID.
-			replicas, err := getAllStaleReplicas(ctx, 4)
+			replicas, err := GetAllStaleReplicas(ctx, 4)
 			So(err, ShouldBeNil)
 			So(replicas, ShouldResembleProto, []*AuthReplicaState{
 				testReplicaState(ctx, "dev~appC", 3),
@@ -99,6 +100,82 @@ func TestGetAllStaleReplicas(t *testing.T) {
 				testReplicaState(ctx, "dev~appE", 3),
 				testReplicaState(ctx, "dev~appF", 2),
 				testReplicaState(ctx, "dev~appG", 1),
+			})
+		})
+	})
+}
+
+func TestGetAuthReplicaState(t *testing.T) {
+	t.Parallel()
+
+	Convey("getAuthReplicaState works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		r := testReplicaState(ctx, "dev~appA", 123)
+
+		_, err := getAuthReplicaState(ctx, replicaStateKey(ctx, "dev~appA"))
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		// Now set up the replica state.
+		So(datastore.Put(ctx, r), ShouldBeNil)
+
+		actual, err := getAuthReplicaState(ctx, replicaStateKey(ctx, "dev~appA"))
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, r)
+	})
+}
+
+func TestUpdateReplicaStateOnSuccess(t *testing.T) {
+	t.Parallel()
+
+	Convey("updateReplicaStateOnSuccess works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		started := testCreatedTS
+		finished := testModifiedTS
+		currentRevision := &protocol.AuthDBRevision{
+			PrimaryId:  "chrome-infra-auth-test",
+			AuthDbRev:  1001,
+			ModifiedTs: testModifiedTS.UnixMicro(),
+		}
+		authCodeVersion := "2.0.test"
+
+		Convey("returns error for unknown replica", func() {
+			storedRev, err := updateReplicaStateOnSuccess(ctx, "dev~unknownApp",
+				started, finished, currentRevision, authCodeVersion)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			So(storedRev, ShouldEqual, 0)
+		})
+
+		Convey("updates last known state", func() {
+			testAppID := "dev~appA"
+			initialState := testReplicaState(ctx, testAppID, 1000)
+			So(datastore.Put(ctx, initialState), ShouldBeNil)
+
+			storedRev, err := updateReplicaStateOnSuccess(ctx, testAppID,
+				started, finished, currentRevision, authCodeVersion)
+			So(err, ShouldBeNil)
+			So(storedRev, ShouldEqual, 1001)
+
+			// Check the replica state was updated.
+			actual := &AuthReplicaState{
+				Kind:   "AuthReplicaState",
+				ID:     testAppID,
+				Parent: replicasRootKey(ctx),
+			}
+			So(datastore.Get(ctx, actual), ShouldBeNil)
+			So(actual, ShouldResemble, &AuthReplicaState{
+				Kind:            "AuthReplicaState",
+				ID:              testAppID,
+				Parent:          replicasRootKey(ctx),
+				ReplicaURL:      initialState.ReplicaURL,
+				AuthDBRev:       1001,
+				RevModifiedTS:   testModifiedTS,
+				AuthCodeVersion: authCodeVersion,
+				PushStartedTS:   started,
+				PushFinishedTS:  finished,
+				PushStatus:      ReplicaPushStatusSuccess,
+				PushError:       "",
 			})
 		})
 	})
