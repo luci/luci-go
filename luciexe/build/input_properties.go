@@ -81,10 +81,10 @@ func MakePropertyReader(ns string, fnptr any) {
 	propReaderReservations.reserve(ns, mkMsg, 1)
 
 	fn.Set(reflect.MakeFunc(fn.Type(), func(args []reflect.Value) []reflect.Value {
-		cstate := getState(args[0].Interface().(context.Context))
+		st := getState(args[0].Interface().(context.Context))
 		var msg proto.Message
 
-		if st := cstate.state; st != nil && st.reservedInputProperties[ns] != nil {
+		if st != nil && st.reservedInputProperties[ns] != nil {
 			msg = proto.Clone(st.reservedInputProperties[ns])
 		} else {
 			msg = mkMsg().ProtoReflect().Type().Zero().Interface()

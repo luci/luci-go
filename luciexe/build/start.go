@@ -123,5 +123,5 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 		return nil, ctx, err
 	}
 
-	return ret, setState(ctx, ctxState{ret, nil}), nil
+	return ret, setState(ctx, ret), nil
 }

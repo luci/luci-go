@@ -48,7 +48,7 @@ func TestStepNoop(t *testing.T) {
 					logging.Info, "set status: SCHEDULED", logging.Fields{"build.step": "some step"})
 
 				So(step, ShouldNotBeNil)
-				So(getState(ctx).stepNamePrefix(), ShouldResemble, "some step|")
+				So(getCurrentStep(ctx).name, ShouldResemble, "some step")
 
 				So(step.Start, ShouldNotPanic)
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: STARTED")
@@ -66,7 +66,7 @@ func TestStepNoop(t *testing.T) {
 				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: STARTED")
 
 				So(step, ShouldNotBeNil)
-				So(getState(ctx).stepNamePrefix(), ShouldResemble, "some step|")
+				So(getCurrentStep(ctx).name, ShouldResemble, "some step")
 				So(logs.Messages(), ShouldHaveLength, 2)
 
 				So(step.Start, ShouldNotPanic) // noop
@@ -159,6 +159,19 @@ func TestStepNoop(t *testing.T) {
 
 				So(parent.name, ShouldResemble, "parent")
 				So(child.name, ShouldResemble, "parent|child")
+			})
+
+			Convey(`creating child step with explicit parent`, func() {
+				parent, ctx := ScheduleStep(ctx, "parent")
+				defer func() { parent.End(nil) }()
+
+				child, _ := parent.ScheduleStep(ctx, "child")
+				defer func() { child.End(nil) }()
+
+				So(parent.name, ShouldResemble, "parent")
+				So(parent.stepPb.Status, ShouldResemble, bbpb.Status_STARTED)
+				So(child.name, ShouldResemble, "parent|child")
+				So(child.stepPb.Status, ShouldResemble, bbpb.Status_SCHEDULED)
 			})
 
 			Convey(`creating child step starts parent`, func() {
@@ -267,6 +280,25 @@ func TestStepLog(t *testing.T) {
 			// Check the link.
 			wantLink := "https://logs.chromium.org/logs/example/builds/8888888888/+/fakeNS/step/0/log/1"
 			So(log.UILink(), ShouldEqual, wantLink)
+		})
+
+		Convey(`child log context is correct`, func() {
+			step, ctx := StartStep(ctx, "parent")
+			defer step.End(nil)
+			logging.Infof(ctx, "I am on the parent")
+
+			// We use step.StartStep here specifically to make sure that logdog
+			// namespace and logging propagate correctly to childCtx even when not
+			// pulling current step from `ctx`.
+			child, childCtx := step.StartStep(ctx, "child")
+			defer child.End(nil)
+			logging.Infof(childCtx, "I am on the child")
+
+			So(environ.FromCtx(ctx).Get("LOGDOG_NAMESPACE"), ShouldResemble, "fakeNS/step/0/u")
+			So(environ.FromCtx(childCtx).Get("LOGDOG_NAMESPACE"), ShouldResemble, "fakeNS/step/1/u")
+
+			So(scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "I am on the parent")
+			So(scFake.Data()["fakeNS/step/1/log/0"].GetStreamData(), ShouldContainSubstring, "I am on the child")
 		})
 
 		Convey(`can open datagram logs`, func() {

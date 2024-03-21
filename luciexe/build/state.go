@@ -265,27 +265,33 @@ func (s *State) SynthesizeIOProto(o io.Writer) error {
 
 // private functions
 
-type ctxState struct {
-	state *State
-	step  *Step
+var buildStateKey = "holds the *State"
+
+func setState(ctx context.Context, s *State) context.Context {
+	return context.WithValue(ctx, &buildStateKey, s)
 }
 
-// Returns the step name prefix including terminal "|".
-func (c ctxState) stepNamePrefix() string {
-	if c.step == nil {
-		return ""
-	}
-	return c.step.name + "|"
+func getState(ctx context.Context) *State {
+	ret, _ := ctx.Value(&buildStateKey).(*State)
+	return ret
 }
 
-var contextStateKey = "holds a ctxState"
+var currentStepKey = "holds the current *Step"
 
-func setState(ctx context.Context, state ctxState) context.Context {
-	return context.WithValue(ctx, &contextStateKey, state)
+func setCurrentStep(ctx context.Context, s *Step) context.Context {
+	return context.WithValue(ctx, &currentStepKey, s)
 }
 
-func getState(ctx context.Context) ctxState {
-	ret, _ := ctx.Value(&contextStateKey).(ctxState)
+// getCurrentStep returns the current Step from the context, if one is set.
+//
+// If no Step is set in the context, this returns `nil`.
+//
+// This is non-exported to keep the ownership of Step objects in user code
+// clear. Otherwise it would be possible to directly get the current step and
+// mutate it at a distance. If user code wants that to happen, it can pass Step
+// explicitly.
+func getCurrentStep(ctx context.Context) *Step {
+	ret, _ := ctx.Value(&currentStepKey).(*Step)
 	return ret
 }
 

@@ -59,6 +59,16 @@ func TestState(t *testing.T) {
 			So(st.buildPb.Steps, ShouldResembleProto, []*bbpb.Step{
 				{Name: "some step", StartTime: nowpb, Status: bbpb.Status_STARTED},
 			})
+
+			Convey(`child with explicit parent`, func() {
+				child, _ := step.StartStep(ctx, "child step")
+				defer func() { child.End(nil) }()
+
+				So(st.buildPb.Steps, ShouldResembleProto, []*bbpb.Step{
+					{Name: "some step", StartTime: nowpb, Status: bbpb.Status_STARTED},
+					{Name: "some step|child step", StartTime: nowpb, Status: bbpb.Status_STARTED},
+				})
+			})
 		})
 
 		Convey(`End`, func() {

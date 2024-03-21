@@ -41,6 +41,12 @@ import (
 //
 // This is properly initialized by the StartStep and ScheduleStep functions.
 type Step struct {
+	// NOTE: I think it should be possible to remove `ctx` and `state` from Step
+	// here, relying on passing `ctx` to a few more methods.
+	//
+	// State is needed because of Step.mutate - the Step needs a link back to the
+	// whole build state to allow it to notify that a change to an inner proto
+	// message (stepPb) has occurred and so the Build should now be published.
 	ctx       context.Context
 	ctxCloser func()
 	state     *State
@@ -85,23 +91,24 @@ func (w *wasWritten) wasWritten() bool {
 //
 // The step will have a "STARTED" status with a StartTime.
 //
-// The returned context is updated so that calling StartStep/ScheduleStep on it
-// will create sub-steps.
-//
 // If `name` contains `|` this function will panic, since this is a reserved
 // character for delimiting hierarchy in steps.
 //
 // Duplicate step names will be disambiguated by appending " (N)" for the 2nd,
 // 3rd, etc. duplicate.
 //
-// The returned context will have `name` embedded in it; Calling StartStep or
-// ScheduleStep with this context will generate a sub-step.
+// The returned context has the following changes:
 //
-// The returned context also has an updated `environ.FromCtx` containing
-// a unique $LOGDOG_NAMESPACE value. If you launch a subprocess, you should use
-// this environment to correctly namespace any logdog log streams your
-// subprocess attempts to open. Using `go.chromium.org/luci/luciexe/build/exec`
-// does this automatically.
+//  1. It contains the returned *Step as the current step, which
+//     means that calling the package-level StartStep/ScheduleStep on it will
+//     create sub-steps of this one.
+//  2. The returned context also has an updated `environ.FromCtx` containing
+//     a unique $LOGDOG_NAMESPACE value. If you launch a subprocess, you
+//     should use this environment to correctly namespace any logdog log
+//     streams your subprocess attempts to open.
+//     Using `go.chromium.org/luci/luciexe/build/exec` does this automatically.
+//  3. `go.chromium.org/luci/common/logging` is wired up to a new step log
+//     stream called "log".
 //
 // You MUST call Step.End. To automatically map errors and panics to their
 // correct visual representation, End the Step like:
@@ -116,9 +123,7 @@ func (w *wasWritten) wasWritten() bool {
 // `recover()` the panic. Please use conventional Go error handling and control
 // flow mechanisms.
 func StartStep(ctx context.Context, name string) (*Step, context.Context) {
-	ret, ctx := ScheduleStep(ctx, name)
-	ret.Start()
-	return ret, ctx
+	return getCurrentStep(ctx).StartStep(ctx, name)
 }
 
 // ScheduleStep is like StartStep, except that it leaves the new step in the
@@ -128,26 +133,59 @@ func StartStep(ctx context.Context, name string) (*Step, context.Context) {
 // the Step, when creating a sub-Step, or if you explicitly call
 // Step.Start().
 func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
+	return getCurrentStep(ctx).ScheduleStep(ctx, name)
+}
+
+// StartStep will create a child step of this one with `name`.
+//
+// This behaves identically to the package level [StartStep], except that the
+// 'current step' is `s` and is not pulled from `ctx. This includes all
+// documented behaviors around changes to the returned context.
+func (s *Step) StartStep(ctx context.Context, name string) (*Step, context.Context) {
+	ret, ctx := s.ScheduleStep(ctx, name)
+	ret.Start()
+	return ret, ctx
+}
+
+// ScheduleStep will create a child step of this one with `name` in the SCHEDULED
+// status.
+//
+// This behaves identically to the package level [ScheduleStep], except that the
+// 'current step' is `s` and is not pulled from `ctx. This includes all
+// documented behaviors around changes to the returned context.
+func (s *Step) ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 	if strings.Contains(name, "|") {
 		panic(errors.Reason("step name %q contains reserved character `|`", name).Err())
 	}
 
-	cstate := getState(ctx)
 	ctx, ctxCloser := context.WithCancel(ctx)
 
-	if cstate.step != nil {
-		cstate.step.mutate(nil) // to ensure step is STARTED
+	if s != nil {
+		s.Start()
+	}
+
+	// We avoid looking in context for the state if we can help it - however
+	// calling ScheduleStep on nil is allowed when making a top-level step.
+	var state *State
+	if s == nil {
+		state = getState(ctx)
+	} else {
+		state = s.state
 	}
 
 	ret := &Step{
 		ctx:       ctx,
 		ctxCloser: ctxCloser,
-		state:     cstate.state,
+		state:     state,
 
 		logClosers: map[string]func() error{},
 	}
-	ret.stepPb, ret.logNamespace, ret.logSuffix = cstate.state.registerStep(&bbpb.Step{
-		Name:   cstate.stepNamePrefix() + name,
+	candidateName := name
+	if s != nil {
+		candidateName = fmt.Sprintf("%s|%s", s.name, name)
+	}
+	ret.stepPb, ret.logNamespace, ret.logSuffix = ret.state.registerStep(&bbpb.Step{
+		Name:   candidateName,
 		Status: bbpb.Status_SCHEDULED,
 	})
 	ret.name = ret.stepPb.Name
@@ -199,8 +237,7 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 	}
 	ret.ctx = ctx
 
-	cstate.step = ret
-	return ret, setState(ctx, cstate)
+	return ret, setCurrentStep(ctx, ret)
 }
 
 // End sets the step's final status, according to `err` (See ExtractStatus).
