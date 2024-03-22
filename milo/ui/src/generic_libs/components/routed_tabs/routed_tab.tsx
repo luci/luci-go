@@ -49,12 +49,11 @@ export function RoutedTab({
   const activeTabId = useActiveTabId();
   const shouldHide = hideWhenInactive && value !== activeTabId;
 
-  return (
-    <Tab
-      {...props}
-      value={value}
-      component={Link}
-      sx={{ display: shouldHide ? 'none' : '' }}
-    />
-  );
+  // Do not render anything when the tab is hidden.
+  // Using `display: none` may cause errors if the tab has tooltip in the label.
+  if (shouldHide) {
+    return <></>;
+  }
+
+  return <Tab {...props} value={value} component={Link} />;
 }

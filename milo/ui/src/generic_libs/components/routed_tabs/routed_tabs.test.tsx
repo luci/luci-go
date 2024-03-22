@@ -111,7 +111,7 @@ describe('RoutedTabs', () => {
     );
     render(<RouterProvider router={router} />);
 
-    expect(screen.getByText('tab B label')).toHaveStyleRule('display', 'none');
+    expect(screen.queryByText('tab B label')).not.toBeInTheDocument();
 
     act(() => screen.getByText('direct link to tab B').click());
     expect(screen.getByText('tab B label')).not.toHaveStyleRule(

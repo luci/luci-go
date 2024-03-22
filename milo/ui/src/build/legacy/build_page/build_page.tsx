@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { css } from '@emotion/react';
-import { LinearProgress, Link } from '@mui/material';
+import { Box, LinearProgress, Link } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
@@ -49,6 +49,7 @@ import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';
 import { BuildContextProvider } from './context';
 import { CustomBugLink } from './custom_bug_link';
+import { InfraTabAnnouncementTooltip } from './infra_tab/announcement_tooltip';
 
 const STATUS_FAVICON_MAP = Object.freeze({
   [BuildbucketStatus.Scheduled]: grayFavicon,
@@ -188,7 +189,11 @@ export const BuildPage = observer(() => {
               iconPosition="end"
             />
             <AppRoutedTab
-              label="Infra"
+              label={
+                <InfraTabAnnouncementTooltip>
+                  <Box>Infra</Box>
+                </InfraTabAnnouncementTooltip>
+              }
               value="infra"
               to="infra"
               hideWhenInactive={!store.buildPage.canReadFullBuild}
