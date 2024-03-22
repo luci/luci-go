@@ -4,15 +4,21 @@ dispatch:
     service: default-go
   - url: "*/prpc/discovery.Discovery/*"
     service: default-go
+
   # Serve Swarming RBE endpoints using Go.
   - url: "*/swarming/api/v1/bot/rbe/*"
     service: default-go
+
   # Serve TQ tasks using Go.
+  - url: "*/internal/tasks/t/bq-*"
+    service: exporter
   - url: "*/internal/tasks/t/*"
     service: default-go
+
   # Serve RBE PubSub push subscription handler using Go.
   - url: "*/pubsub/rbe/*"
     service: default-go
+
   # Serve web UI authentication endpoints using Go.
   - url: "*/auth/openid/*"
     service: default-go

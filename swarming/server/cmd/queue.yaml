@@ -143,5 +143,5 @@ queue:
 # /internal/tasks/t/bq-export-interval
 # This is served by Swarming Go via go.chromium.org/luci/server/tq.
 - name: bq-export-interval
-  target: default-go
+  target: exporter
   rate: 10/s

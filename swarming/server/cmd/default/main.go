@@ -36,7 +36,6 @@ import (
 	notificationspb "go.chromium.org/luci/swarming/internal/notifications"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/botsrv"
-	"go.chromium.org/luci/swarming/server/bq"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/internals"
@@ -80,13 +79,6 @@ func main() {
 		"expose-integration-mocks",
 		false,
 		"If set, expose endpoints for running integration tests. Must be used locally only.",
-	)
-
-	// TODO(vadimsh): Remove once `exporter` is deployed.
-	bqExportDataset := flag.String(
-		"bq-export-dataset",
-		"none",
-		"'none' will do no exports. Otherwise will specify which bq dataset to export to.",
 	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -142,9 +134,6 @@ func main() {
 		srv.RegisterCleanup(func(context.Context) {
 			pubSubNotifier.Stop()
 		})
-
-		// Handlers for TQ tasks and crons for BigQuery export.
-		bq.Register(&tq.Default, &cron.Default, srv.Options.CloudProject, *bqExportDataset)
 
 		// PubSub push handler for notifications from the RBE scheduler.
 		pubsub.InstallHandler(
