@@ -1,0 +1,139 @@
+cron:
+
+
+### Tasks
+
+- description: >-
+    Catch TaskRunResult's where the bot died and failed sending updates.
+  url: /internal/cron/important/scheduler/abort_bot_missing
+  schedule: every 1 minutes
+  target: backend
+
+- description: Catch TaskToRunShards that are expired.
+  url: /internal/cron/important/scheduler/abort_expired
+  schedule: every 1 minutes
+  target: backend
+
+- description: Removes expired task dimension sets from the datastore.
+  url: /internal/cron/cleanup/task_dimension_sets
+  schedule: every 1 minutes
+  target: backend
+
+- description: Delete old TaskRequest
+  url: /internal/cron/cleanup/tasks/delete_old
+  schedule: every 10 minutes synchronized
+  target: backend
+
+
+### Bots
+
+- description: Update BotInfo.composite for dead bots.
+  url: /internal/cron/monitoring/bots/update_bot_info
+  # BotInfo.yield_alive_bots() takes 1+ minute to complete.
+  # Set enough interval to avoid running multiple jobs at the same time.
+  schedule: every 3 minutes
+  target: backend
+
+- description: Delete old Bot entity groups
+  url: /internal/cron/cleanup/bots/delete_old
+  schedule: every 5 minutes synchronized
+  target: backend
+
+- description: Delete old BotEvent
+  url: /internal/cron/cleanup/bots/delete_old_bot_events
+  schedule: every 5 minutes synchronized
+  target: backend
+
+
+### Named caches
+
+- description: >-
+    Update named caches cache sizes; this is important to ensure the bots have
+    enough free disk space for cold named cache.
+  url: /internal/cron/important/named_caches/update
+  schedule: every 10 minutes synchronized
+  target: backend
+
+
+### Caches for the UI
+
+- description: Aggregate all bots dimensions for easier sorting.
+  url: /internal/cron/monitoring/bots/aggregate_dimensions
+  schedule: every 5 minutes
+  target: backend
+
+
+### External schedulers
+
+- description: Cancel tasks at the behest of external scheduler.
+  url: /internal/cron/important/external_scheduler/cancellations
+  schedule: every 1 minutes
+  target: backend
+
+- description: Notify external scheduler based on its desired callbacks.
+  url: /internal/cron/important/external_scheduler/get_callbacks
+  schedule: every 1 minutes
+  target: backend
+
+### ereporter2
+
+- description: ereporter2 cleanup
+  url: /internal/cron/ereporter2/cleanup
+  schedule: every 1 hours
+  target: backend
+
+- description: ereporter2 mail exception report
+  url: /internal/cron/ereporter2/mail
+  schedule: every 1 hours synchronized
+  target: backend
+
+
+### gae_ts_mon and BigQuery
+
+- description: Send ts_mon metrics
+  url: /internal/cron/ts_mon/send
+  schedule: every 1 minutes
+  target: backend
+
+- description: Trigger task queues to send rows to to BigQuery
+  target: backend
+  url: /internal/cron/monitoring/bq
+  schedule: every 1 minutes
+
+- description: Report bot metrics from go service
+  target: monitor
+  url: /internal/cron/report-bots
+  schedule: every 1 minutes
+
+
+- description: Report Task running/pending metrics from go service
+  target: monitor
+  url: /internal/cron/report-tasks
+  schedule: every 1 minutes
+
+
+### Configs
+
+- description: read luci-config configs
+  # Handled by inclusion of components/config in app.yaml.
+  url: /internal/cron/config/update
+  schedule: every 1 minutes
+  target: backend
+
+- description: assemble bot groups configs
+  url: /internal/cron/important/bot_groups_config
+  schedule: every 1 minutes
+  target: backend
+
+
+### Crons handled by the Go portion.
+
+- description: read server configs in Go
+  url: /internal/cron/update-config
+  schedule: every 1 minutes
+  target: default-go
+
+- description: Trigger task queues to send rows to to BigQuery
+  target: default-go
+  url: /internal/cron/bq-export
+  schedule: every 1 minutes

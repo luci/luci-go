@@ -1,0 +1,147 @@
+queue:
+
+## Tasks
+
+# /internal/taskqueue/important/tasks/cancel
+- name: cancel-tasks
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/taskqueue/important/tasks/cancel-task-on-bot
+- name: cancel-task-on-bot
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/taskqueue/important/tasks/cancel-children-tasks
+- name: cancel-children-tasks
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/taskqueue/important/tasks/expire
+- name: task-expire
+  bucket_size: 20
+  rate: 100/s
+
+# /internal/taskqueue/important/pubsub/notify-task/<task_id:[0-9a-f]+>
+- name: pubsub
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/taskqueue/important/buildbucket/notify-task/<task_id:[0-9a-f]+>
+- name: buildbucket-notify
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/tasks/t/buildbucket-notify-go/<task_id:[0-9a-f]+> is served on Go.
+- name: buildbucket-notify-go
+  bucket_size: 100
+  rate: 500/s
+  target: default-go
+
+# /internal/taskqueue/important/task_queues/update-bot-matches
+- name: update-bot-matches
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/taskqueue/important/task_queues/rescan-matching-task-sets
+- name: rescan-matching-task-sets
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/taskqueue/monitoring/bq/tasks/requests/<timestamp:\d{4}-\d\d-\d\dT\d\d:\d\d>
+- name: monitoring-bq-tasks-requests
+  rate: 10/s
+
+# /internal/taskqueue/monitoring/bq/tasks/results/run/<timestamp:\d{4}-\d\d-\d\dT\d\d:\d\d>
+- name: monitoring-bq-tasks-results-run
+  rate: 10/s
+
+# /internal/taskqueue/monitoring/bq/tasks/results/summary/<timestamp:\d{4}-\d\d-\d\dT\d\d:\d\d>
+- name: monitoring-bq-tasks-results-summary
+  rate: 10/s
+
+# /internal/taskqueue/cleanup/tasks/delete
+# An heavy workload produces 1000 tasks per minute, 10000 tasks per 10 minutes.
+# The cron job runs every 10 minutes and leaves 5 minutes for the tasks to
+# complete.
+# Each task is 1000 tasks, and takes around 3 minutes to complete. This means
+# around 10 tasks in practice should be sufficient, set it to 20 to keep a
+# safety margin.
+- name: delete-tasks
+  max_concurrent_requests: 20
+  rate: 1/s
+
+
+# RBE migration
+
+# /internal/tasks/t/rbe-enqueue/.*
+# This is served by Swarming Go via go.chromium.org/luci/server/tq.
+- name: rbe-enqueue
+  target: default-go
+  bucket_size: 100
+  rate: 500/s
+
+# /internal/tasks/t/rbe-cancel/.*
+# This is served by Swarming Go via go.chromium.org/luci/server/tq.
+- name: rbe-cancel
+  target: default-go
+  bucket_size: 100
+  rate: 500/s
+
+
+## External Scheduler
+
+# /internal/taskqueue/important/external_scheduler/notify-tasks
+- name: es-notify-tasks
+  bucket_size: 100
+  rate: 75/s
+  # Additional notifications of the state of a task will be sent by swarming
+  # if it observes a state that differs from the external scheduler's opinion
+  # of that task state. Therefore, we don't need to retry tasks on this queue
+  # aggressively.
+  retry_parameters:
+    task_retry_limit: 2
+    task_age_limit: 5m
+
+# /internal/taskqueue/important/external_scheduler/notify-kick
+# The handler here calls the worker of es-notify-tasks-batch constantly at 1/s,
+# keeping it run and batch notifications.
+- name: es-notify-kick
+  bucket_size: 100
+  rate: 1/s
+  # No need to retry.
+  retry_parameters:
+    task_retry_limit: 0
+    task_age_limit: 1s
+
+# Pull queue to process notify-tasks in batch mode.
+- name: es-notify-tasks-batch
+  mode: pull
+
+
+## Named caches
+
+# /internal/taskqueue/important/named_cache/update-pool
+- name: named-cache-task
+  rate: 10/s
+  # Cron will reschedule, so don't retry on failure.
+  # Need both limits, since AE semantics is "AND", not "OR".
+  retry_parameters:
+    task_retry_limit: 0
+    task_age_limit: 1s
+
+
+## Bots
+
+# /internal/taskqueue/monitoring/bq/bots/events/<timestamp:\d{4}-\d\d-\d\dT\d\d:\d\d>
+- name: monitoring-bq-bots-events
+  rate: 10/s
+
+
+## BigQuery export in golang
+
+# /internal/tasks/t/bq-export-interval
+# This is served by Swarming Go via go.chromium.org/luci/server/tq.
+- name: bq-export-interval
+  target: default-go
+  rate: 10/s

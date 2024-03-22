@@ -7,8 +7,14 @@ sources:
   - ../../swarming
 
 build:
+  - copy: ${inputsdir}/cmd/cron.yaml
+    dest: ${contextdir}/cmd/cron.yaml
   - copy: ${inputsdir}/cmd/dispatch.yaml
     dest: ${contextdir}/cmd/dispatch.yaml
+  - copy: ${inputsdir}/cmd/index.yaml
+    dest: ${contextdir}/cmd/index.yaml
+  - copy: ${inputsdir}/cmd/queue.yaml
+    dest: ${contextdir}/cmd/queue.yaml
   - go_gae_bundle: ${inputsdir}/cmd/default/service-default-go.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/cmd/default
