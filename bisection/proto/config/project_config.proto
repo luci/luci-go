@@ -44,7 +44,7 @@ message CompileAnalysisConfig {
 // TestAnalysisConfig is the configuration data for test failure bisection.
 // Next available tag: 10.
 message TestAnalysisConfig {
-  reserved 1;
+  reserved 1, 5, 7;
   // The build config to run test analysis.
   BuildConfig build_config = 9;
   // Flag of whether test failure detector is enabled.
@@ -67,19 +67,8 @@ message TestAnalysisConfig {
   // It allows us to slowly roll out bisection without consuming too much
   // swarming capacity.
   uint32 daily_limit = 4;
-  // The list of buildbucket buckets that we should not bisect on.
-  // For example, "reviver", "try", and "findit".
-  // TODO(beining@): deprecating, use failure_ingestion_filter.excluded_buckets instead.
-  repeated string excluded_buckets = 5;
   // Configuration data for Gerrit integration for test failures.
   GerritConfig gerrit_config = 6;
-  // The list of swarming test task pools that we want to exclude running bisection.
-  // For example, we want to exclude the "chromium.tests.gpu" pool (b/301523224)
-  // because there are limited resources in the pool.
-  // Note: this is not the pools that the builder run, but the swarming test task pool,
-  // which contains the bots that actually run the tests on swarming.
-  // TODO(beining@): deprecating, use failure_ingestion_filter.excluded_test_pools instead.
-  repeated string excluded_test_pools = 7;
   // Only test failure which satisfies this filter will be ingested.
   FailureIngestionFilter failure_ingestion_filter = 8;
 }
