@@ -28,7 +28,7 @@ queue:
   rate: 500/s
 
 # /internal/tasks/t/pubsub-go/<task_id:[0-9a-f]+> is served on Go.
-- name: pubsub-go
+- name: pubsub-v2
   bucket_size: 100
   rate: 500/s
 
