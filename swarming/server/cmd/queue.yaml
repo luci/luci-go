@@ -27,6 +27,11 @@ queue:
   bucket_size: 100
   rate: 500/s
 
+# /internal/tasks/t/pubsub-go/<task_id:[0-9a-f]+> is served on Go.
+- name: pubsub-go
+  bucket_size: 100
+  rate: 500/s
+
 # /internal/taskqueue/important/buildbucket/notify-task/<task_id:[0-9a-f]+>
 - name: buildbucket-notify
   bucket_size: 100
