@@ -15,7 +15,7 @@
 export enum BuildPageTab {
   Overview = 'overview',
   TestResults = 'test-results',
-  Steps = 'steps',
+  Infra = 'infra',
   RelatedBuilds = 'related-builds',
   Timeline = 'timeline',
   Blamelist = 'blamelist',

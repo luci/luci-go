@@ -42,7 +42,7 @@ export interface ChangeConfigDialogProps {
 const TAB_NAME_LABEL_TUPLES = Object.freeze([
   [BuildPageTab.Overview, 'Overview'],
   [BuildPageTab.TestResults, 'Test Results'],
-  [BuildPageTab.Steps, 'Steps & Logs'],
+  [BuildPageTab.Infra, 'Infra'],
   [BuildPageTab.RelatedBuilds, 'Related Builds'],
   [BuildPageTab.Timeline, 'Timeline'],
   [BuildPageTab.Blamelist, 'Blamelist'],

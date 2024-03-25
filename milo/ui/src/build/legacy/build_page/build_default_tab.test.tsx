@@ -152,7 +152,7 @@ describe('BuildDefaultTab', () => {
   test('should redirect properly when the saved default tab is valid', async () => {
     // This can happen when we changed/added/removed tab identifiers.
     applySnapshot(store, {
-      userConfig: { build: { defaultTab: BuildPageTab.Steps } },
+      userConfig: { build: { defaultTab: BuildPageTab.Infra } },
     });
 
     const router = reactRouterDom.createMemoryRouter(
@@ -162,7 +162,7 @@ describe('BuildDefaultTab', () => {
           children: [
             { index: true, element: <BuildDefaultTab /> },
             { path: BuildPageTab.Overview, element: <></> },
-            { path: BuildPageTab.Steps, element: <></> },
+            { path: BuildPageTab.Infra, element: <></> },
           ],
         },
       ],
@@ -188,7 +188,7 @@ describe('BuildDefaultTab', () => {
       // The type definition for `.toMatchObject` is incomplete. Cast to any to
       // make TSC happy.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      '/path/prefix/steps?param#hash' as any,
+      '/path/prefix/infra?param#hash' as any,
       { replace: true },
     ]);
   });
@@ -206,7 +206,7 @@ describe('BuildDefaultTab', () => {
           children: [
             { index: true, element: <BuildDefaultTab /> },
             { path: BuildPageTab.Overview, element: <></> },
-            { path: BuildPageTab.Steps, element: <></> },
+            { path: BuildPageTab.Infra, element: <></> },
           ],
         },
       ],
