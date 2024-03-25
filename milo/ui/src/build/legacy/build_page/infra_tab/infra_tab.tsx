@@ -38,8 +38,11 @@ const ContainerDiv = styled(Box)({
     gridTemplateColumns: '1fr 40vw',
     gap: '20px',
   },
-  '& > h3': {
-    marginBlock: '15px 10px',
+  '& h3': {
+    marginBlock: '25px 10px',
+  },
+  '& h3:first-of-type': {
+    marginTop: '10px',
   },
 });
 

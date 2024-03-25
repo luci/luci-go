@@ -29,6 +29,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePageSpecificConfig } from '@/common/components/page_config_state_provider';
 import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
+import { Timestamp } from '@/common/components/timestamp';
 import {
   BUILD_STATUS_COLOR_THEME_MAP,
   BUILD_STATUS_DISPLAY_MAP,
@@ -37,11 +38,8 @@ import { UiPage } from '@/common/constants/view';
 import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
-import {
-  getBuilderURLPath,
-  getLegacyBuildURLPath,
-  getProjectURLPath,
-} from '@/common/tools/url_utils';
+import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
+import { getBuilderURLPath, getProjectURLPath } from '@/common/tools/url_utils';
 
 import { CountIndicator } from '../../../test_verdict/legacy/test_results_tab/count_indicator';
 
@@ -99,23 +97,6 @@ export const BuildPage = observer(() => {
     document.getElementById('favicon')?.setAttribute('href', faviconUrl);
   }, [faviconUrl]);
 
-  const handleSwitchVersion = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
-  ) => {
-    const switchVerTemporarily =
-      e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
-
-    if (switchVerTemporarily) {
-      return;
-    }
-
-    const expires = new Date(
-      Date.now() + 365 * 24 * 60 * 60 * 1000,
-    ).toUTCString();
-    document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
-    store.redirectSw?.unregister();
-  };
-
   return (
     <BuildContextProvider build={store.buildPage.build?.data || null}>
       <InvocationProvider value={store.buildPage.invocation}>
@@ -156,15 +137,21 @@ export const BuildPage = observer(() => {
             <div css={delimiter}></div>
             <CustomBugLink project={project} build={build?.data} />
             <div css={delimiter}></div>
-            <Link
-              onClick={handleSwitchVersion}
-              href={getLegacyBuildURLPath(
-                { project, bucket, builder },
-                buildNumOrId,
-              )}
-            >
-              Switch to the legacy build page
-            </Link>
+            {/* TODO: info that helps users identify the build (e.g. source)
+             ** should be displayed at the top (above the tabs). At the moment
+             ** the source description is not short enough to be put here.
+             ** Also we may want to redesign this bar to give more emphasize to
+             ** the build identifier (builder, timestamp, and source).
+             */}
+            {build?.createTime ? (
+              <span>
+                created at{' '}
+                <Timestamp
+                  datetime={build?.createTime}
+                  format={SHORT_TIME_FORMAT}
+                />
+              </span>
+            ) : null}
           </div>
           <LinearProgress
             value={100}

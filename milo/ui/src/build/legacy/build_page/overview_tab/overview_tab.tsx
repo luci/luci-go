@@ -29,8 +29,11 @@ import { SummarySection } from './summary_section';
 
 const ContainerDiv = styled.div({
   margin: '10px 16px',
-  '& > h3': {
-    marginBlock: '15px 10px',
+  '& h3': {
+    marginBlock: '25px 10px',
+  },
+  '& h3:first-of-type': {
+    marginTop: '10px',
   },
 });
 

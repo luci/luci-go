@@ -38,7 +38,6 @@ export const SummarySection = observer(() => {
 
   return (
     <>
-      <h3>Summary</h3>
       <div
         css={{
           padding: '5px 10px',

@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Icon } from '@mui/material';
+import { startCase } from 'lodash-es';
+
+import {
+  BUILD_STATUS_CLASS_MAP,
+  BUILD_STATUS_DISPLAY_MAP,
+} from '@/build/constants';
+import { SpecifiedBuildStatus } from '@/build/types';
+import { BUILD_STATUS_ICON_MAP } from '@/common/constants/build';
+
 import { useBuild } from '../../context';
 
 import { SourceDescription } from './source_description';
@@ -25,12 +35,22 @@ export function BuildDescription() {
 
   const input = build.input;
   const output = build.output;
+  const status = build.status as SpecifiedBuildStatus;
 
   const commit = output?.gitilesCommit || input?.gitilesCommit;
   const changes = input?.gerritChanges || [];
 
   return (
     <>
+      <h3>
+        <Icon
+          className={BUILD_STATUS_CLASS_MAP[status]}
+          sx={{ verticalAlign: 'middle' }}
+        >
+          {BUILD_STATUS_ICON_MAP[status]}
+        </Icon>{' '}
+        {startCase(BUILD_STATUS_DISPLAY_MAP[status])}
+      </h3>
       build{' '}
       {commit ? (
         <>
