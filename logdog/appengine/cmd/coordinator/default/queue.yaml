@@ -12,24 +12,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO(b/330798123): remove the retry limit once the stuck tasks are purged.
 queue:
 - name: "archiveTasks"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-1"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-2"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-3"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-4"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-5"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-6"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-7"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-8"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
 - name: "archiveTasks-9"
   mode: pull
+  retry_parameters:
+    task_retry_limit: 50
