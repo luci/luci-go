@@ -12,7 +12,7 @@ queue:
   rate: 500/s
 - name: backend-default
   target: backend
-  rate: 100/s
+  rate: 500/s
 - name: bulkproc
   target: backend
   rate: 100/s
@@ -20,14 +20,35 @@ queue:
 - name: bq-export
   mode: pull
 - name: backend-go-default
-  # TODO(crbug/1042991): Target backend-go once it exists.
   target: default-go
   rate: 500/s
 - name: swarming-build-create-go
-  # TODO(crbug/1042991): Target backend-go once it exists.
   target: default-go
   rate: 500/s
 - name: swarming-build-sync-go
-  # TODO(crbug/1328646): Switch to backend-go once it exists.
+  target: default-go
+  rate: 500/s
+- name: notify-pubsub-go
+  target: default-go
+  rate: 500/s
+- name: finalize-resultdb-go
+  target: default-go
+  rate: 500/s
+- name: cancel-build
+  target: default-go
+  rate: 500/s
+- name: export-bigquery-go
+  target: default-go
+  rate: 500/s
+- name: check-build-liveness
+  target: default-go
+  rate: 500/s
+- name: create-backend-task-go
+  target: default-go
+  rate: 500/s
+- name: sync-builds-with-backend-tasks
+  target: default-go
+  rate: 500/s
+- name: cancel-backend-task
   target: default-go
   rate: 500/s
