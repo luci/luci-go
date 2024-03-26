@@ -84,7 +84,7 @@ func run(ctx context.Context) error {
 		// Entities created this year all have the expire at property populated.
 		// Only processing old entities also let us commit updates safely without
 		// using transaction.
-		SkipCreatedAfter: time.Date(2024, time.January, 0, 0, 0, 0, 0, time.UTC),
+		SkipCreatedAfter: time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),
 		Expiry:           coordinator.LogStreamExpiry,
 		RetryCount:       5,
 	}

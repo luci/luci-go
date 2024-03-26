@@ -33,6 +33,7 @@ export function SourceDescription({ commit, changes }: SourceDescriptionProps) {
       from <CommitLink commit={commit} />
       {changes.length > 0 ? (
         <>
+          {' '}
           with changes:{' '}
           {changes.map((c, i) => (
             <Fragment key={getGerritChangeURL(c)}>
