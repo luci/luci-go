@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -47,14 +47,14 @@ func TestHandleBuild(t *testing.T) {
 		build := newBuildBuilder(14141414).
 			WithCreateTime(createTime)
 
-		expectedTask := &taskspb.IngestTestResults{
+		expectedTask := &taskspb.IngestTestVerdicts{
 			PartitionTime: timestamppb.New(createTime),
 			Build:         build.ExpectedResult(),
 		}
 
 		assertTasksExpected := func() {
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestResults)
+			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestVerdicts)
 			So(resultsTask, ShouldResembleProto, expectedTask)
 		}
 

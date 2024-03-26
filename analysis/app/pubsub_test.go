@@ -20,7 +20,7 @@ import (
 	"io"
 
 	// Needed to ensure task class is registered.
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester"
+	_ "go.chromium.org/luci/analysis/internal/services/verdictingester"
 )
 
 func makeReq(blob []byte, attributes map[string]any) io.ReadCloser {

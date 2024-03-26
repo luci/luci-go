@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultingester
+package verdictingester
 
 import (
 	"context"
@@ -72,11 +72,11 @@ func TestSchedule(t *testing.T) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
-		task := &taskspb.IngestTestResults{
+		task := &taskspb.IngestTestVerdicts{
 			Build:         &ctrlpb.BuildResult{},
 			PartitionTime: timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC)),
 		}
-		expected := proto.Clone(task).(*taskspb.IngestTestResults)
+		expected := proto.Clone(task).(*taskspb.IngestTestVerdicts)
 
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			Schedule(ctx, task)
@@ -91,8 +91,8 @@ const testInvocation = "invocations/build-87654321"
 const testRealm = "project:ci"
 const testBuildID = int64(87654321)
 
-func TestIngestTestResults(t *testing.T) {
-	Convey(`TestIngestTestResults`, t, func() {
+func TestIngestTestVerdicts(t *testing.T) {
+	Convey(`TestIngestTestVerdicts`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For failure association rules cache.
 		ctx, skdr := tq.TestingContext(ctx, nil)
@@ -103,14 +103,14 @@ func TestIngestTestResults(t *testing.T) {
 		testVerdicts := testverdicts.NewFakeClient()
 		tvBQExporterClient := bqexporter.NewFakeClient()
 		analysis := analysis.NewClusteringHandler(clusteredFailures)
-		ri := &resultIngester{
+		ri := &verdictIngester{
 			clustering:                ingestion.New(chunkStore, analysis),
 			verdictExporter:           testverdicts.NewExporter(testVerdicts),
 			testVariantBranchExporter: bqexporter.NewExporter(tvBQExporterClient),
 		}
 
 		Convey(`partition time`, func() {
-			payload := &taskspb.IngestTestResults{
+			payload := &taskspb.IngestTestVerdicts{
 				Build: &ctrlpb.BuildResult{
 					Host:    "host",
 					Id:      13131313,
@@ -120,12 +120,12 @@ func TestIngestTestResults(t *testing.T) {
 			}
 			Convey(`too early`, func() {
 				payload.PartitionTime = timestamppb.New(clock.Now(ctx).Add(25 * time.Hour))
-				err := ri.ingestTestResults(ctx, payload)
+				err := ri.ingestTestVerdicts(ctx, payload)
 				So(err, ShouldErrLike, "too far in the future")
 			})
 			Convey(`too late`, func() {
 				payload.PartitionTime = timestamppb.New(clock.Now(ctx).Add(-91 * 24 * time.Hour))
-				err := ri.ingestTestResults(ctx, payload)
+				err := ri.ingestTestVerdicts(ctx, payload)
 				So(err, ShouldErrLike, "too long ago")
 			})
 		})
@@ -191,7 +191,7 @@ func TestIngestTestResults(t *testing.T) {
 			// Populate some existing test variant analysis.
 			setupTestVariantAnalysis(ctx, partitionTime)
 
-			payload := &taskspb.IngestTestResults{
+			payload := &taskspb.IngestTestVerdicts{
 				Build: &ctrlpb.BuildResult{
 					Host:         bHost,
 					Id:           testBuildID,
@@ -240,7 +240,7 @@ func TestIngestTestResults(t *testing.T) {
 				PageToken: "expected_token",
 				TaskIndex: 0,
 			}
-			expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestResults)
+			expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
 			expectedContinuation.PageToken = "continuation_token"
 			expectedContinuation.TaskIndex = 1
 
@@ -260,7 +260,7 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Act
-				err = ri.ingestTestResults(ctx, payload)
+				err = ri.ingestTestVerdicts(ctx, payload)
 				So(err, ShouldBeNil)
 
 				// Verify
@@ -288,7 +288,7 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Act
-				err = ri.ingestTestResults(ctx, payload)
+				err = ri.ingestTestVerdicts(ctx, payload)
 				So(err, ShouldBeNil)
 
 				// Verify
@@ -316,7 +316,7 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Act
-				err = ri.ingestTestResults(ctx, payload)
+				err = ri.ingestTestVerdicts(ctx, payload)
 				So(err, ShouldBeNil)
 
 				// Verify
@@ -344,7 +344,7 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Act
-				err = ri.ingestTestResults(ctx, payload)
+				err = ri.ingestTestVerdicts(ctx, payload)
 				So(err, ShouldBeNil)
 
 				// Verify
@@ -363,7 +363,7 @@ func TestIngestTestResults(t *testing.T) {
 				setupConfig(ctx, cfg)
 
 				// Act
-				err := ri.ingestTestResults(ctx, payload)
+				err := ri.ingestTestVerdicts(ctx, payload)
 				So(err, ShouldBeNil)
 
 				// Verify no test results ingested into test history.
@@ -383,7 +383,7 @@ func TestIngestTestResults(t *testing.T) {
 				setupConfig(ctx, cfg)
 
 				// Act
-				err := ri.ingestTestResults(ctx, payload)
+				err := ri.ingestTestVerdicts(ctx, payload)
 				So(err, ShouldBeNil)
 
 				// Verify no test results ingested into test history.
@@ -1375,10 +1375,10 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 	}
 }
 
-func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *taskspb.IngestTestResults) {
+func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *taskspb.IngestTestVerdicts) {
 	count := 0
 	for _, pl := range skdr.Tasks().Payloads() {
-		if pl, ok := pl.(*taskspb.IngestTestResults); ok {
+		if pl, ok := pl.(*taskspb.IngestTestVerdicts); ok {
 			So(pl, ShouldResembleProto, expectedContinuation)
 			count++
 		}

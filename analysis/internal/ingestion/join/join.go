@@ -34,7 +34,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	"go.chromium.org/luci/analysis/internal/services/resultingester"
+	"go.chromium.org/luci/analysis/internal/services/verdictingester"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
@@ -406,15 +406,15 @@ func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
 		return false
 	}
 
-	var itrTask *taskspb.IngestTestResults
+	var itvTask *taskspb.IngestTestVerdicts
 	if e.IsPresubmit {
-		itrTask = &taskspb.IngestTestResults{
+		itvTask = &taskspb.IngestTestVerdicts{
 			PartitionTime: e.PresubmitResult.CreationTime,
 			Build:         e.BuildResult,
 			PresubmitRun:  e.PresubmitResult,
 		}
 	} else {
-		itrTask = &taskspb.IngestTestResults{
+		itvTask = &taskspb.IngestTestVerdicts{
 			PartitionTime: e.BuildResult.CreationTime,
 			Build:         e.BuildResult,
 		}
@@ -423,8 +423,8 @@ func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
 	// Copy the task to avoid aliasing issues if the caller ever
 	// decides the modify e.PresubmitResult or e.BuildResult
 	// after we return.
-	itrTask = proto.Clone(itrTask).(*taskspb.IngestTestResults)
-	resultingester.Schedule(ctx, itrTask)
+	itvTask = proto.Clone(itvTask).(*taskspb.IngestTestVerdicts)
+	verdictingester.Schedule(ctx, itvTask)
 
 	return true
 }

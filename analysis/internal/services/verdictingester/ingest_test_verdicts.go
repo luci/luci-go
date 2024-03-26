@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package resultingester defines the top-level task queue which ingests
-// test results from ResultDB and pushes it into LUCI Analysis's analysis
-// pipelines (e.g. clustering, change point analysis).
-package resultingester
+// Package verdictingester defines the top-level task queue which ingests
+// test verdicts from ResultDB and pushes it into LUCI Analysis's analysis
+// and BigQuery export pipelines.
+package verdictingester
 
 import (
 	"context"
@@ -61,8 +61,10 @@ import (
 )
 
 const (
-	resultIngestionTaskClass = "result-ingestion"
-	resultIngestionQueue     = "result-ingestion"
+	resultIngestionTaskClass  = "result-ingestion"
+	resultIngestionQueue      = "result-ingestion"
+	verdictIngestionTaskClass = "verdict-ingestion"
+	verdictIngestionQueue     = "verdict-ingestion"
 
 	// ingestionEarliest is the oldest data that may be ingested by
 	// LUCI Analysis.
@@ -123,7 +125,7 @@ var (
 type Options struct {
 }
 
-type resultIngester struct {
+type verdictIngester struct {
 	// clustering is used to ingest test failures for clustering.
 	clustering *ingestion.Ingester
 	// verdictExporter is used to export test verdictExporter.
@@ -132,10 +134,17 @@ type resultIngester struct {
 	testVariantBranchExporter *tvbexporter.Exporter
 }
 
-var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
+var verdictIngestion = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        resultIngestionTaskClass,
-	Prototype: &taskspb.IngestTestResults{},
+	Prototype: &taskspb.IngestTestVerdicts{},
 	Queue:     resultIngestionQueue,
+	Kind:      tq.Transactional,
+})
+
+var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        verdictIngestionTaskClass,
+	Prototype: &taskspb.IngestTestResults{},
+	Queue:     verdictIngestionQueue,
 	Kind:      tq.Transactional,
 })
 
@@ -188,28 +197,42 @@ func RegisterTaskHandler(srv *server.Server) error {
 	})
 
 	analysis := analysis.NewClusteringHandler(cf)
-	ri := &resultIngester{
+	ri := &verdictIngester{
 		clustering:                ingestion.New(chunkStore, analysis),
 		verdictExporter:           testverdicts.NewExporter(verdictClient),
 		testVariantBranchExporter: tvbexporter.NewExporter(tvbBQClient),
 	}
-	handler := func(ctx context.Context, payload proto.Message) error {
-		task := payload.(*taskspb.IngestTestResults)
-		return ri.ingestTestResults(ctx, task)
+	verdictHandler := func(ctx context.Context, payload proto.Message) error {
+		task := payload.(*taskspb.IngestTestVerdicts)
+		return ri.ingestTestVerdicts(ctx, task)
 	}
-	resultIngestion.AttachHandler(handler)
+	verdictIngestion.AttachHandler(verdictHandler)
+
+	resultHandler := func(ctx context.Context, payload proto.Message) error {
+		task := payload.(*taskspb.IngestTestResults)
+		itvTask := &taskspb.IngestTestVerdicts{
+			PartitionTime: task.PartitionTime,
+			Build:         task.Build,
+			PresubmitRun:  task.PresubmitRun,
+			PageToken:     task.PageToken,
+			TaskIndex:     task.TaskIndex,
+		}
+		return ri.ingestTestVerdicts(ctx, itvTask)
+	}
+	resultIngestion.AttachHandler(resultHandler)
+
 	return nil
 }
 
-// Schedule enqueues a task to ingest test results from a build.
-func Schedule(ctx context.Context, task *taskspb.IngestTestResults) {
+// Schedule enqueues a task to ingest test verdicts from a build.
+func Schedule(ctx context.Context, task *taskspb.IngestTestVerdicts) {
 	tq.MustAddTask(ctx, &tq.Task{
 		Title:   fmt.Sprintf("%s-%s-%d-page-%v", task.Build.Project, task.Build.Host, task.Build.Id, task.TaskIndex),
 		Payload: task,
 	})
 }
 
-func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb.IngestTestResults) error {
+func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *taskspb.IngestTestVerdicts) error {
 	if err := validateRequest(ctx, payload); err != nil {
 		project := "(unknown)"
 		if payload.GetBuild().GetProject() != "" {
@@ -295,9 +318,9 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return transient.Tag.Apply(err)
 	}
 
-	// Schedule a task to deal with the next page of results (if needed).
+	// Schedule a task to deal with the next page of verdicts (if needed).
 	// Do this immediately, so that task can commence while we are still
-	// inserting the results for this page.
+	// inserting the verdicts for this page.
 	if rsp.NextPageToken != "" {
 		if err := scheduleNextTask(ctx, payload, rsp.NextPageToken); err != nil {
 			err = errors.Annotate(err, "schedule next task").Err()
@@ -305,12 +328,12 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		}
 	}
 
-	// Record the test results for test history.
+	// Record the test verdicts for test history.
 	err = recordTestResults(ctx, ingestion, rsp.TestVariants, sources)
 	if err != nil {
 		// If any transaction failed, the task will be retried and the tables will be
 		// eventual-consistent.
-		return errors.Annotate(err, "record test results").Err()
+		return errors.Annotate(err, "record test verdicts").Err()
 	}
 
 	nextPageToken := rsp.NextPageToken
@@ -324,7 +347,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return errors.Annotate(err, "change point analysis").Err()
 	}
 
-	// Insert the test results for clustering. This should occur
+	// Ingest the test verdicts for clustering. This should occur
 	// after test variant analysis ingestion as it queries the results of the
 	// above analysis.
 	err = ingestForClustering(ctx, i.clustering, payload, ingestion, rsp.TestVariants, sources)
@@ -397,7 +420,7 @@ func hasUnexpectedFailures(tv *rdbpb.TestVariant) bool {
 // starting at the given page token.
 // If a continuation task for this task has been previously scheduled
 // (e.g. in a previous try of this task), this method does nothing.
-func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, nextPageToken string) error {
+func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nextPageToken string) error {
 	if nextPageToken == "" {
 		// If the next page token is "", it means ResultDB returned the
 		// last page. We should not schedule a continuation task.
@@ -435,22 +458,22 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 			return errors.Annotate(err, "update ingestion record").Err()
 		}
 
-		itrTask := &taskspb.IngestTestResults{
+		itvTask := &taskspb.IngestTestVerdicts{
 			PartitionTime: task.PartitionTime,
 			Build:         task.Build,
 			PresubmitRun:  task.PresubmitRun,
 			PageToken:     nextPageToken,
 			TaskIndex:     nextTaskIndex,
 		}
-		Schedule(ctx, itrTask)
+		Schedule(ctx, itvTask)
 
 		return nil
 	})
 	return err
 }
 
-func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestResults, ing *IngestionContext, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
+func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestVerdicts, ing *IngestionContext, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ingestForClustering")
 	defer func() { tracing.End(s, err) }()
 
 	cfg, err := config.Project(ctx, ing.Project)
@@ -520,7 +543,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 // for each verdict in `tvs`. If analysis is not available for a given
 // verdict, the corresponding item in the response will be nil.
 func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, project string, partitionTime time.Time, sourcesMap map[string]*pb.Sources) (tvbs []*clusteringpb.TestVariantBranch, err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.queryTestVariantAnalysisForClustering")
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.queryTestVariantAnalysisForClustering")
 	defer func() { tracing.End(s, err) }()
 
 	cfg, err := config.Get(ctx)
@@ -544,8 +567,8 @@ func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.Tes
 	return result, nil
 }
 
-func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, payload *taskspb.IngestTestResults) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForChangePointAnalysis")
+func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, payload *taskspb.IngestTestVerdicts) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ingestForChangePointAnalysis")
 	defer func() { tracing.End(s, err) }()
 
 	cfg, err := config.Get(ctx)
@@ -564,9 +587,9 @@ func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exp
 }
 
 func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.Exporter,
-	testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, inv *rdbpb.Invocation, payload *taskspb.IngestTestResults) (err error) {
+	testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, inv *rdbpb.Invocation, payload *taskspb.IngestTestVerdicts) (err error) {
 
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForVerdictExport")
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ingestForVerdictExport")
 	defer func() { tracing.End(s, err) }()
 
 	cfg, err := config.Get(ctx)
@@ -590,7 +613,7 @@ func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.E
 	return nil
 }
 
-func validateRequest(ctx context.Context, payload *taskspb.IngestTestResults) error {
+func validateRequest(ctx context.Context, payload *taskspb.IngestTestVerdicts) error {
 	if !payload.PartitionTime.IsValid() {
 		return errors.New("partition time must be specified and valid")
 	}

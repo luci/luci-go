@@ -48,7 +48,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/bugupdater"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
-	"go.chromium.org/luci/analysis/internal/services/resultingester"
+	"go.chromium.org/luci/analysis/internal/services/verdictingester"
 	"go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/views"
@@ -144,7 +144,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		if err := reclustering.RegisterTaskHandler(srv); err != nil {
 			return errors.Annotate(err, "register reclustering").Err()
 		}
-		if err := resultingester.RegisterTaskHandler(srv); err != nil {
+		if err := verdictingester.RegisterTaskHandler(srv); err != nil {
 			return errors.Annotate(err, "register result ingester").Err()
 		}
 		if err := bugupdater.RegisterTaskHandler(srv); err != nil {

@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -45,7 +45,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 			WithCreateTime(t).
 			WithInvocation()
 
-		expectedTask := &taskspb.IngestTestResults{
+		expectedTask := &taskspb.IngestTestVerdicts{
 			PartitionTime: timestamppb.New(t),
 			Build:         build.ExpectedResult(),
 		}
@@ -53,7 +53,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 		assertTasksExpected := func() {
 			// Verify exactly one ingestion has been created.
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestResults)
+			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestVerdicts)
 			So(resultsTask, ShouldResembleProto, expectedTask)
 		}
 

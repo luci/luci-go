@@ -26,8 +26,8 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-func SamplePayload() *taskspb.IngestTestResults {
-	return &taskspb.IngestTestResults{
+func SamplePayload() *taskspb.IngestTestVerdicts {
+	return &taskspb.IngestTestVerdicts{
 		Build: &controlpb.BuildResult{
 			Id:      1234,
 			Project: "chromium",

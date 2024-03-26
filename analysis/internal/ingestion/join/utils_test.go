@@ -34,7 +34,7 @@ import (
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
 )
 
 // cvCreateTime is the create time assigned to CV Runs, for testing.

@@ -74,7 +74,7 @@ type CheckPoint struct {
 
 // Analyze performs change point analyses based on incoming test verdicts.
 // sourcesMap contains the information about the source code being tested.
-func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
+func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
 	logging.Debugf(ctx, "Analyzing %d test variants for build %d", len(tvs), payload.Build.Id)
 
 	// Check that sourcesMap is not empty and has commit position data.
@@ -113,7 +113,7 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 	return nil
 }
 
-func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
+func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
 	// Nothing to analyze.
 	if len(tvs) == 0 {
 		return nil
@@ -314,7 +314,7 @@ func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []*inputbuffer.Segment {
 // of TestVariantBranch tvb.
 // If tvb is nil, it means it is not in spanner. In this case, return a new
 // TestVariantBranch object with a single element in the input buffer.
-func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*pb.Sources) (*testvariantbranch.Entry, error) {
+func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicateMap map[string]bool, sourcesMap map[string]*pb.Sources) (*testvariantbranch.Entry, error) {
 	src := sourcesMap[tv.SourcesId]
 	if tvb == nil {
 		ref := pbutil.SourceRefFromSources(src)
@@ -347,7 +347,7 @@ func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, 
 //   - Have at least 1 non-duplicate and non-skipped test result (the test
 //     result needs to be both non-duplicate and non-skipped).
 //   - Not from unsubmitted code (i.e. try run that did not result in submitted code)
-func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*pb.Sources) ([]*rdbpb.TestVariant, error) {
+func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicateMap map[string]bool, sourcesMap map[string]*pb.Sources) ([]*rdbpb.TestVariant, error) {
 	results := []*rdbpb.TestVariant{}
 	presubmit := payload.PresubmitRun
 	project := payload.Build.Project

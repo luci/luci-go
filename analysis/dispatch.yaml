@@ -17,6 +17,8 @@ dispatch:
 # https://cloud.google.com/appengine/docs/legacy/standard/python/reference/dispatch-yaml#syntax
 - url: "*/internal/tasks/t/result-ingestion/*"
   service: result-ingestion
+- url: "*/internal/tasks/t/verdict-ingestion/*"
+  service: result-ingestion
 - url: "*/internal/tasks/t/reclustering/*"
   service: result-ingestion
 

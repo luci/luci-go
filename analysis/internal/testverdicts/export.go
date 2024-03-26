@@ -56,7 +56,7 @@ func NewExporter(client InsertClient) *Exporter {
 // ExportOptions captures context which will be exported
 // alongside the test verdicts.
 type ExportOptions struct {
-	Payload     *taskspb.IngestTestResults
+	Payload     *taskspb.IngestTestVerdicts
 	Invocation  *rdbpb.Invocation
 	SourcesByID map[string]*pb.Sources
 }

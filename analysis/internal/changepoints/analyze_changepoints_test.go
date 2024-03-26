@@ -103,7 +103,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 
 	Convey(`Filter test variant`, t, func() {
 		ctx := newContext(t)
-		payload := &taskspb.IngestTestResults{
+		payload := &taskspb.IngestTestVerdicts{
 			Build: &controlpb.BuildResult{
 				Project: "chromium",
 			},
@@ -215,7 +215,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 
 	Convey(`Filter test variant with failed presubmit`, t, func() {
 		ctx := newContext(t)
-		payload := &taskspb.IngestTestResults{
+		payload := &taskspb.IngestTestVerdicts{
 			Build: &controlpb.BuildResult{
 				Project: "chromium",
 			},

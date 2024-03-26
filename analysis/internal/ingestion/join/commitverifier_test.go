@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -72,7 +72,7 @@ func TestHandleCVRun(t *testing.T) {
 			rID := "id_full_run"
 			fullRunID := fullRunID("cvproject", rID)
 
-			processCVRun := func(run *cvv0.Run) (processed bool, tasks []*taskspb.IngestTestResults) {
+			processCVRun := func(run *cvv0.Run) (processed bool, tasks []*taskspb.IngestTestVerdicts) {
 				existingTaskCount := len(skdr.Tasks().Payloads())
 
 				runs := map[string]*cvv0.Run{
@@ -84,11 +84,11 @@ func TestHandleCVRun(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(project, ShouldEqual, "cvproject")
 
-				tasks = make([]*taskspb.IngestTestResults, 0,
+				tasks = make([]*taskspb.IngestTestVerdicts, 0,
 					len(skdr.Tasks().Payloads())-existingTaskCount)
 				for _, pl := range skdr.Tasks().Payloads()[existingTaskCount:] {
 					switch pl := pl.(type) {
-					case *taskspb.IngestTestResults:
+					case *taskspb.IngestTestVerdicts:
 						tasks = append(tasks, pl)
 					default:
 						panic("unexpected task type")
@@ -109,7 +109,7 @@ func TestHandleCVRun(t *testing.T) {
 				},
 				Status: cvv0.Run_SUCCEEDED,
 			}
-			expectedTaskTemplate := &taskspb.IngestTestResults{
+			expectedTaskTemplate := &taskspb.IngestTestVerdicts{
 				PartitionTime: run.CreateTime,
 				PresubmitRun: &controlpb.PresubmitResult{
 					PresubmitRunId: &pb.PresubmitRunId{
@@ -249,10 +249,10 @@ func fullRunID(project, runID string) string {
 	return fmt.Sprintf("projects/%s/runs/%s", project, runID)
 }
 
-func expectedTasks(taskTemplate *taskspb.IngestTestResults, builds []*buildBuilder) []*taskspb.IngestTestResults {
-	res := make([]*taskspb.IngestTestResults, 0, len(builds))
+func expectedTasks(taskTemplate *taskspb.IngestTestVerdicts, builds []*buildBuilder) []*taskspb.IngestTestVerdicts {
+	res := make([]*taskspb.IngestTestVerdicts, 0, len(builds))
 	for _, build := range builds {
-		t := proto.Clone(taskTemplate).(*taskspb.IngestTestResults)
+		t := proto.Clone(taskTemplate).(*taskspb.IngestTestVerdicts)
 		t.PresubmitRun.Critical = ((build.buildID % 2) == 0)
 		t.Build = build.ExpectedResult()
 		res = append(res, t)
@@ -260,7 +260,7 @@ func expectedTasks(taskTemplate *taskspb.IngestTestResults, builds []*buildBuild
 	return res
 }
 
-func sortTasks(tasks []*taskspb.IngestTestResults) []*taskspb.IngestTestResults {
+func sortTasks(tasks []*taskspb.IngestTestVerdicts) []*taskspb.IngestTestVerdicts {
 	sort.Slice(tasks, func(i, j int) bool { return tasks[i].Build.Id < tasks[j].Build.Id })
 	return tasks
 }

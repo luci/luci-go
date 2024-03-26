@@ -28,7 +28,7 @@ import (
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/server/router"
 
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

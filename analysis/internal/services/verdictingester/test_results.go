@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultingester
+package verdictingester
 
 import (
 	"context"
@@ -59,7 +59,7 @@ type IngestionContext struct {
 
 // extractIngestionContext extracts the ingested invocation and
 // the git reference tested (if any).
-func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocation) (*IngestionContext, error) {
+func extractIngestionContext(task *taskspb.IngestTestVerdicts, inv *rdbpb.Invocation) (*IngestionContext, error) {
 	invID, err := rdbpbutil.ParseInvocationName(inv.Name)
 	if err != nil {
 		// This should never happen. Inv was originated from ResultDB.
@@ -254,7 +254,7 @@ func batchTestResults(ingestion *IngestionContext, testVariants []*rdbpb.TestVar
 
 // recordTestResults records test results from an test-verdict-ingestion task.
 func recordTestResults(ctx context.Context, ingestion *IngestionContext, tvs []*rdbpb.TestVariant, sourcesByID map[string]*pb.Sources) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.recordTestResults")
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.recordTestResults")
 	defer func() { tracing.End(s, err) }()
 
 	const workerCount = 8
