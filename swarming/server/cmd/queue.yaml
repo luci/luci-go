@@ -31,6 +31,7 @@ queue:
 - name: pubsub-v2
   bucket_size: 100
   rate: 500/s
+  target: default-go
 
 # /internal/taskqueue/important/buildbucket/notify-task/<task_id:[0-9a-f]+>
 - name: buildbucket-notify
