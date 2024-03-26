@@ -125,6 +125,15 @@ CREATE TABLE Invocations (
   -- after the invocation has been finalized.
   Submitted BOOL,
 
+  -- A serialized luci.resultdb.v1.Instruction describing instructions for the invocation.
+  -- Only applicable to test results directly contained in this invocation,
+  -- i.e. it does not apply to test results in included invocations.
+  TestInstruction BYTES(MAX),
+
+  -- A serialized luci.resultdb.v1.Instructions describing instructions for the steps.
+  -- Only useful for a build-level invocation.
+  -- It contains all instructions of steps which belong to the build.
+  StepInstructions BYTES(MAX),
 ) PRIMARY KEY (InvocationId),
 -- Add TTL of 1.5 years to Invocations table. The row deletion policy
 -- configured in the parent table will also take effect on the interleaved child

@@ -1,0 +1,93 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+
+// A collection of instructions.
+message Instructions {
+  repeated Instruction instructions = 1;
+}
+
+// Instruction is one failure reproduction instruction for a step or invocation.
+// Instruction can have different target, like "local" or "remote".
+message Instruction {
+  // ID of the instruction, used for step instruction.
+  // It is consumer-defined and is unique within a build.
+  string id = 1;
+
+  // List of instruction for different targets.
+  repeated TargetedInstruction targeted_instructions = 2;
+}
+
+// Instruction for specific targets.
+// Instruction for different targets may have the same or different dependency
+// and content.
+message TargetedInstruction {
+  // The targets that this instruction is for, like "local", "remote" or "prebuilt"
+  repeated InstructionTarget targets = 1;
+
+  // Another instruction that this instruction depends on.
+  // At the moment, one instruction can have at most 1 dependency.
+  // Make this repeated for forward compatibility.
+  repeated InstructionDependency dependency = 2;
+
+  // The content of the instruction, in markdown format.
+  // Placeholders may be used and will be populated with real
+  // information when displayed in the UI.
+  // This will be limit to 10KB. If the content is longer than 10KB,
+  // it will be truncated (to the nearest whitespace).
+  // See go/luci-failure-reproduction-instructions-dd for details.
+  string content = 3;
+}
+
+// Specifies a dependency for instruction.
+// An instruction being depended on needs to be step instruction, not test result instruction.
+// If the dependency cannot be found, or the user does not have the ACL,
+// the dependency chain will stop and Milo will not display the dependency.
+// If a dependency cycle is detected, we will stop showing dependency once we detected the cycle.
+message InstructionDependency {
+  // The build ID of the instruction being depended on.
+  // This can be a build id or a templated string with placeholders.
+  // Because test results instructions are stored in leaf invocation,
+  // we can use placeholders to refer to the top-level build.
+  // For example, "{{build_tags.parent_build_id}}" to refer to the parent build.
+  // If not specified, assuming to be of the same build.
+  string build_id = 1;
+
+  // The step name of the instruction being depended on.
+  // If this is a nested step, this field should contain both
+  // parent and child step names, separated by "|".
+  // For example "parent_step_name|child_step_name".
+  string step_name = 2;
+
+  // Optional: In case there are more than one step with the same name
+  // in the build, the step_tag is used to select the exact step to depend on.
+  StringPair step_tag = 3;
+}
+
+enum InstructionTarget {
+  INSTRUCTION_TARGET_UNSPECIFIED = 0;
+  // For running in a local machine.
+  LOCAL = 1;
+  // For running remotely.
+  REMOTE = 2;
+  // For prebuilt images.
+  PREBUILT = 3;
+}
