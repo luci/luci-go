@@ -135,16 +135,16 @@ type verdictIngester struct {
 }
 
 var verdictIngestion = tq.RegisterTaskClass(tq.TaskClass{
-	ID:        resultIngestionTaskClass,
+	ID:        verdictIngestionTaskClass,
 	Prototype: &taskspb.IngestTestVerdicts{},
-	Queue:     resultIngestionQueue,
+	Queue:     verdictIngestionQueue,
 	Kind:      tq.Transactional,
 })
 
 var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
-	ID:        verdictIngestionTaskClass,
+	ID:        resultIngestionTaskClass,
 	Prototype: &taskspb.IngestTestResults{},
-	Queue:     verdictIngestionQueue,
+	Queue:     resultIngestionQueue,
 	Kind:      tq.Transactional,
 })
 
