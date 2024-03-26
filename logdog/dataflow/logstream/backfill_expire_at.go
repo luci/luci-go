@@ -216,7 +216,7 @@ func (fn *backfillExpireAtFromCreatedFn) updateEntities(
 		me := err.(errors.MultiError)
 		lme := errors.NewLazyMultiError(len(me))
 		for i, ierr := range me {
-			if errors.Is(err, datastore.ErrNoSuchEntity) {
+			if errors.Is(ierr, datastore.ErrNoSuchEntity) {
 				ierr = nil        // ignore ErrNoSuchEntity
 				entities[i] = nil // nil out the entity, so we can skip it later.
 			}
