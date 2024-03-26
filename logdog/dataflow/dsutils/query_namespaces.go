@@ -34,15 +34,15 @@ func init() {
 
 // GetAllNamespaces queries all the namespaces from datastore and returns
 // PCollection<string>.
-func GetAllNamespaces(s beam.Scope, project string) beam.PCollection {
-	s = s.Scope(fmt.Sprintf("datastore.GetAllNamespaces.%s", project))
+func GetAllNamespaces(s beam.Scope, cloudProject string) beam.PCollection {
+	s = s.Scope(fmt.Sprintf("datastore.GetAllNamespaces.%s", cloudProject))
 	imp := beam.Impulse(s)
-	return beam.ParDo(s, &getAllNamespacesFn{Project: project}, imp)
+	return beam.ParDo(s, &getAllNamespacesFn{CloudProject: cloudProject}, imp)
 }
 
 type getAllNamespacesFn struct {
-	Project string
-	client  clientType
+	CloudProject string
+	client       clientType
 }
 
 type clientType interface {
@@ -51,7 +51,7 @@ type clientType interface {
 
 func (fn *getAllNamespacesFn) Setup(ctx context.Context) error {
 	if fn.client == nil {
-		client, err := cloudds.NewClient(ctx, fn.Project)
+		client, err := cloudds.NewClient(ctx, fn.CloudProject)
 		if err != nil {
 			return errors.Annotate(err, "failed to construct cloud datastore client").Err()
 		}

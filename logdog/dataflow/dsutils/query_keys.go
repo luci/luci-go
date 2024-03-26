@@ -34,76 +34,74 @@ import (
 func init() {
 	beam.RegisterType(reflect.TypeOf((*getAllKeysWithHexPrefixFn)(nil)).Elem())
 	register.DoFn4x1(&getAllKeysWithHexPrefixFn{})
-	register.Emitter2[string, NamespaceKey]()
+	register.Emitter1[KeyBatch]()
 }
 
 type ReadOptions struct {
-	// ParentKind is the kind where the hex prefix is used. It
-	// 1. should equal to the `kind`  being queried, or
-	// 2. is the only ancestor of the `kind`.
-	// In case 2, the child should always have a key of `1`.
-	ParentKind string
 	// HexPrefixLength is the minimum guaranteed length of hex prefix in
 	// `ParentKind`'s key. The hex prefix will be used to divide the read queries
 	// to make it run faster should the beam runner decides more parallelism is
 	// needed.
 	HexPrefixLength int
-	// OutputShards controls the number of beam keys per namespace the entities
-	// are divided into. Dividing the entities into more shards can increase the
-	// maximum parallelism in the downstream should the pipeline need to perform
-	// actions on those entities.
-	OutputShards int
+	// OutputBatchSize controls the number of datastore keys in a given output
+	// batch.
+	OutputBatchSize int
 }
 
 // GetAllKeysWithHexPrefix queries all the keys from datastore for the given
-// kind in the given namespaces (in a PCollection<string>.) and returns
-// PCollection<KV<string, NamespaceKey>> where the element key is
-// `${namespace}-${shard}`.
-func GetAllKeysWithHexPrefix(s beam.Scope, project string, namespaces beam.PCollection, kind string, opts ReadOptions) beam.PCollection {
-	if opts.OutputShards < 1 {
-		opts.OutputShards = 1
+// kind in the given namespaces (in a PCollection<string>) and returns
+// PCollection<KeyBatch>.
+func GetAllKeysWithHexPrefix(
+	s beam.Scope,
+	cloudProject string,
+	namespaces beam.PCollection,
+	kind string,
+	opts ReadOptions,
+) beam.PCollection {
+	if opts.OutputBatchSize < 1 {
+		opts.OutputBatchSize = 1
 	}
 
-	s = s.Scope(fmt.Sprintf("datastore.GetAllKeysWithHexPrefix.%s.%s", project, kind))
+	s = s.Scope(fmt.Sprintf("datastore.GetAllKeysWithHexPrefix.%s.%s", cloudProject, kind))
 	namespaces = beam.Reshuffle(s, namespaces)
 	return beam.ParDo(s, &getAllKeysWithHexPrefixFn{
-		Project:         project,
-		ParentKind:      opts.ParentKind,
+		CloudProject:    cloudProject,
 		Kind:            kind,
 		HexPrefixLength: opts.HexPrefixLength,
-		Shards:          opts.OutputShards,
+		OutputBatchSize: opts.OutputBatchSize,
 	}, namespaces)
 }
 
 type getAllKeysWithHexPrefixFn struct {
-	Project string
-	Kind    string
+	CloudProject string
+	Kind         string
 
-	ParentKind      string
 	HexPrefixLength int
-	Shards          int
+	OutputBatchSize int
 
 	withDatastoreEnv func(context.Context) context.Context
-	emitted          beam.Counter
+	emittedKeys      beam.Counter
+	emittedBatches   beam.Counter
 }
 
 // Setup implements beam DoFn protocol.
 func (fn *getAllKeysWithHexPrefixFn) Setup(ctx context.Context) error {
 	if fn.withDatastoreEnv == nil {
-		client, err := cloudds.NewClient(ctx, fn.Project)
+		client, err := cloudds.NewClient(ctx, fn.CloudProject)
 		if err != nil {
 			return errors.Annotate(err, "failed to construct cloud datastore client").Err()
 		}
 		fn.withDatastoreEnv = func(ctx context.Context) context.Context {
 			return (&cloud.ConfigLite{
-				ProjectID: fn.Project,
+				ProjectID: fn.CloudProject,
 				DS:        client,
 			}).Use(ctx)
 		}
 	}
 
-	namespace := fmt.Sprintf("datastore.get-all-keys-with-hex-prefix.%s.%s", fn.Project, fn.Kind)
-	fn.emitted = beam.NewCounter(namespace, "emitted")
+	namespace := fmt.Sprintf("datastore.get-all-keys-with-hex-prefix.%s.%s", fn.CloudProject, fn.Kind)
+	fn.emittedKeys = beam.NewCounter(namespace, "emitted-keys")
+	fn.emittedBatches = beam.NewCounter(namespace, "emitted-batches")
 
 	return nil
 }
@@ -138,9 +136,9 @@ func (fn *getAllKeysWithHexPrefixFn) RestrictionSize(ctx context.Context, namesp
 	return restriction.EstimatedSize()
 }
 
-type NamespaceKey struct {
+type KeyBatch struct {
 	Namespace string
-	Key       *datastore.Key
+	Keys      []*datastore.Key
 }
 
 // ProcessElement implements beam DoFn protocol.
@@ -148,7 +146,7 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	ctx context.Context,
 	rt *sdf.LockRTracker,
 	namespace string,
-	emit func(string, NamespaceKey),
+	emit func(KeyBatch),
 ) error {
 	ctx = fn.withDatastoreEnv(ctx)
 	ctx, err := info.Namespace(ctx, namespace)
@@ -164,10 +162,7 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	// filter. And we cannot apply an empty key anyway otherwise datastore will
 	// report an error.
 	if restriction.Start != "" {
-		startKey := datastore.MakeKey(ctx, fn.ParentKind, restriction.Start)
-		if fn.ParentKind != fn.Kind {
-			startKey = datastore.MakeKey(ctx, fn.ParentKind, restriction.Start, fn.Kind, 1)
-		}
+		startKey := datastore.MakeKey(ctx, fn.Kind, restriction.Start)
 		if restriction.StartIsExclusive {
 			q = q.Gt("__key__", startKey)
 		} else {
@@ -180,10 +175,7 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 		if restriction.End == "" {
 			return nil
 		}
-		endKey := datastore.MakeKey(ctx, fn.ParentKind, restriction.End)
-		if fn.ParentKind != fn.Kind {
-			endKey = datastore.MakeKey(ctx, fn.ParentKind, restriction.End, fn.Kind, 1)
-		}
+		endKey := datastore.MakeKey(ctx, fn.Kind, restriction.End)
 		if restriction.EndIsExclusive {
 			q = q.Lt("__key__", endKey)
 		} else {
@@ -191,23 +183,41 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 		}
 	}
 
-	i := 0
-	err = datastore.Run(ctx, q, func(key *datastore.Key) error {
-		pivot := key
-		for pivot.Kind() != fn.ParentKind {
-			pivot = pivot.Parent()
+	claimedKeys := make([]*datastore.Key, 0, fn.OutputBatchSize)
+	emitClaimedKeys := func() {
+		if len(claimedKeys) == 0 {
+			return
 		}
 
-		if !rt.TryClaim(HexPosClaim{Value: pivot.StringID()}) {
+		// We cannot batch keys in the same namespace in a later stage without
+		// using a GBK (GroupByKey) or something similar. We want to avoid GBK
+		// because
+		// 1. GBK prevents stage fusion, which leads to unnecessary IO between
+		//    stages.
+		// 2. GBK can lead to OOM when certain keys are very large.
+		// 3. In batch mode, GBK stops the next stage from executing until all
+		//    elements are collected.
+		//
+		// Therefore, we need to emit batches instead of individual keys here.
+		emit(KeyBatch{Namespace: namespace, Keys: claimedKeys})
+		fn.emittedKeys.Inc(ctx, int64(len(claimedKeys)))
+		fn.emittedBatches.Inc(ctx, 1)
+		claimedKeys = make([]*datastore.Key, 0, fn.OutputBatchSize)
+	}
+	// We already claimed these keys from the restriction tracker. Always emit the
+	// final batch of claimed keys, even when there was an error.
+	defer emitClaimedKeys()
+
+	err = datastore.Run(ctx, q, func(key *datastore.Key) error {
+		if !rt.TryClaim(HexPosClaim{Value: key.StringID()}) {
 			return datastore.Stop
 		}
 
-		// Re-key the element to avoid hot spotting if later operations decided to
-		// perform updates on the keys.
-		eleKey := fmt.Sprintf("%s-%d", namespace, (i)%fn.Shards)
-		emit(eleKey, NamespaceKey{Namespace: namespace, Key: key})
-		fn.emitted.Inc(ctx, 1)
-		i += 1
+		claimedKeys = append(claimedKeys, key)
+		if len(claimedKeys) < fn.OutputBatchSize {
+			return nil
+		}
+		emitClaimedKeys()
 		return nil
 	})
 	if err != nil {

@@ -41,19 +41,9 @@ var (
 	// worker.
 	backfillWorkers = flag.Int(
 		"backfill-workers",
-		64,
+		16,
 		"The number of go workers in a backfill beam worker.",
 	)
-
-	// entityShards controls the number of shards (per namespace) the datastore
-	// keys are divided into. This affects the maximum parallelism level of jobs
-	// in later stages. Should be roughly an order of magnitude larger than the
-	// maximum number of beam workers so that
-	// 1. each beam worker gets enough entities so datastore operations can be
-	// batched, and
-	// 2. beam workers finished the assigned shard early can pick another shard to
-	// work on.
-	entityShards = flag.Int("entity-shards", 8192, "The number of shards per namespace per datastore entity type when outputting entities.")
 )
 
 func main() {
@@ -89,18 +79,18 @@ func run(ctx context.Context) error {
 
 	backfillOpts := logstream.BackfillOptions{
 		DryRun:    !*commit,
-		BatchSize: 512,
+		BatchSize: 256,
 		Workers:   *backfillWorkers,
 		// Entities created this year all have the expire at property populated.
 		// Only processing old entities also let us commit updates safely without
 		// using transaction.
 		SkipCreatedAfter: time.Date(2024, time.January, 0, 0, 0, 0, 0, time.UTC),
 		Expiry:           coordinator.LogStreamExpiry,
+		RetryCount:       5,
 	}
 
 	readOpts := dsutils.ReadOptions{
-		ParentKind:   "LogStream",
-		OutputShards: *entityShards,
+		OutputBatchSize: backfillOpts.BatchSize * backfillOpts.Workers * 16,
 		// There are 64, but 10 should be more than enough.
 		// Can split to at most 16^10 + 1 splits.
 		HexPrefixLength: 10,
@@ -109,8 +99,6 @@ func run(ctx context.Context) error {
 	namespaces := dsutils.GetAllNamespaces(s, *cloudProject)
 	logStreamKeys := dsutils.GetAllKeysWithHexPrefix(s, *cloudProject, namespaces, "LogStream", readOpts)
 	logstream.BackfillExpireAtFromCreated(s, *cloudProject, logStreamKeys, backfillOpts)
-	logStreamStateKeys := dsutils.GetAllKeysWithHexPrefix(s, *cloudProject, namespaces, "LogStreamState", readOpts)
-	logstream.BackfillExpireAtFromCreated(s, *cloudProject, logStreamStateKeys, backfillOpts)
 
 	return beamx.Run(ctx, p)
 }

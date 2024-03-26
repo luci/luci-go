@@ -22,8 +22,6 @@ import (
 
 	cloudds "cloud.google.com/go/datastore"
 	"github.com/apache/beam/sdks/v2/go/pkg/beam"
-	"github.com/apache/beam/sdks/v2/go/pkg/beam/core/graph/window"
-	"github.com/apache/beam/sdks/v2/go/pkg/beam/core/graph/window/trigger"
 	"github.com/apache/beam/sdks/v2/go/pkg/beam/log"
 	"github.com/apache/beam/sdks/v2/go/pkg/beam/register"
 
@@ -33,14 +31,13 @@ import (
 	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/logdog/dataflow/dsutils"
 )
 
 func init() {
 	beam.RegisterType(reflect.TypeOf((*backfillExpireAtFromCreatedFn)(nil)).Elem())
-	register.DoFn4x1(&backfillExpireAtFromCreatedFn{})
-	register.Emitter2[string, dsutils.NamespaceKey]()
+	register.DoFn3x1(&backfillExpireAtFromCreatedFn{})
+	register.Emitter2[string, dsutils.KeyBatch]()
 }
 
 type BackfillOptions struct {
@@ -59,90 +56,90 @@ type BackfillOptions struct {
 	// Expiry is the duration added to entities creation time to obtain the expiry
 	// date.
 	Expiry time.Duration
+	// RetryCount is the number of times a failed batch will be retried.
+	RetryCount int
 }
 
-// BackfillExpireAtFromCreated takes a PCollection<NamespaceKey> and updates all
-// the entities' ExpireAt timestamp from its Created timestamp according to
-// expiry.
-func BackfillExpireAtFromCreated(s beam.Scope, project string, nk beam.PCollection, opts BackfillOptions) beam.PCollection {
-	s = s.Scope(fmt.Sprintf("logdog.backfill-expire-at.%s", project))
+// BackfillExpireAtFromCreated takes a PCollection<KeyBatch> and updates all the
+// entities' ExpireAt timestamp from its Created timestamp according to expiry.
+func BackfillExpireAtFromCreated(s beam.Scope, cloudProject string, logStreamKeys beam.PCollection, opts BackfillOptions) beam.PCollection {
+	s = s.Scope(fmt.Sprintf("logdog.backfill-expire-at.%s", cloudProject))
 
-	// Use a trigger to divide the window into smaller collections so hopefully
-	// the pipeline can don't have to retry the entire shard when an element
-	// fails to be processed.
-	nk = beam.WindowInto(
-		s,
-		window.NewGlobalWindows(),
-		nk,
-		beam.Trigger(
-			trigger.Repeat(
-				trigger.AfterProcessingTime().PlusDelay(10*time.Minute),
-			),
-		),
-		beam.PanesDiscard(),
-	)
-
-	// Group by PCollection key (`${namespace}-${shard}`) so they can be batched
-	// together.
-	groupedNk := beam.GroupByKey(s, nk)
-	failedNk := beam.ParDo(s, &backfillExpireAtFromCreatedFn{
-		Project:          project,
+	failedKeys := beam.ParDo(s, &backfillExpireAtFromCreatedFn{
+		CloudProject:     cloudProject,
 		Expiry:           opts.Expiry,
 		SkipCreatedAfter: opts.SkipCreatedAfter,
 		DryRun:           opts.DryRun,
-		MaxBatchSize:     opts.BatchSize,
-		Workers:          opts.Workers,
-	}, groupedNk)
+		UpdateBatchSize:  opts.BatchSize,
+	}, logStreamKeys)
 
-	// Try failed batches again but with less workers.
+	// Retry failed batches a few times but with less go workers (to reduce
+	// the chance of datastore contention).
 	// It's ok if they fail yet again. We will just leave a bit of extra entities
 	// in the datastore. If we want, we can sweep all entities without expiry in
 	// the future.
-	groupedFailedNk := beam.GroupByKey(s, failedNk)
-	return beam.ParDo(s, &backfillExpireAtFromCreatedFn{
-		Project:          project,
-		Expiry:           opts.Expiry,
-		SkipCreatedAfter: opts.SkipCreatedAfter,
-		DryRun:           opts.DryRun,
-		MaxBatchSize:     opts.BatchSize,
-		Workers:          1,
-	}, groupedFailedNk)
+	for i := 0; i < opts.RetryCount; i++ {
+		failedKeys = beam.ParDo(s, &backfillExpireAtFromCreatedFn{
+			CloudProject:     cloudProject,
+			Expiry:           opts.Expiry,
+			SkipCreatedAfter: opts.SkipCreatedAfter,
+			DryRun:           opts.DryRun,
+			UpdateBatchSize:  opts.BatchSize,
+			Workers:          1,
+		}, failedKeys)
+	}
+
+	// Log the failed batches.
+	return beam.ParDo(s, func(ctx context.Context, keyBatch dsutils.KeyBatch, emit func(dsutils.KeyBatch)) {
+		if len(keyBatch.Keys) == 0 {
+			return
+		}
+
+		firstKey := keyBatch.Keys[0].String()
+		lastKey := keyBatch.Keys[len(keyBatch.Keys)-1].String()
+		log.Errorf(ctx, "batch still failed after retries Namespace: `%s` Start: `%s` End: `%s`", keyBatch.Namespace, firstKey, lastKey)
+		emit(keyBatch)
+	}, failedKeys)
 }
 
 // backfillExpireAtFromCreatedFn is a DoFn that backfills the ExpireAt timestamp
 // according to the created timestamp on the entity and the provided Expiry.
 type backfillExpireAtFromCreatedFn struct {
-	Project          string
+	CloudProject     string
 	Expiry           time.Duration
 	SkipCreatedAfter time.Time
 	DryRun           bool
-	MaxBatchSize     int
+	UpdateBatchSize  int
 	Workers          int
 
-	withEnv        func(context.Context) context.Context
-	skippedCounter beam.Counter
-	updatedCounter beam.Counter
-	failedCounter  beam.Counter
+	withDatastoreEnv func(context.Context) context.Context
+	skippedCounter   beam.Counter
+	updatedCounter   beam.Counter
+	deletedCounter   beam.Counter
+	notFoundCounter  beam.Counter
+	failedCounter    beam.Counter
 }
 
 // Setup implements beam DoFn protocol.
 func (fn *backfillExpireAtFromCreatedFn) Setup(ctx context.Context) error {
-	if fn.withEnv == nil {
-		client, err := cloudds.NewClient(ctx, fn.Project)
+	if fn.withDatastoreEnv == nil {
+		client, err := cloudds.NewClient(ctx, fn.CloudProject)
 		if err != nil {
 			return errors.Annotate(err, "failed to construct cloud datastore client").Err()
 		}
-		fn.withEnv = func(ctx context.Context) context.Context {
+		fn.withDatastoreEnv = func(ctx context.Context) context.Context {
 			return (&cloud.ConfigLite{
-				ProjectID: fn.Project,
+				ProjectID: fn.CloudProject,
 				DS:        client,
 			}).Use(ctx)
 		}
 	}
 
-	namespace := fmt.Sprintf("logdog.backfill-expire-at.%s", fn.Project)
+	namespace := fmt.Sprintf("logdog.backfill-expire-at.%s", fn.CloudProject)
 	fn.skippedCounter = beam.NewCounter(namespace, "skipped")
 	fn.updatedCounter = beam.NewCounter(namespace, "updated")
+	fn.deletedCounter = beam.NewCounter(namespace, "deleted")
+	fn.notFoundCounter = beam.NewCounter(namespace, "not-found")
 	fn.failedCounter = beam.NewCounter(namespace, "failed")
 
 	return nil
@@ -151,62 +148,39 @@ func (fn *backfillExpireAtFromCreatedFn) Setup(ctx context.Context) error {
 // ProcessElement implements beam DoFn protocol.
 func (fn *backfillExpireAtFromCreatedFn) ProcessElement(
 	ctx context.Context,
-	eleKey string,
-	loadKey func(*dsutils.NamespaceKey) bool,
-	emit func(string, dsutils.NamespaceKey),
+	keyBatch dsutils.KeyBatch,
+	emit func(dsutils.KeyBatch),
 ) error {
-	ctx = fn.withEnv(ctx)
-
-	var nk dsutils.NamespaceKey
-	if !loadKey(&nk) {
+	// Short circuit if there's nothing in the batch.
+	if len(keyBatch.Keys) == 0 {
 		return nil
 	}
-	namespace := nk.Namespace
-	ctx, err := info.Namespace(ctx, namespace)
-	if err != nil {
-		return errors.Annotate(err, "failed to apply namespace: `%s`", namespace).Err()
-	}
 
-	reportError := func(err error, batch []*datastore.Key) {
-		// Log the error and send the batch to the next stage instead of triggering
-		// an error so the worker can keep progressing.
-		log.Errorf(ctx, "%v", err)
-		for _, failedNk := range batch {
-			emit(eleKey, dsutils.NamespaceKey{Namespace: namespace, Key: failedNk})
-		}
+	// Setup query context.
+	ctx = fn.withDatastoreEnv(ctx)
+	ctx, err := info.Namespace(ctx, keyBatch.Namespace)
+	if err != nil {
+		return errors.Annotate(err, "failed to apply namespace: `%s`", keyBatch.Namespace).Err()
 	}
 
 	return parallel.WorkPool(fn.Workers, func(c chan<- func() error) {
-		nextBatch := make([]*datastore.Key, 0, fn.MaxBatchSize)
-
-		// Keep acquiring and processing batches.
-		for {
-			nextBatch = append(nextBatch, nk.Key)
-
-			if len(nextBatch) == fn.MaxBatchSize {
-				currentBatch := nextBatch
-				c <- func() error {
-					err := fn.flushBatch(ctx, currentBatch)
-					if err != nil {
-						reportError(err, currentBatch)
-					}
+		for i := 0; i*fn.UpdateBatchSize < len(keyBatch.Keys); i++ {
+			keys := keyBatch.Keys[i*fn.UpdateBatchSize : min((i+1)*fn.UpdateBatchSize, len(keyBatch.Keys))]
+			c <- func() error {
+				err := fn.updateEntities(ctx, keys)
+				// In case of a datastore error, log the error and send the batch to the next
+				// stage instead of returning an error so the worker can keep progressing.
+				// Some keys might've been processed already. But it doesn't hurt to
+				// retry them.
+				if err != nil {
+					fn.failedCounter.Inc(ctx, int64(len(keys)*2))
+					log.Errorf(ctx, "%v", err)
+					emit(dsutils.KeyBatch{Namespace: keyBatch.Namespace, Keys: keys})
 					return nil
 				}
-				nextBatch = make([]*datastore.Key, 0, fn.MaxBatchSize)
-			}
 
-			if !loadKey(&nk) {
-				break
+				return nil
 			}
-		}
-
-		// Process the remaining items in the batch.
-		c <- func() error {
-			err := fn.flushBatch(ctx, nextBatch)
-			if err != nil {
-				reportError(err, nextBatch)
-			}
-			return nil
 		}
 	})
 }
@@ -218,38 +192,69 @@ type entityWithCreatedAndExpireAt struct {
 	Extra    datastore.PropertyMap `gae:",extra"`
 }
 
-func (fn *backfillExpireAtFromCreatedFn) flushBatch(
+func (fn *backfillExpireAtFromCreatedFn) updateEntities(
 	ctx context.Context,
-	keys []*datastore.Key,
+	logStreamKeys []*datastore.Key,
 ) error {
-	if len(keys) == 0 {
-		return nil
-	}
-
-	entities := make([]*entityWithCreatedAndExpireAt, 0, len(keys))
-	for _, k := range keys {
+	// Prepare the entity list to read.
+	entities := make([]*entityWithCreatedAndExpireAt, 0, len(logStreamKeys)*2)
+	for _, streamKey := range logStreamKeys {
 		entities = append(entities, &entityWithCreatedAndExpireAt{
-			Key: k,
+			Key: streamKey,
+		})
+
+		// Also update the corresponding LogStreamState.
+		stateKey := streamKey.KeyContext().NewKey("LogStreamState", "", 1, streamKey)
+		entities = append(entities, &entityWithCreatedAndExpireAt{
+			Key: stateKey,
 		})
 	}
+
+	// Read the entities.
 	err := datastore.Get(ctx, entities)
 	if err != nil {
-		return err
+		me := err.(errors.MultiError)
+		lme := errors.NewLazyMultiError(len(me))
+		for i, ierr := range me {
+			if errors.Is(err, datastore.ErrNoSuchEntity) {
+				ierr = nil        // ignore ErrNoSuchEntity
+				entities[i] = nil // nil out the entity, so we can skip it later.
+			}
+			lme.Assign(i, ierr)
+		}
+
+		// Return an error only if we encounter an error other than ErrNoSuchEntity.
+		if err := lme.Get(); err != nil {
+			return errors.Annotate(err, "failed to read entities").Err()
+		}
 	}
 
-	updatedEntities := make([]*entityWithCreatedAndExpireAt, 0, len(entities))
+	now := clock.Now(ctx)
+
+	// Get the list of entities to update.
+	notFound := 0
+	entitiesToPut := make([]*entityWithCreatedAndExpireAt, 0)
+	entitiesToDelete := make([]*entityWithCreatedAndExpireAt, 0, len(entities))
 	for _, entity := range entities {
+		if entity == nil {
+			notFound++
+			continue
+		}
+
 		createdAt := entity.Created
 
 		// If somehow the created timestamp is not defined, make it expire in
 		// `fn.Expiry` from now.
 		if createdAt.IsZero() {
-			createdAt = clock.Now(ctx)
+			createdAt = now
 		}
 
 		// Skip entities created after certain timestamp. This allow us to perform
 		// updates without using a transaction since those entities should've been
 		// finalized. (i.e. no other process is updating the same entity).
+		//
+		// Newer entities do not need to be backfilled as the ExpireAt should
+		// already be populated.
 		if createdAt.After(fn.SkipCreatedAfter) {
 			continue
 		}
@@ -260,19 +265,33 @@ func (fn *backfillExpireAtFromCreatedFn) flushBatch(
 			continue
 		}
 
+		if expectedExpireAt.Before(now) {
+			entitiesToDelete = append(entitiesToDelete, entity)
+			continue
+		}
+
 		entity.ExpireAt = expectedExpireAt
-		updatedEntities = append(updatedEntities, entity)
+		entitiesToPut = append(entitiesToPut, entity)
 	}
 
+	// Update the entities.
 	if !fn.DryRun {
-		err := datastore.Put(ctx, updatedEntities)
+		err := datastore.Put(ctx, entitiesToPut)
 		if err != nil {
-			fn.failedCounter.Inc(ctx, int64(len(keys)))
 			return errors.Annotate(err, "failed to Put entities").Err()
 		}
 	}
+	fn.updatedCounter.Inc(ctx, int64(len(entitiesToPut)))
 
-	fn.updatedCounter.Inc(ctx, int64(len(updatedEntities)))
-	fn.skippedCounter.Inc(ctx, int64(len(keys)-len(updatedEntities)))
+	if !fn.DryRun {
+		err = datastore.Delete(ctx, entitiesToDelete)
+		if err != nil {
+			return errors.Annotate(err, "failed to Delete entities").Err()
+		}
+	}
+	fn.deletedCounter.Inc(ctx, int64(len(entitiesToDelete)))
+
+	fn.skippedCounter.Inc(ctx, int64(len(entities)-len(entitiesToPut)-len(entitiesToDelete)-notFound))
+	fn.notFoundCounter.Inc(ctx, int64(notFound))
 	return nil
 }
