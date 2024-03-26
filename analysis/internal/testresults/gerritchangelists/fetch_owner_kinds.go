@@ -213,6 +213,13 @@ func retrieveChangelistOwnerKind(ctx context.Context, clKey Key, gerritProjectHi
 			clKey.Host, clKey.Change, clKey.Project)
 		return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, nil
 	}
+	if code == codes.InvalidArgument {
+		// This sometimes occurs because the service account we are using does not have
+		// a gerrit account.
+		logging.Warningf(ctx, "LUCI Analysis could not read changelist %s/%v for project %s: %v",
+			clKey.Host, clKey.Change, clKey.Project, err)
+		return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, nil
+	}
 	if err != nil {
 		return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, err
 	}
