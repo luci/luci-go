@@ -41,6 +41,11 @@ service Gerrit {
   // https://chromium-review.googlesource.com/plugins/code-owners/Documentation/rest-api.html#list-code-owners-for-path-in-branch
   rpc ListFileOwners(ListFileOwnersRequest) returns (ListOwnersResponse);
 
+  // Returns the email addresses linked in the given Gerrit account.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#list-account-emails
+  rpc ListAccountEmails(ListAccountEmailsRequest) returns (ListAccountEmailsResponse);
+
 
   /////////////////////////////////////////////////////////////////////////////
   //                            Change read-only RPCs.
@@ -1499,6 +1504,29 @@ message OwnerInfo{
 message ListOwnersResponse{
   // The account(s) who are OWNERS
   repeated OwnerInfo owners = 1;
+}
+
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#email-info
+message EmailInfo {
+  // Email address linked to the user account.
+  string email = 1;
+
+  // Set true if the email address is set as preferred.
+  bool preferred = 2;
+
+  // Set true if the user must confirm control of the email address by following
+  // a verification link before Gerrit will permit use of this address.
+  bool pending_confirmation = 3;
+}
+
+message ListAccountEmailsRequest {
+  // Any of the email address linked to the gerrit account.
+  string email = 1;
+}
+
+message ListAccountEmailsResponse {
+  repeated EmailInfo emails = 1;
 }
 
 message GetPureRevertRequest {

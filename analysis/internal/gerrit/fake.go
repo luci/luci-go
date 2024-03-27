@@ -97,6 +97,10 @@ func (f *FakeClient) ListFileOwners(ctx context.Context, in *gerritpb.ListFileOw
 	panic("not implemented")
 }
 
+func (f *FakeClient) ListAccountEmails(ctx context.Context, in *gerritpb.ListAccountEmailsRequest, opts ...grpc.CallOption) (*gerritpb.ListAccountEmailsResponse, error) {
+	panic("not implemented")
+}
+
 func (f *FakeClient) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
 	panic("not implemented")
 }

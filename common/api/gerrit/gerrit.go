@@ -310,6 +310,24 @@ func NewClient(c *http.Client, gerritURL string) (*Client, error) {
 	return &Client{c, *pu, retry.Default}, nil
 }
 
+// EmailInfo contains the response fields from ListAccountEmails.
+type EmailInfo struct {
+	// Email address linked to the user account.
+	Email string `json:"email"`
+
+	// Set true if the email address is set as preferred.
+	Preferred bool `json:"preferred"`
+
+	// Set true if the user must confirm control of the email address by following
+	// a verification link before Gerrit will permit use of this address.
+	PendingConfirmation bool `json:"pending_confirmation"`
+}
+
+// ListAccountEmails returns the email addresses linked in the given Gerrit account.
+func (c *Client) ListAccountEmails(email string) ([]*EmailInfo, error) {
+	panic("not implemented")
+}
+
 // ChangeQueryParams contains the parameters necessary for querying changes from Gerrit.
 type ChangeQueryParams struct {
 	// Actual query string, see

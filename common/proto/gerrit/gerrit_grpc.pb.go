@@ -37,6 +37,7 @@ const (
 	Gerrit_ListProjects_FullMethodName          = "/gerrit.Gerrit/ListProjects"
 	Gerrit_GetRefInfo_FullMethodName            = "/gerrit.Gerrit/GetRefInfo"
 	Gerrit_ListFileOwners_FullMethodName        = "/gerrit.Gerrit/ListFileOwners"
+	Gerrit_ListAccountEmails_FullMethodName     = "/gerrit.Gerrit/ListAccountEmails"
 	Gerrit_ListChanges_FullMethodName           = "/gerrit.Gerrit/ListChanges"
 	Gerrit_GetChange_FullMethodName             = "/gerrit.Gerrit/GetChange"
 	Gerrit_GetMergeable_FullMethodName          = "/gerrit.Gerrit/GetMergeable"
@@ -74,6 +75,10 @@ type GerritClient interface {
 	//
 	// https://chromium-review.googlesource.com/plugins/code-owners/Documentation/rest-api.html#list-code-owners-for-path-in-branch
 	ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error)
+	// Returns a list of all email addresses for the given email account.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#list-account-emails
+	ListAccountEmails(ctx context.Context, in *ListAccountEmailsRequest, opts ...grpc.CallOption) (*ListAccountEmailsResponse, error)
 	// Lists changes that match a query.
 	//
 	// TODO(tandrii): recommend a paging query.
@@ -191,6 +196,15 @@ func (c *gerritClient) GetRefInfo(ctx context.Context, in *RefInfoRequest, opts 
 func (c *gerritClient) ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error) {
 	out := new(ListOwnersResponse)
 	err := c.cc.Invoke(ctx, Gerrit_ListFileOwners_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritClient) ListAccountEmails(ctx context.Context, in *ListAccountEmailsRequest, opts ...grpc.CallOption) (*ListAccountEmailsResponse, error) {
+	out := new(ListAccountEmailsResponse)
+	err := c.cc.Invoke(ctx, Gerrit_ListAccountEmails_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -384,6 +398,10 @@ type GerritServer interface {
 	//
 	// https://chromium-review.googlesource.com/plugins/code-owners/Documentation/rest-api.html#list-code-owners-for-path-in-branch
 	ListFileOwners(context.Context, *ListFileOwnersRequest) (*ListOwnersResponse, error)
+	// Returns a list of all email addresses for the given email account.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#list-account-emails
+	ListAccountEmails(context.Context, *ListAccountEmailsRequest) (*ListAccountEmailsResponse, error)
 	// Lists changes that match a query.
 	//
 	// TODO(tandrii): recommend a paging query.
@@ -485,6 +503,9 @@ func (UnimplementedGerritServer) GetRefInfo(context.Context, *RefInfoRequest) (*
 }
 func (UnimplementedGerritServer) ListFileOwners(context.Context, *ListFileOwnersRequest) (*ListOwnersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFileOwners not implemented")
+}
+func (UnimplementedGerritServer) ListAccountEmails(context.Context, *ListAccountEmailsRequest) (*ListAccountEmailsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAccountEmails not implemented")
 }
 func (UnimplementedGerritServer) ListChanges(context.Context, *ListChangesRequest) (*ListChangesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListChanges not implemented")
@@ -606,6 +627,24 @@ func _Gerrit_ListFileOwners_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GerritServer).ListFileOwners(ctx, req.(*ListFileOwnersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_ListAccountEmails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAccountEmailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).ListAccountEmails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Gerrit_ListAccountEmails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).ListAccountEmails(ctx, req.(*ListAccountEmailsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -970,6 +1009,10 @@ var Gerrit_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListFileOwners",
 			Handler:    _Gerrit_ListFileOwners_Handler,
+		},
+		{
+			MethodName: "ListAccountEmails",
+			Handler:    _Gerrit_ListAccountEmails_Handler,
 		},
 		{
 			MethodName: "ListChanges",

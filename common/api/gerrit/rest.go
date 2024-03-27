@@ -97,6 +97,11 @@ type client struct {
 	testBaseURL string
 }
 
+// ListAccountEmails returns the email addresses linked in the given Gerrit account.
+func (*client) ListAccountEmails(ctx context.Context, req *gerritpb.ListAccountEmailsRequest, opts ...grpc.CallOption) (*gerritpb.ListAccountEmailsResponse, error) {
+	panic("not implemented")
+}
+
 func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
 	limit := req.Limit
 	if req.Limit < 0 {

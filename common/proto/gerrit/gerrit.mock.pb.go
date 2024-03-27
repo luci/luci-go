@@ -316,6 +316,26 @@ func (mr *MockGerritClientMockRecorder) GetRelatedChanges(ctx, in interface{}, o
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRelatedChanges", reflect.TypeOf((*MockGerritClient)(nil).GetRelatedChanges), varargs...)
 }
 
+// ListAccountEmails mocks base method.
+func (m *MockGerritClient) ListAccountEmails(ctx context.Context, in *ListAccountEmailsRequest, opts ...grpc.CallOption) (*ListAccountEmailsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListAccountEmails", varargs...)
+	ret0, _ := ret[0].(*ListAccountEmailsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAccountEmails indicates an expected call of ListAccountEmails.
+func (mr *MockGerritClientMockRecorder) ListAccountEmails(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAccountEmails", reflect.TypeOf((*MockGerritClient)(nil).ListAccountEmails), varargs...)
+}
+
 // ListChanges mocks base method.
 func (m *MockGerritClient) ListChanges(ctx context.Context, in *ListChangesRequest, opts ...grpc.CallOption) (*ListChangesResponse, error) {
 	m.ctrl.T.Helper()
@@ -707,6 +727,21 @@ func (m *MockGerritServer) GetRelatedChanges(arg0 context.Context, arg1 *GetRela
 func (mr *MockGerritServerMockRecorder) GetRelatedChanges(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRelatedChanges", reflect.TypeOf((*MockGerritServer)(nil).GetRelatedChanges), arg0, arg1)
+}
+
+// ListAccountEmails mocks base method.
+func (m *MockGerritServer) ListAccountEmails(arg0 context.Context, arg1 *ListAccountEmailsRequest) (*ListAccountEmailsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAccountEmails", arg0, arg1)
+	ret0, _ := ret[0].(*ListAccountEmailsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAccountEmails indicates an expected call of ListAccountEmails.
+func (mr *MockGerritServerMockRecorder) ListAccountEmails(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAccountEmails", reflect.TypeOf((*MockGerritServer)(nil).ListAccountEmails), arg0, arg1)
 }
 
 // ListChanges mocks base method.
