@@ -17,6 +17,7 @@ package bq
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"cloud.google.com/go/bigquery/storage/managedwriter"
@@ -89,12 +90,22 @@ func Register(srv *server.Server, disp *tq.Dispatcher, cron *cron.Dispatcher, da
 		}
 	})
 
+	// When running locally use a custom entity key prefix to avoid colliding
+	// with entities used by staging Swarming. Also don't schedule a lot of tasks
+	// at once (they will all run at the same time, making local testing harder).
+	keyPrefix := ""
+	maxTasks := maxTasksToSchedule
+	if !srv.Options.Prod {
+		keyPrefix = fmt.Sprintf("dev:%s:", os.Getenv("USER"))
+		maxTasks = 1
+	}
+
 	cron.RegisterHandler("bq-export", func(ctx context.Context) error {
 		if dataset == "none" {
 			return nil
 		}
 		project := srv.Options.CloudProject
-		return scheduleExportTasks(ctx, disp, project, dataset, TaskRequests)
+		return scheduleExportTasks(ctx, disp, keyPrefix, maxTasks, project, dataset, TaskRequests)
 	})
 
 	registerTQTasks(disp, client)
@@ -141,10 +152,10 @@ func registerTQTasks(disp *tq.Dispatcher, client *managedwriter.Client) {
 // (which is also an integer number of seconds). That way all TQ tasks stay
 // snapped "to the grid" and DuplicationKey is essentially an integer coordinate
 // on this grid.
-func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, cloudProject, dataset, tableName string) error {
+func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, keyPrefix string, maxTasksToSchedule int, cloudProject, dataset, tableName string) error {
 	// Get the timestamp to start exporting from (all events before it have been
 	// exported already).
-	sch := &ExportSchedule{ID: tableName}
+	sch := &ExportSchedule{ID: keyPrefix + tableName}
 	switch err := datastore.Get(ctx, sch); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		// Need to truncate at least to seconds precision (see the function doc),
@@ -170,7 +181,8 @@ func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, cloudProject,
 		// of seconds). It means sch.NextExport.Unix() doesn't lose any precision
 		// and it will be the same even if scheduleExportTasks crashes (before
 		// saving sch.NextExport) and then gets retried.
-		operationID := fmt.Sprintf("%s:%d:%d",
+		operationID := fmt.Sprintf("%s%s:%d:%d",
+			keyPrefix,
 			tableName,
 			sch.NextExport.Unix(),
 			exportDuration/time.Second,

@@ -41,31 +41,28 @@ func TestScheduleExportTasks(t *testing.T) {
 	// a task.
 	// See: https://crrev.com/c/5054492/11..14/swarming/server/bq/export.go#b97
 	Convey("With mocks", t, func() {
+		var testTime = testclock.TestRecentTimeUTC.Truncate(time.Microsecond)
+
 		disp := &tq.Dispatcher{}
 		registerTQTasks(disp, nil)
 
-		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx, _ := testclock.UseTime(context.Background(), testTime)
 		ctx = memory.Use(ctx)
 		ctx, tasks := tq.TestingContext(ctx, disp)
 
 		Convey("Creates 4 export tasks", func() {
-			cutoff := tc.Now().UTC().Add(-minEventAge)
-			start := cutoff.Add(-time.Minute)
-			// It appears that datastore testing implementation strips away
-			// nanosecond time precision.
-			// Truncate by microsecond matches this behaviour in UTs
-			start = start.Truncate(time.Microsecond)
+			start := testTime.Add(-minEventAge - time.Minute - time.Second)
 			schedule := ExportSchedule{
 				ID:         TaskRequests,
 				NextExport: start,
 			}
 			err := datastore.Put(ctx, &schedule)
 			So(err, ShouldBeNil)
-			err = scheduleExportTasks(ctx, disp, "foo", "bar", TaskRequests)
+			err = scheduleExportTasks(ctx, disp, "", maxTasksToSchedule, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
 			expected := []*taskspb.ExportInterval{
 				{
-					OperationId:  "task_requests:1454472126:15",
+					OperationId:  "task_requests:1454472125:15",
 					CloudProject: "foo",
 					Dataset:      "bar",
 					TableName:    TaskRequests,
@@ -73,7 +70,7 @@ func TestScheduleExportTasks(t *testing.T) {
 					Duration:     durationpb.New(exportDuration),
 				},
 				{
-					OperationId:  "task_requests:1454472141:15",
+					OperationId:  "task_requests:1454472140:15",
 					CloudProject: "foo",
 					Dataset:      "bar",
 					TableName:    TaskRequests,
@@ -81,7 +78,7 @@ func TestScheduleExportTasks(t *testing.T) {
 					Duration:     durationpb.New(exportDuration),
 				},
 				{
-					OperationId:  "task_requests:1454472156:15",
+					OperationId:  "task_requests:1454472155:15",
 					CloudProject: "foo",
 					Dataset:      "bar",
 					TableName:    TaskRequests,
@@ -89,7 +86,7 @@ func TestScheduleExportTasks(t *testing.T) {
 					Duration:     durationpb.New(exportDuration),
 				},
 				{
-					OperationId:  "task_requests:1454472171:15",
+					OperationId:  "task_requests:1454472170:15",
 					CloudProject: "foo",
 					Dataset:      "bar",
 					TableName:    TaskRequests,
@@ -114,35 +111,47 @@ func TestScheduleExportTasks(t *testing.T) {
 		})
 
 		Convey("Creates 0 export tasks if ExportSchedule doesn't exist", func() {
-			err := scheduleExportTasks(ctx, disp, "foo", "bar", TaskRequests)
+			err := scheduleExportTasks(ctx, disp, "", maxTasksToSchedule, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
 			So(tasks.Tasks(), ShouldBeEmpty)
 			schedule := ExportSchedule{ID: TaskRequests}
 			err = datastore.Get(ctx, &schedule)
 			So(err, ShouldBeNil)
-			So(schedule.NextExport, ShouldEqual, tc.Now().Add(-minEventAge).Truncate(time.Minute))
+			So(schedule.NextExport, ShouldEqual, testTime.Add(-minEventAge).Truncate(time.Minute))
 		})
 
 		Convey("We cannot create more than 20 tasks at a time", func() {
-			start := tc.Now().Add(-(2 + 10) * time.Minute).Truncate(time.Minute)
+			start := testTime.Add(-(2 + 10) * time.Minute).Truncate(time.Minute)
 			So(datastore.Put(ctx, &ExportSchedule{
 				ID:         TaskRequests,
 				NextExport: start,
 			}), ShouldBeNil)
-			err := scheduleExportTasks(ctx, disp, "foo", "bar", TaskRequests)
+			err := scheduleExportTasks(ctx, disp, "", maxTasksToSchedule, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
 			So(tasks.Tasks(), ShouldHaveLength, 20)
 		})
 
 		Convey("We cannot schedule an exportTask in the future", func() {
-			start := tc.Now().Add(5 * time.Minute)
+			start := testTime.Add(5 * time.Minute)
 			So(datastore.Put(ctx, &ExportSchedule{
 				ID:         TaskRequests,
 				NextExport: start,
 			}), ShouldBeNil)
-			err := scheduleExportTasks(ctx, disp, "foo", "bar", TaskRequests)
+			err := scheduleExportTasks(ctx, disp, "", maxTasksToSchedule, "foo", "bar", TaskRequests)
 			So(err, ShouldBeNil)
 			So(tasks.Tasks(), ShouldHaveLength, 0)
+		})
+
+		Convey("Custom key prefix and max tasks to schedule", func() {
+			So(datastore.Put(ctx, &ExportSchedule{
+				ID:         "key-prefix:" + TaskRequests,
+				NextExport: testTime.Add(-minEventAge - time.Minute),
+			}), ShouldBeNil)
+			err := scheduleExportTasks(ctx, disp, "key-prefix:", 1, "foo", "bar", TaskRequests)
+			So(err, ShouldBeNil)
+			So(tasks.Tasks(), ShouldHaveLength, 1)
+			task := tasks.Tasks().Payloads()[0].(*taskspb.ExportInterval)
+			So(task.OperationId, ShouldEqual, "key-prefix:task_requests:1454472126:15")
 		})
 	})
 }
