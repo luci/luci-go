@@ -60,6 +60,58 @@ func TestBuildURL(t *testing.T) {
 	})
 }
 
+func TestListAccountEmails(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("ListAccountEmails", t, func() {
+		Convey("Validates empty email", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
+			defer srv.Close()
+
+			_, err := c.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
+				Email: "",
+			})
+
+			So(err, ShouldErrLike, "The email field must be present")
+		})
+
+		Convey("Returns emails API response", func() {
+			expectedResponse := &gerritpb.ListAccountEmailsResponse{
+				Emails: []*gerritpb.EmailInfo{
+					{Email: "foo@google.com", Preferred: true},
+					{Email: "foo@chromium.org"},
+				},
+			}
+
+			var actualRequest *http.Request
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				actualRequest = r
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `)]}'[
+					{
+						"email": "foo@google.com",
+						"preferred": true
+					},
+					{
+						"email": "foo@chromium.org"
+					}
+				]`)
+			})
+			defer srv.Close()
+
+			res, err := c.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
+				Email: "foo@google.com",
+			})
+
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, expectedResponse)
+			So(actualRequest.RequestURI, ShouldContainSubstring, "/accounts/foo@google.com/emails")
+		})
+	})
+}
+
 func TestListChanges(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

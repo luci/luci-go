@@ -98,8 +98,21 @@ type client struct {
 }
 
 // ListAccountEmails returns the email addresses linked in the given Gerrit account.
-func (*client) ListAccountEmails(ctx context.Context, req *gerritpb.ListAccountEmailsRequest, opts ...grpc.CallOption) (*gerritpb.ListAccountEmailsResponse, error) {
-	panic("not implemented")
+func (c *client) ListAccountEmails(ctx context.Context, req *gerritpb.ListAccountEmailsRequest, opts ...grpc.CallOption) (*gerritpb.ListAccountEmailsResponse, error) {
+	email := req.GetEmail()
+	if email == "" {
+		return nil, errors.Reason("The email field must be present").Err()
+	}
+
+	urlPath := fmt.Sprintf("/accounts/%s/emails", email)
+	var emails []*gerritpb.EmailInfo
+	if _, err := c.call(ctx, "GET", urlPath, nil, nil, &emails, opts); err != nil {
+		return nil, err
+	}
+
+	return &gerritpb.ListAccountEmailsResponse{
+		Emails: emails,
+	}, nil
 }
 
 func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
