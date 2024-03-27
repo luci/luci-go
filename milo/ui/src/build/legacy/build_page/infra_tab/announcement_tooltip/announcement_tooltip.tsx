@@ -17,8 +17,10 @@ import { useRef } from 'react';
 import { useClickAway, useLocalStorage, useTimeout } from 'react-use';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { useSetShowPageConfig } from '@/common/components/page_config_state_provider';
 
-const HIDE_NEW_INFRA_TAB_NOTIFICATION_KEY = 'hide-new-infra-tab-notification';
+const HIDE_NEW_INFRA_TAB_NOTIFICATION_KEY =
+  'hide-new-infra-tab-notification-v2';
 
 export interface InfraTabAnnouncementTooltipProps {
   readonly children: JSX.Element;
@@ -41,6 +43,8 @@ export function InfraTabAnnouncementTooltip({
     }
   });
 
+  const setShowPageConfig = useSetShowPageConfig();
+
   return (
     <HtmlTooltip
       open={!hideInfraTab}
@@ -50,17 +54,37 @@ export function InfraTabAnnouncementTooltip({
           ref={tooltipRef}
           onClick={(e) => e.stopPropagation()}
           sx={{
-            padding: '10px 5px 0px 5px',
+            padding: '10px 5px 10px 5px',
+            maxWidth: '500px',
           }}
         >
-          Infra details & build steps have been moved to the infra tab.
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto' }}>
+          <p>Infra details & build steps have been moved to the infra tab.</p>
+          <p>
+            If you still want to see these details by default, you can use the
+            page settings menu on the top-right corner to change the default tab
+            to the infra tab.
+          </p>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto auto',
+              marginTop: '20px',
+            }}
+          >
             <Box />
-            <Button
-              onClick={() => setHideInfraTab(true)}
-              sx={{ float: 'right' }}
-            >
+            <Button onClick={() => setHideInfraTab(true)} size="small">
               Dismiss
+            </Button>
+            <Button
+              disabled={setShowPageConfig === null}
+              onClick={() => {
+                setShowPageConfig?.(true);
+                setHideInfraTab(true);
+              }}
+              variant="contained"
+              size="small"
+            >
+              Change Default Tab
             </Button>
           </Box>
         </Box>
