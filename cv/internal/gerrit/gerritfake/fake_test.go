@@ -360,6 +360,45 @@ func TestGetChange(t *testing.T) {
 	})
 }
 
+func TestListAccountEmails(t *testing.T) {
+	t.Parallel()
+
+	Convey("ListAccountEmails works", t, func() {
+
+		ctx := context.Background()
+		f := Fake{
+			linkedAccounts: map[string][]string{
+				"foo@google.com":   []string{"foo@google.com", "foo@chromium.org"},
+				"foo@chromium.org": []string{"foo@chromium.org", "foo@google.com"},
+			},
+		}
+
+		client, err := f.MakeClient(ctx, "foo", "bar")
+		So(err, ShouldBeNil)
+
+		Convey("returns linked email for the given email address", func() {
+			res, err := client.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
+				Email: "foo@google.com",
+			})
+
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &gerritpb.ListAccountEmailsResponse{
+				Emails: []*gerritpb.EmailInfo{
+					&gerritpb.EmailInfo{Email: "foo@google.com"},
+					&gerritpb.EmailInfo{Email: "foo@chromium.org"},
+				},
+			})
+		})
+
+		Convey("returns error when the account doesn't exist", func() {
+			_, err := client.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
+				Email: "bar@google.com",
+			})
+			So(err, ShouldErrLike, "Account 'bar@google.com' not found")
+		})
+	})
+}
+
 func TestListChanges(t *testing.T) {
 	t.Parallel()
 

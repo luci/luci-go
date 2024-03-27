@@ -51,6 +51,12 @@ type timeLimitedClient struct {
 	luciProject string
 }
 
+func (t timeLimitedClient) ListAccountEmails(ctx context.Context, req *gerritpb.ListAccountEmailsRequest, opts ...grpc.CallOption) (*gerritpb.ListAccountEmailsResponse, error) {
+	ctx, cancel := clock.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	return t.actual.ListAccountEmails(ctx, req, opts...)
+}
+
 func (t timeLimitedClient) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
 	ctx, cancel := clock.WithTimeout(ctx, 20*time.Second)
 	defer cancel()

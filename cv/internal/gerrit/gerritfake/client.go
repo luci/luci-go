@@ -50,6 +50,28 @@ var _ gerrit.Client = (*Client)(nil)
 ///////////////////////////////////////////////////////////////////////////////
 // Read RPCs
 
+// ListAccountEmails returns the email addresses linked in the given Gerrit account.
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#list-account-emails
+func (client *Client) ListAccountEmails(ctx context.Context, req *gerritpb.ListAccountEmailsRequest, opts ...grpc.CallOption) (*gerritpb.ListAccountEmailsResponse, error) {
+	client.f.m.Lock()
+	defer client.f.m.Unlock()
+	client.f.recordRequest(req)
+
+	res := &gerritpb.ListAccountEmailsResponse{}
+	if emails, ok := client.f.linkedAccounts[req.GetEmail()]; ok {
+		for _, email := range emails {
+			res.Emails = append(res.Emails, &gerritpb.EmailInfo{
+				Email: email,
+			})
+		}
+	} else {
+		return nil, status.Errorf(codes.NotFound, "Account '%s' not found", req.GetEmail())
+	}
+
+	return res, nil
+}
+
 // ListChanges lists changes that match a query.
 //
 // Note, although the Gerrit API supports multiple queries, for which

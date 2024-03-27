@@ -60,6 +60,11 @@ type Client interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-revision
 	SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error)
+
+	// Returns the email addresses linked in the given Gerrit account.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#list-account-emails
+	ListAccountEmails(ctx context.Context, req *gerritpb.ListAccountEmailsRequest, opts ...grpc.CallOption) (*gerritpb.ListAccountEmailsResponse, error)
 }
 
 // Factory creates Client tied to Gerrit host and LUCI project.

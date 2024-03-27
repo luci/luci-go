@@ -56,6 +56,9 @@ type Fake struct {
 	// childrenOf[X] can be read as "changes which depend on X non-transitively".
 	childrenOf map[string][]string
 
+	// linkedAccounts is set of linked email addresses for a given email.
+	linkedAccounts map[string][]string
+
 	// requests are all incoming requests that this Fake has received.
 	requests   []proto.Message
 	requestsMu sync.RWMutex

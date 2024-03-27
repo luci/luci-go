@@ -109,6 +109,12 @@ func (i instrumentedClient) start(ctx context.Context, method string) func(err e
 	}
 }
 
+func (i instrumentedClient) ListAccountEmails(ctx context.Context, req *gerritpb.ListAccountEmailsRequest, opts ...grpc.CallOption) (*gerritpb.ListAccountEmailsResponse, error) {
+	end := i.start(ctx, "ListAccountEmails")
+	resp, err := i.actual.ListAccountEmails(ctx, req, opts...)
+	return resp, end(err)
+}
+
 func (i instrumentedClient) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
 	end := i.start(ctx, "ListChanges")
 	resp, err := i.actual.ListChanges(ctx, in, opts...)
