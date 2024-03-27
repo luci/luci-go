@@ -15,7 +15,6 @@
 import { observer } from 'mobx-react-lite';
 
 import { useStore } from '@/common/store';
-import { getBuildURLPath } from '@/common/tools/url_utils';
 
 import { StepDisplayConfig } from '../steps_tab/step_display_config';
 import { StepList } from '../steps_tab/step_list';
@@ -28,15 +27,9 @@ export const StepsSection = observer(() => {
     return <></>;
   }
 
-  const stepsUrl =
-    getBuildURLPath(pageState.builderIdParam, pageState.buildNumOrIdParam) +
-    '/steps';
-
   return (
     <>
-      <h3>
-        Steps & Logs (<a href={stepsUrl}>View in Steps Tab</a>)
-      </h3>
+      <h3>Steps & Logs</h3>
       <StepDisplayConfig />
       <StepList />
     </>
