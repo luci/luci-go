@@ -42,7 +42,7 @@ func TestVariantJSON(t *testing.T) {
 			}
 			result, err := variantJSON(variant)
 			So(err, ShouldBeNil)
-			So(result, ShouldEqual, `{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\u000c"}`)
+			So(result, ShouldEqual, `{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`)
 		})
 	})
 	Convey(`MarshalStructPB`, t, func() {

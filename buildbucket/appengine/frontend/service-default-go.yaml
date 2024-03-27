@@ -1,5 +1,5 @@
 service: default-go
-runtime: go121
+runtime: go122
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
