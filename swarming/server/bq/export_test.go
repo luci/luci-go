@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/server/bq/taskspb"
@@ -43,8 +42,7 @@ func TestScheduleExportTasks(t *testing.T) {
 	// See: https://crrev.com/c/5054492/11..14/swarming/server/bq/export.go#b97
 	Convey("With mocks", t, func() {
 		disp := &tq.Dispatcher{}
-		cron := &cron.Dispatcher{}
-		Register(disp, cron, "foo", "bar")
+		registerTQTasks(disp, nil)
 
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ctx = memory.Use(ctx)

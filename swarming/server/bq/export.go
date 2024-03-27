@@ -19,6 +19,10 @@ import (
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/bigquery/storage/managedwriter"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -28,6 +32,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/tq"
 
@@ -63,21 +70,46 @@ const (
 )
 
 // Register registers TQ tasks and cron handlers that implement BigQuery export.
-func Register(disp *tq.Dispatcher, cron *cron.Dispatcher, cloudProject, dataset string) {
+func Register(srv *server.Server, disp *tq.Dispatcher, cron *cron.Dispatcher, dataset string) error {
+	ts, err := auth.GetTokenSource(srv.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	if err != nil {
+		return errors.Annotate(err, "failed to create TokenSource").Err()
+	}
+	client, err := managedwriter.NewClient(srv.Context, srv.Options.CloudProject,
+		option.WithTokenSource(ts),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
+	)
+	if err != nil {
+		return errors.Annotate(err, "failed to create BQ client").Err()
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		if err := client.Close(); err != nil {
+			logging.Errorf(ctx, "Error closing BQ client: %s", err)
+		}
+	})
+
 	cron.RegisterHandler("bq-export", func(ctx context.Context) error {
 		if dataset == "none" {
 			return nil
 		}
-		return scheduleExportTasks(ctx, disp, cloudProject, dataset, TaskRequests)
+		project := srv.Options.CloudProject
+		return scheduleExportTasks(ctx, disp, project, dataset, TaskRequests)
 	})
 
+	registerTQTasks(disp, client)
+	return nil
+}
+
+// registerTQTasks registers TQ tasks used for BQ export.
+func registerTQTasks(disp *tq.Dispatcher, client *managedwriter.Client) {
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "bq-export-interval",
 		Kind:      tq.NonTransactional,
 		Prototype: &taskspb.ExportInterval{},
 		Queue:     "bq-export-interval",
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			return exportTask(ctx, payload.(*taskspb.ExportInterval))
+			return exportTask(ctx, client, payload.(*taskspb.ExportInterval))
 		},
 	})
 }
@@ -181,7 +213,8 @@ func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, cloudProject,
 	return nil
 }
 
-func exportTask(ctx context.Context, t *taskspb.ExportInterval) error {
+// exportTask is the handler for "bq-export-interval" TQ tasks.
+func exportTask(ctx context.Context, client *managedwriter.Client, t *taskspb.ExportInterval) error {
 	logging.Infof(ctx, "ExportInterval %s", t.OperationId)
 	return nil
 }

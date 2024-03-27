@@ -40,7 +40,6 @@ func main() {
 	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		bq.Register(&tq.Default, &cron.Default, srv.Options.CloudProject, *bqExportDataset)
-		return nil
+		return bq.Register(srv, &tq.Default, &cron.Default, *bqExportDataset)
 	})
 }
