@@ -39,7 +39,13 @@ func main() {
 		"'none' will do no exports. Otherwise will specify which bq dataset to export to.",
 	)
 
+	bqExportOneTable := flag.String(
+		"bq-export-only-one-table",
+		"",
+		"If set, the exporter cron will dispatch exports only for this one table. Useful when running locally.",
+	)
+
 	server.Main(nil, modules, func(srv *server.Server) error {
-		return bq.Register(srv, &tq.Default, &cron.Default, *bqExportDataset)
+		return bq.Register(srv, &tq.Default, &cron.Default, *bqExportDataset, *bqExportOneTable)
 	})
 }

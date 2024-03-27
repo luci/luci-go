@@ -24,8 +24,8 @@ const (
 	// TaskRequests exports model.TaskRequest to the `task_requests` table.
 	TaskRequests = "task_requests"
 
-	// Bots exports model.BotInfo and model.BotEvent to the `bot_events` table.
-	Bots = "bot_events"
+	// BotEvents exports model.BotEvent to the `bot_events` table.
+	BotEvents = "bot_events"
 
 	// TaskRunResults exports model.TaskRunResults to the `task_results_run`
 	// table.

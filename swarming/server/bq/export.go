@@ -22,6 +22,7 @@ import (
 
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
@@ -71,7 +72,7 @@ const (
 )
 
 // Register registers TQ tasks and cron handlers that implement BigQuery export.
-func Register(srv *server.Server, disp *tq.Dispatcher, cron *cron.Dispatcher, dataset string) error {
+func Register(srv *server.Server, disp *tq.Dispatcher, cron *cron.Dispatcher, dataset, onlyOneTable string) error {
 	ts, err := auth.GetTokenSource(srv.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return errors.Annotate(err, "failed to create TokenSource").Err()
@@ -104,8 +105,28 @@ func Register(srv *server.Server, disp *tq.Dispatcher, cron *cron.Dispatcher, da
 		if dataset == "none" {
 			return nil
 		}
-		project := srv.Options.CloudProject
-		return scheduleExportTasks(ctx, disp, keyPrefix, maxTasks, project, dataset, TaskRequests)
+		// All tables to export. See also `exportTask` where corresponding Fetchers
+		// are constructed.
+		tables := []string{
+			TaskRequests,
+			BotEvents,
+			TaskRunResults,
+			TaskResultSummaries,
+		}
+		eg, _ := errgroup.WithContext(ctx)
+		for _, table := range tables {
+			if onlyOneTable != "" && table != onlyOneTable {
+				continue
+			}
+			table := table
+			eg.Go(func() error {
+				return scheduleExportTasks(
+					ctx, disp, keyPrefix, maxTasks,
+					srv.Options.CloudProject, dataset, table,
+				)
+			})
+		}
+		return eg.Wait()
 	})
 
 	registerTQTasks(disp, client)
@@ -227,6 +248,22 @@ func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, keyPrefix str
 
 // exportTask is the handler for "bq-export-interval" TQ tasks.
 func exportTask(ctx context.Context, client *managedwriter.Client, t *taskspb.ExportInterval) error {
-	logging.Infof(ctx, "ExportInterval %s", t.OperationId)
+	var fetcher AbstractFetcher
+	switch t.TableName {
+	case TaskRequests:
+		fetcher = TaskRequestFetcher()
+	case BotEvents:
+		fetcher = BotEventsFetcher()
+	case TaskRunResults:
+		fetcher = TaskRunResultsFetcher()
+	case TaskResultSummaries:
+		fetcher = TaskResultSummariesFetcher()
+	default:
+		return errors.Reason("unknown table name %q", t.TableName).Tag(tq.Fatal).Err()
+	}
+	// TODO(vadimsh): Implement.
+	_ = ctx
+	_ = client
+	_ = fetcher
 	return nil
 }
