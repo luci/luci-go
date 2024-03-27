@@ -242,6 +242,10 @@ func logRuleCreate(ctx context.Context, rule *rules.Entry) {
 	logging.Infof(ctx, "Rule created (%s/%s): %s", rule.Project, rule.RuleID, formatRule(rule))
 }
 
+func (*rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRuleWithNewIssueRequest) (*pb.Rule, error) {
+	return nil, appstatus.Errorf(codes.Unimplemented, "not yet implemented")
+}
+
 // Updates a rule.
 func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.Rule, error) {
 	project, ruleID, err := parseRuleName(req.Rule.GetName())
@@ -470,6 +474,10 @@ func (*rulesServer) LookupBug(ctx context.Context, req *pb.LookupBugRequest) (*p
 	return &pb.LookupBugResponse{
 		Rules: ruleNames,
 	}, nil
+}
+
+func (*rulesServer) PrepareDefaults(ctx context.Context, req *pb.PrepareRuleDefaultsRequest) (*pb.PrepareRuleDefaultsResponse, error) {
+	return nil, appstatus.Errorf(codes.Unimplemented, "not yet implemented")
 }
 
 func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, mask ruleMask) *pb.Rule {

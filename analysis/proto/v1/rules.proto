@@ -20,6 +20,8 @@ import "google/api/field_behavior.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
+import "go.chromium.org/luci/analysis/proto/v1/issue_tracking.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
@@ -49,6 +51,20 @@ service Rules {
   // of the LUCI project the rule is in.
   // Designed to conform to https://google.aip.dev/136.
   rpc LookupBug(LookupBugRequest) returns (LookupBugResponse) {};
+
+  // Prepares default values for a rule.
+  rpc PrepareDefaults(PrepareRuleDefaultsRequest) returns (PrepareRuleDefaultsResponse) {};
+
+  // Creates a new rule and creates a new issue in an issue tracker.
+  // Returns the rule that was created, which references the
+  // newly filed issue.
+  //
+  // Designed as a compound RPC rather than separate NewIssue + CreateRule RPCs
+  // to ensure that issues with the definition of the failure association rule
+  // can be caught before the bug is filed (reduces chance of partial success
+  // in which bug is filed but rule cannot then be created).
+  // Designed to conform to https://google.aip.dev/136.
+  rpc CreateWithNewIssue(CreateRuleWithNewIssueRequest) returns (Rule) {};
 }
 
 // A rule associating failures with a bug.
@@ -215,6 +231,9 @@ message CreateRuleRequest {
     [(google.api.field_behavior) = REQUIRED];
 
   // The rule to create.
+  //
+  // The `name` of the rule should be left empty, it will be automatically
+  // assigned by the service.
   Rule rule = 2
     [(google.api.field_behavior) = REQUIRED];
 }
@@ -228,7 +247,8 @@ message UpdateRuleRequest {
     [(google.api.field_behavior) = REQUIRED];
 
   // The list of fields to update.
-  google.protobuf.FieldMask update_mask = 2;
+  google.protobuf.FieldMask update_mask = 2
+    [(google.api.field_behavior) = REQUIRED];
 
   // The current etag of the rule.
   // If an etag is provided and does not match the current etag of the rule,
@@ -253,4 +273,100 @@ message LookupBugResponse {
   // The rules corresponding to the requested bug.
   // Format: projects/{project}/rules/{rule_id}.
   repeated string rules = 2;
+}
+
+// PrepareRuleDefaultsRequest represents a request to prepare default
+// values for a new rule.
+message PrepareRuleDefaultsRequest {
+  // The parent LUCI Project, which will own the rule.
+  // Format: projects/{project}.
+  string parent = 1
+    [(google.api.field_behavior) = REQUIRED];
+
+  // The unexpectedly failed/crashed/aborted test result.
+  message TestResult {
+    // The test identifier.
+    string test_id = 1;
+
+    // The failure reason.
+    luci.analysis.v1.FailureReason failure_reason = 2;
+  }
+
+  // The test failure to create a rule for. If set, a failure
+  // association rule that matches it will be included in the
+  // response.
+  TestResult test_result = 2;
+}
+
+message PrepareRuleDefaultsResponse {
+  // The rule with defaults such as is_active and the failure
+  // association rule populated.
+  Rule rule = 1;
+}
+
+message CreateRuleWithNewIssueRequest {
+  // The parent resource where the rule will be created.
+  // Format: projects/{project}.
+  string parent = 1
+    [(google.api.field_behavior) = REQUIRED];
+
+  // The rule to create.
+  //
+  // The `bug` field should not be set, it will be automatically populated
+  // based on the issue that is filed as part of this request.
+  //
+  // The `name` of the rule should be left empty, it will be automatically
+  // assigned by the service.
+  Rule rule = 2
+    [(google.api.field_behavior) = REQUIRED]; 
+
+  // Contents of the issue to create alongside this rule.
+  message Issue {
+    // The issue tracker component to file the bug into. Currently, only
+    // IssueTracker (Buganizer) components are supported.
+    luci.analysis.v1.BugComponent component = 1
+      [(google.api.field_behavior) = REQUIRED];
+
+    // Short title to use for the new issue.
+    // Maximum length is 250 bytes. Content must be UTF-8
+    // normal form C, with printable characters only.
+    string title = 2;
+
+    // The issue description (initial comment).
+    // Maximum length is 100,000 characters. Content must be UTF-8
+    // normal form C, with printable characters only.
+    //
+    // LUCI Analysis will append its own footer to this
+    // description when creating the issue.
+    // This footer will contain a link to the rule in LUCI Analysis,
+    // and identity of the user who invoked this RPC.
+    //
+    // For example:
+    // "<Supplied issue comment.>
+    //
+    // See failure examples and modify the failure associated with this bug in LUCI Analysis: <link to rule>.
+    // Filed on behalf of someone@google.com."
+    string comment = 3;
+
+    // The issue priority.
+    BuganizerPriority priority = 4;
+
+    // The issue access restriction level.
+    enum IssueAccessLimit {
+      // Default value. Do not use.
+      ISSUE_ACCESS_LIMIT_UNSPECIFIED = 0;
+      // No issue access limits apply. All users who can
+      // access the component can see the issue.
+      None = 1;
+      // Only actors on the issue or trusted users (Full-time Googlers +
+      // Common tools by default) users retain view access.
+      Trusted = 4;
+    }
+
+    // The issue access limit to use for the new issue.
+    IssueAccessLimit limit = 5;
+  }
+
+  // The issue to create alongside this rule.
+  Issue issue = 3; 
 }

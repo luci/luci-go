@@ -18,6 +18,8 @@ package luci.analysis.v1;
 
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
+import "go.chromium.org/luci/analysis/proto/v1/issue_tracking.proto";
+
 // Information about a test.
 //
 // Currently a clone of resultdb.v1.TestMetadata. Do not use
@@ -33,7 +35,7 @@ message TestMetadata {
 
   // The issue tracker component associated with the test, if any.
   // Bugs related to the test may be filed here.
-  BugComponent bug_component = 3;
+  luci.analysis.v1.BugComponent bug_component = 3;
 }
 
 // Location of the test definition.
@@ -55,33 +57,4 @@ message TestLocation {
 
   // One-based line number where the test is defined.
   int32 line = 3;
-}
-
-// Represents a component in an issue tracker. A component is
-// a container for issues.
-message BugComponent {
-  oneof system {
-    // The Google Issue Tracker component.
-    IssueTrackerComponent issue_tracker = 1;
-
-    // The monorail component.
-    MonorailComponent monorail = 2;
-  }
-}
-
-// A component in Google Issue Tracker, sometimes known as Buganizer,
-// available at https://issuetracker.google.com.
-message IssueTrackerComponent {
-  // The Google Issue Tracker component ID.
-  int64 component_id = 1;
-}
-
-// A component in monorail issue tracker, available at
-// https://bugs.chromium.org.
-message MonorailComponent {
-  // The monorail project name.
-  string project = 1;
-
-  // The monorail component value. E.g. "Blink>Accessibility".
-  string value = 2;
 }

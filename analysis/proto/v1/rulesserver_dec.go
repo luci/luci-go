@@ -107,3 +107,37 @@ func (s *DecoratedRules) LookupBug(ctx context.Context, req *LookupBugRequest) (
 	}
 	return
 }
+
+func (s *DecoratedRules) PrepareDefaults(ctx context.Context, req *PrepareRuleDefaultsRequest) (rsp *PrepareRuleDefaultsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "PrepareDefaults", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.PrepareDefaults(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "PrepareDefaults", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRules) CreateWithNewIssue(ctx context.Context, req *CreateRuleWithNewIssueRequest) (rsp *Rule, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "CreateWithNewIssue", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.CreateWithNewIssue(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "CreateWithNewIssue", rsp, err)
+	}
+	return
+}

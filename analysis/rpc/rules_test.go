@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -921,6 +922,43 @@ func TestRules(t *testing.T) {
 						},
 					})
 				})
+			})
+			Convey("PrepareDefaults", func() {
+				request := &pb.PrepareRuleDefaultsRequest{
+					Parent: fmt.Sprintf("projects/%s", testProject),
+				}
+				_, err := srv.PrepareDefaults(ctx, request)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+			})
+			Convey("CreateWithNewIssue", func() {
+				request := &pb.CreateRuleWithNewIssueRequest{
+					Parent: fmt.Sprintf("projects/%s", testProject),
+					Rule: &pb.Rule{
+						RuleDefinition:        `test = "create"`,
+						IsActive:              false,
+						IsManagingBug:         true,
+						IsManagingBugPriority: true,
+						SourceCluster: &pb.ClusterId{
+							Algorithm: testname.AlgorithmName,
+							Id:        strings.Repeat("aa", 16),
+						},
+					},
+					Issue: &pb.CreateRuleWithNewIssueRequest_Issue{
+						Component: &pb.BugComponent{
+							System: &pb.BugComponent_IssueTracker{
+								IssueTracker: &pb.IssueTrackerComponent{
+									ComponentId: 123456,
+								},
+							},
+						},
+						Title:    "Issue title.",
+						Comment:  "Description.",
+						Priority: pb.BuganizerPriority_P1,
+						Limit:    pb.CreateRuleWithNewIssueRequest_Issue_Trusted,
+					},
+				}
+				_, err := srv.CreateWithNewIssue(ctx, request)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented)
 			})
 		})
 	})

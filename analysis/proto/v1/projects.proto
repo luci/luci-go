@@ -18,6 +18,7 @@ package luci.analysis.v1;
 
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
+import "go.chromium.org/luci/analysis/proto/v1/issue_tracking.proto";
 import "go.chromium.org/luci/analysis/proto/v1/project.proto";
 
 // Provides methods to access the projects which are using LUCI Analysis.
@@ -127,7 +128,7 @@ message BugManagementPolicy {
   // For monorail projects, the buganizer priority will be converted to the
   // equivalent monorail priority (P0 is converted to Pri-0, P1 to Pri-1,
   // P2 to Pri-2, etc.) until monorail is turned down.
-  BuganizerPriority priority = 3;
+  luci.analysis.v1.BuganizerPriority priority = 3;
 
   // The set of metrics which will control activation of the bug-filing policy.
   // If a policy activates on a suggested cluster, a new bug will be filed.
@@ -196,19 +197,6 @@ message BugManagementPolicy {
     // required to support simple uses of the following tags: ul, li, a.
     string action_html = 2;
   }
-}
-
-// This enum represents the Buganizer priorities.
-// It is equivalent to the one in Buganizer API.
-enum BuganizerPriority {
-  // Priority unspecified; do not use this value.
-  BUGANIZER_PRIORITY_UNSPECIFIED = 0;
-  // P0, Highest priority.
-  P0 = 1;
-  P1 = 2;
-  P2 = 3;
-  P3 = 4;
-  P4 = 5;
 }
 
 // MonorailProject describes the configuration to use when filing bugs
