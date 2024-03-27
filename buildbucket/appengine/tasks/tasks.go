@@ -51,7 +51,7 @@ func init() {
 		ID:        "cancel-backend-task",
 		Kind:      tq.FollowsContext,
 		Prototype: (*taskdefs.CancelBackendTask)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "cancel-backend-task",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CancelBackendTask)
 			return HandleCancelBackendTask(ctx, t.Project, t.Target, t.TaskId)
@@ -166,7 +166,7 @@ func init() {
 		ID:        "finalize-resultdb-go",
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.FinalizeResultDBGo)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "finalize-resultdb-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.FinalizeResultDBGo)
 			return resultdb.FinalizeInvocation(ctx, t.BuildId)
@@ -204,7 +204,7 @@ func init() {
 		ID:        "notify-pubsub-go",
 		Kind:      tq.FollowsContext,
 		Prototype: (*taskdefs.NotifyPubSubGo)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "notify-pubsub-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.NotifyPubSubGo)
 			return PublishBuildsV2Notification(ctx, t.BuildId, t.Topic, t.Callback)
@@ -215,7 +215,7 @@ func init() {
 		ID:        "notify-pubsub-go-proxy",
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.NotifyPubSubGoProxy)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "notify-pubsub-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.NotifyPubSubGoProxy)
 			return EnqueueNotifyPubSubGo(ctx, t.BuildId, t.Project)
@@ -245,7 +245,7 @@ func init() {
 		ID:        "cancel-build",
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.CancelBuildTask)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "cancel-build",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CancelBuildTask)
 			_, err := Cancel(ctx, t.BuildId)
@@ -268,7 +268,7 @@ func init() {
 		ID:        "create-backend-task-go",
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.CreateBackendBuildTask)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "create-backend-task-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CreateBackendBuildTask)
 			return CreateBackendTask(ctx, t.GetBuildId(), t.GetRequestId())
@@ -290,7 +290,7 @@ func init() {
 		ID:        "export-bigquery-go",
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.ExportBigQueryGo)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "export-bigquery-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.ExportBigQueryGo)
 			return ExportBuild(ctx, t.BuildId)
@@ -301,7 +301,7 @@ func init() {
 		ID:        "sync-builds-with-backend-tasks",
 		Kind:      tq.NonTransactional,
 		Prototype: (*taskdefs.SyncBuildsWithBackendTasks)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "sync-builds-with-backend-tasks",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.SyncBuildsWithBackendTasks)
 			return SyncBuildsWithBackendTasks(ctx, t.Backend, t.Project)
@@ -312,7 +312,7 @@ func init() {
 		ID:        "check-build-liveness",
 		Kind:      tq.FollowsContext,
 		Prototype: (*taskdefs.CheckBuildLiveness)(nil),
-		Queue:     "backend-go-default",
+		Queue:     "check-build-liveness",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CheckBuildLiveness)
 			return CheckLiveness(ctx, t.BuildId, t.HeartbeatTimeout)
