@@ -9,6 +9,7 @@ option go_package = "go.chromium.org/luci/gce/api/bigquery/v1;bigquery";
 package bigquery;
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/gce/api/config/v1/config.proto";
 
 // Configured count of a prefix.
 message ConfiguredCount {
@@ -47,3 +48,11 @@ message InstanceCountRow {
     // The connected instance count of the prefix.
     repeated ConnectedCount connected_count = 6;
 }
+
+// The BigQuery table row for a Config.
+message ConfigRow {
+    // Ingest time of the row.
+    google.protobuf.Timestamp snapshot_time = 1;
+    // The prefix config.
+    config.Config config = 2;
+  }

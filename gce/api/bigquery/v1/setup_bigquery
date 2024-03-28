@@ -81,3 +81,4 @@ function populate_schema() {
 }
 
 populate_schema "instance_count" "InstanceCountRow"
+populate_schema "config" "ConfigRow"
