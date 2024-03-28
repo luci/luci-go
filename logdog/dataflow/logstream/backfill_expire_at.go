@@ -17,6 +17,7 @@ package logstream
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"reflect"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -79,6 +81,7 @@ func BackfillExpireAtFromCreated(s beam.Scope, cloudProject string, logStreamKey
 	// in the datastore. If we want, we can sweep all entities without expiry in
 	// the future.
 	for i := 0; i < opts.RetryCount; i++ {
+		failedKeys = beam.Reshuffle(s, failedKeys)
 		failedKeys = beam.ParDo(s, &backfillExpireAtFromCreatedFn{
 			CloudProject:     cloudProject,
 			Expiry:           opts.Expiry,
@@ -145,6 +148,38 @@ func (fn *backfillExpireAtFromCreatedFn) Setup(ctx context.Context) error {
 	return nil
 }
 
+// RandomizedExponentialBackoff is similar to ExponentialBackoff but the actual
+// delay is a random duration between
+// [thisDelay, thisDelay * (1+MaxIncreaseRatio)).
+type RandomizedExponentialBackoff struct {
+	retry.ExponentialBackoff
+	MaxIncreaseRatio float64
+}
+
+// Next implements Iterator.
+func (b *RandomizedExponentialBackoff) Next(ctx context.Context, err error) time.Duration {
+	// Get ExponentialBackoff base delay.
+	delay := b.ExponentialBackoff.Next(ctx, err)
+	if delay == retry.Stop {
+		return retry.Stop
+	}
+	delay += time.Duration(rand.Float64() * b.MaxIncreaseRatio * float64(delay))
+	return delay
+}
+
+func retryParams() retry.Iterator {
+	return &RandomizedExponentialBackoff{
+		ExponentialBackoff: retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   time.Second,
+				Retries: 6,
+			},
+			Multiplier: 2,
+		},
+		MaxIncreaseRatio: 0.5,
+	}
+}
+
 // ProcessElement implements beam DoFn protocol.
 func (fn *backfillExpireAtFromCreatedFn) ProcessElement(
 	ctx context.Context,
@@ -166,15 +201,23 @@ func (fn *backfillExpireAtFromCreatedFn) ProcessElement(
 	return parallel.WorkPool(fn.Workers, func(c chan<- func() error) {
 		for i := 0; i*fn.UpdateBatchSize < len(keyBatch.Keys); i++ {
 			keys := keyBatch.Keys[i*fn.UpdateBatchSize : min((i+1)*fn.UpdateBatchSize, len(keyBatch.Keys))]
+			startKey := keys[0]
+			endKey := keys[len(keys)-1]
 			c <- func() error {
-				err := fn.updateEntities(ctx, keys)
+				err := retry.Retry(ctx, retryParams, func() error {
+					return fn.updateEntities(ctx, keys)
+				}, func(err error, d time.Duration) {
+					log.Errorf(ctx, "retry batch (Namespace: `%s`, Start: `%s`, End: `%s`) in %s; it failed due to: %v",
+						keyBatch.Namespace, startKey.String(), endKey.String(), d.String(), err)
+				})
 				// In case of a datastore error, log the error and send the batch to the next
 				// stage instead of returning an error so the worker can keep progressing.
 				// Some keys might've been processed already. But it doesn't hurt to
 				// retry them.
 				if err != nil {
 					fn.failedCounter.Inc(ctx, int64(len(keys)*2))
-					log.Errorf(ctx, "%v", err)
+					log.Errorf(ctx, "batch (Namespace: `%s`, Start: `%s`, End: `%s`) failed due to %v",
+						keyBatch.Namespace, startKey.String(), endKey.String(), err)
 					emit(dsutils.KeyBatch{Namespace: keyBatch.Namespace, Keys: keys})
 					return nil
 				}
