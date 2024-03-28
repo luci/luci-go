@@ -222,7 +222,8 @@ func updateReplicas(ctx context.Context, authDBRev int64, authDBBlob, sig []byte
 		logging.Infof(ctx, "all replicas are up-to-date")
 		return nil
 	}
-	logging.Debugf(ctx, "%d stale replicas need to be updated", len(staleReplicas))
+	logging.Debugf(ctx, "%d stale replicas need to be updated (dryRun: %v)",
+		len(staleReplicas), dryRun)
 
 	// Exit early for dry run to skip direct push to replicas.
 	if dryRun {

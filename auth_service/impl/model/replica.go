@@ -19,13 +19,9 @@
 package model
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"net/http"
-	"net/url"
-	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -34,9 +30,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/gae/service/urlfetch"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/auth_service/internal/replicas"
 )
 
 // The possible values for the PushStatus field of AuthReplicaState.
@@ -150,7 +146,7 @@ func ReplicateToReplica(ctx context.Context, r *AuthReplicaState,
 	}
 
 	started := clock.Now(ctx)
-	pushResponse, pushErr := postToReplica(ctx, r.ReplicaURL, authDBBlob,
+	pushResponse, pushErr := pushToReplica(ctx, r.ReplicaURL, authDBBlob,
 		keyName, encodedSig)
 	finished := clock.Now(ctx)
 
@@ -312,67 +308,15 @@ func updateReplicaStateOnFail(ctx context.Context, replicaID string,
 	return storedReplicaRev, err
 }
 
-func postToReplica(ctx context.Context, replicaURL string, authDBBlob []byte,
+// pushToReplica is a helper function to send the AuthDB to a replica.
+// It wraps replicas.SendAuthDB, then handles processing the response
+// so an appropriate ReplicaUpdateError is formed, if necessary.
+func pushToReplica(ctx context.Context, replicaURL string, authDBBlob []byte,
 	keyName, encodedSig string) (*protocol.ReplicationPushResponse, error) {
-	replicaURL = strings.TrimRight(replicaURL, "/")
-	var schema string
-	if info.IsDevAppServer(ctx) {
-		schema = "http://"
-	} else {
-		schema = "https://"
-	}
-	if !strings.HasPrefix(replicaURL, schema) {
-		return nil, &ReplicaUpdateError{
-			RootErr: fmt.Errorf("replica URL is '%s'; must explicitly use schema '%s'",
-				replicaURL, schema),
-			IsFatal: true,
-		}
-	}
-
-	pushURL := replicaURL + "/auth/api/v1/internal/replication"
-	requestTarget, err := url.Parse(pushURL)
+	res, err := replicas.SendAuthDB(ctx, replicaURL, keyName, encodedSig, authDBBlob)
 	if err != nil {
 		return nil, &ReplicaUpdateError{
-			RootErr: errors.Annotate(err, "error parsing replica push URL '%s'", pushURL).Err(),
-			IsFatal: true,
-		}
-	}
-
-	// Pass signature via the headers.
-	headers := http.Header{
-		"Content-Type":          []string{"application/octet-stream"},
-		"X-URLFetch-Service-Id": []string{getURLFetchServiceID(ctx)},
-		"X-AuthDB-SigKey-v1":    []string{keyName},
-		"X-AuthDB-SigVal-v1":    []string{encodedSig},
-	}
-	// On dev appserver emulate X-Appengine-Inbound-Appid header.
-	if info.IsDevAppServer(ctx) {
-		headers.Add("X-Appengine-Inbound-Appid", info.AppID(ctx))
-	}
-
-	// This deadline corresponds to:
-	// - 60 sec for GAE foreground request; plus
-	// - 10 sec to account for URL Fetch lag.
-	c, cancel := clock.WithTimeout(ctx, 70*time.Second)
-	defer cancel()
-	client := &http.Client{
-		Transport: urlfetch.Get(c),
-		// Don't follow redirects (required for 'X-Appengine-Inbound-Appid'
-		// to work).
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	res, err := client.Do(&http.Request{
-		Method:        "POST",
-		URL:           requestTarget,
-		Header:        headers,
-		Body:          io.NopCloser(bytes.NewReader(authDBBlob)),
-		ContentLength: int64(len(authDBBlob)),
-	})
-	if err != nil {
-		return nil, &ReplicaUpdateError{
-			RootErr: err,
+			RootErr: errors.Annotate(err, "error sending AuthDB").Err(),
 			IsFatal: true,
 		}
 	}
@@ -438,21 +382,4 @@ func postToReplica(ctx context.Context, replicaURL string, authDBBlob []byte,
 	}
 
 	return pushResponse, nil
-}
-
-// getURLFetchServiceID returns a value for X-URLFetch-Service-Id header
-// for GAE <-> GAE calls.
-//
-// Usually it can be omitted. It is required in certain environments.
-func getURLFetchServiceID(ctx context.Context) string {
-	if info.IsDevAppServer(ctx) {
-		return "LOCAL"
-	}
-
-	hostnameParts := strings.Split(info.DefaultVersionHostname(ctx), ".")
-	if len(hostnameParts) >= 3 {
-		return strings.ToUpper(hostnameParts[len(hostnameParts)-2])
-	}
-
-	return "APPSPOT"
 }
