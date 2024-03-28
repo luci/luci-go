@@ -95,6 +95,12 @@ func run(ctx context.Context) error {
 		// Can split to at most 16^10 + 1 splits.
 		HexPrefixLength:   10,
 		MinEstimatedCount: 1000,
+		// Initially, we use 500 million entities per split. For prod, this will
+		// result in ~500 splits, which roughly matches the maximum number of
+		// workers we can have.
+		// The runner can decide to split further if some splits finishes earlier
+		// than the others.
+		InitialSplitSize: 500_000_000,
 	}
 
 	namespaces := dsutils.GetAllNamespaces(s, *cloudProject)

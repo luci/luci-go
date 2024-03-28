@@ -55,6 +55,8 @@ type ReadOptions struct {
 	// available or is too small. This can happen when the kind was just added to
 	// the namespace and stats hasn't been updated yet.
 	MinEstimatedCount int64
+	// InitialSplitSize is the size used to split the query DoFn on start up.
+	InitialSplitSize int64
 }
 
 // GetAllKeysWithHexPrefix queries all the keys from datastore for the given
@@ -80,10 +82,11 @@ func GetAllKeysWithHexPrefix(
 	}, namespaces)
 
 	return beam.ParDo(s, &getAllKeysWithHexPrefixFn{
-		CloudProject:    cloudProject,
-		Kind:            kind,
-		HexPrefixLength: opts.HexPrefixLength,
-		OutputBatchSize: opts.OutputBatchSize,
+		CloudProject:     cloudProject,
+		Kind:             kind,
+		HexPrefixLength:  opts.HexPrefixLength,
+		OutputBatchSize:  opts.OutputBatchSize,
+		InitialSplitSize: opts.InitialSplitSize,
 	}, namespacesWithCount)
 }
 
@@ -163,8 +166,9 @@ type getAllKeysWithHexPrefixFn struct {
 	CloudProject string
 	Kind         string
 
-	HexPrefixLength int
-	OutputBatchSize int
+	HexPrefixLength  int
+	OutputBatchSize  int
+	InitialSplitSize int64
 
 	withDatastoreEnv func(context.Context) context.Context
 	emittedKeys      beam.Counter
@@ -213,9 +217,18 @@ func (fn *getAllKeysWithHexPrefixFn) CreateTracker(ctx context.Context, restrict
 }
 
 // SplitRestriction implements beam DoFn protocol.
-func (fn *getAllKeysWithHexPrefixFn) SplitRestriction(ctx context.Context, nc NamespaceCount, restriction hexPrefixRestriction) (splits []hexPrefixRestriction) {
-	// Return the restriction as is. Let the runner initiate the splits.
-	return []hexPrefixRestriction{restriction}
+func (fn *getAllKeysWithHexPrefixFn) SplitRestriction(ctx context.Context, nc NamespaceCount, restriction hexPrefixRestriction) (splits []hexPrefixRestriction, err error) {
+	initialSplitCount := nc.EstimatedCount / fn.InitialSplitSize
+	if initialSplitCount < 1 {
+		initialSplitCount = 1
+	}
+
+	weights := make([]int64, 0, initialSplitCount)
+	for i := 0; i < int(initialSplitCount); i++ {
+		weights = append(weights, 1)
+	}
+
+	return restriction.Split(weights)
 }
 
 // RestrictionSize implements beam DoFn protocol.

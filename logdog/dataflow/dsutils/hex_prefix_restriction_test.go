@@ -21,6 +21,139 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestHexPrefixRestriction(t *testing.T) {
+	t.Parallel()
+
+	Convey("HexPrefixRestriction", t, func() {
+		Convey("Split", func() {
+			Convey("with regular start and end", func() {
+				r := hexPrefixRestriction{
+					HexPrefixLength:  6,
+					StartIsExclusive: true,
+					Start:            "000000",
+					EndIsUnbounded:   false,
+					EndIsExclusive:   true,
+					End:              "ffffff",
+				}
+
+				splits, err := r.Split([]int64{5, 3, 2, 4})
+				So(err, ShouldBeNil)
+				So(splits, ShouldHaveLength, 4)
+				So(splits[0], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  6,
+					StartIsExclusive: true,
+					Start:            "000000",
+					EndIsUnbounded:   false,
+					EndIsExclusive:   false,
+					End:              "5b6db6",
+				})
+				So(splits[1], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  6,
+					StartIsExclusive: true,
+					Start:            "5b6db6",
+					EndIsUnbounded:   false,
+					EndIsExclusive:   false,
+					End:              "924923",
+				})
+				So(splits[2], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  6,
+					StartIsExclusive: true,
+					Start:            "924923",
+					EndIsUnbounded:   false,
+					EndIsExclusive:   false,
+					End:              "b6db6c",
+				})
+				So(splits[3], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  6,
+					StartIsExclusive: true,
+					Start:            "b6db6c",
+					EndIsUnbounded:   false,
+					EndIsExclusive:   true,
+					End:              "ffffff",
+				})
+			})
+
+			Convey("with empty start and end", func() {
+				r := hexPrefixRestriction{
+					HexPrefixLength: 6,
+					EndIsUnbounded:  true,
+				}
+
+				splits, err := r.Split([]int64{9, 1, 12, 3})
+				So(err, ShouldBeNil)
+				So(splits, ShouldHaveLength, 4)
+				So(splits[0], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength: 6,
+					EndIsUnbounded:  false,
+					EndIsExclusive:  false,
+					End:             "5c28f5",
+				})
+				So(splits[1], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  6,
+					StartIsExclusive: true,
+					Start:            "5c28f5",
+					EndIsUnbounded:   false,
+					EndIsExclusive:   false,
+					End:              "666665",
+				})
+				So(splits[2], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  6,
+					StartIsExclusive: true,
+					Start:            "666665",
+					EndIsUnbounded:   false,
+					EndIsExclusive:   false,
+					End:              "e147ac",
+				})
+				So(splits[3], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  6,
+					StartIsExclusive: true,
+					Start:            "e147ac",
+					EndIsUnbounded:   true,
+				})
+			})
+
+			Convey("over-splitting on a narrow range", func() {
+				r := hexPrefixRestriction{
+					HexPrefixLength: 1,
+					Start:           "1",
+					End:             "3",
+				}
+
+				splits, err := r.Split([]int64{9, 1, 12, 3})
+				So(err, ShouldBeNil)
+				So(splits, ShouldHaveLength, 4)
+				So(splits[0], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength: 1,
+					Start:           "1",
+					EndIsExclusive:  false,
+					End:             "1",
+				})
+				So(splits[1], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  1,
+					StartIsExclusive: true,
+					Start:            "1",
+					EndIsExclusive:   false,
+					End:              "1",
+				})
+				So(splits[2], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  1,
+					StartIsExclusive: true,
+					Start:            "1",
+					EndIsExclusive:   false,
+					End:              "1",
+				})
+				So(splits[3], ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength:  1,
+					StartIsExclusive: true,
+					Start:            "1",
+					EndIsExclusive:   false,
+					End:              "3",
+				})
+			})
+		})
+	})
+}
+
 func TestHexPrefixRestrictionTracker(t *testing.T) {
 	t.Parallel()
 
@@ -186,6 +319,22 @@ func TestHexPrefixRestrictionTracker(t *testing.T) {
 					Start:            "aaabcd",
 					EndIsUnbounded:   true,
 				})
+			})
+
+			Convey("when noop split", func() {
+				rt := newHexPrefixRestrictionTracker(hexPrefixRestriction{
+					HexPrefixLength: 6,
+					EndIsUnbounded:  true,
+				})
+				So(rt.TryClaim(HexPosClaim{Value: "aaabcd"}), ShouldBeTrue)
+
+				primary, residual, err := rt.TrySplit(1)
+				So(err, ShouldBeNil)
+				So(primary, ShouldResemble, hexPrefixRestriction{
+					HexPrefixLength: 6,
+					EndIsUnbounded:  true,
+				})
+				So(residual, ShouldBeNil)
 			})
 		})
 

@@ -53,7 +53,7 @@ func (r *hexPrefixRestriction) RangeString() string {
 	return fmt.Sprintf("%s\"%s\", \"%s\"%s", opening, r.Start, endString, closing)
 }
 
-// Ratio returns the the percentage of [start, end] in ["", ∞]
+// Ratio returns the percentage of [start, end] in ["", ∞]
 func (r *hexPrefixRestriction) Ratio() float64 {
 	startPrefixInt, ok := hexPrefixToInt(r.Start, r.HexPrefixLength)
 	if !ok {
@@ -80,6 +80,96 @@ func (r *hexPrefixRestriction) Ratio() float64 {
 	all, _ := allBigInt.Float64()
 
 	return (end - start) / all
+}
+
+// Split splits the restriction into multiple restrictions according to the
+// weights.
+func (r *hexPrefixRestriction) Split(weights []int64) ([]hexPrefixRestriction, error) {
+	if len(weights) <= 1 {
+		return []hexPrefixRestriction{*r}, nil
+	}
+
+	var totalWeight int64 = 0
+	for _, weight := range weights {
+		if weight <= 0 {
+			return nil, errors.Reason("weight of a split must be greater than zero").Err()
+		}
+
+		totalWeight += weight
+	}
+
+	// Convert remaining start to a number so we can use it to calculate the
+	// splitting point.
+	startPrefixInt, ok := hexPrefixToInt(r.Start, r.HexPrefixLength)
+	if !ok {
+		return nil, errors.Reason("`%s` does not have a valid hex prefix with length %d", r.Start, r.HexPrefixLength).Err()
+	}
+
+	// Convert end to a number so we can use it to calculate the splitting point.
+	endCalcBase := r.End
+	if r.EndIsUnbounded {
+		// If the end is not bounded, use the maximum hex number with a length of
+		// `hexPrefixLength` as the end to calculate the splitting point.
+		endCalcBase = strings.Repeat("f", r.HexPrefixLength)
+	}
+	endPrefixInt, ok := hexPrefixToInt(endCalcBase, r.HexPrefixLength)
+	if !ok {
+		return nil, errors.Reason("`%s` does not have a valid hex prefix with length %d", r.End, r.HexPrefixLength).Err()
+	}
+
+	// Not sure if all of the bigint operation are atomic. Do not reuse bigInts to
+	// store temporary results. Do not mutate them after the values are
+	// initialized so they can be safely aliased.
+	totalSize := big.NewInt(0)
+	totalSize = totalSize.Sub(endPrefixInt, startPrefixInt)
+
+	splits := make([]hexPrefixRestriction, 0, len(weights))
+	pivotIsExclusive := r.StartIsExclusive
+	pivot := r.Start
+	pivotInt := startPrefixInt
+	for i, weight := range weights {
+		endIsExclusive := r.EndIsExclusive
+		endIsUnbounded := r.EndIsUnbounded
+		end := r.End
+		endInt := endPrefixInt
+
+		// Other than the last split, the end point of a split is calculated from
+		// start + split size.
+		if i < len(weights)-1 {
+			// Do multiplication first to reduce precision lost due to integer
+			// division.
+			expandedSplitSize := big.NewInt(0)
+			expandedSplitSize = expandedSplitSize.Mul(totalSize, big.NewInt(weight))
+			splitSize := big.NewInt(0)
+			splitSize = splitSize.Div(expandedSplitSize, big.NewInt(totalWeight))
+
+			endInt = big.NewInt(0)
+			endInt = endInt.Add(pivotInt, splitSize)
+
+			endIsExclusive = false
+			endIsUnbounded = false
+			end = fmt.Sprintf("%0*x", r.HexPrefixLength, endInt)
+		}
+
+		split := hexPrefixRestriction{
+			HexPrefixLength: r.HexPrefixLength,
+
+			StartIsExclusive: pivotIsExclusive,
+			Start:            pivot,
+
+			EndIsExclusive: endIsExclusive,
+			EndIsUnbounded: endIsUnbounded,
+			End:            end,
+		}
+		splits = append(splits, split)
+
+		// Update the pivot to be the end of this slice.
+		pivotIsExclusive = true
+		pivot = end
+		pivotInt = endInt
+	}
+
+	return splits, nil
 }
 
 type hexPrefixRestrictionTracker struct {
@@ -212,88 +302,30 @@ func (t *hexPrefixRestrictionTracker) TrySplit(fraction float64) (primary, resid
 	if primarySliceCount == 0 {
 		return t.trySelfCheckPointingSplit()
 	}
-
-	hexPrefixLength := t.restriction.HexPrefixLength
-
-	// Get the start of the remaining portion.
-	remainingStartIsExclusive := t.restriction.StartIsExclusive
-	remainingStart := t.restriction.Start
-	// If something has been claimed, the start boundary should move to the
-	// claimed key.
-	if t.hasClaimed {
-		remainingStartIsExclusive = true
-		remainingStart = t.claimed
-	}
-
-	// Get end of the raining portion, which is also the end of the original
-	// restriction.
-	endIsExclusive := t.restriction.EndIsExclusive
-	endIsUnbounded := t.restriction.EndIsUnbounded
-	end := t.restriction.End
-
-	// Convert remaining start to a number so we can use it to calculate the
-	// splitting point.
-	remainingStartPrefixInt, ok := hexPrefixToInt(remainingStart, hexPrefixLength)
-	// If the boundary is does not have a valid hex prefix somehow, just give up
-	// and use the original restriction. We don't need to fail the whole bundle.
-	if !ok {
-		return t.restriction, nil, nil
-	}
-
-	// Convert end to a number so we can use it to calculate the splitting point.
-	endCalcBase := end
-	if endIsUnbounded {
-		// If the end is not bounded, use the maximum hex number with a length of
-		// `hexPrefixLength` as the end to calculate the splitting point.
-		endCalcBase = strings.Repeat("f", hexPrefixLength)
-	}
-	endPrefixInt, ok := hexPrefixToInt(endCalcBase, hexPrefixLength)
-	// If the boundary is does not have a valid hex prefix somehow, just give up
-	// and use the original restriction. We don't need to fail the whole bundle.
-	if !ok {
-		return t.restriction, nil, nil
-	}
-
-	// Not sure if all of the bigint operation are atomic. Do not reuse bigInts to
-	// store temporary results. Splitting point is calculated as:
-	// `splitPoint = start + (end - start) * (primarySlices / totalSlices)`.
-	remainingSize := big.NewInt(0)
-	remainingSize = remainingSize.Sub(endPrefixInt, remainingStartPrefixInt)
-	// Do multiplication first to reduce precision lost due to integer division.
-	expandedSize := big.NewInt(0)
-	expandedSize = expandedSize.Mul(remainingSize, big.NewInt(primarySliceCount))
-	primarySize := big.NewInt(0)
-	primarySize = primarySize.Div(expandedSize, big.NewInt(totalSlices))
-	splitPointInt := big.NewInt(0)
-	splitPointInt = splitPointInt.Add(remainingStartPrefixInt, primarySize)
-
-	// Convert the splitting point to hex and check if its in the bound of the
-	// remaining start/end.
-	splitPointHex := fmt.Sprintf("%0*x", hexPrefixLength, splitPointInt)
-	splitIsBeforeRemainingStart := splitPointHex < remainingStart ||
-		remainingStartIsExclusive && splitPointHex <= remainingStart
-	if splitIsBeforeRemainingStart {
-		return t.trySelfCheckPointingSplit()
-	}
-	splitIsAfterEnd := !endIsUnbounded && (splitPointHex > end ||
-		endIsExclusive && splitPointHex >= end)
-	if splitIsAfterEnd {
+	if primarySliceCount == totalSlices {
 		return t.tryNoopSplit()
 	}
 
-	// Split into `(original start, splitting point]`, and
-	// `(splitting point, original end)`
-	t.restriction.EndIsUnbounded = false
-	t.restriction.End = splitPointHex
-	t.restriction.EndIsExclusive = false
-	return t.restriction, hexPrefixRestriction{
-		HexPrefixLength:  hexPrefixLength,
-		StartIsExclusive: true,
-		Start:            splitPointHex,
-		EndIsUnbounded:   endIsUnbounded,
-		EndIsExclusive:   endIsExclusive,
-		End:              end,
-	}, nil
+	remainingRestriction := t.restriction
+	if t.hasClaimed {
+		remainingRestriction.StartIsExclusive = true
+		remainingRestriction.Start = t.claimed
+	}
+
+	splits, err := remainingRestriction.Split([]int64{primarySliceCount, totalSlices - primarySliceCount})
+	// If the boundary is does not have a valid hex prefix somehow, just give up
+	// and use the original restriction. We don't need to fail the whole bundle.
+	if err != nil {
+		return t.restriction, nil, nil
+	}
+	primarySplit := splits[0]
+	residualSplit := splits[1]
+
+	// For the primary split, take the updated end only.
+	t.restriction.EndIsUnbounded = primarySplit.EndIsUnbounded
+	t.restriction.End = primarySplit.End
+	t.restriction.EndIsExclusive = primarySplit.EndIsExclusive
+	return t.restriction, residualSplit, nil
 }
 
 // tryNoopSplit performs a noop split.
