@@ -58,18 +58,13 @@ func (client *Client) ListAccountEmails(ctx context.Context, req *gerritpb.ListA
 	defer client.f.m.Unlock()
 	client.f.recordRequest(req)
 
-	res := &gerritpb.ListAccountEmailsResponse{}
 	if emails, ok := client.f.linkedAccounts[req.GetEmail()]; ok {
-		for _, email := range emails {
-			res.Emails = append(res.Emails, &gerritpb.EmailInfo{
-				Email: email,
-			})
-		}
-	} else {
-		return nil, status.Errorf(codes.NotFound, "Account '%s' not found", req.GetEmail())
+		return &gerritpb.ListAccountEmailsResponse{
+			Emails: emails,
+		}, nil
 	}
 
-	return res, nil
+	return nil, status.Errorf(codes.NotFound, "Account '%s' not found", req.GetEmail())
 }
 
 // ListChanges lists changes that match a query.

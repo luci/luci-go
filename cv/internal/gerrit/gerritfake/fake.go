@@ -57,7 +57,7 @@ type Fake struct {
 	childrenOf map[string][]string
 
 	// linkedAccounts is set of linked email addresses for a given email.
-	linkedAccounts map[string][]string
+	linkedAccounts map[string][]*gerritpb.EmailInfo
 
 	// requests are all incoming requests that this Fake has received.
 	requests   []proto.Message
@@ -737,6 +737,20 @@ func (f *Fake) SetDependsOn(host string, child any, parents ...any) {
 		}
 		f.parentsOf[ckey] = append(f.parentsOf[ckey], pkey)
 		f.childrenOf[pkey] = append(f.childrenOf[pkey], ckey)
+	}
+}
+
+// AddLinkedAccountMapping maps each of the email to the set of email addresses.
+func (f *Fake) AddLinkedAccountMapping(emails []*gerritpb.EmailInfo) {
+	f.m.Lock()
+	defer f.m.Unlock()
+
+	if f.linkedAccounts == nil {
+		f.linkedAccounts = make(map[string][]*gerritpb.EmailInfo)
+	}
+
+	for _, email := range emails {
+		f.linkedAccounts[email.GetEmail()] = emails
 	}
 }
 

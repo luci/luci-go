@@ -366,12 +366,11 @@ func TestListAccountEmails(t *testing.T) {
 	Convey("ListAccountEmails works", t, func() {
 
 		ctx := context.Background()
-		f := Fake{
-			linkedAccounts: map[string][]string{
-				"foo@google.com":   []string{"foo@google.com", "foo@chromium.org"},
-				"foo@chromium.org": []string{"foo@chromium.org", "foo@google.com"},
-			},
-		}
+		f := Fake{}
+		f.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "foo@google.com"},
+			&gerritpb.EmailInfo{Email: "foo@chromium.org"},
+		})
 
 		client, err := f.MakeClient(ctx, "foo", "bar")
 		So(err, ShouldBeNil)
