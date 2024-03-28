@@ -145,8 +145,6 @@ func (fn *getEstimatedCountFn) ProcessElement(
 		if !errors.Is(err, datastore.ErrNoSuchEntity) {
 			return errors.Annotate(err, "failed to query stats for kind `%s` in namespace `%s`", fn.Kind, namespace).Err()
 		}
-	} else {
-		log.Infof(ctx, "Datastore: there are `%d` `%s` in namespace `%s`.", stat.Count, fn.Kind, namespace)
 	}
 
 	if stat.Count < fn.MinEstimatedCount {
