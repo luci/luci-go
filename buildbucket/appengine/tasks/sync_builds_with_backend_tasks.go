@@ -41,8 +41,11 @@ import (
 var fetchBatchSize = 1000
 
 // Batch size to update builds and sub entities in on transaction.
+// As of Mar 2024, our database is on Firestore in Datastore mode, using
+// Optimistic With Entity Groups concurrency mode.
 // Transactions are limited to 25 entity groups.
-var updateBatchSize = 25
+// Use a smaller batch to give us a buffer room.
+var updateBatchSize = 12
 
 // queryBuildsToSync runs queries to get incomplete builds from the project running
 // on the backend that have reached/exceeded their next sync time.
@@ -180,14 +183,11 @@ func updateEntities(ctx context.Context, bks []*datastore.Key, now time.Time, ta
 				endedBld = append(endedBld, bld)
 			}
 		}
-		err = datastore.Put(ctx, toPut)
-		if err != nil {
-			logging.Errorf(ctx, "failed to put %d entities: %s", len(toPut), err)
-		} else {
-			logging.Infof(ctx, "Successfully put %d entities", len(toPut))
-		}
-		return err
+		return datastore.Put(ctx, toPut)
 	}, nil)
+	if err != nil {
+		logging.Errorf(ctx, "transaction error: %s", err)
+	}
 	return endedBld, err
 }
 
@@ -342,7 +342,7 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 		shards = 1
 	}
 	nWorkers := int(shards)
-	return parallel.RunMulti(ctx, nWorkers, func(mr parallel.MultiRunner) error {
+	finalErr := parallel.RunMulti(ctx, nWorkers, func(mr parallel.MultiRunner) error {
 		return mr.RunMulti(func(work chan<- func() error) {
 			bkC := make(chan []*datastore.Key)
 
@@ -359,4 +359,8 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 			}
 		})
 	})
+	if finalErr != nil {
+		logging.Errorf(ctx, "final error of the task: %s", finalErr)
+	}
+	return finalErr
 }
