@@ -321,7 +321,7 @@ func UpdateBuildTask(ctx context.Context, body io.Reader) error {
 	}
 	err = updateBuildTask(ctx, req)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to update the build from message %s", req.msgID).Tag(transient.Tag).Err()
 	}
 
 	return cache.Set(ctx, req.msgID, []byte{1}, 10*time.Minute)

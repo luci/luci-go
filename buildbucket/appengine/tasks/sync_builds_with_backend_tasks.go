@@ -180,7 +180,13 @@ func updateEntities(ctx context.Context, bks []*datastore.Key, now time.Time, ta
 				endedBld = append(endedBld, bld)
 			}
 		}
-		return datastore.Put(ctx, toPut)
+		err = datastore.Put(ctx, toPut)
+		if err != nil {
+			logging.Errorf(ctx, "failed to put %d entities: %s", len(toPut), err)
+		} else {
+			logging.Infof(ctx, "Successfully put %d entities", len(toPut))
+		}
+		return err
 	}, nil)
 	return endedBld, err
 }
