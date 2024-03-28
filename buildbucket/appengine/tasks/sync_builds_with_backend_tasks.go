@@ -44,8 +44,12 @@ var fetchBatchSize = 1000
 // As of Mar 2024, our database is on Firestore in Datastore mode, using
 // Optimistic With Entity Groups concurrency mode.
 // Transactions are limited to 25 entity groups.
-// Use a smaller batch to give us a buffer room.
-var updateBatchSize = 12
+// Consider each build and it's sub-entities as one group, and if the build
+// is ended, we'll need to submit 3 transactional tasks for it (bq-export,
+// resultdb-finalization and pubsub), so in total 4 entity groups.
+// Theoritically that means we could have 25/4 = 6 in one batch, make it 5
+// for extra buffer room.
+var updateBatchSize = 5
 
 // queryBuildsToSync runs queries to get incomplete builds from the project running
 // on the backend that have reached/exceeded their next sync time.
