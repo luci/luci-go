@@ -1,0 +1,83 @@
+#!/bin/bash
+# Copyright 2024 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -eu
+
+cd "$(dirname "$0")"
+
+if ! (which bq) >/dev/null; then
+	echo "Please install 'bq' from gcloud SDK"
+	echo "  https://cloud.google.com/sdk/install"
+	exit 1
+fi
+
+if ! (which bqschemaupdater) >/dev/null; then
+	echo "Please install 'bqschemaupdater' from Chrome's infra.git"
+	echo "  Checkout infra.git then run: eval \`./go/env.py\`"
+	exit 1
+fi
+
+if [ $# -lt 1 ]; then
+	echo "usage: $0 <instanceid> [<dataset>]"
+	echo ""
+	echo "<instanceid> is required."
+	echo "<dataset> is optional (default: gce_provider)."
+	exit 1
+fi
+
+APPID=$1
+DATASET=${2:-gce_provider}
+echo "- Make sure the BigQuery API is enabled for the project: ${APPID}"
+# It is enabled by default for new projects, but it wasn't for older projects.
+gcloud services enable --project "${APPID}" bigquery-json.googleapis.com
+
+# Permission is grantes via overground, skipping here
+
+echo "- Create the dataset:"
+echo ""
+echo "  Warning: On first 'bq' invocation, it'll try to find out default"
+echo "    credentials and will ask to select a default app; just press enter to"
+echo "    not select a default."
+if ! (bq --location=US mk --dataset \
+	--description 'gce-provider datastore' "${APPID}":"${DATASET}"); then
+	echo ""
+	echo "Dataset creation failed. Assuming the dataset already exists. At worst"
+	echo "the following command will fail."
+fi
+
+function populate_schema() {
+	local table=$1
+	local message=$2
+
+	echo "- Populate the BigQuery schema: ${APPID}:${DATASET}.${table}"
+	echo ""
+	echo "  Warning: On first 'bqschemaupdater' invocation, it'll request default"
+	echo "    credentials which is stored independently than 'bq'."
+	if ! (bqschemaupdater -force \
+		-I . \
+		-message bigquery."${message}" \
+		-table "${APPID}"."${DATASET}"."${table}"); then
+		echo ""
+		echo ""
+		echo "Oh no! You may need to restart from scratch. You can do so with:"
+		echo ""
+		echo "  bq rm ${APPID}:${DATASET}.${table}"
+		echo ""
+		echo "and run this script again."
+		exit 1
+	fi
+}
+
+populate_schema "instance_count" "InstanceCountRow"

@@ -1,0 +1,49 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/gce/api/bigquery/v1;bigquery";
+
+package bigquery;
+
+import "google/protobuf/timestamp.proto";
+
+// Configured count of a prefix.
+message ConfiguredCount {
+    int64 count = 1;
+    string project = 2;
+}
+
+// Created count of a prefix.
+message CreatedCount {
+    int64 count = 1;
+    string project = 2;
+    string zone = 3;
+}
+
+// Connected count of a prefix.
+message ConnectedCount {
+    int64 count = 1;
+    string project = 2;
+    string server = 3;
+    string zone = 4;
+}
+
+// The BigQuery table row for instance count.
+message InstanceCountRow {
+    // Ingest time of the row.
+    google.protobuf.Timestamp snapshot_time = 1;
+    // The prefix for this count.
+    string prefix = 2;
+    // The time this count was computed.
+    google.protobuf.Timestamp computed = 3;
+
+    // The configured instance count of the prefix.
+    repeated ConfiguredCount configured_count = 4;
+    // The created instance count of the prefix.
+    repeated CreatedCount created_count = 5;
+    // The connected instance count of the prefix.
+    repeated ConnectedCount connected_count = 6;
+}
