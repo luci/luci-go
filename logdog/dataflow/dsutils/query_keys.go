@@ -32,6 +32,10 @@ import (
 )
 
 func init() {
+	beam.RegisterType(reflect.TypeOf((*getEstimatedCountFn)(nil)).Elem())
+	register.DoFn3x1(&getEstimatedCountFn{})
+	register.Emitter1[NamespaceCount]()
+
 	beam.RegisterType(reflect.TypeOf((*getAllKeysWithHexPrefixFn)(nil)).Elem())
 	register.DoFn4x1(&getAllKeysWithHexPrefixFn{})
 	register.Emitter1[KeyBatch]()
@@ -46,6 +50,11 @@ type ReadOptions struct {
 	// OutputBatchSize controls the number of datastore keys in a given output
 	// batch.
 	OutputBatchSize int
+	// MinEstimatedCount is the count used as a floor when estimating the number
+	// of entities of the specified Kind in a namespace when the stats is not
+	// available or is too small. This can happen when the kind was just added to
+	// the namespace and stats hasn't been updated yet.
+	MinEstimatedCount int64
 }
 
 // GetAllKeysWithHexPrefix queries all the keys from datastore for the given
@@ -64,12 +73,92 @@ func GetAllKeysWithHexPrefix(
 
 	s = s.Scope(fmt.Sprintf("datastore.GetAllKeysWithHexPrefix.%s.%s", cloudProject, kind))
 	namespaces = beam.Reshuffle(s, namespaces)
+	namespacesWithCount := beam.ParDo(s, &getEstimatedCountFn{
+		CloudProject:      cloudProject,
+		Kind:              kind,
+		MinEstimatedCount: opts.MinEstimatedCount,
+	}, namespaces)
+
 	return beam.ParDo(s, &getAllKeysWithHexPrefixFn{
 		CloudProject:    cloudProject,
 		Kind:            kind,
 		HexPrefixLength: opts.HexPrefixLength,
 		OutputBatchSize: opts.OutputBatchSize,
-	}, namespaces)
+	}, namespacesWithCount)
+}
+
+type getEstimatedCountFn struct {
+	CloudProject      string
+	Kind              string
+	MinEstimatedCount int64
+
+	withDatastoreEnv func(context.Context) context.Context
+}
+
+// Setup implements beam DoFn protocol.
+func (fn *getEstimatedCountFn) Setup(ctx context.Context) error {
+	if fn.withDatastoreEnv == nil {
+		client, err := cloudds.NewClient(ctx, fn.CloudProject)
+		if err != nil {
+			return errors.Annotate(err, "failed to construct cloud datastore client").Err()
+		}
+		fn.withDatastoreEnv = func(ctx context.Context) context.Context {
+			return (&cloud.ConfigLite{
+				ProjectID: fn.CloudProject,
+				DS:        client,
+			}).Use(ctx)
+		}
+	}
+
+	return nil
+}
+
+type NamespaceCount struct {
+	Namespace      string
+	EstimatedCount int64
+}
+
+type kindStat struct {
+	Key   *datastore.Key        `gae:"$key"`
+	Count int64                 `gae:"count,noindex"`
+	Extra datastore.PropertyMap `gae:",extra"`
+}
+
+// ProcessElement implements beam DoFn protocol.
+func (fn *getEstimatedCountFn) ProcessElement(
+	ctx context.Context,
+	namespace string,
+	emit func(NamespaceCount),
+) error {
+	ctx = fn.withDatastoreEnv(ctx)
+	ctx, err := info.Namespace(ctx, namespace)
+	if err != nil {
+		return errors.Annotate(err, "failed to apply namespace: %s", namespace).Err()
+	}
+
+	stat := kindStat{
+		Key:   datastore.MakeKey(ctx, "__Stat_Ns_Kind__", fn.Kind),
+		Count: 0,
+	}
+	err = datastore.Get(ctx, &stat)
+	if err != nil {
+		if !errors.Is(err, datastore.ErrNoSuchEntity) {
+			return errors.Annotate(err, "failed to query stats for kind `%s` in namespace `%s`", fn.Kind, namespace).Err()
+		}
+	} else {
+		log.Infof(ctx, "Datastore: there are `%d` `%s` in namespace `%s`.", stat.Count, fn.Kind, namespace)
+	}
+
+	if stat.Count < fn.MinEstimatedCount {
+		log.Warnf(ctx, "Datastore: there are only `%d` `%s` recorded in namespace `%s`. The minimum size `%d` will be used.",
+			stat.Count, fn.Kind, namespace, fn.MinEstimatedCount)
+		stat.Count = fn.MinEstimatedCount
+	} else {
+		log.Infof(ctx, "Datastore: there are `%d` `%s` in namespace `%s`.", stat.Count, fn.Kind, namespace)
+	}
+
+	emit(NamespaceCount{Namespace: namespace, EstimatedCount: stat.Count})
+	return nil
 }
 
 type getAllKeysWithHexPrefixFn struct {
@@ -107,7 +196,7 @@ func (fn *getAllKeysWithHexPrefixFn) Setup(ctx context.Context) error {
 }
 
 // CreateInitialRestriction implements beam DoFn protocol.
-func (fn *getAllKeysWithHexPrefixFn) CreateInitialRestriction(ctx context.Context, namespace string) hexPrefixRestriction {
+func (fn *getAllKeysWithHexPrefixFn) CreateInitialRestriction(ctx context.Context, nc NamespaceCount) hexPrefixRestriction {
 	return hexPrefixRestriction{
 		HexPrefixLength: fn.HexPrefixLength,
 
@@ -126,14 +215,14 @@ func (fn *getAllKeysWithHexPrefixFn) CreateTracker(ctx context.Context, restrict
 }
 
 // SplitRestriction implements beam DoFn protocol.
-func (fn *getAllKeysWithHexPrefixFn) SplitRestriction(ctx context.Context, namespace string, restriction hexPrefixRestriction) (splits []hexPrefixRestriction) {
+func (fn *getAllKeysWithHexPrefixFn) SplitRestriction(ctx context.Context, nc NamespaceCount, restriction hexPrefixRestriction) (splits []hexPrefixRestriction) {
 	// Return the restriction as is. Let the runner initiate the splits.
 	return []hexPrefixRestriction{restriction}
 }
 
 // RestrictionSize implements beam DoFn protocol.
-func (fn *getAllKeysWithHexPrefixFn) RestrictionSize(ctx context.Context, namespace string, restriction hexPrefixRestriction) float64 {
-	return restriction.EstimatedSize()
+func (fn *getAllKeysWithHexPrefixFn) RestrictionSize(ctx context.Context, nc NamespaceCount, restriction hexPrefixRestriction) float64 {
+	return restriction.Ratio() * float64(nc.EstimatedCount)
 }
 
 type KeyBatch struct {
@@ -145,17 +234,17 @@ type KeyBatch struct {
 func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	ctx context.Context,
 	rt *sdf.LockRTracker,
-	namespace string,
+	nc NamespaceCount,
 	emit func(KeyBatch),
 ) error {
 	ctx = fn.withDatastoreEnv(ctx)
-	ctx, err := info.Namespace(ctx, namespace)
+	ctx, err := info.Namespace(ctx, nc.Namespace)
 	if err != nil {
-		return errors.Annotate(err, "failed to apply namespace: %s", namespace).Err()
+		return errors.Annotate(err, "failed to apply namespace: %s", nc.Namespace).Err()
 	}
 
 	restriction := rt.GetRestriction().(hexPrefixRestriction)
-	log.Infof(ctx, "Datastore: processing Namespace `%s` Range %s", namespace, restriction.RangeString())
+	log.Infof(ctx, "Datastore: processing Namespace `%s` Range %s", nc.Namespace, restriction.RangeString())
 
 	q := datastore.NewQuery(fn.Kind).KeysOnly(true)
 	// If start == "", its practically unbounded. We don't need to apply the
@@ -199,7 +288,7 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 		//    elements are collected.
 		//
 		// Therefore, we need to emit batches instead of individual keys here.
-		emit(KeyBatch{Namespace: namespace, Keys: claimedKeys})
+		emit(KeyBatch{Namespace: nc.Namespace, Keys: claimedKeys})
 		fn.emittedKeys.Inc(ctx, int64(len(claimedKeys)))
 		fn.emittedBatches.Inc(ctx, 1)
 		claimedKeys = make([]*datastore.Key, 0, fn.OutputBatchSize)
@@ -221,14 +310,14 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to run bounded query Namespace `%s` Range: `%s`", namespace, restriction.RangeString()).Err()
+		return errors.Annotate(err, "failed to run bounded query Namespace `%s` Range: `%s`", nc.Namespace, restriction.RangeString()).Err()
 	}
 	rt.TryClaim(HexPosClaim{End: true})
 
 	// The restriction might have been split. Log the actual restriction we
 	// completed.
 	finalRestriction := rt.GetRestriction().(hexPrefixRestriction)
-	log.Infof(ctx, "Datastore: finished processing Namespace `%s` Range %s (was %s)", namespace, finalRestriction.RangeString(), restriction.RangeString())
+	log.Infof(ctx, "Datastore: finished processing Namespace `%s` Range %s (was %s)", nc.Namespace, finalRestriction.RangeString(), restriction.RangeString())
 
 	return nil
 }

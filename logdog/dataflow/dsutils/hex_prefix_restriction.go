@@ -53,12 +53,11 @@ func (r *hexPrefixRestriction) RangeString() string {
 	return fmt.Sprintf("%s\"%s\", \"%s\"%s", opening, r.Start, endString, closing)
 }
 
-func (r *hexPrefixRestriction) EstimatedSize() float64 {
-	total := float64(totalSlices)
-
+// Ratio returns the the percentage of [start, end] in ["", ∞]
+func (r *hexPrefixRestriction) Ratio() float64 {
 	startPrefixInt, ok := hexPrefixToInt(r.Start, r.HexPrefixLength)
 	if !ok {
-		return total
+		return 1
 	}
 	start, _ := startPrefixInt.Float64()
 
@@ -70,7 +69,7 @@ func (r *hexPrefixRestriction) EstimatedSize() float64 {
 	}
 	endPrefixInt, ok := hexPrefixToInt(endCalcBase, r.HexPrefixLength)
 	if !ok {
-		return total
+		return 1
 	}
 	end, _ := endPrefixInt.Float64()
 
@@ -80,7 +79,7 @@ func (r *hexPrefixRestriction) EstimatedSize() float64 {
 	}
 	all, _ := allBigInt.Float64()
 
-	return (end - start) / all * total
+	return (end - start) / all
 }
 
 type hexPrefixRestrictionTracker struct {

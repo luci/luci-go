@@ -93,7 +93,8 @@ func run(ctx context.Context) error {
 		OutputBatchSize: backfillOpts.BatchSize * backfillOpts.Workers * 16,
 		// There are 64, but 10 should be more than enough.
 		// Can split to at most 16^10 + 1 splits.
-		HexPrefixLength: 10,
+		HexPrefixLength:   10,
+		MinEstimatedCount: 1000,
 	}
 
 	namespaces := dsutils.GetAllNamespaces(s, *cloudProject)
