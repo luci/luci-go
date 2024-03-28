@@ -42,8 +42,14 @@ export function PropertyViewer({
     lineWrapping: true,
     foldGutter: true,
     lineNumbers: true,
-    // Ensures all nodes are rendered therefore searchable.
-    viewportMargin: Infinity,
+    // Ensures most nodes are rendered therefore searchable.
+    //
+    // Still apply an arbitrarily large limit (instead of Infinity) so the
+    // component won't hang the page when `properties` is exceedingly large.
+    //
+    // TODO(b/331605096): a proper fix would be implementing a custom search box
+    // for the property viewer and do not render more lines than necessary.
+    viewportMargin: 5000,
     gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
   });
 
