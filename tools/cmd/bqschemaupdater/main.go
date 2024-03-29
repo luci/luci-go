@@ -157,7 +157,7 @@ type flags struct {
 
 func parseFlags() (*flags, error) {
 	var f flags
-	table := flag.String("table", "", `Table name with format "<project id>.<dataset id>.<table id>"`)
+	table := flag.String("table", "", `Table name with format "<project id>.<dataset id>.<table id>". Use "-" to dump the schema to stdout only.`)
 	flag.StringVar(&f.FriendlyName, "friendly-name", "", "Friendly name for the table.")
 	flag.StringVar(&f.PartitioningField, "partitioning-field", "", "Name of a timestamp field to use for table partitioning (beta).")
 	// See: https://pkg.go.dev/cloud.google.com/go/bigquery#TimePartitioning
@@ -196,8 +196,10 @@ func parseFlags() (*flags, error) {
 		f.ProjectID = parts[0]
 		f.DataSetID = parts[1]
 		f.TableID = parts[2]
+	} else if *table == "-" {
+		f.TableID = "-"
 	} else {
-		return nil, fmt.Errorf("expected exactly 2 dots in table name %q", *table)
+		return nil, fmt.Errorf("table name %q must be '-' or have exactly 2 dots", *table)
 	}
 
 	return &f, nil
@@ -224,6 +226,9 @@ func run(ctx context.Context) error {
 	td.Schema, td.Description, err = schemaFromMessage(desc, flags.messageName)
 	if err != nil {
 		return errors.Annotate(err, "could not derive schema from message %q at path %q", flags.messageName, flags.protoDir).Err()
+	}
+	if td.TableID == "-" {
+		return dumpSchemaJSON(&td.Schema)
 	}
 	file, _, _ := descutil.Resolve(desc, flags.messageName)
 	td.Description = fmt.Sprintf(
@@ -355,4 +360,14 @@ func confirm(action string) (response bool) {
 	var res string
 	fmt.Scanln(&res)
 	return res == "y" || res == "Y"
+}
+
+// dumpSchema dumps the table schema to stdout in JSON.
+func dumpSchemaJSON(s *bigquery.Schema) error {
+	b, err := s.ToJSONFields()
+	if err != nil {
+		return errors.Annotate(err, "failed to dump table schema to JSON").Err()
+	}
+	fmt.Println(string(b))
+	return nil
 }
