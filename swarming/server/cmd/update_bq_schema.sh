@@ -33,28 +33,28 @@ go install go.chromium.org/luci/tools/cmd/bqschemaupdater
 
 bqschemaupdater \
   -table "${BQ_PROJECT}.${BQ_DATASET}.task_requests" \
-  -message-dir "${THIS_DIR}/../../proto/api" \
-  -message "swarming.v1.TaskRequest" \
+  -message-dir "${THIS_DIR}/../../proto/bq" \
+  -message "swarming.bq.TaskRequest" \
   -partitioning-field "create_time" \
   -partitioning-expiration 12960h
 
 bqschemaupdater \
   -table "${BQ_PROJECT}.${BQ_DATASET}.bot_events" \
-  -message-dir "${THIS_DIR}/../../proto/api" \
-  -message "swarming.v1.BotEvent" \
+  -message-dir "${THIS_DIR}/../../proto/bq" \
+  -message "swarming.bq.BotEvent" \
   -partitioning-field "event_time" \
   -partitioning-expiration 12960h
 
 bqschemaupdater \
   -table "${BQ_PROJECT}.${BQ_DATASET}.task_results_run" \
-  -message-dir "${THIS_DIR}/../../proto/api" \
-  -message "swarming.v1.TaskResult" \
+  -message-dir "${THIS_DIR}/../../proto/bq" \
+  -message "swarming.bq.TaskResult" \
   -partitioning-field "end_time" \
   -partitioning-expiration 12960h
 
 bqschemaupdater \
   -table "${BQ_PROJECT}.${BQ_DATASET}.task_results_summary" \
-  -message-dir "${THIS_DIR}/../../proto/api" \
-  -message "swarming.v1.TaskResult" \
+  -message-dir "${THIS_DIR}/../../proto/bq" \
+  -message "swarming.bq.TaskResult" \
   -partitioning-field "end_time" \
   -partitioning-expiration 12960h

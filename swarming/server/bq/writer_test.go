@@ -24,7 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 
-	bqpb "go.chromium.org/luci/swarming/proto/api"
+	bqpb "go.chromium.org/luci/swarming/proto/bq"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

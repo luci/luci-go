@@ -173,22 +173,6 @@ enum SortQuery {
   QUERY_STARTED_TS = 4;
 }
 
-// This flag is only relevant to windows swarming bots.
-// It determines whether or not the task process will use a win32 JobObject.
-enum ContainmentType {
-  // Do not specify a containment type. For tasks which don't run like
-  // Termination task.
-  NOT_SPECIFIED = 0;
-  // Do not use JOB_OBJECT to create new tasks. Has same effect as NOT_SPECIFIED
-  NONE = 1;
-  // On windows, this will start a process using win32 JobObject.
-  // On other platforms this will default to python standard POpen to create
-  // task process.
-  // See https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects
-  AUTO = 2;
-  // Use JOB_OBJECTS on windows. Will auto-fail tasks on non-win32 platforms.
-  JOB_OBJECT = 3;
-}
 
 enum NullableBool {
   NULL = 0;
@@ -343,8 +327,35 @@ message CacheEntry {
   string path = 2;
 }
 
+// Defines the type of "sandbox" to run the task process in.
+//
+// Unimplemented.
 message Containment {
-  ContainmentType containment_type = 1;
+  enum ContainmentType {
+    // Historical value, not specified. Containment may or may not be used.
+    NOT_SPECIFIED = 0;
+    // No containment, the default for now.
+    NONE = 1;
+    // Use the containment appropriate on the platform.
+    AUTO = 2;
+    // Use Job Object on Windows. Will fail if used on other platforms.
+    JOB_OBJECT = 3;
+  }
+
+  // Lowers the priority of the task process when started. Doesn't require
+  // containment. This gives the bot a chance to survive when the task starts an
+  // overwhelming number of children processes.
+  bool lower_priority = 1;
+
+  // Defines the type of containment used.
+  ContainmentType containment_type = 2;
+
+  // The values below require a form of containment to be enforced.
+
+  // Limits the number of concurrent active processes.
+  int64 limit_processes = 3;
+  // Limits the total amount of memory allocated by processes.
+  int64 limit_total_committed_memory = 4;
 }
 
 // Important metadata about a particular task.
@@ -518,6 +529,9 @@ message SwarmingTaskBackendConfig {
   // Tags are 'key:value' strings that describes what the task is about.
   // This can later be leveraged to search for kinds of tasks per tag.
   repeated string tags = 10;
+
+  // Customized name of the task.
+  string task_name = 11;
 }
 
 // Swarming:ResultDB integration configuration for a task.
@@ -666,11 +680,17 @@ message TaskCancelRequest {
 
 // Request to cancel some subset of pending/running tasks.
 message TasksCancelRequest {
+  // Number of items to cancel per request. limit must be in [1..1000].
   int32 limit = 1;
+  // Previous call would have returned a cursor if there were more tasks to kill.
   string cursor = 2;
+  // Any task which contains one or more of tags will be cancelled.
   repeated string tags = 3;
+  // Kill running tasks if set. Otherwise running tasks will be ignored.
   bool kill_running = 4;
+  // Only tasks later or equal to start will be cancelled. No effect if unset.
   google.protobuf.Timestamp start = 5;
+  // Only tasks earlier or equal to end will be cancelled. No effect if unset.
   google.protobuf.Timestamp end = 6;
 }
 
@@ -737,12 +757,15 @@ message TaskOutputResponse {
   TaskState state = 2;
 }
 
-// ResultDB related properties.
+// ResultDB properties of a completed task.
 message ResultDBInfo {
   // ResultDB hostname, e.g. "results.api.cr.dev"
   string hostname = 1;
 
-  // e.g. "invocations/task-chromium-swarm.appspot.com-deadbeef1"
+  // Name of the task's ResultDB invocation.
+  //
+  // For example "invocations/task-chromium-swarm.appspot.com-deadbeef1".
+  // Unset if Swarming:ResultDB integration was not enabled for this task.
   //
   // If the task was deduplicated, this equals invocation name of the original
   // task.

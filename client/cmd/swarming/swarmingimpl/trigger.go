@@ -361,7 +361,7 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 		Outputs:              cmd.outputs,
 		IoTimeoutSecs:        int32(cmd.ioTimeout),
 		Containment: &swarmingv2.Containment{
-			ContainmentType: swarmingv2.ContainmentType(swarmingv2.ContainmentType_value[cmd.containmentType.String()]),
+			ContainmentType: swarmingv2.Containment_ContainmentType(swarmingv2.Containment_ContainmentType_value[cmd.containmentType.String()]),
 		},
 		SecretBytes: secretBytes,
 	}

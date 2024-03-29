@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	bqpb "go.chromium.org/luci/swarming/proto/api"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	bqpb "go.chromium.org/luci/swarming/proto/bq"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/model"
 
@@ -90,7 +90,7 @@ func createTaskRequest(key *datastore.Key, testTime time.Time) *model.TaskReques
 				HasSecretBytes: true,
 				Containment: model.Containment{
 					LowerPriority:             true,
-					ContainmentType:           apipb.ContainmentType_NOT_SPECIFIED,
+					ContainmentType:           apipb.Containment_NOT_SPECIFIED,
 					LimitProcesses:            456,
 					LimitTotalCommittedMemory: 789,
 				},
@@ -316,14 +316,14 @@ func createBQTaskResultBase(taskID string, testTime time.Time) *bqpb.TaskResult 
 				},
 			},
 		},
-		CasOutputRoot: &bqpb.CASReference{
+		CasOutputRoot: &apipb.CASReference{
 			CasInstance: "rbe-cas-instance",
-			Digest: &bqpb.Digest{
+			Digest: &apipb.Digest{
 				Hash:      "foo-bar-digest",
 				SizeBytes: 100,
 			},
 		},
-		ResultdbInfo: &bqpb.ResultDBInfo{
+		ResultdbInfo: &apipb.ResultDBInfo{
 			Hostname:   "some-rdb-hostname",
 			Invocation: "some-rdb-invocation",
 		},
@@ -399,9 +399,9 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 					{Name: "n1", DestPath: "p1"},
 					{Name: "n2", DestPath: "p2"},
 				},
-				CasInputRoot: &bqpb.CASReference{
+				CasInputRoot: &apipb.CASReference{
 					CasInstance: "cas-inst",
-					Digest: &bqpb.Digest{
+					Digest: &apipb.Digest{
 						Hash:      "cas-hash",
 						SizeBytes: 1234,
 					},
@@ -420,8 +420,8 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 				},
 				Outputs:        []string{"o1", "o2"},
 				HasSecretBytes: true,
-				Containment: &bqpb.Containment{
-					ContainmentType: bqpb.Containment_NOT_SPECIFIED,
+				Containment: &apipb.Containment{
+					ContainmentType: apipb.Containment_NOT_SPECIFIED,
 				},
 			},
 			Expiration:      secondsInt(int64(exp.Seconds())),
@@ -448,7 +448,7 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 			Topic:    "pubsub-topic",
 			Userdata: "pubsub-user-data",
 		},
-		Resultdb: &bqpb.ResultDBCfg{Enable: true},
+		Resultdb: &apipb.ResultDBCfg{Enable: true},
 	}
 }
 

@@ -1,0 +1,1159 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.bq;
+option go_package = "go.chromium.org/luci/swarming/proto/bq;bqpb";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/swarming/proto/api_v2/swarming.proto";
+
+
+// BotEventType defines the reason why BotEvent was created.
+enum BotEventType {
+  // Invalid bot event type, do not use.
+  BOT_EVENT_TYPE_UNSPECIFIED = 0;
+
+  // Bot specific events that are outside the scope of a task.
+
+  // Bot connected and started a new session.
+  //
+  // BotEvent.event_msg shall not be set.
+  BOT_NEW_SESSION = 1;
+
+  // Unused.
+  BOT_INTERNAL_FAILURE = 2;
+
+  // Bot had an hook error to report to the server. This shall send a report to
+  // the administrator of the instance.
+  //
+  // BotEvent.event_msg shall contain the error message.
+  BOT_HOOK_ERROR = 3;
+
+  // Bot hook logged information. The bot hooks can log locally to the local log
+  // file, which itself can be streamed out of band. For special notifications
+  // that are worth notifying the administrator, this event can be used to raise
+  // these. Due to the cost of doing an RPC just for this, this should be used
+  // sparingly; vs local logging.
+  //
+  // BotEvent.event_msg shall contain the log entry.
+  BOT_HOOK_LOG = 4;
+
+  // Bot initiated a host reboot. An example is a bot hook requesting to reboot
+  // the host after a task failure.
+  //
+  // BotEvent.event_msg shall contain the reason for rebooting the host, if any.
+  BOT_REBOOTING_HOST = 5;
+
+  // Bot is shutting down. It may be restarting for an update.
+  //
+  // BotEvent.event_msg shall contain the reason.
+  BOT_SHUTDOWN = 6;
+
+  // Unused.
+  BOT_DELETED = 7;
+
+  // Bot is missing. There have been no communication from the bot for longer
+  // than deadline configured on server side.
+  BOT_MISSING = 8;
+
+  // Bot polling results; these are commands sent to the bot to do actions.
+
+  // The server instructs the bot to stay idle. This is when there is no task
+  // pending for this bot. Will only be stored when there are other state
+  // changes.
+  //
+  // BotEvent.event_msg shall not be set.
+  INSTRUCT_IDLE = 10;
+
+  // The server instructs the bot to start a task.
+  //
+  // BotEvent.event_msg shall not be set. BotEvent.bot.current_task_id shall
+  // contain the task ID.
+  INSTRUCT_START_TASK = 11;
+
+  // The server instructs the bot to restart without self-updating. This is to
+  // initiate a new bot session, with potentially new bot hooks.
+  //
+  // BotEvent.event_msg can be set to the rationale, if any.
+  INSTRUCT_RESTART_BOT = 12;
+
+  // The server instructs the bot to self-update.
+  //
+  // BotEvent.event_msg shall be set to the version to update to.
+  // BotEvent.bot.info.version contains the bot's previous version.
+  INSTRUCT_UPDATE_BOT_CODE = 13;
+
+  // The server instructs the bot to stop its process.
+  //
+  // BotEvent.event_msg shall not be set. BotEvent.bot.current_task_id shall
+  // contain the task ID.
+  INSTRUCT_TERMINATE_BOT = 14;
+
+  // Task lifecycle events as processed by the bot. In these event types,
+  // Bot.bot.current_task_id shall be set.
+
+  // Bot completed a task.
+  //
+  // BotEvent.event_msg shall not be set. BotEvent.bot.current_task_id shall
+  // contain the task ID.
+  TASK_COMPLETED = 20;
+
+  // Bot had an internal failure (RAN_INTERNAL_FAILURE) to report to the server
+  // while processing a task. This shall send a report to the administrator of
+  // the instance and service author.
+  //
+  // This event shall not be filed in case of a MISSING_INPUTS.
+  //
+  // BotEvent.event_msg shall contain the error message.
+  // BotEvent.bot.current_task_id shall contain the task ID.
+  TASK_INTERNAL_FAILURE = 21;
+
+  // Bot is forcibly killing the task.
+  //
+  // This can be induced by a server side request (KILLED, PREEMPTED) or by a
+  // bot side decision (TIMED_OUT, TIMED_OUT_SILENCE).
+  //
+  // BotEvent.event_msg shall not be set. BotEvent.bot.current_task_id shall
+  // contain the task ID.
+  TASK_KILLED = 22;
+}
+
+
+// BotStatusType is one of the states the bot can be in.
+//
+// A bot status implies being in this status for a certain amount of time, for
+// example a hook running for N seconds, contrary to BotEventType which is about
+// an event that doesn't have an inherent duration.
+//
+// Some values are more important than others. For example if a bot is now
+// MISSING but used to be QUARANTINED, the value is still MISSING.
+enum BotStatusType {
+  // Invalid bot status, do not use.
+  BOT_STATUS_UNSPECIFIED = 0;
+
+  // Bad states
+
+  // The server detected that the bot is not pinging the server anymore. Unlike
+  // other statuses, this value is set after a timeout.
+  //
+  // Bot.status_msg shall not be set.
+  MISSING = 1;
+
+  // Unused.
+  QUARANTINED_BY_SERVER = 2;
+
+  // Bot self-reported as unhealthy.
+  //
+  // What is currently called as 'quarantined' in the old API.
+  //
+  // Bot.status_msg shall include the bot provided rationale.
+  QUARANTINED_BY_BOT = 3;
+
+  // Overhead states, healthy but unproductive
+
+  // Bot self-reported as unable to run tasks due to externally induced
+  // overhead.
+  //
+  // Examples include:
+  // - The temperature of the DUT (Device Under Test) is too high, and the bot
+  //   is waiting for cool down
+  // - host is doing self-cleaning work out of the bot's control (puppet is
+  //   running), etc.
+  //
+  // Bot.status_msg shall include the bot provided rationale.
+  OVERHEAD_MAINTENANCE_EXTERNAL = 4;
+
+  // Unused.
+  OVERHEAD_BOT_INTERNAL = 5;
+
+  // Unused.
+  HOST_REBOOTING = 6;
+
+  // Healthy states
+
+  // Running a task.
+  //
+  // Bot.status_msg shall not be set.
+  BUSY = 7;
+
+  // Unused.
+  RESERVED = 8;
+
+  // Bot is healthy and waiting for tasks.
+  //
+  // Bot.status_msg shall not be set.
+  IDLE = 9;
+}
+
+
+// TaskStateCategory represents different categories of task state.
+enum TaskStateCategory {
+  // Invalid value.
+  TASK_STATE_CATEGORY_UNSPECIFIED = 0;
+
+  // The task is enqueued and pending bot availability.
+  CATEGORY_PENDING = 0x10;
+
+  // The task is running.
+  CATEGORY_RUNNING = 0x20;
+
+  // Transient done states are uncertain states; something ran but the result
+  // was inconclusive.
+  CATEGORY_TRANSIENT_DONE = 0x30;
+
+  // The task ran, and it is done.
+  CATEGORY_EXECUTION_DONE = 0x40;
+
+  // The task did not run, and won't.
+  CATEGORY_NEVER_RAN_DONE = 0x50;
+}
+
+
+// TaskState represents the different possible states for a Task.
+//
+// Each state is in one of the bitmask in TaskStateCategory.
+enum TaskState {
+  // Invalid task state.
+  TASK_STATE_INVALID = 0;
+
+  // Task states in PENDING_MASK:
+
+  // The task is currently pending.
+  //
+  // This means that no bot reaped the task yet. It will stay in this state
+  // until either a bot reaps the task, or the expiration elapsed or all bots
+  // become MISSING, leading to a NO_RESOURCE. The task pending expiration is
+  // specified as TaskSlice.expiration, one per task slice.
+  //
+  // The task may go through multiple pending TaskSlice as they expire or are
+  // skipped due to NO_RESOURCE (see definition below). In this situation the
+  // task state still stays in PENDING state as long as there's a chance for a
+  // bot to reap the task.
+  PENDING = 0x10;
+
+  // Unused.
+  PENDING_DEDUPING = 0x11;
+
+  // Task states in RUNNING_MASK:
+
+  // The task is currently running.
+  //
+  // For new tasks, this is only the actual tasks runtime. For old tasks, this
+  // includes RUNNING_OVERHEAD_START and RUNNING_OVERHEAD_END.
+  RUNNING = 0x20;
+
+  // Unused.
+  RUNNING_OVERHEAD_SETUP = 0x21;
+
+  // Unused.
+  RUNNING_OVERHEAD_TEARDOWN = 0x22;
+
+  // Unused.
+  TERMINATING = 0x23;
+
+  // Unused.
+  COMPLETING = 0x2F;
+
+  // Task states in TRANSIENT_DONE_MASK:
+
+  // The task ran but the bot had an internal failure, unrelated to the task
+  // itself. It can be due to disk or network I/O issues.
+  RAN_INTERNAL_FAILURE = 0x30;
+
+  // Unused.
+  DUT_FAILURE = 0x31;
+
+  // Unused.
+  BOT_DISAPPEARED = 0x32;
+
+  // Unused.
+  PREEMPTED = 0x33;
+
+  //
+  // All the states below are inactive final states.
+  //
+
+  // Task states in EXECUTION_DONE_MASK:
+
+  // The task ran and completed normally. The task process exit code may be 0 or
+  // another value.
+  //
+  // This value is also used when the task is deduped against a previous task.
+  COMPLETED = 0x40;
+
+  // The task ran for longer than the allowed time in
+  // TaskProperties.execution_timeout.
+  //
+  // This means the bot forcefully killed the task process as described in the
+  // graceful termination dance in the documentation.
+  TIMED_OUT = 0x41;
+
+  // Unused.
+  TIMED_OUT_SILENCE = 0x42;
+
+  // The task ran but was manually killed via the 'cancel' API.
+  //
+  // This means the bot forcefully killed the task process as described in the
+  // graceful termination dance in the documentation.
+  KILLED = 0x43;
+
+  // Unused.
+  MISSING_INPUTS = 0x44;
+
+  // Task states in NEVER_RAN_DONE_MASK:
+
+  // The task didn't have to run, because a previous task had results. It is
+  // functionally equivalent to COMPLETED, except that previous results were
+  // returned as-is.
+  DEDUPED = 0x50;
+
+  // The task is not pending anymore; it never ran due to lack of capacity.
+  //
+  // This means that other higher priority tasks ran instead and that not enough
+  // bots were available to run this task for TaskSlice.expiration.
+  EXPIRED = 0x51;
+
+  // The task never ran, and was manually cancelled via the 'cancel' API before
+  // it was reaped.
+  CANCELED = 0x52;
+
+  // The task was never set to PENDING and was immediately refused, as the
+  // server determined that there is no bot capacity to run this task. This
+  // happens because no bot exposes a superset of the requested task dimensions.
+  //
+  // There can be a situation where a task goes from PENDING to NO_RESOURCE if
+  // capacity (bots) is removed.
+  //
+  // Set TaskSlice.wait_for_capacity to True to force the server to keep the
+  // task slice pending even in this case. Generally speaking, the task will
+  // eventually switch to EXPIRED, as there's no bot to run it. That said, there
+  // are situations where it is known that in some not-too-distant future a wild
+  // bot will appear that will be able to run this task.
+  NO_RESOURCE = 0x53;
+
+  // Unused.
+  LOAD_SHED = 0x54;
+
+  // Unused.
+  RESOURCE_EXHAUSTED = 0x55;
+
+  // Unused.
+  SKIPPED_INTERNAL_FAILURE = 0x56;
+
+  // The task encountered an error caused by the client. This means that
+  // rerunning the task with the same parameters will not change the result
+  CLIENT_ERROR = 0x57;
+}
+
+
+// Unused.
+enum User {
+  USER_UNSPECIFIED = 0;
+  USER_SWARMING = 1;
+  USER_TEMPORARY = 2;
+}
+
+
+// What has been submitted to Swarming for execution.
+message TaskRequest {
+  // Scheduling: what to run, when to run, under which service account.
+
+  // List of TaskSlice, along with their scheduling parameters.
+  //
+  // Each TaskSlice defines where to run the task and what it does. They are
+  // processed in order until the first successfully scheduled one. It is
+  // guaranteed that at most one of these will be attempted.
+  repeated TaskSlice task_slices = 1;
+
+  // Task priority, the lower the more important.
+  //
+  // Valid values are between 1 and 255.
+  int32 priority = 2;
+
+  // Defines what OAuth2 credentials the task uses when calling other services.
+  //
+  // Possible values are:
+  //   - 'none': do not use a task service account at all, this is the default.
+  //   - 'bot': use bot's own account, works only if bots authenticate with
+  //       OAuth2.
+  //  - <some email>: use this specific service account if it is allowed in the
+  //       pool (via 'allowed_service_account' pools.cfg setting) and configured
+  //       in the token server's service_accounts.cfg.
+  //
+  // Note that the service account name is specified outside of task properties,
+  // and thus it is possible to have two tasks with different service accounts,
+  // but identical properties hash (so one can be deduped).
+  string service_account = 3;
+
+  // Task information metadata: doesn't affect what is run.
+
+  // When the task was created.
+  google.protobuf.Timestamp create_time = 4;
+
+  // Task name for display purpose.
+  string name = 5;
+
+  // Tags are 'key:value' strings that describes what the task is about (it's
+  // semantic meaning).
+  //
+  // It is fine to reuse the same 'key' multiple times. It is not fine to use a
+  // key that is also used as a dimension.
+  //
+  // Tags are sorted.
+  repeated string tags = 6;
+
+  // User for this task is run, if relevant. Not validated.
+  string user = 7;
+
+  // Authenticated client that triggered this task.
+  string authenticated = 13;
+
+  // Task realm is used to control who can interact with the task e.g. get,
+  // cancel etc, and which task service accounts can be used in the realm.
+  string realm = 14;
+
+  // ResultDB integration configuration for a task.
+  swarming.v2.ResultDBCfg resultdb = 15;
+
+  // Task hierarchy and notifications
+
+  // The task ID.
+  //
+  // This is an overall ID of the task (not a concrete run attempt). Such IDs
+  // end with 0.
+  string task_id = 8;
+
+  // Parent Swarming task ID of the process requesting this task (if any).
+  //
+  // This is an overall ID of the task (not a concrete run attempt). Such IDs
+  // end with 0.
+  string parent_task_id = 9;
+
+  // Parent Swarming task run ID of the process requesting this task (if any).
+  //
+  // This is an ID of a concrete run attempt. Such IDs end with 1.
+  string parent_run_id = 11;
+
+  // Root task id, independent of the depth of recursive tasks.
+  //
+  // This is an overall ID of the task (not a concrete run attempt). Such IDs
+  // end with 0.
+  string root_task_id = 16;
+
+  // Root task run id, independent of the depth of recursive tasks.
+  //
+  // This is an ID of a concrete run attempt. Such IDs end with 1.
+  string root_run_id = 17;
+
+  // PubSub topic that receives notifications from this task.
+  PubSub pubsub_notification = 10;
+
+  // Maximum delay between bot pings before the bot is considered dead
+  // while running a task.
+  google.protobuf.Duration bot_ping_tolerance = 12;
+}
+
+
+// Defines where to run the task and what it does.
+//
+// A single TaskRequest can have multiple TaskSlices. They are processed in
+// order until the first successfully scheduled one.
+message TaskSlice {
+  // The property of the task to try to run.
+  //
+  // In particular properties.dimensions are used to find bots that can run this
+  // slice.
+  TaskProperties properties = 1;
+
+  // If this task slice is not picked up by a bot after waiting this long, the
+  // next one will be processed. If this is the last slice, the task will fail
+  // with EXPIRED error.
+  google.protobuf.Duration expiration = 2;
+
+  // This flag controls what to do if there are no bots online with requested
+  // dimensions when this slice is submitted.
+  //
+  // A bot is consider online if it is present (sends pings to Swarming) and not
+  // quarantined. It may be busy running some other task though.
+  //
+  // If wait_for_capacity is false and there are no bots online that match
+  // requested dimensions, the slice is skipped immediately with NO_RESOURCE
+  // error (the next slice is processed instead).
+  //
+  // If wait_for_capacity is true, the slice will be put into the pending queue
+  // and will stay there either until a matching bot appears and picks it up,
+  // or the slice reaches its expiration timeout.
+  bool wait_for_capacity = 3;
+
+  // Digest of a serialized form of TaskProperties.
+  //
+  // This is used for DEDUPED and PENDING_DEDUPING when idempotent is true.
+  // Consider this value as opaque string, only use to check equality.
+  //
+  // It is set even if idempotent is false.
+  string properties_hash = 4;
+}
+
+
+// Defines what to run.
+//
+// A serialization of this message is hashed and this hash is what is used for
+// task deduping.
+message TaskProperties {
+  // Inputs.
+
+  // Isolated inputs to map in the working directory.
+  //
+  // Deprecated: Isolate server is being migrated to RBE-CAS. `cas_input_root`
+  // will be used to reference to the input root on RBE-CAS.
+  //
+  // Deprecated: the isolated file may optionally specify a command to run.
+  // Otherwise, 'command' must be specified.
+  CASTree cas_inputs = 1;
+
+  // Digest of the input root on RBE-CAS.
+  //
+  // cas_input_root.digest MUST be digest of [build.bazel.remote.execution.v2.Directory].
+  swarming.v2.CASReference cas_input_root = 18;
+
+  // Set of CIPD packages to install prior to running the task.
+  //
+  // Sorted.
+  repeated CIPDPackage cipd_inputs = 2;
+
+  // Named caches to map into the working directory.
+  //
+  // Sorted.
+  repeated NamedCacheEntry named_caches = 3;
+
+  // The command line to run.
+  repeated string command = 4;
+
+  // Relative working directory to start the 'command' in, defaults to the root
+  // mapped directory or what is provided in the isolated file, if any.
+  string relative_cwd = 5;
+
+  // Extraneous arguments to append to the command specified in the isolated
+  // file. Can only be used when an isolated file specifies a command.
+  //
+  // Deprecated.
+  repeated string extra_args = 6;
+
+  // Secret bytes to provide to the task. Write only, cannot be retrieved back.
+  //
+  // Always empty in BQ exports.
+  bytes secret_bytes = 7;
+
+  // True if properties had secret bytes in them.
+  bool has_secret_bytes = 8;
+
+  // Environment.
+
+  // Dimensions are what is used to determine which bot can run the task.
+  //
+  // The values are effectively an AND, a bot must match all dimensions to be
+  // selected to run the task.
+  //
+  // Sorted.
+  repeated StringListPair dimensions = 9;
+
+  // Environment variables to set when running the task.
+  //
+  // Sorted.
+  repeated StringPair env = 10;
+
+  // Task root relative paths to prepend to a given environment variable.
+  //
+  // This allows one to safely modify variables like PATH, PYTHONPATH, or other
+  // PATH-like environment variables. The order of operations is:
+  // * Turn slashes into native-platform slashes
+  // * Make the path absolute
+  // * Prepend it to the current value of the envvar using the os-native list
+  //   separator (`;` on Windows, `:` on POSIX)
+  //
+  // Each key can have multiple paths to prepend. They will be prepended in
+  // the order seen here.
+  //
+  // For example, if env_paths is:
+  //   [ (key="PATH", values=["foo", "bar"]),
+  //     (key="CUSTOMPATH", values=["custom"]), ]
+  //
+  // The task would see:
+  //   PATH=/path/to/swarming/rundir/foo:/path/to/swarming/rundir/bar:$PATH
+  //   CUSTOMPATH=/path/to/swarming/rundir/custom
+  //
+  // Paths must always be specified here with forward-slashes, and must not
+  // attempt to escape the task's root (i.e. must not contain `..`).
+  //
+  // This is applied AFTER evaluating `env`.
+  //
+  // Sorted by key.
+  repeated StringListPair env_paths = 11;
+
+  // Unused.
+  swarming.v2.Containment containment = 12;
+
+  // Timing.
+
+  // Maximum number of seconds the task can run before its process is forcibly
+  // terminated and the task results in TIMED_OUT.
+  google.protobuf.Duration execution_timeout = 13;
+
+  // Maximum number of seconds the task may be silent (no output to stdout nor
+  // stderr) before it is considered hung and it forcibly terminated early and
+  // the task results in TIMED_OUT_SILENCE.
+  google.protobuf.Duration io_timeout = 14;
+
+  // Number of second to give the child process after a SIGTERM before sending a
+  // SIGKILL.
+  google.protobuf.Duration grace_period = 15;
+
+  // True if it is OK to reuse results of a previously successfully completed
+  // idempotent task with them same Properties.
+  //
+  // Should be set only for tasks that do not have side effects and produce same
+  // outputs given the same inputs.
+  //
+  // Tasks that reuse results of existing tasks have state DEDUPED.
+  bool idempotent = 16;
+
+  // Paths in the working directory to archive back and store as
+  // TaskResult.outputs.
+  //
+  // Sorted.
+  repeated string outputs = 17;
+
+  // Unused.
+  User user = 19;
+}
+
+
+// Describes a named cache that should be reused on the bot.
+//
+// A NamedCacheEntry in a task specifies that the task wants a directory to be
+// persisted on the bot across tasks.
+//
+// If the cache was not present on the bot prior the task's execution, the
+// directory is empty when the task starts. Any change done in the directory by
+// the task is persisted on the bot after the task completes.
+//
+// If another task runs on the same bot and requests the same named cache, even
+// if mapped to a different path, it will get the updated content.
+message NamedCacheEntry {
+  // Unique name of the cache. Length is limited to 4096.
+  string name = 1;
+
+  // Path to directory relative to the task's root dir, where the named cache is
+  // to be installed.
+  //
+  // A path cannot be shared among multiple caches or CIPD installations.
+  // A task will fail if a file/dir with the same name already exists.
+  string dest_path = 2;
+}
+
+
+// PubSub is a Cloud Pub/Sub topic to send task updates to.
+message PubSub {
+  // Full topic name to post updates to, e.g. "projects/<id>/topics/<id>".
+  string topic = 1;
+
+  // Secret string to put into "auth_token" attribute of PubSub messages.
+  //
+  // Always empty in BQ exports.
+  string auth_token = 2;
+
+  // String to put into "userdata" attribute of PubSub messages.
+  string userdata = 3;
+}
+
+
+// BotEvent represents an event on a bot.
+message BotEvent {
+  // When this event happened.
+  google.protobuf.Timestamp event_time = 1;
+
+  // Snapshot of the Bot at the moment the event happened.
+  Bot bot = 2;
+
+  // What has happened to the bot.
+  BotEventType event = 3;
+
+  // Human readable event message.
+  //
+  // See BotEventType for the meaning of this string for each status.
+  string event_msg = 4;
+}
+
+
+// Bot is a snapshot of the state of a Swarming bot.
+message Bot {
+  // Bot ID.
+  //
+  // It is unique across the Swarming fleet. It is generally based on the
+  // hostname where the bot runs, but that's not a requirement
+  //
+  // This value is also included in dimensions for the key 'id'.
+  string bot_id = 1;
+
+  // Unused.
+  string session_id = 2;
+
+  // Pools that this bot belongs to.
+  //
+  // Normally a bot belongs to a single pool, but it can be in multiple pools
+  // simultaneously. This is helpful when moving bots between pools.
+  //
+  // This value is also included in dimensions for the key 'pool'.
+  repeated string pools = 3;
+
+  // Current bot status. A bot status is a state in which the bot is for a
+  // certain amount of time.
+  BotStatusType status = 4;
+
+  // Supplemental information to describe the bot status. Human readable.
+  //
+  // See BotStatusType for the meaning of this string for each status.
+  string status_msg = 5;
+
+  // Current task being handled by the bot, if there is one.
+  //
+  // This is an ID of a concrete run attempt. Such IDs end with 1.
+  string current_task_id = 6;
+
+  // Dimensions reported by the bot.
+  //
+  // Sorted.
+  repeated StringListPair dimensions = 7;
+
+  // Extra information describing the bot or its host.
+  //
+  // This is NOT used for task selection.
+  BotInfo info = 8;
+}
+
+
+// Extra information describing the bot or its host
+//
+// This is NOT used for task selection.
+message BotInfo {
+  // Free form JSON data that includes interesting information about the bot
+  // that doesn't fit in any of the fields below.
+  //
+  // Anything that is usable by multiple customers should eventually be moved to
+  // a new field below.
+  google.protobuf.Struct supplemental = 1;
+
+  // Bot's version. An opaque value.
+  //
+  // This value is Swarming instance and configuration dependent.
+  string version = 2;
+
+  // External IP address as visible by the server.
+  //
+  // This could be a NAT'ing router external IP.
+  //
+  // Can be either IPv4 or IPv6.
+  string external_ip = 3;
+
+  // Authentication identity that the bot identified as. An opaque value.
+  string authenticated_as = 4;
+
+  // State of the content addressed cache on the bot.
+  //
+  // This is used for input files.
+  CASStats cas_stats = 5;
+
+  // State of the named caches on the bot.
+  //
+  // Sorted.
+  repeated NamedCacheStats named_caches_stats = 6;
+
+  // State of the CIPD packages cache on the bot.
+  //
+  // Sorted.
+  repeated CIPDPackageCacheStats cipd_packages_cache_stats = 7;
+
+  // Unused.
+  PhysicalEntity host = 8;
+
+  // Unused.
+  repeated PhysicalEntity devices = 9;
+
+  // This field is used in BOT_MISSING event to know the timestamp of the last
+  // activity.
+  google.protobuf.Timestamp last_seen_ts = 10;
+
+  // The time when the bot became idle.
+  google.protobuf.Timestamp idle_since_ts = 11;
+}
+
+
+// PhysicalEntity includes information about an host or device.
+//
+// Unused.
+message PhysicalEntity {
+  // Name that represents this physical entity.
+  string name = 1;
+
+  // Free form JSON data that includes interesting information about the device
+  // that doesn't fit in any of the fields below.
+  //
+  // Anything that is usable by multiple customers should eventually be moved to
+  // a new field below.
+  google.protobuf.Struct supplemental = 2;
+
+  // IP address as visible by the bot process (bot_main) itself.
+  //
+  // In the case of the host, it will be one of the IP addresses assigned to it.
+  // In the case of the host where the bot is running inside docker, it will be
+  // the IP address assigned to the docker container.
+  // In the case of a device, it is the IP address of the device, if any.
+  //
+  // Can be either IPv4 or IPv6.
+  string ip = 3;
+}
+
+
+// TaskResult is the result of a TaskRequest as it is processed by Swarming.
+//
+// The TaskResult represents one attempt (run on a bot) and/or the final result
+// (summary). When the task never ran (for example EXPIRED), there's one summary
+// but no run.
+message TaskResult {
+  // The task request that concluded with this result.
+  TaskRequest request = 1;
+
+  // Timing information.
+
+  // Time the task was requested.
+  google.protobuf.Timestamp create_time = 2;
+
+  // Time the task started being run by a bot, before RUNNING_OVERHEAD_SETUP.
+  //
+  // Doing "start_time - create_time" gives the task pending time.
+  google.protobuf.Timestamp start_time = 3;
+
+  // Time when the task was abandoned instead of normal completion.
+  //
+  // This happens for example when a task was KILLED, this then represents the
+  // time a client requested the task to be killed, which is before end_time.
+  // Same for TIMED_OUT state, this then represents the time when the bot
+  // decided to abort the task.
+  google.protobuf.Timestamp abandon_time = 4;
+
+  // Time the task completed and teared down, after RUNNING_OVERHEAD_TEARDOWN.
+  //
+  // Doing "end_time - start_time" will not lead to the exact task duration,
+  // since this time frame includes overheads.
+  google.protobuf.Timestamp end_time = 5;
+
+  // Duration of the task. This excludes overheads.
+  google.protobuf.Duration duration = 6;
+
+  // Execution information.
+
+  // Current state of the task (e.g. PENDING, RUNNING, COMPLETED, EXPIRED, etc).
+  TaskState state = 7;
+
+  // The category of the current task state. This is primarily useful to
+  // simplify BigQuery queries. This can be used to determine if a task is done
+  // or if still considered for execution.
+  TaskStateCategory state_category = 8;
+
+  // The task try number.
+  //
+  // It is 0 for a deduped task, since nothing ran. It is 0 if the task is still
+  // PENDING.
+  //
+  // It is normally 1 for a task that started running and runs a normal flow.
+  int32 try_number = 9;
+
+  // Index in the TaskRequest.task_slices (TaskSlice instance) that this result
+  // represents.
+  //
+  // The TaskSlice contains a TaskProperties, which defines what is run.
+  int32 current_task_slice = 10;
+
+  // Snapshot of the bot that was assigned to this task at the start of the
+  // task. This includes bot local cache information.
+  Bot bot = 11;
+
+  // Server versions that touched this task.
+  //
+  // A different version of the server may get the request and hand it to the
+  // bot. This is primarily useful to detect if a new server version introduced
+  // a bug and for canarying purpose.
+  repeated string server_versions = 12;
+
+  // Task identity and hierarchy information.
+
+  // List of children task IDs that this task triggered, if any.
+  //
+  // This is populate only in the case this Swarming task triggers more Swarming
+  // tasks. Each of these task will have 'run_id' set as their 'TaskRequest.parent_task_id'.
+  repeated string children_task_ids = 13;
+
+  // Task ID which results was reused for state DEDUPED.
+  //
+  // This is the run_id (ending with '1', '2' or more).
+  string deduped_from = 14;
+
+  // Summary task ID (ending with '0') when creating a new task.
+  string task_id = 15;
+
+  // Actual executed task id that this task represents.
+  //
+  // This value is only set if it ran, that is, the task went through one of the
+  // state in CATEGORY_RUNNING.
+  string run_id = 16;
+
+  // Task metadata for inputs (reproducibility) and performance.
+
+  // Listing of the actual pinned CIPDPackages that the task used.
+  //
+  // These can vary from the input packages if the inputs included non-identity
+  // versions (e.g. a ref like "latest"). This can be available once task setup
+  // is completed.
+  CIPDPins cipd_pins = 17;
+
+  // Statistics about overhead for an isolated task. This is populated as the
+  // task goes through setup, execution and teardown.
+  TaskPerformance performance = 18;
+
+  // Task's process result.
+
+  // Process exit code if relevant. May be forcibly set to -1 in exceptional
+  // cases.
+  sint64 exit_code = 19;
+
+  // Isolated outputs, if any.
+  //
+  // Deprecated: `cas_output_root` will be used.
+  CASTree outputs = 20;
+
+  // RBE-CAS output, if any.
+  swarming.v2.CASReference cas_output_root = 21;
+
+  // ResultDB related properties for this task.
+  swarming.v2.ResultDBInfo resultdb_info = 22;
+}
+
+
+// Deprecated and unused.
+message CASTree {
+  string server = 1;
+  string digest = 2;
+  string namespace = 3;
+}
+
+
+// Defines one CIPD package to install prior to running the task.
+//
+// CIPD packages are versioned and ACL'ed packages that are meant for tools that
+// are kept for a long time.
+message CIPDPackage {
+  // The template for the CIPD package name that will have its variables
+  // evaluated, e.g. "infra/tools/authutil/${platform}".
+  string package_name = 1;
+
+  // Package version for the requested package.
+  string version = 2;
+
+  // Path to directory relative to the task's root dir, where the package is to
+  // be installed.
+  //
+  // If empty, the package will be installed at the root of the mapped
+  // directory.
+  string dest_path = 3;
+}
+
+
+// Defines pinned CIPD packages that were installed during the task.
+message CIPDPins {
+  // The CIPD server where the CIPD packages were fetched from. Must contain
+  // "https://" or "http://" prefix.
+  string server = 1;
+
+  // The pinned package + version of the CIPD client that was actually used.
+  CIPDPackage client_package = 2;
+
+  // List of CIPD packages that were installed in the task with fully resolved
+  // package names and versions.
+  repeated CIPDPackage packages = 3;
+}
+
+
+// Performance stats messages.
+
+
+// Bot local content addressed cache information.
+message CASStats {
+  int64 number_items = 1;
+  int64 size = 2;
+  google.protobuf.Timestamp oldest_time = 3;
+}
+
+
+// Bot local named cache information.
+message NamedCacheStats {
+  string name = 1;
+  int64 size = 2;
+  google.protobuf.Timestamp last_use_time = 3;
+}
+
+
+// Bot local CIPD package cache information.
+message CIPDPackageCacheStats {
+  string name = 1;
+  string version = 2;
+  int64 size = 3;
+  google.protobuf.Timestamp last_use_time = 4;
+}
+
+
+// Information about the task's performance.
+message TaskPerformance {
+  // Total cost of running this task in $USD. In the case of DEDUPED task, this
+  // represents the amount saved.
+  float cost_usd = 1;
+
+  // Total overhead caused by the bot.
+  //
+  // This is calculated by subtracting the duration of the actual task command
+  // from the overall duration of the task (that includes fetching of inputs
+  // reporting of results).
+  google.protobuf.Duration total_overhead = 5;
+
+  // Overhead that is not accounted for by the other overheads.
+  google.protobuf.Duration other_overhead = 2;
+
+  // Deprecated: use setup_overhead instead.
+  // Task environment setup overhead. This is the task state
+  // RUNNING_OVERHEAD_SETUP.
+  TaskOverheadStats setup = 3;
+
+  // Deprecated: use teardown_overhead instead.
+  // Task environment teardown overhead. This is the task state
+  // RUNNING_OVERHEAD_TEARDOWN.
+  TaskOverheadStats teardown = 4;
+
+  // Task environment setup overhead. This is the task state
+  // RUNNING_OVERHEAD_SETUP.
+  TaskSetupOverhead setup_overhead = 6;
+
+  // Task environment teardown overhead. This is the task state
+  // RUNNING_OVERHEAD_TEARDOWN.
+  TaskTeardownOverhead teardown_overhead = 7;
+}
+
+
+// Overhead information about setup.
+message TaskSetupOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+  // Cache trimming overhead.
+  CacheTrimOverhead cache_trim = 2;
+  // CIPD package installation overhead.
+  CIPDOverhead cipd = 3;
+  // Named cache install overhead.
+  NamedCacheOverhead named_cache = 4;
+  // CAS download overhead.
+  CASOverhead cas = 5;
+}
+
+
+// Overhead information about teardown.
+message TaskTeardownOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+  // CAS upload overhead.
+  CASOverhead cas = 2;
+  // Named cache uninstall overhead.
+  NamedCacheOverhead named_cache = 3;
+  // Directory cleanup overhead.
+  CleanupOverhead cleanup = 4;
+}
+
+
+// Overhead information about cache trimming.
+message CacheTrimOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+}
+
+
+// Overhead information about CIPD package installation.
+message CIPDOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+}
+
+
+// Overhead information about Named Caches install or uninstall.
+message NamedCacheOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+}
+
+
+// Overhead information about CAS download or upload.
+message CASOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+  // CAS entries that were not present in the local or remote cache and had to
+  // be sent across the network.
+  CASEntriesStats cold = 2;
+  // CAS entries that were in the cache and thus didn't have to be transferred.
+  CASEntriesStats hot = 3;
+}
+
+
+// Overhead information about cleanup step.
+message CleanupOverhead {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+}
+
+
+// Deprecated: Use TaskSetupOverhead or TaskTeardownOverhead instead.
+message TaskOverheadStats {
+  // Duration of this overhead.
+  google.protobuf.Duration duration = 1;
+  // CAS entries that were not present in the local or remote cache and had to
+  // be sent across the network.
+  CASEntriesStats cold = 2;
+  // CAS entries that were in the cache and thus didn't have to be transferred.
+  CASEntriesStats hot = 3;
+}
+
+
+// Statistics for differential CAS entries in the context of I/O for a task.
+message CASEntriesStats {
+  // Number of entries in the cache.
+  int64 num_items = 1;
+  // Total size of the cached items.
+  int64 total_bytes_items = 2;
+  // Unused.
+  bytes items = 6;
+}
+
+
+// Represents a mapping of a string to a string.
+message StringPair {
+  string key = 1;
+  string value = 2;
+}
+
+
+// Represents a mapping of a string to a list of strings.
+message StringListPair {
+  string key = 1;
+  repeated string values = 2;
+}
+

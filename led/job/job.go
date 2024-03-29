@@ -429,7 +429,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		GracePeriodSecs: int32(bb.BbagentArgs.Build.GracePeriod.GetSeconds()) + 180,
 	}
 
-	if bb.Containment.GetContainmentType() != swarmingpb.ContainmentType_NOT_SPECIFIED {
+	if bb.Containment.GetContainmentType() != swarmingpb.Containment_NOT_SPECIFIED {
 		baseProperties.Containment = bb.Containment
 	}
 

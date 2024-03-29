@@ -87,9 +87,9 @@ func ToSwarmingNewTask(sw *job.Swarming) (*swarmingpb.NewTaskRequest, error) {
 			},
 		}
 
-		if con := props.GetContainment(); con.GetContainmentType() != swarmingpb.ContainmentType_NOT_SPECIFIED {
+		if typ := props.GetContainment().GetContainmentType(); typ != swarmingpb.Containment_NOT_SPECIFIED {
 			toAdd.Properties.Containment = &swarmingpb.Containment{
-				ContainmentType: con.GetContainmentType(),
+				ContainmentType: typ,
 			}
 		}
 

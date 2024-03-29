@@ -25,8 +25,8 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	bqpb "go.chromium.org/luci/swarming/proto/api"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	bqpb "go.chromium.org/luci/swarming/proto/bq"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -93,16 +93,6 @@ func taskProperties(tp *model.TaskProperties) *bqpb.TaskProperties {
 		}
 	}
 
-	containmentType := bqpb.Containment_NOT_SPECIFIED
-	switch tp.Containment.ContainmentType {
-	case apipb.ContainmentType_NONE:
-		containmentType = bqpb.Containment_NONE
-	case apipb.ContainmentType_AUTO:
-		containmentType = bqpb.Containment_AUTO
-	case apipb.ContainmentType_JOB_OBJECT:
-		containmentType = bqpb.Containment_JOB_OBJECT
-	}
-
 	return &bqpb.TaskProperties{
 		CipdInputs:       inputPackages,
 		NamedCaches:      namedCaches,
@@ -117,15 +107,16 @@ func taskProperties(tp *model.TaskProperties) *bqpb.TaskProperties {
 		GracePeriod:      secondsInt(tp.GracePeriodSecs),
 		Idempotent:       tp.Idempotent,
 		Outputs:          tp.Outputs,
-		CasInputRoot: &bqpb.CASReference{
+		CasInputRoot: &apipb.CASReference{
 			CasInstance: tp.CASInputRoot.CASInstance,
-			Digest: &bqpb.Digest{
+			Digest: &apipb.Digest{
 				Hash:      tp.CASInputRoot.Digest.Hash,
 				SizeBytes: tp.CASInputRoot.Digest.SizeBytes,
 			},
 		},
-		Containment: &bqpb.Containment{
-			ContainmentType: containmentType,
+		// TODO: More fields.
+		Containment: &apipb.Containment{
+			ContainmentType: tp.Containment.ContainmentType,
 		},
 	}
 }
@@ -158,7 +149,7 @@ func taskRequest(tr *model.TaskRequest) *bqpb.TaskRequest {
 		User:           tr.User,
 		Authenticated:  string(tr.Authenticated),
 		Realm:          tr.Realm,
-		Resultdb: &bqpb.ResultDBCfg{
+		Resultdb: &apipb.ResultDBCfg{
 			Enable: tr.ResultDB.Enable,
 		},
 		TaskId: model.RequestKeyToTaskID(tr.Key, model.AsRequest),
@@ -263,16 +254,16 @@ func taskResultCommon(rc *model.TaskResultCommon, req *model.TaskRequest) *bqpb.
 	}
 
 	if rc.ResultDBInfo.Hostname != "" {
-		out.ResultdbInfo = &bqpb.ResultDBInfo{
+		out.ResultdbInfo = &apipb.ResultDBInfo{
 			Hostname:   rc.ResultDBInfo.Hostname,
 			Invocation: rc.ResultDBInfo.Invocation,
 		}
 	}
 
 	if rc.CASOutputRoot.CASInstance != "" {
-		out.CasOutputRoot = &bqpb.CASReference{
+		out.CasOutputRoot = &apipb.CASReference{
 			CasInstance: rc.CASOutputRoot.CASInstance,
-			Digest: &bqpb.Digest{
+			Digest: &apipb.Digest{
 				Hash:      rc.CASOutputRoot.Digest.Hash,
 				SizeBytes: rc.CASOutputRoot.Digest.SizeBytes,
 			},

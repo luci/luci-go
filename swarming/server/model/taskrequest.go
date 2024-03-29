@@ -491,10 +491,10 @@ func (p *CIPDPackage) ToProto() *apipb.CipdPackage {
 
 // Containment describes the task process containment.
 type Containment struct {
-	LowerPriority             bool                  `gae:"lower_priority"`
-	ContainmentType           apipb.ContainmentType `gae:"containment_type"`
-	LimitProcesses            int64                 `gae:"limit_processes"`
-	LimitTotalCommittedMemory int64                 `gae:"limit_total_committed_memory"`
+	ContainmentType           apipb.Containment_ContainmentType `gae:"containment_type"`
+	LowerPriority             bool                              `gae:"lower_priority"`
+	LimitProcesses            int64                             `gae:"limit_processes"`
+	LimitTotalCommittedMemory int64                             `gae:"limit_total_committed_memory"`
 }
 
 // ToProto converts Containment struct to apipb.Containment

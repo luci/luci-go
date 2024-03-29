@@ -186,8 +186,8 @@ func toNewTaskRequest(r *swarming.SwarmingRpcsNewTaskRequest) *swarmingpb.NewTas
 		}
 		if c := props.Containment; c != nil {
 			nt.Properties.Containment = &swarmingpb.Containment{
-				ContainmentType: swarmingpb.ContainmentType(
-					swarmingpb.ContainmentType_value[c.ContainmentType],
+				ContainmentType: swarmingpb.Containment_ContainmentType(
+					swarmingpb.Containment_ContainmentType_value[c.ContainmentType],
 				),
 			}
 		}

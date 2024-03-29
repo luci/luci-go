@@ -7,12 +7,10 @@
 syntax = "proto3";
 
 package swarming.v1;
-option go_package = "go.chromium.org/luci/swarming/proto/api;apipb";
+option go_package = "go.chromium.org/luci/swarming/proto/plugin;pluginpb";
 
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 
-// Basic types used by the plugin API.
 
 // TaskSpec describes a task request and its state, for the purposes of the
 // external scheduler API.
@@ -23,6 +21,79 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 // This message format is in its early stages, and may be subject to frequent
 // or even breaking changes as the external scheduler API is rolled out.
 message TaskSpec {
+  // Represents the 5 different categories of task state.
+  enum StateCategory {
+    // Invalid value.
+    TASK_STATE_CATEGORY_UNSPECIFIED = 0;
+    // Bit mask for the State inside each category.
+    TASK_STATE_MASK = 0x0F;
+
+    // The task is enqueued and pending bot availability.
+    CATEGORY_PENDING = 0x10;
+    // The task is running.
+    CATEGORY_RUNNING = 0x20;
+    // Transient done states are uncertain states.
+    CATEGORY_TRANSIENT_DONE = 0x30;
+    // The task ran, and it is done.
+    CATEGORY_EXECUTION_DONE = 0x40;
+    // The task did not run, and won't.
+    CATEGORY_NEVER_RAN_DONE = 0x50;
+  }
+
+  // Represents the different possible states for a TaskSpec.
+  enum State {
+    // Invalid task state.
+    TASK_STATE_INVALID = 0;
+    // The task is currently pending.
+    PENDING = 0x10;
+    // Unused.
+    PENDING_DEDUPING = 0x11;
+    // The task is currently running.
+    RUNNING = 0x20;
+    // Unused.
+    RUNNING_OVERHEAD_SETUP = 0x21;
+    // Unused.
+    RUNNING_OVERHEAD_TEARDOWN = 0x22;
+    // Unused.
+    TERMINATING = 0x23;
+    // Unused.
+    COMPLETING = 0x2F;
+    // The task ran but the bot had an internal failure.
+    RAN_INTERNAL_FAILURE = 0x30;
+    // Unused.
+    DUT_FAILURE = 0x31;
+    // Unused.
+    BOT_DISAPPEARED = 0x32;
+    // Unused.
+    PREEMPTED = 0x33;
+    // The task ran and completed normally.
+    COMPLETED = 0x40;
+    // The task ran for longer than the allowed time.
+    TIMED_OUT = 0x41;
+    // Unused.
+    TIMED_OUT_SILENCE = 0x42;
+    // The task ran but was manually killed via the 'cancel' API.
+    KILLED = 0x43;
+    // Unused.
+    MISSING_INPUTS = 0x44;
+    // The task didn't have to run, because a previous task had results.
+    DEDUPED = 0x50;
+    // The task is not pending anymore; it never ran due to lack of capacity.
+    EXPIRED = 0x51;
+    // The task never ran, and was manually cancelled via the 'cancel' API.
+    CANCELED = 0x52;
+    // The task was never set to PENDING and was immediately refused.
+    NO_RESOURCE = 0x53;
+    // Unused.
+    LOAD_SHED = 0x54;
+    // Unused.
+    RESOURCE_EXHAUSTED = 0x55;
+    // Unused.
+    SKIPPED_INTERNAL_FAILURE = 0x56;
+    // The task encountered an error caused by the client.
+    CLIENT_ERROR = 0x57;
+  }
+
   // Id is the swarming task request ID.
   //
   // Other than being a unique string to track the lifecycle of this request,
@@ -38,7 +109,7 @@ message TaskSpec {
   repeated SliceSpec slices = 3;
 
   // State is the current state of this task.
-  TaskState state = 4;
+  State state = 4;
 
   // BotID is the id of the bot that this task is running on. It is only
   // valid if state=RUNNING.

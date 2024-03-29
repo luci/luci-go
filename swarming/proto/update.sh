@@ -53,10 +53,10 @@ function add_luci_file_metadata() {
   sed -i "s#option go_package = \"\\(.*\\)\";#option go_package = \"\\1\";\\n${joined}#" ${proto}
 }
 
-import_dir ${LUCI_ROOT}/appengine/swarming/proto/api api
+import_dir ${LUCI_ROOT}/appengine/swarming/proto/api_v2 api_v2
 import_dir ${LUCI_ROOT}/appengine/swarming/proto/config config
 import_dir ${LUCI_ROOT}/appengine/swarming/proto/internals internals
-import_dir ${LUCI_ROOT}/appengine/swarming/proto/api_v2 api_v2
+import_dir ${LUCI_ROOT}/appengine/swarming/proto/plugin plugin
 
 echo "- adding luci.file_metadata option"
 add_luci_file_metadata config/bots.proto bots.cfg
