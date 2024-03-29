@@ -253,17 +253,26 @@ func exportTask(ctx context.Context, client *managedwriter.Client, t *taskspb.Ex
 	case TaskRequests:
 		fetcher = TaskRequestFetcher()
 	case BotEvents:
-		fetcher = BotEventsFetcher()
+		// TODO(vadimsh): fetcher = BotEventsFetcher()
+		logging.Infof(ctx, "Not implemented yet")
+		return nil
 	case TaskRunResults:
-		fetcher = TaskRunResultsFetcher()
+		// TODO(vadimsh): fetcher = TaskRunResultsFetcher()
+		logging.Infof(ctx, "Not implemented yet")
+		return nil
 	case TaskResultSummaries:
-		fetcher = TaskResultSummariesFetcher()
+		// TODO(vadimsh): fetcher = TaskResultSummariesFetcher()
+		logging.Infof(ctx, "Not implemented yet")
+		return nil
 	default:
 		return errors.Reason("unknown table name %q", t.TableName).Tag(tq.Fatal).Err()
 	}
-	// TODO(vadimsh): Implement.
-	_ = ctx
-	_ = client
-	_ = fetcher
-	return nil
+	op := &ExportOp{
+		Client:      client,
+		OperationID: t.OperationId,
+		TableID:     fmt.Sprintf("projects/%s/datasets/%s/tables/%s", t.CloudProject, t.Dataset, t.TableName),
+		Fetcher:     fetcher,
+	}
+	defer op.Close(ctx)
+	return op.Execute(ctx, t.Start.AsTime(), t.Duration.AsDuration())
 }
