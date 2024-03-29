@@ -229,21 +229,21 @@ func createBQPerformanceStats(costUSD float32) *bqpb.TaskPerformance {
 	}
 
 	casSetup := &bqpb.CASOverhead{
-		Duration: secondsFloat(5.5),
+		Duration: 5.5,
 		Cold:     casStats([]int64{1, 2}),
 		Hot:      casStats([]int64{4, 5, 6}),
 	}
 
 	casTeardown := &bqpb.CASOverhead{
-		Duration: secondsFloat(6.5),
+		Duration: 6.5,
 		Cold:     casStats([]int64{7, 8}),
 		Hot:      casStats([]int64{9, 10, 11}),
 	}
 
 	return &bqpb.TaskPerformance{
 		CostUsd:       costUSD,
-		OtherOverhead: secondsFloat(91.5),
-		TotalOverhead: secondsFloat(123.),
+		OtherOverhead: 91.5,
+		TotalOverhead: 123.,
 		Setup: &bqpb.TaskOverheadStats{
 			Duration: casSetup.Duration,
 			Hot:      casSetup.Hot,
@@ -255,26 +255,26 @@ func createBQPerformanceStats(costUSD float32) *bqpb.TaskPerformance {
 			Cold:     casTeardown.Cold,
 		},
 		SetupOverhead: &bqpb.TaskSetupOverhead{
-			Duration: secondsFloat(13),
+			Duration: 13.0,
 			CacheTrim: &bqpb.CacheTrimOverhead{
-				Duration: secondsFloat(1.5),
+				Duration: 1.5,
 			},
 			Cipd: &bqpb.CIPDOverhead{
-				Duration: secondsFloat(2.5),
+				Duration: 2.5,
 			},
 			NamedCache: &bqpb.NamedCacheOverhead{
-				Duration: secondsFloat(3.5),
+				Duration: 3.5,
 			},
 			Cas: casSetup,
 		},
 		TeardownOverhead: &bqpb.TaskTeardownOverhead{
-			Duration: secondsFloat(18.5),
+			Duration: 18.5,
 			Cas:      casTeardown,
 			NamedCache: &bqpb.NamedCacheOverhead{
-				Duration: secondsFloat(4.5),
+				Duration: 4.5,
 			},
 			Cleanup: &bqpb.CleanupOverhead{
-				Duration: secondsFloat(7.5),
+				Duration: 7.5,
 			},
 		},
 	}
@@ -294,7 +294,7 @@ func createBQTaskResultBase(taskID string, testTime time.Time) *bqpb.TaskResult 
 		CurrentTaskSlice: 0,
 		StartTime:        timestamppb.New(testTime),
 		EndTime:          timestamppb.New(testTime),
-		Duration:         secondsFloat(10.456),
+		Duration:         10.456,
 		ExitCode:         int64(0),
 		CipdPins: &bqpb.CIPDPins{
 			Server: "some-cipd-server",
@@ -370,9 +370,9 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 						Values: []string{val},
 					},
 				},
-				ExecutionTimeout: secondsInt(123),
-				GracePeriod:      secondsInt(456),
-				IoTimeout:        secondsInt(789),
+				ExecutionTimeout: 123.0,
+				GracePeriod:      456.0,
+				IoTimeout:        789.0,
 				Command:          []string{"run", val},
 				RelativeCwd:      "./rel/cwd",
 				Env: []*bqpb.StringPair{
@@ -424,7 +424,7 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 					ContainmentType: apipb.Containment_NOT_SPECIFIED,
 				},
 			},
-			Expiration:      secondsInt(int64(exp.Seconds())),
+			Expiration:      exp.Seconds(),
 			WaitForCapacity: true,
 		}
 	}
@@ -443,7 +443,7 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 		ServiceAccount:   "service-account",
 		Realm:            "realm",
 		Priority:         123,
-		BotPingTolerance: secondsInt(456),
+		BotPingTolerance: 456.0,
 		PubsubNotification: &bqpb.PubSub{
 			Topic:    "pubsub-topic",
 			Userdata: "pubsub-user-data",

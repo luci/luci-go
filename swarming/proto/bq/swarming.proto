@@ -7,8 +7,6 @@ syntax = "proto3";
 package swarming.bq;
 option go_package = "go.chromium.org/luci/swarming/proto/bq;bqpb";
 
-import "google/protobuf/duration.proto";
-import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/swarming/proto/api_v2/swarming.proto";
@@ -455,8 +453,8 @@ message TaskRequest {
   PubSub pubsub_notification = 10;
 
   // Maximum delay between bot pings before the bot is considered dead
-  // while running a task.
-  google.protobuf.Duration bot_ping_tolerance = 12;
+  // while running a task in seconds.
+  double bot_ping_tolerance = 12;
 }
 
 
@@ -471,10 +469,10 @@ message TaskSlice {
   // slice.
   TaskProperties properties = 1;
 
-  // If this task slice is not picked up by a bot after waiting this long, the
-  // next one will be processed. If this is the last slice, the task will fail
-  // with EXPIRED error.
-  google.protobuf.Duration expiration = 2;
+  // If this task slice is not picked up by a bot after waiting this number of
+  // seconds, the next one will be processed. If this is the last slice, the
+  // task will fail with EXPIRED error.
+  double expiration = 2;
 
   // This flag controls what to do if there are no bots online with requested
   // dimensions when this slice is submitted.
@@ -603,16 +601,16 @@ message TaskProperties {
 
   // Maximum number of seconds the task can run before its process is forcibly
   // terminated and the task results in TIMED_OUT.
-  google.protobuf.Duration execution_timeout = 13;
+  double execution_timeout = 13;
 
   // Maximum number of seconds the task may be silent (no output to stdout nor
   // stderr) before it is considered hung and it forcibly terminated early and
   // the task results in TIMED_OUT_SILENCE.
-  google.protobuf.Duration io_timeout = 14;
+  double io_timeout = 14;
 
   // Number of second to give the child process after a SIGTERM before sending a
   // SIGKILL.
-  google.protobuf.Duration grace_period = 15;
+  double grace_period = 15;
 
   // True if it is OK to reuse results of a previously successfully completed
   // idempotent task with them same Properties.
@@ -747,7 +745,7 @@ message BotInfo {
   //
   // Anything that is usable by multiple customers should eventually be moved to
   // a new field below.
-  google.protobuf.Struct supplemental = 1;
+  string supplemental = 1;
 
   // Bot's version. An opaque value.
   //
@@ -806,7 +804,7 @@ message PhysicalEntity {
   //
   // Anything that is usable by multiple customers should eventually be moved to
   // a new field below.
-  google.protobuf.Struct supplemental = 2;
+  string supplemental = 2;
 
   // IP address as visible by the bot process (bot_main) itself.
   //
@@ -853,8 +851,8 @@ message TaskResult {
   // since this time frame includes overheads.
   google.protobuf.Timestamp end_time = 5;
 
-  // Duration of the task. This excludes overheads.
-  google.protobuf.Duration duration = 6;
+  // Duration of the task in seconds. This excludes overheads.
+  double duration = 6;
 
   // Execution information.
 
@@ -1023,15 +1021,15 @@ message TaskPerformance {
   // represents the amount saved.
   float cost_usd = 1;
 
-  // Total overhead caused by the bot.
+  // Total overhead caused by the bot in seconds.
   //
   // This is calculated by subtracting the duration of the actual task command
   // from the overall duration of the task (that includes fetching of inputs
   // reporting of results).
-  google.protobuf.Duration total_overhead = 5;
+  double total_overhead = 5;
 
-  // Overhead that is not accounted for by the other overheads.
-  google.protobuf.Duration other_overhead = 2;
+  // Overhead in seconds that is not accounted for by the other overheads.
+  double other_overhead = 2;
 
   // Deprecated: use setup_overhead instead.
   // Task environment setup overhead. This is the task state
@@ -1055,8 +1053,8 @@ message TaskPerformance {
 
 // Overhead information about setup.
 message TaskSetupOverhead {
-  // Duration of this overhead.
-  google.protobuf.Duration duration = 1;
+  // Duration of this overhead in seconds.
+  double duration = 1;
   // Cache trimming overhead.
   CacheTrimOverhead cache_trim = 2;
   // CIPD package installation overhead.
@@ -1070,8 +1068,8 @@ message TaskSetupOverhead {
 
 // Overhead information about teardown.
 message TaskTeardownOverhead {
-  // Duration of this overhead.
-  google.protobuf.Duration duration = 1;
+  // Duration of this overhead in seconds.
+  double duration = 1;
   // CAS upload overhead.
   CASOverhead cas = 2;
   // Named cache uninstall overhead.
@@ -1083,29 +1081,29 @@ message TaskTeardownOverhead {
 
 // Overhead information about cache trimming.
 message CacheTrimOverhead {
-  // Duration of this overhead.
-  google.protobuf.Duration duration = 1;
+  // Duration of this overhead in seconds.
+  double duration = 1;
 }
 
 
 // Overhead information about CIPD package installation.
 message CIPDOverhead {
-  // Duration of this overhead.
-  google.protobuf.Duration duration = 1;
+  // Duration of this overhead in seconds.
+  double duration = 1;
 }
 
 
 // Overhead information about Named Caches install or uninstall.
 message NamedCacheOverhead {
-  // Duration of this overhead.
-  google.protobuf.Duration duration = 1;
+  // Duration of this overhead in seconds.
+  double duration = 1;
 }
 
 
 // Overhead information about CAS download or upload.
 message CASOverhead {
-  // Duration of this overhead.
-  google.protobuf.Duration duration = 1;
+  // Duration of this overhead in seconds.
+  double duration = 1;
   // CAS entries that were not present in the local or remote cache and had to
   // be sent across the network.
   CASEntriesStats cold = 2;
@@ -1116,15 +1114,15 @@ message CASOverhead {
 
 // Overhead information about cleanup step.
 message CleanupOverhead {
-  // Duration of this overhead.
-  google.protobuf.Duration duration = 1;
+  // Duration of this overhead in seconds.
+  double duration = 1;
 }
 
 
 // Deprecated: Use TaskSetupOverhead or TaskTeardownOverhead instead.
 message TaskOverheadStats {
-  // Duration of this overhead.
-  google.protobuf.Duration duration = 1;
+  // Duration of this overhead in seconds.
+  double duration = 1;
   // CAS entries that were not present in the local or remote cache and had to
   // be sent across the network.
   CASEntriesStats cold = 2;

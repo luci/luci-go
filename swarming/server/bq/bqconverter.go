@@ -20,23 +20,13 @@ package bq
 import (
 	"math"
 	"slices"
-	"time"
 
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	bqpb "go.chromium.org/luci/swarming/proto/bq"
 	"go.chromium.org/luci/swarming/server/model"
 )
-
-func secondsInt(secs int64) *durationpb.Duration {
-	return durationpb.New(time.Duration(secs) * time.Second)
-}
-
-func secondsFloat(secs float64) *durationpb.Duration {
-	return durationpb.New(time.Duration(secs * float64(time.Second)))
-}
 
 func sortedKeys[K ~string, V any](m map[K]V) []string {
 	keys := make([]string, 0, len(m))
@@ -102,9 +92,9 @@ func taskProperties(tp *model.TaskProperties) *bqpb.TaskProperties {
 		Dimensions:       dimensions,
 		Env:              env,
 		EnvPaths:         envPaths,
-		ExecutionTimeout: secondsInt(tp.ExecutionTimeoutSecs),
-		IoTimeout:        secondsInt(tp.IOTimeoutSecs),
-		GracePeriod:      secondsInt(tp.GracePeriodSecs),
+		ExecutionTimeout: float64(tp.ExecutionTimeoutSecs),
+		IoTimeout:        float64(tp.IOTimeoutSecs),
+		GracePeriod:      float64(tp.GracePeriodSecs),
 		Idempotent:       tp.Idempotent,
 		Outputs:          tp.Outputs,
 		CasInputRoot: &apipb.CASReference{
@@ -125,7 +115,7 @@ func taskSlice(ts *model.TaskSlice) *bqpb.TaskSlice {
 	// TODO(jonahhooper) implement the property hash calculation
 	return &bqpb.TaskSlice{
 		Properties:      taskProperties(&ts.Properties),
-		Expiration:      secondsInt(ts.ExpirationSecs),
+		Expiration:      float64(ts.ExpirationSecs),
 		WaitForCapacity: ts.WaitForCapacity,
 	}
 }
@@ -157,7 +147,7 @@ func taskRequest(tr *model.TaskRequest) *bqpb.TaskRequest {
 			Topic:    tr.PubSubTopic,
 			Userdata: tr.PubSubUserData,
 		},
-		BotPingTolerance: secondsInt(tr.BotPingToleranceSecs),
+		BotPingTolerance: float64(tr.BotPingToleranceSecs),
 	}
 }
 
@@ -192,7 +182,7 @@ func taskResultCommon(rc *model.TaskResultCommon, req *model.TaskRequest) *bqpb.
 		out.AbandonTime = timestamppb.New(rc.Abandoned.Get())
 	}
 	if rc.DurationSecs.IsSet() {
-		out.Duration = secondsFloat(rc.DurationSecs.Get())
+		out.Duration = rc.DurationSecs.Get()
 	}
 	if rc.BotIdleSince.IsSet() {
 		out.Bot = &bqpb.Bot{
@@ -279,7 +269,7 @@ func casOverhead(stats *model.CASOperationStats) *bqpb.CASOverhead {
 		return nil // either empty or broken, just skip
 	}
 	return &bqpb.CASOverhead{
-		Duration: secondsFloat(float64(pb.Duration)),
+		Duration: float64(pb.Duration),
 		Cold: &bqpb.CASEntriesStats{
 			NumItems:        pb.NumItemsCold,
 			TotalBytesItems: pb.TotalBytesItemsCold,
@@ -302,32 +292,31 @@ func performanceStats(perf *model.PerformanceStats, costUSD float32) *bqpb.TaskP
 		return out
 	}
 
-	maybeAddToOverhead := func(x float64, overhead *time.Duration) *durationpb.Duration {
-		if x <= 0 {
-			return nil
+	maybeAddToOverhead := func(x float64, overhead *float64) float64 {
+		if x <= 0.0 {
+			return 0.0
 		}
-		dur := time.Duration(float64(time.Second) * x)
-		*overhead += dur
-		return durationpb.New(dur)
+		*overhead += x
+		return x
 	}
 
-	var setupOverhead time.Duration
-	var teardownOverhead time.Duration
+	var setupOverhead float64
+	var teardownOverhead float64
 
 	out.SetupOverhead = &bqpb.TaskSetupOverhead{}
 	out.TeardownOverhead = &bqpb.TaskTeardownOverhead{}
 
 	// Add up all setup overhead.
-	if s := maybeAddToOverhead(perf.CacheTrim.DurationSecs, &setupOverhead); s != nil {
+	if s := maybeAddToOverhead(perf.CacheTrim.DurationSecs, &setupOverhead); s != 0.0 {
 		out.SetupOverhead.CacheTrim = &bqpb.CacheTrimOverhead{Duration: s}
 	}
-	if s := maybeAddToOverhead(perf.PackageInstallation.DurationSecs, &setupOverhead); s != nil {
+	if s := maybeAddToOverhead(perf.PackageInstallation.DurationSecs, &setupOverhead); s != 0.0 {
 		out.SetupOverhead.Cipd = &bqpb.CIPDOverhead{Duration: s}
 	}
-	if s := maybeAddToOverhead(perf.NamedCachesInstall.DurationSecs, &setupOverhead); s != nil {
+	if s := maybeAddToOverhead(perf.NamedCachesInstall.DurationSecs, &setupOverhead); s != 0.0 {
 		out.SetupOverhead.NamedCache = &bqpb.NamedCacheOverhead{Duration: s}
 	}
-	if s := maybeAddToOverhead(perf.IsolatedDownload.DurationSecs, &setupOverhead); s != nil {
+	if s := maybeAddToOverhead(perf.IsolatedDownload.DurationSecs, &setupOverhead); s != 0.0 {
 		cas := casOverhead(&perf.IsolatedDownload)
 		out.SetupOverhead.Cas = cas
 		// TODO(https://crbug.com/1510462) remove deprecated Setup field
@@ -339,7 +328,7 @@ func performanceStats(perf *model.PerformanceStats, costUSD float32) *bqpb.TaskP
 	}
 
 	// Add up all teardown overhead.
-	if t := maybeAddToOverhead(perf.IsolatedUpload.DurationSecs, &teardownOverhead); t != nil {
+	if t := maybeAddToOverhead(perf.IsolatedUpload.DurationSecs, &teardownOverhead); t != 0.0 {
 		cas := casOverhead(&perf.IsolatedUpload)
 		out.TeardownOverhead.Cas = cas
 		// TODO(https://crbug.com/1510462) remove deprecated Teardown field
@@ -349,17 +338,17 @@ func performanceStats(perf *model.PerformanceStats, costUSD float32) *bqpb.TaskP
 			Duration: cas.GetDuration(),
 		}
 	}
-	if t := maybeAddToOverhead(perf.NamedCachesUninstall.DurationSecs, &teardownOverhead); t != nil {
+	if t := maybeAddToOverhead(perf.NamedCachesUninstall.DurationSecs, &teardownOverhead); t != 0.0 {
 		out.TeardownOverhead.NamedCache = &bqpb.NamedCacheOverhead{Duration: t}
 	}
-	if t := maybeAddToOverhead(perf.Cleanup.DurationSecs, &teardownOverhead); t != nil {
+	if t := maybeAddToOverhead(perf.Cleanup.DurationSecs, &teardownOverhead); t != 0.0 {
 		out.TeardownOverhead.Cleanup = &bqpb.CleanupOverhead{Duration: t}
 	}
 
-	out.SetupOverhead.Duration = durationpb.New(setupOverhead)
-	out.TeardownOverhead.Duration = durationpb.New(teardownOverhead)
-	out.TotalOverhead = secondsFloat(perf.BotOverheadSecs)
-	out.OtherOverhead = secondsFloat(math.Max(perf.BotOverheadSecs-setupOverhead.Seconds()-teardownOverhead.Seconds(), 0.))
+	out.SetupOverhead.Duration = setupOverhead
+	out.TeardownOverhead.Duration = teardownOverhead
+	out.TotalOverhead = perf.BotOverheadSecs
+	out.OtherOverhead = math.Max(perf.BotOverheadSecs-setupOverhead-teardownOverhead, 0.0)
 
 	return out
 }
