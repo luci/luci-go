@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -39,17 +38,6 @@ import (
 
 // Batch size to fetch tasks from backend.
 var fetchBatchSize = 1000
-
-// Batch size to update builds and sub entities in on transaction.
-// As of Mar 2024, our database is on Firestore in Datastore mode, using
-// Optimistic With Entity Groups concurrency mode.
-// Transactions are limited to 25 entity groups.
-// Consider each build and it's sub-entities as one group, and if the build
-// is ended, we'll need to submit 3 transactional tasks for it (bq-export,
-// resultdb-finalization and pubsub), so in total 4 entity groups.
-// Theoritically that means we could have 25/4 = 6 in one batch, make it 5
-// for extra buffer room.
-var updateBatchSize = 5
 
 // queryBuildsToSync runs queries to get incomplete builds from the project running
 // on the backend that have reached/exceeded their next sync time.
@@ -136,10 +124,9 @@ func getEntities(ctx context.Context, bks []*datastore.Key, now time.Time) ([]*b
 	return entitiesToSync, nil
 }
 
-func updateEntities(ctx context.Context, bks []*datastore.Key, now time.Time, taskMap map[string]*pb.Task) ([]*model.Build, error) {
-	var endedBld []*model.Build
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		entities, err := getEntities(ctx, bks, now)
+func updateBuildEntities(ctx context.Context, bk *datastore.Key, now time.Time, taskMap map[string]*pb.Task) (endedBld *model.Build, err error) {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		entities, err := getEntities(ctx, []*datastore.Key{bk}, now)
 		switch {
 		case err != nil:
 			return err
@@ -147,52 +134,47 @@ func updateEntities(ctx context.Context, bks []*datastore.Key, now time.Time, ta
 			// Nothing to sync.
 			return nil
 		}
-		logging.Infof(ctx, "updating %d builds with their backend tasks", len(bks))
+
+		bld := entities[0].build
+		inf := entities[0].infra
+		logging.Infof(ctx, "updating %d with its backend tasks", bld.ID)
 
 		var toPut []any
-		for _, ent := range entities {
-			bld := ent.build
-			inf := ent.infra
-			t := inf.Proto.Backend.GetTask()
-			taskID := t.GetId().GetId()
-			if taskID == "" {
-				// impossible.
-				logging.Errorf(ctx, "failed to get backend task id for build %d", bld.ID)
-				continue
-			}
-			fetchedTask := taskMap[taskID]
-			switch {
-			case fetchedTask == nil:
-				logging.Errorf(ctx, "backend task %s:%s is not in valid fetched tasks", t.GetId().GetTarget(), taskID)
-				continue
-			case fetchedTask.UpdateId < t.UpdateId:
-				logging.Errorf(ctx, "FetchTasks returns stale task for %s:%s with update_id %d, which task in datastore has update_id %d", t.GetId().GetTarget(), taskID, fetchedTask.UpdateId, t.UpdateId)
-				continue
-			case fetchedTask.UpdateId == t.UpdateId:
-				// No update from the task, so it's still running.
-				// Update build's UpdateTime (so that NextBackendSyncTime is
-				// recalculated when save) and we're done.
-				bld.Proto.UpdateTime = timestamppb.New(clock.Now(ctx))
-				toPut = append(toPut, bld)
-				continue
-			}
+		t := inf.Proto.Backend.GetTask()
+		taskID := t.GetId().GetId()
+		if taskID == "" {
+			// impossible.
+			logging.Errorf(ctx, "failed to get backend task id for build %d", bld.ID)
+			return nil
+		}
+		fetchedTask := taskMap[taskID]
+		switch {
+		case fetchedTask == nil:
+			logging.Errorf(ctx, "backend task %s:%s is not in valid fetched tasks", t.GetId().GetTarget(), taskID)
+			return nil
+		case fetchedTask.UpdateId < t.UpdateId:
+			logging.Errorf(ctx, "FetchTasks returns stale task for %s:%s with update_id %d, which task in datastore has update_id %d", t.GetId().GetTarget(), taskID, fetchedTask.UpdateId, t.UpdateId)
+			return nil
+		case fetchedTask.UpdateId == t.UpdateId:
+			// No update from the task, so it's still running.
+			// Update build's UpdateTime (so that NextBackendSyncTime is
+			// recalculated when save) and we're done.
+			bld.Proto.UpdateTime = timestamppb.New(clock.Now(ctx))
+			toPut = append(toPut, bld)
+		default:
 			toSave, err := prepareUpdate(ctx, bld, inf, fetchedTask)
 			if err != nil {
 				logging.Errorf(ctx, "failed to update task for build %d: %s", bld.ID, err)
-				continue
+				return nil
 			}
 			toPut = append(toPut, toSave...)
-
 			if protoutil.IsEnded(fetchedTask.Status) {
-				endedBld = append(endedBld, bld)
+				endedBld = bld
 			}
 		}
 		return datastore.Put(ctx, toPut)
 	}, nil)
-	if err != nil {
-		logging.Errorf(ctx, "transaction error: %s", err)
-	}
-	return endedBld, err
+	return
 }
 
 // validateResponses iterates through FetchTaskResponse.Responses and logs the
@@ -274,41 +256,28 @@ func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc
 	}
 
 	// Update entities for the builds that need to sync.
-	curBatch := make([]*datastore.Key, 0, updateBatchSize)
-	var bksBatchesToSync [][]*datastore.Key
+	var bksToSync []*datastore.Key
 	for _, ent := range entities {
-		curBatch = append(curBatch, datastore.KeyForObj(ctx, ent.build))
-		if len(curBatch) == updateBatchSize {
-			bksBatchesToSync = append(bksBatchesToSync, curBatch)
-			curBatch = make([]*datastore.Key, 0, updateBatchSize)
-		}
+		bksToSync = append(bksToSync, datastore.KeyForObj(ctx, ent.build))
 	}
-	if len(curBatch) > 0 {
-		bksBatchesToSync = append(bksBatchesToSync, curBatch)
-	}
-	var endedBld []*model.Build
-	for _, batch := range bksBatchesToSync {
-		batch := batch
-		err := mr.RunMulti(func(work chan<- func() error) {
+
+	return mr.RunMulti(func(work chan<- func() error) {
+		for _, bk := range bksToSync {
+			bk := bk
 			work <- func() error {
-				endedBldInBatch, txErr := updateEntities(ctx, batch, now, taskMap)
+				endedBld, txErr := updateBuildEntities(ctx, bk, now, taskMap)
 				if txErr != nil {
-					return transient.Tag.Apply(errors.Annotate(err, "failed to sync backend tasks").Err())
+					// Log the error, but don't fail the overall task
+					// since this is only to update one build.
+					logging.Errorf(ctx, "transaction error when updating %s: %s", bk.String(), txErr)
 				}
-				endedBld = append(endedBld, endedBldInBatch...)
+				if endedBld != nil {
+					metrics.BuildCompleted(ctx, endedBld)
+				}
 				return nil
 			}
-		})
-		if err != nil {
-			return err
 		}
-	}
-
-	for _, b := range endedBld {
-		metrics.BuildCompleted(ctx, b)
-	}
-
-	return nil
+	})
 }
 
 // SyncBuildsWithBackendTasks syncs all the builds belongs to `project` running

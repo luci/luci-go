@@ -303,7 +303,6 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			for _, id := range bIDs {
 				bks = append(bks, prepEntities(ctx, id, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "ended", now.Add(-time.Hour)))
 			}
-			updateBatchSize = 1 // To test update in multiple batches.
 
 			err := sync(bks)
 			So(err, ShouldBeNil)
@@ -420,7 +419,6 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 		Convey("ok - full mode", func() {
 			bIDs := []int64{101, 102, 103, 104, 105}
 			fetchBatchSize = 1
-			updateBatchSize = 1
 			for _, id := range bIDs {
 				prepEntities(ctx, id, pb.Status_STARTED, pb.Status_SUCCESS, pb.Status_STARTED, "", now.Add(-time.Hour))
 			}
