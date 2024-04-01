@@ -20,6 +20,7 @@ import "google/api/field_behavior.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
@@ -183,6 +184,16 @@ message Invocation {
   // The caller must have `resultdb.baselines.put` to be able to
   // modify this field.
   string baseline_id = 16;
+
+  // Instruction for the invocation.
+  // Only applicable to test results directly contained in this invocation,
+  // i.e. it does not apply to test results in included invocations.
+  Instruction test_instruction = 17;
+
+  // Instructions for the steps.
+  // Only useful for a build-level invocation.
+  // It contains all instructions of steps which belong to the build.
+  Instructions step_instructions = 18;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported

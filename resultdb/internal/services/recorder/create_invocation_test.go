@@ -546,6 +546,45 @@ func TestCreateInvocation(t *testing.T) {
 						Sources: testutil.TestSources(),
 					},
 					BaselineId: "testrealm:test-builder",
+					TestInstruction: &pb.Instruction{
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "test instruction",
+								Dependency: []*pb.InstructionDependency{
+									{
+										BuildId:  "8000",
+										StepName: "step",
+									},
+								},
+							},
+						},
+					},
+					StepInstructions: &pb.Instructions{
+						Instructions: []*pb.Instruction{
+							{
+								Id: "step",
+								TargetedInstructions: []*pb.TargetedInstruction{
+									{
+										Targets: []pb.InstructionTarget{
+											pb.InstructionTarget_LOCAL,
+											pb.InstructionTarget_REMOTE,
+										},
+										Content: "step instruction",
+										Dependency: []*pb.InstructionDependency{
+											{
+												BuildId:  "8001",
+												StepName: "dep_step",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, grpc.Header(headers))

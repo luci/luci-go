@@ -90,6 +90,8 @@ func (InstructionTarget) EnumDescriptor() ([]byte, []int) {
 }
 
 // A collection of instructions.
+// Used for step instruction.
+// This has a size limit of 1MB.
 type Instructions struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -145,9 +147,13 @@ type Instruction struct {
 	unknownFields protoimpl.UnknownFields
 
 	// ID of the instruction, used for step instruction.
-	// It is consumer-defined and is unique within a build.
+	// It is consumer-defined and is unique within the build-level invocation.
+	// For test instruction, we will ignore this field.
+	// Included invocation may have the same instruction id with the parent invocation.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// List of instruction for different targets.
+	// There is at most 1 instruction per target.
+	// If there is more than 1, an error will be returned.
 	TargetedInstructions []*TargetedInstruction `protobuf:"bytes,2,rep,name=targeted_instructions,json=targetedInstructions,proto3" json:"targeted_instructions,omitempty"`
 }
 
@@ -215,7 +221,7 @@ type TargetedInstruction struct {
 	// Placeholders may be used and will be populated with real
 	// information when displayed in the UI.
 	// This will be limit to 10KB. If the content is longer than 10KB,
-	// it will be truncated (to the nearest whitespace).
+	// an error will be returned.
 	// See go/luci-failure-reproduction-instructions-dd for details.
 	Content string `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 }
@@ -289,14 +295,18 @@ type InstructionDependency struct {
 	// we can use placeholders to refer to the top-level build.
 	// For example, "{{build_tags.parent_build_id}}" to refer to the parent build.
 	// If not specified, assuming to be of the same build.
+	// Limit: 100 bytes
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 	// The step name of the instruction being depended on.
 	// If this is a nested step, this field should contain both
 	// parent and child step names, separated by "|".
 	// For example "parent_step_name|child_step_name".
+	// Limit: 1024 bytes
 	StepName string `protobuf:"bytes,2,opt,name=step_name,json=stepName,proto3" json:"step_name,omitempty"`
 	// Optional: In case there are more than one step with the same name
 	// in the build, the step_tag is used to select the exact step to depend on.
+	// This have the same size limit as step tag, 256 bytes for the key,
+	// and 1024 bytes for the value.
 	StepTag *StringPair `protobuf:"bytes,3,opt,name=step_tag,json=stepTag,proto3" json:"step_tag,omitempty"`
 }
 

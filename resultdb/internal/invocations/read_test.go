@@ -67,16 +67,59 @@ func TestRead(t *testing.T) {
 			IsDirty: true,
 		}
 
+		testInstruction := &pb.Instruction{
+			TargetedInstructions: []*pb.TargetedInstruction{
+				{
+					Targets: []pb.InstructionTarget{
+						pb.InstructionTarget_LOCAL,
+						pb.InstructionTarget_REMOTE,
+					},
+					Content: "test instruction",
+					Dependency: []*pb.InstructionDependency{
+						{
+							BuildId:  "8000",
+							StepName: "step",
+						},
+					},
+				},
+			},
+		}
+
+		stepInstructions := &pb.Instructions{
+			Instructions: []*pb.Instruction{
+				{
+					Id: "step",
+					TargetedInstructions: []*pb.TargetedInstruction{
+						{
+							Targets: []pb.InstructionTarget{
+								pb.InstructionTarget_LOCAL,
+								pb.InstructionTarget_REMOTE,
+							},
+							Content: "step instruction",
+							Dependency: []*pb.InstructionDependency{
+								{
+									BuildId:  "8001",
+									StepName: "dep_step",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
 			insertInvocation("including", map[string]any{
-				"State":          pb.Invocation_ACTIVE,
-				"CreateTime":     start,
-				"Deadline":       start.Add(time.Hour),
-				"Properties":     spanutil.Compressed(pbutil.MustMarshal(properties)),
-				"Sources":        spanutil.Compressed(pbutil.MustMarshal(sources)),
-				"InheritSources": spanner.NullBool{Bool: true, Valid: true},
-				"BaselineId":     "try:linux-rel",
+				"State":            pb.Invocation_ACTIVE,
+				"CreateTime":       start,
+				"Deadline":         start.Add(time.Hour),
+				"Properties":       spanutil.Compressed(pbutil.MustMarshal(properties)),
+				"Sources":          spanutil.Compressed(pbutil.MustMarshal(sources)),
+				"InheritSources":   spanner.NullBool{Bool: true, Valid: true},
+				"BaselineId":       "try:linux-rel",
+				"TestInstruction":  spanutil.Compressed(pbutil.MustMarshal(testInstruction)),
+				"StepInstructions": spanutil.Compressed(pbutil.MustMarshal(stepInstructions)),
 			}),
 			insertInvocation("included0", nil),
 			insertInvocation("included1", nil),
@@ -101,7 +144,9 @@ func TestRead(t *testing.T) {
 				Inherit: true,
 				Sources: sources,
 			},
-			BaselineId: "try:linux-rel",
+			BaselineId:       "try:linux-rel",
+			TestInstruction:  testInstruction,
+			StepInstructions: stepInstructions,
 		})
 	})
 }

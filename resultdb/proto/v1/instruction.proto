@@ -21,6 +21,8 @@ import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // A collection of instructions.
+// Used for step instruction.
+// This has a size limit of 1MB.
 message Instructions {
   repeated Instruction instructions = 1;
 }
@@ -29,10 +31,14 @@ message Instructions {
 // Instruction can have different target, like "local" or "remote".
 message Instruction {
   // ID of the instruction, used for step instruction.
-  // It is consumer-defined and is unique within a build.
+  // It is consumer-defined and is unique within the build-level invocation.
+  // For test instruction, we will ignore this field.
+  // Included invocation may have the same instruction id with the parent invocation.
   string id = 1;
 
   // List of instruction for different targets.
+  // There is at most 1 instruction per target.
+  // If there is more than 1, an error will be returned.
   repeated TargetedInstruction targeted_instructions = 2;
 }
 
@@ -52,7 +58,7 @@ message TargetedInstruction {
   // Placeholders may be used and will be populated with real
   // information when displayed in the UI.
   // This will be limit to 10KB. If the content is longer than 10KB,
-  // it will be truncated (to the nearest whitespace).
+  // an error will be returned.
   // See go/luci-failure-reproduction-instructions-dd for details.
   string content = 3;
 }
@@ -69,16 +75,20 @@ message InstructionDependency {
   // we can use placeholders to refer to the top-level build.
   // For example, "{{build_tags.parent_build_id}}" to refer to the parent build.
   // If not specified, assuming to be of the same build.
+  // Limit: 100 bytes
   string build_id = 1;
 
   // The step name of the instruction being depended on.
   // If this is a nested step, this field should contain both
   // parent and child step names, separated by "|".
   // For example "parent_step_name|child_step_name".
+  // Limit: 1024 bytes
   string step_name = 2;
 
   // Optional: In case there are more than one step with the same name
   // in the build, the step_tag is used to select the exact step to depend on.
+  // This have the same size limit as step tag, 256 bytes for the key,
+  // and 1024 bytes for the value.
   StringPair step_tag = 3;
 }
 

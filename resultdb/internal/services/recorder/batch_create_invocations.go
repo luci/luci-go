@@ -164,6 +164,8 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 			Properties:       req.Invocation.GetProperties(),
 			SourceSpec:       req.Invocation.GetSourceSpec(),
 			BaselineId:       req.Invocation.GetBaselineId(),
+			TestInstruction:  req.Invocation.GetTestInstruction(),
+			StepInstructions: req.Invocation.GetStepInstructions(),
 		}
 
 		// Ensure the invocation has a deadline.

@@ -164,4 +164,113 @@ func TestValidate(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("ValidateInstruction", t, func() {
+		stepInstructions := &pb.Instructions{
+			Instructions: []*pb.Instruction{
+				{
+					Id: "instruction1",
+					TargetedInstructions: []*pb.TargetedInstruction{
+						{
+							Targets: []pb.InstructionTarget{
+								pb.InstructionTarget_LOCAL,
+							},
+							Content: "content1",
+						},
+					},
+				},
+				{
+					Id: "instruction2",
+					TargetedInstructions: []*pb.TargetedInstruction{
+						{
+							Targets: []pb.InstructionTarget{
+								pb.InstructionTarget_LOCAL,
+							},
+							Content: "content2",
+						},
+					},
+				},
+			},
+		}
+		Convey("Valid Step Instructions", func() {
+			So(ValidateStepInstructions(stepInstructions), ShouldBeNil)
+		})
+		Convey("Step Instruction can be nil", func() {
+			So(ValidateStepInstructions(nil), ShouldBeNil)
+		})
+		Convey("No ID", func() {
+			stepInstructions.Instructions[0].Id = ""
+			So(ValidateStepInstructions(stepInstructions), ShouldErrLike, "step instructions: unspecified id")
+		})
+		Convey("Duplicate ID", func() {
+			stepInstructions.Instructions[0].Id = "instruction2"
+			So(ValidateStepInstructions(stepInstructions), ShouldErrLike, `step instructions: ID "instruction2" is re-used at index 0 and 1`)
+		})
+
+		instruction := &pb.Instruction{
+			TargetedInstructions: []*pb.TargetedInstruction{
+				{
+					Targets: []pb.InstructionTarget{
+						pb.InstructionTarget_LOCAL,
+					},
+					Content: "content1",
+				},
+				{
+					Targets: []pb.InstructionTarget{
+						pb.InstructionTarget_REMOTE,
+					},
+					Content: "content2",
+					Dependency: []*pb.InstructionDependency{
+						{
+							BuildId:  "8000",
+							StepName: "compile",
+						},
+					},
+				},
+			},
+		}
+		Convey("Valid Test Instruction", func() {
+			So(ValidateTestInstruction(instruction), ShouldBeNil)
+		})
+		Convey("Test instruction can be nil", func() {
+			So(ValidateTestInstruction(nil), ShouldBeNil)
+		})
+		Convey("Empty target", func() {
+			instruction.TargetedInstructions[0].Targets = []pb.InstructionTarget{}
+			So(ValidateInstruction(instruction), ShouldErrLike, "target: empty")
+		})
+		Convey("Unspecified target", func() {
+			instruction.TargetedInstructions[0].Targets = []pb.InstructionTarget{
+				pb.InstructionTarget_INSTRUCTION_TARGET_UNSPECIFIED,
+			}
+			So(ValidateInstruction(instruction), ShouldErrLike, "target: unspecified")
+		})
+		Convey("Duplicated target", func() {
+			instruction.TargetedInstructions[0].Targets = []pb.InstructionTarget{
+				pb.InstructionTarget_REMOTE,
+			}
+			So(ValidateInstruction(instruction), ShouldErrLike, `target: duplicated "REMOTE"`)
+		})
+		Convey("Exceed size limit", func() {
+			content := ""
+			for i := 0; i < 120000; i++ {
+				content += "a"
+			}
+			instruction.TargetedInstructions[0].Content = content
+			So(ValidateInstruction(instruction), ShouldErrLike, "content: longer than 10240 bytes")
+		})
+		Convey("More than 1 dependency", func() {
+			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
+				{
+					BuildId:  "8000",
+					StepName: "dep1",
+				},
+				{
+					BuildId:  "8000",
+					StepName: "dep2",
+				},
+			}
+			So(ValidateInstruction(instruction), ShouldErrLike, "dependency: more than 1")
+		})
+	})
 }

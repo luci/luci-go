@@ -146,6 +146,8 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"InheritSources":   spanner.NullBool{Valid: inv.SourceSpec != nil, Bool: inv.SourceSpec.GetInherit()},
 		"Sources":          spanutil.Compressed(pbutil.MustMarshal(inv.SourceSpec.GetSources())),
 		"BaselineId":       inv.BaselineId,
+		"TestInstruction":  spanutil.Compressed(pbutil.MustMarshal(inv.TestInstruction)),
+		"StepInstructions": spanutil.Compressed(pbutil.MustMarshal(inv.StepInstructions)),
 	}
 
 	if inv.State == pb.Invocation_FINALIZED {

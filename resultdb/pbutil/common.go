@@ -23,16 +23,19 @@ import (
 	"time"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const MaxSizeProperties = 4 * 1024
+
+const MaxInstructionSize = 10 * 1024 // 10 KB
 
 var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
 
@@ -218,6 +221,82 @@ func ValidateGerritChange(change *pb.GerritChange) error {
 	default:
 		return nil
 	}
+}
+
+func ValidateTestInstruction(instruction *pb.Instruction) error {
+	// We allows invocation with no test instructions.
+	if instruction == nil {
+		return nil
+	}
+	if err := ValidateInstruction(instruction); err != nil {
+		return errors.Annotate(err, "test instruction").Err()
+	}
+	return nil
+}
+
+func ValidateStepInstructions(instructions *pb.Instructions) error {
+	// We allows invocation with no step instructions.
+	if instructions == nil {
+		return nil
+	}
+	// TODO (nqmtuan): check total size limit of message.
+	idMap := map[string]int{}
+	for i, instruction := range instructions.Instructions {
+		// Make sure that all instructions have id, and id are unique.
+		if instruction.Id == "" {
+			return errors.Reason("step instructions: unspecified id").Err()
+		}
+		if index, ok := idMap[instruction.Id]; ok {
+			return errors.Reason("step instructions: ID %q is re-used at index %d and %d", instruction.Id, index, i).Err()
+		}
+		idMap[instruction.Id] = i
+		if err := ValidateInstruction(instruction); err != nil {
+			return errors.Annotate(err, "step instructions").Err()
+		}
+	}
+	return nil
+}
+
+func ValidateInstruction(instruction *pb.Instruction) error {
+	targetMap := map[pb.InstructionTarget]bool{}
+	for _, targetedInstruction := range instruction.TargetedInstructions {
+		// Check that targets are not empty.
+		if len(targetedInstruction.Targets) == 0 {
+			return errors.Reason("target: empty").Err()
+		}
+		// Check that targets are valid.
+		for _, target := range targetedInstruction.Targets {
+			if target == pb.InstructionTarget_INSTRUCTION_TARGET_UNSPECIFIED {
+				return errors.Reason("target: unspecified").Err()
+			}
+			if _, ok := targetMap[target]; ok {
+				return errors.Reason("target: duplicated %q", target).Err()
+			}
+			targetMap[target] = true
+		}
+		// Make sure content size <= 10KB.
+		// TODO (nqmtuan): Validate this is a valid mustache template.
+		if len(targetedInstruction.Content) > MaxInstructionSize {
+			return errors.Reason("content: longer than %v bytes", MaxInstructionSize).Err()
+		}
+		// Check dependency.
+		if err := ValidateDependencies(targetedInstruction.Dependency); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ValidateDependencies(dependencies []*pb.InstructionDependency) error {
+	if len(dependencies) == 0 {
+		return nil
+	}
+	if len(dependencies) > 1 {
+		return errors.Reason("dependency: more than 1").Err()
+	}
+	// TODO (nqmtuan): Validate dependency.build_id is either integer or mustache format.
+	// TODO (nqmtuan): Validate the size limit of the fields.
+	return nil
 }
 
 // SortGerritChanges sorts in-place the gerrit changes lexicographically.
