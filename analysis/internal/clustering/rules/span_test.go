@@ -434,7 +434,7 @@ func TestSpan(t *testing.T) {
 			Convey(`With invalid Rule Definition`, func() {
 				r.RuleDefinition = "invalid"
 				_, err := testCreate(r, LUCIAnalysisSystem)
-				So(err, ShouldErrLike, "rule definition: syntax error")
+				So(err, ShouldErrLike, "rule definition: parse: syntax error")
 			})
 			Convey(`With too long Rule Definition`, func() {
 				r.RuleDefinition = strings.Repeat(" ", MaxRuleDefinitionLength+1)
@@ -574,7 +574,7 @@ func TestSpan(t *testing.T) {
 						IsAuditableUpdate: true,
 						PredicateUpdated:  true,
 					}, LUCIAnalysisSystem)
-					So(err, ShouldErrLike, "rule definition: syntax error")
+					So(err, ShouldErrLike, "rule definition: parse: syntax error")
 				})
 				Convey(`With invalid Bug ID`, func() {
 					r.BugID.System = ""

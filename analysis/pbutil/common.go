@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/resultdb/pbutil"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -279,4 +280,20 @@ func ValidateProject(project string) error {
 // ValidateSources validates a set of sources.
 func ValidateSources(sources *pb.Sources) error {
 	return pbutil.ValidateSources(SourcesToResultDB(sources))
+}
+
+// ValidateTestID validates a test ID.
+func ValidateTestID(testID string) error {
+	return pbutil.ValidateTestID(testID)
+}
+
+// ValidateFailureReason validates a failure reason.
+func ValidateFailureReason(fr *pb.FailureReason) error {
+	if fr == nil {
+		return errors.Reason("unspecified").Err()
+	}
+	rdbfr := &rdbpb.FailureReason{
+		PrimaryErrorMessage: fr.PrimaryErrorMessage,
+	}
+	return pbutil.ValidateFailureReason(rdbfr)
 }

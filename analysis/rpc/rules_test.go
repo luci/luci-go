@@ -357,6 +357,91 @@ func TestRules(t *testing.T) {
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.getDefinition")
 				So(rule, ShouldBeNil)
 			})
+			Convey("Validation error", func() {
+				Convey("Rule unspecified", func() {
+					request.Rule = nil
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument,
+						"rule: name: invalid rule name")
+				})
+				Convey("Empty bug", func() {
+					request.Rule.Bug = nil
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, "rule: bug: unspecified")
+				})
+				Convey("Invalid bug system", func() {
+					request.Rule.Bug.System = "other"
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, "rule: bug: invalid bug tracking system \"other\"")
+				})
+				Convey("Invalid buganizer bug id", func() {
+					request.Rule.Bug.System = "buganizer"
+					request.Rule.Bug.Id = "-12345"
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, "rule: bug: invalid buganizer bug ID \"-12345\"")
+				})
+				Convey("Invalid bug monorail project", func() {
+					request.Rule.Bug.Id = "otherproject/2"
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, "rule: bug: bug not in expected monorail project (monorailproject)")
+				})
+				Convey("Monorail bug on project that does not support it", func() {
+					cfg.BugManagement.Monorail = nil
+
+					err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
+						"testproject": cfg,
+					})
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, "rule: bug: monorail bug system not enabled for this LUCI project")
+				})
+				Convey("Re-use of same bug in same project", func() {
+					// Use the same bug as another rule.
+					request.Rule.Bug = &pb.AssociatedBug{
+						System: ruleTwoProject.BugID.System,
+						Id:     ruleTwoProject.BugID.ID,
+					}
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCFailedPrecondition,
+						fmt.Sprintf("bug already used by a rule in the same project (%s/%s)",
+							ruleTwoProject.Project, ruleTwoProject.RuleID))
+				})
+				Convey("Bug managed by another rule", func() {
+					// Select a bug already managed by another rule.
+					request.Rule.Bug = &pb.AssociatedBug{
+						System: ruleManagedOther.BugID.System,
+						Id:     ruleManagedOther.BugID.ID,
+					}
+					// Request we manage this bug.
+					request.Rule.IsManagingBug = true
+					request.UpdateMask.Paths = []string{"bug", "is_managing_bug"}
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCFailedPrecondition,
+						fmt.Sprintf("rule: bug: bug already managed by a rule in another project (%s/%s)",
+							ruleManagedOther.Project, ruleManagedOther.RuleID))
+				})
+				Convey("Empty rule definition", func() {
+					// Use an invalid failure association rule.
+					request.Rule.RuleDefinition = ""
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: unspecified`)
+				})
+				Convey("Invalid rule definition", func() {
+					// Use an invalid failure association rule.
+					request.Rule.RuleDefinition = "<"
+
+					_, err := srv.Update(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`)
+				})
+			})
 			Convey("Success", func() {
 				Convey("Predicate updated", func() {
 					// The requested updates should be applied.
@@ -555,63 +640,6 @@ func TestRules(t *testing.T) {
 				So(rule, ShouldBeNil)
 				So(err, ShouldBeRPCNotFound)
 			})
-			Convey("Validation error", func() {
-				Convey("Invalid bug monorail project", func() {
-					request.Rule.Bug.Id = "otherproject/2"
-
-					rule, err := srv.Update(ctx, request)
-					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "bug not in expected monorail project (monorailproject)")
-				})
-				Convey("Monorail bug on project that does not support it", func() {
-					cfg.BugManagement.Monorail = nil
-
-					err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
-						"testproject": cfg,
-					})
-
-					rule, err := srv.Update(ctx, request)
-					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "monorail bug system not enabled for this LUCI project")
-				})
-				Convey("Re-use of same bug in same project", func() {
-					// Use the same bug as another rule.
-					request.Rule.Bug = &pb.AssociatedBug{
-						System: ruleTwoProject.BugID.System,
-						Id:     ruleTwoProject.BugID.ID,
-					}
-
-					rule, err := srv.Update(ctx, request)
-					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument,
-						fmt.Sprintf("bug already used by a rule in the same project (%s/%s)",
-							ruleTwoProject.Project, ruleTwoProject.RuleID))
-				})
-				Convey("Bug managed by another rule", func() {
-					// Select a bug already managed by another rule.
-					request.Rule.Bug = &pb.AssociatedBug{
-						System: ruleManagedOther.BugID.System,
-						Id:     ruleManagedOther.BugID.ID,
-					}
-					// Request we manage this bug.
-					request.Rule.IsManagingBug = true
-					request.UpdateMask.Paths = []string{"bug", "is_managing_bug"}
-
-					rule, err := srv.Update(ctx, request)
-					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument,
-						fmt.Sprintf("bug already managed by a rule in another project (%s/%s)",
-							ruleManagedOther.Project, ruleManagedOther.RuleID))
-				})
-				Convey("Invalid rule definition", func() {
-					// Use an invalid failure association rule.
-					request.Rule.RuleDefinition = ""
-
-					rule, err := srv.Update(ctx, request)
-					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `rule definition: syntax error: 1:1: unexpected token "<EOF>"`)
-				})
-			})
 		})
 		Convey("Create", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
@@ -655,6 +683,62 @@ func TestRules(t *testing.T) {
 				rule, err := srv.Create(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.getDefinition")
 				So(rule, ShouldBeNil)
+			})
+			Convey("Validation error", func() {
+				Convey("Rule unspecified", func() {
+					request.Rule = nil
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument,
+						"rule: unspecified")
+				})
+				Convey("Bug unspecified", func() {
+					request.Rule.Bug = nil
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument,
+						"rule: bug: unspecified")
+				})
+				Convey("Invalid buganizer bug", func() {
+					request.Rule.Bug.System = "buganizer"
+					request.Rule.Bug.Id = "-2"
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument,
+						"rule: bug: invalid buganizer bug ID \"-2\"")
+				})
+				Convey("Invalid bug monorail project", func() {
+					request.Rule.Bug.Id = "otherproject/2"
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument,
+						"rule: bug: bug not in expected monorail project (monorailproject)")
+				})
+				Convey("Re-use of same bug in same project", func() {
+					// Use the same bug as another rule, in the same project.
+					request.Rule.Bug = &pb.AssociatedBug{
+						System: ruleTwoProject.BugID.System,
+						Id:     ruleTwoProject.BugID.ID,
+					}
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCFailedPrecondition,
+						fmt.Sprintf("rule: bug: bug already used by a rule in the same project (%s/%s)",
+							ruleTwoProject.Project, ruleTwoProject.RuleID))
+				})
+				Convey("Empty rule definition", func() {
+					request.Rule.RuleDefinition = ""
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: unspecified`)
+				})
+				Convey("Invalid rule definition", func() {
+					// Use an invalid failure association rule.
+					request.Rule.RuleDefinition = "<"
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`)
+				})
 			})
 			Convey("Success", func() {
 				expectedRuleBuilder := rules.NewRule(0).
@@ -809,36 +893,202 @@ func TestRules(t *testing.T) {
 					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 			})
+		})
+		Convey("CreateWithNewIssue", func() {
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{
+					Realm:      "testproject:@project",
+					Permission: perms.PermCreateRule,
+				},
+				{
+					Realm:      "testproject:@project",
+					Permission: perms.PermGetRuleDefinition,
+				},
+			}
+			request := &pb.CreateRuleWithNewIssueRequest{
+				Parent: fmt.Sprintf("projects/%s", testProject),
+				Rule: &pb.Rule{
+					RuleDefinition:        `test = "create"`,
+					IsActive:              false,
+					IsManagingBug:         true,
+					IsManagingBugPriority: true,
+					SourceCluster: &pb.ClusterId{
+						Algorithm: testname.AlgorithmName,
+						Id:        strings.Repeat("aa", 16),
+					},
+				},
+				Issue: &pb.CreateRuleWithNewIssueRequest_Issue{
+					Component: &pb.BugComponent{
+						System: &pb.BugComponent_IssueTracker{
+							IssueTracker: &pb.IssueTrackerComponent{
+								ComponentId: 123456,
+							},
+						},
+					},
+					Title:    "Issue title.",
+					Comment:  "Description.",
+					Priority: pb.BuganizerPriority_P1,
+					Limit:    pb.CreateRuleWithNewIssueRequest_Issue_Trusted,
+				},
+			}
+
+			Convey("No create rule permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermCreateRule)
+
+				rule, err := srv.CreateWithNewIssue(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.create")
+				So(rule, ShouldBeNil)
+			})
+			Convey("No create rule definition permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
+
+				rule, err := srv.CreateWithNewIssue(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.getDefinition")
+				So(rule, ShouldBeNil)
+			})
 			Convey("Validation error", func() {
-				Convey("Invalid bug monorail project", func() {
-					request.Rule.Bug.Id = "otherproject/2"
+				Convey("Rule", func() {
+					Convey("Unspecified", func() {
+						request.Rule = nil
 
-					rule, err := srv.Create(ctx, request)
-					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument,
-						"bug not in expected monorail project (monorailproject)")
-				})
-				Convey("Re-use of same bug in same project", func() {
-					// Use the same bug as another rule, in the same project.
-					request.Rule.Bug = &pb.AssociatedBug{
-						System: ruleTwoProject.BugID.System,
-						Id:     ruleTwoProject.BugID.ID,
-					}
+						_, err := srv.CreateWithNewIssue(ctx, request)
+						So(err, ShouldBeRPCInvalidArgument,
+							"rule: unspecified")
+					})
+					Convey("Bug specified", func() {
+						// This RPC creates a bug, so the rule should not already have a
+						// bug.
+						request.Rule.Bug = &pb.AssociatedBug{
+							System: "buganizer",
+							Id:     "12345",
+						}
 
-					rule, err := srv.Create(ctx, request)
-					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument,
-						fmt.Sprintf("bug already used by a rule in the same project (%s/%s)",
-							ruleTwoProject.Project, ruleTwoProject.RuleID))
-				})
-				Convey("Invalid rule definition", func() {
-					// Use an invalid failure association rule.
-					request.Rule.RuleDefinition = ""
+						_, err := srv.CreateWithNewIssue(ctx, request)
+						So(err, ShouldBeRPCInvalidArgument,
+							"rule: bug: must not be specified, as a new bug will be created by this RPC")
+					})
+					Convey("Empty rule definition", func() {
+						request.Rule.RuleDefinition = ""
 
-					rule, err := srv.Create(ctx, request)
-					So(rule, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `rule definition: syntax error: 1:1: unexpected token "<EOF>"`)
+						_, err := srv.CreateWithNewIssue(ctx, request)
+						So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: unspecified`)
+					})
+					Convey("Invalid rule definition", func() {
+						// Use an invalid failure association rule.
+						request.Rule.RuleDefinition = "<"
+
+						_, err := srv.CreateWithNewIssue(ctx, request)
+						So(err, ShouldBeRPCInvalidArgument, `rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`)
+					})
 				})
+				Convey("Issue", func() {
+					Convey("unspecified", func() {
+						request.Issue = nil
+
+						_, err := srv.CreateWithNewIssue(ctx, request)
+						So(err, ShouldBeRPCInvalidArgument, `issue: unspecified`)
+					})
+					Convey("title", func() {
+						Convey("unspecified", func() {
+							request.Issue.Title = ""
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: title: unspecified`)
+						})
+						Convey("too long", func() {
+							request.Issue.Title = strings.Repeat("a", 251)
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: title: longer than 250 bytes`)
+						})
+						Convey("invalid - non-printables", func() {
+							request.Issue.Title = "hello\x00"
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: title: non-printable rune '\x00' at byte index 5`)
+						})
+						Convey("invalid - invalid UTF-8", func() {
+							request.Issue.Title = "\xFF"
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: title: not a valid utf8 string`)
+						})
+						Convey("invalid - not in normal form C", func() {
+							// U+0041 (LATIN CAPITAL LETTER A) followed by U+030A (COMBINING ACUTE ACCENT) is Normal Form D.
+							// It should be written as U+00C5 (LATIN CAPITAL LETTER A WITH RING ABOVE) in Normal Form C.
+							request.Issue.Title = "\u0041\u030a"
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: title: not in unicode normalized form C`)
+						})
+					})
+					Convey("comment", func() {
+						Convey("unspecified", func() {
+							request.Issue.Comment = ""
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: comment: unspecified`)
+						})
+						Convey("too long", func() {
+							request.Issue.Comment = strings.Repeat("a", 100_001)
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: comment: longer than 100000 bytes`)
+						})
+						Convey("invalid - non-printables", func() {
+							request.Issue.Comment = "hello\x00"
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: comment: non-printable rune '\x00' at byte index 5`)
+						})
+						Convey("invalid - invalid UTF-8", func() {
+							request.Issue.Comment = "\xFF"
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: comment: not a valid utf8 string`)
+						})
+						Convey("invalid - not in normal form C", func() {
+							// U+0041 (LATIN CAPITAL LETTER A) followed by U+030A (COMBINING ACUTE ACCENT) is Normal Form D.
+							// It should be written as U+00C5 (LATIN CAPITAL LETTER A WITH RING ABOVE) in Normal Form C.
+							request.Issue.Comment = "\u0041\u030a"
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: comment: not in unicode normalized form C`)
+						})
+					})
+					Convey("limit", func() {
+						Convey("unspecified", func() {
+							request.Issue.Limit = pb.CreateRuleWithNewIssueRequest_Issue_ISSUE_ACCESS_LIMIT_UNSPECIFIED
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: limit: unspecified`)
+						})
+						Convey("invalid", func() {
+							request.Issue.Limit = pb.CreateRuleWithNewIssueRequest_Issue_IssueAccessLimit(100)
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: limit: invalid value, must be a valid IssueAccessLimit`)
+						})
+					})
+					Convey("priority", func() {
+						Convey("unspecified", func() {
+							request.Issue.Priority = pb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: priority: unspecified`)
+						})
+						Convey("invalid", func() {
+							request.Issue.Priority = pb.BuganizerPriority(100)
+
+							_, err := srv.CreateWithNewIssue(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, `issue: priority: invalid value, must be a valid BuganizerPriority`)
+						})
+					})
+				})
+			})
+			Convey("Success", func() {
+				_, err := srv.CreateWithNewIssue(ctx, request)
+				So(err, ShouldHaveRPCCode, codes.Unimplemented)
 			})
 		})
 		Convey("LookupBug", func() {
@@ -924,41 +1174,70 @@ func TestRules(t *testing.T) {
 				})
 			})
 			Convey("PrepareDefaults", func() {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{
+						Realm:      "testproject:@project",
+						Permission: perms.PermGetConfig,
+					},
+				}
+
 				request := &pb.PrepareRuleDefaultsRequest{
 					Parent: fmt.Sprintf("projects/%s", testProject),
-				}
-				_, err := srv.PrepareDefaults(ctx, request)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented)
-			})
-			Convey("CreateWithNewIssue", func() {
-				request := &pb.CreateRuleWithNewIssueRequest{
-					Parent: fmt.Sprintf("projects/%s", testProject),
-					Rule: &pb.Rule{
-						RuleDefinition:        `test = "create"`,
-						IsActive:              false,
-						IsManagingBug:         true,
-						IsManagingBugPriority: true,
-						SourceCluster: &pb.ClusterId{
-							Algorithm: testname.AlgorithmName,
-							Id:        strings.Repeat("aa", 16),
+					TestResult: &pb.PrepareRuleDefaultsRequest_TestResult{
+						TestId: "ninja://some_package/some_test",
+						FailureReason: &pb.FailureReason{
+							PrimaryErrorMessage: "Some error.",
 						},
 					},
-					Issue: &pb.CreateRuleWithNewIssueRequest_Issue{
-						Component: &pb.BugComponent{
-							System: &pb.BugComponent_IssueTracker{
-								IssueTracker: &pb.IssueTrackerComponent{
-									ComponentId: 123456,
-								},
-							},
-						},
-						Title:    "Issue title.",
-						Comment:  "Description.",
-						Priority: pb.BuganizerPriority_P1,
-						Limit:    pb.CreateRuleWithNewIssueRequest_Issue_Trusted,
-					},
 				}
-				_, err := srv.CreateWithNewIssue(ctx, request)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+				Convey("No get config permission", func() {
+					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
+
+					_, err := srv.PrepareDefaults(ctx, request)
+					So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.config.get")
+				})
+				Convey("Validation", func() {
+					Convey("test ID", func() {
+						Convey("unspecified", func() {
+							request.TestResult.TestId = ""
+
+							_, err := srv.PrepareDefaults(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, "")
+						})
+						Convey("invalid", func() {
+							request.TestResult.TestId = strings.Repeat("a", 513)
+
+							_, err := srv.PrepareDefaults(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, "test_result: test_id: longer than 512 bytes")
+						})
+					})
+					Convey("failure reason", func() {
+						Convey("invalid", func() {
+							request.TestResult.FailureReason.PrimaryErrorMessage = strings.Repeat("a", 1025)
+
+							_, err := srv.PrepareDefaults(ctx, request)
+							So(err, ShouldBeRPCInvalidArgument, "test_result: failure_reason: primary_error_message: exceeds the maximum size of 1024 bytes")
+						})
+					})
+				})
+				Convey("Success", func() {
+					Convey("Baseline", func() {
+						_, err := srv.PrepareDefaults(ctx, request)
+						So(err, ShouldHaveRPCCode, codes.Unimplemented)
+					})
+					Convey("With no failure reason", func() {
+						request.TestResult.FailureReason = nil
+
+						_, err := srv.PrepareDefaults(ctx, request)
+						So(err, ShouldHaveRPCCode, codes.Unimplemented)
+					})
+					Convey("With no test result", func() {
+						request.TestResult = nil
+
+						_, err := srv.PrepareDefaults(ctx, request)
+						So(err, ShouldHaveRPCCode, codes.Unimplemented)
+					})
+				})
 			})
 		})
 	})

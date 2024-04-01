@@ -19,7 +19,10 @@ import (
 	"fmt"
 	"regexp"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
+	"golang.org/x/text/unicode/norm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -34,10 +37,18 @@ import (
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
-	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	"go.chromium.org/luci/analysis/internal/perms"
+	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+)
+
+const (
+	// Maximum length of a new issue title, in UTF-8 bytes.
+	maxTitleLengthBytes = 250
+
+	// Maximum length of a new issue description, in UTF-8 bytes.
+	maxCommentLengthBytes = 100_000
 )
 
 // Rules implements pb.RulesServer.
@@ -57,7 +68,7 @@ func NewRulesSever() pb.RulesServer {
 func (*rulesServer) Get(ctx context.Context, req *pb.GetRuleRequest) (*pb.Rule, error) {
 	project, ruleID, err := parseRuleName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetRule); err != nil {
 		return nil, err
@@ -74,7 +85,7 @@ func (*rulesServer) Get(ctx context.Context, req *pb.GetRuleRequest) (*pb.Rule, 
 
 	r, err := rules.Read(span.Single(ctx), project, ruleID)
 	if err != nil {
-		if err == rules.NotExistsErr {
+		if errors.Is(err, rules.NotExistsErr) {
 			return nil, appstatus.Error(codes.NotFound, "rule does not exist")
 		}
 		// This will result in an internal error being reported to the caller.
@@ -114,7 +125,7 @@ func ruleFieldAccess(ctx context.Context, project string) (ruleMask, error) {
 func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.ListRulesResponse, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermListRules); err != nil {
 		return nil, err
@@ -150,17 +161,20 @@ func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.Lis
 func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.Rule, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
 	}
-	ruleMask, err := ruleFieldAccess(ctx, project)
+	cfg, err := readProjectConfig(ctx, project)
 	if err != nil {
 		return nil, err
 	}
+	if err := validateCreateRuleRequest(req, cfg.Config); err != nil {
+		return nil, invalidArgumentError(err)
+	}
 
-	cfg, err := readProjectConfig(ctx, project)
+	ruleMask, err := ruleFieldAccess(ctx, project)
 	if err != nil {
 		return nil, err
 	}
@@ -171,28 +185,7 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 	}
 	user := auth.CurrentUser(ctx).Email
 
-	r := &rules.Entry{
-		Project:        project,
-		RuleID:         ruleID,
-		RuleDefinition: req.Rule.GetRuleDefinition(),
-		BugID: bugs.BugID{
-			System: req.Rule.Bug.GetSystem(),
-			ID:     req.Rule.Bug.GetId(),
-		},
-		IsActive:              req.Rule.GetIsActive(),
-		IsManagingBug:         req.Rule.GetIsManagingBug(),
-		IsManagingBugPriority: req.Rule.GetIsManagingBugPriority(),
-		SourceCluster: clustering.ClusterID{
-			Algorithm: req.Rule.SourceCluster.GetAlgorithm(),
-			ID:        req.Rule.SourceCluster.GetId(),
-		},
-		BugManagementState: &bugspb.BugManagementState{},
-	}
-
-	if err := validateBugAgainstConfig(cfg, r.BugID); err != nil {
-		return nil, invalidArgumentError(err)
-	}
-
+	r := ruleEntryFromRequest(project, ruleID, req.Rule)
 	commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Verify the bug is not used by another rule in this project.
 		bugRules, err := rules.ReadByBug(ctx, r.BugID)
@@ -209,13 +202,13 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 				r.IsManagingBug = false
 			}
 			if otherRule.Project == r.Project {
-				return invalidArgumentError(fmt.Errorf("bug already used by a rule in the same project (%s/%s)", otherRule.Project, otherRule.RuleID))
+				return failedPreconditionError(fmt.Errorf("rule: bug: bug already used by a rule in the same project (%s/%s)", otherRule.Project, otherRule.RuleID))
 			}
 		}
 
 		ms, err := rules.Create(r, user)
 		if err != nil {
-			return invalidArgumentError(err)
+			return err
 		}
 		span.BufferWrite(ctx, ms)
 		return nil
@@ -243,6 +236,18 @@ func logRuleCreate(ctx context.Context, rule *rules.Entry) {
 }
 
 func (*rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRuleWithNewIssueRequest) (*pb.Rule, error) {
+	project, err := parseProjectName(req.Parent)
+	if err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+	}
+	// TODO: Check group membership to ensure buganizer access.
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule, perms.PermGetRuleDefinition); err != nil {
+		return nil, err
+	}
+	if err := validateCreateRuleWithNewIssueRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+
 	return nil, appstatus.Errorf(codes.Unimplemented, "not yet implemented")
 }
 
@@ -250,17 +255,19 @@ func (*rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRuleWi
 func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.Rule, error) {
 	project, ruleID, err := parseRuleName(req.Rule.GetName())
 	if err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, invalidArgumentError(errors.Annotate(err, "rule: name").Err())
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermUpdateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
 	}
-	ruleMask, err := ruleFieldAccess(ctx, project)
+	cfg, err := readProjectConfig(ctx, project)
 	if err != nil {
 		return nil, err
 	}
-
-	cfg, err := readProjectConfig(ctx, project)
+	if err := validateUpdateRuleRequest(req, cfg.Config); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+	ruleMask, err := ruleFieldAccess(ctx, project)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +281,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 	f := func(ctx context.Context) error {
 		rule, err := rules.Read(ctx, project, ruleID)
 		if err != nil {
-			if err == rules.NotExistsErr {
+			if errors.Is(err, rules.NotExistsErr) {
 				return appstatus.Error(codes.NotFound, "rule does not exist")
 			}
 			// This will result in an internal error being reported to the
@@ -310,6 +317,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 
 		for _, path := range req.UpdateMask.Paths {
 			// Only limited fields may be modified by the client.
+			// Keep this switch statement in sync with validateUpdateRuleRequest.
 			switch path {
 			case "rule_definition":
 				if rule.RuleDefinition != req.Rule.RuleDefinition {
@@ -320,9 +328,6 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 				bugID := bugs.BugID{
 					System: req.Rule.Bug.GetSystem(),
 					ID:     req.Rule.Bug.GetId(),
-				}
-				if err := validateBugAgainstConfig(cfg, bugID); err != nil {
-					return invalidArgumentError(err)
 				}
 				if rule.BugID != bugID {
 					updatingBug = true // Triggers validation.
@@ -356,7 +361,9 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 					rule.IsManagingBugPriority = req.Rule.IsManagingBugPriority
 				}
 			default:
-				return invalidArgumentError(fmt.Errorf("unsupported field mask: %s", path))
+				// This should never be reached, as update masks are
+				// checked in validateUpdateRuleRequest.
+				return fmt.Errorf("unsupported field mask: %s", path)
 			}
 		}
 
@@ -372,7 +379,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			}
 			for _, otherRule := range bugRules {
 				if otherRule.Project == project && otherRule.RuleID != ruleID {
-					return invalidArgumentError(fmt.Errorf("bug already used by a rule in the same project (%s/%s)", otherRule.Project, otherRule.RuleID))
+					return failedPreconditionError(fmt.Errorf("rule: bug: bug already used by a rule in the same project (%s/%s)", otherRule.Project, otherRule.RuleID))
 				}
 			}
 			for _, otherRule := range bugRules {
@@ -380,7 +387,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 					if requestedManagedTrue {
 						// The caller explicitly requested an update of
 						// IsManagingBug to true, but we cannot do this.
-						return invalidArgumentError(fmt.Errorf("bug already managed by a rule in another project (%s/%s)", otherRule.Project, otherRule.RuleID))
+						return failedPreconditionError(fmt.Errorf("rule: bug: bug already managed by a rule in another project (%s/%s)", otherRule.Project, otherRule.RuleID))
 					}
 					// If only changing the bug, avoid conflicts by silently
 					// making the bug not managed by this rule if there is
@@ -399,7 +406,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			IsManagingBugPriorityUpdated: updatingIsManagingBugPriority,
 		}, user)
 		if err != nil {
-			return invalidArgumentError(err)
+			return err
 		}
 		span.BufferWrite(ctx, ms)
 		updatedRule = rule
@@ -477,7 +484,263 @@ func (*rulesServer) LookupBug(ctx context.Context, req *pb.LookupBugRequest) (*p
 }
 
 func (*rulesServer) PrepareDefaults(ctx context.Context, req *pb.PrepareRuleDefaultsRequest) (*pb.PrepareRuleDefaultsResponse, error) {
+	project, err := parseProjectName(req.Parent)
+	if err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+	}
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetConfig); err != nil {
+		return nil, err
+	}
+	if err := validatePrepareRuleDefaultsRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+
 	return nil, appstatus.Errorf(codes.Unimplemented, "not yet implemented")
+}
+
+func validateCreateRuleRequest(req *pb.CreateRuleRequest, cfg *configpb.ProjectConfig) error {
+	// No need to validate Parent, that is already validated before we
+	// get to this method. It needs to be parsed to do authorization checks.
+	// Per https://google.aip.dev/211, authorization checks should occur before
+	// validation.
+
+	if err := validateRuleForCreate(req.Rule, true /* expectBug */); err != nil {
+		return errors.Annotate(err, "rule").Err()
+	}
+	if err := validateBugAgainstConfig(cfg, req.Rule.Bug); err != nil {
+		return errors.Annotate(err, "rule: bug").Err()
+	}
+	return nil
+}
+
+func validateCreateRuleWithNewIssueRequest(req *pb.CreateRuleWithNewIssueRequest) error {
+	// No need to validate Parent, that is already validated before we
+	// get to this method. It needs to be parsed to do authorization checks.
+	// Per https://google.aip.dev/211, authorization checks should occur before
+	// validation.
+
+	if err := validateRuleForCreate(req.Rule, false /* expectBug */); err != nil {
+		return errors.Annotate(err, "rule").Err()
+	}
+	if err := validateNewIssue(req.Issue); err != nil {
+		return errors.Annotate(err, "issue").Err()
+	}
+	return nil
+}
+
+func validateUpdateRuleRequest(req *pb.UpdateRuleRequest, cfg *configpb.ProjectConfig) error {
+	// No need to validate req.Rule.Name, that is already validated before we
+	// get to this method. It needs to be parsed to do authorization checks.
+	// Per https://google.aip.dev/211, authorization checks should occur before
+	// validation.
+
+	if req.UpdateMask == nil {
+		return errors.New("update_mask: unspecified")
+	}
+	if len(req.UpdateMask.Paths) == 0 {
+		return errors.New("update_mask: paths: unspecified")
+	}
+	for _, path := range req.UpdateMask.Paths {
+		// Only limited fields may be modified by the client.
+		switch path {
+		case "rule_definition":
+			if err := rules.ValidateRuleDefinition(req.Rule.RuleDefinition); err != nil {
+				return errors.Annotate(err, "rule: rule_definition").Err()
+			}
+		case "bug":
+			if req.Rule.Bug == nil {
+				return errors.New("rule: bug: unspecified")
+			}
+			bugID := bugs.BugID{
+				System: req.Rule.Bug.GetSystem(),
+				ID:     req.Rule.Bug.GetId(),
+			}
+			if err := bugID.Validate(); err != nil {
+				return errors.Annotate(err, "rule: bug").Err()
+			}
+			if err := validateBugAgainstConfig(cfg, req.Rule.Bug); err != nil {
+				return errors.Annotate(err, "rule: bug").Err()
+			}
+		case "is_active":
+			// Boolean value.
+		case "is_managing_bug":
+			// Boolean value.
+		case "is_managing_bug_priority":
+			// Boolean value.
+		default:
+			return fmt.Errorf("update_mask: paths: unsupported field path: %s", path)
+		}
+	}
+	return nil
+}
+
+func validatePrepareRuleDefaultsRequest(req *pb.PrepareRuleDefaultsRequest) error {
+	// No need to validate Parent, that is already validated before we
+	// get to this method. It needs to be parsed to do authorization checks.
+	// Per https://google.aip.dev/211, authorization checks should occur before
+	// validation.
+
+	if err := validatePrepareRuleDefaultsTestResult(req.TestResult); err != nil {
+		return errors.Annotate(err, "test_result").Err()
+	}
+	return nil
+}
+
+func validatePrepareRuleDefaultsTestResult(result *pb.PrepareRuleDefaultsRequest_TestResult) error {
+	if result == nil {
+		// Test result is optional.
+		return nil
+	}
+	if err := pbutil.ValidateTestID(result.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
+	}
+	// Failure reason is optional.
+	if result.FailureReason != nil {
+		if err := pbutil.ValidateFailureReason(result.FailureReason); err != nil {
+			return errors.Annotate(err, "failure_reason").Err()
+		}
+	}
+	return nil
+}
+
+func validateRuleForCreate(rule *pb.Rule, expectBug bool) error {
+	if rule == nil {
+		return errors.New("unspecified")
+	}
+	if expectBug {
+		if rule.Bug == nil {
+			return errors.New("bug: unspecified")
+		}
+		b := bugs.BugID{System: rule.Bug.System, ID: rule.Bug.Id}
+		if err := b.Validate(); err != nil {
+			return errors.Annotate(err, "bug").Err()
+		}
+	} else {
+		if rule.Bug != nil {
+			return errors.New("bug: must not be specified, as a new bug will be created by this RPC")
+		}
+	}
+	if rule.SourceCluster != nil {
+		cluster := clustering.ClusterID{
+			Algorithm: rule.SourceCluster.Algorithm,
+			ID:        rule.SourceCluster.Id,
+		}
+		if err := cluster.Validate(); err != nil {
+			return errors.Annotate(err, "source_cluster").Err()
+		}
+	}
+	if err := rules.ValidateRuleDefinition(rule.RuleDefinition); err != nil {
+		return errors.Annotate(err, "rule_definition").Err()
+	}
+	return nil
+}
+
+func validateNewIssue(issue *pb.CreateRuleWithNewIssueRequest_Issue) error {
+	if issue == nil {
+		return errors.New("unspecified")
+	}
+	if err := validateMandatoryString(issue.Title, maxTitleLengthBytes); err != nil {
+		return errors.Annotate(err, "title").Err()
+	}
+	if err := validateMandatoryString(issue.Comment, maxCommentLengthBytes); err != nil {
+		return errors.Annotate(err, "comment").Err()
+	}
+	if err := validateBugComponent(issue.Component); err != nil {
+		return errors.Annotate(err, "component").Err()
+	}
+	if err := validateIssueAccessLimit(issue.Limit); err != nil {
+		return errors.Annotate(err, "limit").Err()
+	}
+	if err := validateBuganizerPriority(issue.Priority); err != nil {
+		return errors.Annotate(err, "priority").Err()
+	}
+	return nil
+}
+
+func validateMandatoryString(s string, maxLengthBytes int) error {
+	if s == "" {
+		return errors.New("unspecified")
+	}
+	if len(s) > maxLengthBytes {
+		return errors.Reason("longer than %v bytes", maxLengthBytes).Err()
+	}
+	if !utf8.ValidString(s) {
+		return errors.Reason("not a valid utf8 string").Err()
+	}
+	// W3C recommends Normalization form C is used for all content moving across the internet.
+	// Read more about Unicode and normalization:
+	// - https://google.aip.dev/210
+	// - https://unicode.org/reports/tr15/
+	if !norm.NFC.IsNormalString(s) {
+		return errors.Reason("not in unicode normalized form C").Err()
+	}
+	for i, rune := range s {
+		if !unicode.IsPrint(rune) {
+			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
+		}
+	}
+	return nil
+}
+
+func validateBugComponent(b *pb.BugComponent) error {
+	if b.System == nil {
+		return errors.New("system: unspecified")
+	}
+	if b.GetMonorail() != nil {
+		// Not supported by this RPC.
+		return errors.New("monorail: filing bugs into monorail is not supported by this RPC")
+	}
+	it := b.GetIssueTracker()
+	if it == nil {
+		return errors.New("issue_tracker: unspecified")
+	}
+	if it.ComponentId == 0 {
+		return errors.New("issue_tracker: component_id: unspecified")
+	}
+	if it.ComponentId < 0 {
+		return errors.New("issue_tracker: component_id: must be positive")
+	}
+	return nil
+}
+
+func validateIssueAccessLimit(limit pb.CreateRuleWithNewIssueRequest_Issue_IssueAccessLimit) error {
+	if limit == pb.CreateRuleWithNewIssueRequest_Issue_ISSUE_ACCESS_LIMIT_UNSPECIFIED {
+		return errors.New("unspecified")
+	}
+	if _, ok := pb.CreateRuleWithNewIssueRequest_Issue_IssueAccessLimit_name[int32(limit)]; !ok {
+		return errors.New("invalid value, must be a valid IssueAccessLimit")
+	}
+	return nil
+}
+
+func validateBuganizerPriority(priority pb.BuganizerPriority) error {
+	if priority == pb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED {
+		return errors.New("unspecified")
+	}
+	if _, ok := pb.BuganizerPriority_name[int32(priority)]; !ok {
+		return errors.New("invalid value, must be a valid BuganizerPriority")
+	}
+	return nil
+}
+
+func ruleEntryFromRequest(project, ruleID string, r *pb.Rule) *rules.Entry {
+	return &rules.Entry{
+		Project:        project,
+		RuleID:         ruleID,
+		RuleDefinition: r.GetRuleDefinition(),
+		BugID: bugs.BugID{
+			System: r.GetBug().GetSystem(),
+			ID:     r.GetBug().GetId(),
+		},
+		IsActive:              r.GetIsActive(),
+		IsManagingBug:         r.GetIsManagingBug(),
+		IsManagingBugPriority: r.GetIsManagingBugPriority(),
+		SourceCluster: clustering.ClusterID{
+			Algorithm: r.GetSourceCluster().GetAlgorithm(),
+			ID:        r.GetSourceCluster().GetId(),
+		},
+		BugManagementState: &bugspb.BugManagementState{},
+	}
 }
 
 func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, mask ruleMask) *pb.Rule {
@@ -547,14 +810,15 @@ func isETagMatching(rule *rules.Entry, etag string) bool {
 
 // validateBugAgainstConfig validates the specified bug is consistent with
 // the project configuration.
-func validateBugAgainstConfig(cfg *compiledcfg.ProjectConfig, bug bugs.BugID) error {
+func validateBugAgainstConfig(cfg *configpb.ProjectConfig, bug *pb.AssociatedBug) error {
 	switch bug.System {
 	case bugs.MonorailSystem:
-		project, _, err := bug.MonorailProjectAndID()
+		b := bugs.BugID{System: bug.System, ID: bug.Id}
+		project, _, err := b.MonorailProjectAndID()
 		if err != nil {
 			return err
 		}
-		monorailCfg := cfg.Config.BugManagement.GetMonorail()
+		monorailCfg := cfg.BugManagement.GetMonorail()
 		if monorailCfg == nil {
 			return fmt.Errorf("monorail bug system not enabled for this LUCI project")
 		}
@@ -564,7 +828,7 @@ func validateBugAgainstConfig(cfg *compiledcfg.ProjectConfig, bug bugs.BugID) er
 	case bugs.BuganizerSystem:
 		// Buganizer bugs are permitted for all LUCI Analysis projects.
 	default:
-		return fmt.Errorf("unsupported bug system: %s", bug.System)
+		return fmt.Errorf("system: unsupported bug system: %s", bug.System)
 	}
 	return nil
 }

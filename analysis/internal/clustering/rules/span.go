@@ -620,6 +620,10 @@ func Update(rule *Entry, options UpdateOptions, user string) (*spanner.Mutation,
 	return ms, nil
 }
 
+// validateRule performs simple validation on the fields of a rule.
+// Complex validation (validation against project configuration or
+// to check rule is not for the same bug as another rule in the same
+// project) is not performed.
 func validateRule(r *Entry) error {
 	if err := pbutil.ValidateProject(r.Project); err != nil {
 		return errors.Annotate(err, "project").Err()
@@ -633,15 +637,25 @@ func validateRule(r *Entry) error {
 	if r.SourceCluster.Validate() != nil && !r.SourceCluster.IsEmpty() {
 		return errors.Annotate(r.SourceCluster.Validate(), "source cluster ID").Err()
 	}
-	if len(r.RuleDefinition) > MaxRuleDefinitionLength {
-		return errors.Reason("rule definition: exceeds maximum length of %v", MaxRuleDefinitionLength).Err()
-	}
-	_, err := lang.Parse(r.RuleDefinition)
-	if err != nil {
+	if err := ValidateRuleDefinition(r.RuleDefinition); err != nil {
 		return errors.Annotate(err, "rule definition").Err()
 	}
 	if err := validateBugManagementState(r.BugManagementState); err != nil {
 		return errors.Annotate(err, "bug management state").Err()
+	}
+	return nil
+}
+
+func ValidateRuleDefinition(ruleDefinition string) error {
+	if ruleDefinition == "" {
+		return errors.New("unspecified")
+	}
+	if len(ruleDefinition) > MaxRuleDefinitionLength {
+		return errors.Reason("exceeds maximum length of %v", MaxRuleDefinitionLength).Err()
+	}
+	_, err := lang.Parse(ruleDefinition)
+	if err != nil {
+		return errors.Annotate(err, "parse").Err()
 	}
 	return nil
 }
