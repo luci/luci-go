@@ -201,3 +201,17 @@ func countTasks(c context.Context) error {
 	}
 	return nil
 }
+
+// dumpDatastoreSync dumps datastore to BigQuery.
+// The function runs in sync, instead of async as other cron handlers, as we
+// don't suppose it takes long to finish.
+func dumpDatastoreSync(c context.Context) error {
+	ds, err := newBQDataset(c)
+	if err != nil {
+		return errors.Annotate(err, "dump datastore").Err()
+	}
+	if err := uploadToBQ(c, ds); err != nil {
+		return errors.Annotate(err, "dump datastore").Err()
+	}
+	return nil
+}

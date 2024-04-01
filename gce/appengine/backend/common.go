@@ -229,4 +229,5 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	r.GET("/internal/cron/audit-project", mw, newHTTPHandler(auditInstances))
 	r.GET("/internal/cron/drain-vms", mw, newHTTPHandler(drainVMsAsync))
 	r.GET("/internal/cron/inspect-swarming", mw, newHTTPHandler(inspectSwarmingAsync))
+	r.GET("/internal/cron/dump-datastore", mw, newHTTPHandler(dumpDatastoreSync))
 }
