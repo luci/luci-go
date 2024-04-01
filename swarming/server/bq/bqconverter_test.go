@@ -97,6 +97,7 @@ func createTaskRequest(key *datastore.Key, testTime time.Time) *model.TaskReques
 			},
 			ExpirationSecs:  int64(exp.Seconds()),
 			WaitForCapacity: true,
+			PropertiesHash:  []byte{1, 2, 3, 4, 5},
 		}
 	}
 	return &model.TaskRequest{
@@ -109,7 +110,8 @@ func createTaskRequest(key *datastore.Key, testTime time.Time) *model.TaskReques
 		Created:              testTime,
 		Expiration:           testTime.Add(20 * time.Minute),
 		Name:                 "name",
-		ParentTaskID:         datastore.Nullable[string, datastore.Indexed]{},
+		ParentTaskID:         datastore.NewIndexedNullable("aaaaaaaaf1"),
+		RootTaskID:           "bbbbbbbbf1",
 		Authenticated:        "user:authenticated",
 		User:                 "user",
 		Tags:                 []string{"tag1", "tag2"},
@@ -421,22 +423,29 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 				Outputs:        []string{"o1", "o2"},
 				HasSecretBytes: true,
 				Containment: &apipb.Containment{
-					ContainmentType: apipb.Containment_NOT_SPECIFIED,
+					ContainmentType:           apipb.Containment_NOT_SPECIFIED,
+					LowerPriority:             true,
+					LimitProcesses:            456,
+					LimitTotalCommittedMemory: 789,
 				},
 			},
 			Expiration:      exp.Seconds(),
 			WaitForCapacity: true,
+			PropertiesHash:  "0102030405",
 		}
 	}
 	return &bqpb.TaskRequest{
-		TaskId: taskID,
+		TaskId:       taskID,
+		ParentRunId:  "aaaaaaaaf1",
+		ParentTaskId: "aaaaaaaaf0",
+		RootRunId:    "bbbbbbbbf1",
+		RootTaskId:   "bbbbbbbbf0",
 		TaskSlices: []*bqpb.TaskSlice{
 			taskSlice("a", 10*time.Minute),
 			taskSlice("b", 20*time.Minute),
 		},
 		Name:             "name",
 		CreateTime:       timestamppb.New(testTime),
-		ParentTaskId:     "",
 		Authenticated:    "user:authenticated",
 		User:             "user",
 		Tags:             []string{"tag1", "tag2"},

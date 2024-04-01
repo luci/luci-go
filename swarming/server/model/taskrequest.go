@@ -89,6 +89,19 @@ type TaskRequest struct {
 	// them when the parent task dies.
 	ParentTaskID datastore.Nullable[string, datastore.Indexed] `gae:"parent_task_id"`
 
+	// RootTaskID identifies the task run that started the tree of Swarming tasks.
+	//
+	// If a new task doesn't have a parent, this is unset. Otherwise if the parent
+	// task has RootTaskID, this value is used in the new task. Otherwise
+	// ParentTaskID itself is used.
+	//
+	// That way all tasks from the same task tree (except the root one itself)
+	// will have RootTaskID populated.
+	//
+	// This is used in BQ exported. Not clear if anyone actually consumes this
+	// information.
+	RootTaskID string `gae:"root_task_id,noindex"`
+
 	// Authenticated is an identity that triggered this task.
 	//
 	// Derived from the caller credentials.
@@ -230,6 +243,12 @@ type TaskSlice struct {
 	// are hashed in a reproducible way and the final hash is used to find a
 	// previously succeeded task that has the same properties.
 	Properties TaskProperties `gae:"properties,lsp"`
+
+	// PropertiesHash is a precalculated hash of properties.
+	//
+	// Populated when the task is scheduled. It is used for task deduplication and
+	// in BQ exports.
+	PropertiesHash []byte `gae:"properties_hash,noindex"`
 
 	// ExpirationSecs defines how long the slice can sit in a pending queue.
 	//

@@ -18,6 +18,7 @@
 package bq
 
 import (
+	"encoding/hex"
 	"math"
 	"slices"
 
@@ -35,6 +36,13 @@ func sortedKeys[K ~string, V any](m map[K]V) []string {
 	}
 	slices.Sort(keys)
 	return keys
+}
+
+func runIDToTaskID(runID string) string {
+	if runID == "" {
+		return ""
+	}
+	return runID[:len(runID)-1] + "0"
 }
 
 func taskProperties(tp *model.TaskProperties) *bqpb.TaskProperties {
@@ -104,27 +112,25 @@ func taskProperties(tp *model.TaskProperties) *bqpb.TaskProperties {
 				SizeBytes: tp.CASInputRoot.Digest.SizeBytes,
 			},
 		},
-		// TODO: More fields.
 		Containment: &apipb.Containment{
-			ContainmentType: tp.Containment.ContainmentType,
+			ContainmentType:           tp.Containment.ContainmentType,
+			LowerPriority:             tp.Containment.LowerPriority,
+			LimitProcesses:            tp.Containment.LimitProcesses,
+			LimitTotalCommittedMemory: tp.Containment.LimitTotalCommittedMemory,
 		},
 	}
 }
 
 func taskSlice(ts *model.TaskSlice) *bqpb.TaskSlice {
-	// TODO(jonahhooper) implement the property hash calculation
 	return &bqpb.TaskSlice{
 		Properties:      taskProperties(&ts.Properties),
 		Expiration:      float64(ts.ExpirationSecs),
 		WaitForCapacity: ts.WaitForCapacity,
+		PropertiesHash:  hex.EncodeToString(ts.PropertiesHash),
 	}
 }
 
 func taskRequest(tr *model.TaskRequest) *bqpb.TaskRequest {
-	// TODO(jonahhooper) Investigate whether to export root_task_id
-	// There is a weird functionality to find root_task_id and root_run_id.
-	// It will make our BQ execution quite slow see: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/5027979/7/swarming/server/model/bqconverter.go#174
-	// We should conclusively establish whether we need to do that.
 	slices := make([]*bqpb.TaskSlice, len(tr.TaskSlices))
 	for i, slice := range tr.TaskSlices {
 		slices[i] = taskSlice(&slice)
@@ -139,10 +145,12 @@ func taskRequest(tr *model.TaskRequest) *bqpb.TaskRequest {
 		User:           tr.User,
 		Authenticated:  string(tr.Authenticated),
 		Realm:          tr.Realm,
-		Resultdb: &apipb.ResultDBCfg{
-			Enable: tr.ResultDB.Enable,
-		},
-		TaskId: model.RequestKeyToTaskID(tr.Key, model.AsRequest),
+		Resultdb:       &apipb.ResultDBCfg{Enable: tr.ResultDB.Enable},
+		TaskId:         model.RequestKeyToTaskID(tr.Key, model.AsRequest),
+		ParentTaskId:   runIDToTaskID(tr.ParentTaskID.Get()),
+		ParentRunId:    tr.ParentTaskID.Get(),
+		RootTaskId:     runIDToTaskID(tr.RootTaskID),
+		RootRunId:      tr.RootTaskID,
 		PubsubNotification: &bqpb.PubSub{
 			Topic:    tr.PubSubTopic,
 			Userdata: tr.PubSubUserData,
