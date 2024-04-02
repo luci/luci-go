@@ -41,7 +41,6 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -81,8 +80,8 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			err := validateBuildTask(ctx, req, infra)
-			So(err, ShouldErrLike, "Build 1 does not support task backend")
+			err := validateBuildTask(req, infra)
+			So(err, ShouldErrLike, "build 1 does not support task backend")
 		})
 		Convey("task not in build infra", func() {
 			infra := &model.BuildInfra{
@@ -101,8 +100,8 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			err := validateBuildTask(ctx, req, infra)
-			So(err, ShouldErrLike, "No task is associated with the build. Cannot update.")
+			err := validateBuildTask(req, infra)
+			So(err, ShouldErrLike, "no task is associated with the build")
 		})
 		Convey("task ID target mismatch", func() {
 			infra := &model.BuildInfra{
@@ -128,7 +127,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			err := validateBuildTask(ctx, req, infra)
+			err := validateBuildTask(req, infra)
 			So(err, ShouldBeError)
 		})
 		Convey("Run task did not return yet", func() {
@@ -155,8 +154,8 @@ func TestValidateBuildTask(t *testing.T) {
 					Status: pb.Status_CANCELED,
 				},
 			}
-			err := validateBuildTask(ctx, req, infra)
-			So(err, ShouldErrLike, "No task is associated with the build. Cannot update.")
+			err := validateBuildTask(req, infra)
+			So(err, ShouldErrLike, "no task is associated with the build")
 		})
 		Convey("task is complete and success", func() {
 			infra := &model.BuildInfra{
@@ -183,7 +182,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			err := validateBuildTask(ctx, req, infra)
+			err := validateBuildTask(req, infra)
 			So(err, ShouldBeError)
 		})
 		Convey("task is cancelled", func() {
@@ -211,7 +210,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			err := validateBuildTask(ctx, req, infra)
+			err := validateBuildTask(req, infra)
 			So(err, ShouldBeError)
 		})
 		Convey("task is running", func() {
@@ -239,7 +238,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			err := validateBuildTask(ctx, req, infra)
+			err := validateBuildTask(req, infra)
 			So(err, ShouldBeNil)
 		})
 
@@ -250,8 +249,6 @@ func TestValidateTaskUpdate(t *testing.T) {
 	t.Parallel()
 
 	Convey("ValidateTaskUpdate", t, func() {
-		ctx := memory.Use(context.Background())
-
 		Convey("is valid task", func() {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
@@ -264,13 +261,13 @@ func TestValidateTaskUpdate(t *testing.T) {
 					UpdateId: 1,
 				},
 			}
-			So(validateBuildTaskUpdate(ctx, req), ShouldBeNil)
+			So(validateBuildTaskUpdate(req), ShouldBeNil)
 		})
 		Convey("is missing task", func() {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 			}
-			err := validateBuildTaskUpdate(ctx, req)
+			err := validateBuildTaskUpdate(req)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "task.id: required")
 		})
@@ -284,7 +281,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			err := validateBuildTaskUpdate(ctx, req)
+			err := validateBuildTaskUpdate(req)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "build_id required")
 		})
@@ -295,7 +292,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					Status: pb.Status_STARTED,
 				},
 			}
-			err := validateBuildTaskUpdate(ctx, req)
+			err := validateBuildTaskUpdate(req)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "task.id: required")
 		})
@@ -310,7 +307,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			err := validateBuildTaskUpdate(ctx, req)
+			err := validateBuildTaskUpdate(req)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "task.UpdateId: required")
 		})
@@ -326,7 +323,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					UpdateId: 1,
 				},
 			}
-			err := validateBuildTaskUpdate(ctx, req)
+			err := validateBuildTaskUpdate(req)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "invalid status SCHEDULED")
 		})
@@ -342,7 +339,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					UpdateId: 1,
 				},
 			}
-			err := validateBuildTaskUpdate(ctx, req)
+			err := validateBuildTaskUpdate(req)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "invalid status ENDED_MASK")
 		})
@@ -358,7 +355,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					UpdateId: 1,
 				},
 			}
-			err := validateBuildTaskUpdate(ctx, req)
+			err := validateBuildTaskUpdate(req)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "invalid status STATUS_UNSPECIFIED")
 		})
@@ -383,7 +380,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					UpdateId: 1,
 				},
 			}
-			err := validateBuildTaskUpdate(ctx, req)
+			err := validateBuildTaskUpdate(req)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "task.details is greater than 10 kb")
 		})
@@ -617,9 +614,9 @@ func TestUpdateTaskEntity(t *testing.T) {
 			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
 			So(buildModel.Proto.Status, ShouldEqual, pb.Status_SCHEDULED)
 
-			post_infra := &model.BuildInfra{Build: bk}
-			So(datastore.Get(ctx, post_infra), ShouldBeNil)
-			So(post_infra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
+			postInfra := &model.BuildInfra{Build: bk}
+			So(datastore.Get(ctx, postInfra), ShouldBeNil)
+			So(postInfra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
 				Status: pb.Status_STARTED,
 				Id: &pb.TaskID{
 					Id:     "1",
@@ -716,7 +713,7 @@ func TestUpdateBuildTask(t *testing.T) {
 					},
 				}
 				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend")
-				So(UpdateBuildTask(ctx, body), ShouldBeRPCOK)
+				So(UpdateBuildTask(ctx, body), ShouldBeNil)
 
 				expectedBuildInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: 1})}
 				So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
@@ -740,7 +737,7 @@ func TestUpdateBuildTask(t *testing.T) {
 					},
 				}
 				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend")
-				So(UpdateBuildTask(ctx, body), ShouldErrLike, "No task is associated with the build. Cannot update.")
+				So(UpdateBuildTask(ctx, body), ShouldErrLike, "no task is associated with the build")
 			})
 
 			Convey("subscription id mismatch", func() {

@@ -16,8 +16,10 @@ package common
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -35,14 +37,21 @@ func GetBuild(ctx context.Context, id int64) (*model.Build, error) {
 	return entities[0].(*model.Build), nil
 }
 
+// GetBuildEntities fetches entities associated with the given build.
+//
+// At least one `kinds` must be given. Only kinds of entities associated with
+// builds must be given (see model.XXXKind constants). Panics otherwise.
+//
+// Returns NonFound appstatus if any of them are not found. Any other errors
+// are tagged as transient.
 func GetBuildEntities(ctx context.Context, id int64, kinds ...string) ([]any, error) {
 	if len(kinds) == 0 {
-		return nil, errors.Reason("no entities to get").Err()
+		panic("no entities to get")
 	}
 
 	var toGet []any
 	bk := datastore.KeyForObj(ctx, &model.Build{ID: id})
-	appendEntity := func(kind string) error {
+	appendEntity := func(kind string) {
 		switch kind {
 		case model.BuildKind:
 			toGet = append(toGet, &model.Build{ID: id})
@@ -57,22 +66,19 @@ func GetBuildEntities(ctx context.Context, id int64, kinds ...string) ([]any, er
 		case model.BuildOutputPropertiesKind:
 			toGet = append(toGet, &model.BuildOutputProperties{Build: bk})
 		default:
-			return errors.Reason("unknown entity kind %s", kind).Err()
+			panic(fmt.Sprintf("unexpected build entity kind %s", kind))
 		}
-		return nil
 	}
 
 	for _, kind := range kinds {
-		if err := appendEntity(kind); err != nil {
-			return nil, err
-		}
+		appendEntity(kind)
 	}
 
 	switch err := datastore.Get(ctx, toGet...); {
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
 		return nil, perm.NotFoundErr(ctx)
 	case err != nil:
-		return nil, errors.Annotate(err, "error fetching build entities with ID %d", id).Err()
+		return nil, errors.Annotate(err, "error fetching build entities with ID %d", id).Tag(transient.Tag).Err()
 	default:
 		return toGet, nil
 	}

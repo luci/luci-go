@@ -111,7 +111,7 @@ func validateTaskStatus(taskStatus pb.Status, allowPending bool) error {
 func validatePubsubSubscription(ctx context.Context, req buildTaskUpdate) error {
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error fetching service config").Err()
+		return errors.Annotate(err, "error fetching service config").Tag(transient.Tag).Err()
 	}
 
 	target := req.GetTask().GetId().GetTarget()
@@ -161,7 +161,7 @@ func validateTask(task *pb.Task, allowPending bool) error {
 
 // validateBuildTaskUpdate ensures that the build_id, task, status, and details
 // are correctly set be sender.
-func validateBuildTaskUpdate(ctx context.Context, req *pb.BuildTaskUpdate) error {
+func validateBuildTaskUpdate(req *pb.BuildTaskUpdate) error {
 	if req.BuildId == "" {
 		return errors.Reason("build_id required").Err()
 	}
@@ -171,17 +171,17 @@ func validateBuildTaskUpdate(ctx context.Context, req *pb.BuildTaskUpdate) error
 // validateBuildTask ensures that the taskID provided in the request matches
 // the taskID that is stored in the build model. If there is no task associated
 // with the build, an error is returned and the update message is lost.
-func validateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate, infra *model.BuildInfra) error {
+func validateBuildTask(req *pb.BuildTaskUpdate, infra *model.BuildInfra) error {
 	switch {
 	case infra.Proto.GetBackend() == nil:
-		return appstatus.Errorf(codes.NotFound, "Build %s does not support task backend", req.BuildId)
+		return errors.Reason("build %s does not support task backend", req.BuildId).Err()
 	case infra.Proto.Backend.GetTask().GetId().GetId() == "":
-		return appstatus.Errorf(codes.NotFound, "No task is associated with the build. Cannot update.")
+		return errors.Reason("no task is associated with the build").Err()
 	case infra.Proto.Backend.Task.Id.GetTarget() != req.Task.Id.GetTarget() || (infra.Proto.Backend.Task.Id.GetId() != "" && infra.Proto.Backend.Task.Id.GetId() != req.Task.Id.GetId()):
 		return errors.Reason("TaskID in request does not match TaskID associated with build").Err()
 	}
 	if protoutil.IsEnded(infra.Proto.Backend.Task.Status) {
-		return appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended task")
+		return errors.Reason("cannot update an ended task").Err()
 	}
 	return nil
 }
@@ -212,10 +212,19 @@ func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildIn
 	return toSave, nil
 }
 
+// updateTaskEntity updates a bunch of entities associated with a build.
+//
+// May return an appstatus NotFound error if some of them are missing. They
+// should all exist.
 func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int64) error {
 	var build *model.Build
 	setBuildToEnd := false
+
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Reset in case of the transaction retry.
+		build = nil
+		setBuildToEnd = false
+
 		entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
 			return errors.Annotate(err, "invalid Build or BuildInfra").Err()
@@ -226,7 +235,7 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 
 		if protoutil.IsEnded(build.Status) {
 			// Cannot update an ended build.
-			logging.Infof(ctx, "build %d is ended", build.ID)
+			logging.Infof(ctx, "Build %d is ended", build.ID)
 			return nil
 		}
 
@@ -259,7 +268,7 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 	if err := validatePubsubSubscription(ctx, req); err != nil {
 		return errors.Annotate(err, "pubsub subscription").Err()
 	}
-	if err := validateBuildTaskUpdate(ctx, req.BuildTaskUpdate); err != nil {
+	if err := validateBuildTaskUpdate(req.BuildTaskUpdate); err != nil {
 		return errors.Annotate(err, "invalid BuildTaskUpdate").Err()
 	}
 	logging.Infof(ctx, "Received an BuildTaskUpdate message for build %q", req.BuildId)
@@ -271,7 +280,10 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 
 	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildInfraKind)
 	if err != nil {
-		return errors.Annotate(err, "invalid buildInfra").Err()
+		if status, _ := appstatus.Get(err); status.Code() == codes.NotFound {
+			return errors.Reason("missing BuildInfra entity").Err()
+		}
+		return errors.Annotate(err, "failed to fetch BuildInfra").Tag(transient.Tag).Err()
 	}
 	infra := entities[0].(*model.BuildInfra)
 
@@ -279,18 +291,25 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 	// Ensures that the taskID provided in the request matches the taskID that is
 	// stored in the build model. If there is no task associated with the build model,
 	// an error is returned and the update message is lost.
-	err = validateBuildTask(ctx, req.BuildTaskUpdate, infra)
+	err = validateBuildTask(req.BuildTaskUpdate, infra)
 	if err != nil {
 		return errors.Annotate(err, "invalid task").Err()
 	}
 
+	// Skip already applied update. This is also double checked in the transaction
+	// later in prepareUpdate.
+	if req.Task.UpdateId <= infra.Proto.Backend.Task.UpdateId {
+		logging.Infof(ctx, "Already seen update ID %d (last seen is %d)",
+			req.Task.UpdateId, infra.Proto.Backend.Task.UpdateId)
+		return nil
+	}
+
 	err = updateTaskEntity(ctx, req.BuildTaskUpdate, buildID)
 	if err != nil {
-		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
-			return err
-		} else {
-			return appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
+		if status, _ := appstatus.Get(err); status.Code() == codes.NotFound {
+			return errors.Annotate(err, "missing some build entities").Err()
 		}
+		return errors.Annotate(err, "failed to update the build entities").Tag(transient.Tag).Err()
 	}
 
 	return nil
@@ -321,8 +340,13 @@ func UpdateBuildTask(ctx context.Context, body io.Reader) error {
 	}
 	err = updateBuildTask(ctx, req)
 	if err != nil {
-		return errors.Annotate(err, "failed to update the build from message %s", req.msgID).Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to update the build from message %s", req.msgID).Err()
 	}
 
-	return cache.Set(ctx, req.msgID, []byte{1}, 10*time.Minute)
+	// Best effort at setting the cache. No big deal if this fails.
+	err = cache.Set(ctx, req.msgID, []byte{1}, 10*time.Minute)
+	if err != nil {
+		logging.Warningf(ctx, "Failed to update cache: %s", err)
+	}
+	return nil
 }
