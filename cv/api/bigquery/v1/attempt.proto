@@ -104,6 +104,8 @@ message Attempt {
 //
 // See also: GerritChange in buildbucket/proto/common.proto.
 message GerritChange {
+  reserved 9; // owner
+
   // Gerrit hostname, e.g. "chromium-review.googlesource.com".
   string host = 1;
   // Gerrit project, e.g. "chromium/src".
@@ -153,9 +155,6 @@ message GerritChange {
   }
   // Whether CQ tried to submit this change and the result of the operation.
   SubmitStatus submit_status = 8;
-
-  // The owner (email address) of the CL.
-  string owner = 9 [deprecated=true];
 
   // Indicates whether the owner of the CL is bot or not.
   //
