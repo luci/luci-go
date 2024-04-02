@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -53,6 +54,7 @@ func TestReadyToFinalize(t *testing.T) {
 }
 
 func TestBackFillTaskInfo(t *testing.T) {
+	t.Parallel()
 	Convey("backFillTaskInfo", t, func() {
 		ctx := lucictx.SetSwarming(context.Background(), &lucictx.Swarming{
 			Task: &lucictx.Task{
@@ -65,31 +67,75 @@ func TestBackFillTaskInfo(t *testing.T) {
 			},
 		})
 
-		build := &bbpb.Build{
-			Infra: &bbpb.BuildInfra{
-				Swarming: &bbpb.BuildInfra_Swarming{},
-			},
-		}
-		input := clientInput{input: &bbpb.BBAgentArgs{Build: build}}
+		Convey("swarming", func() {
+			build := &bbpb.Build{
+				Infra: &bbpb.BuildInfra{
+					Swarming: &bbpb.BuildInfra_Swarming{},
+				},
+			}
+			input := clientInput{input: &bbpb.BBAgentArgs{Build: build}}
 
-		So(backFillTaskInfo(ctx, input), ShouldEqual, 0)
-		So(build.Infra.Swarming.BotDimensions, ShouldResembleProto, []*bbpb.StringPair{
-			{
-				Key:   "cpu",
-				Value: "x86",
-			},
-			{
-				Key:   "cpu",
-				Value: "x86-64",
-			},
-			{
-				Key:   "id",
-				Value: "bot_id",
-			},
-			{
-				Key:   "gcp",
-				Value: "google.com:chromecompute",
-			},
+			So(backFillTaskInfo(ctx, input), ShouldEqual, 0)
+			So(build.Infra.Swarming.BotDimensions, ShouldResembleProto, []*bbpb.StringPair{
+				{
+					Key:   "cpu",
+					Value: "x86",
+				},
+				{
+					Key:   "cpu",
+					Value: "x86-64",
+				},
+				{
+					Key:   "id",
+					Value: "bot_id",
+				},
+				{
+					Key:   "gcp",
+					Value: "google.com:chromecompute",
+				},
+			})
+		})
+
+		Convey("backend", func() {
+			build := &bbpb.Build{
+				Infra: &bbpb.BuildInfra{
+					Backend: &bbpb.BuildInfra_Backend{},
+				},
+			}
+			input := clientInput{input: &bbpb.BBAgentArgs{Build: build}}
+			Convey("fail", func() {
+				So(backFillTaskInfo(ctx, input), ShouldEqual, 1)
+			})
+
+			Convey("pass", func() {
+				build.Infra.Backend.Task = &bbpb.Task{
+					Id: &bbpb.TaskID{
+						Id:     "id",
+						Target: "swarming://target",
+					},
+				}
+				So(backFillTaskInfo(ctx, input), ShouldEqual, 0)
+				actual, err := protoutil.BotDimensionsFromBackend(build)
+				So(err, ShouldBeNil)
+				So(actual, ShouldResembleProto, []*bbpb.StringPair{
+					{
+						Key:   "cpu",
+						Value: "x86",
+					},
+					{
+						Key:   "cpu",
+						Value: "x86-64",
+					},
+					{
+						Key:   "gcp",
+						Value: "google.com:chromecompute",
+					},
+					{
+						Key:   "id",
+						Value: "bot_id",
+					},
+				})
+			})
 		})
 	})
 }

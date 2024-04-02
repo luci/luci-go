@@ -16,7 +16,6 @@ package tasks
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -232,25 +231,7 @@ func tryBackfillBackend(b *pb.Build) (err error) {
 	b.Infra.Backend = backend
 
 	// set backend.Task.Details
-	botDimensions := make(map[string][]string)
-	for _, dim := range sw.BotDimensions {
-		if _, ok := botDimensions[dim.Key]; !ok {
-			botDimensions[dim.Key] = make([]string, 0)
-		}
-		botDimensions[dim.Key] = append(botDimensions[dim.Key], dim.Value)
-	}
-	// Use json as an intermediate format to convert.
-	j, err := json.Marshal(map[string]any{
-		"bot_dimensions": botDimensions,
-	})
-	if err != nil {
-		return err
-	}
-	var m map[string]any
-	if err = json.Unmarshal(j, &m); err != nil {
-		return err
-	}
-	backend.Task.Details, err = structpb.NewStruct(m)
+	backend.Task.Details, err = protoutil.AddBotDimensionsToTaskDetails(sw.BotDimensions, nil)
 	return err
 }
 

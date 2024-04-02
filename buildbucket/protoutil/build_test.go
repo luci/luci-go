@@ -247,3 +247,117 @@ func TestBotDimensions(t *testing.T) {
 		So(MustBotDimensions(b), ShouldResembleProto, botDims)
 	})
 }
+
+func TestAddBotDimensionsToTaskDetails(t *testing.T) {
+	t.Parallel()
+	Convey("with empty details", t, func() {
+		botDims := []*pb.StringPair{
+			{
+				Key:   "cpu",
+				Value: "x86",
+			},
+			{
+				Key:   "cpu",
+				Value: "x86-64",
+			},
+			{
+				Key:   "os",
+				Value: "Linux",
+			},
+		}
+		expected := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bot_dimensions": &structpb.Value{
+					Kind: &structpb.Value_StructValue{
+						StructValue: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"cpu": &structpb.Value{
+									Kind: &structpb.Value_ListValue{
+										ListValue: &structpb.ListValue{
+											Values: []*structpb.Value{
+												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+											},
+										},
+									},
+								},
+								"os": &structpb.Value{
+									Kind: &structpb.Value_ListValue{
+										ListValue: &structpb.ListValue{
+											Values: []*structpb.Value{
+												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		actual, err := AddBotDimensionsToTaskDetails(botDims, nil)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResembleProto, expected)
+	})
+	Convey("with existing details", t, func() {
+		botDims := []*pb.StringPair{
+			{
+				Key:   "cpu",
+				Value: "x86",
+			},
+			{
+				Key:   "cpu",
+				Value: "x86-64",
+			},
+			{
+				Key:   "os",
+				Value: "Linux",
+			},
+		}
+		details := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"a": &structpb.Value{
+					Kind: &structpb.Value_StringValue{StringValue: "x86"},
+				},
+			},
+		}
+		expected := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"a": &structpb.Value{
+					Kind: &structpb.Value_StringValue{StringValue: "x86"},
+				},
+				"bot_dimensions": &structpb.Value{
+					Kind: &structpb.Value_StructValue{
+						StructValue: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"cpu": &structpb.Value{
+									Kind: &structpb.Value_ListValue{
+										ListValue: &structpb.ListValue{
+											Values: []*structpb.Value{
+												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+											},
+										},
+									},
+								},
+								"os": &structpb.Value{
+									Kind: &structpb.Value_ListValue{
+										ListValue: &structpb.ListValue{
+											Values: []*structpb.Value{
+												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		actual, err := AddBotDimensionsToTaskDetails(botDims, details)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResembleProto, expected)
+	})
+}

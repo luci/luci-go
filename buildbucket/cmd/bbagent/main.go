@@ -262,12 +262,33 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, bba
 	return clientInput{bbclient, input}
 }
 
-// backendTaskInfoExists checks if the backend task info exists in build proto.
-//
-// Currently only check input.Infra.Swarming.BotDimensions.
-// TODO(crbug.com/1370221): also check the info from input.Infra.Backend.Task.
-func backendTaskInfoExists(ci clientInput) bool {
-	return len(ci.input.Build.GetInfra().GetSwarming().GetBotDimensions()) > 0
+// backFillTaskInfoNeeded checks if need to backfill the backend task info.
+func backFillTaskInfoNeeded(ci clientInput) bool {
+	swarming := ci.input.Build.GetInfra().GetSwarming()
+	if swarming != nil {
+		// Only need to back fill if bot dimensions have not been populated.
+		return len(swarming.GetBotDimensions()) == 0
+	}
+
+	// Check backend task.
+	task := ci.input.Build.GetInfra().GetBackend().GetTask()
+	if task == nil {
+		// Should not happen, but we cannot backfill in this case anyway.
+		return false
+	}
+	if !strings.HasPrefix(task.GetId().GetTarget(), "swarming://") {
+		// Not a Swarming backend, no need to back fill.
+		return false
+	}
+	details := task.GetDetails().GetFields()
+	if len(details) == 0 {
+		// No task details populated, back fill is needed.
+		return true
+	}
+	_, ok := details["bot_dimensions"]
+	// Only need to back fill if bot dimensions have not been populated.
+	return !ok
+
 }
 
 func chooseCacheDir(input *bbpb.BBAgentArgs, cacheBaseFlag string) string {
@@ -300,7 +321,22 @@ func backFillTaskInfo(ctx context.Context, ci clientInput) int {
 		}
 		botDimensions = append(botDimensions, &bbpb.StringPair{Key: parts[0], Value: parts[1]})
 	}
-	ci.input.Build.Infra.Swarming.BotDimensions = botDimensions
+
+	if ci.input.Build.Infra.Swarming != nil {
+		ci.input.Build.Infra.Swarming.BotDimensions = botDimensions
+		return 0
+	}
+
+	if ci.input.Build.Infra.Backend.GetTask() == nil {
+		logging.Errorf(ctx, "Neither infra.swarming nor infra.backend are found in the build")
+		return 1
+	}
+	var err error
+	ci.input.Build.Infra.Backend.Task.Details, err = protoutil.AddBotDimensionsToTaskDetails(botDimensions, ci.input.Build.Infra.Backend.Task.Details)
+	if err != nil {
+		logging.Errorf(ctx, "failed to back fill infra.backend.task.details: %s", err)
+		return 1
+	}
 	return 0
 }
 
@@ -686,8 +722,7 @@ func mainImpl() int {
 		}
 	}
 
-	// Backfill backend task info if they are missing.
-	if !backendTaskInfoExists(bbclientInput) {
+	if backFillTaskInfoNeeded(bbclientInput) {
 		if retcode := backFillTaskInfo(ctx, bbclientInput); retcode != 0 {
 			return retcode
 		}

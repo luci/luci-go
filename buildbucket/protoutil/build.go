@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/strpair"
@@ -198,4 +199,36 @@ func MustBotDimensions(b *pb.Build) []*pb.StringPair {
 		panic(err)
 	}
 	return botDims
+}
+
+// AddBotDimensionsToTaskDetails converts bot_dimensions from
+// a list of StringPairs to a field in task details struct.
+//
+// If details is nil, construct a struct with bot_dimensions as the only
+// field.
+func AddBotDimensionsToTaskDetails(botDims []*pb.StringPair, details *structpb.Struct) (*structpb.Struct, error) {
+	botDimensions := make(map[string][]string)
+	for _, dim := range botDims {
+		if _, ok := botDimensions[dim.Key]; !ok {
+			botDimensions[dim.Key] = make([]string, 0)
+		}
+		botDimensions[dim.Key] = append(botDimensions[dim.Key], dim.Value)
+	}
+
+	detailsMap := make(map[string]any)
+	if details != nil {
+		detailsMap = details.AsMap()
+	}
+	detailsMap["bot_dimensions"] = botDimensions
+
+	// Use json as an intermediate format to convert.
+	j, err := json.Marshal(detailsMap)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]any
+	if err = json.Unmarshal(j, &m); err != nil {
+		return nil, err
+	}
+	return structpb.NewStruct(m)
 }
