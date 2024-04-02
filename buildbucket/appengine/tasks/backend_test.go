@@ -27,10 +27,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"google.golang.org/api/googleapi"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -622,7 +622,7 @@ func TestCreateBackendTask(t *testing.T) {
 		})
 
 		Convey("fail", func() {
-			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
+			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.InvalidArgument, "bad request"))
 			err = CreateBackendTask(ctx, 1, "request_id")
 			expectedBuild := &model.Build{ID: 1}
 			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)

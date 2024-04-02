@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
@@ -235,7 +234,7 @@ func HandleCancelSwarmingTask(ctx context.Context, hostname string, taskID strin
 	}
 	res, err := swarm.CancelTask(ctx, &apipb.TaskCancelRequest{KillRunning: true, TaskId: taskID})
 	if err != nil {
-		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code >= 500 {
+		if !isFatalError(err) {
 			return errors.Annotate(err, "transient error in cancelling the task %s", taskID).Tag(transient.Tag).Err()
 		}
 		return errors.Annotate(err, "fatal error in cancelling the task %s", taskID).Tag(tq.Fatal).Err()
@@ -312,7 +311,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 	taskResult, err := swarm.GetTaskResult(ctx, taskID)
 	if err != nil {
 		logging.Errorf(ctx, "failed to fetch swarming task %s for build %d: %s", taskID, buildID, err)
-		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code >= 400 && apiErr.Code < 500 {
+		if isFatalError(err) {
 			return failBuild(ctx, buildID, fmt.Sprintf("invalid swarming task %s", taskID))
 		}
 		return transient.Tag.Apply(err)
@@ -554,9 +553,9 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	// Create a swarming task
 	res, err := swarm.CreateTask(ctx, taskReq)
 	if err != nil {
-		// Give up if HTTP 500s are happening continuously. Otherwise re-throw the
+		// Give up if err is permanent. Otherwise re-throw the
 		// error so Cloud Tasks retries the task.
-		if apiErr, _ := err.(*googleapi.Error); apiErr == nil || apiErr.Code >= 500 {
+		if !isFatalError(err) {
 			if clock.Now(ctx).Sub(build.CreateTime) < swarmingCreateTaskGiveUpTimeout {
 				return transient.Tag.Apply(errors.Annotate(err, "failed to create a swarming task").Err())
 			}

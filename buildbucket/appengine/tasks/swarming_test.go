@@ -26,7 +26,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -488,7 +489,7 @@ func TestSyncBuild(t *testing.T) {
 			})
 
 			Convey("create swarming http 400 err", func() {
-				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
+				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.PermissionDenied, "PermissionDenied"))
 				err := SyncBuild(ctx, 123, 0)
 				So(err, ShouldBeNil)
 				failedBuild := &model.Build{ID: 123}
@@ -497,13 +498,13 @@ func TestSyncBuild(t *testing.T) {
 				}
 				So(datastore.Get(ctx, failedBuild, bldStatus), ShouldBeNil)
 				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: googleapi: got HTTP response code 400")
+				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: rpc error: code = PermissionDenied desc = PermissionDenied")
 				So(sch.Tasks(), ShouldHaveLength, 4)
 				So(bldStatus.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			})
 
 			Convey("create swarming http 500 err", func() {
-				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 500})
+				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.Internal, "Server error"))
 				err := SyncBuild(ctx, 123, 0)
 				So(err, ShouldErrLike, "failed to create a swarming task")
 				So(transient.Tag.In(err), ShouldBeTrue)
@@ -514,13 +515,13 @@ func TestSyncBuild(t *testing.T) {
 
 			Convey("create swarming http 500 err give up", func() {
 				ctx1, _ := testclock.UseTime(ctx, now.Add(swarmingCreateTaskGiveUpTimeout))
-				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 500})
+				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, status.Errorf(codes.Internal, "Server error"))
 				err := SyncBuild(ctx1, 123, 0)
 				So(err, ShouldBeNil)
 				failedBuild := &model.Build{ID: 123}
 				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
 				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: googleapi: got HTTP response code 500")
+				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: rpc error: code = Internal desc = Server error")
 				So(sch.Tasks(), ShouldHaveLength, 4)
 			})
 
@@ -548,7 +549,7 @@ func TestSyncBuild(t *testing.T) {
 			So(datastore.Put(ctx, inf), ShouldBeNil)
 
 			Convey("non-existing task ID", func() {
-				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(nil, &googleapi.Error{Code: 404})
+				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(nil, status.Errorf(codes.NotFound, "Not found"))
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
 				So(err, ShouldBeNil)
 				failedBuild := &model.Build{ID: 123}
@@ -558,7 +559,7 @@ func TestSyncBuild(t *testing.T) {
 			})
 
 			Convey("swarming server 500", func() {
-				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(nil, &googleapi.Error{Code: 500})
+				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(nil, status.Errorf(codes.Internal, "Server error"))
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
 				So(transient.Tag.In(err), ShouldBeTrue)
 			})
@@ -1039,7 +1040,7 @@ func TestHandleCancelSwarmingTask(t *testing.T) {
 			})
 
 			Convey("swarming http 500", func() {
-				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(nil, &googleapi.Error{Code: 500, Message: "swarming internal error"})
+				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(nil, status.Errorf(codes.Internal, "swarming internal error"))
 				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket")
 
 				So(err, ShouldErrLike, "transient error in cancelling the task task123")
@@ -1047,7 +1048,7 @@ func TestHandleCancelSwarmingTask(t *testing.T) {
 			})
 
 			Convey("swarming http <500", func() {
-				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(nil, &googleapi.Error{Code: 400, Message: "bad request"})
+				mockSwarm.EXPECT().CancelTask(ctx, gomock.Any()).Return(nil, status.Errorf(codes.InvalidArgument, "bad request"))
 				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket")
 
 				So(err, ShouldErrLike, "fatal error in cancelling the task task123")
@@ -1248,9 +1249,9 @@ func TestSubNotify(t *testing.T) {
 				CreatedTS:        1517260502000000,
 				SwarmingHostname: "swarm",
 			}, "task123", "msg1")
-			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(nil, &googleapi.Error{Code: 500, Message: "swarming internal error"})
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(nil, status.Errorf(codes.Internal, "swarming internal error"))
 			err := SubNotify(ctx, body)
-			So(err, ShouldErrLike, "googleapi: Error 500: swarming internal error")
+			So(err, ShouldErrLike, "rpc error: code = Internal desc = swarming internal error")
 			So(transient.Tag.In(err), ShouldBeTrue)
 
 			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")

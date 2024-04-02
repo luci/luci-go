@@ -23,8 +23,9 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/api/googleapi"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -299,6 +300,21 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 	return
 }
 
+// isFatalError returns true if this gRPC client error is fatal.
+func isFatalError(err error) bool {
+	switch status.Code(err) {
+	case codes.OK,
+		codes.Internal,
+		codes.Unknown,
+		codes.Unavailable,
+		codes.DeadlineExceeded,
+		codes.Canceled:
+		return false
+	default:
+		return true
+	}
+}
+
 // CreateBackendTask creates a backend task for the build.
 func CreateBackendTask(ctx context.Context, buildID int64, requestID string) error {
 	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
@@ -371,9 +387,9 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string) err
 
 	now := clock.Now(ctx)
 	if err != nil {
-		// Give up if HTTP 500s are happening continuously. Otherwise re-throw the
+		// Give up if err is Fatal. Otherwise re-throw the
 		// error so Cloud Tasks retries the task.
-		if apiErr, _ := err.(*googleapi.Error); apiErr == nil || apiErr.Code >= 500 {
+		if !isFatalError(err) {
 			if now.Sub(bld.CreateTime) < runTaskGiveUpTimeout {
 				return transient.Tag.Apply(errors.Annotate(err, "failed to create a backend task").Err())
 			}
