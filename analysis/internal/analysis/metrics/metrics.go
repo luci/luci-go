@@ -137,10 +137,24 @@ var (
 		CountSQL: "f.ingested_invocation_id",
 	}.Build()
 
+	FailuresWithAttributedFilteredTestRuns = metricBuilder{
+		ID:                "failures-with-attributed-filtered-test-runs",
+		HumanReadableName: "Failures with Attributed Filtered Test Runs",
+		Description: "The number of failures in this cluster that has filtered test runs being attributed to them," +
+			" which means those failures caused some tests to be filtered out in the test scheduler.",
+		DefaultConfig: Configuration{
+			SortPriority: 325,
+		},
+		RequireAttrs: true,
+		FilterSQL:    "attrs.attributed_filtered_run_count > 0",
+	}.Build()
+
+	// TODO(b/312590738): this has been replaced by `FailuresWithAttributedFilteredTestRuns`.
+	// Remove this once all usages of it has been removed.
 	HasAttributedFilteredTestRuns = metricBuilder{
 		ID:                "has-attributed-filtered-test-runs",
 		HumanReadableName: "Has Attributed Filtered Test Runs",
-		Description: "The number of failures in this cluster that has filtered test runs being attributed to them," +
+		Description: "[DEPRECATED] The number of failures in this cluster that has filtered test runs being attributed to them," +
 			" which means those failures caused some tests to be filtered out in the test scheduler.",
 		DefaultConfig: Configuration{
 			SortPriority: 350,
@@ -157,6 +171,7 @@ var (
 		TestRunsFailed,
 		Failures,
 		BuildsWithTestRunsFailedDueToFlakyTests,
+		FailuresWithAttributedFilteredTestRuns,
 		HasAttributedFilteredTestRuns,
 	}
 )
