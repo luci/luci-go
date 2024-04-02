@@ -837,9 +837,78 @@ func (s PropertySlice) Len() int           { return len(s) }
 func (s PropertySlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s PropertySlice) Less(i, j int) bool { return s[i].Less(&s[j]) }
 
-// MetaGetter is a subinterface of PropertyLoadSaver, but is also used to
-// abstract the meta argument for RawInterface.GetMulti.
-type MetaGetter interface {
+// PropertyLoadSaver may be implemented by a user type, and Interface will
+// use this interface to serialize the type instead of trying to automatically
+// create a serialization codec for it with helper.GetPLS.
+type PropertyLoadSaver interface {
+	// Load takes the values from the given map and attempts to save them into
+	// the underlying object (usually a struct or a PropertyMap). If a fatal
+	// error occurs, it's returned via error. If non-fatal conversion errors
+	// occur, error will be a MultiError containing one or more ErrFieldMismatch
+	// objects.
+	Load(PropertyMap) error
+
+	// Save returns the current property as a PropertyMap. if withMeta is true,
+	// then the PropertyMap contains all the metadata (e.g. '$meta' fields)
+	// which was held by this PropertyLoadSaver.
+	Save(withMeta bool) (PropertyMap, error)
+}
+
+// MetaGetterSetter is the sister interface of PropertyLoadSaver, which pertains to
+// getting and saving metadata.
+//
+// Metadata are indicated on structs with the `gae:"$<keyname>[,default]"`. Typical
+// examples include `$id`, `$kind`, `$parent` and `$key`, but some filters like
+// dscache also use metadata to allow configurability for structs they interact with
+// (such as `$dscache.enable` and `$dscache.expiration`).
+//
+// A *struct may implement MetaGetterSetter to provide metadata directly, e.g. via
+// computation over the contents of the struct (for example, generating "id" as a
+// hash of various fields in the struct).
+//
+// If you implement the MetaGetterSetter interface, your implementation must respond
+// to ALL keys - there is no fallback to the default behavior. You can re-use the
+// default behavior by doing the following. This example is for a struct whose ID is
+// a pure function of the struct contents:
+//
+//	type MyStruct {  // $kind is derived from the public struct name
+//	   // We want to optionally allow this struct to have a parent.
+//	   OptionalParent *datastore.Key `gae:"$parent"`
+//
+//	   // other fields
+//	}
+//
+//	func (s *MyStruct) GetMeta(key string) (any, bool) {
+//	  // If the gae/datastore library is asking for the id, calculate it.
+//	  if key == "id" {
+//	    return s.calculateID(), true
+//	  }
+//	  // Otherwise use the datastore library default processing to read
+//	  // tagged struct fields (e.g. $kind, $parent) using the normal
+//	  // algorithm.
+//	  return datastore.GetPLS(s).GetMeta(key)
+//	}
+//
+//	func (s *MyStruct) GetAllMeta() datastore.PropertyMap {
+//	  // Note that GetAllMeta, confusingly, only needs to return a map containing
+//	  // the extra values returned by GetMeta.
+//	  ret := datastore.PropertyMap{}
+//	  ret.SetMeta("id", s.calculateID())
+//	  return ret
+//	}
+//
+//	func (s *MyStruct) SetMeta(key string, value any) bool {
+//	  // We don't need to do any custom assignment, so just fallthrough to the
+//	  // default.
+//	  return datastore.GetPLS(s).SetMeta(key, value)
+//	}
+//
+// Note: Because of the nature of the underlying datastore library, `$id` can be SET
+// even during Put operations. This will happen when gae calculates an incomplete key
+// for an entity - when this happens, it means that the underlying datastore service
+// will compute and attach a generated id (int64) to the entity it saves, and then
+// return this back to the user.
+type MetaGetterSetter interface {
 	// GetMeta will get information about the field which has the struct tag in
 	// the form of `gae:"$<key>[,<default>]?"`.
 	//
@@ -873,33 +942,6 @@ type MetaGetter interface {
 	//     // BadFlag  Toggle `gae:"$flag3"` // ILLEGAL
 	//   }
 	GetMeta(key string) (any, bool)
-}
-
-// PropertyLoadSaver may be implemented by a user type, and Interface will
-// use this interface to serialize the type instead of trying to automatically
-// create a serialization codec for it with helper.GetPLS.
-type PropertyLoadSaver interface {
-	// Load takes the values from the given map and attempts to save them into
-	// the underlying object (usually a struct or a PropertyMap). If a fatal
-	// error occurs, it's returned via error. If non-fatal conversion errors
-	// occur, error will be a MultiError containing one or more ErrFieldMismatch
-	// objects.
-	Load(PropertyMap) error
-
-	// Save returns the current property as a PropertyMap. if withMeta is true,
-	// then the PropertyMap contains all the metadata (e.g. '$meta' fields)
-	// which was held by this PropertyLoadSaver.
-	Save(withMeta bool) (PropertyMap, error)
-}
-
-// MetaGetterSetter is the subset of PropertyLoadSaver which pertains to
-// getting and saving metadata.
-//
-// A *struct may implement this interface to provide metadata which is
-// supplimental to the variety described by GetPLS. For example, this could be
-// used to implement a parsed-out $kind or $id.
-type MetaGetterSetter interface {
-	MetaGetter
 
 	// GetAllMeta returns a PropertyMap with all of the metadata in this
 	// MetaGetterSetter. If a metadata field has an error during serialization,
@@ -1107,7 +1149,7 @@ func isMetaKey(k string) bool {
 // Example:
 //
 //	pls.GetMetaDefault("foo", 100).(int64)
-func GetMetaDefault(getter MetaGetter, key string, dflt any) any {
+func GetMetaDefault(getter MetaGetterSetter, key string, dflt any) any {
 	dflt = UpconvertUnderlyingType(dflt)
 	cur, ok := getter.GetMeta(key)
 	if !ok || (dflt != nil && reflect.TypeOf(cur) != reflect.TypeOf(dflt)) {

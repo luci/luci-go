@@ -72,7 +72,7 @@ type plan struct {
 //   - get and m are the pair of values that will be passed to datastore.GetMulti
 //   - save is the memcache item to save the result back to. If it's nil, then
 //     it will not be saved back to memcache.
-func (p *plan) add(idx int, get *ds.Key, m ds.MetaGetter, save CacheItem) {
+func (p *plan) add(idx int, get *ds.Key, m ds.MetaGetterSetter, save CacheItem) {
 	p.idxMap = append(p.idxMap, idx)
 	p.toGet = append(p.toGet, get)
 

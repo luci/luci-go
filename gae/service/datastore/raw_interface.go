@@ -101,13 +101,21 @@ type nullMetaGetterType struct{}
 
 func (nullMetaGetterType) GetMeta(string) (any, bool) { return nil, false }
 
-var nullMetaGetter MetaGetter = nullMetaGetterType{}
+func (nullMetaGetterType) GetAllMeta() PropertyMap {
+	return nil
+}
+
+func (nullMetaGetterType) SetMeta(string, any) bool {
+	return false
+}
+
+var nullMetaGetter MetaGetterSetter = nullMetaGetterType{}
 
 // MultiMetaGetter is a carrier for metadata, used with RawInterface.GetMulti
 //
 // It's OK to default-construct this. GetMeta will just return
 // (nil, ErrMetaFieldUnset) for every index.
-type MultiMetaGetter []MetaGetter
+type MultiMetaGetter []MetaGetterSetter
 
 // NewMultiMetaGetter returns a new MultiMetaGetter object. data may be nil.
 func NewMultiMetaGetter(data []PropertyMap) MultiMetaGetter {
@@ -129,7 +137,7 @@ func (m MultiMetaGetter) GetMeta(idx int, key string) (any, bool) {
 }
 
 // GetSingle gets a single MetaGetter at the specified index.
-func (m MultiMetaGetter) GetSingle(idx int) MetaGetter {
+func (m MultiMetaGetter) GetSingle(idx int) MetaGetterSetter {
 	if idx >= len(m) || m[idx] == nil {
 		return nullMetaGetter
 	}
