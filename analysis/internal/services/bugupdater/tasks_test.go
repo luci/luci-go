@@ -15,7 +15,6 @@
 package bugupdater
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -24,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 
@@ -77,24 +75,6 @@ func TestValidate(t *testing.T) {
 			task.Deadline = nil
 			err := validateTask(task)
 			So(err, ShouldErrLike, "deadline: missing or invalid timestamp")
-		})
-	})
-}
-
-func TestBuganizerClient(t *testing.T) {
-	ctx := context.Background()
-	Convey("Buganizer client", t, func() {
-		Convey("no value in context means no buganizer client", func() {
-			client, err := createBuganizerClient(ctx)
-			So(err, ShouldBeNil)
-			So(client, ShouldBeNil)
-		})
-
-		Convey("`disable` mode doesn't create any client", func() {
-			ctx = context.WithValue(ctx, &buganizer.BuganizerClientModeKey, buganizer.ModeDisable)
-			client, err := createBuganizerClient(ctx)
-			So(err, ShouldBeNil)
-			So(client, ShouldBeNil)
 		})
 	})
 }

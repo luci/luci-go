@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
@@ -105,6 +106,8 @@ func Main(init func(srv *luciserver.Server) error) {
 			return errors.Annotate(err, "creating test verdicts read client").Err()
 		}
 
+		uiBaseURL := fmt.Sprintf("https://%s.appspot.com", srv.Options.CloudProject)
+
 		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
 		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
 		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
@@ -117,7 +120,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
 
 		// GAE crons.
-		updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, srv.Options.Prod)
+		updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, uiBaseURL, srv.Options.Prod)
 		cron.RegisterHandler("update-analysis-and-bugs", updateAnalysisAndBugsHandler.CronHandler)
 		attributeFilteredTestRunsHandler := failureattributes.NewFilteredRunsAttributionHandler(srv.Options.CloudProject)
 		cron.RegisterHandler("attribute-filtered-test-runs", attributeFilteredTestRunsHandler.CronHandler)
@@ -147,7 +150,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		if err := verdictingester.RegisterTaskHandler(srv); err != nil {
 			return errors.Annotate(err, "register result ingester").Err()
 		}
-		if err := bugupdater.RegisterTaskHandler(srv); err != nil {
+		if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL); err != nil {
 			return errors.Annotate(err, "register bug updater").Err()
 		}
 		buildjoiner.RegisterTaskClass()

@@ -31,6 +31,28 @@ import (
 
 const s2aServerAddr = "metadata.google.internal:80"
 
+// CreateBuganizerClient returns a Buganizer client, configured based
+// on server settings passed to main.go.
+// If Buganizer is not configured, returns a nil client.
+func CreateBuganizerClient(ctx context.Context) (*RPCClient, error) {
+	buganizerClientMode := ctx.Value(&BuganizerClientModeKey)
+	if buganizerClientMode == nil || buganizerClientMode == "" {
+		return nil, nil
+	}
+	switch buganizerClientMode {
+	case ModeProvided:
+		buganizerClient, err := NewRPCClient(ctx)
+		if err != nil {
+			return nil, errors.Annotate(err, "create new buganizer client").Err()
+		}
+		return buganizerClient, nil
+	case ModeDisable:
+		return nil, nil
+	default:
+		return nil, errors.Reason("Unrecognized buganizer-mode value used: %q.", buganizerClientMode).Err()
+	}
+}
+
 // RPCClient is an implementation of the client wrapper that uses the Client provided
 // by issuetrackerclient package. This client acts as a delegate and
 // a proxy to the actual implementation.

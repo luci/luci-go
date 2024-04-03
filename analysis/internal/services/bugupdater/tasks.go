@@ -54,10 +54,13 @@ var bugUpdater = tq.RegisterTaskClass(tq.TaskClass{
 })
 
 // RegisterTaskHandler registers the handler for bug update tasks.
-func RegisterTaskHandler(srv *server.Server) error {
+// uiBaseURL is the base URL for the UI, without trailing slash, e.g.
+// "https://luci-analysis.appspot.com".
+func RegisterTaskHandler(srv *server.Server, uiBaseURL string) error {
 	h := &Handler{
 		GCPProject: srv.Options.CloudProject,
 		Simulate:   false,
+		UIBaseURL:  uiBaseURL,
 	}
 
 	handler := func(ctx context.Context, payload proto.Message) error {
@@ -102,6 +105,9 @@ func Schedule(ctx context.Context, task *taskspb.UpdateBugs) error {
 type Handler struct {
 	// GCPProject is the GCP Cloud Project Name, e.g. luci-analysis.
 	GCPProject string
+	// UIBaseURL is the base URL for the UI, without trailing slash, e.g.
+	// "https://luci-analysis.appspot.com".
+	UIBaseURL string
 	// Whether bug updates should be simulated. Only used in local
 	// development when UpdateBug(...) is called directly from the
 	// cron handler.
@@ -139,7 +145,7 @@ func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retE
 		return err
 	}
 
-	buganizerClient, err := createBuganizerClient(ctx)
+	buganizerClient, err := buganizer.CreateBuganizerClient(ctx)
 	if err != nil {
 		return errors.Annotate(err, "creating a buganizer client").Err()
 	}
@@ -162,11 +168,10 @@ func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retE
 		return errors.Annotate(err, "read re-clustering progress").Err()
 	}
 
-	uiBaseURL := fmt.Sprintf("https://%s.appspot.com", h.GCPProject)
 	runTimestamp := clock.Now(ctx).Truncate(time.Minute)
 
 	opts := updater.UpdateOptions{
-		UIBaseURL:            uiBaseURL,
+		UIBaseURL:            h.UIBaseURL,
 		Project:              task.Project,
 		AnalysisClient:       analysisClient,
 		MonorailClient:       monorailClient,
@@ -206,26 +211,4 @@ func validateTask(task *taskspb.UpdateBugs) error {
 		return errors.New("reclustering_attempt_minute: must be aligned to the start of a minute")
 	}
 	return nil
-}
-
-func createBuganizerClient(ctx context.Context) (buganizer.Client, error) {
-	buganizerClientMode := ctx.Value(&buganizer.BuganizerClientModeKey)
-	var buganizerClient buganizer.Client
-	var err error
-	if buganizerClientMode != nil {
-		switch buganizerClientMode {
-		case buganizer.ModeProvided:
-			// TODO (b/263906102)
-			buganizerClient, err = buganizer.NewRPCClient(ctx)
-			if err != nil {
-				return nil, errors.Annotate(err, "create new buganizer client").Err()
-			}
-		case buganizer.ModeDisable:
-			break
-		default:
-			return nil, errors.New("Unrecognized buganizer-mode value used.")
-		}
-	}
-
-	return buganizerClient, err
 }

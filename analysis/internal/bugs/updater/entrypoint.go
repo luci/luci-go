@@ -102,7 +102,6 @@ func UpdateBugsForProject(ctx context.Context, opts UpdateOptions) (retErr error
 			opts.Project,
 			selfEmail,
 			projectCfg.Config,
-			opts.SimulateBugUpdates,
 		)
 		if err != nil {
 			return errors.Annotate(err, "create buganizer bug manager").Err()

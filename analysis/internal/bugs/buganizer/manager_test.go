@@ -75,7 +75,7 @@ func TestBugManager(t *testing.T) {
 			},
 		}
 
-		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+		bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
 		So(err, ShouldBeNil)
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
@@ -152,7 +152,7 @@ func TestBugManager(t *testing.T) {
 				Convey("Policy with comment template", func() {
 					policyA.BugTemplate.CommentTemplate = "RuleURL:{{.RuleURL}},BugID:{{if .BugID.IsBuganizer}}{{.BugID.BuganizerBugID}}{{end}}"
 
-					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
 					So(err, ShouldBeNil)
 
 					response := bm.Create(ctx, createRequest)
@@ -174,7 +174,7 @@ func TestBugManager(t *testing.T) {
 				Convey("Policy has no comment template", func() {
 					policyA.BugTemplate.CommentTemplate = ""
 
-					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+					bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
 					So(err, ShouldBeNil)
 
 					response := bm.Create(ctx, createRequest)
@@ -258,19 +258,6 @@ func TestBugManager(t *testing.T) {
 				So(issue.Comments[1].Comment, ShouldStartWith, "Policy ID: policy-a")
 			})
 
-			Convey("Does nothing if in simulation mode", func() {
-				bm.Simulate = true
-				response := bm.Create(ctx, createRequest)
-				So(response, ShouldResemble, bugs.BugCreateResponse{
-					Simulated: true,
-					ID:        "123456",
-					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
-						"policy-a": {},
-					},
-				})
-				So(len(fakeStore.Issues), ShouldEqual, 0)
-			})
-
 			Convey("With provided component id", func() {
 				createRequest.BuganizerComponent = 7890
 				response := bm.Create(ctx, createRequest)
@@ -329,7 +316,7 @@ func TestBugManager(t *testing.T) {
 				// Check config is respected and we file with Limit View Trusted if the
 				// config option to file without it is not set.
 				buganizerCfg.FileWithoutLimitViewTrusted = false
-				bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg, false)
+				bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
 				So(err, ShouldBeNil)
 
 				response := bm.Create(ctx, createRequest)
@@ -627,10 +614,6 @@ func TestBugManager(t *testing.T) {
 						// Verify repeated update has no effect.
 						So(verifyUpdateDoesNothing(), ShouldBeNil)
 					})
-				})
-				Convey("Does nothing if in simulation mode", func() {
-					bm.Simulate = true
-					So(verifyUpdateDoesNothing(), ShouldBeNil)
 				})
 			})
 			Convey("If all policies deactivate", func() {

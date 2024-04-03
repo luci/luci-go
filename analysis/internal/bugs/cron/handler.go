@@ -33,13 +33,14 @@ import (
 )
 
 // NewHandler initialises a new Handler instance.
-func NewHandler(cloudProject string, prod bool) *Handler {
-	return &Handler{cloudProject: cloudProject, prod: prod}
+func NewHandler(cloudProject, uiBaseURL string, prod bool) *Handler {
+	return &Handler{cloudProject: cloudProject, uiBaseURL: uiBaseURL, prod: prod}
 }
 
 // Handler handles the update-analysis-and-bugs cron job.
 type Handler struct {
 	cloudProject string
+	uiBaseURL    string
 	// prod is set when running in production (not a dev workstation).
 	prod bool
 }
@@ -51,7 +52,7 @@ func (h *Handler) CronHandler(ctx context.Context) error {
 		return errors.Annotate(err, "get config").Err()
 	}
 	simulate := !h.prod
-	err = updateAnalysisAndBugs(ctx, h.cloudProject, simulate, cfg.BugUpdatesEnabled)
+	err = updateAnalysisAndBugs(ctx, h.cloudProject, h.uiBaseURL, simulate, cfg.BugUpdatesEnabled)
 	if err != nil {
 		return errors.Annotate(err, "update bugs").Err()
 	}
@@ -67,7 +68,7 @@ func (h *Handler) CronHandler(ctx context.Context) error {
 // as the developer themselves rather than the LUCI Analysis service.
 // This leads to bugs errounously being detected as having manual priority
 // changes.
-func updateAnalysisAndBugs(ctx context.Context, gcpProject string, simulate, bugUpdatesEnabled bool) (retErr error) {
+func updateAnalysisAndBugs(ctx context.Context, gcpProject, uiBaseURL string, simulate, bugUpdatesEnabled bool) (retErr error) {
 	runMinute := clock.Now(ctx).Truncate(time.Minute)
 
 	projectCfg, err := config.Projects(ctx)
@@ -108,6 +109,7 @@ func updateAnalysisAndBugs(ctx context.Context, gcpProject string, simulate, bug
 				//  -default-request-timeout 15m0s
 				h := bugupdater.Handler{
 					GCPProject: gcpProject,
+					UIBaseURL:  uiBaseURL,
 					Simulate:   true,
 				}
 				if err := h.UpdateBugs(ctx, task); err != nil {

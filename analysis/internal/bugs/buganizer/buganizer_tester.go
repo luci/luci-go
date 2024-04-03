@@ -30,9 +30,9 @@ func CreateSampleIssue(ctx context.Context) (int64, error) {
 		return 0, errors.New("Sample issues are only availabe in buganizer Mode \"provided\".")
 	}
 
-	componentId := ctx.Value(&BuganizerTestComponentIdKey)
+	componentID := ctx.Value(&BuganizerTestComponentIdKey)
 
-	if componentId == nil {
+	if componentID == nil {
 		return 0, errors.New("Test component id is required to create sample issues.")
 	}
 
@@ -41,7 +41,7 @@ func CreateSampleIssue(ctx context.Context) (int64, error) {
 			Comment: fmt.Sprintf("A test issue description %d", rand.Int()),
 		},
 		IssueState: &issuetracker.IssueState{
-			ComponentId: componentId.(int64),
+			ComponentId: componentID.(int64),
 			Type:        issuetracker.Issue_BUG,
 			Priority:    issuetracker.Issue_P2,
 			Severity:    issuetracker.Issue_S2,
