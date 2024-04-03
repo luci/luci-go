@@ -35,7 +35,17 @@ import (
 
 const MaxSizeProperties = 4 * 1024
 
+const MaxInstructionsSize = 1024 * 1024 // 1 MB
+
 const MaxInstructionSize = 10 * 1024 // 10 KB
+
+const MaxDependencyBuildIDSize = 100
+
+const MaxDependencyStepNameSize = 1024
+
+const MaxDependencyStepTagKeySize = 256
+
+const MaxDependencyStepTagValSize = 1024
 
 var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
 
@@ -239,7 +249,10 @@ func ValidateStepInstructions(instructions *pb.Instructions) error {
 	if instructions == nil {
 		return nil
 	}
-	// TODO (nqmtuan): check total size limit of message.
+	if proto.Size(instructions) > MaxInstructionsSize {
+		return errors.Reason("step instructions: bigger than %d bytes", MaxInstructionsSize).Err()
+	}
+
 	idMap := map[string]int{}
 	for i, instruction := range instructions.Instructions {
 		// Make sure that all instructions have id, and id are unique.
@@ -294,8 +307,31 @@ func ValidateDependencies(dependencies []*pb.InstructionDependency) error {
 	if len(dependencies) > 1 {
 		return errors.Reason("dependency: more than 1").Err()
 	}
+	for i, dep := range dependencies {
+		if err := ValidateDependency(dep); err != nil {
+			return errors.Annotate(err, "dependencies[%v]", i).Err()
+		}
+	}
+	return nil
+}
+
+func ValidateDependency(dependency *pb.InstructionDependency) error {
+	if len(dependency.BuildId) > MaxDependencyBuildIDSize {
+		return errors.Reason("build_id: longer than %v bytes", MaxDependencyBuildIDSize).Err()
+	}
+	if dependency.StepName == "" {
+		return errors.Reason("step_name: empty").Err()
+	}
+	if len(dependency.StepName) > MaxDependencyStepNameSize {
+		return errors.Reason("step_name: longer than %v bytes", MaxDependencyStepNameSize).Err()
+	}
+	if len(dependency.GetStepTag().GetKey()) > MaxDependencyStepTagKeySize {
+		return errors.Reason("step_tag_key: longer than %v bytes", MaxDependencyStepTagKeySize).Err()
+	}
+	if len(dependency.GetStepTag().GetValue()) > MaxDependencyStepTagValSize {
+		return errors.Reason("step_tag_val: longer than %v bytes", MaxDependencyStepTagValSize).Err()
+	}
 	// TODO (nqmtuan): Validate dependency.build_id is either integer or mustache format.
-	// TODO (nqmtuan): Validate the size limit of the fields.
 	return nil
 }
 

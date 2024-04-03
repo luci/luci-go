@@ -198,6 +198,10 @@ func TestValidate(t *testing.T) {
 		Convey("Step Instruction can be nil", func() {
 			So(ValidateStepInstructions(nil), ShouldBeNil)
 		})
+		Convey("Step Instruction too big", func() {
+			stepInstructions.Instructions[0].Id = stringWithLength(2 * 1024 * 1024)
+			So(ValidateStepInstructions(stepInstructions), ShouldErrLike, "step instructions: bigger than 1048576 bytes")
+		})
 		Convey("No ID", func() {
 			stepInstructions.Instructions[0].Id = ""
 			So(ValidateStepInstructions(stepInstructions), ShouldErrLike, "step instructions: unspecified id")
@@ -251,7 +255,7 @@ func TestValidate(t *testing.T) {
 			}
 			So(ValidateInstruction(instruction), ShouldErrLike, `target: duplicated "REMOTE"`)
 		})
-		Convey("Exceed size limit", func() {
+		Convey("Content exceeds size limit", func() {
 			content := ""
 			for i := 0; i < 120000; i++ {
 				content += "a"
@@ -272,5 +276,63 @@ func TestValidate(t *testing.T) {
 			}
 			So(ValidateInstruction(instruction), ShouldErrLike, "dependency: more than 1")
 		})
+		Convey("Dependency buildID exceeds limit", func() {
+			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
+				{
+					BuildId:  stringWithLength(101),
+					StepName: "dep",
+				},
+			}
+			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: build_id: longer than 100 bytes")
+		})
+		Convey("Dependency empty step name", func() {
+			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
+				{
+					BuildId: "8000",
+				},
+			}
+			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: step_name: empty")
+		})
+		Convey("Dependency step name exceeds limit", func() {
+			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
+				{
+					BuildId:  "8000",
+					StepName: stringWithLength(1025),
+				},
+			}
+			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: step_name: longer than 1024 bytes")
+		})
+
+		Convey("Dependency step tag key exceeds limit", func() {
+			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
+				{
+					BuildId:  "8000",
+					StepName: "step",
+					StepTag: &pb.StringPair{
+						Key:   stringWithLength(257),
+						Value: "val",
+					},
+				},
+			}
+			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: step_tag_key: longer than 256 bytes")
+		})
+
+		Convey("Dependency step tag value exceeds limit", func() {
+			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
+				{
+					BuildId:  "8000",
+					StepName: "step",
+					StepTag: &pb.StringPair{
+						Key:   "key",
+						Value: stringWithLength(1025),
+					},
+				},
+			}
+			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: step_tag_val: longer than 1024 bytes")
+		})
 	})
+}
+
+func stringWithLength(l int) string {
+	return strings.Repeat("a", l)
 }
