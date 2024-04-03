@@ -314,6 +314,9 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	}
 	r, err := ctxhttp.Get(ctx, c.Client, u)
 	if err != nil {
+		if errors.Contains(err, context.DeadlineExceeded) {
+			return http.Header{}, nil, status.Errorf(codes.DeadlineExceeded, "%s", err)
+		}
 		return http.Header{}, nil, status.Errorf(codes.Unknown, "%s", err)
 	}
 	defer r.Body.Close()
