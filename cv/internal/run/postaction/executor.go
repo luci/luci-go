@@ -128,7 +128,7 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 		for _, vote := range votes {
 			labelsToSet[vote.GetName()] = vote.GetValue()
 		}
-		tag := gerrit.Tag("post-action:vote-gerrit-labels", string(exe.Run.ID))
+		tag := gerrit.Tag("post-action:vote-gerrit-labels", "")
 		for i, rcl := range rcls {
 			i, rcl := i, rcl
 			work <- func() error {
