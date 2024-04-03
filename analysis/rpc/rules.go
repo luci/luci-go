@@ -32,10 +32,14 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
+	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/analysis/internal/clustering/algorithms/failurereason"
+	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -49,17 +53,42 @@ const (
 
 	// Maximum length of a new issue description, in UTF-8 bytes.
 	maxCommentLengthBytes = 100_000
+
+	// Users who can create issues in Buganizer through LUCI Analysis,
+	// using the LUCI Analysis service account.
+	//
+	// Access is managed via a single group, not as a project-level
+	// permission, as the same service account is used to interact
+	// with Buganizer for all components. I.E. anyone who can use this
+	// account can file into any buganizer component that LUCI Analysis
+	// has write access to, regardless of the project that owns that
+	// component.
+	//
+	// Use of a single group allow us to restrict this access only
+	// to trusted groups, i.e. Googlers and partners only.
+	buganizerAccessGroup = "luci-analysis-buganizer-access"
 )
 
 // Rules implements pb.RulesServer.
 type rulesServer struct {
+	// Base URL for UI. Should not include trailing slash.
+	// E.g. "https://luci-analyis.appspot.com".
+	uiBaseURL string
+	// Client for interacting with buganizer.
+	client buganizer.Client
+	// The account used to interact with buganizer.
+	selfEmail string
 }
 
-// NewRulesSever returns a new pb.RulesServer.
-func NewRulesSever() pb.RulesServer {
+// NewRulesServer returns a new pb.RulesServer.
+func NewRulesServer(uiBaseURL string, client buganizer.Client, selfEmail string) pb.RulesServer {
 	return &pb.DecoratedRules{
-		Prelude:  checkAllowedPrelude,
-		Service:  &rulesServer{},
+		Prelude: checkAllowedPrelude,
+		Service: &rulesServer{
+			uiBaseURL: uiBaseURL,
+			client:    client,
+			selfEmail: selfEmail,
+		},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
@@ -181,11 +210,19 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 
 	ruleID, err := rules.GenerateID()
 	if err != nil {
-		return nil, errors.Annotate(err, "generating Rule ID").Err()
+		return nil, errors.Annotate(err, "generating rule ID").Err()
 	}
 	user := auth.CurrentUser(ctx).Email
 
 	r := ruleEntryFromRequest(project, ruleID, req.Rule)
+	r, err = createRuleEntry(ctx, r, user)
+	if err != nil {
+		return nil, err
+	}
+	return createRulePB(r, cfg.Config, ruleMask), nil
+}
+
+func createRuleEntry(ctx context.Context, r *rules.Entry, user string) (*rules.Entry, error) {
 	commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Verify the bug is not used by another rule in this project.
 		bugRules, err := rules.ReadByBug(ctx, r.BugID)
@@ -226,29 +263,158 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 
 	// Log rule changes to provide a way of recovering old system state
 	// if malicious or unintended updates occur.
-	logRuleCreate(ctx, r)
-
-	return createRulePB(r, cfg.Config, ruleMask), nil
+	logging.Infof(ctx, "Rule created (%s/%s): %s", r.Project, r.RuleID, formatRule(r))
+	return r, nil
 }
 
-func logRuleCreate(ctx context.Context, rule *rules.Entry) {
-	logging.Infof(ctx, "Rule created (%s/%s): %s", rule.Project, rule.RuleID, formatRule(rule))
-}
-
-func (*rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRuleWithNewIssueRequest) (*pb.Rule, error) {
+func (s *rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRuleWithNewIssueRequest) (*pb.Rule, error) {
+	// Verify the user is allowed to create issues in Buganizer through LUCI Analysis.
+	if err := checkAllowed(ctx, buganizerAccessGroup); err != nil {
+		return nil, err
+	}
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
 		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
 	}
-	// TODO: Check group membership to ensure buganizer access.
+	// Check standard rule creation permissions.
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
 	}
 	if err := validateCreateRuleWithNewIssueRequest(req); err != nil {
 		return nil, invalidArgumentError(err)
 	}
+	if err := s.checkComponentAccess(ctx, req.Issue.Component.GetIssueTracker()); err != nil {
+		return nil, err
+	}
 
-	return nil, appstatus.Errorf(codes.Unimplemented, "not yet implemented")
+	cfg, err := readProjectConfig(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	ruleMask, err := ruleFieldAccess(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	ruleID, err := rules.GenerateID()
+	if err != nil {
+		return nil, errors.Annotate(err, "generating rule ID").Err()
+	}
+	user := auth.CurrentUser(ctx).Email
+	ruleURL := bugs.RuleURL(s.uiBaseURL, project, ruleID)
+
+	request := prepareBuganizerIssueRequest(req.Issue, ruleURL, user)
+	issue, err := s.client.CreateIssue(ctx, request)
+	if err != nil {
+		code := status.Code(err)
+		if code == codes.FailedPrecondition ||
+			code == codes.InvalidArgument ||
+			code == codes.NotFound ||
+			code == codes.OutOfRange {
+			// Error indicates something wrong with the request,
+			// surface these back to the caller.
+			return nil, invalidArgumentError(errors.Annotate(err, "creating issue").Err())
+		}
+
+		// GRPCifyAndLog will log this, and report an internal error to the caller.
+		return nil, err
+	}
+
+	r := ruleEntryFromRequest(project, ruleID, req.Rule)
+	// Use bug we just filed for the rule.
+	r.BugID = bugs.BugID{
+		System: bugs.BuganizerSystem,
+		ID:     fmt.Sprintf("%v", issue.IssueId),
+	}
+	r, err = createRuleEntry(ctx, r, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return createRulePB(r, cfg.Config, ruleMask), nil
+}
+
+// checkComponentAccess checks LUCI Analysis is able to file a bug into
+// the specified issue tracker component.
+func (s *rulesServer) checkComponentAccess(ctx context.Context, component *pb.IssueTrackerComponent) error {
+	if s.client == nil || s.selfEmail == "" {
+		return appstatus.Error(codes.Unimplemented, "Issue tracker integration is not enabled on this deployment.")
+	}
+	accessChecker := buganizer.NewComponentAccessChecker(s.client, s.selfEmail)
+	componentID := component.ComponentId
+	access, err := accessChecker.CheckAccess(ctx, componentID)
+	if err != nil {
+		// Internal error.
+		return err
+	}
+	if !access.Appender {
+		return appstatus.Errorf(codes.FailedPrecondition, "LUCI Analysis is missing permission to create issues in component %v. Please follow the steps in go/luci-analysis-bug-creation-failed to grant access.", componentID)
+	}
+	if !access.IssueDefaultsAppender {
+		return appstatus.Errorf(codes.FailedPrecondition, "LUCI Analysis is missing permission to append comments to issues in component %v. Please follow the steps in go/luci-analysis-bug-creation-failed to grant access.", componentID)
+	}
+	return nil
+}
+
+func prepareBuganizerIssueRequest(request *pb.CreateRuleWithNewIssueRequest_Issue, ruleLink string, userEmail string) *issuetracker.CreateIssueRequest {
+	comment := fmt.Sprintf("%s\n\nView example failures and modify the failures associated with this bug in LUCI Analysis: %s. Filed on behalf of %s.",
+		request.Comment,
+		ruleLink,
+		userEmail,
+	)
+
+	issue := &issuetracker.Issue{
+		IssueState: &issuetracker.IssueState{
+			ComponentId: request.Component.GetIssueTracker().ComponentId,
+			Type:        issuetracker.Issue_BUG,
+			Status:      issuetracker.Issue_NEW,
+			Priority:    toBuganizerPriority(request.Priority),
+			Severity:    issuetracker.Issue_S2,
+			Title:       request.Title,
+			AccessLimit: &issuetracker.IssueAccessLimit{
+				AccessLevel: toBuganizerAccessLevel(request.AccessLimit),
+			},
+		},
+		IssueComment: &issuetracker.IssueComment{
+			Comment: comment,
+		},
+	}
+
+	return &issuetracker.CreateIssueRequest{
+		Issue: issue,
+		TemplateOptions: &issuetracker.CreateIssueRequest_TemplateOptions{
+			ApplyTemplate: true,
+		},
+	}
+}
+
+func toBuganizerPriority(priority pb.BuganizerPriority) issuetracker.Issue_Priority {
+	switch priority {
+	case pb.BuganizerPriority_P0:
+		return issuetracker.Issue_P0
+	case pb.BuganizerPriority_P1:
+		return issuetracker.Issue_P1
+	case pb.BuganizerPriority_P2:
+		return issuetracker.Issue_P2
+	case pb.BuganizerPriority_P3:
+		return issuetracker.Issue_P3
+	case pb.BuganizerPriority_P4:
+		return issuetracker.Issue_P4
+	default:
+		panic(fmt.Errorf("unknown priority: %v", priority))
+	}
+}
+
+func toBuganizerAccessLevel(accessLevel pb.CreateRuleWithNewIssueRequest_Issue_IssueAccessLimit) issuetracker.IssueAccessLimit_AccessLevel {
+	switch accessLevel {
+	case pb.CreateRuleWithNewIssueRequest_Issue_None:
+		return issuetracker.IssueAccessLimit_LIMIT_NONE
+	case pb.CreateRuleWithNewIssueRequest_Issue_Trusted:
+		return issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED
+	default:
+		panic(fmt.Errorf("unknown access level: %v", accessLevel))
+	}
 }
 
 // Updates a rule.
@@ -494,8 +660,45 @@ func (*rulesServer) PrepareDefaults(ctx context.Context, req *pb.PrepareRuleDefa
 	if err := validatePrepareRuleDefaultsRequest(req); err != nil {
 		return nil, invalidArgumentError(err)
 	}
+	cfg, err := readProjectConfig(ctx, project)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, appstatus.Errorf(codes.Unimplemented, "not yet implemented")
+	rule := &pb.Rule{
+		Project:        "", // Output-only field only set for created rules.
+		RuleId:         "", // Output-only field only set for created rules.
+		RuleDefinition: "",
+		Bug:            nil, // To be determined by user.
+		IsActive:       true,
+		// Enabling auto-closure on manually created rules usually leads to the bug being immediately
+		// closed because it did not meet the auto-bug filing thresholds. So let the user manaully
+		// handle closure.
+		IsManagingBug:         false,
+		IsManagingBugPriority: false,
+	}
+
+	if req.TestResult != nil {
+		example := &clustering.Failure{
+			TestID: req.TestResult.TestId,
+			Reason: req.TestResult.FailureReason,
+		}
+
+		testAlg := &testname.Algorithm{}
+		ruleDefinition := testAlg.FailureAssociationRule(cfg, example)
+
+		reasonAlg := &failurereason.Algorithm{}
+		reasonAlg.FailureAssociationRule(cfg, example)
+		if ruleCriteria := reasonAlg.FailureAssociationRule(cfg, example); ruleCriteria != "" {
+			// Combine test and failure association reason criteria.
+			ruleDefinition = fmt.Sprintf("%s AND %s", ruleDefinition, ruleCriteria)
+		}
+		rule.RuleDefinition = ruleDefinition
+	}
+
+	return &pb.PrepareRuleDefaultsResponse{
+		Rule: rule,
+	}, nil
 }
 
 func validateCreateRuleRequest(req *pb.CreateRuleRequest, cfg *configpb.ProjectConfig) error {
@@ -648,8 +851,8 @@ func validateNewIssue(issue *pb.CreateRuleWithNewIssueRequest_Issue) error {
 	if err := validateBugComponent(issue.Component); err != nil {
 		return errors.Annotate(err, "component").Err()
 	}
-	if err := validateIssueAccessLimit(issue.Limit); err != nil {
-		return errors.Annotate(err, "limit").Err()
+	if err := validateIssueAccessLimit(issue.AccessLimit); err != nil {
+		return errors.Annotate(err, "access_limit").Err()
 	}
 	if err := validateBuganizerPriority(issue.Priority); err != nil {
 		return errors.Annotate(err, "priority").Err()

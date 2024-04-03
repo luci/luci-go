@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -31,8 +30,10 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
+	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname"
@@ -63,7 +64,9 @@ func TestRules(t *testing.T) {
 		// Provides datastore implementation needed for project config.
 		ctx = memory.Use(ctx)
 
-		srv := NewRulesSever()
+		uiBaseURL := "https://analysis.luci.app"
+		buganizerClient := buganizer.NewFakeClient()
+		srv := NewRulesServer(uiBaseURL, buganizerClient, "service@project.iam.gserviceaccount.com")
 
 		ruleManagedBuilder := rules.NewRule(0).
 			WithProject(testProject).
@@ -895,6 +898,7 @@ func TestRules(t *testing.T) {
 			})
 		})
 		Convey("CreateWithNewIssue", func() {
+			authState.IdentityGroups = []string{luciAnalysisAccessGroup, buganizerAccessGroup, auditUsersAccessGroup}
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@project",
@@ -908,8 +912,8 @@ func TestRules(t *testing.T) {
 			request := &pb.CreateRuleWithNewIssueRequest{
 				Parent: fmt.Sprintf("projects/%s", testProject),
 				Rule: &pb.Rule{
-					RuleDefinition:        `test = "create"`,
-					IsActive:              false,
+					RuleDefinition:        `test = "createWithIssue"`,
+					IsActive:              true,
 					IsManagingBug:         true,
 					IsManagingBugPriority: true,
 					SourceCluster: &pb.ClusterId{
@@ -925,13 +929,31 @@ func TestRules(t *testing.T) {
 							},
 						},
 					},
-					Title:    "Issue title.",
-					Comment:  "Description.",
-					Priority: pb.BuganizerPriority_P1,
-					Limit:    pb.CreateRuleWithNewIssueRequest_Issue_Trusted,
+					Title:       "Issue title.",
+					Comment:     "Description.",
+					Priority:    pb.BuganizerPriority_P1,
+					AccessLimit: pb.CreateRuleWithNewIssueRequest_Issue_Trusted,
 				},
 			}
+			expectedRuleBuilder := rules.NewRule(0).
+				WithProject(testProject).
+				WithRuleDefinition(`test = "createWithIssue"`).
+				WithActive(true).
+				WithBugManaged(true).
+				WithBugPriorityManaged(true).
+				WithSourceCluster(clustering.ClusterID{
+					Algorithm: testname.AlgorithmName,
+					ID:        strings.Repeat("aa", 16),
+				}).
+				WithBugManagementState(&bugspb.BugManagementState{})
 
+			Convey("Not a member of luci-analysis-buganizer-access", func() {
+				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "luci-analysis-buganizer-access")
+
+				rule, err := srv.CreateWithNewIssue(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-buganizer-access")
+				So(rule, ShouldBeNil)
+			})
 			Convey("No create rule permission", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermCreateRule)
 
@@ -1056,18 +1078,18 @@ func TestRules(t *testing.T) {
 							So(err, ShouldBeRPCInvalidArgument, `issue: comment: not in unicode normalized form C`)
 						})
 					})
-					Convey("limit", func() {
+					Convey("access limit", func() {
 						Convey("unspecified", func() {
-							request.Issue.Limit = pb.CreateRuleWithNewIssueRequest_Issue_ISSUE_ACCESS_LIMIT_UNSPECIFIED
+							request.Issue.AccessLimit = pb.CreateRuleWithNewIssueRequest_Issue_ISSUE_ACCESS_LIMIT_UNSPECIFIED
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: limit: unspecified`)
+							So(err, ShouldBeRPCInvalidArgument, `issue: access_limit: unspecified`)
 						})
 						Convey("invalid", func() {
-							request.Issue.Limit = pb.CreateRuleWithNewIssueRequest_Issue_IssueAccessLimit(100)
+							request.Issue.AccessLimit = pb.CreateRuleWithNewIssueRequest_Issue_IssueAccessLimit(100)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							So(err, ShouldBeRPCInvalidArgument, `issue: limit: invalid value, must be a valid IssueAccessLimit`)
+							So(err, ShouldBeRPCInvalidArgument, `issue: access_limit: invalid value, must be a valid IssueAccessLimit`)
 						})
 					})
 					Convey("priority", func() {
@@ -1087,8 +1109,96 @@ func TestRules(t *testing.T) {
 				})
 			})
 			Convey("Success", func() {
-				_, err := srv.CreateWithNewIssue(ctx, request)
-				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+				Convey("With audit access", func() {
+					rule, err := srv.CreateWithNewIssue(ctx, request)
+					So(err, ShouldBeNil)
+
+					// Verify the issue that was filed.
+					So(buganizerClient.FakeStore.Issues, ShouldHaveLength, 1)
+					issue := buganizerClient.FakeStore.Issues[1]
+					So(issue, ShouldNotBeNil)
+					So(issue.Issue.IssueState.ComponentId, ShouldEqual, 123456)
+					So(issue.Issue.IssueState.Title, ShouldEqual, "Issue title.")
+					So(issue.Comments[0].Comment, ShouldEqual, "Description.\n\n"+
+						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+". "+
+						"Filed on behalf of someone@example.com.")
+					So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED)
+					So(issue.Issue.IssueState.Priority, ShouldEqual, pb.BuganizerPriority_P1)
+
+					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
+					So(err, ShouldBeNil)
+
+					expectedRule := expectedRuleBuilder.
+						// Accept the randomly generated rule ID.
+						WithRuleID(rule.RuleId).
+						// Accept the ID of the filed bug.
+						WithBug(bugs.BugID{System: "buganizer", ID: "1"}).
+						WithCreateUser("someone@example.com").
+						WithLastAuditableUpdateUser("someone@example.com").
+						// Accept whatever CreationTime was assigned, as it
+						// is determined by Spanner commit time.
+						// Rule spanner data access code tests already validate
+						// this is populated correctly.
+						WithCreateTime(storedRule.CreateTime).
+						WithLastAuditableUpdateTime(storedRule.CreateTime).
+						WithLastUpdateTime(storedRule.CreateTime).
+						WithPredicateLastUpdateTime(storedRule.CreateTime).
+						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
+						Build()
+
+					// Verify the rule was correctly created in the database.
+					So(storedRule, ShouldResembleProto, expectedRule)
+
+					// Verify the returned rule matches our expectations.
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+				})
+				Convey("Without audit access", func() {
+					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
+
+					rule, err := srv.CreateWithNewIssue(ctx, request)
+					So(err, ShouldBeNil)
+
+					// Verify the issue that was filed.
+					So(buganizerClient.FakeStore.Issues, ShouldHaveLength, 1)
+					issue := buganizerClient.FakeStore.Issues[1]
+					So(issue, ShouldNotBeNil)
+					So(issue.Issue.IssueState.ComponentId, ShouldEqual, 123456)
+					So(issue.Issue.IssueState.Title, ShouldEqual, "Issue title.")
+					So(issue.Comments[0].Comment, ShouldEqual, "Description.\n\n"+
+						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+". "+
+						"Filed on behalf of someone@example.com.")
+					So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED)
+					So(issue.Issue.IssueState.Priority, ShouldEqual, pb.BuganizerPriority_P1)
+
+					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
+					So(err, ShouldBeNil)
+
+					expectedRule := expectedRuleBuilder.
+						// Accept the randomly generated rule ID.
+						WithRuleID(rule.RuleId).
+						// Accept the ID of the filed bug.
+						WithBug(bugs.BugID{System: "buganizer", ID: "1"}).
+						WithCreateUser("someone@example.com").
+						WithLastAuditableUpdateUser("someone@example.com").
+						// Accept whatever CreationTime was assigned, as it
+						// is determined by Spanner commit time.
+						// Rule spanner data access code tests already validate
+						// this is populated correctly.
+						WithCreateTime(storedRule.CreateTime).
+						WithLastAuditableUpdateTime(storedRule.CreateTime).
+						WithLastUpdateTime(storedRule.CreateTime).
+						WithPredicateLastUpdateTime(storedRule.CreateTime).
+						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
+						Build()
+
+					// Verify the rule was correctly created in the database.
+					So(storedRule, ShouldResembleProto, expectedRule)
+
+					// Verify the returned rule matches our expectations.
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+				})
 			})
 		})
 		Convey("LookupBug", func() {
@@ -1186,7 +1296,7 @@ func TestRules(t *testing.T) {
 					TestResult: &pb.PrepareRuleDefaultsRequest_TestResult{
 						TestId: "ninja://some_package/some_test",
 						FailureReason: &pb.FailureReason{
-							PrimaryErrorMessage: "Some error.",
+							PrimaryErrorMessage: "Some error 12345678.",
 						},
 					},
 				}
@@ -1222,20 +1332,32 @@ func TestRules(t *testing.T) {
 				})
 				Convey("Success", func() {
 					Convey("Baseline", func() {
-						_, err := srv.PrepareDefaults(ctx, request)
-						So(err, ShouldHaveRPCCode, codes.Unimplemented)
+						response, err := srv.PrepareDefaults(ctx, request)
+						So(err, ShouldBeNil)
+						So(response.Rule, ShouldResembleProto, &pb.Rule{
+							RuleDefinition: `test = "ninja://some_package/some_test" AND reason LIKE "Some error %."`,
+							IsActive:       true,
+						})
 					})
 					Convey("With no failure reason", func() {
 						request.TestResult.FailureReason = nil
 
-						_, err := srv.PrepareDefaults(ctx, request)
-						So(err, ShouldHaveRPCCode, codes.Unimplemented)
+						response, err := srv.PrepareDefaults(ctx, request)
+						So(err, ShouldBeNil)
+						So(response.Rule, ShouldResembleProto, &pb.Rule{
+							RuleDefinition: `test = "ninja://some_package/some_test"`,
+							IsActive:       true,
+						})
 					})
 					Convey("With no test result", func() {
 						request.TestResult = nil
 
-						_, err := srv.PrepareDefaults(ctx, request)
-						So(err, ShouldHaveRPCCode, codes.Unimplemented)
+						response, err := srv.PrepareDefaults(ctx, request)
+						So(err, ShouldBeNil)
+						So(response.Rule, ShouldResembleProto, &pb.Rule{
+							RuleDefinition: ``,
+							IsActive:       true,
+						})
 					})
 				})
 			})

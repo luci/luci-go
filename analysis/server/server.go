@@ -106,12 +106,20 @@ func Main(init func(srv *luciserver.Server) error) {
 			return errors.Annotate(err, "creating test verdicts read client").Err()
 		}
 
+		// May be nil on deployments where Buganizer is not configured.
+		bc, err := buganizer.CreateBuganizerClient(srv.Context)
+		if err != nil {
+			return errors.Annotate(err, "create buganizer client").Err()
+		}
+		// May be empty on deployments where Buganizer is not configured.
+		selfEmail := srv.Context.Value(&buganizer.BuganizerSelfEmailKey).(string)
+
 		uiBaseURL := fmt.Sprintf("https://%s.appspot.com", srv.Options.CloudProject)
 
 		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
 		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
 		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
-		analysispb.RegisterRulesServer(srv, rpc.NewRulesSever())
+		analysispb.RegisterRulesServer(srv, rpc.NewRulesServer(uiBaseURL, bc, selfEmail))
 		analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
 		analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
 		analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())

@@ -364,9 +364,9 @@ message CreateRuleWithNewIssueRequest {
     }
 
     // The issue access limit to use for the new issue.
-    IssueAccessLimit limit = 5;
+    IssueAccessLimit access_limit = 5;
   }
 
   // The issue to create alongside this rule.
-  Issue issue = 3; 
+  Issue issue = 3;
 }
