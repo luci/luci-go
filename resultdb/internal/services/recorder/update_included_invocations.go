@@ -23,13 +23,15 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/span"
 )
 
 // validateUpdateIncludedInvocationsRequest returns a non-nil error if req is
@@ -68,6 +70,11 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 	including := invocations.MustParseName(in.IncludingInvocation)
 	add := invocations.MustParseNames(in.AddInvocations)
 	remove := invocations.MustParseNames(in.RemoveInvocations)
+
+	if len(in.RemoveInvocations) > 0 {
+		// Instrumentation for possible design change to disallow invocation removal in ResultDB.
+		logging.Warningf(ctx, "Instrumentation for b/332787707: removing invocations %v from invocation %v", in.RemoveInvocations, in.IncludingInvocation)
+	}
 
 	err := mutateInvocation(ctx, including, func(ctx context.Context) error {
 		// To include invocation A into invocation B, in addition to checking the

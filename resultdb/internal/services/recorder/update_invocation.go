@@ -238,6 +238,15 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.Properties = in.Invocation.Properties
 
 			case "source_spec":
+				included, err := invocations.ReadIncluded(ctx, invID)
+				if err != nil {
+					logging.Warningf(ctx, "Instrumentation for b/332787707: failed to read included invocations: %v", err)
+				}
+				if len(included) > 0 {
+					example := included.Names()[0]
+					logging.Warningf(ctx, "Instrumentation for b/332787707: invocation %v had children like %v before sources were updated", invID, example)
+				}
+
 				// Store any gerrit changes in normalised form.
 				pbutil.SortGerritChanges(in.Invocation.SourceSpec.GetSources().GetChangelists())
 				values["InheritSources"] = spanner.NullBool{Valid: in.Invocation.SourceSpec != nil, Bool: in.Invocation.SourceSpec.GetInherit()}
