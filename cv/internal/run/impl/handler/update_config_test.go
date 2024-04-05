@@ -154,6 +154,7 @@ func TestUpdateConfig(t *testing.T) {
 		runCLs, err := run.LoadRunCLs(ctx, rs.ID, rs.CLs)
 		So(err, ShouldBeNil)
 		initialReqmt, err := requirement.Compute(ctx, requirement.Input{
+			GFactory:    ct.GFactory(),
 			ConfigGroup: cgMain,
 			RunOwner:    rs.Owner,
 			CLs:         runCLs,

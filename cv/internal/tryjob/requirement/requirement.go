@@ -29,13 +29,16 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/buildbucket"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 // Input contains all info needed to compute the Tryjob Requirement.
 type Input struct {
+	GFactory    gerrit.Factory
 	ConfigGroup *cfgpb.ConfigGroup
 	RunOwner    identity.Identity
 	CLs         []*run.RunCL
@@ -136,7 +139,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	optionalRand, equivalentBuilderRand := rands[0], rands[1]
 	builders := in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders()
 	allOwners := in.allCLOwnersSorted()
-	experiments, err := computeEnabledExperiments(ctx, allOwners, in.ConfigGroup.GetTryjobExperiments())
+	experiments, err := computeEnabledExperiments(ctx, in, allOwners)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +215,7 @@ func handleOverriddenTryjobs(ctx context.Context, in Input) (*ComputationResult,
 	}
 
 	allOwners := in.allCLOwnersSorted()
-	experiments, err := computeEnabledExperiments(ctx, allOwners, in.ConfigGroup.GetTryjobExperiments())
+	experiments, err := computeEnabledExperiments(ctx, in, allOwners)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +245,7 @@ func handleOverriddenTryjobs(ctx context.Context, in Input) (*ComputationResult,
 				allowlist = []string{equi.GetOwnerWhitelistGroup()}
 			}
 		}
-		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, allowlist...); {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, in, allOwners, allowlist...); {
 		case err != nil:
 			return nil, err
 		case len(disallowedOwners) != 0:
@@ -288,7 +291,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptiona
 	}
 
 	if incl.Has(b.Name) {
-		switch disallowedOwners, err := canTriggerIncludedBuilder(ctx, owners, b.Name, b.GetOwnerWhitelistGroup()); {
+		switch disallowedOwners, err := canTriggerIncludedBuilder(ctx, in, owners, b.Name, b.GetOwnerWhitelistGroup()); {
 		case err != nil:
 			return skipBuilder, nil, err
 		case len(disallowedOwners) != 0:
@@ -306,7 +309,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptiona
 
 	if b.GetEquivalentTo() != nil && incl.Has(b.GetEquivalentTo().GetName()) {
 		if builderName, ownerAllowGroup := b.GetEquivalentTo().GetName(), b.GetEquivalentTo().GetOwnerWhitelistGroup(); ownerAllowGroup != "" {
-			switch disallowedOwners, err := canTriggerIncludedBuilder(ctx, owners, builderName, []string{ownerAllowGroup}); {
+			switch disallowedOwners, err := canTriggerIncludedBuilder(ctx, in, owners, builderName, []string{ownerAllowGroup}); {
 			case err != nil:
 				return skipBuilder, nil, err
 			case len(disallowedOwners) != 0:
@@ -343,7 +346,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptiona
 		}
 	}
 
-	switch allowed, err := isBuilderAllowed(ctx, owners, b); {
+	switch allowed, err := isBuilderAllowed(ctx, in, owners, b); {
 	case err != nil:
 		return skipBuilder, nil, err
 	case allowed:
@@ -351,7 +354,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptiona
 		dm.equivalence = mainOnly
 		if b.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders() {
 			dm.equivalence = bothMainAndEquivalent
-			switch allowed, err := isEquiBuilderAllowed(ctx, owners, b.GetEquivalentTo()); {
+			switch allowed, err := isEquiBuilderAllowed(ctx, in, owners, b.GetEquivalentTo()); {
 			case err != nil:
 				return skipBuilder, nil, err
 			case allowed:
@@ -367,7 +370,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptiona
 		return includeBuilder, nil, nil
 	case b.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders():
 		// See if the owners can trigger the equivalent builder instead.
-		switch equiAllowed, err := isEquiBuilderAllowed(ctx, owners, b.GetEquivalentTo()); {
+		switch equiAllowed, err := isEquiBuilderAllowed(ctx, in, owners, b.GetEquivalentTo()); {
 		case err != nil:
 			return skipBuilder, nil, err
 		case equiAllowed:
@@ -401,20 +404,23 @@ func calculateExplicitlyIncluded(in Input) (stringset.Set, ComputationFailure) {
 // regards to checking whether the owners are allowed to use a certain builder,
 // if no allowList groups are defined, then the expectation is that the action
 // is allowed by default.
-func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowLists ...string) ([]string, error) {
+func getDisallowedOwners(ctx context.Context, in Input, allOwnerEmails []string, allowLists ...string) ([]string, error) {
 	switch {
 	case len(allOwnerEmails) == 0:
 		panic(fmt.Errorf("cannot check membership of nil user"))
 	case len(allowLists) == 0:
 		return nil, nil
 	}
+
+	gerritHost := in.CLs[0].Detail.GetGerrit().GetHost()
+	luciProject := in.CLs[0].Detail.GetLuciProject()
 	var disallowed []string
 	for _, userEmail := range allOwnerEmails {
 		id, err := identity.MakeIdentity(fmt.Sprintf("user:%s", userEmail))
 		if err != nil {
 			return nil, err
 		}
-		switch allowed, err := auth.GetState(ctx).DB().IsMember(ctx, id, allowLists); {
+		switch allowed, err := acls.IsMemberLinkedAccounts(ctx, in.GFactory, gerritHost, luciProject, id, allowLists); {
 		case err != nil:
 			return nil, err
 		case !allowed:
@@ -427,8 +433,8 @@ func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowList
 // If a builder is included via `Cq-Include-Trybots` footer, owners must either
 // be a member of provided allowlist groups or has direct schedule permission
 // to this builder.
-func canTriggerIncludedBuilder(ctx context.Context, clOwners []string, builderName string, allowlistGroups []string) (disallowedOwners []string, err error) {
-	disallowed, err := getDisallowedOwners(ctx, clOwners, allowlistGroups...)
+func canTriggerIncludedBuilder(ctx context.Context, in Input, clOwners []string, builderName string, allowlistGroups []string) (disallowedOwners []string, err error) {
+	disallowed, err := getDisallowedOwners(ctx, in, clOwners, allowlistGroups...)
 	switch {
 	case err != nil:
 		return nil, err
@@ -456,9 +462,9 @@ func canTriggerIncludedBuilder(ctx context.Context, clOwners []string, builderNa
 	return disallowedOwners, nil
 }
 
-func isBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_Builder) (bool, error) {
+func isBuilderAllowed(ctx context.Context, in Input, allOwners []string, b *cfgpb.Verifiers_Tryjob_Builder) (bool, error) {
 	if len(b.GetOwnerWhitelistGroup()) > 0 {
-		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()...); {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, in, allOwners, b.GetOwnerWhitelistGroup()...); {
 		case err != nil:
 			return false, err
 		case len(disallowedOwners) > 0:
@@ -468,9 +474,9 @@ func isBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifier
 	return true, nil
 }
 
-func isEquiBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_EquivalentBuilder) (bool, error) {
+func isEquiBuilderAllowed(ctx context.Context, in Input, allOwners []string, b *cfgpb.Verifiers_Tryjob_EquivalentBuilder) (bool, error) {
 	if b.GetOwnerWhitelistGroup() != "" {
-		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()); {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, in, allOwners, b.GetOwnerWhitelistGroup()); {
 		case err != nil:
 			return false, err
 		case len(disallowedOwners) > 0:
@@ -480,13 +486,14 @@ func isEquiBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Veri
 	return true, nil
 }
 
-func computeEnabledExperiments(ctx context.Context, allOwners []string, experiments []*cfgpb.ConfigGroup_TryjobExperiment) ([]string, error) {
+func computeEnabledExperiments(ctx context.Context, in Input, allOwners []string) ([]string, error) {
+	experiments := in.ConfigGroup.GetTryjobExperiments()
 	if len(experiments) == 0 {
 		return nil, nil
 	}
 	ret := make([]string, 0, len(experiments))
 	for _, exp := range experiments {
-		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, exp.GetCondition().GetOwnerGroupAllowlist()...); {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, in, allOwners, exp.GetCondition().GetOwnerGroupAllowlist()...); {
 		case err != nil:
 			return nil, err
 		case len(disallowedOwners) == 0:

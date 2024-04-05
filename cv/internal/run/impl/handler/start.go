@@ -181,6 +181,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	}
 
 	switch result, err := requirement.Compute(ctx, requirement.Input{
+		GFactory:    impl.GFactory,
 		ConfigGroup: cg.Content,
 		RunOwner:    rs.Owner,
 		CLs:         runCLs,

@@ -138,6 +138,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 			// Tryjob requirement could have been not populated yet because user
 			// quota has been exhausted and run start has been delayed
 			switch result, err := requirement.Compute(ctx, requirement.Input{
+				GFactory:    impl.GFactory,
 				ConfigGroup: cgsMap[rs.ConfigGroupID.Name()].Content,
 				RunOwner:    rs.Owner,
 				CLs:         runCLs,

@@ -230,27 +230,47 @@ var (
 )
 
 func TestGetDisallowedOwners(t *testing.T) {
-	ctx := auth.WithState(context.Background(), &authtest.FakeState{
-		FakeDB: authtest.NewFakeDB(
-			authtest.MockMembership(userA, group1),
-			authtest.MockMembership(userB, group1),
-			authtest.MockMembership(userD, group2),
-		),
-	})
 	Convey("getDisallowedOwners", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp(t)
+		defer cancel()
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockMembership(userA, group1),
+				authtest.MockMembership(userB, group1),
+				authtest.MockMembership(userD, group2),
+			),
+		})
+
+		input := Input{GFactory: ct.GFactory(), CLs: []*run.RunCL{
+			{
+				Detail: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+						Host: "foo-review.example.com",
+					}},
+					LuciProject: "foo",
+				},
+			},
+		},
+		}
+
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: userA.Email()},
+		})
+
 		Convey("works", func() {
 			Convey("with no allowlists", func() {
-				disallowed, err := getDisallowedOwners(ctx, []string{userA.Email()})
+				disallowed, err := getDisallowedOwners(ctx, input, []string{userA.Email()})
 				So(err, ShouldBeNil)
 				So(disallowed, ShouldHaveLength, 0)
 			})
 		})
 		Convey("panics", func() {
 			Convey("with nil users", func() {
-				So(func() { _, _ = getDisallowedOwners(ctx, nil, group1) }, ShouldPanicLike, "nil user")
+				So(func() { _, _ = getDisallowedOwners(ctx, input, nil, group1) }, ShouldPanicLike, "nil user")
 			})
 			Convey("with zero users", func() {
-				So(func() { _, _ = getDisallowedOwners(ctx, []string{}, group1) }, ShouldPanicLike, "nil user")
+				So(func() { _, _ = getDisallowedOwners(ctx, input, []string{}, group1) }, ShouldPanicLike, "nil user")
 			})
 		})
 	})
@@ -265,8 +285,20 @@ func TestCompute(t *testing.T) {
 		ct.AddMember(userB.Email(), group1)
 		ct.AddMember(userD.Email(), group2)
 
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: userA.Email()},
+		})
+
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: userB.Email()},
+		})
+
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: userD.Email()},
+		})
+
 		Convey("fail if IncludedTryjobs and OverriddenTryjobs are both provided", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 
@@ -282,7 +314,7 @@ func TestCompute(t *testing.T) {
 		})
 
 		Convey("with a minimal test case", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			Convey("with a single CL", func() {})
 			Convey("with multiple CLs", func() { in.addCL(userB.Email()) })
 			res, err := Compute(ctx, *in)
@@ -310,7 +342,7 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("includes undefined builder", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:unlisted")
 
 			res, err := Compute(ctx, *in)
@@ -324,7 +356,7 @@ func TestCompute(t *testing.T) {
 		})
 		Convey("includes unauthorized builder", func() {
 			Convey("with single unauthorized user", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:      "test-proj/test/builder1",
 						Allowlist: group2,
@@ -342,7 +374,7 @@ func TestCompute(t *testing.T) {
 				})
 			})
 			Convey("with multiple users, one of which is unauthorized", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:      "test-proj/test/builder1",
 						Allowlist: group1,
@@ -362,7 +394,7 @@ func TestCompute(t *testing.T) {
 				})
 			})
 			Convey("but can trigger if owners have bb schedule permission", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:      "test-proj/test/builder1",
 						Allowlist: group1,
@@ -381,7 +413,7 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("with includable-only builder", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "test-proj/test/builder1"}.generate(),
 				builderConfigGenerator{Name: "test-proj/test.bucket/builder2", IncludableOnly: true}.generate(),
 			})
@@ -459,7 +491,7 @@ func TestCompute(t *testing.T) {
 		})
 		Convey("includes equivalent builder explicitly", func() {
 			Convey("unauthorized", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:          "test-proj/test/builder1",
 					Allowlist:     "secret-group",
 					EquiName:      "test-proj/test/equibuilder",
@@ -481,7 +513,7 @@ func TestCompute(t *testing.T) {
 			Convey("authorized", func() {
 				var in *Input
 				Convey("through allowlist group", func() {
-					in = makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					in = makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 						Name:          "test-proj/test/builder1",
 						Allowlist:     "secret-group",
 						EquiName:      "test-proj/test/equibuilder",
@@ -489,7 +521,7 @@ func TestCompute(t *testing.T) {
 					}.generate()})
 				})
 				Convey("through buildbucket schedule permission", func() {
-					in = makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					in = makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 						Name:          "test-proj/test/builder1",
 						Allowlist:     "secret-group",
 						EquiName:      "test-proj/test/equibuilder",
@@ -528,7 +560,7 @@ func TestCompute(t *testing.T) {
 		})
 		Convey("owner allowlist denied", func() {
 			Convey("without equivalent builder", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:      "test-proj/test/builder1",
 					Allowlist: "secret-group",
 				}.generate()})
@@ -541,7 +573,7 @@ func TestCompute(t *testing.T) {
 
 			Convey("with equivalent builder", func() {
 				Convey("equivalent builder allowed", func() {
-					in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 						Name:          "test-proj/test/builder1",
 						Allowlist:     "secret-group",
 						EquiName:      "test-proj/test/equibuilder",
@@ -568,7 +600,7 @@ func TestCompute(t *testing.T) {
 				})
 
 				Convey("equivalent builder denied", func() {
-					in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 						Name:          "test-proj/test/builder1",
 						Allowlist:     "secret-group",
 						EquiName:      "test-proj/test/equibuilder",
@@ -583,7 +615,7 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("optional", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "test-proj/test/optional-builder", ExperimentPercentage: 20}.generate(),
 			})
 
@@ -606,7 +638,7 @@ func TestCompute(t *testing.T) {
 		})
 
 		Convey("optional but explicitly included ", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "test-proj/test/optional-builder", ExperimentPercentage: 0.001}.generate(),
 			})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:optional-builder")
@@ -625,7 +657,7 @@ func TestCompute(t *testing.T) {
 
 		Convey("with location matching", func() {
 			Convey("empty change after location exclusions skips builder", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name: "test-proj/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 						{
@@ -651,7 +683,7 @@ func TestCompute(t *testing.T) {
 				})
 			})
 			Convey("with location filters", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name: "test-proj/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 						{
@@ -737,7 +769,7 @@ func TestCompute(t *testing.T) {
 				// This test case is the same as the above, but using
 				// location_filters, to test that the behavior is the same for
 				// both.
-				multiCLIn := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				multiCLIn := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name: "luci/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 						{
@@ -779,7 +811,7 @@ func TestCompute(t *testing.T) {
 				})
 			})
 			Convey("with location filters and exclusion", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name: "test-proj/test/builder1",
 						LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
@@ -864,7 +896,7 @@ func TestCompute(t *testing.T) {
 
 		Convey("stale check", func() {
 			Convey("from config", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name: "test-proj/test/stale-default",
 					}.generate(),
@@ -888,7 +920,7 @@ func TestCompute(t *testing.T) {
 				}
 			})
 			Convey("overridden by run option", func() {
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:        "test-proj/test/stale-no",
 						CancelStale: cfgpb.Toggle_NO,
@@ -911,7 +943,7 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("ignores included builders if in NPR mode", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{
 					Name:  "test-proj/test/builder1",
 					Modes: []string{string(run.NewPatchsetRun)},
@@ -949,7 +981,7 @@ func TestCompute(t *testing.T) {
 		})
 
 		Convey("Experiments", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.ConfigGroup.TryjobExperiments = []*cfgpb.ConfigGroup_TryjobExperiment{
 				{Name: "experiment.a"}, // unconditional
 				{
@@ -998,7 +1030,7 @@ func TestCompute(t *testing.T) {
 		})
 
 		Convey("override has undefined builder", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:unlisted")
 
 			res, err := Compute(ctx, *in)
@@ -1012,7 +1044,7 @@ func TestCompute(t *testing.T) {
 		})
 
 		Convey("override honors SkipTryjobs option", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
 			in.RunOptions.SkipTryjobs = true
 
@@ -1023,7 +1055,7 @@ func TestCompute(t *testing.T) {
 		})
 
 		Convey("override has unauthorized Tryjob", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 				Name:      "test-proj/test/builder1",
 				Allowlist: "secret-group",
 			}.generate()})
@@ -1041,7 +1073,7 @@ func TestCompute(t *testing.T) {
 		})
 
 		Convey("override works", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{
 					Name: "test-proj/test/builder1",
 				}.generate(),
@@ -1072,7 +1104,7 @@ func TestCompute(t *testing.T) {
 		})
 
 		Convey("override works for equivalent builder", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{
 					Name:     "test-proj/test/builder1",
 					EquiName: "test-proj/test/builder2",
@@ -1129,8 +1161,9 @@ func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
 	return ret
 }
 
-func makeInput(ctx context.Context, builders []*cfgpb.Verifiers_Tryjob_Builder) *Input {
+func makeInput(ctx context.Context, ct *cvtesting.Test, builders []*cfgpb.Verifiers_Tryjob_Builder) *Input {
 	ret := &Input{
+		GFactory: ct.GFactory(),
 		ConfigGroup: &cfgpb.ConfigGroup{
 			Verifiers: &cfgpb.Verifiers{
 				Tryjob: &cfgpb.Verifiers_Tryjob{
