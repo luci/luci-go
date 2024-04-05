@@ -21,6 +21,8 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -238,13 +240,10 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.Properties = in.Invocation.Properties
 
 			case "source_spec":
-				included, err := invocations.ReadIncluded(ctx, invID)
-				if err != nil {
-					logging.Warningf(ctx, "Instrumentation for b/332787707: failed to read included invocations: %v", err)
-				}
-				if len(included) > 0 {
-					example := included.Names()[0]
-					logging.Warningf(ctx, "Instrumentation for b/332787707: invocation %v had children like %v before sources were updated", invID, example)
+				if ret.SourceSpec != nil && !proto.Equal(ret.SourceSpec, in.Invocation.SourceSpec) {
+					logging.Warningf(ctx, "Instrumentation for b/332787707: actual field update on source spec for %s after being set, updated from %v to %v", invID, protojson.Format(ret.SourceSpec), protojson.Format(in.Invocation.SourceSpec))
+				} else if ret.SourceSpec != nil {
+					logging.Warningf(ctx, "Instrumentation for b/332787707: nil field update on source spec for %s after being set to %v", invID, protojson.Format(ret.SourceSpec))
 				}
 
 				// Store any gerrit changes in normalised form.
