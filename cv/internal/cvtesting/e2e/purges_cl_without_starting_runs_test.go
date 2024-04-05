@@ -420,6 +420,9 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+		})
 		tStart := ct.Now()
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 			gChange, gf.Project(gRepo), gf.Ref(gRef), gf.Updated(tStart),

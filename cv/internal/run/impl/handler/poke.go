@@ -101,7 +101,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		if err != nil {
 			return nil, err
 		}
-		switch ok, err := checkRunCreate(ctx, rs, cg, runCLs, cls); {
+		switch ok, err := checkRunCreate(ctx, impl.GFactory, rs, cg, runCLs, cls); {
 		case err != nil:
 			return nil, err
 		case ok:

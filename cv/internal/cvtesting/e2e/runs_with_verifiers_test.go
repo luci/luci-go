@@ -523,6 +523,9 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 
 		tStart := ct.Clock.Now()
 
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+		})
 		ct.LogPhase(ctx, "Set Git chain of 13 depends on 12, and vote CQ+1 on 13")
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 			12, gf.Project(gRepo), gf.Ref(gRef), gf.PS(2), gf.Owner("user-1"),
@@ -897,7 +900,9 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
-
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+		})
 		// Create mutually dependent CLs using Cq-Depend git footer.
 		ci1 := gf.CI(
 			gChange1, gf.Project(gRepo), gf.Ref(gRef),

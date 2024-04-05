@@ -26,7 +26,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/quota"
@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestStart(t *testing.T) {
@@ -155,6 +156,9 @@ func TestStart(t *testing.T) {
 		cl := addCL(triggerer, owner)
 		ct.AddMember(owner, dryRunners)
 		ct.AddMember(owner, committers)
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: fmt.Sprintf("%s@example.com", owner)},
+		})
 
 		Convey("Starts when Run is PENDING", func() {
 			deps.qm.runQuotaOp = &quotapb.OpResult{

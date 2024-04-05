@@ -61,6 +61,9 @@ func TestHandleLargeCLStack(t *testing.T) {
 				gf.Updated(ct.Clock.Now()))
 		}
 		// A DryRunner can trigger a FullRun w/ an approval.
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+		})
 		ct.AddDryRunner("user-1")
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), cis...))
 		for i, child := range cis {

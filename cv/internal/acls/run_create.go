@@ -23,11 +23,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -67,6 +67,8 @@ const (
 // runCreateChecker holds the evaluation results of a CL Run, and checks
 // if the Run can be created.
 type runCreateChecker struct {
+	gf gerrit.Factory
+
 	cl                      *changelist.CL
 	runMode                 run.Mode
 	runModeDef              *cfgpb.Mode // if mode is not standard mode in CV
@@ -314,28 +316,28 @@ func (ck runCreateChecker) isDryRunner(ctx context.Context, id identity.Identity
 	if len(ck.dryGroups) == 0 {
 		return false, nil
 	}
-	return auth.GetState(ctx).DB().IsMember(ctx, id, ck.dryGroups)
+	return IsMemberLinkedAccounts(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.dryGroups)
 }
 
 func (ck runCreateChecker) isNewPatchsetRunner(ctx context.Context, id identity.Identity) (bool, error) {
 	if len(ck.newPatchsetGroups) == 0 {
 		return false, nil
 	}
-	return auth.GetState(ctx).DB().IsMember(ctx, id, ck.newPatchsetGroups)
+	return IsMemberLinkedAccounts(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.newPatchsetGroups)
 }
 
 func (ck runCreateChecker) isCommitter(ctx context.Context, id identity.Identity) (bool, error) {
 	if len(ck.commGroups) == 0 {
 		return false, nil
 	}
-	return auth.GetState(ctx).DB().IsMember(ctx, id, ck.commGroups)
+	return IsMemberLinkedAccounts(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.commGroups)
 }
 
 // CheckRunCreate verifies that the user(s) who triggered Run are authorized
 // to create the Run for the CLs.
-func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) (CheckResult, error) {
+func CheckRunCreate(ctx context.Context, gf gerrit.Factory, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) (CheckResult, error) {
 	res := make(CheckResult, len(cls))
-	cks, err := evaluateCLs(ctx, cg, trs, cls)
+	cks, err := evaluateCLs(ctx, gf, cg, trs, cls)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +352,7 @@ func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trig
 	return res, nil
 }
 
-func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) ([]*runCreateChecker, error) {
+func evaluateCLs(ctx context.Context, gf gerrit.Factory, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) ([]*runCreateChecker, error) {
 	gVerifier := cg.Content.Verifiers.GetGerritCqAbility()
 
 	cks := make([]*runCreateChecker, len(cls))
@@ -384,6 +386,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 		}
 		trustedDeps.Add(cl.ID)
 		cks[i] = &runCreateChecker{
+			gf:                      gf,
 			cl:                      cl,
 			runMode:                 run.Mode(tr.Mode),
 			runModeDef:              tr.GetModeDefinition(),

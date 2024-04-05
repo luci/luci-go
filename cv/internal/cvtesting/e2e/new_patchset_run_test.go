@@ -21,6 +21,7 @@ import (
 	"time"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -294,6 +295,9 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		Convey("If user is not authorized then the new patchset run is immediately cancelled", func() {
 			So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 			updated := ct.Clock.Now().Add(time.Minute)
+			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+				&gerritpb.EmailInfo{Email: "uploader-99@example.com"},
+			})
 			ct.AddCommitter("uploader-99")
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 				gChangeFirst,

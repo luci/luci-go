@@ -24,11 +24,12 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	"go.chromium.org/luci/common/errors"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apipb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -349,10 +350,13 @@ func TestCheckRunCreate(t *testing.T) {
 			},
 		}
 		So(datastore.Put(ctx, cls, rcls), ShouldBeNil)
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+		})
 
 		Convey("Returns empty metas for new patchset run", func() {
 			rs.Mode = run.NewPatchsetRun
-			ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
+			ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
@@ -369,7 +373,7 @@ func TestCheckRunCreate(t *testing.T) {
 		})
 		Convey("Populates metas for other modes", func() {
 			rs.Mode = run.FullRun
-			ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
+			ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
@@ -393,6 +397,9 @@ func TestCheckRunCreate(t *testing.T) {
 			rs.Mode = run.FullRun
 			rs.RootCL = clid1
 			// make rootCL not submittable
+			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+				&gerritpb.EmailInfo{Email: "user-1@example.com"},
+			})
 			cls[0].Snapshot.GetGerrit().Info = gf.CI(gChange1,
 				gf.Owner("user-1"),
 				gf.Disapprove(),
@@ -409,7 +416,7 @@ func TestCheckRunCreate(t *testing.T) {
 
 			Convey("Only root CL fails the ACL check", func() {
 				ct.AddMember("user-1", "committer-group") // can create a full run on cl2 now
-				ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
+				ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeFalse)
 				So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
@@ -425,7 +432,7 @@ func TestCheckRunCreate(t *testing.T) {
 			})
 
 			Convey("Non root CL also fails the ACL check", func() {
-				ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
+				ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeFalse)
 				So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)

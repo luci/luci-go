@@ -256,7 +256,7 @@ func loadRunCLsAndCLs(ctx context.Context, rid common.RunID, clids common.CLIDs)
 	return runCLs, cls, nil
 }
 
-func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup, runCLs []*run.RunCL, cls []*changelist.CL) (ok bool, err error) {
+func checkRunCreate(ctx context.Context, gf gerrit.Factory, rs *state.RunState, cg *prjcfg.ConfigGroup, runCLs []*run.RunCL, cls []*changelist.CL) (ok bool, err error) {
 	if len(runCLs) == 0 {
 		return true, nil
 	}
@@ -269,7 +269,7 @@ func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGr
 			trs[i] = rootTrigger
 		}
 	}
-	switch aclResult, err := acls.CheckRunCreate(ctx, cg, trs, cls); {
+	switch aclResult, err := acls.CheckRunCreate(ctx, gf, cg, trs, cls); {
 	case err != nil:
 		return false, errors.Annotate(err, "acls.CheckRunCreate").Err()
 	case !aclResult.OK():

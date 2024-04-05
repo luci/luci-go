@@ -151,7 +151,7 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		allRunCLs = append(allRunCLs, remainingRunCLs...)
 		allCLs = append(allCLs, remainingCLs...)
 	}
-	if _, err := checkRunCreate(ctx, rs, cg, allRunCLs, allCLs); err != nil {
+	if _, err := checkRunCreate(ctx, impl.GFactory, rs, cg, allRunCLs, allCLs); err != nil {
 		return nil, err
 	}
 	return &Result{State: rs}, nil

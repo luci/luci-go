@@ -20,6 +20,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -88,6 +90,16 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 		ct.AddDryRunner("user-1")
 		ct.AddDryRunner("user-2")
 		ct.AddDryRunner("user-12")
+
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+		})
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "user-2@example.com"},
+		})
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "user-12@example.com"},
+		})
 
 		ct.LogPhase(ctx, "CV starts 2 runs while watching first repo only")
 		prjcfgtest.Create(ctx, lProject, cfgFirst)

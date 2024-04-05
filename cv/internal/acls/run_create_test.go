@@ -84,6 +84,14 @@ func TestCheckRunCLs(t *testing.T) {
 		var trs []*run.Trigger
 		var clid int64
 		addCL := func(triggerer, owner string, m run.Mode) (*changelist.CL, *run.Trigger) {
+			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+				&gerritpb.EmailInfo{Email: owner},
+			})
+
+			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+				&gerritpb.EmailInfo{Email: triggerer},
+			})
+
 			clid++
 			cl := &changelist.CL{
 				ID:         common.CLID(clid),
@@ -111,6 +119,10 @@ func TestCheckRunCLs(t *testing.T) {
 			return cl, tr
 		}
 		addDep := func(base *changelist.CL, owner string) *changelist.CL {
+			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+				&gerritpb.EmailInfo{Email: owner},
+			})
+
 			clid++
 			dep := &changelist.CL{
 				ID:         common.CLID(clid),
@@ -134,13 +146,13 @@ func TestCheckRunCLs(t *testing.T) {
 		}
 
 		mustOK := func() {
-			res, err := CheckRunCreate(ctx, &cg, trs, cls)
+			res, err := CheckRunCreate(ctx, ct.GFake, &cg, trs, cls)
 			So(err, ShouldBeNil)
 			So(res.FailuresSummary(), ShouldBeEmpty)
 			So(res.OK(), ShouldBeTrue)
 		}
 		mustFailWith := func(cl *changelist.CL, format string, args ...any) CheckResult {
-			res, err := CheckRunCreate(ctx, &cg, trs, cls)
+			res, err := CheckRunCreate(ctx, ct.GFake, &cg, trs, cls)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
 			So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(format, args...))

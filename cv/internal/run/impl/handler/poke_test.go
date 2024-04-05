@@ -24,6 +24,7 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -97,6 +98,9 @@ func TestPoke(t *testing.T) {
 			gf.CQ(+1, clock.Now(ctx).UTC(), gf.U("foo")),
 		)
 		ct.AddMember("foo", dryRunners)
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: "foo@example.com"},
+		})
 		cl := &changelist.CL{
 			ID:         gChange,
 			ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
