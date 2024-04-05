@@ -89,7 +89,10 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
     setExpandAll(!expandAll);
   };
   const isSilenced = (alert: AlertJson): boolean => {
-    const silenceUntil = unwrapOrElse(() => parseInt(alert.silenceUntil), () => 0);
+    const silenceUntil = unwrapOrElse(
+      () => parseInt(alert.silenceUntil),
+      () => 0,
+    );
     return (latestBuild(alert) || 1) <= silenceUntil;
   };
   const sortedAlerts = [

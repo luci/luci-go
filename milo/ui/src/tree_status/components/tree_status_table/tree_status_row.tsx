@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import CancelIcon from '@mui/icons-material/Cancel';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ConstructionIcon from '@mui/icons-material/Construction';
-import FlakyIcon from '@mui/icons-material/Flaky';
 import { Link, TableCell, TableRow } from '@mui/material';
 import { DateTime } from 'luxon';
 
@@ -23,9 +19,13 @@ import { useAuthState } from '@/common/components/auth_state_provider';
 import { LinkifiedText } from '@/common/components/linkified_text';
 import { Timestamp } from '@/common/components/timestamp';
 import {
+  statusColor,
+  StatusIcon,
+  statusText,
+} from '@/common/tools/tree_status/tree_status_utils';
+import {
   GeneralState,
   Status,
-  generalStateToJSON,
 } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
 
 interface TreeStatusRowProps {
@@ -75,40 +75,16 @@ interface GeneralStateDisplayProps {
 
 // Display component for a GeneralState value.
 const GeneralStateDisplay = ({ state }: GeneralStateDisplayProps) => {
-  const uppercase = generalStateToJSON(state);
-  const text = uppercase.charAt(0) + uppercase.substring(1).toLocaleLowerCase();
-  const icon =
-    state === GeneralState.OPEN ? (
-      <CheckCircleOutlineIcon />
-    ) : state === GeneralState.CLOSED ? (
-      <CancelIcon />
-    ) : state === GeneralState.THROTTLED ? (
-      <FlakyIcon />
-    ) : state === GeneralState.MAINTENANCE ? (
-      <ConstructionIcon />
-    ) : (
-      <></>
-    );
-  const color =
-    state === GeneralState.OPEN
-      ? 'var(--success-color)'
-      : state === GeneralState.CLOSED
-      ? 'var(--failure-color)'
-      : state === GeneralState.THROTTLED
-      ? 'var(--warning-text-color)'
-      : state === GeneralState.MAINTENANCE
-      ? 'var(--critical-failure-color)'
-      : 'inherit';
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        color,
+        color: statusColor(state),
       }}
     >
-      {icon} {text}
+      <StatusIcon state={state} /> {statusText(state)}
     </div>
   );
 };

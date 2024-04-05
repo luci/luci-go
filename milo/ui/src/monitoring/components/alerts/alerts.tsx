@@ -21,6 +21,7 @@ import { AlertJson, TreeJson, Bug } from '@/monitoring/util/server_json';
 
 import { AlertGroup } from './alert_group';
 import { BugGroup } from './bug_group';
+import { TreeStatusCard } from './tree_status_card';
 
 interface AlertsProps {
   tree: TreeJson;
@@ -81,8 +82,9 @@ export const Alerts = ({ tree, alerts, bugs }: AlertsProps) => {
         />
       </Box>
       <div style={{ margin: '16px 0', padding: '0 16px' }}>
+        <TreeStatusCard tree={tree} />
         <AlertGroup
-          groupName={'Consistent Failures'}
+          groupName={'Untriaged Consistent Failures'}
           alerts={categories.consistentFailures}
           tree={tree}
           groupDescription="Failures that have occurred at least 2 times in a row and are not linked with a bug"
@@ -90,7 +92,7 @@ export const Alerts = ({ tree, alerts, bugs }: AlertsProps) => {
           bugs={bugs}
         />
         <AlertGroup
-          groupName={'New Failures'}
+          groupName={'Untriaged New Failures'}
           alerts={categories.newFailures}
           tree={tree}
           groupDescription="Failures that have only been seen once and are not linked with a bug"

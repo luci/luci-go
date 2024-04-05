@@ -47,11 +47,11 @@ export const ReasonSection = (props: ReasonSectionProps) => {
         <TableHead>
           <TableRow>
             <TableCell>Failed Test</TableCell>
-            <TableCell>Current Pass Rate</TableCell>
-            <TableCell>Test Blamelist</TableCell>
-            <TableCell>Previous Pass Rate</TableCell>
-            <TableCell>Links</TableCell>
-            <TableCell>Actions</TableCell>
+            <TableCell width={125}>Current Pass Rate</TableCell>
+            <TableCell width={96}>Test Blamelist</TableCell>
+            <TableCell width={125}>Previous Pass Rate</TableCell>
+            <TableCell width={250}>Links</TableCell>
+            <TableCell width={80}>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -190,14 +190,18 @@ const TestFailureRow = ({
             }/${test.cur_counts.total_results})`}
       </TableCell>
       <TableCell>
-        <Link
-          href={`https://crrev.com/${test.regression_start_position}..${test.regression_end_position}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {test.regression_end_position - test.regression_start_position}{' '}
-          commits
-        </Link>
+        {test.regression_end_position === test.regression_start_position ? (
+          'Unknown'
+        ) : (
+          <Link
+            href={`https://crrev.com/${test.regression_start_position}..${test.regression_end_position}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {test.regression_end_position - test.regression_start_position}{' '}
+            commits
+          </Link>
+        )}
       </TableCell>
       <TableCell sx={{ backgroundColor: cellColor(previousRate) }}>
         {previousRate === undefined
