@@ -29,13 +29,14 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/server/auth"
 	srvquota "go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/quota/quotapb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	acls "go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -60,6 +61,7 @@ const (
 // Manager manages the quota accounts for CV users.
 type Manager struct {
 	qapp SrvQuota
+	gf   gerrit.Factory
 }
 
 // SrvQuota manages quota
@@ -97,7 +99,7 @@ func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 
 // runQuotaOp updates the run quota for the given run state by the given delta.
 func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delta int64) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
-	userLimit, err := findRunLimit(ctx, r)
+	userLimit, err := qm.findRunLimit(ctx, r)
 
 	// userLimit == nil when no run user limit is configured for this user.
 	if err != nil || userLimit == nil {
@@ -188,7 +190,7 @@ func requestID(runID common.RunID, op string) string {
 }
 
 // findRunLimit identifies the UserLimit to use for the given run.
-func findRunLimit(ctx context.Context, r *run.Run) (*cfgpb.UserLimit, error) {
+func (qm *Manager) findRunLimit(ctx context.Context, r *run.Run) (*cfgpb.UserLimit, error) {
 	project := r.ID.LUCIProject()
 	cfgGroup, err := prjcfg.GetConfigGroup(ctx, project, r.ConfigGroupID)
 	if err != nil {
@@ -200,6 +202,16 @@ func findRunLimit(ctx context.Context, r *run.Run) (*cfgpb.UserLimit, error) {
 		return nil, fmt.Errorf("cannot find cfgGroup content")
 	}
 
+	if len(r.CLs) == 0 {
+		return nil, fmt.Errorf("run '%s' has no CLs", r.ID)
+	}
+
+	rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs[0:1])
+	if err != nil {
+		return nil, err
+	}
+
+	gerritHost := rcls[0].Detail.GetGerrit().GetHost()
 	user := r.BilledTo
 	for _, userLimit := range config.GetUserLimits() {
 		if userLimit.GetRun() == nil {
@@ -223,7 +235,7 @@ func findRunLimit(ctx context.Context, r *run.Run) (*cfgpb.UserLimit, error) {
 			continue
 		}
 
-		switch result, err := auth.GetState(ctx).DB().IsMember(ctx, user, groups); {
+		switch result, err := acls.IsMemberLinkedAccounts(ctx, qm.gf, gerritHost, project, user, groups); {
 		case err != nil:
 			return nil, err
 		case result:
@@ -352,11 +364,11 @@ func (qm *Manager) WritePolicy(ctx context.Context, project string) (*quotapb.Po
 }
 
 // NewManager creates a new quota manager.
-func NewManager() *Manager {
+func NewManager(gf gerrit.Factory) *Manager {
 	qinit.Do(func() {
 		qapp = srvquota.Register(appID, &srvquota.ApplicationOptions{
 			ResourceTypes: []string{runResource, tryjobResource},
 		})
 	})
-	return &Manager{qapp: qapp}
+	return &Manager{qapp: qapp, gf: gf}
 }

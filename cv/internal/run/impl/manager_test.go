@@ -76,7 +76,7 @@ func TestRunManager(t *testing.T) {
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tjNotifier)
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		cf := rdb.NewMockRecorderClientFactory(ct.GoMockCtl)
-		qm := quota.NewManager()
+		qm := quota.NewManager(ct.GFactory())
 		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, cf, qm, ct.Env)
 
 		// sorted by the order of execution.
@@ -423,7 +423,7 @@ func TestRunManager(t *testing.T) {
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tjNotifier)
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		cf := rdb.NewMockRecorderClientFactory(ct.GoMockCtl)
-		qm := quota.NewManager()
+		qm := quota.NewManager(ct.GFactory())
 		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, cf, qm, ct.Env)
 
 		Convey("Recursive", func() {

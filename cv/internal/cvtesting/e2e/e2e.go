@@ -173,7 +173,7 @@ func (t *Test) SetUp(testingT *testing.T) (context.Context, func()) {
 	t.BuildbucketFake.RegisterPubsubTopic(buildbucketHost, topic)
 	cleanupFn = bblistener.StartListenerForTest(ctx, sub, tjNotifier)
 	cleanupFns = append(cleanupFns, cleanupFn)
-	qm := quota.NewManager()
+	qm := quota.NewManager(gFactory)
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	rdbFactory := rdb.NewMockRecorderClientFactory(t.Test.GoMockCtl)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)

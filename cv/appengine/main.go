@@ -129,7 +129,7 @@ func main() {
 			return err
 		}
 		rdbClientFactory := rdb.NewRecorderClientFactory()
-		qm := quota.NewManager()
+		qm := quota.NewManager(gFactory)
 		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, tc, bqc, rdbClientFactory, qm, env)
 
 		// Setup pRPC authentication.

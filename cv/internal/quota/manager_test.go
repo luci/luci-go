@@ -19,27 +19,30 @@ import (
 	"encoding/hex"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gomodule/redigo/redis"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/quota/quotapb"
-	_ "go.chromium.org/luci/server/quota/quotatestmonkeypatch"
 	"go.chromium.org/luci/server/redisconn"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
+
+	_ "go.chromium.org/luci/server/quota/quotatestmonkeypatch"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -79,6 +82,26 @@ func TestManager(t *testing.T) {
 		cfg := &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{cg}}
 		prjcfgtest.Create(ctx, lProject, cfg)
 
+		const gHost = "x-review.example.com"
+		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
+		clIDs := common.MakeCLIDs(1)
+		rcls := []*run.RunCL{
+			{
+				ID:  1,
+				Run: datastore.MakeKey(ctx, common.RunKind, string(rid)),
+				Detail: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+						Host: gHost,
+					}},
+				},
+			},
+		}
+		So(datastore.Put(ctx, rcls), ShouldBeNil)
+
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			&gerritpb.EmailInfo{Email: tEmail},
+		})
+
 		genUserLimit := func(name string, limit int64, principals []string) *cfgpb.UserLimit {
 			userLimit := &cfgpb.UserLimit{
 				Name:       name,
@@ -101,7 +124,7 @@ func TestManager(t *testing.T) {
 			return userLimit
 		}
 
-		qm := NewManager()
+		qm := NewManager(ct.GFactory())
 
 		Convey("WritePolicy() with config groups but no run limit", func() {
 			pid, err := qm.WritePolicy(ctx, lProject)
@@ -168,12 +191,13 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
-			res, err := findRunLimit(ctx, r)
+			res, err := qm.findRunLimit(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, googlerLimit)
 		})
@@ -189,11 +213,12 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
-			res, err := findRunLimit(ctx, r)
+			res, err := qm.findRunLimit(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, exampleLimit)
 		})
@@ -208,12 +233,13 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
-			res, err := findRunLimit(ctx, r)
+			res, err := qm.findRunLimit(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, genUserLimit("default", 5, nil)) // default name is overriden.
 		})
@@ -227,12 +253,13 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
-			res, err := findRunLimit(ctx, r)
+			res, err := qm.findRunLimit(ctx, r)
 			So(err, ShouldBeNil)
 			So(res, ShouldBeNil)
 		})
@@ -247,9 +274,10 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
 			res, userLimit, err := qm.DebitRunQuota(ctx, r)
@@ -281,9 +309,10 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
 			res, userLimit, err := qm.CreditRunQuota(ctx, r)
@@ -315,9 +344,10 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo1", -1)
@@ -365,9 +395,10 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
@@ -385,9 +416,10 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
 			Convey("quota underflow", func() {
@@ -440,9 +472,10 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
@@ -539,9 +572,10 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo", -1)
@@ -583,9 +617,10 @@ func TestManager(t *testing.T) {
 
 		Convey("RunQuotaAccountID() hashes emailID", func() {
 			r := &run.Run{
-				ID:            common.MakeRunID(lProject, time.Now(), 1, []byte{}),
+				ID:            rid,
 				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.ComputeHash(cfg), "infra"),
 				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
 			}
 
 			emailHash := md5.Sum([]byte(tEmail))
