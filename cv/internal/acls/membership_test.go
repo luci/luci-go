@@ -35,6 +35,7 @@ func TestMembership(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
+		linkedAccountAllowedProjects.Add("bar")
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))

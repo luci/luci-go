@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
@@ -51,6 +52,9 @@ var linkedAccountsCache = layered.RegisterCache(layered.Parameters[[]string]{
 	},
 })
 
+// TODO(crbug.com/40287772): remove.
+var linkedAccountAllowedProjects = stringset.NewFromSlice()
+
 // linkedAccountKey constructs the cache key for the given host and email.
 func linkedAccountKey(host string, email string) string {
 	return fmt.Sprintf("linked_account:%s:%s", host, email)
@@ -62,7 +66,6 @@ func listActiveAccountEmails(ctx context.Context, gf gerrit.Factory, gerritHost 
 	if err != nil {
 		return nil, err
 	}
-
 	res, err := client.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{Email: email})
 	if err != nil {
 		return nil, err
@@ -89,11 +92,9 @@ func cacheAllEmails(ctx context.Context, gerritHost string, ignoreEmail string, 
 		if email == ignoreEmail {
 			continue
 		}
-
 		_, err := linkedAccountsCache.GetOrCreate(ctx, linkedAccountKey(gerritHost, email), func() (v []string, exp time.Duration, err error) {
 			return emails, cacheTTL, err
 		})
-
 		if err != nil {
 			return err
 		}
@@ -102,32 +103,32 @@ func cacheAllEmails(ctx context.Context, gerritHost string, ignoreEmail string, 
 	return nil
 }
 
-// IsMemberLinkedAccounts valids group memebership for the given identity and for all its associated gerrit email addresses.
-// groups is a list of CrIA groups to check membership for.
+// IsMemberLinkedAccounts returns true if the given Gerrit account or any
+// of its linked accounts is a member in any of the given CrIA groups.
 func IsMemberLinkedAccounts(ctx context.Context, gf gerrit.Factory, gerritHost string, luciProject string, id identity.Identity, groups []string) (bool, error) {
-	// Given identity is already authorized.
-	if ok, err := auth.GetState(ctx).DB().IsMember(ctx, id, groups); ok || err != nil {
-		return ok, err
+	switch yes, err := auth.GetState(ctx).DB().IsMember(ctx, id, groups); {
+	case err != nil:
+		return false, err
+	case yes:
+		return true, nil
+	// TODO(crbug.com/40287772): remove the following case
+	case !linkedAccountAllowedProjects.Has(luciProject):
+		return false, nil
 	}
 
-	// Set true if the given identity was a cache miss. This is used to initiate
-	// reverse indexing.
-	var forceReCache bool
+	var cacheMissed bool
 	idEmail := id.Email()
-
 	emails, err := linkedAccountsCache.GetOrCreate(ctx, linkedAccountKey(gerritHost, idEmail), func() (v []string, exp time.Duration, err error) {
-		// Fetch all linked email addresses and index all of them.
 		emails, err := listActiveAccountEmails(ctx, gf, gerritHost, luciProject, idEmail)
-		forceReCache = true
-
+		cacheMissed = true
 		return emails, cacheTTL, err
 	})
-
 	if err != nil {
 		return false, err
 	}
-
-	if forceReCache {
+	if cacheMissed {
+		// Index all of the linked email addresses on a cache miss for the given
+		// account.
 		if err := cacheAllEmails(ctx, gerritHost, idEmail, emails); err != nil {
 			return false, nil
 		}
@@ -139,19 +140,17 @@ func IsMemberLinkedAccounts(ctx context.Context, gf gerrit.Factory, gerritHost s
 		if email == idEmail {
 			continue
 		}
-
 		emailIdentity, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
 		if err != nil {
 			return false, err
 		}
 
-		switch ok, err := auth.GetState(ctx).DB().IsMember(ctx, emailIdentity, groups); {
+		switch yes, err := auth.GetState(ctx).DB().IsMember(ctx, emailIdentity, groups); {
 		case err != nil:
 			return false, errors.Annotate(err, "auth.IsMember").Err()
-		case ok:
+		case yes:
 			return true, nil
 		}
 	}
-
 	return false, nil
 }
