@@ -846,7 +846,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			testutil.PutBuilder(ctx, "project", "static bucket", "static builder", "")
 			testutil.PutBucket(ctx, "project", "static bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBucket(ctx, "project", "dynamic bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
+			testutil.PutBucket(ctx, "project", "dynamic bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{Template: &pb.BuilderConfig{SwarmingHost: "host"}}})
 
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 			So(err, ShouldBeNil)
@@ -1038,6 +1038,7 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "host",
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
 									Name: "builder_e229fa0169afaeb5fa8340560ffb3c5fe529169e0207f7378bd115cd74977bd2_v2",
@@ -1123,7 +1124,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			})
 
-			So(sch.Tasks(), ShouldHaveLength, 6)
+			So(sch.Tasks(), ShouldHaveLength, 9)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
 
@@ -1514,6 +1515,7 @@ func TestScheduleBuild(t *testing.T) {
 				Config: &pb.BuilderConfig{
 					Name:           "builder",
 					ServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
+					SwarmingHost:   "swarming.appspot.com",
 					Dimensions:     []string{"pool:pool1"},
 					Properties:     `{"a":"b","b":"b"}`,
 					ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{
@@ -1704,6 +1706,7 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "swarming.appspot.com",
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
 									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -1814,6 +1817,7 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "swarming.appspot.com",
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
 									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -5684,21 +5688,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-						CreatedBy:  string(userID),
-						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-						Id:         9021868963221667745,
-						Input:      &pb.Build_Input{},
-						Status:     pb.Status_SCHEDULED,
-					})
+					_, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldErrLike, "failed to create build with missing backend info and swarming host")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
@@ -6678,6 +6669,7 @@ func TestScheduleBuild(t *testing.T) {
 				Config: &pb.BuilderConfig{
 					Name:           "builder",
 					ServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
+					SwarmingHost:   "swarming.appspot.com",
 					Dimensions:     []string{"pool:pool1"},
 					Properties:     `{"a":"b","b":"b"}`,
 					ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{

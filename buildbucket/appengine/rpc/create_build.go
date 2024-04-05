@@ -679,8 +679,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 							return errors.Annotate(err, "failed to enqueue CreateBackendTask").Err()
 						}
 					case infra.GetSwarming().GetHostname() == "":
-						logging.Debugf(ctx, "skipped creating swarming task for build %d", b.ID)
-						return nil
+						return errors.Reason("failed to create build with missing backend info and swarming host").Err()
 					default:
 						if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
 							if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
@@ -810,7 +809,8 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 	}
 
 	bld := &model.Build{
-		Proto: req.Build,
+		Proto:  req.Build,
+		IsLuci: true,
 	}
 
 	// Update ancestors info.
