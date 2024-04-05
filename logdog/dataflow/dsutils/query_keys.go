@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	cloudds "cloud.google.com/go/datastore"
 	"github.com/apache/beam/sdks/v2/go/pkg/beam"
@@ -37,7 +38,7 @@ func init() {
 	register.Emitter1[NamespaceCount]()
 
 	beam.RegisterType(reflect.TypeOf((*getAllKeysWithHexPrefixFn)(nil)).Elem())
-	register.DoFn4x1(&getAllKeysWithHexPrefixFn{})
+	register.DoFn4x2(&getAllKeysWithHexPrefixFn{})
 	register.Emitter1[KeyBatch]()
 }
 
@@ -247,11 +248,11 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	rt *sdf.LockRTracker,
 	nc NamespaceCount,
 	emit func(KeyBatch),
-) error {
+) (sdf.ProcessContinuation, error) {
 	ctx = fn.withDatastoreEnv(ctx)
 	ctx, err := info.Namespace(ctx, nc.Namespace)
 	if err != nil {
-		return errors.Annotate(err, "failed to apply namespace: %s", nc.Namespace).Err()
+		return sdf.StopProcessing(), errors.Annotate(err, "failed to apply namespace: %s", nc.Namespace).Err()
 	}
 
 	restriction := rt.GetRestriction().(hexPrefixRestriction)
@@ -273,7 +274,7 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 		// Key token cannot be empty otherwise datastore will report an error. When
 		// end is bounded to "", nothing can be smaller than it. Short-circuit it.
 		if restriction.End == "" {
-			return nil
+			return sdf.StopProcessing(), nil
 		}
 		endKey := datastore.MakeKey(ctx, fn.Kind, restriction.End)
 		if restriction.EndIsExclusive {
@@ -307,12 +308,15 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	// We already claimed these keys from the restriction tracker. Always emit the
 	// final batch of claimed keys, even when there was an error.
 	defer emitClaimedKeys()
+	lastClaimed := ""
 
 	err = datastore.Run(ctx, q, func(key *datastore.Key) error {
-		if !rt.TryClaim(HexPosClaim{Value: key.StringID()}) {
+		claim := key.StringID()
+		if !rt.TryClaim(HexPosClaim{Value: claim}) {
 			return datastore.Stop
 		}
 
+		lastClaimed = claim
 		claimedKeys = append(claimedKeys, key)
 		if len(claimedKeys) < fn.OutputBatchSize {
 			return nil
@@ -321,7 +325,16 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to run bounded query Namespace `%s` Range: `%s`", nc.Namespace, restriction.RangeString()).Err()
+		// Log the error and try again in 10 mins.
+		err = errors.Annotate(err, "failed to run bounded query Namespace `%s` Range: `%s` Last Claimed: `%s`",
+			nc.Namespace, restriction.RangeString(), lastClaimed).Err()
+		log.Errorf(ctx, "%v", err)
+		// This will trigger a self-checkpointing split so we don't need to retry
+		// the entire key range.
+		//
+		// Returning the error directly will cause the entire restriction to be
+		// retried up to 4 times (runner dependent).
+		return sdf.ResumeProcessingIn(10 * time.Minute), nil
 	}
 	rt.TryClaim(HexPosClaim{End: true})
 
@@ -330,5 +343,5 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	finalRestriction := rt.GetRestriction().(hexPrefixRestriction)
 	log.Infof(ctx, "Datastore: finished processing Namespace `%s` Range %s (was %s)", nc.Namespace, finalRestriction.RangeString(), restriction.RangeString())
 
-	return nil
+	return sdf.StopProcessing(), nil
 }
