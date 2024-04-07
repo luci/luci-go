@@ -34,7 +34,9 @@ type EmbeddedFiles struct {
 	dir string
 	efs embed.FS
 
-	modeOverride func(info fs.FileInfo) (fs.FileMode, error)
+	// modeOverride lets you customize file permissions within embed.FS, which
+	// otherwise always set to 0o444.
+	modeOverride func(name string) (fs.FileMode, error)
 }
 
 // InitEmbeddedFS registers the embed.FS to copy executor and returns the
@@ -79,13 +81,9 @@ func (e *EmbeddedFiles) Generate(ctx context.Context, plats Platforms) (*core.Ac
 			return fmt.Errorf("root dir can't be file")
 		}
 
-		mode := fs.FileMode(0o666)
+		mode := fs.FileMode(0o444)
 		if e.modeOverride != nil {
-			info, err := d.Info()
-			if err != nil {
-				return err
-			}
-			if mode, err = e.modeOverride(info); err != nil {
+			if mode, err = e.modeOverride(name); err != nil {
 				return err
 			}
 		}
@@ -117,7 +115,7 @@ func (e *EmbeddedFiles) SubDir(dir string) *EmbeddedFiles {
 }
 
 // WithModeOverride overrides file modes while copying.
-func (e *EmbeddedFiles) WithModeOverride(f func(info fs.FileInfo) (fs.FileMode, error)) *EmbeddedFiles {
+func (e *EmbeddedFiles) WithModeOverride(f func(name string) (fs.FileMode, error)) *EmbeddedFiles {
 	ret := *e
 	ret.modeOverride = f
 	return &ret

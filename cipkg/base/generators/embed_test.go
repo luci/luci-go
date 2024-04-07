@@ -18,6 +18,7 @@ import (
 	"context"
 	"embed"
 	"io/fs"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -31,11 +32,11 @@ import (
 var embeddedFilesTestEmbed embed.FS
 var embeddedFilesTestGen = InitEmbeddedFS(
 	"embedded_files_test", embeddedFilesTestEmbed,
-).WithModeOverride(func(info fs.FileInfo) (fs.FileMode, error) {
-	if info.Name() == "embed.go" {
+).WithModeOverride(func(name string) (fs.FileMode, error) {
+	if path.Dir(name) == "testdata" {
 		return fs.ModePerm, nil
 	}
-	return 0o666, nil
+	return 0o444, nil
 })
 
 func TestEmbeddedFiles(t *testing.T) {
@@ -53,19 +54,19 @@ func TestEmbeddedFiles(t *testing.T) {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "embed.go"},
 					},
-					Mode: 0o777,
+					Mode: 0o444,
 				},
 				"embed_test.go": {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "embed_test.go"},
 					},
-					Mode: 0o666,
+					Mode: 0o444,
 				},
 				filepath.FromSlash("testdata/embed"): {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "testdata/embed"},
 					},
-					Mode: 0o666,
+					Mode: 0o777,
 				},
 			})
 		})
@@ -79,7 +80,7 @@ func TestEmbeddedFiles(t *testing.T) {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "testdata/embed"},
 					},
-					Mode: 0o666,
+					Mode: 0o444,
 				},
 			})
 		})
