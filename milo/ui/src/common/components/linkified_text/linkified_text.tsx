@@ -22,7 +22,7 @@ const patterns = [
   'go/[a-zA-Z0-9-_]+',
   'b/[0-9]+',
   'crrev.com/[ci]/[0-9]+',
-  'https?://[a-z0-9.-]+/?[a-zA-Z0-9/.-_+]*',
+  'https?://[a-z0-9.-]+/?[a-zA-Z0-9/.\\-_+]*',
 ];
 
 const combinedPatterns = '(?:' + patterns.join(')|(?:') + ')';

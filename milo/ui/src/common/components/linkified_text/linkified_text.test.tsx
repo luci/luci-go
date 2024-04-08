@@ -102,3 +102,17 @@ it('linkifies bare links', async () => {
     screen.getByRole('link', { name: 'https://google.com' }),
   ).toHaveAttribute('href', 'https://google.com');
 });
+
+it('linkifies bare links with dashes', async () => {
+  render(
+    <LinkifiedText text="https://ci.chromium.org/ui/p/chromium/builders/ci/chromeos-octopus-rel/31214/overview" />,
+  );
+  expect(
+    screen.getByRole('link', {
+      name: 'https://ci.chromium.org/ui/p/chromium/builders/ci/chromeos-octopus-rel/31214/overview',
+    }),
+  ).toHaveAttribute(
+    'href',
+    'https://ci.chromium.org/ui/p/chromium/builders/ci/chromeos-octopus-rel/31214/overview',
+  );
+});
