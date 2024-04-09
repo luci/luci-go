@@ -29,6 +29,29 @@ message Instructions {
 
 // Instruction is one failure reproduction instruction for a step or invocation.
 // Instruction can have different target, like "local" or "remote".
+// When converted to JSONPB format, it will look like below:
+// {
+//   "id" : "my_id",
+//   "targetedInstructions": [
+//     {
+//       "targets": [
+//         "LOCAL",
+//       ],
+//       "content": "my content",
+//       "dependency": [
+//         {
+//           "buildId": "80000",
+//           "stepName": "my step name",
+//           "stepTag": {
+//             "key": "my key",
+//             "value": "my value",
+//           },
+//         },
+//       ],
+//     },
+//   ],
+// }
+//
 message Instruction {
   // ID of the instruction, used for step instruction.
   // It is consumer-defined and is unique within the build-level invocation.
