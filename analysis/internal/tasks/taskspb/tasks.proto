@@ -21,34 +21,6 @@ import "go.chromium.org/luci/analysis/internal/ingestion/control/proto/control.p
 
 option go_package = "go.chromium.org/luci/analysis/internal/tasks/taskspb";
 
-// Payload of IngestTestResults task.
-message IngestTestResults {
-  reserved 1, 2, 4 to 7;
-
-  // Timestamp representing the start of the data retention period
-  // for the ingested test results. In case of multiple builds
-  // ingested for one CV run, the partition_time used for all
-  // builds must be the same.
-  google.protobuf.Timestamp partition_time = 3;
-
-  // The build that is being ingested.
-  luci.analysis.internal.ingestion.control.BuildResult build = 8;
-
-  // Context about the presubmit run the build was a part of. Only
-  // populated if the build is a presubmit run.
-  luci.analysis.internal.ingestion.control.PresubmitResult presubmit_run = 9;
-
-  // The page token value to use when calling QueryTestVariants.
-  // For the first task, this should be "". For subsequent tasks,
-  // this is the next_page_token value returned by the last call.
-  string page_token = 10;
-
-  // The task number of test results task. 0 for the first
-  // task, 1 for the second task, and so on. Used to avoid creating
-  // duplicate tasks.
-  int64 task_index = 11;
-}
-
 // Payload of IngestTestVerdicts task.
 message IngestTestVerdicts {
   // Timestamp representing the start of the data retention period

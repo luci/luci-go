@@ -141,13 +141,6 @@ var verdictIngestion = tq.RegisterTaskClass(tq.TaskClass{
 	Kind:      tq.Transactional,
 })
 
-var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
-	ID:        resultIngestionTaskClass,
-	Prototype: &taskspb.IngestTestResults{},
-	Queue:     resultIngestionQueue,
-	Kind:      tq.Transactional,
-})
-
 // RegisterTaskHandler registers the handler for result ingestion tasks.
 func RegisterTaskHandler(srv *server.Server) error {
 	ctx := srv.Context
@@ -207,19 +200,6 @@ func RegisterTaskHandler(srv *server.Server) error {
 		return ri.ingestTestVerdicts(ctx, task)
 	}
 	verdictIngestion.AttachHandler(verdictHandler)
-
-	resultHandler := func(ctx context.Context, payload proto.Message) error {
-		task := payload.(*taskspb.IngestTestResults)
-		itvTask := &taskspb.IngestTestVerdicts{
-			PartitionTime: task.PartitionTime,
-			Build:         task.Build,
-			PresubmitRun:  task.PresubmitRun,
-			PageToken:     task.PageToken,
-			TaskIndex:     task.TaskIndex,
-		}
-		return ri.ingestTestVerdicts(ctx, itvTask)
-	}
-	resultIngestion.AttachHandler(resultHandler)
 
 	return nil
 }
