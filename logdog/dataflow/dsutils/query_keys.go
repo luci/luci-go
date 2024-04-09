@@ -25,6 +25,7 @@ import (
 	"github.com/apache/beam/sdks/v2/go/pkg/beam/core/sdf"
 	"github.com/apache/beam/sdks/v2/go/pkg/beam/log"
 	"github.com/apache/beam/sdks/v2/go/pkg/beam/register"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/cloud"
@@ -102,7 +103,7 @@ type getEstimatedCountFn struct {
 // Setup implements beam DoFn protocol.
 func (fn *getEstimatedCountFn) Setup(ctx context.Context) error {
 	if fn.withDatastoreEnv == nil {
-		client, err := cloudds.NewClient(ctx, fn.CloudProject)
+		client, err := cloudds.NewClient(ctx, fn.CloudProject, option.WithEndpoint("batch-datastore.googleapis.com:443"))
 		if err != nil {
 			return errors.Annotate(err, "failed to construct cloud datastore client").Err()
 		}
@@ -179,7 +180,7 @@ type getAllKeysWithHexPrefixFn struct {
 // Setup implements beam DoFn protocol.
 func (fn *getAllKeysWithHexPrefixFn) Setup(ctx context.Context) error {
 	if fn.withDatastoreEnv == nil {
-		client, err := cloudds.NewClient(ctx, fn.CloudProject)
+		client, err := cloudds.NewClient(ctx, fn.CloudProject, option.WithEndpoint("batch-datastore.googleapis.com:443"))
 		if err != nil {
 			return errors.Annotate(err, "failed to construct cloud datastore client").Err()
 		}

@@ -23,6 +23,7 @@ import (
 	"github.com/apache/beam/sdks/v2/go/pkg/beam/log"
 	"github.com/apache/beam/sdks/v2/go/pkg/beam/register"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -51,7 +52,7 @@ type clientType interface {
 
 func (fn *getAllNamespacesFn) Setup(ctx context.Context) error {
 	if fn.client == nil {
-		client, err := cloudds.NewClient(ctx, fn.CloudProject)
+		client, err := cloudds.NewClient(ctx, fn.CloudProject, option.WithEndpoint("batch-datastore.googleapis.com:443"))
 		if err != nil {
 			return errors.Annotate(err, "failed to construct cloud datastore client").Err()
 		}
