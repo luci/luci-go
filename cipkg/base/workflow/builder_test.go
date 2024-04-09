@@ -78,10 +78,10 @@ func TestBuilder(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		b := NewBuilder(generators.Platforms{}, pm, actions.NewActionProcessor())
-		b.SetExecutor(func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
+		pe := NewPackageExecutor("", nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
 
 		Convey("ok", func() {
-			pkg, err := b.Build(ctx, "", &Generator{
+			pkg, err := b.Build(ctx, pe, &Generator{
 				Name: "first",
 				Dependencies: []generators.Dependency{
 					{Generator: &Generator{Name: "second"}, Type: generators.DepsBuildHost, Runtime: true},
@@ -96,21 +96,23 @@ func TestBuilder(t *testing.T) {
 		})
 
 		Convey("preExec", func() {
-			b.SetExecutor(func(context.Context, *ExecutionConfig, *core.Derivation) error { panic("unreachable") })
-			b.SetPreExecuteHook(func(ctx context.Context, pkg actions.Package) error {
-				return pkg.Handler.Build(func() error { return nil })
-			})
+			pe = NewPackageExecutor("",
+				func(ctx context.Context, pkg actions.Package) error {
+					return pkg.Handler.Build(func() error { return nil })
+				},
+				func(context.Context, *ExecutionConfig, *core.Derivation) error { panic("unreachable") },
+			)
 		})
 
 		var pkg actions.Package
-		So(func() {
-			pkg, err = b.Build(ctx, "", &Generator{
+		func() {
+			pkg, err = b.Build(ctx, pe, &Generator{
 				Name: "first",
 				Dependencies: []generators.Dependency{
 					{Generator: &Generator{Name: "second"}, Type: generators.DepsBuildHost, Runtime: true},
 				},
 			})
-		}, ShouldNotPanic)
+		}()
 		So(err, ShouldBeNil)
 
 		// all packages are available

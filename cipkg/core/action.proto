@@ -54,16 +54,23 @@ message Action {
   // helping users to identify its content.
   Metadata metadata = 2;
   message Metadata {
-    // Dependencies which PackageManager will ensure being available prior to the
-    // use of this Action's output.
+    // Dependencies which PackageManager will ensure being available prior to
+    // the use of this Action's output.
     repeated Action runtime_deps = 1;
 
     CIPD cipd = 2;
     message CIPD {
       // Name is the cipd package name for the Action's output.
       string name = 1;
-      // version is the cipd version tag for action's output.
+      // Version is the cipd version tag for action's output.
       string version = 2;
+    }
+
+    LUCIExe luciexe = 3;
+    message LUCIExe {
+      // root_step_name indicates this action should be a root step when it's
+      // executed in luci. All its dependencies should be substeps under this.
+      string root_step_name = 1;
     }
   }
 

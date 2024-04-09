@@ -49,7 +49,8 @@ type PackageHandler interface {
 	// - Check the remote cache server (if possible).
 	// - Set up the build environment (e.g. create output directory).
 	// - Mark package available if build function successfully returns.
-	// Calling build function is expected to trigger the actual build.
+	// Calling build function is expected to trigger the actual build iff package
+	// isn't available yet.
 	Build(builder func() error) error
 
 	// TryRemove(), IncRef(), DecRef() are the interface for removable packages.
