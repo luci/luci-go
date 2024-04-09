@@ -636,12 +636,16 @@ class EditGroupForm extends GroupForm {
 
   // Populates the form with the text lists of the group.
   populateForm(group) {
-    // Grab heading and members form fields.
+    // Grab heading, change log link and members form field.
     const heading = this.element.querySelector('#group-heading');
+    const changeLogLink = this.element.querySelector('#group-change-log-link');
     const membersAndGlobs = this.element.querySelector('#membersAndGlobs');
 
-    // Modify group name and members.
+    // Modify group name, change log link target and members.
     heading.textContent = group.name;
+    const changeLogURL = new URL('/change_log', window.location.href);
+    changeLogURL.searchParams.append('target', 'AuthGroup$' + group.name);
+    changeLogLink.setAttribute('href', changeLogURL);
     membersAndGlobs.textContent = group.membersAndGlobs
 
     // Exit early if the form is for an external group.

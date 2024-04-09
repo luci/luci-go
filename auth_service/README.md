@@ -27,9 +27,12 @@ Prefer to test everything locally. If you must deploy to GAE, use:
 
 ```
 cd auth_service
-gae.py upload -A chrome-infra-auth-dev --app-dir services defaultv2 backendv2
+gae.py upload --target ${USER} -A chrome-infra-auth-dev --app-dir services defaultv2 backendv2
 
 ```
+
+This will upload versions for both `defaultv2` and `backendv2` services,
+with target version name `${USER}`.
 
 Note that it doesn't switch the default serving version. Use Cloud Console
 or `gcloud app services set-traffic` to switch the serving version of
