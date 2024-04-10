@@ -828,8 +828,10 @@ func validateRuleForCreate(rule *pb.Rule, expectBug bool) error {
 			Algorithm: rule.SourceCluster.Algorithm,
 			ID:        rule.SourceCluster.Id,
 		}
-		if err := cluster.Validate(); err != nil {
-			return errors.Annotate(err, "source_cluster").Err()
+		if !cluster.IsEmpty() {
+			if err := cluster.Validate(); err != nil {
+				return errors.Annotate(err, "source_cluster").Err()
+			}
 		}
 	}
 	if err := rules.ValidateRuleDefinition(rule.RuleDefinition); err != nil {

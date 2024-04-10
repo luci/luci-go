@@ -717,6 +717,13 @@ func TestRules(t *testing.T) {
 					So(err, ShouldBeRPCInvalidArgument,
 						"rule: bug: bug not in expected monorail project (monorailproject)")
 				})
+				Convey("Invalid source cluster", func() {
+					request.Rule.SourceCluster.Algorithm = "*invalid*"
+
+					_, err := srv.Create(ctx, request)
+					So(err, ShouldBeRPCInvalidArgument,
+						"rule: source_cluster: algorithm not valid")
+				})
 				Convey("Re-use of same bug in same project", func() {
 					// Use the same bug as another rule, in the same project.
 					request.Rule.Bug = &pb.AssociatedBug{
@@ -759,6 +766,19 @@ func TestRules(t *testing.T) {
 					}).
 					WithBugManagementState(&bugspb.BugManagementState{})
 
+				acceptStoredRuleTimestamps := func(b *rules.RuleBuilder, storedRule *rules.Entry) *rules.RuleBuilder {
+					return b.
+						// Accept whatever CreationTime was assigned, as it
+						// is determined by Spanner commit time.
+						// Rule spanner data access code tests already validate
+						// this is populated correctly.
+						WithCreateTime(storedRule.CreateTime).
+						WithLastAuditableUpdateTime(storedRule.CreateTime).
+						WithLastUpdateTime(storedRule.CreateTime).
+						WithPredicateLastUpdateTime(storedRule.CreateTime).
+						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime)
+				}
+
 				Convey("Bug not managed by another rule", func() {
 					// Re-use the same bug as a rule in another project,
 					// where the other rule is not managing the bug.
@@ -773,19 +793,10 @@ func TestRules(t *testing.T) {
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
 					So(err, ShouldBeNil)
 
-					expectedRule := expectedRuleBuilder.
+					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
 						WithRuleID(rule.RuleId).
 						WithBug(ruleUnmanagedOther.BugID).
-						// Accept whatever CreationTime was assigned, as it
-						// is determined by Spanner commit time.
-						// Rule spanner data access code tests already validate
-						// this is populated correctly.
-						WithCreateTime(storedRule.CreateTime).
-						WithLastAuditableUpdateTime(storedRule.CreateTime).
-						WithLastUpdateTime(storedRule.CreateTime).
-						WithPredicateLastUpdateTime(storedRule.CreateTime).
-						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -809,19 +820,13 @@ func TestRules(t *testing.T) {
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
 					So(err, ShouldBeNil)
 
-					expectedRule := expectedRuleBuilder.
+					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
 						WithRuleID(rule.RuleId).
 						WithBug(ruleManagedOther.BugID).
 						// Because another rule is managing the bug, this rule
 						// should be silenlty stopped from managing the bug.
 						WithBugManaged(false).
-						// Accept whatever CreationTime was assigned.
-						WithCreateTime(storedRule.CreateTime).
-						WithLastAuditableUpdateTime(storedRule.CreateTime).
-						WithLastUpdateTime(storedRule.CreateTime).
-						WithPredicateLastUpdateTime(storedRule.CreateTime).
-						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -843,19 +848,10 @@ func TestRules(t *testing.T) {
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
 					So(err, ShouldBeNil)
 
-					expectedRule := expectedRuleBuilder.
+					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
 						WithRuleID(rule.RuleId).
 						WithBug(bugs.BugID{System: "buganizer", ID: "1111111111"}).
-						// Accept whatever CreationTime was assigned, as it
-						// is determined by Spanner commit time.
-						// Rule spanner data access code tests already validate
-						// this is populated correctly.
-						WithCreateTime(storedRule.CreateTime).
-						WithLastAuditableUpdateTime(storedRule.CreateTime).
-						WithLastUpdateTime(storedRule.CreateTime).
-						WithPredicateLastUpdateTime(storedRule.CreateTime).
-						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -874,18 +870,9 @@ func TestRules(t *testing.T) {
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
 					So(err, ShouldBeNil)
 
-					expectedRule := expectedRuleBuilder.
+					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
 						// Accept the randomly generated rule ID.
 						WithRuleID(rule.RuleId).
-						// Accept whatever CreationTime was assigned, as it
-						// is determined by Spanner commit time.
-						// Rule spanner data access code tests already validate
-						// this is populated correctly.
-						WithCreateTime(storedRule.CreateTime).
-						WithLastAuditableUpdateTime(storedRule.CreateTime).
-						WithLastUpdateTime(storedRule.CreateTime).
-						WithPredicateLastUpdateTime(storedRule.CreateTime).
-						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -893,6 +880,29 @@ func TestRules(t *testing.T) {
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
+				})
+				Convey("Without source cluster", func() {
+					request.Rule.SourceCluster = &pb.ClusterId{}
+
+					// Rule creation should succeed.
+					rule, err := srv.Create(ctx, request)
+					So(err, ShouldBeNil)
+
+					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
+					So(err, ShouldBeNil)
+
+					expectedRule := acceptStoredRuleTimestamps(expectedRuleBuilder, storedRule).
+						// Accept the randomly generated rule ID.
+						WithRuleID(rule.RuleId).
+						WithSourceCluster(clustering.ClusterID{}).
+						Build()
+
+					// Verify the rule was correctly created in the database.
+					So(storedRule, ShouldResembleProto, expectedRuleBuilder.Build())
+
+					// Verify the returned rule matches our expectations.
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
 					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, mask))
 				})
 			})
