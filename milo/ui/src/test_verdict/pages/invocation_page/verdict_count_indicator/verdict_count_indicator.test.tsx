@@ -116,6 +116,7 @@ describe('<VerdictCountIndicator />', () => {
     );
     render(
       <FakeContextProvider>
+        <div data-testid="no-error" />
         <VerdictCountIndicator invName="invocations/inv-id" />
       </FakeContextProvider>,
     );
@@ -124,6 +125,7 @@ describe('<VerdictCountIndicator />', () => {
       screen.queryByTestId('verdict-count-indicator'),
     ).not.toBeInTheDocument();
     expect(screen.queryByTestId('RemoveCircleIcon')).not.toBeInTheDocument();
+    expect(screen.getByTestId('no-error')).toBeInTheDocument();
   });
 
   it('show + sign when there are too many verdicts', async () => {

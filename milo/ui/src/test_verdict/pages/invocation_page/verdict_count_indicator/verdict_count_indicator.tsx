@@ -68,7 +68,7 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
 
   const firstPage = data?.pages[0];
   const hasVerdicts = (firstPage?.testVariants.length || 0) !== 0;
-  const worstStatus = (firstPage?.testVariants[0].status ||
+  const worstStatus = (firstPage?.testVariants[0]?.status ||
     TestVariantStatus.UNSPECIFIED) as
     | SpecifiedTestVerdictStatus
     | TestVariantStatus.UNSPECIFIED;
