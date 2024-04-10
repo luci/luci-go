@@ -74,18 +74,20 @@ export const BugMenu = ({
     <>
       <Menu id="basic-menu" anchorEl={anchorEl} open={open} onClose={onClose}>
         {isLinkedToBugs ? (
-          <>
-            <MenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                linkBugMutation.mutateAsync('0').finally(() => onClose());
-              }}
-            >
-              Unlink bug {alerts.length !== 1 && 'from all alerts'}
-            </MenuItem>
-            <Divider />
-          </>
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              linkBugMutation.mutateAsync('0').finally(() => onClose());
+            }}
+          >
+            Unlink bug {alerts.length !== 1 && 'from all alerts'}
+          </MenuItem>
         ) : null}
+        {
+          // Do not merge this with the statement above otherwise <Menu /> will
+          // complain that it does not support taking React fragment as a child.
+          isLinkedToBugs ? <Divider /> : null
+        }
         {bugs.map((bug) => (
           <MenuItem
             key={bug.link}
