@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import createCache from '@emotion/cache';
-import { CacheProvider, EmotionCache, keyframes } from '@emotion/react';
+import { keyframes } from '@emotion/react';
 import { Box, BoxProps, styled } from '@mui/material';
-import { LitElement } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { createRoot, Root } from 'react-dom/client';
-
-import { commonStyles } from '@/common/styles/stylesheets';
 
 const bounceEffect = keyframes`
   0%,
@@ -71,32 +67,52 @@ export function DotSpinner() {
 /**
  * A simple 3-dots loading indicator.
  */
+// This is used in artifact tags, which has to be lit-element.
+// We can make this render the <DotSpinner /> React component. But that causes
+// the test runner to log errors.
+// In the future, we can maybe implement the artifact tags themselves in React
+// then registry them as web-components. Then the lit-version of dot-spinner
+// will not be needed.
 @customElement('milo-dot-spinner')
 export class DotSpinnerElement extends LitElement {
-  private readonly cache: EmotionCache;
-  private readonly parent: HTMLSpanElement;
-  private readonly root: Root;
-
-  constructor() {
-    super();
-    this.parent = document.createElement('span');
-    const child = document.createElement('span');
-    this.root = createRoot(child);
-    this.parent.appendChild(child);
-    this.cache = createCache({
-      key: 'milo-dot-spinner',
-      container: this.parent,
-    });
-  }
-
   protected render() {
-    this.root.render(
-      <CacheProvider value={this.cache}>
-        <DotSpinner />
-      </CacheProvider>,
-    );
-    return this.parent;
+    /* eslint-disable-next-line */
+    return html`<div></div><div></div><div></div>`;
   }
 
-  static styles = [commonStyles];
+  static styles = css`
+    :host {
+      display: inline-block;
+      text-align: center;
+      color: var(--active-text-color);
+    }
+
+    div {
+      width: 0.75em;
+      height: 0.75em;
+      border-radius: 100%;
+      background-color: currentColor;
+      display: inline-block;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    div:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    div:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+      }
+      40% {
+        transform: scale(1);
+      }
+    }
+  `;
 }
