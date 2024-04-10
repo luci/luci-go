@@ -33,7 +33,7 @@ export function useFilterToMetricParam(metrics: ProjectMetric[]): [ProjectMetric
   const [searchParams, setSearchParams] = useSearchParams();
   const filterToMetricParam = searchParams.get('filterToMetric') || '';
 
-  const filterToMetric = metrics.find((metric) => filterToMetricParam.indexOf(metric.metricId) > -1);
+  const filterToMetric = metrics.find((metric) => filterToMetricParam === metric.metricId);
 
   function updateFilterToMetricParam(filterToMetric: ProjectMetric | undefined, replace = false) {
     const params: ParamKeyValuePair[] = [];
