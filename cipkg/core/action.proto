@@ -68,9 +68,9 @@ message Action {
 
     LUCIExe luciexe = 3;
     message LUCIExe {
-      // root_step_name indicates this action should be a root step when it's
-      // executed in luci. All its dependencies should be substeps under this.
-      string root_step_name = 1;
+      // step_name is the name of this action when it's being executed under
+      // luciexe framework.
+      string step_name = 1;
     }
   }
 
