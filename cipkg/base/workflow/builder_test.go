@@ -104,19 +104,27 @@ func TestBuilder(t *testing.T) {
 			)
 		})
 
-		var pkg actions.Package
-		func() {
-			pkg, err = b.Build(ctx, pe, &Generator{
+		Convey("dependency not available", func() {
+			pe = NewPackageExecutor("", nil,
+				func(ctx context.Context, cfg *ExecutionConfig, drv *core.Derivation) error {
+					if drv.Name == "second" {
+						return fmt.Errorf("failed")
+					}
+					return nil
+				},
+			)
+
+			pkgs, err := b.GeneratePackages(ctx, []generators.Generator{&Generator{
 				Name: "first",
 				Dependencies: []generators.Dependency{
 					{Generator: &Generator{Name: "second"}, Type: generators.DepsBuildHost, Runtime: true},
 				},
-			})
-		}()
-		So(err, ShouldBeNil)
+			}})
+			So(err, ShouldBeNil)
 
-		// all packages are available
-		So(func() { MustIncRefRecursiveRuntime(pkg) }, ShouldNotPanic)
-		So(func() { MustDecRefRecursiveRuntime(pkg) }, ShouldNotPanic)
+			err = b.BuildPackages(ctx, pe, pkgs, true)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "dependency not available: second-")
+		})
 	})
 }

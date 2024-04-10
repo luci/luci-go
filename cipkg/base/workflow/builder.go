@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/core"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
 
@@ -111,10 +112,6 @@ func NewPackageExecutor(tempDir string, preExecFn PreExecuteHook, execFn Executo
 // available.
 // preExecFn will be invoked on the package before on it's dependencies.
 func (p *PackageExecutor) Prepare(ctx context.Context, pkg actions.Package) ([]actions.Package, error) {
-	return p.prepare(ctx, pkg)
-}
-
-func (p *PackageExecutor) prepare(ctx context.Context, pkg actions.Package) ([]actions.Package, error) {
 	if _, ok := p.refs[pkg.DerivationID]; ok {
 		return []actions.Package{}, nil
 	}
@@ -131,7 +128,7 @@ func (p *PackageExecutor) prepare(ctx context.Context, pkg actions.Package) ([]a
 
 	// Prepare runtime dependencies.
 	for _, d := range pkg.RuntimeDependencies {
-		pkgs, err := p.prepare(ctx, d)
+		pkgs, err := p.Prepare(ctx, d)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +138,7 @@ func (p *PackageExecutor) prepare(ctx context.Context, pkg actions.Package) ([]a
 	switch err := pkg.Handler.IncRef(); {
 	case errors.Is(err, core.ErrPackageNotExist):
 		for _, d := range pkg.BuildDependencies {
-			pkgs, err := p.prepare(ctx, d)
+			pkgs, err := p.Prepare(ctx, d)
 			if err != nil {
 				return nil, err
 			}
@@ -171,6 +168,13 @@ func (p *PackageExecutor) Execute(ctx context.Context, pkg actions.Package) erro
 		}
 		if err := dumpProto(pkg.Derivation, pkg.Handler.LoggingDirectory(), "derivation.pb"); err != nil {
 			return err
+		}
+
+		// Ensure all build dependencies are referenced by the PackageExecutor.
+		for _, dep := range pkg.BuildDependencies {
+			if _, ok := p.refs[dep.DerivationID]; !ok {
+				return fmt.Errorf("dependency not available: %s", dep.DerivationID)
+			}
 		}
 
 		logging.Infof(ctx, "build package %s", pkg.DerivationID)
@@ -314,7 +318,7 @@ func (b *Builder) GeneratePackages(ctx context.Context, gs []generators.Generato
 // with any reasonable time window (e.g. 1 hour) is highly unlikely to remove
 // packages just dereferenced and may be IncRef within seconds. And even if it's
 // happened, the caller can retry the process.
-func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs []actions.Package, continueOnError bool) error {
+func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs []actions.Package, continueOnExecError bool) error {
 	var newPkgs []actions.Package
 
 	defer func() { _ = pe.Release() }()
@@ -325,19 +329,20 @@ func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs [
 	for _, pkg := range pkgs {
 		pkgs, err := pe.Prepare(ctx, pkg)
 		if err != nil {
-			if continueOnError {
-				errs = errors.Join(errs, err)
-				continue
-			} else {
-				return err
-			}
+			return err
 		}
 		newPkgs = append(newPkgs, pkgs...)
 	}
 
+	executed := stringset.New(len(newPkgs))
+
 	for _, pkg := range newPkgs {
+		if !executed.Add(pkg.DerivationID) {
+			continue
+		}
+
 		if err := pe.Execute(ctx, pkg); err != nil {
-			if continueOnError {
+			if continueOnExecError {
 				errs = errors.Join(errs, err)
 				continue
 			} else {
