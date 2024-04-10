@@ -21,10 +21,18 @@ export interface BatchConfig<T extends unknown[], V> {
   readonly fn: (...params: T) => Promise<V>;
 
   /**
+   * When specified, only requests in the same shard can be batched together.
+   */
+  readonly shardFn?: (...param: T) => string;
+
+  /**
    * Combines two parameter sets into one. If the two function calls can't be
    * combined (e.g. due to batch size limit), return a ResultErr, and the
    * pending batch will be processed immediately and a new batch will be
    * started.
+   *
+   * If `shardFn` is specified, `paramSet1` and `paramSet2` are guaranteed to be
+   * in the same shard.
    */
   readonly combineParamSets: (paramSet1: T, paramSet2: T) => Result<T, unknown>;
 
@@ -32,6 +40,9 @@ export interface BatchConfig<T extends unknown[], V> {
    * Split the return value into multiple values for each batched call.
    * The length and order of the returned batch must match that of the param
    * sets.
+   *
+   * If `shardFn` is specified, `paramSets` are guaranteed to be in the same
+   * shard.
    */
   readonly splitReturn: (paramSets: readonly T[], ret: V) => readonly V[];
 }
@@ -67,17 +78,15 @@ export function batched<T extends unknown[], V>(
   clearTimeout = self.clearTimeout,
   getTimestampMs = Date.now,
 ): (opt: BatchOption, ...params: T) => Promise<V> {
-  let currentBatch: BatchState<T, V> | null = null;
+  const shardCurrentBatchMap = new Map<string, BatchState<T, V>>();
 
-  async function processCurrentBatch() {
-    if (!currentBatch) {
+  async function processCurrentBatch(shard: string) {
+    const batch = shardCurrentBatchMap.get(shard);
+    if (!batch) {
       return;
     }
 
-    // Move the currentBatch from the parent scope to the local scope and reset
-    // the current batch.
-    const batch = currentBatch;
-    currentBatch = null;
+    shardCurrentBatchMap.delete(shard);
     clearTimeout(batch.scheduleId);
 
     try {
@@ -95,8 +104,10 @@ export function batched<T extends unknown[], V>(
 
   return async (opt, ...params) => {
     const [promise, resolve, reject] = deferred<V>();
+    const shard = config.shardFn?.(...params) || '';
+    let currentBatch = shardCurrentBatchMap.get(shard);
     if (!currentBatch) {
-      // No current batch. Start a new batch.
+      // No current batch in this shard. Start a new batch.
       currentBatch = {
         batchedParams: params,
         paramSets: [params],
@@ -105,6 +116,7 @@ export function batched<T extends unknown[], V>(
         resolveTime: Infinity,
         scheduleId: 0,
       };
+      shardCurrentBatchMap.set(shard, currentBatch);
     } else {
       // Attempt to combine the new call with the current batch.
       const combineResult = config.combineParamSets(
@@ -119,7 +131,7 @@ export function batched<T extends unknown[], V>(
       } else {
         // The new call cannot be combined with the current batch. Process the
         // current batch immediately then start a new batch.
-        processCurrentBatch();
+        processCurrentBatch(shard);
         currentBatch = {
           batchedParams: params,
           paramSets: [params],
@@ -128,6 +140,7 @@ export function batched<T extends unknown[], V>(
           resolveTime: Infinity,
           scheduleId: 0,
         };
+        shardCurrentBatchMap.set(shard, currentBatch);
       }
     }
 
@@ -138,7 +151,7 @@ export function batched<T extends unknown[], V>(
       currentBatch.resolveTime = resolveTime;
       clearTimeout(currentBatch.scheduleId);
       currentBatch.scheduleId = setTimeout(
-        processCurrentBatch,
+        () => processCurrentBatch(shard),
         opt.maxPendingMs,
       );
     }
