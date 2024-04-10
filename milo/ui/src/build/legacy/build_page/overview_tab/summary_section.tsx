@@ -12,24 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
 import { useMemo } from 'react';
 
+import { BUILD_STATUS_DISPLAY_MAP } from '@/build/constants';
+import { SpecifiedBuildStatus } from '@/build/types';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { BUILD_STATUS_DISPLAY_MAP } from '@/common/constants/legacy';
-import { useStore } from '@/common/store';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 
-export const SummarySection = observer(() => {
-  const store = useStore();
-  const build = store.buildPage.build;
+import { useBuild } from '../context';
+
+export function SummarySection() {
+  const build = useBuild();
 
   const summaryHtml = useMemo(
     () =>
-      build?.data.summaryMarkdown
-        ? renderMarkdown(build?.data.summaryMarkdown)
-        : null,
-    [build?.data.summaryMarkdown],
+      build?.summaryMarkdown ? renderMarkdown(build.summaryMarkdown) : null,
+    [build?.summaryMarkdown],
   );
 
   if (!build) {
@@ -59,10 +57,10 @@ export const SummarySection = observer(() => {
         ) : (
           <div css={{ fontWeight: 500 }}>
             Build{' '}
-            {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'status unknown'}
+            {BUILD_STATUS_DISPLAY_MAP[build.status as SpecifiedBuildStatus]}
           </div>
         )}
       </div>
     </>
   );
-});
+}
