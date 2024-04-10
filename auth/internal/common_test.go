@@ -46,11 +46,11 @@ func TestCacheKey(t *testing.T) {
 	})
 
 	Convey("EqualCacheKeys works", t, func() {
-		So(EqualCacheKeys(nil, nil), ShouldBeTrue)
-		So(EqualCacheKeys(&CacheKey{}, nil), ShouldBeFalse)
-		So(EqualCacheKeys(nil, &CacheKey{}), ShouldBeFalse)
+		So(equalCacheKeys(nil, nil), ShouldBeTrue)
+		So(equalCacheKeys(&CacheKey{}, nil), ShouldBeFalse)
+		So(equalCacheKeys(nil, &CacheKey{}), ShouldBeFalse)
 
-		So(EqualCacheKeys(
+		So(equalCacheKeys(
 			&CacheKey{
 				Key:    "k",
 				Scopes: []string{"a", "b"},
@@ -61,7 +61,7 @@ func TestCacheKey(t *testing.T) {
 			}),
 			ShouldBeTrue)
 
-		So(EqualCacheKeys(
+		So(equalCacheKeys(
 			&CacheKey{
 				Key:    "k1",
 				Scopes: []string{"a", "b"},
@@ -72,7 +72,7 @@ func TestCacheKey(t *testing.T) {
 			}),
 			ShouldBeFalse)
 
-		So(EqualCacheKeys(
+		So(equalCacheKeys(
 			&CacheKey{
 				Key:    "k",
 				Scopes: []string{"a1", "b"},
@@ -83,7 +83,7 @@ func TestCacheKey(t *testing.T) {
 			}),
 			ShouldBeFalse)
 
-		So(EqualCacheKeys(
+		So(equalCacheKeys(
 			&CacheKey{
 				Key:    "k",
 				Scopes: []string{"a"},

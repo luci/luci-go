@@ -198,8 +198,8 @@ func (k *CacheKey) ToMapKey() string {
 	return b.String()
 }
 
-// EqualCacheKeys returns true if keys are equal.
-func EqualCacheKeys(a, b *CacheKey) bool {
+// Function equalCacheKeys returns true if keys are equal.
+func equalCacheKeys(a, b *CacheKey) bool {
 	return reflect.DeepEqual(a, b)
 }
 

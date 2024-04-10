@@ -393,7 +393,7 @@ func (c *DiskTokenCache) GetToken(key *CacheKey) (*Token, error) {
 		return nil, err
 	}
 	for _, entry := range cache.Cache {
-		if EqualCacheKeys(&entry.key, key) {
+		if equalCacheKeys(&entry.key, key) {
 			return &Token{
 				Token:   entry.token,
 				IDToken: entry.idToken,
@@ -412,7 +412,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 	}
 	return c.updateCache(func(cache *cacheFile, now time.Time) bool {
 		for _, entry := range cache.Cache {
-			if EqualCacheKeys(&entry.key, key) {
+			if equalCacheKeys(&entry.key, key) {
 				entry.token = token
 				entry.idToken = tok.IDToken
 				entry.email = tok.Email
@@ -435,7 +435,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 func (c *DiskTokenCache) DeleteToken(key *CacheKey) error {
 	return c.updateCache(func(cache *cacheFile, now time.Time) bool {
 		for i, entry := range cache.Cache {
-			if EqualCacheKeys(&entry.key, key) {
+			if equalCacheKeys(&entry.key, key) {
 				cache.Cache = append(cache.Cache[:i], cache.Cache[i+1:]...)
 				return true
 			}
