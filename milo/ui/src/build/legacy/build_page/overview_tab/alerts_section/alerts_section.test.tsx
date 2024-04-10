@@ -14,111 +14,21 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 
-import { Build, BuildbucketStatus } from '@/common/services/buildbucket';
+import {
+  alreadyCanceledBuild,
+  canaryFailedBuild,
+  canarySucceededBuild,
+  resourceExhaustionBuild,
+  scheduledToBeCanceledBuild,
+  succeededTimeoutBuild,
+  timeoutBuild,
+} from '@/build/testing_tools/mock_builds';
 
 import { BuildContextProvider } from '../../context';
 
 import { AlertsSection } from './alerts_section';
 
-const canaryFailedBuild: Build = {
-  id: '1234',
-  status: BuildbucketStatus.InfraFailure,
-  builder: {
-    project: 'proj',
-    bucket: 'bucket',
-    builder: 'builder',
-  },
-  createTime: '2020-12-12T01:01:01',
-  input: {
-    experiments: ['luci.buildbucket.canary_software'],
-  },
-};
-
-const canarySucceededBuild: Build = {
-  id: '1234',
-  status: BuildbucketStatus.Success,
-  builder: {
-    project: 'proj',
-    bucket: 'bucket',
-    builder: 'builder',
-  },
-  createTime: '2020-12-12T01:01:01',
-  input: {
-    experiments: ['luci.buildbucket.canary_software'],
-  },
-};
-
-const scheduledToBeCanceledBuild: Build = {
-  id: '1234',
-  status: BuildbucketStatus.Started,
-  builder: {
-    project: 'proj',
-    bucket: 'bucket',
-    builder: 'builder',
-  },
-  createTime: '2020-12-12T01:01:01',
-  cancelTime: '2020-12-12T02:01:01',
-  canceledBy: 'user:bb_user@google.com',
-  gracePeriod: '30s',
-};
-
-const alreadyCanceledBuild: Build = {
-  id: '1234',
-  status: BuildbucketStatus.Canceled,
-  builder: {
-    project: 'proj',
-    bucket: 'bucket',
-    builder: 'builder',
-  },
-  createTime: '2020-12-12T01:01:01',
-  cancelTime: '2020-12-12T02:01:01',
-  canceledBy: 'user:bb_user@google.com',
-  gracePeriod: '30s',
-};
-
-const resourceExhaustionBuild: Build = {
-  id: '1234',
-  status: BuildbucketStatus.Failure,
-  statusDetails: {
-    resourceExhaustion: {},
-  },
-  builder: {
-    project: 'proj',
-    bucket: 'bucket',
-    builder: 'builder',
-  },
-  createTime: '2020-12-12T01:01:01',
-};
-
-const timeoutBuild: Build = {
-  id: '1234',
-  status: BuildbucketStatus.Failure,
-  statusDetails: {
-    timeout: {},
-  },
-  builder: {
-    project: 'proj',
-    bucket: 'bucket',
-    builder: 'builder',
-  },
-  createTime: '2020-12-12T01:01:01',
-};
-
-const succeededTimeoutBuild: Build = {
-  id: '1234',
-  status: BuildbucketStatus.Success,
-  statusDetails: {
-    timeout: {},
-  },
-  builder: {
-    project: 'proj',
-    bucket: 'bucket',
-    builder: 'builder',
-  },
-  createTime: '2020-12-12T01:01:01',
-};
-
-describe('AlertsSection', () => {
+describe('<AlertsSection />', () => {
   describe('canary warning', () => {
     afterEach(() => {
       cleanup();

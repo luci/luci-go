@@ -12,27 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, createContext, useContext, useMemo } from 'react';
+import { ReactNode, createContext, useContext } from 'react';
 
-import { Build as JsonBuild } from '@/common/services/buildbucket';
-import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import { OutputBuild } from '@/build/types';
 
 // Use `undefined` to denote missing context provider.
 // `null` means there's no build.
-const BuildCtx = createContext<Build | null | undefined>(undefined);
+const BuildCtx = createContext<OutputBuild | null | undefined>(undefined);
 
 export interface BuildProviderProps {
-  readonly build: JsonBuild | null;
+  readonly build: OutputBuild | null;
   readonly children: ReactNode;
 }
 
 export function BuildContextProvider({ build, children }: BuildProviderProps) {
-  // Convert to code generated bindings so new build page components can just
-  // use the new bindings. We won't need to do the conversion once everything
-  // is migrated to react query and the new bindings.
-  // Add useMemo for now to achieve referential stability.
-  const value = useMemo(() => build && Build.fromJSON(build), [build]);
-  return <BuildCtx.Provider value={value}>{children}</BuildCtx.Provider>;
+  return <BuildCtx.Provider value={build}>{children}</BuildCtx.Provider>;
 }
 
 export function useBuild() {

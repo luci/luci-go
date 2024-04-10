@@ -15,9 +15,10 @@
 import { css } from '@emotion/react';
 import { Box, LinearProgress, Link } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
+import { OutputBuild } from '@/build/types';
 import grayFavicon from '@/common/assets/favicons/gray-32.png';
 import greenFavicon from '@/common/assets/favicons/green-32.png';
 import miloFavicon from '@/common/assets/favicons/milo-32.png';
@@ -40,6 +41,7 @@ import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { getBuilderURLPath, getProjectURLPath } from '@/common/tools/url_utils';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 
 import { CountIndicator } from '../../../test_verdict/legacy/test_results_tab/count_indicator';
 
@@ -97,8 +99,17 @@ export const BuildPage = observer(() => {
     document.getElementById('favicon')?.setAttribute('href', faviconUrl);
   }, [faviconUrl]);
 
+  // Convert to code generated bindings so new build page components can just
+  // use the new bindings. We won't need to do the conversion once everything
+  // is migrated to react query and the new bindings.
+  // Add useMemo for now to achieve referential stability.
+  const outputBuild = useMemo(
+    () => (build?.data ? (Build.fromJSON(build.data) as OutputBuild) : null),
+    [build?.data],
+  );
+
   return (
-    <BuildContextProvider build={store.buildPage.build?.data || null}>
+    <BuildContextProvider build={outputBuild}>
       <InvocationProvider value={store.buildPage.invocation}>
         <BuildLitEnvProvider>
           <PageMeta
