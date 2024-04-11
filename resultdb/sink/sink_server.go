@@ -178,7 +178,6 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		}
 
 		for id, a := range tr.GetArtifacts() {
-			updateArtifactContentType(a)
 			n := pbutil.TestResultArtifactName(s.cfg.invocationID, tr.TestId, tr.ResultId, id)
 			t, err := newUploadTask(n, a, tr.Status)
 
@@ -223,7 +222,6 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*emptypb.Empty, error) {
 	uts := make([]*uploadTask, 0, len(in.Artifacts))
 	for id, a := range in.Artifacts {
-		updateArtifactContentType(a)
 		if err := validateArtifact(a); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
 		}
@@ -247,19 +245,4 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 	s.ac.schedule(uts...)
 
 	return &emptypb.Empty{}, nil
-}
-
-func updateArtifactContentType(a *sinkpb.Artifact) {
-	if a.GetFilePath() == "" || a.GetContentType() != "" {
-		return
-	}
-
-	switch path.Ext(a.GetFilePath()) {
-	case ".txt":
-		a.ContentType = "text/plain"
-	case ".html":
-		a.ContentType = "text/html"
-	case ".png":
-		a.ContentType = "image/png"
-	}
 }

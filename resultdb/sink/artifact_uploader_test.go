@@ -97,19 +97,36 @@ func TestArtifactUploader(t *testing.T) {
 		})
 
 		Convey("Upload w/ contents", func() {
-			art := testArtifactWithContents([]byte(content))
-			art.ContentType = contentType
-			ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
-			So(err, ShouldBeNil)
-			So(uploader.StreamUpload(ctx, ut, token), ShouldBeNil)
+			tests := []struct {
+				contentType         string
+				expectedContentType string
+			}{{
+				contentType:         contentType,
+				expectedContentType: contentType,
+			},
+				{
+					contentType:         "",
+					expectedContentType: "text/plain",
+				},
+			}
+			for _, tc := range tests {
 
-			// validate the request
-			sent := <-reqCh
-			So(sent.URL.String(), ShouldEqual, fmt.Sprintf("https://example.org/%s", name))
-			So(sent.ContentLength, ShouldEqual, len(content))
-			So(sent.Header.Get("Content-Hash"), ShouldEqual, hash)
-			So(sent.Header.Get("Content-Type"), ShouldEqual, contentType)
-			So(sent.Header.Get("Update-Token"), ShouldEqual, token)
+				Convey(fmt.Sprintf("With artifact content type: %s should upload with content type: %s", tc.contentType, tc.expectedContentType), func() {
+					art := testArtifactWithContents([]byte(content))
+					art.ContentType = tc.contentType
+					ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
+					So(err, ShouldBeNil)
+					So(uploader.StreamUpload(ctx, ut, token), ShouldBeNil)
+
+					// validate the request
+					sent := <-reqCh
+					So(sent.URL.String(), ShouldEqual, fmt.Sprintf("https://example.org/%s", name))
+					So(sent.ContentLength, ShouldEqual, len(content))
+					So(sent.Header.Get("Content-Hash"), ShouldEqual, hash)
+					So(sent.Header.Get("Content-Type"), ShouldEqual, tc.expectedContentType)
+					So(sent.Header.Get("Update-Token"), ShouldEqual, token)
+				})
+			}
 		})
 
 		Convey("Upload w/ gcs not supported by stream upload", func() {

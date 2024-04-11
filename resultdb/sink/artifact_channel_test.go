@@ -199,6 +199,13 @@ func TestUploadTask(t *testing.T) {
 		ut, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
 		So(err, ShouldBeNil)
 
+		Convey("Updates the content type when it is missing", func() {
+			fArt.ContentType = ""
+			req, err := ut.CreateRequest()
+			So(err, ShouldBeNil)
+			So(req.Artifact.ContentType, ShouldEqual, "text/plain")
+		})
+
 		Convey("works", func() {
 			req, err := ut.CreateRequest()
 			So(err, ShouldBeNil)

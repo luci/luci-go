@@ -17,6 +17,8 @@ package sink
 import (
 	"context"
 	"fmt"
+	"mime"
+	"net/http"
 	"os"
 	"strconv"
 	"sync"
@@ -109,6 +111,9 @@ func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 			return nil, err
 		}
 	}
+
+	// Update the content type if it is missing
+	req.Artifact.ContentType = artifactContentType(req.Artifact.ContentType, req.Artifact.Contents)
 
 	// Perform size check only for non gcs artifact.
 	if req.Artifact.GcsUri == "" {
@@ -250,4 +255,20 @@ func (c *artifactChannel) schedule(tasks ...*uploadTask) {
 			c.batchChannel.C <- task
 		}
 	}
+}
+
+// artifactContentType gets the MIME media type by looking at the content.
+// It considers at most the first 512 bytes of content.
+// If the contentType is already present, it returns that instead.
+func artifactContentType(contentType string, contents []byte) string {
+	if len(contentType) != 0 || len(contents) == 0 {
+		return contentType
+	}
+
+	mediaType, _, err := mime.ParseMediaType(http.DetectContentType(contents))
+	if err != nil {
+		return ""
+	}
+
+	return mediaType
 }

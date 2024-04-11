@@ -113,6 +113,19 @@ func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 		return err
 	}
 	req.Header.Add("Content-Hash", hash)
+
+	// Update the artifact content type if it is missing
+	// Read the first 512 bytes since that is what the library uses to
+	// determine the type.
+	contents := make([]byte, 512)
+	bytesRead, err := body.Read(contents)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return err
+	}
+	if _, err := body.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+	t.art.ContentType = artifactContentType(t.art.ContentType, contents[:bytesRead])
 	if t.art.ContentType != "" {
 		req.Header.Add("Content-Type", t.art.ContentType)
 	}
