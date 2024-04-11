@@ -29,13 +29,15 @@ import (
 )
 
 func TestMembership(t *testing.T) {
-	t.Parallel()
+	// TODO(crbug.com/40287772): remove and uncomment
+	linkedAccountAllowedProjects.Add("bar")
+	defer linkedAccountAllowedProjects.Del("bar")
+	// t.Parallel()
 
 	Convey("Membership", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
-		linkedAccountAllowedProjects.Add("bar")
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
