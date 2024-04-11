@@ -44,6 +44,8 @@ import {
 import { provideInvId, provideProject, provideTestTabUrl } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
+jest.mock('@/common/components/result_entry', () => ({}));
+
 const clusteringVersion = {
   algorithmsVersion: '1',
   rulesVersion: '1',
@@ -117,7 +119,7 @@ class TestVariantEntryTestContextElement extends LitElement {
   }
 }
 
-describe('TestVariantEntry', () => {
+describe('<TestVariantEntry />', () => {
   let store: StoreInstance;
   let logErrorMock: jest.SpyInstance;
 
