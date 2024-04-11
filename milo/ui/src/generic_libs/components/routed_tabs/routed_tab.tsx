@@ -43,17 +43,27 @@ export interface RoutedTabProps
  */
 export function RoutedTab({
   value,
+  to,
   hideWhenInactive = false,
   ...props
 }: RoutedTabProps) {
   const activeTabId = useActiveTabId();
   const shouldHide = hideWhenInactive && value !== activeTabId;
 
-  // Do not render anything when the tab is hidden.
-  // Using `display: none` may cause errors if the tab has tooltip in the label.
-  if (shouldHide) {
-    return <></>;
-  }
-
-  return <Tab {...props} value={value} component={Link} />;
+  return (
+    <Tab
+      // Do not inject other props when the tab is hidden because we don't want
+      // to trigger the start up sequence of any injected custom components when
+      // the tab is not visible on screen. Most notably, when there's a MUI
+      // tooltip, it will log an error when its child is hidden.
+      {...(shouldHide ? {} : props)}
+      value={value}
+      to={to}
+      component={Link}
+      // Still render the tab to DoM tree when hidden. Otherwise <Tabs /> will
+      // complain that there's no matching tab when user navigates to a hidden
+      // tab via a URL because children is updated after the parent.
+      sx={{ display: shouldHide ? 'none' : '' }}
+    />
+  );
 }
