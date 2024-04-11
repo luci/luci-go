@@ -90,12 +90,13 @@ const getCurrentGroupInURL = () => {
 
 const setCurrentGroupInURL = (groupName) => {
   if (getCurrentGroupInURL() != groupName) {
-    window.history.pushState({'group': groupName}, null, GROUP_ROOT_URL + groupName);
+    window.history.pushState({ 'group': groupName }, null,
+      common.getGroupPageURL(groupName));
   }
 }
 
 const onCurrentGroupInURLChange = (cb) => {
-  window.onpopstate = function(event) {
+  window.onpopstate = function (event) {
     let s = event.state;
     if (s && s.hasOwnProperty('group')) {
       cb(s.group);
@@ -766,7 +767,7 @@ window.onload = () => {
     onCurrentGroupInURLChange(() => {
       jumpToCurrentGroup(false);
     });
-  }, function(error) {
+  }, function (error) {
     // TODO: replace this with an error modal.
     console.log('error refetching groups:', error.text);
   });

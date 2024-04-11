@@ -2,28 +2,99 @@
 
 {{define "content"}}
 
+<style>
+  .group-results a {
+    text-decoration: none;
+  }
+
+  .group-results a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+
 <script type="text/javascript" src="/static/js/lookup.js"></script>
 
-<!-- Fix margins on this container -->
 <div class="container px-0 py-2" id="content-box">
-    <div class="row mb-2">
-      <form class="d-flex">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-        <button class="btn btn-outline-success" type="submit">Search</button>
-      </form>
+
+  <!-- Search bar. -->
+  <div id="search-bar" class="row my-2">
+    <div class="input-group">
+      <input class="form-control" type="search" aria-label="Search" placeholder="An email or group name" disabled>
+      <button type="button" class="btn btn-outline-secondary" disabled>
+        <i class="bi bi-search" style="font-size: 16px; color: #333"></i>
+      </button>
     </div>
-    <div class="row">
-      <hr/>
-      <p>
-        The configuration is distributed by
-        <a target="_blank" href="https://config.luci.app">
-          luci-config
-        </a>
-          . Using revision
-        <a target="_blank" href="#" style="font-family: monospace">
-          1234
-        </a>.
-      </p>
-    </div>
+  </div>
+
+  <!-- Spinner to be displayed while results are loading. -->
+  <div class="d-flex justify-content-center">
+    <div id="loading-box" class="spinner-border text-secondary my-5"></div>
+  </div>
+
+  <!-- Placeholder for lookup results. -->
+  <div id="all-results"></div>
 </div>
+
+
+<template id="all-results-template">
+  <div class="row my-2">
+    <div class="col-md-12">
+      <hr>
+    </div>
+  </div>
+
+  <!-- The principal being searched. -->
+  <div class="row">
+    <div class="col-md-12">
+      <h3 class="text-center">
+        <a id="principal-header"></a>
+      </h3>
+    </div>
+  </div>
+
+  <div class="row my-2">
+    <div class="col-md-12">
+      <hr>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Groups the principal is directly in. -->
+    <div class="col-md-6">
+      <h4>Directly included by</h4>
+      <div id="direct-groups" class="group-results">
+        <div class="text-secondary">
+          <p><i>None</i></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Groups the principal is indirectly in. -->
+    <div class="col-md-6">
+      <h4>Indirectly included by</h4>
+      <div id="indirect-groups" class="group-results">
+        <div class="text-secondary">
+          <p><i>None</i></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+
+<template id="direct-result-template">
+  <div>
+    <a></a>
+  </div>
+</template>
+
+
+<template id="indirect-result-template">
+  <div>
+    <a></a>
+    <!-- TODO: add a tooltip template for inclusion path details -->
+  </div>
+</template>
+
 {{end}}

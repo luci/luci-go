@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var api = (function() {
+var api = (function () {
   'use strict';
 
   var exports = {};
@@ -47,7 +47,7 @@ var api = (function() {
         return key;
       }
     }
-    return 'CODE_'+code;
+    return 'CODE_' + code;
   };
 
   // CallError is thrown by `call` on unsuccessful responses.
@@ -138,37 +138,42 @@ var api = (function() {
   //// API calls.
 
   // Get all groups.
-  exports.groups = function() {
+  exports.groups = function () {
     return call('auth.service.Groups', 'ListGroups');
   };
 
   // Get individual group.
-  exports.groupRead = function(request) {
-    return call('auth.service.Groups', 'GetGroup', {'name': request});
+  exports.groupRead = function (request) {
+    return call('auth.service.Groups', 'GetGroup', { 'name': request });
   };
 
   // Delete individual group.
-  exports.groupDelete = function(name, etag) {
-    return call('auth.service.Groups', 'DeleteGroup', {'name': name, 'etag': etag});
+  exports.groupDelete = function (name, etag) {
+    return call('auth.service.Groups', 'DeleteGroup', { 'name': name, 'etag': etag });
   };
 
   // Create a group.
-  exports.groupCreate = function(authGroup) {
-    return call('auth.service.Groups', 'CreateGroup', {'group': authGroup});
+  exports.groupCreate = function (authGroup) {
+    return call('auth.service.Groups', 'CreateGroup', { 'group': authGroup });
   }
 
   // Update a group.
-  exports.groupUpdate = function(authGroup) {
-    return call('auth.service.Groups', 'UpdateGroup', {'group': authGroup});
+  exports.groupUpdate = function (authGroup) {
+    return call('auth.service.Groups', 'UpdateGroup', { 'group': authGroup });
+  }
+
+  // Find the groups a principal (user or group) is in.
+  exports.groupLookup = function (principal) {
+    return call('auth.service.Groups', 'GetSubgraph', { 'principal': principal });
   }
 
   // Get all allowlists.
-  exports.ipAllowlists = function() {
+  exports.ipAllowlists = function () {
     return call('auth.service.Allowlists', 'ListAllowlists');
   };
 
   // Get all changeLogs.
-  exports.changeLogs = function(target, revision, pageSize, pageToken) {
+  exports.changeLogs = function (target, revision, pageSize, pageToken) {
     var q = {};
     if (target) {
       q['target'] = target;
@@ -193,19 +198,19 @@ var api = (function() {
   var xsrf_token = null;
 
   // Sets the XSRF token.
-  exports.setXSRFToken = function(token) {
+  exports.setXSRFToken = function (token) {
     xsrf_token = token;
   };
 
   // Enables the XSRF token refresh timer (firing once an hour).
-  exports.startXSRFTokenAutoupdate = function() {
+  exports.startXSRFTokenAutoupdate = function () {
     setInterval(() => {
       call('auth.internals.Internals', 'RefreshXSRFToken', {
         'xsrfToken': xsrf_token,
       }).then(resp => {
         xsrf_token = resp.xsrfToken;
       });
-    }, 3600*1000);
+    }, 3600 * 1000);
   };
 
   return exports;

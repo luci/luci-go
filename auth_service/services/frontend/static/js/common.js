@@ -12,6 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+const toComparableGroupName = (group) => {
+  // Note: callerCanModify is optional; it can be undefined.
+  const prefix = group.callerCanModify ? 'A' : 'B';
+  const name = group.name;
+  if (name.indexOf('/') != -1) {
+    return prefix + 'C' + name;
+  }
+  if (name.indexOf('-') != -1) {
+    return prefix + 'B' + name;
+  }
+  return prefix + 'A' + name;
+}
+
 var common = (function () {
   'use strict';
 
@@ -30,6 +43,19 @@ var common = (function () {
   // Returns URL to a change log page for a given revision.
   exports.getChangeLogRevisionURL = (rev) => {
     return '/change_log?auth_db_rev=' + encodeURIComponent('' + rev);
+  };
+
+  // Returns URL to the group page for a given group.
+  exports.getGroupPageURL = (name) => {
+    return '/groups/' + encodeURIComponent(name);
+  };
+
+  // Returns URL to a page with lookup results.
+  exports.getLookupURL = (principal) => {
+    if (principal) {
+      return '/lookup?p=' + encodeURIComponent(principal);
+    }
+    return '/lookup';
   };
 
   // Returns value of URL query parameter given its name.
@@ -65,6 +91,24 @@ var common = (function () {
   // Applies 'stripPrefix' to each item of a list.
   exports.stripPrefixFromItems = (prefix, items) => {
     return items.map((item) => exports.stripPrefix(prefix, item));
+  };
+
+  // Returns sorted list of groups.
+  //
+  // Groups without '-' or '/' come first, then groups with '-'. Groups that can
+  // be modified by a caller (based on 'caller_can_modify' field if available)
+  // always come before read-only groups.
+  exports.sortGroupsByName = (groups) => {
+    return groups.toSorted((a, b) => {
+      const aName = toComparableGroupName(a);
+      const bName = toComparableGroupName(b);
+      if (aName < bName) {
+        return -1;
+      } else if (aName > bName) {
+        return 1;
+      }
+      return 0;
+    });
   };
 
   return exports;
