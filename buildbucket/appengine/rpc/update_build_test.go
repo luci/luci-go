@@ -439,7 +439,7 @@ func TestValidateStep(t *testing.T) {
 
 			Convey("missing end_time", func() {
 				step.StartTime = ts
-				So(validateStep(step, nil, bStatus), ShouldErrLike, "end_time: must have both or neither end_time and a terminal status")
+				So(validateStep(step, nil, bStatus), ShouldErrLike, `end_time: must have both or neither end_time and a terminal status. Got end_time: "0001-01-01 00:00:00 +0000 UTC", status: "INFRA_FAILURE" for step "step1"`)
 			})
 
 			Convey("end_time is before start_time", func() {

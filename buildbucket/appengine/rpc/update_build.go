@@ -324,7 +324,7 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 	case step.Status < pb.Status_STARTED && !st.IsZero():
 		return errors.Reason("start_time: must not be specified for status %q", step.Status).Err()
 	case protoutil.IsEnded(step.Status) == et.IsZero():
-		return errors.Reason("end_time: must have both or neither end_time and a terminal status").Err()
+		return errors.Reason("end_time: must have both or neither end_time and a terminal status. Got end_time: %q, status: %q for step %q", et, step.Status, step.Name).Err()
 	case !et.IsZero() && et.Before(st):
 		return errors.Reason("end_time: is before the start_time: %q < %q", et, st).Err()
 	}
