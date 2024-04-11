@@ -48,6 +48,7 @@ import { routes } from '@/routes';
 import '@/common/styles/common_style.css';
 import '@/common/styles/color_classes.css';
 import '@/common/components/tooltip';
+import { PermCheckProvider } from './common/components/perm_check_provider';
 import { parseReleaseNotes } from './core/components/release_notes/common';
 
 const isNonTransientError = (error: unknown) =>
@@ -153,9 +154,11 @@ export function App({ initOpts }: AppProps) {
       element: (
         <SyncedSearchParamsProvider>
           <AuthStateInitializer>
-            <RecoverableErrorBoundary>
-              <BaseLayout />
-            </RecoverableErrorBoundary>
+            <PermCheckProvider>
+              <RecoverableErrorBoundary>
+                <BaseLayout />
+              </RecoverableErrorBoundary>
+            </PermCheckProvider>
           </AuthStateInitializer>
         </SyncedSearchParamsProvider>
       ),

@@ -18,6 +18,7 @@ import { observer } from 'mobx-react-lite';
 import { useEffect, useMemo } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
+import { PERM_BUILDS_GET } from '@/build/constants';
 import { OutputBuild } from '@/build/types';
 import grayFavicon from '@/common/assets/favicons/gray-32.png';
 import greenFavicon from '@/common/assets/favicons/green-32.png';
@@ -29,6 +30,7 @@ import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePageSpecificConfig } from '@/common/components/page_config_state_provider';
 import { PageMeta } from '@/common/components/page_meta/page_meta';
+import { usePermCheck } from '@/common/components/perm_check_provider';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { Timestamp } from '@/common/components/timestamp';
 import {
@@ -42,6 +44,10 @@ import { InvocationProvider } from '@/common/store/invocation_state';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { getBuilderURLPath, getProjectURLPath } from '@/common/tools/url_utils';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import {
+  PERM_TEST_RESULTS_LIST_LIMITED,
+  PERM_TEST_EXONERATIONS_LIST_LIMITED,
+} from '@/test_verdict/constants/perms';
 
 import { CountIndicator } from '../../../test_verdict/legacy/test_results_tab/count_indicator';
 
@@ -98,6 +104,14 @@ export const BuildPage = observer(() => {
   useEffect(() => {
     document.getElementById('favicon')?.setAttribute('href', faviconUrl);
   }, [faviconUrl]);
+
+  const realm = `${project}:${bucket}`;
+  const [canReadFullBuild] = usePermCheck(realm, PERM_BUILDS_GET);
+  const [canReadResults] = usePermCheck(realm, PERM_TEST_RESULTS_LIST_LIMITED);
+  const [canReadExonerations] = usePermCheck(
+    realm,
+    PERM_TEST_EXONERATIONS_LIST_LIMITED,
+  );
 
   // Convert to code generated bindings so new build page components can just
   // use the new bindings. We won't need to do the conversion once everything
@@ -181,7 +195,8 @@ export const BuildPage = observer(() => {
               to="test-results"
               hideWhenInactive={
                 !store.buildPage.hasInvocation ||
-                !store.buildPage.canReadTestVerdicts
+                !canReadResults ||
+                !canReadExonerations
               }
               icon={<CountIndicator />}
               iconPosition="end"
@@ -194,25 +209,25 @@ export const BuildPage = observer(() => {
               }
               value="infra"
               to="infra"
-              hideWhenInactive={!store.buildPage.canReadFullBuild}
+              hideWhenInactive={!canReadFullBuild}
             />
             <AppRoutedTab
               label="Related Builds"
               value="related-builds"
               to="related-builds"
-              hideWhenInactive={!store.buildPage.canReadFullBuild}
+              hideWhenInactive={!canReadFullBuild}
             />
             <AppRoutedTab
               label="Timeline"
               value="timeline"
               to="timeline"
-              hideWhenInactive={!store.buildPage.canReadFullBuild}
+              hideWhenInactive={!canReadFullBuild}
             />
             <AppRoutedTab
               label="Blamelist"
               value="blamelist"
               to="blamelist"
-              hideWhenInactive={!store.buildPage.canReadFullBuild}
+              hideWhenInactive={!canReadFullBuild}
             />
           </AppRoutedTabs>
         </BuildLitEnvProvider>

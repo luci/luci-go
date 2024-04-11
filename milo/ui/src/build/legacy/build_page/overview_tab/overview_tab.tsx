@@ -18,7 +18,7 @@ import { useState } from 'react';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { ActionButton, Dialog } from './actions_section';
+import { ActionButton, Dialog } from './action_button';
 import { AlertsSection } from './alerts_section';
 import { CancelBuildDialog } from './cancel_build_dialog';
 import { BuildDescription } from './description_section';

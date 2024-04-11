@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,9 +13,12 @@
 // limitations under the License.
 
 import { Button } from '@mui/material';
-import { observer } from 'mobx-react-lite';
 
-import { useStore } from '@/common/store';
+import { PERM_BUILDS_ADD, PERM_BUILDS_CANCEL } from '@/build/constants';
+import { usePermCheck } from '@/common/components/perm_check_provider';
+import { Trinary } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+import { useBuild } from '../../context';
 
 export const enum Dialog {
   None,
@@ -27,25 +30,30 @@ export interface ActionButtonProps {
   openDialog: (dialog: Dialog) => void;
 }
 
-export const ActionButton = observer(({ openDialog }: ActionButtonProps) => {
-  const store = useStore();
-  const build = store.buildPage.build;
+export function ActionButton({ openDialog }: ActionButtonProps) {
+  const build = useBuild();
+  const realm = build && `${build.builder.project}:${build.builder.bucket}`;
+  const [canRetry] = usePermCheck(realm, PERM_BUILDS_ADD);
+  const [canCancel] = usePermCheck(realm, PERM_BUILDS_CANCEL);
 
   if (!build) {
     return <></>;
   }
 
-  const canRetry = store.buildPage.canRetry;
-
   if (build.endTime) {
+    let tooltip = '';
+    if (build.retriable === Trinary.NO) {
+      tooltip = 'This build cannot be retried.';
+    } else if (!canRetry) {
+      tooltip = "You don't have the permission to retry this build.";
+    }
+
     return (
       // Use a span to display tooltip with button is disabled.
-      <span
-        title={canRetry ? '' : 'You have no permission to retry this build.'}
-      >
+      <span title={tooltip}>
         <Button
           onClick={() => openDialog(Dialog.RetryBuild)}
-          disabled={!canRetry}
+          disabled={!canRetry || build.retriable === Trinary.NO}
         >
           Retry Build
         </Button>
@@ -53,13 +61,11 @@ export const ActionButton = observer(({ openDialog }: ActionButtonProps) => {
     );
   }
 
-  const canCancel = build.cancelTime === null && store.buildPage.canCancel;
   let tooltip = '';
-  if (!canCancel) {
-    tooltip =
-      build.cancelTime === null
-        ? 'You have no permission to cancel this build.'
-        : 'The build is already scheduled to be canceled.';
+  if (build.cancelTime) {
+    tooltip = 'The build is already scheduled to be canceled.';
+  } else if (!canCancel) {
+    tooltip = "You don't have the permission to cancel this build.";
   }
 
   return (
@@ -67,10 +73,10 @@ export const ActionButton = observer(({ openDialog }: ActionButtonProps) => {
     <span title={tooltip}>
       <Button
         onClick={() => openDialog(Dialog.CancelBuild)}
-        disabled={!canCancel}
+        disabled={!canCancel || Boolean(build.cancelTime)}
       >
         Cancel Build
       </Button>
     </span>
   );
-});
+}

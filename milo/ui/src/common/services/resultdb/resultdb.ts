@@ -33,14 +33,6 @@ import { sha256 } from '@/generic_libs/tools/utils';
  */
 /* eslint-enable max-len */
 
-export const PERM_INVOCATIONS_GET = 'resultdb.invocations.get';
-export const PERM_TEST_EXONERATIONS_LIST = 'resultdb.testExonerations.list';
-export const PERM_TEST_RESULTS_LIST = 'resultdb.testResults.list';
-export const PERM_TEST_EXONERATIONS_LIST_LIMITED =
-  'resultdb.testExonerations.listLimited';
-export const PERM_TEST_RESULTS_LIST_LIMITED =
-  'resultdb.testResults.listLimited';
-
 export enum TestStatus {
   Unspecified = 'STATUS_UNSPECIFIED',
   Pass = 'PASS',

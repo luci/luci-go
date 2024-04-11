@@ -31,3 +31,8 @@ export const BUILD_STATUS_DISPLAY_MAP = Object.freeze({
   [BuildStatus.INFRA_FAILURE]: 'infra failed',
   [BuildStatus.CANCELED]: 'canceled',
 });
+
+export const PERM_BUILDS_CANCEL = 'buildbucket.builds.cancel';
+export const PERM_BUILDS_ADD = 'buildbucket.builds.add';
+export const PERM_BUILDS_GET = 'buildbucket.builds.get';
+export const PERM_BUILDS_GET_LIMITED = 'buildbucket.builds.getLimited';

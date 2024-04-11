@@ -31,11 +31,6 @@ import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
  */
 /* eslint-enable max-len */
 
-export const PERM_BUILDS_CANCEL = 'buildbucket.builds.cancel';
-export const PERM_BUILDS_ADD = 'buildbucket.builds.add';
-export const PERM_BUILDS_GET = 'buildbucket.builds.get';
-export const PERM_BUILDS_GET_LIMITED = 'buildbucket.builds.getLimited';
-
 export const TEST_PRESENTATION_KEY =
   '$recipe_engine/resultdb/test_presentation';
 export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';

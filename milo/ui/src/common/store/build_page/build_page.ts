@@ -34,21 +34,11 @@ import {
   BUILD_FIELD_MASK,
   BuilderID,
   GetBuildRequest,
-  PERM_BUILDS_ADD,
-  PERM_BUILDS_CANCEL,
-  PERM_BUILDS_GET,
-  PERM_BUILDS_GET_LIMITED,
   TEST_PRESENTATION_KEY,
-  Trinary,
 } from '@/common/services/buildbucket';
 import {
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
-  PERM_INVOCATIONS_GET,
-  PERM_TEST_EXONERATIONS_LIST,
-  PERM_TEST_EXONERATIONS_LIST_LIMITED,
-  PERM_TEST_RESULTS_LIST,
-  PERM_TEST_RESULTS_LIST_LIMITED,
 } from '@/common/services/resultdb';
 import { BuildState } from '@/common/store/build_state';
 import { InvocationState } from '@/common/store/invocation_state';
@@ -235,60 +225,9 @@ export const BuildPage = types
       }
     });
 
-    const permittedActions = keepAliveComputed(self, () => {
-      if (!self.services?.milo || !self.build?.data.builder) {
-        return null;
-      }
-
-      // Establish a dependency on the timestamp.
-      self.refreshTime?.value;
-
-      return fromPromise(
-        self.services.milo.batchCheckPermissions({
-          realm: `${self.build.data.builder.project}:${self.build.data.builder.bucket}`,
-          permissions: [
-            PERM_BUILDS_CANCEL,
-            PERM_BUILDS_ADD,
-            PERM_BUILDS_GET,
-            PERM_BUILDS_GET_LIMITED,
-            PERM_INVOCATIONS_GET,
-            PERM_TEST_EXONERATIONS_LIST,
-            PERM_TEST_RESULTS_LIST,
-            PERM_TEST_EXONERATIONS_LIST_LIMITED,
-            PERM_TEST_RESULTS_LIST_LIMITED,
-          ],
-        }),
-      );
-    });
-
     return {
       get invocationId() {
         return unwrapObservable(invocationId.get() || NEVER_OBSERVABLE, null);
-      },
-      get _permittedActions(): { readonly [key: string]: boolean | undefined } {
-        const permittedActionRes = unwrapObservable(
-          permittedActions.get() || NEVER_OBSERVABLE,
-          null,
-        );
-        return permittedActionRes?.results || {};
-      },
-      get canRetry() {
-        return Boolean(
-          self.build?.data.retriable !== Trinary.No &&
-            this._permittedActions[PERM_BUILDS_ADD],
-        );
-      },
-      get canCancel() {
-        return this._permittedActions[PERM_BUILDS_CANCEL] || false;
-      },
-      get canReadFullBuild() {
-        return this._permittedActions[PERM_BUILDS_GET] || false;
-      },
-      get canReadTestVerdicts() {
-        return (
-          this._permittedActions[PERM_TEST_EXONERATIONS_LIST_LIMITED] &&
-          this._permittedActions[PERM_TEST_RESULTS_LIST_LIMITED]
-        );
       },
       get gitilesCommitRepo() {
         if (!self.build?.associatedGitilesCommit) {

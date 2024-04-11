@@ -21,6 +21,7 @@ import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
+import { PermCheckProvider } from '@/common/components/perm_check_provider';
 import { UiPage } from '@/common/constants/view';
 import { theme } from '@/common/themes/base';
 import { ReleaseNotesProvider } from '@/core/components/release_notes';
@@ -102,18 +103,20 @@ export function FakeContextProvider({
       <LocalizationProvider dateAdapter={AdapterLuxon}>
         <FakeAuthStateProvider>
           <QueryClientProvider client={client}>
-            <PageMetaProvider
-              initPage={pageMeta?.selectedPage}
-              initProject={pageMeta?.project}
-            >
-              <ReleaseNotesProvider
-                initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
+            <PermCheckProvider>
+              <PageMetaProvider
+                initPage={pageMeta?.selectedPage}
+                initProject={pageMeta?.project}
               >
-                <PageConfigStateProvider>
-                  <RouterProvider router={router} />
-                </PageConfigStateProvider>
-              </ReleaseNotesProvider>
-            </PageMetaProvider>
+                <ReleaseNotesProvider
+                  initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
+                >
+                  <PageConfigStateProvider>
+                    <RouterProvider router={router} />
+                  </PageConfigStateProvider>
+                </ReleaseNotesProvider>
+              </PageMetaProvider>
+            </PermCheckProvider>
           </QueryClientProvider>
         </FakeAuthStateProvider>
       </LocalizationProvider>

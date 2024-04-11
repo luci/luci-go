@@ -125,15 +125,11 @@ describe('BuildPage', () => {
         store,
         autorun(() => {
           store.buildPage.build;
-          store.buildPage.canRetry;
         }),
       );
       await jest.runAllTimersAsync();
 
       expect(getBuildStub.mock.calls[0][0].builder).toBeUndefined();
-      expect(batchCheckPermissionsStub.mock.calls[0][0].realm).toStrictEqual(
-        `${builderId.project}:${builderId.bucket}`,
-      );
     });
   });
 });

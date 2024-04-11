@@ -13,9 +13,39 @@
 // limitations under the License.
 
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
-import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import {
+  Status,
+  Trinary,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { OutputBuild } from '../types';
+
+export const failedBuild = Build.fromPartial({
+  id: '1234',
+  status: Status.FAILURE,
+  builder: {
+    project: 'proj',
+    bucket: 'bucket',
+    builder: 'builder',
+  },
+  createTime: '2020-12-12T01:01:01',
+  startTime: '2020-12-12T02:01:01',
+  endTime: '2020-12-12T03:01:01',
+}) as OutputBuild;
+
+export const unretriableBuild = Build.fromPartial({
+  id: '1234',
+  status: Status.FAILURE,
+  builder: {
+    project: 'proj',
+    bucket: 'bucket',
+    builder: 'builder',
+  },
+  retriable: Trinary.NO,
+  createTime: '2020-12-12T01:01:01',
+  startTime: '2020-12-12T02:01:01',
+  endTime: '2020-12-12T03:01:01',
+}) as OutputBuild;
 
 export const canaryFailedBuild = Build.fromPartial({
   id: '1234',
@@ -43,6 +73,18 @@ export const canarySucceededBuild = Build.fromPartial({
   input: {
     experiments: Object.freeze(['luci.buildbucket.canary_software']),
   },
+}) as OutputBuild;
+
+export const runningBuild = Build.fromPartial({
+  id: '1234',
+  status: Status.STARTED,
+  builder: {
+    project: 'proj',
+    bucket: 'bucket',
+    builder: 'builder',
+  },
+  createTime: '2020-12-12T01:01:01',
+  startTime: '2020-12-12T02:01:01',
 }) as OutputBuild;
 
 export const scheduledToBeCanceledBuild = Build.fromPartial({
