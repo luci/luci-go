@@ -19,9 +19,12 @@
  * 3. logging can easily be disabled/intercepted in tests using `jest.spyOn`
  *    without affecting logs from 3rd party libraries.
  */
+// Do not use `console.warn.bind(console)` otherwise mocking `console.warn` will
+// not have an effect on `logging.warn`. The same applies to `console.error`.
 export const logging = {
   // eslint-disable-next-line no-console
-  warn: console.warn.bind(console),
-  // eslint-disable-next-line no-console
-  error: console.error.bind(console),
+  warn: (...params: Parameters<typeof console.warn>) => console.warn(...params),
+  error: (...params: Parameters<typeof console.error>) =>
+    // eslint-disable-next-line no-console
+    console.error(...params),
 };
