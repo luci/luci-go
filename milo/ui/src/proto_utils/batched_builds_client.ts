@@ -28,6 +28,8 @@ import {
 
 import { Rpc } from './types';
 
+const MAX_BATCH_SIZE = 200;
+
 export interface BatchedBuildsClientImplOpts {
   readonly service?: string;
   /**
@@ -38,7 +40,8 @@ export interface BatchedBuildsClientImplOpts {
 
 /**
  * The same as `BuildsClientImpl` except that eligible RPC calls are batched
- * automatically.
+ * automatically. Only RPC calls made via the same client instance can be
+ * batched together.
  */
 export class BatchedBuildsClientImpl extends BuildsClientImpl {
   private readonly autoBatchedBatch: (
@@ -48,7 +51,7 @@ export class BatchedBuildsClientImpl extends BuildsClientImpl {
 
   constructor(rpc: Rpc, opts?: BatchedBuildsClientImplOpts) {
     super(rpc, opts);
-    const maxBatchSize = opts?.maxBatchSize || 200;
+    const maxBatchSize = opts?.maxBatchSize || MAX_BATCH_SIZE;
 
     this.autoBatchedBatch = batched({
       // eslint-disable-next-line new-cap

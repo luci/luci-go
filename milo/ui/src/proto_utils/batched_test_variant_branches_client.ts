@@ -21,6 +21,8 @@ import {
 
 import { Rpc } from './types';
 
+const MAX_BATCH_SIZE = 100;
+
 export interface BatchedTestVariantBranchesClientImplOpts {
   readonly service?: string;
   /**
@@ -31,7 +33,8 @@ export interface BatchedTestVariantBranchesClientImplOpts {
 
 /**
  * The same as `TestVariantBranchesClientImpl` except that eligible RPC calls
- * are batched automatically.
+ * are batched automatically. Only RPC calls made via the same client instance
+ * can be batched together.
  */
 export class BatchedTestVariantBranchesClientImpl extends TestVariantBranchesClientImpl {
   private readonly autoBatchedBatchGet: (
@@ -41,7 +44,7 @@ export class BatchedTestVariantBranchesClientImpl extends TestVariantBranchesCli
 
   constructor(rpc: Rpc, opts?: BatchedTestVariantBranchesClientImplOpts) {
     super(rpc, opts);
-    const maxBatchGetSize = opts?.maxBatchGetSize || 100;
+    const maxBatchGetSize = opts?.maxBatchGetSize || MAX_BATCH_SIZE;
 
     this.autoBatchedBatchGet = batched({
       // eslint-disable-next-line new-cap

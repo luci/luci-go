@@ -21,6 +21,8 @@ import {
 
 import { Rpc } from './types';
 
+const MAX_BATCH_SIZE = 100;
+
 export interface BatchedMiloInternalClientImplOpts {
   readonly service?: string;
   /**
@@ -31,7 +33,8 @@ export interface BatchedMiloInternalClientImplOpts {
 
 /**
  * The same as `MiloInternalClientImpl` except that eligible RPC calls are
- * batched automatically.
+ * batched automatically. Only RPC calls made via the same client instance can
+ * be batched together.
  */
 export class BatchedMiloInternalClientImpl extends MiloInternalClientImpl {
   private readonly autoBatchedBatchCheckPermissions: (
@@ -41,7 +44,7 @@ export class BatchedMiloInternalClientImpl extends MiloInternalClientImpl {
 
   constructor(rpc: Rpc, opts?: BatchedMiloInternalClientImplOpts) {
     super(rpc, opts);
-    const maxBatchSize = opts?.maxBatchSize || 100;
+    const maxBatchSize = opts?.maxBatchSize || MAX_BATCH_SIZE;
 
     this.autoBatchedBatchCheckPermissions = batched({
       fn: (req: BatchCheckPermissionsRequest) =>

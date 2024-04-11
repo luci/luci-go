@@ -29,6 +29,8 @@ export interface PermCheckProviderProps {
 }
 
 export function PermCheckProvider({ children }: PermCheckProviderProps) {
+  // Use a single client instance so all requests in the same rendering cycle
+  // can be batched together.
   const client = usePrpcServiceClient({
     host: '',
     insecure: location.protocol === 'http:',

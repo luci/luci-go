@@ -35,6 +35,8 @@ export function BuilderTableContextProvider({
   maxBatchSize,
   children,
 }: BuilderTableContextProviderProps) {
+  // Use a single client instance so all requests in the same rendering cycle
+  // can be batched together.
   const buildsClient = usePrpcServiceClient(
     {
       host: SETTINGS.buildbucket.host,
