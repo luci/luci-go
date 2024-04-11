@@ -305,7 +305,7 @@ func TestReportTestResults(t *testing.T) {
 			Convey("properties too large", func() {
 				tr.Properties = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeProperties)),
+						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeTestResultProperties)),
 					},
 				}
 

@@ -66,7 +66,7 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 			}
 
 		case "properties":
-			if err := pbutil.ValidateProperties(req.Invocation.Properties); err != nil {
+			if err := pbutil.ValidateInvocationProperties(req.Invocation.Properties); err != nil {
 				return errors.Annotate(err, "invocation: properties").Err()
 			}
 

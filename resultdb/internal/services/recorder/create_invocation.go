@@ -143,7 +143,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
-	if err := pbutil.ValidateProperties(req.Invocation.GetProperties()); err != nil {
+	if err := pbutil.ValidateInvocationProperties(req.Invocation.GetProperties()); err != nil {
 		return errors.Annotate(err, "properties").Err()
 	}
 

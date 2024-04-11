@@ -33,7 +33,21 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-const MaxSizeProperties = 4 * 1024
+const MaxSizeInvocationProperties = 16 * 1024 // 16 KB
+
+const MaxSizeTestMetadataProperties = 4 * 1024 // 4 KB
+
+// MaxSizeTestResultProperties is the maximum size of the test result
+// properties.
+//
+// CAVEAT: before increasing the size limit, verify if it will break downstream
+// services. Notably the test verdict exports. BigQuery has a 10 MB AppendRows
+// request size limit[1]. Each verdict can have a maximum of 100 test results[2]
+// as of 2024-04-11.
+//
+// [1]: https://cloud.google.com/bigquery/quotas#write-api-limits
+// [2]: https://chromium.googlesource.com/infra/luci/luci-go/+/e83766e441050596aaaa22dbdaad4228bacf0929/resultdb/internal/testvariants/query.go#49
+const MaxSizeTestResultProperties = 4 * 1024 // 4 KB
 
 const MaxInstructionsSize = 1024 * 1024 // 1 MB
 
@@ -148,12 +162,27 @@ func MustMarshal(m protoreflect.ProtoMessage) []byte {
 	return msg
 }
 
-// ValidateProperties returns a non-nil error if properties is invalid.
-func ValidateProperties(properties *structpb.Struct) error {
-	if proto.Size(properties) > MaxSizeProperties {
-		return errors.Reason("exceeds the maximum size of %d bytes", MaxSizeProperties).Err()
+// validateProperties returns a non-nil error if properties is invalid.
+func validateProperties(properties *structpb.Struct, maxSize int) error {
+	if proto.Size(properties) > maxSize {
+		return errors.Reason("exceeds the maximum size of %d bytes", maxSize).Err()
 	}
 	return nil
+}
+
+// ValidateInvocationProperties returns a non-nil error if properties is invalid.
+func ValidateInvocationProperties(properties *structpb.Struct) error {
+	return validateProperties(properties, MaxSizeInvocationProperties)
+}
+
+// ValidateTestResultProperties returns a non-nil error if properties is invalid.
+func ValidateTestResultProperties(properties *structpb.Struct) error {
+	return validateProperties(properties, MaxSizeTestResultProperties)
+}
+
+// ValidateTestMetadataProperties returns a non-nil error if properties is invalid.
+func ValidateTestMetadataProperties(properties *structpb.Struct) error {
+	return validateProperties(properties, MaxSizeTestMetadataProperties)
 }
 
 // ValidateGitilesCommit validates a gitiles commit.

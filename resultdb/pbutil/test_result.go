@@ -162,7 +162,7 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
 	case msg.TestMetadata != nil && ec.isErr(ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
 	case msg.FailureReason != nil && ec.isErr(ValidateFailureReason(msg.FailureReason), "failure_reason"):
-	case msg.Properties != nil && ec.isErr(ValidateProperties(msg.Properties), "properties"):
+	case msg.Properties != nil && ec.isErr(ValidateTestResultProperties(msg.Properties), "properties"):
 	case ec.isErr(ValidateTestResultSkipReason(msg.Status, msg.SkipReason), "skip_reason"):
 	}
 	return err
@@ -200,7 +200,7 @@ func ValidateTestMetadata(tmd *pb.TestMetadata) error {
 		if tmd.PropertiesSchema == "" {
 			return errors.New("properties_schema must be specified with non-empty properties")
 		}
-		if err := ValidateProperties(tmd.Properties); err != nil {
+		if err := ValidateTestMetadataProperties(tmd.Properties); err != nil {
 			return errors.Annotate(err, "properties").Err()
 		}
 	}

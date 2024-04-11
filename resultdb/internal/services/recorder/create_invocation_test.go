@@ -352,7 +352,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		Convey(`invalid properties`, func() {
 			request.Invocation.Properties = &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"a": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeProperties)),
+					"a": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationProperties)),
 				},
 			}
 			err := validateCreateInvocationRequest(request, now, addedInvs)

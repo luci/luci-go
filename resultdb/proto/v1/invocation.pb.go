@@ -183,7 +183,7 @@ type Invocation struct {
 	// Arbitrary JSON object that contains structured, domain-specific properties
 	// of the invocation.
 	//
-	// The serialized size must be <= 4096 bytes.
+	// The serialized size must be <= 16 KB.
 	Properties *structpb.Struct `protobuf:"bytes,14,opt,name=properties,proto3" json:"properties,omitempty"`
 	// The code sources which were tested by this invocation.
 	// This is used to index test results for test history, and for

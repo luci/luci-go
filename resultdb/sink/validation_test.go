@@ -72,7 +72,7 @@ func TestValidateTestResult(t *testing.T) {
 			Convey(`Large Properties`, func() {
 				tr.Properties = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeProperties)),
+						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeTestResultProperties)),
 					},
 				}
 				err := validateTestResult(testclock.TestRecentTimeUTC, tr)

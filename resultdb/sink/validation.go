@@ -40,7 +40,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 	case ec.isErr(validateArtifacts(msg.Artifacts), "artifacts"):
 	case msg.TestMetadata != nil && ec.isErr(pbutil.ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
 	case msg.FailureReason != nil && ec.isErr(pbutil.ValidateFailureReason(msg.FailureReason), "failure_reason"):
-	case msg.Properties != nil && ec.isErr(pbutil.ValidateProperties(msg.Properties), "properties"):
+	case msg.Properties != nil && ec.isErr(pbutil.ValidateTestResultProperties(msg.Properties), "properties"):
 	}
 	return err
 }

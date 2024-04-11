@@ -448,7 +448,7 @@ func TestValidateTestResult(t *testing.T) {
 					PropertiesSchema: "package.message",
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeProperties)),
+							"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeTestMetadataProperties)),
 						},
 					},
 				}
@@ -486,7 +486,7 @@ func TestValidateTestResult(t *testing.T) {
 		Convey("with too big properties", func() {
 			msg.Properties = &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeProperties)),
+					"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeTestResultProperties)),
 				},
 			}
 			So(validate(msg), ShouldErrLike, "properties: exceeds the maximum size")
