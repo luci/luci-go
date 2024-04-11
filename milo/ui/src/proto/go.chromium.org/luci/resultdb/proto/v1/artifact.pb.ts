@@ -2,6 +2,7 @@
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
+import { TestStatus, testStatusFromJSON, testStatusToJSON } from "./test_result.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
 
@@ -12,7 +13,7 @@ export const protobufPackage = "luci.resultdb.v1";
  * An invocation-level artifact might be related to tests, or it might not, for
  * example it may be used to store build step logs when streaming support is
  * added.
- * Next id: 9.
+ * Next id: 10.
  */
 export interface Artifact {
   /**
@@ -67,6 +68,15 @@ export interface Artifact {
   readonly contents: Uint8Array;
   /** The GCS URI of the artifact if it's stored in GCS.  If specified, `contents` must be empty. */
   readonly gcsUri: string;
+  /**
+   * Status of the test result that the artifact belongs to.
+   * This is only applicable for test-level artifacts, not invocation-level artifacts.
+   * We need this field because when an artifact is created (for example, with BatchCreateArtifact),
+   * the containing test result may or may not be created yet, as they
+   * are created in different channels from result sink.
+   * Having the test status here allows setting the correct status of artifact in BigQuery.
+   */
+  readonly testStatus: TestStatus;
 }
 
 function createBaseArtifact(): Artifact {
@@ -79,6 +89,7 @@ function createBaseArtifact(): Artifact {
     sizeBytes: "0",
     contents: new Uint8Array(0),
     gcsUri: "",
+    testStatus: 0,
   };
 }
 
@@ -107,6 +118,9 @@ export const Artifact = {
     }
     if (message.gcsUri !== "") {
       writer.uint32(66).string(message.gcsUri);
+    }
+    if (message.testStatus !== 0) {
+      writer.uint32(72).int32(message.testStatus);
     }
     return writer;
   },
@@ -174,6 +188,13 @@ export const Artifact = {
 
           message.gcsUri = reader.string();
           continue;
+        case 9:
+          if (tag !== 72) {
+            break;
+          }
+
+          message.testStatus = reader.int32() as any;
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -193,6 +214,7 @@ export const Artifact = {
       sizeBytes: isSet(object.sizeBytes) ? globalThis.String(object.sizeBytes) : "0",
       contents: isSet(object.contents) ? bytesFromBase64(object.contents) : new Uint8Array(0),
       gcsUri: isSet(object.gcsUri) ? globalThis.String(object.gcsUri) : "",
+      testStatus: isSet(object.testStatus) ? testStatusFromJSON(object.testStatus) : 0,
     };
   },
 
@@ -222,6 +244,9 @@ export const Artifact = {
     if (message.gcsUri !== "") {
       obj.gcsUri = message.gcsUri;
     }
+    if (message.testStatus !== 0) {
+      obj.testStatus = testStatusToJSON(message.testStatus);
+    }
     return obj;
   },
 
@@ -238,6 +263,7 @@ export const Artifact = {
     message.sizeBytes = object.sizeBytes ?? "0";
     message.contents = object.contents ?? new Uint8Array(0);
     message.gcsUri = object.gcsUri ?? "";
+    message.testStatus = object.testStatus ?? 0;
     return message;
   },
 };

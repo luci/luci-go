@@ -22,6 +22,8 @@ import {
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { ParsedTestVariantBranchName } from '@/test_verdict/types';
 
+import { RegressionDetailsDialog } from './regression_details_dialog';
+
 export interface RegressionDetailsProps {
   readonly testVariantBranch: ParsedTestVariantBranchName;
   readonly nominalStartPosition: string;
@@ -66,5 +68,12 @@ export function RegressionDetails({
 
   // TODO(b/321110247): Display all the test variant branches in a table with
   // all the associated changepoints.
-  return <>{JSON.stringify(data.changepoints, undefined, 2)}</>;
+  return (
+    <>
+      {JSON.stringify(data.changepoints, undefined, 2)}
+      {/* TODO: open the dialog when a changepoint is selected.
+      For now, always open dialog for the first changepoint in the group */}
+      <RegressionDetailsDialog changepoint={data.changepoints[0]} />
+    </>
+  );
 }

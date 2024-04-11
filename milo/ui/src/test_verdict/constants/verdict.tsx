@@ -32,14 +32,14 @@ export const VERDICT_STATUS_COLOR_MAP = Object.freeze({
 
 export const VERDICT_STATUS_ICON_MAP = Object.freeze({
   [TestVariantStatus.EXONERATED]: (
-    <RemoveCircle sx={{ color: '--exonerated-color' }} />
+    <RemoveCircle sx={{ color: 'var(--exonerated-color)' }} />
   ),
   [TestVariantStatus.EXPECTED]: (
     <CheckCircle sx={{ color: 'var(--success-color)' }} />
   ),
   [TestVariantStatus.FLAKY]: <Warning sx={{ color: 'var(--warning-color)' }} />,
   [TestVariantStatus.UNEXPECTED]: (
-    <Cancel sx={{ color: 'var(--failure-color))' }} />
+    <Cancel sx={{ color: 'var(--failure-color)' }} />
   ),
   [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: (
     <Report sx={{ color: 'var(--critical-failure-color)' }} />

@@ -352,10 +352,6 @@ export interface TestAnalysis {
   readonly endCommit:
     | GitilesCommit
     | undefined;
-  /** The start failure rate of the failures. */
-  readonly startFailureRate: number;
-  /** The end failure rate of the failures. */
-  readonly endFailureRate: number;
   /** Sample build bucket ID where the primary test failure failed. */
   readonly sampleBbid: string;
   /** Nthsection result. */
@@ -381,7 +377,13 @@ export interface TestFailure {
   /** Whether the test failure is a primary failure or not. */
   readonly isPrimary: boolean;
   /** Start hour of the test failure. */
-  readonly startHour: string | undefined;
+  readonly startHour:
+    | string
+    | undefined;
+  /** The unexpected test result rate at the start position of the changepoint. */
+  readonly startUnexpectedResultRate: number;
+  /** The unexpected test result rate at the end position of the changepoint. */
+  readonly endUnexpectedResultRate: number;
 }
 
 export interface TestNthSectionAnalysisResult {
@@ -1721,8 +1723,6 @@ function createBaseTestAnalysis(): TestAnalysis {
     testFailures: [],
     startCommit: undefined,
     endCommit: undefined,
-    startFailureRate: 0,
-    endFailureRate: 0,
     sampleBbid: "0",
     nthSectionResult: undefined,
   };
@@ -1762,12 +1762,6 @@ export const TestAnalysis = {
     }
     if (message.endCommit !== undefined) {
       GitilesCommit.encode(message.endCommit, writer.uint32(90).fork()).ldelim();
-    }
-    if (message.startFailureRate !== 0) {
-      writer.uint32(101).float(message.startFailureRate);
-    }
-    if (message.endFailureRate !== 0) {
-      writer.uint32(109).float(message.endFailureRate);
     }
     if (message.sampleBbid !== "0") {
       writer.uint32(112).int64(message.sampleBbid);
@@ -1862,20 +1856,6 @@ export const TestAnalysis = {
 
           message.endCommit = GitilesCommit.decode(reader, reader.uint32());
           continue;
-        case 12:
-          if (tag !== 101) {
-            break;
-          }
-
-          message.startFailureRate = reader.float();
-          continue;
-        case 13:
-          if (tag !== 109) {
-            break;
-          }
-
-          message.endFailureRate = reader.float();
-          continue;
         case 14:
           if (tag !== 112) {
             break;
@@ -1914,8 +1894,6 @@ export const TestAnalysis = {
         : [],
       startCommit: isSet(object.startCommit) ? GitilesCommit.fromJSON(object.startCommit) : undefined,
       endCommit: isSet(object.endCommit) ? GitilesCommit.fromJSON(object.endCommit) : undefined,
-      startFailureRate: isSet(object.startFailureRate) ? globalThis.Number(object.startFailureRate) : 0,
-      endFailureRate: isSet(object.endFailureRate) ? globalThis.Number(object.endFailureRate) : 0,
       sampleBbid: isSet(object.sampleBbid) ? globalThis.String(object.sampleBbid) : "0",
       nthSectionResult: isSet(object.nthSectionResult)
         ? TestNthSectionAnalysisResult.fromJSON(object.nthSectionResult)
@@ -1958,12 +1936,6 @@ export const TestAnalysis = {
     if (message.endCommit !== undefined) {
       obj.endCommit = GitilesCommit.toJSON(message.endCommit);
     }
-    if (message.startFailureRate !== 0) {
-      obj.startFailureRate = message.startFailureRate;
-    }
-    if (message.endFailureRate !== 0) {
-      obj.endFailureRate = message.endFailureRate;
-    }
     if (message.sampleBbid !== "0") {
       obj.sampleBbid = message.sampleBbid;
     }
@@ -1997,8 +1969,6 @@ export const TestAnalysis = {
     message.endCommit = (object.endCommit !== undefined && object.endCommit !== null)
       ? GitilesCommit.fromPartial(object.endCommit)
       : undefined;
-    message.startFailureRate = object.startFailureRate ?? 0;
-    message.endFailureRate = object.endFailureRate ?? 0;
     message.sampleBbid = object.sampleBbid ?? "0";
     message.nthSectionResult = (object.nthSectionResult !== undefined && object.nthSectionResult !== null)
       ? TestNthSectionAnalysisResult.fromPartial(object.nthSectionResult)
@@ -2016,6 +1986,8 @@ function createBaseTestFailure(): TestFailure {
     isDiverged: false,
     isPrimary: false,
     startHour: undefined,
+    startUnexpectedResultRate: 0,
+    endUnexpectedResultRate: 0,
   };
 }
 
@@ -2041,6 +2013,12 @@ export const TestFailure = {
     }
     if (message.startHour !== undefined) {
       Timestamp.encode(toTimestamp(message.startHour), writer.uint32(58).fork()).ldelim();
+    }
+    if (message.startUnexpectedResultRate !== 0) {
+      writer.uint32(69).float(message.startUnexpectedResultRate);
+    }
+    if (message.endUnexpectedResultRate !== 0) {
+      writer.uint32(77).float(message.endUnexpectedResultRate);
     }
     return writer;
   },
@@ -2101,6 +2079,20 @@ export const TestFailure = {
 
           message.startHour = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
+        case 8:
+          if (tag !== 69) {
+            break;
+          }
+
+          message.startUnexpectedResultRate = reader.float();
+          continue;
+        case 9:
+          if (tag !== 77) {
+            break;
+          }
+
+          message.endUnexpectedResultRate = reader.float();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2119,6 +2111,12 @@ export const TestFailure = {
       isDiverged: isSet(object.isDiverged) ? globalThis.Boolean(object.isDiverged) : false,
       isPrimary: isSet(object.isPrimary) ? globalThis.Boolean(object.isPrimary) : false,
       startHour: isSet(object.startHour) ? globalThis.String(object.startHour) : undefined,
+      startUnexpectedResultRate: isSet(object.startUnexpectedResultRate)
+        ? globalThis.Number(object.startUnexpectedResultRate)
+        : 0,
+      endUnexpectedResultRate: isSet(object.endUnexpectedResultRate)
+        ? globalThis.Number(object.endUnexpectedResultRate)
+        : 0,
     };
   },
 
@@ -2145,6 +2143,12 @@ export const TestFailure = {
     if (message.startHour !== undefined) {
       obj.startHour = message.startHour;
     }
+    if (message.startUnexpectedResultRate !== 0) {
+      obj.startUnexpectedResultRate = message.startUnexpectedResultRate;
+    }
+    if (message.endUnexpectedResultRate !== 0) {
+      obj.endUnexpectedResultRate = message.endUnexpectedResultRate;
+    }
     return obj;
   },
 
@@ -2162,6 +2166,8 @@ export const TestFailure = {
     message.isDiverged = object.isDiverged ?? false;
     message.isPrimary = object.isPrimary ?? false;
     message.startHour = object.startHour ?? undefined;
+    message.startUnexpectedResultRate = object.startUnexpectedResultRate ?? 0;
+    message.endUnexpectedResultRate = object.endUnexpectedResultRate ?? 0;
     return message;
   },
 };

@@ -330,7 +330,10 @@ export interface QuerySourcePositionsRequest {
   readonly variantHash: string;
   /** Hash of the source branch, as 16 lowercase hexadecimal characters. */
   readonly refHash: string;
-  /** The source position where to start listing from, inclusive. */
+  /**
+   * The source position where to start listing from, in descending order (newest commit to older commits).
+   * This start source position will be the largest source position in the response.
+   */
   readonly startSourcePosition: string;
   /**
    * The maximum number of commits to return.

@@ -14,10 +14,18 @@
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { ChangepointsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
+import { TestVariantBranchesClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
 export function useChangepointsClient() {
   return usePrpcServiceClient({
     host: SETTINGS.luciAnalysis.host,
     ClientImpl: ChangepointsClientImpl,
+  });
+}
+
+export function useTestVariantBranchesClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciAnalysis.host,
+    ClientImpl: TestVariantBranchesClientImpl,
   });
 }
