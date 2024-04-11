@@ -567,6 +567,14 @@ func TestCheckBuildForUpdate(t *testing.T) {
 				err = checkBuildForUpdate(updateMask(req), req, b)
 				So(err, ShouldBeNil)
 			})
+			Convey("with nothing to update", func() {
+				build.Proto.Status = pb.Status_SUCCESS
+				So(datastore.Put(ctx, build), ShouldBeNil)
+				b, err := common.GetBuild(ctx, 1)
+				So(err, ShouldBeNil)
+				err = checkBuildForUpdate(updateMask(req), req, b)
+				So(err, ShouldBeNil)
+			})
 		})
 
 		Convey("fails", func() {

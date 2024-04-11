@@ -395,6 +395,10 @@ func explicitlyIncludesOutputStatus(req *pb.UpdateBuildRequest) bool {
 }
 
 func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, build *model.Build) error {
+	if len(req.UpdateMask.GetPaths()) == 0 {
+		// Nothing to updte, maybe a heartbeat call?
+		return nil
+	}
 	if protoutil.IsEnded(build.Status) || protoutil.IsEnded(build.Proto.Output.GetStatus()) {
 		return appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended build")
 	}
