@@ -348,7 +348,7 @@ type TestResult struct {
 	// Arbitrary JSON object that contains structured, domain-specific properties
 	// of the test result.
 	//
-	// The serialized size must be <= 4096 bytes.
+	// The serialized size must be <= 8 KB.
 	Properties *structpb.Struct `protobuf:"bytes,15,opt,name=properties,proto3" json:"properties,omitempty"`
 	// Whether the test result has been masked so that it includes only metadata.
 	// The metadata fields for a TestResult are:
