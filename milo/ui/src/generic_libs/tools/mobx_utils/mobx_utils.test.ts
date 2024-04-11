@@ -23,8 +23,18 @@ import {
 import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
 
 import { deferred } from '@/generic_libs/tools/utils';
+import { silence } from '@/testing_tools/console_filter';
 
 import { aliveFlow, keepAliveComputed } from './mobx_utils';
+
+afterAll(() => {
+  // Silence warning from mobx. We will purposefully access dead computed values.
+  // The logs from mobx-state-tree happens after all the unit tests and hooks
+  // are run. So we cannot recover the mocked `console.warn`. But this should
+  // not matter as jest tests from different test files are isolated from each
+  // other.
+  silence('warn', (err) => `${err}`.includes('[mobx-state-tree]'));
+});
 
 describe('aliveFlow', () => {
   const TestStore = types
@@ -137,24 +147,23 @@ describe('keepAliveComputed', () => {
     }));
 
   let store: Instance<typeof TestStore>;
-  let computeSpy: jest.SpiedFunction<(v: number) => number>;
   beforeEach(() => {
     jest.useFakeTimers();
     store = TestStore.create({});
-    unprotect(store);
-    computeSpy = jest.spyOn(store, 'compute').mockImplementation((v) => v);
-    protect(store);
   });
 
   afterEach(() => {
     unprotect(store);
-    jest.restoreAllMocks();
     destroy(store);
     jest.useRealTimers();
   });
 
   test('e2e', async () => {
-    expect(computeSpy).toHaveBeenCalledTimes(0);
+    unprotect(store);
+    const computeSpy = jest
+      .spyOn(store, 'compute')
+      .mockImplementation((v) => v);
+    protect(store);
 
     // Access the computed value.
     expect(store.computedValue).toStrictEqual(0);

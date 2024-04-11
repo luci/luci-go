@@ -21,6 +21,9 @@ import {
 } from '@testing-library/react';
 import { ErrorBoundary } from 'react-error-boundary';
 
+import { logging } from '@/common/tools/logging';
+import { resetSilence, silence } from '@/testing_tools/console_filter';
+
 import {
   PageConfigStateProvider,
   usePageSpecificConfig,
@@ -64,14 +67,17 @@ function TestError({ error }: TestErrorProps) {
   return <div data-testid="error">{`${error}`}</div>;
 }
 
-describe('PageConfigStateProvider', () => {
+describe('<PageConfigStateProvider />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    jest.spyOn(logging, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
     cleanup();
+    resetSilence();
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('e2e', async () => {
@@ -107,6 +113,17 @@ describe('PageConfigStateProvider', () => {
   });
 
   it('multiple pages with page-specific settings', async () => {
+    silence('error', (e) =>
+      `${e}`.includes(
+        'React will try to recreate this component tree from scratch using the error boundary you provided',
+      ),
+    );
+    silence('error', (e) =>
+      `${e}`.includes(
+        'Error: cannot support two page config dialogs at the same time',
+      ),
+    );
+
     render(
       <PageConfigStateProvider>
         <TestConfigButton />

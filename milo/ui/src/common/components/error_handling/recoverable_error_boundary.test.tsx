@@ -20,6 +20,7 @@ import { ReactNode } from 'react';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { resetSilence, silence } from '@/testing_tools/console_filter';
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -61,9 +62,7 @@ function InternalErrorComponent(): ReactNode {
   );
 }
 
-describe('RecoverableErrorBoundary', () => {
-  // eslint-disable-next-line no-console
-  const logErr = console['error'];
+describe('<RecoverableErrorBoundary />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     // Silence error related to the error we thrown. Note that the following
@@ -72,24 +71,17 @@ describe('RecoverableErrorBoundary', () => {
     // jest.spyOn(console, 'error').mockImplementation(() => {});
     // ```
     // eslint-disable-next-line no-console
-    console.error = function (err) {
-      const errStr = `${err}`;
-      if (
-        errStr.includes(SILENCED_ERROR_MAGIC_STRING) ||
-        errStr.includes(
-          'React will try to recreate this component tree from scratch using the error boundary you provided',
-        )
-      ) {
-        return;
-      }
-      logErr(err);
-    };
+    silence('error', (err) => `${err}`.includes(SILENCED_ERROR_MAGIC_STRING));
+    silence('error', (err) =>
+      `${err}`.includes(
+        'React will try to recreate this component tree from scratch using the error boundary you provided',
+      ),
+    );
   });
 
   afterEach(() => {
     jest.useRealTimers();
-    // eslint-disable-next-line no-console
-    console['error'] = logErr;
+    resetSilence();
     cleanup();
   });
 
