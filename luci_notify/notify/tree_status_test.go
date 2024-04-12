@@ -23,6 +23,7 @@ import (
 	"time"
 
 	grpc "google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -42,34 +43,23 @@ import (
 // but locally, in-memory.
 type fakeTreeStatusClient struct {
 	statusForHosts map[string]treeStatus
-	nextKey        int64
 	mu             sync.Mutex
 }
 
-func (ts *fakeTreeStatusClient) getStatus(c context.Context, host string) (*treeStatus, error) {
+func (ts *fakeTreeStatusClient) getStatus(c context.Context, treeName string) (*treeStatus, error) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	status, exists := ts.statusForHosts[host]
+	status, exists := ts.statusForHosts[treeName]
 	if exists {
 		return &status, nil
 	}
-	return nil, errors.New(fmt.Sprintf("No status for host %s", host))
+	return nil, errors.New(fmt.Sprintf("No status for treeName %s", treeName))
 }
 
-func (ts *fakeTreeStatusClient) postStatus(c context.Context, host, message string, prevKey int64, treeName string, status config.TreeCloserStatus) error {
+func (ts *fakeTreeStatusClient) postStatus(c context.Context, message string, treeName string, status config.TreeCloserStatus) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-
-	currStatus, exists := ts.statusForHosts[host]
-	if exists && currStatus.key != prevKey {
-		return errors.New(fmt.Sprintf(
-			"prevKey %q passed to postStatus doesn't match previously stored key %q",
-			prevKey, currStatus.key))
-	}
-
-	key := ts.nextKey
-	ts.nextKey++
 
 	var messageStatus config.TreeCloserStatus
 	if strings.Contains(message, "close") {
@@ -81,8 +71,8 @@ func (ts *fakeTreeStatusClient) postStatus(c context.Context, host, message stri
 		return errors.Reason("message status does not match provided status").Err()
 	}
 
-	ts.statusForHosts[host] = treeStatus{
-		"buildbot@chromium.org", message, key, messageStatus, time.Now(),
+	ts.statusForHosts[treeName] = treeStatus{
+		"buildbot@chromium.org", message, messageStatus, time.Now(),
 	}
 	return nil
 }
@@ -130,10 +120,9 @@ func TestUpdateTrees(t *testing.T) {
 			}
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  botUsername,
 						message:   statusMessage,
-						key:       -1,
 						status:    initialTreeStatus,
 						timestamp: earlierTime,
 					},
@@ -158,7 +147,7 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, expectedStatus)
 		}
@@ -190,10 +179,9 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Closed manually, doesn't re-open", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  "somedev@chromium.org",
 						message:   "Closed because of reasons",
-						key:       -1,
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
@@ -211,7 +199,7 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
 		})
@@ -219,10 +207,9 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Opened manually, stays open with no new failures", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  "somedev@chromium.org",
 						message:   "Opened, because I feel like it",
-						key:       -1,
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
@@ -240,7 +227,7 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldEqual, "Opened, because I feel like it")
@@ -249,10 +236,9 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Opened manually, closes on new failure", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  "somedev@chromium.org",
 						message:   "Opened, because I feel like it",
-						key:       -1,
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
@@ -270,7 +256,7 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
 		})
@@ -278,17 +264,15 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Multiple trees", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  botUsername,
 						message:   "Closed up",
-						key:       -1,
 						status:    config.Closed,
 						timestamp: evenEarlierTime,
 					},
-					"v8-status.appspot.com": {
+					"v8": {
 						username:  botUsername,
 						message:   "Open for business",
-						key:       -1,
 						status:    config.Open,
 						timestamp: evenEarlierTime,
 					},
@@ -344,12 +328,12 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
 
-			status, err = ts.getStatus(c, "v8-status.appspot.com")
+			status, err = ts.getStatus(c, "v8")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
 			So(status.message, ShouldEqual, "Tree is closed (Automatic: Correct message)")
@@ -358,10 +342,9 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Doesn't close when build is older than last status update", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  "somedev@chromium.org",
 						message:   "Opened, because I feel like it",
-						key:       -1,
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
@@ -379,7 +362,7 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldEqual, "Opened, because I feel like it")
@@ -392,10 +375,9 @@ func TestUpdateTrees(t *testing.T) {
 			// than the status update.
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  botUsername,
 						message:   "Tree is closed (Automatic: some builder failed)",
-						key:       -1,
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
@@ -419,7 +401,7 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
 			So(status.message, ShouldEqual, "Tree is closed (Automatic: some builder failed)")
@@ -431,10 +413,9 @@ func TestUpdateTrees(t *testing.T) {
 			// build.
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  botUsername,
 						message:   "Tree is closed (Automatic: some builder failed)",
-						key:       -1,
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
@@ -458,7 +439,7 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
 			So(status.message, ShouldEqual, "Tree is closed (Automatic: some builder failed)")
@@ -467,17 +448,15 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Multiple projects", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  botUsername,
 						message:   "Tree is closed (Automatic: some builder failed)",
-						key:       -1,
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
-					"infra-status.appspot.com": {
+					"infra": {
 						username:  botUsername,
 						message:   "Tree is open (Automatic: Yes!)",
-						key:       -1,
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
@@ -502,12 +481,12 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
 
-			status, err = ts.getStatus(c, "infra-status.appspot.com")
+			status, err = ts.getStatus(c, "infra")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
@@ -516,7 +495,7 @@ func TestUpdateTrees(t *testing.T) {
 			for _, log := range log.Messages() {
 				if log.Level == logging.Info {
 					hasExpectedLog = true
-					So(log.Msg, ShouldEqual, `Would update status for infra-status.appspot.com to "Tree is closed (Automatic: Close it up!)"`)
+					So(log.Msg, ShouldEqual, `Would update status for infra to "Tree is closed (Automatic: Close it up!)"`)
 				}
 			}
 
@@ -526,17 +505,15 @@ func TestUpdateTrees(t *testing.T) {
 		Convey("Multiple projects, overlapping tree status hosts", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
-					"chromium-status.appspot.com": {
+					"chromium": {
 						username:  botUsername,
 						message:   "Tree is open (Flake)",
-						key:       -1,
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
-					"infra-status.appspot.com": {
+					"infra": {
 						username:  botUsername,
 						message:   "Tree is closed (Automatic: Some builder failed)",
-						key:       -1,
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
@@ -572,12 +549,12 @@ func TestUpdateTrees(t *testing.T) {
 
 			So(updateTrees(c, &ts), ShouldBeNil)
 
-			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldEqual, "Tree is open (Flake)")
 
-			status, err = ts.getStatus(c, "infra-status.appspot.com")
+			status, err = ts.getStatus(c, "infra")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
@@ -590,42 +567,8 @@ func TestHttpTreeStatusClient(t *testing.T) {
 		c := memory.Use(context.Background())
 		c = common.SetAppIDForTest(c, "luci-notify-test")
 
-		// Real responses, with usernames redacted and readable formatting applied.
-		responses := map[string]string{
-			"https://chromium-status.appspot.com/current?format=json": `{
-				"username": "someone@google.com",
-				"can_commit_freely": false,
-				"general_state": "throttled",
-				"key": 5656890264518656,
-				"date": "2020-03-31 05:33:52.682351",
-				"message": "Tree is throttled (win rel 32 appears to be a goma flake. the other builds seem to be charging ahead OK. will fully open / fully close if win32 does/doesn't improve)"
-			}`,
-			"https://v8-status.appspot.com/current?format=json": `{
-				"username": "someone-else@google.com",
-				"can_commit_freely": true,
-				"general_state": "open",
-				"key": 5739466035560448,
-				"date": "2020-04-02 15:21:39.981072",
-				"message": "open (flake?)"
-			}`,
-		}
-
-		get := func(_ context.Context, url string) ([]byte, error) {
-			if s, e := responses[url]; e {
-				return []byte(s), nil
-			} else {
-				return nil, fmt.Errorf("Key not present: %q", url)
-			}
-		}
-
-		var postUrls []string
-		post := func(_ context.Context, url string) error {
-			postUrls = append(postUrls, url)
-			return nil
-		}
-
 		fakePrpcClient := &fakePRPCTreeStatusClient{}
-		ts := httpTreeStatusClient{get, post, fakePrpcClient}
+		ts := httpTreeStatusClient{fakePrpcClient}
 
 		Convey("getStatus, open tree", func() {
 			status, err := ts.getStatus(c, "chromium-status.appspot.com")
@@ -635,7 +578,6 @@ func TestHttpTreeStatusClient(t *testing.T) {
 			So(status, ShouldResemble, &treeStatus{
 				username:  "someone@google.com",
 				message:   "Tree is throttled (win rel 32 appears to be a goma flake. the other builds seem to be charging ahead OK. will fully open / fully close if win32 does/doesn't improve)",
-				key:       5656890264518656,
 				status:    config.Closed,
 				timestamp: expectedTime,
 			})
@@ -649,18 +591,15 @@ func TestHttpTreeStatusClient(t *testing.T) {
 			So(status, ShouldResemble, &treeStatus{
 				username:  "someone-else@google.com",
 				message:   "open (flake?)",
-				key:       5739466035560448,
 				status:    config.Open,
 				timestamp: expectedTime,
 			})
 		})
 
 		Convey("postStatus", func() {
-			err := ts.postStatus(c, "dart-status.appspot.com", "open for business", 1234, "dart", config.Open)
+			err := ts.postStatus(c, "open for business", "dart", config.Open)
 			So(err, ShouldBeNil)
 
-			So(postUrls, ShouldHaveLength, 1)
-			So(postUrls[0], ShouldEqual, "https://dart-status.appspot.com/?last_status_key=1234&message=open+for+business")
 			So(fakePrpcClient.latestStatus, ShouldNotBeNil)
 			So(fakePrpcClient.latestStatus.Message, ShouldEqual, "open for business")
 			So(fakePrpcClient.latestStatus.GeneralState, ShouldEqual, tspb.GeneralState_OPEN)
@@ -677,7 +616,25 @@ func (c *fakePRPCTreeStatusClient) ListStatus(ctx context.Context, in *tspb.List
 }
 
 func (c *fakePRPCTreeStatusClient) GetStatus(ctx context.Context, in *tspb.GetStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {
-	return nil, errors.Reason("Not implemented").Err()
+	if c.latestStatus != nil {
+		return c.latestStatus, nil
+	}
+	if strings.HasPrefix(in.Name, "trees/v8-") {
+		return &tspb.Status{
+			Name:         in.Name,
+			GeneralState: tspb.GeneralState_OPEN,
+			Message:      "open (flake?)",
+			CreateUser:   "someone-else@google.com",
+			CreateTime:   timestamppb.New(time.Date(2020, time.April, 2, 15, 21, 39, 981072000, time.UTC)),
+		}, nil
+	}
+	return &tspb.Status{
+		Name:         "trees/chromium/status/fallback",
+		GeneralState: tspb.GeneralState_CLOSED,
+		Message:      "Tree is throttled (win rel 32 appears to be a goma flake. the other builds seem to be charging ahead OK. will fully open / fully close if win32 does/doesn't improve)",
+		CreateUser:   "someone@google.com",
+		CreateTime:   timestamppb.New(time.Date(2020, time.March, 31, 5, 33, 52, 682351000, time.UTC)),
+	}, nil
 }
 
 func (c *fakePRPCTreeStatusClient) CreateStatus(ctx context.Context, in *tspb.CreateStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {

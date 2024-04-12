@@ -16,12 +16,8 @@ package notify
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -47,20 +43,17 @@ const legacyBotUsername = "buildbot@chromium.org"
 type treeStatus struct {
 	username  string
 	message   string
-	key       int64
 	status    config.TreeCloserStatus
 	timestamp time.Time
 }
 
 type treeStatusClient interface {
-	getStatus(c context.Context, host string) (*treeStatus, error)
-	postStatus(c context.Context, host, message string, prevKey int64, treeName string, status config.TreeCloserStatus) error
+	getStatus(c context.Context, treeName string) (*treeStatus, error)
+	postStatus(c context.Context, message string, treeName string, status config.TreeCloserStatus) error
 }
 
 type httpTreeStatusClient struct {
-	getFunc  func(context.Context, string) ([]byte, error)
-	postFunc func(context.Context, string) error
-	client   tspb.TreeStatusClient
+	client tspb.TreeStatusClient
 }
 
 func NewHTTPTreeStatusClient(ctx context.Context, luciTreeStatusHost string) (*httpTreeStatusClient, error) {
@@ -78,70 +71,36 @@ func NewHTTPTreeStatusClient(ctx context.Context, luciTreeStatusHost string) (*h
 	}
 
 	return &httpTreeStatusClient{
-		getFunc:  getHttp,
-		postFunc: postHttp,
-		client:   tspb.NewTreeStatusPRPCClient(prpcClient),
+		client: tspb.NewTreeStatusPRPCClient(prpcClient),
 	}, nil
 }
 
-func (ts *httpTreeStatusClient) getStatus(c context.Context, host string) (*treeStatus, error) {
-	// TODO(mwarton): transition to the new tree status app RPC after the migration.
-	respJSON, err := ts.getFunc(c, fmt.Sprintf("https://%s/current?format=json", host))
+func (ts *httpTreeStatusClient) getStatus(ctx context.Context, treeName string) (*treeStatus, error) {
+	request := &tspb.GetStatusRequest{
+		Name: fmt.Sprintf("trees/%s/status/latest", treeName),
+	}
+	response, err := ts.client.GetStatus(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 
-	var r struct {
-		Username        string
-		CanCommitFreely bool `json:"can_commit_freely"`
-		Key             int64
-		Date            string
-		Message         string
-	}
-	if err = json.Unmarshal(respJSON, &r); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal JSON").Err()
-	}
-
-	var status config.TreeCloserStatus = config.Closed
-	if r.CanCommitFreely {
+	var status = config.Closed
+	if response.GeneralState == tspb.GeneralState_OPEN {
 		status = config.Open
 	}
 
-	// Similar to RFC3339, but not quite the same. No time zone is specified,
-	// so this will default to UTC, which is correct here.
-	const dateFormat = "2006-01-02 15:04:05.999999"
-	t, err := time.Parse(dateFormat, r.Date)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to parse date from tree status").Err()
-	}
+	t := response.CreateTime.AsTime()
 
 	return &treeStatus{
-		username:  r.Username,
-		message:   r.Message,
-		key:       r.Key,
+		username:  response.CreateUser,
+		message:   response.Message,
 		status:    status,
 		timestamp: t,
 	}, nil
 }
 
-func (ts *httpTreeStatusClient) postStatus(ctx context.Context, host, message string, prevKey int64, treeName string, status config.TreeCloserStatus) error {
-	// During the tree status migration, we will update both the old (HTTP) status
-	// and the new (PRPC) status.  We always attempt to update both despite whatever
-	// errors may occur.
-	// TODO(mwarton): Remove the HTTP post after the migration.
-	logging.Infof(ctx, "Updating status for %s: %q", host, message)
-
-	q := url.Values{}
-	q.Add("message", message)
-	q.Add("last_status_key", strconv.FormatInt(prevKey, 10))
-	u := url.URL{
-		Host:     host,
-		Scheme:   "https",
-		Path:     "/",
-		RawQuery: q.Encode(),
-	}
-
-	httpErr := ts.postFunc(ctx, u.String())
+func (ts *httpTreeStatusClient) postStatus(ctx context.Context, message string, treeName string, status config.TreeCloserStatus) error {
+	logging.Infof(ctx, "Updating status for %s: %q", treeName, message)
 
 	generalState := tspb.GeneralState_OPEN
 	if status == config.Closed {
@@ -154,73 +113,8 @@ func (ts *httpTreeStatusClient) postStatus(ctx context.Context, host, message st
 			Message:      message,
 		},
 	}
-	_, prpcErr := ts.client.CreateStatus(ctx, request)
-
-	// If the PRPC worked, we don't really mind what the status of the HTTP request was, as
-	// we expect it to start failing during the migration.
-	if prpcErr == nil {
-		if httpErr != nil {
-			logging.Infof(ctx, "Error updating status by HTTP: %s", httpErr)
-		}
-		return nil
-	}
-	// Log any PRPC errors, but allow HTTP success to override us during the migration.
-	logging.Errorf(ctx, "Error updating status by PRPC: %s", prpcErr)
-	return httpErr
-
-}
-
-func getHttp(c context.Context, url string) ([]byte, error) {
-	response, err := makeHttpRequest(c, url, "GET")
-	if err != nil {
-		return nil, err
-	}
-
-	defer response.Body.Close()
-	bytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to read response body from %q", url).Err()
-	}
-
-	return bytes, nil
-}
-
-func postHttp(c context.Context, url string) error {
-	response, err := makeHttpRequest(c, url, "POST")
-	if err != nil {
-		return err
-	}
-
-	response.Body.Close()
-
-	// If the operation succeeded, the status app will apply the update, and
-	// then redirect back to the main page. Let's also check for a 200, as this
-	// is a reasonable response and we don't want to depend too heavily on
-	// particular implementation details.
-	if response.StatusCode == http.StatusFound || response.StatusCode == http.StatusOK {
-		return nil
-	}
-	return fmt.Errorf("POST to %q returned unexpected status code %d", url, response.StatusCode)
-}
-
-func makeHttpRequest(c context.Context, url, method string) (*http.Response, error) {
-	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(method, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(c)
-
-	response, err := (&http.Client{Transport: transport}).Do(req)
-	if err != nil {
-		return nil, errors.Annotate(err, "%s request to %q failed", method, url).Err()
-	}
-
-	return response, nil
+	_, err := ts.client.CreateStatus(ctx, request)
+	return err
 }
 
 // UpdateTreeStatus is the HTTP handler triggered by cron when it's time to
@@ -315,7 +209,7 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 			host, treeClosers := host, treeClosers
 			ch <- func() error {
 				c := logging.SetField(c, "tree-status-host", host)
-				return updateHost(c, ts, host, treeClosers, closingEnabledProjects, treeNameOrDefault(treeClosers))
+				return updateHost(c, ts, treeClosers, closingEnabledProjects, treeNameOrDefault(treeClosers))
 			}
 		}
 	})
@@ -351,8 +245,8 @@ func tcProject(tc *config.TreeCloser) string {
 	return tc.BuilderKey.Parent().StringID()
 }
 
-func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set, treeName string) error {
-	treeStatus, err := ts.getStatus(c, host)
+func updateHost(c context.Context, ts treeStatusClient, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set, treeName string) error {
+	treeStatus, err := ts.getStatus(c, treeName)
 	if err != nil {
 		return err
 	}
@@ -451,9 +345,9 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 	}
 
 	if anyEnabled {
-		return ts.postStatus(c, host, message, treeStatus.key, treeName, newStatus)
+		return ts.postStatus(c, message, treeName, newStatus)
 	}
-	logging.Infof(c, "Would update status for %s to %q", host, message)
+	logging.Infof(c, "Would update status for %s to %q", treeName, message)
 	return nil
 }
 
