@@ -55,6 +55,9 @@ func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[st
 		"Deadline":                          future,
 	}
 
+	if state == pb.Invocation_FINALIZING || state == pb.Invocation_FINALIZED {
+		values["FinalizeStartTime"] = spanner.CommitTimestamp
+	}
 	if state == pb.Invocation_FINALIZED {
 		values["FinalizeTime"] = spanner.CommitTimestamp
 	}

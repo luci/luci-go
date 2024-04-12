@@ -67,10 +67,14 @@ func TestFinalizeInvocation(t *testing.T) {
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
+			So(inv.FinalizeStartTime, ShouldNotBeNil)
+			finalizeStartTime := inv.FinalizeStartTime
 
 			inv, err = recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
+			// The finalize start time should be the same as after the first call.
+			So(inv.FinalizeStartTime, ShouldResembleProto, finalizeStartTime)
 
 			So(sched.Tasks(), ShouldHaveLength, 1)
 		})
@@ -80,11 +84,14 @@ func TestFinalizeInvocation(t *testing.T) {
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
+			finalizeTime := inv.FinalizeStartTime
+			So(finalizeTime, ShouldNotBeNil)
 
 			// Read the invocation from Spanner to confirm it's really FINALIZING.
 			inv, err = invocations.Read(span.Single(ctx), "inv")
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
+			So(inv.FinalizeStartTime, ShouldResembleProto, finalizeTime)
 
 			// Enqueued the finalization task.
 			So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{

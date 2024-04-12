@@ -17,6 +17,8 @@ package tasks
 import (
 	"context"
 
+	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -51,8 +53,9 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 func StartInvocationFinalization(ctx context.Context, id invocations.ID, updateInv bool) {
 	if updateInv {
 		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]any{
-			"InvocationId": id,
-			"State":        pb.Invocation_FINALIZING,
+			"InvocationId":      id,
+			"State":             pb.Invocation_FINALIZING,
+			"FinalizeStartTime": spanner.CommitTimestamp,
 		}))
 	}
 	tq.MustAddTask(ctx, &tq.Task{

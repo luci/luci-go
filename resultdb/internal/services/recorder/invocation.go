@@ -123,7 +123,8 @@ func extractUpdateToken(ctx context.Context) (string, error) {
 
 // rowOfInvocation returns Invocation row values to be inserted to create the
 // invocation.
-// inv.CreateTime is ignored in favor of spanner.CommitTime.
+// inv.CreateTime, inv.FinalizeStartTime and inv.FinalizeTime are ignored
+// and set by the implementation to spanner.CommitTime as appropriate.
 func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string) map[string]any {
 	now := clock.Now(ctx).UTC()
 	row := map[string]any{
@@ -150,13 +151,12 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"StepInstructions": spanutil.Compressed(pbutil.MustMarshal(inv.StepInstructions)),
 	}
 
+	if inv.State == pb.Invocation_FINALIZING || inv.State == pb.Invocation_FINALIZED {
+		// Invocation immediately transitioning to finalizing/finalized.
+		row["FinalizeStartTime"] = spanner.CommitTimestamp
+	}
 	if inv.State == pb.Invocation_FINALIZED {
-		// We are ignoring the provided inv.FinalizeTime because it would not
-		// make sense to have an invocation finalized before it was created,
-		// yet attempting to set this in the future would fail the sql schema
-		// restriction for columns that allow commit timestamp.
-		// Note this function is only used for setting FinalizeTime by derive
-		// invocation, which is planned to be superseded by other mechanisms.
+		// Invocation immediately finalized.
 		row["FinalizeTime"] = spanner.CommitTimestamp
 	}
 

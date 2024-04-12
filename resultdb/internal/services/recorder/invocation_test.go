@@ -97,19 +97,21 @@ func TestReadInvocation(t *testing.T) {
 
 		Convey(`Finalized`, func() {
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
-				"CreateTime":   ct,
-				"Deadline":     ct.Add(time.Hour),
-				"FinalizeTime": ct.Add(time.Hour),
+				"CreateTime":        ct,
+				"Deadline":          ct.Add(time.Hour),
+				"FinalizeStartTime": ct.Add(2 * time.Hour),
+				"FinalizeTime":      ct.Add(3 * time.Hour),
 			}))
 
 			inv := readInv()
 			expected := &pb.Invocation{
-				Name:         "invocations/inv",
-				State:        pb.Invocation_FINALIZED,
-				CreateTime:   pbutil.MustTimestampProto(ct),
-				Deadline:     pbutil.MustTimestampProto(ct.Add(time.Hour)),
-				FinalizeTime: pbutil.MustTimestampProto(ct.Add(time.Hour)),
-				Realm:        insert.TestRealm,
+				Name:              "invocations/inv",
+				State:             pb.Invocation_FINALIZED,
+				CreateTime:        pbutil.MustTimestampProto(ct),
+				Deadline:          pbutil.MustTimestampProto(ct.Add(time.Hour)),
+				FinalizeStartTime: pbutil.MustTimestampProto(ct.Add(2 * time.Hour)),
+				FinalizeTime:      pbutil.MustTimestampProto(ct.Add(3 * time.Hour)),
+				Realm:             insert.TestRealm,
 			}
 			So(inv, ShouldResembleProto, expected)
 

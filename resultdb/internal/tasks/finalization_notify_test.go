@@ -20,10 +20,11 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"go.chromium.org/luci/resultdb/internal/testutil"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/resultdb/internal/testutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -56,7 +57,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 	}
 
 	var ret *pb.Invocation
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		inv, err := invocations.Read(ctx, invID)
 		if err != nil {
 			return err
@@ -64,7 +65,9 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		ret = inv
 
 		if ret.State != pb.Invocation_ACTIVE {
-			// Idempotent.
+			// Finalization already started. Do not start finalization
+			// again as doing so would overwrite the existing FinalizeStartTime
+			// and create an unnecessary task.
 			return nil
 		}
 
@@ -73,9 +76,12 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		tasks.StartInvocationFinalization(ctx, invID, true)
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
+	}
+	if ret.FinalizeStartTime == nil {
+		// We set the invocation to finalizing.
+		ret.FinalizeStartTime = timestamppb.New(commitTimestamp)
 	}
 
 	return ret, nil

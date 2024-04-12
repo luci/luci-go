@@ -599,7 +599,8 @@ func TestCreateInvocation(t *testing.T) {
 				CreatedBy: "user:someone@example.com",
 
 				// we use Spanner commit time, so skip the check
-				CreateTime: inv.CreateTime,
+				CreateTime:        inv.CreateTime,
+				FinalizeStartTime: inv.CreateTime,
 			})
 			So(inv, ShouldResembleProto, expected)
 

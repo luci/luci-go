@@ -30,7 +30,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 //
-// Next id: 17.
+// Next id: 20.
 message Invocation {
   reserved 3; // bool interrupted, crbug.com/1078696.
 
@@ -83,8 +83,18 @@ message Invocation {
 
   // == Finalization ===========================================================
 
+  // When the invocation started to finalize, i.e. transitioned to FINALIZING
+  // state. This means the invocation is immutable but directly or indirectly
+  // included invocations may not be.
+  //
+  // Output only.
+  google.protobuf.Timestamp finalize_start_time = 19
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
   // When the invocation was finalized, i.e. transitioned to FINALIZED state.
-  // If this field is set, implies that the invocation is finalized.
+  // If this field is set, implies that the invocation is finalized. This
+  // means the invocation and directly or indirectly included invocations
+  // are immutable.
   //
   // Output only.
   google.protobuf.Timestamp finalize_time = 6

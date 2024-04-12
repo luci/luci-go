@@ -21,10 +21,11 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	// Add support for Spanner transactions in TQ.
 	_ "go.chromium.org/luci/server/tq/txn/spanner"

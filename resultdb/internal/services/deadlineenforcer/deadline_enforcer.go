@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const maxInvocationsPerShardToEnforceAtOnce = 100
@@ -132,6 +133,19 @@ func enforce(ctx context.Context, shard, limit int) (int, error) {
 		}
 		// TODO(crbug.com/1207606): Increase parallelism.
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			state, err := invocations.ReadState(ctx, id)
+			if err != nil {
+				return err
+			}
+
+			if state != pb.Invocation_ACTIVE {
+				// Finalization already started (possible race with explicit
+				// finalization). Do not start finalization again as doing
+				// so would overwrite the existing FinalizeStartTime
+				// and create an unnecessary task.
+				return nil
+			}
+
 			tasks.StartInvocationFinalization(ctx, id, true)
 			return nil
 		})
