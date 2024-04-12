@@ -69,6 +69,18 @@ message Config {
 
   // Deprecated. Ignored. Do not use.
   Toggle project_scoped_account = 5 [deprecated = true];
+
+  // If true, all linked accounts and the primary accounts will share the same
+  // permission from LUCI CV's PoV.
+  //
+  // For example, if user has primary account as x@chromium.org and links it
+  // to x@google.com in Gerrit, even though only x@google.com is granted
+  // the permission to trigger CQ dry run in the configuration, LUCI CV will
+  // allow x@chromium.org to trigger CQ dryrun.
+  //
+  // If enabled, the project scoped service account MUST have "Modify Account"
+  // capabilities to see the linked Gerrit accounts.
+  bool honor_gerrit_linked_accounts = 6;
 }
 
 

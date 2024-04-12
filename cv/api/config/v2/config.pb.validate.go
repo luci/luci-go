@@ -129,6 +129,8 @@ func (m *Config) validate(all bool) error {
 
 	// no validation rules for ProjectScopedAccount
 
+	// no validation rules for HonorGerritLinkedAccounts
+
 	if len(errors) > 0 {
 		return ConfigMultiError(errors)
 	}
