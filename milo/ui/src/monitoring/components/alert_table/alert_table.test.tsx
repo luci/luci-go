@@ -42,6 +42,34 @@ it('expands an alert on click', async () => {
   expect(screen.getByText('test.Example')).toBeInTheDocument();
 });
 
+it('sorts alerts on header click', async () => {
+  render(
+    <FakeContextProvider>
+      <AlertTable
+        tree={configuredTrees[0]}
+        alerts={[alert, alert2]}
+        bugs={[]}
+      />
+    </FakeContextProvider>,
+  );
+  expect(screen.getByText('linux-rel')).toBeInTheDocument();
+  expect(screen.getByText('win-rel')).toBeInTheDocument();
+  // Sort asc
+  await act(() => fireEvent.click(screen.getByText('Failed Builder')));
+  let linux = screen.getByText('linux-rel');
+  let win = screen.getByText('win-rel');
+  expect(linux.compareDocumentPosition(win)).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  // Sort desc
+  await act(() => fireEvent.click(screen.getByText('Failed Builder')));
+  linux = screen.getByText('linux-rel');
+  win = screen.getByText('win-rel');
+  expect(linux.compareDocumentPosition(win)).toBe(
+    Node.DOCUMENT_POSITION_PRECEDING,
+  );
+});
+
 const revision: RevisionJson = {
   author: 'Player 1',
   branch: 'main',
@@ -76,6 +104,78 @@ const alert: AlertJson = {
         count: 2,
         start_time: new Date().valueOf(),
         url: '/p/chromium/b/linux-rel',
+        failing_tests_trunc: '',
+        latest_passing: 3,
+        first_failing_rev: { ...revision, commit_position: 10 },
+        first_failure: 23,
+        first_failure_build_number: 342,
+        first_failure_url: '/b/342',
+        last_passing_rev: { ...revision, commit_position: 5 },
+        latest_failure: 46,
+        latest_failure_build_number: 356,
+        latest_failure_url: '/b/356',
+      },
+    ],
+    culprits: null,
+    has_findings: false,
+    is_finished: false,
+    is_supported: false,
+    regression_ranges: [],
+    suspected_cls: null,
+    tree_closer: false,
+    reason: {
+      num_failing_tests: 0,
+      step: 'test step',
+      tests: [
+        {
+          test_id: 'ninja://test.Example',
+          realm: 'ci',
+          test_name: 'test.Example',
+          cluster_name: 'chromium/rules-v2/4242',
+          variant_hash: '1234',
+          cur_counts: {
+            unexpected_results: 10,
+            total_results: 10,
+          },
+          cur_start_hour: '9:00',
+          regression_start_position: 123450,
+          prev_counts: {
+            unexpected_results: 1,
+            total_results: 100,
+          },
+          prev_end_hour: '8:00',
+          regression_end_position: 123456,
+          ref_hash: '5678',
+        },
+      ],
+    },
+  },
+  bug: '0',
+  silenceUntil: '0',
+};
+
+const alert2: AlertJson = {
+  key: 'alert-2',
+  title: 'Step "compile" failuing on builder win-rel',
+  body: '',
+  links: null,
+  resolved: false,
+  severity: 1,
+  start_time: new Date().valueOf(),
+  tags: null,
+  time: new Date().valueOf(),
+  type: 'compile',
+  extension: {
+    builders: [
+      {
+        project: 'chromium',
+        builder_group: 'windows',
+        bucket: 'ci',
+        name: 'win-rel',
+        build_status: 'FAILED',
+        count: 2,
+        start_time: new Date().valueOf(),
+        url: '/p/chromium/b/win-rel',
         failing_tests_trunc: '',
         latest_passing: 3,
         first_failing_rev: { ...revision, commit_position: 10 },

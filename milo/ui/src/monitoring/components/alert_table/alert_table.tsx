@@ -23,6 +23,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableSortLabel,
   Tooltip,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -53,6 +54,8 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [expanded, setExpanded] = useState({} as { [alert: string]: boolean });
   const [expandAll, setExpandAll] = useState(false);
+  const [sortColumn, setSortColumn] = useState<string | undefined>(undefined);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const latestBuild = (alert: AlertJson): number | undefined => {
     return alert.extension.builders?.[0].latest_failure_build_number;
@@ -95,10 +98,34 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
     );
     return (latestBuild(alert) || 1) <= silenceUntil;
   };
+  const sortAlerts = (alerts: AlertJson[]): AlertJson[] => {
+    if (!sortColumn) {
+      return alerts;
+    }
+    return alerts.sort((a, b) => {
+      const aValue = sortValue(a, sortColumn);
+      const bValue = sortValue(b, sortColumn);
+      if (sortDirection === 'desc') {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      }
+    });
+  };
   const sortedAlerts = [
-    ...alerts.filter((a) => !isSilenced(a)),
-    ...alerts.filter(isSilenced),
+    ...sortAlerts(alerts.filter((a) => !isSilenced(a))),
+    ...sortAlerts(alerts.filter(isSilenced)),
   ];
+
+  const clickSortColumn = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   return (
     <Table size="small">
       <TableHead>
@@ -108,10 +135,42 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
               {expandAll ? <ExpandMoreIcon /> : <ChevronRightIcon />}
             </IconButton>
           </TableCell>
-          <TableCell>Failed Builder</TableCell>
-          <TableCell>Failed Step</TableCell>
-          <TableCell>Failed Builds</TableCell>
-          <TableCell>Blamelist</TableCell>
+          <TableCell>
+            <TableSortLabel
+              active={sortColumn === 'failed_builder'}
+              onClick={() => clickSortColumn('failed_builder')}
+              direction={sortDirection}
+            >
+              Failed Builder
+            </TableSortLabel>
+          </TableCell>
+          <TableCell>
+            <TableSortLabel
+              active={sortColumn === 'failed_step'}
+              onClick={() => clickSortColumn('failed_step')}
+              direction={sortDirection}
+            >
+              Failed Step
+            </TableSortLabel>
+          </TableCell>
+          <TableCell>
+            <TableSortLabel
+              active={sortColumn === 'failed_builds'}
+              onClick={() => clickSortColumn('failed_builds')}
+              direction={sortDirection}
+            >
+              Failed Builds
+            </TableSortLabel>
+          </TableCell>
+          <TableCell>
+            <TableSortLabel
+              active={sortColumn === 'blamelist'}
+              onClick={() => clickSortColumn('blamelist')}
+              direction={sortDirection}
+            >
+              Blamelist
+            </TableSortLabel>
+          </TableCell>
           <TableCell>
             <div style={{ display: 'flex' }}>
               <Tooltip title="Link bug to ALL alerts">
@@ -175,3 +234,36 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
     </Table>
   );
 };
+
+const sortValue = (alert: AlertJson, sortColumn: string): number | string => {
+  const builder = alert.extension.builders?.[0];
+  switch (sortColumn) {
+    case 'failed_builder':
+      return builder?.name || '';
+    case 'failed_step':
+      return stepRe.exec(alert.title)?.[1] || '';
+    case 'failed_builds':
+      return builder.first_failure_build_number === 0
+        ? -1
+        : builder.latest_failure_build_number -
+            builder.first_failure_build_number +
+            1;
+    case 'blamelist':
+      if (
+        builder.first_failing_rev?.commit_position &&
+        builder.last_passing_rev?.commit_position
+      ) {
+        return (
+          builder.first_failing_rev?.commit_position -
+          builder.last_passing_rev?.commit_position
+        );
+      } else {
+        return -1;
+      }
+    default:
+      return 0;
+  }
+};
+
+// stepRE extracts the step name from an alert title.
+const stepRe = /Step "([^"]*)/;
