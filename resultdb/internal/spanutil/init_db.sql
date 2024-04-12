@@ -51,7 +51,16 @@ CREATE TABLE Invocations (
   -- LUCI identity who created the invocation, typically "user:<email>".
   CreatedBy STRING(MAX),
 
-  -- When the invocation was finalized.
+  -- When the invocation started finalizing (invocation state was set to
+  -- Finalizing).
+  -- This means the invocation became immutable but directly or
+  -- indirectly included invocations may still be mutable.
+  FinalizeStartTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
+  -- When the invocation finished finalizing (invocation state set to
+  -- Finalized).
+  -- This means the invocation and all its directly or indirectly
+  -- included invocations became immutable.
   FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
 
   -- When to force invocation finalization.
@@ -100,6 +109,23 @@ CREATE TABLE Invocations (
   -- A serialized luci.resultdb.v1.Sources message describing the source information for the
   -- invocation. Only this or InheritSources may be set, not both.
   Sources BYTES(MAX),
+
+  -- Whether the invocation's source specification is immutable. This pertains to both
+  -- the InheritSources field and Sources field.
+  IsSourceSpecFinal BOOL,
+
+  -- Whether this invocation is a root of the invocation graph for export purposes.
+  --
+  -- To help downstream systems make sense of test results, and gather overall
+  -- context for a result, ResultDB data export is centered around roots. The roots
+  -- typically represent a top-level buildbucket build, like a postsubmit build
+  -- or presubmit tryjob. Test results are only exported if they are included from
+  -- a root. They may be exported multiple times of they are included by multiple
+  -- roots.
+  --
+  -- N.B. Roots do not affect legacy BigQuery exports configured by the
+  -- BigQueryExports field.
+  IsExportRoot BOOL,
 
   -- A user-specified baseline identifier that maps to a set of test variants.
   -- Often, this will be the source that generated the test result, such as the
@@ -172,6 +198,40 @@ CREATE TABLE IncludedInvocations (
 -- Used to find invocations including a given one.
 CREATE INDEX ReversedIncludedInvocations
   ON IncludedInvocations (IncludedInvocationId, InvocationId);
+
+-- Tracks the export roots an invocation is directly or indirectly included by.
+-- For each export root the invocation is included by, the sources it is
+-- eligible to inherit (will inherit if it chooses to inherit sources by
+-- setting SourceSpec.inherit = true) are tracked.
+-- Export roots are considered to include themselves, and so will have
+-- a row in this table where RootInvocationId equals InvocationId.
+CREATE TABLE InvocationExportRoots (
+  -- ID of the parent Invocations row.
+  InvocationId STRING(MAX) NOT NULL,
+
+  -- ID of the root invocation the invocation is directly or indirectly
+  -- included by.
+  RootInvocationId STRING(MAX) NOT NULL,
+
+  -- Whether inherited sources for this invocation have been resolved.
+  -- The value is then stored in InheritedSources.
+  IsInheritedSourcesSet BOOL NOT NULL,
+
+  -- The sources this invocation is eligible to inherit for its inclusion
+  -- (directly or indirectly) from RootInvocationId.
+  -- This may to a concrete luci.resultdb.v1.Sources value (if concrete
+  -- sources are eligible to be inherited) or to a nil value (if empty
+  -- sources are eligible to be inherited).
+  -- To be able to distinguish inheriting empty/nil sources and the inherited
+  -- sources not being resolved yet, see HasInheritedSourcesResolved.
+  InheritedSources BYTES(MAX),
+
+  -- The timestamp a `invocation-ready-for-export` pub/sub notification was
+  -- sent for this row. Used for debugging and to avoid triggering
+  -- pub/sub notifications that were already sent.
+  NotifiedTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (InvocationId, RootInvocationId),
+  INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
 -- Stores test results. Interleaved in Invocations.
 CREATE TABLE TestResults (
