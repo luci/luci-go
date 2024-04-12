@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -31,7 +33,7 @@ type fakeBQDataset struct {
 	result map[string]interface{}
 }
 
-func (f *fakeBQDataset) putToTable(c context.Context, table string, src interface{}) error {
+func (f *fakeBQDataset) putToTable(c context.Context, table string, src []proto.Message) error {
 	f.result[table] = src
 	return nil
 }

@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -51,7 +52,7 @@ func newBQDataset(c context.Context) (bqDataset, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "new BQ dataset").Err()
 	}
-	return &realBQDataset{ds: client.Dataset(dataset)}, nil
+	return &realBQDataset{client: client, dsID: dataset}, nil
 }
 
 // uploadToBQ uploads rows of data from datastore to BQ.
@@ -96,17 +97,20 @@ func uploadToBQ(c context.Context, ds bqDataset) error {
 // bqDataset is the interface to operate BigQuery dataset.
 // We have this interface mainly for better unit tests.
 type bqDataset interface {
-	putToTable(context.Context, string, interface{}) error
+	putToTable(context.Context, string, []proto.Message) error
 }
 
 type realBQDataset struct {
-	ds *bigquery.Dataset
+	client *bigquery.Client
+	dsID   string
 }
 
 // putToTable puts the src data to the named BigQuery table.
-func (r *realBQDataset) putToTable(c context.Context, table string, src interface{}) error {
-	ins := r.ds.Table(table).Inserter()
-	return ins.Put(c, src)
+func (r *realBQDataset) putToTable(c context.Context, table string, src []proto.Message) error {
+	up := bq.NewUploader(c, r.client, r.dsID, table)
+	up.SkipInvalidRows = true
+	up.IgnoreUnknownValues = true
+	return up.Put(c, src...)
 }
 
 // dumpInstanceCount dumps InstanceCount datastore to a slice.
