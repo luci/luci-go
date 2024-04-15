@@ -362,6 +362,30 @@ class IndirectResultItem extends ResultItem {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Address bar manipulation.
+
+const getCurrentPrincipalInURL = () => {
+  return common.getQueryParameter('p');
+}
+
+const setCurrentPrincipalInURL = (principal) => {
+  if (getCurrentPrincipalInURL() != principal) {
+    window.history.pushState({ 'principal': principal }, null,
+      common.getLookupURL(principal));
+  }
+}
+
+const onCurrentPrincipalInURLChange = (cb) => {
+  window.onpopstate = function (event) {
+    var s = event.state;
+    if (s && s.hasOwnProperty('principal')) {
+      cb(s.principal);
+    }
+  };
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 window.onload = () => {
@@ -369,11 +393,8 @@ window.onload = () => {
   const loadingBox = new LoadingBox('#loading-box');
   const searchResults = new SearchResults('#all-results');
 
-  // TODO: record principal searched in the URL, and check it on load.
-
-  const doSearch = () => {
-    const userInput = searchBar.input.value;
-    if (!userInput) {
+  const doSearch = (principal) => {
+    if (!principal) {
       return;
     }
 
@@ -381,7 +402,15 @@ window.onload = () => {
     searchResults.hide();
     loadingBox.setLoadStatus(true);
 
-    doLookup(userInput)
+    // Set the search parameter for the principal in the URL.
+    setCurrentPrincipalInURL(principal);
+    if (searchBar.input.value != principal) {
+      // Update the text in the search box in case the principal was set
+      // through the URL.
+      searchBar.input.value = principal;
+    }
+
+    doLookup(principal)
       .then((response) => {
         searchResults.setLookupResults(response);
         searchResults.show();
@@ -396,17 +425,27 @@ window.onload = () => {
       });
   }
 
-  // Search if the search button is clicked.
+  // Search when the principal in the URL is changed.
+  onCurrentPrincipalInURLChange(doSearch);
+
+  // Search when the search button is clicked.
   searchBar.btn.addEventListener('click', (e) => {
-    doSearch();
+    doSearch(searchBar.input.value);
   });
 
-  // Search if "Enter" is hit.
+  // Search when "Enter" is hit in the search box.
   searchBar.input.addEventListener('keyup', (e) => {
     if (e.keyCode == 13) {
-      doSearch();
+      doSearch(searchBar.input.value);
     }
   });
 
-  searchBar.enableInteraction();
+  // Initial state depends on whether there was a principal in the URL.
+  const currentPrincipal = getCurrentPrincipalInURL();
+  if (currentPrincipal) {
+    // The search bar will be enabled in doSearch's `finally` block.
+    doSearch(currentPrincipal);
+  } else {
+    searchBar.enableInteraction();
+  }
 }
