@@ -257,6 +257,23 @@ class LoadingBox extends HidableElement {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Component to display a lookup error.
+class LookupErrorAlert extends HidableElement {
+  constructor(element) {
+    super(element, false);
+
+    this.heading = this.element.querySelector('#lookup-heading');
+    this.errorBody = this.element.querySelector('#lookup-error-message');
+  }
+
+  setError(principal, error) {
+    this.heading.textContent = `Looking up "${principal}" failed`;
+    this.errorBody.textContent = error.error;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 // Component to display all search results.
 class SearchResults extends HidableElement {
   constructor(element) {
@@ -392,23 +409,26 @@ window.onload = () => {
   const searchBar = new SearchBar('#search-bar');
   const loadingBox = new LoadingBox('#loading-box');
   const searchResults = new SearchResults('#all-results');
+  const lookupErrorAlert = new LookupErrorAlert('#lookup-error');
 
   const doSearch = (principal) => {
     if (!principal) {
       return;
     }
 
-    searchBar.disableInteraction();
-    searchResults.hide();
-    loadingBox.setLoadStatus(true);
-
     // Set the search parameter for the principal in the URL.
     setCurrentPrincipalInURL(principal);
+
+    searchBar.disableInteraction();
     if (searchBar.input.value != principal) {
       // Update the text in the search box in case the principal was set
       // through the URL.
       searchBar.input.value = principal;
     }
+
+    searchResults.hide();
+    lookupErrorAlert.hide();
+    loadingBox.setLoadStatus(true);
 
     doLookup(principal)
       .then((response) => {
@@ -416,8 +436,8 @@ window.onload = () => {
         searchResults.show();
       })
       .catch((err) => {
-        // TODO: replace this with an error alert.
-        console.error('Lookup failed:', err);
+        lookupErrorAlert.setError(principal, err);
+        lookupErrorAlert.show();
       })
       .finally(() => {
         loadingBox.setLoadStatus(false);

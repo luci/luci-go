@@ -825,7 +825,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.GetSubgraph(ctx, &request)
-			So(err.Error(), ShouldContainSubstring, "no such group")
+			So(err.Error(), ShouldContainSubstring, "not found")
 		})
 	})
 }

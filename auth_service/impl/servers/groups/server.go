@@ -159,7 +159,8 @@ func (*Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphReques
 	// Get groups from datastore.
 	groups, err := model.GetAllAuthGroups(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to fetch groups %s", err)
+		return nil, status.Errorf(codes.Internal,
+			"Failed to fetch groups: %s", err)
 	}
 
 	// Build groups graph from groups in datastore.
@@ -167,12 +168,19 @@ func (*Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphReques
 
 	principal, err := convertPrincipal(request.Principal)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal,
+			"Issue parsing the principal from the request: %s", err)
 	}
 
 	subgraph, err := groupsGraph.GetRelevantSubgraph(principal)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, graph.ErrNoSuchGroup) {
+			return nil, status.Errorf(codes.NotFound,
+				"The requested group \"%s\" was not found.", principal.Value)
+		}
+
+		return nil, status.Errorf(codes.Internal,
+			"Error getting relevant groups: %s", err)
 	}
 
 	subgraphProto := subgraph.ToProto()
