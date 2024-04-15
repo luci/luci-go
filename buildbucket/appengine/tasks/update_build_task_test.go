@@ -625,6 +625,77 @@ func TestUpdateTaskEntity(t *testing.T) {
 				UpdateId: 200,
 			})
 		})
+
+		Convey("Backfill task for a canceled build", func() {
+			buildModel.Proto.Status = pb.Status_CANCELED
+			So(datastore.Put(ctx, buildModel), ShouldBeNil)
+			Convey("bypassing if task has ended", func() {
+				infraModel.Proto.Backend.Task.Status = pb.Status_CANCELED
+				So(datastore.Put(ctx, infraModel), ShouldBeNil)
+				endReq := &pb.BuildTaskUpdate{
+					BuildId: "1",
+					Task: &pb.Task{
+						Status: pb.Status_CANCELED,
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming",
+						},
+						UpdateId: 200,
+					},
+				}
+				err := updateTaskEntity(ctx, endReq, 1)
+				So(err, ShouldBeNil)
+				result := &model.BuildInfra{
+					Build: bk,
+				}
+				So(datastore.Get(ctx, result), ShouldBeNil)
+				// No update made.
+				So(result.Proto.Backend.Task.UpdateId, ShouldEqual, 50)
+			})
+			Convey("bypassing intermediate update", func() {
+				endReq := &pb.BuildTaskUpdate{
+					BuildId: "1",
+					Task: &pb.Task{
+						Status: pb.Status_STARTED,
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming",
+						},
+						UpdateId: 200,
+					},
+				}
+				err := updateTaskEntity(ctx, endReq, 1)
+				So(err, ShouldBeNil)
+				result := &model.BuildInfra{
+					Build: bk,
+				}
+				So(datastore.Get(ctx, result), ShouldBeNil)
+				// No update made.
+				So(result.Proto.Backend.Task.UpdateId, ShouldEqual, 50)
+			})
+			Convey("backfilled", func() {
+				endReq := &pb.BuildTaskUpdate{
+					BuildId: "1",
+					Task: &pb.Task{
+						Status: pb.Status_CANCELED,
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming",
+						},
+						UpdateId: 200,
+					},
+				}
+				err := updateTaskEntity(ctx, endReq, 1)
+				So(err, ShouldBeNil)
+				result := &model.BuildInfra{
+					Build: bk,
+				}
+				So(datastore.Get(ctx, result), ShouldBeNil)
+				So(result.Proto.Backend.Task.UpdateId, ShouldEqual, 200)
+				So(result.Proto.Backend.Task.Status, ShouldEqual, pb.Status_CANCELED)
+			})
+		})
+
 	})
 }
 

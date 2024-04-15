@@ -186,6 +186,29 @@ func validateBuildTask(req *pb.BuildTaskUpdate, infra *model.BuildInfra) error {
 	return nil
 }
 
+func backfillCanceledTask(ctx context.Context, build *model.Build, infra *model.BuildInfra, task *pb.Task) []any {
+	switch {
+	case task.UpdateId <= infra.Proto.Backend.Task.UpdateId:
+		// Returning nil since there is no work to do here.
+		// The task in the request is outdated.
+		return nil
+	case protoutil.IsEnded(infra.Proto.Backend.Task.Status):
+		// Only need to backfill if the backend task in datastore is still
+		// in running state.
+		return nil
+	case !protoutil.IsEnded(task.Status):
+		// Only need to backfill the backend task to set it's end state.
+		// We could bypass other intermidiate updates between the backend server
+		// schedules the task cancelation and the task actually being canceled.
+		return nil
+
+	}
+	logging.Infof(ctx, "Backfill build %d's backend task, setting it's state to %q", build.ID, task.Status)
+	proto.Merge(infra.Proto.Backend.Task, task)
+	toSave := []any{infra}
+	return toSave
+}
+
 func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildInfra, task *pb.Task) ([]any, error) {
 	if task.UpdateId <= infra.Proto.Backend.Task.UpdateId {
 		// Returning nil since there is no work to do here.
@@ -232,19 +255,34 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 
 		build = entities[0].(*model.Build)
 		infra := entities[1].(*model.BuildInfra)
-
-		if protoutil.IsEnded(build.Status) {
-			// Cannot update an ended build.
+		var toSave []any
+		switch {
+		case build.Status == pb.Status_CANCELED:
+			// It's possible that this build got forcefully cancelled by the
+			// "cancel-build" internal task after the grace period.
+			// The task sets the build to be CANCELED and enqueues a
+			// CancelBackendTask task which will make a CancelTasks RPC to the
+			// backend asynchronously - while still leaving the backend task to
+			// running state.
+			// So we should backfill the backend task here when the task is
+			// finally canceled by the backend, even though the build already
+			// ends.
+			toSave = backfillCanceledTask(ctx, build, infra, req.Task)
+		case protoutil.IsEnded(build.Status):
+			// Otherwise cannot update an ended build.
 			logging.Infof(ctx, "Build %d is ended", build.ID)
 			return nil
+		default:
+			toSave, err = prepareUpdate(ctx, build, infra, req.Task)
+			if err != nil {
+				return err
+			}
+			setBuildToEnd = protoutil.IsEnded(req.Task.Status)
 		}
 
-		toSave, err := prepareUpdate(ctx, build, infra, req.Task)
-		if err != nil {
-			return err
+		if len(toSave) == 0 {
+			return nil
 		}
-
-		setBuildToEnd = protoutil.IsEnded(req.Task.Status)
 		return datastore.Put(ctx, toSave)
 	}, nil)
 
