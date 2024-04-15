@@ -45,7 +45,7 @@ import (
 // add/modify build properties. LUCI CV permits certain keys which are either
 // added by LUCI CV itself, or known to not change build behavior.
 var AcceptedAdditionalPropKeys = stringset.NewFromSlice(
-	"$recipe_engine/cq",
+	"$recipe_engine/cq", // TODO: crbug/333811087 - remove
 	"$recipe_engine/cv", // future proof
 	"requester",
 )

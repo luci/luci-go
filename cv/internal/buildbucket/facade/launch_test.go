@@ -187,6 +187,15 @@ func TestLaunch(t *testing.T) {
 								"ownerIsGoogler": structpb.NewBoolValue(true),
 							},
 						}),
+						legacyPropertyKey: structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"active":         structpb.NewBoolValue(true),
+								"dryRun":         structpb.NewBoolValue(true),
+								"topLevel":       structpb.NewBoolValue(true),
+								"runMode":        structpb.NewStringValue(string(run.DryRun)),
+								"ownerIsGoogler": structpb.NewBoolValue(true),
+							},
+						}),
 					},
 				})
 				So(build.GetInput().GetGerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{

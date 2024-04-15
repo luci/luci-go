@@ -42,7 +42,9 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-const propertyKey = "$recipe_engine/cq"
+// TODO: crbug/333811087 - remove after cq module is deleted
+const legacyPropertyKey = "$recipe_engine/cq"
+const propertyKey = "$recipe_engine/cv"
 
 // Launch schedules requested Tryjobs in Buildbucket.
 //
@@ -277,7 +279,10 @@ func makeCVProperties(in *recipe.Input) (*structpb.Struct, error) {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return nil, err
 	}
-	return structpb.NewStruct(map[string]any{propertyKey: raw})
+	return structpb.NewStruct(map[string]any{
+		propertyKey:       raw,
+		legacyPropertyKey: raw,
+	})
 }
 
 func makeGerritChanges(cls []*run.RunCL) []*bbpb.GerritChange {
