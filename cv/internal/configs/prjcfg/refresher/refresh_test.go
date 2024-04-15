@@ -68,6 +68,7 @@ var testCfg = &cfgpb.Config{
 			},
 		},
 	},
+	HonorGerritLinkedAccounts: true,
 }
 
 func TestUpdateProject(t *testing.T) {
@@ -110,6 +111,7 @@ func TestUpdateProject(t *testing.T) {
 					},
 				},
 			},
+			HonorGerritLinkedAccounts: true,
 		}
 		verifyEntitiesInDatastore := func(ctx context.Context, expectedEVersion int64) {
 			cfg, meta := &cfgpb.Config{}, &config.Meta{}
@@ -131,6 +133,7 @@ func TestUpdateProject(t *testing.T) {
 				So(cg.SubmitOptions, ShouldResembleProto, cfg.GetSubmitOptions())
 				So(cg.Content, ShouldResembleProto, cfg.GetConfigGroups()[i])
 				So(cg.CQStatusHost, ShouldResemble, cfg.GetCqStatusHost())
+				So(cg.HonorGerritLinkedAccounts, ShouldEqual, cfg.GetHonorGerritLinkedAccounts())
 			}
 			// Verify ProjectConfig.
 			pc := prjcfg.ProjectConfig{Project: "chromium"}
@@ -381,6 +384,7 @@ func TestPutConfigGroups(t *testing.T) {
 			So(stored.DrainingStartTime, ShouldEqual, testCfg.GetDrainingStartTime())
 			So(stored.SubmitOptions, ShouldResembleProto, testCfg.GetSubmitOptions())
 			So(stored.Content, ShouldResembleProto, testCfg.GetConfigGroups()[0])
+			So(stored.HonorGerritLinkedAccounts, ShouldEqual, testCfg.GetHonorGerritLinkedAccounts())
 			So(stored.SchemaVersion, ShouldEqual, prjcfg.SchemaVersion)
 
 			Convey("Skip if already exists", func() {

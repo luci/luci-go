@@ -207,6 +207,15 @@ type ConfigGroup struct {
 	// Note that this is currently a project-level field. Therefore, all
 	// ConfigGroups in a single version of Config should have the same value.
 	SubmitOptions *cfgpb.SubmitOptions
+	// HonorGerritLinkedAccounts tells whether LUCI CV should also honor linked
+	// accounts in Gerrit.
+	//
+	// That means all linked secondary accounts and primary accounts will share
+	// the same permission from LUCI CV points of view.
+	//
+	// Note that this is currently a project-level field. Therefore, all
+	// ConfigGroups in a single version of Config should have the same value.
+	HonorGerritLinkedAccounts bool `gae:",noindex"`
 	// Content represents a `pb.ConfigGroup` proto message defined in the CV
 	// config
 	Content *cfgpb.ConfigGroup

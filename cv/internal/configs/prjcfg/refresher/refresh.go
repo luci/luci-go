@@ -291,6 +291,7 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 		ent.DrainingStartTime = cfg.GetDrainingStartTime()
 		ent.SubmitOptions = cfg.GetSubmitOptions()
 		ent.Content = cfg.GetConfigGroups()[i]
+		ent.HonorGerritLinkedAccounts = cfg.GetHonorGerritLinkedAccounts()
 		ent.CQStatusHost = cfg.GetCqStatusHost()
 		toPut = append(toPut, ent)
 	}
