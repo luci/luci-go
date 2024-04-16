@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -58,11 +59,9 @@ func getPythonEnvironment(ver string) *python.Environment {
 }
 
 func setupApp(ctx context.Context, app *Application) context.Context {
-	app.Arguments = append([]string{
-		"-vpython-root",
-		testStorageDir,
-	}, app.Arguments...)
-
+	if app.VpythonRoot == "" {
+		app.VpythonRoot = testStorageDir
+	}
 	app.Initialize(ctx)
 
 	So(app.ParseEnvs(ctx), ShouldBeNil)
@@ -166,6 +165,27 @@ func TestPythonBasic(t *testing.T) {
 					So(has, ShouldBeTrue)
 					So(rc, ShouldEqual, 42)
 				})
+
+				if runtime.GOOS != "windows" {
+					// See https://github.com/pypa/virtualenv/issues/1949
+					Convey("Test symlink root", func() {
+						symlinkRoot := filepath.Join(t.TempDir(), "link")
+						err := os.Symlink(testStorageDir, symlinkRoot)
+						So(err, ShouldBeNil)
+
+						c := cmd(t, &Application{
+							Arguments: []string{
+								"-vpython-spec",
+								testData("default.vpython3"),
+								"-c",
+								"print(123)",
+							},
+							VpythonRoot: symlinkRoot,
+						}, env)
+
+						So(output(c), ShouldEqual, "123")
+					})
+				}
 			})
 		}
 	})

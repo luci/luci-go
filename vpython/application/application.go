@@ -169,7 +169,7 @@ func (a *Application) ParseEnvs(ctx context.Context) (err error) {
 	// Determine our VirtualEnv base directory.
 	if v, ok := e.Lookup(VirtualEnvRootENV); ok {
 		a.VpythonRoot = v
-	} else {
+	} else if a.VpythonRoot == "" {
 		cdir, err := a.userCacheDir()
 		if err != nil {
 			logging.Infof(ctx, "failed to get user cache dir: %s", err)
