@@ -2266,6 +2266,7 @@ luci.cq(
     submit_burst_delay = None,
     draining_start_time = None,
     status_host = None,
+    honor_gerrit_linked_accounts = None,
 )
 ```
 
@@ -2290,6 +2291,7 @@ This optional rule can be used to set global CQ parameters that apply to all
 * **submit_burst_delay**: how long to wait between bursts of submissions of CQ attempts. Required if `submit_max_burst` is used.
 * **draining_start_time**: **Temporarily not supported, see https://crbug.com/1208569. Reach out to LUCI team oncall if you need urgent help.**. If present, the CQ will refrain from processing any CLs, on which CQ was triggered after the specified time. This is an UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z is mandatory.
 * **status_host**: Optional. Decide whether user has access to the details of runs in this Project in LUCI CV UI. Currently, only the following hosts are accepted: 1) "chromium-cq-status.appspot.com" where everyone can access run details. 2) "internal-cq-status.appspot.com" where only Googlers can access run details. Please don't use the public host if the Project launches internal builders for public repos. It can leak the builder names, which may be confidential.
+* **honor_gerrit_linked_accounts**: Optional. Decide whether LUCI CV should consider the primary gerrit accounts and the linked/secondary accounts sharing the same permission. That means if the primary account is allowed to trigger CQ dry run, the secondary account will also be allowed, vice versa.
 
 
 

@@ -1091,6 +1091,9 @@ def gen_cq_cfg(ctx):
     cfg = cq_pb.Config(
         cq_status_host = cq_node.props.status_host if cq_node else None,
         draining_start_time = cq_node.props.draining_start_time if cq_node else None,
+        honor_gerrit_linked_accounts = (
+            cq_node.props.honor_gerrit_linked_accounts if cq_node else None
+        ),
     )
     set_config(ctx, "commit-queue.cfg", cfg)
 

@@ -25,7 +25,8 @@ def _cq(
         submit_max_burst = None,
         submit_burst_delay = None,
         draining_start_time = None,
-        status_host = None):
+        status_host = None,
+        honor_gerrit_linked_accounts = None):
     """Defines optional configuration of the CQ service for this project.
 
     CQ is a service that monitors Gerrit CLs in a configured set of Gerrit
@@ -62,6 +63,11 @@ def _cq(
         Googlers can access run details. Please don't use the public host if
         the Project launches internal builders for public repos. It can leak
         the builder names, which may be confidential.
+      honor_gerrit_linked_accounts: Optional. Decide whether LUCI CV should
+        consider the primary gerrit accounts and the linked/secondary accounts
+        sharing the same permission. That means if the primary account is
+        allowed to trigger CQ dry run, the secondary account will also be
+        allowed, vice versa.
     """
     submit_max_burst = validate.int("submit_max_burst", submit_max_burst, required = False)
     submit_burst_delay = validate.duration("submit_burst_delay", submit_burst_delay, required = False)
@@ -77,6 +83,12 @@ def _cq(
         "submit_burst_delay": submit_burst_delay,
         "draining_start_time": validate.string("draining_start_time", draining_start_time, required = False),
         "status_host": validate.hostname("status_host", status_host, required = False),
+        "honor_gerrit_linked_accounts": validate.bool(
+            "honor_gerrit_linked_accounts",
+            honor_gerrit_linked_accounts,
+            default = False,
+            required = False,
+        ),
     })
     graph.add_edge(keys.project(), key)
 
