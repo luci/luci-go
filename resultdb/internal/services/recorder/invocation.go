@@ -140,15 +140,16 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"CreateTime": spanner.CommitTimestamp,
 		"Deadline":   inv.Deadline,
 
-		"Tags":             inv.Tags,
-		"ProducerResource": inv.ProducerResource,
-		"BigQueryExports":  inv.BigqueryExports,
-		"Properties":       spanutil.Compressed(pbutil.MustMarshal(inv.Properties)),
-		"InheritSources":   spanner.NullBool{Valid: inv.SourceSpec != nil, Bool: inv.SourceSpec.GetInherit()},
-		"Sources":          spanutil.Compressed(pbutil.MustMarshal(inv.SourceSpec.GetSources())),
-		"BaselineId":       inv.BaselineId,
-		"TestInstruction":  spanutil.Compressed(pbutil.MustMarshal(inv.TestInstruction)),
-		"StepInstructions": spanutil.Compressed(pbutil.MustMarshal(inv.StepInstructions)),
+		"Tags":              inv.Tags,
+		"ProducerResource":  inv.ProducerResource,
+		"BigQueryExports":   inv.BigqueryExports,
+		"Properties":        spanutil.Compressed(pbutil.MustMarshal(inv.Properties)),
+		"InheritSources":    spanner.NullBool{Valid: inv.SourceSpec != nil, Bool: inv.SourceSpec.GetInherit()},
+		"Sources":           spanutil.Compressed(pbutil.MustMarshal(inv.SourceSpec.GetSources())),
+		"IsSourceSpecFinal": spanner.NullBool{Valid: inv.IsSourceSpecFinal, Bool: inv.IsSourceSpecFinal},
+		"BaselineId":        inv.BaselineId,
+		"TestInstruction":   spanutil.Compressed(pbutil.MustMarshal(inv.TestInstruction)),
+		"StepInstructions":  spanutil.Compressed(pbutil.MustMarshal(inv.StepInstructions)),
 	}
 
 	if inv.State == pb.Invocation_FINALIZING || inv.State == pb.Invocation_FINALIZED {

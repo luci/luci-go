@@ -84,8 +84,8 @@ func TestFinalizeInvocation(t *testing.T) {
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
+			So(inv.FinalizeStartTime, ShouldNotBeNil)
 			finalizeTime := inv.FinalizeStartTime
-			So(finalizeTime, ShouldNotBeNil)
 
 			// Read the invocation from Spanner to confirm it's really FINALIZING.
 			inv, err = invocations.Read(span.Single(ctx), "inv")

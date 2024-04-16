@@ -154,19 +154,20 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		// Prepare the invocation we will save to spanner.
 		inv := &pb.Invocation{
-			Name:             invocations.ID(req.InvocationId).Name(),
-			State:            newInvState,
-			Deadline:         req.Invocation.GetDeadline(),
-			Tags:             req.Invocation.GetTags(),
-			BigqueryExports:  req.Invocation.GetBigqueryExports(),
-			CreatedBy:        createdBy,
-			ProducerResource: req.Invocation.GetProducerResource(),
-			Realm:            req.Invocation.GetRealm(),
-			Properties:       req.Invocation.GetProperties(),
-			SourceSpec:       req.Invocation.GetSourceSpec(),
-			BaselineId:       req.Invocation.GetBaselineId(),
-			TestInstruction:  req.Invocation.GetTestInstruction(),
-			StepInstructions: req.Invocation.GetStepInstructions(),
+			Name:              invocations.ID(req.InvocationId).Name(),
+			State:             newInvState,
+			Deadline:          req.Invocation.GetDeadline(),
+			Tags:              req.Invocation.GetTags(),
+			BigqueryExports:   req.Invocation.GetBigqueryExports(),
+			CreatedBy:         createdBy,
+			ProducerResource:  req.Invocation.GetProducerResource(),
+			Realm:             req.Invocation.GetRealm(),
+			Properties:        req.Invocation.GetProperties(),
+			SourceSpec:        req.Invocation.GetSourceSpec(),
+			IsSourceSpecFinal: req.Invocation.GetIsSourceSpecFinal(),
+			BaselineId:        req.Invocation.GetBaselineId(),
+			TestInstruction:   req.Invocation.GetTestInstruction(),
+			StepInstructions:  req.Invocation.GetStepInstructions(),
 		}
 
 		// Ensure the invocation has a deadline.

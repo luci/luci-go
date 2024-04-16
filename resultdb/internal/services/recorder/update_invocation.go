@@ -100,6 +100,11 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 				return errors.Annotate(err, "invocation: step_instructions").Err()
 			}
 
+		case "is_source_spec_final":
+			// Either true or false is OK for this first pass validation.
+			// However, later we must validate that if the field is true,
+			// it is not being set to false.
+
 		default:
 			return errors.Reason("update_mask: unsupported path %q", path).Err()
 		}
@@ -220,15 +225,21 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			"InvocationId": invID,
 		}
 
+		// Capture whether sources were final at the start of processing
+		// this request. It should be valid to set both sources and
+		// sources final in the same request, regardless of the order
+		// the fields are mentioned in the update mask.
+		wasSourcesFinal := ret.IsSourceSpecFinal
+
 		for _, path := range in.UpdateMask.Paths {
 			switch path {
 			// The cases in this switch statement must be synchronized with a
 			// similar switch statement in validateUpdateInvocationRequest.
 
 			case "deadline":
-				deadlne := in.Invocation.Deadline
-				values["Deadline"] = deadlne
-				ret.Deadline = deadlne
+				deadline := in.Invocation.Deadline
+				values["Deadline"] = deadline
+				ret.Deadline = deadline
 
 			case "bigquery_exports":
 				bqExports := in.Invocation.BigqueryExports
@@ -245,12 +256,27 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				} else if ret.SourceSpec != nil {
 					logging.Warningf(ctx, "Instrumentation for b/332787707: nil field update on source spec for %s after being set to %v", invID, protojson.Format(ret.SourceSpec))
 				}
+				// Are we setting the field to a value other than its current value?
+				updateSources := !proto.Equal(ret.SourceSpec, in.Invocation.SourceSpec)
+				if updateSources {
+					if wasSourcesFinal {
+						return appstatus.BadRequest(errors.Reason("invocation: source_spec: cannot modify already finalized sources").Err())
+					}
 
-				// Store any gerrit changes in normalised form.
-				pbutil.SortGerritChanges(in.Invocation.SourceSpec.GetSources().GetChangelists())
-				values["InheritSources"] = spanner.NullBool{Valid: in.Invocation.SourceSpec != nil, Bool: in.Invocation.SourceSpec.GetInherit()}
-				values["Sources"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.SourceSpec.GetSources()))
-				ret.SourceSpec = in.Invocation.SourceSpec
+					// Store any gerrit changes in normalised form.
+					pbutil.SortGerritChanges(in.Invocation.SourceSpec.GetSources().GetChangelists())
+					values["InheritSources"] = spanner.NullBool{Valid: in.Invocation.SourceSpec != nil, Bool: in.Invocation.SourceSpec.GetInherit()}
+					values["Sources"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.SourceSpec.GetSources()))
+					ret.SourceSpec = in.Invocation.SourceSpec
+				}
+
+			case "is_source_spec_final":
+				if ret.IsSourceSpecFinal && !in.Invocation.IsSourceSpecFinal {
+					return appstatus.BadRequest(errors.Reason("invocation: is_source_spec_final: cannot unfinalize already finalized sources").Err())
+				}
+
+				values["IsSourceSpecFinal"] = spanner.NullBool{Valid: in.Invocation.IsSourceSpecFinal, Bool: in.Invocation.IsSourceSpecFinal}
+				ret.IsSourceSpecFinal = in.Invocation.IsSourceSpecFinal
 
 			case "baseline_id":
 				baselineID := in.Invocation.BaselineId

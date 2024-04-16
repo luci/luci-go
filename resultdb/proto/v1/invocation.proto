@@ -30,7 +30,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 //
-// Next id: 20.
+// Next id: 21.
 message Invocation {
   reserved 3; // bool interrupted, crbug.com/1078696.
 
@@ -168,14 +168,33 @@ message Invocation {
   // The sources specified here applies only to:
   // - the test results directly contained in this invocation, and
   // - any directly included invocations which set their source_spec.inherit to
-  // true.
+  //   true.
   //
   // Clients should be careful to ensure the uploaded source spec is consistent
   // between included invocations that upload the same test variants.
   // Verdicts are associated with the sources of *any* of their constituent
   // test results, so if there is inconsistency between included invocations,
   // the position of the verdict becomes not well defined.
+  //
+  // Note that the sources specified here are shared with included invocations
+  // regardless of the realm of those included invocations.
+  //
+  // Attempting to update this field to a value other than its current value
+  // after is_source_spec_final is set will generate an error.
   SourceSpec source_spec = 15;
+
+  // Whether the code sources specified by source_spec are final (immutable).
+  //
+  // To facilitate rapid export of invocations inheriting sources from this
+  // invocation, this property should be set to true as soon as possible
+  // after the invocation's sources are fixed. In most cases, clients
+  // will want to set this property to true at the same time as they set
+  // source_spec.
+  //
+  // This field is client owned. Consistent with https://google.aip.dev/129,
+  // it will not be forced to true when the invocation starts to finalize, even
+  // if its effective value will always be true at that point.
+  bool is_source_spec_final = 20;
 
   // A user-specified baseline identifier that maps to a set of test variants.
   // Often, this will be the source that generated the test result, such as the

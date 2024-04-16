@@ -76,6 +76,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.Properties,
 		 i.Sources,
 		 i.InheritSources,
+		 i.IsSourceSpecFinal,
 		 i.BaselineId,
 		 i.TestInstruction,
 		 i.StepInstructions,
@@ -92,15 +93,16 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		inv := &pb.Invocation{}
 
 		var (
-			createdBy        spanner.NullString
-			producerResource spanner.NullString
-			realm            spanner.NullString
-			properties       spanutil.Compressed
-			sources          spanutil.Compressed
-			inheritSources   spanner.NullBool
-			baselineId       spanner.NullString
-			testInstruction  spanutil.Compressed
-			stepInstructions spanutil.Compressed
+			createdBy         spanner.NullString
+			producerResource  spanner.NullString
+			realm             spanner.NullString
+			properties        spanutil.Compressed
+			sources           spanutil.Compressed
+			inheritSources    spanner.NullBool
+			isSourceSpecFinal spanner.NullBool
+			baselineID        spanner.NullString
+			testInstruction   spanutil.Compressed
+			stepInstructions  spanutil.Compressed
 		)
 		err := b.FromSpanner(row, &id,
 			&inv.State,
@@ -117,7 +119,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&properties,
 			&sources,
 			&inheritSources,
-			&baselineId,
+			&isSourceSpecFinal,
+			&baselineID,
 			&testInstruction,
 			&stepInstructions,
 		)
@@ -149,8 +152,12 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			}
 		}
 
-		if baselineId.Valid {
-			inv.BaselineId = baselineId.StringVal
+		if isSourceSpecFinal.Valid && isSourceSpecFinal.Bool {
+			inv.IsSourceSpecFinal = true
+		}
+
+		if baselineID.Valid {
+			inv.BaselineId = baselineID.StringVal
 		}
 
 		if len(testInstruction) > 0 {

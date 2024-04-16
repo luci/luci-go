@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -190,6 +191,26 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				}
 				err := validateUpdateInvocationRequest(request, now)
 				So(err, ShouldErrLike, `invocation: source_spec: sources: gitiles_commit: host: unspecified`)
+			})
+		})
+		Convey(`is_source_spec_final`, func() {
+			request.UpdateMask.Paths = []string{"is_source_spec_final"}
+
+			Convey(`true`, func() {
+				request.Invocation.IsSourceSpecFinal = true
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldBeNil)
+			})
+			Convey(`false`, func() {
+				// If the current field value is true and we are setting
+				// false, a validation error is generated, but outside this
+				// request validation routine.
+				// For this purposes of this validation, this is not a
+				// useful update to do, but it allowed to set a field to
+				// its current value.
+				request.Invocation.IsSourceSpecFinal = false
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldBeNil)
 			})
 		})
 		Convey(`baseline_id`, func() {
@@ -558,6 +579,54 @@ func TestUpdateInvocation(t *testing.T) {
 				So(inv.BaselineId, ShouldEqual, "existing-baseline")
 			})
 		})
+		Convey("is_source_spec_final", func() {
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name: "invocations/inv",
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"is_source_spec_final"}},
+			}
+			Convey("from non-finalized sources", func() {
+				Convey("to non-finalized sources", func() {
+					req.Invocation.IsSourceSpecFinal = false
+
+					inv, err := recorder.UpdateInvocation(ctx, req)
+					So(err, ShouldBeNil)
+					So(inv.IsSourceSpecFinal, ShouldEqual, false)
+				})
+				Convey("to finalized sources", func() {
+					req.Invocation.IsSourceSpecFinal = true
+
+					inv, err := recorder.UpdateInvocation(ctx, req)
+					So(err, ShouldBeNil)
+					So(inv.IsSourceSpecFinal, ShouldEqual, true)
+				})
+			})
+			Convey("from finalized sources", func() {
+				testutil.MustApply(ctx, insert.Invocation("inv-sources-final", pb.Invocation_ACTIVE, map[string]any{
+					"IsSourceSpecFinal": spanner.NullBool{Valid: true, Bool: true},
+				}))
+				req.Invocation.Name = "invocations/inv-sources-final"
+
+				token, err := generateInvocationToken(ctx, "inv-sources-final")
+				So(err, ShouldBeNil)
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+
+				Convey("to finalized sources", func() {
+					req.Invocation.IsSourceSpecFinal = true
+
+					inv, err := recorder.UpdateInvocation(ctx, req)
+					So(err, ShouldBeNil)
+					So(inv.IsSourceSpecFinal, ShouldEqual, true)
+				})
+				Convey("to non-finalized sources", func() {
+					req.Invocation.IsSourceSpecFinal = false
+
+					_, err := recorder.UpdateInvocation(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, `invocation: is_source_spec_final: cannot unfinalize already finalized sources`)
+				})
+			})
+		})
 
 		Convey("e2e", func() {
 			validDeadline := pbutil.MustTimestampProto(start.Add(day))
@@ -631,7 +700,7 @@ func TestUpdateInvocation(t *testing.T) {
 			}
 
 			updateMask := &field_mask.FieldMask{
-				Paths: []string{"deadline", "bigquery_exports", "properties", "source_spec", "baseline_id", "realm", "test_instruction", "step_instructions"},
+				Paths: []string{"deadline", "bigquery_exports", "properties", "is_source_spec_final", "source_spec", "baseline_id", "realm", "test_instruction", "step_instructions"},
 			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
@@ -642,10 +711,11 @@ func TestUpdateInvocation(t *testing.T) {
 					SourceSpec: &pb.SourceSpec{
 						Sources: testutil.TestSourcesWithChangelistNumbers(431, 123),
 					},
-					BaselineId:       "try:linux-rel",
-					Realm:            "testproject:newrealm",
-					TestInstruction:  testInstruction,
-					StepInstructions: stepInstructions,
+					IsSourceSpecFinal: true,
+					BaselineId:        "try:linux-rel",
+					Realm:             "testproject:newrealm",
+					TestInstruction:   testInstruction,
+					StepInstructions:  stepInstructions,
 				},
 				UpdateMask: updateMask,
 			}
@@ -662,16 +732,18 @@ func TestUpdateInvocation(t *testing.T) {
 					// normalized.
 					Sources: testutil.TestSourcesWithChangelistNumbers(123, 431),
 				},
-				BaselineId:       "try:linux-rel",
-				Realm:            "testproject:newrealm",
-				TestInstruction:  testInstruction,
-				StepInstructions: stepInstructions,
+				IsSourceSpecFinal: true,
+				BaselineId:        "try:linux-rel",
+				Realm:             "testproject:newrealm",
+				TestInstruction:   testInstruction,
+				StepInstructions:  stepInstructions,
 			}
 			So(inv.Name, ShouldEqual, expected.Name)
 			So(inv.State, ShouldEqual, pb.Invocation_ACTIVE)
 			So(inv.Deadline, ShouldResembleProto, expected.Deadline)
 			So(inv.Properties, ShouldResembleProto, expected.Properties)
 			So(inv.SourceSpec, ShouldResembleProto, expected.SourceSpec)
+			So(inv.IsSourceSpecFinal, ShouldEqual, expected.IsSourceSpecFinal)
 			So(inv.BaselineId, ShouldEqual, expected.BaselineId)
 			So(inv.Realm, ShouldEqual, expected.Realm)
 			So(inv.TestInstruction, ShouldResembleProto, expected.TestInstruction)
@@ -685,18 +757,20 @@ func TestUpdateInvocation(t *testing.T) {
 			invID := invocations.ID("inv")
 			var compressedProperties spanutil.Compressed
 			var compressedSources spanutil.Compressed
+			var isSourceSpecFinal spanner.NullBool
 			var compressedTestInstruction spanutil.Compressed
 			var compressedStepInstructions spanutil.Compressed
 			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]any{
-				"Deadline":         &actual.Deadline,
-				"BigQueryExports":  &actual.BigqueryExports,
-				"Properties":       &compressedProperties,
-				"Sources":          &compressedSources,
-				"InheritSources":   &actual.SourceSpec.Inherit,
-				"BaselineId":       &actual.BaselineId,
-				"Realm":            &actual.Realm,
-				"TestInstruction":  &compressedTestInstruction,
-				"StepInstructions": &compressedStepInstructions,
+				"Deadline":          &actual.Deadline,
+				"BigQueryExports":   &actual.BigqueryExports,
+				"Properties":        &compressedProperties,
+				"Sources":           &compressedSources,
+				"InheritSources":    &actual.SourceSpec.Inherit,
+				"IsSourceSpecFinal": &isSourceSpecFinal,
+				"BaselineId":        &actual.BaselineId,
+				"Realm":             &actual.Realm,
+				"TestInstruction":   &compressedTestInstruction,
+				"StepInstructions":  &compressedStepInstructions,
 			})
 			actual.Properties = &structpb.Struct{}
 			err = proto.Unmarshal(compressedProperties, actual.Properties)
@@ -710,6 +784,9 @@ func TestUpdateInvocation(t *testing.T) {
 			actual.StepInstructions = &pb.Instructions{}
 			err = proto.Unmarshal(compressedStepInstructions, actual.StepInstructions)
 			So(err, ShouldBeNil)
+			if isSourceSpecFinal.Valid && isSourceSpecFinal.Bool {
+				actual.IsSourceSpecFinal = true
+			}
 			So(actual, ShouldResembleProto, expected)
 		})
 	})

@@ -539,7 +539,8 @@ func TestCreateInvocation(t *testing.T) {
 					SourceSpec: &pb.SourceSpec{
 						Sources: testutil.TestSources(),
 					},
-					BaselineId: "testrealm:test-builder",
+					IsSourceSpecFinal: true,
+					BaselineId:        "testrealm:test-builder",
 					TestInstruction: &pb.Instruction{
 						TargetedInstructions: []*pb.TargetedInstruction{
 							{
