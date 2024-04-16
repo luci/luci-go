@@ -69,10 +69,10 @@ message MachineTypeRow {
     string cpu_type = 3;
 
     // The count of CPU.
-    int64 cpu_count = 4;
+    float cpu_count = 4;
 
     // Memory size in GB.
-    int64 memory_gb = 5;
+    float memory_gb = 5;
 
     // Allowed count of disks.
     repeated int64 disks = 6;
