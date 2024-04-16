@@ -187,8 +187,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		casClient := &fakeRBEClient{}
-		recorder := newTestRecorderServer()
-		recorder.casClient = casClient
+		bqClient := &fakeBQClient{}
+		recorder := newTestRecorderServerWithClients(casClient, bqClient)
 		bReq := &pb.BatchCreateArtifactsRequest{}
 
 		appendArtReq := func(aID, content, cType, parent string, testStatus pb.TestStatus) {
@@ -242,8 +242,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "testproject")
+				So(err, ShouldBeRPCPermissionDenied, "testproject")
 			})
 			Convey("user not configured", func() {
 				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
@@ -254,8 +253,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "user:other@test.com")
+				So(err, ShouldBeRPCPermissionDenied, "user:other@test.com")
 			})
 			Convey("bucket not listed", func() {
 				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "otherbucket")
@@ -264,8 +262,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "testbucket")
+				So(err, ShouldBeRPCPermissionDenied, "testbucket")
 			})
 		})
 		Convey("works", func() {
@@ -280,8 +277,6 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			appendArtReq("art5", "c5ntent", "text/richtext", "invocations/inv/tests/test_id_1/results/0", pb.TestStatus_FAIL)
 
 			casClient.mockResp(nil, codes.OK, codes.OK)
-			bqClient := &fakeBQClient{}
-			recorder.bqExportClient = bqClient
 
 			resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 			So(err, ShouldBeNil)
@@ -443,7 +438,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 			Convey("Partly", func() {
 				casClient.mockResp(nil, codes.OK, codes.InvalidArgument)
-				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				// Call the implementation without postlude so that we can see the
+				// internal error, and don't just get "Internal server error" back.
+				_, err := recorder.Service.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldErrLike, `artifact "invocations/inv/artifacts/art2": cas.BatchUpdateBlobs failed`)
 			})
 
@@ -451,7 +448,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				// exceeded the maximum size limit is the only possible error that
 				// can cause the entire request failed.
 				casClient.mockResp(errors.New("err"), codes.OK, codes.OK)
-				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
+				// Call the implementation without postlude so that we can see the
+				// internal error, and don't just get "Internal server error" back.
+				_, err := recorder.Service.BatchCreateArtifacts(ctx, bReq)
 				So(err, ShouldErrLike, "cas.BatchUpdateBlobs failed")
 			})
 
@@ -466,12 +465,12 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			Convey("Missing", func() {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs())
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.Unauthenticated, `missing update-token`)
+				So(err, ShouldBeRPCUnauthenticated, `missing update-token`)
 			})
 			Convey("Wrong", func() {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "rong"))
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
+				So(err, ShouldBeRPCPermissionDenied, `invalid update token`)
 			})
 		})
 
@@ -482,7 +481,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
+				So(err, ShouldBeRPCFailedPrecondition, `invocations/inv is not active`)
 			})
 
 			art := map[string]any{
@@ -523,16 +522,16 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different size")
+				So(err, ShouldBeRPCAlreadyExists, "exists w/ different size")
 
 				bReq.Requests[0].Artifact.Contents = []byte("c1ntent")
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different hash")
+				So(err, ShouldBeRPCAlreadyExists, "exists w/ different hash")
 
 				bReq.Requests[0].Artifact.Contents = []byte("")
 				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art1"
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different storage scheme")
+				So(err, ShouldBeRPCAlreadyExists, "exists w/ different storage scheme")
 			})
 
 			Convey("Different artifact exists GCS", func() {
@@ -544,17 +543,17 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different storage scheme")
+				So(err, ShouldBeRPCAlreadyExists, "exists w/ different storage scheme")
 
 				bReq.Requests[0].Artifact.Contents = []byte("")
 				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art2"
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different GCS URI")
+				So(err, ShouldBeRPCAlreadyExists, "exists w/ different GCS URI")
 
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				bReq.Requests[0].Artifact.SizeBytes = 42
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldHaveAppStatus, codes.AlreadyExists, "exists w/ different size")
+				So(err, ShouldBeRPCAlreadyExists, "exists w/ different size")
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
@@ -564,7 +563,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		Convey("Too many requests", func() {
 			bReq.Requests = make([]*pb.CreateArtifactRequest, 1000)
 			_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, "the number of requests in the batch exceeds 500")
+			So(err, ShouldBeRPCInvalidArgument, "the number of requests in the batch exceeds 500")
 		})
 	})
 }

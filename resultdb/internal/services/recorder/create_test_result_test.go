@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -202,7 +201,7 @@ func TestCreateTestResult(t *testing.T) {
 			Convey("with an invalid request", func() {
 				req.Invocation = "this is an invalid invocation name"
 				_, err := recorder.CreateTestResult(ctx, req)
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "bad request: invocation: does not match")
+				So(err, ShouldBeRPCInvalidArgument, "bad request: invocation: does not match")
 			})
 
 			Convey("with an non-existing invocation", func() {
@@ -211,7 +210,7 @@ func TestCreateTestResult(t *testing.T) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, tok))
 				req.Invocation = "invocations/inv"
 				_, err := recorder.CreateTestResult(ctx, req)
-				So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv not found")
+				So(err, ShouldBeRPCNotFound, "invocations/inv not found")
 			})
 		})
 	})

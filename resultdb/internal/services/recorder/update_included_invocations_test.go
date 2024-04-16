@@ -17,7 +17,6 @@ package recorder
 import (
 	"testing"
 
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/server/auth"
@@ -116,7 +115,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 		Convey(`Invalid request`, func() {
 			_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{})
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: including_invocation: unspecified`)
+			So(err, ShouldBeRPCInvalidArgument, `bad request: including_invocation: unspecified`)
 		})
 
 		Convey(`With valid request`, func() {
@@ -138,7 +137,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 					insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, req)
-				So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/including not found`)
+				So(err, ShouldBeRPCNotFound, `invocations/including not found`)
 			})
 
 			Convey(`With existing inclusion`, func() {
@@ -155,7 +154,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 				Convey(`No included invocation`, func() {
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
-					So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/included`)
+					So(err, ShouldBeRPCNotFound, `invocations/included`)
 				})
 
 				Convey(`Leaking disallowed`, func() {
@@ -165,7 +164,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 					)
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
-					So(err, ShouldHaveAppStatus, codes.PermissionDenied, `caller does not have permission resultdb.invocations.include in realm of invocation included2`)
+					So(err, ShouldBeRPCPermissionDenied, `caller does not have permission resultdb.invocations.include in realm of invocation included2`)
 					assertNotIncluded("included2")
 				})
 

@@ -449,7 +449,7 @@ func TestUpdateInvocation(t *testing.T) {
 		Convey(`invalid request`, func() {
 			req := &pb.UpdateInvocationRequest{}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: invocation: name: unspecified`)
+			So(err, ShouldBeRPCInvalidArgument, `bad request: invocation: name: unspecified`)
 		})
 		Convey(`no update token`, func() {
 			req := &pb.UpdateInvocationRequest{
@@ -460,7 +460,7 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.Unauthenticated, `missing update-token metadata value in the request`)
+			So(err, ShouldBeRPCUnauthenticated, `missing update-token metadata value in the request`)
 		})
 		Convey(`invalid update token`, func() {
 			token, err := generateInvocationToken(ctx, "inv2")
@@ -475,7 +475,7 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err = recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
+			So(err, ShouldBeRPCPermissionDenied, `invalid update token`)
 		})
 
 		token, err := generateInvocationToken(ctx, "inv")
@@ -491,7 +491,7 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
+			So(err, ShouldBeRPCNotFound, `invocations/inv not found`)
 		})
 
 		// Insert the invocation.

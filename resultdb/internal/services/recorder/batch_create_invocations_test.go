@@ -15,19 +15,16 @@
 package recorder
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -120,11 +117,6 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 		// Setup a full HTTP server in order to retrieve response headers.
 		server := &prpctest.Server{}
-		server.UnaryServerInterceptor = func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-			res, err := handler(ctx, req)
-			err = appstatus.GRPCifyAndLog(ctx, err)
-			return res, err
-		}
 		pb.RegisterRecorderServer(server, newTestRecorderServer())
 		server.Start(ctx)
 		defer server.Close()

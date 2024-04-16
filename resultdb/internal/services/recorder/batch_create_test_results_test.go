@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
@@ -224,7 +223,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				req.Requests[0].Invocation = ""
 				req.Requests[1].Invocation = ""
 				_, err := recorder.BatchCreateTestResults(ctx, req)
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "bad request: invocation: does not match")
+				So(err, ShouldBeRPCInvalidArgument, "bad request: invocation: does not match")
 			})
 
 			Convey("with an non-existing invocation", func() {
@@ -235,7 +234,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				req.Requests[0].Invocation = ""
 				req.Requests[1].Invocation = ""
 				_, err := recorder.BatchCreateTestResults(ctx, req)
-				So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv not found")
+				So(err, ShouldBeRPCNotFound, "invocations/inv not found")
 			})
 		})
 	})

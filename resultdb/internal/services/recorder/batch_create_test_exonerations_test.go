@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/server/span"
@@ -157,7 +156,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				Invocation: "x",
 			}
 			_, err := recorder.BatchCreateTestExonerations(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: invocation: does not match`)
+			So(err, ShouldBeRPCInvalidArgument, `bad request: invocation: does not match`)
 		})
 
 		Convey(`No invocation`, func() {
@@ -165,7 +164,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				Invocation: "invocations/inv",
 			}
 			_, err := recorder.BatchCreateTestExonerations(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
+			So(err, ShouldBeRPCNotFound, `invocations/inv not found`)
 		})
 
 		// Insert the invocation.

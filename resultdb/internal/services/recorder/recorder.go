@@ -82,14 +82,7 @@ func InitServer(srv *server.Server, opt Options) error {
 		}
 	})
 
-	pb.RegisterRecorderServer(srv, &pb.DecoratedRecorder{
-		Service: &recorderServer{
-			Options:        &opt,
-			casClient:      repb.NewContentAddressableStorageClient(conn),
-			bqExportClient: bqClient,
-		},
-		Postlude: internal.CommonPostlude,
-	})
+	pb.RegisterRecorderServer(srv, NewRecorderServer(opt, repb.NewContentAddressableStorageClient(conn), bqClient))
 
 	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 	srv.ConfigurePRPC(func(p *prpc.Server) {
@@ -98,6 +91,17 @@ func InitServer(srv *server.Server, opt Options) error {
 
 	srv.RegisterUnaryServerInterceptors(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_HIGH))
 	return installArtifactCreationHandler(srv, &opt, conn)
+}
+
+func NewRecorderServer(opts Options, casClient repb.ContentAddressableStorageClient, bqClient BQExportClient) *pb.DecoratedRecorder {
+	return &pb.DecoratedRecorder{
+		Service: &recorderServer{
+			Options:        &opts,
+			casClient:      casClient,
+			bqExportClient: bqClient,
+		},
+		Postlude: internal.CommonPostlude,
+	}
 }
 
 // installArtifactCreationHandler installs artifact creation handler.

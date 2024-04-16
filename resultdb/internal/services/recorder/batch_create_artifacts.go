@@ -480,7 +480,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 			}
 			bucket, _ := gsutil.Split(a.gcsURI)
 			if _, ok := allowedBuckets[bucket]; !ok {
-				return nil, errors.New(fmt.Sprintf("the user %s does not have permission to reference GCS objects in bucket %s in project %s", string(user), bucket, project))
+				return nil, appstatus.Errorf(codes.PermissionDenied, "the user %s does not have permission to reference GCS objects in bucket %s in project %s", string(user), bucket, project)
 			}
 		}
 	}

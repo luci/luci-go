@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/server/span"
@@ -126,7 +125,7 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: test_exoneration: test_id: non-printable rune`)
+			So(err, ShouldBeRPCInvalidArgument, `bad request: test_exoneration: test_id: non-printable rune`)
 		})
 
 		Convey(`No invocation`, func() {
@@ -139,7 +138,7 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
+			So(err, ShouldBeRPCNotFound, `invocations/inv not found`)
 		})
 
 		// Insert the invocation.

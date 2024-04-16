@@ -17,7 +17,10 @@ package recorder
 import (
 	"testing"
 
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const expectedResultExpiration = 60 * day
@@ -26,8 +29,11 @@ func TestMain(m *testing.M) {
 	testutil.SpannerTestMain(m)
 }
 
-func newTestRecorderServer() *recorderServer {
-	return &recorderServer{
-		Options: &Options{ExpectedResultsExpiration: expectedResultExpiration},
-	}
+func newTestRecorderServer() *pb.DecoratedRecorder {
+	return newTestRecorderServerWithClients(nil, nil)
+}
+
+func newTestRecorderServerWithClients(casClient repb.ContentAddressableStorageClient, bqClient BQExportClient) *pb.DecoratedRecorder {
+	opts := Options{ExpectedResultsExpiration: expectedResultExpiration}
+	return NewRecorderServer(opts, casClient, bqClient)
 }

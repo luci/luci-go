@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -382,11 +381,6 @@ func TestCreateInvocation(t *testing.T) {
 
 		// Setup a full HTTP server in order to retrieve response headers.
 		server := &prpctest.Server{}
-		server.UnaryServerInterceptor = func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-			res, err := handler(ctx, req)
-			err = appstatus.GRPCifyAndLog(ctx, err)
-			return res, err
-		}
 		pb.RegisterRecorderServer(server, newTestRecorderServer())
 		server.Start(ctx)
 		defer server.Close()
@@ -396,7 +390,7 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`empty request`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation: unspecified`)
+			So(err, ShouldBeRPCInvalidArgument, `invocation: unspecified`)
 		})
 		Convey(`invalid realm`, func() {
 			req := &pb.CreateInvocationRequest{
@@ -407,7 +401,7 @@ func TestCreateInvocation(t *testing.T) {
 				RequestId: "request id",
 			}
 			_, err := recorder.CreateInvocation(ctx, req)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation: realm`)
+			So(err, ShouldBeRPCInvalidArgument, `invocation: realm`)
 		})
 		Convey(`missing invocation id`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
@@ -415,7 +409,7 @@ func TestCreateInvocation(t *testing.T) {
 					Realm: "testproject:testrealm",
 				},
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation_id: unspecified`)
+			So(err, ShouldBeRPCInvalidArgument, `invocation_id: unspecified`)
 		})
 
 		req := &pb.CreateInvocationRequest{
@@ -432,7 +426,7 @@ func TestCreateInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			_, err = recorder.CreateInvocation(ctx, req)
-			So(err, ShouldHaveGRPCStatus, codes.AlreadyExists)
+			So(err, ShouldBeRPCAlreadyExists)
 		})
 
 		Convey(`unsorted tags`, func() {
