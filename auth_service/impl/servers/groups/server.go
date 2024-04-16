@@ -32,9 +32,17 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
 
+// AuthGroupsProvider is the interface to get all AuthGroup entities.
+type AuthGroupsProvider interface {
+	GetAllAuthGroups(ctx context.Context) ([]*model.AuthGroup, error)
+	RefreshPeriodically(ctx context.Context)
+}
+
 // Server implements Groups server.
 type Server struct {
 	rpcpb.UnimplementedGroupsServer
+
+	authGroupsProvider AuthGroupsProvider
 
 	// Whether modifications should be done in dry run mode (i.e. skip
 	// committing entity changes).
@@ -43,14 +51,33 @@ type Server struct {
 
 func NewServer(dryRun bool) *Server {
 	return &Server{
-		dryRun: dryRun,
+		authGroupsProvider: &CachingGroupsProvider{},
+		dryRun:             dryRun,
+	}
+}
+
+// Warmup does the setup for the groups server; it should be called before the
+// main serving loop.
+func (srv *Server) Warmup(ctx context.Context) {
+	if srv.authGroupsProvider != nil {
+		_, err := srv.authGroupsProvider.GetAllAuthGroups(ctx)
+		if err != nil {
+			logging.Errorf(ctx, "error warming up AuthGroups provider")
+		}
+	}
+}
+
+// RefreshPeriodically wraps the groups provider's refresh method.
+func (srv *Server) RefreshPeriodically(ctx context.Context) {
+	if srv.authGroupsProvider != nil {
+		srv.authGroupsProvider.RefreshPeriodically(ctx)
 	}
 }
 
 // ListGroups implements the corresponding RPC method.
-func (*Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGroupsResponse, error) {
-	// Get groups from datastore.
-	groups, err := model.GetAllAuthGroups(ctx)
+func (srv *Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGroupsResponse, error) {
+	// Get all groups.
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch groups: %s", err)
 	}
@@ -155,9 +182,9 @@ func (srv *Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRe
 //	NotFound error wrapping a graph.ErrNoSuchGroup if group is not present in groups graph.
 //	InvalidArgument error if the PrincipalKind is unspecified.
 //	Annotated error if the subgraph building fails, this may be an InvalidArgument or NotFound error.
-func (*Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRequest) (*rpcpb.Subgraph, error) {
-	// Get groups from datastore.
-	groups, err := model.GetAllAuthGroups(ctx)
+func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRequest) (*rpcpb.Subgraph, error) {
+	// Get all groups.
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
 			"Failed to fetch groups: %s", err)

@@ -41,7 +41,7 @@ import (
 
 func TestGroupsServer(t *testing.T) {
 	t.Parallel()
-	srv := Server{}
+
 	createdTime := time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC)
 	modifiedTime := time.Date(2022, time.July, 4, 15, 45, 0, 0, time.UTC)
 	versionedEntity := model.AuthVersionedEntityMixin{
@@ -51,6 +51,9 @@ func TestGroupsServer(t *testing.T) {
 	etag := `W/"MjAyMi0wNy0wNFQxNTo0NTowMFo="`
 
 	Convey("ListGroups RPC call", t, func() {
+		srv := Server{
+			authGroupsProvider: &CachingGroupsProvider{},
+		}
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"testers"},
@@ -110,6 +113,7 @@ func TestGroupsServer(t *testing.T) {
 				CreatedBy:                "user:test-user-1@example.com",
 				AuthVersionedEntityMixin: versionedEntity,
 			}), ShouldBeNil)
+		So(putRev(ctx, 123), ShouldBeNil)
 
 		// What expected response should be, built with pb.
 		expectedResp := &rpcpb.ListGroupsResponse{
@@ -150,6 +154,9 @@ func TestGroupsServer(t *testing.T) {
 	})
 
 	Convey("GetGroup RPC call", t, func() {
+		srv := Server{
+			authGroupsProvider: &CachingGroupsProvider{},
+		}
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"testers"},
@@ -213,6 +220,9 @@ func TestGroupsServer(t *testing.T) {
 	})
 
 	Convey("CreateGroup RPC call", t, func() {
+		srv := Server{
+			authGroupsProvider: &CachingGroupsProvider{},
+		}
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 		})
@@ -322,6 +332,9 @@ func TestGroupsServer(t *testing.T) {
 	})
 
 	Convey("UpdateGroup RPC call", t, func() {
+		srv := Server{
+			authGroupsProvider: &CachingGroupsProvider{},
+		}
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"owners"},
@@ -499,6 +512,9 @@ func TestGroupsServer(t *testing.T) {
 	})
 
 	Convey("DeleteGroup RPC call", t, func() {
+		srv := Server{
+			authGroupsProvider: &CachingGroupsProvider{},
+		}
 		ctx := memory.Use(context.Background())
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, _ = tq.TestingContext(txndefer.FilterRDS(ctx), nil)
@@ -652,6 +668,9 @@ func TestGroupsServer(t *testing.T) {
 			testGlob1   = "user:t2*"
 		)
 
+		srv := Server{
+			authGroupsProvider: &CachingGroupsProvider{},
+		}
 		ctx := memory.Use(context.Background())
 		So(datastore.Put(ctx,
 			&model.AuthGroup{
@@ -684,6 +703,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 				Owners: owningGroup,
 			}), ShouldBeNil)
+		So(putRev(ctx, 123), ShouldBeNil)
 
 		Convey("Identity principal", func() {
 			request := &rpcpb.GetSubgraphRequest{

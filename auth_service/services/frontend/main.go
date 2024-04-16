@@ -106,10 +106,15 @@ func main() {
 
 		authdbServer := &authdb.Server{}
 
+		// Initialize groups server.
+		groupsServer := groups.NewServer(dryRunAPIChange)
+		srv.RegisterWarmup(groupsServer.Warmup)
+		srv.RunInBackground("authdb.refresh-all-groups", groupsServer.RefreshPeriodically)
+
 		// Register all RPC servers.
 		internalspb.RegisterInternalsServer(srv, &internals.Server{})
 		rpcpb.RegisterAccountsServer(srv, &accounts.Server{})
-		rpcpb.RegisterGroupsServer(srv, groups.NewServer(dryRunAPIChange))
+		rpcpb.RegisterGroupsServer(srv, groupsServer)
 		rpcpb.RegisterAllowlistsServer(srv, &allowlists.Server{})
 		rpcpb.RegisterAuthDBServer(srv, authdbServer)
 		rpcpb.RegisterChangeLogsServer(srv, &changelogs.Server{})
