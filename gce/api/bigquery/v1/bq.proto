@@ -55,4 +55,25 @@ message ConfigRow {
     google.protobuf.Timestamp snapshot_time = 1;
     // The prefix config.
     config.Config config = 2;
-  }
+}
+
+// The BigQuery table row for a machine type.
+message MachineTypeRow {
+    // Ingest time of the row.
+    google.protobuf.Timestamp snapshot_time = 1;
+
+    // Machine type name, e.g. n2-starndard-4.
+    string name = 2;
+
+    // CPU type, e.g. "n2".
+    string cpu_type = 3;
+
+    // The count of CPU.
+    int64 cpu_count = 4;
+
+    // Memory size in GB.
+    int64 memory_gb = 5;
+
+    // Allowed count of disks.
+    repeated int64 disks = 6;
+}
