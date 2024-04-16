@@ -38,7 +38,6 @@ func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "invocations/a",
 				AddInvocations:      []string{"invocations/b"},
-				RemoveInvocations:   []string{"invocations/c"},
 			})
 			So(err, ShouldBeNil)
 		})
@@ -47,7 +46,6 @@ func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "x",
 				AddInvocations:      []string{"invocations/b"},
-				RemoveInvocations:   []string{"invocations/c"},
 			})
 			So(err, ShouldErrLike, `including_invocation: does not match`)
 		})
@@ -59,29 +57,20 @@ func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
 			})
 			So(err, ShouldErrLike, `add_invocations: "x": does not match`)
 		})
-		Convey(`Invalid remove_invocations`, func() {
+		Convey(`Attempt to remove invocations`, func() {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "invocations/a",
 				AddInvocations:      []string{"invocations/b"},
-				RemoveInvocations:   []string{"x"},
+				RemoveInvocations:   []string{"invocations/x"},
 			})
-			So(err, ShouldErrLike, `remove_invocations: "x": does not match`)
+			So(err, ShouldErrLike, `remove_invocations: invocation removal has been deprecated and is not permitted`)
 		})
 		Convey(`Include itself`, func() {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "invocations/a",
 				AddInvocations:      []string{"invocations/a"},
-				RemoveInvocations:   []string{"invocations/c"},
 			})
 			So(err, ShouldErrLike, `cannot include itself`)
-		})
-		Convey(`Add and remove same invocation`, func() {
-			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
-				IncludingInvocation: "invocations/a",
-				AddInvocations:      []string{"invocations/b"},
-				RemoveInvocations:   []string{"invocations/b"},
-			})
-			So(err, ShouldErrLike, `cannot add and remove the same invocation(s) at the same time: ["invocations/b"]`)
 		})
 	})
 }
@@ -125,10 +114,6 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 					"invocations/included",
 					"invocations/included2",
 				},
-				RemoveInvocations: []string{
-					"invocations/toberemoved",
-					"invocations/neverexisted",
-				},
 			}
 
 			Convey(`No including invocation`, func() {
@@ -143,14 +128,14 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 			Convey(`With existing inclusion`, func() {
 				testutil.MustApply(ctx,
 					insert.Invocation("including", pb.Invocation_ACTIVE, nil),
-					insert.Invocation("toberemoved", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Invocation("existinginclusion", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
 					IncludingInvocation: "invocations/including",
-					AddInvocations:      []string{"invocations/toberemoved"},
+					AddInvocations:      []string{"invocations/existinginclusion"},
 				})
 				So(err, ShouldBeNil)
-				assertIncluded("toberemoved")
+				assertIncluded("existinginclusion")
 
 				Convey(`No included invocation`, func() {
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
@@ -178,13 +163,13 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 					So(err, ShouldBeNil)
 					assertIncluded("included")
 					assertIncluded("included2")
-					assertNotIncluded("toberemoved")
+					assertIncluded("existinginclusion")
 
 					_, err = recorder.UpdateIncludedInvocations(ctx, req)
 					So(err, ShouldBeNil)
 					assertIncluded("included")
 					assertIncluded("included2")
-					assertNotIncluded("toberemoved")
+					assertIncluded("existinginclusion")
 				})
 			})
 		})

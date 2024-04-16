@@ -21,9 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
@@ -49,16 +47,10 @@ func validateUpdateIncludedInvocationsRequest(req *pb.UpdateIncludedInvocationsR
 		}
 	}
 
-	for _, name := range req.RemoveInvocations {
-		if _, err := pbutil.ParseInvocationName(name); err != nil {
-			return errors.Annotate(err, "remove_invocations: %q", name).Err()
-		}
+	if len(req.RemoveInvocations) > 0 {
+		return errors.Reason("remove_invocations: invocation removal has been deprecated and is not permitted").Err()
 	}
 
-	both := stringset.NewFromSlice(req.AddInvocations...).Intersect(stringset.NewFromSlice(req.RemoveInvocations...)).ToSortedSlice()
-	if len(both) > 0 {
-		return errors.Reason("cannot add and remove the same invocation(s) at the same time: %q", both).Err()
-	}
 	return nil
 }
 
@@ -69,12 +61,6 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 	}
 	including := invocations.MustParseName(in.IncludingInvocation)
 	add := invocations.MustParseNames(in.AddInvocations)
-	remove := invocations.MustParseNames(in.RemoveInvocations)
-
-	if len(in.RemoveInvocations) > 0 {
-		// Instrumentation for possible design change to disallow invocation removal in ResultDB.
-		logging.Warningf(ctx, "Instrumentation for b/332787707: removing invocations %v from invocation %v", in.RemoveInvocations, in.IncludingInvocation)
-	}
 
 	err := mutateInvocation(ctx, including, func(ctx context.Context) error {
 		// To include invocation A into invocation B, in addition to checking the
@@ -86,13 +72,7 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 			return err
 		}
 
-		// Accumulate keys to remove in a single KeySet.
-		ks := spanner.KeySets()
-		for rInv := range remove {
-			ks = spanner.KeySets(invocations.InclusionKey(including, rInv), ks)
-		}
-		ms := make([]*spanner.Mutation, 1, 1+len(add))
-		ms[0] = spanner.Delete("IncludedInvocations", ks)
+		ms := make([]*spanner.Mutation, 0, len(add))
 
 		switch states, err := invocations.ReadStateBatch(ctx, add); {
 		case err != nil:

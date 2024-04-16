@@ -365,10 +365,7 @@ type UpdateIncludedInvocationsRequest struct {
 	// If any of these invocations are already included, they will be silently
 	// ignored for idempotency.
 	AddInvocations []string `protobuf:"bytes,2,rep,name=add_invocations,json=addInvocations,proto3" json:"add_invocations,omitempty"`
-	// Names of the previously included invocations to remove, see
-	// Invocation.name.
-	// If any of these invocations are not included already, they will be silently
-	// ignored for idempotency.
+	// Deprecated: Removing invocations is no longer supported. Do not use.
 	RemoveInvocations []string `protobuf:"bytes,3,rep,name=remove_invocations,json=removeInvocations,proto3" json:"remove_invocations,omitempty"`
 }
 

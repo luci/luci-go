@@ -175,10 +175,7 @@ message UpdateIncludedInvocationsRequest {
   // ignored for idempotency.
   repeated string add_invocations = 2;
 
-  // Names of the previously included invocations to remove, see
-  // Invocation.name.
-  // If any of these invocations are not included already, they will be silently
-  // ignored for idempotency.
+  // Deprecated: Removing invocations is no longer supported. Do not use.
   repeated string remove_invocations = 3;
 }
 
