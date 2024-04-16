@@ -14,11 +14,18 @@
 
 import { css } from '@emotion/react';
 import { Box, LinearProgress, Link } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { DateTime } from 'luxon';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
-import { PERM_BUILDS_GET } from '@/build/constants';
+import {
+  BUILD_FIELD_MASK,
+  BUILD_STATUS_DISPLAY_MAP,
+  PERM_BUILDS_GET,
+} from '@/build/constants';
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { OutputBuild } from '@/build/types';
 import grayFavicon from '@/common/assets/favicons/gray-32.png';
 import greenFavicon from '@/common/assets/favicons/green-32.png';
@@ -33,17 +40,16 @@ import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { usePermCheck } from '@/common/components/perm_check_provider';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { Timestamp } from '@/common/components/timestamp';
-import {
-  BUILD_STATUS_COLOR_THEME_MAP,
-  BUILD_STATUS_DISPLAY_MAP,
-} from '@/common/constants/legacy';
+import { BUILD_STATUS_COLOR_THEME_MAP } from '@/common/constants/build';
 import { UiPage } from '@/common/constants/view';
-import { BuildbucketStatus } from '@/common/services/buildbucket';
+import { Build as JsonBuild } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { getBuilderURLPath, getProjectURLPath } from '@/common/tools/url_utils';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import {
   PERM_TEST_RESULTS_LIST_LIMITED,
   PERM_TEST_EXONERATIONS_LIST_LIMITED,
@@ -58,12 +64,12 @@ import { CustomBugLink } from './custom_bug_link';
 import { InfraTabAnnouncementTooltip } from './infra_tab/announcement_tooltip';
 
 const STATUS_FAVICON_MAP = Object.freeze({
-  [BuildbucketStatus.Scheduled]: grayFavicon,
-  [BuildbucketStatus.Started]: yellowFavicon,
-  [BuildbucketStatus.Success]: greenFavicon,
-  [BuildbucketStatus.Failure]: redFavicon,
-  [BuildbucketStatus.InfraFailure]: purpleFavicon,
-  [BuildbucketStatus.Canceled]: tealFavicon,
+  [Status.SCHEDULED]: grayFavicon,
+  [Status.STARTED]: yellowFavicon,
+  [Status.SUCCESS]: greenFavicon,
+  [Status.FAILURE]: redFavicon,
+  [Status.INFRA_FAILURE]: purpleFavicon,
+  [Status.CANCELED]: tealFavicon,
 });
 
 const delimiter = css({
@@ -87,19 +93,54 @@ export const BuildPage = observer(() => {
   }
 
   const [showConfigDialog, setShowConfigDialog] = usePageSpecificConfig();
+  const client = useBuildsClient();
+  const req = buildNumOrId.startsWith('b')
+    ? GetBuildRequest.fromPartial({
+        id: buildNumOrId.slice('b'.length),
+        mask: {
+          fields: BUILD_FIELD_MASK,
+        },
+      })
+    : GetBuildRequest.fromPartial({
+        buildNumber: Number(buildNumOrId),
+        builder: { project, bucket, builder },
+        mask: {
+          fields: BUILD_FIELD_MASK,
+        },
+      });
+  const {
+    data: build,
+    isError,
+    error,
+    isLoading,
+  } = useQuery({
+    ...client.GetBuild.query(req),
+    select: (data) => data as OutputBuild,
+  });
+  if (isError) {
+    // TODO(b/335065098): display a warning that the build might've expired if
+    // the build is not found.
+    throw error;
+  }
 
   useEffect(() => {
     store.buildPage.setParams({ project, bucket, builder }, buildNumOrId);
   }, [store, project, bucket, builder, buildNumOrId]);
+  useEffect(() => {
+    // When a defined build become an undefined build (e.g. due to a new build
+    // is being displayed), we want to update the MobX store to reset the build
+    // as well. Otherwise, components that rely on the mobx store will keep
+    // displaying info for the old build.
+    store.buildPage.setBuild(build ? (Build.toJSON(build) as JsonBuild) : null);
+  }, [store, build]);
 
-  const build = store.buildPage.build;
-
-  const status = build?.data?.status;
-  const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
+  const statusDisplay = build?.status
+    ? BUILD_STATUS_DISPLAY_MAP[build.status]
+    : 'loading';
   const documentTitle = `${statusDisplay} - ${builder} ${buildNumOrId}`;
 
-  const faviconUrl = build
-    ? STATUS_FAVICON_MAP[build.data.status]
+  const faviconUrl = build?.status
+    ? STATUS_FAVICON_MAP[build.status]
     : miloFavicon;
   useEffect(() => {
     document.getElementById('favicon')?.setAttribute('href', faviconUrl);
@@ -113,17 +154,8 @@ export const BuildPage = observer(() => {
     PERM_TEST_EXONERATIONS_LIST_LIMITED,
   );
 
-  // Convert to code generated bindings so new build page components can just
-  // use the new bindings. We won't need to do the conversion once everything
-  // is migrated to react query and the new bindings.
-  // Add useMemo for now to achieve referential stability.
-  const outputBuild = useMemo(
-    () => (build?.data ? (Build.fromJSON(build.data) as OutputBuild) : null),
-    [build?.data],
-  );
-
   return (
-    <BuildContextProvider build={outputBuild}>
+    <BuildContextProvider build={build}>
       <InvocationProvider value={store.buildPage.invocation}>
         <BuildLitEnvProvider>
           <PageMeta
@@ -160,7 +192,7 @@ export const BuildPage = observer(() => {
               <span>{buildNumOrId}</span>
             </div>
             <div css={delimiter}></div>
-            <CustomBugLink project={project} build={build?.data} />
+            <CustomBugLink project={project} build={build} />
             <div css={delimiter}></div>
             {/* TODO: info that helps users identify the build (e.g. source)
              ** should be displayed at the top (above the tabs). At the moment
@@ -172,7 +204,7 @@ export const BuildPage = observer(() => {
               <span>
                 created at{' '}
                 <Timestamp
-                  datetime={build?.createTime}
+                  datetime={DateTime.fromISO(build.createTime)}
                   format={SHORT_TIME_FORMAT}
                 />
               </span>
@@ -180,11 +212,9 @@ export const BuildPage = observer(() => {
           </div>
           <LinearProgress
             value={100}
-            variant={build ? 'determinate' : 'indeterminate'}
+            variant={isLoading ? 'indeterminate' : 'determinate'}
             color={
-              build
-                ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status]
-                : 'primary'
+              build ? BUILD_STATUS_COLOR_THEME_MAP[build.status] : 'primary'
             }
           />
           <AppRoutedTabs>

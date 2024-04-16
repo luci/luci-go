@@ -14,6 +14,35 @@
 
 import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
+export const BUILD_FIELD_MASK = Object.freeze([
+  'id',
+  'builder',
+  'builderInfo',
+  'number',
+  'canceledBy',
+  'createTime',
+  'startTime',
+  'endTime',
+  'cancelTime',
+  'status',
+  'statusDetails',
+  'summaryMarkdown',
+  'input',
+  'output',
+  'steps',
+  'infra.buildbucket.agent',
+  'infra.swarming',
+  'infra.resultdb',
+  'infra.backend',
+  'tags',
+  'exe',
+  'schedulingTimeout',
+  'executionTimeout',
+  'gracePeriod',
+  'ancestorIds',
+  'retriable',
+]);
+
 export const BUILD_STATUS_CLASS_MAP = Object.freeze({
   [BuildStatus.SCHEDULED]: 'scheduled',
   [BuildStatus.STARTED]: 'started',

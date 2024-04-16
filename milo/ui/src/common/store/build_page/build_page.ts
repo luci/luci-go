@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
 import { reaction } from 'mobx';
 import {
@@ -25,15 +24,10 @@ import {
 } from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';
 
-import {
-  NEVER_OBSERVABLE,
-  POTENTIALLY_EXPIRED,
-} from '@/common/constants/legacy';
+import { NEVER_OBSERVABLE } from '@/common/constants/legacy';
 import {
   Build,
-  BUILD_FIELD_MASK,
   BuilderID,
-  GetBuildRequest,
   TEST_PRESENTATION_KEY,
 } from '@/common/services/buildbucket';
 import {
@@ -46,11 +40,10 @@ import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
 import { UserConfig } from '@/common/store/user_config';
 import {
-  aliveFlow,
   keepAliveComputed,
   unwrapObservable,
 } from '@/generic_libs/tools/mobx_utils';
-import { attachTags, InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
+import { InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 
 export const enum SearchTarget {
@@ -91,7 +84,7 @@ export const BuildPage = types
 
     // Properties that provide a mounting point for computed models so they can
     // have references to some other properties in the tree.
-    _build: types.maybe(BuildState),
+    _buildState: types.maybe(BuildState),
   })
   .volatile(() => {
     const cachedBuildId = new Map<string, string>();
@@ -131,12 +124,16 @@ export const BuildPage = types
       );
     },
     get hasInvocation() {
-      return Boolean(self._build?.data.infra?.resultdb?.invocation);
+      return Boolean(self._buildState?.data.infra?.resultdb?.invocation);
     },
   }))
   .actions((self) => ({
-    _setBuild(build: Build) {
-      self._build = cast({
+    setBuild(build: Build | null) {
+      if (build === null) {
+        self._buildState = undefined;
+        return;
+      }
+      self._buildState = cast({
         data: build,
         currentTime: self.currentTime?.id,
         userConfig: self.userConfig?.id,
@@ -144,60 +141,9 @@ export const BuildPage = types
     },
   }))
   .views((self) => {
-    let buildQueryTime: number | null = null;
-    const build = keepAliveComputed(self, () => {
-      if (
-        !self.services?.builds ||
-        (!self.buildId && (!self.builderIdParam || !self.buildNum)) ||
-        !self.refreshTime
-      ) {
-        return null;
-      }
-
-      // If we use a simple boolean property here,
-      // 1. the boolean property cannot be an observable because we don't want
-      // to update observables in a computed property, and
-      // 2. we still need an observable (like this.timestamp) to trigger the
-      // update, and
-      // 3. this.refresh() will need to reset the boolean properties of all
-      // time-sensitive computed value.
-      //
-      // If we record the query time instead, no other code will need to read
-      // or update the query time.
-      const cacheOpt = {
-        acceptCache:
-          buildQueryTime === null || buildQueryTime >= self.refreshTime.value,
-      };
-      buildQueryTime = self.refreshTime.value;
-
-      // Favor ID over builder + number to ensure cache hit when the build
-      // page is redirected from a short build link to a long build link.
-      const req: GetBuildRequest = self.buildId
-        ? { id: self.buildId, fields: BUILD_FIELD_MASK }
-        : {
-            builder: self.builderIdParam,
-            buildNumber: self.buildNum!,
-            fields: BUILD_FIELD_MASK,
-          };
-
-      return fromPromise(
-        self.services.builds
-          .getBuild(req, cacheOpt)
-          .catch((e) => {
-            if (e instanceof GrpcError && e.code === RpcCode.NOT_FOUND) {
-              attachTags(e, POTENTIALLY_EXPIRED);
-            }
-            throw new GetBuildError(e);
-          })
-          .then((b) => {
-            self._setBuild(b);
-            return self._build!;
-          }),
-      );
-    });
     return {
       get build() {
-        return unwrapObservable(build.get() || NEVER_OBSERVABLE, null);
+        return self._buildState || null;
       },
     };
   })
@@ -255,28 +201,6 @@ export const BuildPage = types
       self.builderIdParam = builderId;
       self.buildNumOrIdParam = buildNumOrId;
     },
-    retryBuild: aliveFlow(self, function* () {
-      if (!self.build?.data.id || !self.services?.builds) {
-        return null;
-      }
-
-      const call = self.services.builds.scheduleBuild({
-        templateBuildId: self.build.data.id,
-      });
-      const build: Awaited<typeof call> = yield call;
-      return build;
-    }),
-    cancelBuild: aliveFlow(self, function* (reason: string) {
-      if (!self.build?.data.id || !reason || !self.services?.builds) {
-        return;
-      }
-
-      yield self.services.builds.cancelBuild({
-        id: self.build.data.id,
-        summaryMarkdown: reason,
-      });
-      self.refreshTime?.refresh();
-    }),
     afterCreate() {
       addDisposer(
         self,

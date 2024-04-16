@@ -12,58 +12,73 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
+import { Box, CircularProgress } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import { BUILD_FIELD_MASK } from '@/build/constants';
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
+import { OutputBuild } from '@/build/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useStore } from '@/common/store';
-import { getBuildURLPath } from '@/common/tools/url_utils';
+import { getBuildURLPathFromBuildData } from '@/common/tools/url_utils';
+import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
-export const BuildPageShortLink = observer(() => {
+export function BuildPageShortLink() {
   const { buildId, ['__luci_ui__-raw-*']: pathSuffix } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const store = useStore();
 
   if (!buildId) {
     throw new Error('invariant violated: buildId should be set');
   }
 
-  useEffect(() => {
-    store.buildPage.setParams(undefined, `b${buildId}`);
-  }, [store, buildId]);
-
-  const buildLoaded = Boolean(store.buildPage.build?.data);
+  // TODO: cache the build so we don't need to fetch the build again after
+  // redirection.
+  const client = useBuildsClient();
+  const {
+    data: build,
+    isError,
+    error,
+  } = useQuery({
+    ...client.GetBuild.query(
+      GetBuildRequest.fromPartial({
+        id: buildId,
+        mask: {
+          fields: BUILD_FIELD_MASK,
+        },
+      }),
+    ),
+    select: (data) => data as OutputBuild,
+  });
+  if (isError) {
+    // TODO(b/335065098): display a warning that the build might've expired if
+    // the build is not found.
+    throw error;
+  }
 
   const urlSuffix =
     (pathSuffix ? `/${pathSuffix}` : '') + location.search + location.hash;
+
+  // Redirect to the long link after the build is fetched.
   useEffect(() => {
-    // Redirect to the long link after the build is fetched.
-    // The second check is noop but useful for type narrowing.
-    if (!buildLoaded || !store.buildPage.build) {
+    if (!build) {
       return;
     }
-    const build = store.buildPage.build;
-    if (build.data.number !== undefined) {
-      store.buildPage.setBuildId(
-        build.data.builder,
-        build.data.number,
-        build.data.id,
-      );
-    }
-    const buildUrl = getBuildURLPath(build.data.builder, build.buildNumOrId);
+    const buildUrl = getBuildURLPathFromBuildData(build);
     const newUrl = buildUrl + urlSuffix;
 
     // TODO(weiweilin): sinon is not able to mock useNavigate.
     // Add a unit test once we setup jest.
     navigate(newUrl, { replace: true });
-  }, [buildLoaded, navigate, urlSuffix, store]);
+  }, [build, urlSuffix, navigate]);
 
-  // Page will be redirected once the build is loaded.
-  // Don't need to render anything.
-  return <></>;
-});
+  return (
+    <Box display="flex" justifyContent="center" alignItems="center">
+      <CircularProgress />
+    </Box>
+  );
+}
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.

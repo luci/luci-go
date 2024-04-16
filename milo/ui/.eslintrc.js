@@ -116,6 +116,11 @@ module.exports = {
       },
     ],
 
+    // This prevents us from calling functions in Pascal case (e.g. generated
+    // pRPC bindings). It doesn't add a lot of value since TypeScript already
+    // enforces ES6 class constructors to be called with `new`.
+    'new-cap': 0,
+
     'no-restricted-imports': [
       'error',
       {

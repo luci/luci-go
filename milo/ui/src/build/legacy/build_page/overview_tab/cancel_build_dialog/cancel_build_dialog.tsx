@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { LoadingButton } from '@mui/lab';
 import {
   Button,
   Dialog,
@@ -20,10 +21,13 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import { observer } from 'mobx-react-lite';
-import { useCallback, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
-import { useStore } from '@/common/store';
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
+import { CancelBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+
+import { useBuild } from '../../context';
 
 export interface CancelBuildDialogProps {
   readonly open: boolean;
@@ -31,59 +35,84 @@ export interface CancelBuildDialogProps {
   readonly container?: HTMLDivElement;
 }
 
-export const CancelBuildDialog = observer(
-  ({ open, onClose, container }: CancelBuildDialogProps) => {
-    const pageState = useStore().buildPage;
-    const [reason, setReason] = useState('');
-    const [showError, setShowErr] = useState(false);
+export function CancelBuildDialog({
+  open,
+  onClose,
+  container,
+}: CancelBuildDialogProps) {
+  const [reason, setReason] = useState('');
+  const [showError, setShowErr] = useState(false);
 
-    const handleConfirm = useCallback(() => {
-      if (!reason) {
-        setShowErr(true);
-        return;
-      }
-      pageState.cancelBuild(reason);
+  const build = useBuild();
+  const queryClient = useQueryClient();
+  const client = useBuildsClient();
+  const cancelBuildMutation = useMutation({
+    mutationFn: (req: CancelBuildRequest) => client.CancelBuild(req),
+    onSuccess: () => {
+      // TODO(b/335064206): invalidate the cancelled build only.
+      queryClient.invalidateQueries();
       onClose?.();
-    }, [reason, pageState, onClose]);
+    },
+    // TODO(b/335064206): handle failure.
+  });
 
-    const handleUpdate = (newReason: string) => {
-      setReason(newReason);
-      setShowErr(false);
-    };
+  if (!build) {
+    return <></>;
+  }
 
-    return (
-      <Dialog
-        onClose={onClose}
-        open={open}
-        fullWidth
-        maxWidth="sm"
-        container={container}
-      >
-        <DialogTitle>Cancel Build</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Reason"
-            value={reason}
-            error={showError}
-            helperText={showError ? 'Reason is required' : ''}
-            onChange={(e) => handleUpdate(e.target.value)}
-            required
-            margin="dense"
-            fullWidth
-            multiline
-            minRows={4}
-            maxRows={10}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} variant="text">
-            Dismiss
-          </Button>
-          <Button onClick={handleConfirm} variant="contained">
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+  const handleConfirm = () => {
+    if (!reason) {
+      setShowErr(true);
+      return;
+    }
+    cancelBuildMutation.mutate(
+      CancelBuildRequest.fromPartial({
+        id: build.id,
+        summaryMarkdown: reason,
+      }),
     );
-  },
-);
+  };
+  const handleUpdate = (newReason: string) => {
+    setReason(newReason);
+    setShowErr(false);
+  };
+
+  return (
+    <Dialog
+      onClose={onClose}
+      open={open}
+      fullWidth
+      maxWidth="sm"
+      container={container}
+    >
+      <DialogTitle>Cancel Build</DialogTitle>
+      <DialogContent>
+        <TextField
+          label="Reason"
+          value={reason}
+          error={showError}
+          helperText={showError ? 'Reason is required' : ''}
+          onChange={(e) => handleUpdate(e.target.value)}
+          required
+          margin="dense"
+          fullWidth
+          multiline
+          minRows={4}
+          maxRows={10}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} variant="text">
+          Dismiss
+        </Button>
+        <LoadingButton
+          onClick={handleConfirm}
+          variant="contained"
+          loading={cancelBuildMutation.isLoading}
+        >
+          Confirm
+        </LoadingButton>
+      </DialogActions>
+    </Dialog>
+  );
+}

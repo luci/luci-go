@@ -12,71 +12,85 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { destroy, Instance, protect, unprotect } from 'mobx-state-tree';
-import { act } from 'react-dom/test-utils';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 
-import { Store, StoreProvider } from '@/common/store';
+import {
+  runningBuild,
+  scheduledToBeCanceledBuild,
+} from '@/build/testing_tools/mock_builds';
+import {
+  BuildsClientImpl,
+  CancelBuildRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { BuildContextProvider } from '../../context';
 
 import { CancelBuildDialog } from './cancel_build_dialog';
 
-describe('CancelBuildDialog', () => {
-  let store: Instance<typeof Store>;
-  let cancelBuildStub: jest.SpiedFunction<(reason: string) => Promise<void>>;
+describe('<CancelBuildDialog />', () => {
+  let cancelBuildStub: jest.SpiedFunction<BuildsClientImpl['CancelBuild']>;
   beforeEach(() => {
     jest.useFakeTimers();
-    store = Store.create();
-    unprotect(store);
-    cancelBuildStub = jest.spyOn(store.buildPage!, 'cancelBuild');
-    protect(store);
-    cancelBuildStub.mockResolvedValue();
+    cancelBuildStub = jest
+      .spyOn(BuildsClientImpl.prototype, 'CancelBuild')
+      .mockImplementation(async () => scheduledToBeCanceledBuild);
   });
 
   afterEach(() => {
     cleanup();
-    destroy(store);
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
-  test('should not trigger cancel request when reason is not provided', async () => {
+  it('should not trigger cancel request when reason is not provided', async () => {
     const onCloseSpy = jest.fn();
 
     render(
-      <StoreProvider value={store}>
-        <CancelBuildDialog open onClose={onCloseSpy} />
-      </StoreProvider>,
+      <FakeContextProvider>
+        <BuildContextProvider build={runningBuild}>
+          <CancelBuildDialog open onClose={onCloseSpy} />
+        </BuildContextProvider>
+      </FakeContextProvider>,
     );
 
     fireEvent.click(screen.getByText('Confirm'));
-    await act(async () => {
-      await jest.runOnlyPendingTimersAsync();
-    });
-    expect(onCloseSpy.mock.calls.length).toStrictEqual(0);
-    expect(cancelBuildStub.mock.calls.length).toStrictEqual(0);
-    screen.getByText('Reason is required');
+    await act(() => jest.runOnlyPendingTimersAsync());
+    expect(onCloseSpy).not.toHaveBeenCalled();
+    expect(cancelBuildStub).not.toHaveBeenCalled();
+    expect(screen.getByText('Reason is required')).toBeInTheDocument();
   });
 
-  test('should trigger cancel request when reason is provided', async () => {
+  it('should trigger cancel request when reason is provided', async () => {
     const onCloseSpy = jest.fn();
 
     render(
-      <StoreProvider value={store}>
-        <CancelBuildDialog open onClose={onCloseSpy} />
-      </StoreProvider>,
+      <FakeContextProvider>
+        <BuildContextProvider build={runningBuild}>
+          <CancelBuildDialog open onClose={onCloseSpy} />
+        </BuildContextProvider>
+      </FakeContextProvider>,
     );
 
     fireEvent.change(screen.getByRole('textbox'), {
       target: { value: 'need to stop build' },
     });
     fireEvent.click(screen.getByText('Confirm'));
-    await act(async () => {
-      await jest.runOnlyPendingTimersAsync();
-    });
-    expect(onCloseSpy.mock.calls.length).toStrictEqual(1);
-    expect(screen.queryByText('Reason is required')).toBeNull();
-    expect(cancelBuildStub.mock.calls.length).toStrictEqual(1);
-    expect(cancelBuildStub.mock.lastCall?.[0]).toStrictEqual(
-      'need to stop build',
+    await act(() => jest.runOnlyPendingTimersAsync());
+    expect(onCloseSpy).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Reason is required')).not.toBeInTheDocument();
+    expect(cancelBuildStub).toHaveBeenCalledTimes(1);
+    expect(cancelBuildStub).toHaveBeenLastCalledWith(
+      CancelBuildRequest.fromPartial({
+        id: runningBuild.id,
+        summaryMarkdown: 'need to stop build',
+      }),
     );
   });
 });

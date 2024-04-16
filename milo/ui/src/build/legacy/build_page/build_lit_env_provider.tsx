@@ -18,10 +18,8 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ReactNode } from 'react';
 
 import { OPTIONAL_RESOURCE } from '@/common/common_tags';
-import { POTENTIALLY_EXPIRED } from '@/common/constants/legacy';
 import { LoadTestVariantsError } from '@/common/models/test_loader';
 import { consumeStore, StoreInstance } from '@/common/store';
-import { GetBuildError } from '@/common/store/build_page';
 import {
   provideInvocationState,
   QueryInvocationError,
@@ -31,10 +29,9 @@ import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import {
   errorHandler,
   forwardWithoutMsg,
-  renderErrorInPre,
 } from '@/generic_libs/tools/error_handler';
 import { consumer, provider } from '@/generic_libs/tools/lit_context';
-import { attachTags, hasTags } from '@/generic_libs/tools/tag';
+import { attachTags } from '@/generic_libs/tools/tag';
 import {
   provideInvId,
   provideProject,
@@ -82,35 +79,15 @@ function retryWithoutComputedInvId(
     return false;
   }
 
-  if (!(err.error instanceof GetBuildError)) {
-    attachTags(err.error, OPTIONAL_RESOURCE);
-  }
-
+  attachTags(err.error, OPTIONAL_RESOURCE);
   return forwardWithoutMsg(err, ele);
-}
-
-function renderError(err: ErrorEvent, ele: BuildLitEnvProviderElement) {
-  if (
-    err.error instanceof GetBuildError &&
-    hasTags(err.error, POTENTIALLY_EXPIRED)
-  ) {
-    return html`
-      <div id="build-not-found-error">
-        Build Not Found: if you are trying to view an old build, it could have
-        been wiped from the server already.
-      </div>
-      ${renderErrorInPre(err, ele)}
-    `;
-  }
-
-  return renderErrorInPre(err, ele);
 }
 
 /**
  * Provides context and error handling to lit components in a build page.
  */
 @customElement('milo-build-lit-env-provider')
-@errorHandler(retryWithoutComputedInvId, renderError)
+@errorHandler(retryWithoutComputedInvId)
 @provider
 @consumer
 export class BuildLitEnvProviderElement extends MobxExtLitElement {

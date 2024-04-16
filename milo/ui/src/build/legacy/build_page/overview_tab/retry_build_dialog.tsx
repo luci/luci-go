@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { LoadingButton } from '@mui/lab';
 import {
   Button,
   Dialog,
@@ -20,12 +21,15 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { observer } from 'mobx-react-lite';
-import { useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
-import { useStore } from '@/common/store';
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
+import { OutputBuild } from '@/build/types';
 import { getBuildURLPathFromBuildData } from '@/common/tools/url_utils';
+import { ScheduleBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+
+import { useBuild } from '../context';
 
 export interface RetryBuildDialogProps {
   readonly open: boolean;
@@ -33,42 +37,55 @@ export interface RetryBuildDialogProps {
   readonly container?: HTMLDivElement;
 }
 
-export const RetryBuildDialog = observer(
-  ({ open, onClose, container }: RetryBuildDialogProps) => {
-    const pageState = useStore().buildPage;
-    const navigate = useNavigate();
+export function RetryBuildDialog({
+  open,
+  onClose,
+  container,
+}: RetryBuildDialogProps) {
+  const navigate = useNavigate();
+  const build = useBuild();
 
-    const handleConfirm = useCallback(async () => {
-      const build = await pageState.retryBuild();
-      onClose?.();
-      if (build) {
-        navigate(getBuildURLPathFromBuildData(build));
-      }
-    }, [pageState]);
+  const client = useBuildsClient();
+  const retryBuildMutation = useMutation({
+    mutationFn: (buildId: string) =>
+      client.ScheduleBuild(
+        ScheduleBuildRequest.fromPartial({ templateBuildId: buildId }),
+      ),
+    onSuccess: (data) =>
+      navigate(getBuildURLPathFromBuildData(data as OutputBuild)),
+    // TODO(b/335064206): handle failure.
+  });
 
-    return (
-      <Dialog
-        onClose={onClose}
-        open={open}
-        fullWidth
-        maxWidth="sm"
-        container={container}
-      >
-        <DialogTitle>Retry Build</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Note: this doesnt trigger anything else (e.g. CQ).
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} variant="text">
-            Dismiss
-          </Button>
-          <Button onClick={handleConfirm} variant="contained">
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-    );
-  },
-);
+  if (!build) {
+    return <></>;
+  }
+
+  return (
+    <Dialog
+      onClose={onClose}
+      open={open}
+      fullWidth
+      maxWidth="sm"
+      container={container}
+    >
+      <DialogTitle>Retry Build</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Note: this doesnt trigger anything else (e.g. CQ).
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} variant="text">
+          Dismiss
+        </Button>
+        <LoadingButton
+          onClick={() => retryBuildMutation.mutate(build.id)}
+          variant="contained"
+          loading={retryBuildMutation.isLoading}
+        >
+          Confirm
+        </LoadingButton>
+      </DialogActions>
+    </Dialog>
+  );
+}
