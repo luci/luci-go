@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications/taskspb"
+	"go.chromium.org/luci/swarming/server/util/taskbackendutil"
 )
 
 type PubSubNotifier struct {
@@ -221,7 +222,7 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 			},
 		},
 	}
-	setBBStatus(t.State, resultSummary.Failure, bbTask)
+	taskbackendutil.SetBBStatus(t.State, resultSummary.Failure, bbTask)
 
 	// send the update msg via PubSub
 	cloudProj, topicID, err := parsePubSubTopicName(buildTask.PubSubTopic)
