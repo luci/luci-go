@@ -235,7 +235,7 @@ func (qm *Manager) findRunLimit(ctx context.Context, r *run.Run) (*cfgpb.UserLim
 			continue
 		}
 
-		switch result, err := acls.IsMemberLinkedAccounts(ctx, qm.gf, gerritHost, project, user, groups); {
+		switch result, err := acls.IsMember(ctx, qm.gf, gerritHost, project, user, groups); {
 		case err != nil:
 			return nil, err
 		case result:

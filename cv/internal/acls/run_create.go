@@ -316,21 +316,21 @@ func (ck runCreateChecker) isDryRunner(ctx context.Context, id identity.Identity
 	if len(ck.dryGroups) == 0 {
 		return false, nil
 	}
-	return IsMemberLinkedAccounts(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.dryGroups)
+	return IsMember(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.dryGroups)
 }
 
 func (ck runCreateChecker) isNewPatchsetRunner(ctx context.Context, id identity.Identity) (bool, error) {
 	if len(ck.newPatchsetGroups) == 0 {
 		return false, nil
 	}
-	return IsMemberLinkedAccounts(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.newPatchsetGroups)
+	return IsMember(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.newPatchsetGroups)
 }
 
 func (ck runCreateChecker) isCommitter(ctx context.Context, id identity.Identity) (bool, error) {
 	if len(ck.commGroups) == 0 {
 		return false, nil
 	}
-	return IsMemberLinkedAccounts(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.commGroups)
+	return IsMember(ctx, ck.gf, ck.cl.Snapshot.GetGerrit().GetHost(), ck.cl.Snapshot.GetLuciProject(), id, ck.commGroups)
 }
 
 // CheckRunCreate verifies that the user(s) who triggered Run are authorized

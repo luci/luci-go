@@ -23,21 +23,27 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/caching"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMembership(t *testing.T) {
-	// TODO(crbug.com/40287772): remove and uncomment
-	linkedAccountAllowedProjects.Add("bar")
-	defer linkedAccountAllowedProjects.Del("bar")
-	// t.Parallel()
+	t.Parallel()
 
 	Convey("Membership", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp(t)
 		defer cancel()
+		const lProject = "test-proj"
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{{
+				Name: "main",
+			}},
+			HonorGerritLinkedAccounts: true,
+		})
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
@@ -51,18 +57,18 @@ func TestMembership(t *testing.T) {
 		Convey("no linked accounts", func() {
 			const unlinkedEmail = "bar@google.com"
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: unlinkedEmail},
+				{Email: unlinkedEmail},
 			})
 
-			Convey("IsMemberLinkedAccounts returns true when the given identity is authorized", func() {
+			Convey("IsMember returns true when the given identity is authorized", func() {
 				ct.AddMember(unlinkedEmail, "googlers")
-				ok, err := IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(unlinkedEmail), groups)
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(unlinkedEmail), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeTrue)
 			})
 
-			Convey("IsMemberLinkedAccounts returns false when the given identity is unauthorized", func() {
-				ok, err := IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(unlinkedEmail), groups)
+			Convey("IsMember returns false when the given identity is unauthorized", func() {
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(unlinkedEmail), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeFalse)
 			})
@@ -73,50 +79,63 @@ func TestMembership(t *testing.T) {
 			const linkedEmail2 = "foo@chromium.org"
 
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: linkedEmail1},
-				&gerritpb.EmailInfo{Email: linkedEmail2},
+				{Email: linkedEmail1},
+				{Email: linkedEmail2},
 			})
 
-			Convey("IsMemberLinkedAccounts returns true when the given linked identity is authorized", func() {
+			Convey("IsMember returns true when the given linked identity is authorized", func() {
 				ct.AddMember(linkedEmail1, "googlers")
-				ok, err := IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(linkedEmail1), groups)
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeTrue)
 			})
 
-			Convey("IsMemberLinkedAccounts returns true when the given identity's linked account is authorized", func() {
+			Convey("IsMember returns true when the given identity's linked account is authorized", func() {
 				ct.AddMember(linkedEmail1, "googlers")
-				ok, err := IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(linkedEmail2), groups)
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeTrue)
 			})
 
-			Convey("IsMemberLinkedAccounts returns false when all linked accounts are unauthorized", func() {
-				ok, err := IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(linkedEmail2), groups)
+			Convey("IsMember returns false if project doesn't honor linked account even if the given identity's linked account is authorized", func() {
+				ct.AddMember(linkedEmail1, "googlers")
+				prjcfgtest.Update(ctx, lProject, &cfgpb.Config{
+					ConfigGroups: []*cfgpb.ConfigGroup{{
+						Name: "main",
+					}},
+					HonorGerritLinkedAccounts: false,
+				})
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
+				So(err, ShouldBeNil)
+				So(ok, ShouldBeFalse)
+			})
+
+			Convey("IsMember returns false when all linked accounts are unauthorized", func() {
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeFalse)
 			})
 
 			Convey("listActiveAccountEmails returns all non-pending linked email addresses", func() {
-				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", "bar", linkedEmail1)
+				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", lProject, linkedEmail1)
 				So(err, ShouldBeNil)
 				So(emails, ShouldEqual, []string{linkedEmail1, linkedEmail2})
 			})
 
-			Convey("IsMemberLinkedAccounts looks up cache on second hit", func() {
+			Convey("IsMember looks up cache on second hit", func() {
 				ct.AddMember(linkedEmail1, "googlers")
-				ok, err := IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(linkedEmail2), groups)
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeTrue)
 
-				ok, err = IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(linkedEmail2), groups)
+				ok, err = IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeTrue)
 				So(ct.GFake.Requests(), ShouldHaveLength, 1)
 
-				Convey("IsMemberLinkedAccounts calls gerrit after cache expires", func() {
+				Convey("IsMember calls gerrit after cache expires", func() {
 					ct.Clock.Add(cacheTTL + time.Second)
-					ok, err = IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(linkedEmail2), groups)
+					ok, err = IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
 					So(err, ShouldBeNil)
 					So(ok, ShouldBeTrue)
 					So(ct.GFake.Requests(), ShouldHaveLength, 2)
@@ -129,26 +148,26 @@ func TestMembership(t *testing.T) {
 			const linkedEmail2 = "foo@chromium.org"
 
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: linkedEmail1},
-				&gerritpb.EmailInfo{Email: linkedEmail2, PendingConfirmation: true},
+				{Email: linkedEmail1},
+				{Email: linkedEmail2, PendingConfirmation: true},
 			})
 
-			Convey("IsMemberLinkedAccounts returns true when the given linked identity is authorized", func() {
+			Convey("IsMember returns true when the given linked identity is authorized", func() {
 				ct.AddMember(linkedEmail1, "googlers")
-				ok, err := IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(linkedEmail1), groups)
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeTrue)
 			})
 
-			Convey("IsMemberLinkedAccounts returns false when the linked authorized email is pending_confirmation", func() {
+			Convey("IsMember returns false when the linked authorized email is pending_confirmation", func() {
 				ct.AddMember(linkedEmail2, "googlers")
-				ok, err := IsMemberLinkedAccounts(ctx, ct.GFake, "foo", "bar", makeIdentity(linkedEmail1), groups)
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
 				So(err, ShouldBeNil)
 				So(ok, ShouldBeFalse)
 			})
 
 			Convey("listActiveAccountEmails skips pending email addresses", func() {
-				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", "bar", linkedEmail1)
+				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", lProject, linkedEmail1)
 				So(err, ShouldBeNil)
 				So(emails, ShouldEqual, []string{linkedEmail1})
 			})

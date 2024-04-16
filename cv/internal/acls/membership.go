@@ -21,12 +21,13 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
@@ -37,8 +38,8 @@ const cacheTTL = 3 * time.Hour
 //
 // The cache uses the host and the email address as the key for the cached set
 // of emails. The cache also stores a reverse index for each of the email within
-// the linked emails set so that the set could be retrived with any email within
-// it.
+// the linked emails set so that the set could be retrieved with any email
+// within it.
 var linkedAccountsCache = layered.RegisterCache(layered.Parameters[[]string]{
 	ProcessCacheCapacity: 0,
 	GlobalNamespace:      "gerrit_linked_accounts_cache",
@@ -52,8 +53,9 @@ var linkedAccountsCache = layered.RegisterCache(layered.Parameters[[]string]{
 	},
 })
 
-// TODO(crbug.com/40287772): remove.
-var linkedAccountAllowedProjects = stringset.NewFromSlice()
+// honorGerritLinkedAccountsCaches caches whether honor Gerrit linked account
+// is enabled for up to 200 LUCI projects.
+var honorGerritLinkedAccountsCaches = caching.RegisterLRUCache[string, bool](200)
 
 // linkedAccountKey constructs the cache key for the given host and email.
 func linkedAccountKey(host string, email string) string {
@@ -103,16 +105,46 @@ func cacheAllEmails(ctx context.Context, gerritHost string, ignoreEmail string, 
 	return nil
 }
 
-// IsMemberLinkedAccounts returns true if the given Gerrit account or any
-// of its linked accounts is a member in any of the given CrIA groups.
-func IsMemberLinkedAccounts(ctx context.Context, gf gerrit.Factory, gerritHost string, luciProject string, id identity.Identity, groups []string) (bool, error) {
+func shouldHonorGerritLinkedAccounts(ctx context.Context, project string) (bool, error) {
+	cache := honorGerritLinkedAccountsCaches.LRU(ctx)
+	if cache == nil {
+		return false, errors.New("process cache data is missing")
+	}
+	return cache.GetOrCreate(ctx, project, func() (v bool, exp time.Duration, err error) {
+		meta, err := prjcfg.GetLatestMeta(ctx, project)
+		if err != nil {
+			return false, 0, err
+		}
+		if len(meta.ConfigGroupIDs) == 0 {
+			return false, 0, errors.Reason("project %q doesn't have any config group", project).Err()
+		}
+		// honor_gerrit_linked_accounts is a project level field so it will be the
+		// same for all config group. Pick the first config group here.
+		cg, err := prjcfg.GetConfigGroup(ctx, project, meta.ConfigGroupIDs[0])
+		if err != nil {
+			return false, 0, err
+		}
+		return cg.HonorGerritLinkedAccounts, 10 * time.Minute, nil
+	})
+}
+
+// IsMember checks whether the given identity is a member of any given groups.
+//
+// If the LUCI project is configured to honor Gerrit linked accounts, in
+// addition to checking whether the given identity belongs to the group, this
+// function will also return true if any of the linked accounts in the provided
+// gerrit host is a member of provided groups.
+func IsMember(ctx context.Context, gf gerrit.Factory, gerritHost string, luciProject string, id identity.Identity, groups []string) (bool, error) {
 	switch yes, err := auth.GetState(ctx).DB().IsMember(ctx, id, groups); {
 	case err != nil:
 		return false, err
 	case yes:
 		return true, nil
-	// TODO(crbug.com/40287772): remove the following case
-	case !linkedAccountAllowedProjects.Has(luciProject):
+	}
+
+	switch yes, err := shouldHonorGerritLinkedAccounts(ctx, luciProject); {
+	case err != nil:
+	case !yes:
 		return false, nil
 	}
 

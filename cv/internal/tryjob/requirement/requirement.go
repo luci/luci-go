@@ -420,7 +420,7 @@ func getDisallowedOwners(ctx context.Context, in Input, allOwnerEmails []string,
 		if err != nil {
 			return nil, err
 		}
-		switch allowed, err := acls.IsMemberLinkedAccounts(ctx, in.GFactory, gerritHost, luciProject, id, allowLists); {
+		switch allowed, err := acls.IsMember(ctx, in.GFactory, gerritHost, luciProject, id, allowLists); {
 		case err != nil:
 			return nil, err
 		case !allowed:
