@@ -233,7 +233,7 @@ func checkVoteStatus(ctx context.Context, originCLID int64, isCanceled *atomic.B
 			}
 		}
 		if err := changelist.LoadCLs(ctx, []*changelist.CL{originCL}); err == nil {
-			isCanceled.Store(ensureOriginCLVote(ctx, originCL))
+			isCanceled.Store(!ensureOriginCLVote(ctx, originCL))
 		}
 	}
 }

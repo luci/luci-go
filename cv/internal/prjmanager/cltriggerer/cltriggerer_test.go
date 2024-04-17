@@ -231,7 +231,7 @@ func TestTriggerer(t *testing.T) {
 			So(exist, ShouldBeTrue)
 		})
 
-		Convey("skips voting, if deadline exceeded", func() {
+		Convey("skips voting", func() {
 			var statusWant string
 			Convey("if deadline exceeded", func() {
 				ct.Clock.Add(prjpb.MaxTriggeringCLDepsDuration + time.Minute)
