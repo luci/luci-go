@@ -2,6 +2,17 @@
 
 {{define "content"}}
 
+<style>
+  .popover {
+    max-width: 100%;
+  }
+
+  .popover-body {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+</style>
+
 <script type="text/javascript" src="/static/js/lookup.js"></script>
 
 <div class="container px-0 py-2" id="content-box">
@@ -91,18 +102,11 @@
 </template>
 
 
-<template id="direct-result-template">
+<template id="result-template">
   <div>
     <a></a>
   </div>
 </template>
 
-
-<template id="indirect-result-template">
-  <div>
-    <a></a>
-    <!-- TODO: add a tooltip template for inclusion path details -->
-  </div>
-</template>
 
 {{end}}

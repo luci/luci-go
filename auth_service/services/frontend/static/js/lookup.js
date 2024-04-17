@@ -278,9 +278,19 @@ class LookupErrorAlert extends HidableElement {
 class SearchResults extends HidableElement {
   constructor(element) {
     super(element, false);
+
+    // Popovers for details of indirect results.
+    this.popovers = [];
   }
 
   clearResults() {
+    // Dispose of popovers that were for previous results, so there aren't any
+    // orphaned elements floating about.
+    this.popovers.forEach((p) => {
+      p.dispose();
+    })
+    this.popovers = [];
+
     // Empty the DOM element.
     this.element.innerHTML = '';
   }
@@ -309,8 +319,8 @@ class SearchResults extends HidableElement {
       directSection.innerHTML = '';
 
       summary.directIncluders.forEach(inc => {
-        const d = new DirectResultItem(inc);
-        directSection.appendChild(d.element);
+        const result = new DirectResultItem(inc);
+        directSection.appendChild(result.element);
       });
     }
 
@@ -320,8 +330,10 @@ class SearchResults extends HidableElement {
       indirectSection.innerHTML = '';
 
       summary.indirectIncluders.forEach(inc => {
-        const d = new IndirectResultItem(inc);
-        indirectSection.appendChild(d.element);
+        const result = new IndirectResultItem(inc);
+        indirectSection.appendChild(result.element);
+        // Keep track of the popover so it can be disposed of later.
+        this.popovers.push(result.popover);
       });
     }
 
@@ -334,19 +346,17 @@ class SearchResults extends HidableElement {
 ////////////////////////////////////////////////////////////////////////////////
 // Base class for a singular search result.
 class ResultItem {
-  constructor(template_id, includer) {
-    const template = document.querySelector(template_id);
+  constructor(includer) {
+    const template = document.querySelector('#result-template');
 
     // Clone and grab elements to modify.
     const clone = template.content.cloneNode(true);
-    const rootEl = clone.querySelector('div');
-    const linkEl = clone.querySelector('a');
+    this.element = clone.querySelector('div');
+    this.link = clone.querySelector('a');
 
     // Set the link text and target.
-    linkEl.textContent = includer.name;
-    linkEl.setAttribute('href', includer.href);
-
-    this.element = rootEl;
+    this.link.textContent = includer.name;
+    this.link.setAttribute('href', includer.href);
   }
 }
 
@@ -355,7 +365,7 @@ class ResultItem {
 // Singular search result, representing a group the principal is directly in.
 class DirectResultItem extends ResultItem {
   constructor(includer) {
-    super('#direct-result-template', includer);
+    super(includer);
 
     // Add a description if included via GLOB.
     if (includer.includesViaGlobs.length > 0) {
@@ -371,9 +381,29 @@ class DirectResultItem extends ResultItem {
 // Singular search result, representing a group the principal is indirectly in.
 class IndirectResultItem extends ResultItem {
   constructor(includer) {
-    super('#indirect-result-template', includer);
+    super(includer);
 
-    // TODO: set tooltip details for inclusion path.
+    // Construct an element with the indirect inclusion details.
+    const popoverContent = document.createElement('div');
+    includer.includesIndirectly.forEach((groupNames) => {
+      // Replace empty strings with ellipses.
+      const displayNames = groupNames.map(g => g === '' ? '\u2026' : g);
+
+      const pathResult = document.createElement('div');
+      pathResult.classList.add('small', 'my-2');
+      pathResult.textContent = displayNames.join(' \u2192 ');
+      popoverContent.appendChild(pathResult);
+    });
+
+    // Create a popover with the details content.
+    this.popover = new bootstrap.Popover(this.link, {
+      container: 'body',
+      content: popoverContent,
+      html: true,
+      placement: 'left',
+      title: 'Included via',
+      trigger: 'hover',
+    });
   }
 }
 
