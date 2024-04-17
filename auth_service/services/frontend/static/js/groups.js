@@ -393,6 +393,11 @@ class ContentFrame {
   // Sets the content of the content frame.
   // Clears any content that was previously in the frame.
   setContent(content) {
+    // Dispose of any tooltips from the old content.
+    if (this.content instanceof EditGroupForm) {
+      this.content.clearTooltips();
+    }
+
     // Empty the dom element.
     this.element.innerHTML = '';
 
@@ -551,6 +556,17 @@ class EditGroupForm extends GroupForm {
 
     // Whether the group is external.
     this.isExternal = false;
+
+    // Tooltips in this form.
+    this.tooltips = [];
+  }
+
+  // Dispose of all tooltips in this form.
+  clearTooltips() {
+    this.tooltips.forEach((t) => {
+      t.dispose();
+    });
+    this.tooltips = [];
   }
 
   // Get group response and build the form.
@@ -637,17 +653,27 @@ class EditGroupForm extends GroupForm {
 
   // Populates the form with the text lists of the group.
   populateForm(group) {
-    // Grab heading, change log link and members form field.
+    // Grab heading, members form field, and links.
     const heading = this.element.querySelector('#group-heading');
-    const changeLogLink = this.element.querySelector('#group-change-log-link');
     const membersAndGlobs = this.element.querySelector('#membersAndGlobs');
+    const changeLogLink = this.element.querySelector('#group-change-log-link');
+    const lookupLink = this.element.querySelector('#group-lookup-link');
+    const listingLink = this.element.querySelector('#group-listing-link');
 
-    // Modify group name, change log link target and members.
+    // Modify group name and members.
     heading.textContent = group.name;
-    const changeLogURL = new URL('/change_log', window.location.href);
-    changeLogURL.searchParams.append('target', 'AuthGroup$' + group.name);
-    changeLogLink.setAttribute('href', changeLogURL);
     membersAndGlobs.textContent = group.membersAndGlobs
+
+    // Modify the links for group-specific information.
+    changeLogLink.setAttribute('href',
+      common.getChangeLogTargetURL('AuthGroup', group.name));
+    lookupLink.setAttribute('href', common.getLookupURL(group.name));
+    // TODO: implement then link to full listing page for the group.
+
+    // Enable tooltips for the group's links.
+    this.tooltips.push(new bootstrap.Tooltip(changeLogLink));
+    this.tooltips.push(new bootstrap.Tooltip(lookupLink));
+    this.tooltips.push(new bootstrap.Tooltip(listingLink));
 
     // Exit early if the form is for an external group.
     if (this.isExternal) {
