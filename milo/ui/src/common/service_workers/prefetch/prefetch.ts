@@ -12,18 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { BUILD_FIELD_MASK } from '@/build/constants';
 import {
   getAuthStateCache,
   getAuthStateCacheSync,
   queryAuthState,
   setAuthStateCache,
 } from '@/common/api/auth_state';
-import {
-  BUILD_FIELD_MASK,
-  BuilderID,
-  BuildsService,
-  GetBuildRequest,
-} from '@/common/services/buildbucket';
 import {
   constructArtifactName,
   getInvIdFromBuildId,
@@ -32,9 +27,15 @@ import {
   ResultDb,
 } from '@/common/services/resultdb';
 import { cached } from '@/generic_libs/tools/cached_fn';
+import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from '@/generic_libs/tools/prpc_utils';
 import { timeout } from '@/generic_libs/tools/utils';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import {
+  BuildsClientImpl,
+  GetBuildRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
 const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
 const AUTH_STATE_CACHE_KEY = Math.random().toString();
@@ -78,7 +79,7 @@ export class Prefetcher {
     },
   );
 
-  private readonly prefetchBuildsService: BuildsService;
+  private readonly prefetchBuildClient: BuildsClientImpl;
   private readonly prefetchResultDBService: ResultDb;
 
   constructor(
@@ -92,14 +93,17 @@ export class Prefetcher {
       `https://${this.configs.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
       `https://${this.configs.resultdb.host}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
     ];
-    this.prefetchBuildsService = new BuildsService(
-      this.makePrpcClient(this.configs.buildbucket.host),
+    this.prefetchBuildClient = new BuildsClientImpl(
+      this.makeRpcClient(this.configs.buildbucket.host),
     );
     this.prefetchResultDBService = new ResultDb(
       this.makePrpcClient(this.configs.resultdb.host),
     );
   }
 
+  /**
+   * @deprecated use makeRpcClient instead.
+   */
   private makePrpcClient(host: string) {
     return new PrpcClientExt(
       {
@@ -121,6 +125,26 @@ export class Prefetcher {
 
       () => getAuthStateCacheSync()?.accessToken || '',
     );
+  }
+
+  private makeRpcClient(host: string) {
+    return new PrpcClient({
+      host,
+      getAuthToken: () => getAuthStateCacheSync()?.accessToken || '',
+      fetchImpl: async (info, init?) => {
+        const req = new Request(info, init);
+        await this.cachedFetch(
+          {},
+          req,
+          undefined,
+          await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, req.clone()),
+          CACHE_DURATION, // See the documentation for CACHE_DURATION.
+        );
+
+        // Abort the function to prevent the response from being consumed.
+        throw new Error();
+      },
+    });
   }
 
   /**
@@ -181,24 +205,29 @@ export class Prefetcher {
 
     let getBuildRequest: GetBuildRequest | null = null;
     if (buildId) {
-      getBuildRequest = { id: buildId, fields: BUILD_FIELD_MASK };
+      getBuildRequest = GetBuildRequest.fromPartial({
+        id: buildId,
+        mask: {
+          fields: BUILD_FIELD_MASK,
+        },
+      });
       invName = 'invocations/' + getInvIdFromBuildId(buildId);
     } else if (builderId && buildNum) {
-      getBuildRequest = {
+      getBuildRequest = GetBuildRequest.fromPartial({
         builder: builderId,
         buildNumber: buildNum,
-        fields: BUILD_FIELD_MASK,
-      };
+        mask: {
+          fields: BUILD_FIELD_MASK,
+        },
+      });
       invName =
         'invocations/' + (await getInvIdFromBuildNum(builderId, buildNum));
     }
 
     if (getBuildRequest) {
-      this.prefetchBuildsService
-        .getBuild(getBuildRequest, CACHE_OPTION)
-        .catch((_e) => {
-          // Ignore any error, let the consumer of the cache deal with it.
-        });
+      this.prefetchBuildClient.GetBuild(getBuildRequest).catch((_e) => {
+        // Ignore any error, let the consumer of the cache deal with it.
+      });
     }
 
     if (invName) {

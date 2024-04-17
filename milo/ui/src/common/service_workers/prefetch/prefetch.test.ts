@@ -12,15 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { BUILD_FIELD_MASK } from '@/build/constants';
 import { queryAuthState, setAuthStateCache } from '@/common/api/auth_state';
-import { BUILD_FIELD_MASK, BuildsService } from '@/common/services/buildbucket';
 import {
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
   RESULT_LIMIT,
   ResultDb,
 } from '@/common/services/resultdb';
+import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
+import {
+  BuildsClientImpl,
+  GetBuildRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
 import { Prefetcher } from './prefetch';
 
@@ -34,7 +39,7 @@ describe('Prefetcher', () => {
   // Helps generate fetch requests that are identical to the ones generated
   // by the pRPC Clients.
   let fetchInterceptor: jest.MockedFunction<typeof fetch>;
-  let buildsService: BuildsService;
+  let buildsClient: BuildsClientImpl;
   let resultdb: ResultDb;
 
   beforeEach(async () => {
@@ -52,11 +57,12 @@ describe('Prefetcher', () => {
 
     fetchInterceptor = jest.fn(fetch);
     fetchInterceptor.mockResolvedValue(new Response(''));
-    buildsService = new BuildsService(
-      new PrpcClientExt(
-        { host: SETTINGS.buildbucket.host, fetchImpl: fetchInterceptor },
-        () => 'access-token',
-      ),
+    buildsClient = new BuildsClientImpl(
+      new PrpcClient({
+        host: SETTINGS.buildbucket.host,
+        getAuthToken: () => 'access-token',
+        fetchImpl: fetchInterceptor,
+      }),
     );
     resultdb = new ResultDb(
       new PrpcClientExt(
@@ -70,7 +76,7 @@ describe('Prefetcher', () => {
     jest.useRealTimers();
   });
 
-  test('prefetches build page resources', async () => {
+  it('prefetches build page resources', async () => {
     const authResponse = new Response(
       JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }),
     );
@@ -136,19 +142,23 @@ describe('Prefetcher', () => {
     let cachedRes = await respondWithStub.mock.calls[0][0];
 
     expect(cachedRes).toStrictEqual(authResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(4);
+    expect(fetchStub).toHaveBeenCalledTimes(4);
 
     // Generate a fetch request.
-    await buildsService
-      .getBuild({
-        builder: {
-          project: 'chromium',
-          bucket: 'ci',
-          builder: 'Win7 Tests (1)',
-        },
-        buildNumber: 116372,
-        fields: BUILD_FIELD_MASK,
-      })
+    await buildsClient
+      .GetBuild(
+        GetBuildRequest.fromPartial({
+          builder: {
+            project: 'chromium',
+            bucket: 'ci',
+            builder: 'Win7 Tests (1)',
+          },
+          buildNumber: 116372,
+          mask: {
+            fields: BUILD_FIELD_MASK,
+          },
+        }),
+      )
       .catch((_e) => {});
     // Check whether the build was prefetched.
     cacheHit = prefetcher.respondWithPrefetched({
@@ -159,7 +169,7 @@ describe('Prefetcher', () => {
 
     expect(cacheHit).toBeTruthy();
     expect(cachedRes).toStrictEqual(buildResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(4);
+    expect(fetchStub).toHaveBeenCalledTimes(4);
 
     // Generate a fetch request.
     await resultdb.getInvocation({ name: invName }).catch((_e) => {});
@@ -172,7 +182,7 @@ describe('Prefetcher', () => {
 
     expect(cacheHit).toBeTruthy();
     expect(cachedRes).toStrictEqual(invResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(4);
+    expect(fetchStub).toHaveBeenCalledTimes(4);
 
     // Generate a fetch request.
     await resultdb
@@ -187,10 +197,10 @@ describe('Prefetcher', () => {
 
     expect(cacheHit).toBeTruthy();
     expect(cachedRes).toStrictEqual(testVariantsResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(4);
+    expect(fetchStub).toHaveBeenCalledTimes(4);
   });
 
-  test('prefetches build page resources when visiting a short build page url', async () => {
+  it('prefetches build page resources when visiting a short build page url', async () => {
     const authResponse = new Response(
       JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }),
     );
@@ -244,14 +254,18 @@ describe('Prefetcher', () => {
 
     expect(cacheHit).toBeTruthy();
     expect(cachedRes).toStrictEqual(authResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(4);
+    expect(fetchStub).toHaveBeenCalledTimes(4);
 
     // Generate a fetch request.
-    await buildsService
-      .getBuild({
-        id: '123456789',
-        fields: BUILD_FIELD_MASK,
-      })
+    await buildsClient
+      .GetBuild(
+        GetBuildRequest.fromPartial({
+          id: '123456789',
+          mask: {
+            fields: BUILD_FIELD_MASK,
+          },
+        }),
+      )
       .catch((_e) => {});
     // Check whether the build was prefetched.
     cacheHit = prefetcher.respondWithPrefetched({
@@ -262,7 +276,7 @@ describe('Prefetcher', () => {
 
     expect(cacheHit).toBeTruthy();
     expect(cachedRes).toStrictEqual(buildResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(4);
+    expect(fetchStub).toHaveBeenCalledTimes(4);
 
     // Generate a fetch request.
     await resultdb.getInvocation({ name: invName }).catch((_e) => {});
@@ -275,7 +289,7 @@ describe('Prefetcher', () => {
 
     expect(cacheHit).toBeTruthy();
     expect(cachedRes).toStrictEqual(invResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(4);
+    expect(fetchStub).toHaveBeenCalledTimes(4);
 
     // Generate a fetch request.
     await resultdb
@@ -290,10 +304,10 @@ describe('Prefetcher', () => {
 
     expect(cacheHit).toBeTruthy();
     expect(cachedRes).toStrictEqual(testVariantsResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(4);
+    expect(fetchStub).toHaveBeenCalledTimes(4);
   });
 
-  test('prefetches artifact page resources', async () => {
+  it('prefetches artifact page resources', async () => {
     const authResponse = new Response(
       JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }),
     );
@@ -344,7 +358,7 @@ describe('Prefetcher', () => {
 
     expect(cacheHit).toBeTruthy();
     expect(cachedRes).toStrictEqual(authResponse);
-    expect(fetchStub.mock.calls.length).toStrictEqual(2);
+    expect(fetchStub).toHaveBeenCalledTimes(2);
 
     // Generate a fetch request.
     await resultdb
@@ -360,7 +374,7 @@ describe('Prefetcher', () => {
     cachedRes = await respondWithStub.mock.calls[1][0];
 
     expect(cacheHit).toBeTruthy();
-    expect(fetchStub.mock.calls.length).toStrictEqual(2);
+    expect(fetchStub).toHaveBeenCalledTimes(2);
     expect(cachedRes).toStrictEqual(artifactResponse);
   });
 });
