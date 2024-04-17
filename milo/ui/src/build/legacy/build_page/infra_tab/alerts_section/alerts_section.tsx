@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert } from '@mui/material';
+import { Alert, Box } from '@mui/material';
 import { DateTime } from 'luxon';
 
 import {
@@ -42,7 +42,7 @@ export function AlertsSection() {
     : null;
 
   return (
-    <>
+    <Box sx={{ marginBottom: '10px' }}>
       {isCanary(build) && isFailureStatus(build.status) && (
         <Alert severity="warning">
           This build ran on a canary version of LUCI. If you suspect it failed
@@ -66,6 +66,6 @@ export function AlertsSection() {
           <RelativeTimestamp timestamp={scheduledCancelTime} />.
         </Alert>
       )}
-    </>
+    </Box>
   );
 }

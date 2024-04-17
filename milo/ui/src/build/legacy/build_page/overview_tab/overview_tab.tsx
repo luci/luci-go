@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import styled from '@emotion/styled';
+import { Box, styled } from '@mui/material';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { AlertsSection } from './alerts_section';
-import { BuildActionButton } from './build_action_button';
-import { BuildDescription } from './description_section';
-import { FailedTestSection } from './failed_tests_section';
-import { StepsSection } from './steps_section';
-import { SummarySection } from './summary_section';
+import { AlertsSection } from '../infra_tab/alerts_section';
+import { BuildActionButton } from '../infra_tab/build_action_button';
+import { FailedTestSection } from '../infra_tab/failed_tests_section';
+import { StepsSection } from '../infra_tab/steps_section';
+import { SummarySection } from '../infra_tab/summary_section';
 
-const ContainerDiv = styled.div({
-  margin: '10px 16px',
+import { BuildDescription } from './description_section';
+
+const ContainerDiv = styled(Box)({
+  padding: '5px 16px',
   '& h3': {
     marginBlock: '25px 10px',
   },

@@ -12,27 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, styled } from '@mui/material';
+import { Box, Icon, styled } from '@mui/material';
+import { startCase } from 'lodash-es';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  BUILD_STATUS_DISPLAY_MAP,
+  BUILD_STATUS_ICON_MAP,
+} from '@/common/constants/build';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useBuild } from '../context';
-import { StepsSection } from '../overview_tab/steps_section';
 
+import { ActionsSection } from './actions_section';
+import { AlertsSection } from './alerts_section';
 import { BuildLogSection } from './build_log_section';
 import { BuildPackagesInfoSection } from './build_packages_info_section';
 import { BuilderInfoSection } from './builder_info_section';
 import { ExperimentsSection } from './experiments_section';
+import { FailedTestSection } from './failed_tests_section';
 import { InfraSection } from './infra_section';
 import { InputSection } from './input_section';
 import { OutputSection } from './output_section';
 import { PropertiesSection } from './properties_section';
+import { StepsSection } from './steps_section';
+import { SummarySection } from './summary_section';
 import { TagsSection } from './tags_section';
 import { TimingSection } from './timing_section';
 
 const ContainerDiv = styled(Box)({
-  margin: '10px 16px',
+  padding: '5px 16px',
   '@media screen and (min-width: 1300px)': {
     display: 'grid',
     gridTemplateColumns: '1fr 40vw',
@@ -49,13 +59,30 @@ const ContainerDiv = styled(Box)({
 export function InfraTab() {
   const build = useBuild();
 
+  if (!build) {
+    return;
+  }
+
   return (
     <ContainerDiv>
       <Box>
+        <h3>
+          <Icon
+            className={BUILD_STATUS_CLASS_MAP[build.status]}
+            sx={{ verticalAlign: 'middle' }}
+          >
+            {BUILD_STATUS_ICON_MAP[build.status]}
+          </Icon>{' '}
+          {startCase(BUILD_STATUS_DISPLAY_MAP[build.status])}
+        </h3>
+        <AlertsSection />
+        <SummarySection />
+        <FailedTestSection />
         <StepsSection />
       </Box>
       <Box>
-        {build?.builderInfo?.description && (
+        <ActionsSection />
+        {build.builderInfo?.description && (
           <BuilderInfoSection descriptionHtml={build.builderInfo.description} />
         )}
         <InputSection />
