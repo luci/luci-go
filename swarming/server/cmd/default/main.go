@@ -18,9 +18,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"strings"
 
 	"google.golang.org/grpc"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
@@ -35,6 +37,7 @@ import (
 
 	notificationspb "go.chromium.org/luci/swarming/internal/notifications"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/bbtaskbackend"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
@@ -174,6 +177,10 @@ func main() {
 				tokenSecret,
 			))
 		}
+
+		// Register the TaskBackend pRPC server which will be only called by Buildbucket.
+		srv.RegisterUnaryServerInterceptors(bbtaskbackend.TaskBackendAuthInterceptor(strings.HasSuffix(srv.Options.CloudProject, "-dev")))
+		bbpb.RegisterTaskBackendServer(srv, bbtaskbackend.NewTaskBackend(srv.Options.CloudProject))
 
 		// A temporary interceptor with very crude but solid ACL check for the
 		// duration of the development. To avoid accidentally leaking stuff due to
