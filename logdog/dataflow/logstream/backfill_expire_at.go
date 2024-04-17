@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sync"
 	"time"
 
 	cloudds "cloud.google.com/go/datastore"
@@ -118,6 +119,7 @@ type backfillExpireAtFromCreatedFn struct {
 	Workers          int
 
 	withDatastoreEnv func(context.Context) context.Context
+	mu               sync.Mutex
 	skippedCounter   beam.Counter
 	updatedCounter   beam.Counter
 	deletedCounter   beam.Counter
@@ -326,7 +328,6 @@ func (fn *backfillExpireAtFromCreatedFn) updateEntities(
 			return errors.Annotate(err, "failed to Put entities").Err()
 		}
 	}
-	fn.updatedCounter.Inc(ctx, int64(len(entitiesToPut)))
 
 	if !fn.DryRun {
 		err = datastore.Delete(ctx, entitiesToDelete)
@@ -334,9 +335,13 @@ func (fn *backfillExpireAtFromCreatedFn) updateEntities(
 			return errors.Annotate(err, "failed to Delete entities").Err()
 		}
 	}
-	fn.deletedCounter.Inc(ctx, int64(len(entitiesToDelete)))
 
+	fn.mu.Lock()
+	defer fn.mu.Unlock()
+	fn.updatedCounter.Inc(ctx, int64(len(entitiesToPut)))
+	fn.deletedCounter.Inc(ctx, int64(len(entitiesToDelete)))
 	fn.skippedCounter.Inc(ctx, int64(len(entities)-len(entitiesToPut)-len(entitiesToDelete)-notFound))
 	fn.notFoundCounter.Inc(ctx, int64(notFound))
+
 	return nil
 }
