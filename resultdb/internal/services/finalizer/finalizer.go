@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/services/artifactexporter"
 	"go.chromium.org/luci/resultdb/internal/services/baselineupdater"
 	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 	"go.chromium.org/luci/resultdb/internal/services/testmetadataupdator"
@@ -281,6 +282,11 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 
 				// Enqueue update test metadata task transactionally.
 				if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
+					return err
+				}
+
+				// Enqueue export artifact task transactionally.
+				if err := artifactexporter.Schedule(ctx, invID); err != nil {
 					return err
 				}
 

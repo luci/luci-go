@@ -47,3 +47,7 @@ message UpdateTestMetadata {
 message MarkInvocationSubmitted {
   string invocation_id = 1;
 }
+
+message ExportArtifacts {
+  string invocation_id = 1;
+}

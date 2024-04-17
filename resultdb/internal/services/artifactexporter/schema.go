@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package artifactexporter handles uploading artifacts to BigQuery.
-// Perhaps it makes sense to merge this package into the bqexporter package
-// but we intentionally it as a separate package because:
-// 1. It is still in experimental phase.
-// 2. The bqexporter package contains the legacy artifact exporter. Merging
-// the 2 packages may cause some confusions/naming conflict.
 package artifactexporter
 
 import (
@@ -30,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/bq"
+
 	"go.chromium.org/luci/resultdb/bqutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"

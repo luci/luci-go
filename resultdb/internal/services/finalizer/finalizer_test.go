@@ -157,12 +157,15 @@ func TestFinalizeInvocation(t *testing.T) {
 			err := finalizeInvocation(ctx, "x")
 			So(err, ShouldBeNil)
 
-			So(sched.Tasks().Payloads(), ShouldHaveLength, 2)
-			So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.UpdateTestMetadata{
+			So(sched.Tasks().Payloads(), ShouldHaveLength, 3)
+			So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.ExportArtifacts{
+				InvocationId: "x",
+			})
+			So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.UpdateTestMetadata{
 				InvocationId: "x",
 			})
 			// Enqueued pub/sub notification.
-			So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
+			So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
 				Message: &pb.InvocationFinalizedNotification{
 					Invocation: "invocations/x",
 					Realm:      "myproject:myrealm",
