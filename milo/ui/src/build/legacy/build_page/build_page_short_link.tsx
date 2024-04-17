@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Box, CircularProgress } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
@@ -33,8 +33,7 @@ export function BuildPageShortLink() {
     throw new Error('invariant violated: buildId should be set');
   }
 
-  // TODO: cache the build so we don't need to fetch the build again after
-  // redirection.
+  const queryClient = useQueryClient();
   const client = useBuildsClient();
   const {
     data: build,
@@ -50,6 +49,21 @@ export function BuildPageShortLink() {
       }),
     ),
     select: (data) => data as OutputBuild,
+    onSuccess(data) {
+      // Allow GetBuild query using the builder ID + build number to hit the
+      // same cache.
+      const query = client.GetBuild.query(
+        GetBuildRequest.fromPartial({
+          builder: data.builder,
+          buildNumber: data.number,
+          mask: {
+            fields: BUILD_FIELD_MASK,
+          },
+        }),
+      );
+      queryClient.setQueryDefaults(query.queryKey, { cacheTime: 5000 });
+      queryClient.setQueryData(query.queryKey, data);
+    },
   });
   if (isError) {
     // TODO(b/335065098): display a warning that the build might've expired if

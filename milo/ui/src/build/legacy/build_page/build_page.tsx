@@ -116,6 +116,8 @@ export const BuildPage = observer(() => {
   } = useQuery({
     ...client.GetBuild.query(req),
     select: (data) => data as OutputBuild,
+    // Allow cache populated by <BuildPageShortLink /> to be used.
+    staleTime: 5000,
   });
   if (isError) {
     // TODO(b/335065098): display a warning that the build might've expired if
