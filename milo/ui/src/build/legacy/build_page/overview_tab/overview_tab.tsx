@@ -13,17 +13,14 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
-import { useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
-import { ActionButton, Dialog } from './action_button';
 import { AlertsSection } from './alerts_section';
-import { CancelBuildDialog } from './cancel_build_dialog';
+import { BuildActionButton } from './build_action_button';
 import { BuildDescription } from './description_section';
 import { FailedTestSection } from './failed_tests_section';
-import { RetryBuildDialog } from './retry_build_dialog';
 import { StepsSection } from './steps_section';
 import { SummarySection } from './summary_section';
 
@@ -38,27 +35,15 @@ const ContainerDiv = styled.div({
 });
 
 export function OverviewTab() {
-  const [activeDialog, setActiveDialog] = useState(Dialog.None);
-
   return (
-    <>
-      <RetryBuildDialog
-        open={activeDialog === Dialog.RetryBuild}
-        onClose={() => setActiveDialog(Dialog.None)}
-      />
-      <CancelBuildDialog
-        open={activeDialog === Dialog.CancelBuild}
-        onClose={() => setActiveDialog(Dialog.None)}
-      />
-      <ContainerDiv>
-        <BuildDescription />
-        <ActionButton openDialog={(dialog) => setActiveDialog(dialog)} />
-        <AlertsSection />
-        <SummarySection />
-        <FailedTestSection />
-        <StepsSection />
-      </ContainerDiv>
-    </>
+    <ContainerDiv>
+      <BuildDescription />
+      <BuildActionButton />
+      <AlertsSection />
+      <SummarySection />
+      <FailedTestSection />
+      <StepsSection />
+    </ContainerDiv>
   );
 }
 

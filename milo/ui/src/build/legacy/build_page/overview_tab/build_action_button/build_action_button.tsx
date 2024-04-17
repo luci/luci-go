@@ -12,4 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './action_button';
+import { useBuild } from '../../context';
+
+import { CancelBuildButton } from './cancel_build_button';
+import { RetryBuildButton } from './retry_build_button';
+
+export function BuildActionButton() {
+  const build = useBuild();
+
+  if (!build) {
+    return <></>;
+  }
+
+  return build.endTime ? (
+    <RetryBuildButton build={build} />
+  ) : (
+    <CancelBuildButton build={build} />
+  );
+}

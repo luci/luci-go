@@ -29,25 +29,24 @@ import { OutputBuild } from '@/build/types';
 import { getBuildURLPathFromBuildData } from '@/common/tools/url_utils';
 import { ScheduleBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
-import { useBuild } from '../context';
-
 export interface RetryBuildDialogProps {
+  readonly buildId: string;
   readonly open: boolean;
   readonly onClose?: () => void;
   readonly container?: HTMLDivElement;
 }
 
 export function RetryBuildDialog({
+  buildId,
   open,
   onClose,
   container,
 }: RetryBuildDialogProps) {
   const navigate = useNavigate();
-  const build = useBuild();
 
   const client = useBuildsClient();
   const retryBuildMutation = useMutation({
-    mutationFn: (buildId: string) =>
+    mutationFn: () =>
       client.ScheduleBuild(
         ScheduleBuildRequest.fromPartial({ templateBuildId: buildId }),
       ),
@@ -55,10 +54,6 @@ export function RetryBuildDialog({
       navigate(getBuildURLPathFromBuildData(data as OutputBuild)),
     // TODO(b/335064206): handle failure.
   });
-
-  if (!build) {
-    return <></>;
-  }
 
   return (
     <Dialog
@@ -79,7 +74,7 @@ export function RetryBuildDialog({
           Dismiss
         </Button>
         <LoadingButton
-          onClick={() => retryBuildMutation.mutate(build.id)}
+          onClick={() => retryBuildMutation.mutate()}
           variant="contained"
           loading={retryBuildMutation.isLoading}
         >

@@ -30,8 +30,6 @@ import {
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { BuildContextProvider } from '../../context';
-
 import { CancelBuildDialog } from './cancel_build_dialog';
 
 describe('<CancelBuildDialog />', () => {
@@ -54,9 +52,11 @@ describe('<CancelBuildDialog />', () => {
 
     render(
       <FakeContextProvider>
-        <BuildContextProvider build={runningBuild}>
-          <CancelBuildDialog open onClose={onCloseSpy} />
-        </BuildContextProvider>
+        <CancelBuildDialog
+          buildId={runningBuild.id}
+          open
+          onClose={onCloseSpy}
+        />
       </FakeContextProvider>,
     );
 
@@ -72,9 +72,11 @@ describe('<CancelBuildDialog />', () => {
 
     render(
       <FakeContextProvider>
-        <BuildContextProvider build={runningBuild}>
-          <CancelBuildDialog open onClose={onCloseSpy} />
-        </BuildContextProvider>
+        <CancelBuildDialog
+          buildId={runningBuild.id}
+          open
+          onClose={onCloseSpy}
+        />
       </FakeContextProvider>,
     );
 

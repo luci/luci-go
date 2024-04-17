@@ -27,15 +27,15 @@ import { useState } from 'react';
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { CancelBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
-import { useBuild } from '../../context';
-
 export interface CancelBuildDialogProps {
+  readonly buildId: string;
   readonly open: boolean;
   readonly onClose?: () => void;
   readonly container?: HTMLDivElement;
 }
 
 export function CancelBuildDialog({
+  buildId,
   open,
   onClose,
   container,
@@ -43,11 +43,16 @@ export function CancelBuildDialog({
   const [reason, setReason] = useState('');
   const [showError, setShowErr] = useState(false);
 
-  const build = useBuild();
   const queryClient = useQueryClient();
   const client = useBuildsClient();
   const cancelBuildMutation = useMutation({
-    mutationFn: (req: CancelBuildRequest) => client.CancelBuild(req),
+    mutationFn: (reason: string) =>
+      client.CancelBuild(
+        CancelBuildRequest.fromPartial({
+          id: buildId,
+          summaryMarkdown: reason,
+        }),
+      ),
     onSuccess: () => {
       // TODO(b/335064206): invalidate the cancelled build only.
       queryClient.invalidateQueries();
@@ -56,21 +61,12 @@ export function CancelBuildDialog({
     // TODO(b/335064206): handle failure.
   });
 
-  if (!build) {
-    return <></>;
-  }
-
   const handleConfirm = () => {
     if (!reason) {
       setShowErr(true);
       return;
     }
-    cancelBuildMutation.mutate(
-      CancelBuildRequest.fromPartial({
-        id: build.id,
-        summaryMarkdown: reason,
-      }),
-    );
+    cancelBuildMutation.mutate(reason);
   };
   const handleUpdate = (newReason: string) => {
     setReason(newReason);
