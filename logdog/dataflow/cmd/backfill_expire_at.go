@@ -41,7 +41,7 @@ var (
 	// worker.
 	backfillWorkers = flag.Int(
 		"backfill-workers",
-		4,
+		16,
 		"The number of go workers in a backfill beam worker.",
 	)
 )

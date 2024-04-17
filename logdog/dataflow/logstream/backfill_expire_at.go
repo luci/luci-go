@@ -74,6 +74,7 @@ func BackfillExpireAtFromCreated(s beam.Scope, cloudProject string, logStreamKey
 		SkipCreatedAfter: opts.SkipCreatedAfter,
 		DryRun:           opts.DryRun,
 		UpdateBatchSize:  opts.BatchSize,
+		Workers:          opts.Workers,
 	}, logStreamKeys)
 
 	// Retry failed batches a few times but with less go workers (to reduce
