@@ -16,6 +16,7 @@ import glob
 import os
 import subprocess
 import sys
+import tempfile
 
 if sys.version_info[0] > 2:
   ISOLATION_FLAG = '-I'
@@ -27,10 +28,19 @@ else:
 # Create virtual environment in ${out} directory
 virtualenv = glob.glob(
     os.path.join(os.environ['virtualenv'], '*', 'virtualenv.py*'))[0]
-subprocess.check_call([
-    sys.executable, '-B', ISOLATION_FLAG, virtualenv,
-    '--no-download', '--always-copy', os.environ['out']
-])
+
+args = [
+    sys.executable, '-B', ISOLATION_FLAG,
+    # Use realpath to mitigate https://github.com/pypa/virtualenv/issues/1949
+    os.path.realpath(virtualenv),
+    '--no-download', '--always-copy', os.environ['out'],
+]
+if virtualenv.endswith('.pyz'):
+  # .pyz ensures Python3 so we can use TemporaryDirectory.
+  with tempfile.TemporaryDirectory() as d:
+    subprocess.check_call(args + ['--app-data', d])
+else:
+  subprocess.check_call(args)
 
 # Install wheels to virtual environment
 if 'wheels' in os.environ:

@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -44,24 +45,28 @@ var testStorageDir string
 
 func getPythonEnvironment(ver string) *python.Environment {
 	return map[string]*python.Environment{
+		"2.7": {
+			Executable: "python",
+			CPython:    python.CPythonFromCIPD("version:2@2.7.18.chromium.44"),
+			Virtualenv: python.VirtualenvFromCIPD("version:2@16.7.12.chromium.7"),
+		},
 		"3.8": {
 			Executable: "python3",
-			CPython:    python.CPython3FromCIPD("version:2@3.8.10.chromium.24"),
+			CPython:    python.CPython3FromCIPD("version:2@3.8.10.chromium.34"),
 			Virtualenv: python.VirtualenvFromCIPD("version:2@16.7.12.chromium.7"),
 		},
 		"3.11": {
 			Executable: "python3",
-			CPython:    python.CPython3FromCIPD("version:2@3.11.5.chromium.30"),
-			Virtualenv: python.VirtualenvFromCIPD("version:2@20.17.1.chromium.8"),
+			CPython:    python.CPython3FromCIPD("version:2@3.11.8.chromium.35"),
+			Virtualenv: python.VirtualenvFromCIPD("version:2@20.25.1.chromium.8"),
 		},
 	}[ver]
 }
 
 func setupApp(ctx context.Context, app *Application) context.Context {
-	app.Arguments = append([]string{
-		"-vpython-root",
-		testStorageDir,
-	}, app.Arguments...)
+	if app.VpythonRoot == "" {
+		app.VpythonRoot = testStorageDir
+	}
 
 	app.Initialize(ctx)
 
@@ -131,7 +136,7 @@ func TestMain(m *testing.M) {
 func TestPythonBasic(t *testing.T) {
 	Convey("Test python basic", t, func() {
 		var env *python.Environment
-		for _, ver := range []string{"3.8", "3.11"} {
+		for _, ver := range []string{"2.7", "3.8", "3.11"} {
 			Convey(ver, func() {
 				env = getPythonEnvironment(ver)
 
@@ -166,6 +171,27 @@ func TestPythonBasic(t *testing.T) {
 					So(has, ShouldBeTrue)
 					So(rc, ShouldEqual, 42)
 				})
+
+				if runtime.GOOS != "windows" {
+					// See https://github.com/pypa/virtualenv/issues/1949
+					Convey("Test symlink root", func() {
+						symlinkRoot := filepath.Join(t.TempDir(), "link")
+						err := os.Symlink(testStorageDir, symlinkRoot)
+						So(err, ShouldBeNil)
+
+						c := cmd(t, &Application{
+							Arguments: []string{
+								"-vpython-spec",
+								testData("default.vpython3"),
+								"-c",
+								"print(123)",
+							},
+							VpythonRoot: symlinkRoot,
+						}, env)
+
+						So(output(c), ShouldEqual, "123")
+					})
+				}
 			})
 		}
 	})

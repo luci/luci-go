@@ -39,6 +39,19 @@ type Environment struct {
 	Virtualenv generators.Generator
 }
 
+func CPythonFromCIPD(version string) generators.Generator {
+	return &generators.CIPDExport{
+		Name: "cpython",
+		Ensure: ensure.File{
+			PackagesBySubdir: map[string]ensure.PackageSlice{
+				"": {
+					{PackageTemplate: "infra/3pp/tools/cpython/${platform}", UnresolvedVersion: version},
+				},
+			},
+		},
+	}
+}
+
 func CPython3FromCIPD(version string) generators.Generator {
 	return &generators.CIPDExport{
 		Name: "cpython",
