@@ -100,7 +100,7 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 		statusUpdated = true
 		bld.Proto.SummaryMarkdown = msg
 		st := &buildstatus.StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
-		bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, bld, st, st, clock.Now(ctx))
+		bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, bld, st, st, clock.Now(ctx), false)
 		if err != nil {
 			return err
 		}
@@ -125,13 +125,14 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 
 // updateBuildStatusOnTaskStatusChange updates build's top level status based on
 // task status change.
-func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, buildStatus, taskStatus *buildstatus.StatusWithDetails, updateTime time.Time) (*model.BuildStatus, *model.BuildSteps, error) {
+func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, buildStatus, taskStatus *buildstatus.StatusWithDetails, updateTime time.Time, useTaskSuccess bool) (*model.BuildStatus, *model.BuildSteps, error) {
 	var steps *model.BuildSteps
 	statusUpdater := buildstatus.Updater{
-		Build:       bld,
-		BuildStatus: buildStatus,
-		TaskStatus:  taskStatus,
-		UpdateTime:  updateTime,
+		Build:                       bld,
+		BuildStatus:                 buildStatus,
+		TaskStatus:                  taskStatus,
+		UpdateTime:                  updateTime,
+		SucceedBuildIfTaskSucceeded: useTaskSuccess,
 		PostProcess: func(c context.Context, bld *model.Build) error {
 			// Besides the post process cloud tasks, we also need to update
 			// steps, in case the build task ends before the build does.

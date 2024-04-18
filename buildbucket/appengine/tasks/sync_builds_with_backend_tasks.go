@@ -124,7 +124,7 @@ func getEntities(ctx context.Context, bks []*datastore.Key, now time.Time) ([]*b
 	return entitiesToSync, nil
 }
 
-func updateBuildEntities(ctx context.Context, bk *datastore.Key, now time.Time, taskMap map[string]*pb.Task) (endedBld *model.Build, err error) {
+func updateBuildEntities(ctx context.Context, bk *datastore.Key, now time.Time, taskMap map[string]*pb.Task, useTaskSuccess bool) (endedBld *model.Build, err error) {
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entities, err := getEntities(ctx, []*datastore.Key{bk}, now)
 		switch {
@@ -162,7 +162,7 @@ func updateBuildEntities(ctx context.Context, bk *datastore.Key, now time.Time, 
 			bld.Proto.UpdateTime = timestamppb.New(clock.Now(ctx))
 			toPut = append(toPut, bld)
 		default:
-			toSave, err := prepareUpdate(ctx, bld, inf, fetchedTask)
+			toSave, err := prepareUpdate(ctx, bld, inf, fetchedTask, useTaskSuccess)
 			if err != nil {
 				logging.Errorf(ctx, "failed to update task for build %d: %s", bld.ID, err)
 				return nil
@@ -215,7 +215,7 @@ func validateResponses(ctx context.Context, responses []*pb.FetchTasksResponse_R
 //
 // The task only retries if there's top level errors. In the case that a single
 // build is failed to update, we'll wait for the next task to update it again.
-func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc *clients.BackendClient, bks []*datastore.Key, now time.Time) error {
+func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc *clients.BackendClient, bks []*datastore.Key, now time.Time, useTaskSuccess bool) error {
 	if len(bks) == 0 {
 		return nil
 	}
@@ -265,7 +265,7 @@ func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc
 		for _, bk := range bksToSync {
 			bk := bk
 			work <- func() error {
-				endedBld, txErr := updateBuildEntities(ctx, bk, now, taskMap)
+				endedBld, txErr := updateBuildEntities(ctx, bk, now, taskMap, useTaskSuccess)
 				if txErr != nil {
 					// Log the error, but don't fail the overall task
 					// since this is only to update one build.
@@ -291,6 +291,7 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 
 	var shards int32
 	backendFound := false
+	useTaskSuccess := false
 	for _, config := range globalCfg.Backends {
 		if config.Target == backend {
 			if config.GetFullMode() == nil {
@@ -299,6 +300,7 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 			}
 			backendFound = true
 			shards = config.GetFullMode().GetBuildSyncSetting().GetShards()
+			useTaskSuccess = config.GetFullMode().GetSucceedBuildIfTaskIsSucceeded()
 		}
 	}
 	if !backendFound {
@@ -327,7 +329,7 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 			for bks := range bkC {
 				bks := bks
 				work <- func() error {
-					return syncBuildsWithBackendTasks(ctx, mr, bc, bks, now)
+					return syncBuildsWithBackendTasks(ctx, mr, bc, bks, now, useTaskSuccess)
 				}
 			}
 		})

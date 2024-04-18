@@ -138,7 +138,26 @@ message BackendSetting {
     // If set to true, visiting "cr-buildbucket.appspot.com/build/<build_id>"
     // will be redirected to the corresponding task page instead of the Milo
     // build page.
+    //
+    // To visit the Milo build page with this configuration on, please use
+    // "ci.chromium.org/b/<build_id>".
     bool redirect_to_task_page = 3;
+
+    // If set to true, Buildbucket will set the final build status to SUCCESS
+    // if the backend task is SUCCESS, regardless the build's output status.
+    //
+    // For standard backends like Swarming, the build should always finish
+    // before the backend task - unless the task crashes or being killed.
+    // So in the case that build output status is not ended, Buildbucket
+    // sets the build's final status with the task's status -if it ends
+    // with a non SUCCESS status. But if the task has
+    // ended with a SUCCESS status while the build is still running, Buildbucket
+    // considers that impossible and sets the build to INFRA_FAILURE.
+    //
+    // But for other backends e.g. Skia, we cannot have the assumption that
+    // build always finishes before task. And to them a successful task always
+    // means a successful build.
+    bool succeed_build_if_task_is_succeeded = 4;
   }
 
   // The corresponding backend should be a `TaskBackendLite` implementation,

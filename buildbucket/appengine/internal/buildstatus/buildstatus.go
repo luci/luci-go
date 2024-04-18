@@ -44,6 +44,8 @@ type Updater struct {
 	OutputStatus *StatusWithDetails
 	TaskStatus   *StatusWithDetails
 
+	SucceedBuildIfTaskSucceeded bool
+
 	UpdateTime time.Time
 
 	PostProcess func(c context.Context, bld *model.Build) error
@@ -51,16 +53,16 @@ type Updater struct {
 
 // buildEndStatus calculates the final status of a build based on its output
 // status and backend task status.
-func buildEndStatus(outStatus, taskStatus *StatusWithDetails) *StatusWithDetails {
+func buildEndStatus(outStatus, taskStatus *StatusWithDetails, useTaskSuccess bool) *StatusWithDetails {
 	switch {
 	case !outStatus.isSet() || !protoutil.IsEnded(outStatus.Status):
-		if taskStatus.Status == pb.Status_SUCCESS {
+		if taskStatus.Status == pb.Status_SUCCESS && !useTaskSuccess {
 			// outStatus should have been an ended status since taskStatus is.
 			// Something must be wrong.
 			return &StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
 		} else {
-			// This could happen if the task crashes when running the build, use the
-			// task status.
+			// This could happen if the task crashes when running the build, or
+			// SucceedBuildIfTaskSucceeded is true, use the task status.
 			return taskStatus
 		}
 	case outStatus.Status == pb.Status_SUCCESS:
@@ -87,7 +89,7 @@ func (u *Updater) calculateBuildStatus() *StatusWithDetails {
 		return buildEndStatus(&StatusWithDetails{
 			Status:  u.Build.Proto.Output.GetStatus(),
 			Details: u.Build.Proto.Output.GetStatusDetails()},
-			u.TaskStatus)
+			u.TaskStatus, u.SucceedBuildIfTaskSucceeded)
 	default:
 		// no change.
 		return &StatusWithDetails{Status: u.Build.Proto.Status, Details: u.Build.Proto.StatusDetails}

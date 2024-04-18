@@ -445,7 +445,7 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 		}
 
 		stWithDetails := &buildstatus.StatusWithDetails{Status: st, Details: details}
-		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, stWithDetails, stWithDetails, endTime)
+		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, stWithDetails, stWithDetails, endTime, false)
 	}
 
 	// Update build status
@@ -469,7 +469,7 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 			updateTime = t.AsTime()
 		}
 		stWithDetails := &buildstatus.StatusWithDetails{Status: pb.Status_STARTED}
-		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, stWithDetails, stWithDetails, updateTime)
+		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, stWithDetails, stWithDetails, updateTime, false)
 	case apipb.TaskState_CANCELED, apipb.TaskState_KILLED:
 		setEndStatus(pb.Status_CANCELED, nil)
 	case apipb.TaskState_NO_RESOURCE:

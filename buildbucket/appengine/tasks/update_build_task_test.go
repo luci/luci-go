@@ -443,7 +443,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 					UpdateId: 100,
 				},
 			}
-			err := updateTaskEntity(ctx, req, 1)
+			err := updateTaskEntity(ctx, req, 1, false)
 			So(err, ShouldBeNil)
 			bk := datastore.KeyForObj(ctx, &model.Build{ID: 1})
 			resultInfraModel := &model.BuildInfra{
@@ -479,7 +479,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 					UpdateId: 2,
 				},
 			}
-			err := updateTaskEntity(ctx, req, 1)
+			err := updateTaskEntity(ctx, req, 1, false)
 			So(err, ShouldBeNil)
 		})
 
@@ -515,7 +515,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 					UpdateId: 200,
 				},
 			}
-			err = updateTaskEntity(ctx, endReq, 1)
+			err = updateTaskEntity(ctx, endReq, 1, false)
 			So(err, ShouldBeNil)
 			resultInfraModel := &model.BuildInfra{
 				Build: bk,
@@ -565,7 +565,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 					UpdateId: 200,
 				},
 			}
-			err := updateTaskEntity(ctx, endReq, 1)
+			err := updateTaskEntity(ctx, endReq, 1, false)
 			So(err, ShouldBeNil)
 			resultInfraModel := &model.BuildInfra{
 				Build: bk,
@@ -601,7 +601,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 					UpdateId: 200,
 				},
 			}
-			err := updateTaskEntity(ctx, endReq, 1)
+			err := updateTaskEntity(ctx, endReq, 1, false)
 			So(err, ShouldBeNil)
 			resultInfraModel := &model.BuildInfra{
 				Build: bk,
@@ -643,7 +643,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 						UpdateId: 200,
 					},
 				}
-				err := updateTaskEntity(ctx, endReq, 1)
+				err := updateTaskEntity(ctx, endReq, 1, false)
 				So(err, ShouldBeNil)
 				result := &model.BuildInfra{
 					Build: bk,
@@ -664,7 +664,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 						UpdateId: 200,
 					},
 				}
-				err := updateTaskEntity(ctx, endReq, 1)
+				err := updateTaskEntity(ctx, endReq, 1, false)
 				So(err, ShouldBeNil)
 				result := &model.BuildInfra{
 					Build: bk,
@@ -685,7 +685,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 						UpdateId: 200,
 					},
 				}
-				err := updateTaskEntity(ctx, endReq, 1)
+				err := updateTaskEntity(ctx, endReq, 1, false)
 				So(err, ShouldBeNil)
 				result := &model.BuildInfra{
 					Build: bk,

@@ -108,40 +108,6 @@ func validateTaskStatus(taskStatus pb.Status, allowPending bool) error {
 	return nil
 }
 
-func validatePubsubSubscription(ctx context.Context, req buildTaskUpdate) error {
-	globalCfg, err := config.GetSettingsCfg(ctx)
-	if err != nil {
-		return errors.Annotate(err, "error fetching service config").Tag(transient.Tag).Err()
-	}
-
-	target := req.GetTask().GetId().GetTarget()
-	if target == "" {
-		return errors.Reason("could not validate message. task.id.target not provided.").Err()
-	}
-
-	isValid := false
-	for _, backend := range globalCfg.Backends {
-		if backend.Target == target {
-			var subscription string
-			switch backend.Mode.(type) {
-			case *pb.BackendSetting_LiteMode_:
-				return errors.Reason("backend target %s is in lite mode. The task update isn't supported", target).Err()
-			case *pb.BackendSetting_FullMode_:
-				subscription = fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.GetFullMode().GetPubsubId())
-			}
-			if subscription == req.subscription {
-				isValid = true
-			}
-			break
-		}
-	}
-
-	if !isValid {
-		return errors.Reason("pubsub subscription %s did not match the one configured for target %s", req.subscription, target).Err()
-	}
-	return nil
-}
-
 func validateTask(task *pb.Task, allowPending bool) error {
 	if task.GetId().GetId() == "" {
 		return errors.Reason("task.id: required").Err()
@@ -209,7 +175,7 @@ func backfillCanceledTask(ctx context.Context, build *model.Build, infra *model.
 	return toSave
 }
 
-func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildInfra, task *pb.Task) ([]any, error) {
+func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildInfra, task *pb.Task, useTaskSuccess bool) ([]any, error) {
 	if task.UpdateId <= infra.Proto.Backend.Task.UpdateId {
 		// Returning nil since there is no work to do here.
 		// The task in the request is outdated.
@@ -222,7 +188,7 @@ func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildIn
 
 	toSave := []any{build, infra}
 
-	bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, nil, &buildstatus.StatusWithDetails{Status: task.Status}, now)
+	bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, nil, &buildstatus.StatusWithDetails{Status: task.Status}, now, useTaskSuccess)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +205,7 @@ func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildIn
 //
 // May return an appstatus NotFound error if some of them are missing. They
 // should all exist.
-func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int64) error {
+func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int64, useTaskSuccess bool) error {
 	var build *model.Build
 	setBuildToEnd := false
 
@@ -273,7 +239,7 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 			logging.Infof(ctx, "Build %d is ended", build.ID)
 			return nil
 		default:
-			toSave, err = prepareUpdate(ctx, build, infra, req.Task)
+			toSave, err = prepareUpdate(ctx, build, infra, req.Task, useTaskSuccess)
 			if err != nil {
 				return err
 			}
@@ -299,12 +265,37 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 // updateBuildTask allows the Backend to preemptively update the
 // status of the task (e.g. if it knows that the task has crashed, etc.).
 func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return errors.Annotate(err, "error fetching service config").Tag(transient.Tag).Err()
+	}
+
+	target := req.GetTask().GetId().GetTarget()
+	if target == "" {
+		return errors.Reason("task.id.target not provided.").Err()
+	}
+
+	var subscription string
+	useTaskSuccess := false
+	for _, backend := range globalCfg.Backends {
+		if backend.Target == target {
+			switch backend.Mode.(type) {
+			case *pb.BackendSetting_LiteMode_:
+				return errors.Reason("backend target %s is in lite mode. The task update isn't supported", target).Err()
+			case *pb.BackendSetting_FullMode_:
+				subscription = fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.GetFullMode().GetPubsubId())
+				useTaskSuccess = backend.GetFullMode().GetSucceedBuildIfTaskIsSucceeded()
+			}
+			break
+		}
+	}
+
 	buildID, err := strconv.ParseInt(req.GetBuildId(), 10, 64)
 	if err != nil {
 		return errors.Annotate(err, "bad build id").Err()
 	}
-	if err := validatePubsubSubscription(ctx, req); err != nil {
-		return errors.Annotate(err, "pubsub subscription").Err()
+	if subscription != req.subscription {
+		return errors.Annotate(errors.Reason("pubsub subscription %s did not match the one configured for target %s", req.subscription, target).Err(), "pubsub subscription").Err()
 	}
 	if err := validateBuildTaskUpdate(req.BuildTaskUpdate); err != nil {
 		return errors.Annotate(err, "invalid BuildTaskUpdate").Err()
@@ -342,7 +333,7 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 		return nil
 	}
 
-	err = updateTaskEntity(ctx, req.BuildTaskUpdate, buildID)
+	err = updateTaskEntity(ctx, req.BuildTaskUpdate, buildID, useTaskSuccess)
 	if err != nil {
 		if status, _ := appstatus.Get(err); status.Code() == codes.NotFound {
 			return errors.Annotate(err, "missing some build entities").Err()

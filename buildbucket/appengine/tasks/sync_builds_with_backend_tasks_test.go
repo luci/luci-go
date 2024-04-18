@@ -260,7 +260,7 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			return parallel.RunMulti(ctx, 5, func(mr parallel.MultiRunner) error {
 				return mr.RunMulti(func(work chan<- func() error) {
 					work <- func() error {
-						return syncBuildsWithBackendTasks(ctx, mr, bc, bks, now)
+						return syncBuildsWithBackendTasks(ctx, mr, bc, bks, now, false)
 					}
 				})
 			})
