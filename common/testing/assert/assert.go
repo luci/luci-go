@@ -18,7 +18,7 @@
 // # Why have an assertion library at all?
 //
 // While it is recommended to use 'stdlib style' for Go tests, we have found
-// them to be lacking in the following ways:
+// that approach to be lacking in the following ways:
 //
 //  1. Writing good error messages is difficult; when an assertion fails,
 //     the error message needs to indicate why. As the error messages get more
