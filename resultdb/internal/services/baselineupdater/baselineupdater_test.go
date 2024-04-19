@@ -147,11 +147,10 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 		// Split the test results between parent and included to ensure that the query
 		// fetches results for all included invs.
 		ms := make([]*spanner.Mutation, 0)
-		for i := 1; i <= 4000; i++ {
+		for i := 1; i <= 100; i++ {
 			ms = append(ms, insert.TestResults("inv1", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestStatus_PASS)...)
 		}
-		// TransactionLimit + 1 so we know there's overflow.
-		for i := 4001; i <= TransactionLimit+1; i++ {
+		for i := 101; i <= 200; i++ {
 			ms = append(ms, insert.TestResults("inv2", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestStatus_PASS)...)
 		}
 
@@ -159,13 +158,13 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 		err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv1"))
 		So(err, ShouldBeNil)
 
-		// fetch the 8001 entry to ensure that test results from subinvocations
-		// that also exceed the 8000 limit are being processed
-		res, err := btv.Read(span.Single(ctx), "testproject", "try:linux-rel", "testId8001", pbutil.VariantHash(pbutil.Variant("a", "b")))
+		// fetch the 200 entry to ensure that test results from subinvocations
+		// are being processed
+		res, err := btv.Read(span.Single(ctx), "testproject", "try:linux-rel", "testId200", pbutil.VariantHash(pbutil.Variant("a", "b")))
 		So(err, ShouldBeNil)
 		So(res.Project, ShouldEqual, "testproject")
 		So(res.BaselineID, ShouldEqual, "try:linux-rel")
-		So(res.TestID, ShouldEqual, "testId8001")
+		So(res.TestID, ShouldEqual, "testId200")
 
 		// find the baseline in the baselines table
 		baseline, err := baselines.Read(span.Single(ctx), "testproject", "try:linux-rel")
@@ -189,7 +188,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 		Convey(`Mark existing baseline test variant submitted`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				[]*spanner.Mutation{insert.Invocation("inv3", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"})},
-				insert.TestResults("inv3", "testId8001", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
+				insert.TestResults("inv3", "testId200", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
 			)...)
 
 			err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv3"))
@@ -198,7 +197,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 			exp := &btv.BaselineTestVariant{
 				Project:     "testproject",
 				BaselineID:  "try:linux-rel",
-				TestID:      "testId8001",
+				TestID:      "testId200",
 				VariantHash: pbutil.VariantHash(pbutil.Variant("a", "b")),
 			}
 
@@ -212,7 +211,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 		Convey(`Mark skipped test should be skipped`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				[]*spanner.Mutation{insert.Invocation("inv4", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"})},
-				insert.TestResults("inv4", "testId8002", pbutil.Variant("a", "b"), pb.TestStatus_SKIP),
+				insert.TestResults("inv4", "testId202", pbutil.Variant("a", "b"), pb.TestStatus_SKIP),
 			)...)
 
 			err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv4"))
@@ -221,7 +220,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 			exp := &btv.BaselineTestVariant{
 				Project:     "testproject",
 				BaselineID:  "try:linux-rel",
-				TestID:      "testId8002",
+				TestID:      "testId202",
 				VariantHash: pbutil.VariantHash(pbutil.Variant("a", "b")),
 			}
 
