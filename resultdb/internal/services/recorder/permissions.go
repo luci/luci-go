@@ -29,4 +29,5 @@ var (
 	permCreateWithReservedID = realms.RegisterPermission("resultdb.invocations.createWithReservedID")
 	permExportToBigQuery     = realms.RegisterPermission("resultdb.invocations.exportToBigQuery")
 	permSetProducerResource  = realms.RegisterPermission("resultdb.invocations.setProducerResource")
+	permSetExportRoot        = realms.RegisterPermission("resultdb.invocations.setExportRoot")
 )

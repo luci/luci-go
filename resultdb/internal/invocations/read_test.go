@@ -114,6 +114,7 @@ func TestRead(t *testing.T) {
 				"State":             pb.Invocation_ACTIVE,
 				"CreateTime":        start,
 				"Deadline":          start.Add(time.Hour),
+				"IsExportRoot":      spanner.NullBool{Bool: true, Valid: true},
 				"Properties":        spanutil.Compressed(pbutil.MustMarshal(properties)),
 				"Sources":           spanutil.Compressed(pbutil.MustMarshal(sources)),
 				"InheritSources":    spanner.NullBool{Bool: true, Valid: true},
@@ -139,6 +140,7 @@ func TestRead(t *testing.T) {
 			State:               pb.Invocation_ACTIVE,
 			CreateTime:          pbutil.MustTimestampProto(start),
 			Deadline:            pbutil.MustTimestampProto(start.Add(time.Hour)),
+			IsExportRoot:        true,
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 			Properties:          properties,
 			SourceSpec: &pb.SourceSpec{

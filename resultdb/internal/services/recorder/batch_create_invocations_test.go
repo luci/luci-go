@@ -104,6 +104,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: permCreateInvocation},
+				{Realm: "testproject:testrealm", Permission: permSetExportRoot},
 				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
 				{Realm: "testproject:@root", Permission: permSetProducerResource},
 				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
@@ -217,8 +218,9 @@ func TestBatchCreateInvocations(t *testing.T) {
 					{
 						InvocationId: "u-batch-inv",
 						Invocation: &pb.Invocation{
-							Deadline: deadline,
-							Tags:     pbutil.StringPairs("a", "1", "b", "2"),
+							Deadline:     deadline,
+							Tags:         pbutil.StringPairs("a", "1", "b", "2"),
+							IsExportRoot: true,
 							BigqueryExports: []*pb.BigQueryExport{
 								bqExport,
 							},

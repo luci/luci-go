@@ -551,28 +551,36 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"realm"}},
 			}
-			Convey("without create invocation permission", func() {
+
+			Convey("missing create invocation permission", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
 
 				_, err := recorder.UpdateInvocation(ctx, req)
 				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`)
 			})
-			Convey("without include invocation permission", func() {
+			Convey("missing include invocation permission", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
 
 				_, err := recorder.UpdateInvocation(ctx, req)
 				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`)
 			})
-			Convey(`to new project`, func() {
+			Convey(`cannot change realm's project`, func() {
 				req.Invocation.Realm = "newproject:testrealm"
 
 				_, err := recorder.UpdateInvocation(ctx, req)
 				So(err, ShouldBeRPCInvalidArgument, `cannot change invocation realm to outside project "testproject"`)
 			})
-			Convey(`valid`, func() {
-				// Regardless of permission to put baseline.
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
+			Convey(`cannot change realm on an export root`, func() {
+				// Make the invocation an export root.
+				testutil.MustApply(ctx, spanutil.UpdateMap("Invocations", map[string]any{
+					"InvocationId": invocations.ID("inv"),
+					"IsExportRoot": true,
+				}))
 
+				_, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeRPCInvalidArgument, `realm: cannot change realm of an invocation that is an export root`)
+			})
+			Convey(`valid`, func() {
 				inv, err := recorder.UpdateInvocation(ctx, req)
 				So(err, ShouldBeNil)
 				So(inv.Realm, ShouldEqual, "testproject:newrealm")

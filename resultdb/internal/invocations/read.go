@@ -69,6 +69,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.FinalizeTime,
 		 i.Deadline,
 		 i.Tags,
+		 i.IsExportRoot,
 		 i.BigQueryExports,
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
 		 i.ProducerResource,
@@ -94,6 +95,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 
 		var (
 			createdBy         spanner.NullString
+			isExportRoot      spanner.NullBool
 			producerResource  spanner.NullString
 			realm             spanner.NullString
 			properties        spanutil.Compressed
@@ -112,6 +114,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&inv.FinalizeTime,
 			&inv.Deadline,
 			&inv.Tags,
+			&isExportRoot,
 			&inv.BigqueryExports,
 			&included,
 			&producerResource,
@@ -150,6 +153,10 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 					return err
 				}
 			}
+		}
+
+		if isExportRoot.Valid && isExportRoot.Bool {
+			inv.IsExportRoot = true
 		}
 
 		if isSourceSpecFinal.Valid && isSourceSpecFinal.Bool {

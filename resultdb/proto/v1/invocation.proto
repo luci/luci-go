@@ -30,7 +30,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 //
-// Next id: 21.
+// Next id: 22.
 message Invocation {
   reserved 3; // bool interrupted, crbug.com/1078696.
 
@@ -129,8 +129,26 @@ message Invocation {
   // all other cases.
   repeated string included_invocations = 8;
 
+  // Whether this invocation is a root of the invocation graph for export purposes.
+  //
+  // To help downstream systems (like LUCI Analysis) make sense of test results,
+  // and gather overall context for a result, ResultDB data export is centered
+  // around export roots.
+  // The export roots typically represent a top-level buildbucket build, like a
+  // postsubmit build or presubmit tryjob. Test results are only exported if
+  // they are included from a root. They may be exported multiple times of they
+  // are included by multiple roots (e.g. in case of re-used test results).
+  // Re-used test results can be identified because the parent invocation of the
+  // test result will be the same even though the export root will be different.
+  //
+  // N.B. Export roots do not affect legacy BigQuery exports configured by the
+  // BigQueryExports field.
+  bool is_export_root = 21;
+
   // bigquery_exports indicates what BigQuery table(s) that results in this
   // invocation should export to.
+  //
+  // Legacy feature: Prefer to use LUCI Analysis exports instead.
   repeated BigQueryExport bigquery_exports = 9;
 
   // LUCI identity (e.g. "user:<email>") who created the invocation.

@@ -21,7 +21,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
@@ -251,11 +250,6 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.Properties = in.Invocation.Properties
 
 			case "source_spec":
-				if ret.SourceSpec != nil && !proto.Equal(ret.SourceSpec, in.Invocation.SourceSpec) {
-					logging.Warningf(ctx, "Instrumentation for b/332787707: actual field update on source spec for %s after being set, updated from %v to %v", invID, protojson.Format(ret.SourceSpec), protojson.Format(in.Invocation.SourceSpec))
-				} else if ret.SourceSpec != nil {
-					logging.Warningf(ctx, "Instrumentation for b/332787707: nil field update on source spec for %s after being set to %v", invID, protojson.Format(ret.SourceSpec))
-				}
 				// Are we setting the field to a value other than its current value?
 				updateSources := !proto.Equal(ret.SourceSpec, in.Invocation.SourceSpec)
 				if updateSources {
@@ -284,9 +278,22 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.BaselineId = baselineID
 
 			case "realm":
-				realm := in.Invocation.Realm
-				values["Realm"] = realm
-				ret.Realm = realm
+				if in.Invocation.Realm != ret.Realm {
+					if ret.IsExportRoot {
+						// For ResultDB export to be useful, we must provide both the
+						// realm of the root invocation as well as the realm of the
+						// immediate invocation a test result was uploaded to.
+						// This is because both can contribute to the ACLing of a
+						// result, and because the project of the root invocation
+						// dictates the project results are exported to.
+						// To make low-latency exports possible, we fix the realm
+						// of the root invocation from time of its creation.
+						return appstatus.BadRequest(errors.Reason("invocation: realm: cannot change realm of an invocation that is an export root").Err())
+					}
+					realm := in.Invocation.Realm
+					values["Realm"] = realm
+					ret.Realm = realm
+				}
 
 			case "test_instruction":
 				values["TestInstruction"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.GetTestInstruction()))

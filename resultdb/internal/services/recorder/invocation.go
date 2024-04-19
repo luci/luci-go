@@ -142,6 +142,7 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 
 		"Tags":              inv.Tags,
 		"ProducerResource":  inv.ProducerResource,
+		"IsExportRoot":      spanner.NullBool{Valid: inv.IsExportRoot, Bool: inv.IsExportRoot},
 		"BigQueryExports":   inv.BigqueryExports,
 		"Properties":        spanutil.Compressed(pbutil.MustMarshal(inv.Properties)),
 		"InheritSources":    spanner.NullBool{Valid: inv.SourceSpec != nil, Bool: inv.SourceSpec.GetInherit()},

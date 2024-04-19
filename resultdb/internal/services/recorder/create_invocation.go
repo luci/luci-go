@@ -205,6 +205,18 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		}
 	}
 
+	if inv.GetIsExportRoot() {
+		// Export roots cannot have their realm changed after creation,
+		// so we do not need to check the project's root realm, like the
+		// other cases.
+		switch allowed, err := auth.HasPermission(ctx, permSetExportRoot, realm, nil); {
+		case err != nil:
+			return err
+		case !allowed:
+			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set export roots in realm %q`, inv.GetRealm())
+		}
+	}
+
 	if len(inv.GetBigqueryExports()) > 0 {
 		// Note: This check is effectively pointless now, as it is
 		// possible to update an invocation after creation with whatever exports

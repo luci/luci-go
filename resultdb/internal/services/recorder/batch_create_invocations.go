@@ -158,6 +158,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 			State:             newInvState,
 			Deadline:          req.Invocation.GetDeadline(),
 			Tags:              req.Invocation.GetTags(),
+			IsExportRoot:      req.Invocation.GetIsExportRoot(),
 			BigqueryExports:   req.Invocation.GetBigqueryExports(),
 			CreatedBy:         createdBy,
 			ProducerResource:  req.Invocation.GetProducerResource(),

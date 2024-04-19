@@ -140,6 +140,39 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 		})
+		Convey(`is_export_root allowed`, func() {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:ci", Permission: permCreateInvocation},
+					{Realm: "chromium:ci", Permission: permSetExportRoot},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm:        "chromium:ci",
+					IsExportRoot: true,
+				},
+			})
+			So(err, ShouldBeNil)
+		})
+		Convey(`is_export_root disallowed`, func() {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:ci", Permission: permCreateInvocation},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm:        "chromium:ci",
+					IsExportRoot: true,
+				},
+			})
+			So(err, ShouldErrLike, `does not have permission to set export roots`)
+		})
 		Convey(`bigquery_exports allowed`, func() {
 			ctx = auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -369,6 +402,7 @@ func TestCreateInvocation(t *testing.T) {
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: permCreateInvocation},
 				{Realm: "testproject:@root", Permission: permCreateWithReservedID},
+				{Realm: "testproject:testrealm", Permission: permSetExportRoot},
 				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
 				{Realm: "testproject:@root", Permission: permSetProducerResource},
 				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
@@ -526,8 +560,9 @@ func TestCreateInvocation(t *testing.T) {
 			req = &pb.CreateInvocationRequest{
 				InvocationId: "u-inv",
 				Invocation: &pb.Invocation{
-					Deadline: deadline,
-					Tags:     pbutil.StringPairs("a", "1", "b", "2"),
+					Deadline:     deadline,
+					Tags:         pbutil.StringPairs("a", "1", "b", "2"),
+					IsExportRoot: true,
 					BigqueryExports: []*pb.BigQueryExport{
 						bqExport,
 					},
