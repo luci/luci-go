@@ -351,3 +351,60 @@ func ReadSubmitted(ctx context.Context, id ID) (bool, error) {
 	// submitted is not a required field and so may be nil, in which we default to false.
 	return submitted.Valid && submitted.Bool, nil
 }
+
+// ExportInfo captures information pertinent to exporting an invocation and
+// propogating export roots.
+type ExportInfo struct {
+	// Whether the invocation is in FINALIZED or FINALIZING state.
+	IsInvocationFinal bool
+	// The realm of the invocation.
+	Realm string
+	// IsSourcesSpecFinalEffective whether the source information is immutable.
+	// This is true if either IsSourceSpecFinal is set on the invocation, or
+	// the invocation is in FINALIZING or FINALIZED state.
+	IsSourceSpecFinalEffective bool
+	// IsInheritingSources contains whether the invocation is inheriting sources
+	// from its parent (including) invocation.
+	IsInheritingSources bool
+	// Sources are the concrete sources specific on the invocation (if any).
+	Sources *pb.Sources
+}
+
+// ReadExportInfo reads information pertinent to exporting an invocation.
+func ReadExportInfo(ctx context.Context, invID ID) (ExportInfo, error) {
+	var state pb.Invocation_State
+	var realm string
+	var inheritingSources spanner.NullBool
+	var isSourceSpecFinal spanner.NullBool
+	var sourceCmp spanutil.Compressed
+
+	// Read invocation source spec, invocation finalization and source finalization.
+	err := ReadColumns(ctx, invID, map[string]any{
+		"State":             &state,
+		"Realm":             &realm,
+		"InheritSources":    &inheritingSources,
+		"Sources":           &sourceCmp,
+		"IsSourceSpecFinal": &isSourceSpecFinal,
+	})
+	if err != nil {
+		return ExportInfo{}, errors.Annotate(err, "read columns").Err()
+	}
+
+	var result ExportInfo
+	result.IsInvocationFinal = state == pb.Invocation_FINALIZING || state == pb.Invocation_FINALIZED
+	result.Realm = realm
+	if result.IsInvocationFinal || (isSourceSpecFinal.Valid && isSourceSpecFinal.Bool) {
+		result.IsSourceSpecFinalEffective = true
+	}
+	if inheritingSources.Valid && inheritingSources.Bool {
+		result.IsInheritingSources = true
+	}
+	if len(sourceCmp) > 0 {
+		result.Sources = &pb.Sources{}
+		if err := proto.Unmarshal(sourceCmp, result.Sources); err != nil {
+			return ExportInfo{}, errors.Annotate(err, "unmarshal sources").Err()
+		}
+	}
+
+	return result, nil
+}

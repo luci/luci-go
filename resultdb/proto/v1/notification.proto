@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
+
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // A message notifying that an invocation has been finalized,
@@ -34,4 +36,49 @@ message InvocationFinalizedNotification {
     // The LUCI realm that owns the invocation.
     // E.g. "chromium:ci".
     string realm = 2;
+}
+
+// InvocationReadyForExportNotification notifies that the properties, test results
+// and artifacts directly inside invocation `invocation`, within the context of
+// export root `root_invocation`, are now immutable and ready for consumption
+// by downstream systems.
+//
+// If a given invocation is included by multiple export roots, a message will
+// be sent for each such root.
+//
+// When sent over v1.invocation_ready_for_export Cloud Pub/Sub, an attribute
+// "luci_project" will be attached to the message, which will contain the
+// LUCI Project of the `root_invocation_realm`.
+message InvocationReadyForExportNotification {
+    // The export root with respect to which the export is occurring.
+    //
+    // Format: invocations/{ROOT_INVOCATION_ID}.
+    string root_invocation = 1;
+
+    // The LUCI realm that owns the root invocation.
+    string root_invocation_realm = 2;
+
+    // The name of the ResultDB invocation included by root_invocation whose
+    // immediate properties, test results and artifacts are now immutable
+    // (in FINALIZING OR FINALIZED state). Note that child invocations included
+    // by `invocation` may not yet be immutable.
+    //
+    // This may be equal to root_invocation, to indicate test results, artifacts
+    // and properties immediately inside root_invocation are immutable and ready
+    // for ingestion.
+    //
+    // Format: invocations/{INVOCATION_ID}.
+    string invocation = 3;
+
+    // The LUCI realm that owns `invocation`.
+    string invocation_realm = 4;
+
+    // The resolved sources for `invocation`, if any.
+    //
+    // As sources may be inherited, the sources resolved for the same
+    // invocation may vary between export roots. This typically occurs when
+    // a project uses testing task deduplication, and the different sources
+    // deduplicate to the same testing task as they compile to
+    // byte-for-byte-identical testing artifacts.
+    luci.resultdb.v1.Sources sources = 5;
 }

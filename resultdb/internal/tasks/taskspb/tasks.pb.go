@@ -381,6 +381,140 @@ func (x *ExportArtifacts) GetInvocationId() string {
 	return ""
 }
 
+// RunExportNotifications dispatches "ready for export" notifications
+// as appropriate. To do so, it maintains the export root information
+// for each invocation, which is used to determine when all criteria for
+// sending a notification has been met.
+//
+// This task must be created upon if an invocation encounters
+// any of the following events:
+//   - It had its source spec finalized.
+//   - It entered finalizing state (become locally immutable).
+//   - It had a new invocation included in it.
+//   - It had an export root added or updated (for example, a new
+//     export root was defined).
+type RunExportNotifications struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The invocation which had an event occur that may contribute to
+	// the need for a "ready for export" notification.
+	InvocationId string `protobuf:"bytes,1,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
+	// If set, limits updates to the specified included invocations.
+	// Should only be set if this task was created in response to the
+	// inclusion of new invocations, to avoid unnecessary reads
+	// on large invocations.
+	// If empty, will propagate export roots to all included invocations.
+	IncludedInvocationIds []string `protobuf:"bytes,2,rep,name=included_invocation_ids,json=includedInvocationIds,proto3" json:"included_invocation_ids,omitempty"`
+	// The export roots for which to propagate roots and sources.
+	// Should only be set if this task was created in response to
+	// specified export roots being updated for this invocation.
+	// If empty, will propagate all export roots.
+	RootInvocationIds []string `protobuf:"bytes,3,rep,name=root_invocation_ids,json=rootInvocationIds,proto3" json:"root_invocation_ids,omitempty"`
+}
+
+func (x *RunExportNotifications) Reset() {
+	*x = RunExportNotifications{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RunExportNotifications) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunExportNotifications) ProtoMessage() {}
+
+func (x *RunExportNotifications) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunExportNotifications.ProtoReflect.Descriptor instead.
+func (*RunExportNotifications) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *RunExportNotifications) GetInvocationId() string {
+	if x != nil {
+		return x.InvocationId
+	}
+	return ""
+}
+
+func (x *RunExportNotifications) GetIncludedInvocationIds() []string {
+	if x != nil {
+		return x.IncludedInvocationIds
+	}
+	return nil
+}
+
+func (x *RunExportNotifications) GetRootInvocationIds() []string {
+	if x != nil {
+		return x.RootInvocationIds
+	}
+	return nil
+}
+
+type NotificationInvocationReadyForExport struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The message to publish to Cloud Pub/Sub.
+	Message *v1.InvocationReadyForExportNotification `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+}
+
+func (x *NotificationInvocationReadyForExport) Reset() {
+	*x = NotificationInvocationReadyForExport{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NotificationInvocationReadyForExport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotificationInvocationReadyForExport) ProtoMessage() {}
+
+func (x *NotificationInvocationReadyForExport) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotificationInvocationReadyForExport.ProtoReflect.Descriptor instead.
+func (*NotificationInvocationReadyForExport) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *NotificationInvocationReadyForExport) GetMessage() *v1.InvocationReadyForExportNotification {
+	if x != nil {
+		return x.Message
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDesc = []byte{
@@ -435,11 +569,29 @@ var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDes
 	0x69, 0x6f, 0x6e, 0x49, 0x64, 0x22, 0x36, 0x0a, 0x0f, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x41,
 	0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x69, 0x6e, 0x76, 0x6f,
 	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x0c, 0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x42, 0x36, 0x5a,
-	0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
-	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x69,
-	0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x74, 0x61,
-	0x73, 0x6b, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x0c, 0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x22, 0xa5, 0x01,
+	0x0a, 0x16, 0x52, 0x75, 0x6e, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x69, 0x6e, 0x76, 0x6f,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0c, 0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x36, 0x0a,
+	0x17, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x64, 0x5f, 0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x15,
+	0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x64, 0x49, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x49, 0x64, 0x73, 0x12, 0x2e, 0x0a, 0x13, 0x72, 0x6f, 0x6f, 0x74, 0x5f, 0x69, 0x6e,
+	0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x03, 0x20, 0x03,
+	0x28, 0x09, 0x52, 0x11, 0x72, 0x6f, 0x6f, 0x74, 0x49, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x49, 0x64, 0x73, 0x22, 0x78, 0x0a, 0x24, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52,
+	0x65, 0x61, 0x64, 0x79, 0x46, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x50, 0x0a,
+	0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x36,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76,
+	0x31, 0x2e, 0x49, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x61, 0x64,
+	0x79, 0x46, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42,
+	0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
+	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
+	0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f,
+	0x74, 0x61, 0x73, 0x6b, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -454,27 +606,31 @@ func file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDe
 	return file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_goTypes = []interface{}{
-	(*TryFinalizeInvocation)(nil),              // 0: luci.resultdb.internal.tasks.TryFinalizeInvocation
-	(*NotifyInvocationFinalized)(nil),          // 1: luci.resultdb.internal.tasks.NotifyInvocationFinalized
-	(*ExportInvocationTestResultsToBQ)(nil),    // 2: luci.resultdb.internal.tasks.ExportInvocationTestResultsToBQ
-	(*ExportInvocationArtifactsToBQ)(nil),      // 3: luci.resultdb.internal.tasks.ExportInvocationArtifactsToBQ
-	(*UpdateTestMetadata)(nil),                 // 4: luci.resultdb.internal.tasks.UpdateTestMetadata
-	(*MarkInvocationSubmitted)(nil),            // 5: luci.resultdb.internal.tasks.MarkInvocationSubmitted
-	(*ExportArtifacts)(nil),                    // 6: luci.resultdb.internal.tasks.ExportArtifacts
-	(*v1.InvocationFinalizedNotification)(nil), // 7: luci.resultdb.v1.InvocationFinalizedNotification
-	(*v1.BigQueryExport)(nil),                  // 8: luci.resultdb.v1.BigQueryExport
+	(*TryFinalizeInvocation)(nil),                   // 0: luci.resultdb.internal.tasks.TryFinalizeInvocation
+	(*NotifyInvocationFinalized)(nil),               // 1: luci.resultdb.internal.tasks.NotifyInvocationFinalized
+	(*ExportInvocationTestResultsToBQ)(nil),         // 2: luci.resultdb.internal.tasks.ExportInvocationTestResultsToBQ
+	(*ExportInvocationArtifactsToBQ)(nil),           // 3: luci.resultdb.internal.tasks.ExportInvocationArtifactsToBQ
+	(*UpdateTestMetadata)(nil),                      // 4: luci.resultdb.internal.tasks.UpdateTestMetadata
+	(*MarkInvocationSubmitted)(nil),                 // 5: luci.resultdb.internal.tasks.MarkInvocationSubmitted
+	(*ExportArtifacts)(nil),                         // 6: luci.resultdb.internal.tasks.ExportArtifacts
+	(*RunExportNotifications)(nil),                  // 7: luci.resultdb.internal.tasks.RunExportNotifications
+	(*NotificationInvocationReadyForExport)(nil),    // 8: luci.resultdb.internal.tasks.NotificationInvocationReadyForExport
+	(*v1.InvocationFinalizedNotification)(nil),      // 9: luci.resultdb.v1.InvocationFinalizedNotification
+	(*v1.BigQueryExport)(nil),                       // 10: luci.resultdb.v1.BigQueryExport
+	(*v1.InvocationReadyForExportNotification)(nil), // 11: luci.resultdb.v1.InvocationReadyForExportNotification
 }
 var file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_depIdxs = []int32{
-	7, // 0: luci.resultdb.internal.tasks.NotifyInvocationFinalized.message:type_name -> luci.resultdb.v1.InvocationFinalizedNotification
-	8, // 1: luci.resultdb.internal.tasks.ExportInvocationTestResultsToBQ.bq_export:type_name -> luci.resultdb.v1.BigQueryExport
-	8, // 2: luci.resultdb.internal.tasks.ExportInvocationArtifactsToBQ.bq_export:type_name -> luci.resultdb.v1.BigQueryExport
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	9,  // 0: luci.resultdb.internal.tasks.NotifyInvocationFinalized.message:type_name -> luci.resultdb.v1.InvocationFinalizedNotification
+	10, // 1: luci.resultdb.internal.tasks.ExportInvocationTestResultsToBQ.bq_export:type_name -> luci.resultdb.v1.BigQueryExport
+	10, // 2: luci.resultdb.internal.tasks.ExportInvocationArtifactsToBQ.bq_export:type_name -> luci.resultdb.v1.BigQueryExport
+	11, // 3: luci.resultdb.internal.tasks.NotificationInvocationReadyForExport.message:type_name -> luci.resultdb.v1.InvocationReadyForExportNotification
+	4,  // [4:4] is the sub-list for method output_type
+	4,  // [4:4] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_init() }
@@ -567,6 +723,30 @@ func file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_init(
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RunExportNotifications); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NotificationInvocationReadyForExport); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -574,7 +754,7 @@ func file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_init(
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -110,6 +110,24 @@ func (s IDSet) Union(other IDSet) {
 	}
 }
 
+// Intersect returns only the ids present in this set and other.
+func (s IDSet) Intersect(other IDSet) IDSet {
+	var smaller, larger IDSet
+	if len(other) < len(s) {
+		smaller, larger = other, s
+	} else {
+		smaller, larger = s, other
+	}
+
+	ret := make(IDSet)
+	for id := range smaller {
+		if larger.Has(id) {
+			ret.Add(id)
+		}
+	}
+	return ret
+}
+
 // RemoveAll removes any ids present in other.
 func (s IDSet) RemoveAll(other IDSet) {
 	if len(s) > 0 {
@@ -220,6 +238,26 @@ func (s IDSet) SortByRowID() []ID {
 		ret[i] = ID(stripHashPrefix(rowID))
 	}
 	return ret
+}
+
+// Batch returns IDs in the set in batches of size batchSize.
+func (s IDSet) Batch(batchSize int) []IDSet {
+	if batchSize <= 0 {
+		panic("batchSize must be positive")
+	}
+	// Keep rows with similar IDs together, this minimises the number
+	// of Spanner splits the batch will hit. It also ensures this
+	// method is deterministic.
+	ids := s.SortByRowID()
+	result := make([]IDSet, 0, (len(ids)+batchSize-1)/batchSize)
+	for start := 0; start < len(ids); start += batchSize {
+		end := start + batchSize
+		if end > len(ids) {
+			end = len(ids)
+		}
+		result = append(result, NewIDSet(ids[start:end]...))
+	}
+	return result
 }
 
 // hashPrefixBytes is the number of bytes of sha256 to prepend to a PK
