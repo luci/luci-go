@@ -26,21 +26,26 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/swarming/server/cfg"
 )
 
 // TaskBackend implements bbpb.TaskBackendServer.
 type TaskBackend struct {
 	bbpb.UnimplementedTaskBackendServer
 
-	bbTarget string
+	bbTarget    string
+	cfgProvider *cfg.Provider
 }
 
 // Ensure TaskBackend implements bbpb.TaskBackendServer.
 var _ bbpb.TaskBackendServer = &TaskBackend{}
 
 // NewTaskBackend returns a new bbpb.TaskBackendServer.
-func NewTaskBackend(target string) bbpb.TaskBackendServer {
-	return &TaskBackend{bbTarget: target}
+func NewTaskBackend(target string, cfgProvider *cfg.Provider) bbpb.TaskBackendServer {
+	return &TaskBackend{
+		bbTarget:    target,
+		cfgProvider: cfgProvider,
+	}
 }
 
 // TaskBackendAuthInterceptor checks if the request caller can use Taskbackend.

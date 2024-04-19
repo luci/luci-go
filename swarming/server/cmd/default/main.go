@@ -180,7 +180,7 @@ func main() {
 
 		// Register the TaskBackend pRPC server which will be only called by Buildbucket.
 		srv.RegisterUnaryServerInterceptors(bbtaskbackend.TaskBackendAuthInterceptor(strings.HasSuffix(srv.Options.CloudProject, "-dev")))
-		bbpb.RegisterTaskBackendServer(srv, bbtaskbackend.NewTaskBackend(srv.Options.CloudProject))
+		bbpb.RegisterTaskBackendServer(srv, bbtaskbackend.NewTaskBackend(fmt.Sprintf("swarming://%s", srv.Options.CloudProject), cfg))
 
 		// A temporary interceptor with very crude but solid ACL check for the
 		// duration of the development. To avoid accidentally leaking stuff due to
