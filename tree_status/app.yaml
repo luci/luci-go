@@ -28,4 +28,7 @@ entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
   -frontend-client-id ${OAUTH_CLIENT_ID}
+  -gerrit-auth-signer-account gerritcodereview@system.gserviceaccount.com
+  -gerrit-auth-signer-account git-gerrit@system.gserviceaccount.com
+  -gerrit-auth-audience https://api.cr.dev
   -spanner-database ${SPANNER_DB}

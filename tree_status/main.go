@@ -15,10 +15,14 @@
 package main
 
 import (
+	"context"
+
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/secrets"
 	spanmodule "go.chromium.org/luci/server/span"
@@ -38,14 +42,29 @@ func main() {
 	modules := []module.Module{
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		gerritauth.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
-		tq.NewModuleFromFlags(),
 		spanmodule.NewModuleFromFlags(nil),
+		tq.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
+		srv.SetRPCAuthMethods([]auth.Method{
+			// The default method used by majority of clients.
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+			},
+			// For authenticating calls from Gerrit plugins.
+			&gerritauth.Method,
+		})
 		srv.ConfigurePRPC(func(s *prpc.Server) {
-			s.AccessControl = prpc.AllowOriginAll
+			s.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+				return prpc.AccessControlDecision{
+					AllowCrossOriginRequests: true,
+					AllowCredentials:         true,
+					AllowHeaders:             []string{gerritauth.Method.Header},
+				}
+			}
 			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 			s.HackFixFieldMasksForJSON = true
 		})
