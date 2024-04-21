@@ -18,9 +18,12 @@ import subprocess
 import sys
 import tempfile
 
+DISABLE_PERIODIC_UPDATE = False  # This option only exists for newer virtualenv
 if sys.version_info[0] > 2:
   ISOLATION_FLAG = '-I'
   COMPILE_WORKERS = os.cpu_count() or 1
+  if sys.version_info[1] >= 11:
+    DISABLE_PERIODIC_UPDATE = True
 else:
   ISOLATION_FLAG = '-sSE'
   COMPILE_WORKERS = 1
@@ -29,12 +32,15 @@ else:
 virtualenv = glob.glob(
     os.path.join(os.environ['virtualenv'], '*', 'virtualenv.py*'))[0]
 
+virtualenv_flags = ['--no-download', '--always-copy']
+if DISABLE_PERIODIC_UPDATE:
+  virtualenv_flags.append('--no-periodic-update')
+
 args = [
     sys.executable, '-B', ISOLATION_FLAG,
     # Use realpath to mitigate https://github.com/pypa/virtualenv/issues/1949
-    os.path.realpath(virtualenv),
-    '--no-download', '--always-copy', os.environ['out'],
-]
+    os.path.realpath(virtualenv)
+] + virtualenv_flags + [os.environ['out']]
 if virtualenv.endswith('.pyz'):
   # .pyz ensures Python3 so we can use TemporaryDirectory.
   with tempfile.TemporaryDirectory() as d:
