@@ -31,12 +31,6 @@ import (
 	"github.com/danjacques/gofslock/fslock"
 )
 
-// blocker is used by fslock for waiting lock.
-func blocker() error {
-	time.Sleep(time.Millisecond * 10)
-	return nil
-}
-
 // LocalPackageManager implements core.PackageManager.
 var _ core.PackageManager = &LocalPackageManager{}
 
@@ -113,7 +107,63 @@ func (h *localPackageHandler) Build(builder func() error) error {
 		return fmt.Errorf("can't build package when read lock is held")
 	}
 
-	return fslock.WithBlocking(h.lockFile, blocker, func() error {
+	var errPotentialRaceCondition = errors.New("potential race condition; retry with shared lock")
+
+	blocker := func() error {
+		// Avoid a race case:
+		// +-----------+             +-------+                +-----------+
+		// | vpython1  |             | lock  |                | vpython2  |
+		// +-----------+             +-------+                +-----------+
+		//       |                       |                          |
+		//       | Require Exclusive     |        Require Exclusive |
+		//       |---------------------->|<-------------------------|
+		//       |                       |                          |
+		//       |     Acquire Exclusive | -------------------\     |
+		//       |<----------------------|-| Lock unavailable |     |
+		//       |                       | |------------------|     |
+		//       | Build Package         |                          |
+		//       |--------------         |                          |
+		//       |             |         |                          |
+		//       |<-------------         |                          |
+		//       |                       |                          |
+		//       | Release Exclusive     | -----------------\       |
+		//       |---------------------->|-| Lock available |       |
+		//       |                       | |----------------|       |
+		//       | Require Shared        |                          |
+		//       |---------------------->|                          |
+		//       |                       |                          |
+		//       |        Acquire Shared | -------------------\     |
+		//       |<----------------------|-| Lock unavailable |     |
+		//       |                       | |------------------|     |
+		//       | Executing Python      |                          |
+		//       |-----------------      |                          |
+		//       |                |      |                          |
+		//       |<----------------      |                          |
+		//       |                       |                          |
+		//       | Release Shared        | -----------------\       |
+		//       |---------------------->|-| Lock available |       |
+		//       |                       | |----------------|       |
+		//       |                       |                          |
+		//       |                       | Acquire Exclusive        |
+		//       |                       |------------------------->|
+		//       |                       |                          |
+		// If vpython2 miss the time windows from Release Exclusive to Acquire
+		// Shared for acquiring exclusive lock, it will wait the lock forever until
+		// vpython1 exit.
+		//
+		// In this case, we can check stamp and if its available, probably other
+		// process is/was holding the exclusive lock and building the package. Try
+		// shared lock instead so Build() can return as soon as exclusive lock
+		// released.
+		if t := h.lastUsed(); !t.IsZero() {
+			return errPotentialRaceCondition
+		}
+
+		time.Sleep(time.Millisecond * 10)
+		return nil
+	}
+
+	if err := fslock.WithBlocking(h.lockFile, blocker, func() error {
 		if t := h.lastUsed(); !t.IsZero() {
 			return nil
 		}
@@ -138,7 +188,18 @@ func (h *localPackageHandler) Build(builder func() error) error {
 			return fmt.Errorf("failed to touch stamp file: %s: %w", h.stampPath(), err)
 		}
 		return nil
-	})
+	}); errors.Is(errPotentialRaceCondition, err) {
+		// Although there is still a small chance that package (stamp) being removed
+		// and should back to waiting exclusive lock for rebuild, we want to avoid
+		// unexpected infinite loop here. Return error if we failed to acquire shared
+		// lock.
+		if err := h.IncRef(); err != nil {
+			return fmt.Errorf("failed to acquire read lock after potential race condition: %w", err)
+		}
+		return h.DecRef()
+	} else {
+		return err
+	}
 }
 
 func (h *localPackageHandler) TryRemove() (ok bool, err error) {
@@ -173,6 +234,11 @@ func (h *localPackageHandler) IncRef() error {
 		return fmt.Errorf("acquire read lock multiple times on same package")
 	}
 
+	blocker := func() error {
+		time.Sleep(time.Millisecond * 10)
+		return nil
+	}
+
 	rl, err := fslock.LockSharedBlocking(h.lockFile, blocker)
 	if err != nil {
 		return fmt.Errorf("failed to acquire read lock: %w", err)
@@ -193,6 +259,7 @@ func (h *localPackageHandler) IncRef() error {
 		}
 		return nil
 	}(); err != nil {
+		// Release the shared lock if any error happens.
 		return errors.Join(err, rl.Unlock())
 	}
 	h.rlockHandle = rl
