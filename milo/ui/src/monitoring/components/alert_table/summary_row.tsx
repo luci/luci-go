@@ -69,7 +69,7 @@ export const AlertSummaryRow = ({
           requests: [
             UpdateAlertRequest.fromPartial({
               alert: {
-                name: `alerts/${alert.key}`,
+                name: `alerts/${encodeURIComponent(alert.key)}`,
                 bug: alert.bug || '0',
                 silenceUntil: build,
               },

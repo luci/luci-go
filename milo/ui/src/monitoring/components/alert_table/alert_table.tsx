@@ -73,7 +73,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
           requests: alerts.map((a) =>
             UpdateAlertRequest.fromPartial({
               alert: {
-                name: `alerts/${a.key}`,
+                name: `alerts/${encodeURIComponent(a.key)}`,
                 bug: a.bug || '0',
                 silenceUntil: `${latestBuild(a) || 0}`,
               },

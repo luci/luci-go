@@ -59,7 +59,7 @@ export const BugMenu = ({
           requests: alerts.map((a) => {
             return UpdateAlertRequest.fromPartial({
               alert: {
-                name: `alerts/${a.key}`,
+                name: `alerts/${encodeURIComponent(a.key)}`,
                 bug: bug,
                 silenceUntil: a.silenceUntil,
               },

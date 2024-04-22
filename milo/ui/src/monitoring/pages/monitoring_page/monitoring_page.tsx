@@ -58,7 +58,9 @@ export const MonitoringPage = () => {
   const extendedQuery = useQuery({
     ...notifyClient.BatchGetAlerts.query(
       BatchGetAlertsRequest.fromPartial({
-        names: alertsQuery.data?.alerts?.map((a) => `alerts/${a.key}`),
+        names: alertsQuery.data?.alerts?.map(
+          (a) => `alerts/${encodeURIComponent(a.key)}`,
+        ),
       }),
     ),
     refetchInterval: 60000,
