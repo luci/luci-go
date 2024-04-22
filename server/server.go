@@ -196,11 +196,13 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	otelmetricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
+	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
@@ -1106,7 +1108,7 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	if err := srv.initAuthFinish(); err != nil {
 		return srv, errors.Annotate(err, "failed to finish auth initialization").Err()
 	}
-	if err := srv.initTracing(); err != nil {
+	if err := srv.initOpenTelemetry(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tracing").Err()
 	}
 	if err := srv.initErrorReporting(); err != nil {
@@ -2660,8 +2662,8 @@ func (s *Server) otelSpanExporter(ctx context.Context) (trace.SpanExporter, erro
 	)
 }
 
-// initTracing initializes Cloud Trace exporter via OpenTelemetry.
-func (s *Server) initTracing() error {
+// initOpenTelemetry initializes OpenTelemetry to export to Cloud Trace.
+func (s *Server) initOpenTelemetry() error {
 	// Initialize a transformer that knows how to extract span info from the
 	// context and serialize it as a bunch of headers and vice-versa. It is
 	// invoked by otelhttp and otelgrpc middleware and when creating instrumented
@@ -2675,10 +2677,12 @@ func (s *Server) initTracing() error {
 		propagation.TraceContext{},
 	)
 
-	// If tracing is disabled, just don't initialize OpenTelemetry library. All
-	// tracing machinery would still nominally "work", just do nothing in a
-	// relatively efficient way.
+	// If tracing is disabled, initialize OTEL with noop providers that just
+	// silently discard everything. Otherwise OTEL leaks memory, see
+	// https://github.com/open-telemetry/opentelemetry-go-contrib/issues/5190
 	if !s.Options.shouldEnableTracing() {
+		otel.SetTracerProvider(oteltracenoop.TracerProvider{})
+		otel.SetMeterProvider(otelmetricnoop.MeterProvider{})
 		return nil
 	}
 
@@ -2728,6 +2732,10 @@ func (s *Server) initTracing() error {
 	otel.SetErrorHandler(s.otelErrorHandler(ctx))
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(s.propagator)
+
+	// We don't use OTEL metrics. Set the noop provider to avoid leaking memory.
+	// See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/5190.
+	otel.SetMeterProvider(otelmetricnoop.MeterProvider{})
 
 	return nil
 }

@@ -19,6 +19,10 @@ import (
 	"net/http"
 	"sync"
 
+	"go.opentelemetry.io/otel"
+	otelmetricnoop "go.opentelemetry.io/otel/metric/noop"
+	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
+
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/readonly"
@@ -111,12 +115,27 @@ type Environment struct {
 // ensurePrepared is called before handling requests to initialize global state.
 func (e *Environment) ensurePrepared(ctx context.Context) {
 	e.prepareOnce.Do(func() {
+		disableOTEL()
 		e.processCacheData = caching.NewProcessCacheData()
 		e.globalSettings = settings.New(gaesettings.Storage{})
 		if e.Prepare != nil {
 			e.Prepare(ctx)
 		}
 	})
+}
+
+// disableOTEL is called to install noop OpenTelemetry providers.
+//
+// We don't use OpenTelemetry on GAEv1. But many libraries (including LUCI ones)
+// register OTEL tracers and meters. If we just ignore OTEL completely, this
+// results a memory leak. Instead we install noop providers that silently ignore
+// everything (instead of accumulating stuff in memory, in expectation that
+// a real provider will be installed at some point).
+//
+// See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/5190.
+func disableOTEL() {
+	otel.SetTracerProvider(oteltracenoop.TracerProvider{})
+	otel.SetMeterProvider(otelmetricnoop.MeterProvider{})
 }
 
 // InstallHandlers installs handlers for an Environment's framework routes.
