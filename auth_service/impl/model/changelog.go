@@ -558,9 +558,16 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 			logging.Errorf(
 				ctx, "failed when checking changelog processed for previous AuthDB revision %d: %s",
 				prevAuthDBRev, err)
-		} else if existingPrevLogRev == nil {
-			// Previous revision's changelog has not been processed yet.
-			err = EnqueueProcessChangeTask(ctx, prevAuthDBRev)
+			return nil
+		}
+
+		if existingPrevLogRev != nil {
+			// Previous revision's changelog has been processed.
+			return nil
+		}
+
+		// Previous revision's changelog has not been processed yet.
+		if err := EnqueueProcessChangeTask(ctx, prevAuthDBRev); err != nil {
 			// Non-fatal, just log the error; this enqueuing is for redundancy.
 			logging.Warningf(
 				ctx, "failed when enqueuing changelog task for previous AuthDB revision %d: %s",
