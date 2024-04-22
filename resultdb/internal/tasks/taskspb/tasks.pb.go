@@ -386,13 +386,17 @@ func (x *ExportArtifacts) GetInvocationId() string {
 // for each invocation, which is used to determine when all criteria for
 // sending a notification has been met.
 //
-// This task must be created upon if an invocation encounters
-// any of the following events:
-//   - It had its source spec finalized.
-//   - It entered finalizing state (become locally immutable).
-//   - It had a new invocation included in it.
-//   - It had an export root added or updated (for example, a new
-//     export root was defined).
+// This task must be created if an invocation encounters any of the
+// following events:
+// - An existing invocation:
+//   - Had its source spec finalized.
+//   - Enters finalizing state (become locally immutable).
+//   - Has a new invocation included in it.
+//   - Has an export root added or updated (task recurses via this mechanism).
+//
+// - A new invocation:
+//   - Is created in finalizing state.
+//   - Is created as an export root and with new invocations included in it.
 type RunExportNotifications struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

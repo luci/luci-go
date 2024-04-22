@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -453,6 +454,7 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 func TestUpdateInvocation(t *testing.T) {
 	Convey(`TestUpdateInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, _ = tq.TestingContext(ctx, nil)
 		start := clock.Now(ctx).UTC()
 
 		recorder := newTestRecorderServer()

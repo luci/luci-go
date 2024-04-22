@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -99,6 +100,8 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 func TestBatchCreateInvocations(t *testing.T) {
 	Convey(`TestBatchCreateInvocations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, _ = tq.TestingContext(ctx, nil)
+
 		// Configure mock authentication to allow creation of custom invocation ids.
 		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",

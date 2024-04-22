@@ -27,7 +27,9 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -81,13 +83,23 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 		case len(states) != len(add):
 			return appstatus.Errorf(codes.NotFound, "at least one of the included invocations does not exist")
 		}
+		var addedInvocationIDs []string
 		for aInv := range add {
 			ms = append(ms, spanutil.InsertOrUpdateMap("IncludedInvocations", map[string]any{
 				"InvocationId":         including,
 				"IncludedInvocationId": aInv,
 			}))
+			addedInvocationIDs = append(addedInvocationIDs, string(aInv))
 		}
 		span.BufferWrite(ctx, ms...)
+
+		// Invocations may have been added to export root(s) directly
+		// or indirectly. Send notifications as appropriate.
+		exportnotifier.EnqueueTask(ctx, &taskspb.RunExportNotifications{
+			InvocationId:          string(including),
+			IncludedInvocationIds: addedInvocationIDs,
+		})
+
 		return nil
 	})
 

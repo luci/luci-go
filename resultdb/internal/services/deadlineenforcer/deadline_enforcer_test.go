@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -58,7 +60,10 @@ func TestExpiredInvocations(t *testing.T) {
 			So(enforceOneShard(ctx, i), ShouldBeNil)
 		}
 
-		So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.TryFinalizeInvocation{InvocationId: "expired"})
+		So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			&taskspb.RunExportNotifications{InvocationId: "expired"},
+			&taskspb.TryFinalizeInvocation{InvocationId: "expired"},
+		})
 		var state resultpb.Invocation_State
 		testutil.MustReadRow(ctx, "Invocations", invocations.ID("expired").Key(), map[string]any{
 			"State": &state,

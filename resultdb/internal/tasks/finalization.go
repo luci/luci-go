@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -45,7 +46,9 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 // StartInvocationFinalization changes invocation state to FINALIZING
 // if updateInv is set, and enqueues a TryFinalizeInvocation task.
 //
-// The caller is responsible for ensuring that the invocation is active.
+// The caller is responsible for ensuring that the invocation was
+// previously active (except in case of new invocations being created
+// in the FINALIZING state).
 //
 // TODO(nodir): this package is not a great place for this function, but there
 // is no better package at the moment. Keep it here for now, but consider a
@@ -58,8 +61,15 @@ func StartInvocationFinalization(ctx context.Context, id invocations.ID, updateI
 			"FinalizeStartTime": spanner.CommitTimestamp,
 		}))
 	}
+
 	tq.MustAddTask(ctx, &tq.Task{
 		Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
 		Title:   string(id),
+	})
+
+	// Inform export notifier of the invocation transitioning to
+	// FINALIZING.
+	exportnotifier.EnqueueTask(ctx, &taskspb.RunExportNotifications{
+		InvocationId: string(id),
 	})
 }

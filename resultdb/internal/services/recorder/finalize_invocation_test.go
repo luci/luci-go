@@ -69,14 +69,14 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 			So(inv.FinalizeStartTime, ShouldNotBeNil)
 			finalizeStartTime := inv.FinalizeStartTime
+			So(sched.Tasks(), ShouldHaveLength, 2)
 
 			inv, err = recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 			// The finalize start time should be the same as after the first call.
 			So(inv.FinalizeStartTime, ShouldResembleProto, finalizeStartTime)
-
-			So(sched.Tasks(), ShouldHaveLength, 1)
+			So(sched.Tasks(), ShouldHaveLength, 2)
 		})
 
 		Convey(`Success`, func() {
@@ -95,6 +95,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			// Enqueued the finalization task.
 			So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				&taskspb.RunExportNotifications{InvocationId: "inv"},
 				&taskspb.TryFinalizeInvocation{InvocationId: "inv"},
 			})
 		})

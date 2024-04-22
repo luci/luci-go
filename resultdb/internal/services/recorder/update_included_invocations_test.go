@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -77,7 +78,9 @@ func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
 
 func TestUpdateIncludedInvocations(t *testing.T) {
 	Convey(`TestIncludedInvocations`, t, func() {
-		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+		ctx := testutil.SpannerTestContext(t)
+		ctx, _ = tq.TestingContext(ctx, nil)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},

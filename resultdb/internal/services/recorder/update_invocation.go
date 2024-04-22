@@ -32,7 +32,9 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -265,12 +267,22 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				}
 
 			case "is_source_spec_final":
-				if ret.IsSourceSpecFinal && !in.Invocation.IsSourceSpecFinal {
-					return appstatus.BadRequest(errors.Reason("invocation: is_source_spec_final: cannot unfinalize already finalized sources").Err())
-				}
+				if ret.IsSourceSpecFinal != in.Invocation.IsSourceSpecFinal {
+					if !in.Invocation.IsSourceSpecFinal {
+						return appstatus.BadRequest(errors.Reason("invocation: is_source_spec_final: cannot unfinalize already finalized sources").Err())
+					}
 
-				values["IsSourceSpecFinal"] = spanner.NullBool{Valid: in.Invocation.IsSourceSpecFinal, Bool: in.Invocation.IsSourceSpecFinal}
-				ret.IsSourceSpecFinal = in.Invocation.IsSourceSpecFinal
+					values["IsSourceSpecFinal"] = spanner.NullBool{Valid: in.Invocation.IsSourceSpecFinal, Bool: in.Invocation.IsSourceSpecFinal}
+					ret.IsSourceSpecFinal = in.Invocation.IsSourceSpecFinal
+
+					// Finalizing sources on this invocation also finalizes the sources
+					// included invocations are eligible to inherit from this invocation.
+					// Run export notifier to propogate this information and send
+					// notifications as appropriate.
+					exportnotifier.EnqueueTask(ctx, &taskspb.RunExportNotifications{
+						InvocationId: string(invID),
+					})
+				}
 
 			case "baseline_id":
 				baselineID := in.Invocation.BaselineId

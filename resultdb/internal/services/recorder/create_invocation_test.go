@@ -620,7 +620,11 @@ func TestCreateInvocation(t *testing.T) {
 			inv, err := recorder.CreateInvocation(ctx, req, grpc.Header(headers))
 			So(err, ShouldBeNil)
 			So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+				// For invocation finalizing.
+				&taskspb.RunExportNotifications{InvocationId: "u-inv"},
 				&taskspb.TryFinalizeInvocation{InvocationId: "u-inv"},
+				// For invocation inclusion.
+				&taskspb.RunExportNotifications{InvocationId: "u-inv", RootInvocationIds: []string{"u-inv"}, IncludedInvocationIds: []string{"u-inv-child"}},
 			})
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)

@@ -27,10 +27,13 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/exportroots"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -103,7 +106,6 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 // createInvocations is a shared implementation for CreateInvocation and BatchCreateInvocations RPCs.
 func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.CreateInvocationRequest, requestID string, now time.Time, idSet invocations.IDSet) ([]*pb.Invocation, []string, error) {
 	createdBy := string(auth.CurrentIdentity(ctx))
-	ms := s.createInvocationsRequestsToMutations(ctx, now, reqs, requestID, createdBy)
 
 	var err error
 	deduped := false
@@ -113,13 +115,7 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 			return err
 		}
 		if !deduped {
-			span.BufferWrite(ctx, ms...)
-			// Enqueue any finalization tasks in the same transaction.
-			for _, req := range reqs {
-				if req.Invocation.State == pb.Invocation_FINALIZING {
-					tasks.StartInvocationFinalization(ctx, invocations.ID(req.InvocationId), false)
-				}
-			}
+			s.createInvocationsInternal(ctx, now, reqs, requestID, createdBy)
 		}
 
 		return nil
@@ -136,10 +132,10 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 	return getCreatedInvocationsAndUpdateTokens(ctx, idSet, reqs)
 }
 
-// createInvocationsRequestsToMutations computes a database mutation for
-// inserting a row for each invocation creation requested.
-func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Context, now time.Time, reqs []*pb.CreateInvocationRequest, requestID, createdBy string) []*spanner.Mutation {
-
+// createInvocationsInternal creates each invocation requested. It enqueues
+// task queue tasks for finalization and/or export notifications as appropriate.
+// Must be called within a Spanner Read/Write transaction.
+func (s *recorderServer) createInvocationsInternal(ctx context.Context, now time.Time, reqs []*pb.CreateInvocationRequest, requestID, createdBy string) {
 	ms := make([]*spanner.Mutation, 0, len(reqs))
 	// Compute mutations
 	for _, req := range reqs {
@@ -181,14 +177,46 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 		ms = append(ms, spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID)))
 
 		// Add any inclusions.
+		var includedInvocationIDs []string
 		for _, incName := range req.Invocation.IncludedInvocations {
+			invID := invocations.MustParseName(incName)
 			ms = append(ms, spanutil.InsertMap("IncludedInvocations", map[string]any{
 				"InvocationId":         invocations.ID(req.InvocationId),
-				"IncludedInvocationId": invocations.MustParseName(incName),
+				"IncludedInvocationId": invID,
 			}))
+			includedInvocationIDs = append(includedInvocationIDs, string(invID))
+		}
+
+		if req.Invocation.GetIsExportRoot() {
+			// An export root has itself as an export root. Exportnotifier service
+			// will propagate the export root to included invocations in a separate
+			// task.
+			root := exportroots.ExportRoot{
+				Invocation:            invocations.ID(req.InvocationId),
+				RootInvocation:        invocations.ID(req.InvocationId),
+				IsInheritedSourcesSet: true, // Roots inherit nil sources.
+				InheritedSources:      nil,
+				IsNotified:            false,
+			}
+			ms = append(ms, exportroots.Create(root))
+
+			if len(includedInvocationIDs) > 0 {
+				// Enqueue task to propagate export root to any included invocations
+				// and send any notifications.
+				exportnotifier.EnqueueTask(ctx, &taskspb.RunExportNotifications{
+					InvocationId:          req.InvocationId,
+					RootInvocationIds:     []string{req.InvocationId},
+					IncludedInvocationIds: includedInvocationIDs,
+				})
+			}
+		}
+
+		if req.Invocation.State == pb.Invocation_FINALIZING {
+			// Enqueue finalization task and run export notifications task.
+			tasks.StartInvocationFinalization(ctx, invocations.ID(req.InvocationId), false)
 		}
 	}
-	return ms
+	span.BufferWrite(ctx, ms...)
 }
 
 // getCreatedInvocationsAndUpdateTokens reads the full details of the
