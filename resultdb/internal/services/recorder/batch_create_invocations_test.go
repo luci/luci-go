@@ -108,7 +108,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: permCreateInvocation},
 				{Realm: "testproject:testrealm", Permission: permSetExportRoot},
-				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
+				{Realm: "testproject:@root", Permission: permExportToBigQuery},
 				{Realm: "testproject:@root", Permission: permSetProducerResource},
 				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
 				{Realm: "testproject:createonly", Permission: permCreateInvocation},

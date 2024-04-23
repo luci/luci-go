@@ -370,8 +370,11 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
-				// permission required to set baseline
+				// permission required to update BigQuery exports.
+				{Realm: "testproject:@root", Permission: permExportToBigQuery},
+				// permission required to set baseline.
 				{Realm: "testproject:@project", Permission: permPutBaseline},
+				// permission required to change realm to newrealm.
 				{Realm: "testproject:newrealm", Permission: permCreateInvocation},
 				{Realm: "testproject:newrealm", Permission: permIncludeInvocation},
 			},
@@ -385,29 +388,32 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 			UpdateMask: &field_mask.FieldMask{Paths: []string{}},
 		}
 
-		existingRealm := "testproject:testrealm"
+		existing := &pb.Invocation{
+			Name:  "invocations/inv",
+			Realm: "testproject:testrealm",
+		}
 
 		Convey(`realm`, func() {
 			request.UpdateMask.Paths = []string{"realm"}
 			request.Invocation.Realm = "testproject:newrealm"
 
 			Convey(`valid`, func() {
-				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				err := validateUpdateInvocationPermissions(ctx, existing, request)
 				So(err, ShouldBeNil)
 			})
 			Convey(`no create access`, func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
-				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				err := validateUpdateInvocationPermissions(ctx, existing, request)
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`)
 			})
 			Convey(`no include access`, func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
-				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				err := validateUpdateInvocationPermissions(ctx, existing, request)
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`)
 			})
 			Convey(`change of project`, func() {
 				request.Invocation.Realm = "newproject:testrealm"
-				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				err := validateUpdateInvocationPermissions(ctx, existing, request)
 				So(err, ShouldHaveAppStatus, codes.InvalidArgument, `cannot change invocation realm to outside project "testproject"`)
 			})
 		})
@@ -417,17 +423,17 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 
 			Convey(`empty`, func() {
 				request.Invocation.BaselineId = ""
-				err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+				err := validateUpdateInvocationPermissions(ctx, existing, request)
 				So(err, ShouldBeNil)
 			})
 			Convey(`no concurrent change to realm`, func() {
 				Convey(`valid`, func() {
-					err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+					err := validateUpdateInvocationPermissions(ctx, existing, request)
 					So(err, ShouldBeNil)
 				})
 				Convey(`no access`, func() {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
-					err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+					err := validateUpdateInvocationPermissions(ctx, existing, request)
 					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
 					So(err, ShouldBeNil)
 				})
@@ -437,18 +443,68 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 				request.Invocation.Realm = "testproject:newrealm"
 
 				Convey(`valid`, func() {
-					err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+					err := validateUpdateInvocationPermissions(ctx, existing, request)
 					So(err, ShouldBeNil)
 				})
 				Convey(`no access`, func() {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
-					err := validateUpdateInvocationPermissions(ctx, existingRealm, request)
+					err := validateUpdateInvocationPermissions(ctx, existing, request)
 					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
 					So(err, ShouldBeNil)
 				})
 			})
 		})
+		Convey(`bigquery_exports`, func() {
+			request.UpdateMask.Paths = append(request.UpdateMask.Paths, "bigquery_exports")
+			request.Invocation.BigqueryExports = []*pb.BigQueryExport{
+				createTestBigQueryExportConfig(),
+			}
+
+			Convey(`no permission`, func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permExportToBigQuery)
+
+				Convey(`with change`, func() {
+					err := validateUpdateInvocationPermissions(ctx, existing, request)
+					So(err, ShouldBeRPCPermissionDenied, `updater does not have permission to set bigquery exports in realm "testproject:@root"`)
+				})
+				Convey(`with no change`, func() {
+					// If we are not updating anything, we should not need permission.
+					existing.BigqueryExports = []*pb.BigQueryExport{
+						createTestBigQueryExportConfig(),
+					}
+
+					err := validateUpdateInvocationPermissions(ctx, existing, request)
+					So(err, ShouldBeNil)
+				})
+			})
+			Convey(`valid`, func() {
+				err := validateUpdateInvocationPermissions(ctx, existing, request)
+				So(err, ShouldBeNil)
+			})
+		})
 	})
+}
+
+func createTestBigQueryExportConfig() *pb.BigQueryExport {
+	return &pb.BigQueryExport{
+		Project: "my-project",
+		Dataset: "my-dataset",
+		Table:   "my-table",
+		ResultType: &pb.BigQueryExport_TestResults_{
+			TestResults: &pb.BigQueryExport_TestResults{
+				Predicate: &pb.TestResultPredicate{
+					TestIdRegexp: "regexp",
+					Variant: &pb.VariantPredicate{
+						Predicate: &pb.VariantPredicate_Contains{
+							Contains: &pb.Variant{
+								Def: map[string]string{"key": "value"},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 func TestUpdateInvocation(t *testing.T) {
@@ -463,6 +519,7 @@ func TestUpdateInvocation(t *testing.T) {
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:@project", Permission: permPutBaseline},
+				{Realm: "testproject:@root", Permission: permExportToBigQuery},
 				{Realm: "testproject:newrealm", Permission: permCreateInvocation},
 				{Realm: "testproject:newrealm", Permission: permIncludeInvocation},
 			},
@@ -543,6 +600,30 @@ func TestUpdateInvocation(t *testing.T) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
 				So(err, ShouldBeNil)
 				So(inv.BaselineId, ShouldEqual, "try:linux-rel")
+			})
+		})
+		Convey("bigquery_exports", func() {
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name: "invocations/inv",
+					BigqueryExports: []*pb.BigQueryExport{
+						createTestBigQueryExportConfig(),
+					},
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"bigquery_exports"}},
+			}
+			Convey("without permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permExportToBigQuery)
+
+				_, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeRPCPermissionDenied, `updater does not have permission to set bigquery exports in realm "testproject:@root"`)
+			})
+			Convey("with permission", func() {
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeNil)
+				So(inv.BigqueryExports, ShouldResembleProto, []*pb.BigQueryExport{
+					createTestBigQueryExportConfig(),
+				})
 			})
 		})
 		Convey("realm", func() {

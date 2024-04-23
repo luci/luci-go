@@ -178,7 +178,7 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:ci", Permission: permCreateInvocation},
-					{Realm: "chromium:ci", Permission: permExportToBigQuery},
+					{Realm: "chromium:@root", Permission: permExportToBigQuery},
 				},
 			})
 			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
@@ -403,7 +403,7 @@ func TestCreateInvocation(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: permCreateInvocation},
 				{Realm: "testproject:@root", Permission: permCreateWithReservedID},
 				{Realm: "testproject:testrealm", Permission: permSetExportRoot},
-				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
+				{Realm: "testproject:@root", Permission: permExportToBigQuery},
 				{Realm: "testproject:@root", Permission: permSetProducerResource},
 				{Realm: "testproject:testrealm", Permission: permIncludeInvocation},
 				{Realm: "testproject:createonly", Permission: permCreateInvocation},

@@ -114,12 +114,12 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 	return nil
 }
 
-func validateUpdateInvocationPermissions(ctx context.Context, existingRealm string, req *pb.UpdateInvocationRequest) error {
+func validateUpdateInvocationPermissions(ctx context.Context, existing *pb.Invocation, req *pb.UpdateInvocationRequest) error {
 	// Note: Permission to update the invocation itself is verified by
 	// checking the update-token, which occurs in mutateInvocation(...).
 
-	realm := existingRealm
-	project, _ := realms.Split(existingRealm)
+	realm := existing.Realm
+	project, _ := realms.Split(existing.Realm)
 
 	// If there is a change of realm being attempted, verify it first, as
 	// further fields must be validated against this new realm, not the old one.
@@ -149,6 +149,26 @@ func validateUpdateInvocationPermissions(ctx context.Context, existingRealm stri
 
 					// Silently reset the baseline ID on the invocation instead.
 					req.Invocation.BaselineId = ""
+				}
+			}
+		case "bigquery_exports":
+			if !isBigQueryExportsEqual(req.Invocation.BigqueryExports, existing.BigqueryExports) {
+				// Configuring BigQuery exports indirectly grants use of the
+				// LUCI project-scoped service account to write to a BigQuery table.
+
+				// Check permission against the root realm <project>:@root as the
+				// project-scoped service account is project-scoped resource.
+				// We can change this to check realm @project in future but this
+				// currently generates a bunch of nuisance warning messages as
+				// projects typically do not define a realm '@project' so it
+				// falls back to '@root' anyway.
+				rootRealm := realms.Join(project, realms.RootRealm)
+
+				switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, rootRealm, nil); {
+				case err != nil:
+					return err
+				case !allowed:
+					return appstatus.Errorf(codes.PermissionDenied, `updater does not have permission to set bigquery exports in realm %q`, rootRealm)
 				}
 			}
 		}
@@ -218,7 +238,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		// Perform validation and permission checks in the same transaction
 		// as the update, to prevent the possibility of permission check bypass
 		// (TOC/TOU bug) in the event of an update-update race.
-		if err := validateUpdateInvocationPermissions(ctx, ret.Realm, in); err != nil {
+		if err := validateUpdateInvocationPermissions(ctx, ret, in); err != nil {
 			return err
 		}
 
@@ -243,9 +263,11 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.Deadline = deadline
 
 			case "bigquery_exports":
-				bqExports := in.Invocation.BigqueryExports
-				values["BigQueryExports"] = bqExports
-				ret.BigqueryExports = bqExports
+				if !isBigQueryExportsEqual(in.Invocation.BigqueryExports, ret.BigqueryExports) {
+					bqExports := in.Invocation.BigqueryExports
+					values["BigQueryExports"] = bqExports
+					ret.BigqueryExports = bqExports
+				}
 
 			case "properties":
 				values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.Properties))
@@ -327,4 +349,12 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		return nil, err
 	}
 	return ret, nil
+}
+
+func isBigQueryExportsEqual(a, b []*pb.BigQueryExport) bool {
+	// As a and b are slices, they cannot be passed to proto.Equal directly.
+	// Wrap them an invocation container.
+	aInv := &pb.Invocation{BigqueryExports: a}
+	bInv := &pb.Invocation{BigqueryExports: b}
+	return proto.Equal(aInv, bInv)
 }

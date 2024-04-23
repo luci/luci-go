@@ -213,19 +213,29 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		case err != nil:
 			return err
 		case !allowed:
-			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set export roots in realm %q`, inv.GetRealm())
+			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set export roots in realm %q`, realm)
 		}
 	}
 
 	if len(inv.GetBigqueryExports()) > 0 {
-		// Note: This check is effectively pointless now, as it is
-		// possible to update an invocation after creation with whatever exports
-		// you want (without incurring any permission check).
-		switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, realm, nil); {
+		// Configuring BigQuery exports indirectly grants use of the
+		// LUCI project-scoped service account to write to a BigQuery table.
+
+		// Check permission against the root realm <project>:@root as the
+		// project-scoped service account is project-scoped resource.
+		//
+		// We can change this to check realm @project in future but this
+		// currently generates a bunch of nuisance warning messages as
+		// projects typically do not define a realm '@project' so it
+		// falls back to '@root' anyway.
+		project, _ := realms.Split(realm)
+		rootRealm := realms.Join(project, realms.RootRealm)
+
+		switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, rootRealm, nil); {
 		case err != nil:
 			return err
 		case !allowed:
-			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set bigquery exports in realm %q`, inv.GetRealm())
+			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set bigquery exports in realm %q`, rootRealm)
 		}
 	}
 
