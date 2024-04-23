@@ -150,10 +150,7 @@ func TestBQRowDescriptors(t *testing.T) {
 
 	// Verify we can get descriptors of all necessary BQ rows without panics.
 	_ = TaskRequestFetcher().Descriptor()
-
-	// TODO(vadimsh): These panic currently due to use of recursive
-	// structpb.Struct.
-	// _ = BotEventsFetcher().Descriptor()
-	// _ = TaskRunResultsFetcher().Descriptor()
-	// _ = TaskResultSummariesFetcher().Descriptor()
+	_ = BotEventsFetcher().Descriptor()
+	_ = TaskRunResultsFetcher().Descriptor()
+	_ = TaskResultSummariesFetcher().Descriptor()
 }

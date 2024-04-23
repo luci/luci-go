@@ -253,9 +253,7 @@ func exportTask(ctx context.Context, client *managedwriter.Client, t *taskspb.Ex
 	case TaskRequests:
 		fetcher = TaskRequestFetcher()
 	case BotEvents:
-		// TODO(vadimsh): fetcher = BotEventsFetcher()
-		logging.Infof(ctx, "Not implemented yet")
-		return nil
+		fetcher = BotEventsFetcher()
 	case TaskRunResults:
 		// TODO(vadimsh): fetcher = TaskRunResultsFetcher()
 		logging.Infof(ctx, "Not implemented yet")

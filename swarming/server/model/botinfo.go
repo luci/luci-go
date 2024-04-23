@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -221,7 +222,7 @@ type BotInfo struct {
 	// Key is derived based on the bot ID, see BotInfoKey.
 	Key *datastore.Key `gae:"$key"`
 
-	// Dimensions is a list of dimensions reported by the bot.
+	// Dimensions is a sorted list of dimensions reported by the bot.
 	//
 	// Dimensions are used for task selection. They are encoded as a sorted list
 	// of `key:value` strings. Keep in mind that the same key can be used
@@ -321,7 +322,7 @@ func (b *BotInfo) ToProto() *apipb.BotInfo {
 		IsDead:          b.IsDead(),
 		Quarantined:     b.Quarantined,
 		MaintenanceMsg:  b.Maintenance,
-		Dimensions:      dimensionsFlatToPb(b.Dimensions),
+		Dimensions:      DimensionsFlatToPb(b.Dimensions),
 		Version:         b.Version,
 		State:           string(b.State),
 	}
@@ -423,7 +424,7 @@ type BotEvent struct {
 	// Message is an optional free form message associated with the event.
 	Message string `gae:"message,noindex"`
 
-	// Dimensions is a list of dimensions reported by the bot.
+	// Dimensions is a sorted list of dimensions reported by the bot.
 	//
 	// TODO(vadimsh): Stop indexing this after turning down native Swarming
 	// scheduler. This index is only used in has_capacity(...) implementation,
@@ -433,13 +434,47 @@ type BotEvent struct {
 	Dimensions []string `gae:"dimensions_flat"`
 }
 
+// IsIdle is true if this event represents the bot being idle.
+func (e *BotEvent) IsIdle() bool {
+	return (e.EventType == BotEventSleep || e.EventType == BotEventIdle) &&
+		!e.Quarantined && e.Maintenance == ""
+}
+
+// QuarantineMessage returns the explanation of why the bot is quarantined.
+//
+// Returns an empty string if the state doesn't contain "quarantined" field.
+func (e *BotEvent) QuarantineMessage() string {
+	if len(e.State) == 0 {
+		return ""
+	}
+	var state struct {
+		Quarantined any `json:"quarantined"`
+	}
+	if err := json.Unmarshal(e.State, &state); err != nil {
+		return ""
+	}
+	switch val := state.Quarantined.(type) {
+	case nil:
+		return ""
+	case string:
+		return val
+	case bool:
+		if val {
+			return "true"
+		}
+		return ""
+	default:
+		return "true"
+	}
+}
+
 // ToProto converts BotEvent to apipb.BotEventResponse.
 func (e *BotEvent) ToProto() *apipb.BotEventResponse {
 	return &apipb.BotEventResponse{
 		Ts:              timestamppb.New(e.Timestamp),
 		EventType:       string(e.EventType),
 		Message:         e.Message,
-		Dimensions:      dimensionsFlatToPb(e.Dimensions),
+		Dimensions:      DimensionsFlatToPb(e.Dimensions),
 		State:           string(e.State),
 		ExternalIp:      e.ExternalIP,
 		AuthenticatedAs: string(e.AuthenticatedAs),

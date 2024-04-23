@@ -164,7 +164,7 @@ func TestDimensionsFlatToPb(t *testing.T) {
 
 	Convey("Works", t, func() {
 		for _, cs := range cases {
-			So(dimensionsFlatToPb(cs.flat), ShouldResembleProto, cs.list)
+			So(DimensionsFlatToPb(cs.flat), ShouldResembleProto, cs.list)
 		}
 	})
 }

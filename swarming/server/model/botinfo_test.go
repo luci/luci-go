@@ -62,3 +62,27 @@ func TestBotInfoQuery(t *testing.T) {
 				"`dimensions_flat` IN ARRAY(\"k2:v1\", \"k2:v2\") ORDER BY `__key__`")
 	})
 }
+
+func TestBotEvent(t *testing.T) {
+	t.Parallel()
+
+	Convey("QuarantineMessage", t, func() {
+		event := func(state string) *BotEvent {
+			return &BotEvent{
+				BotCommon: BotCommon{
+					State: []byte(state),
+				},
+			}
+		}
+
+		So(event(`{"quarantined": "yes", "blah": 1}`).QuarantineMessage(), ShouldEqual, "yes")
+		So(event(`{"quarantined": true}`).QuarantineMessage(), ShouldEqual, "true")
+		So(event(`{"quarantined": 0}`).QuarantineMessage(), ShouldEqual, "true")
+		So(event(`{"quarantined": false}`).QuarantineMessage(), ShouldEqual, "")
+		So(event(`{"quarantined": null}`).QuarantineMessage(), ShouldEqual, "")
+		So(event(`{}`).QuarantineMessage(), ShouldEqual, "")
+		So(event(``).QuarantineMessage(), ShouldEqual, "")
+		So(event(`broken`).QuarantineMessage(), ShouldEqual, "")
+		So(event(`[]`).QuarantineMessage(), ShouldEqual, "")
+	})
+}

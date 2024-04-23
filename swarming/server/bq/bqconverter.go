@@ -384,3 +384,82 @@ func taskRunResult(res *model.TaskRunResult, req *model.TaskRequest, perf *model
 	out.RunId = model.RequestKeyToTaskID(req.Key, model.AsRunResult)
 	return out
 }
+
+// Datastore event type => BQ exports event type.
+var botEventMapping = map[model.BotEventType]bqpb.BotEventType{
+	model.BotEventConnected: bqpb.BotEventType_BOT_NEW_SESSION,
+	model.BotEventError:     bqpb.BotEventType_BOT_HOOK_ERROR,
+	model.BotEventLog:       bqpb.BotEventType_BOT_HOOK_LOG,
+
+	model.BotEventMissing:   bqpb.BotEventType_BOT_MISSING,
+	model.BotEventRebooting: bqpb.BotEventType_BOT_REBOOTING_HOST,
+	model.BotEventShutdown:  bqpb.BotEventType_BOT_SHUTDOWN,
+	model.BotEventTerminate: bqpb.BotEventType_INSTRUCT_TERMINATE_BOT,
+	model.BotEventRestart:   bqpb.BotEventType_INSTRUCT_RESTART_BOT,
+
+	model.BotEventSleep:         bqpb.BotEventType_INSTRUCT_IDLE,
+	model.BotEventTask:          bqpb.BotEventType_INSTRUCT_START_TASK,
+	model.BotEventUpdate:        bqpb.BotEventType_INSTRUCT_UPDATE_BOT_CODE,
+	model.BotEventTaskCompleted: bqpb.BotEventType_TASK_COMPLETED,
+	model.BotEventTaskError:     bqpb.BotEventType_TASK_INTERNAL_FAILURE,
+	model.BotEventTaskKilled:    bqpb.BotEventType_TASK_KILLED,
+
+	// These values are not registered in the BQ API.
+	model.BotEventIdle:       bqpb.BotEventType_BOT_EVENT_TYPE_UNSPECIFIED,
+	model.BotEventPolling:    bqpb.BotEventType_BOT_EVENT_TYPE_UNSPECIFIED,
+	model.BotEventTaskUpdate: bqpb.BotEventType_BOT_EVENT_TYPE_UNSPECIFIED,
+}
+
+func botEvent(ev *model.BotEvent) *bqpb.BotEvent {
+	dims := model.DimensionsFlatToPb(ev.Dimensions)
+
+	bot := &bqpb.Bot{
+		BotId:         ev.Key.Parent().StringID(),
+		CurrentTaskId: ev.TaskID,
+		Dimensions:    make([]*bqpb.StringListPair, len(dims)),
+		Info: &bqpb.BotInfo{
+			Supplemental:    string(ev.State),
+			Version:         ev.Version,
+			ExternalIp:      ev.ExternalIP,
+			AuthenticatedAs: string(ev.AuthenticatedAs),
+		},
+	}
+
+	for i, dim := range dims {
+		if dim.Key == "pool" {
+			bot.Pools = dim.Value
+		}
+		bot.Dimensions[i] = &bqpb.StringListPair{
+			Key:    dim.Key,
+			Values: dim.Value,
+		}
+	}
+
+	if ev.IdleSince.IsSet() {
+		bot.Info.IdleSinceTs = timestamppb.New(ev.IdleSince.Get())
+	}
+	if ev.LastSeen.IsSet() && ev.EventType == model.BotEventMissing {
+		bot.Info.LastSeenTs = timestamppb.New(ev.LastSeen.Get())
+	}
+
+	if ev.EventType == model.BotEventMissing {
+		bot.Status = bqpb.BotStatusType_MISSING
+	} else if ev.IsIdle() {
+		bot.Status = bqpb.BotStatusType_IDLE
+	} else if ev.Quarantined {
+		bot.Status = bqpb.BotStatusType_QUARANTINED_BY_BOT
+		bot.StatusMsg = ev.QuarantineMessage()
+	} else if ev.Maintenance != "" {
+		bot.Status = bqpb.BotStatusType_OVERHEAD_MAINTENANCE_EXTERNAL
+		bot.StatusMsg = ev.Maintenance
+	} else if ev.TaskID != "" {
+		bot.Status = bqpb.BotStatusType_BUSY
+	}
+
+	return &bqpb.BotEvent{
+		EventTime: timestamppb.New(ev.Timestamp),
+		Bot:       bot,
+		Event:     botEventMapping[ev.EventType],
+		EventMsg:  ev.Message,
+	}
+}

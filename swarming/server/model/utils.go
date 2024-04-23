@@ -151,8 +151,8 @@ func SortStringPairs(pairs []*apipb.StringPair) {
 	})
 }
 
-// dimensionsFlatToPb converts a list of k:v pairs into []*apipb.StringListPair.
-func dimensionsFlatToPb(flat []string) []*apipb.StringListPair {
+// DimensionsFlatToPb converts a list of k:v pairs into []*apipb.StringListPair.
+func DimensionsFlatToPb(flat []string) []*apipb.StringListPair {
 	// In the vast majority of cases `flat` is already sorted and we can skip
 	// unnecessary maps and resorting. Start with the assumption it is sorted and
 	// fallback to a generic implementation if we notice a violation.
@@ -193,7 +193,7 @@ func dimensionsFlatToPb(flat []string) []*apipb.StringListPair {
 func dimensionsFlatToPbSlow(flat []string) []*apipb.StringListPair {
 	sortedCopy := append(make([]string, 0, len(flat)), flat...)
 	sort.Strings(sortedCopy)
-	return dimensionsFlatToPb(sortedCopy)
+	return DimensionsFlatToPb(sortedCopy)
 }
 
 // MapToStringListPair converts a map[string][]string to []*apipb.StringListPair.

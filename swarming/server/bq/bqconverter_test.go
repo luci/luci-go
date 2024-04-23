@@ -631,3 +631,102 @@ func TestTaskRunResultConversion(t *testing.T) {
 		So(got, ShouldResembleProto, want)
 	})
 }
+
+func TestBotEventConversion(t *testing.T) {
+	t.Parallel()
+
+	testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
+	eventTime := testTime.Add(time.Hour)
+	ctx := memory.Use(context.Background())
+
+	event := func(typ model.BotEventType, quarantined bool, maintenance, state string) *model.BotEvent {
+		return &model.BotEvent{
+			BotCommon: model.BotCommon{
+				State:           []byte(state),
+				ExternalIP:      "external-ip",
+				AuthenticatedAs: "authenticated-as",
+				Version:         "version",
+				Quarantined:     quarantined,
+				Maintenance:     maintenance,
+				TaskID:          "task-id",
+				LastSeen:        datastore.NewUnindexedOptional(testTime),
+				IdleSince:       datastore.NewUnindexedOptional(testTime),
+			},
+			Key:       datastore.NewKey(ctx, "BotEvent", "", 12345, model.BotRootKey(ctx, "bot-id")),
+			Timestamp: eventTime,
+			EventType: typ,
+			Message:   "Event message",
+			Dimensions: []string{
+				"id:bot-id",
+				"pool:a",
+				"pool:b",
+				"stuff:x",
+			},
+		}
+	}
+
+	expected := func(typ bqpb.BotEventType, status bqpb.BotStatusType, msg, state string) *bqpb.BotEvent {
+		var lastSeen *timestamppb.Timestamp
+		if typ == bqpb.BotEventType_BOT_MISSING {
+			lastSeen = timestamppb.New(testTime)
+		}
+		return &bqpb.BotEvent{
+			EventTime: timestamppb.New(eventTime),
+			Bot: &bqpb.Bot{
+				BotId:         "bot-id",
+				Pools:         []string{"a", "b"},
+				Status:        status,
+				StatusMsg:     msg,
+				CurrentTaskId: "task-id",
+				Dimensions: []*bqpb.StringListPair{
+					{Key: "id", Values: []string{"bot-id"}},
+					{Key: "pool", Values: []string{"a", "b"}},
+					{Key: "stuff", Values: []string{"x"}},
+				},
+				Info: &bqpb.BotInfo{
+					Supplemental:    state,
+					Version:         "version",
+					ExternalIp:      "external-ip",
+					AuthenticatedAs: "authenticated-as",
+					IdleSinceTs:     timestamppb.New(testTime),
+					LastSeenTs:      lastSeen,
+				},
+			},
+			Event:    typ,
+			EventMsg: "Event message",
+		}
+	}
+
+	Convey("Works", t, func() {
+		So(
+			botEvent(event(model.BotEventMissing, false, "", `{}`)),
+			ShouldResembleProto,
+			expected(bqpb.BotEventType_BOT_MISSING, bqpb.BotStatusType_MISSING, "", `{}`),
+		)
+
+		So(
+			botEvent(event(model.BotEventSleep, false, "", `{}`)),
+			ShouldResembleProto,
+			expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_IDLE, "", `{}`),
+		)
+
+		state := `{"quarantined": "broke"}`
+		So(
+			botEvent(event(model.BotEventSleep, true, "ignored", state)),
+			ShouldResembleProto,
+			expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_QUARANTINED_BY_BOT, "broke", state),
+		)
+
+		So(
+			botEvent(event(model.BotEventSleep, false, "maintenance", `{}`)),
+			ShouldResembleProto,
+			expected(bqpb.BotEventType_INSTRUCT_IDLE, bqpb.BotStatusType_OVERHEAD_MAINTENANCE_EXTERNAL, "maintenance", `{}`),
+		)
+
+		So(
+			botEvent(event(model.BotEventTask, false, "", `{}`)),
+			ShouldResembleProto,
+			expected(bqpb.BotEventType_INSTRUCT_START_TASK, bqpb.BotStatusType_BUSY, "", `{}`),
+		)
+	})
+}

@@ -140,7 +140,7 @@ func (f *Fetcher[E, R]) Fetch(ctx context.Context, start time.Time, duration tim
 	return err
 }
 
-// TaskRequestFetcher makes a fetches that can produce TaskRequest BQ rows.
+// TaskRequestFetcher makes a fetcher that can produce TaskRequest BQ rows.
 func TaskRequestFetcher() AbstractFetcher {
 	return &Fetcher[model.TaskRequest, *bqpb.TaskRequest]{
 		entityKind:     "TaskRequest",
@@ -157,20 +157,24 @@ func TaskRequestFetcher() AbstractFetcher {
 	}
 }
 
-// BotEventsFetcher makes a fetches that can produce BotEvent BQ rows.
+// BotEventsFetcher makes a fetcher that can produce BotEvent BQ rows.
 func BotEventsFetcher() AbstractFetcher {
 	return &Fetcher[model.BotEvent, *bqpb.BotEvent]{
 		entityKind:     "BotEvent",
 		timestampField: "ts",
 		queryBatchSize: queryBatchSize,
 		flushThreshold: flushThreshold,
-		convert: func(context.Context, []*model.BotEvent) ([]*bqpb.BotEvent, error) {
-			panic("not implemented")
+		convert: func(_ context.Context, entities []*model.BotEvent) ([]*bqpb.BotEvent, error) {
+			out := make([]*bqpb.BotEvent, len(entities))
+			for i, ent := range entities {
+				out[i] = botEvent(ent)
+			}
+			return out, nil
 		},
 	}
 }
 
-// TaskRunResultsFetcher makes a fetches that can produce TaskResult BQ rows.
+// TaskRunResultsFetcher makes a fetcher that can produce TaskResult BQ rows.
 func TaskRunResultsFetcher() AbstractFetcher {
 	return &Fetcher[model.TaskRunResult, *bqpb.TaskResult]{
 		entityKind:     "TaskRunResult",
@@ -183,7 +187,8 @@ func TaskRunResultsFetcher() AbstractFetcher {
 	}
 }
 
-// TaskResultSummariesFetcher makes a fetches that can produce TaskResult BQ rows.
+// TaskResultSummariesFetcher makes a fetcher that can produce TaskResult BQ
+// rows.
 func TaskResultSummariesFetcher() AbstractFetcher {
 	return &Fetcher[model.TaskResultSummary, *bqpb.TaskResult]{
 		entityKind:     "TaskResultSummary",
