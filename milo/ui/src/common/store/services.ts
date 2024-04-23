@@ -26,12 +26,10 @@ import { keepAlive } from 'mobx-utils';
 
 import { MAY_REQUIRE_SIGNIN } from '@/common/common_tags';
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
-import { BuildsService } from '@/common/services/buildbucket';
 import {
   ClustersService,
   TestHistoryService,
 } from '@/common/services/luci_analysis';
-import { MiloInternal } from '@/common/services/milo_internal';
 import { ResultDb } from '@/common/services/resultdb';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 import { attachTags } from '@/generic_libs/tools/tag';
@@ -77,22 +75,6 @@ export const ServicesStore = types
           makeClient({ host: SETTINGS.luciAnalysis.host }),
         );
       },
-      get milo() {
-        if (!self.authState?.identity) {
-          return null;
-        }
-        return new MiloInternal(
-          makeClient({ host: '', insecure: location.protocol === 'http:' }),
-        );
-      },
-      get builds() {
-        if (!self.authState?.identity) {
-          return null;
-        }
-        return new BuildsService(
-          makeClient({ host: SETTINGS.buildbucket.host }),
-        );
-      },
       get clusters() {
         if (!self.authState?.identity) {
           return null;
@@ -111,8 +93,6 @@ export const ServicesStore = types
       // These computed properties contains internal caches. Keep them alive.
       addDisposer(self, keepAlive(computed(() => self.resultDb)));
       addDisposer(self, keepAlive(computed(() => self.testHistory)));
-      addDisposer(self, keepAlive(computed(() => self.milo)));
-      addDisposer(self, keepAlive(computed(() => self.builds)));
       addDisposer(self, keepAlive(computed(() => self.clusters)));
     },
   }));

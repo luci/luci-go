@@ -56,7 +56,6 @@ export const Store = types
       self.userConfig.enableCaching();
       self.buildPage.setDependencies({
         currentTime: self.currentTime,
-        refreshTime: self.refreshTime,
         services: self.services,
         userConfig: self.userConfig,
       });

@@ -63,7 +63,6 @@ export class GetBuildError extends Error implements InnerTag {
 export const BuildPage = types
   .model('BuildPage', {
     currentTime: types.safeReference(Timestamp),
-    refreshTime: types.safeReference(Timestamp),
     services: types.safeReference(ServicesStore),
     userConfig: types.safeReference(UserConfig),
 
@@ -186,10 +185,7 @@ export const BuildPage = types
   .actions((self) => ({
     setDependencies(
       deps: Partial<
-        Pick<
-          typeof self,
-          'currentTime' | 'refreshTime' | 'services' | 'userConfig'
-        >
+        Pick<typeof self, 'currentTime' | 'services' | 'userConfig'>
       >,
     ) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
