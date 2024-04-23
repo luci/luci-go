@@ -52,6 +52,7 @@ func toAlertProto(value *alerts.Alert) *pb.Alert {
 	return &pb.Alert{
 		Name:         fmt.Sprintf("alerts/%s", value.AlertKey),
 		Bug:          value.Bug,
+		GerritCl:     value.GerritCL,
 		SilenceUntil: value.SilenceUntil,
 		ModifyTime:   timestamppb.New(value.ModifyTime),
 		Etag:         value.Etag(),
@@ -108,6 +109,7 @@ func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpd
 		a := &alerts.Alert{
 			AlertKey:     key,
 			Bug:          r.Alert.Bug,
+			GerritCL:     r.Alert.GerritCl,
 			SilenceUntil: r.Alert.SilenceUntil,
 		}
 		m, err := alerts.Put(a)
@@ -118,6 +120,7 @@ func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpd
 		response.Alerts = append(response.Alerts, &pb.Alert{
 			Name:         fmt.Sprintf("alerts/%s", a.AlertKey),
 			Bug:          a.Bug,
+			GerritCl:     a.GerritCL,
 			SilenceUntil: a.SilenceUntil,
 			Etag:         a.Etag(),
 		})

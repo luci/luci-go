@@ -25,10 +25,13 @@ CREATE TABLE Alerts (
   -- This may be revised in the future.
   AlertKey STRING(256) NOT NULL,
   -- The bug number in Buganizer/IssueTracker.
-  -- NULL if the alert is not linked to a bug.
+  -- 0 if the alert is not linked to a bug.
   Bug INT64,
+  -- The Gerrit CL number associated with this alert.
+  -- 0 if the alert is not associated with any CL.
+  GerritCL INT64,
   -- The build number to consider this alert silenced until.
-  -- NULL if the alert is not silenced.
+  -- 0 if the alert is not silenced.
   SilenceUntil INT64,
   -- The time the alert was last modified.
   -- Used to control TTL of alert values.

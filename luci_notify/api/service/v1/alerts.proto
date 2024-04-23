@@ -58,6 +58,10 @@ message Alert {
   // The build number of the builder corresponding to the alert that this alert should be ignored until.
   // In other words, if the latest_failing_build_number (currently in SOM alerts) <= silence_until, this alert should be considered 'silenced'.
   int64 silence_until = 4;
+  // The Gerrit CL number associated with this alert.
+  // 0 means the alert is not associated with any CL.
+  int64 gerrit_cl = 7;
+
   // The time the alert was last modified.
   //
   // This is automatically set by the server and cannot be modified explicitly

@@ -35,13 +35,23 @@ func TestValidation(t *testing.T) {
 			err := Validate(NewAlertBuilder().Build())
 			So(err, ShouldBeNil)
 		})
-		Convey("bug", func() {
+		Convey("Bug", func() {
 			Convey("must not be negative", func() {
 				err := Validate(NewAlertBuilder().WithBug(-1).Build())
 				So(err, ShouldErrLike, "bug: must be zero or positive")
 			})
 			Convey("zero is valid", func() {
 				err := Validate(NewAlertBuilder().WithBug(0).Build())
+				So(err, ShouldBeNil)
+			})
+		})
+		Convey("GerritCL", func() {
+			Convey("must not be negative", func() {
+				err := Validate(NewAlertBuilder().WithGerritCL(-1).Build())
+				So(err, ShouldErrLike, "gerrit_cl: must be zero or positive")
+			})
+			Convey("zero is valid", func() {
+				err := Validate(NewAlertBuilder().WithGerritCL(0).Build())
 				So(err, ShouldBeNil)
 			})
 		})
@@ -61,7 +71,7 @@ func TestValidation(t *testing.T) {
 func TestStatusTable(t *testing.T) {
 	Convey("Put", t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		alert := NewAlertBuilder().WithBug(10).Build()
+		alert := NewAlertBuilder().WithBug(10).WithGerritCL(15).Build()
 
 		m, err := Put(alert)
 		So(err, ShouldBeNil)
@@ -112,6 +122,7 @@ func TestStatusTable(t *testing.T) {
 			So(fetched, ShouldEqual, []*Alert{{
 				AlertKey:     "not-present",
 				Bug:          0,
+				GerritCL:     0,
 				SilenceUntil: 0,
 				ModifyTime:   time.Time{},
 			}})
@@ -140,6 +151,7 @@ func NewAlertBuilder() *AlertBuilder {
 	return &AlertBuilder{alert: Alert{
 		AlertKey:     "test-alert",
 		Bug:          0,
+		GerritCL:     0,
 		SilenceUntil: 0,
 		ModifyTime:   spanner.CommitTimestamp,
 	}}
@@ -152,6 +164,11 @@ func (b *AlertBuilder) WithAlertKey(alertKey string) *AlertBuilder {
 
 func (b *AlertBuilder) WithBug(bug int64) *AlertBuilder {
 	b.alert.Bug = bug
+	return b
+}
+
+func (b *AlertBuilder) WithGerritCL(gerritCL int64) *AlertBuilder {
+	b.alert.GerritCL = gerritCL
 	return b
 }
 
@@ -175,6 +192,7 @@ func (b *AlertBuilder) CreateInDB(ctx context.Context) *Alert {
 	row := map[string]any{
 		"AlertKey":     s.AlertKey,
 		"Bug":          s.Bug,
+		"GerritCL":     s.GerritCL,
 		"SilenceUntil": s.SilenceUntil,
 		"ModifyTime":   s.ModifyTime,
 	}

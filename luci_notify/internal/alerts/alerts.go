@@ -46,6 +46,9 @@ type Alert struct {
 	// The bug number in Buganizer/IssueTracker.
 	// 0 if the alert is not linked to a bug.
 	Bug int64
+	// GerritCL is the CL number associated with this alert.
+	// 0 means the alert is not associated with any GerritCL.
+	GerritCL int64
 	// The build number to consider this alert silenced until.
 	// 0 if the alert is not silenced.
 	SilenceUntil int64
@@ -61,6 +64,9 @@ func Validate(alert *Alert) error {
 	if err := validateBug(alert.Bug); err != nil {
 		return errors.Annotate(err, "bug").Err()
 	}
+	if err := validateGerritCL(alert.GerritCL); err != nil {
+		return errors.Annotate(err, "gerrit_cl").Err()
+	}
 	if err := validateSilenceUntil(alert.SilenceUntil); err != nil {
 		return errors.Annotate(err, "silence_until").Err()
 	}
@@ -69,6 +75,13 @@ func Validate(alert *Alert) error {
 
 func validateBug(bug int64) error {
 	if bug < 0 {
+		return errors.Reason("must be zero or positive").Err()
+	}
+	return nil
+}
+
+func validateGerritCL(gerritCL int64) error {
+	if gerritCL < 0 {
 		return errors.Reason("must be zero or positive").Err()
 	}
 	return nil
@@ -91,12 +104,13 @@ func Put(alert *Alert) (*spanner.Mutation, error) {
 		return nil, err
 	}
 
-	if alert.Bug == 0 && alert.SilenceUntil == 0 {
+	if alert.Bug == 0 && alert.GerritCL == 0 && alert.SilenceUntil == 0 {
 		return spanner.Delete("Alerts", spanner.Key{alert.AlertKey}), nil
 	}
 	row := map[string]any{
 		"AlertKey":     alert.AlertKey,
 		"Bug":          alert.Bug,
+		"GerritCL":     alert.GerritCL,
 		"SilenceUntil": alert.SilenceUntil,
 		"ModifyTime":   spanner.CommitTimestamp,
 	}
@@ -120,6 +134,7 @@ func ReadBatch(ctx context.Context, keys []string) ([]*Alert, error) {
 		SELECT
 			AlertKey,
 			Bug,
+			GerritCL,
 			SilenceUntil,
 			ModifyTime
 		FROM Alerts
@@ -160,13 +175,20 @@ func fromRow(row *spanner.Row) (*Alert, error) {
 	if err := row.Column(0, &alert.AlertKey); err != nil {
 		return nil, errors.Annotate(err, "reading AlertKey column").Err()
 	}
-	if err := row.Column(1, &alert.Bug); err != nil {
+	var nullable spanner.NullInt64
+	if err := row.Column(1, &nullable); err != nil {
 		return nil, errors.Annotate(err, "reading Bug column").Err()
 	}
-	if err := row.Column(2, &alert.SilenceUntil); err != nil {
+	alert.Bug = nullable.Int64
+	if err := row.Column(2, &nullable); err != nil {
+		return nil, errors.Annotate(err, "reading GerritCL column").Err()
+	}
+	alert.GerritCL = nullable.Int64
+	if err := row.Column(3, &nullable); err != nil {
 		return nil, errors.Annotate(err, "reading SilenceUntil column").Err()
 	}
-	if err := row.Column(3, &alert.ModifyTime); err != nil {
+	alert.SilenceUntil = nullable.Int64
+	if err := row.Column(4, &alert.ModifyTime); err != nil {
 		return nil, errors.Annotate(err, "reading ModifyTime column").Err()
 	}
 	return alert, nil
@@ -176,6 +198,7 @@ func (a *Alert) Etag() string {
 	h := fnv.New32a()
 	// Ignore errors here.
 	_ = binary.Write(h, binary.LittleEndian, a.Bug)
+	_ = binary.Write(h, binary.LittleEndian, a.GerritCL)
 	_ = binary.Write(h, binary.LittleEndian, a.SilenceUntil)
 	return fmt.Sprintf("W/\"%x\"", h.Sum32())
 }
