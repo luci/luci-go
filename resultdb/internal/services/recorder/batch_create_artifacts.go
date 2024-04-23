@@ -493,6 +493,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	}
 
 	// Upload text artifact to BQ.
+	// TODO (nqmtuan): Remove this code when the artifact exporter service finishes.
 	shouldUpload, err := shouldUploadToBQ(ctx)
 	if err != nil {
 		// Just log here, the feature is still in experiment, and we do not want

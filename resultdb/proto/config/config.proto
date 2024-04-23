@@ -20,7 +20,12 @@ option go_package = "go.chromium.org/luci/resultdb/proto/config;resultpb";
 
 // Config is the service-wide configuration data for Luci ResultDB.
 message Config {
+  // Control the export of artifact from BatchCreateArtifact.
+  // Going to be deprecate soon.
   BqArtifactExportConfig bq_artifact_export_config = 1;
+
+  // Control the export of artifact in the artifactexporter service.
+  BqArtifactExportConfig bq_artifact_exporter_service_config = 2;
 }
 
 // BqArtifactExportConfig contains the configuration to export

@@ -12,22 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package artifactexporter
 
 import (
-	"flag"
+	"testing"
 
-	"go.chromium.org/luci/server"
-
-	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/artifactcontent"
-	"go.chromium.org/luci/resultdb/internal/services/artifactexporter"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 )
 
-func main() {
-	opts := artifactexporter.Options{}
-	artifactcontent.RegisterRBEInstanceFlag(flag.CommandLine, &opts.ArtifactRBEInstance)
-	internal.Main(func(srv *server.Server) error {
-		return artifactexporter.InitServer(srv, opts)
-	})
+func TestMain(m *testing.M) {
+	testutil.SpannerTestMain(m)
 }
