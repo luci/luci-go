@@ -1022,6 +1022,18 @@ func TestGenerateChanges(t *testing.T) {
 					PermissionsChanged: []string{"test.perm.create"},
 					PermissionsRemoved: []string{"test.perm.edit"},
 				}})
+
+				// Add a permission to the existing permissions.
+				So(updateAuthRealmsGlobalsV1Perms(ctx, []*protocol.Permission{
+					{Name: "test.perm.create", Internal: true},
+					{Name: "test.perm.edit"},
+				}), ShouldBeNil)
+				actualChanges, err = generateChanges(ctx, 3, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "add perm to realms globals, old config present", 3, actualChanges, []*AuthDBChange{{
+					ChangeType:         ChangeRealmsGlobalsChanged,
+					PermissionsAdded: []string{"test.perm.edit"},
+				}})
 			})
 
 			Convey("v2 permissions", func() {
@@ -1075,6 +1087,36 @@ func TestGenerateChanges(t *testing.T) {
 					ChangeType:         ChangeRealmsGlobalsChanged,
 					PermissionsChanged: []string{"test.perm.create"},
 					PermissionsRemoved: []string{"test.perm.edit"},
+				}})
+
+				permCfg = &configspb.PermissionsConfig{
+					Role: []*configspb.PermissionsConfig_Role{
+						{
+							Name: "role/test.role.editor",
+							Permissions: []*protocol.Permission{
+								{
+									Name: "test.perm.edit",
+								},
+							},
+						},
+						{
+							Name: "role/test.role.creator",
+							Permissions: []*protocol.Permission{
+								{
+									Name: "test.perm.create",
+								},
+							},
+						},
+					},
+				}
+				So(UpdateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
+				actualChanges, err = generateChanges(ctx, 3, false)
+				So(err, ShouldBeNil)
+				validateChanges(ctx, "add perm to realms globals, old config present", 3, actualChanges, []*AuthDBChange{{
+					ChangeType:       ChangeRealmsGlobalsChanged,
+					PermissionsAdded: []string{"test.perm.edit"},
+					PermissionsChanged: []string{"test.perm.create"},
 				}})
 			})
 		})

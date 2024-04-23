@@ -945,7 +945,10 @@ func diffPermissions(ctx context.Context, oldNames, newNames []string, oldPerms,
 		if !ok {
 			// Permission is not in previous version.
 			added = append(added, name)
-		} else if oldPerm != newPerm {
+			continue
+		}
+
+		if !proto.Equal(oldPerm, newPerm) {
 			// Permission is different between versions.
 			changed = append(changed, name)
 		}
