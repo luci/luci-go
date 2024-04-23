@@ -44,6 +44,7 @@ export function StatusDescription({ build }: StatusDescriptionProps) {
   const durationDisplay =
     startTime && endTime ? (
       <>
+        {' '}
         <DurationBadge
           duration={endTime.diff(startTime)}
           from={startTime}
@@ -59,8 +60,7 @@ export function StatusDescription({ build }: StatusDescriptionProps) {
   if (status === Status.SCHEDULED) {
     return (
       <>
-        was {statusDisplay} at
-        <Timestamp datetime={createTime} />.
+        was {statusDisplay} at <Timestamp datetime={createTime} />
       </>
     );
   }
@@ -69,7 +69,7 @@ export function StatusDescription({ build }: StatusDescriptionProps) {
     return (
       <>
         is {statusDisplay} since{' '}
-        {<Timestamp datetime={startTime!} format={SHORT_TIME_FORMAT} />}
+        <Timestamp datetime={startTime!} format={SHORT_TIME_FORMAT} />
       </>
     );
   }
@@ -77,8 +77,8 @@ export function StatusDescription({ build }: StatusDescriptionProps) {
   if (status === Status.CANCELED) {
     return (
       <>
-        was {statusDisplay} by {build.canceledBy || '<unknown>'} at
-        {<Timestamp datetime={endTime!} format={SHORT_TIME_FORMAT} />}{' '}
+        was {statusDisplay} by {build.canceledBy || '<unknown>'} at{' '}
+        <Timestamp datetime={endTime!} format={SHORT_TIME_FORMAT} />
         {durationDisplay}
       </>
     );
@@ -87,7 +87,7 @@ export function StatusDescription({ build }: StatusDescriptionProps) {
   return (
     <>
       {statusDisplay} at{' '}
-      {<Timestamp datetime={endTime!} format={SHORT_TIME_FORMAT} />}{' '}
+      <Timestamp datetime={endTime!} format={SHORT_TIME_FORMAT} />
       {durationDisplay}
     </>
   );

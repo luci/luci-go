@@ -51,14 +51,15 @@ export function BuildDescription() {
         </Icon>{' '}
         {startCase(BUILD_STATUS_DISPLAY_MAP[status])}
       </h3>
-      build{' '}
+      build
       {commit ? (
         <>
-          <SourceDescription commit={commit} changes={changes} />{' '}
+          {' '}
+          <SourceDescription commit={commit} changes={changes} />
         </>
       ) : (
         ''
-      )}
+      )}{' '}
       <StatusDescription build={build} />.
     </>
   );
