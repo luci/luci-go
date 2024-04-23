@@ -18,6 +18,7 @@ package luci.analysis.internal.tasks;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/internal/ingestion/control/proto/control.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/notification.proto";
 
 option go_package = "go.chromium.org/luci/analysis/internal/tasks/taskspb";
 
@@ -45,6 +46,23 @@ message IngestTestVerdicts {
   // task, 1 for the second task, and so on. Used to avoid creating
   // duplicate tasks.
   int64 task_index = 5;
+}
+
+// Payload of IngestTestResults task.
+message IngestTestResults {
+  // The ResultDB invocation ready for export notification that triggered
+  // the ingestion of test results.
+  luci.resultdb.v1.InvocationReadyForExportNotification notification = 1;
+
+  // The page token value to use when calling ListTestResults.
+  // For the first task, this should be "". For subsequent tasks,
+  // this is the next_page_token value returned by the last call.
+  string page_token = 2;
+
+  // The task number of test results task. 0 for the first
+  // task, 1 for the second task, and so on. Used to avoid creating
+  // duplicate tasks.
+  int64 task_index = 3;
 }
 
 // Payload of the ReclusterChunks task.

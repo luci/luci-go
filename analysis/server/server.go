@@ -49,6 +49,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/bugupdater"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
+	"go.chromium.org/luci/analysis/internal/services/resultingester"
 	"go.chromium.org/luci/analysis/internal/services/verdictingester"
 	"go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
@@ -150,13 +151,17 @@ func Main(init func(srv *luciserver.Server) error) {
 		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)
 		srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.NewCVRunHandler().Handle)
 		srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.NewInvocationFinalizedHandler().Handle)
+		srv.Routes.POST("/_ah/push-handlers/invocation-ready-for-export", nil, app.NewInvocationReadyForExportHandler().Handle)
 
 		// Register task queue tasks.
 		if err := reclustering.RegisterTaskHandler(srv); err != nil {
 			return errors.Annotate(err, "register reclustering").Err()
 		}
-		if err := verdictingester.RegisterTaskHandler(srv); err != nil {
+		if err := resultingester.RegisterTaskHandler(srv); err != nil {
 			return errors.Annotate(err, "register result ingester").Err()
+		}
+		if err := verdictingester.RegisterTaskHandler(srv); err != nil {
+			return errors.Annotate(err, "register verdict ingester").Err()
 		}
 		if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL); err != nil {
 			return errors.Annotate(err, "register bug updater").Err()

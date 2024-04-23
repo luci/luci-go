@@ -61,8 +61,6 @@ import (
 )
 
 const (
-	resultIngestionTaskClass  = "result-ingestion"
-	resultIngestionQueue      = "result-ingestion"
 	verdictIngestionTaskClass = "verdict-ingestion"
 	verdictIngestionQueue     = "verdict-ingestion"
 
