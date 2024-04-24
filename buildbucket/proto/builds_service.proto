@@ -288,7 +288,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild RPC.
 //
-// Next ID: 24.
+// Next ID: 25.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -518,6 +518,20 @@ message ScheduleBuildRequest {
   //   adjustments on service_account, dimensions and properties.
   // * inherit its parent build's agent input and agent source if it has a parent.
   ShadowInput shadow_input = 23;
+
+  // ResultDB-specific part of build request.
+  message ResultDB {
+    // Whether to create the ResultDB invocation for this build as an export
+    // root. See ResultDB invocation.is_export_root for more information.
+    //
+    // By default, only buildbucket builds that do not have a parent are
+    // defined as an export root, as invocations for child builds are included
+    // in their parents.
+    bool is_export_root_override = 1;
+  }
+
+  // ResultDB-specific part of the build request.
+  ResultDB resultdb = 24;
 }
 
 // A request message for CancelBuild RPC.

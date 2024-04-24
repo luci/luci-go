@@ -49,11 +49,21 @@ func SetMockRecorder(ctx context.Context, mock rdbPb.RecorderClient) context.Con
 	return context.WithValue(ctx, &mockRecorderClientKey, mock)
 }
 
+// CreateOptions for each invocation created by CreateInvocations.
+type CreateOptions struct {
+	// Whether to mark the ResultDB invocation an export root.
+	IsExportRoot bool
+}
+
 // CreateInvocations creates resultdb invocations for each build.
 // build.Proto.Infra.Resultdb must not be nil.
+// builds and opts must have the same length and match 1:1.
 //
 // Note: it will mutate the value of build.Proto.Infra.Resultdb.Invocation and build.ResultDBUpdateToken.
-func CreateInvocations(ctx context.Context, builds []*model.Build) errors.MultiError {
+func CreateInvocations(ctx context.Context, builds []*model.Build, opts []CreateOptions) errors.MultiError {
+	if len(builds) != len(opts) {
+		panic("builds and opts have mismatched length")
+	}
 	bbHost := info.AppID(ctx) + ".appspot.com"
 	merr := make(errors.MultiError, len(builds))
 	if len(builds) == 0 {
@@ -99,6 +109,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build) errors.MultiE
 						Deadline:         timestamppb.New(deadline),
 						ProducerResource: fmt.Sprintf("//%s/builds/%d", bbHost, b.Proto.Id),
 						Realm:            realm,
+						IsExportRoot:     opts[i].IsExportRoot,
 					},
 					RequestId: invID,
 				}

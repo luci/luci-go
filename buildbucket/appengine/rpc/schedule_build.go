@@ -49,6 +49,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
+	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -1535,6 +1536,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 
 	validReq, idxMapBlds := getValidReqs(reqs, merr)
 	blds := make([]*model.Build, len(validReq))
+	resultdbOpts := make([]resultdb.CreateOptions, len(validReq))
 
 	pBld, err := validateParent(ctx)
 	if err != nil {
@@ -1598,6 +1600,11 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		blds[i] = &model.Build{
 			Proto: build,
 		}
+		resultdbOpts[i] = resultdb.CreateOptions{
+			// Build is an export root in ResultDB if it has no parent, or if
+			// explicitly requested.
+			IsExportRoot: pBld == nil || validReq[i].GetResultdb().GetIsExportRootOverride(),
+		}
 
 		setExperimentsFromProto(blds[i])
 		blds[i].IsLuci = cfg != nil || inDynamicBucket
@@ -1631,6 +1638,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	}
 	bc := &buildCreator{
 		blds:           blds,
+		resultdbOpts:   resultdbOpts,
 		idxMapBldToReq: idxMapBlds,
 		reqIDs:         reqIDs,
 		merr:           merr,

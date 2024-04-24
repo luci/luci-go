@@ -527,6 +527,8 @@ type buildCreator struct {
 	blds []*model.Build
 	// idxMapBldToReq is an index map of index of blds -> index of reqIDs.
 	idxMapBldToReq []int
+	// Contains ResultDB creation options for each build.
+	resultdbOpts []resultdb.CreateOptions
 	// RequestIDs of each request.
 	reqIDs []string
 	// errors when creating the builds.
@@ -538,6 +540,10 @@ type buildCreator struct {
 // A single returned error means a top-level error.
 // Otherwise, it would be a MultiError where len(MultiError) equals to len(bc.reqIDs).
 func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error) {
+	if len(bc.blds) != len(bc.resultdbOpts) {
+		return nil, errors.Reason("len(blds) must match len(resultdbOpts)").Err()
+	}
+
 	now := clock.Now(ctx).UTC()
 	user := auth.CurrentIdentity(ctx)
 	appID := info.AppID(ctx) // e.g. cr-buildbucket
@@ -574,10 +580,11 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 		bc.merr = mergeErrs(bc.merr, me, "error generating build numbers", func(idx int) int { return idxMapNums[idx] })
 	}
 
-	validBlds, idxMapValidBlds := getValidBlds(bc.blds, bc.merr, bc.idxMapBldToReq)
+	validBlds, filteredRDBOpts, idxMapValidBlds := getValidBlds(bc.blds, bc.resultdbOpts, bc.merr, bc.idxMapBldToReq)
+
 	err := parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error { return model.UpdateBuilderStat(ctx, validBlds, now) }
-		work <- func() error { return resultdb.CreateInvocations(ctx, validBlds) }
+		work <- func() error { return resultdb.CreateInvocations(ctx, validBlds, filteredRDBOpts) }
 		work <- func() error { return search.UpdateTagIndex(ctx, validBlds) }
 	})
 	if err != nil {
@@ -731,22 +738,28 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 	return resBlds, bc.merr
 }
 
-// getValidBlds returns a list of valid builds where its corresponding error is nil.
-// as well as an index map where idxMap[returnedIndex] == originalIndex.
-func getValidBlds(blds []*model.Build, origErrs errors.MultiError, idxMapBldToReq []int) ([]*model.Build, []int) {
+// getValidBlds returns a list of valid builds where its corresponding error is nil,
+// their ResultDB creation options, as well as an index map where
+// idxMap[returnedIndex] == idxMapBldToReq[originalIndex].
+func getValidBlds(blds []*model.Build, resultDBOpts []resultdb.CreateOptions, origErrs errors.MultiError, idxMapBldToReq []int) ([]*model.Build, []resultdb.CreateOptions, []int) {
 	if len(blds) != len(idxMapBldToReq) {
 		panic("The length of blds and the length of idxMapBldToReq must be the same.")
 	}
+	if len(blds) != len(resultDBOpts) {
+		panic("The length of blds and the length of resultDBOpts must be the same.")
+	}
 	var validBlds []*model.Build
 	var idxMap []int
+	var filteredOpts []resultdb.CreateOptions
 	for i, bld := range blds {
 		origI := idxMapBldToReq[i]
 		if origErrs[origI] == nil {
 			idxMap = append(idxMap, origI)
 			validBlds = append(validBlds, bld)
+			filteredOpts = append(filteredOpts, resultDBOpts[i])
 		}
 	}
-	return validBlds, idxMap
+	return validBlds, filteredOpts, idxMap
 }
 
 // generateBuildNumbers mutates the given builds, setting build numbers and
@@ -826,6 +839,10 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 		bld.Proto.AncestorIds = ancestors
 	}
 
+	resultdbOpts := resultdb.CreateOptions{
+		IsExportRoot: pBld == nil,
+	}
+
 	setExperimentsFromProto(bld)
 	// Tags are stored in the outer struct (see model/build.go).
 	tagMap := protoutil.StringPairMap(bld.Proto.Tags)
@@ -839,6 +856,7 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 
 	bc := &buildCreator{
 		blds:           []*model.Build{bld},
+		resultdbOpts:   []resultdb.CreateOptions{resultdbOpts},
 		idxMapBldToReq: []int{0},
 		reqIDs:         []string{req.RequestId},
 		merr:           make(errors.MultiError, 1),

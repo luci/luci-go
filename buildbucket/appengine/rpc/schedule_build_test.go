@@ -6524,6 +6524,7 @@ func TestScheduleBuild(t *testing.T) {
 							ProducerResource: "//app.appspot.com/builds/9021868963221610321",
 							Realm:            "project:bucket",
 							Deadline:         timestamppb.New(deadline),
+							IsExportRoot:     true,
 						},
 						RequestId: "build-9021868963221610321",
 					}), gomock.Any()).Return(nil, grpcStatus.Error(codes.Internal, "internal error"))

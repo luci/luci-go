@@ -95,6 +95,14 @@ func TestCreateInvocations(t *testing.T) {
 					},
 				},
 			}
+			opts := []CreateOptions{
+				{
+					IsExportRoot: true,
+				},
+				{
+					IsExportRoot: false,
+				},
+			}
 
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
 				&rdbPb.CreateInvocationRequest{
@@ -104,6 +112,7 @@ func TestCreateInvocations(t *testing.T) {
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						Realm:            "proj1:bucket",
+						IsExportRoot:     true,
 					},
 					RequestId: "build-1",
 				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
@@ -127,7 +136,7 @@ func TestCreateInvocations(t *testing.T) {
 				return &rdbPb.Invocation{}, nil
 			})
 
-			err := CreateInvocations(ctx, builds)
+			err := CreateInvocations(ctx, builds, opts)
 			So(err, ShouldBeNil)
 			So(builds[0].ResultDBUpdateToken, ShouldEqual, "token for build-1")
 			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-1")
@@ -159,6 +168,9 @@ func TestCreateInvocations(t *testing.T) {
 					},
 				},
 			}
+			opts := []CreateOptions{{
+				IsExportRoot: true,
+			}}
 
 			deadline := testclock.TestRecentTimeUTC.Add(2000)
 			sha256Bldr := sha256.Sum256([]byte("proj1/bucket/builder"))
@@ -170,6 +182,7 @@ func TestCreateInvocations(t *testing.T) {
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						Realm:            "proj1:bucket",
+						IsExportRoot:     true,
 					},
 					RequestId: "build-1",
 				}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
@@ -185,11 +198,12 @@ func TestCreateInvocations(t *testing.T) {
 						ProducerResource:    "//cr-buildbucket-dev.appspot.com/builds/1",
 						State:               rdbPb.Invocation_FINALIZING,
 						Realm:               "proj1:bucket",
+						// Should NOT be marked export root.
 					},
 					RequestId: "build-1-123",
 				})).Return(&rdbPb.Invocation{}, nil)
 
-			err := CreateInvocations(ctx, builds)
+			err := CreateInvocations(ctx, builds, opts)
 			So(err, ShouldBeNil)
 			So(len(builds), ShouldEqual, 1)
 			So(builds[0].ResultDBUpdateToken, ShouldEqual, "token for build id 1")
@@ -218,6 +232,9 @@ func TestCreateInvocations(t *testing.T) {
 					},
 				},
 			}
+			opts := []CreateOptions{{
+				IsExportRoot: true,
+			}}
 
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
 				&rdbPb.CreateInvocationRequest{
@@ -227,11 +244,12 @@ func TestCreateInvocations(t *testing.T) {
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						Realm:            "proj1:bucket",
+						IsExportRoot:     true,
 					},
 					RequestId: "build-1",
 				}), gomock.Any()).Return(nil, grpcStatus.Error(codes.AlreadyExists, "already exists"))
 
-			err := CreateInvocations(ctx, builds)
+			err := CreateInvocations(ctx, builds, opts)
 			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = AlreadyExists desc = already exists")
 		})
 
@@ -256,10 +274,13 @@ func TestCreateInvocations(t *testing.T) {
 					},
 				},
 			}
+			opts := []CreateOptions{{
+				IsExportRoot: true,
+			}}
 
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, grpcStatus.Error(codes.DeadlineExceeded, "timeout"))
 
-			err := CreateInvocations(ctx, builds)
+			err := CreateInvocations(ctx, builds, opts)
 			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = DeadlineExceeded desc = timeout")
 		})
 
@@ -302,6 +323,11 @@ func TestCreateInvocations(t *testing.T) {
 					},
 				},
 			}
+			opts := []CreateOptions{{
+				IsExportRoot: true,
+			}, {
+				IsExportRoot: false,
+			}}
 
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
 				&rdbPb.CreateInvocationRequest{
@@ -311,6 +337,7 @@ func TestCreateInvocations(t *testing.T) {
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						Realm:            "proj1:bucket",
+						IsExportRoot:     true,
 					},
 					RequestId: "build-1",
 				}), gomock.Any()).Return(nil, grpcStatus.Error(codes.Internal, "error"))
@@ -330,7 +357,7 @@ func TestCreateInvocations(t *testing.T) {
 				return &rdbPb.Invocation{}, nil
 			})
 
-			err := CreateInvocations(ctx, builds)
+			err := CreateInvocations(ctx, builds, opts)
 			So(err[0], ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = Internal desc = error")
 			So(err[1], ShouldBeNil)
 			So(builds[0].ResultDBUpdateToken, ShouldEqual, "")
@@ -357,8 +384,9 @@ func TestCreateInvocations(t *testing.T) {
 					},
 				},
 			}
+			opts := []CreateOptions{{}}
 
-			err := CreateInvocations(ctx, builds)
+			err := CreateInvocations(ctx, builds, opts)
 			So(err, ShouldBeNil)
 			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "")
 		})
