@@ -50,7 +50,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
-	"go.chromium.org/luci/analysis/internal/testresults/gerritchangelists"
+	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	configpb "go.chromium.org/luci/analysis/proto/config"

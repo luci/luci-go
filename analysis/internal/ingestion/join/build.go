@@ -36,11 +36,11 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/gerrit"
+	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/testresults"
-	"go.chromium.org/luci/analysis/internal/testresults/gerritchangelists"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
