@@ -160,6 +160,9 @@ CREATE TABLE Invocations (
   -- Only useful for a build-level invocation.
   -- It contains all instructions of steps which belong to the build.
   StepInstructions BYTES(MAX),
+
+  -- A compressed, serialized luci.resultdb.internal.invocations.ExtendedProperties message.
+  ExtendedProperties BYTES(MAX),
 ) PRIMARY KEY (InvocationId),
 -- Add TTL of 1.5 years to Invocations table. The row deletion policy
 -- configured in the parent table will also take effect on the interleaved child
