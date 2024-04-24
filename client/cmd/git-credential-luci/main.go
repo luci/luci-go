@@ -61,7 +61,7 @@ const loginRequiredMsg = `not running with a service account and not logged in
 
 If you are running this in a development environment, you can log in by running:
 
-luci-auth login -scopes "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gerritcodereview"
+git credential-luci login
 
 `
 
@@ -91,7 +91,7 @@ func main() {
 		t, err := a.GetAccessToken(lifetime)
 		if err != nil {
 			if err == auth.ErrLoginRequired {
-				fmt.Fprintf(os.Stderr, loginRequiredMsg)
+				fmt.Fprintf(os.Stderr, "%s", loginRequiredMsg)
 			} else {
 				fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
 			}
@@ -102,6 +102,14 @@ func main() {
 	case "erase":
 		if err := a.PurgeCredentialsCache(); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
+			os.Exit(1)
+		}
+	case "login":
+		// This is not part of the Git credential helper
+		// specification, but it is provided for convenience.
+		a = auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
+		if err := a.Login(); err != nil {
+			fmt.Fprintf(os.Stderr, "login failed: %v\n", err)
 			os.Exit(1)
 		}
 	default:
