@@ -56,6 +56,15 @@ func init() {
 	}
 }
 
+// loginRequiredMsg is the message to print when reporting a login required error.
+const loginRequiredMsg = `not running with a service account and not logged in
+
+If you are running this in a development environment, you can log in by running:
+
+luci-auth login -scopes "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gerritcodereview"
+
+`
+
 func main() {
 	flag.Parse()
 
@@ -75,34 +84,29 @@ func main() {
 	}
 
 	ctx := gologger.StdConfig.Use(context.Background())
-	auth := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 
 	switch flag.Args()[0] {
 	case "get":
-		t, err := auth.GetAccessToken(lifetime)
+		t, err := a.GetAccessToken(lifetime)
 		if err != nil {
-			printErr("cannot get access token", err)
+			if err == auth.ErrLoginRequired {
+				fmt.Fprintf(os.Stderr, loginRequiredMsg)
+			} else {
+				fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
+			}
 			os.Exit(1)
 		}
 		fmt.Printf("username=git-luci\n")
 		fmt.Printf("password=%s\n", t.AccessToken)
 	case "erase":
-		if err := auth.PurgeCredentialsCache(); err != nil {
-			printErr("cannot erase cache", err)
+		if err := a.PurgeCredentialsCache(); err != nil {
+			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
 			os.Exit(1)
 		}
 	default:
 		// The specification for Git credential helper says: "If a helper
 		// receives any other operation, it should silently ignore the
 		// request."
-	}
-}
-
-func printErr(prefix string, err error) {
-	switch {
-	case err == auth.ErrLoginRequired:
-		fmt.Fprintln(os.Stderr, "not running with a service account and not logged in")
-	case err != nil:
-		fmt.Fprintf(os.Stderr, "%s: %v\n", prefix, err)
 	}
 }
