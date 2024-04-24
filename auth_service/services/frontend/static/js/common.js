@@ -111,5 +111,19 @@ var common = (function () {
     });
   };
 
+  exports.setMainNavbarActiveLink = () => {
+    const path = window.location.pathname;
+    document.querySelectorAll('#main-navbar a').forEach((link) => {
+      const target = link.getAttribute('href');
+      if (target && path.startsWith(target)) {
+        link.classList.add('active');
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.classList.remove('active');
+        link.setAttribute('aria-current', null);
+      }
+    });
+  };
+
   return exports;
 })();

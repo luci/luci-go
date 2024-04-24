@@ -31,7 +31,7 @@ that can be found in the LICENSE file. -->
         </div>
       </div>
       {{else}}
-      <nav class="navbar navbar-expand-xl navbar-light bg-light border rounded">
+      <nav id="main-navbar" class="navbar navbar-expand-xl navbar-light bg-light border rounded">
         <div class="container-fluid">
           <a class="navbar-brand">Auth Service</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@ that can be found in the LICENSE file. -->
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="/groups">Groups</a>
+                <a class="nav-link" href="/groups">Groups</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="/change_log">Changes</a>
@@ -81,6 +81,11 @@ that can be found in the LICENSE file. -->
         </div>
       </div>
     </div>
+
+    <script type="text/javascript">
+      common.setMainNavbarActiveLink();
+    </script>
+
   </body>
 
   {{template "script" .}}
