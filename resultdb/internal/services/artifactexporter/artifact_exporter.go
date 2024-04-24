@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -44,6 +46,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
+	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -75,6 +78,37 @@ var ExportArtifactsTask = tq.RegisterTaskClass(tq.TaskClass{
 
 var (
 	ErrInvalidUTF8 = fmt.Errorf("invalid UTF-8 character")
+)
+
+var (
+	artifactExportCounter = metric.NewCounter(
+		"resultdb/artifacts/bqexport",
+		"The number of artifacts rows to export to BigQuery, grouped by project and status.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// The status of the export.
+		// Possible values:
+		// - "success": The export was successful.
+		// - "failure_input": There was an error with the input artifact
+		// (e.g. artifact contains invalid UTF-8 character).
+		// - "failure_bq": There was an error with BigQuery (e.g. throttling, load shedding),
+		// which made the artifact failed to export.
+		field.String("status"),
+	)
+
+	artifactContentCounter = metric.NewCounter(
+		"resultdb/artifacts/content",
+		"The number of artifacts for a particular content type.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// The status of the export.
+		// Possible values: "text", "nontext", "empty".
+		// We record the group instead of the actual value to prevent
+		// the explosion in cardinality.
+		field.String("content_type"),
+	)
 )
 
 // Options is artifact exporter configuration.
@@ -171,7 +205,8 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 	}
 
 	// Query for artifacts.
-	artifacts, err := ae.queryTextArtifacts(ctx, invID)
+	project, _ := realms.Split(inv.Realm)
+	artifacts, err := ae.queryTextArtifacts(ctx, invID, project)
 	if err != nil {
 		return errors.Annotate(err, "query text artifacts").Err()
 	}
@@ -251,8 +286,10 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqp
 		if currentSize+rowSize > bqutil.RowMaxBytes {
 			err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
 			if err != nil {
+				artifactExportCounter.Add(ctx, int64(len(rows)), row.Project, "failure_bq")
 				return errors.Annotate(err, "insert artifact rows").Err()
 			}
+			artifactExportCounter.Add(ctx, int64(len(rows)), row.Project, "success")
 			// Reset
 			rows = []*bqpb.TextArtifactRow{}
 			currentSize = 0
@@ -266,8 +303,10 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqp
 	if currentSize > 0 {
 		err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
 		if err != nil {
+			artifactExportCounter.Add(ctx, int64(len(rows)), rows[0].Project, "failure_bq")
 			return errors.Annotate(err, "insert artifact rows").Err()
 		}
+		artifactExportCounter.Add(ctx, int64(len(rows)), rows[0].Project, "success")
 	}
 	return nil
 }
@@ -276,7 +315,7 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqp
 // The query also join with TestResult table for test status.
 // The content of the artifact is not populated in this function,
 // this will keep the size of the slice small enough to fit in memory.
-func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invocations.ID) ([]*Artifact, error) {
+func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invocations.ID, project string) ([]*Artifact, error) {
 	st := spanner.NewStatement(`
 		SELECT
 			tr.TestId,
@@ -291,24 +330,33 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 		ON a.InvocationId = tr.InvocationId
 		AND a.ParentId = CONCAT("tr/", tr.TestId , "/" , tr.ResultId)
 		WHERE a.InvocationId=@invID
-		AND REGEXP_CONTAINS(IFNULL(a.ContentType, ""), @contentTypeRegexp)
 		ORDER BY tr.TestId, tr.ResultId, a.ArtifactId
 		`)
 	st.Params = spanutil.ToSpannerMap(map[string]any{
-		"invID":             invID,
-		"contentTypeRegexp": "text/.*",
+		"invID": invID,
 	})
 
 	results := []*Artifact{}
 	it := span.Query(ctx, st)
 	var b spanutil.Buffer
+
 	err := it.Do(func(r *spanner.Row) error {
 		a := &Artifact{InvocationID: string(invID)}
 		err := b.FromSpanner(r, &a.TestID, &a.ResultID, &a.ArtifactID, &a.ContentType, &a.Size, &a.RBECASHash, &a.TestStatus)
 		if err != nil {
 			return errors.Annotate(err, "read row").Err()
 		}
-		results = append(results, a)
+		if a.ContentType == "" {
+			artifactContentCounter.Add(ctx, 1, project, "empty")
+		} else {
+			if pbutil.IsTextArtifact(a.ContentType) {
+				artifactContentCounter.Add(ctx, 1, project, "text")
+				results = append(results, a)
+			} else {
+				artifactContentCounter.Add(ctx, 1, project, "nontext")
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -321,6 +369,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 // in parallel and creates TextArtifactRows for each rows.
 // The rows will be pushed in rowC.
 func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context, artifacts []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow, maxShardContentSize int) error {
+	project, _ := realms.Split(inv.Realm)
 	return parallel.FanOutIn(func(work chan<- func() error) {
 		for _, artifact := range artifacts {
 			artifact := artifact
@@ -335,6 +384,7 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 							"ResultID":     artifact.ResultID,
 							"ArtifactID":   artifact.ArtifactID,
 						}.Warningf(ctx, "Test result artifact has invalid UTF-8")
+						artifactExportCounter.Add(ctx, 1, project, "failure_input")
 					} else {
 						return errors.Annotate(err, "download artifact content inv_id = %q test id =%q result_id=%q artifact_id = %q", artifact.InvocationID, artifact.TestID, artifact.ResultID, artifact.ArtifactID).Err()
 					}

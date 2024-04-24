@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
 
@@ -87,19 +88,21 @@ func TestQueryTextArtifacts(t *testing.T) {
 		ae := artifactExporter{}
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
 		testutil.MustApply(ctx,
 			insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
 			insert.Artifact("inv1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "100", "RBECASHash": "deadbeef"}),
 			insert.Artifact("inv1", "tr/testid/0", "a2", map[string]any{"ContentType": "image/png", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv1", "", "a3", map[string]any{"Size": "100"}),
 		)
 
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("inv1", "testid", nil, pb.TestStatus_PASS),
 		)...)
 
-		artifacts, err := ae.queryTextArtifacts(ctx, "inv1")
+		artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject")
 		So(err, ShouldBeNil)
 		So(len(artifacts), ShouldEqual, 2)
 		So(artifacts, ShouldResemble, []*Artifact{
@@ -124,6 +127,9 @@ func TestQueryTextArtifacts(t *testing.T) {
 				TestStatus:   pb.TestStatus_PASS,
 			},
 		})
+		So(artifactContentCounter.Get(ctx, "testproject", "text"), ShouldEqual, 2)
+		So(artifactContentCounter.Get(ctx, "testproject", "nontext"), ShouldEqual, 1)
+		So(artifactContentCounter.Get(ctx, "testproject", "empty"), ShouldEqual, 1)
 	})
 }
 
@@ -142,6 +148,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 		},
 	}
 	ctx := context.Background()
+	ctx, _ = tsmon.WithDummyInMemory(ctx)
 	Convey(`Download multiple artifact content`, t, func() {
 		rowC := make(chan *bqpb.TextArtifactRow, 10)
 		artifacts := []*Artifact{
@@ -242,6 +249,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				TestStatus:          "FAIL",
 			},
 		})
+		So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 1)
 	})
 }
 
@@ -254,6 +262,7 @@ func TestExportArtifacts(t *testing.T) {
 			rbecasClient:   &fakeByteStreamClient{},
 			bqExportClient: bqClient,
 		}
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
 		Convey("Export disabled", func() {
 			err := config.SetServiceConfig(ctx, &configpb.Config{
@@ -297,6 +306,7 @@ func TestExportArtifacts(t *testing.T) {
 			}
 			err = ae.exportArtifacts(ctx, "inv-1")
 			So(err, ShouldErrLike, "bq error")
+			So(artifactExportCounter.Get(ctx, "testproject", "failure_bq"), ShouldEqual, 2)
 		})
 
 		Convey("Succeed", func() {
@@ -345,6 +355,7 @@ func TestExportArtifacts(t *testing.T) {
 					PartitionTime:       timestamppb.New(commitTime),
 				},
 			})
+			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 2)
 		})
 	})
 }
@@ -353,6 +364,7 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 	Convey("Export Artifacts To BigQuery", t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = memory.Use(ctx)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		bqClient := &fakeBQClient{}
 		ae := artifactExporter{
 			rbecasClient:   &fakeByteStreamClient{},
@@ -399,6 +411,7 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 				},
 			})
 		})
+		So(artifactExportCounter.Get(ctx, "project", "success"), ShouldEqual, 3)
 	})
 }
 

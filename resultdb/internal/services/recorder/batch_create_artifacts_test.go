@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -428,7 +427,6 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					TestStatus:          "FAIL",
 				},
 			})
-			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 3)
 		})
 
 		Convey("BatchUpdateBlobs fails", func() {
@@ -604,9 +602,6 @@ func TestFilterAndThrottle(t *testing.T) {
 				contentType: "text/html",
 			},
 		})
-		So(artifactContentCounter.Get(ctx, "chromium", "text"), ShouldEqual, 2)
-		So(artifactContentCounter.Get(ctx, "chromium", "nontext"), ShouldEqual, 1)
-		So(artifactContentCounter.Get(ctx, "chromium", "empty"), ShouldEqual, 1)
 	})
 
 	Convey("Throttle artifact", t, func() {
@@ -761,94 +756,5 @@ func TestReqToProto(t *testing.T) {
 				TestStatus:          "PASS",
 			},
 		})
-	})
-}
-
-func TestArtifactExportCounter(t *testing.T) {
-	Convey("BQ export error", t, func() {
-		ctx := testutil.SpannerTestContext(t)
-		ctx, _ = tsmon.WithDummyInMemory(ctx)
-		client := &fakeBQClient{
-			Error: fmt.Errorf("Some error"),
-		}
-		invInfo := &invocationInfo{
-			id:         "invid",
-			realm:      "chromium:ci",
-			createTime: time.Unix(1000, 0),
-		}
-		reqs := []*artifactCreationRequest{
-			{
-				testID:      "testid",
-				resultID:    "resultid",
-				artifactID:  "artifactid",
-				contentType: "text/plain",
-				size:        20,
-				data:        []byte("0123456789abcdefghij"),
-			},
-		}
-		err := uploadArtifactsToBQ(ctx, client, reqs, invInfo)
-		So(err, ShouldNotBeNil)
-		So(artifactExportCounter.Get(ctx, "chromium", "failure_bq"), ShouldEqual, 1)
-	})
-
-	Convey("Input error", t, func() {
-		ctx := testutil.SpannerTestContext(t)
-		ctx, _ = tsmon.WithDummyInMemory(ctx)
-		client := &fakeBQClient{
-			Error: errors.Annotate(fmt.Errorf("error"), "marshal proto").Tag(errors.BoolTag{Key: bqutil.InvalidRowTagKey}).Err(),
-		}
-		invInfo := &invocationInfo{
-			id:         "invid",
-			realm:      "chromium:ci",
-			createTime: time.Unix(1000, 0),
-		}
-		reqs := []*artifactCreationRequest{
-			{
-				testID:      "testid",
-				resultID:    "resultid",
-				artifactID:  "artifactid",
-				contentType: "text/plain",
-				size:        20,
-				data:        []byte("0123456789abcdefghij"),
-			},
-		}
-		err := uploadArtifactsToBQ(ctx, client, reqs, invInfo)
-		So(err, ShouldNotBeNil)
-		So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 1)
-	})
-
-	Convey("Invalid unicode", t, func() {
-		ctx := testutil.SpannerTestContext(t)
-		ctx, _ = tsmon.WithDummyInMemory(ctx)
-		client := &fakeBQClient{}
-		invInfo := &invocationInfo{
-			id:         "invid",
-			realm:      "chromium:ci",
-			createTime: time.Unix(1000, 0),
-		}
-		reqs := []*artifactCreationRequest{
-			{
-				testID:      "testid",
-				resultID:    "resultid",
-				artifactID:  "artifactid",
-				contentType: "text/plain",
-				size:        20,
-				// Invalid Unicode.
-				data: []byte{0xFF, 0xFE},
-			},
-			{
-				testID:      "testid",
-				resultID:    "resultid",
-				artifactID:  "artifactid_1",
-				contentType: "text/plain",
-				size:        20,
-				data:        []byte("content"),
-			},
-		}
-		err := uploadArtifactsToBQ(ctx, client, reqs, invInfo)
-		So(err, ShouldBeNil)
-		So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 1)
-		So(len(client.Rows), ShouldEqual, 1)
-		So(client.Rows[0].ArtifactId, ShouldEqual, "artifactid_1")
 	})
 }
