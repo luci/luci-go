@@ -84,10 +84,17 @@ type Options struct {
 	ArtifactRBEInstance string
 }
 
+// BQExportClient is the interface for exporting artifacts.
+type BQExportClient interface {
+	InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifactRow) error
+}
+
 type artifactExporter struct {
 	rbecasInstance string
 	// Client to read from RBE-CAS.
 	rbecasClient bytestream.ByteStreamClient
+	// Client to export to BigQuery.
+	bqExportClient BQExportClient
 }
 
 // InitServer initializes a artifactexporter server.
@@ -101,16 +108,26 @@ func InitServer(srv *server.Server, opts Options) error {
 		return err
 	}
 
+	bqClient, err := NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "create bq export client").Err()
+	}
+
 	srv.RegisterCleanup(func(ctx context.Context) {
 		err := conn.Close()
 		if err != nil {
 			logging.Errorf(ctx, "Cleaning up artifact RBE connection: %s", err)
+		}
+		err = bqClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up BigQuery export client: %s", err)
 		}
 	})
 
 	ae := &artifactExporter{
 		rbecasInstance: opts.ArtifactRBEInstance,
 		rbecasClient:   bytestream.NewByteStreamClient(conn),
+		bqExportClient: bqClient,
 	}
 
 	ExportArtifactsTask.AttachHandler(func(ctx context.Context, msg proto.Message) error {
@@ -170,6 +187,11 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 		return errors.Annotate(err, "throttle artifacts for bq").Err()
 	}
 
+	logging.Infof(ctx, "Found %d text artifact after throttling", len(artifacts))
+	if len(artifacts) == 0 {
+		return nil
+	}
+
 	// Get artifact content.
 	// Channel to push the artifact rows.
 	// In theory, some artifact content may be too big to
@@ -190,24 +212,64 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 		}
 		// Upload the rows to BQ.
 		work <- func() error {
-			for range rowC {
-				// TODO (nqmtuan): Group rows to reasonable size and send to BQ default stream.
-				// There is a caveat in using default stream.
-				// If the exporter failed in the middle (with some data already exported to BQ),
-				// and then retried, duplicated rows may be inserted into BQ.
-				// Another alternative is to use pending type [1] instead of default stream,
-				// which allows atomic commit operation. The problem is that it has the limit
-				// of 10k CreateWriteStream limit per hour, which is not enough for the number
-				// of invocations we have (1.5 mil/day).
-				// Another alternative is add a field in the Artifact spanner table to mark which
-				// rows have been exported.
-				// [1] https://cloud.google.com/bigquery/docs/write-api#pending_type
+			err := ae.exportToBigQuery(ctx, rowC)
+			if err != nil {
+				return errors.Annotate(err, "export to bigquery").Err()
 			}
 			return nil
 		}
 	})
 
 	return err
+}
+
+// exportToBigQuery reads rows from channel rowC and export to BigQuery.
+// It groups the rows into chunks and appends to the default stream.
+// There is a caveat in using default stream.
+// If the exporter failed in the middle (with some data already exported to BQ),
+// and then retried, duplicated rows may be inserted into BQ.
+// Another alternative is to use pending type [1] instead of default stream,
+// which allows atomic commit operation. The problem is that it has the limit
+// of 10k CreateWriteStream limit per hour, which is not enough for the number
+// of invocations we have (1.5 mil/day).
+// Another alternative is add a field in the Artifact spanner table to mark which
+// rows have been exported.
+// [1] https://cloud.google.com/bigquery/docs/write-api#pending_type
+func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqpb.TextArtifactRow) error {
+	// rows contains the rows that will be sent to AppendRows.
+	rows := []*bqpb.TextArtifactRow{}
+	currentSize := 0
+	for row := range rowC {
+		// Group the rows together such that the total size of the batch
+		// does not exceed AppendRows max size.
+		// The bqutil package also does the batching, but we don't want to send
+		// a just slightly bigger group of row to it, to prevent a big batch and
+		// a tiny batch, so we make sure that the rows we send just fit in one batch.
+		rowSize := bqutil.RowSize(row)
+
+		// Exceed max batch size, send whatever we have.
+		if currentSize+rowSize > bqutil.RowMaxBytes {
+			err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
+			if err != nil {
+				return errors.Annotate(err, "insert artifact rows").Err()
+			}
+			// Reset
+			rows = []*bqpb.TextArtifactRow{}
+			currentSize = 0
+		}
+
+		rows = append(rows, row)
+		currentSize += rowSize
+	}
+
+	// Upload the remaining rows.
+	if currentSize > 0 {
+		err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
+		if err != nil {
+			return errors.Annotate(err, "insert artifact rows").Err()
+		}
+	}
+	return nil
 }
 
 // queryTextArtifacts queries all text artifacts contained in an invocation.

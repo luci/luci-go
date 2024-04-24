@@ -16,6 +16,7 @@ package artifactexporter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -41,11 +42,11 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-type FakeByteStreamClient struct {
+type fakeByteStreamClient struct {
 	ResponseData map[string][]byte
 }
 
-func (c *FakeByteStreamClient) Read(ctx context.Context, in *bytestream.ReadRequest, opts ...grpc.CallOption) (bytestream.ByteStream_ReadClient, error) {
+func (c *fakeByteStreamClient) Read(ctx context.Context, in *bytestream.ReadRequest, opts ...grpc.CallOption) (bytestream.ByteStream_ReadClient, error) {
 	res := []*bytestream.ReadResponse{
 		{Data: []byte("data")},
 	}
@@ -59,12 +60,25 @@ func (c *FakeByteStreamClient) Read(ctx context.Context, in *bytestream.ReadRequ
 	}, nil
 }
 
-func (c *FakeByteStreamClient) Write(ctx context.Context, opts ...grpc.CallOption) (bytestream.ByteStream_WriteClient, error) {
+func (c *fakeByteStreamClient) Write(ctx context.Context, opts ...grpc.CallOption) (bytestream.ByteStream_WriteClient, error) {
 	return nil, nil
 }
 
-func (c *FakeByteStreamClient) QueryWriteStatus(ctx context.Context, in *bytestream.QueryWriteStatusRequest, opts ...grpc.CallOption) (*bytestream.QueryWriteStatusResponse, error) {
+func (c *fakeByteStreamClient) QueryWriteStatus(ctx context.Context, in *bytestream.QueryWriteStatusRequest, opts ...grpc.CallOption) (*bytestream.QueryWriteStatusResponse, error) {
 	return nil, nil
+}
+
+type fakeBQClient struct {
+	Rows  [][]*bqpb.TextArtifactRow
+	Error error
+}
+
+func (c *fakeBQClient) InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifactRow) error {
+	if c.Error != nil {
+		return c.Error
+	}
+	c.Rows = append(c.Rows, rows)
+	return nil
 }
 
 func TestQueryTextArtifacts(t *testing.T) {
@@ -115,7 +129,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 
 func TestDownloadArtifactContent(t *testing.T) {
 	ae := artifactExporter{
-		rbecasClient: &FakeByteStreamClient{
+		rbecasClient: &fakeByteStreamClient{
 			ResponseData: map[string][]byte{
 				resourceName("hash1", 3): []byte("abc"),
 				// Invalid UTF-8. It does not result in any row.
@@ -235,8 +249,10 @@ func TestExportArtifacts(t *testing.T) {
 	Convey("Export Artifacts", t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = memory.Use(ctx)
+		bqClient := &fakeBQClient{}
 		ae := artifactExporter{
-			rbecasClient: &FakeByteStreamClient{},
+			rbecasClient:   &fakeByteStreamClient{},
+			bqExportClient: bqClient,
 		}
 
 		Convey("Export disabled", func() {
@@ -258,11 +274,11 @@ func TestExportArtifacts(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		testutil.MustApply(ctx,
+		commitTime := testutil.MustApply(ctx,
 			insert.Invocation("inv-1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Invocation("inv-2", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
-			insert.Artifact("inv-1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
-			insert.Artifact("inv-1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv-1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "4", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv-1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "4", "RBECASHash": "deadbeef"}),
 			insert.Artifact("inv-1", "tr/testid/0", "a2", map[string]any{"ContentType": "image/png", "Size": "100", "RBECASHash": "deadbeef"}),
 		)
 
@@ -275,10 +291,113 @@ func TestExportArtifacts(t *testing.T) {
 			So(err, ShouldErrLike, "invocation not finalized")
 		})
 
+		Convey("BQ Export failed", func() {
+			ae.bqExportClient = &fakeBQClient{
+				Error: errors.New("bq error"),
+			}
+			err = ae.exportArtifacts(ctx, "inv-1")
+			So(err, ShouldErrLike, "bq error")
+		})
+
 		Convey("Succeed", func() {
 			err = ae.exportArtifacts(ctx, "inv-1")
 			So(err, ShouldBeNil)
-			// TODO (nqmtuan): Check Bigquery after implementing exporting to BQ.
+			// Sort to make deterministic, as we parallelized the downloading,
+			// so it is not certain which row will come first.
+			rows := []*bqpb.TextArtifactRow{}
+			for _, r := range bqClient.Rows {
+				rows = append(rows, r...)
+			}
+			sort.Slice(rows, func(i, j int) bool {
+				return (rows[i].ArtifactShard < rows[j].ArtifactShard)
+			})
+
+			So(rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
+				{
+					Project:             "testproject",
+					Realm:               "testrealm",
+					InvocationId:        "inv-1",
+					TestId:              "",
+					ResultId:            "",
+					ArtifactId:          "a0",
+					ShardId:             0,
+					ContentType:         "text/plain; encoding=utf-8",
+					Content:             "data",
+					ArtifactContentSize: 4,
+					ArtifactShard:       "a0:0",
+					ShardContentSize:    4,
+					PartitionTime:       timestamppb.New(commitTime),
+				},
+				{
+					Project:             "testproject",
+					Realm:               "testrealm",
+					InvocationId:        "inv-1",
+					TestId:              "testid",
+					ResultId:            "0",
+					ArtifactId:          "a1",
+					ShardId:             0,
+					ContentType:         "text/html",
+					Content:             "data",
+					ArtifactContentSize: 4,
+					ArtifactShard:       "a1:0",
+					TestStatus:          "PASS",
+					ShardContentSize:    4,
+					PartitionTime:       timestamppb.New(commitTime),
+				},
+			})
+		})
+	})
+}
+
+func TestExportArtifactsToBigQuery(t *testing.T) {
+	Convey("Export Artifacts To BigQuery", t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		ctx = memory.Use(ctx)
+		bqClient := &fakeBQClient{}
+		ae := artifactExporter{
+			rbecasClient:   &fakeByteStreamClient{},
+			bqExportClient: bqClient,
+		}
+
+		rowC := make(chan *bqpb.TextArtifactRow, 10)
+		rows := []*bqpb.TextArtifactRow{}
+		// Insert 3 artifacts, each of size ~4MB to rowC.
+		// With the batch size of ~10MB, we will need 2 batches.
+		for i := 0; i < 3; i++ {
+			row := &bqpb.TextArtifactRow{
+				Project:             "project",
+				Realm:               "realm",
+				InvocationId:        "inv",
+				TestId:              "test",
+				ResultId:            "result",
+				ArtifactId:          fmt.Sprintf("artifact%d", i),
+				ShardId:             int32(i),
+				ContentType:         "text/plain",
+				ArtifactContentSize: 4 * 1024 * 1024,
+				Content:             strings.Repeat("a", 4*1024*1024),
+				ShardContentSize:    4 * 1024 * 1024,
+				ArtifactShard:       fmt.Sprintf("artifact%d:0", i),
+				TestStatus:          "PASS",
+				PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
+			}
+			rows = append(rows, row)
+			rowC <- row
+		}
+
+		close(rowC)
+
+		Convey("Grouping", func() {
+			err := ae.exportToBigQuery(ctx, rowC)
+			So(err, ShouldBeNil)
+
+			So(bqClient.Rows, ShouldResembleProto, [][]*bqpb.TextArtifactRow{
+				{
+					rows[0], rows[1],
+				},
+				{
+					rows[2],
+				},
+			})
 		})
 	})
 }

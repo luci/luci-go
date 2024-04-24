@@ -139,8 +139,7 @@ func batch(rows []proto.Message) ([][]proto.Message, error) {
 	batchStartIndex := 0
 	batchSizeInBytes := 0
 	for i, row := range rows {
-		// Assume 16 bytes of overhead per row not captured here.
-		rowSize := proto.Size(row) + 16
+		rowSize := RowSize(row)
 		if (batchSizeInBytes + rowSize) > RowMaxBytes {
 			if rowSize > RowMaxBytes {
 				return nil, errors.Reason("a single row exceeds the maximum BigQuery AppendRows request size of %v bytes", RowMaxBytes).Err()
@@ -159,4 +158,10 @@ func batch(rows []proto.Message) ([][]proto.Message, error) {
 		result = append(result, lastBatch)
 	}
 	return result, nil
+}
+
+// RowSize return size of row when we do batching.
+func RowSize(row proto.Message) int {
+	// Assume 16 bytes of overhead per row not captured here.
+	return proto.Size(row) + 16
 }
