@@ -23,6 +23,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -90,7 +91,7 @@ func main() {
 	case "get":
 		t, err := a.GetAccessToken(lifetime)
 		if err != nil {
-			if err == auth.ErrLoginRequired {
+			if errors.Is(err, auth.ErrLoginRequired) {
 				fmt.Fprintf(os.Stderr, "%s", loginRequiredMsg)
 			} else {
 				fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
