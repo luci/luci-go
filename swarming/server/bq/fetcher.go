@@ -128,18 +128,32 @@ func (f *Fetcher[E, R]) Fetch(ctx context.Context, start time.Time, duration tim
 		Gte(f.timestampField, start).
 		Lt(f.timestampField, start.Add(duration))
 
+	var innerErr error
 	err := datastore.Run(ctx, q, func(ent *E) error {
+		innerErr = nil
 		pendingEntities = append(pendingEntities, ent)
 		if len(pendingEntities) >= f.queryBatchSize {
-			return flushPending(false)
+			innerErr = flushPending(false)
 		}
-		return nil
+		return innerErr
 	})
-	if err := flushPending(true); err != nil {
-		return err
+	if flushErr := flushPending(true); flushErr != nil {
+		return flushErr
 	}
 
-	return err
+	switch {
+	case err == nil:
+		return nil
+	case err == innerErr:
+		// The callback failed (e.g. flushPending returned an error). Propagate
+		// the error as is. It comes from the `flush` callback.
+		return innerErr
+	default:
+		// If datastore.Run returned an error not from the callback, it must be
+		// the error from the datastore library itself (e.g. a query timeout). Mark
+		// it as a transient error.
+		return errors.Annotate(err, "datastore query error").Tag(transient.Tag).Err()
+	}
 }
 
 // TaskRequestFetcher makes a fetcher that can produce TaskRequest BQ rows.
