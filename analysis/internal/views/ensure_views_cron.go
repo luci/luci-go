@@ -77,11 +77,11 @@ const segmentsUnexpectedRealtimePerProjectQuery = `
 	WITH merged_table AS(
 		SELECT *
 		FROM internal.test_variant_segment_updates
-		WHERE project = "%[1]s" AND has_recent_unexpected_results = 1
+		WHERE (%[1]s) AND has_recent_unexpected_results = 1
 		UNION ALL
 		SELECT *
 		FROM internal.test_variant_segments
-		WHERE project = "%[1]s" AND has_recent_unexpected_results = 1
+		WHERE (%[1]s) AND has_recent_unexpected_results = 1
 	), merged_table_grouped AS(
 		SELECT
 			project, test_id, variant_hash, ref_hash,
@@ -116,14 +116,9 @@ type makeTableMetadata func(luciProject string) *bigquery.TableMetadata
 
 var luciProjectViewQueries = map[string]makeTableMetadata{
 	"failure_association_rules": func(luciProject string) *bigquery.TableMetadata {
-		// Revalidate project as safeguard against SQL-Injection.
-		if err := pbutil.ValidateProject(luciProject); err != nil {
-			panic(err)
-		}
-
 		return &bigquery.TableMetadata{
 			Description: "Failure association rules for " + luciProject + ". See go/luci-analysis-concepts#failure-association-rules.",
-			ViewQuery:   `SELECT * FROM internal.failure_association_rules WHERE project = "` + luciProject + `"`,
+			ViewQuery:   `SELECT * FROM internal.failure_association_rules WHERE ` + projectWhereClause(luciProject),
 			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
@@ -134,7 +129,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 		return &bigquery.TableMetadata{
 			Description: "Clustered test failures for " + luciProject + ". Each failure is repeated for each cluster it is contained in.",
-			ViewQuery:   `SELECT * FROM internal.clustered_failures WHERE project = "` + luciProject + `"`,
+			ViewQuery:   `SELECT * FROM internal.clustered_failures WHERE ` + projectWhereClause(luciProject),
 			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
@@ -145,7 +140,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 		return &bigquery.TableMetadata{
 			Description: "Test failure clusters for " + luciProject + " with cluster metrics. Periodically updated from clustered_failures table with ~15 minute staleness.",
-			ViewQuery:   `SELECT * FROM internal.cluster_summaries WHERE project = "` + luciProject + `"`,
+			ViewQuery:   `SELECT * FROM internal.cluster_summaries WHERE ` + projectWhereClause(luciProject),
 			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
@@ -156,7 +151,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 		return &bigquery.TableMetadata{
 			Description: "Contains all test verdicts produced by " + luciProject + ". See go/luci-analysis-verdict-export-proposal.",
-			ViewQuery:   `SELECT * FROM internal.test_verdicts WHERE project = "` + luciProject + `"`,
+			ViewQuery:   `SELECT * FROM internal.test_verdicts WHERE ` + projectWhereClause(luciProject),
 			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
@@ -167,7 +162,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 		return &bigquery.TableMetadata{
 			Description: "Contains test variant histories segmented by change point analysis. See go/luci-test-variant-analysis-design.",
-			ViewQuery:   `SELECT * FROM internal.test_variant_segments WHERE project = "` + luciProject + `"`,
+			ViewQuery:   `SELECT * FROM internal.test_variant_segments WHERE ` + projectWhereClause(luciProject),
 			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
@@ -176,7 +171,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		if err := pbutil.ValidateProject(luciProject); err != nil {
 			panic(err)
 		}
-		viewQuery := fmt.Sprintf(segmentsUnexpectedRealtimePerProjectQuery, luciProject)
+		viewQuery := fmt.Sprintf(segmentsUnexpectedRealtimePerProjectQuery, projectWhereClause(luciProject))
 		return &bigquery.TableMetadata{
 			Description: "Contains test variant histories segmented by change point analysis, limited to test variants with unexpected" +
 				" results in postsubmit in the last 90 days. See go/luci-test-variant-analysis-design.",
@@ -202,6 +197,25 @@ func CronHandler(ctx context.Context, gcpProject string) (retErr error) {
 		return err
 	}
 	return nil
+}
+
+func projectWhereClause(luciProject string) string {
+	// Special treatment for chromium/chrome project views.
+	if luciProject == "chromium" {
+		// Enclose in brackets to ensure expression is evaluated to
+		// a boolean wherever it is injected. I.E. So that
+		// `WHERE something = a AND ` + projectWhereClause(luciProject) is safe.
+		return `(project = "chromium" OR STARTS_WITH(project, "chromium-m"))`
+	} else if luciProject == "chrome" {
+		return `(project IN ("chromium", "chrome") OR STARTS_WITH(project, "chromium-m") OR STARTS_WITH(project, "chrome-m"))`
+	}
+
+	// Other LUCI Projects.
+	// Revalidate project as safeguard against SQL-Injection.
+	if err := pbutil.ValidateProject(luciProject); err != nil {
+		panic(err)
+	}
+	return `(project = "` + luciProject + `")`
 }
 
 func ensureViews(ctx context.Context, bqClient *bigquery.Client) error {
