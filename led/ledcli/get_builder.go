@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
 )
@@ -58,9 +57,10 @@ type cmdGetBuilder struct {
 	experiments          stringmapflag.Value
 	processedExperiments map[string]bool
 
-	project string
-	bucket  string
-	builder string
+	project  string
+	bucket   string
+	builder  string
+	bucketV1 string
 }
 
 func (c *cmdGetBuilder) initFlags(opts cmdBaseOptions) {
@@ -160,16 +160,10 @@ func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string,
 	}
 
 	c.builder = bldr.builder
-	if c.realBuild {
-		c.project = bldr.project
-		c.bucket = bldr.v2Bucket
-		if c.project == "" {
-			return errors.New("empty project")
-		}
-	} else {
-		c.bucket = bldr.v1Bucket
-	}
-	if c.bucket == "" {
+	c.project = bldr.project
+	c.bucket = bldr.v2Bucket
+	c.bucketV1 = bldr.v1Bucket
+	if c.bucket == "" && c.bucketV1 == "" {
 		return errors.New("empty bucket")
 	}
 	if c.builder == "" {
@@ -177,10 +171,6 @@ func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string,
 	}
 	if !c.realBuild && len(c.experiments) > 0 {
 		return errors.Reason("setting experiments only works in real-build mode.").Err()
-	}
-	if !c.realBuild {
-		// TODO(b/324312802): make c.realBuild to be true by default.
-		logging.Warningf(ctx, "led get-builder without -real-build is scheduled to be deprecated at the end of Q1, 2024. Please follow http://shortn/_9FEIA3yZbK to enable led real builds in your project/bucket.")
 	}
 	if c.processedExperiments, err = processExperiments(c.experiments); err != nil {
 		return err
@@ -201,6 +191,8 @@ func (c *cmdGetBuilder) execute(ctx context.Context, authClient *http.Client, _ 
 
 		KitchenSupport: c.kitchenSupport,
 		RealBuild:      c.realBuild,
+
+		BucketV1: c.bucketV1,
 	})
 }
 

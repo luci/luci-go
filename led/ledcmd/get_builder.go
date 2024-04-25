@@ -24,10 +24,12 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/job/jobcreate"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // GetBuildersOpts are the options for GetBuilder.
@@ -43,17 +45,32 @@ type GetBuildersOpts struct {
 
 	KitchenSupport job.KitchenSupport
 	RealBuild      bool
+
+	BucketV1 string
 }
 
-func getBuilderJobName(opts GetBuildersOpts) string {
-	return fmt.Sprintf(`get-builder %s:%s`, opts.Bucket, opts.Builder)
+func getBuilderJobName(opts GetBuildersOpts, realBuild bool) string {
+	if realBuild {
+		return fmt.Sprintf(`get-builder %s:%s:%s`, opts.Project, opts.Bucket, opts.Builder)
+	}
+	return fmt.Sprintf(`get-builder %s:%s`, opts.BucketV1, opts.Builder)
 }
 
 // GetBuilder retrieves a new job Definition from a Buildbucket builder.
 func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOpts) (*job.Definition, error) {
+	jd, err := synthesizeBuildFromBuilder(ctx, authClient, opts)
 	if opts.RealBuild {
-		return synthesizeBuildFromBuilder(ctx, authClient, opts)
+		return jd, err
 	}
+
+	jdBucket := jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetBuilder().GetBucket()
+	if err == nil && jdBucket != opts.Bucket {
+		// The builder has shadow bucket enabled, switch to real build mode automatically.
+		logging.Infof(ctx, "Bucket %s has shadow bucket %s, Switching to led real-build automatically.", opts.Bucket, jdBucket)
+		return jd, err
+	}
+
+	logging.Warningf(ctx, "The legacy led jobs as raw swarming tasks is scheduled to be deprecated at the end of Q1, 2024. Please follow http://shortn/_9FEIA3yZbK to enable led real builds in your project/bucket.")
 
 	if opts.KitchenSupport == nil {
 		opts.KitchenSupport = job.NoKitchenSupport()
@@ -79,7 +96,7 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 	args := &swarmbucket.LegacySwarmbucketApiGetTaskDefinitionRequestMessage{
 		BuildRequest: &swarmbucket.LegacyApiPutRequestMessage{
 			CanaryPreference: canaryPref,
-			Bucket:           opts.Bucket,
+			Bucket:           opts.BucketV1,
 			ParametersJson:   string(data),
 			Tags:             opts.ExtraTags,
 		},
@@ -97,8 +114,8 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 
 	newTask := toNewTaskRequest(newRpcsTask)
 
-	jd, err := jobcreate.FromNewTaskRequest(
-		ctx, newTask, getBuilderJobName(opts),
+	jd, err = jobcreate.FromNewTaskRequest(
+		ctx, newTask, getBuilderJobName(opts, false),
 		answer.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff, nil, opts.ExtraTags, authClient)
 	if err != nil {
 		return nil, err
@@ -124,7 +141,7 @@ func synthesizeBuildFromBuilder(ctx context.Context, authClient *http.Client, op
 	if err != nil {
 		return nil, err
 	}
-	return jobcreate.FromBuild(build, opts.BuildbucketHost, getBuilderJobName(opts), opts.PriorityDiff, opts.ExtraTags), nil
+	return jobcreate.FromBuild(build, opts.BuildbucketHost, getBuilderJobName(opts, true), opts.PriorityDiff, opts.ExtraTags), nil
 }
 
 func toNewTaskRequest(r *swarming.SwarmingRpcsNewTaskRequest) *swarmingpb.NewTaskRequest {

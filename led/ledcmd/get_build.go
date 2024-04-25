@@ -48,8 +48,9 @@ func getBuildJobName(opts GetBuildOpts) string {
 func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (*job.Definition, error) {
 	logging.Infof(ctx, "getting build definition")
 
+	jd, synErr := synthesizeBuildFromTemplate(ctx, authClient, opts)
 	if opts.RealBuild {
-		return synthesizeBuildFromTemplate(ctx, authClient, opts)
+		return jd, synErr
 	}
 
 	bbClient := newBuildbucketClient(authClient, opts.BuildbucketHost)
@@ -73,6 +74,13 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	jdBucket := jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetBuilder().GetBucket()
+	if synErr == nil && jdBucket != answer.GetBuilder().GetBucket() {
+		// The builder has shadow bucket enabled, switch to real build mode automatically.
+		logging.Infof(ctx, "Bucket %s has shadow bucket %s, Switching to led real-build automatically.", answer.GetBuilder().GetBucket(), jdBucket)
+		return jd, err
 	}
 
 	if answer.Infra.GetBuildbucket().GetAgent().GetOutput() != nil {
