@@ -17,16 +17,24 @@ package bq
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	bqpb "go.chromium.org/luci/swarming/proto/bq"
+	"go.chromium.org/luci/swarming/server/model"
+
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetcher(t *testing.T) {
@@ -141,6 +149,108 @@ func TestFetcher(t *testing.T) {
 			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, flushCB)
 			So(gotErr, ShouldEqual, wantErr)
 			So(collected, ShouldResemble, []int64{3, 4, 5, 6, 7, 8, 9, 10}) // doesn't have the last 2
+		})
+	})
+}
+
+func TestConvertTaskResults(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ctx := memory.Use(context.Background())
+
+		// TaskRunResult that has both TaskRequest and PerformanceStats.
+		req1, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00010")
+		So(datastore.Put(ctx, &model.TaskRequest{
+			Key:  req1,
+			Name: "req-1",
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.PerformanceStats{
+			Key:             model.PerformanceStatsKey(ctx, req1),
+			BotOverheadSecs: 123,
+		}), ShouldBeNil)
+		res1 := &model.TaskRunResult{
+			Key: model.TaskRunResultKey(ctx, req1),
+			TaskResultCommon: model.TaskResultCommon{
+				State: apipb.TaskState_COMPLETED,
+			},
+		}
+
+		// TaskRunResult that doesn't have TaskRequest (will be skipped).
+		req2, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00020")
+		res2 := &model.TaskRunResult{
+			Key: model.TaskRunResultKey(ctx, req2),
+			TaskResultCommon: model.TaskResultCommon{
+				State: apipb.TaskState_COMPLETED,
+			},
+		}
+
+		// TaskRunResult that has TaskRequest, but not PerformanceStats.
+		req3, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00030")
+		So(datastore.Put(ctx, &model.TaskRequest{
+			Key:  req3,
+			Name: "req-3",
+		}), ShouldBeNil)
+		res3 := &model.TaskRunResult{
+			Key: model.TaskRunResultKey(ctx, req3),
+			TaskResultCommon: model.TaskResultCommon{
+				State: apipb.TaskState_BOT_DIED,
+			},
+		}
+
+		// TaskRunResult with PerformanceStats entity missing.
+		req4, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00040")
+		So(datastore.Put(ctx, &model.TaskRequest{
+			Key:  req4,
+			Name: "req-4",
+		}), ShouldBeNil)
+		res4 := &model.TaskRunResult{
+			Key: model.TaskRunResultKey(ctx, req4),
+			TaskResultCommon: model.TaskResultCommon{
+				State: apipb.TaskState_COMPLETED,
+			},
+		}
+
+		Convey("Works", func() {
+			out, err := convertTaskResults(ctx,
+				[]*model.TaskRunResult{res1, res2, res3, res4},
+				func(res *model.TaskRunResult, req *model.TaskRequest, perf *model.PerformanceStats) *bqpb.TaskResult {
+					perfInfo := "none"
+					if perf != nil {
+						perfInfo = fmt.Sprintf("%d", int(perf.BotOverheadSecs))
+					}
+					return &bqpb.TaskResult{
+						TaskId: model.RequestKeyToTaskID(res.TaskRequestKey(), model.AsRequest),
+						ServerVersions: []string{
+							req.Name,
+							perfInfo,
+						},
+					}
+				},
+			)
+			So(err, ShouldBeNil)
+
+			So(out, ShouldResembleProto, []*bqpb.TaskResult{
+				{TaskId: "692b33d4feb00010", ServerVersions: []string{"req-1", "123"}},
+				{TaskId: "692b33d4feb00030", ServerVersions: []string{"req-3", "none"}},
+				{TaskId: "692b33d4feb00040", ServerVersions: []string{"req-4", "none"}},
+			})
+		})
+
+		Convey("Transient error", func() {
+			var fb featureBreaker.FeatureBreaker
+			ctx, fb = featureBreaker.FilterRDS(ctx, nil)
+			fb.BreakFeatures(errors.New("BOOM"), "GetMulti")
+
+			_, err := convertTaskResults(ctx,
+				[]*model.TaskRunResult{res1, res2, res3, res4},
+				func(*model.TaskRunResult, *model.TaskRequest, *model.PerformanceStats) *bqpb.TaskResult {
+					panic("should not be called")
+				},
+			)
+
+			So(err, ShouldErrLike, "BOOM")
+			So(transient.Tag.In(err), ShouldBeTrue)
 		})
 	})
 }

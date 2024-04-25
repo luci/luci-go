@@ -23,6 +23,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	bqpb "go.chromium.org/luci/swarming/proto/bq"
@@ -181,8 +183,8 @@ func TaskRunResultsFetcher() AbstractFetcher {
 		timestampField: "completed_ts",
 		queryBatchSize: queryBatchSize,
 		flushThreshold: flushThreshold,
-		convert: func(context.Context, []*model.TaskRunResult) ([]*bqpb.TaskResult, error) {
-			panic("not implemented")
+		convert: func(ctx context.Context, entities []*model.TaskRunResult) ([]*bqpb.TaskResult, error) {
+			return convertTaskResults(ctx, entities, taskRunResult)
 		},
 	}
 }
@@ -195,8 +197,101 @@ func TaskResultSummariesFetcher() AbstractFetcher {
 		timestampField: "completed_ts",
 		queryBatchSize: queryBatchSize,
 		flushThreshold: flushThreshold,
-		convert: func(context.Context, []*model.TaskResultSummary) ([]*bqpb.TaskResult, error) {
-			panic("not implemented")
+		convert: func(ctx context.Context, entities []*model.TaskResultSummary) ([]*bqpb.TaskResult, error) {
+			return convertTaskResults(ctx, entities, taskResultSummary)
 		},
 	}
+}
+
+// TaskRunResult and TaskResultSummary fetchers share implementation. The only
+// difference is in how they are converted to BQ rows in the end by the
+// `converter` callback.
+
+type taskResultEntity[T any] interface {
+	*T
+	TaskRequestKey() *datastore.Key
+	PerformanceStatsKey(ctx context.Context) *datastore.Key
+}
+
+func convertTaskResults[T any, TP taskResultEntity[T]](
+	ctx context.Context,
+	entities []TP,
+	converter func(TP, *model.TaskRequest, *model.PerformanceStats) *bqpb.TaskResult,
+) ([]*bqpb.TaskResult, error) {
+	// Things to fetch.
+	reqs := make([]*model.TaskRequest, 0, len(entities))
+	stat := make([]*model.PerformanceStats, 0, len(entities))
+
+	// Index of the original entity => index of its PerformanceStats in `stat`.
+	statMap := make(map[int]int, len(entities))
+
+	for idx, ent := range entities {
+		reqs = append(reqs, &model.TaskRequest{Key: ent.TaskRequestKey()})
+		if statsKey := ent.PerformanceStatsKey(ctx); statsKey != nil {
+			stat = append(stat, &model.PerformanceStats{Key: statsKey})
+			statMap[idx] = len(stat) - 1
+		}
+	}
+
+	var reqsErr error
+	var statErr error
+
+	// Fetch both lists in parallel.
+	if err := datastore.Get(ctx, reqs, stat); err != nil {
+		var merr errors.MultiError
+		if errors.As(err, &merr) {
+			// Errors specific to entities being fetched.
+			reqsErr, statErr = merr[0], merr[1]
+		} else {
+			// Some generic RPC error, applies to both lists.
+			reqsErr, statErr = err, err
+		}
+	}
+
+	// Join the results and convert to BQ format.
+	out := make([]*bqpb.TaskResult, 0, len(entities))
+	for idx, ent := range entities {
+		taskID := model.RequestKeyToTaskID(ent.TaskRequestKey(), model.AsRequest)
+
+		// TaskRequest **must** be there. Skip broken tasks that don't have it.
+		req, err := entityOrErr(reqs, reqsErr, idx)
+		switch {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			logging.Errorf(ctx, "Missing TaskRequest for %q, skipping", taskID)
+			continue
+		case err != nil:
+			return nil, errors.Annotate(err, "fetching TaskRequest %q", taskID).Tag(transient.Tag).Err()
+		}
+
+		// PerformanceStats may be missing if the task didn't run, this is OK.
+		var stats *model.PerformanceStats
+		if statsIdx, ok := statMap[idx]; ok {
+			stats, err = entityOrErr(stat, statErr, statsIdx)
+			if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
+				return nil, errors.Annotate(err, "fetching PerformanceStats for %q", taskID).Tag(transient.Tag).Err()
+			}
+		}
+
+		out = append(out, converter(ent, req, stats))
+	}
+
+	return out, nil
+}
+
+func entityOrErr[T any](res []T, err error, idx int) (T, error) {
+	if err == nil {
+		return res[idx], nil
+	}
+
+	var merr errors.MultiError
+	if errors.As(err, &merr) {
+		if err := merr[idx]; err != nil {
+			var zero T
+			return zero, err
+		}
+		return res[idx], nil
+	}
+
+	var zero T
+	return zero, err
 }

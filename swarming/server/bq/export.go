@@ -255,13 +255,9 @@ func exportTask(ctx context.Context, client *managedwriter.Client, t *taskspb.Ex
 	case BotEvents:
 		fetcher = BotEventsFetcher()
 	case TaskRunResults:
-		// TODO(vadimsh): fetcher = TaskRunResultsFetcher()
-		logging.Infof(ctx, "Not implemented yet")
-		return nil
+		fetcher = TaskRunResultsFetcher()
 	case TaskResultSummaries:
-		// TODO(vadimsh): fetcher = TaskResultSummariesFetcher()
-		logging.Infof(ctx, "Not implemented yet")
-		return nil
+		fetcher = TaskResultSummariesFetcher()
 	default:
 		return errors.Reason("unknown table name %q", t.TableName).Tag(tq.Fatal).Err()
 	}
