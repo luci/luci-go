@@ -102,7 +102,8 @@ func extractReadyForExportNotification(r *http.Request) (*rdbpb.InvocationReadyF
 	}
 
 	var run rdbpb.InvocationReadyForExportNotification
-	err := protojson.Unmarshal(msg.Message.Data, &run)
+	unmarshalOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
+	err := unmarshalOpts.Unmarshal(msg.Message.Data, &run)
 	if err != nil {
 		return nil, errors.Annotate(err, "parsing pubsub message data").Err()
 	}

@@ -101,7 +101,8 @@ func extractPubSubRun(r *http.Request) (*cvv1.PubSubRun, error) {
 	}
 
 	var run cvv1.PubSubRun
-	err := protojson.Unmarshal(msg.Message.Data, &run)
+	unmarshalOpts := protojson.UnmarshalOptions{DiscardUnknown: true}
+	err := unmarshalOpts.Unmarshal(msg.Message.Data, &run)
 	if err != nil {
 		return nil, errors.Annotate(err, "could not parse cv pubsub message data").Err()
 	}
