@@ -47,7 +47,7 @@ func TestExportToJSON(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(out, ShouldEqual, `{
   "bot": {
-    "botId": "bot-id",
+    "bot_id": "bot-id",
     "info": {
       "devices": [
         {
@@ -73,7 +73,7 @@ func TestExportToJSON(t *testing.T) {
     }
   },
   "event": "BOT_NEW_SESSION",
-  "eventMsg": "hello"
+  "event_msg": "hello"
 }`)
 	})
 
@@ -101,22 +101,22 @@ func TestExportToJSON(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(out, ShouldEqual, `{
-  "botPingTolerance": "9.500s",
-  "taskSlices": [
+  "bot_ping_tolerance": "9.500s",
+  "task_slices": [
     {
       "expiration": "4.500s",
       "properties": {
-        "executionTimeout": "1.500s",
-        "gracePeriod": "3.500s",
-        "ioTimeout": "2.500s"
+        "execution_timeout": "1.500s",
+        "grace_period": "3.500s",
+        "io_timeout": "2.500s"
       }
     },
     {
       "expiration": "8.500s",
       "properties": {
-        "executionTimeout": "5.500s",
-        "gracePeriod": "7.500s",
-        "ioTimeout": "6.500s"
+        "execution_timeout": "5.500s",
+        "grace_period": "7.500s",
+        "io_timeout": "6.500s"
       }
     }
   ]

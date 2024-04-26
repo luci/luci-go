@@ -56,7 +56,7 @@ func init() {
 	}
 }
 
-// exportToJSON converts a protobuf message to JSON.
+// exportToJSON converts a protobuf message to JSON for PubSub export.
 //
 // It understands `swarming.bq.marshal_to_json_as` field options.
 func exportToJSON(msg proto.Message) (string, error) {
@@ -67,7 +67,9 @@ func exportToJSON(msg proto.Message) (string, error) {
 	}
 
 	// Serialize to JSON using default proto encoding rules.
-	raw, err := protojson.Marshal(msg)
+	raw, err := (protojson.MarshalOptions{
+		UseProtoNames: true,
+	}).Marshal(msg)
 	if err != nil {
 		return "", err
 	}
@@ -131,7 +133,7 @@ func buildMessageFixer(typ protoreflect.MessageDescriptor) messageFixer {
 
 	for i := 0; i < fields.Len(); i++ {
 		field := fields.Get(i)
-		jsonKey := field.JSONName()
+		jsonKey := string(field.Name())
 
 		// See if this field is annotated with `marshal_to_json_as` option.
 		if opts := field.Options(); opts != nil && proto.HasExtension(opts, bqpb.E_MarshalToJsonAs) {
