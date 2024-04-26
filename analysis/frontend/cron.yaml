@@ -45,3 +45,6 @@ cron:
 - description: "Attribute filtered test runs to the test failures that caused the test to be filtered."
   url: /internal/cron/attribute-filtered-test-runs
   schedule: every 15 minutes from 00:11 to 23:59
+- description: "Create or replace the test_variant_changepoints table."
+  url: /internal/cron/update-changepoint-table
+  schedule: every 5 minutes synchronized

@@ -40,6 +40,7 @@ import (
 	migrationpb "go.chromium.org/luci/analysis/internal/bugs/monorail/migration/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
+	bqupdator "go.chromium.org/luci/analysis/internal/changepoints/bqupdater"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -145,6 +146,9 @@ func Main(init func(srv *luciserver.Server) error) {
 		})
 		cron.RegisterHandler("merge-test-variant-branches", func(ctx context.Context) error {
 			return cpbq.MergeTables(ctx, srv.Options.CloudProject)
+		})
+		cron.RegisterHandler("update-changepoint-table", func(ctx context.Context) error {
+			return bqupdator.UpdateChangepointTable(ctx, srv.Options.CloudProject)
 		})
 
 		// Pub/Sub subscription endpoints.
