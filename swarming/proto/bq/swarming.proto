@@ -10,6 +10,16 @@ option go_package = "go.chromium.org/luci/swarming/proto/bq;bqpb";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/swarming/proto/api_v2/swarming.proto";
+import "go.chromium.org/luci/swarming/proto/bq/options.proto";
+
+
+// This schema matches BigQuery tables using following conversion rules
+// https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+//
+// But for historical reasons PubSub JSON export stream has a slightly different
+// schema. Differences are annotated by swarming.bq.marshal_to_json_as field
+// option. Basically, some string fields that contain JSON are "inlined" and
+// fields that represent durations are serialized as google.protobuf.Duration.
 
 
 // BotEventType defines the reason why BotEvent was created.
@@ -454,7 +464,7 @@ message TaskRequest {
 
   // Maximum delay between bot pings before the bot is considered dead
   // while running a task in seconds.
-  double bot_ping_tolerance = 12;
+  double bot_ping_tolerance = 12 [(swarming.bq.marshal_to_json_as) = DURATION];
 }
 
 
@@ -472,7 +482,7 @@ message TaskSlice {
   // If this task slice is not picked up by a bot after waiting this number of
   // seconds, the next one will be processed. If this is the last slice, the
   // task will fail with EXPIRED error.
-  double expiration = 2;
+  double expiration = 2 [(swarming.bq.marshal_to_json_as) = DURATION];
 
   // This flag controls what to do if there are no bots online with requested
   // dimensions when this slice is submitted.
@@ -601,16 +611,16 @@ message TaskProperties {
 
   // Maximum number of seconds the task can run before its process is forcibly
   // terminated and the task results in TIMED_OUT.
-  double execution_timeout = 13;
+  double execution_timeout = 13 [(swarming.bq.marshal_to_json_as) = DURATION];
 
   // Maximum number of seconds the task may be silent (no output to stdout nor
   // stderr) before it is considered hung and it forcibly terminated early and
   // the task results in TIMED_OUT_SILENCE.
-  double io_timeout = 14;
+  double io_timeout = 14 [(swarming.bq.marshal_to_json_as) = DURATION];
 
   // Number of second to give the child process after a SIGTERM before sending a
   // SIGKILL.
-  double grace_period = 15;
+  double grace_period = 15 [(swarming.bq.marshal_to_json_as) = DURATION];
 
   // True if it is OK to reuse results of a previously successfully completed
   // idempotent task with them same Properties.
@@ -745,7 +755,7 @@ message BotInfo {
   //
   // Anything that is usable by multiple customers should eventually be moved to
   // a new field below.
-  string supplemental = 1;
+  string supplemental = 1 [(swarming.bq.marshal_to_json_as) = JSON];
 
   // Bot's version. An opaque value.
   //
@@ -804,7 +814,7 @@ message PhysicalEntity {
   //
   // Anything that is usable by multiple customers should eventually be moved to
   // a new field below.
-  string supplemental = 2;
+  string supplemental = 2 [(swarming.bq.marshal_to_json_as) = JSON];
 
   // IP address as visible by the bot process (bot_main) itself.
   //
@@ -852,7 +862,7 @@ message TaskResult {
   google.protobuf.Timestamp end_time = 5;
 
   // Duration of the task in seconds. This excludes overheads.
-  double duration = 6;
+  double duration = 6 [(swarming.bq.marshal_to_json_as) = DURATION];
 
   // Execution information.
 
@@ -1026,10 +1036,10 @@ message TaskPerformance {
   // This is calculated by subtracting the duration of the actual task command
   // from the overall duration of the task (that includes fetching of inputs
   // reporting of results).
-  double total_overhead = 5;
+  double total_overhead = 5 [(swarming.bq.marshal_to_json_as) = DURATION];
 
   // Overhead in seconds that is not accounted for by the other overheads.
-  double other_overhead = 2;
+  double other_overhead = 2 [(swarming.bq.marshal_to_json_as) = DURATION];
 
   // Deprecated: use setup_overhead instead.
   // Task environment setup overhead. This is the task state
@@ -1054,7 +1064,7 @@ message TaskPerformance {
 // Overhead information about setup.
 message TaskSetupOverhead {
   // Duration of this overhead in seconds.
-  double duration = 1;
+  double duration = 1 [(swarming.bq.marshal_to_json_as) = DURATION];
   // Cache trimming overhead.
   CacheTrimOverhead cache_trim = 2;
   // CIPD package installation overhead.
@@ -1069,7 +1079,7 @@ message TaskSetupOverhead {
 // Overhead information about teardown.
 message TaskTeardownOverhead {
   // Duration of this overhead in seconds.
-  double duration = 1;
+  double duration = 1 [(swarming.bq.marshal_to_json_as) = DURATION];
   // CAS upload overhead.
   CASOverhead cas = 2;
   // Named cache uninstall overhead.
@@ -1082,28 +1092,28 @@ message TaskTeardownOverhead {
 // Overhead information about cache trimming.
 message CacheTrimOverhead {
   // Duration of this overhead in seconds.
-  double duration = 1;
+  double duration = 1 [(swarming.bq.marshal_to_json_as) = DURATION];
 }
 
 
 // Overhead information about CIPD package installation.
 message CIPDOverhead {
   // Duration of this overhead in seconds.
-  double duration = 1;
+  double duration = 1 [(swarming.bq.marshal_to_json_as) = DURATION];
 }
 
 
 // Overhead information about Named Caches install or uninstall.
 message NamedCacheOverhead {
   // Duration of this overhead in seconds.
-  double duration = 1;
+  double duration = 1 [(swarming.bq.marshal_to_json_as) = DURATION];
 }
 
 
 // Overhead information about CAS download or upload.
 message CASOverhead {
   // Duration of this overhead in seconds.
-  double duration = 1;
+  double duration = 1 [(swarming.bq.marshal_to_json_as) = DURATION];
   // CAS entries that were not present in the local or remote cache and had to
   // be sent across the network.
   CASEntriesStats cold = 2;
@@ -1115,14 +1125,14 @@ message CASOverhead {
 // Overhead information about cleanup step.
 message CleanupOverhead {
   // Duration of this overhead in seconds.
-  double duration = 1;
+  double duration = 1 [(swarming.bq.marshal_to_json_as) = DURATION];
 }
 
 
 // Deprecated: Use TaskSetupOverhead or TaskTeardownOverhead instead.
 message TaskOverheadStats {
   // Duration of this overhead in seconds.
-  double duration = 1;
+  double duration = 1 [(swarming.bq.marshal_to_json_as) = DURATION];
   // CAS entries that were not present in the local or remote cache and had to
   // be sent across the network.
   CASEntriesStats cold = 2;
