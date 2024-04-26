@@ -38,6 +38,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+const testHostname = "test.resultdb.deployment.luci.app"
+
 func TestPropagate(t *testing.T) {
 	Convey(`Propagate`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
@@ -127,6 +129,7 @@ func TestPropagate(t *testing.T) {
 				So(visited, ShouldResemble, invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2"))
 				So(notifications, ShouldResembleProto, []*pb.InvocationReadyForExportNotification{
 					{
+						ResultdbHost:        testHostname,
 						RootInvocation:      "invocations/inv-root-a",
 						RootInvocationRealm: "projecta:root",
 						Invocation:          "invocations/inv-a",
@@ -134,6 +137,7 @@ func TestPropagate(t *testing.T) {
 						Sources:             sources,
 					},
 					{
+						ResultdbHost:        testHostname,
 						RootInvocation:      "invocations/inv-root-a",
 						RootInvocationRealm: "projecta:root",
 						Invocation:          "invocations/inv-a1",
@@ -208,6 +212,7 @@ func TestPropagate(t *testing.T) {
 			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2"))
 			So(notifications, ShouldResembleProto, []*pb.InvocationReadyForExportNotification{
 				{
+					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-a",
 					RootInvocationRealm: "projecta:root",
 					Invocation:          "invocations/inv-a",
@@ -215,6 +220,7 @@ func TestPropagate(t *testing.T) {
 					Sources:             sources,
 				},
 				{
+					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-a",
 					RootInvocationRealm: "projecta:root",
 					Invocation:          "invocations/inv-a1",
@@ -312,6 +318,7 @@ func TestPropagate(t *testing.T) {
 			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-d", "inv-d1", "inv-d1a"))
 			So(notifications, ShouldResembleProto, []*pb.InvocationReadyForExportNotification{
 				{
+					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-d",
 					RootInvocationRealm: "testproject:testrealm",
 					Invocation:          "invocations/inv-root-d",
@@ -319,6 +326,7 @@ func TestPropagate(t *testing.T) {
 					Sources:             sources,
 				},
 				{
+					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-d",
 					RootInvocationRealm: "testproject:testrealm",
 					Invocation:          "invocations/inv-d1",
@@ -326,6 +334,7 @@ func TestPropagate(t *testing.T) {
 					Sources:             sources,
 				},
 				{
+					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-d",
 					RootInvocationRealm: "testproject:testrealm",
 					Invocation:          "invocations/inv-d1a",
@@ -374,6 +383,7 @@ func TestPropagate(t *testing.T) {
 			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-e", "inv-e"))
 			So(notifications, ShouldResembleProto, []*pb.InvocationReadyForExportNotification{
 				{
+					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-e",
 					RootInvocationRealm: "projecte:root",
 					Invocation:          "invocations/inv-e",
@@ -398,7 +408,10 @@ func TestPropagate(t *testing.T) {
 func propagateRecursive(ctx context.Context, sched *tqtesting.Scheduler, task *taskspb.RunExportNotifications) (visited invocations.IDSet, sentMessages []*pb.InvocationReadyForExportNotification, err error) {
 	index := len(sched.Tasks().Payloads())
 
-	err = propagate(ctx, task)
+	options := Options{
+		ResultDBHostname: testHostname,
+	}
+	err = propagate(ctx, task, options)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "invocation %s", task.InvocationId).Err()
 	}
@@ -417,7 +430,7 @@ func propagateRecursive(ctx context.Context, sched *tqtesting.Scheduler, task *t
 			}
 			visited.Add(invID)
 
-			err := propagate(ctx, task)
+			err := propagate(ctx, task, options)
 			if err != nil {
 				return nil, nil, errors.Annotate(err, "invocation %s", task.InvocationId).Err()
 			}

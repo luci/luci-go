@@ -63,13 +63,20 @@ var RunExportNotificationsTasks = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/exportnotifier",
 })
 
+type Options struct {
+	// Hostname of the luci.resultdb.v1.ResultDB service which can be
+	// queried to fetch the details of invocations being exported.
+	// E.g. "results.api.cr.dev".
+	ResultDBHostname string
+}
+
 // InitServer initializes a exportnotifier server.
-func InitServer(srv *server.Server) error {
+func InitServer(srv *server.Server, opts Options) error {
 	RunExportNotificationsTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.RunExportNotifications)
 		// Propogate export roots and send `invocation ready for export`
 		// notifications as needed.
-		return propagate(ctx, task)
+		return propagate(ctx, task, opts)
 	})
 	return nil
 }
@@ -96,7 +103,7 @@ func InitServer(srv *server.Server) error {
 // export roots will be eventually consistent with the state of
 // invocations in ResultDB, after all pending tasks for that
 // invocation graph have completed.
-func propagate(ctx context.Context, task *taskspb.RunExportNotifications) error {
+func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts Options) error {
 	// The task body can be split up into multiple transactions, where
 	// it does not cause us to violate any of the following rules:
 	//   - We read whatever was present at a time after the task
@@ -165,6 +172,7 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications) error 
 
 			// Create pub/sub message.
 			notification := &pb.InvocationReadyForExportNotification{
+				ResultdbHost:        opts.ResultDBHostname,
 				RootInvocation:      root.RootInvocation.Name(),
 				RootInvocationRealm: rootRealm,
 				Invocation:          root.Invocation.Name(),
