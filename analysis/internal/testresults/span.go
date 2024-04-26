@@ -245,7 +245,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 		changelistHosts = append(changelistHosts, CompressHost(cl.Host))
 		changelistChanges = append(changelistChanges, cl.Change)
 		changelistPatchsets = append(changelistPatchsets, int64(cl.Patchset))
-		changelistOwnerKinds = append(changelistOwnerKinds, ownerKindToDB(cl.OwnerKind))
+		changelistOwnerKinds = append(changelistOwnerKinds, OwnerKindToDB(cl.OwnerKind))
 	}
 
 	hasDirtySources := spanner.NullBool{Bool: tr.Sources.IsDirty, Valid: tr.Sources.IsDirty}

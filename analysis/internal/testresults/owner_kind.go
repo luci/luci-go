@@ -16,8 +16,8 @@ package testresults
 
 import pb "go.chromium.org/luci/analysis/proto/v1"
 
-// ownerKindToDB encodes owner kind to its database representation.
-func ownerKindToDB(value pb.ChangelistOwnerKind) string {
+// OwnerKindToDB encodes owner kind to its database representation.
+func OwnerKindToDB(value pb.ChangelistOwnerKind) string {
 	switch value {
 	case pb.ChangelistOwnerKind_AUTOMATION:
 		return "A"

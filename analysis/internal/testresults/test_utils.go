@@ -137,7 +137,7 @@ func (b TestResultBuilder) WithSources(sources Sources) TestResultBuilder {
 	// Copy sources to avoid aliasing artifacts. Changes made to
 	// slices within the sources struct after this call should
 	// not propagate to the test result.
-	b.result.Sources = copySources(sources)
+	b.result.Sources = CopySources(sources)
 	return b
 }
 
@@ -151,12 +151,12 @@ func (b TestResultBuilder) Build() *TestResult {
 	// not change the returned test verdict.
 	result := new(TestResult)
 	*result = b.result
-	result.Sources = copySources(b.result.Sources)
+	result.Sources = CopySources(b.result.Sources)
 	return result
 }
 
-// copySources makes a deep copy of the given code sources.
-func copySources(sources Sources) Sources {
+// CopySources makes a deep copy of the given code sources.
+func CopySources(sources Sources) Sources {
 	var refHash []byte
 	if sources.RefHash != nil {
 		refHash = make([]byte, len(sources.RefHash))

@@ -435,6 +435,110 @@ CREATE TABLE TestResults (
 ) PRIMARY KEY(Project, TestId, PartitionTime DESC, VariantHash, IngestedInvocationId, RunIndex, ResultIndex)
 , ROW DELETION POLICY (OLDER_THAN(PartitionTime, INTERVAL 90 DAY));
 
+-- Stores test results by source position from the ResultDB low-latency data
+-- feed. Note that as data is coming from low-latency feed, not all results
+-- for a verdict may be populated at once.
+-- Test results without sources are not retained.
+-- Currently only retained for 15 days, to meet needs of exoneration analysis.
+CREATE TABLE TestResultsBySourcePosition (
+  -- Primary key fields.
+  -- Note: SourceRefHash, SourcePosition are not included in the primary
+  -- key for uniqueness, but to speed up finding nearby test results.
+
+  -- The LUCI Project the root invocation belongs to.
+  Project STRING(40) NOT NULL,
+
+  -- Unique identifier of the test.
+  -- This has the same value as luci.resultdb.v1.TestResult.test_id.
+  TestId STRING(MAX) NOT NULL,
+
+  -- A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
+  -- Combination of Realm, TestId and VariantHash can identify a test variant.
+  VariantHash STRING(16) NOT NULL,
+
+  -- The identity of the source reference (e.g. git reference / branch) that was tested.
+  -- See go.chromium.org/luci/analysis/pbutil.SourceRefHash for details.
+  SourceRefHash BYTES(8) NOT NULL,
+
+  -- The position along the given source reference that was tested.
+  -- This excludes any unsubmitted changes that were tested, which are
+  -- noted separately in the Changelist... fields below.
+  SourcePosition INT64 NOT NULL,
+
+  -- The root invocation from which these test results were ingested.
+  -- This is the top-level invocation that was ingested.
+  RootInvocationId STRING(MAX) NOT NULL,
+
+  -- The invocation which was the immediate parent of the test result.
+  InvocationId STRING(MAX) NOT NULL,
+
+  -- The identifier of the test result within the invocation.
+  ResultId STRING(MAX) NOT NULL,
+
+  -- Test result properties.
+
+  -- The time the process that produced the test result started.
+  -- Start of the test result's retention time period.
+  PartitionTime TIMESTAMP NOT NULL,
+
+  -- The realm of the root invocation, excluding project. 62 as ResultDB allows
+  -- at most 64 characters for the construction "<project>:<realm>" and project
+  -- must be at least one character.
+  SubRealm STRING(62) NOT NULL,
+
+  -- Whether the test result was expected.
+  IsUnexpected BOOL NOT NULL,
+
+  -- The test result status.
+  Status INT64 NOT NULL,
+
+  -- The following fields capture information about any unsubmitted
+  -- changelists that were tested by the test execution. The arrays
+  -- are matched in length and correspond in index, i.e.
+  -- ChangelistHosts[OFFSET(0)] corresponds with ChangelistChanges[OFFSET(0)]
+  -- and ChangelistPatchsets[OFFSET(0)],
+  -- with the exception of ChangelistOwnerKinds, for which correspondance
+  -- is not guaranteed until March 2023 (as the column was retrofitted later).
+  --
+  -- Changelists are stored in ascending lexicographical order (over
+  -- (hostname, change, patchset)).
+  -- They will be set for all presubmit runs, and may be set for other
+  -- builds as well (even those outside a formal LUCI CV run) based on
+  -- buildbucket inputs. At most 10 changelists are included.
+
+  -- Hostname(s) of the gerrit instance of the changelist that was tested
+  -- (if any). For storage efficiency, the suffix "-review.googlesource.com"
+  -- is not stored if it is present. When reading, if the value read
+  -- does not contain dots ('.'), the suffix should be added back.
+  -- Otherwise, the value can be assumed to be complete.
+  ChangelistHosts ARRAY<STRING(255)> NOT NULL,
+
+  -- The changelist number(s), e.g. 12345.
+  ChangelistChanges ARRAY<INT64> NOT NULL,
+
+  -- The patchset number(s) of the changelist, e.g. 1.
+  ChangelistPatchsets ARRAY<INT64> NOT NULL,
+
+  -- The changelist owner kind(s). Elements in this array correspond to
+  -- one of the luci.analysis.v1.ChangelistOwnerKinds values.
+  -- 'U' corresponds to a User changelist, 'A' corresponds to an Automation
+  -- changelist, and '' corresponds to a changelist of unspecified origin.
+  ChangelistOwnerKinds ARRAY<STRING(1)> NOT NULL,
+
+  -- Whether there were any changes made to the sources, not described above.
+  -- For example, a version of a dependency was uprevved in the build (e.g.
+  -- in an autoroller recipe).
+  --
+  -- Cherry-picking a changelist on top of the base checkout is not considered
+  -- making the sources dirty as it is reported separately above.
+  HasDirtySources BOOL NOT NULL,
+) PRIMARY KEY(Project, TestId, VariantHash, SourceRefHash, SourcePosition DESC, RootInvocationId, InvocationId, ResultId)
+, ROW DELETION POLICY (OLDER_THAN(PartitionTime, INTERVAL 15 DAY));
+
+
 -- Stores whether gerrit changes are user or authomation authored.
 -- This is used as a cache to avoid excessive RPCs to gerrit.
 --
