@@ -122,6 +122,24 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 	if err != nil {
 		return nil
 	}
+	// TODO - crbug/337269256: Remove after the bug is root caused and returns
+	// error if config group is missing.
+	if len(configGroups) == 0 {
+		logging.Errorf(ctx, "requested purging cl %d, but task has empty config group. Task body: %s", cl.ID, task)
+		// Pick the first config group of a CL instead.
+		if len(cl.ApplicableConfig.GetProjects()) == 0 {
+			return errors.Reason("cl %d doesn't have applicable project", cl.ID).Err()
+		}
+		proj := cl.ApplicableConfig.GetProjects()[0]
+		if len(proj.GetConfigGroupIds()) == 0 {
+			return errors.Reason("cl %d doesn't have applicable config group", cl.ID).Err()
+		}
+		cg, err := prjcfg.GetConfigGroup(ctx, proj.GetName(), prjcfg.ConfigGroupID(proj.GetConfigGroupIds()[0]))
+		if err != nil {
+			return errors.Annotate(err, "failed to load a ConfigGroup").Tag(transient.Tag).Err()
+		}
+		configGroups = append(configGroups, cg)
+	}
 	purgeTriggers, msg, err := triggersToPurge(ctx, configGroups[0].Content, cl, task)
 	switch {
 	case err != nil:
