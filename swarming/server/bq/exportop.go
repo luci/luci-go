@@ -23,6 +23,7 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -30,6 +31,13 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+)
+
+const (
+	// How many raw BigQuery serialized bytes to buffer before flushing them.
+	//
+	// BigQuery's hard limit is 10MB.
+	bqFlushThresholdDefault = 5 * 1024 * 1024
 )
 
 // ExportOp can fetch data from datastore and write it to BigQuery.
@@ -42,7 +50,8 @@ type ExportOp struct {
 	TableID     string                // full table name to write results into
 	Fetcher     AbstractFetcher       // fetches data and coverts it to [][]byte
 
-	stream *managedwriter.ManagedStream
+	bqFlushThreshold int
+	stream           *managedwriter.ManagedStream
 }
 
 // Execute performs the export operation.
@@ -62,14 +71,30 @@ func (p *ExportOp) Execute(ctx context.Context, start time.Time, duration time.D
 		return nil
 	}
 
-	// Upload all the data into the lazily opened write stream.
+	var flushers []*Flusher
+
+	// Flusher that sends rows to BQ via a lazily opened write stream.
 	total := 0
-	err := p.Fetcher.Fetch(ctx, start, duration, func(rows [][]byte) error {
-		total += len(rows)
-		return p.appendRows(ctx, rows)
+	bqFlushThreshold := bqFlushThresholdDefault
+	if p.bqFlushThreshold != 0 {
+		bqFlushThreshold = p.bqFlushThreshold
+	}
+	flushers = append(flushers, &Flusher{
+		CountThreshold: 100000,           // ~= unlimited, BQ doesn't care
+		ByteThreshold:  bqFlushThreshold, // BQ does care about overall request size
+		Marshal:        proto.Marshal,
+		Flush: func(rows [][]byte) error {
+			total += len(rows)
+			return p.appendRows(ctx, rows)
+		},
 	})
+
+	// TODO: PubSub flusher.
+
+	// Do all fetching and uploads.
+	err := p.Fetcher.Fetch(ctx, start, duration, flushers)
 	if err != nil {
-		return errors.Annotate(err, "sending data to BigQuery").Err()
+		return errors.Annotate(err, "exporting rows").Err()
 	}
 
 	// It is possible there was no data to export. We are done in that case. No

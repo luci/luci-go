@@ -222,7 +222,6 @@ func setUp(t *testing.T) (context.Context, *mockedBQ, *ExportOp) {
 			entityKind:     "entity",
 			timestampField: "TS",
 			queryBatchSize: 300,
-			flushThreshold: 6,
 			convert: func(_ context.Context, ents []*entity) ([]*wrapperspb.Int64Value, error) {
 				out := make([]*wrapperspb.Int64Value, len(ents))
 				for i, ent := range ents {
@@ -231,6 +230,7 @@ func setUp(t *testing.T) (context.Context, *mockedBQ, *ExportOp) {
 				return out, nil
 			},
 		},
+		bqFlushThreshold: 6,
 	}
 
 	return ctx, bq, op

@@ -67,7 +67,6 @@ func TestFetcher(t *testing.T) {
 			entityKind:     "entity",
 			timestampField: "TS",
 			queryBatchSize: queryBatchSize,
-			flushThreshold: flushThreshold,
 			// Converts entity IDs to Int64Value protos.
 			convert: func(_ context.Context, ents []*entity) ([]*wrapperspb.Int64Value, error) {
 				convertCalls = append(convertCalls, len(ents))
@@ -87,29 +86,34 @@ func TestFetcher(t *testing.T) {
 		var collected []int64
 
 		// Takes Int64Value protos and appends values in them to `collected`.
-		flushCB := func(rows [][]byte) error {
-			total := 0
-			for _, row := range rows {
-				total += len(row)
-			}
-			flushCalls = append(flushCalls, total)
-			if flushErr != nil {
-				if err := flushErr(total); err != nil {
-					return err
+		flusher := &Flusher{
+			CountThreshold: 1000, // unlimited
+			ByteThreshold:  flushThreshold,
+			Marshal:        proto.Marshal,
+			Flush: func(rows [][]byte) error {
+				total := 0
+				for _, row := range rows {
+					total += len(row)
 				}
-			}
-			for _, row := range rows {
-				var wrapper wrapperspb.Int64Value
-				if err := proto.Unmarshal(row, &wrapper); err != nil {
-					panic(err)
+				flushCalls = append(flushCalls, total)
+				if flushErr != nil {
+					if err := flushErr(total); err != nil {
+						return err
+					}
 				}
-				collected = append(collected, wrapper.Value)
-			}
-			return nil
+				for _, row := range rows {
+					var wrapper wrapperspb.Int64Value
+					if err := proto.Unmarshal(row, &wrapper); err != nil {
+						panic(err)
+					}
+					collected = append(collected, wrapper.Value)
+				}
+				return nil
+			},
 		}
 
 		Convey("Visits correct time range", func() {
-			err := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, flushCB)
+			err := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
 			So(err, ShouldBeNil)
 			So(collected, ShouldResemble, []int64{3, 4, 5, 6, 7, 8, 9, 10, 11, 12})
 
@@ -125,7 +129,7 @@ func TestFetcher(t *testing.T) {
 		Convey("Convert error", func() {
 			wantErr := errors.New("BOOM")
 			convertErr = wantErr
-			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, flushCB)
+			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
 			So(gotErr, ShouldEqual, wantErr)
 			So(collected, ShouldBeEmpty)
 		})
@@ -133,7 +137,7 @@ func TestFetcher(t *testing.T) {
 		Convey("Flush error", func() {
 			wantErr := errors.New("BOOM")
 			flushErr = func(int) error { return wantErr }
-			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, flushCB)
+			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
 			So(gotErr, ShouldEqual, wantErr)
 			So(collected, ShouldBeEmpty)
 		})
@@ -146,7 +150,7 @@ func TestFetcher(t *testing.T) {
 				}
 				return nil
 			}
-			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, flushCB)
+			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
 			So(gotErr, ShouldEqual, wantErr)
 			So(collected, ShouldResemble, []int64{3, 4, 5, 6, 7, 8, 9, 10}) // doesn't have the last 2
 		})

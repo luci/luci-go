@@ -31,17 +31,10 @@ import (
 	"go.chromium.org/luci/swarming/server/model"
 )
 
-const (
-	// How many entities to fetch by default before staring converting them.
-	//
-	// 300 is the internal page size as used by Cloud Datastore queries.
-	queryBatchSize = 300
-
-	// How many raw BigQuery serialized bytes to buffer before flushing them.
-	//
-	// BigQuery's hard limit is 10MB.
-	flushThreshold = 5 * 1024 * 1024
-)
+// How many entities to fetch by default before staring converting them.
+//
+// 300 is the internal page size as used by Cloud Datastore queries.
+const queryBatchSize = 300
 
 // Fetcher knows how to fetch Datastore data that should be exported to BQ.
 //
@@ -51,7 +44,6 @@ type Fetcher[E any, R proto.Message] struct {
 	entityKind     string // e.g. "TaskRequest"
 	timestampField string // e.g. "created_ts"
 	queryBatchSize int    // how many entities to fetch before staring converting them
-	flushThreshold int    // how many bytes to buffer before flushing them
 
 	// convert is a callback that converts a batch of fetched entities to BQ rows.
 	//
@@ -64,7 +56,22 @@ type AbstractFetcher interface {
 	// Descriptor is the proto descriptor of the BQ row protobuf message.
 	Descriptor() *descriptorpb.DescriptorProto
 	// Fetch fetches entities, converts them to BQ rows and flushes the result.
-	Fetch(ctx context.Context, start time.Time, duration time.Duration, flush func(rows [][]byte) error) error
+	Fetch(ctx context.Context, start time.Time, duration time.Duration, flushers []*Flusher) error
+}
+
+// Flusher knows how to serialize rows and flush a bunch of them.
+type Flusher struct {
+	// CountThreshold is how many rows to buffer before flushing them.
+	CountThreshold int
+	// ByteThreshold is how many bytes to buffer before flushing them.
+	ByteThreshold int
+	// Marshal converts a row proto to a raw byte message.
+	Marshal func(proto.Message) ([]byte, error)
+	// Flush flushes a batch of converted messages.
+	Flush func([][]byte) error
+
+	pendingRows     [][]byte
+	pendingRowsSize int
 }
 
 // Descriptor is the proto descriptor of the row protobuf message.
@@ -81,10 +88,8 @@ func (f *Fetcher[E, R]) Descriptor() *descriptorpb.DescriptorProto {
 //
 // Visits entities in range `[start, start+duration)`. Calls `flush` callback
 // when it wants to send a batch of rows to BQ.
-func (f *Fetcher[E, R]) Fetch(ctx context.Context, start time.Time, duration time.Duration, flush func(rows [][]byte) error) error {
+func (f *Fetcher[E, R]) Fetch(ctx context.Context, start time.Time, duration time.Duration, flushers []*Flusher) error {
 	var pendingEntities []*E
-	var pendingRows [][]byte
-	var pendingRowsSize int
 
 	flushPending := func(force bool) error {
 		batch := pendingEntities
@@ -99,28 +104,33 @@ func (f *Fetcher[E, R]) Fetch(ctx context.Context, start time.Time, duration tim
 			}
 		}
 
-		// Split into batches of ~= flushThreshold each, flush them.
-		for _, msg := range protos {
-			pb, err := proto.Marshal(msg)
-			if err != nil {
-				return errors.Annotate(err, "failed to marshal BQ row %v", msg).Err()
+		// Feed to flushers.
+		for _, flusher := range flushers {
+			// Split into batches of ~= flusher.Threshold each, flush them.
+			for _, msg := range protos {
+				pb, err := flusher.Marshal(msg)
+				if err != nil {
+					return errors.Annotate(err, "failed to marshal BQ row %v", msg).Err()
+				}
+				flusher.pendingRows = append(flusher.pendingRows, pb)
+				flusher.pendingRowsSize += len(pb)
+				if len(flusher.pendingRows) >= flusher.CountThreshold || flusher.pendingRowsSize >= flusher.ByteThreshold {
+					flushing := flusher.pendingRows
+					flusher.pendingRows = nil
+					flusher.pendingRowsSize = 0
+					if err := flusher.Flush(flushing); err != nil {
+						return err
+					}
+				}
 			}
-			pendingRows = append(pendingRows, pb)
-			pendingRowsSize += len(pb)
-			if pendingRowsSize >= f.flushThreshold {
-				flushing := pendingRows
-				pendingRows = nil
-				pendingRowsSize = 0
-				if err := flush(flushing); err != nil {
+			// Flush the final batch if asked to.
+			if force && len(flusher.pendingRows) != 0 {
+				if err := flusher.Flush(flusher.pendingRows); err != nil {
 					return err
 				}
 			}
 		}
 
-		// Flush the final batch if asked to.
-		if force && len(pendingRows) != 0 {
-			return flush(pendingRows)
-		}
 		return nil
 	}
 
@@ -162,7 +172,6 @@ func TaskRequestFetcher() AbstractFetcher {
 		entityKind:     "TaskRequest",
 		timestampField: "created_ts",
 		queryBatchSize: queryBatchSize,
-		flushThreshold: flushThreshold,
 		convert: func(_ context.Context, entities []*model.TaskRequest) ([]*bqpb.TaskRequest, error) {
 			out := make([]*bqpb.TaskRequest, len(entities))
 			for i, ent := range entities {
@@ -179,7 +188,6 @@ func BotEventsFetcher() AbstractFetcher {
 		entityKind:     "BotEvent",
 		timestampField: "ts",
 		queryBatchSize: queryBatchSize,
-		flushThreshold: flushThreshold,
 		convert: func(_ context.Context, entities []*model.BotEvent) ([]*bqpb.BotEvent, error) {
 			out := make([]*bqpb.BotEvent, len(entities))
 			for i, ent := range entities {
@@ -196,7 +204,6 @@ func TaskRunResultsFetcher() AbstractFetcher {
 		entityKind:     "TaskRunResult",
 		timestampField: "completed_ts",
 		queryBatchSize: queryBatchSize,
-		flushThreshold: flushThreshold,
 		convert: func(ctx context.Context, entities []*model.TaskRunResult) ([]*bqpb.TaskResult, error) {
 			return convertTaskResults(ctx, entities, taskRunResult)
 		},
@@ -210,7 +217,6 @@ func TaskResultSummariesFetcher() AbstractFetcher {
 		entityKind:     "TaskResultSummary",
 		timestampField: "completed_ts",
 		queryBatchSize: queryBatchSize,
-		flushThreshold: flushThreshold,
 		convert: func(ctx context.Context, entities []*model.TaskResultSummary) ([]*bqpb.TaskResult, error) {
 			return convertTaskResults(ctx, entities, taskResultSummary)
 		},
