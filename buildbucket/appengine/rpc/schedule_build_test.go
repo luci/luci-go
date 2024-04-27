@@ -1506,7 +1506,20 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
 
-		Convey("one shadow, one original, and one with no shadow bucket", func() {
+		Convey("one shadow inherit parent, one shadow not inherit, one original, and one with no shadow bucket", func() {
+			globalCfg = &pb.SettingsCfg{
+				Resultdb: &pb.ResultDBSettings{
+					Hostname: "rdbHost",
+				},
+				Swarming: &pb.SwarmingSettings{
+					UserPackages: []*pb.SwarmingSettings_Package{
+						{
+							PackageName: "include",
+							Version:     "version",
+						},
+					},
+				},
+			}
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}, Shadow: "bucket.shadow"})
 			testutil.PutBucket(ctx, "project", "bucket.shadow", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
 			So(datastore.Put(ctx, &model.Builder{
@@ -1525,6 +1538,10 @@ func TestScheduleBuild(t *testing.T) {
 						Dimensions: []string{
 							"pool:pool2",
 						},
+					},
+					Exe: &pb.Executable{
+						CipdPackage: "package",
+						CipdVersion: "version",
 					},
 				},
 			}), ShouldBeNil)
@@ -1603,6 +1620,16 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
+					ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{
+						InheritFromParent: true,
+					},
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
 					ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 				},
 				{
@@ -1643,7 +1670,7 @@ func TestScheduleBuild(t *testing.T) {
 					GracePeriod: &durationpb.Duration{
 						Seconds: 30,
 					},
-					Id: 9021868963221610337,
+					Id: 9021868963222105921,
 					Infra: &pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
 							CacheDir:    "cache",
@@ -1699,7 +1726,150 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963221610337",
+							Prefix:  "buildbucket/app/9021868963222105921",
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "swarming.appspot.com",
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
+							Priority:           30,
+							TaskServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+							TaskDimensions: []*pb.RequestedDimension{
+								{
+									Key:   "pool",
+									Value: "pool2",
+								},
+							},
+						},
+						Led: &pb.BuildInfra_Led{
+							ShadowedBucket: "bucket",
+						},
+					},
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"$recipe_engine/led": {
+									Kind: &structpb.Value_StructValue{
+										StructValue: &structpb.Struct{
+											Fields: map[string]*structpb.Value{
+												"shadowed_bucket": {
+													Kind: &structpb.Value_StringValue{
+														StringValue: "bucket",
+													},
+												},
+											},
+										},
+									},
+								},
+								"a": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b2",
+									},
+								},
+								"b": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "b",
+									},
+								},
+								"c": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "c",
+									},
+								},
+							},
+						},
+					},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+					},
+					AncestorIds:      []int64{1},
+					CanOutliveParent: true,
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket.shadow",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Exe: &pb.Executable{
+						Cmd:         []string{"recipes"},
+						CipdPackage: "package",
+						CipdVersion: "version",
+					},
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id: 9021868963222105905,
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								// Inherited from its parent.
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"cipd_bin_packages": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+														{Package: "include", Version: "version"},
+													},
+												},
+											},
+											OnPath: []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
+										},
+										"kitchen-checkout": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+														{Package: "package", Version: "version"},
+													},
+												},
+											},
+										},
+									},
+								},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
+								CipdPackagesCache: &pb.CacheEntry{
+									Name: "cipd_cache_60bbd3834a15dabe356b6b277007f73bc1b4bdb8dff69da7db09d155463f8f75",
+									Path: "cipd_cache",
+								},
+							},
+							ExperimentReasons: map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+								bb.ExperimentBBAgent: pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG,
+							},
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963222105905",
 							Project: "project",
 						},
 						Resultdb: &pb.BuildInfra_ResultDB{
@@ -1786,7 +1956,9 @@ func TestScheduleBuild(t *testing.T) {
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
+						Cmd:         []string{"recipes"},
+						CipdPackage: "package",
+						CipdVersion: "version",
 					},
 					ExecutionTimeout: &durationpb.Duration{
 						Seconds: 10800,
@@ -1794,7 +1966,7 @@ func TestScheduleBuild(t *testing.T) {
 					GracePeriod: &durationpb.Duration{
 						Seconds: 30,
 					},
-					Id: 9021868963221610321,
+					Id: 9021868963222105889,
 					Infra: &pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
 							CacheDir:    "cache",
@@ -1803,14 +1975,43 @@ func TestScheduleBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"cipd_bin_packages": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+														{Package: "include", Version: "version"},
+													},
+												},
+											},
+											OnPath: []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
+										},
+										"kitchen-checkout": {
+											DataType: &pb.InputDataRef_Cipd{
+												Cipd: &pb.InputDataRef_CIPD{
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+														{Package: "package", Version: "version"},
+													},
+												},
+											},
+										},
+									},
+								},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
+								CipdPackagesCache: &pb.CacheEntry{
+									Name: "cipd_cache_e73238f71b7e4eb5683fe0f1cae1b765816537b83ca1cd7e5b82e66543c26834",
+									Path: "cipd_cache",
+								},
+							},
+							ExperimentReasons: map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+								bb.ExperimentBBAgent: pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG,
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963221610321",
+							Prefix:  "buildbucket/app/9021868963222105889",
 							Project: "project",
 						},
 						Resultdb: &pb.BuildInfra_ResultDB{

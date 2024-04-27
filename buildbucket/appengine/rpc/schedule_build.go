@@ -1585,11 +1585,13 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 					pInfra = entities[0].(*model.BuildInfra)
 				}
 				// Inherit agent input and agent source from the parent build.
-				build.Infra.Buildbucket.Agent.Input = pInfra.Proto.Buildbucket.Agent.Input
-				build.Infra.Buildbucket.Agent.Source = pInfra.Proto.Buildbucket.Agent.Source
-				build.Exe = pBld.Proto.Exe
-				if len(build.Infra.Buildbucket.Agent.Input.Data) > 0 {
-					setCipdPackagesCache(build)
+				if reqs[origI].ShadowInput.InheritFromParent {
+					build.Infra.Buildbucket.Agent.Input = pInfra.Proto.Buildbucket.Agent.Input
+					build.Infra.Buildbucket.Agent.Source = pInfra.Proto.Buildbucket.Agent.Source
+					build.Exe = pBld.Proto.Exe
+					if len(build.Infra.Buildbucket.Agent.Input.Data) > 0 {
+						setCipdPackagesCache(build)
+					}
 				}
 			}
 		} else {
