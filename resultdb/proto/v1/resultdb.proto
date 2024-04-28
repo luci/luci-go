@@ -385,8 +385,7 @@ message QueryTestVariantsRequest {
   // Retrieve test variants included in these invocations, directly or indirectly
   // (via Invocation.included_invocations).
   //
-  // Specifying multiple invocations is equivalent to querying one invocation
-  // that includes these.
+  // As of April 2024, a maximum of one invocation may be specified.
   repeated string invocations = 2;
 
   // A test variant must satisfy this predicate.

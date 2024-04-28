@@ -59,7 +59,7 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.InvocationWithInclusions("inv0", pb.Invocation_ACTIVE, map[string]any{
 				"Realm":   "testproject:testrealm",
 				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSourcesWithChangelistNumbers(1))),
-			}, "inv1")...,
+			}, "inv1", "invmissing")...,
 		)
 		testutil.MustApply(
 			ctx,
@@ -103,7 +103,7 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestExonerations("inv5", "T1005", pbutil.Variant("k3", "v3"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 		)...)
 
-		srv := &resultDBServer{}
+		srv := newTestResultDBService()
 
 		getTVStrings := func(tvs []*pb.TestVariant) []string {
 			tvStrings := make([]string, len(tvs))
@@ -297,29 +297,19 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 		})
 
-		Convey(`Valid with missing included invocation`, func() {
-			testutil.MustApply(
-				ctx,
-				// The invocation missinginv is missing in Invocations table.
-				insert.Inclusion("inv0", "missinginv"),
-			)
-			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
+		Convey(`Too many invocations`, func() {
+			_, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0", "invocations/inv1"},
+				PageSize:    1,
 			})
-			So(err, ShouldBeNil)
-			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
-			So(len(res.TestVariants), ShouldEqual, 3)
-			So(getTVStrings(res.TestVariants), ShouldResemble, []string{
-				"10/T2/e3b0c44298fc1c14",
-				"30/T1/c467ccce5a16dc72",
-				"40/T1/e3b0c44298fc1c14",
-			})
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invocations: only one invocation is allowed")
 		})
 
 		Convey(`Try next page`, func() {
 			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
-				Invocations: []string{"invocations/inv0", "invocations/inv1"},
+				Invocations: []string{"invocations/inv0"},
 				PageSize:    3,
 				PageToken:   pagination.Token("EXPECTED", "", ""),
 			})

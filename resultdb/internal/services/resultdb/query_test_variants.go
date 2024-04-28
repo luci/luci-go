@@ -151,6 +151,9 @@ func validateQueryTestVariantsRequest(in *pb.QueryTestVariantsRequest) error {
 		return err
 	}
 
+	if len(in.Invocations) > 1 {
+		return errors.Reason("invocations: only one invocation is allowed").Err()
+	}
 	if err := testvariants.ValidateResultLimit(in.ResultLimit); err != nil {
 		return errors.Annotate(err, "result_limit").Err()
 	}

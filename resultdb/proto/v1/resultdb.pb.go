@@ -1233,8 +1233,7 @@ type QueryTestVariantsRequest struct {
 	// Retrieve test variants included in these invocations, directly or indirectly
 	// (via Invocation.included_invocations).
 	//
-	// Specifying multiple invocations is equivalent to querying one invocation
-	// that includes these.
+	// As of April 2024, a maximum of one invocation may be specified.
 	Invocations []string `protobuf:"bytes,2,rep,name=invocations,proto3" json:"invocations,omitempty"`
 	// A test variant must satisfy this predicate.
 	Predicate *TestVariantPredicate `protobuf:"bytes,6,opt,name=predicate,proto3" json:"predicate,omitempty"`
