@@ -248,6 +248,10 @@ export const routes: RouteObject[] = [
           },
         ],
       },
+      {
+        path: 'authdb',
+        lazy: () => import('@/authdb/pages/groups_page'),
+      },
     ],
   },
 ];
