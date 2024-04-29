@@ -3,6 +3,7 @@ import _m0 from "protobufjs/minimal";
 import { Struct } from "../../../../../google/protobuf/struct.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { CommitPosition, GerritChange, GitilesCommit, StringPair } from "./common.pb";
+import { Instruction, Instructions } from "./instruction.pb";
 import { ArtifactPredicate, TestResultPredicate } from "./predicate.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
@@ -13,7 +14,7 @@ export const protobufPackage = "luci.resultdb.v1";
  * buildbucket build, CQ attempt.
  * Composable: can include other invocations, see inclusion.proto.
  *
- * Next id: 17.
+ * Next id: 22.
  */
 export interface Invocation {
   /**
@@ -47,8 +48,20 @@ export interface Invocation {
    */
   readonly tags: readonly StringPair[];
   /**
+   * When the invocation started to finalize, i.e. transitioned to FINALIZING
+   * state. This means the invocation is immutable but directly or indirectly
+   * included invocations may not be.
+   *
+   * Output only.
+   */
+  readonly finalizeStartTime:
+    | string
+    | undefined;
+  /**
    * When the invocation was finalized, i.e. transitioned to FINALIZED state.
-   * If this field is set, implies that the invocation is finalized.
+   * If this field is set, implies that the invocation is finalized. This
+   * means the invocation and directly or indirectly included invocations
+   * are immutable.
    *
    * Output only.
    */
@@ -89,8 +102,27 @@ export interface Invocation {
    */
   readonly includedInvocations: readonly string[];
   /**
+   * Whether this invocation is a root of the invocation graph for export purposes.
+   *
+   * To help downstream systems (like LUCI Analysis) make sense of test results,
+   * and gather overall context for a result, ResultDB data export is centered
+   * around export roots.
+   * The export roots typically represent a top-level buildbucket build, like a
+   * postsubmit build or presubmit tryjob. Test results are only exported if
+   * they are included from a root. They may be exported multiple times of they
+   * are included by multiple roots (e.g. in case of re-used test results).
+   * Re-used test results can be identified because the parent invocation of the
+   * test result will be the same even though the export root will be different.
+   *
+   * N.B. Export roots do not affect legacy BigQuery exports configured by the
+   * BigQueryExports field.
+   */
+  readonly isExportRoot: boolean;
+  /**
    * bigquery_exports indicates what BigQuery table(s) that results in this
    * invocation should export to.
+   *
+   * Legacy feature: Prefer to use LUCI Analysis exports instead.
    */
   readonly bigqueryExports: readonly BigQueryExport[];
   /**
@@ -123,7 +155,7 @@ export interface Invocation {
    * Arbitrary JSON object that contains structured, domain-specific properties
    * of the invocation.
    *
-   * The serialized size must be <= 4096 bytes.
+   * The serialized size must be <= 16 KB.
    */
   readonly properties:
     | { readonly [key: string]: any }
@@ -136,17 +168,37 @@ export interface Invocation {
    * The sources specified here applies only to:
    * - the test results directly contained in this invocation, and
    * - any directly included invocations which set their source_spec.inherit to
-   * true.
+   *   true.
    *
    * Clients should be careful to ensure the uploaded source spec is consistent
    * between included invocations that upload the same test variants.
    * Verdicts are associated with the sources of *any* of their constituent
    * test results, so if there is inconsistency between included invocations,
    * the position of the verdict becomes not well defined.
+   *
+   * Note that the sources specified here are shared with included invocations
+   * regardless of the realm of those included invocations.
+   *
+   * Attempting to update this field to a value other than its current value
+   * after is_source_spec_final is set will generate an error.
    */
   readonly sourceSpec:
     | SourceSpec
     | undefined;
+  /**
+   * Whether the code sources specified by source_spec are final (immutable).
+   *
+   * To facilitate rapid export of invocations inheriting sources from this
+   * invocation, this property should be set to true as soon as possible
+   * after the invocation's sources are fixed. In most cases, clients
+   * will want to set this property to true at the same time as they set
+   * source_spec.
+   *
+   * This field is client owned. Consistent with https://google.aip.dev/129,
+   * it will not be forced to true when the invocation starts to finalize, even
+   * if its effective value will always be true at that point.
+   */
+  readonly isSourceSpecFinal: boolean;
   /**
    * A user-specified baseline identifier that maps to a set of test variants.
    * Often, this will be the source that generated the test result, such as the
@@ -166,6 +218,20 @@ export interface Invocation {
    * modify this field.
    */
   readonly baselineId: string;
+  /**
+   * Instruction for the invocation.
+   * Only applicable to test results directly contained in this invocation,
+   * i.e. it does not apply to test results in included invocations.
+   */
+  readonly testInstruction:
+    | Instruction
+    | undefined;
+  /**
+   * Instructions for the steps.
+   * Only useful for a build-level invocation.
+   * It contains all instructions of steps which belong to the build.
+   */
+  readonly stepInstructions: Instructions | undefined;
 }
 
 export enum Invocation_State {
@@ -368,9 +434,11 @@ function createBaseInvocation(): Invocation {
     state: 0,
     createTime: undefined,
     tags: [],
+    finalizeStartTime: undefined,
     finalizeTime: undefined,
     deadline: undefined,
     includedInvocations: [],
+    isExportRoot: false,
     bigqueryExports: [],
     createdBy: "",
     producerResource: "",
@@ -378,7 +446,10 @@ function createBaseInvocation(): Invocation {
     historyOptions: undefined,
     properties: undefined,
     sourceSpec: undefined,
+    isSourceSpecFinal: false,
     baselineId: "",
+    testInstruction: undefined,
+    stepInstructions: undefined,
   };
 }
 
@@ -396,6 +467,9 @@ export const Invocation = {
     for (const v of message.tags) {
       StringPair.encode(v!, writer.uint32(42).fork()).ldelim();
     }
+    if (message.finalizeStartTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.finalizeStartTime), writer.uint32(154).fork()).ldelim();
+    }
     if (message.finalizeTime !== undefined) {
       Timestamp.encode(toTimestamp(message.finalizeTime), writer.uint32(50).fork()).ldelim();
     }
@@ -404,6 +478,9 @@ export const Invocation = {
     }
     for (const v of message.includedInvocations) {
       writer.uint32(66).string(v!);
+    }
+    if (message.isExportRoot === true) {
+      writer.uint32(168).bool(message.isExportRoot);
     }
     for (const v of message.bigqueryExports) {
       BigQueryExport.encode(v!, writer.uint32(74).fork()).ldelim();
@@ -426,8 +503,17 @@ export const Invocation = {
     if (message.sourceSpec !== undefined) {
       SourceSpec.encode(message.sourceSpec, writer.uint32(122).fork()).ldelim();
     }
+    if (message.isSourceSpecFinal === true) {
+      writer.uint32(160).bool(message.isSourceSpecFinal);
+    }
     if (message.baselineId !== "") {
       writer.uint32(130).string(message.baselineId);
+    }
+    if (message.testInstruction !== undefined) {
+      Instruction.encode(message.testInstruction, writer.uint32(138).fork()).ldelim();
+    }
+    if (message.stepInstructions !== undefined) {
+      Instructions.encode(message.stepInstructions, writer.uint32(146).fork()).ldelim();
     }
     return writer;
   },
@@ -467,6 +553,13 @@ export const Invocation = {
 
           message.tags.push(StringPair.decode(reader, reader.uint32()));
           continue;
+        case 19:
+          if (tag !== 154) {
+            break;
+          }
+
+          message.finalizeStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
         case 6:
           if (tag !== 50) {
             break;
@@ -487,6 +580,13 @@ export const Invocation = {
           }
 
           message.includedInvocations.push(reader.string());
+          continue;
+        case 21:
+          if (tag !== 168) {
+            break;
+          }
+
+          message.isExportRoot = reader.bool();
           continue;
         case 9:
           if (tag !== 74) {
@@ -537,12 +637,33 @@ export const Invocation = {
 
           message.sourceSpec = SourceSpec.decode(reader, reader.uint32());
           continue;
+        case 20:
+          if (tag !== 160) {
+            break;
+          }
+
+          message.isSourceSpecFinal = reader.bool();
+          continue;
         case 16:
           if (tag !== 130) {
             break;
           }
 
           message.baselineId = reader.string();
+          continue;
+        case 17:
+          if (tag !== 138) {
+            break;
+          }
+
+          message.testInstruction = Instruction.decode(reader, reader.uint32());
+          continue;
+        case 18:
+          if (tag !== 146) {
+            break;
+          }
+
+          message.stepInstructions = Instructions.decode(reader, reader.uint32());
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -559,11 +680,13 @@ export const Invocation = {
       state: isSet(object.state) ? invocation_StateFromJSON(object.state) : 0,
       createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
       tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => StringPair.fromJSON(e)) : [],
+      finalizeStartTime: isSet(object.finalizeStartTime) ? globalThis.String(object.finalizeStartTime) : undefined,
       finalizeTime: isSet(object.finalizeTime) ? globalThis.String(object.finalizeTime) : undefined,
       deadline: isSet(object.deadline) ? globalThis.String(object.deadline) : undefined,
       includedInvocations: globalThis.Array.isArray(object?.includedInvocations)
         ? object.includedInvocations.map((e: any) => globalThis.String(e))
         : [],
+      isExportRoot: isSet(object.isExportRoot) ? globalThis.Boolean(object.isExportRoot) : false,
       bigqueryExports: globalThis.Array.isArray(object?.bigqueryExports)
         ? object.bigqueryExports.map((e: any) => BigQueryExport.fromJSON(e))
         : [],
@@ -573,7 +696,10 @@ export const Invocation = {
       historyOptions: isSet(object.historyOptions) ? HistoryOptions.fromJSON(object.historyOptions) : undefined,
       properties: isObject(object.properties) ? object.properties : undefined,
       sourceSpec: isSet(object.sourceSpec) ? SourceSpec.fromJSON(object.sourceSpec) : undefined,
+      isSourceSpecFinal: isSet(object.isSourceSpecFinal) ? globalThis.Boolean(object.isSourceSpecFinal) : false,
       baselineId: isSet(object.baselineId) ? globalThis.String(object.baselineId) : "",
+      testInstruction: isSet(object.testInstruction) ? Instruction.fromJSON(object.testInstruction) : undefined,
+      stepInstructions: isSet(object.stepInstructions) ? Instructions.fromJSON(object.stepInstructions) : undefined,
     };
   },
 
@@ -591,6 +717,9 @@ export const Invocation = {
     if (message.tags?.length) {
       obj.tags = message.tags.map((e) => StringPair.toJSON(e));
     }
+    if (message.finalizeStartTime !== undefined) {
+      obj.finalizeStartTime = message.finalizeStartTime;
+    }
     if (message.finalizeTime !== undefined) {
       obj.finalizeTime = message.finalizeTime;
     }
@@ -599,6 +728,9 @@ export const Invocation = {
     }
     if (message.includedInvocations?.length) {
       obj.includedInvocations = message.includedInvocations;
+    }
+    if (message.isExportRoot === true) {
+      obj.isExportRoot = message.isExportRoot;
     }
     if (message.bigqueryExports?.length) {
       obj.bigqueryExports = message.bigqueryExports.map((e) => BigQueryExport.toJSON(e));
@@ -621,8 +753,17 @@ export const Invocation = {
     if (message.sourceSpec !== undefined) {
       obj.sourceSpec = SourceSpec.toJSON(message.sourceSpec);
     }
+    if (message.isSourceSpecFinal === true) {
+      obj.isSourceSpecFinal = message.isSourceSpecFinal;
+    }
     if (message.baselineId !== "") {
       obj.baselineId = message.baselineId;
+    }
+    if (message.testInstruction !== undefined) {
+      obj.testInstruction = Instruction.toJSON(message.testInstruction);
+    }
+    if (message.stepInstructions !== undefined) {
+      obj.stepInstructions = Instructions.toJSON(message.stepInstructions);
     }
     return obj;
   },
@@ -636,9 +777,11 @@ export const Invocation = {
     message.state = object.state ?? 0;
     message.createTime = object.createTime ?? undefined;
     message.tags = object.tags?.map((e) => StringPair.fromPartial(e)) || [];
+    message.finalizeStartTime = object.finalizeStartTime ?? undefined;
     message.finalizeTime = object.finalizeTime ?? undefined;
     message.deadline = object.deadline ?? undefined;
     message.includedInvocations = object.includedInvocations?.map((e) => e) || [];
+    message.isExportRoot = object.isExportRoot ?? false;
     message.bigqueryExports = object.bigqueryExports?.map((e) => BigQueryExport.fromPartial(e)) || [];
     message.createdBy = object.createdBy ?? "";
     message.producerResource = object.producerResource ?? "";
@@ -650,7 +793,14 @@ export const Invocation = {
     message.sourceSpec = (object.sourceSpec !== undefined && object.sourceSpec !== null)
       ? SourceSpec.fromPartial(object.sourceSpec)
       : undefined;
+    message.isSourceSpecFinal = object.isSourceSpecFinal ?? false;
     message.baselineId = object.baselineId ?? "";
+    message.testInstruction = (object.testInstruction !== undefined && object.testInstruction !== null)
+      ? Instruction.fromPartial(object.testInstruction)
+      : undefined;
+    message.stepInstructions = (object.stepInstructions !== undefined && object.stepInstructions !== null)
+      ? Instructions.fromPartial(object.stepInstructions)
+      : undefined;
     return message;
   },
 };

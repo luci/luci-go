@@ -79,14 +79,22 @@ export function DetailsTab() {
           <StringRow label="Realm" value={invocation.realm} />
           <StringRow label="Created By" value={invocation.createdBy} />
           <StringRow label="Baseline" value={invocation.baselineId || 'N/A'} />
+          <StringRow
+            label="Is Export Root"
+            value={invocation.isExportRoot ? 'True' : 'False'}
+          />
         </tbody>
       </table>
       <h3>Timing</h3>
       <table>
         <tbody>
-          <TimestampRow label="Create Time" dateISO={invocation.createTime} />
+          <TimestampRow label="Created At" dateISO={invocation.createTime} />
           <TimestampRow
-            label="Finalize Time"
+            label="Finalizing At"
+            dateISO={invocation.finalizeStartTime}
+          />
+          <TimestampRow
+            label="Finalized At"
             dateISO={invocation.finalizeTime}
           />
           <TimestampRow label="Deadline" dateISO={invocation.deadline} />

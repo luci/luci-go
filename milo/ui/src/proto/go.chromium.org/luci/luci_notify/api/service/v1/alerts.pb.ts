@@ -35,6 +35,11 @@ export interface Alert {
    */
   readonly silenceUntil: string;
   /**
+   * The Gerrit CL number associated with this alert.
+   * 0 means the alert is not associated with any CL.
+   */
+  readonly gerritCl: string;
+  /**
    * The time the alert was last modified.
    *
    * This is automatically set by the server and cannot be modified explicitly
@@ -144,7 +149,7 @@ export const BatchGetAlertsRequest = {
 };
 
 function createBaseAlert(): Alert {
-  return { name: "", bug: "0", silenceUntil: "0", modifyTime: undefined, etag: "" };
+  return { name: "", bug: "0", silenceUntil: "0", gerritCl: "0", modifyTime: undefined, etag: "" };
 }
 
 export const Alert = {
@@ -157,6 +162,9 @@ export const Alert = {
     }
     if (message.silenceUntil !== "0") {
       writer.uint32(32).int64(message.silenceUntil);
+    }
+    if (message.gerritCl !== "0") {
+      writer.uint32(56).int64(message.gerritCl);
     }
     if (message.modifyTime !== undefined) {
       Timestamp.encode(toTimestamp(message.modifyTime), writer.uint32(42).fork()).ldelim();
@@ -195,6 +203,13 @@ export const Alert = {
 
           message.silenceUntil = longToString(reader.int64() as Long);
           continue;
+        case 7:
+          if (tag !== 56) {
+            break;
+          }
+
+          message.gerritCl = longToString(reader.int64() as Long);
+          continue;
         case 5:
           if (tag !== 42) {
             break;
@@ -223,6 +238,7 @@ export const Alert = {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       bug: isSet(object.bug) ? globalThis.String(object.bug) : "0",
       silenceUntil: isSet(object.silenceUntil) ? globalThis.String(object.silenceUntil) : "0",
+      gerritCl: isSet(object.gerritCl) ? globalThis.String(object.gerritCl) : "0",
       modifyTime: isSet(object.modifyTime) ? globalThis.String(object.modifyTime) : undefined,
       etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
     };
@@ -238,6 +254,9 @@ export const Alert = {
     }
     if (message.silenceUntil !== "0") {
       obj.silenceUntil = message.silenceUntil;
+    }
+    if (message.gerritCl !== "0") {
+      obj.gerritCl = message.gerritCl;
     }
     if (message.modifyTime !== undefined) {
       obj.modifyTime = message.modifyTime;
@@ -256,6 +275,7 @@ export const Alert = {
     message.name = object.name ?? "";
     message.bug = object.bug ?? "0";
     message.silenceUntil = object.silenceUntil ?? "0";
+    message.gerritCl = object.gerritCl ?? "0";
     message.modifyTime = object.modifyTime ?? undefined;
     message.etag = object.etag ?? "";
     return message;

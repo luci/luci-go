@@ -209,63 +209,6 @@ export function sortQueryToJSON(object: SortQuery): string {
   }
 }
 
-/**
- * This flag is only relevant to windows swarming bots.
- * It determines whether or not the task process will use a win32 JobObject.
- */
-export enum ContainmentType {
-  /**
-   * NOT_SPECIFIED - Do not specify a containment type. For tasks which don't run like
-   * Termination task.
-   */
-  NOT_SPECIFIED = 0,
-  /** NONE - Do not use JOB_OBJECT to create new tasks. Has same effect as NOT_SPECIFIED */
-  NONE = 1,
-  /**
-   * AUTO - On windows, this will start a process using win32 JobObject.
-   * On other platforms this will default to python standard POpen to create
-   * task process.
-   * See https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects
-   */
-  AUTO = 2,
-  /** JOB_OBJECT - Use JOB_OBJECTS on windows. Will auto-fail tasks on non-win32 platforms. */
-  JOB_OBJECT = 3,
-}
-
-export function containmentTypeFromJSON(object: any): ContainmentType {
-  switch (object) {
-    case 0:
-    case "NOT_SPECIFIED":
-      return ContainmentType.NOT_SPECIFIED;
-    case 1:
-    case "NONE":
-      return ContainmentType.NONE;
-    case 2:
-    case "AUTO":
-      return ContainmentType.AUTO;
-    case 3:
-    case "JOB_OBJECT":
-      return ContainmentType.JOB_OBJECT;
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ContainmentType");
-  }
-}
-
-export function containmentTypeToJSON(object: ContainmentType): string {
-  switch (object) {
-    case ContainmentType.NOT_SPECIFIED:
-      return "NOT_SPECIFIED";
-    case ContainmentType.NONE:
-      return "NONE";
-    case ContainmentType.AUTO:
-      return "AUTO";
-    case ContainmentType.JOB_OBJECT:
-      return "JOB_OBJECT";
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ContainmentType");
-  }
-}
-
 export enum NullableBool {
   NULL = 0,
   FALSE = 1,
@@ -638,8 +581,69 @@ export interface CacheEntry {
   readonly path: string;
 }
 
+/**
+ * Defines the type of "sandbox" to run the task process in.
+ *
+ * Unimplemented.
+ */
 export interface Containment {
-  readonly containmentType: ContainmentType;
+  /**
+   * Lowers the priority of the task process when started. Doesn't require
+   * containment. This gives the bot a chance to survive when the task starts an
+   * overwhelming number of children processes.
+   */
+  readonly lowerPriority: boolean;
+  /** Defines the type of containment used. */
+  readonly containmentType: Containment_ContainmentType;
+  /** Limits the number of concurrent active processes. */
+  readonly limitProcesses: string;
+  /** Limits the total amount of memory allocated by processes. */
+  readonly limitTotalCommittedMemory: string;
+}
+
+export enum Containment_ContainmentType {
+  /** NOT_SPECIFIED - Historical value, not specified. Containment may or may not be used. */
+  NOT_SPECIFIED = 0,
+  /** NONE - No containment, the default for now. */
+  NONE = 1,
+  /** AUTO - Use the containment appropriate on the platform. */
+  AUTO = 2,
+  /** JOB_OBJECT - Use Job Object on Windows. Will fail if used on other platforms. */
+  JOB_OBJECT = 3,
+}
+
+export function containment_ContainmentTypeFromJSON(object: any): Containment_ContainmentType {
+  switch (object) {
+    case 0:
+    case "NOT_SPECIFIED":
+      return Containment_ContainmentType.NOT_SPECIFIED;
+    case 1:
+    case "NONE":
+      return Containment_ContainmentType.NONE;
+    case 2:
+    case "AUTO":
+      return Containment_ContainmentType.AUTO;
+    case 3:
+    case "JOB_OBJECT":
+      return Containment_ContainmentType.JOB_OBJECT;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Containment_ContainmentType");
+  }
+}
+
+export function containment_ContainmentTypeToJSON(object: Containment_ContainmentType): string {
+  switch (object) {
+    case Containment_ContainmentType.NOT_SPECIFIED:
+      return "NOT_SPECIFIED";
+    case Containment_ContainmentType.NONE:
+      return "NONE";
+    case Containment_ContainmentType.AUTO:
+      return "AUTO";
+    case Containment_ContainmentType.JOB_OBJECT:
+      return "JOB_OBJECT";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Containment_ContainmentType");
+  }
 }
 
 /** Important metadata about a particular task. */
@@ -854,6 +858,8 @@ export interface SwarmingTaskBackendConfig {
    * This can later be leveraged to search for kinds of tasks per tag.
    */
   readonly tags: readonly string[];
+  /** Customized name of the task. */
+  readonly taskName: string;
 }
 
 /**
@@ -1063,11 +1069,19 @@ export interface TaskCancelRequest {
 
 /** Request to cancel some subset of pending/running tasks. */
 export interface TasksCancelRequest {
+  /** Number of items to cancel per request. limit must be in [1..1000]. */
   readonly limit: number;
+  /** Previous call would have returned a cursor if there were more tasks to kill. */
   readonly cursor: string;
+  /** Any task which contains one or more of tags will be cancelled. */
   readonly tags: readonly string[];
+  /** Kill running tasks if set. Otherwise running tasks will be ignored. */
   readonly killRunning: boolean;
-  readonly start: string | undefined;
+  /** Only tasks later or equal to start will be cancelled. No effect if unset. */
+  readonly start:
+    | string
+    | undefined;
+  /** Only tasks earlier or equal to end will be cancelled. No effect if unset. */
   readonly end: string | undefined;
 }
 
@@ -1138,12 +1152,15 @@ export interface TaskOutputResponse {
   readonly state: TaskState;
 }
 
-/** ResultDB related properties. */
+/** ResultDB properties of a completed task. */
 export interface ResultDBInfo {
   /** ResultDB hostname, e.g. "results.api.cr.dev" */
   readonly hostname: string;
   /**
-   * e.g. "invocations/task-chromium-swarm.appspot.com-deadbeef1"
+   * Name of the task's ResultDB invocation.
+   *
+   * For example "invocations/task-chromium-swarm.appspot.com-deadbeef1".
+   * Unset if Swarming:ResultDB integration was not enabled for this task.
    *
    * If the task was deduplicated, this equals invocation name of the original
    * task.
@@ -2564,13 +2581,22 @@ export const CacheEntry = {
 };
 
 function createBaseContainment(): Containment {
-  return { containmentType: 0 };
+  return { lowerPriority: false, containmentType: 0, limitProcesses: "0", limitTotalCommittedMemory: "0" };
 }
 
 export const Containment = {
   encode(message: Containment, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.lowerPriority === true) {
+      writer.uint32(8).bool(message.lowerPriority);
+    }
     if (message.containmentType !== 0) {
-      writer.uint32(8).int32(message.containmentType);
+      writer.uint32(16).int32(message.containmentType);
+    }
+    if (message.limitProcesses !== "0") {
+      writer.uint32(24).int64(message.limitProcesses);
+    }
+    if (message.limitTotalCommittedMemory !== "0") {
+      writer.uint32(32).int64(message.limitTotalCommittedMemory);
     }
     return writer;
   },
@@ -2587,7 +2613,28 @@ export const Containment = {
             break;
           }
 
+          message.lowerPriority = reader.bool();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
           message.containmentType = reader.int32() as any;
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.limitProcesses = longToString(reader.int64() as Long);
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.limitTotalCommittedMemory = longToString(reader.int64() as Long);
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -2599,13 +2646,29 @@ export const Containment = {
   },
 
   fromJSON(object: any): Containment {
-    return { containmentType: isSet(object.containmentType) ? containmentTypeFromJSON(object.containmentType) : 0 };
+    return {
+      lowerPriority: isSet(object.lowerPriority) ? globalThis.Boolean(object.lowerPriority) : false,
+      containmentType: isSet(object.containmentType) ? containment_ContainmentTypeFromJSON(object.containmentType) : 0,
+      limitProcesses: isSet(object.limitProcesses) ? globalThis.String(object.limitProcesses) : "0",
+      limitTotalCommittedMemory: isSet(object.limitTotalCommittedMemory)
+        ? globalThis.String(object.limitTotalCommittedMemory)
+        : "0",
+    };
   },
 
   toJSON(message: Containment): unknown {
     const obj: any = {};
+    if (message.lowerPriority === true) {
+      obj.lowerPriority = message.lowerPriority;
+    }
     if (message.containmentType !== 0) {
-      obj.containmentType = containmentTypeToJSON(message.containmentType);
+      obj.containmentType = containment_ContainmentTypeToJSON(message.containmentType);
+    }
+    if (message.limitProcesses !== "0") {
+      obj.limitProcesses = message.limitProcesses;
+    }
+    if (message.limitTotalCommittedMemory !== "0") {
+      obj.limitTotalCommittedMemory = message.limitTotalCommittedMemory;
     }
     return obj;
   },
@@ -2615,7 +2678,10 @@ export const Containment = {
   },
   fromPartial<I extends Exact<DeepPartial<Containment>, I>>(object: I): Containment {
     const message = createBaseContainment() as any;
+    message.lowerPriority = object.lowerPriority ?? false;
     message.containmentType = object.containmentType ?? 0;
+    message.limitProcesses = object.limitProcesses ?? "0";
+    message.limitTotalCommittedMemory = object.limitTotalCommittedMemory ?? "0";
     return message;
   },
 };
@@ -3018,6 +3084,7 @@ function createBaseSwarmingTaskBackendConfig(): SwarmingTaskBackendConfig {
     agentBinaryCipdFilename: "",
     agentBinaryCipdServer: "",
     tags: [],
+    taskName: "",
   };
 }
 
@@ -3052,6 +3119,9 @@ export const SwarmingTaskBackendConfig = {
     }
     for (const v of message.tags) {
       writer.uint32(82).string(v!);
+    }
+    if (message.taskName !== "") {
+      writer.uint32(90).string(message.taskName);
     }
     return writer;
   },
@@ -3133,6 +3203,13 @@ export const SwarmingTaskBackendConfig = {
 
           message.tags.push(reader.string());
           continue;
+        case 11:
+          if (tag !== 90) {
+            break;
+          }
+
+          message.taskName = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3156,6 +3233,7 @@ export const SwarmingTaskBackendConfig = {
         : "",
       agentBinaryCipdServer: isSet(object.agentBinaryCipdServer) ? globalThis.String(object.agentBinaryCipdServer) : "",
       tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => globalThis.String(e)) : [],
+      taskName: isSet(object.taskName) ? globalThis.String(object.taskName) : "",
     };
   },
 
@@ -3191,6 +3269,9 @@ export const SwarmingTaskBackendConfig = {
     if (message.tags?.length) {
       obj.tags = message.tags;
     }
+    if (message.taskName !== "") {
+      obj.taskName = message.taskName;
+    }
     return obj;
   },
 
@@ -3209,6 +3290,7 @@ export const SwarmingTaskBackendConfig = {
     message.agentBinaryCipdFilename = object.agentBinaryCipdFilename ?? "";
     message.agentBinaryCipdServer = object.agentBinaryCipdServer ?? "";
     message.tags = object.tags?.map((e) => e) || [];
+    message.taskName = object.taskName ?? "";
     return message;
   },
 };

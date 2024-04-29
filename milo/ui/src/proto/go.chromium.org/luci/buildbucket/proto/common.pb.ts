@@ -435,7 +435,7 @@ export interface CacheEntry {
    * Must use POSIX format (forward slashes).
    * In most cases, it does not need slashes at all.
    *
-   * In recipes, use api.path['cache'].join(path) to get absolute path.
+   * In recipes, use api.path.cache_dir.join(path) to get absolute path.
    *
    * Must be unique in the build.
    */

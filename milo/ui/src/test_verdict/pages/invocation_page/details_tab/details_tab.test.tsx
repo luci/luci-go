@@ -47,6 +47,7 @@ describe('<DetailsTab />', () => {
       Invocation.fromPartial({
         state: Invocation_State.ACTIVE,
         createTime: '2002-02-02',
+        finalizeStartTime: undefined,
         finalizeTime: undefined,
         deadline: '2002-02-03',
       }),
@@ -60,10 +61,13 @@ describe('<DetailsTab />', () => {
       </FakeContextProvider>,
     );
     await act(() => jest.runAllTimersAsync());
-    expect(screen.getByText('Create Time:').nextSibling).toHaveTextContent(
+    expect(screen.getByText('Created At:').nextSibling).toHaveTextContent(
       '00:00:00 Sat, Feb 02 2002 UTC',
     );
-    expect(screen.getByText('Finalize Time:').nextSibling).toHaveTextContent(
+    expect(screen.getByText('Finalizing At:').nextSibling).toHaveTextContent(
+      'N/A',
+    );
+    expect(screen.getByText('Finalized At:').nextSibling).toHaveTextContent(
       'N/A',
     );
     expect(screen.getByText('Deadline:').nextSibling).toHaveTextContent(
@@ -78,6 +82,7 @@ describe('<DetailsTab />', () => {
         realm: 'chromium:try',
         createdBy: 'project:chromium',
         baselineId: 'try:my-builder',
+        isExportRoot: true,
       }),
     );
     render(
@@ -98,6 +103,9 @@ describe('<DetailsTab />', () => {
     );
     expect(screen.getByText('Baseline:').nextSibling).toHaveTextContent(
       'try:my-builder',
+    );
+    expect(screen.getByText('Is Export Root:').nextSibling).toHaveTextContent(
+      'True',
     );
   });
 });

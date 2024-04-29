@@ -226,7 +226,7 @@ export interface UpdateBuildRequest {
 /**
  * A request message for ScheduleBuild RPC.
  *
- * Next ID: 24.
+ * Next ID: 25.
  */
 export interface ScheduleBuildRequest {
   /**
@@ -475,7 +475,11 @@ export interface ScheduleBuildRequest {
    *   adjustments on service_account, dimensions and properties.
    * * inherit its parent build's agent input and agent source if it has a parent.
    */
-  readonly shadowInput: ScheduleBuildRequest_ShadowInput | undefined;
+  readonly shadowInput:
+    | ScheduleBuildRequest_ShadowInput
+    | undefined;
+  /** ResultDB-specific part of the build request. */
+  readonly resultdb: ScheduleBuildRequest_ResultDB | undefined;
 }
 
 export interface ScheduleBuildRequest_ExperimentsEntry {
@@ -508,6 +512,19 @@ export interface ScheduleBuildRequest_Swarming {
 
 /** Information for scheduling a build as a shadow build. */
 export interface ScheduleBuildRequest_ShadowInput {
+}
+
+/** ResultDB-specific part of build request. */
+export interface ScheduleBuildRequest_ResultDB {
+  /**
+   * Whether to create the ResultDB invocation for this build as an export
+   * root. See ResultDB invocation.is_export_root for more information.
+   *
+   * By default, only buildbucket builds that do not have a parent are
+   * defined as an export root, as invocations for child builds are included
+   * in their parents.
+   */
+  readonly isExportRootOverride: boolean;
 }
 
 /** A request message for CancelBuild RPC. */
@@ -1640,6 +1657,7 @@ function createBaseScheduleBuildRequest(): ScheduleBuildRequest {
     canOutliveParent: 0,
     retriable: 0,
     shadowInput: undefined,
+    resultdb: undefined,
   };
 }
 
@@ -1719,6 +1737,9 @@ export const ScheduleBuildRequest = {
     }
     if (message.shadowInput !== undefined) {
       ScheduleBuildRequest_ShadowInput.encode(message.shadowInput, writer.uint32(186).fork()).ldelim();
+    }
+    if (message.resultdb !== undefined) {
+      ScheduleBuildRequest_ResultDB.encode(message.resultdb, writer.uint32(194).fork()).ldelim();
     }
     return writer;
   },
@@ -1908,6 +1929,13 @@ export const ScheduleBuildRequest = {
 
           message.shadowInput = ScheduleBuildRequest_ShadowInput.decode(reader, reader.uint32());
           continue;
+        case 24:
+          if (tag !== 194) {
+            break;
+          }
+
+          message.resultdb = ScheduleBuildRequest_ResultDB.decode(reader, reader.uint32());
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1955,6 +1983,7 @@ export const ScheduleBuildRequest = {
       shadowInput: isSet(object.shadowInput)
         ? ScheduleBuildRequest_ShadowInput.fromJSON(object.shadowInput)
         : undefined,
+      resultdb: isSet(object.resultdb) ? ScheduleBuildRequest_ResultDB.fromJSON(object.resultdb) : undefined,
     };
   },
 
@@ -2041,6 +2070,9 @@ export const ScheduleBuildRequest = {
     if (message.shadowInput !== undefined) {
       obj.shadowInput = ScheduleBuildRequest_ShadowInput.toJSON(message.shadowInput);
     }
+    if (message.resultdb !== undefined) {
+      obj.resultdb = ScheduleBuildRequest_ResultDB.toJSON(message.resultdb);
+    }
     return obj;
   },
 
@@ -2097,6 +2129,9 @@ export const ScheduleBuildRequest = {
     message.retriable = object.retriable ?? 0;
     message.shadowInput = (object.shadowInput !== undefined && object.shadowInput !== null)
       ? ScheduleBuildRequest_ShadowInput.fromPartial(object.shadowInput)
+      : undefined;
+    message.resultdb = (object.resultdb !== undefined && object.resultdb !== null)
+      ? ScheduleBuildRequest_ResultDB.fromPartial(object.resultdb)
       : undefined;
     return message;
   },
@@ -2282,6 +2317,69 @@ export const ScheduleBuildRequest_ShadowInput = {
     _: I,
   ): ScheduleBuildRequest_ShadowInput {
     const message = createBaseScheduleBuildRequest_ShadowInput() as any;
+    return message;
+  },
+};
+
+function createBaseScheduleBuildRequest_ResultDB(): ScheduleBuildRequest_ResultDB {
+  return { isExportRootOverride: false };
+}
+
+export const ScheduleBuildRequest_ResultDB = {
+  encode(message: ScheduleBuildRequest_ResultDB, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.isExportRootOverride === true) {
+      writer.uint32(8).bool(message.isExportRootOverride);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ScheduleBuildRequest_ResultDB {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleBuildRequest_ResultDB() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.isExportRootOverride = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleBuildRequest_ResultDB {
+    return {
+      isExportRootOverride: isSet(object.isExportRootOverride)
+        ? globalThis.Boolean(object.isExportRootOverride)
+        : false,
+    };
+  },
+
+  toJSON(message: ScheduleBuildRequest_ResultDB): unknown {
+    const obj: any = {};
+    if (message.isExportRootOverride === true) {
+      obj.isExportRootOverride = message.isExportRootOverride;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ScheduleBuildRequest_ResultDB>, I>>(base?: I): ScheduleBuildRequest_ResultDB {
+    return ScheduleBuildRequest_ResultDB.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ScheduleBuildRequest_ResultDB>, I>>(
+    object: I,
+  ): ScheduleBuildRequest_ResultDB {
+    const message = createBaseScheduleBuildRequest_ResultDB() as any;
+    message.isExportRootOverride = object.isExportRootOverride ?? false;
     return message;
   },
 };

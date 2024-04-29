@@ -343,7 +343,7 @@ export interface TestResult {
    * Arbitrary JSON object that contains structured, domain-specific properties
    * of the test result.
    *
-   * The serialized size must be <= 4096 bytes.
+   * The serialized size must be <= 8 KB.
    */
   readonly properties:
     | { readonly [key: string]: any }
