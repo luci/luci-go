@@ -183,14 +183,10 @@ type LUCIAnalysisProject struct {
 	DefaultProject string
 }
 
-// Project return LUCI Analysis project given a LUCI Project.
-// In normal cases, it will just check the app.yaml for the LUCI Analysis project.
-// However, for the case of Chrome, where we don't have dev data, we need to
-// query from LUCI Analysis prod instead.
+// Project return LUCI Analysis GCP project given a LUCI Project.
+// In normal cases, it will just check the app.yaml for the LUCI Analysis GCP project.
+// However, for some project (eg. chrome) where we don't have dev data, we need to
+// query from LUCI Analysis prod instead. In this case, we can set the GCP project here.
 func (pg *LUCIAnalysisProject) Project(luciProject string) string {
-	// TODO (nqmtuan): Remove this when we finish testing Chrome.
-	if luciProject == "chrome" {
-		return "luci-analysis"
-	}
 	return pg.DefaultProject
 }
