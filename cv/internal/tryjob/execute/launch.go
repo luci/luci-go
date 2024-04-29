@@ -113,8 +113,6 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 				Reason:     tj.UntriggeredReason,
 			})
 		}
-		tj.EVersion += 1
-		tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 	}
 	if len(launchFailureLogs) > 0 {
 		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{
@@ -206,6 +204,25 @@ func (w *worker) saveLaunchedTryjobs(ctx context.Context, tryjobs []*tryjob.Tryj
 	var reconciled []*tryjob.Tryjob
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
+		// reload the tryjobs as the tryjobs could have been changed while LUCI CV
+		// is launching the tryjobs against backend.
+		currentTryjobs := make([]*tryjob.Tryjob, len(tryjobs))
+		for i, tj := range tryjobs {
+			currentTryjobs[i] = &tryjob.Tryjob{ID: tj.ID}
+		}
+		if err := datastore.Get(ctx, currentTryjobs); err != nil {
+			return errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
+		}
+		// update the tryjob with the eversion, update_time and all fields that
+		// have been updated by backend.Launch(...)
+		for i, tj := range tryjobs {
+			currentTj := currentTryjobs[i]
+			currentTj.ExternalID = tj.ExternalID
+			currentTj.Status = tj.Status
+			currentTj.Result = tj.Result
+			currentTj.EVersion += 1
+			currentTj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+		}
 		// It's possible (though unlikely) that the external ID of the launched
 		// Tryjob already has a record in CV. Reconcile to use the existing record
 		// and drop the record in the input by resetting the data and set the
