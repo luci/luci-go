@@ -44,7 +44,7 @@ func TestUpdateAnalysisStatus(t *testing.T) {
       segments[1].end_position AS nominal_lower,
       STRING(variant.builder) AS builder
     FROM test_variant_segments_unexpected_realtime
-    WHERE ARRAY_LENGTH(segments) > 1
+    WHERE project = @project AND ARRAY_LENGTH(segments) > 1
   ),
   builder_regression_groups AS (
     SELECT
@@ -97,7 +97,7 @@ func TestUpdateAnalysisStatus(t *testing.T) {
     -- Filter by test_verdict.partition_time to only return test failures that have test verdict recently.
     -- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
     -- If this is found to be too restricted, we can increase it later.
-    WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+    WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY) AND v.project = @project
     GROUP BY v.buildbucket_build.builder.bucket, v.buildbucket_build.builder.builder, g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
 SELECT regression_group.*,
@@ -127,7 +127,7 @@ LIMIT 5000`)
       segments[1].end_position AS nominal_lower,
       STRING(variant.builder) AS builder
     FROM test_variant_segments_unexpected_realtime
-    WHERE ARRAY_LENGTH(segments) > 1
+    WHERE project = @project AND ARRAY_LENGTH(segments) > 1
   ),
   builder_regression_groups AS (
     SELECT
@@ -180,7 +180,7 @@ LIMIT 5000`)
     -- Filter by test_verdict.partition_time to only return test failures that have test verdict recently.
     -- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
     -- If this is found to be too restricted, we can increase it later.
-    WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+    WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY) AND v.project = @project
     GROUP BY v.buildbucket_build.builder.bucket, v.buildbucket_build.builder.builder, g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
 SELECT regression_group.*,

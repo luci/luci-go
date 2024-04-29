@@ -37,6 +37,8 @@ import (
 	"google.golang.org/api/option"
 )
 
+var internalDatasetID = "internal"
+
 var readFailureTemplate = template.Must(template.New("").Parse(
 	`
 {{define "basic" -}}
@@ -50,7 +52,7 @@ WITH
       segments[1].end_position AS nominal_lower,
       STRING(variant.builder) AS builder
     FROM test_variant_segments_unexpected_realtime
-    WHERE ARRAY_LENGTH(segments) > 1
+    WHERE project = @project AND ARRAY_LENGTH(segments) > 1
   ),
   builder_regression_groups AS (
     SELECT
@@ -103,7 +105,7 @@ WITH
     -- Filter by test_verdict.partition_time to only return test failures that have test verdict recently.
     -- 3 days is chosen as we expect tests run at least once every 3 days if they are not disabled.
     -- If this is found to be too restricted, we can increase it later.
-    WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+    WHERE v.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY) AND v.project = @project
     GROUP BY v.buildbucket_build.builder.bucket, v.buildbucket_build.builder.builder, g.testVariants[0].TestId,  g.testVariants[0].VariantHash, g.RefHash
   )
 {{- if .ExcludedPools}}
@@ -229,9 +231,10 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		return nil, errors.Annotate(err, "generate test failures query").Err()
 	}
 	q := c.client.Query(queryStm)
-	q.DefaultDatasetID = task.Project
+	q.DefaultDatasetID = internalDatasetID
 	q.DefaultProjectID = c.luciAnalysisProjectFunc(task.Project)
 	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: task.Project},
 		{Name: "dimensionExcludes", Value: task.DimensionExcludes},
 		{Name: "excludedBuckets", Value: filter.GetExcludedBuckets()},
 		{Name: "excludedPools", Value: filter.GetExcludedTestPools()},
@@ -317,7 +320,8 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 		ANY_VALUE(sources.gitiles_commit.commit_hash) AS CommitHash,
 		sources.gitiles_commit.position AS Position
 	FROM test_verdicts
-	WHERE test_id = @testID
+	WHERE project = @project
+		AND test_id = @testID
 		AND variant_hash = @variantHash
 		AND source_ref_hash = @refHash
 		AND buildbucket_build.builder.bucket = @bucket
@@ -327,9 +331,10 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 	GROUP BY sources.gitiles_commit.position
 	ORDER BY sources.gitiles_commit.position DESC
 `)
-	q.DefaultDatasetID = tf.Project
+	q.DefaultDatasetID = internalDatasetID
 	q.DefaultProjectID = c.luciAnalysisProjectFunc(tf.Project)
 	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: tf.Project},
 		{Name: "testID", Value: tf.TestID},
 		{Name: "variantHash", Value: tf.VariantHash},
 		{Name: "refHash", Value: tf.RefHash},
@@ -423,14 +428,17 @@ func (c *Client) ReadLatestVerdict(ctx context.Context, project string, keys []T
 				)[OFFSET(0)] AS TestName,
 			ANY_VALUE(status HAVING MAX tv.partition_time) AS Status
 		FROM test_verdicts tv
-		WHERE ` + whereClause + `
+		WHERE project = @project AND ` + whereClause + `
 		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
 		GROUP BY test_id, variant_hash, source_ref_hash
  	`
 	logging.Infof(ctx, "Running query %s", query)
 	q := c.client.Query(query)
-	q.DefaultDatasetID = project
+	q.DefaultDatasetID = internalDatasetID
 	q.DefaultProjectID = c.luciAnalysisProjectFunc(project)
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: project},
+	}
 	job, err := q.Run(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying test name").Err()
@@ -481,16 +489,17 @@ func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project strin
 		SELECT
 			COUNT(*) as count
 		FROM test_verdicts
-		WHERE test_id = @testID AND variant_hash = @variantHash AND source_ref_hash = @refHash
+		WHERE project = @project AND test_id = @testID AND variant_hash = @variantHash AND source_ref_hash = @refHash
 		AND counts.total_non_skipped > counts.unexpected_non_skipped
 		AND sources.gitiles_commit.position > @sinceCommitPosition
 		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
  	`
 	logging.Infof(ctx, "Running query %s", query)
 	q := c.client.Query(query)
-	q.DefaultDatasetID = project
+	q.DefaultDatasetID = internalDatasetID
 	q.DefaultProjectID = c.luciAnalysisProjectFunc(project)
 	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: project},
 		{Name: "testID", Value: key.TestID},
 		{Name: "variantHash", Value: key.VariantHash},
 		{Name: "refHash", Value: key.RefHash},
@@ -553,11 +562,14 @@ func (c *Client) ChangepointAnalysisForTestVariant(ctx context.Context, project 
 				FROM UNNEST(segments) s
 			) AS Segments
 		FROM test_variant_segments_unexpected_realtime
-		WHERE ` + whereClause
+		WHERE project = @project AND ` + whereClause
 	logging.Infof(ctx, "Running query %s", query)
 	q := c.client.Query(query)
-	q.DefaultDatasetID = project
+	q.DefaultDatasetID = internalDatasetID
 	q.DefaultProjectID = c.luciAnalysisProjectFunc(project)
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: project},
+	}
 
 	job, err := q.Run(ctx)
 	if err != nil {
