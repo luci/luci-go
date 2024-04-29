@@ -97,6 +97,23 @@ service ResultDB {
   // Supports invocation inclusions.
   rpc QueryArtifacts(QueryArtifactsRequest) returns (QueryArtifactsResponse) {};
 
+  // Retrieves test variants for a test run. A test run comprises only
+  // the test results from a single invocation and not its included
+  // invocations.
+  //
+  // Useful to incrementally ingest test results for an export root as its
+  // individual constituent invocations finalize, in conjunction with
+  // the invocations-ready-for-export pub/sub.
+  //
+  // Compared to the ListTestResults RPC, this RPC ensures all results
+  // for a test variant are returned together, which is useful when
+  // ingesting results into analyses that treat retried test results
+  // in a given test run differently to the first retry.
+  //
+  // To use, the caller must have `resultdb.testResults.list` permission
+  // on the queried invocation.
+  rpc QueryRunTestVariants(QueryRunTestVariantsRequest) returns (QueryRunTestVariantsResponse) {};
+
   // Retrieves test variants from an invocation, recursively.
   // Supports invocation inclusions.
   rpc QueryTestVariants(QueryTestVariantsRequest) returns (QueryTestVariantsResponse) {};
@@ -450,6 +467,60 @@ message QueryTestVariantsResponse {
   // kilobytes and there are usually no more than a handful of different sources
   // tested in an invocation, so deduplicating them here reduces response size.
   map<string, Sources> sources = 3;
+}
+
+// Request message for QueryRunTestVariants RPC.
+message QueryRunTestVariantsRequest {
+  // Retrieve test variants for the test run represented by this invocation.
+  // Format: invocations/{INVOCATION_ID}.
+  string invocation = 1;
+
+  // The maximum number of test results to be included in a test variant.
+  //
+  // If a test variant has more results than the limit, the remaining results
+  // will not be returned.
+  // If unspecified, at most 10 results will be included in a test variant.
+  // The maximum value is 100; values above 100 will be coerced to 100.
+  int32 result_limit = 2;
+
+  // The maximum number of test variants to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 1000 test variants will be returned.
+  // The maximum value is 10,000; values above 10,000 will be coerced to 10,000.
+  // Page sizes smaller than the maximum may be returned at the server's
+  // discretion, for example, due to keep the response size tractable for
+  // the server.
+  int32 page_size = 3;
+
+  // A page token, received from a previous `QueryRunTestVariants` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to
+  // `QueryRunTestVariants` MUST match the call that provided the page
+  // token.
+  string page_token = 4;
+}
+
+// A response message for QueryRunTestVariants RPC.
+message QueryRunTestVariantsResponse {
+  // Test variants for the run.
+  //
+  // Exonerations will be unset, as it is verdict-level concept and not
+  // a test run-level concept.
+  //
+  // Sources will also be unset, as this RPC is only querying a particular
+  // test run and there is no opportunity to resolve inherited test sources.
+  // When used in conjunction with the invocation-ready-for-export pub/sub,
+  // sources can be obtained from that pub/sub instead.
+  //
+  // Ordered by test_id, then variant_hash.
+  repeated TestVariant test_variants = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there were no subsequent pages at the time of
+  // request.
+  string next_page_token = 2;
 }
 
 // A request message for BatchGetTestVariants RPC.
