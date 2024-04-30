@@ -54,6 +54,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/servers/imports"
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
 	"go.chromium.org/luci/auth_service/impl/servers/oauth"
+	"go.chromium.org/luci/auth_service/impl/servers/replicas"
 	"go.chromium.org/luci/auth_service/services/frontend/subscription"
 
 	// Ensure registration of validation rules.
@@ -118,6 +119,7 @@ func main() {
 		rpcpb.RegisterAllowlistsServer(srv, &allowlists.Server{})
 		rpcpb.RegisterAuthDBServer(srv, authdbServer)
 		rpcpb.RegisterChangeLogsServer(srv, &changelogs.Server{})
+		rpcpb.RegisterReplicasServer(srv, &replicas.Server{})
 
 		// The middleware chain applied to all plain HTTP routes.
 		mw := router.MiddlewareChain{

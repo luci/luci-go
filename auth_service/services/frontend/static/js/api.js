@@ -191,6 +191,11 @@ var api = (function () {
     return call('auth.service.ChangeLogs', 'ListChangeLogs', q)
   }
 
+  // Get all services linked via legacy replica method.
+  exports.listReplicas = function () {
+    return call('auth.service.Replicas', 'ListReplicas');
+  }
+
   //// XSRF token utilities.
 
 

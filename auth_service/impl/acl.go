@@ -47,6 +47,9 @@ var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 	// All methods to work with ChangeLogs require authorization.
 	"/auth.service.ChangeLogs/*": authdb.AuthServiceAccessGroup,
 
+	// All methods to work with replicas require authorization.
+	"/auth.service.Replicas/*": authdb.AuthServiceAccessGroup,
+
 	// Internals are used by the UI which is accessible only to authorized users.
 	"/auth.internals.Internals/*": authdb.AuthServiceAccessGroup,
 
