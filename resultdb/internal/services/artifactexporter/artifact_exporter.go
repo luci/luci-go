@@ -22,11 +22,14 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
 	"cloud.google.com/go/spanner"
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"google.golang.org/genproto/googleapis/bytestream"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -42,6 +45,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
+	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -55,6 +59,13 @@ import (
 // Artifacts content bigger than this size needs to be sharded.
 // Leave 10 KB for other fields, the rest is content.
 const MaxShardContentSize = bqutil.RowMaxBytes - 10*1024
+
+// MaxRBECasBatchSize is the batch size limit when we read artifact content.
+// TODO(nqmtuan): Call the Capacity API to find out the exact size limit for
+// batch operations.
+// For now, hardcode to be 2MB. It should be under the limit,
+// since BatchUpdateBlobs in BatchCreateArtifacts can handle up to 10MB.
+const MaxRBECasBatchSize = 2 * 1024 * 1024 // 2 MB
 
 type Artifact struct {
 	InvocationID string
@@ -125,8 +136,10 @@ type BQExportClient interface {
 
 type artifactExporter struct {
 	rbecasInstance string
-	// Client to read from RBE-CAS.
-	rbecasClient bytestream.ByteStreamClient
+	// bytestreamClient is the client to stream big artifacts from RBE-CAS.
+	bytestreamClient bytestream.ByteStreamClient
+	// casClient is used to read artifacts in batch.
+	casClient repb.ContentAddressableStorageClient
 	// Client to export to BigQuery.
 	bqExportClient BQExportClient
 }
@@ -159,9 +172,10 @@ func InitServer(srv *server.Server, opts Options) error {
 	})
 
 	ae := &artifactExporter{
-		rbecasInstance: opts.ArtifactRBEInstance,
-		rbecasClient:   bytestream.NewByteStreamClient(conn),
-		bqExportClient: bqClient,
+		rbecasInstance:   opts.ArtifactRBEInstance,
+		bytestreamClient: bytestream.NewByteStreamClient(conn),
+		casClient:        repb.NewContentAddressableStorageClient(conn),
+		bqExportClient:   bqClient,
 	}
 
 	ExportArtifactsTask.AttachHandler(func(ctx context.Context, msg proto.Message) error {
@@ -239,7 +253,7 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 		// Download artifacts content and put the rows in a channel.
 		work <- func() error {
 			defer close(rowC)
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, MaxShardContentSize)
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, MaxShardContentSize, MaxRBECasBatchSize)
 			if err != nil {
 				return errors.Annotate(err, "download multiple artifact content").Err()
 			}
@@ -368,36 +382,158 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 // downloadMutipleArtifactContent downloads multiple artifact content
 // in parallel and creates TextArtifactRows for each rows.
 // The rows will be pushed in rowC.
-func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context, artifacts []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow, maxShardContentSize int) error {
+// Artifacts with content size smaller or equal than MaxRBECasBatchSize will be downloaded in batch.
+// Artifacts with content size bigger than MaxRBECasBatchSize will be downloaded in streaming manner.
+func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context, artifacts []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow, maxShardContentSize, maxRBECasBatchSize int) error {
 	project, _ := realms.Split(inv.Realm)
-	return parallel.FanOutIn(func(work chan<- func() error) {
-		for _, artifact := range artifacts {
-			artifact := artifact
-			work <- func() error {
-				err := ae.downloadArtifactContent(ctx, artifact, inv, rowC, maxShardContentSize)
-				if err != nil {
-					// We don't want to retry on this error. Just log a warning.
-					if errors.Is(err, ErrInvalidUTF8) {
-						logging.Fields{
-							"InvocationID": artifact.InvocationID,
-							"TestID":       artifact.TestID,
-							"ResultID":     artifact.ResultID,
-							"ArtifactID":   artifact.ArtifactID,
-						}.Warningf(ctx, "Test result artifact has invalid UTF-8")
-						artifactExportCounter.Add(ctx, 1, project, "failure_input")
-					} else {
-						return errors.Annotate(err, "download artifact content inv_id = %q test id =%q result_id=%q artifact_id = %q", artifact.InvocationID, artifact.TestID, artifact.ResultID, artifact.ArtifactID).Err()
+
+	// Sort the artifacts by size, make it easier to do batching.
+	sort.Slice(artifacts, func(i, j int) bool {
+		return (artifacts[i].Size < artifacts[j].Size)
+	})
+
+	// Limit to 10 workers to avoid possible OOM.
+	return parallel.WorkPool(10, func(work chan<- func() error) {
+		// Smaller artifacts should be downloaded in batch.
+		currentBatchSize := 0
+		batch := []*Artifact{}
+		bigArtifactStartIndex := -1
+		for i, artifact := range artifacts {
+			if int(artifact.Size) > maxRBECasBatchSize {
+				bigArtifactStartIndex = i
+				break
+			}
+			// Exceed batch limit, download whatever in batch.
+			if currentBatchSize+int(artifact.Size) > maxRBECasBatchSize {
+				b := batch
+				work <- func() error {
+					err := ae.batchDownloadArtifacts(ctx, b, inv, rowC)
+					if err != nil {
+						return errors.Annotate(err, "batch download artifacts").Err()
 					}
+					return nil
+				}
+				// Reset
+				currentBatchSize = 0
+				batch = []*Artifact{}
+			}
+			batch = append(batch, artifact)
+			currentBatchSize += int(artifact.Size)
+		}
+
+		// Download whatever left in batch.
+		if len(batch) > 0 {
+			b := batch
+			work <- func() error {
+				err := ae.batchDownloadArtifacts(ctx, b, inv, rowC)
+				if err != nil {
+					return errors.Annotate(err, "batch download artifacts").Err()
 				}
 				return nil
+			}
+		}
+
+		// Download the big artifacts in streaming manner.
+		if bigArtifactStartIndex > -1 {
+			for i := bigArtifactStartIndex; i < len(artifacts); i++ {
+				artifact := artifacts[i]
+				work <- func() error {
+					err := ae.streamArtifactContent(ctx, artifact, inv, rowC, maxShardContentSize)
+					if err != nil {
+						// We don't want to retry on this error. Just log a warning.
+						if errors.Is(err, ErrInvalidUTF8) {
+							logging.Fields{
+								"InvocationID": artifact.InvocationID,
+								"TestID":       artifact.TestID,
+								"ResultID":     artifact.ResultID,
+								"ArtifactID":   artifact.ArtifactID,
+							}.Warningf(ctx, "Test result artifact has invalid UTF-8")
+							artifactExportCounter.Add(ctx, 1, project, "failure_input")
+						} else {
+							return errors.Annotate(err, "download artifact content inv_id = %q test id =%q result_id=%q artifact_id = %q", artifact.InvocationID, artifact.TestID, artifact.ResultID, artifact.ArtifactID).Err()
+						}
+					}
+					return nil
+				}
 			}
 		}
 	})
 }
 
-// downloadArtifactContent downloads artifact content from RBE-CAS.
+// batchDownloadArtifacts downloads artifact content from RBE-CAS in batch.
 // It generates one or more TextArtifactRows for the content and push in rowC.
-func (ae *artifactExporter) downloadArtifactContent(ctx context.Context, a *Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow, maxShardContentSize int) error {
+func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow) error {
+	logging.Infof(ctx, "batch download artifacts for %d artifacts", len(batch))
+	req := &repb.BatchReadBlobsRequest{InstanceName: ae.rbecasInstance}
+	for _, artifact := range batch {
+		req.Digests = append(req.Digests, &repb.Digest{
+			Hash:      artifacts.TrimHashPrefix(artifact.RBECASHash),
+			SizeBytes: artifact.Size,
+		})
+	}
+	resp, err := ae.casClient.BatchReadBlobs(ctx, req)
+	if err != nil {
+		return errors.Annotate(err, "batch read blobs").Err()
+	}
+	project, realm := realms.Split(inv.Realm)
+	for i, r := range resp.GetResponses() {
+		artifact := batch[i]
+		c := codes.Code(r.GetStatus().GetCode())
+		loggingFields := logging.Fields{
+			"InvocationID": artifact.InvocationID,
+			"TestID":       artifact.TestID,
+			"ResultID":     artifact.ResultID,
+			"ArtifactID":   artifact.ArtifactID,
+		}
+		// It's no use to retry if we get those code.
+		// We'll just log the error.
+		if c == codes.InvalidArgument {
+			loggingFields.Warningf(ctx, "Invalid artifact")
+			artifactExportCounter.Add(ctx, 1, project, "failure_input")
+			continue
+		}
+		if c == codes.NotFound {
+			loggingFields.Warningf(ctx, "Not found artifact")
+			artifactExportCounter.Add(ctx, 1, project, "failure_input")
+			continue
+		}
+
+		// Perhaps something is wrong with RBE, we should retry.
+		if c != codes.OK {
+			loggingFields.Errorf(ctx, "Error downloading artifact. Code = %v message = %q", c, r.Status.GetMessage())
+			return errors.Reason("downloading artifact").Err()
+		}
+		// Check data, make sure it is of valid UTF-8 format.
+		if !utf8.Valid(r.Data) {
+			loggingFields.Warningf(ctx, "Invalid UTF-8 content")
+			artifactExportCounter.Add(ctx, 1, project, "failure_input")
+			continue
+		}
+		// Everything is ok, send to rowC.
+		// This is guaranteed to be small artifact, so we need only 1 shard.
+		row := &bqpb.TextArtifactRow{
+			Project:             project,
+			Realm:               realm,
+			InvocationId:        string(artifact.InvocationID),
+			TestId:              artifact.TestID,
+			ResultId:            artifact.ResultID,
+			ArtifactId:          artifact.ArtifactID,
+			ContentType:         artifact.ContentType,
+			Content:             string(r.Data),
+			ArtifactContentSize: int32(artifact.Size),
+			ShardContentSize:    int32(artifact.Size),
+			TestStatus:          testStatusToString(artifact.TestStatus),
+			PartitionTime:       timestamppb.New(inv.CreateTime.AsTime()),
+			ArtifactShard:       fmt.Sprintf("%s:0", artifact.ArtifactID),
+		}
+		rowC <- row
+	}
+	return nil
+}
+
+// streamArtifactContent downloads artifact content from RBE-CAS in streaming manner.
+// It generates one or more TextArtifactRows for the content and push in rowC.
+func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow, maxShardContentSize int) error {
 	ac := artifactcontent.Reader{
 		RBEInstance: ae.rbecasInstance,
 		Hash:        a.RBECASHash,
@@ -431,7 +567,7 @@ func (ae *artifactExporter) downloadArtifactContent(ctx context.Context, a *Arti
 		}
 	}
 
-	err := ac.DownloadRBECASContent(ctx, ae.rbecasClient, func(ctx context.Context, pr io.Reader) error {
+	err := ac.DownloadRBECASContent(ctx, ae.bytestreamClient, func(ctx context.Context, pr io.Reader) error {
 		sc := bufio.NewScanner(pr)
 
 		// Read by runes, so we will know if the input contains invalid Unicode

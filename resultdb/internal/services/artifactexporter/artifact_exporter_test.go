@@ -20,11 +20,15 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"google.golang.org/genproto/googleapis/bytestream"
+	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/tsmon"
@@ -43,13 +47,70 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+type fakeCASClient struct {
+	ResponseData      map[string][]byte
+	ResponseErrorCode map[string]int
+	Err               error
+	DigestHashes      [][]string
+	m                 sync.Mutex
+}
+
+func (c *fakeCASClient) BatchReadBlobs(ctx context.Context, in *repb.BatchReadBlobsRequest, opts ...grpc.CallOption) (*repb.BatchReadBlobsResponse, error) {
+	if c.Err != nil {
+		return nil, c.Err
+	}
+	res := &repb.BatchReadBlobsResponse{}
+	hashes := []string{}
+	for _, digest := range in.Digests {
+		hashes = append(hashes, digest.GetHash())
+		if code, ok := c.ResponseErrorCode[digest.Hash]; ok {
+			res.Responses = append(res.Responses, &repb.BatchReadBlobsResponse_Response{
+				Digest: digest,
+				Data:   []byte(""),
+				Status: &status.Status{Code: int32(code)},
+			})
+		} else {
+			data := []byte("batchdata")
+			if val, ok := c.ResponseData[digest.Hash]; ok {
+				data = []byte(val)
+			}
+			res.Responses = append(res.Responses, &repb.BatchReadBlobsResponse_Response{
+				Digest: digest,
+				Data:   data,
+				Status: &status.Status{Code: int32(codes.OK)},
+			})
+		}
+	}
+	c.m.Lock()
+	c.DigestHashes = append(c.DigestHashes, hashes)
+	c.m.Unlock()
+	return res, nil
+}
+
+func (c *fakeCASClient) BatchUpdateBlobs(ctx context.Context, in *repb.BatchUpdateBlobsRequest, opts ...grpc.CallOption) (*repb.BatchUpdateBlobsResponse, error) {
+	return nil, nil
+}
+
+func (c *fakeCASClient) FindMissingBlobs(ctx context.Context, in *repb.FindMissingBlobsRequest, opts ...grpc.CallOption) (*repb.FindMissingBlobsResponse, error) {
+	return nil, nil
+}
+
+func (c *fakeCASClient) GetTree(ctx context.Context, in *repb.GetTreeRequest, opts ...grpc.CallOption) (repb.ContentAddressableStorage_GetTreeClient, error) {
+	return nil, nil
+}
+
 type fakeByteStreamClient struct {
+	Err          error
 	ResponseData map[string][]byte
 }
 
 func (c *fakeByteStreamClient) Read(ctx context.Context, in *bytestream.ReadRequest, opts ...grpc.CallOption) (bytestream.ByteStream_ReadClient, error) {
+	if c.Err != nil {
+		return nil, c.Err
+	}
+
 	res := []*bytestream.ReadResponse{
-		{Data: []byte("data")},
+		{Data: []byte("streamdata")},
 	}
 	if val, ok := c.ResponseData[in.ResourceName]; ok {
 		res = []*bytestream.ReadResponse{
@@ -134,22 +195,36 @@ func TestQueryTextArtifacts(t *testing.T) {
 }
 
 func TestDownloadArtifactContent(t *testing.T) {
-	ae := artifactExporter{
-		rbecasClient: &fakeByteStreamClient{
-			ResponseData: map[string][]byte{
-				resourceName("hash1", 3): []byte("abc"),
-				// Invalid UTF-8. It does not result in any row.
-				resourceName("hash2", 2): {0xFF, 0xFE},
-				// Need more than 1 shards.
-				// each "€" is 3 bytes
-				// We need 2 shards.
-				resourceName("hash3", 150): []byte(strings.Repeat("€", 50)),
-			},
-		},
-	}
 	ctx := context.Background()
-	ctx, _ = tsmon.WithDummyInMemory(ctx)
 	Convey(`Download multiple artifact content`, t, func() {
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		casClient := &fakeCASClient{
+			ResponseData: map[string][]byte{
+				"hash1": []byte("abc"),
+				// Invalid UTF-8. It does not result in any row.
+				"hash2": {0xFF, 0xFE},
+				"hash5": []byte(strings.Repeat("a", 99)),
+			},
+			ResponseErrorCode: map[string]int{
+				"hash6": int(codes.InvalidArgument),
+				"hash7": int(codes.NotFound),
+				"hash8": int(codes.Internal),
+			},
+		}
+		ae := artifactExporter{
+			bytestreamClient: &fakeByteStreamClient{
+				ResponseData: map[string][]byte{
+					// Need more than 1 shards.
+					// each "€" is 3 bytes
+					// We need 2 shards.
+					// This should be downloaded by stream.
+					resourceName("hash3", 150): []byte(strings.Repeat("€", 50)),
+					// Invalid data.
+					resourceName("hash4", 150): {0xFF, 0xFE},
+				},
+			},
+			casClient: casClient,
+		}
 		rowC := make(chan *bqpb.TextArtifactRow, 10)
 		artifacts := []*Artifact{
 			{
@@ -182,74 +257,175 @@ func TestDownloadArtifactContent(t *testing.T) {
 				RBECASHash:   "hash3",
 				TestStatus:   pb.TestStatus_FAIL,
 			},
+			{
+				InvocationID: "inv1",
+				TestID:       "testid",
+				ResultID:     "0",
+				ArtifactID:   "a3",
+				ContentType:  "text/html",
+				Size:         150,
+				RBECASHash:   "hash4",
+				TestStatus:   pb.TestStatus_FAIL,
+			},
+			{
+				InvocationID: "inv1",
+				TestID:       "testid",
+				ResultID:     "0",
+				ArtifactID:   "a4",
+				ContentType:  "text/html",
+				Size:         97,
+				RBECASHash:   "hash5",
+				TestStatus:   pb.TestStatus_FAIL,
+			},
+			{
+				InvocationID: "inv1",
+				TestID:       "testid",
+				ResultID:     "0",
+				ArtifactID:   "a5",
+				ContentType:  "text/html",
+				Size:         98,
+				RBECASHash:   "hash6",
+				TestStatus:   pb.TestStatus_FAIL,
+			},
+			{
+				InvocationID: "inv1",
+				TestID:       "testid",
+				ResultID:     "0",
+				ArtifactID:   "a6",
+				ContentType:  "text/html",
+				Size:         99,
+				RBECASHash:   "hash7",
+				TestStatus:   pb.TestStatus_FAIL,
+			},
 		}
 		inv := &pb.Invocation{
 			Realm:      "chromium:ci",
 			CreateTime: timestamppb.New(time.Unix(10000, 0).UTC()),
 		}
-		err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100)
-		So(err, ShouldBeNil)
-		close(rowC)
-		rows := []*bqpb.TextArtifactRow{}
-		for r := range rowC {
-			rows = append(rows, r)
-		}
-		So(len(rows), ShouldEqual, 3)
-		// Sort the rows for deterministism.
-		sort.Slice(rows, func(i, j int) bool {
-			return (rows[i].ArtifactShard < rows[j].ArtifactShard)
+		Convey("Batch failed", func() {
+			ae.casClient = &fakeCASClient{
+				Err: errors.New("batch failed"),
+			}
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100)
+			So(err, ShouldErrLike, "batch failed")
 		})
-		So(rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
-			{
-				Project:             "chromium",
-				Realm:               "ci",
-				InvocationId:        "inv1",
-				TestId:              "",
-				ResultId:            "",
-				ArtifactId:          "a0",
-				ShardId:             0,
-				ContentType:         "text/plain; encoding=utf-8",
-				Content:             "abc",
-				ArtifactContentSize: int32(3),
-				ShardContentSize:    int32(3),
-				PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
-				ArtifactShard:       "a0:0",
-				TestStatus:          "",
-			},
-			{
-				Project:             "chromium",
-				Realm:               "ci",
-				InvocationId:        "inv1",
-				TestId:              "testid",
-				ResultId:            "0",
-				ArtifactId:          "a2",
-				ShardId:             0,
-				ContentType:         "text/html",
-				Content:             strings.Repeat("€", 33),
-				ArtifactContentSize: int32(150),
-				ShardContentSize:    int32(99),
-				PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
-				ArtifactShard:       "a2:0",
-				TestStatus:          "FAIL",
-			},
-			{
-				Project:             "chromium",
-				Realm:               "ci",
-				InvocationId:        "inv1",
-				TestId:              "testid",
-				ResultId:            "0",
-				ArtifactId:          "a2",
-				ShardId:             1,
-				ContentType:         "text/html",
-				Content:             strings.Repeat("€", 17),
-				ArtifactContentSize: int32(150),
-				ShardContentSize:    int32(51),
-				PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
-				ArtifactShard:       "a2:1",
-				TestStatus:          "FAIL",
-			},
+		Convey("Stream failed", func() {
+			ae.bytestreamClient = &fakeByteStreamClient{
+				Err: errors.New("stream failed"),
+			}
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100)
+			So(err, ShouldErrLike, "stream failed")
 		})
-		So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 1)
+
+		Convey("Succeed", func() {
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100)
+			So(err, ShouldBeNil)
+			close(rowC)
+			rows := []*bqpb.TextArtifactRow{}
+			for r := range rowC {
+				rows = append(rows, r)
+			}
+			// So(len(rows), ShouldEqual, 3)
+			// Sort the rows for deterministism.
+			sort.Slice(rows, func(i, j int) bool {
+				return (rows[i].ArtifactShard < rows[j].ArtifactShard)
+			})
+			So(rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
+				{
+					Project:             "chromium",
+					Realm:               "ci",
+					InvocationId:        "inv1",
+					TestId:              "",
+					ResultId:            "",
+					ArtifactId:          "a0",
+					ShardId:             0,
+					ContentType:         "text/plain; encoding=utf-8",
+					Content:             "abc",
+					ArtifactContentSize: int32(3),
+					ShardContentSize:    int32(3),
+					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
+					ArtifactShard:       "a0:0",
+					TestStatus:          "",
+				},
+				{
+					Project:             "chromium",
+					Realm:               "ci",
+					InvocationId:        "inv1",
+					TestId:              "testid",
+					ResultId:            "0",
+					ArtifactId:          "a2",
+					ShardId:             0,
+					ContentType:         "text/html",
+					Content:             strings.Repeat("€", 33),
+					ArtifactContentSize: int32(150),
+					ShardContentSize:    int32(99),
+					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
+					ArtifactShard:       "a2:0",
+					TestStatus:          "FAIL",
+				},
+				{
+					Project:             "chromium",
+					Realm:               "ci",
+					InvocationId:        "inv1",
+					TestId:              "testid",
+					ResultId:            "0",
+					ArtifactId:          "a2",
+					ShardId:             1,
+					ContentType:         "text/html",
+					Content:             strings.Repeat("€", 17),
+					ArtifactContentSize: int32(150),
+					ShardContentSize:    int32(51),
+					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
+					ArtifactShard:       "a2:1",
+					TestStatus:          "FAIL",
+				},
+				{
+					Project:             "chromium",
+					Realm:               "ci",
+					InvocationId:        "inv1",
+					TestId:              "testid",
+					ResultId:            "0",
+					ArtifactId:          "a4",
+					ShardId:             0,
+					ContentType:         "text/html",
+					Content:             strings.Repeat("a", 99),
+					ArtifactContentSize: int32(97),
+					ShardContentSize:    int32(97),
+					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
+					ArtifactShard:       "a4:0",
+					TestStatus:          "FAIL",
+				},
+			})
+			// Make sure we do the chunking properly.
+			sort.Slice(casClient.DigestHashes, func(i, j int) bool {
+				return (casClient.DigestHashes[i][0] < casClient.DigestHashes[j][0])
+			})
+			So(casClient.DigestHashes, ShouldResemble, [][]string{
+				{"hash2", "hash1"},
+				{"hash5"},
+				{"hash6"},
+				{"hash7"},
+			})
+			So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 4)
+		})
+
+		Convey("One batch error", func() {
+			artifacts := []*Artifact{
+				{
+					InvocationID: "inv1",
+					TestID:       "",
+					ResultID:     "",
+					ArtifactID:   "a0",
+					ContentType:  "text/plain; encoding=utf-8",
+					Size:         3,
+					RBECASHash:   "hash8",
+					TestStatus:   pb.TestStatus_PASS,
+				},
+			}
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100)
+			So(err, ShouldErrLike, "downloading artifact")
+			close(rowC)
+		})
 	})
 }
 
@@ -259,8 +435,9 @@ func TestExportArtifacts(t *testing.T) {
 		ctx = memory.Use(ctx)
 		bqClient := &fakeBQClient{}
 		ae := artifactExporter{
-			rbecasClient:   &fakeByteStreamClient{},
-			bqExportClient: bqClient,
+			bytestreamClient: &fakeByteStreamClient{},
+			bqExportClient:   bqClient,
+			casClient:        &fakeCASClient{},
 		}
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
@@ -332,7 +509,7 @@ func TestExportArtifacts(t *testing.T) {
 					ArtifactId:          "a0",
 					ShardId:             0,
 					ContentType:         "text/plain; encoding=utf-8",
-					Content:             "data",
+					Content:             "batchdata",
 					ArtifactContentSize: 4,
 					ArtifactShard:       "a0:0",
 					ShardContentSize:    4,
@@ -347,7 +524,7 @@ func TestExportArtifacts(t *testing.T) {
 					ArtifactId:          "a1",
 					ShardId:             0,
 					ContentType:         "text/html",
-					Content:             "data",
+					Content:             "batchdata",
 					ArtifactContentSize: 4,
 					ArtifactShard:       "a1:0",
 					TestStatus:          "PASS",
@@ -367,8 +544,8 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		bqClient := &fakeBQClient{}
 		ae := artifactExporter{
-			rbecasClient:   &fakeByteStreamClient{},
-			bqExportClient: bqClient,
+			bytestreamClient: &fakeByteStreamClient{},
+			bqExportClient:   bqClient,
 		}
 
 		rowC := make(chan *bqpb.TextArtifactRow, 10)
