@@ -27,7 +27,7 @@ import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 
 import { ITEM_HEIGHT, SIDE_PANEL_WIDTH } from './constants';
-import { SidePanelItemSpan } from './side_panel_item';
+import { SidePanelItem } from './side_panel_item';
 import { TimeSpan } from './time_span';
 
 export interface IncludedInvocationsTimelineProps {
@@ -57,7 +57,7 @@ export function IncludedInvocationsTimeline({
       <TopAxis />
       <SidePanel
         content={(index) => (
-          <SidePanelItemSpan
+          <SidePanelItem
             invName={invocation.includedInvocations[index]}
             parentCreateTime={createTime}
           />

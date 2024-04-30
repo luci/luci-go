@@ -14,13 +14,14 @@
 
 import { Box, styled, useTheme } from '@mui/material';
 import { axisLeft, select } from 'd3';
-import { ReactNode, forwardRef, useEffect, useRef } from 'react';
+import { CSSProperties, ReactNode, forwardRef, useEffect, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
 import { useTimelineConfig } from './context';
 
 interface OptionalChildrenProps {
   readonly children?: ReactNode;
+  readonly style?: CSSProperties;
 }
 
 function SidePanelItem({ ...props }: OptionalChildrenProps) {
@@ -43,7 +44,23 @@ const SidePanelSvg = forwardRef<HTMLDivElement, OptionalChildrenProps>(
     const height = config.itemHeight * config.itemCount;
 
     return (
-      <svg {...props} height={height} width={config.sidePanelWidth}>
+      <svg
+        {...props}
+        // We do not need paddings as transforms are used to place the children
+        // in the right place. We need to override `style.paddingTop(Bottom)`
+        // specifically because that's what used by virtuoso to set paddings.
+        //
+        // An alternative solution would be calculating the offset relative to
+        // the first rendered item. But this means every item needs to be
+        // rerendered when scrolling, as the offset on every item needs to be
+        // updated.
+        //
+        // TODO: add an integration test to ensure this continues to work after
+        // virtuoso is upgraded.
+        style={{ ...props.style, paddingTop: 0, paddingBottom: 0 }}
+        height={height}
+        width={config.sidePanelWidth}
+      >
         <g
           ref={gridLineElement}
           transform={`translate(0.5, 0.5)`}

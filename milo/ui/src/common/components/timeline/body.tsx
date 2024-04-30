@@ -14,7 +14,7 @@
 
 import { Box, styled } from '@mui/material';
 import { ScaleTime, axisLeft, axisTop, select } from 'd3';
-import { ReactNode, forwardRef, useEffect, useRef } from 'react';
+import { CSSProperties, ReactNode, forwardRef, useEffect, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
 import {
@@ -29,6 +29,7 @@ const Container = styled(Box)`
 
 interface OptionalChildrenProps {
   readonly children?: ReactNode;
+  readonly style?: CSSProperties;
 }
 
 function BodyItem(props: OptionalChildrenProps) {
@@ -85,6 +86,18 @@ const BodySvg = forwardRef<HTMLDivElement, OptionalChildrenProps>(
     return (
       <svg
         {...props}
+        // We do not need paddings as transforms are used to place the children
+        // in the right place. We need to override `style.paddingTop(Bottom)`
+        // specifically because that's what used by virtuoso to set paddings.
+        //
+        // An alternative solution would be calculating the offset relative to
+        // the first rendered item. But this means every item needs to be
+        // rerendered when scrolling, as the offset on every item needs to be
+        // updated.
+        //
+        // TODO: add an integration test to ensure this continues to work after
+        // virtuoso is upgraded.
+        style={{ ...props.style, paddingTop: 0, paddingBottom: 0 }}
         height={height}
         width={config.bodyWidth}
         ref={svgRef}

@@ -35,7 +35,7 @@ export interface SidePanelItemProps {
   readonly parentCreateTime: DateTime;
 }
 
-export function SidePanelItemSpan({
+export function SidePanelItem({
   invName,
   parentCreateTime,
 }: SidePanelItemProps) {
