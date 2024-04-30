@@ -473,7 +473,8 @@ export interface ScheduleBuildRequest {
    * If this field is set, it means the build to be scheduled will
    * * be scheduled in the shadow bucket of the requested bucket, with shadow
    *   adjustments on service_account, dimensions and properties.
-   * * inherit its parent build's agent input and agent source if it has a parent.
+   * * inherit its parent build's agent input and agent source if it has a
+   *   parent and `inherit_from_parent` is true.
    */
   readonly shadowInput:
     | ScheduleBuildRequest_ShadowInput
@@ -512,6 +513,11 @@ export interface ScheduleBuildRequest_Swarming {
 
 /** Information for scheduling a build as a shadow build. */
 export interface ScheduleBuildRequest_ShadowInput {
+  /**
+   * Flag for whether the build should inherit its parent build's agent input
+   * and agent source.
+   */
+  readonly inheritFromParent: boolean;
 }
 
 /** ResultDB-specific part of build request. */
@@ -2275,11 +2281,14 @@ export const ScheduleBuildRequest_Swarming = {
 };
 
 function createBaseScheduleBuildRequest_ShadowInput(): ScheduleBuildRequest_ShadowInput {
-  return {};
+  return { inheritFromParent: false };
 }
 
 export const ScheduleBuildRequest_ShadowInput = {
-  encode(_: ScheduleBuildRequest_ShadowInput, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: ScheduleBuildRequest_ShadowInput, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.inheritFromParent === true) {
+      writer.uint32(8).bool(message.inheritFromParent);
+    }
     return writer;
   },
 
@@ -2290,6 +2299,13 @@ export const ScheduleBuildRequest_ShadowInput = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.inheritFromParent = reader.bool();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2299,12 +2315,17 @@ export const ScheduleBuildRequest_ShadowInput = {
     return message;
   },
 
-  fromJSON(_: any): ScheduleBuildRequest_ShadowInput {
-    return {};
+  fromJSON(object: any): ScheduleBuildRequest_ShadowInput {
+    return {
+      inheritFromParent: isSet(object.inheritFromParent) ? globalThis.Boolean(object.inheritFromParent) : false,
+    };
   },
 
-  toJSON(_: ScheduleBuildRequest_ShadowInput): unknown {
+  toJSON(message: ScheduleBuildRequest_ShadowInput): unknown {
     const obj: any = {};
+    if (message.inheritFromParent === true) {
+      obj.inheritFromParent = message.inheritFromParent;
+    }
     return obj;
   },
 
@@ -2314,9 +2335,10 @@ export const ScheduleBuildRequest_ShadowInput = {
     return ScheduleBuildRequest_ShadowInput.fromPartial(base ?? ({} as any));
   },
   fromPartial<I extends Exact<DeepPartial<ScheduleBuildRequest_ShadowInput>, I>>(
-    _: I,
+    object: I,
   ): ScheduleBuildRequest_ShadowInput {
     const message = createBaseScheduleBuildRequest_ShadowInput() as any;
+    message.inheritFromParent = object.inheritFromParent ?? false;
     return message;
   },
 };

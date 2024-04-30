@@ -19,7 +19,7 @@ mkdir ../src/proto
 cd ../../../../../
 
 # Use ts-proto instead of the official grpc-web because it is RPC framework
-# agnostic. This is curcial because we use a non-standard protocol (pRPC) for
+# agnostic. This is crucial because we use a non-standard protocol (pRPC) for
 # client-server communication.
 protoc \
   --plugin=./go.chromium.org/luci/milo/ui/node_modules/.bin/protoc-gen-ts_proto \
@@ -38,6 +38,7 @@ protoc \
   ./go.chromium.org/luci/analysis/proto/v1/clusters.proto \
   ./go.chromium.org/luci/analysis/proto/v1/test_history.proto \
   ./go.chromium.org/luci/analysis/proto/v1/test_variant_branches.proto \
+  ./go.chromium.org/luci/auth_service/api/rpcpb/groups.proto \
   ./go.chromium.org/luci/bisection/proto/v1/analyses.proto \
   ./go.chromium.org/luci/buildbucket/proto/builder_service.proto \
   ./go.chromium.org/luci/buildbucket/proto/builds_service.proto \

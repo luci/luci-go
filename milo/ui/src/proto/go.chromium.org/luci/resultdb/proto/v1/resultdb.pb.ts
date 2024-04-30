@@ -333,8 +333,7 @@ export interface QueryTestVariantsRequest {
    * Retrieve test variants included in these invocations, directly or indirectly
    * (via Invocation.included_invocations).
    *
-   * Specifying multiple invocations is equivalent to querying one invocation
-   * that includes these.
+   * As of April 2024, a maximum of one invocation may be specified.
    */
   readonly invocations: readonly string[];
   /** A test variant must satisfy this predicate. */
@@ -414,6 +413,68 @@ export interface QueryTestVariantsResponse {
 export interface QueryTestVariantsResponse_SourcesEntry {
   readonly key: string;
   readonly value: Sources | undefined;
+}
+
+/** Request message for QueryRunTestVariants RPC. */
+export interface QueryRunTestVariantsRequest {
+  /**
+   * Retrieve test variants for the test run represented by this invocation.
+   * Format: invocations/{INVOCATION_ID}.
+   */
+  readonly invocation: string;
+  /**
+   * The maximum number of test results to be included in a test variant.
+   *
+   * If a test variant has more results than the limit, the remaining results
+   * will not be returned.
+   * If unspecified, at most 10 results will be included in a test variant.
+   * The maximum value is 100; values above 100 will be coerced to 100.
+   */
+  readonly resultLimit: number;
+  /**
+   * The maximum number of test variants to return.
+   *
+   * The service may return fewer than this value.
+   * If unspecified, at most 1000 test variants will be returned.
+   * The maximum value is 10,000; values above 10,000 will be coerced to 10,000.
+   * Page sizes smaller than the maximum may be returned at the server's
+   * discretion, for example, due to keep the response size tractable for
+   * the server.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `QueryRunTestVariants` call.
+   * Provide this to retrieve the subsequent page.
+   *
+   * When paginating, all other parameters provided to
+   * `QueryRunTestVariants` MUST match the call that provided the page
+   * token.
+   */
+  readonly pageToken: string;
+}
+
+/** A response message for QueryRunTestVariants RPC. */
+export interface QueryRunTestVariantsResponse {
+  /**
+   * Test variants for the run.
+   *
+   * Exonerations will be unset, as it is verdict-level concept and not
+   * a test run-level concept.
+   *
+   * Sources will also be unset, as this RPC is only querying a particular
+   * test run and there is no opportunity to resolve inherited test sources.
+   * When used in conjunction with the invocation-ready-for-export pub/sub,
+   * sources can be obtained from that pub/sub instead.
+   *
+   * Ordered by test_id, then variant_hash.
+   */
+  readonly testVariants: readonly TestVariant[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there were no subsequent pages at the time of
+   * request.
+   */
+  readonly nextPageToken: string;
 }
 
 /** A request message for BatchGetTestVariants RPC. */
@@ -2324,6 +2385,186 @@ export const QueryTestVariantsResponse_SourcesEntry = {
   },
 };
 
+function createBaseQueryRunTestVariantsRequest(): QueryRunTestVariantsRequest {
+  return { invocation: "", resultLimit: 0, pageSize: 0, pageToken: "" };
+}
+
+export const QueryRunTestVariantsRequest = {
+  encode(message: QueryRunTestVariantsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.invocation !== "") {
+      writer.uint32(10).string(message.invocation);
+    }
+    if (message.resultLimit !== 0) {
+      writer.uint32(16).int32(message.resultLimit);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(24).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(34).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryRunTestVariantsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryRunTestVariantsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.invocation = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.resultLimit = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryRunTestVariantsRequest {
+    return {
+      invocation: isSet(object.invocation) ? globalThis.String(object.invocation) : "",
+      resultLimit: isSet(object.resultLimit) ? globalThis.Number(object.resultLimit) : 0,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryRunTestVariantsRequest): unknown {
+    const obj: any = {};
+    if (message.invocation !== "") {
+      obj.invocation = message.invocation;
+    }
+    if (message.resultLimit !== 0) {
+      obj.resultLimit = Math.round(message.resultLimit);
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryRunTestVariantsRequest>, I>>(base?: I): QueryRunTestVariantsRequest {
+    return QueryRunTestVariantsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryRunTestVariantsRequest>, I>>(object: I): QueryRunTestVariantsRequest {
+    const message = createBaseQueryRunTestVariantsRequest() as any;
+    message.invocation = object.invocation ?? "";
+    message.resultLimit = object.resultLimit ?? 0;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryRunTestVariantsResponse(): QueryRunTestVariantsResponse {
+  return { testVariants: [], nextPageToken: "" };
+}
+
+export const QueryRunTestVariantsResponse = {
+  encode(message: QueryRunTestVariantsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.testVariants) {
+      TestVariant.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryRunTestVariantsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryRunTestVariantsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testVariants.push(TestVariant.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryRunTestVariantsResponse {
+    return {
+      testVariants: globalThis.Array.isArray(object?.testVariants)
+        ? object.testVariants.map((e: any) => TestVariant.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryRunTestVariantsResponse): unknown {
+    const obj: any = {};
+    if (message.testVariants?.length) {
+      obj.testVariants = message.testVariants.map((e) => TestVariant.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryRunTestVariantsResponse>, I>>(base?: I): QueryRunTestVariantsResponse {
+    return QueryRunTestVariantsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryRunTestVariantsResponse>, I>>(object: I): QueryRunTestVariantsResponse {
+    const message = createBaseQueryRunTestVariantsResponse() as any;
+    message.testVariants = object.testVariants?.map((e) => TestVariant.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
 function createBaseBatchGetTestVariantsRequest(): BatchGetTestVariantsRequest {
   return { invocation: "", testVariants: [], resultLimit: 0 };
 }
@@ -3147,6 +3388,24 @@ export interface ResultDB {
    */
   QueryArtifacts(request: QueryArtifactsRequest): Promise<QueryArtifactsResponse>;
   /**
+   * Retrieves test variants for a test run. A test run comprises only
+   * the test results from a single invocation and not its included
+   * invocations.
+   *
+   * Useful to incrementally ingest test results for an export root as its
+   * individual constituent invocations finalize, in conjunction with
+   * the invocations-ready-for-export pub/sub.
+   *
+   * Compared to the ListTestResults RPC, this RPC ensures all results
+   * for a test variant are returned together, which is useful when
+   * ingesting results into analyses that treat retried test results
+   * in a given test run differently to the first retry.
+   *
+   * To use, the caller must have `resultdb.testResults.list` permission
+   * on the queried invocation.
+   */
+  QueryRunTestVariants(request: QueryRunTestVariantsRequest): Promise<QueryRunTestVariantsResponse>;
+  /**
    * Retrieves test variants from an invocation, recursively.
    * Supports invocation inclusions.
    */
@@ -3180,6 +3439,7 @@ export class ResultDBClientImpl implements ResultDB {
     this.GetArtifact = this.GetArtifact.bind(this);
     this.ListArtifacts = this.ListArtifacts.bind(this);
     this.QueryArtifacts = this.QueryArtifacts.bind(this);
+    this.QueryRunTestVariants = this.QueryRunTestVariants.bind(this);
     this.QueryTestVariants = this.QueryTestVariants.bind(this);
     this.BatchGetTestVariants = this.BatchGetTestVariants.bind(this);
     this.QueryTestMetadata = this.QueryTestMetadata.bind(this);
@@ -3254,6 +3514,12 @@ export class ResultDBClientImpl implements ResultDB {
     const data = QueryArtifactsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryArtifacts", data);
     return promise.then((data) => QueryArtifactsResponse.fromJSON(data));
+  }
+
+  QueryRunTestVariants(request: QueryRunTestVariantsRequest): Promise<QueryRunTestVariantsResponse> {
+    const data = QueryRunTestVariantsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryRunTestVariants", data);
+    return promise.then((data) => QueryRunTestVariantsResponse.fromJSON(data));
   }
 
   QueryTestVariants(request: QueryTestVariantsRequest): Promise<QueryTestVariantsResponse> {
