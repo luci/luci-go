@@ -646,6 +646,7 @@ func (o *Options) FromGAEEnv() {
 	o.ShutdownDelay = time.Second
 	o.CloudProject = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
+	o.ClientAuth.GCESupportsArbitraryScopes = true
 	o.TsMonServiceName = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	o.TsMonJobName = os.Getenv("GAE_SERVICE")
 	o.ContainerImageID = fmt.Sprintf("appengine/%s/%s:%s",
@@ -719,6 +720,7 @@ func (o *Options) FromCloudRunEnv() error {
 	o.CloudProject = project
 	o.CloudRegion = region
 	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
+	o.ClientAuth.GCESupportsArbitraryScopes = true
 	o.OpenIDRPCAuthEnable = true
 	o.TsMonServiceName = project
 	o.TsMonJobName = os.Getenv("K_SERVICE")

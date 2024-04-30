@@ -54,15 +54,17 @@ var metadataClient = metadata.NewClient(&http.Client{
 var globalGCELock sync.Mutex
 
 type gceTokenProvider struct {
-	account  string
-	email    string
-	audience string // not empty iff using ID tokens
-	cacheKey CacheKey
+	account      string
+	email        string
+	scopes       []string
+	audience     string // not empty iff using ID tokens
+	attachScopes bool   // if true, attach "?scopes=..." to token requests
+	cacheKey     CacheKey
 }
 
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata
 // server.
-func NewGCETokenProvider(ctx context.Context, account string, scopes []string, audience string) (TokenProvider, error) {
+func NewGCETokenProvider(ctx context.Context, account string, attachScopes bool, scopes []string, audience string) (TokenProvider, error) {
 	// When running on GKE using Workload Identities, the metadata is served by
 	// gke-metadata-server pod, which may be very slow, especially when the node
 	// has just started. We'll wait for it to become responsive by retrying
@@ -70,7 +72,7 @@ func NewGCETokenProvider(ctx context.Context, account string, scopes []string, a
 	var p TokenProvider
 	err := retry.Retry(ctx, transient.Only(retryParams), func() error {
 		var err error
-		p, err = attemptInit(ctx, account, scopes, audience)
+		p, err = attemptInit(ctx, account, attachScopes, scopes, audience)
 		return err
 	}, retry.LogCallback(ctx, "initializing GCE token provider"))
 	return p, err
@@ -90,7 +92,7 @@ func retryParams() retry.Iterator {
 }
 
 // attemptInit attempts to initialize GCE token provider.
-func attemptInit(ctx context.Context, account string, scopes []string, audience string) (TokenProvider, error) {
+func attemptInit(ctx context.Context, account string, attachScopes bool, scopes []string, audience string) (TokenProvider, error) {
 	// This mutex is used to avoid hitting GKE metadata server concurrently if
 	// we have a stampede of goroutines. It doesn't actually protect any shared
 	// state in the current process.
@@ -130,7 +132,7 @@ func attemptInit(ctx context.Context, account string, scopes []string, audience 
 	// The exception is non-cloud scopes (like gerritcodereview or G Suite). To
 	// use such scopes, one will have to use impersonation through Cloud IAM APIs,
 	// which *are* covered by cloud-platform (see ActAsServiceAccount in auth.go).
-	if audience == "" {
+	if audience == "" && !attachScopes {
 		availableScopes, err := metadataClient.Scopes(account)
 		if err != nil {
 			return nil, transient.Tag.Apply(err)
@@ -147,9 +149,11 @@ func attemptInit(ctx context.Context, account string, scopes []string, audience 
 	}
 
 	return &gceTokenProvider{
-		account:  account,
-		email:    email,
-		audience: audience,
+		account:      account,
+		email:        email,
+		scopes:       scopes,
+		audience:     audience,
+		attachScopes: attachScopes,
 		cacheKey: CacheKey{
 			Key:    fmt.Sprintf("gce/%s", account),
 			Scopes: scopes,
@@ -221,7 +225,14 @@ func (p gceTokenProvider) mintIDToken(ctx context.Context) (*Token, error) {
 //
 // [1]: google/google.go file in https://github.com/golang/oauth2
 func (p *gceTokenProvider) mintAccessToken(ctx context.Context) (*Token, error) {
-	tokenJSON, err := metadataClient.Get("instance/service-accounts/" + p.account + "/token")
+	tokenURI := "instance/service-accounts/" + p.account + "/token"
+	if p.attachScopes && len(p.scopes) > 0 {
+		v := url.Values{}
+		v.Set("scopes", strings.Join(p.scopes, ","))
+		tokenURI = tokenURI + "?" + v.Encode()
+	}
+
+	tokenJSON, err := metadataClient.Get(tokenURI)
 	if err != nil {
 		return nil, errors.Annotate(err, "auth/gce: metadata server call failed").Tag(transient.Tag).Err()
 	}

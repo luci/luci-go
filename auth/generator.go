@@ -84,6 +84,9 @@ func allowsArbitraryScopes(opts *Options) bool {
 		// A private key can be used to generate tokens with any combination of
 		// scopes.
 		return true
+	case opts.Method == GCEMetadataMethod && opts.GCESupportsArbitraryScopes:
+		// We can ask the metadata server for any combination of scopes.
+		return true
 	case opts.Method == LUCIContextMethod:
 		// We can ask the local auth server for any combination of scopes.
 		return true

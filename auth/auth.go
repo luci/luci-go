@@ -404,6 +404,25 @@ type Options struct {
 	// Default: false (don't "sniff" GCE environment).
 	GCEAllowAsDefault bool
 
+	// GCESupportsArbitraryScopes is true if the GCE metadata server is expected
+	// to produce tokens with an arbitrary set of scopes (not only ones it reports
+	// via "/scopes" endpoint) when asked via "/token?scopes=...".
+	//
+	// As of Apr 2024, this is true for at least GAE and Cloud Run metadata
+	// servers. It is not true for GCE VM metadata server.
+	//
+	// When false, the default token produced by the metadata server will always
+	// be used, regardless of requested set of scopes (they will be ignored). This
+	// matches the standard GCE VM metadata experience.
+	//
+	// This field is primarily exposed to be used by go.chromium.org/luci/server,
+	// which knows details of the environment the server runs in.
+	//
+	// Ignored when not using GCEMetadataMethod.
+	//
+	// Default is conservative false.
+	GCESupportsArbitraryScopes bool
+
 	// SecretsDir can be used to set the path to a directory where tokens
 	// are cached.
 	//
@@ -1569,6 +1588,7 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 		return internal.NewGCETokenProvider(
 			ctx,
 			opts.GCEAccountName,
+			opts.GCESupportsArbitraryScopes,
 			scopes,
 			audience)
 	case LUCIContextMethod:
