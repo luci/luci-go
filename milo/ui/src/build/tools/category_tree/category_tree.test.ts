@@ -81,4 +81,32 @@ describe('CategoryTree', () => {
       7,
     ]);
   });
+
+  it('entries should generate the correct index', () => {
+    const tree = buildCategoryTree(items);
+    expect([...tree.entries()]).toEqual([
+      // Can handle item with empty category. It sits at the root so it's
+      // yielded immediately.
+      [[], 5],
+      //
+      [[0, 0], 1],
+      // Lifted forward because 'cat1B' is already discovered.
+      [[0, 0], 3],
+      // Lifted forward because it's in the ancestor node of value 2.
+      [[1], 4],
+      // Not lifted forward because 'cat1A' is discovered later than 'cat1B',
+      // even though 'cat1A' is alphanumerically smaller than 'cat1B'.
+      [[1, 0], 2],
+      //
+      [[2, 0], 6],
+      //
+      [[2, 0], 8],
+      //
+      [[2, 0, 0], 9],
+      // 'cat1C' -> 'cat2A' is not treated the same as 'cat1A' -> 'cat2A'.
+      // Although 'cat2A' under 'cat1B' was discovered quite early,
+      // 'cat1C' -> 'cat2A' is discovered later than 'cat1C' -> 'cat2B'.
+      [[2, 1], 7],
+    ]);
+  });
 });

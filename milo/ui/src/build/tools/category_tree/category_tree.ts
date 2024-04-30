@@ -14,11 +14,14 @@
 
 export interface CategoryTree<T> {
   /**
-   * Perform a depth-first pre-order traversal and yield all values in the
+   * Performs a depth-first pre-order traversal and yield all values in the
    * nodes.
    *
    * For example, traversing the following tree
    * ```
+   * // Only alphabetic letters are nodes. Numeric numbers are values attached
+   * // to the node.
+   *
    *       root
    *      /    \
    *     d      a
@@ -32,6 +35,32 @@ export interface CategoryTree<T> {
    * will yield values: 1, 2, 4, 3.
    */
   values(): Iterable<T>;
+  /**
+   * Performs a depth-first pre-order traversal and yield all values in the
+   * nodes along with the index path of their category.
+   *
+   * For example, traversing the following tree.
+   * ```ascii
+   * // Only alphabetic letters are nodes. Numeric numbers are values attached
+   * // to the node.
+   *
+   *       root
+   *      /    \
+   *     d      a
+   *    / \    / \
+   *   e   b  f   4
+   *  /     \  \
+   * 1      c   3
+   *       /
+   *      2
+   * ```
+   * will yield entries:
+   *  * index: [0, 0]     value: 1
+   *  * index: [0, 1, 0]  value: 2
+   *  * index: [1]        value: 4
+   *  * index: [1, 0]     value: 3
+   */
+  entries(): Iterable<[index: readonly number[], value: T]>;
 }
 
 export interface CategorizedItem<T> {
@@ -57,6 +86,9 @@ export interface CategorizedItem<T> {
  *
  * will result in a tree that looks like the graph below
  * ```
+ * // Only alphabetic letters are nodes. Numeric numbers are values attached
+ * // to the node.
+ *
  *       root
  *      /    \
  *     d      a
@@ -104,6 +136,24 @@ class CategoryTreeNode<T> implements CategoryTree<T> {
     yield* this.selfValues;
     for (const child of this.children) {
       yield* child.values();
+    }
+  }
+
+  *entries(): Iterable<[index: readonly number[], value: T]> {
+    for (const [rIndex, value] of this.entriesImpl()) {
+      yield [rIndex.reverse(), value];
+    }
+  }
+
+  *entriesImpl(): Iterable<[rIndex: number[], T]> {
+    for (const value of this.selfValues) {
+      yield [[], value];
+    }
+    for (const [i, child] of this.children.entries()) {
+      for (const [rIndex, value] of child.entriesImpl()) {
+        rIndex.push(i);
+        yield [rIndex, value];
+      }
     }
   }
 }
