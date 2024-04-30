@@ -25,6 +25,32 @@ const toComparableGroupName = (group) => {
   return prefix + 'A' + name;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Base class for a hidable component.
+class HidableElement {
+  constructor(element, show) {
+    // Root DOM element.
+    this.element = document.querySelector(element);
+
+    // Set the initial visibility.
+    if (show) {
+      this.show();
+    } else {
+      this.hide();
+    }
+  }
+
+  show() {
+    this.element.style.display = 'block';
+  }
+
+  hide() {
+    this.element.style.display = 'none';
+  }
+}
+
+
 var common = (function () {
   'use strict';
 
@@ -124,6 +150,8 @@ var common = (function () {
       }
     });
   };
+
+  exports.HidableElement = HidableElement;
 
   return exports;
 })();

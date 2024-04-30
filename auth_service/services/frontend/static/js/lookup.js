@@ -215,33 +215,8 @@ class SearchBar {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Base class for a hidable component.
-class HidableElement {
-  constructor(element, show) {
-    // Root DOM element.
-    this.element = document.querySelector(element);
-
-    // Set the initial visibility.
-    if (show) {
-      this.show();
-    } else {
-      this.hide();
-    }
-  }
-
-  show() {
-    this.element.style.display = 'block';
-  }
-
-  hide() {
-    this.element.style.display = 'none';
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 // Component with centered spinner to represent loading.
-class LoadingBox extends HidableElement {
+class LoadingBox extends common.HidableElement {
   constructor(element) {
     super(element, false);
   }
@@ -258,7 +233,7 @@ class LoadingBox extends HidableElement {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Component to display a lookup error.
-class LookupErrorAlert extends HidableElement {
+class LookupErrorAlert extends common.HidableElement {
   constructor(element) {
     super(element, false);
 
@@ -275,7 +250,7 @@ class LookupErrorAlert extends HidableElement {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Component to display all search results.
-class SearchResults extends HidableElement {
+class SearchResults extends common.HidableElement {
   constructor(element) {
     super(element, false);
 

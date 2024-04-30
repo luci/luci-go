@@ -164,6 +164,9 @@ func main() {
 		srv.Routes.GET("/lookup", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/lookup.html", nil)
 		})
+		srv.Routes.GET("/services", mw, func(ctx *router.Context) {
+			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/services.html", nil)
+		})
 
 		// For PubSub subscriber and AuthDB Google Storage reader authorization.
 		//
