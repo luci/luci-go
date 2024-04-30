@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/ensureviews"
 	"go.chromium.org/luci/resultdb/internal/rpcutil"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -81,6 +82,9 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	// Serve cron jobs endpoints.
 	cron.RegisterHandler("read-config", config.UpdateConfig)
+	cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
+		return ensureviews.CronHandler(ctx, srv.Options.CloudProject)
+	})
 
 	rdbSvr := &resultDBServer{
 		generateArtifactURL: contentServer.GenerateSignedURL,

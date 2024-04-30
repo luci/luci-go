@@ -14,6 +14,24 @@
 
 package bqutil
 
+import (
+	"strings"
+
+	"go.chromium.org/luci/resultdb/pbutil"
+)
+
 // InternalDatasetID is the name of the BigQuery dataset which is intended
 // for internal service use only.
 const InternalDatasetID = "internal"
+
+// ProjectForDataset returns the name of the LUCI Project that corresponds
+// to the given BigQuery dataset.
+func ProjectForDataset(dataset string) (string, error) {
+	project := strings.ReplaceAll(dataset, "_", "-")
+
+	if err := pbutil.ValidateProject(project); err != nil {
+		return "", err
+	}
+
+	return project, nil
+}
