@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/internal/replicas"
 )
 
@@ -99,9 +101,23 @@ type AuthReplicaState struct {
 	PushError string `gae:"push_error,noindex"`
 }
 
-// replicasRootKey is th eroot key for AuthReplicaState entities. The
+func (r *AuthReplicaState) ToProto() *rpcpb.ReplicaState {
+	return &rpcpb.ReplicaState{
+		AppId:           r.ID,
+		BaseUrl:         r.ReplicaURL,
+		AuthDbRev:       r.AuthDBRev,
+		RevModified:     timestamppb.New(r.RevModifiedTS),
+		AuthCodeVersion: r.AuthCodeVersion,
+		PushStarted:     timestamppb.New(r.PushStartedTS),
+		PushFinished:    timestamppb.New(r.PushFinishedTS),
+		PushStatus:      rpcpb.ReplicaPushStatus(r.PushStatus + 1),
+		PushError:       r.PushError,
+	}
+}
+
+// ReplicasRootKey is the root key for AuthReplicaState entities. The
 // entity itself doesn't exist.
-func replicasRootKey(ctx context.Context) *datastore.Key {
+func ReplicasRootKey(ctx context.Context) *datastore.Key {
 	// This is intentionally not under model.go's RootKey(). It has
 	// nothing to do with the AuthDB itself.
 	return datastore.NewKey(ctx, "AuthReplicaStateRoot", "root", 0, nil)
@@ -110,21 +126,31 @@ func replicasRootKey(ctx context.Context) *datastore.Key {
 // replicaStateKey returns the corresponding key for the given app's
 // AuthReplicaState entity.
 func replicaStateKey(ctx context.Context, appID string) *datastore.Key {
-	return datastore.NewKey(ctx, "AuthReplicaState", appID, 0, replicasRootKey(ctx))
+	return datastore.NewKey(ctx, "AuthReplicaState", appID, 0, ReplicasRootKey(ctx))
 }
 
-// GetAllStaleReplicas gets all the AuthReplicaState entities that are
-// behind the given authDBRev.
-func GetAllStaleReplicas(ctx context.Context, authDBRev int64) ([]*AuthReplicaState, error) {
-	query := datastore.NewQuery("AuthReplicaState").Ancestor(replicasRootKey(ctx))
+// GetAllReplicas gets all the AuthReplicaState entities.
+func GetAllReplicas(ctx context.Context) ([]*AuthReplicaState, error) {
+	query := datastore.NewQuery("AuthReplicaState").Ancestor(ReplicasRootKey(ctx))
 	var replicaStates []*AuthReplicaState
 	err := datastore.GetAll(ctx, query, &replicaStates)
 	if err != nil {
 		return nil, errors.Annotate(err, "error getting all AuthReplicaState entities").Err()
 	}
 
+	return replicaStates, nil
+}
+
+// GetAllStaleReplicas gets all the AuthReplicaState entities that are
+// behind the given authDBRev.
+func GetAllStaleReplicas(ctx context.Context, authDBRev int64) ([]*AuthReplicaState, error) {
+	replicas, err := GetAllReplicas(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	staleReplicas := []*AuthReplicaState{}
-	for _, replica := range replicaStates {
+	for _, replica := range replicas {
 		if replica.AuthDBRev < authDBRev {
 			staleReplicas = append(staleReplicas, replica)
 		}
