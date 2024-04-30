@@ -101,14 +101,15 @@ const segmentsUnexpectedRealtimePerProjectQuery = `
 var datasetViewQueries = map[string]map[string]*bigquery.TableMetadata{
 	"internal": {
 		"failure_association_rules": &bigquery.TableMetadata{
-			ViewQuery: rulesViewBaseQuery,
-			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
+			Description: "Failure association rules.",
+			ViewQuery:   rulesViewBaseQuery,
+			Labels:      map[string]string{bq.MetadataVersionKey: "3"},
 		},
 		"test_variant_segments_unexpected_realtime": &bigquery.TableMetadata{
 			Description: "Contains test variant histories segmented by change point analysis, limited to test variants with unexpected" +
 				" results in postsubmit in the last 90 days. See go/luci-test-variant-analysis-design.",
 			ViewQuery: segmentsUnexpectedRealtimeQuery,
-			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
+			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
 		}},
 }
 
@@ -117,9 +118,9 @@ type makeTableMetadata func(luciProject string) *bigquery.TableMetadata
 var luciProjectViewQueries = map[string]makeTableMetadata{
 	"failure_association_rules": func(luciProject string) *bigquery.TableMetadata {
 		return &bigquery.TableMetadata{
-			Description: "Failure association rules for " + luciProject + ". See go/luci-analysis-concepts#failure-association-rules.",
+			Description: "Failure association rules for " + luciProject + ". See go/luci-reference#failure-association-rules.",
 			ViewQuery:   `SELECT * FROM internal.failure_association_rules WHERE ` + projectWhereClause(luciProject),
-			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
+			Labels:      map[string]string{bq.MetadataVersionKey: "2"},
 		}
 	},
 	"clustered_failures": func(luciProject string) *bigquery.TableMetadata {
@@ -128,9 +129,10 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			Description: "Clustered test failures for " + luciProject + ". Each failure is repeated for each cluster it is contained in.",
-			ViewQuery:   `SELECT * FROM internal.clustered_failures WHERE ` + projectWhereClause(luciProject),
-			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
+			Description: "Clustered test failures for " + luciProject + ". Each failure is repeated for each cluster it is contained in." +
+				" See go/luci-reference#clustered-failures.",
+			ViewQuery: `SELECT * FROM internal.clustered_failures WHERE ` + projectWhereClause(luciProject),
+			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
 		}
 	},
 	"cluster_summaries": func(luciProject string) *bigquery.TableMetadata {
@@ -139,9 +141,10 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			Description: "Test failure clusters for " + luciProject + " with cluster metrics. Periodically updated from clustered_failures table with ~15 minute staleness.",
-			ViewQuery:   `SELECT * FROM internal.cluster_summaries WHERE ` + projectWhereClause(luciProject),
-			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
+			Description: "Test failure clusters for " + luciProject + " with cluster metrics. Periodically updated from clustered_failures table with ~15 minute staleness." +
+				" See go/luci-reference#cluster-summaries.",
+			ViewQuery: `SELECT * FROM internal.cluster_summaries WHERE ` + projectWhereClause(luciProject),
+			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
 		}
 	},
 	"test_verdicts": func(luciProject string) *bigquery.TableMetadata {
@@ -150,9 +153,10 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			Description: "Contains all test verdicts produced by " + luciProject + ". See go/luci-analysis-verdict-export-proposal.",
-			ViewQuery:   `SELECT * FROM internal.test_verdicts WHERE ` + projectWhereClause(luciProject),
-			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
+			Description: "Contains all test verdicts produced by " + luciProject + "." +
+				" See go/luci-reference#test-verdicts.",
+			ViewQuery: `SELECT * FROM internal.test_verdicts WHERE ` + projectWhereClause(luciProject),
+			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
 		}
 	},
 	"test_variant_segments": func(luciProject string) *bigquery.TableMetadata {
@@ -161,9 +165,9 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic(err)
 		}
 		return &bigquery.TableMetadata{
-			Description: "Contains test variant histories segmented by change point analysis. See go/luci-test-variant-analysis-design.",
+			Description: "Contains test variant histories segmented by change point analysis. See go/luci-reference#test-variant-segments.",
 			ViewQuery:   `SELECT * FROM internal.test_variant_segments WHERE ` + projectWhereClause(luciProject),
-			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
+			Labels:      map[string]string{bq.MetadataVersionKey: "2"},
 		}
 	},
 	"test_variant_segments_unexpected_realtime": func(luciProject string) *bigquery.TableMetadata {
@@ -174,9 +178,9 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		viewQuery := fmt.Sprintf(segmentsUnexpectedRealtimePerProjectQuery, projectWhereClause(luciProject))
 		return &bigquery.TableMetadata{
 			Description: "Contains test variant histories segmented by change point analysis, limited to test variants with unexpected" +
-				" results in postsubmit in the last 90 days. See go/luci-test-variant-analysis-design.",
+				" results in postsubmit in the last 90 days. See go/luci-reference#test-variant-segments-unexpected-realtime.",
 			ViewQuery: viewQuery,
-			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
+			Labels:    map[string]string{bq.MetadataVersionKey: "3"},
 		}
 	},
 }
