@@ -1,0 +1,87 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package auth.service;
+
+option go_package = "go.chromium.org/luci/auth_service/api/rpcpb";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/server/auth/service/protocol/components/auth/proto/replication.proto";
+
+
+service Replicas {
+    // ListReplicas lists the replicas that have been linked with Auth Service
+    // as their primary AuthDB service.
+    rpc ListReplicas(google.protobuf.Empty) returns (ListReplicasResponse);
+}
+
+message ListReplicasResponse {
+    // State of Auth Service's latest AuthDB revision.
+    components.auth.AuthDBRevision primary_revision = 1;
+
+    // Value of components.auth.version.__version__ used by primary.
+    string auth_code_version = 2;
+
+    // All replica services' states that have Auth Service configured as their
+    // primary service from which to receive AuthDB replication calls.
+    repeated ReplicaState replicas = 3;
+
+    // When the ListReplicas request was processed, according to Auth Service's
+    // clock.
+    google.protobuf.Timestamp processed_at = 4;
+}
+
+// The status of a push attempt to a replica.
+enum ReplicaPushStatus {
+    PUSH_STATUS_UNSPECIFIED = 0;
+    SUCCESS = 1;
+    TRANSIENT_ERROR = 2;
+    FATAL_ERROR = 3;
+}
+
+message ReplicaState {
+    // The App ID of the replica.
+    string app_id = 1;
+
+    // Base URL of the replica host which can receive AuthDB push updates, e.g.
+    // "https://luci-config-dev.appspot.com"
+    string base_url = 2;
+
+    // The replica's current AuthDB revision.
+    int64 auth_db_rev = 3;
+
+    // Timestamp of when the replica's current AuthDB revision was created (by
+    // the primary service's clock).
+    google.protobuf.Timestamp rev_modified = 4;
+
+    // Value of components.auth.version.__version__ used by the replica.
+    string auth_code_version = 5;
+
+    // Timestamp of when the last push attempt started.
+    google.protobuf.Timestamp push_started = 6;
+
+    // Timestamp of when the last push attempt finished (regardless of status).
+    google.protobuf.Timestamp push_finished = 7;
+
+    // Status of the last push attempt.
+    ReplicaPushStatus push_status = 8;
+
+    // Error message of the last push attempt. If the last push attempt was
+    // successful, this will be an empty string.
+    string push_error = 9;
+}
