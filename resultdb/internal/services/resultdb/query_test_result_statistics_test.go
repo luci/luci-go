@@ -18,12 +18,9 @@ import (
 	"context"
 	"testing"
 
-	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/rdbperms"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/tsmon"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -32,6 +29,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

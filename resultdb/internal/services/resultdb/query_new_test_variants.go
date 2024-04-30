@@ -18,13 +18,15 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-
-	"go.chromium.org/luci/grpc/grpcutil"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/baselines"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -33,10 +35,6 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
-
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/span"
 )
 
 const noPermissionsError = "Caller does not have permission to query new test variants"

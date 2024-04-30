@@ -22,7 +22,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/tsmon"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 

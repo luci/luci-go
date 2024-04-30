@@ -18,13 +18,14 @@ import (
 	"context"
 
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
-	"go.chromium.org/luci/server/span"
 )
 
 // QueryTestResultStatistics implements pb.ResultDBServer.

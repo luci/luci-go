@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/resultdb/rdbperms"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
