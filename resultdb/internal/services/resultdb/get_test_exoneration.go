@@ -22,9 +22,21 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/exonerations"
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
+
+func verifyGetTestExonerationPermission(ctx context.Context, exonerationName string) error {
+	invID, _, _, err := pbutil.ParseTestExonerationName(exonerationName)
+	if err != nil {
+		return appstatus.BadRequest(errors.Annotate(err, "name").Err())
+	}
+
+	return permissions.VerifyInvocation(ctx, invocations.ID(invID), rdbperms.PermGetTestExoneration)
+}
 
 func validateGetTestExonerationRequest(req *pb.GetTestExonerationRequest) error {
 	if err := pbutil.ValidateTestExonerationName(req.Name); err != nil {
@@ -35,11 +47,15 @@ func validateGetTestExonerationRequest(req *pb.GetTestExonerationRequest) error 
 }
 
 func (s *resultDBServer) GetTestExoneration(ctx context.Context, in *pb.GetTestExonerationRequest) (*pb.TestExoneration, error) {
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	if err := verifyGetTestExonerationPermission(ctx, in.GetName()); err != nil {
+		return nil, err
+	}
 	if err := validateGetTestExonerationRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
 	return exonerations.Read(ctx, in.Name)
 }

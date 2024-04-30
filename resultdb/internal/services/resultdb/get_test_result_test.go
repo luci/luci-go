@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc/codes"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/server/auth"
@@ -112,7 +111,7 @@ func TestGetTestResult(t *testing.T) {
 			req := &pb.GetTestResultRequest{Name: "invocations/inv_s/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_s"}
 			tr, err := srv.GetTestResult(ctx, req)
 			So(tr, ShouldBeNil)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testResults.get in realm of invocation inv_s")
 		})
 
 		Convey(`works with expected result`, func() {

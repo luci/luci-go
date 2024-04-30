@@ -17,8 +17,6 @@ package resultdb
 import (
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -125,7 +123,7 @@ func TestListTestExonerations(t *testing.T) {
 		Convey(`Permission denied`, func() {
 			req := &pb.ListTestExonerationsRequest{Invocation: "invocations/invx"}
 			_, err := srv.ListTestExonerations(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testExonerations.list in realm of invocation invx")
 		})
 
 		Convey(`Basic`, func() {

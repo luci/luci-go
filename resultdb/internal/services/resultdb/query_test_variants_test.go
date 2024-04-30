@@ -129,8 +129,7 @@ func TestQueryTestVariants(t *testing.T) {
 				},
 			})
 			_, err := srv.QueryTestVariants(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.testResults.listLimited")
+			So(err, ShouldBeRPCPermissionDenied, "resultdb.testResults.listLimited")
 
 			// Test PermListLimitedTestExonerations is required if the user does not
 			// have both PermListTestResults and PermListTestExonerations.
@@ -142,8 +141,7 @@ func TestQueryTestVariants(t *testing.T) {
 				},
 			})
 			_, err = srv.QueryTestVariants(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.testExonerations.listLimited")
+			So(err, ShouldBeRPCPermissionDenied, "resultdb.testExonerations.listLimited")
 		})
 
 		Convey(`Valid with limited list permission`, func() {
@@ -305,8 +303,7 @@ func TestQueryTestVariants(t *testing.T) {
 				PageSize:    1,
 			})
 
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invocations: only one invocation is allowed")
+			So(err, ShouldBeRPCInvalidArgument, "invocations: only one invocation is allowed")
 		})
 
 		Convey(`Try next page`, func() {

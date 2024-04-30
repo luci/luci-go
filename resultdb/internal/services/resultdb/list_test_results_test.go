@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc/codes"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/server/auth"
@@ -78,7 +77,7 @@ func TestListTestResults(t *testing.T) {
 		Convey(`Permission denied`, func() {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/reqx"}
 			_, err := srv.ListTestResults(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testResults.list in realm of invocation reqx")
 		})
 
 		Convey(`Works`, func() {

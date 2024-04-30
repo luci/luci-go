@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/clock"
@@ -86,7 +85,7 @@ func TestGetArtifact(t *testing.T) {
 			)
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.get")
 		})
 
 		Convey(`Exists`, func() {
@@ -134,12 +133,12 @@ func TestGetArtifact(t *testing.T) {
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}))
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv/artifacts/a not found")
+			So(err, ShouldBeRPCNotFound, "invocations/inv/artifacts/a not found")
 		})
 		Convey(`Invocation does not exist`, func() {
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv not found")
+			So(err, ShouldBeRPCNotFound, "invocations/inv not found")
 		})
 	})
 }

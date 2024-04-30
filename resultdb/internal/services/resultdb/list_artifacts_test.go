@@ -18,8 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -113,7 +111,7 @@ func TestListArtifacts(t *testing.T) {
 		Convey(`Permission denied`, func() {
 			req.Parent = "invocations/invx/tests/t%20t/results/r"
 			_, err := srv.ListArtifacts(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.list in realm of invocation invx")
 		})
 
 		Convey(`With both invocation and test result artifacts`, func() {

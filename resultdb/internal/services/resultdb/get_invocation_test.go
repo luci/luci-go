@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
@@ -116,7 +115,7 @@ func TestGetInvocation(t *testing.T) {
 			)
 			req := &pb.GetInvocationRequest{Name: "invocations/secret"}
 			_, err := srv.GetInvocation(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.invocations.get")
 		})
 	})
 }

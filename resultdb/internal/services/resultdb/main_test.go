@@ -21,19 +21,25 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestMain(m *testing.M) {
 	testutil.SpannerTestMain(m)
 }
 
-func newTestResultDBService() *resultDBServer {
-	return &resultDBServer{
+func newTestResultDBService() pb.ResultDBServer {
+	svr := &resultDBServer{
 		generateArtifactURL: func(ctx context.Context, requestHost, artifactName string) (u string, expiration time.Time, err error) {
 			u = "https://signed-url.example.com/" + artifactName
 			expiration = clock.Now(ctx).UTC().Add(time.Hour)
 			return
 		},
+	}
+	return &pb.DecoratedResultDB{
+		Service:  svr,
+		Postlude: internal.CommonPostlude,
 	}
 }

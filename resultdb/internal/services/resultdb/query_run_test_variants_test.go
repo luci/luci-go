@@ -95,14 +95,13 @@ func TestQueryPartialTestVariants(t *testing.T) {
 				Invocation: "invocations/y",
 			})
 
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testResults.list in realm of invocation y")
 		})
 		Convey(`Invalid argument`, func() {
 			Convey(`Empty request`, func() {
 				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{})
 
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-				So(err, ShouldErrLike, `unspecified`)
+				So(err, ShouldBeRPCInvalidArgument, `unspecified`)
 			})
 
 			Convey(`Invalid result limit`, func() {
@@ -111,21 +110,20 @@ func TestQueryPartialTestVariants(t *testing.T) {
 					ResultLimit: -1,
 				})
 
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-				So(err, ShouldErrLike, `result_limit: negative`)
+				So(err, ShouldBeRPCInvalidArgument, `result_limit: negative`)
 			})
 		})
 		Convey(`Not found`, func() {
 			_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
 				Invocation: "invocations/notexists",
 			})
-			So(err, ShouldHaveAppStatus, codes.NotFound)
+			So(err, ShouldBeRPCNotFound)
 		})
 		Convey(`Valid`, func() {
 			_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
 				Invocation: "invocations/a",
 			})
-			So(err, ShouldHaveAppStatus, codes.Unimplemented)
+			So(err, ShouldHaveRPCCode, codes.Unimplemented)
 		})
 	})
 }

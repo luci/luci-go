@@ -18,8 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -93,7 +91,7 @@ func TestQueryTestResultStatistics(t *testing.T) {
 			_, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
 				Invocations: []string{"invocations/x"},
 			})
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, `caller does not have permission resultdb.testResults.list in realm of invocation x`)
 		})
 
 		Convey(`Valid with included invocation`, func() {

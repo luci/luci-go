@@ -18,8 +18,6 @@ import (
 	"sort"
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -81,7 +79,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			_, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
 				Invocations: []string{"invocations/x"},
 			})
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testExonerations.list in realm of invocation x")
 		})
 
 		Convey(`Valid with included invocation`, func() {

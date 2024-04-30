@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"google.golang.org/genproto/protobuf/field_mask"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/auth"
@@ -115,7 +114,7 @@ func TestQueryTestResults(t *testing.T) {
 				Invocations: []string{"invocations/x"},
 			})
 
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, `caller does not have permission resultdb.testResults.list in realm of invocation x`)
 		})
 
 		Convey(`Valid with included invocation`, func() {

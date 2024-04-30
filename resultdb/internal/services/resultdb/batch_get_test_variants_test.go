@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -79,7 +77,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 			insert.TestResults("i1", "test3", pbutil.Variant("c", "d"), pb.TestStatus_PASS),
 		)...)
 
-		srv := &resultDBServer{}
+		srv := newTestResultDBService()
 
 		Convey(`Access denied`, func() {
 			req := &pb.BatchGetTestVariantsRequest{
@@ -97,8 +95,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 				},
 			})
 			_, err := srv.BatchGetTestVariants(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.testResults.list")
+			So(err, ShouldBeRPCPermissionDenied, "resultdb.testResults.list")
 
 			// Verify missing ListTestExonerations permission results in an error.
 			ctx := auth.WithState(ctx, &authtest.FakeState{
@@ -108,8 +105,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 				},
 			})
 			_, err = srv.BatchGetTestVariants(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.testExonerations.list")
+			So(err, ShouldBeRPCPermissionDenied, "resultdb.testExonerations.list")
 		})
 		Convey(`Valid request with included invocation`, func() {
 			res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
@@ -208,7 +204,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 			}
 
 			_, err := srv.BatchGetTestVariants(ctx, &req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
+			So(err, ShouldBeRPCInvalidArgument, "a maximum of 500 test variants can be requested at once")
 		})
 
 		Convey(`Request including missing variants omits said variants`, func() {

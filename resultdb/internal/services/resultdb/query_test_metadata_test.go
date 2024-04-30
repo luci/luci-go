@@ -19,8 +19,6 @@ import (
 	"sort"
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -72,7 +70,7 @@ func TestQueryTestMetadata(t *testing.T) {
 
 		Convey(`Permission denied`, func() {
 			res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{Project: "x"})
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testMetadata.list in any realm in project \"x\"")
 			So(res, ShouldBeNil)
 		})
 
@@ -84,8 +82,7 @@ func TestQueryTestMetadata(t *testing.T) {
 						TestIds: []string{"test"},
 					},
 				})
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-				So(err, ShouldErrLike, "project")
+				So(err, ShouldBeRPCInvalidArgument, `project: does not match ^[a-z0-9\-]{1,40}$`)
 				So(res, ShouldBeNil)
 			})
 
@@ -97,8 +94,7 @@ func TestQueryTestMetadata(t *testing.T) {
 					},
 					PageSize: -1,
 				})
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-				So(err, ShouldErrLike, "page_size")
+				So(err, ShouldBeRPCInvalidArgument, `page_size`)
 				So(res, ShouldBeNil)
 			})
 		})
