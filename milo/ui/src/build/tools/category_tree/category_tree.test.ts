@@ -54,20 +54,21 @@ const items = [
 ];
 
 describe('CategoryTree', () => {
-  it('should traverse the leaves in the right order', () => {
+  it('values should perform depth-first pre-order traversal', () => {
     const tree = buildCategoryTree(items);
-    const values = [...tree.items()].map((i) => i.value);
-    expect(values).toEqual([
+    expect([...tree.values()]).toEqual([
+      // Can handle item with empty category. It sits at the root so it's
+      // yielded immediately.
+      5,
+      //
       1,
       // Lifted forward because 'cat1B' is already discovered.
       3,
+      // Lifted forward because it's in the ancestor node of value 2.
+      4,
       // Not lifted forward because 'cat1A' is discovered later than 'cat1B',
       // even though 'cat1A' is alphanumerically smaller than 'cat1B'.
       2,
-      //
-      4,
-      // Can handle item with empty category.
-      5,
       //
       6,
       //

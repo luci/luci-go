@@ -94,7 +94,7 @@ export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
     // this behavior because some users rely on this order to quickly tell the
     // builder each cell represents (see crbug.com/1495253).
     const tree = buildCategoryTree(items);
-    return [...tree.items()].map((l) => l.value);
+    return [...tree.values()];
   }, [snapshot]);
 
   return (

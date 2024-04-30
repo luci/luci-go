@@ -14,23 +14,24 @@
 
 export interface CategoryTree<T> {
   /**
-   * Perform a depth-first traversal and yield all items in the leaves.
+   * Perform a depth-first pre-order traversal and yield all values in the
+   * nodes.
    *
    * For example, traversing the following tree
    * ```
    *       root
-   *       /  \
-   *      d    a
-   *     / \    \
-   *    e   b    f
-   *   /     \    \
-   * item1    c  item3
-   *         /
-   *       item2
+   *      /    \
+   *     d      a
+   *    / \    / \
+   *   e   b  f   4
+   *  /     \  \
+   * 1      c   3
+   *       /
+   *      2
    * ```
-   * will yield items: item1, item2, item3.
+   * will yield values: 1, 2, 4, 3.
    */
-  items(): Iterable<CategorizedItem<T>>;
+  values(): Iterable<T>;
 }
 
 export interface CategorizedItem<T> {
@@ -47,67 +48,62 @@ export interface CategorizedItem<T> {
 /**
  * Build a category tree from the provided categorized items.
  *
- * The children of any branch are sorted by the order they are first discovered.
+ * The children of any node are sorted by the order they are first discovered.
  * For example, building a tree from the following items:
  *  * item1 with category: d > e
  *  * item2 with category: d > b > c
  *  * item3 with category: a > f
+ *  * item4 with category: a
  *
  * will result in a tree that looks like the graph below
  * ```
  *       root
- *       /  \
- *      d    a
- *     / \    \
- *    e   b    f
- *   /     \    \
- * item1    c  item3
- *         /
- *       item2
+ *      /    \
+ *     d      a
+ *    / \    / \
+ *   e   b  f   4
+ *  /     \  \
+ * 1      c   3
+ *       /
+ *      2
  * ```
  */
 export function buildCategoryTree<T>(
   items: ReadonlyArray<CategorizedItem<T>>,
 ): CategoryTree<T> {
-  const root = new CategoryTreeBranch<T>();
+  const root = new CategoryTreeNode<T>();
   for (const item of items) {
-    root.addItem(item, 0);
+    root.addValue(item.value, item.category, 0);
   }
   return root;
 }
 
-class CategoryTreeBranch<T> implements CategoryTree<T> {
-  private children: Array<CategoryTreeBranch<T> | CategoryTreeLeaf<T>> = [];
-  private branchMap: { [key: string]: CategoryTreeBranch<T> } = {};
+class CategoryTreeNode<T> implements CategoryTree<T> {
+  private selfValues: T[] = [];
+  private children: Array<CategoryTreeNode<T>> = [];
+  private childMap: { [key: string]: CategoryTreeNode<T> } = {};
 
-  addItem(item: CategorizedItem<T>, depth: number) {
-    if (item.category.length <= depth) {
-      this.children.push(new CategoryTreeLeaf(item));
+  addValue(value: T, category: readonly string[], depth: number) {
+    if (category.length <= depth) {
+      this.selfValues.push(value);
       return;
     }
 
-    const key = item.category[depth];
-    let branch = this.branchMap[key];
-    if (!branch) {
-      branch = new CategoryTreeBranch();
-      this.branchMap[key] = branch;
-      this.children.push(branch);
+    const key = category[depth];
+    let child = this.childMap[key];
+    if (!child) {
+      child = new CategoryTreeNode();
+      this.childMap[key] = child;
+      this.children.push(child);
     }
 
-    branch.addItem(item, depth + 1);
+    child.addValue(value, category, depth + 1);
   }
 
-  *items(): Iterable<CategorizedItem<T>> {
+  *values(): Iterable<T> {
+    yield* this.selfValues;
     for (const child of this.children) {
-      yield* child.items();
+      yield* child.values();
     }
-  }
-}
-
-class CategoryTreeLeaf<T> implements CategoryTree<T> {
-  constructor(readonly item: CategorizedItem<T>) {}
-
-  *items(): Iterable<CategorizedItem<T>> {
-    yield this.item;
   }
 }
