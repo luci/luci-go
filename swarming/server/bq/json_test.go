@@ -45,7 +45,7 @@ func TestExportToJSON(t *testing.T) {
 			EventMsg: "hello",
 		})
 		So(err, ShouldBeNil)
-		So(out, ShouldEqual, `{
+		So(string(out), ShouldEqual, `{
   "bot": {
     "bot_id": "bot-id",
     "info": {
@@ -100,7 +100,7 @@ func TestExportToJSON(t *testing.T) {
 			BotPingTolerance: 9.5,
 		})
 		So(err, ShouldBeNil)
-		So(out, ShouldEqual, `{
+		So(string(out), ShouldEqual, `{
   "bot_ping_tolerance": "9.500s",
   "task_slices": [
     {

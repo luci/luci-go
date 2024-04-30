@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery/storage/managedwriter"
+	pubsub "cloud.google.com/go/pubsub/apiv1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/option"
@@ -30,6 +31,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -71,13 +73,30 @@ const (
 	minEventAge = 2 * time.Minute
 )
 
+// exportGlobals is constructed on server start and shared with TQ handlers.
+type exportGlobals struct {
+	bqClient          *managedwriter.Client
+	psClient          *pubsub.PublisherClient
+	exportToPubSub    stringset.Set
+	pubSubTopicPrefix string
+}
+
 // Register registers TQ tasks and cron handlers that implement BigQuery export.
-func Register(srv *server.Server, disp *tq.Dispatcher, cron *cron.Dispatcher, dataset, onlyOneTable string) error {
+func Register(
+	srv *server.Server,
+	disp *tq.Dispatcher,
+	cron *cron.Dispatcher,
+	dataset, onlyOneTable string,
+	exportToPubSub stringset.Set,
+	pubSubTopicPrefix string,
+) error {
 	ts, err := auth.GetTokenSource(srv.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return errors.Annotate(err, "failed to create TokenSource").Err()
 	}
-	client, err := managedwriter.NewClient(srv.Context, srv.Options.CloudProject,
+
+	// Client for exports to BigQuery.
+	bqClient, err := managedwriter.NewClient(srv.Context, srv.Options.CloudProject,
 		option.WithTokenSource(ts),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
@@ -86,8 +105,23 @@ func Register(srv *server.Server, disp *tq.Dispatcher, cron *cron.Dispatcher, da
 		return errors.Annotate(err, "failed to create BQ client").Err()
 	}
 	srv.RegisterCleanup(func(ctx context.Context) {
-		if err := client.Close(); err != nil {
+		if err := bqClient.Close(); err != nil {
 			logging.Errorf(ctx, "Error closing BQ client: %s", err)
+		}
+	})
+
+	// Client for exports to PubSub.
+	psClient, err := pubsub.NewPublisherClient(srv.Context,
+		option.WithTokenSource(ts),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
+	)
+	if err != nil {
+		return errors.Annotate(err, "failed to create PubSub client").Err()
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		if err := psClient.Close(); err != nil {
+			logging.Errorf(ctx, "Error closing PubSub client: %s", err)
 		}
 	})
 
@@ -129,19 +163,24 @@ func Register(srv *server.Server, disp *tq.Dispatcher, cron *cron.Dispatcher, da
 		return eg.Wait()
 	})
 
-	registerTQTasks(disp, client)
+	registerTQTasks(disp, &exportGlobals{
+		bqClient:          bqClient,
+		psClient:          psClient,
+		exportToPubSub:    exportToPubSub,
+		pubSubTopicPrefix: pubSubTopicPrefix,
+	})
 	return nil
 }
 
-// registerTQTasks registers TQ tasks used for BQ export.
-func registerTQTasks(disp *tq.Dispatcher, client *managedwriter.Client) {
+// registerTQTasks registers TQ tasks used for BQ and PubSub export.
+func registerTQTasks(disp *tq.Dispatcher, globals *exportGlobals) {
 	disp.RegisterTaskClass(tq.TaskClass{
 		ID:        "bq-export-interval",
 		Kind:      tq.NonTransactional,
 		Prototype: &taskspb.ExportInterval{},
 		Queue:     "bq-export-interval",
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			return exportTask(ctx, client, payload.(*taskspb.ExportInterval))
+			return exportTask(ctx, globals, payload.(*taskspb.ExportInterval))
 		},
 	})
 }
@@ -247,7 +286,7 @@ func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, keyPrefix str
 }
 
 // exportTask is the handler for "bq-export-interval" TQ tasks.
-func exportTask(ctx context.Context, client *managedwriter.Client, t *taskspb.ExportInterval) error {
+func exportTask(ctx context.Context, globals *exportGlobals, t *taskspb.ExportInterval) error {
 	var fetcher AbstractFetcher
 	switch t.TableName {
 	case TaskRequests:
@@ -261,10 +300,21 @@ func exportTask(ctx context.Context, client *managedwriter.Client, t *taskspb.Ex
 	default:
 		return errors.Reason("unknown table name %q", t.TableName).Tag(tq.Fatal).Err()
 	}
+	// Export rows to PubSub if this specific table is requested via server flags.
+	psTopic := ""
+	if globals.exportToPubSub.Has(t.TableName) {
+		pfx := ""
+		if globals.pubSubTopicPrefix != "" {
+			pfx = globals.pubSubTopicPrefix + "_"
+		}
+		psTopic = fmt.Sprintf("projects/%s/topics/%s%s", t.CloudProject, pfx, t.TableName)
+	}
 	op := &ExportOp{
-		Client:      client,
+		BQClient:    globals.bqClient,
+		PSClient:    globals.psClient,
 		OperationID: t.OperationId,
 		TableID:     fmt.Sprintf("projects/%s/datasets/%s/tables/%s", t.CloudProject, t.Dataset, t.TableName),
+		Topic:       psTopic,
 		Fetcher:     fetcher,
 	}
 	defer op.Close(ctx)

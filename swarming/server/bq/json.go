@@ -59,7 +59,7 @@ func init() {
 // exportToJSON converts a protobuf message to JSON for PubSub export.
 //
 // It understands `swarming.bq.marshal_to_json_as` field options.
-func exportToJSON(msg proto.Message) (string, error) {
+func exportToJSON(msg proto.Message) ([]byte, error) {
 	// Only types known in advance are supported here.
 	fixer, ok := fixers[msg.ProtoReflect().Descriptor()]
 	if !ok {
@@ -71,26 +71,26 @@ func exportToJSON(msg proto.Message) (string, error) {
 		UseProtoNames: true,
 	}).Marshal(msg)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Convert to a structured Go value that can be "fixed".
 	var dict map[string]any
 	if err := json.Unmarshal(raw, &dict); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Recursively "fix" necessary parts.
 	if err := fixMsg(dict, fixer); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Convert back to pretty JSON.
 	blob, err := json.MarshalIndent(dict, "", "  ")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(blob), nil
+	return blob, nil
 }
 
 // fixMsg applies fixes to a JSON dict, recursively.

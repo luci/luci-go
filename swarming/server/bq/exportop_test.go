@@ -25,6 +25,8 @@ import (
 
 	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
+	pubsub "cloud.google.com/go/pubsub/apiv1"
+	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -40,6 +42,8 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+
+	bqpb "go.chromium.org/luci/swarming/proto/bq"
 )
 
 const (
@@ -47,6 +51,7 @@ const (
 	fakeDataset     = "ds"
 	fakeTable       = "table"
 	fullTableID     = "projects/proj/datasets/ds/tables/table"
+	fullTopicID     = "projects/proj/topics/table"
 	fakeWriteStream = fullTableID + "/streams/write-stream"
 )
 
@@ -55,28 +60,42 @@ var testTime = testclock.TestRecentTimeUTC.Truncate(time.Microsecond)
 func TestExportOpHappyPath(t *testing.T) {
 	t.Parallel()
 
-	ctx, bq, op := setUp(t)
-	defer bq.close()
+	ctx, grpc, bq, ps, op := setUp(t)
+	defer grpc.close()
 	defer op.Close(ctx)
 
 	if err := op.Execute(ctx, testTime.Add(3*time.Second), 10*time.Second); err != nil {
 		t.Fatalf("%s", err)
 	}
-	if !bq.bqw.streamCommitted {
+	if !bq.streamCommitted {
 		t.Fatal("Did not commit the stream")
 	}
-	if got := len(bq.bqw.rows); got != 10 {
+
+	// Uploaded to BQ.
+	if got := len(bq.rows); got != 10 {
 		t.Fatalf("Expected 10 committed rows, but got %d", got)
 	}
-
-	expectedVal := int64(3)
-	for idx, row := range bq.bqw.rows {
-		val := &wrapperspb.Int64Value{}
+	expectedVal := int32(3)
+	for idx, row := range bq.rows {
+		val := &bqpb.TaskRequest{}
 		if err := proto.Unmarshal(row, val); err != nil {
 			t.Fatalf("Unmarshal error %s", err)
 		}
-		if val.Value != expectedVal {
-			t.Fatalf("Row %d: want %d, got %d", idx, expectedVal, val.Value)
+		if val.Priority != expectedVal {
+			t.Fatalf("Row %d: want %d, got %d", idx, expectedVal, val.Priority)
+		}
+		expectedVal++ // exported rows have sequential values
+	}
+
+	// Published to PubSub.
+	if got := len(ps.messages); got != 10 {
+		t.Fatalf("Expected 10 PubSub messages, but got %d", got)
+	}
+	expectedVal = int32(3)
+	for idx, msg := range ps.messages {
+		want := fmt.Sprintf("{\n  \"priority\": %d\n}", expectedVal)
+		if msg != want {
+			t.Fatalf("PubSub message %d: want %q, got %q", idx, want, msg)
 		}
 		expectedVal++ // exported rows have sequential values
 	}
@@ -96,15 +115,15 @@ func TestExportOpHappyPath(t *testing.T) {
 func TestExportOpNothingToExport(t *testing.T) {
 	t.Parallel()
 
-	ctx, bq, op := setUp(t)
-	defer bq.close()
+	ctx, grpc, bq, _, op := setUp(t)
+	defer grpc.close()
 	defer op.Close(ctx)
 
 	// Export a range with no events in it.
 	if err := op.Execute(ctx, testTime.Add(30*time.Second), 10*time.Second); err != nil {
 		t.Fatalf("%s", err)
 	}
-	if got := len(bq.bqw.rows); got != 0 {
+	if got := len(bq.rows); got != 0 {
 		t.Fatalf("Unexpected %d rows", got)
 	}
 	if state := exportState(ctx); state != nil {
@@ -115,11 +134,11 @@ func TestExportOpNothingToExport(t *testing.T) {
 func TestExportOpMissingTable(t *testing.T) {
 	t.Parallel()
 
-	ctx, bq, op := setUp(t)
-	defer bq.close()
+	ctx, grpc, bq, _, op := setUp(t)
+	defer grpc.close()
 	defer op.Close(ctx)
 
-	bq.bqw.tableMissing = true
+	bq.tableMissing = true
 
 	err := op.Execute(ctx, testTime.Add(3*time.Second), 10*time.Second)
 	if err == nil || !tq.Fatal.In(err) {
@@ -133,8 +152,8 @@ func TestExportOpMissingTable(t *testing.T) {
 func TestExportOpRetryCommitted(t *testing.T) {
 	t.Parallel()
 
-	ctx, bq, op := setUp(t)
-	defer bq.close()
+	ctx, grpc, bq, _, op := setUp(t)
+	defer grpc.close()
 	defer op.Close(ctx)
 
 	if err := op.Execute(ctx, testTime.Add(3*time.Second), 10*time.Second); err != nil {
@@ -143,7 +162,7 @@ func TestExportOpRetryCommitted(t *testing.T) {
 	op.Close(ctx)
 
 	// Uploaded some rows.
-	rows := len(bq.bqw.rows)
+	rows := len(bq.rows)
 	if rows == 0 {
 		t.Fatal("No rows uploaded")
 	}
@@ -152,20 +171,20 @@ func TestExportOpRetryCommitted(t *testing.T) {
 	if err := op.Execute(ctx, testTime.Add(3*time.Second), 10*time.Second); err != nil {
 		t.Fatalf("%s", err)
 	}
-	if len(bq.bqw.rows) != rows {
-		t.Fatalf("Unexpectedly exported more rows: %d", len(bq.bqw.rows))
+	if len(bq.rows) != rows {
+		t.Fatalf("Unexpectedly exported more rows: %d", len(bq.rows))
 	}
 }
 
 func TestExportOpRetryFinalized(t *testing.T) {
 	t.Parallel()
 
-	ctx, bq, op := setUp(t)
-	defer bq.close()
+	ctx, grpc, bq, _, op := setUp(t)
+	defer grpc.close()
 	defer op.Close(ctx)
 
 	// Make commit fail with a transient error.
-	bq.bqw.commitErr = status.Errorf(codes.Internal, "BOOM")
+	bq.commitErr = status.Errorf(codes.Internal, "BOOM")
 
 	err := op.Execute(ctx, testTime.Add(3*time.Second), 10*time.Second)
 	if !transient.Tag.In(err) {
@@ -174,28 +193,28 @@ func TestExportOpRetryFinalized(t *testing.T) {
 	op.Close(ctx)
 
 	// Uploaded some rows
-	rows := len(bq.bqw.rows)
+	rows := len(bq.rows)
 	if rows == 0 {
 		t.Fatal("No rows uploaded")
 	}
 	// But didn't commit them.
-	if bq.bqw.streamCommitted {
+	if bq.streamCommitted {
 		t.Fatal("Stream unexpectedly committed already")
 	}
 
 	// Running the second time just commits the existing stream.
-	bq.bqw.commitErr = nil
+	bq.commitErr = nil
 	if err := op.Execute(ctx, testTime.Add(3*time.Second), 10*time.Second); err != nil {
 		t.Fatalf("%s", err)
 	}
-	if len(bq.bqw.rows) != rows {
-		t.Fatalf("Unexpectedly exported more rows: %d", len(bq.bqw.rows))
+	if len(bq.rows) != rows {
+		t.Fatalf("Unexpectedly exported more rows: %d", len(bq.rows))
 	}
 }
 
 // Helpers below.
 
-func setUp(t *testing.T) (context.Context, *mockedBQ, *ExportOp) {
+func setUp(t *testing.T) (context.Context, *localGRPC, *bigQueryWrite, *pubSubPublisher, *ExportOp) {
 	ctx, _ := testclock.UseTime(context.Background(), testTime)
 	ctx = memory.Use(ctx)
 	datastore.GetTestable(ctx).Consistent(true)
@@ -212,28 +231,36 @@ func setUp(t *testing.T) (context.Context, *mockedBQ, *ExportOp) {
 		})
 	}
 
-	bq := mockBQ(ctx, t)
+	g := newLocalGRPC()
+	bq := &bigQueryWrite{t: t}
+	ps := &pubSubPublisher{t: t}
+	bq.register(g)
+	ps.register(g)
+	g.start(ctx)
 
 	op := &ExportOp{
-		Client:      bq.client,
+		BQClient:    bq.client(ctx, g),
+		PSClient:    ps.client(ctx, g),
 		OperationID: "operation-id",
 		TableID:     fullTableID,
-		Fetcher: &Fetcher[entity, *wrapperspb.Int64Value]{
+		Topic:       fullTopicID,
+		Fetcher: &Fetcher[entity, *bqpb.TaskRequest]{
 			entityKind:     "entity",
 			timestampField: "TS",
 			queryBatchSize: 300,
-			convert: func(_ context.Context, ents []*entity) ([]*wrapperspb.Int64Value, error) {
-				out := make([]*wrapperspb.Int64Value, len(ents))
+			convert: func(_ context.Context, ents []*entity) ([]*bqpb.TaskRequest, error) {
+				out := make([]*bqpb.TaskRequest, len(ents))
 				for i, ent := range ents {
-					out[i] = &wrapperspb.Int64Value{Value: ent.ID}
+					out[i] = &bqpb.TaskRequest{Priority: int32(ent.ID)}
 				}
 				return out, nil
 			},
 		},
 		bqFlushThreshold: 6,
+		psFlushThreshold: 6,
 	}
 
-	return ctx, bq, op
+	return ctx, g, bq, ps, op
 }
 
 // exportState returns the single ExportState if it exists.
@@ -252,13 +279,41 @@ func exportState(ctx context.Context) *ExportState {
 	}
 }
 
-// mockedBQ is a mocked BQ gRPC server and a client connected to it.
-type mockedBQ struct {
+// localGPRC is a gRPC server and a client connected to it.
+type localGRPC struct {
 	listener *bufconn.Listener
 	server   *grpc.Server
-	client   *managedwriter.Client
-	bqw      *bigQueryWrite
+	conn     *grpc.ClientConn
 }
+
+func newLocalGRPC() *localGRPC {
+	return &localGRPC{
+		listener: bufconn.Listen(100 * 1024),
+		server:   grpc.NewServer(),
+	}
+}
+
+func (l *localGRPC) start(ctx context.Context) {
+	go func() { _ = l.server.Serve(l.listener) }()
+	conn, err := grpc.DialContext(ctx, "",
+		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+			return l.listener.Dial()
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		panic(fmt.Sprintf("failed to dial gRPC: %s", err))
+	}
+	l.conn = conn
+}
+
+func (l *localGRPC) close() {
+	_ = l.listener.Close()
+	l.server.Stop()
+}
+
+// BigQuery mock.
 
 type bigQueryWrite struct {
 	storagepb.UnimplementedBigQueryWriteServer
@@ -274,43 +329,16 @@ type bigQueryWrite struct {
 	tableMissing    bool
 }
 
-func mockBQ(ctx context.Context, t *testing.T) *mockedBQ {
-	listener := bufconn.Listen(100 * 1024)
-	server := grpc.NewServer()
-	bqw := &bigQueryWrite{t: t}
+func (w *bigQueryWrite) register(g *localGRPC) {
+	storagepb.RegisterBigQueryWriteServer(g.server, w)
+}
 
-	storagepb.RegisterBigQueryWriteServer(server, bqw)
-
-	go func() { _ = server.Serve(listener) }()
-
-	conn, err := grpc.DialContext(ctx, "",
-		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
-			return listener.Dial()
-		}),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-	)
-	if err != nil {
-		panic(fmt.Sprintf("failed to dial gRPC: %s", err))
-	}
-
-	client, err := managedwriter.NewClient(ctx, fakeProject, option.WithGRPCConn(conn))
+func (w *bigQueryWrite) client(ctx context.Context, g *localGRPC) *managedwriter.Client {
+	client, err := managedwriter.NewClient(ctx, fakeProject, option.WithGRPCConn(g.conn))
 	if err != nil {
 		panic(fmt.Sprintf("failed to create BQ client: %s", err))
 	}
-
-	return &mockedBQ{
-		listener: listener,
-		server:   server,
-		client:   client,
-		bqw:      bqw,
-	}
-}
-
-func (m *mockedBQ) close() {
-	_ = m.client.Close()
-	_ = m.listener.Close()
-	m.server.Stop()
+	return client
 }
 
 func (w *bigQueryWrite) CreateWriteStream(_ context.Context, req *storagepb.CreateWriteStreamRequest) (*storagepb.WriteStream, error) {
@@ -436,4 +464,39 @@ func (w *bigQueryWrite) BatchCommitWriteStreams(_ context.Context, req *storagep
 	return &storagepb.BatchCommitWriteStreamsResponse{
 		CommitTime: timestamppb.New(testTime),
 	}, nil
+}
+
+// PubSub mock.
+
+type pubSubPublisher struct {
+	pubsubpb.UnimplementedPublisherServer
+
+	t *testing.T
+
+	m        sync.Mutex
+	messages []string
+}
+
+func (p *pubSubPublisher) register(g *localGRPC) {
+	pubsubpb.RegisterPublisherServer(g.server, p)
+}
+
+func (p *pubSubPublisher) client(ctx context.Context, g *localGRPC) *pubsub.PublisherClient {
+	client, err := pubsub.NewPublisherClient(ctx, option.WithGRPCConn(g.conn))
+	if err != nil {
+		panic(fmt.Sprintf("failed to create PubSub client: %s", err))
+	}
+	return client
+}
+
+func (p *pubSubPublisher) Publish(_ context.Context, req *pubsubpb.PublishRequest) (*pubsubpb.PublishResponse, error) {
+	p.m.Lock()
+	defer p.m.Unlock()
+	if len(req.Messages) == 0 {
+		p.t.Fatalf("Empty Publish request")
+	}
+	for _, msg := range req.Messages {
+		p.messages = append(p.messages, string(msg.Data))
+	}
+	return &pubsubpb.PublishResponse{}, nil
 }

@@ -16,7 +16,9 @@ package main
 
 import (
 	"flag"
+	"strings"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -45,7 +47,36 @@ func main() {
 		"If set, the exporter cron will dispatch exports only for this one table. Useful when running locally.",
 	)
 
+	bqExportToPubSub := flag.String(
+		"bq-export-to-pubsub",
+		"none",
+		"A comma separated list of tables that should also be exported to PubSub or literal 'none'.",
+	)
+
+	bqExportPubSubTopicPrefix := flag.String(
+		"bq-export-to-pubsub-topic-prefix",
+		"none",
+		"A prefix to append to PubSub topic names or literal 'none' to not use a prefix.",
+	)
+
 	server.Main(nil, modules, func(srv *server.Server) error {
-		return bq.Register(srv, &tq.Default, &cron.Default, *bqExportDataset, *bqExportOneTable)
+		var exportToPubSubSet stringset.Set
+		if *bqExportToPubSub != "" && *bqExportToPubSub != "none" {
+			exportToPubSubSet = stringset.New(0)
+			for _, table := range strings.Split(*bqExportToPubSub, ",") {
+				exportToPubSubSet.Add(strings.TrimSpace(table))
+			}
+		}
+		if *bqExportPubSubTopicPrefix == "none" {
+			*bqExportPubSubTopicPrefix = ""
+		}
+		return bq.Register(srv,
+			&tq.Default,
+			&cron.Default,
+			*bqExportDataset,
+			*bqExportOneTable,
+			exportToPubSubSet,
+			*bqExportPubSubTopicPrefix,
+		)
 	})
 }

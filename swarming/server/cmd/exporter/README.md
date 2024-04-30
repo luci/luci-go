@@ -48,6 +48,25 @@ BQ export of real `chromium-swarm-dev` entities (that appeared recently) into
 `dev_${USER}` dataset.
 
 
+Running PubSub export locally
+-----------------------------
+
+Add two extra flags:
+
+```
+cd server/cmd/exporter
+go run main.go \
+  -cloud-project chromium-swarm-dev \
+  -bq-export-dataset "dev_${USER}" \
+  -bq-export-only-one-table task_requests \
+  -bq-export-to-pubsub task_requests \
+  -bq-export-to-pubsub-topic-prefix "dev_${USER}"
+```
+
+This will start sending data to PubSub topic `dev_${USER}_task_requests` in
+the cloud project specified by `-cloud-project`. The topic must exist already.
+
+
 Sticky cron job state
 ---------------------
 
