@@ -35,7 +35,9 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-type PreExecuteHook func(ctx context.Context, pkg actions.Package) error
+type PreExpandHook func(ctx context.Context, pkg actions.Package) error
+type PreExecuteHook func(ctx context.Context, pkg actions.Package) (context.Context, error)
+type PostExecuteHook func(ctx context.Context, pkg actions.Package, execErr error) error
 
 // ExecutionConfig includes all configs for Executor.
 type ExecutionConfig struct {
@@ -76,8 +78,11 @@ type PackageExecutor struct {
 	// Mapping derivation id to package.
 	refs map[string]actions.Package
 
-	preExecFn PreExecuteHook
-	execFn    Executor
+	preExpandFn PreExpandHook
+	preExecFn   PreExecuteHook
+	postExecFn  PostExecuteHook
+
+	execFn Executor
 
 	// tempDir is the temporary directory used as the working directory during
 	// execution. Since artifacts should be installed into output directory at the
@@ -88,47 +93,53 @@ type PackageExecutor struct {
 }
 
 // NewPackageExecutor creates a package executor to make packages available.
-// A preExecFn can be provided to e.g. fetch package from remote cache.
-// Both preExecFn and execFn are optional. If execFn is nil, builder.Execute
-// will be used.
+// All hooks and execFn are optional.
+// - preExpandFn can be provided to e.g. fetch package from remote cache.
+// - preExecFn can be provided to e.g. setup execution environment.
+// - postExecFn can be provided to e.g. cleanup execution environment.
+// - If execFn is nil, builder.Execute will be used.
 // tempDir will be used as the working directory during execution and can be
 // removed by caller after execution.
-func NewPackageExecutor(tempDir string, preExecFn PreExecuteHook, execFn Executor) *PackageExecutor {
+func NewPackageExecutor(tempDir string, preExpandFn PreExpandHook, preExecFn PreExecuteHook, postExecFn PostExecuteHook, execFn Executor) *PackageExecutor {
 	if execFn == nil {
 		execFn = Execute
 	}
 	return &PackageExecutor{
 		refs: make(map[string]actions.Package),
 
-		preExecFn: preExecFn,
-		execFn:    execFn,
+		preExpandFn: preExpandFn,
+		preExecFn:   preExecFn,
+		postExecFn:  postExecFn,
+
+		execFn: execFn,
 
 		tempDir: tempDir,
 	}
 }
 
-// Prepare prepares a package and all its dependencies for execution. If
-// preExecFn is not empty, it will be executed to possibly make the package
-// available.
-// preExecFn will be invoked on the package before on it's dependencies.
-func (p *PackageExecutor) Prepare(ctx context.Context, pkg actions.Package) ([]actions.Package, error) {
+// Expand expands a package with all its dependencies to a flattened slice of
+// packages for execution. If preExpandFn is not empty, it will be executed to
+// possibly make the package available so its dependencies don't need to be
+// expanded.
+// preExpandFn will be invoked on the package before on it's dependencies.
+func (p *PackageExecutor) Expand(ctx context.Context, pkg actions.Package) ([]actions.Package, error) {
 	if _, ok := p.refs[pkg.DerivationID]; ok {
-		return []actions.Package{}, nil
+		return []actions.Package{pkg}, nil
 	}
 
-	// PreExecuteHook is promised to be executed on the package before all its
+	// PreExpandHook is promised to be executed on the package before all its
 	// dependencies.
-	if p.preExecFn != nil {
-		if err := p.preExecFn(ctx, pkg); err != nil {
-			return nil, fmt.Errorf("failed to run preExecute hook for the package: %s: %w", pkg.DerivationID, err)
+	if p.preExpandFn != nil {
+		if err := p.preExpandFn(ctx, pkg); err != nil {
+			return nil, fmt.Errorf("failed to run preExpand hook for the package: %s: %w", pkg.ActionID, err)
 		}
 	}
 
 	var newPkgs []actions.Package
 
-	// Prepare runtime dependencies.
+	// Expand runtime dependencies.
 	for _, d := range pkg.RuntimeDependencies {
-		pkgs, err := p.Prepare(ctx, d)
+		pkgs, err := p.Expand(ctx, d)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +149,7 @@ func (p *PackageExecutor) Prepare(ctx context.Context, pkg actions.Package) ([]a
 	switch err := pkg.Handler.IncRef(); {
 	case errors.Is(err, core.ErrPackageNotExist):
 		for _, d := range pkg.BuildDependencies {
-			pkgs, err := p.Prepare(ctx, d)
+			pkgs, err := p.Expand(ctx, d)
 			if err != nil {
 				return nil, err
 			}
@@ -148,6 +159,7 @@ func (p *PackageExecutor) Prepare(ctx context.Context, pkg actions.Package) ([]a
 		return newPkgs, nil
 	case err == nil:
 		p.refs[pkg.DerivationID] = pkg
+		newPkgs = append(newPkgs, pkg)
 		return newPkgs, nil
 	default:
 		return nil, err
@@ -155,9 +167,25 @@ func (p *PackageExecutor) Prepare(ctx context.Context, pkg actions.Package) ([]a
 }
 
 // Execute executes packages' derivations and keeps the reference to the
-// package.
+// package. PreExecHook and PostExecHook, if not nil, are invoked before and
+// after the execution. If PreExecHook returns error, Execute will be skipped
+// but PostExecHook should be invoked with the error.
 func (p *PackageExecutor) Execute(ctx context.Context, pkg actions.Package) error {
-	// Skip if we have referenced the package.
+	var errs error
+	if p.preExecFn != nil {
+		ctx, errs = p.preExecFn(ctx, pkg)
+	}
+	if errs == nil {
+		errs = errors.Join(errs, p.execute(ctx, pkg))
+	}
+	if p.postExecFn != nil {
+		errs = errors.Join(errs, p.postExecFn(ctx, pkg, errs))
+	}
+	return errs
+}
+
+func (p *PackageExecutor) execute(ctx context.Context, pkg actions.Package) error {
+	// Skip execution if we have referenced the derivation outputs.
 	if _, ok := p.refs[pkg.DerivationID]; ok {
 		return nil
 	}
@@ -325,13 +353,18 @@ func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs [
 
 	var errs error
 
-	// Make actions.Package available
+	added := stringset.New(len(pkgs))
 	for _, pkg := range pkgs {
-		pkgs, err := pe.Prepare(ctx, pkg)
+		expands, err := pe.Expand(ctx, pkg)
 		if err != nil {
 			return err
 		}
-		newPkgs = append(newPkgs, pkgs...)
+
+		for _, expand := range expands {
+			if added.Add(expand.ActionID) {
+				newPkgs = append(newPkgs, expand)
+			}
+		}
 	}
 
 	executed := stringset.New(len(newPkgs))

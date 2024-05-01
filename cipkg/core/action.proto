@@ -72,6 +72,11 @@ message Action {
       // luciexe framework.
       string step_name = 1;
     }
+
+    // context_info can be used to indicate what this action related to - this
+    // can help e.g. differentiate action with same content but comes from
+    // different generator.
+    string context_info = 4;
   }
 
   // Dependencies which PackageManager will ensure being available prior to the

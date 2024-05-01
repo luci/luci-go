@@ -156,7 +156,7 @@ func TestRefRecursiveRuntime(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		b := NewBuilder(generators.Platforms{}, pm, actions.NewActionProcessor())
-		pe := NewPackageExecutor("", nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
+		pe := NewPackageExecutor("", nil, nil, nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
 		first, err := b.Build(ctx, pe, &Generator{
 			Name: "first",
 			Dependencies: []generators.Dependency{

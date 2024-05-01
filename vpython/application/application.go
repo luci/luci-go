@@ -343,7 +343,7 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 	}
 
 	b := workflow.NewBuilder(plats, pm, ap)
-	pe := workflow.NewPackageExecutor("", nil, nil)
+	pe := workflow.NewPackageExecutor("", nil, nil, nil, nil)
 	pkg, err := b.Build(ctx, pe, venv)
 	if err != nil {
 		return errors.Annotate(err, "failed to generate venv derivation").Err()

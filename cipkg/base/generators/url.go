@@ -63,8 +63,9 @@ func (f *FetchURLs) Generate(ctx context.Context, plats Platforms) (*core.Action
 		name := fmt.Sprintf("%s_%s", f.Name, id)
 
 		deps = append(deps, &core.Action{
-			Name: name,
-			Spec: &core.Action_Url{Url: spec},
+			Name:     name,
+			Metadata: &core.Action_Metadata{ContextInfo: f.Metadata.GetContextInfo()},
+			Spec:     &core.Action_Url{Url: spec},
 		})
 
 		m := v.Mode

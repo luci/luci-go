@@ -16,6 +16,7 @@ package workflow
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -78,7 +79,7 @@ func TestBuilder(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		b := NewBuilder(generators.Platforms{}, pm, actions.NewActionProcessor())
-		pe := NewPackageExecutor("", nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
+		pe := NewPackageExecutor("", nil, nil, nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
 
 		Convey("ok", func() {
 			pkg, err := b.Build(ctx, pe, &Generator{
@@ -95,17 +96,96 @@ func TestBuilder(t *testing.T) {
 			So(pkg.Action.Name, ShouldEqual, "first")
 		})
 
-		Convey("preExec", func() {
+		Convey("prePrepare", func() {
+			var res string
 			pe = NewPackageExecutor("",
 				func(ctx context.Context, pkg actions.Package) error {
 					return pkg.Handler.Build(func() error { return nil })
 				},
-				func(context.Context, *ExecutionConfig, *core.Derivation) error { panic("unreachable") },
+				func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+				func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return nil },
+				func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
 			)
+
+			_, err := b.Build(ctx, pe, &Generator{Name: "first"})
+			So(err, ShouldBeNil)
+			So(res, ShouldEqual, "PrePost")
+		})
+
+		Convey("exec hooks", func() {
+			Convey("ok", func() {
+				var res string
+				pe = NewPackageExecutor("",
+					nil,
+					func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+					func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return nil },
+					func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+				)
+
+				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
+				So(err, ShouldBeNil)
+				So(res, ShouldEqual, "PreExecPost")
+			})
+
+			Convey("err - pre", func() {
+				var res string
+				e := errors.New("err")
+				pe = NewPackageExecutor("",
+					nil,
+					func(ctx context.Context, pkg actions.Package) (context.Context, error) {
+						res += "Pre"
+						return ctx, e
+					},
+					func(ctx context.Context, pkg actions.Package, execErr error) error {
+						So(errors.Is(execErr, e), ShouldBeTrue)
+						res += "Post"
+						return nil
+					},
+					func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+				)
+
+				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
+				So(errors.Is(err, e), ShouldBeTrue)
+				So(res, ShouldEqual, "PrePost")
+			})
+
+			Convey("err - exec", func() {
+				var res string
+				e := errors.New("err")
+				pe = NewPackageExecutor("",
+					nil,
+					func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+					func(ctx context.Context, pkg actions.Package, execErr error) error {
+						So(errors.Is(execErr, e), ShouldBeTrue)
+						res += "Post"
+						return nil
+					},
+					func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return e },
+				)
+
+				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
+				So(errors.Is(err, e), ShouldBeTrue)
+				So(res, ShouldEqual, "PreExecPost")
+			})
+
+			Convey("err - post", func() {
+				var res string
+				e := errors.New("err")
+				pe = NewPackageExecutor("",
+					nil,
+					func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+					func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return e },
+					func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+				)
+
+				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
+				So(errors.Is(err, e), ShouldBeTrue)
+				So(res, ShouldEqual, "PreExecPost")
+			})
 		})
 
 		Convey("dependency not available", func() {
-			pe = NewPackageExecutor("", nil,
+			pe = NewPackageExecutor("", nil, nil, nil,
 				func(ctx context.Context, cfg *ExecutionConfig, drv *core.Derivation) error {
 					if drv.Name == "second" {
 						return fmt.Errorf("failed")

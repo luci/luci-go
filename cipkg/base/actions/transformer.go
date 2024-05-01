@@ -44,7 +44,8 @@ type Package struct {
 	BuildDependencies   []Package
 	RuntimeDependencies []Package
 
-	Action *core.Action
+	ActionID string
+	Action   *core.Action
 }
 
 var (
@@ -121,8 +122,13 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 		return Package{}, fmt.Errorf("action name must conform %s: %s", packageNameRe, a)
 	}
 
+	aid, err := core.GetActionID(a)
+	if err != nil {
+		return Package{}, err
+	}
 	pkg := Package{
-		Action: a,
+		ActionID: aid,
+		Action:   a,
 	}
 
 	// Recursivedly process all dependencies
@@ -148,10 +154,7 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 	}
 
 	// Parse spec message
-	var (
-		spec proto.Message
-		err  error
-	)
+	var spec proto.Message
 
 	if s, ok := a.Spec.(*core.Action_Extension); ok {
 		if spec, err = s.Extension.UnmarshalNew(); err != nil {

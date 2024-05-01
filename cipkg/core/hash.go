@@ -17,6 +17,7 @@ package core
 import (
 	"crypto/sha256"
 	"encoding/base32"
+	"fmt"
 	"hash"
 	"strings"
 
@@ -53,4 +54,16 @@ func hashDerivation(h hash.Hash, drv *Derivation) error {
 		return err
 	}
 	return proto.StableHash(h, drv)
+}
+
+// GetActionID calculates a unique ID from action's content and can represent
+// package abstraction. Different actions may generate same derivation and
+// share underlying content. ActionID isn't safe to be used as filesystem path.
+func GetActionID(a *Action) (string, error) {
+	h := sha256.New()
+	if err := proto.StableHash(h, a); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s-%x", a.Name, h.Sum(nil)), nil
 }
