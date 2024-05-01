@@ -91,7 +91,7 @@ func taskProperties(tp *model.TaskProperties) *bqpb.TaskProperties {
 		}
 	}
 
-	return &bqpb.TaskProperties{
+	bqtp := &bqpb.TaskProperties{
 		CipdInputs:       inputPackages,
 		NamedCaches:      namedCaches,
 		Command:          tp.Command,
@@ -105,20 +105,28 @@ func taskProperties(tp *model.TaskProperties) *bqpb.TaskProperties {
 		GracePeriod:      float64(tp.GracePeriodSecs),
 		Idempotent:       tp.Idempotent,
 		Outputs:          tp.Outputs,
-		CasInputRoot: &apipb.CASReference{
+	}
+
+	if tp.CASInputRoot.Digest.Hash != "" {
+		bqtp.CasInputRoot = &apipb.CASReference{
 			CasInstance: tp.CASInputRoot.CASInstance,
 			Digest: &apipb.Digest{
 				Hash:      tp.CASInputRoot.Digest.Hash,
 				SizeBytes: tp.CASInputRoot.Digest.SizeBytes,
 			},
-		},
-		Containment: &apipb.Containment{
+		}
+	}
+
+	if tp.Containment.ContainmentType != apipb.Containment_NOT_SPECIFIED && tp.Containment.ContainmentType != apipb.Containment_NONE {
+		bqtp.Containment = &apipb.Containment{
 			ContainmentType:           tp.Containment.ContainmentType,
 			LowerPriority:             tp.Containment.LowerPriority,
 			LimitProcesses:            tp.Containment.LimitProcesses,
 			LimitTotalCommittedMemory: tp.Containment.LimitTotalCommittedMemory,
-		},
+		}
 	}
+
+	return bqtp
 }
 
 func taskSlice(ts *model.TaskSlice) *bqpb.TaskSlice {
@@ -135,28 +143,31 @@ func taskRequest(tr *model.TaskRequest) *bqpb.TaskRequest {
 	for i, slice := range tr.TaskSlices {
 		slices[i] = taskSlice(&slice)
 	}
-	return &bqpb.TaskRequest{
-		TaskSlices:     slices,
-		Priority:       int32(tr.Priority),
-		ServiceAccount: tr.ServiceAccount,
-		CreateTime:     timestamppb.New(tr.Created),
-		Name:           tr.Name,
-		Tags:           tr.Tags,
-		User:           tr.User,
-		Authenticated:  string(tr.Authenticated),
-		Realm:          tr.Realm,
-		Resultdb:       &apipb.ResultDBCfg{Enable: tr.ResultDB.Enable},
-		TaskId:         model.RequestKeyToTaskID(tr.Key, model.AsRequest),
-		ParentTaskId:   runIDToTaskID(tr.ParentTaskID.Get()),
-		ParentRunId:    tr.ParentTaskID.Get(),
-		RootTaskId:     runIDToTaskID(tr.RootTaskID),
-		RootRunId:      tr.RootTaskID,
-		PubsubNotification: &bqpb.PubSub{
-			Topic:    tr.PubSubTopic,
-			Userdata: tr.PubSubUserData,
-		},
+	bqtr := &bqpb.TaskRequest{
+		TaskSlices:       slices,
+		Priority:         int32(tr.Priority),
+		ServiceAccount:   tr.ServiceAccount,
+		CreateTime:       timestamppb.New(tr.Created),
+		Name:             tr.Name,
+		Tags:             tr.Tags,
+		User:             tr.User,
+		Authenticated:    string(tr.Authenticated),
+		Realm:            tr.Realm,
+		Resultdb:         &apipb.ResultDBCfg{Enable: tr.ResultDB.Enable},
+		TaskId:           model.RequestKeyToTaskID(tr.Key, model.AsRequest),
+		ParentTaskId:     runIDToTaskID(tr.ParentTaskID.Get()),
+		ParentRunId:      tr.ParentTaskID.Get(),
+		RootTaskId:       runIDToTaskID(tr.RootTaskID),
+		RootRunId:        tr.RootTaskID,
 		BotPingTolerance: float64(tr.BotPingToleranceSecs),
 	}
+	if tr.PubSubTopic != "" {
+		bqtr.PubsubNotification = &bqpb.PubSub{
+			Topic:    tr.PubSubTopic,
+			Userdata: tr.PubSubUserData,
+		}
+	}
+	return bqtr
 }
 
 var taskStateMapping = map[apipb.TaskState]bqpb.TaskState{
@@ -230,8 +241,12 @@ func taskResultCommon(rc *model.TaskResultCommon, req *model.TaskRequest) *bqpb.
 	// TODO(https://crbug.com/1510462) remove state category as part of this bug
 	out.StateCategory = bqpb.TaskStateCategory(out.State & 0xF0)
 
-	if rc.CIPDPins.Server != "" {
-		out.CipdPins = &bqpb.CIPDPins{Server: rc.CIPDPins.Server}
+	cipdServer := rc.CIPDPins.Server
+	if cipdServer == "" && len(req.TaskSlices) != 0 {
+		cipdServer = req.TaskSlices[0].Properties.CIPDInput.Server
+	}
+	if cipdServer != "" {
+		out.CipdPins = &bqpb.CIPDPins{Server: cipdServer}
 		if rc.CIPDPins.ClientPackage.PackageName != "" {
 			out.CipdPins.ClientPackage = &bqpb.CIPDPackage{
 				PackageName: rc.CIPDPins.ClientPackage.PackageName,
@@ -258,7 +273,7 @@ func taskResultCommon(rc *model.TaskResultCommon, req *model.TaskRequest) *bqpb.
 		}
 	}
 
-	if rc.CASOutputRoot.CASInstance != "" {
+	if rc.CASOutputRoot.Digest.Hash != "" {
 		out.CasOutputRoot = &apipb.CASReference{
 			CasInstance: rc.CASOutputRoot.CASInstance,
 			Digest: &apipb.Digest{
@@ -314,6 +329,11 @@ func performanceStats(perf *model.PerformanceStats, costUSD float32) *bqpb.TaskP
 	out.SetupOverhead = &bqpb.TaskSetupOverhead{}
 	out.TeardownOverhead = &bqpb.TaskTeardownOverhead{}
 
+	// Deprecated, but still potentially used fields.
+	// TODO(https://crbug.com/1510462): Remove them at some point.
+	out.Setup = &bqpb.TaskOverheadStats{}
+	out.Teardown = &bqpb.TaskOverheadStats{}
+
 	// Add up all setup overhead.
 	if s := maybeAddToOverhead(perf.CacheTrim.DurationSecs, &setupOverhead); s != 0.0 {
 		out.SetupOverhead.CacheTrim = &bqpb.CacheTrimOverhead{Duration: s}
@@ -327,24 +347,16 @@ func performanceStats(perf *model.PerformanceStats, costUSD float32) *bqpb.TaskP
 	if s := maybeAddToOverhead(perf.IsolatedDownload.DurationSecs, &setupOverhead); s != 0.0 {
 		cas := casOverhead(&perf.IsolatedDownload)
 		out.SetupOverhead.Cas = cas
-		// TODO(https://crbug.com/1510462) remove deprecated Setup field
-		out.Setup = &bqpb.TaskOverheadStats{
-			Hot:      cas.GetHot(),
-			Cold:     cas.GetCold(),
-			Duration: cas.GetDuration(),
-		}
+		out.Setup.Hot = cas.GetHot()
+		out.Setup.Cold = cas.GetCold()
 	}
 
 	// Add up all teardown overhead.
 	if t := maybeAddToOverhead(perf.IsolatedUpload.DurationSecs, &teardownOverhead); t != 0.0 {
 		cas := casOverhead(&perf.IsolatedUpload)
 		out.TeardownOverhead.Cas = cas
-		// TODO(https://crbug.com/1510462) remove deprecated Teardown field
-		out.Teardown = &bqpb.TaskOverheadStats{
-			Hot:      cas.GetHot(),
-			Cold:     cas.GetCold(),
-			Duration: cas.GetDuration(),
-		}
+		out.Teardown.Hot = cas.GetHot()
+		out.Teardown.Cold = cas.GetCold()
 	}
 	if t := maybeAddToOverhead(perf.NamedCachesUninstall.DurationSecs, &teardownOverhead); t != 0.0 {
 		out.TeardownOverhead.NamedCache = &bqpb.NamedCacheOverhead{Duration: t}
@@ -355,6 +367,8 @@ func performanceStats(perf *model.PerformanceStats, costUSD float32) *bqpb.TaskP
 
 	out.SetupOverhead.Duration = setupOverhead
 	out.TeardownOverhead.Duration = teardownOverhead
+	out.Setup.Duration = setupOverhead
+	out.Teardown.Duration = teardownOverhead
 	out.TotalOverhead = perf.BotOverheadSecs
 	out.OtherOverhead = math.Max(perf.BotOverheadSecs-setupOverhead-teardownOverhead, 0.0)
 

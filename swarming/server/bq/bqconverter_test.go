@@ -90,7 +90,7 @@ func createTaskRequest(key *datastore.Key, testTime time.Time) *model.TaskReques
 				HasSecretBytes: true,
 				Containment: model.Containment{
 					LowerPriority:             true,
-					ContainmentType:           apipb.Containment_NOT_SPECIFIED,
+					ContainmentType:           apipb.Containment_JOB_OBJECT,
 					LimitProcesses:            456,
 					LimitTotalCommittedMemory: 789,
 				},
@@ -247,12 +247,12 @@ func createBQPerformanceStats(costUSD float32) *bqpb.TaskPerformance {
 		OtherOverhead: 91.5,
 		TotalOverhead: 123.,
 		Setup: &bqpb.TaskOverheadStats{
-			Duration: casSetup.Duration,
+			Duration: 13.0, // total
 			Hot:      casSetup.Hot,
 			Cold:     casSetup.Cold,
 		},
 		Teardown: &bqpb.TaskOverheadStats{
-			Duration: casTeardown.Duration,
+			Duration: 18.5, // total
 			Hot:      casTeardown.Hot,
 			Cold:     casTeardown.Cold,
 		},
@@ -423,7 +423,7 @@ func createBQTaskRequest(taskID string, testTime time.Time) *bqpb.TaskRequest {
 				Outputs:        []string{"o1", "o2"},
 				HasSecretBytes: true,
 				Containment: &apipb.Containment{
-					ContainmentType:           apipb.Containment_NOT_SPECIFIED,
+					ContainmentType:           apipb.Containment_JOB_OBJECT,
 					LowerPriority:             true,
 					LimitProcesses:            456,
 					LimitTotalCommittedMemory: 789,
