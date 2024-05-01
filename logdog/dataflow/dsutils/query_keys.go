@@ -311,12 +311,13 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	defer emitClaimedKeys()
 	lastClaimed := ""
 
+	claimedCount := 0
 	err = datastore.Run(ctx, q, func(key *datastore.Key) error {
 		claim := key.StringID()
 		if !rt.TryClaim(HexPosClaim{Value: claim}) {
 			return datastore.Stop
 		}
-
+		claimedCount += 1
 		lastClaimed = claim
 		claimedKeys = append(claimedKeys, key)
 		if len(claimedKeys) < fn.OutputBatchSize {
@@ -327,8 +328,8 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	})
 	if err != nil {
 		// Log the error and try again in 10 mins.
-		err = errors.Annotate(err, "failed to run bounded query Namespace `%s` Range: `%s` Last Claimed: `%s`",
-			nc.Namespace, restriction.RangeString(), lastClaimed).Err()
+		err = errors.Annotate(err, "failed to run bounded query Namespace `%s` Range: `%s`, Claimed: %d, Last Claimed: `%s`",
+			nc.Namespace, restriction.RangeString(), claimedCount, lastClaimed).Err()
 		log.Errorf(ctx, "%v", err)
 		// This will trigger a self-checkpointing split so we don't need to retry
 		// the entire key range.
@@ -342,7 +343,8 @@ func (fn *getAllKeysWithHexPrefixFn) ProcessElement(
 	// The restriction might have been split. Log the actual restriction we
 	// completed.
 	finalRestriction := rt.GetRestriction().(hexPrefixRestriction)
-	log.Infof(ctx, "Datastore: finished processing Namespace `%s` Range %s (was %s)", nc.Namespace, finalRestriction.RangeString(), restriction.RangeString())
+	log.Infof(ctx, "Datastore: finished processing Namespace `%s` Range %s (was %s), claimed %d keys",
+		nc.Namespace, finalRestriction.RangeString(), restriction.RangeString(), claimedCount)
 
 	return sdf.StopProcessing(), nil
 }
