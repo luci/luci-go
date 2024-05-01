@@ -58,13 +58,17 @@ func init() {
 }
 
 // loginRequiredMsg is the message to print when reporting a login required error.
+//
+// In most setups, Git will fallback to reading the username and
+// password, which will overwrite any preceding trailing whitespace.  Thus, we
+// add a zero width space at the end to protect the message.
 const loginRequiredMsg = `not running with a service account and not logged in
 
 If you are running this in a development environment, you can log in by running:
 
 git credential-luci login
 
-`
+` + "\u200b\n"
 
 func main() {
 	flag.Parse()
@@ -92,7 +96,7 @@ func main() {
 		t, err := a.GetAccessToken(lifetime)
 		if err != nil {
 			if errors.Is(err, auth.ErrLoginRequired) {
-				fmt.Fprintf(os.Stderr, "%s", loginRequiredMsg)
+				fmt.Fprint(os.Stderr, loginRequiredMsg)
 			} else {
 				fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
 			}
@@ -100,7 +104,9 @@ func main() {
 		}
 		fmt.Printf("username=git-luci\n")
 		fmt.Printf("password=%s\n", t.AccessToken)
-	case "erase":
+	case "erase", "logout":
+		// logout is not part of the Git credential helper
+		// specification, but it is provided for convenience.
 		if err := a.PurgeCredentialsCache(); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
 			os.Exit(1)
