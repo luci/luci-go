@@ -21,6 +21,7 @@ package registry
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 
 	"go.chromium.org/luci/common/tsmon/monitor"
@@ -55,22 +56,22 @@ func Add(m types.Metric) {
 	lock.Lock()
 	defer lock.Unlock()
 
+	if err := ValidateMetricName(key.MetricName); err != nil {
+		panic(err)
+	}
+
 	switch _, exist := registry[key]; {
-	case key.MetricName == "":
-		panic(fmt.Errorf("empty metric name"))
-	case !metricNameRe.MatchString(monitor.MetricNamePrefix + key.MetricName):
-		panic(fmt.Errorf("invalid metric name %q: doesn't match %s", key.MetricName, metricNameRe))
 	case exist:
 		panic(fmt.Errorf("duplicate metric name: metric %q with target %q is registered already",
 			key.MetricName, key.TargetType.Name))
 	default:
 		for _, f := range fields {
-			if !metricFieldNameRe.MatchString(f.Name) {
-				panic(fmt.Errorf("invalid field name %q: doesn't match %s",
-					f.Name, metricFieldNameRe))
+			if err := ValidateMetricFieldName(f.Name); err != nil {
+				panic(err)
 			}
 		}
 	}
+
 	registry[key] = m
 }
 
@@ -84,4 +85,34 @@ func Iter(cb func(m types.Metric)) {
 	for _, v := range registry {
 		cb(v)
 	}
+}
+
+func validateMetricName(name string) error {
+	if metricNameRe.MatchString(name) {
+		return nil
+	}
+	return fmt.Errorf("invalid metric name %q: doesn't match %s", name, metricNameRe)
+}
+
+// ValidateMetricName validates the provided metric name.
+// * if the provided name starts with "/", validate it as is;
+// * otherwise prepend monitor.MetricNamePrefix to it then validate.
+func ValidateMetricName(name string) error {
+	if name == "" {
+		return fmt.Errorf("empty metric name")
+	}
+
+	if strings.HasPrefix(name, "/") {
+		return validateMetricName(name)
+	}
+	return validateMetricName(monitor.MetricNamePrefix + name)
+}
+
+// ValidateMetricFieldName validates a metric field name.
+func ValidateMetricFieldName(fName string) error {
+	if metricFieldNameRe.MatchString(fName) {
+		return nil
+	}
+	return fmt.Errorf("invalid field name %q: doesn't match %s",
+		fName, metricFieldNameRe)
 }
