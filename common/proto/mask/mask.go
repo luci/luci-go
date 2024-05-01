@@ -217,6 +217,11 @@ func removeTrailingStars(paths []path) []path {
 	return ret
 }
 
+// Children returns the children of the current Mask node.
+func (m *Mask) Children() map[string]*Mask {
+	return m.children
+}
+
 // Trim clears protobuf message fields that are not in the mask.
 //
 // If mask is empty, this is a noop. It returns error when the supplied
