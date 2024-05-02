@@ -19,6 +19,7 @@ syntax = "proto3";
 package buildbucket;
 
 import "google/protobuf/duration.proto";
+
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
@@ -49,6 +50,13 @@ message SettingsCfg {
   // derive a backend config from swarming related configs.
   // So we could control the migration process behind the scene.
   map<string, string> swarming_backends = 8;
+
+  // Custom metrics.
+  //
+  // Global config to register custom build metrics that more than one LUCI
+  // projects may report data to.
+  // Therefore, the metric names must be unique globally.
+  repeated CustomMetric custom_metrics = 9;
 }
 
 // Backend setting.
@@ -333,4 +341,63 @@ message CipdSettings {
 
   // Source of the cipd package itself
   Source source = 2;
+}
+
+// A CustomBuildMetricBase tells the base metric of a given custom metric.
+//
+// Buildbucket will determine what to report to and the annotation for
+// a given CustomMetric, based on the specified metric base. Visit
+// http://shortn/_6bc0aXIouD to find all the supported metric bases.
+enum CustomBuildMetricBase {
+  CUSTOM_BUILD_METRIC_BASE_UNSET = 0;
+  CUSTOM_BUILD_METRIC_BASE_CREATED = 1;
+  CUSTOM_BUILD_METRIC_BASE_STARTED = 2;
+  CUSTOM_BUILD_METRIC_BASE_COMPLETED = 3;
+  CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS = 4;
+  CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS = 5;
+  CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS = 6;
+  CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED = 7;
+  CUSTOM_BUILD_METRIC_BASE_COUNT = 8;
+  CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT = 9;
+}
+
+// CustomMetric is a metric object that collects a series of data
+// exported by a given metric class.
+//
+// All metrics are using luci.Builder schema at https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/buildbucket/metrics/builder.go;l=26-48;drc=b77d0c2bd4bbb536f8e349e993e3ca18818c51e7.
+//
+// Builders can then reference a custom metric by name to report their build
+// metrics.
+message CustomMetric {
+  // Name of the metric.
+  //
+  // Must be unique globally across all LUCI projects.
+  // Must conform to ^(/[a-zA-Z0-9_-]+)+$ (See
+  // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/tsmon/registry/registry.go;l=33;drc=b77d0c2bd4bbb536f8e349e993e3ca18818c51e7).
+  string name = 1;
+
+  // Description of the metric.
+  string description = 2;
+
+  // Metric field names.
+  //
+  // Each builder uses this metric must specify how to populate the values of
+  // each field in their configurations.
+  //
+  // The value type of all metric fields is always string.
+  // Each Field must conform to ^[A-Za-z_][A-Za-z0-9_]*$ (See
+  // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/tsmon/registry/registry.go;l=34;drc=b77d0c2bd4bbb536f8e349e993e3ca18818c51e7).
+  repeated string fields = 3;
+
+  // True if the metric is disabled.
+  //
+  // This is useful for pausing a metric report pipeline temporary
+  // in an emergency situation.
+  bool disabled = 4;
+
+  // Metric class determines which data to be collected and reported
+  // to the metric.
+  oneof class {
+      CustomBuildMetricBase metric_base = 5;
+  }
 }
