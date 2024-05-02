@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/assert/results"
-	"go.chromium.org/luci/common/testing/assert/testsupport"
+	"go.chromium.org/luci/common/testing/assert/interfaces"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -34,7 +34,7 @@ func TestCheck(t *testing.T) {
 	cases := []struct {
 		name   string
 		input  any
-		expect testsupport.MockTB
+		expect interfaces.MockTB
 		ok     bool
 	}{
 		{
@@ -45,7 +45,7 @@ func TestCheck(t *testing.T) {
 		{
 			name:  "non-empty string",
 			input: "a",
-			expect: testsupport.MockTB{
+			expect: interfaces.MockTB{
 				HelperCalls: 2,
 				LogCalls:    [][]any{{"string not empty FAILED"}},
 				FailCalls:   1,
@@ -55,7 +55,7 @@ func TestCheck(t *testing.T) {
 		{
 			name:  "bad type match",
 			input: 100,
-			expect: testsupport.MockTB{
+			expect: interfaces.MockTB{
 				HelperCalls: 2,
 				LogCalls:    [][]any{{"builtin.LosslessConvertTo FAILED"}},
 				FailCalls:   1,
@@ -69,7 +69,7 @@ func TestCheck(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			zt := &testsupport.MockTB{}
+			zt := &interfaces.MockTB{}
 			got := Check(zt, tt.input, isEmptyCmp)
 
 			if diff := typed.Diff(zt, &tt.expect); diff != "" {
@@ -88,7 +88,7 @@ func TestAssert(t *testing.T) {
 	cases := []struct {
 		name   string
 		input  string
-		expect testsupport.MockTB
+		expect interfaces.MockTB
 	}{
 		{
 			name:  "empty string",
@@ -97,7 +97,7 @@ func TestAssert(t *testing.T) {
 		{
 			name:  "non-empty string",
 			input: "a",
-			expect: testsupport.MockTB{
+			expect: interfaces.MockTB{
 				HelperCalls:  2,
 				LogCalls:     [][]any{{"string not empty FAILED"}},
 				FailNowCalls: 1,
@@ -110,7 +110,7 @@ func TestAssert(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			zt := &testsupport.MockTB{}
+			zt := &interfaces.MockTB{}
 			Assert(zt, tt.input, isEmptyCmp)
 
 			if diff := typed.Diff(zt, &tt.expect); diff != "" {

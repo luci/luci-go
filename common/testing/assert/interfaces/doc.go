@@ -12,20 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package interfaces contains all the interfaces necessary for the different
-// components of the testing library like TestingTB.
-//
-// If you are just using the assert or should libraries, you shouldn't
-// need to worry about this package.
-package interfaces
-
-// TestingTB exposes a subset of the testing.T interface from the standard
+// Package interfaces contains the TestingTB and related mock for the assert
 // library.
 //
-// Keep this in sync with results.FakeTB.
-type TestingTB interface {
-	Helper()
-	Log(...any)
-	Fail()
-	FailNow()
-}
+// This library is not intended for direct use. It is ONLY used to test the
+// inner workings of assert/should and similar libraries.
+package interfaces

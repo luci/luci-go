@@ -12,15 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package testsupport contains helpers for testing the assertion library.
-//
-// This library is not intended for direct use. It is ONLY used to test the
-// inner workings of assert/should and similar libraries.
-package testsupport
-
-import (
-	"go.chromium.org/luci/common/testing/assert/interfaces"
-)
+package interfaces
 
 // MockTB is a mock interfaces.TestingTB implementation for testing the `assert`
 // library itself.
@@ -38,4 +30,4 @@ func (m *MockTB) Log(args ...any) { m.LogCalls = append(m.LogCalls, args) }
 func (m *MockTB) Fail()           { m.FailCalls++ }
 func (m *MockTB) FailNow()        { m.FailNowCalls++ }
 
-var _ interfaces.TestingTB = (*MockTB)(nil)
+var _ TestingTB = (*MockTB)(nil)
