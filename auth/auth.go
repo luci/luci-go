@@ -1553,26 +1553,22 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 		if opts.ClientID == "" || opts.ClientSecret == "" {
 			return nil, errors.Reason("OAuth client is not configured, can't use interactive login").Err()
 		}
-		// Note: both LoginSessionTokenProvider and UserAuthTokenProvider support
-		// ID tokens and OAuth access tokens at the same time. They ignore audience
-		// (it always matches ClientID).
-		if opts.LoginSessionsHost != "" {
-			if internal.NewLoginSessionTokenProvider == nil {
-				return nil, errors.New("support for interactive login flow is not compiled into this binary")
-			}
-			return internal.NewLoginSessionTokenProvider(
-				ctx,
-				opts.LoginSessionsHost,
-				opts.ClientID,
-				opts.ClientSecret,
-				scopes,
-				opts.Transport)
+		if internal.NewLoginSessionTokenProvider == nil {
+			return nil, errors.Reason("support for interactive login flow is not compiled into this binary").Err()
 		}
-		return internal.NewUserAuthTokenProvider(
+		if opts.LoginSessionsHost == "" {
+			return nil, errors.Reason("no login session host configured").Err()
+		}
+		// Note: LoginSessionTokenProvider supports ID tokens
+		// and OAuth access tokens at the same time.
+		// It ignores audience (it always matches ClientID).
+		return internal.NewLoginSessionTokenProvider(
 			ctx,
+			opts.LoginSessionsHost,
 			opts.ClientID,
 			opts.ClientSecret,
-			scopes)
+			scopes,
+			opts.Transport)
 	case ServiceAccountMethod:
 		serviceAccountPath := ""
 		if len(opts.ServiceAccountJSON) == 0 {
