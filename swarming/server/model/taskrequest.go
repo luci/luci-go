@@ -470,9 +470,14 @@ type CIPDInput struct {
 	Packages []CIPDPackage `gae:"packages,lsp"`
 }
 
+// IsPopulated returns true if the struct carries some data.
+func (p *CIPDInput) IsPopulated() bool {
+	return p.Server != "" || p.ClientPackage.PackageName != "" || len(p.Packages) != 0
+}
+
 // ToProto converts CIPDInput to apipb.CIPDInput.
 func (p *CIPDInput) ToProto() *apipb.CipdInput {
-	if len(p.Packages) == 0 && p.ClientPackage.PackageName == "" {
+	if !p.IsPopulated() {
 		return nil
 	}
 	packages := make([]*apipb.CipdPackage, len(p.Packages))

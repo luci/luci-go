@@ -184,11 +184,12 @@ var taskStateMapping = map[apipb.TaskState]bqpb.TaskState{
 
 func taskResultCommon(rc *model.TaskResultCommon, req *model.TaskRequest) *bqpb.TaskResult {
 	out := &bqpb.TaskResult{
-		TaskId:         model.RequestKeyToTaskID(req.Key, model.AsRequest),
-		CreateTime:     timestamppb.New(req.Created),
-		Request:        taskRequest(req),
-		ServerVersions: rc.ServerVersions,
-		ExitCode:       int64(rc.ExitCode.Get()),
+		TaskId:           model.RequestKeyToTaskID(req.Key, model.AsRequest),
+		CreateTime:       timestamppb.New(req.Created),
+		CurrentTaskSlice: int32(rc.CurrentTaskSlice),
+		Request:          taskRequest(req),
+		ServerVersions:   rc.ServerVersions,
+		ExitCode:         int64(rc.ExitCode.Get()),
 	}
 
 	if rc.Started.IsSet() {
@@ -245,7 +246,7 @@ func taskResultCommon(rc *model.TaskResultCommon, req *model.TaskRequest) *bqpb.
 	if cipdServer == "" && len(req.TaskSlices) != 0 {
 		cipdServer = req.TaskSlices[0].Properties.CIPDInput.Server
 	}
-	if cipdServer != "" {
+	if cipdServer != "" || rc.CIPDPins.IsPopulated() {
 		out.CipdPins = &bqpb.CIPDPins{Server: cipdServer}
 		if rc.CIPDPins.ClientPackage.PackageName != "" {
 			out.CipdPins.ClientPackage = &bqpb.CIPDPackage{
@@ -253,16 +254,16 @@ func taskResultCommon(rc *model.TaskResultCommon, req *model.TaskRequest) *bqpb.
 				DestPath:    rc.CIPDPins.ClientPackage.Path,
 				Version:     rc.CIPDPins.ClientPackage.Version,
 			}
-			for _, p := range rc.CIPDPins.Packages {
-				if p.PackageName == "" {
-					continue
-				}
-				out.CipdPins.Packages = append(out.CipdPins.Packages, &bqpb.CIPDPackage{
-					PackageName: p.PackageName,
-					DestPath:    p.Path,
-					Version:     p.Version,
-				})
+		}
+		for _, p := range rc.CIPDPins.Packages {
+			if p.PackageName == "" {
+				continue
 			}
+			out.CipdPins.Packages = append(out.CipdPins.Packages, &bqpb.CIPDPackage{
+				PackageName: p.PackageName,
+				DestPath:    p.Path,
+				Version:     p.Version,
+			})
 		}
 	}
 

@@ -293,7 +293,7 @@ func createBQTaskResultBase(taskID string, testTime time.Time) *bqpb.TaskResult 
 		StateCategory:    bqpb.TaskStateCategory_CATEGORY_RUNNING,
 		Request:          createBQTaskRequest(taskID, testTime),
 		ServerVersions:   []string{"foo", "bar"},
-		CurrentTaskSlice: 0,
+		CurrentTaskSlice: 1,
 		StartTime:        timestamppb.New(testTime),
 		EndTime:          timestamppb.New(testTime),
 		Duration:         10.456,
