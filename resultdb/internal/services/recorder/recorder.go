@@ -24,13 +24,11 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
-	"go.chromium.org/luci/resultdb/internal/services/artifactexporter"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -45,9 +43,6 @@ type recorderServer struct {
 	// casClient is an instance of ContentAddressableStorageClient which is used for
 	// artifact batch operations.
 	casClient repb.ContentAddressableStorageClient
-
-	// bqExportClient is used for exporting artifacts to BigQuery.
-	bqExportClient BQExportClient
 }
 
 // Options is recorder server configuration.
@@ -71,18 +66,8 @@ func InitServer(srv *server.Server, opt Options) error {
 	if err != nil {
 		return err
 	}
-	bqClient, err := artifactexporter.NewClient(srv.Context, srv.Options.CloudProject)
-	if err != nil {
-		return errors.Annotate(err, "create bq export client").Err()
-	}
-	srv.RegisterCleanup(func(ctx context.Context) {
-		err := bqClient.Close()
-		if err != nil {
-			logging.Errorf(ctx, "Cleaning up BigQuery export client: %s", err)
-		}
-	})
 
-	pb.RegisterRecorderServer(srv, NewRecorderServer(opt, repb.NewContentAddressableStorageClient(conn), bqClient))
+	pb.RegisterRecorderServer(srv, NewRecorderServer(opt, repb.NewContentAddressableStorageClient(conn)))
 
 	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 	srv.ConfigurePRPC(func(p *prpc.Server) {
@@ -93,12 +78,11 @@ func InitServer(srv *server.Server, opt Options) error {
 	return installArtifactCreationHandler(srv, &opt, conn)
 }
 
-func NewRecorderServer(opts Options, casClient repb.ContentAddressableStorageClient, bqClient BQExportClient) *pb.DecoratedRecorder {
+func NewRecorderServer(opts Options, casClient repb.ContentAddressableStorageClient) *pb.DecoratedRecorder {
 	return &pb.DecoratedRecorder{
 		Service: &recorderServer{
-			Options:        &opts,
-			casClient:      casClient,
-			bqExportClient: bqClient,
+			Options:   &opts,
+			casClient: casClient,
 		},
 		Postlude: internal.CommonPostlude,
 	}

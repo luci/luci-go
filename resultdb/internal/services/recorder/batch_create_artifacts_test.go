@@ -27,7 +27,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon"
@@ -40,7 +39,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
-	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -69,19 +67,6 @@ func (c *fakeRBEClient) mockResp(err error, cds ...codes.Code) {
 			Status: &spb.Status{Code: int32(cd)},
 		})
 	}
-}
-
-type fakeBQClient struct {
-	Rows  []*bqpb.TextArtifactRow
-	Error error
-}
-
-func (c *fakeBQClient) InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifactRow) error {
-	if c.Error != nil {
-		return c.Error
-	}
-	c.Rows = append(c.Rows, rows...)
-	return nil
 }
 
 func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
@@ -186,8 +171,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		casClient := &fakeRBEClient{}
-		bqClient := &fakeBQClient{}
-		recorder := newTestRecorderServerWithClients(casClient, bqClient)
+		recorder := newTestRecorderServerWithClients(casClient)
 		bReq := &pb.BatchCreateArtifactsRequest{}
 
 		appendArtReq := func(aID, content, cType, parent string, testStatus pb.TestStatus) {
@@ -373,60 +357,6 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 			// RowCount metric should be increased by 5.
 			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 5)
-
-			// Verify the bigquery rows.
-			So(len(bqClient.Rows), ShouldEqual, 3)
-			So(bqClient.Rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
-				{
-					Project:             "testproject",
-					Realm:               "testrealm",
-					InvocationId:        "inv",
-					ArtifactId:          "art1",
-					ContentType:         "text/plain",
-					Content:             "c0ntent",
-					NumShards:           1,
-					ShardId:             0,
-					ShardContentSize:    7,
-					ArtifactContentSize: 7,
-					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
-					ArtifactShard:       "art1:0",
-					TestStatus:          "",
-				},
-				{
-					Project:             "testproject",
-					Realm:               "testrealm",
-					InvocationId:        "inv",
-					ArtifactId:          "art2",
-					ContentType:         "text/richtext",
-					Content:             "c1ntent",
-					NumShards:           1,
-					ShardId:             0,
-					ShardContentSize:    7,
-					ArtifactContentSize: 7,
-					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
-					TestId:              "test_id",
-					ResultId:            "0",
-					ArtifactShard:       "art2:0",
-					TestStatus:          "PASS",
-				},
-				{
-					Project:             "testproject",
-					Realm:               "testrealm",
-					InvocationId:        "inv",
-					ArtifactId:          "art5",
-					ContentType:         "text/richtext",
-					Content:             "c5ntent",
-					NumShards:           1,
-					ShardId:             0,
-					ShardContentSize:    7,
-					ArtifactContentSize: 7,
-					PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
-					TestId:              "test_id_1",
-					ResultId:            "0",
-					ArtifactShard:       "art5:0",
-					TestStatus:          "FAIL",
-				},
-			})
 		})
 
 		Convey("BatchUpdateBlobs fails", func() {
@@ -562,199 +492,6 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			bReq.Requests = make([]*pb.CreateArtifactRequest, 1000)
 			_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 			So(err, ShouldBeRPCInvalidArgument, "the number of requests in the batch exceeds 500")
-		})
-	})
-}
-
-func TestFilterAndThrottle(t *testing.T) {
-	ctx := context.Background()
-	// Setup tsmon
-	ctx, _ = tsmon.WithDummyInMemory(ctx)
-
-	invInfo := &invocationInfo{realm: "chromium:ci"}
-	Convey("Filter artifact", t, func() {
-		artReqs := []*artifactCreationRequest{
-			{
-				testID:      "test1",
-				contentType: "",
-			},
-			{
-				testID:      "test2",
-				contentType: "text/plain",
-			},
-			{
-				testID:      "test3",
-				contentType: "image/png",
-			},
-			{
-				testID:      "test4",
-				contentType: "text/html",
-			},
-		}
-		results := filterTextArtifactRequests(ctx, artReqs, invInfo)
-		So(results, ShouldResemble, []*artifactCreationRequest{
-			{
-				testID:      "test2",
-				contentType: "text/plain",
-			},
-			{
-				testID:      "test4",
-				contentType: "text/html",
-			},
-		})
-	})
-
-	Convey("Throttle artifact", t, func() {
-		artReqs := []*artifactCreationRequest{
-			{
-				testID:     "test",
-				artifactID: "artifact38", // Hash value 0
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact158", // Hash value 99
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact230", // Hash value 32
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact232", // Hash value 54
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact341", // Hash value 91
-			},
-		}
-		// 0%.
-		results, err := throttleArtifactsForBQ(artReqs, 0)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*artifactCreationRequest{})
-
-		// 1%.
-		results, err = throttleArtifactsForBQ(artReqs, 1)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*artifactCreationRequest{
-			{
-				testID:     "test",
-				artifactID: "artifact38", // Hash value 0
-			},
-		})
-
-		// 33%.
-		results, err = throttleArtifactsForBQ(artReqs, 33)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*artifactCreationRequest{
-			{
-				testID:     "test",
-				artifactID: "artifact38", // Hash value 0
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact230", // Hash value 32
-			},
-		})
-
-		// 90%.
-		results, err = throttleArtifactsForBQ(artReqs, 90)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*artifactCreationRequest{
-			{
-				testID:     "test",
-				artifactID: "artifact38", // Hash value 0
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact230", // Hash value 32
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact232", // Hash value 54
-			},
-		})
-
-		// 100%.
-		results, err = throttleArtifactsForBQ(artReqs, 100)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*artifactCreationRequest{
-			{
-				testID:     "test",
-				artifactID: "artifact38", // Hash value 0
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact158", // Hash value 99
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact230", // Hash value 32
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact232", // Hash value 54
-			},
-			{
-				testID:     "test",
-				artifactID: "artifact341", // Hash value 91
-			},
-		})
-	})
-}
-
-func TestReqToProto(t *testing.T) {
-	Convey("Artifact request to proto", t, func() {
-		ctx := context.Background()
-		req := &artifactCreationRequest{
-			testID:      "testid",
-			resultID:    "resultid",
-			artifactID:  "artifactid",
-			contentType: "text/plain",
-			size:        20,
-			data:        []byte("0123456789abcdefghij"),
-		}
-		invInfo := &invocationInfo{
-			id:         "invid",
-			realm:      "chromium:ci",
-			createTime: time.Unix(1000, 0),
-		}
-		results, err := reqToProtos(ctx, req, invInfo, pb.TestStatus_PASS, 10, 10)
-		So(err, ShouldBeNil)
-		So(results, ShouldResembleProto, []*bqpb.TextArtifactRow{
-			{
-				Project:             "chromium",
-				Realm:               "ci",
-				InvocationId:        "invid",
-				TestId:              "testid",
-				ResultId:            "resultid",
-				ArtifactId:          "artifactid",
-				ContentType:         "text/plain",
-				NumShards:           2,
-				ShardId:             0,
-				Content:             "0123456789",
-				ShardContentSize:    10,
-				ArtifactContentSize: 20,
-				PartitionTime:       timestamppb.New(time.Unix(1000, 0)),
-				ArtifactShard:       "artifactid:0",
-				TestStatus:          "PASS",
-			},
-			{
-				Project:             "chromium",
-				Realm:               "ci",
-				InvocationId:        "invid",
-				TestId:              "testid",
-				ResultId:            "resultid",
-				ArtifactId:          "artifactid",
-				ContentType:         "text/plain",
-				NumShards:           2,
-				ShardId:             1,
-				Content:             "abcdefghij",
-				ShardContentSize:    10,
-				ArtifactContentSize: 20,
-				PartitionTime:       timestamppb.New(time.Unix(1000, 0)),
-				ArtifactShard:       "artifactid:1",
-				TestStatus:          "PASS",
-			},
 		})
 	})
 }

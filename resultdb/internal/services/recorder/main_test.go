@@ -30,10 +30,10 @@ func TestMain(m *testing.M) {
 }
 
 func newTestRecorderServer() *pb.DecoratedRecorder {
-	return newTestRecorderServerWithClients(nil, nil)
+	return newTestRecorderServerWithClients(nil)
 }
 
-func newTestRecorderServerWithClients(casClient repb.ContentAddressableStorageClient, bqClient BQExportClient) *pb.DecoratedRecorder {
+func newTestRecorderServerWithClients(casClient repb.ContentAddressableStorageClient) *pb.DecoratedRecorder {
 	opts := Options{ExpectedResultsExpiration: expectedResultExpiration}
-	return NewRecorderServer(opts, casClient, bqClient)
+	return NewRecorderServer(opts, casClient)
 }
