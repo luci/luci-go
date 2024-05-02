@@ -86,7 +86,7 @@ func (p *userAuthTokenProvider) MintToken(ctx context.Context, base *Token) (*To
 	}
 	fmt.Println()
 
-	// Exchange it for an access and (possibly) ID tokens.
+	// Exchange it for refresh, access and (possibly) ID tokens.
 	tok, err := p.config.Exchange(ctx, code)
 	if err != nil {
 		return nil, err

@@ -835,7 +835,7 @@ func (a *Authenticator) CheckLoginRequired() error {
 	return nil
 }
 
-// Login perform an interaction with the user to get a long term refresh token
+// Login performs an interaction with the user to get a long term refresh token
 // and cache it.
 //
 // Blocks for user input, can use stdin. It overwrites currently cached
