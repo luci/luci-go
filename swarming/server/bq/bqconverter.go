@@ -457,16 +457,16 @@ func botEvent(ev *model.BotEvent) *bqpb.BotEvent {
 		bot.Info.LastSeenTs = timestamppb.New(ev.LastSeen.Get())
 	}
 
-	if ev.EventType == model.BotEventMissing {
-		bot.Status = bqpb.BotStatusType_MISSING
-	} else if ev.IsIdle() {
-		bot.Status = bqpb.BotStatusType_IDLE
-	} else if ev.Quarantined {
+	if ev.Quarantined {
 		bot.Status = bqpb.BotStatusType_QUARANTINED_BY_BOT
 		bot.StatusMsg = ev.QuarantineMessage()
 	} else if ev.Maintenance != "" {
 		bot.Status = bqpb.BotStatusType_OVERHEAD_MAINTENANCE_EXTERNAL
 		bot.StatusMsg = ev.Maintenance
+	} else if ev.EventType == model.BotEventMissing {
+		bot.Status = bqpb.BotStatusType_MISSING
+	} else if ev.IsIdle() {
+		bot.Status = bqpb.BotStatusType_IDLE
 	} else if ev.TaskID != "" {
 		bot.Status = bqpb.BotStatusType_BUSY
 	}
