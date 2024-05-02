@@ -58,7 +58,14 @@ var common = (function () {
 
   // Converts UTC timestamp (in microseconds) to a readable string in local TZ.
   exports.utcTimestampToString = (utc) => {
-    return (new Date(utc)).toLocaleString();
+    const t = new Date(utc);
+    let yyyy = `${t.getFullYear()}`
+    yyyy = yyyy.padStart(4, '0');
+    let mm = `${t.getMonth() + 1}`;
+    mm = mm.padStart(2, '0');
+    let dd = `${t.getDate()}`
+    dd = dd.padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}, ${t.toLocaleTimeString()}`;
   };
 
   // Returns URL to a change log page for a given target.
