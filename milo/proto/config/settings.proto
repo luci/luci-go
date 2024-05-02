@@ -120,4 +120,10 @@ message Settings {
   }
   LuciNotify luci_notify = 11;
 
+  message AuthService {
+    // host is the hostname of the Auth Service instance we're pointing to (eg. defaultv2-dot-chrome-infra-auth.appspot.com).
+    string host = 1;
+  }
+  AuthService auth_service = 12;
+
 }
