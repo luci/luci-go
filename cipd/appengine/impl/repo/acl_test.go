@@ -105,7 +105,7 @@ func TestRoles(t *testing.T) {
 
 				// Get the same set of roles through rolesInPrefix.
 				Convey("rolesInPrefix", func() {
-					haveRoles, err := rolesInPrefix(ctx, metas)
+					haveRoles, err := rolesInPrefix(ctx, tc.user, metas)
 					So(err, ShouldBeNil)
 					So(haveRoles, ShouldResemble, tc.expectedRoles)
 				})

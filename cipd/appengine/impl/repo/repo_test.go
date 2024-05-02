@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
@@ -360,11 +361,103 @@ func TestMetadataUpdating(t *testing.T) {
 	})
 }
 
+func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		rootCtx, _, _ := testutil.TestingContext()
+
+		meta := testutil.MetadataStore{}
+
+		meta.Populate("", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:admin@example.com"},
+				},
+			},
+		})
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_WRITER,
+					Principals: []string{"user:writer@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		call := func(prefix string, user identity.Identity, callerIsPrefixViewer bool) (*api.RolesInPrefixResponse, error) {
+			caller := identity.Identity("user:roles-caller@example.com")
+			mocks := []authtest.MockedDatum{}
+			if callerIsPrefixViewer {
+				mocks = append(mocks, authtest.MockMembership(caller, PrefixesViewers))
+			}
+			return impl.GetRolesInPrefixOnBehalfOf(auth.WithState(rootCtx, &authtest.FakeState{
+				Identity: caller,
+				FakeDB:   authtest.NewFakeDB(mocks...),
+			}), &api.PrefixRequestOnBehalfOf{Identity: string(user), PrefixRequest: &api.PrefixRequest{Prefix: prefix}})
+		}
+
+		Convey("Happy path", func() {
+			resp, err := call("a/b/c/d", "user:writer@example.com", true)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{
+				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
+					{Role: api.Role_READER},
+					{Role: api.Role_WRITER},
+				},
+			})
+		})
+
+		Convey("Anonymous", func() {
+			resp, err := call("a/b/c/d", "anonymous:anonymous", true)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{})
+		})
+
+		Convey("Admin", func() {
+			resp, err := call("a/b/c/d", "user:admin@example.com", true)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{
+				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
+					{Role: api.Role_READER},
+					{Role: api.Role_WRITER},
+					{Role: api.Role_OWNER},
+				},
+			})
+		})
+
+		Convey("Bad prefix", func() {
+			_, err := call("///", "user:writer@example.com", true)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'prefix'")
+		})
+
+		Convey("Not prefix viewer", func() {
+			_, err := call("a/b/c/d", "user:writer@example.com", false)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("Disallowed identity types", func() {
+			for _, kind := range []identity.Kind{identity.Bot, identity.Project, identity.Service} {
+				ident, err := identity.MakeIdentity(string(kind) + ":somevalue")
+				So(err, ShouldBeNil)
+
+				_, err = call("a/b/c/d", ident, true)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			}
+		})
+
+	})
+}
+
 func TestGetRolesInPrefix(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		_, _, as := testutil.TestingContext()
+		rootCtx, _, _ := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
 
@@ -388,7 +481,10 @@ func TestGetRolesInPrefix(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		call := func(prefix string, user identity.Identity) (*api.RolesInPrefixResponse, error) {
-			return impl.GetRolesInPrefix(as(user.Email()), &api.PrefixRequest{Prefix: prefix})
+			return impl.GetRolesInPrefix(auth.WithState(rootCtx, &authtest.FakeState{
+				Identity: user,
+				FakeDB:   authtest.NewFakeDB(),
+			}), &api.PrefixRequest{Prefix: prefix})
 		}
 
 		Convey("Happy path", func() {

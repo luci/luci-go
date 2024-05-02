@@ -166,6 +166,19 @@ func (impl *repoImpl) GetPrefixMetadata(ctx context.Context, r *api.PrefixReques
 	return nil, noMetadataErr(r.Prefix)
 }
 
+func (impl *repoImpl) canGetPrefixMetadata(ctx context.Context, prefix string) (metas []*api.PrefixMetadata, err error) {
+	prefixViewer, err := auth.IsMember(ctx, PrefixesViewers)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to check group membership")
+	}
+	if !prefixViewer {
+		// Check if have OWNER access in the prefix, this also fetches metadata as
+		// a side effect (it is needed to check ACLs too).
+		metas, err = impl.checkRole(ctx, prefix, api.Role_OWNER)
+	}
+	return
+}
+
 // GetInheritedPrefixMetadata implements the corresponding RPC method, see the
 // proto doc.
 //
@@ -178,21 +191,12 @@ func (impl *repoImpl) GetInheritedPrefixMetadata(ctx context.Context, r *api.Pre
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
 	}
 
-	var metas []*api.PrefixMetadata
-	var prefixViewer bool
-	switch prefixViewer, err = auth.IsMember(ctx, PrefixesViewers); {
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, "failed to check group membership")
-	case prefixViewer:
-		// Have access to the metadata via the global group, just fetch it.
-		metas, err = impl.meta.GetMetadata(ctx, r.Prefix)
-	default:
-		// Check if have OWNER access in the prefix, this also fetches metadata as
-		// a side effect (it is needed to check ACLs too).
-		metas, err = impl.checkRole(ctx, r.Prefix, api.Role_OWNER)
-	}
+	metas, err := impl.canGetPrefixMetadata(ctx, r.Prefix)
 	if err != nil {
 		return nil, err
+	}
+	if metas == nil {
+		metas, err = impl.meta.GetMetadata(ctx, r.Prefix)
 	}
 
 	return &api.InheritedPrefixMetadata{PerPrefixMetadata: metas}, nil
@@ -259,17 +263,54 @@ func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *api.PrefixMet
 func (impl *repoImpl) GetRolesInPrefix(ctx context.Context, r *api.PrefixRequest) (resp *api.RolesInPrefixResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
-	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
-	}
+	return impl.getRolesInPrefixImpl(ctx, auth.CurrentIdentity(ctx), nil, r)
+}
 
-	metas, err := impl.meta.GetMetadata(ctx, r.Prefix)
+// GetRolesInPrefixOnBehalfOf implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) GetRolesInPrefixOnBehalfOf(ctx context.Context, r *api.PrefixRequestOnBehalfOf) (resp *api.RolesInPrefixResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+
+	metas, err := impl.canGetPrefixMetadata(ctx, r.PrefixRequest.Prefix)
 	if err != nil {
 		return nil, err
 	}
 
-	roles, err := rolesInPrefix(ctx, metas)
+	ident, err := identity.MakeIdentity(r.Identity)
+	if err != nil {
+		return nil, err
+	}
+	switch ident.Kind() {
+	case identity.Anonymous, identity.User:
+		// These are the only allowed kinds.
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "identity must be of kind Anonymous or User.")
+	}
+	return impl.getRolesInPrefixImpl(ctx, ident, metas, r.PrefixRequest)
+}
+
+// Implements both GetRolesInPrefixOnBehalfOf and GetRolesInPrefix.
+//
+// `ident` must always be supplied - this function will validate it.
+// `metas` is optional - in the case of GetRolesInPrefixOnBehalfOf, it may be
+// fetched as a side-effect of checking permissions. In other cases, this
+// function will fetch it directly without additional permission checks.
+func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.Identity, metas []*api.PrefixMetadata, r *api.PrefixRequest) (resp *api.RolesInPrefixResponse, err error) {
+	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
+	}
+	if err := ident.Validate(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'identity': %s", err)
+	}
+
+	if metas == nil {
+		metas, err = impl.meta.GetMetadata(ctx, r.Prefix)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	roles, err := rolesInPrefix(ctx, ident, metas)
 	if err != nil {
 		return nil, err
 	}

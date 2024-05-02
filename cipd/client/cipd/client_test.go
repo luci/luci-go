@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -1179,7 +1178,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("MaybeUpdateClient", t, func(c C) {
-		tempDir, err := ioutil.TempDir("", "cipd_tag_cache")
+		tempDir, err := os.MkdirTemp("", "cipd_tag_cache")
 		c.So(err, ShouldBeNil)
 		c.Reset(func() {
 			os.RemoveAll(tempDir)
@@ -1593,7 +1592,7 @@ func mockedClientOpts(c C) (ClientOptions, *mockedStorageClient, *mockedRepoClie
 
 	storage := &mockedStorage{}
 
-	siteRoot, err := ioutil.TempDir("", "cipd_site_root")
+	siteRoot, err := os.MkdirTemp("", "cipd_site_root")
 	c.So(err, ShouldBeNil)
 	c.Reset(func() { os.RemoveAll(siteRoot) })
 
@@ -1617,7 +1616,7 @@ func mockedCipdClient(c C) (*clientImpl, *mockedStorageClient, *mockedRepoClient
 
 func setupTagCache(cl *clientImpl, c C) string {
 	c.So(cl.tagCache, ShouldBeNil)
-	tempDir, err := ioutil.TempDir("", "cipd_tag_cache")
+	tempDir, err := os.MkdirTemp("", "cipd_tag_cache")
 	c.So(err, ShouldBeNil)
 	c.Reset(func() { os.RemoveAll(tempDir) })
 	cl.tagCache = internal.NewTagCache(fs.NewFileSystem(tempDir, ""), "service.example.com")
@@ -1625,7 +1624,7 @@ func setupTagCache(cl *clientImpl, c C) string {
 }
 
 func setupInstanceCache(cl *clientImpl, c C) string {
-	tempDir, err := ioutil.TempDir("", "cipd_instance_cache")
+	tempDir, err := os.MkdirTemp("", "cipd_instance_cache")
 	c.So(err, ShouldBeNil)
 	c.Reset(func() { os.RemoveAll(tempDir) })
 	cl.CacheDir = tempDir

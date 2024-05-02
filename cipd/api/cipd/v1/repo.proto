@@ -130,6 +130,14 @@ service Repository {
   // prefix at all or such prefix doesn't exist.
   rpc GetRolesInPrefix(PrefixRequest) returns (RolesInPrefixResponse);
 
+  // Returns a set of roles a specific identity has in the given prefix.
+  //
+  // This works the same way as GetRolesInPrefix, except:
+  //   * The caller requires the same permission as GetPrefixMetadata.
+  //   * Uses PrefixRequestOnBehalfOf.identity, rather than the caller's
+  //   identity, for determining the returned Roles.
+  rpc GetRolesInPrefixOnBehalfOf(PrefixRequestOnBehalfOf) returns (RolesInPrefixResponse);
+
   // Lists packages and subprefixes registered under the prefix.
   //
   // Lists either only direct descendants or recursively all descendants. The
@@ -474,6 +482,18 @@ message PrefixRequest {
   string prefix = 1;
 }
 
+message PrefixRequestOnBehalfOf {
+  // The identity that we are requesting prefix data on behalf of.
+  //
+  // This must be either anonymous or a luci-auth User identity, e.g.:
+  //
+  //   * anonymous:anonymous
+  //   * user:<email address>
+  string identity = 1;
+
+  // The actual PrefixRequest.
+  PrefixRequest prefix_request = 2;
+}
 
 // PrefixMetadata is metadata defined at some concrete package prefix.
 //

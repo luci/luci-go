@@ -18,6 +18,7 @@ import (
 	"context"
 	"strings"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
@@ -109,20 +110,20 @@ func hasRole(ctx context.Context, metas []*api.PrefixMetadata, role api.Role) (b
 	return yes, nil
 }
 
-// rolesInPrefix returns a union of roles the caller has in given supplied
+// rolesInPrefix returns a union of roles `ident` has in given supplied
 // PrefixMetadata objects.
 //
 // It understands the role inheritance defined by impliedRoles map.
 //
 // Returns only transient errors.
-func rolesInPrefix(ctx context.Context, metas []*api.PrefixMetadata) ([]api.Role, error) {
+func rolesInPrefix(ctx context.Context, ident identity.Identity, metas []*api.PrefixMetadata) ([]api.Role, error) {
 	roles := roleSet()
 	for _, meta := range metas {
 		for _, acl := range meta.Acls {
 			if _, ok := roles[acl.Role]; ok {
 				continue // seen this role already
 			}
-			switch yes, err := isInACL(ctx, acl); {
+			switch yes, err := isInACL(ctx, ident, acl); {
 			case err != nil:
 				return nil, err
 			case yes:
@@ -144,21 +145,29 @@ func rolesInPrefix(ctx context.Context, metas []*api.PrefixMetadata) ([]api.Role
 	return out, nil
 }
 
-// isInACL is true if the caller is in the given access control list.
-func isInACL(ctx context.Context, acl *api.PrefixMetadata_ACL) (bool, error) {
-	caller := string(auth.CurrentIdentity(ctx)) // e.g. "user:abc@example.com"
-
+// isInACL is true if `ident` is in the given access control list.
+//
+// Most callers will use auth.CurrentIdentity() for this value.
+func isInACL(ctx context.Context, ident identity.Identity, acl *api.PrefixMetadata_ACL) (bool, error) {
 	var groups []string
 	for _, p := range acl.Principals {
-		if p == caller {
-			return true, nil // the caller was specified in ACLs explicitly
+		if p == string(ident) {
+			return true, nil // the identity was specified in ACLs explicitly
 		}
 		if s := strings.SplitN(p, ":", 2); len(s) == 2 && s[0] == "group" {
 			groups = append(groups, s[1])
 		}
 	}
 
-	yes, err := auth.IsMember(ctx, groups...)
+	// We don't use auth.IsMember because we want to check for `ident` rather than
+	// for the current caller.
+	var yes bool
+	var err error
+	if s := auth.GetState(ctx); s != nil {
+		yes, err = s.DB().IsMember(ctx, ident, groups)
+	} else {
+		err = auth.ErrNotConfigured
+	}
 	if err != nil {
 		return false, errors.Annotate(err, "failed to check group memberships when checking ACLs").Err()
 	}

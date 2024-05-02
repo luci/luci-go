@@ -316,6 +316,26 @@ func (mr *MockRepositoryClientMockRecorder) GetRolesInPrefix(ctx, in interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRolesInPrefix", reflect.TypeOf((*MockRepositoryClient)(nil).GetRolesInPrefix), varargs...)
 }
 
+// GetRolesInPrefixOnBehalfOf mocks base method.
+func (m *MockRepositoryClient) GetRolesInPrefixOnBehalfOf(ctx context.Context, in *PrefixRequestOnBehalfOf, opts ...grpc.CallOption) (*RolesInPrefixResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRolesInPrefixOnBehalfOf", varargs...)
+	ret0, _ := ret[0].(*RolesInPrefixResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRolesInPrefixOnBehalfOf indicates an expected call of GetRolesInPrefixOnBehalfOf.
+func (mr *MockRepositoryClientMockRecorder) GetRolesInPrefixOnBehalfOf(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRolesInPrefixOnBehalfOf", reflect.TypeOf((*MockRepositoryClient)(nil).GetRolesInPrefixOnBehalfOf), varargs...)
+}
+
 // HidePackage mocks base method.
 func (m *MockRepositoryClient) HidePackage(ctx context.Context, in *PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
@@ -747,6 +767,21 @@ func (m *MockRepositoryServer) GetRolesInPrefix(arg0 context.Context, arg1 *Pref
 func (mr *MockRepositoryServerMockRecorder) GetRolesInPrefix(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRolesInPrefix", reflect.TypeOf((*MockRepositoryServer)(nil).GetRolesInPrefix), arg0, arg1)
+}
+
+// GetRolesInPrefixOnBehalfOf mocks base method.
+func (m *MockRepositoryServer) GetRolesInPrefixOnBehalfOf(arg0 context.Context, arg1 *PrefixRequestOnBehalfOf) (*RolesInPrefixResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRolesInPrefixOnBehalfOf", arg0, arg1)
+	ret0, _ := ret[0].(*RolesInPrefixResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRolesInPrefixOnBehalfOf indicates an expected call of GetRolesInPrefixOnBehalfOf.
+func (mr *MockRepositoryServerMockRecorder) GetRolesInPrefixOnBehalfOf(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRolesInPrefixOnBehalfOf", reflect.TypeOf((*MockRepositoryServer)(nil).GetRolesInPrefixOnBehalfOf), arg0, arg1)
 }
 
 // HidePackage mocks base method.
