@@ -16,12 +16,12 @@ package assert
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/testing/assert/results"
 	"go.chromium.org/luci/common/testing/assert/interfaces"
+	"go.chromium.org/luci/common/testing/assert/results"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
-func isEmptyCmp(x string) *results.Result {
+func isEmptyCmp(x string) *results.OldResult {
 	if x == "" {
 		return nil
 	}

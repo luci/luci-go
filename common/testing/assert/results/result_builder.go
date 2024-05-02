@@ -20,7 +20,7 @@ import (
 
 // A ResultBuilder builds a Result and has a fluent interface.
 type ResultBuilder struct {
-	result *Result
+	result *OldResult
 }
 
 // NewResultBuilder returns an empty ResultBuilder.
@@ -29,14 +29,14 @@ func NewResultBuilder() ResultBuilder {
 }
 
 // Result returns the finished result from a builder.
-func (builder ResultBuilder) Result() *Result {
+func (builder ResultBuilder) Result() *OldResult {
 	return builder.result
 }
 
 // SetName sets the name of a Result.
 func (builder ResultBuilder) SetName(comparison string, types ...reflect.Type) ResultBuilder {
 	if builder.result == nil {
-		builder.result = &Result{}
+		builder.result = &OldResult{}
 	}
 	builder.result.failed = true
 	var typeNames []string
@@ -53,9 +53,9 @@ func (builder ResultBuilder) SetName(comparison string, types ...reflect.Type) R
 }
 
 // Because sets the because field of a Result.
-func (builder ResultBuilder) Because(format string, args ...interface{}) ResultBuilder{
+func (builder ResultBuilder) Because(format string, args ...interface{}) ResultBuilder {
 	if builder.result == nil {
-		builder.result = &Result{}
+		builder.result = &OldResult{}
 	}
 	builder.result.failed = true
 	addValuef(builder.result, "Because", format, args...)
@@ -63,9 +63,9 @@ func (builder ResultBuilder) Because(format string, args ...interface{}) ResultB
 }
 
 // Actual sets the actual field of a Result.
-func (builder ResultBuilder) Actual(actual interface{}) ResultBuilder{
+func (builder ResultBuilder) Actual(actual interface{}) ResultBuilder {
 	if builder.result == nil {
-		builder.result = &Result{}
+		builder.result = &OldResult{}
 	}
 	builder.result.failed = true
 	addValue(builder.result, "Actual", actual)
@@ -73,9 +73,9 @@ func (builder ResultBuilder) Actual(actual interface{}) ResultBuilder{
 }
 
 // Expected sets the expected field of a Result.
-func (builder ResultBuilder) Expected(actual interface{}) ResultBuilder{
+func (builder ResultBuilder) Expected(actual interface{}) ResultBuilder {
 	if builder.result == nil {
-		builder.result = &Result{}
+		builder.result = &OldResult{}
 	}
 	builder.result.failed = true
 	addValue(builder.result, "Expected", actual)

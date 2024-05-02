@@ -37,7 +37,7 @@
 // you can also use other natural syntax like "isConsistentWith(databaseKey)",
 // etc.
 //
-// Typically, Comparisons require additional data to produce a [*Result] for
+// Typically, Comparisons require additional data to produce a [*OldResult] for
 // a given value. Implementations which take additional data typically look
 // like:
 //
@@ -71,9 +71,9 @@
 // # Crafting *Results
 //
 // After your [Comparison] makes its evaluation of the actual data, if it
-// fails, it needs to return a [*Result].
+// fails, it needs to return a [*OldResult].
 //
-// The cardinal rule to follow is that [*Result] should contain
+// The cardinal rule to follow is that [*OldResult] should contain
 // exactly the necessary+sufficient information to let a reader understand why
 // the Comparison failed. Try to avoid populating Values with redundant information
 // just because it's easily available.
@@ -105,8 +105,8 @@
 // However, most Comparisons will need to give additional context to the
 // failure, which is where values and diff come in.
 //
-// Values are named data items, and can be added with [*Result.Value] or
-// [*Result.Valuef]. These will be rendered under the name like:
+// Values are named data items, and can be added with [*OldResult.Value] or
+// [*OldResult.Valuef]. These will be rendered under the name like:
 //
 //	resultName FAILED
 //	  ValueName: value contents
@@ -128,19 +128,19 @@
 //   - [*Result.Because]: This formats a string with fmt.Sprintf and sets it to
 //     have the "Because" name. This should be a descriptive explaination of why
 //     the Comparison failed.
-//   - [*Result.Actual]/[*Result.Actualf]: These can be used to reflect the
+//   - [*OldResult.Actual]/[*Result.Actualf]: These can be used to reflect the
 //     "actual" value of the assertion back to the reader of the assertion
 //     failure. Sometimes this is useful (e.g. should.AlmostEqual reflects the
 //     actual value back, which is a float32). However, sometimes this is not
 //     useful, e.g. when the actual value is a gigantic struct (see
-//     [*Result.Diff]).
-//   - [*Result.Expected]/[*Result.Expected]: These can be used to reflect the
+//     [*OldResult.Diff]).
+//   - [*OldResult.Expected]/[*Result.Expected]: These can be used to reflect the
 //     "expected" value of the comparison back to the reader of the assertion
 //     failure. This has very similar tradeoffs to Actual/Actualf.
 //
 // Finally, *Result can have a Diff, which is what you will likely want to use
 // if the actual and expected values have large representations (long lists,
-// structs, potentially large maps, etc.). This is usually set with [*Result.Diff],
+// structs, potentially large maps, etc.). This is usually set with [*OldResult.Diff],
 // and will use [github.com/google/go-cmp] to generate the difference between
 // two arbitrary objects. This function accepts zero or more
 // [github.com/google/go-cmp/cmp.Option] objects, which can allow you to compare
@@ -155,5 +155,5 @@
 // By default, the diff will print a hint like "(-actual, +expected)" or "(actual
 // != expected)" to help orient the reader about how to interpret the diff. This
 // hint works well, but occasionally a Comparison may need to set different
-// labels for these. To do this, refer to the [*Result.DiffHintNames] method.
+// labels for these. To do this, refer to the [*OldResult.DiffHintNames] method.
 package results

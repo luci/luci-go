@@ -130,7 +130,7 @@ import (
 // which the caller of this function should call directly.
 func checkImpl[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) bool {
 	actualTyped, ok := data.LosslessConvertTo[T](actual)
-	var result *results.Result
+	var result *results.OldResult
 	if !ok {
 		result = results.NewResultBuilder().
 			SetName("builtin.LosslessConvertTo", reflect.TypeOf(&actualTyped)).

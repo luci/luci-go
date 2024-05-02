@@ -26,7 +26,7 @@ import (
 func TestAddValue(t *testing.T) {
 	t.Parallel()
 
-	result := &Result{}
+	result := &OldResult{}
 	addValue(result, "a", 4)
 	if diff := typed.Got(result.values[0]).Want(value{name: "a", value: 4}).Options(cmpopts.EquateComparable(value{})).Diff(); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
@@ -37,7 +37,7 @@ func TestAddValue(t *testing.T) {
 func TestAddValuef(t *testing.T) {
 	t.Parallel()
 
-	result := &Result{}
+	result := &OldResult{}
 	addValuef(result, "a", "%d", 4)
 	if diff := typed.Got(result.values[0]).Want(value{name: "a", value: verbatimString("4")}).Options(cmpopts.EquateComparable(value{})).Diff(); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)

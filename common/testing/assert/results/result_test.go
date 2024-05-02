@@ -26,7 +26,7 @@ func TestResultOk(t *testing.T) {
 
 	cases := []struct {
 		name  string
-		input *Result
+		input *OldResult
 		ok    bool
 	}{
 		{
@@ -36,12 +36,12 @@ func TestResultOk(t *testing.T) {
 		},
 		{
 			name:  "nil",
-			input: &Result{},
+			input: &OldResult{},
 			ok:    true,
 		},
 		{
 			name: "failed result",
-			input: &Result{
+			input: &OldResult{
 				failed: true,
 			},
 			ok: false,
@@ -66,8 +66,8 @@ func TestResultEquals(t *testing.T) {
 
 	cases := []struct {
 		name  string
-		lhs   *Result
-		rhs   *Result
+		lhs   *OldResult
+		rhs   *OldResult
 		equal bool
 	}{
 		{
@@ -79,18 +79,18 @@ func TestResultEquals(t *testing.T) {
 		{
 			name:  "both nil",
 			lhs:   nil,
-			rhs:   &Result{},
+			rhs:   &OldResult{},
 			equal: true,
 		},
 		{
 			name: "different headers",
-			lhs: &Result{
+			lhs: &OldResult{
 				failed: true,
 				header: resultHeader{
 					comparison: "a",
 				},
 			},
-			rhs: &Result{
+			rhs: &OldResult{
 				failed: true,
 				header: resultHeader{
 					comparison: "b",
@@ -100,13 +100,13 @@ func TestResultEquals(t *testing.T) {
 		},
 		{
 			name: "same headers",
-			lhs: &Result{
+			lhs: &OldResult{
 				failed: true,
 				header: resultHeader{
 					comparison: "a",
 				},
 			},
-			rhs: &Result{
+			rhs: &OldResult{
 				failed: true,
 				header: resultHeader{
 					comparison: "a",
@@ -134,7 +134,7 @@ func TestResultRender(t *testing.T) {
 
 	cases := []struct {
 		name   string
-		result *Result
+		result *OldResult
 		lines  []string
 	}{
 		{
@@ -144,14 +144,14 @@ func TestResultRender(t *testing.T) {
 		},
 		{
 			name: "ok result",
-			result: &Result{
+			result: &OldResult{
 				failed: false,
 			},
 			lines: nil,
 		},
 		{
 			name: "simple failure",
-			result: &Result{
+			result: &OldResult{
 				failed: true,
 			},
 			lines: []string{
@@ -160,7 +160,7 @@ func TestResultRender(t *testing.T) {
 		},
 		{
 			name: "failure with value",
-			result: &Result{
+			result: &OldResult{
 				failed: true,
 				header: resultHeader{
 					comparison: "equal",

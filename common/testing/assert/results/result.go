@@ -20,12 +20,12 @@ import (
 )
 
 // Comparison takes in an item-to-be-compared and returns a Result.
-type Comparison[T any] func(T) *Result
+type Comparison[T any] func(T) *OldResult
 
-// Result is the data returned from a [Comparison].
+// OldResult is the data returned from a [Comparison].
 //
 // It represents a successful or failed comparison.
-type Result struct {
+type OldResult struct {
 	failed bool
 	// The header is a structural representation of the name of the test.
 	//
@@ -37,12 +37,12 @@ type Result struct {
 }
 
 // Ok returns whether a Result represents success or failure.
-func (r *Result) Ok() bool {
+func (r *OldResult) Ok() bool {
 	return r == nil || !r.failed
 }
 
 // Equal returns whether two Results are semantically equal or not.
-func (r *Result) Equal(s *Result) bool {
+func (r *OldResult) Equal(s *OldResult) bool {
 	if !r.Ok() && !s.Ok() {
 		return reflect.DeepEqual(r.header, s.header)
 	}
@@ -52,7 +52,7 @@ func (r *Result) Equal(s *Result) bool {
 // Render pretty-prints the result as a list of lines.
 //
 // TODO(gregorynisbet): Implement the diffing logic.
-func (r *Result) Render() []string {
+func (r *OldResult) Render() []string {
 	if r.Ok() {
 		return nil
 	}

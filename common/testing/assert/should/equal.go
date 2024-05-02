@@ -25,7 +25,7 @@ func Equal[T comparable](expected T) results.Comparison[T] {
 	cmpName := "should.Equal"
 	rtype := reflect.TypeOf(expected)
 
-	return func(actual T) (ret *results.Result) {
+	return func(actual T) (ret *results.OldResult) {
 		// The weird-looking second condition is for floats.
 		// NaN doesn't compare equal to itself.
 		//

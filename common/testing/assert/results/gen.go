@@ -14,19 +14,4 @@
 
 package results
 
-import "fmt"
-
-func addValue(result *OldResult, name string, val interface{}) {
-	result.values = append(result.values, value{
-		name:  name,
-		value: val,
-	})
-}
-
-func addValuef(result *OldResult, name string, format string, args ...interface{}) {
-	if len(args) == 0 {
-		result.values = append(result.values, value{name, verbatimString(format)})
-	} else {
-		result.values = append(result.values, value{name, verbatimString(fmt.Sprintf(format, args...))})
-	}
-}
+//go:generate cproto

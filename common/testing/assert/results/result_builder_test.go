@@ -37,13 +37,13 @@ func TestNewResultBuilder(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		expected *Result
-		actual   *Result
+		expected *OldResult
+		actual   *OldResult
 	}{
 		{
 			name:     "equal",
 			expected: NewResultBuilder().SetName("equal").Result(),
-			actual: &Result{
+			actual: &OldResult{
 				failed: true,
 				header: resultHeader{
 					comparison: "equal",
@@ -53,7 +53,7 @@ func TestNewResultBuilder(t *testing.T) {
 		{
 			name:     "equal[int]",
 			expected: NewResultBuilder().SetName("equal", reflect.TypeOf(0)).Result(),
-			actual: &Result{
+			actual: &OldResult{
 				failed: true,
 				header: resultHeader{
 					comparison: "equal",
@@ -82,13 +82,13 @@ func TestBecause(t *testing.T) {
 		name   string
 		format string
 		args   []interface{}
-		result *Result
+		result *OldResult
 	}{
 		{
 			name:   "because",
 			format: "%s",
 			args:   []interface{}{7},
-			result: &Result{
+			result: &OldResult{
 				failed: true,
 				values: []value{{
 					name:  "Because",
