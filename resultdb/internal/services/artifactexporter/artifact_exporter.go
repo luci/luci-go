@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -66,6 +67,10 @@ const MaxShardContentSize = bqutil.RowMaxBytes - 10*1024
 // For now, hardcode to be 2MB. It should be under the limit,
 // since BatchUpdateBlobs in BatchCreateArtifacts can handle up to 10MB.
 const MaxRBECasBatchSize = 2 * 1024 * 1024 // 2 MB
+
+// ArtifactRequestOverhead is the overhead (in bytes) applying to each artifact
+// when calculating the size.
+const ArtifactRequestOverhead = 100
 
 type Artifact struct {
 	InvocationID string
@@ -399,12 +404,12 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 		batch := []*Artifact{}
 		bigArtifactStartIndex := -1
 		for i, artifact := range artifacts {
-			if int(artifact.Size) > maxRBECasBatchSize {
+			if artifactSizeWithOverhead(artifact.Size) > maxRBECasBatchSize {
 				bigArtifactStartIndex = i
 				break
 			}
 			// Exceed batch limit, download whatever in batch.
-			if currentBatchSize+int(artifact.Size) > maxRBECasBatchSize {
+			if currentBatchSize+artifactSizeWithOverhead(artifact.Size) > maxRBECasBatchSize {
 				b := batch
 				work <- func() error {
 					err := ae.batchDownloadArtifacts(ctx, b, inv, rowC)
@@ -418,7 +423,8 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 				batch = []*Artifact{}
 			}
 			batch = append(batch, artifact)
-			currentBatchSize += int(artifact.Size)
+			// Add ArtifactRequestOverhead bytes for the overhead of the request.
+			currentBatchSize += artifactSizeWithOverhead(artifact.Size)
 		}
 
 		// Download whatever left in batch.
@@ -460,6 +466,10 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 	})
 }
 
+func artifactSizeWithOverhead(artifactSize int64) int {
+	return int(artifactSize) + ArtifactRequestOverhead
+}
+
 // batchDownloadArtifacts downloads artifact content from RBE-CAS in batch.
 // It generates one or more TextArtifactRows for the content and push in rowC.
 func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow) error {
@@ -473,6 +483,17 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 	}
 	resp, err := ae.casClient.BatchReadBlobs(ctx, req)
 	if err != nil {
+		// The Invalid argument or ResourceExhausted suggest something is wrong with the
+		// input, so we should not retry in this case.
+		// ResourceExhausted may happen when we try to download more than the capacity.
+		if grpcutil.Code(err) == codes.InvalidArgument {
+			logging.Errorf(ctx, "BatchReadBlobs: invalid argument for invocation %q. Error: %v", inv.Name, err.Error())
+			return nil
+		}
+		if grpcutil.Code(err) == codes.ResourceExhausted {
+			logging.Errorf(ctx, "BatchReadBlobs: resource exhausted for invocation %q. Error: %v", inv.Name, err.Error())
+			return nil
+		}
 		return errors.Annotate(err, "batch read blobs").Err()
 	}
 	project, realm := realms.Split(inv.Realm)

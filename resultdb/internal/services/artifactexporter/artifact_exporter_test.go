@@ -29,6 +29,7 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/tsmon"
@@ -218,9 +219,9 @@ func TestDownloadArtifactContent(t *testing.T) {
 					// each "€" is 3 bytes
 					// We need 2 shards.
 					// This should be downloaded by stream.
-					resourceName("hash3", 150): []byte(strings.Repeat("€", 50)),
+					resourceName("hash3", 450): []byte(strings.Repeat("€", 150)),
 					// Invalid data.
-					resourceName("hash4", 150): {0xFF, 0xFE},
+					resourceName("hash4", 400): {0xFF, 0xFE},
 				},
 			},
 			casClient: casClient,
@@ -253,7 +254,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				ResultID:     "0",
 				ArtifactID:   "a2",
 				ContentType:  "text/html",
-				Size:         150,
+				Size:         450,
 				RBECASHash:   "hash3",
 				TestStatus:   pb.TestStatus_FAIL,
 			},
@@ -263,7 +264,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				ResultID:     "0",
 				ArtifactID:   "a3",
 				ContentType:  "text/html",
-				Size:         150,
+				Size:         400,
 				RBECASHash:   "hash4",
 				TestStatus:   pb.TestStatus_FAIL,
 			},
@@ -306,9 +307,26 @@ func TestDownloadArtifactContent(t *testing.T) {
 			ae.casClient = &fakeCASClient{
 				Err: errors.New("batch failed"),
 			}
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100)
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 1000)
 			So(err, ShouldErrLike, "batch failed")
 		})
+
+		Convey("Invalid argument should not retry", func() {
+			ae.casClient = &fakeCASClient{
+				Err: grpcstatus.New(codes.InvalidArgument, "invalid argument").Err(),
+			}
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Resource Exhausted should not retry", func() {
+			ae.casClient = &fakeCASClient{
+				Err: grpcstatus.New(codes.ResourceExhausted, "resource exhausted").Err(),
+			}
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300)
+			So(err, ShouldBeNil)
+		})
+
 		Convey("Stream failed", func() {
 			ae.bytestreamClient = &fakeByteStreamClient{
 				Err: errors.New("stream failed"),
@@ -318,7 +336,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 		})
 
 		Convey("Succeed", func() {
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100)
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 300, 300)
 			So(err, ShouldBeNil)
 			close(rowC)
 			rows := []*bqpb.TextArtifactRow{}
@@ -356,9 +374,9 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ArtifactId:          "a2",
 					ShardId:             0,
 					ContentType:         "text/html",
-					Content:             strings.Repeat("€", 33),
-					ArtifactContentSize: int32(150),
-					ShardContentSize:    int32(99),
+					Content:             strings.Repeat("€", 100),
+					ArtifactContentSize: int32(450),
+					ShardContentSize:    int32(300),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
 					ArtifactShard:       "a2:0",
 					TestStatus:          "FAIL",
@@ -372,9 +390,9 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ArtifactId:          "a2",
 					ShardId:             1,
 					ContentType:         "text/html",
-					Content:             strings.Repeat("€", 17),
-					ArtifactContentSize: int32(150),
-					ShardContentSize:    int32(51),
+					Content:             strings.Repeat("€", 50),
+					ArtifactContentSize: int32(450),
+					ShardContentSize:    int32(150),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
 					ArtifactShard:       "a2:1",
 					TestStatus:          "FAIL",
@@ -422,7 +440,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 					TestStatus:   pb.TestStatus_PASS,
 				},
 			}
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100)
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300)
 			So(err, ShouldErrLike, "downloading artifact")
 			close(rowC)
 		})
