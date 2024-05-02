@@ -22,19 +22,20 @@ import (
 	"go.chromium.org/luci/common/testing/assert/interfaces"
 )
 
-// ZeroTB is a do nothing test implementation.
+// MockTB is a mock interfaces.TestingTB implementation for testing the `assert`
+// library itself.
 //
-// Check and Assert both call methods on the test interface, and this can result in
-// really confusing error messages or the test being aborted early. In other to prevent this
-// we need to pass in an object that satisfies the test interface but doesn't do anything.
-type ZeroTB struct{}
+// Records the count/arguments of all calls to aid in testing.
+type MockTB struct {
+	HelperCalls  int
+	LogCalls     [][]any
+	FailCalls    int
+	FailNowCalls int
+}
 
-func (ZeroTB) Helper() {}
+func (m *MockTB) Helper()         { m.HelperCalls++ }
+func (m *MockTB) Log(args ...any) { m.LogCalls = append(m.LogCalls, args) }
+func (m *MockTB) Fail()           { m.FailCalls++ }
+func (m *MockTB) FailNow()        { m.FailNowCalls++ }
 
-func (ZeroTB) Log(...any) {}
-
-func (ZeroTB) Fail() {}
-
-func (ZeroTB) FailNow() {}
-
-var _ interfaces.TestingTB = ZeroTB{}
+var _ interfaces.TestingTB = (*MockTB)(nil)

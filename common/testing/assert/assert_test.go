@@ -21,33 +21,46 @@ import (
 	"go.chromium.org/luci/common/testing/typed"
 )
 
+func isEmptyCmp(x string) *results.Result {
+	if x == "" {
+		return nil
+	}
+	return results.NewResultBuilder().SetName("string not empty").Result()
+}
+
 func TestCheck(t *testing.T) {
 	t.Parallel()
 
-	isEmpty := func(x string) *results.Result {
-		if x == "" {
-			return nil
-		}
-		return results.NewResultBuilder().SetName("string not empty").Result()
-	}
-
 	cases := []struct {
-		name    string
-		input   string
-		compare results.Comparison[string]
-		ok      bool
+		name   string
+		input  any
+		expect testsupport.MockTB
+		ok     bool
 	}{
 		{
-			name:    "empty string",
-			input:   "",
-			compare: isEmpty,
-			ok:      true,
+			name:  "empty string",
+			input: "",
+			ok:    true,
 		},
 		{
-			name:    "empty string",
-			input:   "a",
-			compare: isEmpty,
-			ok:      false,
+			name:  "non-empty string",
+			input: "a",
+			expect: testsupport.MockTB{
+				HelperCalls: 2,
+				LogCalls:    [][]any{{"string not empty FAILED"}},
+				FailCalls:   1,
+			},
+			ok: false,
+		},
+		{
+			name:  "bad type match",
+			input: 100,
+			expect: testsupport.MockTB{
+				HelperCalls: 2,
+				LogCalls:    [][]any{{"builtin.LosslessConvertTo FAILED"}},
+				FailCalls:   1,
+			},
+			ok: false,
 		},
 	}
 
@@ -56,9 +69,51 @@ func TestCheck(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := Check(testsupport.ZeroTB{}, tt.input, tt.compare)
+			zt := &testsupport.MockTB{}
+			got := Check(zt, tt.input, isEmptyCmp)
 
+			if diff := typed.Diff(zt, &tt.expect); diff != "" {
+				t.Errorf("unexpected diff in TB calls (-want +got): %s", diff)
+			}
 			if diff := typed.Diff(got, tt.ok); diff != "" {
+				t.Errorf("unexpected diff in Check return value (-want +got): %s", diff)
+			}
+		})
+	}
+}
+
+func TestAssert(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		input  string
+		expect testsupport.MockTB
+	}{
+		{
+			name:  "empty string",
+			input: "",
+		},
+		{
+			name:  "non-empty string",
+			input: "a",
+			expect: testsupport.MockTB{
+				HelperCalls:  2,
+				LogCalls:     [][]any{{"string not empty FAILED"}},
+				FailNowCalls: 1,
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			zt := &testsupport.MockTB{}
+			Assert(zt, tt.input, isEmptyCmp)
+
+			if diff := typed.Diff(zt, &tt.expect); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
 		})

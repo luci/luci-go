@@ -123,6 +123,33 @@ import (
 	"go.chromium.org/luci/common/testing/assert/results"
 )
 
+// checkImpl allows both Check and Assert to share a single common
+// implementation.
+//
+// This will call all functions necessary in `t` EXCEPT for Fail or FailNow,
+// which the caller of this function should call directly.
+func checkImpl[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) bool {
+	actualTyped, ok := data.LosslessConvertTo[T](actual)
+	var result *results.Result
+	if !ok {
+		result = results.NewResultBuilder().
+			SetName("builtin.LosslessConvertTo", reflect.TypeOf(&actualTyped)).
+			Result()
+	} else {
+		result = compare(actualTyped)
+	}
+
+	if result != nil {
+		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
+		t.Helper()
+		for _, line := range result.Render() {
+			t.Log(line)
+		}
+		return false
+	}
+	return true
+}
+
 // Assert compares `actual` using `compare`, which is typically a closure over some
 // expected value.
 //
@@ -137,9 +164,9 @@ import (
 // `testingTB` is an interface which is a subset of testing.TB, but is
 // unexported to allow this package to be cleanly .-imported.
 func Assert[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) {
-	t.Helper()
-
-	if !Check[T](t, actual, compare) {
+	if !checkImpl(t, actual, compare) {
+		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
+		t.Helper()
 		t.FailNow()
 	}
 }
@@ -156,24 +183,11 @@ func Assert[T any](t interfaces.TestingTB, actual any, compare results.Compariso
 // `testingTB` is an interface which is a subset of testing.TB, but is
 // unexported to allow this package to be cleanly .-imported.
 func Check[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) bool {
-	t.Helper()
-
-	actualTyped, ok := data.LosslessConvertTo[T](actual)
-	var result *results.Result
-	if !ok {
-		result = results.NewResultBuilder().
-			SetName("builtin.LosslessConvertTo", reflect.TypeOf(&actualTyped)).
-			Result()
-	} else {
-		result = compare(actualTyped)
-	}
-
-	if result != nil {
-		for _, line := range result.Render() {
-			t.Log(line)
-		}
+	ret := checkImpl(t, actual, compare)
+	if !ret {
+		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
+		t.Helper()
 		t.Fail()
-		return false
 	}
-	return true
+	return ret
 }
