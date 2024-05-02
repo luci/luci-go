@@ -288,6 +288,64 @@ func TestConfig(t *testing.T) {
 			})
 		})
 
+		Convey("invalid custom metrics", func() {
+			Convey("invalid name", func() {
+				content := []byte(`
+							logdog {
+								hostname: "logs.chromium.org"
+							}
+							resultdb {
+								hostname: "results.api.cr.dev"
+							}
+							custom_metrics {
+								name: "/chrome/infra/custom/builds/started/",
+								metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+							}
+						`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid metric name "/chrome/infra/custom/builds/started/": doesn't match ^(/[a-zA-Z0-9_-]+)+$`)
+			})
+
+			Convey("duplicated names", func() {
+				content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						custom_metrics {
+							name: "/chrome/infra/custom/builds/started",
+							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+						}
+						custom_metrics {
+							name: "/chrome/infra/custom/builds/started",
+							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+						}
+					`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "duplicated name is not allowed: /chrome/infra/custom/builds/started")
+			})
+
+			Convey("invalid field", func() {
+				content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						custom_metrics {
+							name: "/chrome/infra/custom/builds/started",
+							fields: "$status",
+							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+						}
+					`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid field name "$status": doesn't match ^[A-Za-z_][A-Za-z0-9_]*$`)
+			})
+		})
+
 		Convey("OK", func() {
 			var okCfg = `
 				swarming {
@@ -334,6 +392,18 @@ func TestConfig(t *testing.T) {
 					full_mode {
 						pubsub_id: "topic"
 					}
+				}
+				custom_metrics {
+					name: "/chrome/infra/custom/builds/started",
+					fields: "status",
+					fields: "branch",
+					metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+				}
+				custom_metrics {
+					name: "/chrome/infra/custom/builds/completed",
+					fields: "status",
+					fields: "final_step",
+					metric_base: CUSTOM_BUILD_METRIC_BASE_COMPLETED,
 				}
 			`
 			So(validateSettingsCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)

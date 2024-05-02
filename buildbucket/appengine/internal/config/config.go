@@ -21,6 +21,8 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/tsmon/registry"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/config/validation"
@@ -78,9 +80,38 @@ func validateSettingsCfg(ctx *validation.Context, configSet, path string, conten
 		ctx.Exit()
 	}
 
+	validateCustomMetrics(ctx, cfg.GetCustomMetrics())
+
 	validateHostname(ctx, "logdog.hostname", cfg.Logdog.GetHostname())
 	validateHostname(ctx, "resultdb.hostname", cfg.Resultdb.GetHostname())
 	return nil
+}
+
+func validateCustomMetrics(ctx *validation.Context, cms []*pb.CustomMetric) {
+	ctx.Enter("custom_metrics")
+	metricNames := stringset.New(len(cms))
+	for i, customMetric := range cms {
+		ctx.Enter("custom_metrics #%d", i)
+		validateCustomMetric(ctx, customMetric)
+
+		if !metricNames.Add(customMetric.Name) {
+			ctx.Errorf("duplicated name is not allowed: %s", customMetric.Name)
+		}
+		ctx.Exit()
+	}
+	ctx.Exit()
+}
+
+func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
+	if err := registry.ValidateMetricName(cm.GetName()); err != nil {
+		ctx.Errorf("%s", err)
+	}
+
+	for _, field := range cm.GetFields() {
+		if err := registry.ValidateMetricFieldName(field); err != nil {
+			ctx.Errorf("%s", err)
+		}
+	}
 }
 
 func validateBackendFullMode(ctx *validation.Context, m *pb.BackendSetting_FullMode) {
