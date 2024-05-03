@@ -35,7 +35,7 @@ func TestResultBuilderNil(t *testing.T) {
 	t.Parallel()
 
 	res := (&FailureBuilder{}).Because("reasons").Failure
-	if diff := typed.Diff(res, &Failure{Findings: []*Failure_Finding{{Name: "Because", Value: "reasons"}}}); diff != "" {
+	if diff := typed.Diff(res, &Failure{Findings: []*Failure_Finding{{Name: "Because", Value: []string{"reasons"}}}}); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}
 }
@@ -98,7 +98,7 @@ func TestBecause(t *testing.T) {
 			failure: &Failure{
 				Comparison: &Failure_ComparisonFunc{Name: "test"},
 				Findings: []*Failure_Finding{
-					{Name: "Because", Value: "7"},
+					{Name: "Because", Value: []string{"7"}},
 				},
 			},
 		},
@@ -134,8 +134,8 @@ func TestActualExpected(t *testing.T) {
 			failure: &Failure{
 				Comparison: &Failure_ComparisonFunc{Name: "test"},
 				Findings: []*Failure_Finding{
-					{Name: "Expected", Value: "7"},
-					{Name: "Actual", Value: "8"},
+					{Name: "Expected", Value: []string{"7"}},
+					{Name: "Actual", Value: []string{"8"}},
 				},
 			},
 		},

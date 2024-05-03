@@ -57,8 +57,8 @@ func TestResultRender(t *testing.T) {
 			failure: &Failure{
 				Comparison: &Failure_ComparisonFunc{Name: "equal", TypeArguments: []string{"int", "int"}},
 				Findings: []*Failure_Finding{
-					{Name: "left", Value: "4"},
-					{Name: "right", Value: "7"},
+					{Name: "left", Value: []string{"4"}},
+					{Name: "right", Value: []string{"7"}},
 				},
 			},
 			lines: []string{

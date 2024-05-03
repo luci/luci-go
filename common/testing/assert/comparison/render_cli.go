@@ -59,7 +59,7 @@ func RenderCLI(r *Failure) []string {
 
 	lines = append(lines, fmt.Sprintf("%s%s FAILED", testName, testTypeArgs))
 	for _, f := range r.Findings {
-		lines = append(lines, heredocLines("  ", f.Name, strings.Split(f.Value, "\n"))...)
+		lines = append(lines, heredocLines("  ", f.Name, f.Value)...)
 	}
 
 	return lines

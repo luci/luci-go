@@ -62,7 +62,8 @@ func NewFailureBuilder(comparisonName string, typeArgs ...any) *FailureBuilder {
 	return ret
 }
 
-// AddFormattedFinding adds a new Finding to this Failure with the given `name`.
+// AddFormattedFinding adds a new single-line Finding to this Failure with the
+// given `name`.
 //
 // If `args` is empty, then `format` will be used as the Finding value verbatim.
 // Otherwise the value will be formatted as `fmt.Sprintf(format, args...)`.
@@ -75,7 +76,7 @@ func AddFormattedFinding(f *Failure, name, format string, args ...any) {
 	}
 	f.Findings = append(f.Findings, &Failure_Finding{
 		Name:  name,
-		Value: value,
+		Value: []string{value},
 		Type:  FindingTypeHint_Text,
 	})
 }

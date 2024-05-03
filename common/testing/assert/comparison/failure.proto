@@ -77,12 +77,13 @@ message Failure {
     // rendered in order.
     string name = 1;
 
-    // The value of this Finding. The content here is completely up to you and
-    // needs to make sense in the context of the Comparison and this Finding's
-    // name.
+    // The value of this Finding as a list of lines.
+    //
+    // The content here is completely up to you and needs to make sense in the
+    // context of the Comparison and this Finding's name.
     //
     // See also `type`.
-    string value = 2;
+    repeated string value = 2;
 
     // This is a type hint for the renderer, when the renderer may like to
     // interpret `value` in some way to display it better (for example - to
