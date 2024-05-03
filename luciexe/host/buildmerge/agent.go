@@ -105,7 +105,7 @@ type Agent struct {
 	states map[string]*buildStateTracker
 
 	// mergeCh is used in production mode to send pings via informNewData
-	mergeCh dispatcher.Channel
+	mergeCh dispatcher.Channel[any]
 
 	// informNewData is used to 'ping' mergeCh; it's overwritten in tests.
 	informNewData func()
@@ -178,7 +178,7 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 	}
 
 	var err error
-	ret.mergeCh, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
+	ret.mergeCh, err = dispatcher.NewChannel[any](ctx, &dispatcher.Options{
 		Buffer: buffer.Options{
 			MaxLeases:     1,
 			BatchItemsMax: 1,

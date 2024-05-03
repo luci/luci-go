@@ -139,13 +139,13 @@ type artifactChannel struct {
 	// The downside of this channel is that there is a limit on the maximum size of
 	// an artifact that can be included in a batch. Use streamChannel for artifacts
 	// greater than ServerConfig.MaxBatchableArtifactSize.
-	batchChannel dispatcher.Channel
+	batchChannel dispatcher.Channel[any]
 
 	// streamChannel uploads artifacts in a streaming manner via HTTP.
 	//
 	// This is suitable for uploading large files, but with limited parallelism.
 	// Use batchChannel, if possible.
-	streamChannel dispatcher.Channel
+	streamChannel dispatcher.Channel[any]
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
 	//
@@ -192,7 +192,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.batchChannel, err = dispatcher.NewChannel(ctx, bcOpts, func(b *buffer.Batch) error {
+	c.batchChannel, err = dispatcher.NewChannel[any](ctx, bcOpts, func(b *buffer.Batch) error {
 		return errors.Annotate(au.BatchUpload(ctx, b), "BatchUpload").Err()
 	})
 	if err != nil {
@@ -208,7 +208,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 4000},
 		},
 	}
-	c.streamChannel, err = dispatcher.NewChannel(ctx, stOpts, func(b *buffer.Batch) error {
+	c.streamChannel, err = dispatcher.NewChannel[any](ctx, stOpts, func(b *buffer.Batch) error {
 		return errors.Annotate(
 			au.StreamUpload(ctx, b.Data[0].Item.(*uploadTask), cfg.UpdateToken),
 			"StreamUpload").Err()

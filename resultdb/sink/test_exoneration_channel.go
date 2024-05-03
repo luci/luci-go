@@ -31,7 +31,7 @@ import (
 
 // unexpectedPassChannel is the channel for unexpected passes which will be exonerated.
 type unexpectedPassChannel struct {
-	ch  dispatcher.Channel
+	ch  dispatcher.Channel[any]
 	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestExonerations.
@@ -59,7 +59,7 @@ func newTestExonerationChannel(ctx context.Context, cfg *ServerConfig) *unexpect
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
+	c.ch, err = dispatcher.NewChannel[any](ctx, opts, func(b *buffer.Batch) error {
 		return c.report(ctx, b)
 	})
 	if err != nil {

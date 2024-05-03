@@ -74,7 +74,7 @@ func OptLogsink(c *streamclient.Client) StartOption {
 func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 	return func(s *State) {
 		var err error
-		s.sendCh, err = dispatcher.NewChannel(s.ctx, &dispatcher.Options{
+		s.sendCh, err = dispatcher.NewChannel[any](s.ctx, &dispatcher.Options{
 			QPSLimit: rate.NewLimiter(lim, 1),
 			Buffer: buffer.Options{
 				MaxLeases:     1,

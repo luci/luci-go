@@ -23,11 +23,11 @@ import (
 )
 
 // Channel holds a chan which you can push individual work items to.
-type Channel struct {
+type Channel[T any] struct {
 	// C is an unbuffered channel which you can push single work items into.
 	//
 	// Close this to shut down the Channel.
-	C chan<- any
+	C chan<- T
 
 	// DrainC will unblock when this Channel is closed/canceled and fully drained.
 	DrainC <-chan struct{}
@@ -35,14 +35,14 @@ type Channel struct {
 
 // Close is a convenience function which closes C (and swallows panic if
 // already closed).
-func (c Channel) Close() {
+func (c Channel[T]) Close() {
 	defer func() { recover() }()
 	close(c.C)
 }
 
 // CloseAndDrain is a convenience function which closes C (and swallows panic if
 // already closed) and then blocks on DrainC/ctx.Done().
-func (c Channel) CloseAndDrain(ctx context.Context) {
+func (c Channel[T]) CloseAndDrain(ctx context.Context) {
 	c.Close()
 	select {
 	case <-ctx.Done():
@@ -51,7 +51,7 @@ func (c Channel) CloseAndDrain(ctx context.Context) {
 }
 
 // IsDrained returns true iff the Channel is closed and drained.
-func (c Channel) IsDrained() bool {
+func (c Channel[T]) IsDrained() bool {
 	select {
 	case <-c.DrainC:
 		return true
@@ -104,9 +104,9 @@ type SendFn func(data *buffer.Batch) error
 // of NewChannel is effectively the sender (owner) of Channel.C, they must
 // coordinate closure of this channel with all their use of sends to this
 // channel.
-func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error) {
+func NewChannel[T any](ctx context.Context, opts *Options, send SendFn) (Channel[T], error) {
 	if send == nil {
-		return Channel{}, errors.New("send is required: got nil")
+		return Channel[T]{}, errors.New("send is required: got nil")
 	}
 
 	var optsCopy Options
@@ -116,17 +116,17 @@ func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error
 
 	buf, err := buffer.NewBuffer(&optsCopy.Buffer)
 	if err != nil {
-		return Channel{}, errors.Annotate(err, "allocating Buffer").Err()
+		return Channel[T]{}, errors.Annotate(err, "allocating Buffer").Err()
 	}
 
 	if err = optsCopy.normalize(ctx); err != nil {
-		return Channel{}, errors.Annotate(err, "normalizing dispatcher.Options").Err()
+		return Channel[T]{}, errors.Annotate(err, "normalizing dispatcher.Options").Err()
 	}
 
-	itemCh := make(chan any)
+	itemCh := make(chan T)
 	drainCh := make(chan struct{})
 
-	cstate := coordinatorState{
+	cstate := coordinatorState[T]{
 		opts:    optsCopy,
 		buf:     buf,
 		itemCh:  itemCh,
@@ -138,5 +138,5 @@ func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error
 	}
 
 	go cstate.run(ctx, send)
-	return Channel{C: itemCh, DrainC: drainCh}, nil
+	return Channel[T]{C: itemCh, DrainC: drainCh}, nil
 }

@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
@@ -30,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
-	"golang.org/x/time/rate"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -63,7 +64,7 @@ func TestChannelConstruction(t *testing.T) {
 		Convey(`construction`, func() {
 
 			Convey(`success`, func() {
-				ch, err := NewChannel(ctx, &Options{testingDbg: dbg}, dummySendFn)
+				ch, err := NewChannel[any](ctx, &Options{testingDbg: dbg}, dummySendFn)
 				So(err, ShouldBeNil)
 				ch.Close()
 				<-ch.DrainC
@@ -71,19 +72,19 @@ func TestChannelConstruction(t *testing.T) {
 
 			Convey(`failure`, func() {
 				Convey(`bad SendFn`, func() {
-					_, err := NewChannel(ctx, nil, nil)
+					_, err := NewChannel[any](ctx, nil, nil)
 					So(err, ShouldErrLike, "send is required")
 				})
 
 				Convey(`bad Options`, func() {
-					_, err := NewChannel(ctx, &Options{
+					_, err := NewChannel[any](ctx, &Options{
 						QPSLimit: rate.NewLimiter(100, 0),
 					}, dummySendFn)
 					So(err, ShouldErrLike, "normalizing dispatcher.Options")
 				})
 
 				Convey(`bad Options.Buffer`, func() {
-					_, err := NewChannel(ctx, &Options{
+					_, err := NewChannel[any](ctx, &Options{
 						Buffer: buffer.Options{
 							BatchItemsMax: -3,
 						},
@@ -106,7 +107,7 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 		sentBatches := []string{}
 		enableThisError := false
 
-		ch, err := NewChannel(ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options{
 			DropFn:   noDrop,
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			Buffer: buffer.Options{
@@ -176,7 +177,7 @@ func TestContextShutdown(t *testing.T) {
 		sentBatches := []string{}
 		droppedBatches := []string{}
 
-		ch, err := NewChannel(cctx, &Options{
+		ch, err := NewChannel[any](cctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			DropFn: func(dropped *buffer.Batch, flush bool) {
 				if flush {
@@ -224,7 +225,7 @@ func TestQPSLimit(t *testing.T) {
 
 		sentBatches := []int{}
 
-		ch, err := NewChannel(ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Every(10*time.Millisecond), 1),
 			DropFn:   noDrop,
 			Buffer: buffer.Options{
@@ -265,7 +266,7 @@ func TestQPSLimitParallel(t *testing.T) {
 		var lock sync.Mutex
 		sentBatches := []int{}
 
-		ch, err := NewChannel(ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Every(10*time.Millisecond), 10),
 			DropFn:   noDrop,
 			Buffer: buffer.Options{
@@ -307,7 +308,7 @@ func TestExplicitDrops(t *testing.T) {
 		sentBatches := []int{}
 		droppedBatches := []int{}
 
-		ch, err := NewChannel(ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			DropFn: func(batch *buffer.Batch, flush bool) {
 				if flush {
@@ -354,7 +355,7 @@ func TestImplicitDrops(t *testing.T) {
 		sendBlocker := make(chan struct{})
 
 		limiter := rate.NewLimiter(rate.Every(100*time.Millisecond), 1)
-		ch, err := NewChannel(ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options{
 			QPSLimit: limiter,
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -396,7 +397,7 @@ func TestContextCancel(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		ch, err := NewChannel(ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -441,7 +442,7 @@ func TestDrainedFn(t *testing.T) {
 
 		amDrained := false
 
-		ch, err := NewChannel(ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options{
 			DrainedFn:  func() { amDrained = true },
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
@@ -476,7 +477,7 @@ func TestCloseDeadlockRegression(t *testing.T) {
 			inSendFn := make(chan struct{})
 			holdSendFn := make(chan struct{})
 
-			ch, err := NewChannel(ctx, &Options{
+			ch, err := NewChannel[any](ctx, &Options{
 				testingDbg: dbg,
 				Buffer: buffer.Options{
 					MaxLeases:     1,
@@ -530,7 +531,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 		mu := sync.Mutex{}
 		sent := []int{}
 
-		ch, err := NewChannel(ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options{
 			DropFn: noDrop,
 			Buffer: buffer.Options{
 				MaxLeases:     10,
@@ -613,7 +614,7 @@ func TestSizeBasedChannel(t *testing.T) {
 			QPSLimit: rate.NewLimiter(rate.Inf, 1),
 		}
 
-		ch, err := NewChannel(ctx, opts, func(batch *buffer.Batch) (err error) {
+		ch, err := NewChannel[any](ctx, opts, func(batch *buffer.Batch) (err error) {
 			mu.Lock()
 			defer mu.Unlock()
 			for _, itm := range batch.Data {
@@ -679,7 +680,7 @@ func TestMinQPS(t *testing.T) {
 
 			numNilBatches := 0
 
-			ch, err := NewChannel(ctx, &Options{
+			ch, err := NewChannel[any](ctx, &Options{
 				MinQPS: rate.Every(100 * time.Millisecond),
 				DropFn: noDrop,
 				Buffer: buffer.Options{
@@ -715,7 +716,7 @@ func TestMinQPS(t *testing.T) {
 			numNilBatch := 0
 			minWaitDuration := 100 * time.Millisecond
 
-			ch, err := NewChannel(ctx, &Options{
+			ch, err := NewChannel[any](ctx, &Options{
 				MinQPS: rate.Every(minWaitDuration),
 				DropFn: noDrop,
 				Buffer: buffer.Options{

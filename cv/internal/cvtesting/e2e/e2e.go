@@ -124,7 +124,7 @@ type Test struct {
 	// dsFlakiness enables ds flakiness for "RunUntil".
 	dsFlakiness     float64
 	dsFlakinessRand rand.Source
-	tqSweepChannel  dispatcher.Channel
+	tqSweepChannel  dispatcher.Channel[any]
 }
 
 // SetUp sets up the end to end test.
@@ -571,7 +571,7 @@ func (t *Test) startTQSweeping(ctx context.Context) (deferme func()) {
 		SubmitBatchSize: 1,
 	})
 	var err error
-	t.tqSweepChannel, err = dispatcher.NewChannel(
+	t.tqSweepChannel, err = dispatcher.NewChannel[any](
 		ctx,
 		&dispatcher.Options{
 			Buffer: buffer.Options{

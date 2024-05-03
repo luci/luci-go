@@ -81,7 +81,7 @@ type buildStateTracker struct {
 	// It's send function parses and interprets the Build message.
 	// Errors are not reported to the dispatcher.Channel, but are instead recorded
 	// in the parsed Build state.
-	work       dispatcher.Channel
+	work       dispatcher.Channel[any]
 	workClosed bool // true if we've closed work.C, protected by workMu
 
 	latestStateMu sync.Mutex
@@ -223,7 +223,7 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 		ret.finalize()
 		ret.Close()
 	} else {
-		ret.work, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
+		ret.work, err = dispatcher.NewChannel[any](ctx, &dispatcher.Options{
 			Buffer: buffer.Options{
 				MaxLeases:     1,
 				BatchItemsMax: 1,

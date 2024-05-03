@@ -36,7 +36,7 @@ import (
 )
 
 type testResultChannel struct {
-	ch  dispatcher.Channel
+	ch  dispatcher.Channel[any]
 	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
@@ -65,7 +65,7 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
+	c.ch, err = dispatcher.NewChannel[any](ctx, opts, func(b *buffer.Batch) error {
 		return c.report(ctx, b)
 	})
 	if err != nil {

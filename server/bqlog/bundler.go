@@ -291,7 +291,7 @@ type logBuffer struct {
 	desc    *descriptorpb.DescriptorProto
 	tableID string
 	sender  *logSender
-	disp    dispatcher.Channel
+	disp    dispatcher.Channel[any]
 }
 
 func (b *logBuffer) start(ctx context.Context, tableID string, sender *logSender) {
@@ -321,7 +321,7 @@ func (b *logBuffer) start(ctx context.Context, tableID string, sender *logSender
 	}
 
 	var err error
-	b.disp, err = dispatcher.NewChannel(ctx, &opts, sender.send)
+	b.disp, err = dispatcher.NewChannel[any](ctx, &opts, sender.send)
 	if err != nil {
 		panic(fmt.Sprintf("failed to start the dispatcher: %s", err)) // should not be happening
 	}

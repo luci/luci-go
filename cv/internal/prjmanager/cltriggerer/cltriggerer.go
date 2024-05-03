@@ -91,10 +91,10 @@ func (tr *Triggerer) Schedule(ctx context.Context, t *prjpb.TriggeringCLDepsTask
 	})
 }
 
-func (tr *Triggerer) makeDispatcherChannel(ctx context.Context, task *prjpb.TriggeringCLDepsTask) dispatcher.Channel {
+func (tr *Triggerer) makeDispatcherChannel(ctx context.Context, task *prjpb.TriggeringCLDepsTask) dispatcher.Channel[any] {
 	concurrency := min(len(task.GetTriggeringClDeps().GetDepClids()), maxConcurrency)
 	prj := task.GetLuciProject()
-	dc, err := dispatcher.NewChannel(ctx, &dispatcher.Options{
+	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options{
 		ErrorFn: func(failedBatch *buffer.Batch, err error) (retry bool) {
 			_, isLeaseErr := lease.IsAlreadyInLeaseErr(err)
 			return isLeaseErr || transient.Tag.In(err)

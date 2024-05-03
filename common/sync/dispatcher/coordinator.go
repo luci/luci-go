@@ -23,11 +23,11 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
 
-type coordinatorState struct {
+type coordinatorState[T any] struct {
 	opts Options
 	buf  *buffer.Buffer
 
-	itemCh  <-chan any
+	itemCh  <-chan T
 	drainCh chan<- struct{}
 
 	resultCh chan workerResult
@@ -48,7 +48,7 @@ type workerResult struct {
 	err   error
 }
 
-func (state *coordinatorState) dbg(msg string, args ...any) {
+func (state *coordinatorState[T]) dbg(msg string, args ...any) {
 	if state.opts.testingDbg != nil {
 		state.opts.testingDbg(msg, args...)
 	}
@@ -68,7 +68,7 @@ func (state *coordinatorState) dbg(msg string, args ...any) {
 //
 //	batches, while sendBatches should only try to send a nil batch if it doesn't
 //	have any batch to send.
-func (state *coordinatorState) sendBatches(ctx context.Context, now, prevLastSend time.Time, send SendFn) (lastSend time.Time, delay time.Duration) {
+func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLastSend time.Time, send SendFn) (lastSend time.Time, delay time.Duration) {
 	lastSend = prevLastSend
 	if state.canceled {
 		for _, batch := range state.buf.ForceLeaseAll() {
@@ -144,7 +144,7 @@ func (state *coordinatorState) sendBatches(ctx context.Context, now, prevLastSen
 //   - nextQPSToken
 //
 // So resetDuration = max(min(MinQPS, nextSendTime), nextQPSToken)
-func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken time.Duration) <-chan clock.TimerResult {
+func (state *coordinatorState[T]) getNextTimingEvent(now time.Time, nextQPSToken time.Duration) <-chan clock.TimerResult {
 	var resetDuration time.Duration
 	var msg string
 	nextSendReached := false
@@ -188,7 +188,7 @@ func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken ti
 // our client) if our buffer is willing to accept additional work items.
 //
 // Otherwise returns nil.
-func (state *coordinatorState) getWorkChannel() <-chan any {
+func (state *coordinatorState[T]) getWorkChannel() <-chan T {
 	if !state.closed && state.buf.CanAddItem() {
 		state.dbg("  |waiting on new data")
 		return state.itemCh
@@ -200,7 +200,7 @@ func (state *coordinatorState) getWorkChannel() <-chan any {
 // coordinator from a worker.
 //
 // This will ACK/NACK the Batch (once).
-func (state *coordinatorState) handleResult(ctx context.Context, result workerResult) {
+func (state *coordinatorState[T]) handleResult(ctx context.Context, result workerResult) {
 	state.dbg("  GOT RESULT")
 
 	if result.err == nil {
@@ -233,7 +233,7 @@ func (state *coordinatorState) handleResult(ctx context.Context, result workerRe
 // Exactly one coordinator() function runs per Channel. This coordinates (!!)
 // all of the internal channels of the external Channel object in one big select
 // loop.
-func (state *coordinatorState) run(ctx context.Context, send SendFn) {
+func (state *coordinatorState[T]) run(ctx context.Context, send SendFn) {
 	defer close(state.drainCh)
 	if state.opts.DrainedFn != nil {
 		defer state.opts.DrainedFn()

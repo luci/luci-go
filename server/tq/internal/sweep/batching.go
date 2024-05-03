@@ -38,14 +38,14 @@ type BatchProcessor struct {
 	BatchSize         int // max size of a single reminder batch
 	ConcurrentBatches int // how many concurrent batches to process
 
-	ch        dispatcher.Channel
+	ch        dispatcher.Channel[any]
 	processed int32 // total reminders successfully processed
 }
 
 // Start launches background processor goroutines.
 func (p *BatchProcessor) Start() error {
 	var err error
-	p.ch, err = dispatcher.NewChannel(
+	p.ch, err = dispatcher.NewChannel[any](
 		p.Context,
 		&dispatcher.Options{
 			Buffer: buffer.Options{

@@ -56,7 +56,7 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 	}
 
 	cutoff := clock.Now(ctx).Add(-retentionPeriod).UTC()
-	dc, err := dispatcher.NewChannel(ctx, &dispatcher.Options{
+	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options{
 		DropFn: dispatcher.DropFnQuiet,
 		Buffer: buffer.Options{
 			MaxLeases:     10,

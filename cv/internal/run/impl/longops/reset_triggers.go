@@ -238,13 +238,13 @@ func (op *ResetTriggersOp) executeInParallel(ctx context.Context) {
 	<-dc.DrainC
 }
 
-func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher.Channel {
+func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher.Channel[any] {
 	concurrency := op.Concurrency
 	if concurrency == 0 {
 		concurrency = defaultConcurrency
 	}
 	concurrency = min(concurrency, len(op.inputs))
-	dc, err := dispatcher.NewChannel(ctx, &dispatcher.Options{
+	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options{
 		ErrorFn: func(failedBatch *buffer.Batch, err error) (retry bool) {
 			_, isLeaseErr := lease.IsAlreadyInLeaseErr(err)
 			return isLeaseErr || transient.Tag.In(err)
