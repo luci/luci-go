@@ -48,9 +48,11 @@
 // runtime, which was unfortunate.
 //
 // While this library does still do some runtime type reflection (to convert
-// from `actual any` to `T` for the given Comparison), this conversion is done
-// in exactly one place (this package), and does not require each comparison to
-// do this.
+// from `actual any` to `T` for the given Comparison in AssertL and CheckL),
+// this conversion is done in exactly one place (this package), and does not
+// require each comparison to do this. In addition, the default symbols Assert
+// and Check do no dynamic type inference at all, which should hopefully
+// encourage test authors to follow this stricter style by default.
 //
 // # Why now, and why this style?
 //
@@ -121,48 +123,17 @@ import (
 	"go.chromium.org/luci/common/testing/assert/interfaces"
 )
 
-// checkImpl allows both Check and Assert to share a single common
-// implementation.
-//
-// This will call all functions necessary in `t` EXCEPT for Fail or FailNow,
-// which the caller of this function should call directly.
-func checkImpl[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) bool {
-	actualTyped, ok := data.LosslessConvertTo[T](actual)
-	var failure *comparison.Failure
-	if !ok {
-		failure = comparison.NewFailureBuilder("builtin.LosslessConvertTo", actualTyped).Failure
-	} else {
-		failure = compare(actualTyped)
-	}
-
-	if failure != nil {
-		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
-		t.Helper()
-		for _, line := range comparison.RenderCLI(failure) {
-			t.Log(line)
-		}
-		return false
-	}
-	return true
-}
-
-// Assert compares `actual` using `compare`, which is typically a closure over some
-// expected value.
+// Assert strictly compares `actual` using `compare`, which is typically
+// a closure over some expected value.
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-//
-// `actual` will be converted to T using the function
-// [go.chromium.org/luci/common/data.LosslessConvertTo].
-//
-// If this conversion fails, a descriptive error will be logged and FailNow()
-// called.
-//
-// `testingTB` is an interface which is a subset of testing.TB, but is
-// unexported to allow this package to be cleanly .-imported.
-func Assert[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) {
-	if !checkImpl(t, actual, compare) {
+func Assert[T any](t interfaces.TestingTB, actual T, compare comparison.Func[T]) {
+	if f := compare(actual); f != nil {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
 		t.Helper()
+		for _, line := range comparison.RenderCLI(f) {
+			t.Log(line)
+		}
 		t.FailNow()
 	}
 }
@@ -172,18 +143,64 @@ func Assert[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
+func Check[T any](t interfaces.TestingTB, actual T, compare comparison.Func[T]) (ok bool) {
+	f := compare(actual)
+	ok = f == nil
+	if !ok {
+		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
+		t.Helper()
+		for _, line := range comparison.RenderCLI(f) {
+			t.Log(line)
+		}
+		t.Fail()
+	}
+	return
+}
+
+// looseCheckImpl allows both Check and Assert to share a single common
+// implementation.
+//
+// This will call all functions necessary in `t` EXCEPT for Fail or FailNow,
+// which the caller of this function should call directly.
+func wrapCompare[T any](actual any, compare comparison.Func[T]) (converted T, newCompare comparison.Func[T]) {
+	converted, ok := data.LosslessConvertTo[T](actual)
+	if ok {
+		return converted, compare
+	}
+	return converted, func(t T) *comparison.Failure {
+		return comparison.NewFailureBuilder("builtin.LosslessConvertTo", t).Failure
+	}
+}
+
+// AssertL loosely compares `actual` using `compare`, which is typically
+// a closure over some expected value.
 //
 // `actual` will be converted to T using the function
 // [go.chromium.org/luci/common/data.LosslessConvertTo].
 //
-// `testingTB` is an interface which is a subset of testing.TB, but is
-// unexported to allow this package to be cleanly .-imported.
-func Check[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) bool {
-	ret := checkImpl(t, actual, compare)
-	if !ret {
-		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
-		t.Helper()
-		t.Fail()
-	}
-	return ret
+// If this conversion fails, a descriptive error will be logged and FailNow()
+// called.
+//
+// If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
+func AssertL[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) {
+	converted, compare := wrapCompare[T](actual, compare)
+	t.Helper()
+	Assert(t, converted, compare)
+}
+
+// CheckL loosely compares `actual` using `compare`, which is typically
+// a closure over some expected value.
+//
+// `actual` will be converted to T using the function
+// [go.chromium.org/luci/common/data.LosslessConvertTo].
+//
+// If this conversion fails, a descriptive error will be logged and FailNow()
+// called.
+//
+// If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
+// returning true iff the comparison was successful.
+func CheckL[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) bool {
+	converted, compare := wrapCompare[T](actual, compare)
+	t.Helper()
+	return Check(t, converted, compare)
 }

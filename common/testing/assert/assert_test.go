@@ -28,7 +28,7 @@ func isEmptyCmp(x string) *comparison.Failure {
 	return comparison.NewFailureBuilder("string not empty").Failure
 }
 
-func TestCheck(t *testing.T) {
+func TestCheckL(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
@@ -41,6 +41,9 @@ func TestCheck(t *testing.T) {
 			name:  "empty string",
 			input: "",
 			ok:    true,
+			expect: interfaces.MockTB{
+				HelperCalls: 1,
+			},
 		},
 		{
 			name:  "non-empty string",
@@ -58,6 +61,100 @@ func TestCheck(t *testing.T) {
 			expect: interfaces.MockTB{
 				HelperCalls: 2,
 				LogCalls:    [][]any{{"builtin.LosslessConvertTo[string] FAILED"}},
+				FailCalls:   1,
+			},
+			ok: false,
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			zt := &interfaces.MockTB{}
+			got := CheckL(zt, tt.input, isEmptyCmp)
+
+			if diff := typed.Diff(zt, &tt.expect); diff != "" {
+				t.Errorf("unexpected diff in TB calls (-want +got): %s", diff)
+			}
+			if diff := typed.Diff(got, tt.ok); diff != "" {
+				t.Errorf("unexpected diff in CheckL return value (-want +got): %s", diff)
+			}
+		})
+	}
+}
+
+func TestAssertL(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		input  any
+		expect interfaces.MockTB
+	}{
+		{
+			name:  "empty string",
+			input: "",
+			expect: interfaces.MockTB{
+				HelperCalls: 1,
+			},
+		},
+		{
+			name:  "non-empty string",
+			input: "a",
+			expect: interfaces.MockTB{
+				HelperCalls:  2,
+				LogCalls:     [][]any{{"string not empty FAILED"}},
+				FailNowCalls: 1,
+			},
+		},
+		{
+			name:  "bad type match",
+			input: 100,
+			expect: interfaces.MockTB{
+				HelperCalls:  2,
+				LogCalls:     [][]any{{"builtin.LosslessConvertTo[string] FAILED"}},
+				FailNowCalls: 1,
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			zt := &interfaces.MockTB{}
+			AssertL(zt, tt.input, isEmptyCmp)
+
+			if diff := typed.Diff(zt, &tt.expect); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
+}
+
+func TestCheck(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		input  string
+		expect interfaces.MockTB
+		ok     bool
+	}{
+		{
+			name:  "empty string",
+			input: "",
+			ok:    true,
+		},
+		{
+			name:  "non-empty string",
+			input: "a",
+			expect: interfaces.MockTB{
+				HelperCalls: 1,
+				LogCalls:    [][]any{{"string not empty FAILED"}},
 				FailCalls:   1,
 			},
 			ok: false,
@@ -98,7 +195,7 @@ func TestAssert(t *testing.T) {
 			name:  "non-empty string",
 			input: "a",
 			expect: interfaces.MockTB{
-				HelperCalls:  2,
+				HelperCalls:  1,
 				LogCalls:     [][]any{{"string not empty FAILED"}},
 				FailNowCalls: 1,
 			},
