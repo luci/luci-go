@@ -89,7 +89,7 @@ func TestReplicasServer(t *testing.T) {
 				AuthDbRev:  5,
 				ModifiedTs: modifiedTime.UnixMicro(),
 			},
-			AuthCodeVersion: "2.0.0",
+			AuthCodeVersion: model.AuthAPIVersion,
 			Replicas: []*rpcpb.ReplicaState{
 				{
 					AppId:           "dev~appA",

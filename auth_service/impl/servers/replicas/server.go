@@ -70,7 +70,7 @@ func (*Server) ListReplicas(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListR
 			AuthDbRev:  primaryState.AuthDBRev,
 			ModifiedTs: primaryState.ModifiedTS.UnixMicro(),
 		},
-		AuthCodeVersion: "2.0.0",
+		AuthCodeVersion: model.AuthAPIVersion,
 		Replicas:        replicaStates,
 		ProcessedAt:     timestamppb.New(clock.Now(ctx)),
 	}, nil
