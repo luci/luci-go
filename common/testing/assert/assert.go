@@ -120,14 +120,22 @@ package assert
 import (
 	"go.chromium.org/luci/common/data"
 	"go.chromium.org/luci/common/testing/assert/comparison"
-	"go.chromium.org/luci/common/testing/assert/interfaces"
 )
+
+// MinimalTestingTB exposes the minimal subset of the testing.TB interface from the standard
+// library which is needed by this package.
+type MinimalTestingTB interface {
+	Helper()
+	Log(...any)
+	Fail()
+	FailNow()
+}
 
 // Assert strictly compares `actual` using `compare`, which is typically
 // a closure over some expected value.
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-func Assert[T any](t interfaces.TestingTB, actual T, compare comparison.Func[T]) {
+func Assert[T any](t MinimalTestingTB, actual T, compare comparison.Func[T]) {
 	if f := compare(actual); f != nil {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
 		t.Helper()
@@ -143,7 +151,7 @@ func Assert[T any](t interfaces.TestingTB, actual T, compare comparison.Func[T])
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
-func Check[T any](t interfaces.TestingTB, actual T, compare comparison.Func[T]) (ok bool) {
+func Check[T any](t MinimalTestingTB, actual T, compare comparison.Func[T]) (ok bool) {
 	f := compare(actual)
 	ok = f == nil
 	if !ok {
@@ -182,7 +190,7 @@ func wrapCompare[T any](actual any, compare comparison.Func[T]) (converted T, ne
 // called.
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-func AssertL[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) {
+func AssertL[T any](t MinimalTestingTB, actual any, compare comparison.Func[T]) {
 	converted, compare := wrapCompare[T](actual, compare)
 	t.Helper()
 	Assert(t, converted, compare)
@@ -199,7 +207,7 @@ func AssertL[T any](t interfaces.TestingTB, actual any, compare comparison.Func[
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
-func CheckL[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) bool {
+func CheckL[T any](t MinimalTestingTB, actual any, compare comparison.Func[T]) bool {
 	converted, compare := wrapCompare[T](actual, compare)
 	t.Helper()
 	return Check(t, converted, compare)

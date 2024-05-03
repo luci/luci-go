@@ -17,9 +17,26 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/assert/comparison"
-	"go.chromium.org/luci/common/testing/assert/interfaces"
 	"go.chromium.org/luci/common/testing/typed"
 )
+
+// mockTB is a mock MinimalTestingTB implementation for testing the `assert`
+// library itself.
+//
+// Records the count/arguments of all calls to aid in testing.
+type mockTB struct {
+	HelperCalls  int
+	LogCalls     [][]any
+	FailCalls    int
+	FailNowCalls int
+}
+
+func (m *mockTB) Helper()         { m.HelperCalls++ }
+func (m *mockTB) Log(args ...any) { m.LogCalls = append(m.LogCalls, args) }
+func (m *mockTB) Fail()           { m.FailCalls++ }
+func (m *mockTB) FailNow()        { m.FailNowCalls++ }
+
+var _ MinimalTestingTB = (*mockTB)(nil)
 
 func isEmptyCmp(x string) *comparison.Failure {
 	if x == "" {
@@ -34,21 +51,21 @@ func TestCheckL(t *testing.T) {
 	cases := []struct {
 		name   string
 		input  any
-		expect interfaces.MockTB
+		expect mockTB
 		ok     bool
 	}{
 		{
 			name:  "empty string",
 			input: "",
 			ok:    true,
-			expect: interfaces.MockTB{
+			expect: mockTB{
 				HelperCalls: 1,
 			},
 		},
 		{
 			name:  "non-empty string",
 			input: "a",
-			expect: interfaces.MockTB{
+			expect: mockTB{
 				HelperCalls: 2,
 				LogCalls:    [][]any{{"string not empty FAILED"}},
 				FailCalls:   1,
@@ -58,7 +75,7 @@ func TestCheckL(t *testing.T) {
 		{
 			name:  "bad type match",
 			input: 100,
-			expect: interfaces.MockTB{
+			expect: mockTB{
 				HelperCalls: 2,
 				LogCalls:    [][]any{{"builtin.LosslessConvertTo[string] FAILED"}},
 				FailCalls:   1,
@@ -72,7 +89,7 @@ func TestCheckL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			zt := &interfaces.MockTB{}
+			zt := &mockTB{}
 			got := CheckL(zt, tt.input, isEmptyCmp)
 
 			if diff := typed.Diff(zt, &tt.expect); diff != "" {
@@ -91,19 +108,19 @@ func TestAssertL(t *testing.T) {
 	cases := []struct {
 		name   string
 		input  any
-		expect interfaces.MockTB
+		expect mockTB
 	}{
 		{
 			name:  "empty string",
 			input: "",
-			expect: interfaces.MockTB{
+			expect: mockTB{
 				HelperCalls: 1,
 			},
 		},
 		{
 			name:  "non-empty string",
 			input: "a",
-			expect: interfaces.MockTB{
+			expect: mockTB{
 				HelperCalls:  2,
 				LogCalls:     [][]any{{"string not empty FAILED"}},
 				FailNowCalls: 1,
@@ -112,7 +129,7 @@ func TestAssertL(t *testing.T) {
 		{
 			name:  "bad type match",
 			input: 100,
-			expect: interfaces.MockTB{
+			expect: mockTB{
 				HelperCalls:  2,
 				LogCalls:     [][]any{{"builtin.LosslessConvertTo[string] FAILED"}},
 				FailNowCalls: 1,
@@ -125,7 +142,7 @@ func TestAssertL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			zt := &interfaces.MockTB{}
+			zt := &mockTB{}
 			AssertL(zt, tt.input, isEmptyCmp)
 
 			if diff := typed.Diff(zt, &tt.expect); diff != "" {
@@ -141,7 +158,7 @@ func TestCheck(t *testing.T) {
 	cases := []struct {
 		name   string
 		input  string
-		expect interfaces.MockTB
+		expect mockTB
 		ok     bool
 	}{
 		{
@@ -152,7 +169,7 @@ func TestCheck(t *testing.T) {
 		{
 			name:  "non-empty string",
 			input: "a",
-			expect: interfaces.MockTB{
+			expect: mockTB{
 				HelperCalls: 1,
 				LogCalls:    [][]any{{"string not empty FAILED"}},
 				FailCalls:   1,
@@ -166,7 +183,7 @@ func TestCheck(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			zt := &interfaces.MockTB{}
+			zt := &mockTB{}
 			got := Check(zt, tt.input, isEmptyCmp)
 
 			if diff := typed.Diff(zt, &tt.expect); diff != "" {
@@ -185,7 +202,7 @@ func TestAssert(t *testing.T) {
 	cases := []struct {
 		name   string
 		input  string
-		expect interfaces.MockTB
+		expect mockTB
 	}{
 		{
 			name:  "empty string",
@@ -194,7 +211,7 @@ func TestAssert(t *testing.T) {
 		{
 			name:  "non-empty string",
 			input: "a",
-			expect: interfaces.MockTB{
+			expect: mockTB{
 				HelperCalls:  1,
 				LogCalls:     [][]any{{"string not empty FAILED"}},
 				FailNowCalls: 1,
@@ -207,7 +224,7 @@ func TestAssert(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			zt := &interfaces.MockTB{}
+			zt := &mockTB{}
 			Assert(zt, tt.input, isEmptyCmp)
 
 			if diff := typed.Diff(zt, &tt.expect); diff != "" {
