@@ -15,17 +15,14 @@
 package should
 
 import (
-	"reflect"
-
-	"go.chromium.org/luci/common/testing/assert/results"
+	"go.chromium.org/luci/common/testing/assert/comparison"
 )
 
 // Equal checks whether two objects are equal.
-func Equal[T comparable](expected T) results.Comparison[T] {
+func Equal[T comparable](expected T) comparison.Func[T] {
 	cmpName := "should.Equal"
-	rtype := reflect.TypeOf(expected)
 
-	return func(actual T) (ret *results.OldResult) {
+	return func(actual T) (ret *comparison.Failure) {
 		// The weird-looking second condition is for floats.
 		// NaN doesn't compare equal to itself.
 		//
@@ -35,10 +32,9 @@ func Equal[T comparable](expected T) results.Comparison[T] {
 			return nil
 		}
 
-		return results.NewResultBuilder().
-			SetName(cmpName, rtype).
+		return comparison.NewFailureBuilder(cmpName, expected).
 			Actual(actual).
 			Expected(expected).
-			Result()
+			Failure
 	}
 }

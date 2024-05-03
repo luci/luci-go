@@ -16,9 +16,9 @@ syntax = "proto3";
 
 package buildbucket.v2;
 
-option go_package = "go.chromium.org/luci/common/testing/assert/results;results";
+option go_package = "go.chromium.org/luci/common/testing/assert/comparison;comparison";
 
-// Result is the factual outcome of a failing Comparison.
+// Failure is the factual outcome of a failing Comparison.
 //
 // As an example:
 //
@@ -35,12 +35,12 @@ option go_package = "go.chromium.org/luci/common/testing/assert/results;results"
 // In the future we expect other interfaces (like a web browser) to render these
 // in a similarly suitable way.
 //
-// Note that Result is not intended to be hand-assembled, but is meant to be
+// Note that Failure is not intended to be hand-assembled, but is meant to be
 // built with the Builder functionality in this package.
-message Result {
-  message Comparison {
+message Failure {
+  message ComparisonFunc {
     // This is the logical name of the comparison function that produced this
-    // Result, e.g. `should.Equal`.
+    // Failure, e.g. `should.Equal`.
     string name = 1;
 
     // Optional type argument names. Will be used with comparison_name like
@@ -50,13 +50,13 @@ message Result {
     // `pkgname.TypeName`.
     repeated string type_arguments = 2;
   }
-  // Information about the Comparison which produced this Result.
-  Comparison comparison = 1;
+  // Information about the ComparisonFunc which produced this Failure.
+  ComparisonFunc comparison = 1;
 
   // TODO - can put filename/lineno of the assert here
   //
-  // At some point it would be good to be able to consume this Result directly,
-  // for example filing a bug for a Result, or uploading directly to ResultDB.
+  // At some point it would be good to be able to consume this Failure directly,
+  // for example filing a bug for a Failure, or uploading directly to FailureDB.
 
   message Finding {
     // The name of this finding. Some conventional values:
@@ -84,16 +84,6 @@ message Result {
     // See also `type`.
     string value = 2;
 
-    enum FindingTypeHint {
-      // Indicates that `value` is just a verbatim string and needs no special
-      // rendering.
-      FindingTypeText = 0;
-
-      // These indicate that `value` is a kind of diff and MAY be colorized by
-      // the renderer if appropriate.
-      FindingTypeUnifiedDiff = 1;
-      FindingTypeCmpDiff = 2;
-    }
     // This is a type hint for the renderer, when the renderer may like to
     // interpret `value` in some way to display it better (for example - to
     // colorize the output).
@@ -102,7 +92,7 @@ message Result {
     // to have the renderer directly compute things like diffs.
     FindingTypeHint type = 3;
   }
-  // These are some facts which are logically associated with this Result
+  // These are some facts which are logically associated with this Failure
   // (which, in turn is the outcome of a failing Comparison).
   //
   // Each finding has a 'name' and a 'value'.
@@ -116,7 +106,7 @@ message Result {
   //
   // We previously considered storing the ACTUAL values, and then having the
   // rendering process compute the diff, but:
-  //   * This is generally impossible if the Result needs to traverse a process
+  //   * This is generally impossible if the Failure needs to traverse a process
   //   boundary.
   //   * It turns out computing the diff on a Go type is tricky! See: go-cmp and
   //   protobuf comparison.
@@ -125,4 +115,20 @@ message Result {
   //   clarify what's going on and this is sufficient to fix the test, which is
   //   why we're doing all this stuff... right? :)
   repeated Finding findings = 2;
+}
+
+
+// FindingTypeHint is a type hint for the Failure.Finding.type field.
+//
+// This is declared as a top-level type to avoid ugly
+// Failure_Finding_FindingTypeXXX symbols.
+enum FindingTypeHint {
+  // Indicates that `value` is just a verbatim string and needs no special
+  // rendering.
+  Text = 0;
+
+  // These indicate that `value` is a kind of diff and MAY be colorized by
+  // the renderer if appropriate.
+  UnifiedDiff = 1;
+  CmpDiff = 2;
 }

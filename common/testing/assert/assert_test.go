@@ -16,16 +16,16 @@ package assert
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/assert/comparison"
 	"go.chromium.org/luci/common/testing/assert/interfaces"
-	"go.chromium.org/luci/common/testing/assert/results"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
-func isEmptyCmp(x string) *results.OldResult {
+func isEmptyCmp(x string) *comparison.Failure {
 	if x == "" {
 		return nil
 	}
-	return results.NewResultBuilder().SetName("string not empty").Result()
+	return comparison.NewFailureBuilder("string not empty").Failure
 }
 
 func TestCheck(t *testing.T) {
@@ -57,7 +57,7 @@ func TestCheck(t *testing.T) {
 			input: 100,
 			expect: interfaces.MockTB{
 				HelperCalls: 2,
-				LogCalls:    [][]any{{"builtin.LosslessConvertTo FAILED"}},
+				LogCalls:    [][]any{{"builtin.LosslessConvertTo[string] FAILED"}},
 				FailCalls:   1,
 			},
 			ok: false,

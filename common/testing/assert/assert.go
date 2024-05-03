@@ -116,11 +116,9 @@
 package assert
 
 import (
-	"reflect"
-
 	"go.chromium.org/luci/common/data"
+	"go.chromium.org/luci/common/testing/assert/comparison"
 	"go.chromium.org/luci/common/testing/assert/interfaces"
-	"go.chromium.org/luci/common/testing/assert/results"
 )
 
 // checkImpl allows both Check and Assert to share a single common
@@ -128,21 +126,19 @@ import (
 //
 // This will call all functions necessary in `t` EXCEPT for Fail or FailNow,
 // which the caller of this function should call directly.
-func checkImpl[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) bool {
+func checkImpl[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) bool {
 	actualTyped, ok := data.LosslessConvertTo[T](actual)
-	var result *results.OldResult
+	var failure *comparison.Failure
 	if !ok {
-		result = results.NewResultBuilder().
-			SetName("builtin.LosslessConvertTo", reflect.TypeOf(&actualTyped)).
-			Result()
+		failure = comparison.NewFailureBuilder("builtin.LosslessConvertTo", actualTyped).Failure
 	} else {
-		result = compare(actualTyped)
+		failure = compare(actualTyped)
 	}
 
-	if result != nil {
+	if failure != nil {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
 		t.Helper()
-		for _, line := range result.Render() {
+		for _, line := range comparison.RenderCLI(failure) {
 			t.Log(line)
 		}
 		return false
@@ -153,7 +149,7 @@ func checkImpl[T any](t interfaces.TestingTB, actual any, compare results.Compar
 // Assert compares `actual` using `compare`, which is typically a closure over some
 // expected value.
 //
-// If `comparison` returns a non-nil Result, this logs it and calls t.FailNow().
+// If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
 //
 // `actual` will be converted to T using the function
 // [go.chromium.org/luci/common/data.LosslessConvertTo].
@@ -163,7 +159,7 @@ func checkImpl[T any](t interfaces.TestingTB, actual any, compare results.Compar
 //
 // `testingTB` is an interface which is a subset of testing.TB, but is
 // unexported to allow this package to be cleanly .-imported.
-func Assert[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) {
+func Assert[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) {
 	if !checkImpl(t, actual, compare) {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
 		t.Helper()
@@ -174,7 +170,7 @@ func Assert[T any](t interfaces.TestingTB, actual any, compare results.Compariso
 // Check compares `actual` using `compare`, which is typically a closure over some
 // expected value.
 //
-// If `comparison` returns a non-nil Result, this logs it and calls t.Fail(),
+// If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
 //
 // `actual` will be converted to T using the function
@@ -182,7 +178,7 @@ func Assert[T any](t interfaces.TestingTB, actual any, compare results.Compariso
 //
 // `testingTB` is an interface which is a subset of testing.TB, but is
 // unexported to allow this package to be cleanly .-imported.
-func Check[T any](t interfaces.TestingTB, actual any, compare results.Comparison[T]) bool {
+func Check[T any](t interfaces.TestingTB, actual any, compare comparison.Func[T]) bool {
 	ret := checkImpl(t, actual, compare)
 	if !ret {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.

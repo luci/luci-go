@@ -12,21 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package results
+package comparison
 
-import "fmt"
-
-func addValue(result *OldResult, name string, val interface{}) {
-	result.values = append(result.values, value{
-		name:  name,
-		value: val,
-	})
-}
-
-func addValuef(result *OldResult, name string, format string, args ...interface{}) {
-	if len(args) == 0 {
-		result.values = append(result.values, value{name, verbatimString(format)})
-	} else {
-		result.values = append(result.values, value{name, verbatimString(fmt.Sprintf(format, args...))})
-	}
-}
+// Func takes in a value-to-be-compared and returns a Failure if the value
+// does not meet the expectation of this comparison.Func.
+//
+// Example:
+//
+//	func BeTrue(value bool) *Failure {
+//	  if !value { return NewFailureBuilder("should.BeTrue").(*Failure) }
+//	  return nil
+//	}
+//
+// In this example, BeTrue is a comparison.Func.
+type Func[T any] func(T) *Failure

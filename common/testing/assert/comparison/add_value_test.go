@@ -12,12 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package results
+package comparison
 
-// A verbatimString is a special string that should be rendered verbatim.
-type verbatimString string
+import (
+	"testing"
 
-// String converts a verbatimString to a string in the obvious way.
-func (s verbatimString) String() string {
-	return string(s)
+	"go.chromium.org/luci/common/testing/typed"
+)
+
+// TestAddValue tests adding a value to the values of a failure.
+func TestAddValuef(t *testing.T) {
+	t.Parallel()
+
+	failure := &Failure{}
+	AddFormattedFinding(failure, "a", "%d", 4)
+	if diff := typed.Got(failure.Findings[0]).Want(&Failure_Finding{Name: "a", Value: "4"}).Diff(); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
 }

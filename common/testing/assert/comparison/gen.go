@@ -12,19 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package results
+package comparison
 
-import (
-	"testing"
-
-	"go.chromium.org/luci/common/testing/typed"
-)
-
-// TestVerbatimString tests that stringifying a verbatim string returns the underlying string.
-func TestVerbatimString(t *testing.T) {
-	t.Parallel()
-
-	if diff := typed.Diff(verbatimString("a").String(), "a"); diff != "" {
-		t.Errorf("unexpected diff (-want +got): %s", diff)
-	}
-}
+//go:generate cproto

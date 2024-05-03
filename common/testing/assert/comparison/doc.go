@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package results contains symbols for making your own [Comparison]
+// package comparison contains symbols for making your own [Comparison]
 // implementations for use with [go.chromium.org/luci/common/testing/assert].
 //
 // Please see [go.chromium.org/luci/common/testing/assert/should] for a set of
@@ -156,4 +156,4 @@
 // != expected)" to help orient the reader about how to interpret the diff. This
 // hint works well, but occasionally a Comparison may need to set different
 // labels for these. To do this, refer to the [*OldResult.DiffHintNames] method.
-package results
+package comparison
