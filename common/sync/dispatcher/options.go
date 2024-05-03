@@ -57,15 +57,15 @@ import (
 //
 // Returns true iff the dispatcher should re-try sending this Batch, according
 // to Buffer.Retry.
-type ErrorFn func(failedBatch *buffer.Batch, err error) (retry bool)
+type ErrorFn[T any] func(failedBatch *buffer.Batch[T], err error) (retry bool)
 
 // Options is the configuration options for NewChannel.
-type Options struct {
+type Options[T any] struct {
 	// [OPTIONAL] The ErrorFn to use (see ErrorFn docs for details).
 	//
 	// Default: Logs the error (at Info for retryable errors, and Error for
 	// non-retryable errors) and returns true on a transient error.
-	ErrorFn ErrorFn
+	ErrorFn ErrorFn[T]
 
 	// [OPTIONAL] Called with the dropped batch any time the Channel drops a batch.
 	//
@@ -90,7 +90,7 @@ type Options struct {
 	//
 	// Default: logs (at Info level if FullBehavior==DropOldestBatch, or Warning
 	// level otherwise) the number of data items in the Batch being dropped.
-	DropFn func(b *buffer.Batch, flush bool)
+	DropFn func(b *buffer.Batch[T], flush bool)
 
 	// [OPTIONAL] Called exactly once when the associated Channel is closed and
 	// has fully drained its buffer, but before DrainC is closed.
@@ -150,8 +150,8 @@ type Options struct {
 	testingDbg func(string, ...any)
 }
 
-func defaultDropFnFactory(ctx context.Context, fullBehavior buffer.FullBehavior) func(*buffer.Batch, bool) {
-	return func(dropped *buffer.Batch, flush bool) {
+func defaultDropFnFactory[T any](ctx context.Context, fullBehavior buffer.FullBehavior) func(*buffer.Batch[T], bool) {
+	return func(dropped *buffer.Batch[T], flush bool) {
 		if flush {
 			return
 		}
@@ -166,8 +166,8 @@ func defaultDropFnFactory(ctx context.Context, fullBehavior buffer.FullBehavior)
 	}
 }
 
-func defaultErrorFnFactory(ctx context.Context) ErrorFn {
-	return func(failedBatch *buffer.Batch, err error) (retry bool) {
+func defaultErrorFnFactory[T any](ctx context.Context) ErrorFn[T] {
+	return func(failedBatch *buffer.Batch[T], err error) (retry bool) {
 		retry = transient.Tag.In(err)
 		logFn := logging.Errorf
 		if retry {
@@ -184,7 +184,7 @@ func defaultErrorFnFactory(ctx context.Context) ErrorFn {
 
 // ErrorFnQuiet is an implementation of Options.ErrorFn which doesn't log the
 // batch, but does check for `transient.Tag` to determine `retry`.
-func ErrorFnQuiet(b *buffer.Batch, err error) (retry bool) {
+func ErrorFnQuiet[T any](b *buffer.Batch[T], err error) (retry bool) {
 	return transient.Tag.In(err)
 }
 
@@ -194,9 +194,9 @@ func ErrorFnQuiet(b *buffer.Batch, err error) (retry bool) {
 //
 // If `inner` error function is provided, it is used to determine `retry`.
 // Otherwise, `retry` is always false.
-func ErrorFnReport(bufferSize int, inner ErrorFn) (ErrorFn, <-chan error) {
+func ErrorFnReport[T any](bufferSize int, inner ErrorFn[T]) (ErrorFn[T], <-chan error) {
 	errCh := make(chan error, bufferSize)
-	return func(b *buffer.Batch, err error) bool {
+	return func(b *buffer.Batch[T], err error) bool {
 		errCh <- err
 		if inner != nil {
 			return inner(b, err)
@@ -207,17 +207,17 @@ func ErrorFnReport(bufferSize int, inner ErrorFn) (ErrorFn, <-chan error) {
 
 // DropFnQuiet is an implementation of Options.DropFn which drops batches
 // without logging anything.
-func DropFnQuiet(*buffer.Batch, bool) {}
+func DropFnQuiet[T any](*buffer.Batch[T], bool) {}
 
 // DropFnSummarized returns an implementation of Options.DropFn which counts the
 // number of dropped batches, and only reports it at the rate provided.
 //
 // Unlike the default log function, this only logs the number of dropped items
 // and the duration that they were collected over.
-func DropFnSummarized(ctx context.Context, lim *rate.Limiter) func(*buffer.Batch, bool) {
+func DropFnSummarized[T any](ctx context.Context, lim *rate.Limiter) func(*buffer.Batch[T], bool) {
 	durationStart := clock.Now(ctx)
 	dropCount := 0
-	return func(b *buffer.Batch, flush bool) {
+	return func(b *buffer.Batch[T], flush bool) {
 		dataLen := 0
 		if b != nil {
 			dataLen = len(b.Data)

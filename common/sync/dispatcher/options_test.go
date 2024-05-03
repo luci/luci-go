@@ -28,24 +28,24 @@ import (
 )
 
 func TestOptionValidationGood(t *testing.T) {
-	fullOptions := Options{
-		ErrorFn:  func(*buffer.Batch, error) bool { return false },
-		DropFn:   DropFnQuiet,
+	fullOptions := Options[string]{
+		ErrorFn:  func(*buffer.Batch[string], error) bool { return false },
+		DropFn:   DropFnQuiet[string],
 		QPSLimit: rate.NewLimiter(rate.Inf, 0),
 		Buffer:   buffer.Defaults,
 	}
 
 	var goodOptions = []struct {
 		name     string
-		options  Options
-		expected Options
+		options  Options[string]
+		expected Options[string]
 	}{
 		{
 			name: "minimal",
-			options: Options{
+			options: Options[string]{
 				Buffer: buffer.Defaults,
 			},
-			expected: Options{
+			expected: Options[string]{
 				QPSLimit: rate.NewLimiter(rate.Inf, 0),
 				Buffer:   buffer.Defaults,
 			},
@@ -109,13 +109,13 @@ func TestOptionValidationBad(t *testing.T) {
 		ctx := context.Background()
 
 		Convey(`QPSLimit`, func() {
-			opts := Options{QPSLimit: rate.NewLimiter(100, 0), Buffer: buffer.Defaults}
+			opts := Options[string]{QPSLimit: rate.NewLimiter(100, 0), Buffer: buffer.Defaults}
 			So(opts.normalize(ctx), ShouldErrLike, "QPSLimit has burst size < 1")
 		})
 
 		Convey(`ItemSizeFunc == nil`, func() {
 			Convey(`BatchSizeMax > 0`, func() {
-				opts := Options{Buffer: buffer.Defaults}
+				opts := Options[string]{Buffer: buffer.Defaults}
 				opts.Buffer.BatchSizeMax = 1000
 				So(opts.normalize(ctx), ShouldErrLike, "Buffer.BatchSizeMax > 0")
 			})
@@ -123,13 +123,13 @@ func TestOptionValidationBad(t *testing.T) {
 
 		Convey(`MinQPS`, func() {
 			Convey(`MinQPS == rate.Inf`, func() {
-				opts := Options{
+				opts := Options[string]{
 					MinQPS: rate.Inf,
 					Buffer: buffer.Defaults}
 				So(opts.normalize(ctx), ShouldErrLike, "MinQPS cannot be infinite")
 			})
 			Convey(`MinQPS greater than QPSLimit`, func() {
-				opts := Options{
+				opts := Options[string]{
 					QPSLimit: rate.NewLimiter(100, 1),
 					MinQPS:   rate.Every(time.Millisecond),
 					Buffer:   buffer.Defaults}

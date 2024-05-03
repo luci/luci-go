@@ -178,13 +178,13 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 	}
 
 	var err error
-	ret.mergeCh, err = dispatcher.NewChannel[any](ctx, &dispatcher.Options{
+	ret.mergeCh, err = dispatcher.NewChannel[any](ctx, &dispatcher.Options[any]{
 		Buffer: buffer.Options{
 			MaxLeases:     1,
 			BatchItemsMax: 1,
 			FullBehavior:  &buffer.DropOldestBatch{},
 		},
-		DropFn:    dispatcher.DropFnQuiet,
+		DropFn:    dispatcher.DropFnQuiet[any],
 		DrainedFn: ret.finalize,
 	}, ret.sendMerge)
 	if err != nil {
@@ -283,7 +283,7 @@ func (a *Agent) snapStates() map[string]*buildStateTracker {
 	return trackers
 }
 
-func (a *Agent) sendMerge(_ *buffer.Batch) error {
+func (a *Agent) sendMerge(_ *buffer.Batch[any]) error {
 	trackers := a.snapStates()
 
 	builds := make(map[string]*bbpb.Build, len(trackers))

@@ -187,11 +187,11 @@ func newBuildsClientWithSecrets(ctx context.Context, hostname string, retryF ret
 }
 
 // options for the dispatcher.Channel
-func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
-	errorFn, errCh := dispatcher.ErrorFnReport(10, func(failedBatch *buffer.Batch, err error) bool {
+func channelOpts(ctx context.Context) (*dispatcher.Options[any], <-chan error) {
+	errorFn, errCh := dispatcher.ErrorFnReport(10, func(failedBatch *buffer.Batch[any], err error) bool {
 		return transient.Tag.In(err)
 	})
-	opts := &dispatcher.Options{
+	opts := &dispatcher.Options[any]{
 		QPSLimit: rate.NewLimiter(rate.Every(3*time.Second), 1),
 		MinQPS:   rate.Every(buildbucket.MinUpdateBuildInterval),
 		Buffer: buffer.Options{
@@ -210,14 +210,14 @@ func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
 				}
 			},
 		},
-		DropFn:  dispatcher.DropFnSummarized(ctx, rate.NewLimiter(rate.Every(10*time.Second), 1)),
+		DropFn:  dispatcher.DropFnSummarized[any](ctx, rate.NewLimiter(rate.Every(10*time.Second), 1)),
 		ErrorFn: errorFn,
 	}
 	return opts, errCh
 }
 
-func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuildCh *closeOnceCh) dispatcher.SendFn {
-	return func(b *buffer.Batch) error {
+func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuildCh *closeOnceCh) dispatcher.SendFn[any] {
+	return func(b *buffer.Batch[any]) error {
 		var req *bbpb.UpdateBuildRequest
 
 		// Nil batch. Synthesize a UpdateBuild request.

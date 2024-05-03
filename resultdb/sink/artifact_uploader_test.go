@@ -146,8 +146,8 @@ func TestArtifactUploader(t *testing.T) {
 			ut.size = 5 * 1024 * 1024
 			So(err, ShouldBeNil)
 
-			b := &buffer.Batch{
-				Data: []buffer.BatchItem{{Item: ut}},
+			b := &buffer.Batch[*uploadTask]{
+				Data: []buffer.BatchItem[*uploadTask]{{Item: ut}},
 			}
 
 			So(uploader.BatchUpload(ctx, b), ShouldBeNil)
@@ -167,8 +167,8 @@ func TestArtifactUploader(t *testing.T) {
 				ut.size = 15 * 1024 * 1024
 				So(err, ShouldBeNil)
 
-				b := &buffer.Batch{
-					Data: []buffer.BatchItem{{Item: ut}},
+				b := &buffer.Batch[*uploadTask]{
+					Data: []buffer.BatchItem[*uploadTask]{{Item: ut}},
 				}
 
 				So(uploader.BatchUpload(ctx, b), ShouldErrLike, "an artifact is greater than")
@@ -197,8 +197,8 @@ func TestArtifactUploader(t *testing.T) {
 				ut3.size = 5 * 1024 * 1024
 				So(err, ShouldBeNil)
 
-				b := &buffer.Batch{
-					Data: []buffer.BatchItem{{Item: ut1}, {Item: ut2}, {Item: ut3}},
+				b := &buffer.Batch[*uploadTask]{
+					Data: []buffer.BatchItem[*uploadTask]{{Item: ut1}, {Item: ut2}, {Item: ut3}},
 				}
 
 				So(uploader.BatchUpload(ctx, b), ShouldBeNil)

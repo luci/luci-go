@@ -139,7 +139,7 @@ type artifactChannel struct {
 	// The downside of this channel is that there is a limit on the maximum size of
 	// an artifact that can be included in a batch. Use streamChannel for artifacts
 	// greater than ServerConfig.MaxBatchableArtifactSize.
-	batchChannel dispatcher.Channel[any]
+	batchChannel dispatcher.Channel[*uploadTask]
 
 	// streamChannel uploads artifacts in a streaming manner via HTTP.
 	//
@@ -172,7 +172,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	}
 
 	// batchChannel
-	bcOpts := &dispatcher.Options{
+	bcOpts := &dispatcher.Options[*uploadTask]{
 		Buffer: buffer.Options{
 			// BatchCreateArtifactRequest can include up to 500 requests and at most 10MiB
 			// of artifact contents. uploadTaskSlicer slices tasks, as the number of size
@@ -192,7 +192,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.batchChannel, err = dispatcher.NewChannel[any](ctx, bcOpts, func(b *buffer.Batch) error {
+	c.batchChannel, err = dispatcher.NewChannel[*uploadTask](ctx, bcOpts, func(b *buffer.Batch[*uploadTask]) error {
 		return errors.Annotate(au.BatchUpload(ctx, b), "BatchUpload").Err()
 	})
 	if err != nil {
@@ -200,7 +200,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	}
 
 	// streamChannel
-	stOpts := &dispatcher.Options{
+	stOpts := &dispatcher.Options[any]{
 		Buffer: buffer.Options{
 			// BatchItemsMax MUST be 1.
 			BatchItemsMax: 1,
@@ -208,7 +208,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 4000},
 		},
 	}
-	c.streamChannel, err = dispatcher.NewChannel[any](ctx, stOpts, func(b *buffer.Batch) error {
+	c.streamChannel, err = dispatcher.NewChannel[any](ctx, stOpts, func(b *buffer.Batch[any]) error {
 		return errors.Annotate(
 			au.StreamUpload(ctx, b.Data[0].Item.(*uploadTask), cfg.UpdateToken),
 			"StreamUpload").Err()

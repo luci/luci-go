@@ -25,7 +25,7 @@ import (
 
 func TestBatchHeap(t *testing.T) {
 	Convey(`batchHeap`, t, func() {
-		h := batchHeap{}
+		h := batchHeap[any]{}
 
 		Convey(`ordering`, func() {
 			checkSorted := func() {
@@ -37,26 +37,26 @@ func TestBatchHeap(t *testing.T) {
 
 			Convey(`id`, func() {
 				h.data = append(h.data,
-					&Batch{id: 0},
-					&Batch{id: 1})
+					&Batch[any]{id: 0},
+					&Batch[any]{id: 1})
 				checkSorted()
 			})
 
 			Convey(`nextSend`, func() {
 				now := time.Now()
 				h.data = append(h.data,
-					&Batch{nextSend: now},
-					&Batch{nextSend: now.Add(time.Second)})
+					&Batch[any]{nextSend: now},
+					&Batch[any]{nextSend: now.Add(time.Second)})
 				checkSorted()
 			})
 
 			Convey(`(nextSend, id)`, func() {
 				now := time.Now().UTC()
 				h.data = append(h.data,
-					&Batch{nextSend: now, id: 0},
-					&Batch{nextSend: now.Add(time.Second), id: 0},
-					&Batch{nextSend: now.Add(time.Second), id: 1},
-					&Batch{nextSend: now.Add(2 * time.Second), id: 0},
+					&Batch[any]{nextSend: now, id: 0},
+					&Batch[any]{nextSend: now.Add(time.Second), id: 0},
+					&Batch[any]{nextSend: now.Add(time.Second), id: 1},
+					&Batch[any]{nextSend: now.Add(2 * time.Second), id: 0},
 				)
 				checkSorted()
 			})
@@ -64,31 +64,31 @@ func TestBatchHeap(t *testing.T) {
 			Convey(`test push-pop yields sorted`, func() {
 				now := time.Now().UTC()
 				for i := uint64(0); i < 20; i++ {
-					h.data = append(h.data, &Batch{nextSend: now, id: i})
+					h.data = append(h.data, &Batch[any]{nextSend: now, id: i})
 				}
-				shuffled := batchHeap{data: make([]*Batch, h.Len())}
+				shuffled := batchHeap[any]{data: make([]*Batch[any], h.Len())}
 				copy(shuffled.data, h.data)
 				rand.Shuffle(shuffled.Len(), shuffled.Swap)
 				So(shuffled, ShouldNotResemble, h)
 
 				heap.Init(&shuffled)
-				sorted := make([]*Batch, 0, shuffled.Len())
+				sorted := make([]*Batch[any], 0, shuffled.Len())
 				for shuffled.Len() > 0 {
-					sorted = append(sorted, heap.Pop(&shuffled).(*Batch))
+					sorted = append(sorted, heap.Pop(&shuffled).(*Batch[any]))
 				}
 				So(sorted, ShouldResemble, h.data)
 			})
 
 			Convey(`batch dropping`, func() {
-				h.PushBatch(&Batch{id: 10})
-				h.PushBatch(&Batch{id: 20})
+				h.PushBatch(&Batch[any]{id: 10})
+				h.PushBatch(&Batch[any]{id: 20})
 
 				Convey(`drops an old batch`, func() {
 					oldest, idx := h.Oldest()
 					So(oldest.id, ShouldEqual, 10)
 					So(idx, ShouldEqual, 0)
 					h.RemoveAt(idx)
-					So(h.PopBatch(), ShouldResemble, &Batch{id: 20})
+					So(h.PopBatch(), ShouldResemble, &Batch[any]{id: 20})
 					So(h.data, ShouldBeEmpty)
 				})
 

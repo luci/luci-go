@@ -26,8 +26,8 @@ import (
 // the buffer. This will not be modified by Buffer, but can be adjusted
 // by your application while handling a Batch if your handler needs to trim
 // this somehow.
-type BatchItem struct {
-	Item any
+type BatchItem[T any] struct {
+	Item T
 	Size int
 }
 
@@ -55,10 +55,10 @@ type BatchItem struct {
 // amount (by removing items, or potentially reducing the Size in a BatchItem)
 // will reduce the effective Size of this Batch, but adding to Data cannot
 // increase the Size of the batch.
-type Batch struct {
+type Batch[T any] struct {
 	// Data is the work items pushed into the Buffer, plus their Size as provided
 	// to AddNoBlock.
-	Data []BatchItem
+	Data []BatchItem[T]
 
 	// Meta is an object which dispatcher.Channel will treat as totally opaque;
 	// You may manipulate it in SendFn or ErrorFn as you see fit. This can be used
@@ -93,7 +93,7 @@ type Batch struct {
 	countedSize int
 }
 
-func (b *Batch) canAccept(o *Options, itemSize int) bool {
+func (b *Batch[T]) canAccept(o *Options, itemSize int) bool {
 	switch {
 	case b == nil:
 		return false
@@ -103,4 +103,12 @@ func (b *Batch) canAccept(o *Options, itemSize int) bool {
 		return false
 	}
 	return true
+}
+
+func (b *Batch[T]) getCountedItems() int {
+	return b.countedItems
+}
+
+func (b *Batch[T]) getCountedSize() int {
+	return b.countedSize
 }

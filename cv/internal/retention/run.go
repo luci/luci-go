@@ -56,15 +56,15 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 	}
 
 	cutoff := clock.Now(ctx).Add(-retentionPeriod).UTC()
-	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options{
-		DropFn: dispatcher.DropFnQuiet,
+	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options[any]{
+		DropFn: dispatcher.DropFnQuiet[any],
 		Buffer: buffer.Options{
 			MaxLeases:     10,
 			BatchItemsMax: runsPerTask,
 			FullBehavior:  &buffer.InfiniteGrowth{},
 			Retry:         retry.Default,
 		},
-	}, func(b *buffer.Batch) error {
+	}, func(b *buffer.Batch[any]) error {
 		runIDStrs := make(sort.StringSlice, len(b.Data))
 		for i, item := range b.Data {
 			runIDStrs[i] = string(item.Item.(common.RunID))

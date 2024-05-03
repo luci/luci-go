@@ -25,7 +25,7 @@ import (
 
 // normalize validates that Options is well formed and populates defaults which
 // are missing.
-func (o *Options) normalize(ctx context.Context) error {
+func (o *Options[T]) normalize(ctx context.Context) error {
 	if o.ItemSizeFunc == nil {
 		if o.Buffer.BatchSizeMax > 0 {
 			return errors.New("Buffer.BatchSizeMax > 0 but ItemSizerFunc == nil")
@@ -33,10 +33,10 @@ func (o *Options) normalize(ctx context.Context) error {
 	}
 
 	if o.ErrorFn == nil {
-		o.ErrorFn = defaultErrorFnFactory(ctx)
+		o.ErrorFn = defaultErrorFnFactory[T](ctx)
 	}
 	if o.DropFn == nil {
-		o.DropFn = defaultDropFnFactory(ctx, o.Buffer.FullBehavior)
+		o.DropFn = defaultDropFnFactory[T](ctx, o.Buffer.FullBehavior)
 	}
 
 	if o.QPSLimit == nil {

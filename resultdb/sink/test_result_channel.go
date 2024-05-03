@@ -54,7 +54,7 @@ type testResultChannel struct {
 func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultChannel {
 	var err error
 	c := &testResultChannel{cfg: cfg}
-	opts := &dispatcher.Options{
+	opts := &dispatcher.Options[any]{
 		Buffer: buffer.Options{
 			// BatchRequest can include up to 500 requests. KEEP BatchItemsMax <= 500
 			// to keep report() simple. For more details, visit
@@ -65,7 +65,7 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.ch, err = dispatcher.NewChannel[any](ctx, opts, func(b *buffer.Batch) error {
+	c.ch, err = dispatcher.NewChannel[any](ctx, opts, func(b *buffer.Batch[any]) error {
 		return c.report(ctx, b)
 	})
 	if err != nil {
@@ -166,7 +166,7 @@ func (c *testResultChannel) setLocationSpecificFields(tr *sinkpb.TestResult) {
 	}
 }
 
-func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
+func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch[any]) error {
 	// retried batch?
 	if b.Meta == nil {
 		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))

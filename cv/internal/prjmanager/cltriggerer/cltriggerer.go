@@ -94,12 +94,12 @@ func (tr *Triggerer) Schedule(ctx context.Context, t *prjpb.TriggeringCLDepsTask
 func (tr *Triggerer) makeDispatcherChannel(ctx context.Context, task *prjpb.TriggeringCLDepsTask) dispatcher.Channel[any] {
 	concurrency := min(len(task.GetTriggeringClDeps().GetDepClids()), maxConcurrency)
 	prj := task.GetLuciProject()
-	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options{
-		ErrorFn: func(failedBatch *buffer.Batch, err error) (retry bool) {
+	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options[any]{
+		ErrorFn: func(failedBatch *buffer.Batch[any], err error) (retry bool) {
 			_, isLeaseErr := lease.IsAlreadyInLeaseErr(err)
 			return isLeaseErr || transient.Tag.In(err)
 		},
-		DropFn: dispatcher.DropFnQuiet,
+		DropFn: dispatcher.DropFnQuiet[any],
 		Buffer: buffer.Options{
 			MaxLeases:     concurrency,
 			BatchItemsMax: 1,
@@ -108,7 +108,7 @@ func (tr *Triggerer) makeDispatcherChannel(ctx context.Context, task *prjpb.Trig
 			},
 			Retry: makeRetryFactory(),
 		},
-	}, func(data *buffer.Batch) error {
+	}, func(data *buffer.Batch[any]) error {
 		op, ok := data.Data[0].Item.(*triggerDepOp)
 		if !ok {
 			panic(fmt.Errorf("unexpected batch data item type %T", data.Data[0].Item))

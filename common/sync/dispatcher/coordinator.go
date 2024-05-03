@@ -24,13 +24,13 @@ import (
 )
 
 type coordinatorState[T any] struct {
-	opts Options
-	buf  *buffer.Buffer
+	opts Options[T]
+	buf  *buffer.Buffer[T]
 
 	itemCh  <-chan T
 	drainCh chan<- struct{}
 
-	resultCh chan workerResult
+	resultCh chan workerResult[T]
 
 	// Used as a wake-up timer for the coordinator to wake itself up when the
 	// buffer will have a batch available due to buffer timeout and/or qps limiter.
@@ -43,8 +43,8 @@ type coordinatorState[T any] struct {
 	canceled bool
 }
 
-type workerResult struct {
-	batch *buffer.Batch
+type workerResult[T any] struct {
+	batch *buffer.Batch[T]
 	err   error
 }
 
@@ -68,7 +68,7 @@ func (state *coordinatorState[T]) dbg(msg string, args ...any) {
 //
 //	batches, while sendBatches should only try to send a nil batch if it doesn't
 //	have any batch to send.
-func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLastSend time.Time, send SendFn) (lastSend time.Time, delay time.Duration) {
+func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLastSend time.Time, send SendFn[T]) (lastSend time.Time, delay time.Duration) {
 	lastSend = prevLastSend
 	if state.canceled {
 		for _, batch := range state.buf.ForceLeaseAll() {
@@ -100,7 +100,7 @@ func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLast
 			state.dbg("  >sending batch")
 			lastSend = now
 			go func() {
-				state.resultCh <- workerResult{
+				state.resultCh <- workerResult[T]{
 					batch: batchToSend,
 					err:   send(batchToSend),
 				}
@@ -122,7 +122,7 @@ func (state *coordinatorState[T]) sendBatches(ctx context.Context, now, prevLast
 				state.dbg("  >sending nil batch")
 				lastSend = now
 				go func() {
-					state.resultCh <- workerResult{
+					state.resultCh <- workerResult[T]{
 						batch: nil,
 						err:   send(nil),
 					}
@@ -200,7 +200,7 @@ func (state *coordinatorState[T]) getWorkChannel() <-chan T {
 // coordinator from a worker.
 //
 // This will ACK/NACK the Batch (once).
-func (state *coordinatorState[T]) handleResult(ctx context.Context, result workerResult) {
+func (state *coordinatorState[T]) handleResult(ctx context.Context, result workerResult[T]) {
 	state.dbg("  GOT RESULT")
 
 	if result.err == nil {
@@ -233,7 +233,7 @@ func (state *coordinatorState[T]) handleResult(ctx context.Context, result worke
 // Exactly one coordinator() function runs per Channel. This coordinates (!!)
 // all of the internal channels of the external Channel object in one big select
 // loop.
-func (state *coordinatorState[T]) run(ctx context.Context, send SendFn) {
+func (state *coordinatorState[T]) run(ctx context.Context, send SendFn[T]) {
 	defer close(state.drainCh)
 	if state.opts.DrainedFn != nil {
 		defer state.opts.DrainedFn()
@@ -294,8 +294,8 @@ loop:
 			state.dbg("  GOT NEW DATA")
 			if state.canceled {
 				state.dbg("    dropped item (canceled)")
-				state.opts.DropFn(&buffer.Batch{
-					Data: []buffer.BatchItem{{Item: itm, Size: itemSize}},
+				state.opts.DropFn(&buffer.Batch[T]{
+					Data: []buffer.BatchItem[T]{{Item: itm, Size: itemSize}},
 				}, false)
 				continue
 			}
@@ -313,8 +313,8 @@ loop:
 				panic(errors.Annotate(err, "unaccounted error from AddNoBlock").Err())
 			}
 			if err != nil {
-				state.opts.ErrorFn(&buffer.Batch{
-					Data: []buffer.BatchItem{{Item: itm, Size: itemSize}},
+				state.opts.ErrorFn(&buffer.Batch[T]{
+					Data: []buffer.BatchItem[T]{{Item: itm, Size: itemSize}},
 				}, err)
 				continue
 			}

@@ -91,19 +91,29 @@ func (s *Stats) addOneUnleased(siz int) {
 	*sizeUnits += siz
 }
 
-func (s *Stats) add(b *Batch, to category) {
-	count, sizeUnits := s.getCategoryVars(to)
-	*count += b.countedItems
-	*sizeUnits += b.countedSize
+// batchStates is an interface over batch that exposes only the following
+// methods, which do not depend on the parameter T for a Batch[T].
+//
+// - getCountedItems()
+// - getCountedSize()
+type batchStats interface {
+	getCountedItems() int
+	getCountedSize() int
 }
 
-func (s *Stats) del(b *Batch, to category) {
+func (s *Stats) add(b batchStats, to category) {
 	count, sizeUnits := s.getCategoryVars(to)
-	*count -= b.countedItems
-	*sizeUnits -= b.countedSize
+	*count += b.getCountedItems()
+	*sizeUnits += b.getCountedSize()
 }
 
-func (s *Stats) mv(b *Batch, from, to category) {
+func (s *Stats) del(b batchStats, to category) {
+	count, sizeUnits := s.getCategoryVars(to)
+	*count -= b.getCountedItems()
+	*sizeUnits -= b.getCountedSize()
+}
+
+func (s *Stats) mv(b batchStats, from, to category) {
 	s.del(b, from)
 	s.add(b, to)
 }

@@ -58,7 +58,7 @@ var (
 		}
 	}
 
-	ackChannelOptions = &dispatcher.Options{
+	ackChannelOptions = &dispatcher.Options[any]{
 		Buffer: buffer.Options{
 			MaxLeases:     10,
 			BatchItemsMax: 500,
@@ -79,8 +79,8 @@ var (
 		},
 	}
 
-	mkJobChannelOptions = func(maxWorkers int) *dispatcher.Options {
-		return &dispatcher.Options{
+	mkJobChannelOptions = func(maxWorkers int) *dispatcher.Options[any] {
+		return &dispatcher.Options[any]{
 			Buffer: buffer.Options{
 				MaxLeases:     maxWorkers,
 				BatchItemsMax: 1,
@@ -134,7 +134,7 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 		task     *logdog.ArchiveTask
 	}
 
-	ackChan, err := dispatcher.NewChannel[any](ctx, ackChannelOptions, func(batch *buffer.Batch) error {
+	ackChan, err := dispatcher.NewChannel[any](ctx, ackChannelOptions, func(batch *buffer.Batch[any]) error {
 		var req *logdog.DeleteRequest
 		if batch.Meta != nil {
 			req = batch.Meta.(*logdog.DeleteRequest)
@@ -163,7 +163,7 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 	}()
 
 	jobChanOpts := mkJobChannelOptions(flags.MaxConcurrentTasks)
-	jobChan, err := dispatcher.NewChannel[any](ctx, jobChanOpts, func(data *buffer.Batch) error {
+	jobChan, err := dispatcher.NewChannel[any](ctx, jobChanOpts, func(data *buffer.Batch[any]) error {
 		job := data.Data[0].Item.(*archiveJob)
 
 		nc, cancel := context.WithDeadline(ctx, job.deadline)

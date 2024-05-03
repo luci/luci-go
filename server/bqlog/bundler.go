@@ -298,14 +298,14 @@ func (b *logBuffer) start(ctx context.Context, tableID string, sender *logSender
 	b.tableID = tableID
 	b.sender = sender
 
-	opts := dispatcher.Options{
+	opts := dispatcher.Options[any]{
 		ItemSizeFunc: func(itm any) int { return len(itm.([]byte)) },
-		DropFn: func(data *buffer.Batch, flush bool) {
+		DropFn: func(data *buffer.Batch[any], flush bool) {
 			if data != nil {
 				recordDrop(ctx, b.tableID, len(data.Data), nil, "DISPATCHER")
 			}
 		},
-		ErrorFn: func(data *buffer.Batch, err error) (retry bool) {
+		ErrorFn: func(data *buffer.Batch[any], err error) (retry bool) {
 			recordErr(ctx, b.tableID, len(data.Data), err)
 			return transient.Tag.In(err)
 		},
@@ -363,7 +363,7 @@ type logSender struct {
 	stream storagepb.BigQueryWrite_AppendRowsClient
 }
 
-func (s *logSender) send(data *buffer.Batch) (rerr error) {
+func (s *logSender) send(data *buffer.Batch[any]) (rerr error) {
 	// There allowed only one concurrent Send or CloseSend per a gRPC stream.
 	s.m.Lock()
 	defer s.m.Unlock()

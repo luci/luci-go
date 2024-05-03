@@ -223,13 +223,13 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 		ret.finalize()
 		ret.Close()
 	} else {
-		ret.work, err = dispatcher.NewChannel[any](ctx, &dispatcher.Options{
+		ret.work, err = dispatcher.NewChannel[any](ctx, &dispatcher.Options[any]{
 			Buffer: buffer.Options{
 				MaxLeases:     1,
 				BatchItemsMax: 1,
 				FullBehavior:  &buffer.DropOldestBatch{},
 			},
-			DropFn:    dispatcher.DropFnQuiet,
+			DropFn:    dispatcher.DropFnQuiet[any],
 			DrainedFn: ret.finalize,
 		}, ret.parseAndSend)
 		if err != nil {
@@ -281,7 +281,7 @@ func (t *buildStateTracker) finalize() {
 	t.merger.informNewData()
 }
 
-func (t *buildStateTracker) parseAndSend(data *buffer.Batch) error {
+func (t *buildStateTracker) parseAndSend(data *buffer.Batch[any]) error {
 	t.latestStateMu.Lock()
 	state := *t.latestState
 	t.latestStateMu.Unlock()

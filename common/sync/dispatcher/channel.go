@@ -77,7 +77,7 @@ func (c Channel[T]) IsDrained() bool {
 // bound to a derived Context.
 //
 // Non-nil errors returned by this function will be handled by ErrorFn.
-type SendFn func(data *buffer.Batch) error
+type SendFn[T any] func(data *buffer.Batch[T]) error
 
 // NewChannel produces a new Channel ready to listen and send work items.
 //
@@ -104,17 +104,17 @@ type SendFn func(data *buffer.Batch) error
 // of NewChannel is effectively the sender (owner) of Channel.C, they must
 // coordinate closure of this channel with all their use of sends to this
 // channel.
-func NewChannel[T any](ctx context.Context, opts *Options, send SendFn) (Channel[T], error) {
+func NewChannel[T any](ctx context.Context, opts *Options[T], send SendFn[T]) (Channel[T], error) {
 	if send == nil {
 		return Channel[T]{}, errors.New("send is required: got nil")
 	}
 
-	var optsCopy Options
+	var optsCopy Options[T]
 	if opts != nil {
 		optsCopy = *opts
 	}
 
-	buf, err := buffer.NewBuffer(&optsCopy.Buffer)
+	buf, err := buffer.NewBuffer[T](&optsCopy.Buffer)
 	if err != nil {
 		return Channel[T]{}, errors.Annotate(err, "allocating Buffer").Err()
 	}
@@ -132,7 +132,7 @@ func NewChannel[T any](ctx context.Context, opts *Options, send SendFn) (Channel
 		itemCh:  itemCh,
 		drainCh: drainCh,
 
-		resultCh: make(chan workerResult),
+		resultCh: make(chan workerResult[T]),
 
 		timer: clock.NewTimer(clock.Tag(ctx, "coordinator")),
 	}

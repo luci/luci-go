@@ -573,7 +573,7 @@ func (t *Test) startTQSweeping(ctx context.Context) (deferme func()) {
 	var err error
 	t.tqSweepChannel, err = dispatcher.NewChannel[any](
 		ctx,
-		&dispatcher.Options{
+		&dispatcher.Options[any]{
 			Buffer: buffer.Options{
 				BatchItemsMax: 1, // incoming event => sweep ASAP.
 				MaxLeases:     1, // at most 1 sweep concurrently
@@ -585,7 +585,7 @@ func (t *Test) startTQSweeping(ctx context.Context) (deferme func()) {
 				Retry: retry.None,
 			},
 		},
-		func(*buffer.Batch) error { return t.TQDispatcher.Sweep(ctx) },
+		func(*buffer.Batch[any]) error { return t.TQDispatcher.Sweep(ctx) },
 	)
 	if err != nil {
 		panic(err)

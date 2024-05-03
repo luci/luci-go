@@ -74,7 +74,7 @@ func OptLogsink(c *streamclient.Client) StartOption {
 func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 	return func(s *State) {
 		var err error
-		s.sendCh, err = dispatcher.NewChannel[any](s.ctx, &dispatcher.Options{
+		s.sendCh, err = dispatcher.NewChannel[any](s.ctx, &dispatcher.Options[any]{
 			QPSLimit: rate.NewLimiter(lim, 1),
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -83,7 +83,7 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 					MaxLiveItems: 1,
 				},
 			},
-		}, func(batch *buffer.Batch) error {
+		}, func(batch *buffer.Batch[any]) error {
 			buildPb, vers := func() (*bbpb.Build, int64) {
 				s.buildPbMu.Lock()
 				defer s.buildPbMu.Unlock()

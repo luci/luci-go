@@ -37,9 +37,9 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func dummySendFn(*buffer.Batch) error { return nil }
+func dummySendFn[T any](*buffer.Batch[T]) error { return nil }
 
-func noDrop(dropped *buffer.Batch, flush bool) {
+func noDrop[T any](dropped *buffer.Batch[T], flush bool) {
 	if flush {
 		return
 	}
@@ -64,7 +64,7 @@ func TestChannelConstruction(t *testing.T) {
 		Convey(`construction`, func() {
 
 			Convey(`success`, func() {
-				ch, err := NewChannel[any](ctx, &Options{testingDbg: dbg}, dummySendFn)
+				ch, err := NewChannel[string](ctx, &Options[string]{testingDbg: dbg}, dummySendFn)
 				So(err, ShouldBeNil)
 				ch.Close()
 				<-ch.DrainC
@@ -72,19 +72,19 @@ func TestChannelConstruction(t *testing.T) {
 
 			Convey(`failure`, func() {
 				Convey(`bad SendFn`, func() {
-					_, err := NewChannel[any](ctx, nil, nil)
+					_, err := NewChannel[string](ctx, nil, nil)
 					So(err, ShouldErrLike, "send is required")
 				})
 
 				Convey(`bad Options`, func() {
-					_, err := NewChannel[any](ctx, &Options{
+					_, err := NewChannel[string](ctx, &Options[string]{
 						QPSLimit: rate.NewLimiter(100, 0),
 					}, dummySendFn)
 					So(err, ShouldErrLike, "normalizing dispatcher.Options")
 				})
 
 				Convey(`bad Options.Buffer`, func() {
-					_, err := NewChannel[any](ctx, &Options{
+					_, err := NewChannel[string](ctx, &Options[string]{
 						Buffer: buffer.Options{
 							BatchItemsMax: -3,
 						},
@@ -107,8 +107,8 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 		sentBatches := []string{}
 		enableThisError := false
 
-		ch, err := NewChannel[any](ctx, &Options{
-			DropFn:   noDrop,
+		ch, err := NewChannel[string](ctx, &Options[string]{
+			DropFn:   noDrop[string],
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -116,9 +116,9 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 				FullBehavior:  &buffer.BlockNewItems{MaxItems: 10},
 			},
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
+		}, func(batch *buffer.Batch[string]) (err error) {
 			cvctx.So(batch.Data, ShouldHaveLength, 1)
-			str := batch.Data[0].Item.(string)
+			str := batch.Data[0].Item
 			if enableThisError && str == "This" {
 				enableThisError = false
 				return errors.New("narp", transient.Tag)
@@ -177,9 +177,9 @@ func TestContextShutdown(t *testing.T) {
 		sentBatches := []string{}
 		droppedBatches := []string{}
 
-		ch, err := NewChannel[any](cctx, &Options{
+		ch, err := NewChannel[any](cctx, &Options[any]{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
-			DropFn: func(dropped *buffer.Batch, flush bool) {
+			DropFn: func(dropped *buffer.Batch[any], flush bool) {
 				if flush {
 					return
 				}
@@ -191,7 +191,7 @@ func TestContextShutdown(t *testing.T) {
 				FullBehavior:  &buffer.BlockNewItems{MaxItems: 2},
 			},
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
+		}, func(batch *buffer.Batch[any]) (err error) {
 			sentBatches = append(sentBatches, batch.Data[0].Item.(string))
 			<-cctx.Done()
 			return
@@ -225,17 +225,17 @@ func TestQPSLimit(t *testing.T) {
 
 		sentBatches := []int{}
 
-		ch, err := NewChannel[any](ctx, &Options{
+		ch, err := NewChannel[int](ctx, &Options[int]{
 			QPSLimit: rate.NewLimiter(rate.Every(10*time.Millisecond), 1),
-			DropFn:   noDrop,
+			DropFn:   noDrop[int],
 			Buffer: buffer.Options{
 				MaxLeases:     1,
 				BatchItemsMax: 1,
 				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 			},
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
-			sentBatches = append(sentBatches, batch.Data[0].Item.(int))
+		}, func(batch *buffer.Batch[int]) (err error) {
+			sentBatches = append(sentBatches, batch.Data[0].Item)
 			return
 		})
 		So(err, ShouldBeNil)
@@ -266,18 +266,18 @@ func TestQPSLimitParallel(t *testing.T) {
 		var lock sync.Mutex
 		sentBatches := []int{}
 
-		ch, err := NewChannel[any](ctx, &Options{
+		ch, err := NewChannel[int](ctx, &Options[int]{
 			QPSLimit: rate.NewLimiter(rate.Every(10*time.Millisecond), 10),
-			DropFn:   noDrop,
+			DropFn:   noDrop[int],
 			Buffer: buffer.Options{
 				MaxLeases:     4,
 				BatchItemsMax: 1,
 				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 			},
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
+		}, func(batch *buffer.Batch[int]) (err error) {
 			lock.Lock()
-			sentBatches = append(sentBatches, batch.Data[0].Item.(int))
+			sentBatches = append(sentBatches, batch.Data[0].Item)
 			lock.Unlock()
 			return
 		})
@@ -308,15 +308,15 @@ func TestExplicitDrops(t *testing.T) {
 		sentBatches := []int{}
 		droppedBatches := []int{}
 
-		ch, err := NewChannel[any](ctx, &Options{
+		ch, err := NewChannel[int](ctx, &Options[int]{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
-			DropFn: func(batch *buffer.Batch, flush bool) {
+			DropFn: func(batch *buffer.Batch[int], flush bool) {
 				if flush {
 					return
 				}
-				droppedBatches = append(droppedBatches, batch.Data[0].Item.(int))
+				droppedBatches = append(droppedBatches, batch.Data[0].Item)
 			},
-			ErrorFn: func(batch *buffer.Batch, err error) (retry bool) {
+			ErrorFn: func(batch *buffer.Batch[int], err error) (retry bool) {
 				return false
 			},
 			Buffer: buffer.Options{
@@ -325,8 +325,8 @@ func TestExplicitDrops(t *testing.T) {
 				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 			},
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
-			itm := batch.Data[0].Item.(int)
+		}, func(batch *buffer.Batch[int]) (err error) {
+			itm := batch.Data[0].Item
 			if itm%2 == 0 {
 				err = errors.New("number is even")
 			} else {
@@ -355,7 +355,7 @@ func TestImplicitDrops(t *testing.T) {
 		sendBlocker := make(chan struct{})
 
 		limiter := rate.NewLimiter(rate.Every(100*time.Millisecond), 1)
-		ch, err := NewChannel[any](ctx, &Options{
+		ch, err := NewChannel[int](ctx, &Options[int]{
 			QPSLimit: limiter,
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -363,8 +363,8 @@ func TestImplicitDrops(t *testing.T) {
 				FullBehavior:  &buffer.DropOldestBatch{MaxLiveItems: 1},
 			},
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
-			sentBatches = append(sentBatches, batch.Data[0].Item.(int))
+		}, func(batch *buffer.Batch[int]) (err error) {
+			sentBatches = append(sentBatches, batch.Data[0].Item)
 			<-sendBlocker
 			return
 		})
@@ -397,7 +397,7 @@ func TestContextCancel(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		ch, err := NewChannel[any](ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options[any]{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			Buffer: buffer.Options{
 				MaxLeases:     1,
@@ -405,7 +405,7 @@ func TestContextCancel(t *testing.T) {
 				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 			},
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
+		}, func(batch *buffer.Batch[any]) (err error) {
 			// doesn't matter :)
 			return
 		})
@@ -442,10 +442,10 @@ func TestDrainedFn(t *testing.T) {
 
 		amDrained := false
 
-		ch, err := NewChannel[any](ctx, &Options{
+		ch, err := NewChannel[any](ctx, &Options[any]{
 			DrainedFn:  func() { amDrained = true },
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
+		}, func(batch *buffer.Batch[any]) (err error) {
 			// doesn't matter :)
 			return
 		})
@@ -477,7 +477,7 @@ func TestCloseDeadlockRegression(t *testing.T) {
 			inSendFn := make(chan struct{})
 			holdSendFn := make(chan struct{})
 
-			ch, err := NewChannel[any](ctx, &Options{
+			ch, err := NewChannel[any](ctx, &Options[any]{
 				testingDbg: dbg,
 				Buffer: buffer.Options{
 					MaxLeases:     1,
@@ -487,7 +487,7 @@ func TestCloseDeadlockRegression(t *testing.T) {
 					},
 				},
 				QPSLimit: rate.NewLimiter(rate.Inf, 1),
-			}, func(batch *buffer.Batch) (err error) {
+			}, func(batch *buffer.Batch[any]) (err error) {
 				inSendFn <- struct{}{}
 				<-holdSendFn
 				return
@@ -531,8 +531,8 @@ func TestCorrectTimerUsage(t *testing.T) {
 		mu := sync.Mutex{}
 		sent := []int{}
 
-		ch, err := NewChannel[any](ctx, &Options{
-			DropFn: noDrop,
+		ch, err := NewChannel[int](ctx, &Options[int]{
+			DropFn: noDrop[int],
 			Buffer: buffer.Options{
 				MaxLeases:     10,
 				BatchItemsMax: 3,
@@ -540,7 +540,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 				FullBehavior:  &buffer.BlockNewItems{MaxItems: 15},
 			},
 			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
+		}, func(batch *buffer.Batch[int]) (err error) {
 			// Add randomish delays.
 			timer := clock.NewTimer(clock.Tag(ctx, "test-itself"))
 			timer.Reset(time.Millisecond)
@@ -548,7 +548,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 
 			mu.Lock()
 			for i := range batch.Data {
-				sent = append(sent, batch.Data[i].Item.(int))
+				sent = append(sent, batch.Data[i].Item)
 			}
 			mu.Unlock()
 			return nil
@@ -592,15 +592,15 @@ func TestSizeBasedChannel(t *testing.T) {
 			}
 		}()
 		var out []string
-		var fails []*buffer.Batch
+		var fails []*buffer.Batch[string]
 		var errs []error
 
-		opts := &Options{
+		opts := &Options[string]{
 			testingDbg: dbg,
 			ItemSizeFunc: func(itm any) int {
 				return len(itm.(string))
 			},
-			ErrorFn: func(failedBatch *buffer.Batch, err error) (retry bool) {
+			ErrorFn: func(failedBatch *buffer.Batch[string], err error) (retry bool) {
 				fails = append(fails, failedBatch)
 				errs = append(errs, err)
 				return false
@@ -614,11 +614,11 @@ func TestSizeBasedChannel(t *testing.T) {
 			QPSLimit: rate.NewLimiter(rate.Inf, 1),
 		}
 
-		ch, err := NewChannel[any](ctx, opts, func(batch *buffer.Batch) (err error) {
+		ch, err := NewChannel[string](ctx, opts, func(batch *buffer.Batch[string]) (err error) {
 			mu.Lock()
 			defer mu.Unlock()
 			for _, itm := range batch.Data {
-				out = append(out, itm.Item.(string))
+				out = append(out, itm.Item)
 			}
 			return nil
 		})
@@ -680,16 +680,16 @@ func TestMinQPS(t *testing.T) {
 
 			numNilBatches := 0
 
-			ch, err := NewChannel[any](ctx, &Options{
+			ch, err := NewChannel[int](ctx, &Options[int]{
 				MinQPS: rate.Every(100 * time.Millisecond),
-				DropFn: noDrop,
+				DropFn: noDrop[int],
 				Buffer: buffer.Options{
 					MaxLeases:     1,
 					BatchItemsMax: 1,
 					FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 				},
 				testingDbg: dbg,
-			}, func(batch *buffer.Batch) (err error) {
+			}, func(batch *buffer.Batch[int]) (err error) {
 				if batch == nil {
 					numNilBatches++
 				}
@@ -716,16 +716,16 @@ func TestMinQPS(t *testing.T) {
 			numNilBatch := 0
 			minWaitDuration := 100 * time.Millisecond
 
-			ch, err := NewChannel[any](ctx, &Options{
+			ch, err := NewChannel[int](ctx, &Options[int]{
 				MinQPS: rate.Every(minWaitDuration),
-				DropFn: noDrop,
+				DropFn: noDrop[int],
 				Buffer: buffer.Options{
 					MaxLeases:     1,
 					BatchItemsMax: 1,
 					FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
 				},
 				testingDbg: dbg,
-			}, func(batch *buffer.Batch) (err error) {
+			}, func(batch *buffer.Batch[int]) (err error) {
 				mu.Lock()
 				if batch == nil {
 					numNilBatch++

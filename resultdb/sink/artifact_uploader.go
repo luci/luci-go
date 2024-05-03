@@ -167,7 +167,7 @@ func calculateHash(input io.Reader) (string, error) {
 // at most 500 items with capping the sum of the artifact sizes by maxSum.
 //
 // Panics if tasks an item with an artifact larger than maxSum.
-func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem) (*pb.BatchCreateArtifactsRequest, error) {
+func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem[*uploadTask]) (*pb.BatchCreateArtifactsRequest, error) {
 	l := len(tasks)
 	if l > 500 {
 		l = 500
@@ -176,7 +176,7 @@ func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem) (*pb
 	var sum int64
 	reqs := make([]*pb.CreateArtifactRequest, 0, l)
 	for i := 0; i < l; i++ {
-		ut := tasks[i].Item.(*uploadTask)
+		ut := tasks[i].Item
 
 		// artifactChannel.schedule() should have sent it to streamChannel.
 		if ut.size > maxSum {
@@ -197,7 +197,7 @@ func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem) (*pb
 	return &pb.BatchCreateArtifactsRequest{Requests: reqs}, nil
 }
 
-func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch) error {
+func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch[*uploadTask]) error {
 	var req *pb.BatchCreateArtifactsRequest
 	var err error
 	if b.Meta != nil {

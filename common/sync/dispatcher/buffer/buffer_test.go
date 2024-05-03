@@ -30,21 +30,21 @@ import (
 )
 
 func TestBuffer(t *testing.T) {
-	must := func(b *Batch, err error) *Batch {
+	must := func(b *Batch[any], err error) *Batch[any] {
 		So(err, ShouldBeNil)
 		return b
 	}
-	addNoBlockZero := func(b *Buffer, now time.Time, item any) (*Batch, error) {
+	addNoBlockZero := func(b *Buffer[any], now time.Time, item any) (*Batch[any], error) {
 		return b.AddNoBlock(now, item, 0)
 	}
-	addNoBlockStr := func(b *Buffer, now time.Time, item string) (*Batch, error) {
+	addNoBlockStr := func(b *Buffer[any], now time.Time, item string) (*Batch[any], error) {
 		return b.AddNoBlock(now, item, len(item))
 	}
 
 	Convey(`Buffer`, t, func() {
 		Convey(`construction`, func() {
 			Convey(`success`, func() {
-				b, err := NewBuffer(nil)
+				b, err := NewBuffer[any](nil)
 				So(err, ShouldBeNil)
 
 				So(b.Stats(), ShouldResemble, Stats{})
@@ -53,7 +53,7 @@ func TestBuffer(t *testing.T) {
 				So(b.LeaseOne(time.Time{}), ShouldBeNil)
 			})
 			Convey(`fail`, func() {
-				_, err := NewBuffer(&Options{BatchItemsMax: -100})
+				_, err := NewBuffer[any](&Options{BatchItemsMax: -100})
 				So(err, ShouldErrLike, "normalizing buffer.Options")
 			})
 		})
@@ -63,7 +63,7 @@ func TestBuffer(t *testing.T) {
 			ctx, tclock := testclock.UseTime(context.Background(), start)
 
 			Convey(`common behavior`, func() {
-				b, err := NewBuffer(&Options{
+				b, err := NewBuffer[any](&Options{
 					MaxLeases:     2,
 					BatchItemsMax: 20,
 				})
@@ -129,7 +129,7 @@ func TestBuffer(t *testing.T) {
 							newBatch := b.LeaseOne(clock.Now(ctx))
 							So(newBatch, ShouldNotBeNil)
 
-							newBatch.Data = append(newBatch.Data, BatchItem{}, BatchItem{}, BatchItem{})
+							newBatch.Data = append(newBatch.Data, BatchItem[any]{}, BatchItem[any]{}, BatchItem[any]{})
 
 							b.NACK(ctx, nil, newBatch)
 
@@ -226,7 +226,7 @@ func TestBuffer(t *testing.T) {
 			})
 
 			Convey(`retry limit eventually drops batch`, func() {
-				b, err := NewBuffer(&Options{
+				b, err := NewBuffer[any](&Options{
 					BatchItemsMax: 1,
 					Retry: func() retry.Iterator {
 						return &retry.Limited{Retries: 1}
@@ -244,7 +244,7 @@ func TestBuffer(t *testing.T) {
 			})
 
 			Convey(`in-order delivery`, func() {
-				b, err := NewBuffer(&Options{
+				b, err := NewBuffer[any](&Options{
 					MaxLeases:     1,
 					BatchItemsMax: 1,
 					FullBehavior:  InfiniteGrowth{},
@@ -283,7 +283,7 @@ func TestBuffer(t *testing.T) {
 			})
 
 			Convey(`batch size`, func() {
-				b, err := NewBuffer(&Options{
+				b, err := NewBuffer[any](&Options{
 					FullBehavior:  &BlockNewItems{MaxSize: 150},
 					BatchItemsMax: -1,
 					BatchSizeMax:  100,
@@ -377,7 +377,7 @@ func TestBuffer(t *testing.T) {
 			Convey(`full buffer behavior`, func() {
 
 				Convey(`DropOldestBatch`, func() {
-					b, err := NewBuffer(&Options{
+					b, err := NewBuffer[any](&Options{
 						FullBehavior:  &DropOldestBatch{MaxLiveItems: 1},
 						BatchItemsMax: 1,
 					})
@@ -428,7 +428,7 @@ func TestBuffer(t *testing.T) {
 				})
 
 				Convey(`DropOldestBatch dropping items from the current batch`, func() {
-					b, err := NewBuffer(&Options{
+					b, err := NewBuffer[any](&Options{
 						FullBehavior:  &DropOldestBatch{MaxLiveItems: 1},
 						BatchItemsMax: -1,
 					})
@@ -441,7 +441,7 @@ func TestBuffer(t *testing.T) {
 				})
 
 				Convey(`BlockNewItems`, func() {
-					b, err := NewBuffer(&Options{
+					b, err := NewBuffer[any](&Options{
 						FullBehavior:  &BlockNewItems{MaxItems: 21},
 						BatchItemsMax: 20,
 					})

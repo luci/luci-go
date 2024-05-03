@@ -47,7 +47,7 @@ func (p *BatchProcessor) Start() error {
 	var err error
 	p.ch, err = dispatcher.NewChannel[any](
 		p.Context,
-		&dispatcher.Options{
+		&dispatcher.Options[any]{
 			Buffer: buffer.Options{
 				MaxLeases:     p.ConcurrentBatches,
 				BatchItemsMax: p.BatchSize,
@@ -94,7 +94,7 @@ func (p *BatchProcessor) Enqueue(ctx context.Context, r []*reminder.Reminder) {
 // processBatch called concurrently to handle a single batch of items.
 //
 // Logs errors inside, doesn't return them.
-func (p *BatchProcessor) processBatch(data *buffer.Batch) error {
+func (p *BatchProcessor) processBatch(data *buffer.Batch[any]) error {
 	batch := make([]*reminder.Reminder, len(data.Data))
 	for i, d := range data.Data {
 		batch[i] = d.Item.(*reminder.Reminder)

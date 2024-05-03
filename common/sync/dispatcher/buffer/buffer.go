@@ -41,7 +41,7 @@ var (
 //
 // All access to the Buffer (as well as invoking ACK/NACK on LeasedBatches) must
 // be synchronized because Buffer is not goroutine-safe.
-type Buffer struct {
+type Buffer[T any] struct {
 	// User-provided Options block; dictates all policy for this Buffer.
 	opts Options
 
@@ -60,23 +60,23 @@ type Buffer struct {
 	// NOTE: It is possible for this to be nil; if AddNoBlock fills this Batch up
 	// until Batch.canAccept returns false, it will be removed and pushed into
 	// `unleased`.
-	currentBatch *Batch
+	currentBatch *Batch[T]
 
 	// Contains all of the cut, but not currently leased, Batches.
 	//
 	// Kept ordered by (nextSend, id), so the 0th element is always the
 	// next-batch-to-be-sent.
-	unleased batchHeap
+	unleased batchHeap[T]
 
 	// Contains all of the live leased batches.
-	liveLeases map[*Batch]struct{}
+	liveLeases map[*Batch[T]]struct{}
 
 	// Tracks the liveLeases which haven't been ack'd yet.
 	//
 	// Batches can be removed from liveLeases without being removed from
 	// unAckedLeases when the Batch is dropped from the Buffer due to the
 	// FullBehavior policy.
-	unAckedLeases map[*Batch]struct{}
+	unAckedLeases map[*Batch[T]]struct{}
 
 	// The `id` of the last Batch we cut. If currentBatch is non-nil, this is
 	// `currentBatch.id`.
@@ -88,11 +88,11 @@ type Buffer struct {
 // NewBuffer returns a new Buffer configured with the given Options.
 //
 // If there's an issue with the provided Options, this returns an error.
-func NewBuffer(o *Options) (*Buffer, error) {
+func NewBuffer[T any](o *Options) (*Buffer[T], error) {
 	if o == nil {
 		o = &Options{}
 	}
-	ret := &Buffer{opts: *o} // copy o before normalizing it
+	ret := &Buffer[T]{opts: *o} // copy o before normalizing it
 
 	if err := ret.opts.normalize(); err != nil {
 		return nil, errors.Annotate(err, "normalizing buffer.Options").Err()
@@ -100,13 +100,13 @@ func NewBuffer(o *Options) (*Buffer, error) {
 
 	ret.unleased.onlyID = o.FIFO
 	ret.batchItemsGuess = newMovingAverage(10, ret.opts.batchItemsGuess())
-	ret.liveLeases = map[*Batch]struct{}{}
-	ret.unAckedLeases = map[*Batch]struct{}{}
+	ret.liveLeases = map[*Batch[T]]struct{}{}
+	ret.unAckedLeases = map[*Batch[T]]struct{}{}
 	return ret, nil
 }
 
 // Returns the oldest *Batch from liveLeases.
-func (buf *Buffer) oldestLiveLease() (oldest *Batch) {
+func (buf *Buffer[T]) oldestLiveLease() (oldest *Batch[T]) {
 	for lb := range buf.liveLeases {
 		if oldest == nil || lb.id < oldest.id {
 			oldest = lb
@@ -118,7 +118,7 @@ func (buf *Buffer) oldestLiveLease() (oldest *Batch) {
 // dropOldest will drop the oldest un-dropped batch.
 //
 // Returns the dropped Batch.
-func (buf *Buffer) dropOldest() (dropped *Batch) {
+func (buf *Buffer[T]) dropOldest() (dropped *Batch[T]) {
 	unleased, unleasedIdx := buf.unleased.Oldest()
 	leased := buf.oldestLiveLease()
 
@@ -157,7 +157,7 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 //     `itemSize` is larger than this.
 //   - ErrItemTooSmall - If this buffer has a BatchSizeMax configured and
 //     `itemSize` is zero, or if `itemSize` is negative.
-func (buf *Buffer) AddNoBlock(now time.Time, item any, itemSize int) (dropped *Batch, err error) {
+func (buf *Buffer[T]) AddNoBlock(now time.Time, item T, itemSize int) (dropped *Batch[T], err error) {
 	if err = buf.opts.checkItemSize(itemSize); err != nil {
 		return
 	}
@@ -176,10 +176,10 @@ func (buf *Buffer) AddNoBlock(now time.Time, item any, itemSize int) (dropped *B
 	}
 
 	if buf.currentBatch == nil {
-		buf.currentBatch = &Batch{
+		buf.currentBatch = &Batch[T]{
 			// Try to minimize allocations by allocating 20% more slots in Data than
 			// the moving average for the last 10 batches' actual use.
-			Data:     make([]BatchItem, 0, int(buf.batchItemsGuess.get()*1.2)),
+			Data:     make([]BatchItem[T], 0, int(buf.batchItemsGuess.get()*1.2)),
 			id:       buf.lastBatchID + 1,
 			retry:    buf.opts.Retry(),
 			nextSend: now.Add(buf.opts.BatchAgeMax),
@@ -187,7 +187,7 @@ func (buf *Buffer) AddNoBlock(now time.Time, item any, itemSize int) (dropped *B
 		buf.lastBatchID++
 	}
 
-	buf.currentBatch.Data = append(buf.currentBatch.Data, BatchItem{item, itemSize})
+	buf.currentBatch.Data = append(buf.currentBatch.Data, BatchItem[T]{item, itemSize})
 	buf.currentBatch.countedItems++
 	buf.currentBatch.countedSize += itemSize
 	buf.stats.addOneUnleased(itemSize)
@@ -204,7 +204,7 @@ func (buf *Buffer) AddNoBlock(now time.Time, item any, itemSize int) (dropped *B
 // a Batch.
 //
 // No-op if there's no such data.
-func (buf *Buffer) Flush(now time.Time) {
+func (buf *Buffer[T]) Flush(now time.Time) {
 	batch := buf.currentBatch
 	if batch == nil {
 		return
@@ -222,7 +222,7 @@ func (buf *Buffer) Flush(now time.Time) {
 //
 // NOTE: Because LeaseOne enforces MaxLeases, this time may not guarantee an
 // available lease.
-func (buf *Buffer) NextSendTime() time.Time {
+func (buf *Buffer[T]) NextSendTime() time.Time {
 	ret := time.Time{}
 
 	if next := buf.unleased.Peek(); next != nil {
@@ -239,13 +239,13 @@ func (buf *Buffer) NextSendTime() time.Time {
 }
 
 // Stats returns information about the Buffer's state.
-func (buf *Buffer) Stats() Stats {
+func (buf *Buffer[T]) Stats() Stats {
 	return buf.stats
 }
 
 // CanAddItem returns true iff the Buffer will accept an item from AddNoBlock
 // without returning ErrBufferFull.
-func (buf *Buffer) CanAddItem() bool {
+func (buf *Buffer[T]) CanAddItem() bool {
 	okToInsert, _ := buf.opts.FullBehavior.ComputeState(buf.stats)
 	return okToInsert
 }
@@ -257,7 +257,7 @@ func (buf *Buffer) CanAddItem() bool {
 //
 // Returns nil if no batch is available to lease, or if the Buffer has reached
 // MaxLeases.
-func (buf *Buffer) LeaseOne(now time.Time) (leased *Batch) {
+func (buf *Buffer[T]) LeaseOne(now time.Time) (leased *Batch[T]) {
 	cur, next := buf.currentBatch, buf.unleased.Peek()
 
 	switch {
@@ -281,7 +281,7 @@ func (buf *Buffer) LeaseOne(now time.Time) (leased *Batch) {
 }
 
 // leases the next available batch, regardless of its marked nextSend time.
-func (buf *Buffer) forceLeaseOne() (leased *Batch) {
+func (buf *Buffer[T]) forceLeaseOne() (leased *Batch[T]) {
 	if buf.unleased.Len() == 0 {
 		return nil
 	}
@@ -301,11 +301,11 @@ func (buf *Buffer) forceLeaseOne() (leased *Batch) {
 //
 // NOTE: It's helpful to call Flush before ForceLeaseAll to include the
 // currently buffered, but unbatched, data.
-func (buf *Buffer) ForceLeaseAll() []*Batch {
+func (buf *Buffer[T]) ForceLeaseAll() []*Batch[T] {
 	if buf.unleased.Len() == 0 {
 		return nil
 	}
-	ret := make([]*Batch, 0, buf.unleased.Len())
+	ret := make([]*Batch[T], 0, buf.unleased.Len())
 	for buf.unleased.Len() > 0 {
 		ret = append(ret, buf.forceLeaseOne())
 	}
@@ -318,11 +318,11 @@ func (buf *Buffer) ForceLeaseAll() []*Batch {
 //
 // Calling ACK/NACK on the same Batch twice will panic.
 // Calling ACK/NACK on a Batch not returned from LeaseOne will panic.
-func (buf *Buffer) ACK(leased *Batch) {
+func (buf *Buffer[T]) ACK(leased *Batch[T]) {
 	buf.removeLease(leased)
 }
 
-func (buf *Buffer) removeLease(leased *Batch) (live bool) {
+func (buf *Buffer[T]) removeLease(leased *Batch[T]) (live bool) {
 	if leased == nil {
 		// Nil batch. Bail out.
 		return
@@ -354,7 +354,7 @@ func (buf *Buffer) removeLease(leased *Batch) (live bool) {
 //
 // Calling ACK/NACK on the same Batch twice will panic.
 // Calling ACK/NACK on a Batch not returned from LeaseOne will panic.
-func (buf *Buffer) NACK(ctx context.Context, err error, leased *Batch) {
+func (buf *Buffer[T]) NACK(ctx context.Context, err error, leased *Batch[T]) {
 	if live := buf.removeLease(leased); !live {
 		return
 	}

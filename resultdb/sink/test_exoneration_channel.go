@@ -49,7 +49,7 @@ type unexpectedPassChannel struct {
 func newTestExonerationChannel(ctx context.Context, cfg *ServerConfig) *unexpectedPassChannel {
 	var err error
 	c := &unexpectedPassChannel{cfg: cfg}
-	opts := &dispatcher.Options{
+	opts := &dispatcher.Options[any]{
 		Buffer: buffer.Options{
 			// BatchRequest can include up to 500 requests. KEEP BatchItemsMax <= 500
 			// to keep report() simple. For more details, visit
@@ -59,7 +59,7 @@ func newTestExonerationChannel(ctx context.Context, cfg *ServerConfig) *unexpect
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.ch, err = dispatcher.NewChannel[any](ctx, opts, func(b *buffer.Batch) error {
+	c.ch, err = dispatcher.NewChannel[any](ctx, opts, func(b *buffer.Batch[any]) error {
 		return c.report(ctx, b)
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ func (c *unexpectedPassChannel) schedule(trs ...*sinkpb.TestResult) {
 	}
 }
 
-func (c *unexpectedPassChannel) report(ctx context.Context, b *buffer.Batch) error {
+func (c *unexpectedPassChannel) report(ctx context.Context, b *buffer.Batch[any]) error {
 	if b.Meta == nil {
 		reqs := make([]*pb.CreateTestExonerationRequest, len(b.Data))
 		for i, d := range b.Data {

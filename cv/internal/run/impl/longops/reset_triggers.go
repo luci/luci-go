@@ -244,12 +244,12 @@ func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher
 		concurrency = defaultConcurrency
 	}
 	concurrency = min(concurrency, len(op.inputs))
-	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options{
-		ErrorFn: func(failedBatch *buffer.Batch, err error) (retry bool) {
+	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options[any]{
+		ErrorFn: func(failedBatch *buffer.Batch[any], err error) (retry bool) {
 			_, isLeaseErr := lease.IsAlreadyInLeaseErr(err)
 			return isLeaseErr || transient.Tag.In(err)
 		},
-		DropFn: dispatcher.DropFnQuiet,
+		DropFn: dispatcher.DropFnQuiet[any],
 		Buffer: buffer.Options{
 			MaxLeases:     concurrency,
 			BatchItemsMax: 1,
@@ -258,7 +258,7 @@ func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher
 			},
 			Retry: op.makeRetryFactory(),
 		},
-	}, func(data *buffer.Batch) error {
+	}, func(data *buffer.Batch[any]) error {
 		ci, ok := data.Data[0].Item.(resetItem)
 		if !ok {
 			panic(fmt.Errorf("unexpected batch data item %s", data.Data[0].Item))
