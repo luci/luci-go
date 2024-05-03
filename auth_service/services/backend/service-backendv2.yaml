@@ -18,7 +18,7 @@ env_variables:
   DRY_RUN_CRON_REALMS: true
   DRY_RUN_CRON_STALE_AUTH: true
   DRY_RUN_TQ_CHANGELOG: false
-  DRY_RUN_TQ_REPLICATION: true
+  DRY_RUN_TQ_REPLICATION: false
   ENABLE_GROUP_IMPORTS: false
 
 inbound_services:
