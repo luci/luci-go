@@ -238,18 +238,18 @@ func (op *ResetTriggersOp) executeInParallel(ctx context.Context) {
 	<-dc.DrainC
 }
 
-func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher.Channel[any] {
+func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher.Channel[resetItem] {
 	concurrency := op.Concurrency
 	if concurrency == 0 {
 		concurrency = defaultConcurrency
 	}
 	concurrency = min(concurrency, len(op.inputs))
-	dc, err := dispatcher.NewChannel[any](ctx, &dispatcher.Options[any]{
-		ErrorFn: func(failedBatch *buffer.Batch[any], err error) (retry bool) {
+	dc, err := dispatcher.NewChannel(ctx, &dispatcher.Options[resetItem]{
+		ErrorFn: func(failedBatch *buffer.Batch[resetItem], err error) (retry bool) {
 			_, isLeaseErr := lease.IsAlreadyInLeaseErr(err)
 			return isLeaseErr || transient.Tag.In(err)
 		},
-		DropFn: dispatcher.DropFnQuiet[any],
+		DropFn: dispatcher.DropFnQuiet[resetItem],
 		Buffer: buffer.Options{
 			MaxLeases:     concurrency,
 			BatchItemsMax: 1,
@@ -258,11 +258,8 @@ func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher
 			},
 			Retry: op.makeRetryFactory(),
 		},
-	}, func(data *buffer.Batch[any]) error {
-		ci, ok := data.Data[0].Item.(resetItem)
-		if !ok {
-			panic(fmt.Errorf("unexpected batch data item %s", data.Data[0].Item))
-		}
+	}, func(data *buffer.Batch[resetItem]) error {
+		ci := data.Data[0].Item
 		result := &op.results[ci.index]
 		result.err = trigger.Reset(ctx, ci.input)
 		gerritErr := "GERRIT_ERROR_NONE"
