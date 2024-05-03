@@ -12,9 +12,9 @@ luci_gae_vars:
   chromium-swarm-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
-    BQ_EXPORT_DATASET: experimental
+    BQ_EXPORT_DATASET: swarming
     BQ_EXPORT_TO_PUBSUB: bot_events,task_results_run,task_results_summary
-    BQ_EXPORT_TO_PUBSUB_TOPIC_PREFIX: go
+    BQ_EXPORT_TO_PUBSUB_TOPIC_PREFIX: none
 
 entrypoint: >
   main
