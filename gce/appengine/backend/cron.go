@@ -127,13 +127,22 @@ func drainVMsAsync(c context.Context) error {
 	//TODO(anushruth): Delete VMs based on uptime instead of ID.
 	var taskList []*tq.Task
 	for id, vm := range vmMap {
-		if configMap[vm.Config].GetCurrentAmount() <= vm.Index {
-			taskList = append(taskList, &tq.Task{
-				Payload: &tasks.DrainVM{
-					Id: id,
-				},
-			})
+		if vm.DUT != "" {
+			// DUT is still present in config. Index is not available for VM
+			// mapped to DUT due to different sequences of creation.
+			duts := configMap[vm.Config].GetDuts()
+			if _, ok := duts[vm.DUT]; ok {
+				continue
+			}
+		} else if configMap[vm.Config].GetCurrentAmount() > vm.Index {
+			continue
 		}
+		logging.Debugf(c, "schedule %s to be drained", id)
+		taskList = append(taskList, &tq.Task{
+			Payload: &tasks.DrainVM{
+				Id: id,
+			},
+		})
 	}
 	if len(taskList) > 0 {
 		if err := getDispatcher(c).AddTask(c, taskList...); err != nil {

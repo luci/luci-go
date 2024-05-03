@@ -200,10 +200,6 @@ func manageBot(c context.Context, payload proto.Message) error {
 		logging.Debugf(c, "instance %q does not exist", vm.Hostname)
 		return nil
 	}
-	// Drain the VM if necessary. No-op if unnecessary or already drained.
-	if err := drainVM(c, vm); err != nil {
-		return errors.Annotate(err, "failed to drain VM").Err()
-	}
 
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
 	bot, err := getSwarming(c, vm.Swarming).GetBot(c, &swarmingpb.BotRequest{
