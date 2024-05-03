@@ -58,7 +58,7 @@ var (
 		}
 	}
 
-	ackChannelOptions = &dispatcher.Options[any]{
+	ackChannelOptions = &dispatcher.Options[*logdog.ArchiveTask]{
 		Buffer: buffer.Options{
 			MaxLeases:     10,
 			BatchItemsMax: 500,
@@ -134,14 +134,14 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 		task     *logdog.ArchiveTask
 	}
 
-	ackChan, err := dispatcher.NewChannel[any](ctx, ackChannelOptions, func(batch *buffer.Batch[any]) error {
+	ackChan, err := dispatcher.NewChannel[*logdog.ArchiveTask](ctx, ackChannelOptions, func(batch *buffer.Batch[*logdog.ArchiveTask]) error {
 		var req *logdog.DeleteRequest
 		if batch.Meta != nil {
 			req = batch.Meta.(*logdog.DeleteRequest)
 		} else {
 			tasks := make([]*logdog.ArchiveTask, len(batch.Data))
 			for i, datum := range batch.Data {
-				tasks[i] = datum.Item.(*logdog.ArchiveTask)
+				tasks[i] = datum.Item
 				batch.Data[i].Item = nil
 			}
 			req = &logdog.DeleteRequest{Tasks: tasks}
