@@ -597,8 +597,8 @@ func TestSizeBasedChannel(t *testing.T) {
 
 		opts := &Options[string]{
 			testingDbg: dbg,
-			ItemSizeFunc: func(itm any) int {
-				return len(itm.(string))
+			ItemSizeFunc: func(itm string) int {
+				return len(itm)
 			},
 			ErrorFn: func(failedBatch *buffer.Batch[string], err error) (retry bool) {
 				fails = append(fails, failedBatch)

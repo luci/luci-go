@@ -142,7 +142,7 @@ type Options[T any] struct {
 	// Must return a positive value less than Buffer.BatchSizeMax. Failure to do
 	// so will cause `itm` to be immediately rejected from the dispatcher.Channel
 	// and routed to ErrorFn with no further processing.
-	ItemSizeFunc func(itm any) int
+	ItemSizeFunc func(itm T) int
 
 	Buffer buffer.Options
 

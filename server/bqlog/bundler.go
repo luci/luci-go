@@ -291,21 +291,21 @@ type logBuffer struct {
 	desc    *descriptorpb.DescriptorProto
 	tableID string
 	sender  *logSender
-	disp    dispatcher.Channel[any]
+	disp    dispatcher.Channel[[]byte]
 }
 
 func (b *logBuffer) start(ctx context.Context, tableID string, sender *logSender) {
 	b.tableID = tableID
 	b.sender = sender
 
-	opts := dispatcher.Options[any]{
-		ItemSizeFunc: func(itm any) int { return len(itm.([]byte)) },
-		DropFn: func(data *buffer.Batch[any], flush bool) {
+	opts := dispatcher.Options[[]byte]{
+		ItemSizeFunc: func(itm []byte) int { return len(itm) },
+		DropFn: func(data *buffer.Batch[[]byte], flush bool) {
 			if data != nil {
 				recordDrop(ctx, b.tableID, len(data.Data), nil, "DISPATCHER")
 			}
 		},
-		ErrorFn: func(data *buffer.Batch[any], err error) (retry bool) {
+		ErrorFn: func(data *buffer.Batch[[]byte], err error) (retry bool) {
 			recordErr(ctx, b.tableID, len(data.Data), err)
 			return transient.Tag.In(err)
 		},
@@ -321,7 +321,7 @@ func (b *logBuffer) start(ctx context.Context, tableID string, sender *logSender
 	}
 
 	var err error
-	b.disp, err = dispatcher.NewChannel[any](ctx, &opts, sender.send)
+	b.disp, err = dispatcher.NewChannel[[]byte](ctx, &opts, sender.send)
 	if err != nil {
 		panic(fmt.Sprintf("failed to start the dispatcher: %s", err)) // should not be happening
 	}
@@ -363,7 +363,7 @@ type logSender struct {
 	stream storagepb.BigQueryWrite_AppendRowsClient
 }
 
-func (s *logSender) send(data *buffer.Batch[any]) (rerr error) {
+func (s *logSender) send(data *buffer.Batch[[]byte]) (rerr error) {
 	// There allowed only one concurrent Send or CloseSend per a gRPC stream.
 	s.m.Lock()
 	defer s.m.Unlock()
@@ -386,7 +386,7 @@ func (s *logSender) send(data *buffer.Batch[any]) (rerr error) {
 		},
 	}
 	for i, row := range data.Data {
-		protoData.Rows.SerializedRows[i] = row.Item.([]byte)
+		protoData.Rows.SerializedRows[i] = row.Item
 	}
 
 	// WriterSchema field is necessary only in the first request.
