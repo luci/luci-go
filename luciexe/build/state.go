@@ -72,7 +72,7 @@ type State struct {
 	// buildPbVersSent only updated when buildPbMu is held in WRITE mode.
 	buildPbVersSent atomic.Int64
 
-	sendCh dispatcher.Channel[any]
+	sendCh dispatcher.Channel[int64]
 
 	logsink    *streamclient.Client
 	logNames   nameTracker
