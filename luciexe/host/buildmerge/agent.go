@@ -105,7 +105,7 @@ type Agent struct {
 	states map[string]*buildStateTracker
 
 	// mergeCh is used in production mode to send pings via informNewData
-	mergeCh dispatcher.Channel[any]
+	mergeCh dispatcher.Channel[struct{}]
 
 	// informNewData is used to 'ping' mergeCh; it's overwritten in tests.
 	informNewData func()
@@ -178,20 +178,20 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 	}
 
 	var err error
-	ret.mergeCh, err = dispatcher.NewChannel[any](ctx, &dispatcher.Options[any]{
+	ret.mergeCh, err = dispatcher.NewChannel[struct{}](ctx, &dispatcher.Options[struct{}]{
 		Buffer: buffer.Options{
 			MaxLeases:     1,
 			BatchItemsMax: 1,
 			FullBehavior:  &buffer.DropOldestBatch{},
 		},
-		DropFn:    dispatcher.DropFnQuiet[any],
+		DropFn:    dispatcher.DropFnQuiet[struct{}],
 		DrainedFn: ret.finalize,
 	}, ret.sendMerge)
 	if err != nil {
 		return nil, err // creating dispatcher with static config should never fail
 	}
 	ret.informNewData = func() {
-		ret.mergeCh.C <- nil // content doesn't matter
+		ret.mergeCh.C <- struct{}{} // content doesn't matter
 	}
 	ret.DrainC = ret.mergeCh.DrainC
 
@@ -283,7 +283,7 @@ func (a *Agent) snapStates() map[string]*buildStateTracker {
 	return trackers
 }
 
-func (a *Agent) sendMerge(_ *buffer.Batch[any]) error {
+func (a *Agent) sendMerge(_ *buffer.Batch[struct{}]) error {
 	trackers := a.snapStates()
 
 	builds := make(map[string]*bbpb.Build, len(trackers))
