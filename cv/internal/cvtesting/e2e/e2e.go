@@ -124,7 +124,7 @@ type Test struct {
 	// dsFlakiness enables ds flakiness for "RunUntil".
 	dsFlakiness     float64
 	dsFlakinessRand rand.Source
-	tqSweepChannel  dispatcher.Channel[any]
+	tqSweepChannel  dispatcher.Channel[struct{}]
 }
 
 // SetUp sets up the end to end test.
@@ -571,9 +571,9 @@ func (t *Test) startTQSweeping(ctx context.Context) (deferme func()) {
 		SubmitBatchSize: 1,
 	})
 	var err error
-	t.tqSweepChannel, err = dispatcher.NewChannel[any](
+	t.tqSweepChannel, err = dispatcher.NewChannel[struct{}](
 		ctx,
-		&dispatcher.Options[any]{
+		&dispatcher.Options[struct{}]{
 			Buffer: buffer.Options{
 				BatchItemsMax: 1, // incoming event => sweep ASAP.
 				MaxLeases:     1, // at most 1 sweep concurrently
@@ -585,7 +585,7 @@ func (t *Test) startTQSweeping(ctx context.Context) (deferme func()) {
 				Retry: retry.None,
 			},
 		},
-		func(*buffer.Batch[any]) error { return t.TQDispatcher.Sweep(ctx) },
+		func(*buffer.Batch[struct{}]) error { return t.TQDispatcher.Sweep(ctx) },
 	)
 	if err != nil {
 		panic(err)
