@@ -31,7 +31,7 @@ import (
 
 // unexpectedPassChannel is the channel for unexpected passes which will be exonerated.
 type unexpectedPassChannel struct {
-	ch  dispatcher.Channel[any]
+	ch  dispatcher.Channel[*sinkpb.TestResult]
 	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestExonerations.
@@ -49,7 +49,7 @@ type unexpectedPassChannel struct {
 func newTestExonerationChannel(ctx context.Context, cfg *ServerConfig) *unexpectedPassChannel {
 	var err error
 	c := &unexpectedPassChannel{cfg: cfg}
-	opts := &dispatcher.Options[any]{
+	opts := &dispatcher.Options[*sinkpb.TestResult]{
 		Buffer: buffer.Options{
 			// BatchRequest can include up to 500 requests. KEEP BatchItemsMax <= 500
 			// to keep report() simple. For more details, visit
@@ -59,7 +59,7 @@ func newTestExonerationChannel(ctx context.Context, cfg *ServerConfig) *unexpect
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.ch, err = dispatcher.NewChannel[any](ctx, opts, func(b *buffer.Batch[any]) error {
+	c.ch, err = dispatcher.NewChannel[*sinkpb.TestResult](ctx, opts, func(b *buffer.Batch[*sinkpb.TestResult]) error {
 		return c.report(ctx, b)
 	})
 	if err != nil {
@@ -90,11 +90,11 @@ func (c *unexpectedPassChannel) schedule(trs ...*sinkpb.TestResult) {
 	}
 }
 
-func (c *unexpectedPassChannel) report(ctx context.Context, b *buffer.Batch[any]) error {
+func (c *unexpectedPassChannel) report(ctx context.Context, b *buffer.Batch[*sinkpb.TestResult]) error {
 	if b.Meta == nil {
 		reqs := make([]*pb.CreateTestExonerationRequest, len(b.Data))
 		for i, d := range b.Data {
-			tr := d.Item.(*sinkpb.TestResult)
+			tr := d.Item
 			reqs[i] = &pb.CreateTestExonerationRequest{
 				TestExoneration: &pb.TestExoneration{
 					TestId:          tr.GetTestId(),
