@@ -81,7 +81,7 @@ type buildStateTracker struct {
 	// It's send function parses and interprets the Build message.
 	// Errors are not reported to the dispatcher.Channel, but are instead recorded
 	// in the parsed Build state.
-	work       dispatcher.Channel[any]
+	work       dispatcher.Channel[[]byte]
 	workClosed bool // true if we've closed work.C, protected by workMu
 
 	latestStateMu sync.Mutex
@@ -223,13 +223,13 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 		ret.finalize()
 		ret.Close()
 	} else {
-		ret.work, err = dispatcher.NewChannel[any](ctx, &dispatcher.Options[any]{
+		ret.work, err = dispatcher.NewChannel[[]byte](ctx, &dispatcher.Options[[]byte]{
 			Buffer: buffer.Options{
 				MaxLeases:     1,
 				BatchItemsMax: 1,
 				FullBehavior:  &buffer.DropOldestBatch{},
 			},
-			DropFn:    dispatcher.DropFnQuiet[any],
+			DropFn:    dispatcher.DropFnQuiet[[]byte],
 			DrainedFn: ret.finalize,
 		}, ret.parseAndSend)
 		if err != nil {
@@ -281,7 +281,7 @@ func (t *buildStateTracker) finalize() {
 	t.merger.informNewData()
 }
 
-func (t *buildStateTracker) parseAndSend(data *buffer.Batch[any]) error {
+func (t *buildStateTracker) parseAndSend(data *buffer.Batch[[]byte]) error {
 	t.latestStateMu.Lock()
 	state := *t.latestState
 	t.latestStateMu.Unlock()
@@ -291,7 +291,7 @@ func (t *buildStateTracker) parseAndSend(data *buffer.Batch[any]) error {
 		return nil
 	}
 
-	newBuild, err := t.parseBuild(data.Data[0].Item.([]byte))
+	newBuild, err := t.parseBuild(data.Data[0].Item)
 	// may set state.closed on an error
 	t.updateState(newBuild, err)
 
