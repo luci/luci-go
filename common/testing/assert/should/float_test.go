@@ -19,20 +19,11 @@ import (
 	"testing"
 )
 
-func TestEqual(t *testing.T) {
+func TestBeNaN(t *testing.T) {
 	t.Parallel()
 
-	t.Run("int equal", shouldPass(Equal(10)(10)))
+	t.Run("non-NaN equal", shouldPass(BeNaN(math.NaN())))
+	t.Run("non-NaN equal (32)", shouldPass(BeNaN(float32(math.NaN()))))
 
-	t.Run("int inequal", shouldFail(Equal(10)(100), "Expected"))
-	t.Run("int NaN", shouldFail(Equal(math.NaN())(10.1), "should.BeNaN"))
-}
-
-func TestNotEqual(t *testing.T) {
-	t.Parallel()
-
-	t.Run("int inequal", shouldPass(NotEqual(10)(100)))
-
-	t.Run("int equal", shouldFail(NotEqual(10)(10), "Actual"))
-	t.Run("int NaN", shouldFail(NotEqual(math.NaN())(10.1), "should.BeNaN"))
+	t.Run("not NaN", shouldFail(BeNaN(10.1), "Actual"))
 }

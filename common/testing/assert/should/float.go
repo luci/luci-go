@@ -15,24 +15,13 @@
 package should
 
 import (
-	"math"
-	"testing"
+	"go.chromium.org/luci/common/testing/assert/comparison"
 )
 
-func TestEqual(t *testing.T) {
-	t.Parallel()
-
-	t.Run("int equal", shouldPass(Equal(10)(10)))
-
-	t.Run("int inequal", shouldFail(Equal(10)(100), "Expected"))
-	t.Run("int NaN", shouldFail(Equal(math.NaN())(10.1), "should.BeNaN"))
-}
-
-func TestNotEqual(t *testing.T) {
-	t.Parallel()
-
-	t.Run("int inequal", shouldPass(NotEqual(10)(100)))
-
-	t.Run("int equal", shouldFail(NotEqual(10)(10), "Actual"))
-	t.Run("int NaN", shouldFail(NotEqual(math.NaN())(10.1), "should.BeNaN"))
+// BeNaN checks that `actual` is a floating point NaN.
+func BeNaN[T float32 | float64](actual T) *comparison.Failure {
+	if actual != actual { // see `math.IsNaN` for why this works.
+		return nil
+	}
+	return comparison.NewFailureBuilder("should.BeNaN", actual).Actual(actual).Failure
 }
