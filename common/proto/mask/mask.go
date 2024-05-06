@@ -139,8 +139,8 @@ func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, is
 		curNode := root
 		curNodeName := ""
 		for _, seg := range p {
-			if curNode.isRepeated && isUpdateMask {
-				return nil, fmt.Errorf("update mask allows a repeated field only at the last position; field: %s is not last", curNodeName)
+			if err := validateMask(curNode, curNodeName, seg, isUpdateMask); err != nil {
+				return nil, err
 			}
 			if _, ok := curNode.children[seg]; !ok {
 				child := &Mask{
@@ -215,6 +215,24 @@ func removeTrailingStars(paths []path) []path {
 		ret = append(ret, p)
 	}
 	return ret
+}
+
+func validateMask(node *Mask, nodeName string, childName string, isUpdateMask bool) error {
+	if node.isRepeated && isUpdateMask {
+		nodeDesc := node.descriptor
+		// For a map, https://google.aip.dev/161 states that field masks may permit
+		// the specification of specific fields in a map, e.g. "my_map.some_key",
+		// if and only if the map's keys are either strings or integers.
+		// This can be used when a request tries to update a specific key in a map.
+		//
+		// Note that the requirement for the key type is already guaranteed by
+		// protobuf spec: https://protobuf.dev/programming-guides/proto3/#maps,
+		if nodeDesc.IsMapEntry() && childName != "*" {
+			return nil
+		}
+		return fmt.Errorf("update mask allows a repeated field only at the last position; field: %s is not last", nodeName)
+	}
+	return nil
 }
 
 // Children returns the children of the current Mask node.

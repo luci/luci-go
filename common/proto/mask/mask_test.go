@@ -146,6 +146,8 @@ func TestFromFieldMask(t *testing.T) {
 			So(err, ShouldErrLike, "update mask allows a repeated field only at the last position; field: msgs is not last")
 			_, err = parse([]string{"map_str_msg.*.str"}, true)
 			So(err, ShouldErrLike, "update mask allows a repeated field only at the last position; field: map_str_msg is not last")
+			_, err = parse([]string{"map_str_num.some_key"}, true)
+			So(err, ShouldBeNil)
 		})
 	})
 }
