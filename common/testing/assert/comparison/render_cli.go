@@ -17,50 +17,108 @@ package comparison
 import (
 	"fmt"
 	"strings"
+
+	"github.com/mgutz/ansi"
 )
 
-// if lines has zero lines or one line with an empty value, returns prefix+title.
-// if lines has one line with a value, returns just that line prefixed with prefix and
-// title.
-// if lines has many lines, returns a heredoc style set of lines with the first
-// line as `prefix+title: EOF`, the lines, and then `EOF`.
-func heredocLines(prefix, title string, lines []string) (ret []string) {
-	if len(lines) == 0 || len(strings.TrimSpace(lines[0])) == 0 {
-		return []string{fmt.Sprintf("%s%s", prefix, title)}
+type RenderCLI struct {
+	// If true, will render all Verbose findings.
+	//
+	// Otherwise this will print an omission message which describes how long the
+	// omitted value is and to pass `-v` to the test to see them.
+	Verbose bool
+
+	// If true, will add ANSI color codes to Findings with appropriate types
+	// (currently just simple +/- per-line colorization for unified and cmp.Diff
+	// Findings).
+	Colorize bool
+}
+
+// RenderFindingCLI renders a Finding to a set of output lines which would be
+// suitable for display as CLI output (e.g. to be logged with testing.T.Log
+// calls).
+func (r RenderCLI) Finding(prefix string, f *Failure_Finding) (ret string) {
+	if len(f.Value) == 0 {
+		return fmt.Sprintf("%s%s [no value]", prefix, f.Name)
 	}
-	if len(lines) == 1 {
-		return []string{fmt.Sprintf("%s%s: %s", prefix, title, lines[0])}
+	if len(strings.TrimSpace(f.Value[0])) == 0 {
+		return fmt.Sprintf("%s%s [blank one-line value]", prefix, f.Name)
 	}
 
-	ret = make([]string, 0, len(lines)+2)
-	ret = append(ret, fmt.Sprintf("%s%s: <<EOF", prefix, title))
-	ret = append(ret, lines...)
-	ret = append(ret, "EOF")
+	if f.Level > FindingLogLevel_Error && !r.Verbose {
+		valLen := len(f.Value) - 1 // one per newline
+		for _, line := range f.Value {
+			valLen += len(line)
+		}
+		return fmt.Sprintf("%s%s [verbose value len=%d (pass -v to see)]", prefix, f.Name, valLen)
+	}
 
-	return ret
+	if len(f.Value) == 1 {
+		return fmt.Sprintf("%s%s: %s", prefix, f.Name, f.Value[0])
+	}
+
+	value := make([]string, len(f.Value))
+	copy(value, f.Value)
+	if r.Colorize {
+		switch f.Type {
+		case FindingTypeHint_CmpDiff, FindingTypeHint_UnifiedDiff:
+			for i, line := range value {
+				code := ""
+				if strings.HasPrefix(line, "-") {
+					code = ansi.Green
+					if strings.HasPrefix(line, "--- ") {
+						code = ansi.LightGreen
+					}
+				} else if strings.HasPrefix(line, "+") {
+					code = ansi.Red
+					if strings.HasPrefix(line, "+++ ") {
+						code = ansi.LightRed
+					}
+				} else if strings.HasPrefix(line, "@@ ") {
+					code = ansi.Red
+				}
+				if code != "" {
+					value[i] = fmt.Sprintf("%s%s%s", code, line, ansi.Reset)
+				} else {
+					value[i] = line
+				}
+			}
+		}
+	}
+	for i, line := range value {
+		value[i] = "    " + line
+	}
+	return fmt.Sprintf("%s%s: \\\n%s", prefix, f.Name, strings.Join(value, "\n"))
 }
 
 // RenderCLI pretty-prints the result as a list of lines for display via the `go
 // test` CLI output.
-func RenderCLI(r *Failure) []string {
-	if r == nil {
-		return nil
+//
+// If verbose is true, will render all verbose Findings.
+// If colorize is true, will attempt to add ANSI coloring (currently just very
+// basic per-line colors for diffs).
+func (r RenderCLI) Failure(prefix string, f *Failure) string {
+	if f == nil {
+		return ""
 	}
-	var lines []string
-	testName := r.GetComparison().GetName()
+	testName := f.GetComparison().GetName()
 	if testName == "" {
 		testName = "UNKNOWN COMPARISON"
 	}
 
 	var testTypeArgs string
-	if args := r.GetComparison().GetTypeArguments(); len(args) > 0 {
+	if args := f.GetComparison().GetTypeArguments(); len(args) > 0 {
 		testTypeArgs = fmt.Sprintf("[%s]", strings.Join(args, ", "))
 	}
 
-	lines = append(lines, fmt.Sprintf("%s%s FAILED", testName, testTypeArgs))
-	for _, f := range r.Findings {
-		lines = append(lines, heredocLines("  ", f.Name, f.Value)...)
+	if len(f.Findings) == 0 {
+		return fmt.Sprintf("%s%s FAILED", testName, testTypeArgs)
 	}
 
-	return lines
+	findingLines := make([]string, 0, len(f.Findings))
+	for _, finding := range f.Findings {
+		findingLines = append(findingLines, r.Finding(prefix, finding))
+	}
+
+	return fmt.Sprintf("%s%s FAILED\n%s", testName, testTypeArgs, strings.Join(findingLines, "\n"))
 }

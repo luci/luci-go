@@ -14,6 +14,8 @@
 package assert
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/assert/comparison"
@@ -26,15 +28,27 @@ import (
 // Records the count/arguments of all calls to aid in testing.
 type mockTB struct {
 	HelperCalls  int
-	LogCalls     [][]any
+	LogCalls     []string
 	FailCalls    int
 	FailNowCalls int
 }
 
-func (m *mockTB) Helper()         { m.HelperCalls++ }
-func (m *mockTB) Log(args ...any) { m.LogCalls = append(m.LogCalls, args) }
-func (m *mockTB) Fail()           { m.FailCalls++ }
-func (m *mockTB) FailNow()        { m.FailNowCalls++ }
+func (m *mockTB) Helper() { m.HelperCalls++ }
+func (m *mockTB) Log(args ...any) {
+	// apparently, fmt.Sprint only adds spaces between arguments when it
+	// encounters two non-string arguments... t.Log always adds spaces. This is
+	// unfortunately inconsistent :(.
+	var buf strings.Builder
+	for i, arg := range args {
+		if i > 0 {
+			buf.WriteByte(' ')
+		}
+		fmt.Fprint(&buf, arg)
+	}
+	m.LogCalls = append(m.LogCalls, buf.String())
+}
+func (m *mockTB) Fail()    { m.FailCalls++ }
+func (m *mockTB) FailNow() { m.FailNowCalls++ }
 
 var _ MinimalTestingTB = (*mockTB)(nil)
 
@@ -67,7 +81,7 @@ func TestCheckL(t *testing.T) {
 			input: "a",
 			expect: mockTB{
 				HelperCalls: 2,
-				LogCalls:    [][]any{{"string not empty FAILED"}},
+				LogCalls:    []string{"Check string not empty FAILED"},
 				FailCalls:   1,
 			},
 			ok: false,
@@ -77,7 +91,7 @@ func TestCheckL(t *testing.T) {
 			input: 100,
 			expect: mockTB{
 				HelperCalls: 2,
-				LogCalls:    [][]any{{"builtin.LosslessConvertTo[string] FAILED"}},
+				LogCalls:    []string{"Check builtin.LosslessConvertTo[string] FAILED\nActualType: int"},
 				FailCalls:   1,
 			},
 			ok: false,
@@ -122,7 +136,7 @@ func TestAssertL(t *testing.T) {
 			input: "a",
 			expect: mockTB{
 				HelperCalls:  2,
-				LogCalls:     [][]any{{"string not empty FAILED"}},
+				LogCalls:     []string{"Assert string not empty FAILED"},
 				FailNowCalls: 1,
 			},
 		},
@@ -131,7 +145,7 @@ func TestAssertL(t *testing.T) {
 			input: 100,
 			expect: mockTB{
 				HelperCalls:  2,
-				LogCalls:     [][]any{{"builtin.LosslessConvertTo[string] FAILED"}},
+				LogCalls:     []string{"Assert builtin.LosslessConvertTo[string] FAILED\nActualType: int"},
 				FailNowCalls: 1,
 			},
 		},
@@ -171,7 +185,7 @@ func TestCheck(t *testing.T) {
 			input: "a",
 			expect: mockTB{
 				HelperCalls: 1,
-				LogCalls:    [][]any{{"string not empty FAILED"}},
+				LogCalls:    []string{"Check string not empty FAILED"},
 				FailCalls:   1,
 			},
 			ok: false,
@@ -213,7 +227,7 @@ func TestAssert(t *testing.T) {
 			input: "a",
 			expect: mockTB{
 				HelperCalls:  1,
-				LogCalls:     [][]any{{"string not empty FAILED"}},
+				LogCalls:     []string{"Assert string not empty FAILED"},
 				FailNowCalls: 1,
 			},
 		},

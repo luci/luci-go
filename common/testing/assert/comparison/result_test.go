@@ -15,6 +15,7 @@
 package comparison
 
 import (
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/typed"
@@ -26,6 +27,8 @@ func TestResultRender(t *testing.T) {
 
 	cases := []struct {
 		name    string
+		prefix  string
+		render  RenderCLI
 		failure *Failure
 		lines   []string
 	}{
@@ -63,8 +66,8 @@ func TestResultRender(t *testing.T) {
 			},
 			lines: []string{
 				`equal[int, int] FAILED`,
-				`  left: 4`,
-				`  right: 7`,
+				`left: 4`,
+				`right: 7`,
 			},
 		},
 	}
@@ -73,7 +76,7 @@ func TestResultRender(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if diff := typed.Diff(RenderCLI(tt.failure), tt.lines); diff != "" {
+			if diff := typed.Diff(tt.render.Failure(tt.prefix, tt.failure), strings.Join(tt.lines, "\n")); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
 		})

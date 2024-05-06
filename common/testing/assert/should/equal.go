@@ -33,8 +33,7 @@ func Equal[T comparable](expected T) comparison.Func[T] {
 		}
 
 		return comparison.NewFailureBuilder(cmpName, expected).
-			Actual(actual).
-			Expected(expected).
+			SmartCmpDiff(actual, expected).
 			Failure
 	}
 }

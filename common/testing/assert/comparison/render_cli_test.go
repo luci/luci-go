@@ -15,79 +15,210 @@
 package comparison
 
 import (
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/typed"
 )
 
-func TestHeredocLines(t *testing.T) {
+func TestRenderFinding(t *testing.T) {
 	t.Parallel()
 
-	cases := []struct {
-		name     string
+	type caseT struct {
 		prefix   string
-		title    string
-		input    []string
+		render   RenderCLI
+		input    *Failure_Finding
 		expected []string
-	}{
-		{
-			name:   "no lines",
-			prefix: "  ",
-			title:  "Because",
-			expected: []string{
-				`  Because`,
-			},
-		},
-		{
-			name:   "empty oneline",
-			prefix: "  ",
-			title:  "Because",
-			input: []string{
-				``,
-			},
-			expected: []string{
-				`  Because`,
-			},
-		},
-		{
-			name:   "oneline",
-			prefix: "  ",
-			title:  "Because",
-			input: []string{
-				`meepmorp`,
-			},
-			expected: []string{
-				`  Because: meepmorp`,
-			},
-		},
-		{
-			name:   "multiline",
-			prefix: "  ",
-			title:  "Because",
-			input: []string{
-				`here`,
-				`are`,
-				`some`,
-				`lines`,
-			},
-			expected: []string{
-				`  Because: <<EOF`,
-				`here`,
-				`are`,
-				`some`,
-				`lines`,
-				`EOF`,
-			},
-		},
 	}
+	testCase := func(tt caseT) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+			t.Helper()
+			actual := tt.render.Finding(tt.prefix, tt.input)
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			actual := heredocLines(tt.prefix, tt.title, tt.input)
-
-			if diff := typed.Diff(tt.expected, actual); diff != "" {
+			if diff := typed.Diff(strings.Join(tt.expected, "\n"), actual); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
-		})
+		}
 	}
+
+	t.Run("no lines", testCase(caseT{
+		prefix: "  ",
+		input: &Failure_Finding{
+			Name: "Because",
+		},
+		expected: []string{
+			`  Because [no value]`,
+		},
+	}))
+
+	t.Run("empty oneline", testCase(caseT{
+		prefix: "  ",
+		input: &Failure_Finding{
+			Name:  "Because",
+			Value: []string{""},
+		},
+		expected: []string{
+			`  Because [blank one-line value]`,
+		},
+	}))
+
+	t.Run("oneline", testCase(caseT{
+		prefix: "  ",
+		input: &Failure_Finding{
+			Name: "Because",
+			Value: []string{
+				`meepmorp`,
+			},
+		},
+		expected: []string{
+			`  Because: meepmorp`,
+		},
+	}))
+
+	t.Run("multiline", testCase(caseT{
+		prefix: "  ",
+		input: &Failure_Finding{
+			Name: "Because",
+			Value: []string{
+				`here`,
+				`are`,
+				`some`,
+				`lines`,
+			},
+		},
+		expected: []string{
+			`  Because: \`,
+			`    here`,
+			`    are`,
+			`    some`,
+			`    lines`,
+		},
+	}))
+}
+
+func TestRenderCLIFinding(t *testing.T) {
+	t.Parallel()
+
+	type caseT struct {
+		render   RenderCLI
+		input    *Failure_Finding
+		expected []string
+	}
+	testCase := func(tt caseT) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+			t.Helper()
+			actual := tt.render.Finding("", tt.input)
+
+			if diff := typed.Diff(strings.Join(tt.expected, "\n"), actual); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		}
+	}
+
+	t.Run("basic", testCase(caseT{
+		input: &Failure_Finding{
+			Name: "Because",
+		},
+		expected: []string{
+			`Because [no value]`,
+		},
+	}))
+
+	t.Run("long value", testCase(caseT{
+		input: &Failure_Finding{
+			Name: "Because",
+			Value: []string{
+				strings.Repeat("hi", 30),
+			},
+			Level: FindingLogLevel_Warn,
+		},
+		expected: []string{
+			`Because [verbose value len=60 (pass -v to see)]`,
+		},
+	}))
+
+	t.Run("long value", testCase(caseT{
+		render: RenderCLI{
+			Verbose: true,
+		},
+		input: &Failure_Finding{
+			Name: "Because",
+			Value: []string{
+				strings.Repeat("hi", 30),
+			},
+		},
+		expected: []string{
+			`Because: hihihihihihihihihihihihihihihihihihihihihihihihihihihihihihi`,
+		},
+	}))
+
+	t.Run("color cmp.Diff", testCase(caseT{
+		render: RenderCLI{
+			Colorize: true,
+		},
+		input: &Failure_Finding{
+			Name: "Because",
+			Value: []string{
+				"strings.Join({",
+				"  \t... // 872 identical bytes",
+				"  \t\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",",
+				"  \t\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",",
+				"- \t\"arg\",",
+				"+ \t\"B\",",
+				"  \t\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",",
+				"  \t\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",",
+				"  \t... // 872 identical bytes",
+				"}, \"\")",
+			},
+			Type: FindingTypeHint_CmpDiff,
+		},
+		expected: []string{
+			"Because: \\",
+			"    strings.Join({",
+			"      \t... // 872 identical bytes",
+			"      \t\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",",
+			"      \t\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",",
+			"    \x1b[0;32m- \t\"arg\",\x1b[0m",
+			"    \x1b[0;31m+ \t\"B\",\x1b[0m",
+			"      \t\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",",
+			"      \t\"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",",
+			"      \t... // 872 identical bytes",
+			"    }, \"\")",
+		},
+	}))
+
+	t.Run("color unified diff", testCase(caseT{
+		render: RenderCLI{
+			Colorize: true,
+		},
+		input: &Failure_Finding{
+			Name: "Because",
+			Value: []string{
+				"--- lao\t2002-02-21 23:30:39.942229878 -0800",
+				"+++ tzu\t2002-02-21 23:30:50.442260588 -0800",
+				"@@ -1,7 +1,6 @@",
+				"-The Way that can be told of is not the eternal Way;",
+				"-The name that can be named is not the eternal name.",
+				" The Nameless is the origin of Heaven and Earth;",
+				"-The Named is the mother of all things.",
+				"+The named is the mother of all things.",
+				"+",
+			},
+			Type: FindingTypeHint_UnifiedDiff,
+		},
+		expected: []string{
+			"Because: \\",
+			"    \x1b[0;92m--- lao\t2002-02-21 23:30:39.942229878 -0800\x1b[0m",
+			"    \x1b[0;91m+++ tzu\t2002-02-21 23:30:50.442260588 -0800\x1b[0m",
+			"    \x1b[0;31m@@ -1,7 +1,6 @@\x1b[0m",
+			"    \x1b[0;32m-The Way that can be told of is not the eternal Way;\x1b[0m",
+			"    \x1b[0;32m-The name that can be named is not the eternal name.\x1b[0m",
+			"     The Nameless is the origin of Heaven and Earth;",
+			"    \x1b[0;32m-The Named is the mother of all things.\x1b[0m",
+			"    \x1b[0;31m+The named is the mother of all things.\x1b[0m",
+			"    \x1b[0;31m+\x1b[0m",
+		},
+	}))
 }

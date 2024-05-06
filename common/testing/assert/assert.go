@@ -118,8 +118,12 @@
 package assert
 
 import (
+	"fmt"
+	"os"
+
 	"go.chromium.org/luci/common/data"
 	"go.chromium.org/luci/common/testing/assert/comparison"
+	"golang.org/x/term"
 )
 
 // MinimalTestingTB exposes the minimal subset of the testing.TB interface from the standard
@@ -131,6 +135,36 @@ type MinimalTestingTB interface {
 	FailNow()
 }
 
+// Verbose indicates if Assert should always render verbose Findings.
+//
+// By default this is true when the '-test.v' flag is passed to the binary (this
+// is what gets set on the binary when you run `go test -v`).
+var Verbose bool
+
+// Colorize is true when the assert library should colorize its output, and can
+// be set to false in TestMain.
+//
+// By default this is true when Stdout is connected to a terminal.
+var Colorize bool
+
+func init() {
+	Colorize = term.IsTerminal(int(os.Stdout.Fd()))
+
+	for _, val := range os.Args {
+		if val == "-test.v" || val == "-test.v=true" {
+			Verbose = true
+			break
+		}
+	}
+}
+
+func render(f *comparison.Failure) string {
+	return comparison.RenderCLI{
+		Verbose:  Verbose,
+		Colorize: Colorize,
+	}.Failure("", f)
+}
+
 // Assert strictly compares `actual` using `compare`, which is typically
 // a closure over some expected value.
 //
@@ -139,9 +173,7 @@ func Assert[T any](t MinimalTestingTB, actual T, compare comparison.Func[T]) {
 	if f := compare(actual); f != nil {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
 		t.Helper()
-		for _, line := range comparison.RenderCLI(f) {
-			t.Log(line)
-		}
+		t.Log("Assert", render(f))
 		t.FailNow()
 	}
 }
@@ -157,9 +189,7 @@ func Check[T any](t MinimalTestingTB, actual T, compare comparison.Func[T]) (ok 
 	if !ok {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
 		t.Helper()
-		for _, line := range comparison.RenderCLI(f) {
-			t.Log(line)
-		}
+		t.Log("Check", render(f))
 		t.Fail()
 	}
 	return
@@ -176,7 +206,12 @@ func wrapCompare[T any](actual any, compare comparison.Func[T]) (converted T, ne
 		return converted, compare
 	}
 	return converted, func(t T) *comparison.Failure {
-		return comparison.NewFailureBuilder("builtin.LosslessConvertTo", t).Failure
+		fb := comparison.NewFailureBuilder("builtin.LosslessConvertTo", t)
+		fb.Findings = append(fb.Findings, &comparison.Failure_Finding{
+			Name:  "ActualType",
+			Value: []string{fmt.Sprintf("%T", actual)},
+		})
+		return fb.Failure
 	}
 }
 
@@ -191,7 +226,7 @@ func wrapCompare[T any](actual any, compare comparison.Func[T]) (converted T, ne
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
 func AssertL[T any](t MinimalTestingTB, actual any, compare comparison.Func[T]) {
-	converted, compare := wrapCompare[T](actual, compare)
+	converted, compare := wrapCompare(actual, compare)
 	t.Helper()
 	Assert(t, converted, compare)
 }
@@ -208,7 +243,7 @@ func AssertL[T any](t MinimalTestingTB, actual any, compare comparison.Func[T]) 
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
 func CheckL[T any](t MinimalTestingTB, actual any, compare comparison.Func[T]) bool {
-	converted, compare := wrapCompare[T](actual, compare)
+	converted, compare := wrapCompare(actual, compare)
 	t.Helper()
 	return Check(t, converted, compare)
 }

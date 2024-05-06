@@ -16,6 +16,7 @@ package comparison
 
 import (
 	"fmt"
+	"strings"
 )
 
 // A FailureBuilder builds a Failure and has a fluent interface.
@@ -76,7 +77,7 @@ func AddFormattedFinding(f *Failure, name, format string, args ...any) {
 	}
 	f.Findings = append(f.Findings, &Failure_Finding{
 		Name:  name,
-		Value: []string{value},
+		Value: strings.Split(value, "\n"),
 		Type:  FindingTypeHint_Text,
 	})
 }
