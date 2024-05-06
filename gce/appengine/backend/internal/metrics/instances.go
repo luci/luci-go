@@ -34,6 +34,7 @@ var (
 		nil,
 		field.String("prefix"),
 		field.String("project"),
+		field.String("resource_group"),
 	)
 
 	createdInstances = metric.NewInt(
@@ -71,6 +72,7 @@ var (
 		nil,
 		field.String("prefix"),
 		field.String("project"),
+		field.String("resource_group"),
 		field.String("server"),
 		field.String("zone"),
 	)
@@ -109,6 +111,8 @@ type InstanceCount struct {
 	ID string `gae:"$id"`
 	// Prefix is the prefix for this count.
 	Prefix string `gae:"prefix"`
+	// ResourceGroup is the resource group for this prefix.
+	ResourceGroup string `gae:"resource_group"`
 	// Computed is the time this count was computed.
 	Computed time.Time `gae:"computed"`
 	// Configured is a slice of configuredCounts.
@@ -167,11 +171,12 @@ func (ic *InstanceCount) AddConnected(n int, project, server, zone string) {
 }
 
 // Update updates metrics for all known counts of VMs for the given prefix.
-func (ic *InstanceCount) Update(c context.Context, prefix string) error {
+func (ic *InstanceCount) Update(c context.Context, prefix, resourceGroup string) error {
 	// Prefixes are globally unique, so we can use them as IDs.
 	ic.ID = prefix
 	ic.Computed = clock.Now(c).UTC()
 	ic.Prefix = prefix
+	ic.ResourceGroup = resourceGroup
 	if err := datastore.Put(c, ic); err != nil {
 		return errors.Annotate(err, "failed to store count").Err()
 	}
@@ -191,13 +196,13 @@ func updateInstances(c context.Context) {
 			return
 		}
 		for _, conf := range ic.Configured {
-			configuredInstances.Set(c, int64(conf.Count), ic.Prefix, conf.Project)
+			configuredInstances.Set(c, int64(conf.Count), ic.Prefix, conf.Project, ic.ResourceGroup)
 		}
 		for _, crea := range ic.Created {
 			createdInstances.Set(c, int64(crea.Count), ic.Prefix, crea.Project, crea.Zone)
 		}
 		for _, conn := range ic.Connected {
-			connectedInstances.Set(c, int64(conn.Count), ic.Prefix, conn.Project, conn.Server, conn.Zone)
+			connectedInstances.Set(c, int64(conn.Count), ic.Prefix, conn.Project, ic.ResourceGroup, conn.Server, conn.Zone)
 		}
 	}); err != nil {
 		errors.Log(c, errors.Annotate(err, "failed to fetch counts").Err())

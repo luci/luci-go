@@ -90,7 +90,7 @@ func countVMs(c context.Context, payload proto.Message) error {
 	}); err != nil {
 		return errors.Annotate(err, "failed to fetch VMs").Err()
 	}
-	if err := vms.Update(c, task.Id); err != nil {
+	if err := vms.Update(c, task.Id, cfg.Config.GetAttributes().GetLabel()["resource_group"]); err != nil {
 		return errors.Annotate(err, "failed to update count").Err()
 	}
 	return nil

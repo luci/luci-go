@@ -96,7 +96,7 @@ func TestInstances(t *testing.T) {
 				ic.AddConfigured(1, "project")
 				ic.AddCreated(1, "project", "zone")
 				ic.AddConnected(1, "project", "server", "zone")
-				So(ic.Update(c, "prefix"), ShouldBeNil)
+				So(ic.Update(c, "prefix", "resource_group"), ShouldBeNil)
 				ic = &InstanceCount{
 					ID: "prefix",
 				}
@@ -105,17 +105,19 @@ func TestInstances(t *testing.T) {
 				So(ic.Created, ShouldHaveLength, 1)
 				So(ic.Connected, ShouldHaveLength, 1)
 				So(ic.Prefix, ShouldEqual, ic.ID)
+				So(ic.ResourceGroup, ShouldEqual, "resource_group")
 			})
 		})
 
 		Convey("updateInstances", func() {
-			confFields := []any{"prefix", "project"}
+			confFields := []any{"prefix", "project", "resource_group"}
 			creaFields1 := []any{"prefix", "project", "zone-1"}
 			creaFields2 := []any{"prefix", "project", "zone-2"}
-			connFields := []any{"prefix", "project", "server", "zone"}
+			connFields := []any{"prefix", "project", "resource_group", "server", "zone"}
 
 			ic := &InstanceCount{
-				ID: "prefix",
+				ID:            "prefix",
+				ResourceGroup: "resource_group",
 				Configured: []configuredCount{
 					{
 						Count:   3,
