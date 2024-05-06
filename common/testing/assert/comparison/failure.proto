@@ -92,6 +92,9 @@ message Failure {
     // This hint system is expected to be a 'good enough' compromise vs. trying
     // to have the renderer directly compute things like diffs.
     FindingTypeHint type = 3;
+
+    // Level is the "log level" of this finding.
+    FindingLogLevel level = 4;
   }
   // These are some facts which are logically associated with this Failure
   // (which, in turn is the outcome of a failing Comparison).
@@ -132,4 +135,21 @@ enum FindingTypeHint {
   // the renderer if appropriate.
   UnifiedDiff = 1;
   CmpDiff = 2;
+}
+
+// FindingLogLevel is the "log level" (like debug, info &c) of the finding.
+//
+// We are not including the full suite of log4j-esque levels because we don't
+// need them all.
+enum FindingLogLevel {
+  // Unknown is the default value.
+  Unknown = 0;
+
+  // Error indicates that the finding is an error-level finding.
+  // These are always shown.
+  Error = 1;
+
+  // Warn indicates that the finding is a warn-level finding.
+  // These should only be shown when the user wants verbose stuff.
+  Warn = 2;
 }
