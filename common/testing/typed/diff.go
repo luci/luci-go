@@ -17,7 +17,8 @@ package typed
 
 import (
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/protobuf/testing/protocmp"
+
+	"go.chromium.org/luci/common/testing/registry"
 )
 
 // Diff is just like cmp.Diff but it forces got and want to have the same type
@@ -27,8 +28,11 @@ import (
 // protocmp.Transform() is necessary for any protocol buffer comparison, and it
 // correctly does nothing if the arguments that we pass in are hereditarily
 // non-protobufs. So, for developer convenience, let's just always add it.
+//
+// if you want to extend the defaults, take a look at:
+// - "go.chromium.org/luci/common/testing/registry"
 func Diff[T any](want T, got T, opts ...cmp.Option) string {
-	opts = append(opts, protocmp.Transform())
+	opts = append(opts, registry.GetCmpOptions()...)
 	return cmp.Diff(want, got, opts...)
 }
 

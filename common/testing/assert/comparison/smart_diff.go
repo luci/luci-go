@@ -19,20 +19,9 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/protobuf/testing/protocmp"
-)
 
-// DefaultCmpOpts is a list of default cmp.Options used by
-// FailureBuilder.SmartCmpDiff.
-//
-// This can be safely added to in your test's TestMain function, but otherwise
-// shuld be constant during test execution.
-//
-// The default value knows how to correctly diff protobuf Messages, which is an
-// extremely common stumbling block when trying to compare them.
-var DefaultCmpOpts = []cmp.Option{
-	protocmp.Transform(),
-}
+	"go.chromium.org/luci/common/testing/registry"
+)
 
 // SmartCmpDiff does a couple things:
 //   - It adds "Actual" and "Expected" findings. If they have long renderings,
@@ -42,6 +31,9 @@ var DefaultCmpOpts = []cmp.Option{
 //
 // "Long" is defined as a Value with multiple lines or which has > 30 characters
 // in one line.
+//
+// if you want to extend the defaults, take a look at:
+// - "go.chromium.org/luci/common/testing/registry"
 func (fb *FailureBuilder) SmartCmpDiff(actual, expected any, extraCmpOpts ...cmp.Option) *FailureBuilder {
 	const lengthThreshold = 30
 	isLong := func(f *Failure_Finding) bool {
@@ -64,12 +56,8 @@ func (fb *FailureBuilder) SmartCmpDiff(actual, expected any, extraCmpOpts ...cmp
 	}
 
 	if hasLong || slices.Equal(added[0].Value, added[1].Value) {
-		cmpOpts := DefaultCmpOpts
-		if len(extraCmpOpts) > 0 {
-			cmpOpts = make([]cmp.Option, 0, len(DefaultCmpOpts)+len(extraCmpOpts))
-			cmpOpts = append(cmpOpts, DefaultCmpOpts...)
-			cmpOpts = append(cmpOpts, extraCmpOpts...)
-		}
+		cmpOpts := registry.GetCmpOptions()
+		cmpOpts = append(cmpOpts, extraCmpOpts...)
 
 		splitted := strings.Split(cmp.Diff(actual, expected, cmpOpts...), "\n")
 		if splitted[len(splitted)-1] == "" {
