@@ -72,4 +72,26 @@ func TestTimes(t *testing.T) {
 		So(d.Count(), ShouldEqual, 3)
 		So(d.Sum(), ShouldEqual, math.Inf(1))
 	})
+
+	Convey("ReportOnlineTime", t, func() {
+		c, _ := tsmon.WithDummyInMemory(context.Background())
+		s := tsmon.Store(c)
+
+		fields := []any{"prefix", "project", "resource_group", "server", "zone"}
+
+		ReportBotConnectionTime(c, 120.0, "prefix", "project", "resource_group", "server", "zone")
+		d := s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
+		So(d.Count(), ShouldEqual, 1)
+		So(d.Sum(), ShouldEqual, 120.0)
+
+		ReportBotConnectionTime(c, 180.0, "prefix", "project", "resource_group", "server", "zone")
+		d = s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
+		So(d.Count(), ShouldEqual, 2)
+		So(d.Sum(), ShouldEqual, 300.0)
+
+		ReportBotConnectionTime(c, math.Inf(1), "prefix", "project", "resource_group", "server", "zone")
+		d = s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
+		So(d.Count(), ShouldEqual, 3)
+		So(d.Sum(), ShouldEqual, math.Inf(1))
+	})
 }

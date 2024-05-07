@@ -44,6 +44,18 @@ var (
 		field.String("server"),
 		field.String("zone"),
 	)
+
+	botConnectionTime = metric.NewCumulativeDistribution(
+		"gce/bots/times/connection",
+		"Time between GCE Provider configuring an Swarming bot (VM instance) and Swarming reporting it as connected.",
+		&types.MetricMetadata{Units: types.Seconds},
+		distribution.GeometricBucketer(1.1, 100),
+		field.String("prefix"),
+		field.String("project"),
+		field.String("resource_group"),
+		field.String("server"),
+		field.String("zone"),
+	)
 )
 
 // ReportCreationTime sets GCE instance creation time metric.
@@ -54,4 +66,9 @@ func ReportCreationTime(c context.Context, secs float64, prefix, project, zone s
 // ReportConnectionTime sets GCE instance creation time metric.
 func ReportConnectionTime(c context.Context, secs float64, prefix, project, server, zone string) {
 	connectionTime.Add(c, secs, prefix, project, server, zone)
+}
+
+// ReportBotConnectionTime sets Swarming bot connection time metric.
+func ReportBotConnectionTime(c context.Context, secs float64, prefix, project, resourceGroup, server, zone string) {
+	botConnectionTime.Add(c, secs, prefix, project, resourceGroup, server, zone)
 }
