@@ -1031,7 +1031,7 @@ func TestGenerateChanges(t *testing.T) {
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)
 				validateChanges(ctx, "add perm to realms globals, old config present", 3, actualChanges, []*AuthDBChange{{
-					ChangeType:         ChangeRealmsGlobalsChanged,
+					ChangeType:       ChangeRealmsGlobalsChanged,
 					PermissionsAdded: []string{"test.perm.edit"},
 				}})
 			})
@@ -1114,8 +1114,8 @@ func TestGenerateChanges(t *testing.T) {
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)
 				validateChanges(ctx, "add perm to realms globals, old config present", 3, actualChanges, []*AuthDBChange{{
-					ChangeType:       ChangeRealmsGlobalsChanged,
-					PermissionsAdded: []string{"test.perm.edit"},
+					ChangeType:         ChangeRealmsGlobalsChanged,
+					PermissionsAdded:   []string{"test.perm.edit"},
 					PermissionsChanged: []string{"test.perm.create"},
 				}})
 			})

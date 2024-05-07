@@ -174,6 +174,36 @@ func (srv *Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRe
 	}
 }
 
+// GetExpandedGroup implements the corresponding RPC method.
+//
+// Possible Errors:
+//
+//	Internal error for datastore access issues.
+//	NotFound error wrapping a graph.ErrNoSuchGroup if group is not present in groups graph.
+func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*rpcpb.AuthGroup, error) {
+	// Get all groups.
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal,
+			"Failed to fetch groups: %s", err)
+	}
+
+	// Build graph from groups.
+	groupsGraph := graph.NewGraph(groups)
+	expandedGroup, err := groupsGraph.GetExpandedGroup(request.Name)
+	if err != nil {
+		if errors.Is(err, graph.ErrNoSuchGroup) {
+			return nil, status.Errorf(codes.NotFound,
+				"The requested group \"%s\" was not found.", request.Name)
+		}
+
+		return nil, status.Errorf(codes.Internal,
+			"Error expanding group: %s", err)
+	}
+
+	return expandedGroup, nil
+}
+
 // GetSubgraph implements the corresponding RPC method.
 //
 // Possible Errors:
@@ -190,7 +220,7 @@ func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRe
 			"Failed to fetch groups: %s", err)
 	}
 
-	// Build groups graph from groups in datastore.
+	// Build graph from groups.
 	groupsGraph := graph.NewGraph(groups)
 
 	principal, err := convertPrincipal(request.Principal)

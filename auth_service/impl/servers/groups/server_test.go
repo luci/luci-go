@@ -655,6 +655,101 @@ func TestGroupsServer(t *testing.T) {
 		})
 	})
 
+	Convey("GetExpandedGroup RPC call", t, func() {
+		const (
+			// Identities, groups, globs
+			owningGroup = "owning-group"
+			nestedGroup = "nested-group"
+			soloGroup   = "solo-group"
+			testUser0   = "user:m0@example.com"
+			testUser1   = "user:m1@example.com"
+			testUser2   = "user:t2@example.com"
+			testGlob0   = "user:m*@example.com"
+			testGlob1   = "user:t2*"
+		)
+
+		srv := Server{
+			authGroupsProvider: &CachingGroupsProvider{},
+		}
+		ctx := memory.Use(context.Background())
+		So(datastore.Put(ctx,
+			&model.AuthGroup{
+				ID:     owningGroup,
+				Parent: model.RootKey(ctx),
+				Members: []string{
+					testUser0,
+					testUser1,
+				},
+				Nested: []string{
+					nestedGroup,
+				},
+			},
+			&model.AuthGroup{
+				ID:     soloGroup,
+				Parent: model.RootKey(ctx),
+				Globs: []string{
+					testGlob1,
+				},
+				Description:              "This is a solo group",
+				Owners:                   model.AdminGroup,
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-solo-user@example.com",
+				AuthVersionedEntityMixin: versionedEntity,
+			},
+			&model.AuthGroup{
+				ID:     nestedGroup,
+				Parent: model.RootKey(ctx),
+				Members: []string{
+					testUser2,
+				},
+				Globs: []string{
+					testGlob0,
+					testGlob1,
+				},
+				Owners: owningGroup,
+			}), ShouldBeNil)
+		So(putRev(ctx, 123), ShouldBeNil)
+
+		Convey("unknown group returns error", func() {
+			request := &rpcpb.GetGroupRequest{Name: "unknown"}
+			_, err := srv.GetExpandedGroup(ctx, request)
+			So(err, ShouldErrLike, "not found")
+		})
+
+		Convey("works for standalone group", func() {
+			request := &rpcpb.GetGroupRequest{Name: soloGroup}
+			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
+			So(err, ShouldBeNil)
+			So(expandedGroup, ShouldResembleProto, &rpcpb.AuthGroup{
+				Name:  soloGroup,
+				Globs: []string{testGlob1},
+			})
+		})
+
+		Convey("nested memberships returned", func() {
+			request := &rpcpb.GetGroupRequest{Name: owningGroup}
+			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
+			So(err, ShouldBeNil)
+			So(expandedGroup, ShouldResembleProto, &rpcpb.AuthGroup{
+				Name:    owningGroup,
+				Members: []string{testUser0, testUser1, testUser2},
+				Globs:   []string{testGlob0, testGlob1},
+				Nested:  []string{nestedGroup},
+			})
+		})
+
+		Convey("works for nested group with no subgroups", func() {
+			request := &rpcpb.GetGroupRequest{Name: nestedGroup}
+			expandedGroup, err := srv.GetExpandedGroup(ctx, request)
+			So(err, ShouldBeNil)
+			So(expandedGroup, ShouldResembleProto, &rpcpb.AuthGroup{
+				Name:    nestedGroup,
+				Members: []string{testUser2},
+				Globs:   []string{testGlob0, testGlob1},
+			})
+		})
+	})
+
 	Convey("GetSubgraph RPC call", t, func() {
 		const (
 			// Identities, groups, globs

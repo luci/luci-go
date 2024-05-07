@@ -19,10 +19,13 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -104,6 +107,65 @@ func TestGraphBuilding(t *testing.T) {
 		So(actualGraph.groups["group-1"].included[0].group, ShouldResemble, authGroups[2])
 		So(actualGraph.groups["group-1"].includes[0].group, ShouldResemble, authGroups[0])
 		So(actualGraph.groups["group-2"].includes[0].group, ShouldResemble, authGroups[1])
+	})
+}
+
+func TestGetExpandedGroup(t *testing.T) {
+	t.Parallel()
+
+	Convey("Testing GetExpandedGroup", t, func() {
+		testGroup0 := "group-0"
+		testGroup1 := "group-1"
+		testGroup2 := "group-2"
+		testUser0 := "user:m0@example.com"
+		testUser1 := "user:m1@example.com"
+		testGlob := "user:*@example.com"
+
+		authGroups := []*model.AuthGroup{
+			testAuthGroup(testGroup0, testUser0, testGlob),
+			testAuthGroup(testGroup1, testUser0, testUser1, testGroup0),
+			testAuthGroup(testGroup2, testGroup1, testGroup0),
+		}
+
+		graph := NewGraph(authGroups)
+
+		Convey("unknown group should return error", func() {
+			_, err := graph.GetExpandedGroup("unknown-group")
+			So(errors.Is(err, ErrNoSuchGroup), ShouldBeTrue)
+		})
+
+		Convey("group with no nesting works", func() {
+			expanded, err := graph.GetExpandedGroup(testGroup0)
+			So(err, ShouldBeNil)
+			So(expanded, ShouldResembleProto, &rpcpb.AuthGroup{
+				Name:    testGroup0,
+				Members: []string{testUser0},
+				Globs:   []string{testGlob},
+				Nested:  []string{},
+			})
+		})
+
+		Convey("group with nested group works", func() {
+			expanded, err := graph.GetExpandedGroup(testGroup1)
+			So(err, ShouldBeNil)
+			So(expanded, ShouldResembleProto, &rpcpb.AuthGroup{
+				Name:    testGroup1,
+				Members: []string{testUser0, testUser1},
+				Globs:   []string{testGlob},
+				Nested:  []string{testGroup0},
+			})
+		})
+
+		Convey("subgroup nested twice", func() {
+			expanded, err := graph.GetExpandedGroup(testGroup2)
+			So(err, ShouldBeNil)
+			So(expanded, ShouldResembleProto, &rpcpb.AuthGroup{
+				Name:    testGroup2,
+				Members: []string{testUser0, testUser1},
+				Globs:   []string{testGlob},
+				Nested:  []string{testGroup0, testGroup1},
+			})
+		})
 	})
 }
 

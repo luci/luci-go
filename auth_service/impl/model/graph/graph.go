@@ -20,7 +20,9 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 )
 
@@ -98,6 +100,61 @@ func NewGraph(groups []*model.AuthGroup) *Graph {
 	graph.initializeNodes(groups)
 
 	return graph
+}
+
+// GetExpandedGroup returns the explicit membership rules for the group.
+//
+// If the group exists in the Graph, the returned AuthGroup shall have the
+// following fields:
+//   - Name, the name of the group;
+//   - Members, containing all unique members from both direct and indirect inclusions;
+//   - Globs, containing all unique globs from both direct and indirect inclusions; and
+//   - Nested, containing all unique nested groups from both direct and indirect
+//     inclusions.
+func (g *Graph) GetExpandedGroup(name string) (*rpcpb.AuthGroup, error) {
+	root, ok := g.groups[name]
+	if !ok {
+		return nil, ErrNoSuchGroup
+	}
+
+	// The direct and indirect memberships of the fully expanded group.
+	members := stringset.Set{}
+	globs := stringset.Set{}
+	nested := stringset.Set{}
+
+	// The set of groups which have already been expanded.
+	expanded := stringset.Set{}
+
+	var expand func(node *groupNode)
+	expand = func(node *groupNode) {
+		if expanded.Has(node.group.ID) {
+			// Skip previously processed group.
+			return
+		}
+
+		// Process the group.
+		members.AddAll(node.group.Members)
+		globs.AddAll(node.group.Globs)
+		nested.AddAll(node.group.Nested)
+
+		// Record the group as having been processed.
+		expanded.Add(node.group.ID)
+
+		// Process the memberships from subgroups of this group.
+		for _, subgroup := range node.includes {
+			expand(subgroup)
+		}
+	}
+
+	// Expand memberships, starting from the given group.
+	expand(root)
+
+	return &rpcpb.AuthGroup{
+		Name:    root.group.ID,
+		Members: members.ToSortedSlice(),
+		Globs:   globs.ToSortedSlice(),
+		Nested:  nested.ToSortedSlice(),
+	}, nil
 }
 
 // GetRelevantSubgraph returns a Subgraph of groups that

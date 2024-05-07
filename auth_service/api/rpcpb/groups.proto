@@ -46,6 +46,13 @@ service Groups {
   // include a principal (perhaps indirectly or via globs). Here a principal is
   // either an identity, a group or a glob (see PrincipalKind enum).
   rpc GetSubgraph(GetSubgraphRequest) returns (Subgraph);
+
+  // GetExpandedGroup returns the requested AuthGroup, with subgroups fully
+  // expanded, i.e.
+  // - `members` will include direct and indirect members;
+  // - `globs` will include direct and indirect globs; and
+  // - `nested` will include direct and indirect subgroups.
+  rpc GetExpandedGroup(GetGroupRequest) returns (AuthGroup);
 }
 
 // ListGroupsResponse is all the groups listed in LUCI Auth Service.

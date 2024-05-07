@@ -34,12 +34,13 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Groups_ListGroups_FullMethodName  = "/auth.service.Groups/ListGroups"
-	Groups_GetGroup_FullMethodName    = "/auth.service.Groups/GetGroup"
-	Groups_CreateGroup_FullMethodName = "/auth.service.Groups/CreateGroup"
-	Groups_UpdateGroup_FullMethodName = "/auth.service.Groups/UpdateGroup"
-	Groups_DeleteGroup_FullMethodName = "/auth.service.Groups/DeleteGroup"
-	Groups_GetSubgraph_FullMethodName = "/auth.service.Groups/GetSubgraph"
+	Groups_ListGroups_FullMethodName       = "/auth.service.Groups/ListGroups"
+	Groups_GetGroup_FullMethodName         = "/auth.service.Groups/GetGroup"
+	Groups_CreateGroup_FullMethodName      = "/auth.service.Groups/CreateGroup"
+	Groups_UpdateGroup_FullMethodName      = "/auth.service.Groups/UpdateGroup"
+	Groups_DeleteGroup_FullMethodName      = "/auth.service.Groups/DeleteGroup"
+	Groups_GetSubgraph_FullMethodName      = "/auth.service.Groups/GetSubgraph"
+	Groups_GetExpandedGroup_FullMethodName = "/auth.service.Groups/GetExpandedGroup"
 )
 
 // GroupsClient is the client API for Groups service.
@@ -62,6 +63,12 @@ type GroupsClient interface {
 	// include a principal (perhaps indirectly or via globs). Here a principal is
 	// either an identity, a group or a glob (see PrincipalKind enum).
 	GetSubgraph(ctx context.Context, in *GetSubgraphRequest, opts ...grpc.CallOption) (*Subgraph, error)
+	// GetExpandedGroup returns the requested AuthGroup, with subgroups fully
+	// expanded, i.e.
+	// - `members` will include direct and indirect members;
+	// - `globs` will include direct and indirect globs; and
+	// - `nested` will include direct and indirect subgroups.
+	GetExpandedGroup(ctx context.Context, in *GetGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error)
 }
 
 type groupsClient struct {
@@ -126,6 +133,15 @@ func (c *groupsClient) GetSubgraph(ctx context.Context, in *GetSubgraphRequest, 
 	return out, nil
 }
 
+func (c *groupsClient) GetExpandedGroup(ctx context.Context, in *GetGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error) {
+	out := new(AuthGroup)
+	err := c.cc.Invoke(ctx, Groups_GetExpandedGroup_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GroupsServer is the server API for Groups service.
 // All implementations must embed UnimplementedGroupsServer
 // for forward compatibility
@@ -146,6 +162,12 @@ type GroupsServer interface {
 	// include a principal (perhaps indirectly or via globs). Here a principal is
 	// either an identity, a group or a glob (see PrincipalKind enum).
 	GetSubgraph(context.Context, *GetSubgraphRequest) (*Subgraph, error)
+	// GetExpandedGroup returns the requested AuthGroup, with subgroups fully
+	// expanded, i.e.
+	// - `members` will include direct and indirect members;
+	// - `globs` will include direct and indirect globs; and
+	// - `nested` will include direct and indirect subgroups.
+	GetExpandedGroup(context.Context, *GetGroupRequest) (*AuthGroup, error)
 	mustEmbedUnimplementedGroupsServer()
 }
 
@@ -170,6 +192,9 @@ func (UnimplementedGroupsServer) DeleteGroup(context.Context, *DeleteGroupReques
 }
 func (UnimplementedGroupsServer) GetSubgraph(context.Context, *GetSubgraphRequest) (*Subgraph, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSubgraph not implemented")
+}
+func (UnimplementedGroupsServer) GetExpandedGroup(context.Context, *GetGroupRequest) (*AuthGroup, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExpandedGroup not implemented")
 }
 func (UnimplementedGroupsServer) mustEmbedUnimplementedGroupsServer() {}
 
@@ -292,6 +317,24 @@ func _Groups_GetSubgraph_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Groups_GetExpandedGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GroupsServer).GetExpandedGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Groups_GetExpandedGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GroupsServer).GetExpandedGroup(ctx, req.(*GetGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Groups_ServiceDesc is the grpc.ServiceDesc for Groups service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -322,6 +365,10 @@ var Groups_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSubgraph",
 			Handler:    _Groups_GetSubgraph_Handler,
+		},
+		{
+			MethodName: "GetExpandedGroup",
+			Handler:    _Groups_GetExpandedGroup_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
