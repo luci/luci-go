@@ -27,7 +27,7 @@
 //  2. If you refuse to put the helpers in a library, you now have one custom
 //     library per package, which is worse.
 //  3. If you ignore the problem, you may be tempted to write shorter error
-//     messages, at which point test failures become more cumbersome to debug.
+//     messages, which makes test failures more cumbersome to debug.
 //
 // So, for our applications, we've found them to be helpful tools to write high
 // quality tests. This library is NOT a requirement, but a tool. If it gets in
