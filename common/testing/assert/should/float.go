@@ -19,7 +19,7 @@ import (
 )
 
 // BeNaN checks that `actual` is a floating point NaN.
-func BeNaN[T float32 | float64](actual T) *comparison.Failure {
+func BeNaN[T ~float32 | ~float64](actual T) *comparison.Failure {
 	if actual != actual { // see `math.IsNaN` for why this works.
 		return nil
 	}
