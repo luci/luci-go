@@ -24,8 +24,8 @@ import (
 func TestAddValuef(t *testing.T) {
 	t.Parallel()
 
-	failure := &Failure{}
-	AddFormattedFinding(failure, "a", "%d", 4)
+	failure := NewFailureBuilder("test").AddFormattedFinding("a", "%d", 4)
+
 	if diff := typed.Got(failure.Findings[0]).Want(&Failure_Finding{Name: "a", Value: []string{"4"}}).Diff(); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}

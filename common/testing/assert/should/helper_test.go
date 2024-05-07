@@ -70,4 +70,3 @@ func shouldFail(f *comparison.Failure, containing ...string) func(t *testing.T) 
 		}
 	}
 }
-
