@@ -410,6 +410,9 @@ func OptionsFromEnv(opts *Options) (*Options, error) {
 	if opts.ClientAuth.SecretsDir == "" {
 		opts.ClientAuth.SecretsDir = authDefaults.SecretsDir
 	}
+	if opts.ClientAuth.LoginSessionsHost == "" {
+		opts.ClientAuth.LoginSessionsHost = authDefaults.LoginSessionsHost
+	}
 
 	// Use CloudOAuthScopes by default when using UserCredentialsMethod auth mode.
 	// This is ignored when running in the cloud (the server uses the ambient
