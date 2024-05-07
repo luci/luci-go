@@ -19,55 +19,52 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-
-	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/typed"
 )
+
+// AddCmpDiff adds a 'Diff' finding which is type hinted to be the output of
+// cmp.Diff.
+//
+// The diff is split into multiple lines, but is otherwise untouched.
+func (fb *FailureBuilder) AddCmpDiff(diff string) *FailureBuilder {
+	fb.fixNilFailure()
+	fb.Findings = append(fb.Findings, &Failure_Finding{
+		Name:  "Diff",
+		Value: strings.Split(diff, "\n"),
+		Type:  FindingTypeHint_CmpDiff,
+	})
+	return fb
+}
 
 // SmartCmpDiff does a couple things:
 //   - It adds "Actual" and "Expected" findings. If they have long renderings,
-//     they will be marked as Verbose.
-//   - If their text representations are long, or are identical, this will also
-//     add a Diff, using cmp.Diff and the provided Options.
+//     they will be marked as Level=Warn.
+//   - If either text representation is long, or they are identical, this will
+//     also add a Diff, using cmp.Diff and the provided Options.
 //
 // "Long" is defined as a Value with multiple lines or which has > 30 characters
 // in one line.
 //
-// if you want to extend the defaults, take a look at:
-// - "go.chromium.org/luci/common/testing/registry"
+// The default cmp.Options include a Transformer to handle protobufs. If you
+// want to extend the default Options see
+// `go.chromium.org/luci/common/testing/registry`.
 func (fb *FailureBuilder) SmartCmpDiff(actual, expected any, extraCmpOpts ...cmp.Option) *FailureBuilder {
-	const lengthThreshold = 30
-	isLong := func(f *Failure_Finding) bool {
-		// NOTE: f.Value here will be the newline-split %#v formatting of a Go value
-		// - these are USUALLY single line... however just in case someone has
-		// a custom GoStringer function which returns a value with non-escaped
-		// newlines, we consider all multi-line values here to be 'long'.
-		return len(f.Value) > 1 || len(f.Value[0]) > lengthThreshold
-	}
+	fb.fixNilFailure()
 
-	fb = fb.Actual(actual).Expected(expected)
+	fb = fb.Actual(actual).WarnIfLong().
+		Expected(expected).WarnIfLong()
 
 	added := fb.Findings[len(fb.Findings)-2:]
 	hasLong := false
 	for _, finding := range added {
-		if isLong(finding) {
-			finding.Level = FindingLogLevel_Warn
+		if finding.Level == FindingLogLevel_Warn {
 			hasLong = true
+			break
 		}
 	}
 
 	if hasLong || slices.Equal(added[0].Value, added[1].Value) {
-		cmpOpts := registry.GetCmpOptions()
-		cmpOpts = append(cmpOpts, extraCmpOpts...)
-
-		splitted := strings.Split(cmp.Diff(actual, expected, cmpOpts...), "\n")
-		if splitted[len(splitted)-1] == "" {
-			splitted = splitted[:len(splitted)-1]
-		}
-		fb.Findings = append(fb.Findings, &Failure_Finding{
-			Name:  "Diff",
-			Value: splitted,
-			Type:  FindingTypeHint_CmpDiff,
-		})
+		fb.AddCmpDiff(typed.Diff(actual, expected, extraCmpOpts...))
 	}
 
 	return fb

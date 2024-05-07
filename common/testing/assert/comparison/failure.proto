@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package buildbucket.v2;
+package luci.common.testing.assert.comparison;
 
 option go_package = "go.chromium.org/luci/common/testing/assert/comparison;comparison";
 

@@ -113,3 +113,23 @@ func (fb *FailureBuilder) Expected(Expected any) *FailureBuilder {
 	AddFormattedFinding(fb.Failure, "Expected", "%#v", Expected)
 	return fb
 }
+
+// Marks the previously-added Finding with Level 'Warn' if it has a long value.
+//
+// A long value is defined as:
+//   - More than one line OR
+//   - A line exceeding 30 characters in length.
+//
+// No-op if there are no findings in the failure yet.
+func (fb *FailureBuilder) WarnIfLong() *FailureBuilder {
+	const lengthThreshold = 30
+
+	fb.fixNilFailure()
+	if len(fb.Findings) > 0 {
+		f := fb.Findings[len(fb.Findings)-1]
+		if len(f.Value) > 1 || len(f.Value[0]) > lengthThreshold {
+			f.Level = FindingLogLevel_Warn
+		}
+	}
+	return fb
+}
