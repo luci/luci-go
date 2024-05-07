@@ -17,7 +17,8 @@ package resultdb
 import (
 	"testing"
 
-	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/auth"
@@ -32,41 +33,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateQueryPartialTestVariantsRequest(t *testing.T) {
-	t.Parallel()
-	Convey(`Validate`, t, func() {
-		Convey(`no invocation`, func() {
-			err := validateQueryRunTestVariantsRequest(&pb.QueryRunTestVariantsRequest{})
-			So(err, ShouldErrLike, `invocation: unspecified`)
-		})
-
-		Convey(`invalid invocation`, func() {
-			err := validateQueryRunTestVariantsRequest(&pb.QueryRunTestVariantsRequest{
-				Invocation: "x",
-			})
-			So(err, ShouldErrLike, `invocation: does not match`)
-		})
-
-		Convey(`invalid page size`, func() {
-			err := validateQueryRunTestVariantsRequest(&pb.QueryRunTestVariantsRequest{
-				Invocation: "invocations/x",
-				PageSize:   -1,
-			})
-			So(err, ShouldErrLike, `page_size: negative`)
-		})
-
-		Convey(`invalid result limit`, func() {
-			err := validateQueryRunTestVariantsRequest(&pb.QueryRunTestVariantsRequest{
-				Invocation:  "invocations/x",
-				ResultLimit: -1,
-			})
-			So(err, ShouldErrLike, `result_limit: negative`)
-		})
-	})
-}
-
-func TestQueryPartialTestVariants(t *testing.T) {
-	Convey(`QueryPartialTestVariants`, t, func() {
+func TestQueryRunTestVariants(t *testing.T) {
+	Convey(`QueryRunTestVariants`, t, func() {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -75,21 +43,102 @@ func TestQueryPartialTestVariants(t *testing.T) {
 		})
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		insertInv := insert.FinalizedInvocationWithInclusions
-		insertTRs := insert.TestResults
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			insertInv("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
-			insertInv("b", map[string]any{"Realm": "testproject:testrealm"}),
-			insertTRs("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insertTRs("a", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			insertTRs("a", "C", nil, pb.TestStatus_PASS),
-			insertTRs("b", "A", nil, pb.TestStatus_FAIL),
+			insert.FinalizedInvocationWithInclusions("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
+			insert.FinalizedInvocationWithInclusions("b", map[string]any{"Realm": "testproject:testrealm"}),
+			insert.TestResults("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults("a", "B", nil, pb.TestStatus_PASS, pb.TestStatus_CRASH),
+			insert.TestResults("a", "C", nil, pb.TestStatus_PASS),
+			insert.TestResults("b", "A", nil, pb.TestStatus_CRASH),
 		)...)
 
 		srv := newTestResultDBService()
+		properties := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"key": structpb.NewStringValue("value"),
+			},
+		}
+		expectedTestVariants := []*pb.TestVariant{
+			{
+				TestId:      "A",
+				Variant:     nil,
+				VariantHash: "e3b0c44298fc1c14",
+				Results: []*pb.TestResultBundle{
+					{
+						Result: &pb.TestResult{
+							Name:          "invocations/a/tests/A/results/0",
+							ResultId:      "0",
+							Duration:      &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							Status:        pb.TestStatus_FAIL,
+							SummaryHtml:   "SummaryHtml",
+							FailureReason: &pb.FailureReason{PrimaryErrorMessage: "failure reason"},
+							Properties:    properties,
+						},
+					}, {
+						Result: &pb.TestResult{
+							Name:        "invocations/a/tests/A/results/1",
+							ResultId:    "1",
+							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
+							Expected:    true,
+							Status:      pb.TestStatus_PASS,
+							SummaryHtml: "SummaryHtml",
+							Properties:  properties,
+						},
+					},
+				},
+				TestMetadata: &pb.TestMetadata{Name: "testname"},
+			}, {
+				TestId:      "B",
+				Variant:     nil,
+				VariantHash: "e3b0c44298fc1c14",
+				Results: []*pb.TestResultBundle{
+					{
+						Result: &pb.TestResult{
+							Name:          "invocations/a/tests/B/results/1",
+							ResultId:      "1",
+							Duration:      &durationpb.Duration{Seconds: 1, Nanos: 234567000},
+							Status:        pb.TestStatus_CRASH,
+							SummaryHtml:   "SummaryHtml",
+							FailureReason: &pb.FailureReason{PrimaryErrorMessage: "failure reason"},
+							Properties:    properties,
+						},
+					},
+					{
+						Result: &pb.TestResult{
+							Name:        "invocations/a/tests/B/results/0",
+							ResultId:    "0",
+							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							Expected:    true,
+							Status:      pb.TestStatus_PASS,
+							SummaryHtml: "SummaryHtml",
+							Properties:  properties,
+						},
+					},
+				},
+				TestMetadata: &pb.TestMetadata{Name: "testname"},
+			}, {
+				TestId:      "C",
+				Variant:     nil,
+				VariantHash: "e3b0c44298fc1c14",
+				Results: []*pb.TestResultBundle{
+					{
+						Result: &pb.TestResult{
+							Name:        "invocations/a/tests/C/results/0",
+							ResultId:    "0",
+							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							Expected:    true,
+							Status:      pb.TestStatus_PASS,
+							SummaryHtml: "SummaryHtml",
+							Properties:  properties,
+						},
+					},
+				},
+				TestMetadata: &pb.TestMetadata{Name: "testname"},
+			},
+		}
 
 		Convey(`Permission denied`, func() {
-			testutil.MustApply(ctx, insertInv("y", map[string]any{"Realm": "secretproject:secret"})...)
+			testutil.MustApply(ctx, insert.Invocation("y", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:secret"}))
 
 			_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
 				Invocation: "invocations/y",
@@ -103,7 +152,13 @@ func TestQueryPartialTestVariants(t *testing.T) {
 
 				So(err, ShouldBeRPCInvalidArgument, `unspecified`)
 			})
+			Convey(`Invalid invocation name`, func() {
+				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+					Invocation: "x",
+				})
 
+				So(err, ShouldBeRPCInvalidArgument, `does not match ^invocations/([a-z][a-z0-9_\-:.]{0,99})$`)
+			})
 			Convey(`Invalid result limit`, func() {
 				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
 					Invocation:  "invocations/a",
@@ -112,18 +167,70 @@ func TestQueryPartialTestVariants(t *testing.T) {
 
 				So(err, ShouldBeRPCInvalidArgument, `result_limit: negative`)
 			})
+			Convey(`Invalid page size`, func() {
+				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+					Invocation: "invocations/a",
+					PageSize:   -1,
+				})
+
+				So(err, ShouldBeRPCInvalidArgument, `page_size: negative`)
+			})
+			Convey(`Invalid page token`, func() {
+				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+					Invocation: "invocations/a",
+					PageToken:  "aaaa",
+				})
+
+				So(err, ShouldBeRPCInvalidArgument, `page_token`)
+			})
 		})
-		Convey(`Not found`, func() {
+		Convey(`Invocation not found`, func() {
 			_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
 				Invocation: "invocations/notexists",
 			})
 			So(err, ShouldBeRPCNotFound)
 		})
-		Convey(`Valid`, func() {
-			_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+		Convey(`Valid, no pagination`, func() {
+			result, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
 				Invocation: "invocations/a",
 			})
-			So(err, ShouldHaveRPCCode, codes.Unimplemented)
+			So(err, ShouldBeNil)
+			So(result, ShouldResembleProto, &pb.QueryRunTestVariantsResponse{
+				TestVariants: expectedTestVariants,
+			})
+		})
+		Convey(`Valid, pagination`, func() {
+			response, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+				Invocation: "invocations/a",
+				PageSize:   1,
+			})
+			So(err, ShouldBeNil)
+			So(response, ShouldResembleProto, &pb.QueryRunTestVariantsResponse{
+				TestVariants:  expectedTestVariants[:1],
+				NextPageToken: "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
+			})
+
+			response, err = srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+				Invocation: "invocations/a",
+				PageSize:   1,
+				PageToken:  "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
+			})
+			So(err, ShouldBeNil)
+			So(response, ShouldResembleProto, &pb.QueryRunTestVariantsResponse{
+				TestVariants:  expectedTestVariants[1:2],
+				NextPageToken: "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
+			})
+
+			response, err = srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+				Invocation: "invocations/a",
+				PageSize:   1,
+				PageToken:  "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
+			})
+			So(err, ShouldBeNil)
+			So(response, ShouldResembleProto, &pb.QueryRunTestVariantsResponse{
+				TestVariants:  expectedTestVariants[2:],
+				NextPageToken: "",
+			})
 		})
 	})
 }

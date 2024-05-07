@@ -181,7 +181,11 @@ func TestExportToBigQuery(t *testing.T) {
 					})
 					So(tr.SkipReason, ShouldEqual, pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS.String())
 				} else {
-					So(tr.Properties, ShouldBeNil)
+					So(tr.Properties, ShouldResembleProto, &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key": structpb.NewStringValue("value"),
+						},
+					})
 					So(tr.SkipReason, ShouldBeEmpty)
 				}
 

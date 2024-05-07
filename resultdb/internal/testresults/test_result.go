@@ -103,13 +103,13 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	PopulateExpectedField(tr, maybeUnexpected)
 	PopulateDurationField(tr, micros)
 	PopulateSkipReasonField(tr, skipReason)
-	if err := populateTestMetadata(tr, tmd); err != nil {
+	if err := PopulateTestMetadata(tr, tmd); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal test metadata").Err()
 	}
-	if err := populateFailureReason(tr, fr); err != nil {
+	if err := PopulateFailureReason(tr, fr); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal failure reason").Err()
 	}
-	if err := populateProperties(tr, properties); err != nil {
+	if err := PopulateProperties(tr, properties); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal properties").Err()
 	}
 	return tr, nil
@@ -136,7 +136,7 @@ func PopulateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) 
 	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
 }
 
-func populateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {
+func PopulateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {
 	if len(tmd) == 0 {
 		return nil
 	}
@@ -145,7 +145,7 @@ func populateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {
 	return proto.Unmarshal(tmd, tr.TestMetadata)
 }
 
-func populateFailureReason(tr *pb.TestResult, fr spanutil.Compressed) error {
+func PopulateFailureReason(tr *pb.TestResult, fr spanutil.Compressed) error {
 	if len(fr) == 0 {
 		return nil
 	}
@@ -154,7 +154,7 @@ func populateFailureReason(tr *pb.TestResult, fr spanutil.Compressed) error {
 	return proto.Unmarshal(fr, tr.FailureReason)
 }
 
-func populateProperties(tr *pb.TestResult, properties spanutil.Compressed) error {
+func PopulateProperties(tr *pb.TestResult, properties spanutil.Compressed) error {
 	if len(properties) == 0 {
 		return nil
 	}

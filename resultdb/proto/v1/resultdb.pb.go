@@ -1526,13 +1526,14 @@ type QueryRunTestVariantsResponse struct {
 
 	// Test variants for the run.
 	//
-	// Exonerations will be unset, as it is verdict-level concept and not
-	// a test run-level concept.
-	//
-	// Sources will also be unset, as this RPC is only querying a particular
-	// test run and there is no opportunity to resolve inherited test sources.
-	// When used in conjunction with the invocation-ready-for-export pub/sub,
-	// sources can be obtained from that pub/sub instead.
+	// The following fields will be unset:
+	//   - exonerations (exonerations are a verdict-level concept and not
+	//     a test run verdict-level concept)
+	//   - sources_id (as we are only querying a particular invocation there
+	//     is no opportunity to resolve inherited test sources. When used
+	//     in conjunction with the invocation-ready-for-export pub/sub,
+	//     sources can be obtained from that pub/sub instead.)
+	//   - status
 	//
 	// Ordered by test_id, then variant_hash.
 	TestVariants []*TestVariant `protobuf:"bytes,1,rep,name=test_variants,json=testVariants,proto3" json:"test_variants,omitempty"`

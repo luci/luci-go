@@ -24,6 +24,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -98,16 +99,21 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 	for i, tr := range trs {
 		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
 		So(err, ShouldBeNil)
+
 		mutMap := map[string]any{
 			"InvocationId":    invocations.ID(invID),
 			"TestId":          testID,
 			"ResultId":        resultID,
-			"Variant":         trs[i].Variant,
-			"VariantHash":     pbutil.VariantHash(trs[i].Variant),
+			"Variant":         tr.Variant,
+			"VariantHash":     pbutil.VariantHash(tr.Variant),
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"Status":          tr.Status,
-			"RunDurationUsec": 1e6*i + 234567,
-			"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
+			"Tags":            tr.Tags,
+			"StartTime":       tr.StartTime,
+			"SummaryHtml":     spanutil.Compressed(tr.SummaryHtml),
+		}
+		if tr.Duration != nil {
+			mutMap["RunDurationUsec"] = spanner.NullInt64{Int64: int64(tr.Duration.Seconds)*1e6 + int64(trs[i].Duration.Nanos)/1000, Valid: true}
 		}
 		if tr.SkipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
 			mutMap["SkipReason"] = tr.SkipReason
@@ -212,16 +218,32 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
 		resultID := fmt.Sprintf("%d", i)
+
+		var reason *pb.FailureReason
+		if status != pb.TestStatus_PASS && status != pb.TestStatus_SKIP {
+			reason = &pb.FailureReason{
+				PrimaryErrorMessage: "failure reason",
+			}
+		}
+		var skipReason pb.SkipReason
+		if status == pb.TestStatus_SKIP {
+			skipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+		}
+
 		trs[i] = &pb.TestResult{
-			Name:        pbutil.TestResultName(invID, testID, resultID),
-			TestId:      testID,
-			ResultId:    resultID,
-			Variant:     v,
-			VariantHash: pbutil.VariantHash(v),
-			Expected:    status == pb.TestStatus_PASS,
-			Status:      status,
-			Duration:    &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
-			SummaryHtml: "SummaryHtml",
+			Name:          pbutil.TestResultName(invID, testID, resultID),
+			TestId:        testID,
+			ResultId:      resultID,
+			Variant:       v,
+			VariantHash:   pbutil.VariantHash(v),
+			Expected:      status == pb.TestStatus_PASS,
+			Status:        status,
+			Duration:      &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			SummaryHtml:   "SummaryHtml",
+			TestMetadata:  &pb.TestMetadata{Name: "testname"},
+			FailureReason: reason,
+			Properties:    &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
+			SkipReason:    skipReason,
 		}
 	}
 	return trs

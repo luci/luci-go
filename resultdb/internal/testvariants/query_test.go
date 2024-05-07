@@ -95,10 +95,11 @@ func TestQueryTestVariants(t *testing.T) {
 			for {
 				page, err := fetch(q)
 				So(err, ShouldBeNil)
+
+				f(page)
 				if page.NextPageToken == "" {
 					break
 				}
-				f(page)
 
 				// The page token should always advance, it should
 				// never remain the same.
@@ -823,12 +824,18 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 					{
 						Result: &pb.TestResult{
-							Name:        "invocations/inv1/tests/T2/results/0",
-							ResultId:    "0",
-							Expected:    false,
-							Status:      pb.TestStatus_FAIL,
+							Name:     "invocations/inv1/tests/T2/results/0",
+							ResultId: "0",
+							Expected: false,
+							Status:   pb.TestStatus_FAIL,
+							FailureReason: &pb.FailureReason{
+								PrimaryErrorMessage: "failure reason",
+							},
 							Duration:    duration,
 							SummaryHtml: "SummaryHtml",
+							Properties: &structpb.Struct{Fields: map[string]*structpb.Value{
+								"key": structpb.NewStringValue("value"),
+							}},
 						},
 					},
 				})

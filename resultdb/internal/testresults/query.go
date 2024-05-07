@@ -237,13 +237,13 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		PopulateExpectedField(tr, maybeUnexpected)
 		PopulateDurationField(tr, micros)
 		PopulateSkipReasonField(tr, skipReason)
-		if err := populateTestMetadata(tr, tmd); err != nil {
+		if err := PopulateTestMetadata(tr, tmd); err != nil {
 			return nil, errors.Annotate(err, "error unmarshalling test_metadata for %s", trName).Err()
 		}
-		if err := populateFailureReason(tr, fr); err != nil {
+		if err := PopulateFailureReason(tr, fr); err != nil {
 			return nil, errors.Annotate(err, "error unmarshalling failure_reason for %s", trName).Err()
 		}
-		if err := populateProperties(tr, properties); err != nil {
+		if err := PopulateProperties(tr, properties); err != nil {
 			return nil, errors.Annotate(err, "failed to unmarshal properties").Err()
 		}
 		if err := q.Mask.Trim(tr); err != nil {

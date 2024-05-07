@@ -17,18 +17,24 @@ package resultdb
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/runtestvariants"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+)
+
+const (
+	// RunTestVariantsResponseLimitBytes is the default soft limit on the number of bytes
+	// that should be returned by a run test variants query.
+	RunTestVariantsResponseLimitBytes = 20 * 1000 * 1000 // 20 MB
 )
 
 func validateQueryRunTestVariantsRequest(req *pb.QueryRunTestVariantsRequest) error {
@@ -72,5 +78,25 @@ func (s *resultDBServer) QueryRunTestVariants(ctx context.Context, req *pb.Query
 		return nil, appstatus.BadRequest(err)
 	}
 
-	return nil, appstatus.Error(codes.Unimplemented, "not implemented")
+	token, err := runtestvariants.ParsePageToken(req.PageToken)
+	if err != nil {
+		return nil, err
+	}
+
+	query := runtestvariants.Query{
+		InvocationID:       invocations.MustParseName(req.Invocation),
+		PageSize:           pagination.AdjustPageSize(req.PageSize),
+		PageToken:          token,
+		ResultLimit:        testvariants.AdjustResultLimit(req.ResultLimit),
+		ResponseLimitBytes: RunTestVariantsResponseLimitBytes,
+	}
+	result, err := query.Run(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.QueryRunTestVariantsResponse{
+		TestVariants:  result.TestVariants,
+		NextPageToken: result.NextPageToken.Serialize(),
+	}, nil
 }

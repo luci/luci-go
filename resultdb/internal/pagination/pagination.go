@@ -29,7 +29,7 @@ import (
 const (
 	// pageSizeMax is the maximum pageSize.
 	// It is high, but still required to prevent client-caused OOMs.
-	pageSizeMax     = 1e5
+	pageSizeMax     = 10_000
 	pageSizeDefault = 1000
 )
 

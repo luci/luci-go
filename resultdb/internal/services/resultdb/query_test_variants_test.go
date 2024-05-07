@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/auth"
@@ -165,6 +166,9 @@ func TestQueryTestVariants(t *testing.T) {
 								ResultId: "0",
 								Status:   pb.TestStatus_FAIL,
 								Duration: duration,
+								FailureReason: &pb.FailureReason{
+									PrimaryErrorMessage: "failure reason",
+								},
 								IsMasked: true,
 							},
 						},
@@ -185,6 +189,12 @@ func TestQueryTestVariants(t *testing.T) {
 								Status:      pb.TestStatus_FAIL,
 								Duration:    duration,
 								SummaryHtml: "SummaryHtml",
+								FailureReason: &pb.FailureReason{
+									PrimaryErrorMessage: "failure reason",
+								},
+								Properties: &structpb.Struct{Fields: map[string]*structpb.Value{
+									"key": structpb.NewStringValue("value"),
+								}},
 							},
 						},
 					},
@@ -196,7 +206,8 @@ func TestQueryTestVariants(t *testing.T) {
 							IsMasked:        true,
 						},
 					},
-					SourcesId: graph.HashSources(testutil.TestSourcesWithChangelistNumbers(2)).String(),
+					TestMetadata: &pb.TestMetadata{Name: "testname"},
+					SourcesId:    graph.HashSources(testutil.TestSourcesWithChangelistNumbers(2)).String(),
 				},
 				{
 					TestId:      "T1004",
@@ -210,6 +221,9 @@ func TestQueryTestVariants(t *testing.T) {
 								ResultId: "0",
 								Status:   pb.TestStatus_FAIL,
 								Duration: duration,
+								FailureReason: &pb.FailureReason{
+									PrimaryErrorMessage: "failure reason",
+								},
 								IsMasked: true,
 							},
 						},
@@ -234,6 +248,9 @@ func TestQueryTestVariants(t *testing.T) {
 								Name:     "invocations/inv5/tests/T1005/results/0",
 								ResultId: "0",
 								Status:   pb.TestStatus_FAIL,
+								FailureReason: &pb.FailureReason{
+									PrimaryErrorMessage: "failure reason",
+								},
 								Duration: duration,
 								IsMasked: true,
 							},
