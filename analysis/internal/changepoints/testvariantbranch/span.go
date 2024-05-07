@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/pagination"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 )
 
@@ -130,6 +131,88 @@ func Read(ctx context.Context, ks []Key) ([]*Entry, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+// QueryVariantBranchesOptions specifies options for QueryVariantBranches().
+type QueryVariantBranchesOptions struct {
+	PageSize  int
+	PageToken string
+}
+
+// parseQueryVariantBranchesPageToken parses the variant hash position from the page token.
+func parseQueryVariantBranchesPageToken(pageToken string) (afterVariantHash string, err error) {
+	tokens, err := pagination.ParseToken(pageToken)
+	if err != nil {
+		return "", err
+	}
+
+	if len(tokens) != 1 {
+		return "", pagination.InvalidToken(errors.Reason("expected 1 components, got %d", len(tokens)).Err())
+	}
+
+	return tokens[0], nil
+}
+
+func QueryVariantBranches(ctx context.Context, project, testID string, refHash []byte, opts QueryVariantBranchesOptions) (entries []*Entry, nextPageToken string, err error) {
+	stmt := spanner.NewStatement(`
+		SELECT
+			Project,
+			TestId,
+			VariantHash,
+			RefHash,
+			Variant,
+			SourceRef,
+			HotInputBuffer,
+			ColdInputBuffer,
+			FinalizingSegment,
+			FinalizedSegments,
+			Statistics
+	FROM TestVariantBranch
+	WHERE
+		Project = @project
+			AND TestId = @testId
+			AND RefHash = @RefHash
+			AND VariantHash > @paginationVariantHash
+	ORDER BY VariantHash ASC
+	LIMIT @limit
+`)
+	paginationVariantHash := ""
+	if opts.PageToken != "" {
+		paginationVariantHash, err = parseQueryVariantBranchesPageToken(opts.PageToken)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	stmt.Params = map[string]any{
+		"project": project,
+		"testId":  testID,
+		"refHash": refHash,
+
+		// Control pagination.
+		"limit":                 opts.PageSize,
+		"paginationVariantHash": paginationVariantHash,
+	}
+
+	tvbs := make([]*Entry, 0, opts.PageSize)
+	tvb := New()
+	var hs inputbuffer.HistorySerializer
+	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
+		err := tvb.PopulateFromSpannerRow(row, &hs)
+		if err != nil {
+			return errors.Annotate(err, "populate from spanner row").Err()
+		}
+		tvbs = append(tvbs, tvb.Copy())
+		return nil
+	})
+	if err != nil {
+		return nil, "", errors.Annotate(err, "run query").Err()
+	}
+
+	if opts.PageSize != 0 && len(tvbs) == opts.PageSize {
+		lastVariantHash := tvbs[len(tvbs)-1].VariantHash
+		nextPageToken = pagination.Token(lastVariantHash)
+	}
+	return tvbs, nextPageToken, nil
 }
 
 func (tvb *Entry) PopulateFromSpannerRow(row *spanner.Row, hs *inputbuffer.HistorySerializer) error {

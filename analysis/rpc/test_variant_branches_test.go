@@ -496,6 +496,118 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 			})
 		})
 
+		Convey("Query", func() {
+			Convey("permission denied", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "anonymous:anonymous",
+				})
+				req := &pb.QueryTestVariantBranchRequest{}
+
+				res, err := server.Query(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(res, ShouldBeNil)
+			})
+			Convey("invalid request", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{"googlers", "luci-analysis-access"},
+				})
+				req := &pb.QueryTestVariantBranchRequest{
+					Project: "project",
+					TestId:  "test://is/a/test",
+					Ref: &pb.SourceRef{
+						System: &pb.SourceRef_Gitiles{
+							Gitiles: &pb.GitilesRef{
+								Host:    "host",
+								Project: "proj",
+								Ref:     "ref",
+							},
+						},
+					},
+				}
+				Convey("invalid project", func() {
+					req.Project = ""
+
+					_, err := server.Query(ctx, req)
+					So(err, ShouldNotBeNil)
+					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+					So(err.Error(), ShouldContainSubstring, "project")
+				})
+				Convey("invalid test id", func() {
+					req.TestId = ""
+
+					_, err := server.Query(ctx, req)
+					So(err, ShouldNotBeNil)
+					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+					So(err.Error(), ShouldContainSubstring, "test_id")
+				})
+				Convey("invalid ref", func() {
+					req.Ref.GetGitiles().Host = ""
+
+					_, err := server.Query(ctx, req)
+					So(err, ShouldNotBeNil)
+					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+					So(err.Error(), ShouldContainSubstring, "host")
+				})
+			})
+			Convey("e2e", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{"googlers", "luci-analysis-access"},
+				})
+				ref := &pb.SourceRef{
+					System: &pb.SourceRef_Gitiles{
+						Gitiles: &pb.GitilesRef{
+							Host:    "host",
+							Project: "proj",
+							Ref:     "ref",
+						},
+					},
+				}
+				refHash := pbutil.SourceRefHash(ref)
+				var1 := pbutil.Variant("key1", "val1", "key2", "val1")
+				var2 := pbutil.Variant("key1", "val2", "key2", "val1")
+				var3 := pbutil.Variant("key1", "val2", "key2", "val2")
+				var4 := pbutil.Variant("key1", "val1", "key2", "val2")
+				tvb1 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var1)).WithRefHash(refHash)
+				tvb2 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var2)).WithRefHash(refHash)
+				tvb3 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var3)).WithRefHash(refHash)
+				tvb4 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash(refHash)
+				// Different test id, should not appear in the response.
+				tvb5 := newBuilder().WithProject("project").WithTestID("test://is/a/different/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash(refHash)
+				// Different ref, should not appear in the response.
+				tvb6 := newBuilder().WithProject("project").WithTestID("test://is/a/test").WithVariantHash(pbutil.VariantHash(var4)).WithRefHash([]byte("refhash"))
+
+				var hs inputbuffer.HistorySerializer
+				tvb1.saveInDB(ctx, hs)
+				tvb2.saveInDB(ctx, hs)
+				tvb3.saveInDB(ctx, hs)
+				tvb4.saveInDB(ctx, hs)
+				tvb5.saveInDB(ctx, hs)
+				tvb6.saveInDB(ctx, hs)
+				req := &pb.QueryTestVariantBranchRequest{
+					Project:   "project",
+					TestId:    "test://is/a/test",
+					Ref:       ref,
+					PageSize:  3,
+					PageToken: "",
+				}
+
+				res, err := server.Query(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldNotEqual, "")
+				So(res.TestVariantBranch, ShouldResembleProto, []*pb.TestVariantBranch{tvb1.buildProto(), tvb3.buildProto(), tvb4.buildProto()})
+
+				// Query next page.
+				req.PageToken = res.NextPageToken
+				res, err = server.Query(ctx, req)
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldEqual, "")
+				So(res.TestVariantBranch, ShouldResembleProto, []*pb.TestVariantBranch{tvb2.buildProto()})
+			})
+		})
+
 		Convey("QuerySourcePositions", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -805,4 +917,157 @@ func adminContext(ctx context.Context) context.Context {
 		Identity:       "user:admin@example.com",
 		IdentityGroups: []string{"service-luci-analysis-admins", "luci-analysis-access"},
 	})
+}
+
+type testVariantBranchBuilder struct {
+	project     string
+	testID      string
+	variantHash string
+	refHash     []byte
+}
+
+func newBuilder() *testVariantBranchBuilder {
+	return &testVariantBranchBuilder{}
+}
+
+func (b *testVariantBranchBuilder) WithProject(project string) *testVariantBranchBuilder {
+	b.project = project
+	return b
+}
+
+func (b *testVariantBranchBuilder) WithTestID(testID string) *testVariantBranchBuilder {
+	b.testID = testID
+	return b
+}
+
+func (b *testVariantBranchBuilder) WithVariantHash(variantHash string) *testVariantBranchBuilder {
+	b.variantHash = variantHash
+	return b
+}
+
+func (b *testVariantBranchBuilder) WithRefHash(refHash []byte) *testVariantBranchBuilder {
+	b.refHash = refHash
+	return b
+}
+
+func (b *testVariantBranchBuilder) buildProto() *pb.TestVariantBranch {
+	refHash := hex.EncodeToString(b.refHash)
+	return &pb.TestVariantBranch{
+		Name:        testVariantBranchName(b.project, b.testID, b.variantHash, refHash),
+		Project:     b.project,
+		TestId:      b.testID,
+		VariantHash: b.variantHash,
+		RefHash:     refHash,
+		Ref: &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "host",
+					Project: "proj",
+					Ref:     "ref",
+				},
+			},
+		},
+		Variant: &pb.Variant{
+			Def: map[string]string{
+				"k": "v",
+			},
+		},
+		Segments: []*pb.Segment{
+			{
+				HasStartChangepoint:          true,
+				StartPosition:                100,
+				StartPositionLowerBound_99Th: 95,
+				StartPositionUpperBound_99Th: 105,
+				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+				EndPosition:                  200,
+				EndHour:                      timestamppb.New(time.Unix(3600, 0)),
+				Counts: &pb.Segment_Counts{
+					UnexpectedVerdicts: 1,
+					FlakyVerdicts:      0,
+					TotalVerdicts:      2,
+				},
+			},
+			{
+				StartPositionLowerBound_99Th: 45,
+				StartPositionUpperBound_99Th: 55,
+				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+				EndHour:                      timestamppb.New(time.Unix(0, 0)),
+				Counts: &pb.Segment_Counts{
+					UnexpectedVerdicts: 2,
+					FlakyVerdicts:      0,
+					TotalVerdicts:      2,
+				},
+			},
+		},
+	}
+}
+
+func (b *testVariantBranchBuilder) saveInDB(ctx context.Context, hs inputbuffer.HistorySerializer) {
+	mutation, err := b.buildEntry().ToMutation(&hs)
+	So(err, ShouldBeNil)
+	testutil.MustApply(ctx, mutation)
+}
+
+func (b *testVariantBranchBuilder) buildEntry() *testvariantbranch.Entry {
+	return &testvariantbranch.Entry{
+		IsNew:       true,
+		Project:     b.project,
+		TestID:      b.testID,
+		VariantHash: b.variantHash,
+		RefHash:     b.refHash,
+		SourceRef: &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "host",
+					Project: "proj",
+					Ref:     "ref",
+				},
+			},
+		},
+		Variant: &pb.Variant{
+			Def: map[string]string{
+				"k": "v",
+			},
+		},
+		InputBuffer: &inputbuffer.Buffer{
+			HotBuffer: inputbuffer.History{
+				Verdicts: []inputbuffer.PositionVerdict{
+					{
+						CommitPosition:       200,
+						IsSimpleExpectedPass: true,
+						Hour:                 time.Unix(3700, 0),
+					},
+				},
+			},
+			ColdBuffer: inputbuffer.History{
+				Verdicts: []inputbuffer.PositionVerdict{},
+			},
+		},
+		FinalizingSegment: &cpb.Segment{
+			State:                        cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:          true,
+			StartPosition:                100,
+			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+			StartPositionLowerBound_99Th: 95,
+			StartPositionUpperBound_99Th: 105,
+			FinalizedCounts: &cpb.Counts{
+				UnexpectedVerdicts: 1,
+				TotalVerdicts:      1,
+			},
+		},
+		FinalizedSegments: &cpb.Segments{
+			Segments: []*cpb.Segment{
+				{
+					State:                        cpb.SegmentState_FINALIZED,
+					StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+					StartPositionLowerBound_99Th: 45,
+					StartPositionUpperBound_99Th: 55,
+					FinalizedCounts: &cpb.Counts{
+						UnexpectedVerdicts: 2,
+						TotalVerdicts:      2,
+					},
+				},
+			},
+		},
+	}
 }

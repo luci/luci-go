@@ -139,17 +139,7 @@ func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGet
 			tvbpbs = append(tvbpbs, nil)
 			continue
 		}
-		refHash := hex.EncodeToString(tvb.RefHash)
-		tvbpbs = append(tvbpbs, &pb.TestVariantBranch{
-			Name:        testVariantBranchName(tvb.Project, tvb.TestID, tvb.VariantHash, refHash),
-			Project:     tvb.Project,
-			TestId:      tvb.TestID,
-			VariantHash: tvb.VariantHash,
-			RefHash:     refHash,
-			Variant:     tvb.Variant,
-			Ref:         tvb.SourceRef,
-			Segments:    toSegmentsProto(tvb, analysis),
-		})
+		tvbpbs = append(tvbpbs, toTestVariantBranchProto(tvb, analysis))
 	}
 	return &pb.BatchGetTestVariantBranchResponse{
 		TestVariantBranches: tvbpbs,
@@ -175,6 +165,19 @@ func validateGetRawTestVariantBranchRequest(req *pb.GetRawTestVariantBranchReque
 	}, nil
 }
 
+func toTestVariantBranchProto(tvb *testvariantbranch.Entry, analysis changepoints.Analyzer) *pb.TestVariantBranch {
+	refHash := hex.EncodeToString(tvb.RefHash)
+	return &pb.TestVariantBranch{
+		Name:        testVariantBranchName(tvb.Project, tvb.TestID, tvb.VariantHash, refHash),
+		Project:     tvb.Project,
+		TestId:      tvb.TestID,
+		VariantHash: tvb.VariantHash,
+		RefHash:     refHash,
+		Variant:     tvb.Variant,
+		Ref:         tvb.SourceRef,
+		Segments:    toSegmentsProto(tvb, analysis),
+	}
+}
 func toTestVariantBranchRawProto(tvb *testvariantbranch.Entry) (*pb.TestVariantBranchRaw, error) {
 	var finalizedSegments *anypb.Any
 	var finalizingSegment *anypb.Any
@@ -550,6 +553,55 @@ func validateQuerySourcePositionsRequest(req *pb.QuerySourcePositionsRequest) er
 	}
 	if req.StartSourcePosition <= 0 {
 		return errors.Reason("start_source_position: must be a positive number").Err()
+	}
+	return nil
+}
+
+// Query queries test variant branches with a given test id and ref.
+func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTestVariantBranchRequest) (*pb.QueryTestVariantBranchResponse, error) {
+	// Currently, we only allow Googlers to use this API.
+	// TODO: implement proper ACL check with realms.
+	if err := checkAllowed(ctx, googlerOnlyGroup); err != nil {
+		return nil, err
+	}
+	if err := validateQueryTestVariantBranchRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+	pageSize := int(pageSizeLimiter.Adjust(req.PageSize))
+	txn, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	opts := testvariantbranch.QueryVariantBranchesOptions{
+		PageSize:  pageSize,
+		PageToken: req.PageToken,
+	}
+	refHash := pbutil.SourceRefHash(req.Ref)
+	tvbs, nextPageToken, err := testvariantbranch.QueryVariantBranches(txn, req.Project, req.TestId, refHash, opts)
+	if err != nil {
+		return nil, errors.Annotate(err, "query variant branches").Err()
+	}
+	tvbpbs := make([]*pb.TestVariantBranch, 0, len(tvbs))
+	var analysis changepoints.Analyzer
+	for _, tvb := range tvbs {
+		tvbpbs = append(tvbpbs, toTestVariantBranchProto(tvb, analysis))
+	}
+	return &pb.QueryTestVariantBranchResponse{
+		TestVariantBranch: tvbpbs,
+		NextPageToken:     nextPageToken,
+	}, nil
+}
+
+func validateQueryTestVariantBranchRequest(req *pb.QueryTestVariantBranchRequest) error {
+	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
+	}
+	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
+		return errors.Annotate(err, "page_size").Err()
+	}
+	if err := pbutil.ValidateSourceRef(req.Ref); err != nil {
+		return errors.Annotate(err, "ref").Err()
 	}
 	return nil
 }

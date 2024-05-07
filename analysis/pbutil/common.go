@@ -297,3 +297,19 @@ func ValidateFailureReason(fr *pb.FailureReason) error {
 	}
 	return pbutil.ValidateFailureReason(rdbfr)
 }
+
+func ValidateSourceRef(ref *pb.SourceRef) error {
+	if ref == nil {
+		return errors.Reason("unspecified").Err()
+	}
+	if ref.GetGitiles().GetHost() == "" {
+		return errors.Reason("host unspecified").Err()
+	}
+	if ref.GetGitiles().GetProject() == "" {
+		return errors.Reason("project unspecified").Err()
+	}
+	if ref.GetGitiles().GetRef() == "" {
+		return errors.Reason("ref unspecified").Err()
+	}
+	return nil
+}

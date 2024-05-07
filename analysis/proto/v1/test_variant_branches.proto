@@ -41,6 +41,9 @@ service TestVariantBranches {
   // Retrieves the current state of segments of test variant branch analysis in batches.
   rpc BatchGet(BatchGetTestVariantBranchRequest) returns (
     BatchGetTestVariantBranchResponse) {};
+  // Query queries test variant branches for a given test id and ref.
+  rpc Query(QueryTestVariantBranchRequest) returns (
+    QueryTestVariantBranchResponse) {};
   // Lists commits and the test verdicts at these commits, starting from a source position.
   rpc QuerySourcePositions(QuerySourcePositionsRequest) returns (QuerySourcePositionsResponse) {};
 }
@@ -201,6 +204,42 @@ message BatchGetTestVariantBranchResponse {
   // The return list will have the same length and order as request names list.
   // If a record is not found, the corresponding element will be set to nil.
   repeated TestVariantBranch test_variant_branches = 1;
+}
+
+// A request message for `TestVariantBranches.Query` RPC.
+message QueryTestVariantBranchRequest {
+  // Required. The LUCI project of the test variant branch.
+  string project = 1;
+
+  // Required. The test id of test variant branches.
+  string test_id = 2;
+
+  // Required. The source ref of test variant branches.
+  luci.analysis.v1.SourceRef ref = 3;
+
+  // The maximum number of entries to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 variants will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 4;
+
+  // A page token, received from a previous call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to the next call MUST
+  // match the call that provided the page token.
+  string page_token = 5;
+}
+
+message QueryTestVariantBranchResponse {
+  // The list of test variant branches ordered by `variant_hash` ASC.
+  repeated TestVariantBranch test_variant_branch = 1;
+
+  // This field will be set if there are more results to return.
+  // To get the next page of data, send the same request again, but include this
+  // token.
+  string next_page_token = 2;
 }
 
 // Represents changepoint analysis for a particular (project, test, variant, ref).
