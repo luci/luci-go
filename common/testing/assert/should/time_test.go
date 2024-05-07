@@ -79,7 +79,7 @@ func TestHappenOnOrAfter(t *testing.T) {
 	t.Run("simple", shouldPass(HappenOnOrAfter(now)(now.Add(time.Second))))
 	t.Run("simple equal", shouldPass(HappenOnOrAfter(now)(now)))
 
-	t.Run("simple false", shouldFail(HappenAfter(now)(now.Add(-time.Second)), "Diff"))
+	t.Run("simple false", shouldFail(HappenOnOrAfter(now)(now.Add(-time.Second)), "Diff"))
 }
 
 func TestHappenOnOrBetween(t *testing.T) {
