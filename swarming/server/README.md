@@ -15,6 +15,7 @@ cd server/cmd/default
 go run main.go \
   -cloud-project chromium-swarm-dev \
   -shared-hmac-secret devsecret://aaaa \
+  -primary-tink-aead-key devsecret-gen://tink/aead \
   -expose-integration-mocks
 
 # Terminal 2: launch a fake bot and keep it running.

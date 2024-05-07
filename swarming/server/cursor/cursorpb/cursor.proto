@@ -1,0 +1,86 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.internals.cursor;
+
+option go_package = "go.chromium.org/luci/swarming/server/cursor/cursorpb";
+
+import "google/protobuf/timestamp.proto";
+
+// What request a cursor is for. Indirectly identifies what branch of the
+// `payload` oneof is expected to be set.
+enum RequestKind {
+  REQUEST_KIND_UNSPECIFIED = 0;
+
+  LIST_BOT_EVENTS    = 1; // uses OpaqueCursor
+  LIST_BOT_TASKS     = 2; // uses OpaqueCursor
+  LIST_BOTS          = 3; // uses BotsCursor
+  LIST_TASKS         = 4; // uses TasksCursor
+  LIST_TASK_REQUESTS = 5; // uses TasksCursor
+  CANCEL_TASKS       = 6; // uses TasksCursor
+}
+
+// Cursor is serialized, encrypted and base64-encoded before it is sent to the
+// user.
+//
+// There are two reasons this exists:
+//  1. To support "custom" (not native Cloud Datastore) cursors for queries
+//     that use "|" tag filters. Such queries are executed by running a bunch of
+//     datastore queries in parallel and merging their results. There is no
+//     simple working generic mechanism for paginating through such merged
+//     output. A custom cursor allows to exploit a known structure of Swarming
+//     queries to implement a simple, but Swarming specific, cursor.
+//  2. To make cursors produced by the Go implementation be easily distinguished
+//     from cursors produced by the Python implementation. That allows us to
+//     implement a "smart" traffic router that routes RPC calls with Go cursors
+//     to the Go implementation.
+//
+// Encryption allows us not to worry about leaking any data or exposing internal
+// implementation details or worry about users manually messing with cursors.
+message Cursor {
+  // What request this cursor is for. Indirectly identifies what branch of the
+  // `payload` oneof is expected to be set.
+  RequestKind request = 1;
+
+  // When the cursor was created (for debugging).
+  google.protobuf.Timestamp created = 2;
+
+  // Possible kinds of cursors, based on RequestKind.
+  oneof payload {
+    OpaqueCursor opaque_cursor = 10;
+    BotsCursor bots_cursor = 11;
+    TasksCursor tasks_cursor = 12;
+  }
+}
+
+// An opaque datastore cursor (in its raw []byte form).
+message OpaqueCursor {
+  // Base64-decoded cursor returned by the Cloud Datastore API.
+  bytes cursor = 1;
+}
+
+// Cursor used in the bots listing query (there's only one).
+//
+// Bots are always ordered by bot ID. This cursor just contains the latest
+// returned bot ID. To resume from it, we query for all bots with the ID larger
+// than the one in the cursor.
+message BotsCursor {
+  // The last returned bot ID.
+  string last_bot_id = 1;
+}
+
+// Cursor used in various task listing queries.
+//
+// Task listing can be ordered by e.g. task completion timestamp. The cursor
+// thus encodes not only the last seen task ID, but also the last seen timestamp
+// (it is theoretically possible many tasks have the same timestamp, so we
+// need to return both pieces of data).
+message TasksCursor {
+  // The last returned task ID.
+  string last_task_id = 1;
+
+  // TODO: Add more when really implementing tasks pagination cursors.
+}
