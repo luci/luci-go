@@ -246,6 +246,15 @@ func (p *ExportOp) commit(ctx context.Context, streamName string) error {
 	case err != nil:
 		return wrapAPIErr(err, "committing the stream")
 	case resp.CommitTime == nil:
+		// Check if the stream was actually already committed. For some reason the
+		// check in `ensureCommitted` doesn't always catch this situation, even when
+		// all calls happen serially.
+		for _, serr := range resp.StreamErrors {
+			if serr.Code == storagepb.StorageError_STREAM_ALREADY_COMMITTED {
+				logging.Infof(ctx, "Got STREAM_ALREADY_COMMITTED response")
+				return nil
+			}
+		}
 		// Something is misconfigured. Treat such errors as fatal to avoid infinite
 		// retries.
 		logging.Errorf(ctx, "Commit failed for %s", streamName)
