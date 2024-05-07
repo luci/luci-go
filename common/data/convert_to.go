@@ -50,18 +50,29 @@ import (
 // author to change the input/output types explicitly.
 func LosslessConvertTo[T any](value any) (T, bool) {
 	var ret T
-	// need `to` to be assignable, so & and Elem().
-	to := reflect.ValueOf(&ret).Elem()
+	ok := LosslessConvertToReflect(value, reflect.ValueOf(&ret).Elem())
+	return ret, ok
+}
+
+// LosslessConvertToReflect is the same as LosslessConvertTo, except that it
+// takes a set-able reflect.Value rather than directly returning the converted
+// value.
+//
+// This will panic if `to` is not settable.
+func LosslessConvertToReflect(value any, to reflect.Value) (ok bool) {
+	if !to.CanSet() {
+		panic("LosslessConvertToReflect: to is not settable")
+	}
 
 	if value == nil {
 		switch to.Kind() {
 		case reflect.Interface, reflect.Pointer, reflect.Chan, reflect.Slice,
 			reflect.Map, reflect.Func:
 			// just keep `to` as the default value
-			return ret, true
+			return true
 		}
 		// else: nil -> * is not allowed
-		return ret, false
+		return false
 	}
 
 	from := reflect.ValueOf(value)
@@ -74,60 +85,60 @@ func LosslessConvertTo[T any](value any) (T, bool) {
 		if ok {
 			to.Set(from.Convert(toT))
 		}
-		return ret, ok
+		return ok
 
 	case fromK >= reflect.Int && fromK <= reflect.Int64:
 		if toK >= reflect.Int && toK <= reflect.Int64 && toT.Bits() >= fromT.Bits() {
 			to.SetInt(from.Int())
-			return ret, true
+			return true
 		}
 
 	case fromK >= reflect.Uint && fromK <= reflect.Uint64:
 		switch {
 		case toK >= reflect.Uint && toK <= reflect.Uint64 && toT.Bits() >= fromT.Bits():
 			to.SetUint(from.Uint())
-			return ret, true
+			return true
 		case toK >= reflect.Int && toK <= reflect.Int64 && toT.Bits() > fromT.Bits():
 			to.SetInt(int64(from.Uint()))
-			return ret, true
+			return true
 		}
 
 	case fromK >= reflect.Float32 && fromK <= reflect.Float64:
 		if toK >= reflect.Float32 && toK <= reflect.Float64 && toT.Bits() >= fromT.Bits() {
 			to.SetFloat(from.Float())
-			return ret, true
+			return true
 		}
 
 	case fromK >= reflect.Complex64 && fromK <= reflect.Complex128:
 		if toK >= reflect.Complex64 && toK <= reflect.Complex128 && toT.Bits() >= fromT.Bits() {
 			to.SetComplex(from.Complex())
-			return ret, true
+			return true
 		}
 
 	case fromK == reflect.String:
 		switch {
 		case toK == reflect.String:
 			to.SetString(from.String())
-			return ret, true
+			return true
 
 		case toK == reflect.Slice && toT.Elem().Kind() == reflect.Uint8:
 			// []byte
 			to.SetBytes([]byte(from.String()))
-			return ret, true
+			return true
 
 		case toK == reflect.Slice && toT.Elem().Kind() == reflect.Int32:
 			// []rune - we use Convert because reflect has a fancy internal
 			// implementation for setRunes that we can't use :/
 			to.Set(from.Convert(toT))
-			return ret, true
+			return true
 		}
 
 	case fromT.ConvertibleTo(toT):
 		// We rely on the default conversion rules for all other target types.
 		to.Set(from.Convert(toT))
-		return ret, true
+		return true
 
 	}
 
-	return ret, false
+	return false
 }
