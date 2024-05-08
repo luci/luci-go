@@ -211,11 +211,25 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 }
 
 func (p *loginSessionTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
-	return refreshToken(ctx, prev, base, &oauth2.Config{
+	// Clear expiration time to force token refresh. Do not use 0 since it means
+	// that token never expires.
+	t := prev.Token
+	t.Expiry = time.Unix(1, 0)
+	cfg := &oauth2.Config{
 		ClientID:     p.clientID,
 		ClientSecret: p.clientSecret,
 		Endpoint:     google.Endpoint,
-	})
+	}
+	switch newTok, err := grabToken(cfg.TokenSource(ctx, &t)); {
+	case err == nil:
+		return processProviderReply(ctx, newTok, prev.Email)
+	case transient.Tag.In(err):
+		logging.Warningf(ctx, "Transient error when refreshing the token - %s", err)
+		return nil, err
+	default:
+		logging.Warningf(ctx, "Bad refresh token - %s", err)
+		return nil, ErrBadRefreshToken
+	}
 }
 
 // generateCodeVerifier generates a random string used as a code_verifier in
@@ -416,23 +430,6 @@ func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
 				spinCh <- codeAndExp{code, time.Now().Add(exp), exp}
 			}
 		}
-	}
-}
-
-func refreshToken(ctx context.Context, prev, base *Token, cfg *oauth2.Config) (*Token, error) {
-	// Clear expiration time to force token refresh. Do not use 0 since it means
-	// that token never expires.
-	t := prev.Token
-	t.Expiry = time.Unix(1, 0)
-	switch newTok, err := grabToken(cfg.TokenSource(ctx, &t)); {
-	case err == nil:
-		return processProviderReply(ctx, newTok, prev.Email)
-	case transient.Tag.In(err):
-		logging.Warningf(ctx, "Transient error when refreshing the token - %s", err)
-		return nil, err
-	default:
-		logging.Warningf(ctx, "Bad refresh token - %s", err)
-		return nil, ErrBadRefreshToken
 	}
 }
 
