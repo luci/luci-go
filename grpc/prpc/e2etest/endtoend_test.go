@@ -122,7 +122,9 @@ func TestEndToEnd(t *testing.T) {
 
 	Convey(`A client/server for the Greet service`, t, func() {
 		ctx := gologger.StdConfig.Use(context.Background())
-		svc := service{}
+		svc := service{
+			sleep: func() time.Duration { return time.Millisecond },
+		}
 		ts, client := newTestClient(ctx, &svc, nil)
 		defer ts.Close()
 
