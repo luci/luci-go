@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
@@ -46,12 +48,12 @@ func TestCursor(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(yes, ShouldBeTrue)
 
-				dec, err := Decode[cursorpb.OpaqueCursor](ctx, cur, kind)
+				dec, err := Decode[cursorpb.OpaqueCursor](ctx, kind, cur)
 				So(err, ShouldBeNil)
 				So(string(dec.Cursor), ShouldEqual, "hello")
 
 				So(func() { _, _ = Encode(ctx, kind, &cursorpb.BotsCursor{}) }, ShouldPanic)
-				So(func() { _, _ = Decode[cursorpb.BotsCursor](ctx, cur, kind) }, ShouldPanic)
+				So(func() { _, _ = Decode[cursorpb.BotsCursor](ctx, kind, cur) }, ShouldPanic)
 			}
 		})
 
@@ -68,12 +70,12 @@ func TestCursor(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(yes, ShouldBeTrue)
 
-				dec, err := Decode[cursorpb.BotsCursor](ctx, cur, kind)
+				dec, err := Decode[cursorpb.BotsCursor](ctx, kind, cur)
 				So(err, ShouldBeNil)
 				So(dec.LastBotId, ShouldEqual, "hello")
 
 				So(func() { _, _ = Encode(ctx, kind, &cursorpb.TasksCursor{}) }, ShouldPanic)
-				So(func() { _, _ = Decode[cursorpb.TasksCursor](ctx, cur, kind) }, ShouldPanic)
+				So(func() { _, _ = Decode[cursorpb.TasksCursor](ctx, kind, cur) }, ShouldPanic)
 			}
 		})
 
@@ -92,12 +94,12 @@ func TestCursor(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(yes, ShouldBeTrue)
 
-				dec, err := Decode[cursorpb.TasksCursor](ctx, cur, kind)
+				dec, err := Decode[cursorpb.TasksCursor](ctx, kind, cur)
 				So(err, ShouldBeNil)
 				So(dec.LastTaskId, ShouldEqual, "hello")
 
 				So(func() { _, _ = Encode(ctx, kind, &cursorpb.OpaqueCursor{}) }, ShouldPanic)
-				So(func() { _, _ = Decode[cursorpb.OpaqueCursor](ctx, cur, kind) }, ShouldPanic)
+				So(func() { _, _ = Decode[cursorpb.OpaqueCursor](ctx, kind, cur) }, ShouldPanic)
 			}
 		})
 
@@ -108,22 +110,68 @@ func TestCursor(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Corrupted", func() {
-				dec, err := Decode[cursorpb.TasksCursor](ctx, cur[:len(cur)-2], cursorpb.RequestKind_LIST_TASKS)
+				dec, err := Decode[cursorpb.TasksCursor](ctx, cursorpb.RequestKind_LIST_TASKS, cur[:len(cur)-2])
 				So(dec, ShouldBeNil)
 				So(err, ShouldEqual, cursorDecodeErr)
 			})
 
 			Convey("Wrong kind #1", func() {
-				dec, err := Decode[cursorpb.TasksCursor](ctx, cur, cursorpb.RequestKind_LIST_TASK_REQUESTS)
+				dec, err := Decode[cursorpb.TasksCursor](ctx, cursorpb.RequestKind_LIST_TASK_REQUESTS, cur)
 				So(dec, ShouldBeNil)
 				So(err, ShouldEqual, cursorDecodeErr)
 			})
 
 			Convey("Wrong kind #2", func() {
-				dec, err := Decode[cursorpb.BotsCursor](ctx, cur, cursorpb.RequestKind_LIST_BOTS)
+				dec, err := Decode[cursorpb.BotsCursor](ctx, cursorpb.RequestKind_LIST_BOTS, cur)
 				So(dec, ShouldBeNil)
 				So(err, ShouldEqual, cursorDecodeErr)
 			})
+		})
+
+		Convey("EncodeOpaqueCursor + DecodeOpaqueCursor", func() {
+			ctx = memory.Use(ctx)
+
+			type Entity struct {
+				ID int64 `gae:"$id"`
+			}
+			for i := 1; i <= 10; i++ {
+				So(datastore.Put(ctx, &Entity{ID: int64(i)}), ShouldBeNil)
+			}
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			var cur datastore.Cursor
+			var fetched []int64
+			err := datastore.Run(ctx,
+				datastore.NewQuery("Entity"),
+				func(e *Entity, cb datastore.CursorCB) error {
+					fetched = append(fetched, e.ID)
+					if len(fetched) == 5 {
+						var err error
+						cur, err = cb()
+						So(err, ShouldBeNil)
+						return datastore.Stop
+					}
+					return nil
+				},
+			)
+			So(err, ShouldBeNil)
+
+			enc, err := EncodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_EVENTS, cur)
+			So(err, ShouldBeNil)
+			dec, err := DecodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_EVENTS, enc)
+			So(err, ShouldBeNil)
+
+			err = datastore.Run(ctx,
+				datastore.NewQuery("Entity").Start(dec),
+				func(e *Entity, cb datastore.CursorCB) error {
+					fetched = append(fetched, e.ID)
+					return nil
+				},
+			)
+			So(err, ShouldBeNil)
+
+			// Resumed from the cursor correctly and finished fetching entities.
+			So(fetched, ShouldResemble, []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 		})
 	})
 }

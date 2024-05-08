@@ -17,6 +17,7 @@ package cursor
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -27,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
@@ -112,10 +114,7 @@ func Encode(ctx context.Context, kind cursorpb.RequestKind, payload proto.Messag
 //
 // Returns gRPC errors with an appropriate code. Such errors can be returned to
 // the user as are. Extra details are logged.
-func Decode[T any, TP interface {
-	*T
-	proto.Message
-}](ctx context.Context, cursor string, kind cursorpb.RequestKind) (TP, error) {
+func Decode[T any](ctx context.Context, kind cursorpb.RequestKind, cursor string) (*T, error) {
 	blob, err := secrets.URLSafeDecrypt(ctx, cursor, []byte(cursorAEADContext))
 	switch {
 	case errors.Is(err, secrets.ErrNoPrimaryAEAD):
@@ -167,13 +166,46 @@ func Decode[T any, TP interface {
 	// Here `payload` type is already matching `kind`. Per Decode contract, `TP`
 	// should also match `kind`, thus `payload` should have type `TP`. If not, it
 	// is a programming error and we should panic.
-	out, ok := payload.(TP)
+	out, ok := payload.(*T)
 	if !ok {
 		var zero T
 		panic(fmt.Sprintf("%v: expecting %T, but got %T", kind, payload, &zero))
 	}
 
 	return out, nil
+}
+
+// EncodeOpaqueCursor encodes an opaque datastore cursor.
+//
+// Returns gRPC errors. All errors have INTERNAL code (since there's no other
+// way for this function to fail) and can be returned to the user as are. Extra
+// details are logged.
+func EncodeOpaqueCursor(ctx context.Context, kind cursorpb.RequestKind, cursor datastore.Cursor) (string, error) {
+	b64 := cursor.String()
+	blob, err := base64.RawURLEncoding.DecodeString(b64)
+	if err != nil {
+		logging.Errorf(ctx, "Not a valid datastore cursor %q, not base64: %s", b64, err)
+		return "", cursorEncodeErr
+	}
+	return Encode(ctx, kind, &cursorpb.OpaqueCursor{Cursor: blob})
+}
+
+// DecodeOpaqueCursor decodes an opaque datastore cursor.
+//
+// Returns gRPC errors with an appropriate code. Such errors can be returned to
+// the user as are. Extra details are logged.
+func DecodeOpaqueCursor(ctx context.Context, kind cursorpb.RequestKind, cursor string) (datastore.Cursor, error) {
+	opaque, err := Decode[cursorpb.OpaqueCursor](ctx, kind, cursor)
+	if err != nil {
+		return nil, err
+	}
+	b64 := base64.RawURLEncoding.EncodeToString(opaque.Cursor)
+	dscursor, err := datastore.DecodeCursor(ctx, b64)
+	if err != nil {
+		logging.Errorf(ctx, "Not a valid datastore cursor %q: %s", b64, err)
+		return nil, cursorDecodeErr
+	}
+	return dscursor, nil
 }
 
 // IsValidCursor returns true if `cursor` looks like a Swarming cursor string.

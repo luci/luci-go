@@ -28,6 +28,8 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/cursor"
+	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -57,12 +59,12 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		return nil, err
 	}
 
-	var cursor datastore.Cursor
+	var dscursor datastore.Cursor
 	if req.Cursor != "" {
 		var err error
-		cursor, err = datastore.DecodeCursor(ctx, req.Cursor)
+		dscursor, err = cursor.DecodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_TASKS, req.Cursor)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid cursor: %s", err)
+			return nil, err
 		}
 	}
 
@@ -76,8 +78,8 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		q = model.FilterTasksByState(q, req.State)
 	}
 	q = q.Limit(req.Limit)
-	if cursor != nil {
-		q = q.Start(cursor)
+	if dscursor != nil {
+		q = q.Start(dscursor)
 	}
 
 	// Apply ordering and the time range filter. Filtering by creation time is
@@ -114,14 +116,14 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 
 	out := &apipb.TaskListResponse{}
 
+	dscursor = nil
 	err = datastore.Run(ctx, q, func(task *model.TaskRunResult, cb datastore.CursorCB) error {
 		out.Items = append(out.Items, task.ToProto())
 		if len(out.Items) == int(req.Limit) {
-			cursor, err := cb()
-			if err != nil {
+			var err error
+			if dscursor, err = cb(); err != nil {
 				return err
 			}
-			out.Cursor = cursor.String()
 			return datastore.Stop
 		}
 		return nil
@@ -129,6 +131,13 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 	if err != nil {
 		logging.Errorf(ctx, "Error querying TaskRunResult for %q: %s", req.BotId, err)
 		return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
+	}
+
+	if dscursor != nil {
+		out.Cursor, err = cursor.EncodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_TASKS, dscursor)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	out.Now = timestamppb.New(clock.Now(ctx))

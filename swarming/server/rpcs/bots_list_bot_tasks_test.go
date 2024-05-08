@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/secrets"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
@@ -52,6 +53,7 @@ func TestListBotTasks(t *testing.T) {
 	ctx := memory.Use(context.Background())
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
+	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
 	testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
