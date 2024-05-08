@@ -23,6 +23,76 @@ import (
 	"go.chromium.org/luci/common/testing/assert/comparison"
 )
 
+// ErrLikeString returns failure when the stringified error is not a substring
+// of the target. Additionally, when the substring argument is empty, ErrLikeString
+// always returns failure
+// because the empty string is a subset of every string and you probably made a
+// mistake.
+func ErrLikeString(substring string) comparison.Func[error] {
+	const cmpName = "should.ErrLikeString"
+	if substring == "" {
+		return func(error) *comparison.Failure {
+			return comparison.NewFailureBuilder(cmpName).
+				Because(`"" is a substring of every string. Use ErrLikeError(nil) or BeNil.`).
+				Failure
+		}
+	}
+	return func(actual error) *comparison.Failure {
+		if actual == nil {
+			return comparison.NewFailureBuilder(cmpName).
+				Because("actual is nil and therefore doesn't contain any non-empty substrings").
+				Actual(substring).
+				AddFindingf("substring", substring).
+				Failure
+		}
+		a := actual.Error()
+		if strings.Contains(a, substring) {
+			return nil
+		}
+		return comparison.NewFailureBuilder(cmpName).
+			Because("`actual.Error()` is missing substring.").
+			Actual(a).
+			AddFindingf("actual.Error()", "%q", a).
+			Expected(substring).
+			AddFindingf("Substring", substring).
+			Failure
+	}
+}
+
+// ErrLikeError checks whether your error errors.Is another error.
+//
+// nil is an acceptable target here indicating the absence of an error.
+func ErrLikeError(target error) comparison.Func[error] {
+	const cmpName = "ErrLikeError"
+	if target == nil {
+		return func(actual error) *comparison.Failure {
+			if actual == nil {
+				return nil
+			}
+			return comparison.NewFailureBuilder(cmpName).
+				Because("Actual is not nil").
+				Actual(actual).
+				Failure
+		}
+	}
+	return func(actual error) *comparison.Failure {
+		// target MUST be non-nil at this point
+		if actual == nil {
+			return comparison.NewFailureBuilder(cmpName, target).
+				Because("Actual is nil but target is not").
+				Expected(target).
+				Failure
+		}
+		if errors.Is(actual, target) {
+			return nil
+		}
+		return comparison.NewFailureBuilder(cmpName, target).
+			Because("Actual does not contain the expected error.").
+			SmartCmpDiff(actual, target, cmpopts.EquateErrors()).
+			Failure
+	}
+}
+
 // ErrLike returns a Comparison[error] which will check that `actual` is:
 //
 //   - `nil`, if `stringOrError` is nil.
@@ -37,44 +107,13 @@ import (
 //	Assert(t, err, should.ErrLike(ErrBadValue))  // errors.Is
 //	Assert(t, err, should.ErrLike(nil))          // err == nil
 func ErrLike(stringOrError any) comparison.Func[error] {
-	cmpName := "should.ErrLike"
-
 	switch expected := stringOrError.(type) {
 	case nil:
-		return func(actual error) *comparison.Failure {
-			if actual == nil {
-				return nil
-			}
-			return comparison.NewFailureBuilder(cmpName, nil).
-				Because("Error was non-nil").
-				Actual(actual).
-				Failure
-		}
-
+		return ErrLikeError(nil)
 	case string:
-		return func(actual error) *comparison.Failure {
-			actualErrStr := actual.Error()
-			if strings.Contains(actualErrStr, expected) {
-				return nil
-			}
-			return comparison.NewFailureBuilder(cmpName, expected).
-				Because("`actual.Error()` is missing substring.").
-				Actual(actualErrStr).
-				AddFindingf("Substring", expected).
-				Failure
-		}
-
+		return ErrLikeString(expected)
 	case error:
-		return func(actual error) *comparison.Failure {
-			if errors.Is(actual, expected) {
-				return nil
-			}
-			return comparison.NewFailureBuilder(cmpName, expected).
-				Because("Actual does not contain the expected error.").
-				SmartCmpDiff(actual, expected, cmpopts.EquateErrors()).
-				Failure
-		}
+		return ErrLikeError(expected)
 	}
-
 	panic(fmt.Errorf("should.ErrLike: got `%T`, not `nil`, `string`, or `error`", stringOrError))
 }
