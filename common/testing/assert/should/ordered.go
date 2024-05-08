@@ -139,7 +139,7 @@ func BeGreaterThan[T constraints.Ordered](lower T) comparison.Func[T] {
 	}
 }
 
-// BeGreaterThan returns a comparison.Func which checks if an ordered value is
+// BeGreaterThanOrEqual returns a comparison.Func which checks if an ordered value is
 // greater than (or equal to) a lower bound.
 func BeGreaterThanOrEqual[T constraints.Ordered](lower T) comparison.Func[T] {
 	return func(actual T) (fail *comparison.Failure) {

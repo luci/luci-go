@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package comparison contains symbols for making your own [Comparison]
+// Package comparison contains symbols for making your own [Comparison]
 // implementations for use with [go.chromium.org/luci/common/testing/assert].
 //
 // Please see [go.chromium.org/luci/common/testing/assert/should] for a set of

@@ -50,7 +50,7 @@ func BeNil(actual any) *comparison.Failure {
 	return comparison.NewFailureBuilder(cmpName).Actual(actual).Failure
 }
 
-// BeNil implements comparison.Func[any] and asserts that `actual` is a nillable
+// NotBeNil implements comparison.Func[any] and asserts that `actual` is a nillable
 // type (like a pointer, slice, channel, etc) and is not nil.
 //
 // Note that this is a slightly stricter form than should.NotBeZero.

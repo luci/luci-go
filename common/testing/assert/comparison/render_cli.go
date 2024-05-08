@@ -34,7 +34,7 @@ type RenderCLI struct {
 	Colorize bool
 }
 
-// RenderFindingCLI renders a Finding to a set of output lines which would be
+// Finding renders a Finding to a set of output lines which would be
 // suitable for display as CLI output (e.g. to be logged with testing.T.Log
 // calls).
 func (r RenderCLI) Finding(prefix string, f *Failure_Finding) (ret string) {
@@ -91,7 +91,7 @@ func (r RenderCLI) Finding(prefix string, f *Failure_Finding) (ret string) {
 	return fmt.Sprintf("%s%s: \\\n%s", prefix, f.Name, strings.Join(value, "\n"))
 }
 
-// RenderCLI pretty-prints the result as a list of lines for display via the `go
+// Failure pretty-prints the result as a list of lines for display via the `go
 // test` CLI output.
 //
 // If verbose is true, will render all verbose Findings.

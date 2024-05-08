@@ -111,7 +111,7 @@ func (fb *FailureBuilder) Expected(Expected any) *FailureBuilder {
 	return fb.AddFindingf("Expected", "%#v", Expected)
 }
 
-// Marks the previously-added Finding with Level 'Warn' if it has a long value.
+// WarnIfLong marks the previously-added Finding with Level 'Warn' if it has a long value.
 //
 // A long value is defined as:
 //   - More than one line OR

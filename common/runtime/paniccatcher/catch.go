@@ -54,3 +54,12 @@ func Do(f func(), cb func(p *Panic)) {
 	defer Catch(cb)
 	f()
 }
+
+// PCall calls a nullary function and returns the panic if there was one.
+func PCall(fn func()) (ret *Panic) {
+	defer Catch(func(thePanic *Panic) {
+		ret = thePanic
+	})
+	fn()
+	return
+}
