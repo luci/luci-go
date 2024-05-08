@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"slices"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
 	"golang.org/x/exp/constraints"
+
+	"go.chromium.org/luci/common/testing/assert/comparison"
 )
 
 // TODO(iannucci): these implementations are all extremely similar; consider

@@ -16,6 +16,7 @@ package should
 
 import (
 	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/common/testing/assert/comparison"
 	"go.chromium.org/luci/common/testing/typed"
 )

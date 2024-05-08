@@ -95,6 +95,6 @@ func TestFailure_BadConversion(t *testing.T) {
 	maybeSkipFailureTests(t)
 
 	CheckL(t, 100, should.Equal("hello"))
-	CheckL(t, uint8(100), should.Equal(100))  // passes
+	CheckL(t, uint8(100), should.Equal(100)) // passes
 	CheckL(t, 10000, should.Equal(uint8(100)))
 }

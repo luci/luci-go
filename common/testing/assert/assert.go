@@ -122,9 +122,10 @@ import (
 	"fmt"
 	"os"
 
+	"golang.org/x/term"
+
 	"go.chromium.org/luci/common/data"
 	"go.chromium.org/luci/common/testing/assert/comparison"
-	"golang.org/x/term"
 )
 
 // MinimalTestingTB exposes the minimal subset of the testing.TB interface from the standard

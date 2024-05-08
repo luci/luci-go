@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/common/testing/typed"
 )
 

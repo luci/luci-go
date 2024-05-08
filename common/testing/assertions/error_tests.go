@@ -17,9 +17,9 @@ package assertions
 import (
 	"fmt"
 
-	"go.chromium.org/luci/common/errors"
-
 	"github.com/smarty/assertions"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // ShouldContainErr checks if an `errors.MultiError` on the left side contains

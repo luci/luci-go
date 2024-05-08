@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"go.chromium.org/luci/common/testing/assert/comparison"
 )
 

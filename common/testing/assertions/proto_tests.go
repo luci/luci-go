@@ -18,14 +18,12 @@ import (
 	"fmt"
 	"reflect"
 
+	protoLegacy "github.com/golang/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
-
-	protoLegacy "github.com/golang/protobuf/proto"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // ShouldResembleProto determines if two values are deeply equal, using
