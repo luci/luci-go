@@ -11,22 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package assert
+
+package truth
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
-// mockTB is a mock MinimalTestingTB implementation for testing the `assert`
+// mockTB is a mock testing.TB implementation for testing the `assert`
 // library itself.
 //
 // Records the count/arguments of all calls to aid in testing.
 type mockTB struct {
+	testing.TB // panic all unimplemented methods
+
 	HelperCalls  int
 	LogCalls     []string
 	FailCalls    int
@@ -50,7 +53,7 @@ func (m *mockTB) Log(args ...any) {
 func (m *mockTB) Fail()    { m.FailCalls++ }
 func (m *mockTB) FailNow() { m.FailNowCalls++ }
 
-var _ MinimalTestingTB = (*mockTB)(nil)
+var _ testing.TB = (*mockTB)(nil)
 
 func isEmptyCmp(x string) *comparison.Failure {
 	if x == "" {
@@ -59,7 +62,7 @@ func isEmptyCmp(x string) *comparison.Failure {
 	return comparison.NewFailureBuilder("string not empty").Failure
 }
 
-func TestCheckL(t *testing.T) {
+func TestCheckLoosely(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
@@ -104,19 +107,19 @@ func TestCheckL(t *testing.T) {
 			t.Parallel()
 
 			zt := &mockTB{}
-			got := CheckL(zt, tt.input, isEmptyCmp)
+			got := CheckLoosely(zt, tt.input, isEmptyCmp)
 
 			if diff := typed.Diff(zt, &tt.expect); diff != "" {
 				t.Errorf("unexpected diff in TB calls (-want +got): %s", diff)
 			}
 			if diff := typed.Diff(got, tt.ok); diff != "" {
-				t.Errorf("unexpected diff in CheckL return value (-want +got): %s", diff)
+				t.Errorf("unexpected diff in CheckLoosely return value (-want +got): %s", diff)
 			}
 		})
 	}
 }
 
-func TestAssertL(t *testing.T) {
+func TestAssertLoosely(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
@@ -157,7 +160,7 @@ func TestAssertL(t *testing.T) {
 			t.Parallel()
 
 			zt := &mockTB{}
-			AssertL(zt, tt.input, isEmptyCmp)
+			AssertLoosely(zt, tt.input, isEmptyCmp)
 
 			if diff := typed.Diff(zt, &tt.expect); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)

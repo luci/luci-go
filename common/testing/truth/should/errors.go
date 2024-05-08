@@ -21,7 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 // ErrLikeString returns failure when the stringified error is not a substring

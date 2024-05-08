@@ -17,7 +17,7 @@ package should
 import (
 	"reflect"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 // canLen returns true iff the `anything` Value can safely use with

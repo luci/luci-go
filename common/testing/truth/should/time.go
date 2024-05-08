@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 // HappenBefore returns a comparison.Func which checks that some actual time happened

@@ -14,14 +14,20 @@
 
 package should
 
-import (
-	"go.chromium.org/luci/common/testing/assert/comparison"
-)
+import "go.chromium.org/luci/common/testing/truth/comparison"
 
-// BeNaN checks that `actual` is a floating point NaN.
-func BeNaN[T ~float32 | ~float64](actual T) *comparison.Failure {
-	if actual != actual { // see `math.IsNaN` for why this works.
+// BeTrue is a comparison.Func[bool] which asserts that the actual value is `true`.
+func BeTrue(actual bool) *comparison.Failure {
+	if actual {
 		return nil
 	}
-	return comparison.NewFailureBuilder("should.BeNaN", actual).Actual(actual).Failure
+	return comparison.NewFailureBuilder("should.BeTrue").Failure
+}
+
+// BeFalse is a comparison.Func[bool] which asserts that the actual value is `false`.
+func BeFalse(actual bool) *comparison.Failure {
+	if !actual {
+		return nil
+	}
+	return comparison.NewFailureBuilder("should.BeFalse").Failure
 }

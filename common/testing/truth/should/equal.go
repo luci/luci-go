@@ -18,7 +18,7 @@ import (
 	"math"
 	"reflect"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 func checkIsNaN[T comparable](cmpName string, expected T) comparison.Func[T] {

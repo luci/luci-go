@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package assert implements an extensible, simple, assertion library for Go
+// Package truth implements an extensible, simple, assertion library for Go
 // with minimal dependencies.
 //
 // # Why have an assertion library at all?
@@ -49,18 +49,19 @@
 // runtime, which was unfortunate.
 //
 // While this library does still do some runtime type reflection (to convert
-// from `actual any` to `T` for the given Comparison in AssertL and CheckL),
-// this conversion is done in exactly one place (this package), and does not
-// require each comparison to do this. In addition, the default symbols Assert
-// and Check do no dynamic type inference at all, which should hopefully
-// encourage test authors to follow this stricter style by default.
+// from `actual any` to `T` for the given Comparison in AssertLoosely and
+// CheckLoosely), this conversion is done in exactly one place (this package),
+// and does not require each comparison to reimplement this. In addition, the
+// default symbols Assert and Check do no dynamic type inference at all, which
+// should hopefully encourage test authors to follow this stricter style by
+// default.
 //
 // # Why now, and why this style?
 //
 // At the time this library was written, our codebase had a large amount of testing
 // code written with `github.com/smartystreets/goconvey/convey` which is a "BDD
 // style" testing framework (sort of). We liked the assertion syntax well enough
-// to emulate it here; in that framework assertions look like:
+// to emulate it here; in convey assertions looked like:
 //
 //	So(actualValue, ShouldResemble, expectedValue)
 //	So(somePointer, ShouldBeNil)
@@ -78,9 +79,10 @@
 // returned encoded JSON instead of a plain string message.
 //
 // For goconvey assertions, you also had to also use the controversial "Convey"
-// suite syntax (see the sister library `ftt` adjacent to `assert`, which
+// suite syntax (see the sister library `ftt` adjacent to `truth`, which
 // implements the test layout/format without the "BDD style" flavoring).
-// This `assert` library has no such restriction.
+// This `assert` library has no such restriction and works directly with
+// anything implementing testing.TB.
 //
 // This library is a way for us to provide high quality assertion replacements
 // for the So assertions of goconvey.
@@ -90,8 +92,16 @@
 //	import (
 //	  "testing"
 //
-//	  // Exports EXACTLY two symbols, Assert and Check.
-//	  . "go.chromium.org/luci/common/testing/assert"
+//	  "go.chromium.org/luci/common/testing/truth/assert"
+//	  // You may also import "go.chromium.org/luci/common/testing/truth/check"
+//	  // which makes non-fatal assertions.
+//	  //
+//	  // If you don't like cute names, then import
+//	  // "go.chromium.org/luci/common/testing/truth" for:
+//	  //   * truth.Assert
+//	  //   * truth.AssertLoosely
+//	  //   * truth.Check
+//	  //   * truth.CheckLoosely
 //
 //	  // Optional; these are a collection of useful common comparisons, but
 //	  // are by no means required.
@@ -99,54 +109,53 @@
 //	)
 //
 //	func TestSomething(t *testing.T) {
-//	   // Checks that `someFunction` returns some value assignable to `int`.
-//	   // which equals 100.
-//	   Assert(t, someFunction(), should.Equal(100))
+//	   // Checks that `someFunction` returns an `int` (enforced at compile
+//	   // time).
+//	   assert.That(t, someFunction(), should.Equal(100))
 //
-//	   // Checks that `someFunction` returns some value assignable to `int8`
-//	   // which equals 100.
-//	   Assert(t, someFunction(), should.Equal[int8](100))
+//	   // Checks that `someFunction` returns some value lossesly assignable to
+//	   // `int8` which equals 100.
+//	   assert.Loosely(t, someOtherFunction(), should.Equal[int8](100))
 //
 //	   // Checks that `someFunction` returns some value assignable to
 //	   // `*someStruct` which is populated in the same way.
 //	   //
 //	   // NOTE: should.Resemble correctly handles comparisons between protobufs
-//	   // and types containing protobufs, by default.
-//	   Assert(t, someFunctionReturningStruct(), should.Resemble(&someStruct{
+//	   // and types containing protobufs, by default, using the excellent
+//	   // `github.com/google/go-cmp/cmp` library under the hood for comparisons.
+//	   assert.That(t, someFunctionReturningStruct(), should.Resemble(&someStruct{
 //	     ...
 //	   }))
 //	}
-package assert
+package truth
 
 import (
 	"fmt"
 	"os"
+	"testing"
 
 	"golang.org/x/term"
 
 	"go.chromium.org/luci/common/data"
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
-// MinimalTestingTB exposes the minimal subset of the testing.TB interface from the standard
-// library which is needed by this package.
-type MinimalTestingTB interface {
-	Helper()
-	Log(...any)
-	Fail()
-	FailNow()
-}
-
-// Verbose indicates if Assert should always render verbose Findings.
+// Verbose indicates that the truth library should always render verbose
+// Findings in comparison Failures.
 //
 // By default this is true when the '-test.v' flag is passed to the binary (this
 // is what gets set on the binary when you run `go test -v`).
+//
+// You may override this in your TestMain function.
 var Verbose bool
 
-// Colorize is true when the assert library should colorize its output, and can
-// be set to false in TestMain.
+// Colorize indicates that the truth library should colorize its output (used
+// to highlight diffs produced by some comparison functions, such as
+// should.Resemble).
 //
 // By default this is true when Stdout is connected to a terminal.
+//
+// You may override this in your TestMain function.
 var Colorize bool
 
 func init() {
@@ -171,7 +180,7 @@ func render(f *comparison.Failure) string {
 // a closure over some expected value.
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-func Assert[T any](t MinimalTestingTB, actual T, compare comparison.Func[T]) {
+func Assert[T any](t testing.TB, actual T, compare comparison.Func[T]) {
 	if f := compare(actual); f != nil {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
 		t.Helper()
@@ -185,7 +194,7 @@ func Assert[T any](t MinimalTestingTB, actual T, compare comparison.Func[T]) {
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
-func Check[T any](t MinimalTestingTB, actual T, compare comparison.Func[T]) (ok bool) {
+func Check[T any](t testing.TB, actual T, compare comparison.Func[T]) (ok bool) {
 	f := compare(actual)
 	ok = f == nil
 	if !ok {
@@ -217,7 +226,7 @@ func wrapCompare[T any](actual any, compare comparison.Func[T]) (converted T, ne
 	}
 }
 
-// AssertL loosely compares `actual` using `compare`, which is typically
+// AssertLoosely loosely compares `actual` using `compare`, which is typically
 // a closure over some expected value.
 //
 // `actual` will be converted to T using the function
@@ -227,13 +236,13 @@ func wrapCompare[T any](actual any, compare comparison.Func[T]) (converted T, ne
 // called.
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-func AssertL[T any](t MinimalTestingTB, actual any, compare comparison.Func[T]) {
+func AssertLoosely[T any](t testing.TB, actual any, compare comparison.Func[T]) {
 	converted, compare := wrapCompare(actual, compare)
 	t.Helper()
 	Assert(t, converted, compare)
 }
 
-// CheckL loosely compares `actual` using `compare`, which is typically
+// CheckLoosely loosely compares `actual` using `compare`, which is typically
 // a closure over some expected value.
 //
 // `actual` will be converted to T using the function
@@ -244,7 +253,7 @@ func AssertL[T any](t MinimalTestingTB, actual any, compare comparison.Func[T]) 
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
-func CheckL[T any](t MinimalTestingTB, actual any, compare comparison.Func[T]) bool {
+func CheckLoosely[T any](t testing.TB, actual any, compare comparison.Func[T]) bool {
 	converted, compare := wrapCompare(actual, compare)
 	t.Helper()
 	return Check(t, converted, compare)

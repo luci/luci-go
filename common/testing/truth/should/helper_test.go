@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 // shouldPass returns a function you can pass to `t.Run` which tests that `f`

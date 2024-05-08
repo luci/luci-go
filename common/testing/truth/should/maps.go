@@ -18,7 +18,7 @@ import (
 	"reflect"
 
 	"go.chromium.org/luci/common/data"
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 // ContainKey returns a comparison.Func which checks to see if some `map[~K]?`

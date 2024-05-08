@@ -15,7 +15,7 @@
 package should
 
 import (
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 // BeIn returns a Comparison which checks to see if `actual` is equal to any of

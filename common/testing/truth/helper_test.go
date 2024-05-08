@@ -12,28 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package assert
+package truth_test
 
 import (
 	"fmt"
 	"regexp"
 	"strings"
+	"testing"
+
+	"go.chromium.org/luci/common/testing/truth"
 )
 
 // fakeTB is just a simple MinimalTestingTB implementation for the example. In
 // a real test, this would be *testing.T, *testing.B, etc.
-type fakeTB bool
+type fakeTB struct {
+	testing.TB // panic all unimplemented methods
 
-var _ MinimalTestingTB = (*fakeTB)(nil)
+	// true after first Log call
+	firstLog bool
+}
+
+var _ testing.TB = (*fakeTB)(nil)
 
 // This is either 'space' (U+0020) or 'non-breaking space' (U+00a0).
 var spaceRE = regexp.MustCompile("[  ]")
 
 func (*fakeTB) Helper() {}
 func (f *fakeTB) Log(args ...any) {
-	if !*f {
+	if !f.firstLog {
 		fmt.Println("--- FAIL: FakeTestName (0.00s)")
-		*f = true
+		f.firstLog = true
 	}
 
 	// HACK - cmp.Diff intentionally has unstable output because they don't want
@@ -63,12 +71,12 @@ func (*fakeTB) Fail()    {}
 func (*fakeTB) FailNow() {}
 
 func disableColorization() func() {
-	old := Colorize
-	Colorize = false
-	return func() { Colorize = old }
+	old := truth.Colorize
+	truth.Colorize = false
+	return func() { truth.Colorize = old }
 }
 func disableVerbosity() func() {
-	old := Verbose
-	Verbose = false
-	return func() { Verbose = old }
+	old := truth.Verbose
+	truth.Verbose = false
+	return func() { truth.Verbose = old }
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package assert
+package truth
 
 import (
 	"flag"
@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/assert/should"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var runFailureTests = flag.Bool("assert.run-failure-tests", false, "If set, run failure tests.")
@@ -94,7 +94,7 @@ func TestFailure_MultiCheck(t *testing.T) {
 func TestFailure_BadConversion(t *testing.T) {
 	maybeSkipFailureTests(t)
 
-	CheckL(t, 100, should.Equal("hello"))
-	CheckL(t, uint8(100), should.Equal(100)) // passes
-	CheckL(t, 10000, should.Equal(uint8(100)))
+	CheckLoosely(t, 100, should.Equal("hello"))
+	CheckLoosely(t, uint8(100), should.Equal(100)) // passes
+	CheckLoosely(t, 10000, should.Equal(uint8(100)))
 }

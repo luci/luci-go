@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/runtime/paniccatcher"
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 // Panic checks whether a function panics.

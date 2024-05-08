@@ -17,7 +17,7 @@ package should
 import (
 	"reflect"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 func isNil(cmpName string, actual any) (isNil bool, ret *comparison.Failure) {

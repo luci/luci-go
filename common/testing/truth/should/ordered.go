@@ -20,7 +20,7 @@ import (
 
 	"golang.org/x/exp/constraints"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 // TODO(iannucci): these implementations are all extremely similar; consider

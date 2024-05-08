@@ -18,7 +18,7 @@ import (
 	"math"
 	"reflect"
 
-	"go.chromium.org/luci/common/testing/assert/comparison"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 )
 
 func almostEqualComputeEpsilon[T ~float32 | ~float64](cmpName string, bits int, epsilon ...T) (ep T, errFn comparison.Func[T]) {

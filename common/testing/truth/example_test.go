@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package assert
+package truth_test
 
 import (
 	"strings"
 
-	"go.chromium.org/luci/common/testing/assert/should"
+	"go.chromium.org/luci/common/testing/truth/check"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func ExampleAssert() {
@@ -31,23 +32,23 @@ func ExampleAssert() {
 	// this is omitted for this example.
 	t := new(fakeTB)
 
-	Check(t, 100, should.Equal(100)) // OK - no output
-	Check(t, 100, should.Equal(102)) // Fails!
+	check.That(t, 100, should.Equal(100)) // OK - no output
+	check.That(t, 100, should.Equal(102)) // Fails!
 
 	// Does not compile:
-	// Check(t, uint8(8), should.Equal(8))
-	// Check(t, 100, should.Equal("hello"))
+	// check.That(t, uint8(8), should.Equal(8))
+	// check.That(t, 100, should.Equal("hello"))
 
-	CheckL(t, 100, should.Equal(100))    // OK
-	CheckL(t, uint8(8), should.Equal(8)) // OK, Compiles
+	check.Loosely(t, 100, should.Equal(100))    // OK
+	check.Loosely(t, uint8(8), should.Equal(8)) // OK, Compiles
 
-	CheckL(t, 100, should.Equal(144))     // Fails!
-	CheckL(t, 100, should.Equal("hello")) // Fails!
+	check.Loosely(t, 100, should.Equal(144))     // Fails!
+	check.Loosely(t, 100, should.Equal("hello")) // Fails!
 
 	// Long outputs automatically get diffed.
 	veryLongA := strings.Repeat("X", 1000) + "arg" + strings.Repeat("X", 1000)
 	veryLongB := strings.Repeat("X", 1000) + "B" + strings.Repeat("X", 1000)
-	Check(t, veryLongA, should.Equal(veryLongB))
+	check.That(t, veryLongA, should.Equal(veryLongB))
 
 	// Output:
 	// --- FAIL: FakeTestName (0.00s)
