@@ -95,6 +95,9 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 	return err
 }
 
+// minPendingForBotConnected is the minimal minutes (10 minutes) to wait for the swarming bot in the VM to connect to Swarming.
+const minPendingForBotConnected = 10 * time.Minute
+
 // manageMissingBot manages a missing Swarming bot.
 func manageMissingBot(c context.Context, vm *model.VM) error {
 	// Set that the bot has not yet connected to Swarming.
@@ -114,67 +117,6 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 	default:
 		return nil
 	}
-}
-
-// minPendingForBotConnected is the minimal minutes (10 minutes) to wait for the swarming bot in the VM to connect to Swarming.
-const minPendingForBotConnected = 10 * time.Minute
-
-// manageExistingBot manages an existing Swarming bot.
-func manageExistingBot(c context.Context, bot *swarmingpb.BotInfo, vm *model.VM) error {
-	// A bot connected to Swarming may be executing workload.
-	// To destroy the instance, terminate the bot first to avoid interruptions.
-	// Termination can be skipped if the bot is deleted, dead, or already terminated.
-	if bot.Deleted || bot.IsDead {
-		if bot.Deleted {
-			logging.Debugf(c, "bot deleted (%s)", vm.Hostname)
-		} else {
-			logging.Debugf(c, "bot dead (%s)", vm.Hostname)
-		}
-		// A bot may be returned as deleted or dead if a bot with the same ID was previously connected to Swarming, but this new VM's bot hasn't connected yet
-		if time.Since(time.Unix(vm.Created, 0)) <= minPendingForBotConnected {
-			logging.Debugf(c, "bot %s is newly created, wait for %s minutes at least to destroy", vm.Hostname, minPendingForBotConnected.Minutes())
-			return nil
-		}
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
-	}
-	// This value of vm.Connected may be several seconds old, because the VM was fetched
-	// prior to sending an RPC to Swarming. Still, check it here to save a costly operation
-	// in setConnected, since manageExistingBot may be called thousands of times per minute.
-	if vm.Connected == 0 {
-		if err := setConnected(c, vm.ID, vm.Hostname, bot.FirstSeenTs.AsTime()); err != nil {
-			return err
-		}
-	}
-	// bot_terminate occurs when the bot starts the termination task and is normally followed
-	// by task_completed and bot_shutdown. Responses also include the full set of dimensions
-	// when the event was recorded. Limit response size by fetching only recent events, and only
-	// the type of each.
-	// A VM may be recreated multiple times with the same name, so it is important to only
-	// query swarming for events since the current VM's creation.
-	events, err := getSwarming(c, vm.Swarming).ListBotEvents(c, &swarmingpb.BotEventsRequest{
-		BotId: vm.Hostname,
-		Limit: 5,
-		Start: timestamppb.New(time.Unix(vm.Created, 0)),
-	})
-	if err != nil {
-		logGrpcError(c, vm.Hostname, err)
-		return errors.Annotate(err, "failed to fetch bot events").Err()
-	}
-	for _, e := range events.Items {
-		if e.EventType == "bot_terminate" {
-			logging.Debugf(c, "bot terminated (%s)", vm.Hostname)
-			return destroyInstanceAsync(c, vm.ID, vm.URL)
-		}
-	}
-	switch {
-	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
-		logging.Debugf(c, "deadline %d exceeded", vm.Created+vm.Lifetime)
-		return terminateBotAsync(c, vm.ID, vm.Hostname)
-	case vm.Drained:
-		logging.Debugf(c, "VM drained")
-		return terminateBotAsync(c, vm.ID, vm.Hostname)
-	}
-	return nil
 }
 
 // manageBotQueue is the name of the manage bot task handler queue.
@@ -203,7 +145,7 @@ func manageBot(c context.Context, payload proto.Message) error {
 	}
 
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
-	bot, err := getSwarming(c, vm.Swarming).GetBot(c, &swarmingpb.BotRequest{
+	_, err := getSwarming(c, vm.Swarming).GetBot(c, &swarmingpb.BotRequest{
 		BotId: vm.Hostname,
 	})
 	if err != nil {
@@ -214,8 +156,7 @@ func manageBot(c context.Context, payload proto.Message) error {
 		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "failed to fetch bot").Err()
 	}
-	logging.Debugf(c, "found bot")
-	return manageExistingBot(c, bot, vm)
+	return nil
 }
 
 // inspectSwarmingAsync collects all the swarming servers and schedules a task for each of them
