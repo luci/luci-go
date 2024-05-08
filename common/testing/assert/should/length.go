@@ -70,7 +70,7 @@ func HaveLength(expected int) comparison.Func[any] {
 		}
 
 		return comparison.NewFailureBuilder(cmpName, actual).
-			AddFormattedFinding("len(Actual)", "%d", actual).
+			AddFindingf("len(Actual)", "%d", actual).
 			Expected(expected).
 			Failure
 	}

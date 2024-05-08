@@ -60,7 +60,7 @@ func ErrLike(stringOrError any) comparison.Func[error] {
 			return comparison.NewFailureBuilder(cmpName, expected).
 				Because("`actual.Error()` is missing substring.").
 				Actual(actualErrStr).
-				AddFormattedFinding("Substring", expected).
+				AddFindingf("Substring", expected).
 				Failure
 		}
 

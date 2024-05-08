@@ -116,7 +116,7 @@ func HappenOnOrBetween(lower, upper time.Time) comparison.Func[time.Time] {
 
 		return comparison.NewFailureBuilder(cmpName).
 			Actual(actual).
-			AddFormattedFinding("Expected", "[%s, %s]", lower, upper).
+			AddFindingf("Expected", "[%s, %s]", lower, upper).
 			Failure
 	}
 }
@@ -143,7 +143,7 @@ func HappenWithin(target time.Time, delta time.Duration) comparison.Func[time.Ti
 
 		return comparison.NewFailureBuilder(cmpName).
 			Actual(actual).
-			AddFormattedFinding("Expected", "%v ± %v", target, delta).
+			AddFindingf("Expected", "%v ± %v", target, delta).
 			Failure
 	}
 }

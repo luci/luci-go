@@ -63,14 +63,14 @@ func NewFailureBuilder(comparisonName string, typeArgs ...any) *FailureBuilder {
 	return ret
 }
 
-// AddFormattedFinding adds a new single-line Finding to this Failure with the
+// AddFindingf adds a new single-line Finding to this Failure with the
 // given `name`.
 //
 // If `args` is empty, then `format` will be used as the Finding value verbatim.
 // Otherwise the value will be formatted as `fmt.Sprintf(format, args...)`.
 //
 // The finding will have the type "FindingTypeHint_Text".
-func (fb *FailureBuilder) AddFormattedFinding(name, format string, args ...any) *FailureBuilder {
+func (fb *FailureBuilder) AddFindingf(name, format string, args ...any) *FailureBuilder {
 	fb.fixNilFailure()
 
 	value := format
@@ -94,21 +94,21 @@ func (fb *FailureBuilder) fixNilFailure() {
 
 // Because adds a new finding "Because" to the Failure with AddFormattedFinding.
 func (fb *FailureBuilder) Because(format string, args ...interface{}) *FailureBuilder {
-	return fb.AddFormattedFinding("Because", format, args...)
+	return fb.AddFindingf("Because", format, args...)
 }
 
 // Actual adds a new finding "Actual" to the Failure.
 //
 // `actual` will be rendered with fmt.Sprintf("%#v").
 func (fb *FailureBuilder) Actual(actual any) *FailureBuilder {
-	return fb.AddFormattedFinding("Actual", "%#v", actual)
+	return fb.AddFindingf("Actual", "%#v", actual)
 }
 
 // Expected adds a new finding "Expected" to the Failure.
 //
 // `Expected` will be rendered with fmt.Sprintf("%#v").
 func (fb *FailureBuilder) Expected(Expected any) *FailureBuilder {
-	return fb.AddFormattedFinding("Expected", "%#v", Expected)
+	return fb.AddFindingf("Expected", "%#v", Expected)
 }
 
 // Marks the previously-added Finding with Level 'Warn' if it has a long value.

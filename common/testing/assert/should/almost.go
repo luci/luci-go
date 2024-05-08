@@ -89,7 +89,7 @@ func AlmostEqual[T ~float32 | ~float64](target T, epsilon ...T) comparison.Func[
 		return comparison.NewFailureBuilder(cmpName, target).
 			Because("Actual value was %g off of target.", delta).
 			Actual(actual).
-			AddFormattedFinding("Expected", "%g ± %g", target, ep).
+			AddFindingf("Expected", "%g ± %g", target, ep).
 			Failure
 	}
 }

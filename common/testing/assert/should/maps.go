@@ -56,7 +56,7 @@ func NotContainKey[K comparable](key K) comparison.Func[any] {
 			return fail
 		}
 		return comparison.NewFailureBuilder(cmpName, key).
-			AddFormattedFinding("Unexpected Key", "%#v", key).
+			AddFindingf("Unexpected Key", "%#v", key).
 			Failure
 	}
 }
