@@ -24,6 +24,7 @@ import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // Represents a matching test variant with its outcomes.
+// Also known as a test verdict.
 message TestVariant {
   // A unique identifier of the test in a LUCI project.
   // Regex: ^[[::print::]]{1,256}$
@@ -108,4 +109,32 @@ enum TestVariantStatus {
 message TestVariantPredicate {
   // A test variant must have this status.
   TestVariantStatus status = 1;
+}
+
+// The outcome of a test variant in a test run (a single invocation,
+// excluding any included invocations).
+message RunTestVerdict {
+  // A unique identifier of the test in a LUCI project.
+  // Regex: ^[[::print::]]{1,256}$
+  //
+  // Refer to TestResult.test_id for details.
+  string test_id = 1;
+
+  // Description of one specific way of running the test,
+  // e.g. a specific bucket, builder and a test suite.
+  Variant variant = 2;
+
+  // Hash of the variant.
+  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
+  string variant_hash = 3;
+
+  // Outcomes of the test variant.
+  repeated TestResultBundle results = 4;
+
+  // Information about the test at the time of its execution.
+  //
+  // All test results of the same test variant should report the same test
+  // metadata. This RPC relies on this rule and returns test metadata from
+  // *arbitrary* result of the test variant.
+  TestMetadata test_metadata = 5;
 }

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package runtestvariants provides methods to query test variants within a test run
+// Package runtestverdicts provides methods to query test verdicts within a test run
 // (single invocation excluding included invocation).
-package runtestvariants
+package runtestverdicts
 
 import (
 	"context"
@@ -35,10 +35,10 @@ import (
 )
 
 // complete is returned by the callback provided to fetch(...) to indicate
-// that iteration is complete and no more test variants should be retrieved.
-var complete = errors.New("callback does not want any more test variants")
+// that iteration is complete and no more test verdicts should be retrieved.
+var complete = errors.New("callback does not want any more test verdicts")
 
-// Query specifies the run test variants to fetch.
+// Query specifies the run test verdicts to fetch.
 type Query struct {
 	InvocationID       invocations.ID
 	PageSize           int // must be non-negative
@@ -49,27 +49,24 @@ type Query struct {
 
 // QueryResult is the result of a Query.
 type QueryResult struct {
-	// The test variants retrieved.
+	// The test verdicts retrieved.
 	//
-	// Within each test variant, results are ordered with unexpected results
+	// Within each test verdict, results are ordered with unexpected results
 	// first, then by result ID.
-	//
-	// The test variants of a run do not have a concept of status,
-	// exonerations or sources. As such those fields are not populated.
-	TestVariants []*pb.TestVariant
+	RunTestVerdicts []*pb.RunTestVerdict
 	// The continuation token. If this is empty, then there are no more
-	// test variants to retrieve.
+	// test verdicts to retrieve.
 	NextPageToken PageToken
 }
 
-// Run queries the run's test variants. It behaves deterministically,
-// returning the maximum number of test variants consistent with the
+// Run queries the run's test verdicts. It behaves deterministically,
+// returning the maximum number of test verdicts consistent with the
 // requested PageSize and ResponseLimitBytes, in ascending (test, variantHash)
 // order.
 //
 // Must be run in a transactional spanner context supporting multiple reads.
 func (q *Query) Run(ctx context.Context) (result QueryResult, err error) {
-	ctx, ts := tracing.Start(ctx, "runtestvariants.Query.run",
+	ctx, ts := tracing.Start(ctx, "runtestverdicts.Query.Run",
 		attribute.String("cr.dev.invocation", string(q.InvocationID)),
 	)
 	defer func() { tracing.End(ts, err) }()
@@ -84,28 +81,28 @@ func (q *Query) Run(ctx context.Context) (result QueryResult, err error) {
 		panic("ResponseLimitBytes < 0")
 	}
 
-	var results []*pb.TestVariant
+	var results []*pb.RunTestVerdict
 	var responseSize int
 
 	continuation := q.PageToken
 	done := false
 
-	// Assume 1.1 test results per test variant.
-	milliTestResultsPerTestVariant := 1100
+	// Assume 1.1 test results per test verdict.
+	milliTestResultsPerTestVerdict := 1100
 	for !done {
 		opts := fetchOptions{
-			targetTestVariants:             q.PageSize - len(results),
-			milliTestResultsPerTestVariant: milliTestResultsPerTestVariant,
+			targetTestVerdicts:             q.PageSize - len(results),
+			milliTestResultsPerTestVerdict: milliTestResultsPerTestVerdict,
 		}
 
-		// Fetch the next batch of test variants.
-		continuation, err = q.fetch(ctx, continuation, opts, func(tv *pb.TestVariant) error {
+		// Fetch the next batch of test verdicts.
+		continuation, err = q.fetch(ctx, continuation, opts, func(tv *pb.RunTestVerdict) error {
 			results = append(results, tv)
 
 			// Check if we have reached our soft response size limit.
 			// We check this after appending to ensure we always
-			// return at least one test variant on each Query.
-			responseSize += estimateTestVariantSize(tv)
+			// return at least one test verdict on each Query.
+			responseSize += estimateRunTestVerdictSize(tv)
 			if responseSize >= q.ResponseLimitBytes {
 				done = true
 				return complete
@@ -123,73 +120,73 @@ func (q *Query) Run(ctx context.Context) (result QueryResult, err error) {
 			return QueryResult{}, err
 		}
 		if (continuation == PageToken{}) {
-			// Empty page token indicates we have read all test variants
+			// Empty page token indicates we have read all test verdicts
 			// in the invocation.
 			done = true
 		}
 
 		// If we are not yet done, then our estimate of test results per test
-		// variant was too low to read everything in one fetch request.
+		// verdict was too low to read everything in one fetch request.
 		// Revise our estimate upwards.
-		milliTestResultsPerTestVariant *= 4
+		milliTestResultsPerTestVerdict *= 4
 	}
 
 	return QueryResult{
-		TestVariants:  results,
-		NextPageToken: continuation,
+		RunTestVerdicts: results,
+		NextPageToken:   continuation,
 	}, nil
 }
 
 type fetchOptions struct {
-	// The target number of test variants to retrieve.
-	targetTestVariants int
-	// The assumed number of test results per test variant retrieved,
-	// in thousandths of a test result per test variant.
-	// If this is smaller than the actual number, fewer test variants
+	// The target number of test verdicts to retrieve.
+	targetTestVerdicts int
+	// The assumed number of test results per test verdict retrieved,
+	// in thousandths of a test result per test verdict.
+	// If this is smaller than the actual number, fewer test verdicts
 	// will be returned. If this is larger than the actual number,
-	// more test variants than targetTestVariants may be returned.
+	// more test verdicts than targetTestVerdicts may be returned.
 	//
 	// 1000 is the minimum value, to indicate one test result per test
-	// variant.
-	milliTestResultsPerTestVariant int
+	// verdict.
+	milliTestResultsPerTestVerdict int
 }
 
-// fetch executes a query to retrieve test variants starting at
+// fetch executes a query to retrieve test verdicts starting at
 // the given PageToken. The implementation will target the retrieval
-// of a specified number of test variants using the options provided
+// of a specified number of test verdicts using the options provided
 // but is only guaranteed to return at least one in each call to fetch
-// (assuming there are test variants remaining to be read at all).
+// (assuming there are test verdicts remaining to be read at all).
 //
-// For each test variant, the user-provided callback function
+// For each test verdict, the user-provided callback function
 // is called. Return `complete` to stop iteration early.
 //
 // continuation returns a continuation token that may be used to
-// coninue querying more test variants.
-// If there are no more test variants to be read in the invocation,
+// coninue querying more test verdicts.
+// If there are no more test verdicts to be read in the invocation,
 // the continatuion token will be empty.
-func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f func(tr *pb.TestVariant) error) (continuation PageToken, err error) {
-	if opts.targetTestVariants < 1 {
-		panic("opts.targetTestVariants < 1")
+func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f func(tr *pb.RunTestVerdict) error) (continuation PageToken, err error) {
+	if opts.targetTestVerdicts < 1 {
+		panic("opts.targetTestVerdicts < 1")
 	}
-	if opts.milliTestResultsPerTestVariant < 1000 {
-		panic("opts.milliTestResultsPerTestVariant < 1000")
+	if opts.milliTestResultsPerTestVerdict < 1000 {
+		panic("opts.milliTestResultsPerTestVerdict < 1000")
 	}
 
-	// Bound the estimated number of test results per test variant
+	// Bound the estimated number of test results per test verdict
 	// to no more than q.ResultLimit as that is all we will read.
-	milliTRPerTV := opts.milliTestResultsPerTestVariant
+	milliTRPerTV := opts.milliTestResultsPerTestVerdict
 	if milliTRPerTV > q.ResultLimit*1000 {
 		milliTRPerTV = q.ResultLimit * 1000
 	}
 
 	// Even if the estimates are perfect, we need one more result
-	// than (# test variants) * (# avg test results/test variant),
+	// than (# test verdict) * (# avg test results/test verdict),
 	// so that we can identify we have read all test results
-	// for the last test variant.
-	limit := int(((int64(opts.targetTestVariants) * int64(milliTRPerTV)) / 1000) + 1)
+	// for the last test verdict.
+	limit := int(((int64(opts.targetTestVerdicts) * int64(milliTRPerTV)) / 1000) + 1)
 	if limit < q.ResultLimit {
 		// Ensure we query enough to be able to read one whole
-		// test variant in the worst case.
+		// test verdict in the worst case.
 		limit = q.ResultLimit
 	}
 
@@ -203,24 +200,24 @@ func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f
 
 	it := span.Query(ctx, stmt)
 
-	// The continuation page token. Set based on the last test variant
+	// The continuation page token. Set based on the last test verdict
 	// yielded.
 	continuation = start
 
-	yield := func(testVariant *pb.TestVariant) error {
+	yield := func(testVerdict *pb.RunTestVerdict) error {
 		// Update page token.
-		continuation.AfterTestID = testVariant.TestId
-		continuation.AfterVariantHash = testVariant.VariantHash
+		continuation.AfterTestID = testVerdict.TestId
+		continuation.AfterVariantHash = testVerdict.VariantHash
 
-		if len(testVariant.Results) > q.ResultLimit {
+		if len(testVerdict.Results) > q.ResultLimit {
 			// Truncate results to set limit.
-			testVariant.Results = testVariant.Results[:q.ResultLimit]
+			testVerdict.Results = testVerdict.Results[:q.ResultLimit]
 		}
 
-		// Yield the current test variant.
-		if err := f(testVariant); err != nil {
+		// Yield the current test verdict.
+		if err := f(testVerdict); err != nil {
 			if errors.Is(err, complete) {
-				// Stop reading test variants.
+				// Stop reading test verdicts.
 				return complete
 			}
 			return err
@@ -228,13 +225,13 @@ func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f
 		return nil
 	}
 
-	var testVariants testVariantsStream
+	var testVerdicts testVerdictsStream
 	testResultCount := 0
 
 	err = unmarshalRows(q.InvocationID, it, func(tr *pb.TestResult) error {
 		testResultCount++
 
-		toYield := testVariants.Push(tr)
+		toYield := testVerdicts.Push(tr)
 		if toYield != nil {
 			// N.B. yield may update continuation token.
 			err := yield(toYield)
@@ -260,20 +257,20 @@ func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f
 	// Whether we have read the last test result in the invocation.
 	readAllResults := testResultCount < limit && !terminatedEarly
 
-	// This last test variant will be either partial or complete
+	// This last test verdict will be either partial or complete
 	// based on whether we have read all test results.
-	lastTestVariant := testVariants.Finish()
+	lastTestVerdict := testVerdicts.Finish()
 
-	if lastTestVariant != nil && !terminatedEarly {
-		// If we have a buffered test variant and we did not terminate
+	if lastTestVerdict != nil && !terminatedEarly {
+		// If we have a buffered test verdict and we did not terminate
 		// iteration early, yield it if either:
 		// - We read the last test result in the invocation, or
-		// - The test variant has at least q.ResultLimit results
-		//   (avoids getting stuck on test variants which have
+		// - The test verdict has at least q.ResultLimit results
+		//   (avoids getting stuck on test verdicts which have
 		//   more test results than our limit).
-		if readAllResults || len(lastTestVariant.Results) >= q.ResultLimit {
+		if readAllResults || len(lastTestVerdict.Results) >= q.ResultLimit {
 			// N.B. yield may update continuation token.
-			err := yield(lastTestVariant)
+			err := yield(lastTestVerdict)
 			if err != nil && !errors.Is(err, complete) {
 				return PageToken{}, errors.Annotate(err, "yield").Err()
 			}
@@ -288,31 +285,31 @@ func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f
 	return continuation, nil
 }
 
-// testVariantsStream converts a stream of test results (in
-// test_id, variant_hash order) into a stream of test variants.
-type testVariantsStream struct {
-	// The partially populated test variant.
-	partial *pb.TestVariant
+// testVerdictsStream converts a stream of test results (in
+// test_id, variant_hash order) into a stream of test verdicts.
+type testVerdictsStream struct {
+	// The partially populated test verdict.
+	partial *pb.RunTestVerdict
 }
 
 // Push adds a new test result read from the database.
-// If a previous test variant is now complete, it is returned.
-func (e *testVariantsStream) Push(tr *pb.TestResult) *pb.TestVariant {
-	var toYield *pb.TestVariant
+// If a previous test verdict is now complete, it is returned.
+func (e *testVerdictsStream) Push(tr *pb.TestResult) *pb.RunTestVerdict {
+	var toYield *pb.RunTestVerdict
 	if e.partial != nil && (e.partial.TestId != tr.TestId || e.partial.VariantHash != tr.VariantHash) {
-		// Started a new test variant. Yield the current one.
+		// Started a new test verdict. Yield the current one.
 		toYield = e.partial
 		e.partial = nil
 	}
 	if e.partial == nil {
-		e.partial = &pb.TestVariant{
+		e.partial = &pb.RunTestVerdict{
 			TestId:       tr.TestId,
 			VariantHash:  tr.VariantHash,
 			Variant:      tr.Variant,
 			TestMetadata: tr.TestMetadata,
 		}
 	}
-	// Clear test result fields lifted to the test variant level.
+	// Clear test result fields lifted to the test verdict level.
 	tr.TestId = ""
 	tr.VariantHash = ""
 	tr.Variant = nil
@@ -329,11 +326,11 @@ func (e *testVariantsStream) Push(tr *pb.TestResult) *pb.TestVariant {
 // to the stream.
 //
 // If the last test result in the invocation has been written,
-// the test variant returned is complete.
-// If not all test results have been written, the test variant
+// the test verdict returned is complete.
+// If not all test results have been written, the test verdict
 // returned may be partial.
-// If no test variants were written, nil will be returned.
-func (e *testVariantsStream) Finish() *pb.TestVariant {
+// If no test results have been written, nil will be returned.
+func (e *testVerdictsStream) Finish() *pb.RunTestVerdict {
 	toYield := e.partial
 	e.partial = nil
 	return toYield
@@ -396,18 +393,18 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 	})
 }
 
-// estimateTestVariantSize estimates the size of a test variant in
+// estimateRunTestVerdictSize estimates the size of a run test verdict in
 // a pRPC response (pRPC responses use JSON serialisation).
-func estimateTestVariantSize(tv *pb.TestVariant) int {
-	// Estimate the size of a JSON-serialised test variant,
+func estimateRunTestVerdictSize(tv *pb.RunTestVerdict) int {
+	// Estimate the size of a JSON-serialised test verdict,
 	// as the sum of the sizes of its fields, plus
 	// an overhead (for JSON grammar and the field names).
 	return 1000 + proto.Size(tv)
 }
 
 // This query design has been observed to be significantly more efficient for
-// Spanner to execute than one in which we group test results to test variants
-// and return a given number of test variants.
+// Spanner to execute than one in which we group test results to test verdicts
+// and limit to a given number of test verdicts.
 const querySQL = `
 	SELECT
 		TestId,
@@ -429,7 +426,7 @@ const querySQL = `
 		(TestId > @afterTestId) OR
 		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
 	)
-	-- Within a test variant, return the unexpected test results first as
+	-- Within a test verdict, return the unexpected test results first as
 	-- they are likely to be the most interesting.
 	ORDER BY TestId, VariantHash, IsUnexpected DESC, ResultId
 	LIMIT @limit

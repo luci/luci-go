@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtestvariants
+package runtestverdicts
 
 import (
 	"go.chromium.org/luci/common/errors"

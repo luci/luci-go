@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtestvariants
+package runtestverdicts
 
 import (
 	"context"
@@ -88,7 +88,7 @@ func TestQuery(t *testing.T) {
 				"key": structpb.NewStringValue("value"),
 			},
 		}
-		expectedTestVariants := []*pb.TestVariant{
+		expectedTestVerdicts := []*pb.RunTestVerdict{
 			{
 				TestId:      "A",
 				Variant:     nil,
@@ -212,86 +212,86 @@ func TestQuery(t *testing.T) {
 			result, err := query(ctx, q)
 			So(err, ShouldBeNil)
 			So(result, ShouldResembleProto, QueryResult{
-				TestVariants: expectedTestVariants,
+				RunTestVerdicts: expectedTestVerdicts,
 			})
 		})
 		Convey(`page size works`, func() {
 			q.PageSize = 1
 
-			var tvs []*pb.TestVariant
+			var tvs []*pb.RunTestVerdict
 			err := fetchAll(ctx, q, func(page QueryResult) {
-				tvs = append(tvs, page.TestVariants...)
-				So(page.TestVariants, ShouldHaveLength, 1)
+				tvs = append(tvs, page.RunTestVerdicts...)
+				So(page.RunTestVerdicts, ShouldHaveLength, 1)
 			})
 			So(err, ShouldBeNil)
-			So(tvs, ShouldResembleProto, expectedTestVariants)
+			So(tvs, ShouldResembleProto, expectedTestVerdicts)
 		})
 		Convey(`response limit bytes works`, func() {
 			q.ResponseLimitBytes = 1
 
-			var tvs []*pb.TestVariant
+			var tvs []*pb.RunTestVerdict
 			err := fetchAll(ctx, q, func(page QueryResult) {
-				if (page.NextPageToken == PageToken{} && len(page.TestVariants) == 0) {
+				if (page.NextPageToken == PageToken{} && len(page.RunTestVerdicts) == 0) {
 					// Allowed to have a blank page as the final page.
 					return
 				}
 
-				tvs = append(tvs, page.TestVariants...)
-				So(page.TestVariants, ShouldHaveLength, 1)
+				tvs = append(tvs, page.RunTestVerdicts...)
+				So(page.RunTestVerdicts, ShouldHaveLength, 1)
 			})
 			So(err, ShouldBeNil)
-			So(tvs, ShouldResembleProto, expectedTestVariants)
+			So(tvs, ShouldResembleProto, expectedTestVerdicts)
 		})
 		Convey(`result limit works`, func() {
 			q.ResultLimit = 1
 
-			for _, tv := range expectedTestVariants {
+			for _, tv := range expectedTestVerdicts {
 				tv.Results = tv.Results[:1]
 			}
 
 			result, err := query(ctx, q)
 			So(err, ShouldBeNil)
 			So(result, ShouldResembleProto, QueryResult{
-				TestVariants: expectedTestVariants,
+				RunTestVerdicts: expectedTestVerdicts,
 			})
 		})
 		Convey(`low result and page limit works #1`, func() {
 			q.ResultLimit = 1
 			q.PageSize = 1
 
-			for _, tv := range expectedTestVariants {
+			for _, tv := range expectedTestVerdicts {
 				tv.Results = tv.Results[:1]
 			}
 
-			var tvs []*pb.TestVariant
+			var tvs []*pb.RunTestVerdict
 			err := fetchAll(ctx, q, func(page QueryResult) {
-				if (page.NextPageToken == PageToken{} && len(page.TestVariants) == 0) {
+				if (page.NextPageToken == PageToken{} && len(page.RunTestVerdicts) == 0) {
 					// Allowed to have a blank page as the final page.
 					return
 				}
 
-				tvs = append(tvs, page.TestVariants...)
-				So(page.TestVariants, ShouldHaveLength, 1)
+				tvs = append(tvs, page.RunTestVerdicts...)
+				So(page.RunTestVerdicts, ShouldHaveLength, 1)
 			})
 			So(err, ShouldBeNil)
-			So(tvs, ShouldResembleProto, expectedTestVariants)
+			So(tvs, ShouldResembleProto, expectedTestVerdicts)
 		})
 		Convey(`low result and page limit works #2`, func() {
 			q.ResultLimit = 2
 			q.PageSize = 1
 
-			var tvs []*pb.TestVariant
+			var tvs []*pb.RunTestVerdict
 			err := fetchAll(ctx, q, func(page QueryResult) {
-				if (page.NextPageToken == PageToken{} && len(page.TestVariants) == 0) {
+				if (page.NextPageToken == PageToken{} && len(page.RunTestVerdicts) == 0) {
 					// Allowed to have a blank page as the final page.
 					return
 				}
 
-				tvs = append(tvs, page.TestVariants...)
-				So(page.TestVariants, ShouldHaveLength, 1)
+				tvs = append(tvs, page.RunTestVerdicts...)
+				So(page.RunTestVerdicts, ShouldHaveLength, 1)
 			})
 			So(err, ShouldBeNil)
-			So(tvs, ShouldResembleProto, expectedTestVariants)
+			So(tvs, ShouldResembleProto, expectedTestVerdicts)
 		})
 	})
 }

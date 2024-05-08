@@ -227,19 +227,19 @@ func (s *DecoratedResultDB) QueryArtifacts(ctx context.Context, req *QueryArtifa
 	return
 }
 
-func (s *DecoratedResultDB) QueryRunTestVariants(ctx context.Context, req *QueryRunTestVariantsRequest) (rsp *QueryRunTestVariantsResponse, err error) {
+func (s *DecoratedResultDB) QueryRunTestVerdicts(ctx context.Context, req *QueryRunTestVerdictsRequest) (rsp *QueryRunTestVerdictsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "QueryRunTestVariants", req)
+		newCtx, err = s.Prelude(ctx, "QueryRunTestVerdicts", req)
 		if err == nil {
 			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.QueryRunTestVariants(ctx, req)
+		rsp, err = s.Service.QueryRunTestVerdicts(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(ctx, "QueryRunTestVariants", rsp, err)
+		err = s.Postlude(ctx, "QueryRunTestVerdicts", rsp, err)
 	}
 	return
 }

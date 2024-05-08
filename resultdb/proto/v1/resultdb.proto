@@ -97,7 +97,7 @@ service ResultDB {
   // Supports invocation inclusions.
   rpc QueryArtifacts(QueryArtifactsRequest) returns (QueryArtifactsResponse) {};
 
-  // Retrieves test variants for a test run. A test run comprises only
+  // Retrieves test verdicts for a test run. A test run comprises only
   // the test results from a single invocation and not its included
   // invocations.
   //
@@ -112,9 +112,9 @@ service ResultDB {
   //
   // To use, the caller must have `resultdb.testResults.list` permission
   // on the queried invocation.
-  rpc QueryRunTestVariants(QueryRunTestVariantsRequest) returns (QueryRunTestVariantsResponse) {};
+  rpc QueryRunTestVerdicts(QueryRunTestVerdictsRequest) returns (QueryRunTestVerdictsResponse) {};
 
-  // Retrieves test variants from an invocation, recursively.
+  // Retrieves test verdicts from an invocation, recursively.
   // Supports invocation inclusions.
   rpc QueryTestVariants(QueryTestVariantsRequest) returns (QueryTestVariantsResponse) {};
 
@@ -399,7 +399,7 @@ message QueryArtifactsResponse {
 // A request message for QueryTestVariants RPC.
 // Next id: 9.
 message QueryTestVariantsRequest {
-  // Retrieve test variants included in these invocations, directly or indirectly
+  // Retrieve test verdicts included in these invocations, directly or indirectly
   // (via Invocation.included_invocations).
   //
   // As of April 2024, a maximum of one invocation may be specified.
@@ -469,9 +469,9 @@ message QueryTestVariantsResponse {
   map<string, Sources> sources = 3;
 }
 
-// Request message for QueryRunTestVariants RPC.
-message QueryRunTestVariantsRequest {
-  // Retrieve test variants for the test run represented by this invocation.
+// Request message for QueryRunTestVerdicts RPC.
+message QueryRunTestVerdictsRequest {
+  // Retrieve test verdicts for the test run represented by this invocation.
   // Format: invocations/{INVOCATION_ID}.
   string invocation = 1;
 
@@ -493,30 +493,21 @@ message QueryRunTestVariantsRequest {
   // the server.
   int32 page_size = 3;
 
-  // A page token, received from a previous `QueryRunTestVariants` call.
+  // A page token, received from a previous `QueryRunTestVerdicts` call.
   // Provide this to retrieve the subsequent page.
   //
   // When paginating, all other parameters provided to
-  // `QueryRunTestVariants` MUST match the call that provided the page
+  // `QueryRunTestVerdicts` MUST match the call that provided the page
   // token.
   string page_token = 4;
 }
 
-// A response message for QueryRunTestVariants RPC.
-message QueryRunTestVariantsResponse {
-  // Test variants for the run.
-  //
-  // The following fields will be unset:
-  // - exonerations (exonerations are a verdict-level concept and not
-  //   a test run verdict-level concept)
-  // - sources_id (as we are only querying a particular invocation there
-  //   is no opportunity to resolve inherited test sources. When used
-  //   in conjunction with the invocation-ready-for-export pub/sub,
-  //   sources can be obtained from that pub/sub instead.)
-  // - status
+// A response message for QueryRunTestVerdicts RPC.
+message QueryRunTestVerdictsResponse {
+  // Test verdicts for the run.
   //
   // Ordered by test_id, then variant_hash.
-  repeated TestVariant test_variants = 1;
+  repeated RunTestVerdict run_test_verdicts = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there were no subsequent pages at the time of
@@ -537,7 +528,7 @@ message BatchGetTestVariantsRequest {
   }
 
   // Name of the invocation that the test variants are in.
-   string invocation = 1;
+  string invocation = 1;
 
   // A list of test IDs and variant hashes, identifying the requested test
   // variants. Size is limited to 500. Any request for more than 500 variants

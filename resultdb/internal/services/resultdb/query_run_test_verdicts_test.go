@@ -33,8 +33,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestQueryRunTestVariants(t *testing.T) {
-	Convey(`QueryRunTestVariants`, t, func() {
+func TestQueryRunTestVerdicts(t *testing.T) {
+	Convey(`QueryRunTestVerdicts`, t, func() {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -58,7 +58,7 @@ func TestQueryRunTestVariants(t *testing.T) {
 				"key": structpb.NewStringValue("value"),
 			},
 		}
-		expectedTestVariants := []*pb.TestVariant{
+		expectedTestVerdicts := []*pb.RunTestVerdict{
 			{
 				TestId:      "A",
 				Variant:     nil,
@@ -140,7 +140,7 @@ func TestQueryRunTestVariants(t *testing.T) {
 		Convey(`Permission denied`, func() {
 			testutil.MustApply(ctx, insert.Invocation("y", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:secret"}))
 
-			_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+			_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/y",
 			})
 
@@ -148,19 +148,19 @@ func TestQueryRunTestVariants(t *testing.T) {
 		})
 		Convey(`Invalid argument`, func() {
 			Convey(`Empty request`, func() {
-				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{})
+				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{})
 
 				So(err, ShouldBeRPCInvalidArgument, `unspecified`)
 			})
 			Convey(`Invalid invocation name`, func() {
-				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation: "x",
 				})
 
 				So(err, ShouldBeRPCInvalidArgument, `does not match ^invocations/([a-z][a-z0-9_\-:.]{0,99})$`)
 			})
 			Convey(`Invalid result limit`, func() {
-				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation:  "invocations/a",
 					ResultLimit: -1,
 				})
@@ -168,7 +168,7 @@ func TestQueryRunTestVariants(t *testing.T) {
 				So(err, ShouldBeRPCInvalidArgument, `result_limit: negative`)
 			})
 			Convey(`Invalid page size`, func() {
-				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation: "invocations/a",
 					PageSize:   -1,
 				})
@@ -176,7 +176,7 @@ func TestQueryRunTestVariants(t *testing.T) {
 				So(err, ShouldBeRPCInvalidArgument, `page_size: negative`)
 			})
 			Convey(`Invalid page token`, func() {
-				_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation: "invocations/a",
 					PageToken:  "aaaa",
 				})
@@ -185,51 +185,51 @@ func TestQueryRunTestVariants(t *testing.T) {
 			})
 		})
 		Convey(`Invocation not found`, func() {
-			_, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+			_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/notexists",
 			})
 			So(err, ShouldBeRPCNotFound)
 		})
 		Convey(`Valid, no pagination`, func() {
-			result, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+			result, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/a",
 			})
 			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, &pb.QueryRunTestVariantsResponse{
-				TestVariants: expectedTestVariants,
+			So(result, ShouldResembleProto, &pb.QueryRunTestVerdictsResponse{
+				RunTestVerdicts: expectedTestVerdicts,
 			})
 		})
 		Convey(`Valid, pagination`, func() {
-			response, err := srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+			response, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/a",
 				PageSize:   1,
 			})
 			So(err, ShouldBeNil)
-			So(response, ShouldResembleProto, &pb.QueryRunTestVariantsResponse{
-				TestVariants:  expectedTestVariants[:1],
-				NextPageToken: "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
+			So(response, ShouldResembleProto, &pb.QueryRunTestVerdictsResponse{
+				RunTestVerdicts: expectedTestVerdicts[:1],
+				NextPageToken:   "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			})
 
-			response, err = srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+			response, err = srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/a",
 				PageSize:   1,
 				PageToken:  "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			})
 			So(err, ShouldBeNil)
-			So(response, ShouldResembleProto, &pb.QueryRunTestVariantsResponse{
-				TestVariants:  expectedTestVariants[1:2],
-				NextPageToken: "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
+			So(response, ShouldResembleProto, &pb.QueryRunTestVerdictsResponse{
+				RunTestVerdicts: expectedTestVerdicts[1:2],
+				NextPageToken:   "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			})
 
-			response, err = srv.QueryRunTestVariants(ctx, &pb.QueryRunTestVariantsRequest{
+			response, err = srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/a",
 				PageSize:   1,
 				PageToken:  "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			})
 			So(err, ShouldBeNil)
-			So(response, ShouldResembleProto, &pb.QueryRunTestVariantsResponse{
-				TestVariants:  expectedTestVariants[2:],
-				NextPageToken: "",
+			So(response, ShouldResembleProto, &pb.QueryRunTestVerdictsResponse{
+				RunTestVerdicts: expectedTestVerdicts[2:],
+				NextPageToken:   "",
 			})
 		})
 	})

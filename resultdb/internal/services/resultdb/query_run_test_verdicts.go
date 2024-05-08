@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
-	"go.chromium.org/luci/resultdb/internal/runtestvariants"
+	"go.chromium.org/luci/resultdb/internal/runtestverdicts"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -32,12 +32,12 @@ import (
 )
 
 const (
-	// RunTestVariantsResponseLimitBytes is the default soft limit on the number of bytes
-	// that should be returned by a run test variants query.
-	RunTestVariantsResponseLimitBytes = 20 * 1000 * 1000 // 20 MB
+	// RunTestVerdictsResponseLimitBytes is the default soft limit on the number of bytes
+	// that should be returned by a run test verdicts query.
+	RunTestVerdictsResponseLimitBytes = 20 * 1000 * 1000 // 20 MB
 )
 
-func validateQueryRunTestVariantsRequest(req *pb.QueryRunTestVariantsRequest) error {
+func validateQueryRunTestVerdictsRequest(req *pb.QueryRunTestVerdictsRequest) error {
 	_, err := pbutil.ParseInvocationName(req.GetInvocation())
 	if err != nil {
 		return errors.Annotate(err, "invocation").Err()
@@ -56,7 +56,7 @@ func validateQueryRunTestVariantsRequest(req *pb.QueryRunTestVariantsRequest) er
 	return nil
 }
 
-// QueryRunTestVariants returns test variants for a test run. A test run
+// QueryRunTestVerdicts returns test verdicts for a test run. A test run
 // comprises only the test results directly inside an invocation,
 // excluding test results from included invocations.
 //
@@ -65,7 +65,7 @@ func validateQueryRunTestVariantsRequest(req *pb.QueryRunTestVariantsRequest) er
 // Designed to be used for incremental ingestion of test results
 // from an export root in conjuction with the `invocation-ready-for-export`
 // pub/sub.
-func (s *resultDBServer) QueryRunTestVariants(ctx context.Context, req *pb.QueryRunTestVariantsRequest) (*pb.QueryRunTestVariantsResponse, error) {
+func (s *resultDBServer) QueryRunTestVerdicts(ctx context.Context, req *pb.QueryRunTestVerdictsRequest) (*pb.QueryRunTestVerdictsResponse, error) {
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
@@ -73,30 +73,30 @@ func (s *resultDBServer) QueryRunTestVariants(ctx context.Context, req *pb.Query
 		return nil, err
 	}
 
-	err := validateQueryRunTestVariantsRequest(req)
+	err := validateQueryRunTestVerdictsRequest(req)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
-	token, err := runtestvariants.ParsePageToken(req.PageToken)
+	token, err := runtestverdicts.ParsePageToken(req.PageToken)
 	if err != nil {
 		return nil, err
 	}
 
-	query := runtestvariants.Query{
+	query := runtestverdicts.Query{
 		InvocationID:       invocations.MustParseName(req.Invocation),
 		PageSize:           pagination.AdjustPageSize(req.PageSize),
 		PageToken:          token,
 		ResultLimit:        testvariants.AdjustResultLimit(req.ResultLimit),
-		ResponseLimitBytes: RunTestVariantsResponseLimitBytes,
+		ResponseLimitBytes: RunTestVerdictsResponseLimitBytes,
 	}
 	result, err := query.Run(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.QueryRunTestVariantsResponse{
-		TestVariants:  result.TestVariants,
-		NextPageToken: result.NextPageToken.Serialize(),
+	return &pb.QueryRunTestVerdictsResponse{
+		RunTestVerdicts: result.RunTestVerdicts,
+		NextPageToken:   result.NextPageToken.Serialize(),
 	}, nil
 }
