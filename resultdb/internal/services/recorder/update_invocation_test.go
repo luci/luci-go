@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -76,6 +77,20 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			request.UpdateMask.Paths = []string{"name"}
 			err := validateUpdateInvocationRequest(request, now)
 			So(err, ShouldErrLike, `update_mask: unsupported path "name"`)
+		})
+
+		Convey(`submask in update mask`, func() {
+			Convey(`unsupported`, func() {
+				request.UpdateMask.Paths = []string{"deadline.seconds"}
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldErrLike, `update_mask: "deadline" should not have any submask`)
+			})
+
+			Convey(`supported`, func() {
+				request.UpdateMask.Paths = []string{"extended_properties.some_key"}
+				err := validateUpdateInvocationRequest(request, now)
+				So(err, ShouldBeNil)
+			})
 		})
 
 		Convey(`deadline`, func() {
@@ -358,6 +373,89 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				}
 				err := validateUpdateInvocationRequest(request, now)
 				So(err, ShouldErrLike, `invocation: step_instructions: step instructions: ID "instruction1" is re-used at index 0 and 1`)
+			})
+		})
+
+		Convey(`extended properties`, func() {
+			Convey(`full update mask`, func() {
+				request.UpdateMask.Paths = []string{"extended_properties"}
+
+				Convey(`empty`, func() {
+					request.Invocation.ExtendedProperties = nil
+					err := validateUpdateInvocationRequest(request, now)
+					So(err, ShouldBeNil)
+				})
+				Convey(`valid`, func() {
+					request.Invocation.ExtendedProperties = testutil.TestInvocationExtendedProperties()
+					err := validateUpdateInvocationRequest(request, now)
+					So(err, ShouldBeNil)
+				})
+				Convey(`invalid`, func() {
+					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
+						"abc": &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"child_key": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue)),
+							},
+						},
+					}
+					err := validateUpdateInvocationRequest(request, now)
+					So(err, ShouldErrLike, `invocation: extended_properties: ["abc"]: exceeds the maximum size`, `bytes`)
+				})
+			})
+
+			Convey(`sub update mask`, func() {
+
+				Convey(`backticks`, func() {
+					request.UpdateMask.Paths = []string{"extended_properties.`abc`"}
+					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
+						"abc": &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"@type":     structpb.NewStringValue("some.package.MyMessage"),
+								"child_key": structpb.NewStringValue("child_value"),
+							},
+						},
+					}
+					err := validateUpdateInvocationRequest(request, now)
+					So(err, ShouldBeNil)
+				})
+				Convey(`valid`, func() {
+					request.UpdateMask.Paths = []string{"extended_properties.abc"}
+					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
+						"abc": &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"@type":     structpb.NewStringValue("some.package.MyMessage"),
+								"child_key": structpb.NewStringValue("child_value"),
+							},
+						},
+					}
+					err := validateUpdateInvocationRequest(request, now)
+					So(err, ShouldBeNil)
+				})
+				Convey(`invalid`, func() {
+					request.UpdateMask.Paths = []string{"extended_properties.abc_"}
+					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
+						"abc_": &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"@type":     structpb.NewStringValue("some.package.MyMessage"),
+								"child_key": structpb.NewStringValue("child_value"),
+							},
+						},
+					}
+					err := validateUpdateInvocationRequest(request, now)
+					So(err, ShouldErrLike, `update_mask: extended_properties: key "abc_": does not match`)
+				})
+				Convey(`too deep`, func() {
+					request.UpdateMask.Paths = []string{"extended_properties.abc.fields"}
+					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
+						"abc": &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"child_key": structpb.NewStringValue("child_value"),
+							},
+						},
+					}
+					err := validateUpdateInvocationRequest(request, now)
+					So(err, ShouldErrLike, `update_mask: extended_properties["abc"] should not have any submask`)
+				})
 			})
 		})
 	})
@@ -716,6 +814,119 @@ func TestUpdateInvocation(t *testing.T) {
 					_, err := recorder.UpdateInvocation(ctx, req)
 					So(err, ShouldBeRPCInvalidArgument, `invocation: is_source_spec_final: cannot unfinalize already finalized sources`)
 				})
+			})
+		})
+		Convey("extended_properties", func() {
+			structValueOrg := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"@type":       structpb.NewStringValue("some.package.MyMessage"),
+					"child_key_1": structpb.NewStringValue("child_value_1"),
+				},
+			}
+			Convey("replace entire field", func() {
+				internalExtendedProperties := &invocationspb.ExtendedProperties{
+					ExtendedProperties: map[string]*structpb.Struct{
+						"old_key": structValueOrg,
+					},
+				}
+				testutil.MustApply(ctx, insert.Invocation("entire-extended_properties", pb.Invocation_ACTIVE, map[string]any{
+					"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
+				}))
+				token, err := generateInvocationToken(ctx, "entire-extended_properties")
+				So(err, ShouldBeNil)
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+				newExtendedProperties := map[string]*structpb.Struct{
+					"new_key": structValueOrg,
+				}
+				req := &pb.UpdateInvocationRequest{
+					Invocation: &pb.Invocation{
+						Name:               "invocations/entire-extended_properties",
+						ExtendedProperties: newExtendedProperties,
+					},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{"extended_properties"}},
+				}
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeNil)
+				So(inv.ExtendedProperties, ShouldResembleProto, newExtendedProperties)
+			})
+			Convey("add, replace, and delete keys", func() {
+				structValueNew := &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"child_key_2": structpb.NewStringValue("child_value_2"),
+					},
+				}
+				internalExtendedProperties := &invocationspb.ExtendedProperties{
+					ExtendedProperties: map[string]*structpb.Struct{
+						"to_be_kept":    structValueOrg,
+						"to_be_updated": structValueOrg,
+						"to_be_deleted": structValueOrg,
+					},
+				}
+				testutil.MustApply(ctx, insert.Invocation("entire-extended_properties", pb.Invocation_ACTIVE, map[string]any{
+					"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
+				}))
+				token, err := generateInvocationToken(ctx, "entire-extended_properties")
+				So(err, ShouldBeNil)
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+				req := &pb.UpdateInvocationRequest{
+					Invocation: &pb.Invocation{
+						Name: "invocations/entire-extended_properties",
+						ExtendedProperties: map[string]*structpb.Struct{
+							"to_be_added":   structValueNew,
+							"to_be_updated": structValueNew,
+						},
+					},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{
+						"extended_properties.to_be_added",
+						"extended_properties.to_be_updated",
+						"extended_properties.to_be_deleted",
+					}},
+				}
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeNil)
+				So(inv.ExtendedProperties, ShouldResembleProto, map[string]*structpb.Struct{
+					"to_be_kept":    structValueOrg,
+					"to_be_added":   structValueNew,
+					"to_be_updated": structValueNew,
+				})
+			})
+			Convey("valid request but overall size exceed limit", func() {
+				structValueLong := &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue-60)),
+					},
+				}
+				internalExtendedProperties := &invocationspb.ExtendedProperties{
+					ExtendedProperties: map[string]*structpb.Struct{
+						"mykey_1": structValueLong,
+						"mykey_2": structValueLong,
+						"mykey_3": structValueLong,
+						"mykey_4": structValueLong,
+						"mykey_5": structValueOrg,
+					},
+				}
+				testutil.MustApply(ctx, insert.Invocation("entire-extended_properties", pb.Invocation_ACTIVE, map[string]any{
+					"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
+				}))
+				token, err := generateInvocationToken(ctx, "entire-extended_properties")
+				So(err, ShouldBeNil)
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+				req := &pb.UpdateInvocationRequest{
+					Invocation: &pb.Invocation{
+						Name: "invocations/entire-extended_properties",
+						ExtendedProperties: map[string]*structpb.Struct{
+							"mykey_5": structValueLong,
+						},
+					},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{
+						"extended_properties.mykey_5",
+					}},
+				}
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				So(err, ShouldBeRPCInvalidArgument, `invocation: extended_properties: exceeds the maximum size of`)
+				So(inv, ShouldBeNil)
 			})
 		})
 

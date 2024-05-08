@@ -15,9 +15,9 @@
 package testutil
 
 import (
-	pb "go.chromium.org/luci/resultdb/proto/v1"
-
 	"google.golang.org/protobuf/types/known/structpb"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestProperties() *structpb.Struct {
@@ -57,4 +57,21 @@ func TestSourcesWithChangelistNumbers(changelistNumbers ...int) *pb.Sources {
 		})
 	}
 	return result
+}
+
+func TestInvocationExtendedProperties() map[string]*structpb.Struct {
+	return map[string]*structpb.Struct{
+		"key_1": &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"@type":       structpb.NewStringValue("some.package.MyMessage"),
+				"child_key_1": structpb.NewStringValue("child_value_1"),
+			},
+		},
+		"key_2": &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"@type":       structpb.NewStringValue("some.package.MyMessage"),
+				"child_key_1": structpb.NewStringValue("child_value_2"),
+			},
+		},
+	}
 }

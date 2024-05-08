@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -152,6 +153,13 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"TestInstruction":   spanutil.Compressed(pbutil.MustMarshal(inv.TestInstruction)),
 		"StepInstructions":  spanutil.Compressed(pbutil.MustMarshal(inv.StepInstructions)),
 	}
+
+	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that
+	// it can be serialized as a single value to spanner.
+	internalExtendedProperties := &invocationspb.ExtendedProperties{
+		ExtendedProperties: inv.ExtendedProperties,
+	}
+	row["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
 
 	if inv.State == pb.Invocation_FINALIZING || inv.State == pb.Invocation_FINALIZED {
 		// Invocation immediately transitioning to finalizing/finalized.

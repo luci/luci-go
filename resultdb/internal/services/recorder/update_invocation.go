@@ -26,18 +26,38 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// validateUpdateInvocationRequestSubmask returns non-nil error if path should
+// not have submask, e.g. "deadline.seconds".
+func validateUpdateInvocationRequestSubmask(path string, submask *mask.Mask) error {
+	if path == "extended_properties" {
+		for extPropKey, extPropMask := range submask.Children() {
+			if err := pbutil.ValidateInvocationExtendedPropertyKey(extPropKey); err != nil {
+				return errors.Annotate(err, "update_mask: extended_properties: key %q", extPropKey).Err()
+			}
+			if len(extPropMask.Children()) > 0 {
+				return errors.Reason("update_mask: extended_properties[%q] should not have any submask", extPropKey).Err()
+			}
+		}
+	} else if len(submask.Children()) > 0 {
+		return errors.Reason("update_mask: %q should not have any submask", path).Err()
+	}
+	return nil
+}
 
 // validateUpdateInvocationRequest returns non-nil error if req is invalid.
 func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.Time) error {
@@ -49,7 +69,14 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 		return errors.Reason("update_mask: paths is empty").Err()
 	}
 
-	for _, path := range req.UpdateMask.GetPaths() {
+	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.Invocation, false, true)
+	if err != nil {
+		return errors.Annotate(err, "update_mask").Err()
+	}
+	for path, submask := range updateMask.Children() {
+		if err := validateUpdateInvocationRequestSubmask(path, submask); err != nil {
+			return err
+		}
 		switch path {
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in UpdateInvocation implementation.
@@ -105,6 +132,11 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 			// Either true or false is OK for this first pass validation.
 			// However, later we must validate that if the field is true,
 			// it is not being set to false.
+
+		case "extended_properties":
+			if err := pbutil.ValidateInvocationExtendedProperties(req.Invocation.GetExtendedProperties()); err != nil {
+				return errors.Annotate(err, "invocation: extended_properties").Err()
+			}
 
 		default:
 			return errors.Reason("update_mask: unsupported path %q", path).Err()
@@ -252,7 +284,11 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		// the fields are mentioned in the update mask.
 		wasSourcesFinal := ret.IsSourceSpecFinal
 
-		for _, path := range in.UpdateMask.Paths {
+		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.Invocation, false, true)
+		if err != nil {
+			return errors.Annotate(err, "update_mask").Err()
+		}
+		for path, submask := range updateMask.Children() {
 			switch path {
 			// The cases in this switch statement must be synchronized with a
 			// similar switch statement in validateUpdateInvocationRequest.
@@ -336,6 +372,31 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "step_instructions":
 				values["StepInstructions"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.GetStepInstructions()))
 				ret.StepInstructions = in.Invocation.GetStepInstructions()
+
+			case "extended_properties":
+				extendedProperties := in.Invocation.GetExtendedProperties()
+				if len(submask.Children()) > 0 {
+					// If the update_mask has masks like "extended_properties.some_key".
+					for extPropKey := range submask.Children() {
+						if _, exist := extendedProperties[extPropKey]; exist {
+							// Add or update if extPropKey exists in extendedProperties
+							ret.ExtendedProperties[extPropKey] = extendedProperties[extPropKey]
+						} else {
+							// Delete if does not exist
+							delete(ret.ExtendedProperties, extPropKey)
+						}
+					}
+				} else {
+					ret.ExtendedProperties = extendedProperties
+				}
+				// One more validation to ensure the size is within the limit.
+				if err := pbutil.ValidateInvocationExtendedProperties(ret.ExtendedProperties); err != nil {
+					return appstatus.BadRequest(errors.Annotate(err, "invocation: extended_properties").Err())
+				}
+				internalExtendedProperties := &invocationspb.ExtendedProperties{
+					ExtendedProperties: ret.ExtendedProperties,
+				}
+				values["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
 
 			default:
 				panic("impossible")

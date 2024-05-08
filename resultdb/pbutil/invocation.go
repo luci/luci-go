@@ -15,14 +15,28 @@
 package pbutil
 
 import (
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-const invocationIDPattern = `[a-z][a-z0-9_\-:.]{0,99}`
+const (
+	invocationIDPattern                     = `[a-z][a-z0-9_\-:.]{0,99}`
+	invocationExtendedPropertyKeyPattern    = `[a-z]([a-z0-9_]{0,61}[a-z0-9])?`
+	invocationExtendedPropertySchemaPattern = `[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+`
+	MaxSizeInvocationExtendedPropertyValue  = 20 * 1024  // 20 KB
+	MaxSizeInvocationExtendedProperties     = 100 * 1024 // 100 KB
+
+)
 
 var invocationIDRe = regexpf("^%s$", invocationIDPattern)
 var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
+var invocationExtendedPropertyKeyRe = regexpf("^%s$", invocationExtendedPropertyKeyPattern)
+var invocationExtendedPropertySchemaRe = regexpf("^%s$", invocationExtendedPropertySchemaPattern)
 
 // ValidateInvocationID returns a non-nil error if id is invalid.
 func ValidateInvocationID(id string) error {
@@ -106,6 +120,37 @@ func ValidateSources(sources *pb.Sources) error {
 			return errors.Reason("changelists[%v]: duplicate change modulo patchset number; same change at changelists[%v]", i, duplicateIndex).Err()
 		}
 		clToIndex[cl] = i
+	}
+	return nil
+}
+
+// ValidateInvocationExtendedPropertyKey returns a non-nil error if key is invalid.
+func ValidateInvocationExtendedPropertyKey(key string) error {
+	return validateWithRe(invocationExtendedPropertyKeyRe, key)
+}
+
+// ValidateInvocationExtendedProperties returns a non-nil error if extendedProperties is invalid.
+func ValidateInvocationExtendedProperties(extendedProperties map[string]*structpb.Struct) error {
+	for key, value := range extendedProperties {
+		if err := ValidateInvocationExtendedPropertyKey(key); err != nil {
+			return errors.Annotate(err, "key %q", key).Err()
+		}
+		if err := validateProperties(value, MaxSizeInvocationExtendedPropertyValue); err != nil {
+			return errors.Annotate(err, "[%q]", key).Err()
+		}
+		schemaVal, schemaExist := value.Fields["@type"]
+		if !schemaExist {
+			return errors.Reason("[%q] should have a key \"@type\"", key).Err()
+		}
+		if err := validateWithRe(invocationExtendedPropertySchemaRe, schemaVal.GetStringValue()); err != nil {
+			return errors.Annotate(err, "[%q][\"@type\"]", key).Err()
+		}
+	}
+	internalExtendedProperties := &invocationspb.ExtendedProperties{
+		ExtendedProperties: extendedProperties,
+	}
+	if proto.Size(internalExtendedProperties) > MaxSizeInvocationExtendedProperties {
+		return errors.Reason("exceeds the maximum size of %d bytes", MaxSizeInvocationExtendedProperties).Err()
 	}
 	return nil
 }

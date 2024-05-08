@@ -23,11 +23,13 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -108,20 +110,26 @@ func TestRead(t *testing.T) {
 			},
 		}
 
+		extendedProperties := testutil.TestInvocationExtendedProperties()
+		internalExtendedProperties := &invocationspb.ExtendedProperties{
+			ExtendedProperties: extendedProperties,
+		}
+
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
 			insertInvocation("including", map[string]any{
-				"State":             pb.Invocation_ACTIVE,
-				"CreateTime":        start,
-				"Deadline":          start.Add(time.Hour),
-				"IsExportRoot":      spanner.NullBool{Bool: true, Valid: true},
-				"Properties":        spanutil.Compressed(pbutil.MustMarshal(properties)),
-				"Sources":           spanutil.Compressed(pbutil.MustMarshal(sources)),
-				"InheritSources":    spanner.NullBool{Bool: true, Valid: true},
-				"IsSourceSpecFinal": spanner.NullBool{Bool: true, Valid: true},
-				"BaselineId":        "try:linux-rel",
-				"TestInstruction":   spanutil.Compressed(pbutil.MustMarshal(testInstruction)),
-				"StepInstructions":  spanutil.Compressed(pbutil.MustMarshal(stepInstructions)),
+				"State":              pb.Invocation_ACTIVE,
+				"CreateTime":         start,
+				"Deadline":           start.Add(time.Hour),
+				"IsExportRoot":       spanner.NullBool{Bool: true, Valid: true},
+				"Properties":         spanutil.Compressed(pbutil.MustMarshal(properties)),
+				"Sources":            spanutil.Compressed(pbutil.MustMarshal(sources)),
+				"InheritSources":     spanner.NullBool{Bool: true, Valid: true},
+				"IsSourceSpecFinal":  spanner.NullBool{Bool: true, Valid: true},
+				"BaselineId":         "try:linux-rel",
+				"TestInstruction":    spanutil.Compressed(pbutil.MustMarshal(testInstruction)),
+				"StepInstructions":   spanutil.Compressed(pbutil.MustMarshal(stepInstructions)),
+				"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
 			}),
 			insertInvocation("included0", nil),
 			insertInvocation("included1", nil),
@@ -147,10 +155,11 @@ func TestRead(t *testing.T) {
 				Inherit: true,
 				Sources: sources,
 			},
-			IsSourceSpecFinal: true,
-			BaselineId:        "try:linux-rel",
-			TestInstruction:   testInstruction,
-			StepInstructions:  stepInstructions,
+			IsSourceSpecFinal:  true,
+			BaselineId:         "try:linux-rel",
+			TestInstruction:    testInstruction,
+			StepInstructions:   stepInstructions,
+			ExtendedProperties: extendedProperties,
 		})
 	})
 }

@@ -30,7 +30,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 //
-// Next id: 22.
+// Next id: 23.
 message Invocation {
   reserved 3; // bool interrupted, crbug.com/1078696.
 
@@ -241,6 +241,31 @@ message Invocation {
   // Only useful for a build-level invocation.
   // It contains all instructions of steps which belong to the build.
   Instructions step_instructions = 18;
+
+  // Additional JSON object(s) that contain additional structured data about the
+  // invocation. Unlike `properties` this field is not included (denormalized)
+  // in the test results export, it is only available in the finalized
+  // invocations BigQuery export.
+  //
+  // All google.protobuf.Struct values must contain a field '@type' at the
+  // top-level that defines the fully-qualified name of the source protocol
+  // buffer that was used to populate this field (e.g. some.package.MyMessage).
+  //
+  // ResultDB will not validate the contents with respect to this schema, but
+  // downstream systems may depend on the '@type' field to inform how the
+  // contents are interpreted.
+  //
+  // Each key is limited to 63 characters matching
+  // ^[a-z]([a-z0-9_]{0,61}[a-z0-9])?$.
+  // The size of each value is limited to <= 20,000 bytes.
+  // The total size of the map (as measured by proto.Size())
+  // is limited to <= 100,000 bytes.
+  //
+  // Valid field masks:
+  //  * extended_properties
+  //  * extended_properties.exception_occurances
+  //  * extended_properties.test_script_metrics
+  map<string, google.protobuf.Struct> extended_properties = 22;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported

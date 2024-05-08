@@ -275,6 +275,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 									},
 								},
 							},
+							ExtendedProperties: testutil.TestInvocationExtendedProperties(),
 						},
 					},
 					{

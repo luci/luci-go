@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -81,6 +82,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.BaselineId,
 		 i.TestInstruction,
 		 i.StepInstructions,
+		 i.ExtendedProperties,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -94,17 +96,18 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		inv := &pb.Invocation{}
 
 		var (
-			createdBy         spanner.NullString
-			isExportRoot      spanner.NullBool
-			producerResource  spanner.NullString
-			realm             spanner.NullString
-			properties        spanutil.Compressed
-			sources           spanutil.Compressed
-			inheritSources    spanner.NullBool
-			isSourceSpecFinal spanner.NullBool
-			baselineID        spanner.NullString
-			testInstruction   spanutil.Compressed
-			stepInstructions  spanutil.Compressed
+			createdBy          spanner.NullString
+			isExportRoot       spanner.NullBool
+			producerResource   spanner.NullString
+			realm              spanner.NullString
+			properties         spanutil.Compressed
+			sources            spanutil.Compressed
+			inheritSources     spanner.NullBool
+			isSourceSpecFinal  spanner.NullBool
+			baselineID         spanner.NullString
+			testInstruction    spanutil.Compressed
+			stepInstructions   spanutil.Compressed
+			extendedProperties spanutil.Compressed
 		)
 		err := b.FromSpanner(row, &id,
 			&inv.State,
@@ -126,6 +129,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&baselineID,
 			&testInstruction,
 			&stepInstructions,
+			&extendedProperties,
 		)
 		if err != nil {
 			return err
@@ -179,6 +183,16 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			if err := proto.Unmarshal(stepInstructions, inv.StepInstructions); err != nil {
 				return err
 			}
+		}
+
+		// Deserialize from luci.resultdb.internal.invocations.ExtendedProperties
+		// and assign the wrapped map to invocation.ExtendedProperties
+		if len(extendedProperties) > 0 {
+			internalExtendedProperties := &invocationspb.ExtendedProperties{}
+			if err := proto.Unmarshal(extendedProperties, internalExtendedProperties); err != nil {
+				return err
+			}
+			inv.ExtendedProperties = internalExtendedProperties.ExtendedProperties
 		}
 
 		return f(id, inv)

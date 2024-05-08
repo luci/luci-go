@@ -15,7 +15,10 @@
 package pbutil
 
 import (
+	"strings"
 	"testing"
+
+	"google.golang.org/protobuf/types/known/structpb"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -259,6 +262,90 @@ func TestValidateInvocation(t *testing.T) {
 		Convey(`Invalid Sources`, func() {
 			sourceSpec.Sources.GitilesCommit.Host = "b@d"
 			So(ValidateSourceSpec(sourceSpec), ShouldErrLike, `sources: gitiles_commit: host: does not match`)
+		})
+	})
+	Convey(`ValidateInvocationExtendedPropertyKey`, t, func() {
+		Convey(`Invalid key`, func() {
+			err := ValidateInvocationExtendedPropertyKey("mykey_")
+			So(err, ShouldErrLike, `does not match`)
+		})
+	})
+	Convey(`ValidateInvocationExtendedProperties`, t, func() {
+		Convey(`Invalid key`, func() {
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey_": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldErrLike, `key "mykey_": does not match`)
+		})
+		Convey(`Max size of value`, func() {
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue(strings.Repeat("a", MaxSizeInvocationExtendedPropertyValue)),
+					},
+				},
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldErrLike, `["mykey"]: exceeds the maximum size of `, `bytes`)
+		})
+		Convey(`Missing @type`, func() {
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldErrLike, `["mykey"] should have a key "@type"`)
+		})
+		Convey(`Invalid @type`, func() {
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("_some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldErrLike, `["mykey"]["@type"]: does not match`)
+		})
+		Convey(`Max size of extended properties`, func() {
+			structValueLong := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"@type":       structpb.NewStringValue("some.package.MyMessage"),
+					"child_key_1": structpb.NewStringValue(strings.Repeat("a", MaxSizeInvocationExtendedPropertyValue-60)),
+				},
+			}
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey_1": structValueLong,
+				"mykey_2": structValueLong,
+				"mykey_3": structValueLong,
+				"mykey_4": structValueLong,
+				"mykey_5": structValueLong,
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldErrLike, `exceeds the maximum size of`, `bytes`)
+		})
+		Convey(`Valid`, func() {
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldBeNil)
 		})
 	})
 }
