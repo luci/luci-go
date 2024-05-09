@@ -19,9 +19,6 @@ package internal
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"os"
@@ -117,8 +114,8 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 	// Generate a code verifier (a random string) and corresponding challenge for
 	// PKCE protocol. They are used to make sure only us can exchange the
 	// authorization code for tokens (because only we know the code verifier).
-	codeVerifier := generateCodeVerifier()
-	codeChallenge := deriveCodeChallenge(codeVerifier)
+	codeVerifier := oauth2.GenerateVerifier()
+	codeChallenge := oauth2.S256ChallengeFromVerifier(codeVerifier)
 
 	// Collect some information about the running environment to show to the user
 	// so they can understand better what is invoking the login session. Both are
@@ -230,24 +227,6 @@ func (p *loginSessionTokenProvider) RefreshToken(ctx context.Context, prev, base
 		logging.Warningf(ctx, "Bad refresh token - %s", err)
 		return nil, ErrBadRefreshToken
 	}
-}
-
-// generateCodeVerifier generates a random string used as a code_verifier in
-// the PKCE protocol.
-//
-// See https://tools.ietf.org/html/rfc7636.
-func generateCodeVerifier() string {
-	blob := make([]byte, 50)
-	if _, err := rand.Read(blob); err != nil {
-		panic(fmt.Sprintf("failed to generate code verifier: %s", err))
-	}
-	return base64.RawURLEncoding.EncodeToString(blob)
-}
-
-// deriveCodeChallenge derives code_challenge from the code_verifier.
-func deriveCodeChallenge(codeVerifier string) string {
-	codeVerifierS256 := sha256.Sum256([]byte(codeVerifier))
-	return base64.RawURLEncoding.EncodeToString(codeVerifierS256[:])
 }
 
 // codeAndExp represents a login confirmation code and its expiration time.
