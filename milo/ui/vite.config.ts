@@ -75,6 +75,9 @@ function getLocalDevConfigsJs(env: Record<string, string>) {
     luciTreeStatus: {
       host: env['VITE_TREE_STATUS_HOST'],
     },
+    authService: {
+      host: env['VITE_AUTH_SERVICE_HOST'],
+    },
   };
 
   const localDevConfigsJs =

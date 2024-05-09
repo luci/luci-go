@@ -48,6 +48,9 @@ declare const SETTINGS: {
   readonly luciNotify: {
     readonly host: string;
   };
+  readonly authService: {
+    readonly host: string;
+  };
 };
 
 /**

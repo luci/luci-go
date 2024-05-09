@@ -75,6 +75,9 @@ configJSVars.SETTINGS = Object.freeze({
   luciNotify: {
     host: assertNonNullable(process.env['VITE_LUCI_NOTIFY_HOST']),
   },
+  authService: {
+    host: assertNonNullable(process.env['VITE_AUTH_SERVICE_HOST']),
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by
