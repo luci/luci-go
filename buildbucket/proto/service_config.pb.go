@@ -806,6 +806,17 @@ type CustomMetric struct {
 	// The value type of all metric fields is always string.
 	// Each Field must conform to ^[A-Za-z_][A-Za-z0-9_]*$ (See
 	// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/tsmon/registry/registry.go;l=34;drc=b77d0c2bd4bbb536f8e349e993e3ca18818c51e7).
+	//
+	// Note that the possible values of each field should be bounded.
+	// So below fields should not be included:
+	// * build id
+	// * any timestamp (e.g. build's creation time)
+	// * any markdown strings (e.g. build's summary_markdown)
+	// * any log strings (e.g. build's output logs)
+	// * any PII
+	// * build's gitiles commit hash
+	// * build's gerrit change number
+	// * etc
 	Fields []string `protobuf:"bytes,3,rep,name=fields,proto3" json:"fields,omitempty"`
 	// True if the metric is disabled.
 	//
