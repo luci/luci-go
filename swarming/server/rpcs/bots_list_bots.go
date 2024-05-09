@@ -27,6 +27,8 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/cursor"
+	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -37,8 +39,12 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 		return nil, status.Errorf(codes.InvalidArgument, "invalid limit: %s", err)
 	}
 
-	if req.Cursor != "" && !datastore.IsMultiCursorString(req.Cursor) {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid cursor: wrong format")
+	var dscursor *cursorpb.BotsCursor
+	if req.Cursor != "" {
+		dscursor, err = cursor.Decode[cursorpb.BotsCursor](ctx, cursorpb.RequestKind_LIST_BOTS, req.Cursor)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	dims, err := model.NewFilter(req.Dimensions)
@@ -60,8 +66,6 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 		return nil, res.ToGrpcErr()
 	}
 
-	// Split the dimensions filter into simpler filters supported natively by
-	// the datastore with existing indices. In most cases there will be only one.
 	q := model.BotInfoQuery().Limit(req.Limit)
 	q = model.FilterBotsByState(q, model.StateFilter{
 		Quarantined:   req.Quarantined,
@@ -69,25 +73,23 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 		IsDead:        req.IsDead,
 		IsBusy:        req.IsBusy,
 	})
-	multi := model.FilterBotsByDimensions(q, srv.BotQuerySplitMode, dims)
-	if req.Cursor != "" {
-		multi, err = datastore.ApplyCursorString(ctx, multi, req.Cursor)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid cursor: %s", err)
-		}
+	// The results are always ordered by the key (derived from the bot ID). There
+	// are also no duplicates. Thus we can use the bot ID itself as a cursor.
+	if dscursor != nil {
+		q = q.Gt("__key__", model.BotInfoKey(ctx, dscursor.LastBotId))
 	}
+	// Split the dimensions filter into simpler filters supported natively by
+	// the datastore with existing indices. In most cases there will be only one.
+	multi := model.FilterBotsByDimensions(q, srv.BotQuerySplitMode, dims)
 
+	dscursor = nil
 	out := &apipb.BotInfoListResponse{
 		DeathTimeout: state.Config.Settings().BotDeathTimeoutSecs,
 	}
 	err = datastore.RunMulti(ctx, multi, func(bot *model.BotInfo, cb datastore.CursorCB) error {
 		out.Items = append(out.Items, bot.ToProto())
 		if len(out.Items) == int(req.Limit) {
-			cursor, err := cb()
-			if err != nil {
-				return err
-			}
-			out.Cursor = cursor.String()
+			dscursor = &cursorpb.BotsCursor{LastBotId: out.Items[len(out.Items)-1].BotId}
 			return datastore.Stop
 		}
 		return nil
@@ -95,6 +97,13 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 	if err != nil {
 		logging.Errorf(ctx, "Error querying BotInfo: %s", err)
 		return nil, status.Errorf(codes.Internal, "datastore error fetching bots")
+	}
+
+	if dscursor != nil {
+		out.Cursor, err = cursor.Encode(ctx, cursorpb.RequestKind_LIST_BOTS, dscursor)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	out.Now = timestamppb.New(clock.Now(ctx))
