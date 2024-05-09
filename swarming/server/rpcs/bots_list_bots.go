@@ -51,19 +51,8 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid dimensions: %s", err)
 	}
-
-	// If the query is restricted to some set of pools, need the permission in all
-	// of them. Otherwise need the global server permissions, since an
-	// unrestricted query can return bots from any pool.
-	var res acls.CheckResult
-	state := State(ctx)
-	if pools := dims.Pools(); len(pools) != 0 {
-		res = state.ACL.CheckAllPoolsPerm(ctx, pools, acls.PermPoolsListBots)
-	} else {
-		res = state.ACL.CheckServerPerm(ctx, acls.PermPoolsListBots)
-	}
-	if !res.Permitted {
-		return nil, res.ToGrpcErr()
+	if err := CheckListingPerm(ctx, dims, acls.PermPoolsListBots); err != nil {
+		return nil, err
 	}
 
 	q := model.BotInfoQuery().Limit(req.Limit)
@@ -84,7 +73,7 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 
 	dscursor = nil
 	out := &apipb.BotInfoListResponse{
-		DeathTimeout: state.Config.Settings().BotDeathTimeoutSecs,
+		DeathTimeout: State(ctx).Config.Settings().BotDeathTimeoutSecs,
 	}
 	err = datastore.RunMulti(ctx, multi, func(bot *model.BotInfo, cb datastore.CursorCB) error {
 		out.Items = append(out.Items, bot.ToProto())

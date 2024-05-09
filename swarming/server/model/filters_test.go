@@ -70,15 +70,7 @@ func TestFilter(t *testing.T) {
 
 	Convey("SplitForQuery", t, func() {
 		split := func(q string, mode SplitMode) []string {
-			var pairs []*apipb.StringPair
-			for _, kv := range strings.Split(q, " ") {
-				k, v, _ := strings.Cut(kv, ":")
-				pairs = append(pairs, &apipb.StringPair{
-					Key:   k,
-					Value: v,
-				})
-			}
-			in, err := NewFilter(pairs)
+			in, err := NewFilterFromKV(strings.Split(q, " "))
 			So(err, ShouldBeNil)
 
 			parts := in.SplitForQuery(mode)

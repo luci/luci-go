@@ -114,6 +114,16 @@ func NewFilter(tags []*apipb.StringPair) (Filter, error) {
 	return filter, nil
 }
 
+// NewFilterFromKV is a variant of NewFilter that takes "k:v" pairs as input.
+func NewFilterFromKV(tags []string) (Filter, error) {
+	pairs := make([]*apipb.StringPair, len(tags))
+	for i, tag := range tags {
+		parts := strings.SplitN(tag, ":", 2)
+		pairs[i] = &apipb.StringPair{Key: parts[0], Value: parts[1]}
+	}
+	return NewFilter(pairs)
+}
+
 // Pools is a list of all pools mentioned in the filter (if any).
 func (f Filter) Pools() []string {
 	pools := stringset.New(1) // there's usually only 1 pool

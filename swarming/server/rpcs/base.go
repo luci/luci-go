@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
@@ -145,6 +146,27 @@ func ValidateLimit(val int32) (int32, error) {
 		return val, errors.Reason("must be less or equal to %d, got %d", maxPageSize, val).Err()
 	}
 	return val, nil
+}
+
+// CheckListingPerm checks the caller can perform a listing using the given tags
+// or dimensions filter.
+//
+// It checks either the global ACL (if the filter doesn't specify any concrete
+// pools to restrict the listing to) or ACLs of pools specified by the filter.
+//
+// Returns nil if it is OK to proceed or a gRPC error to stop. The error should
+// be returned by the RPC as is.
+func CheckListingPerm(ctx context.Context, filter model.Filter, perm realms.Permission) error {
+	var res acls.CheckResult
+	if pools := filter.Pools(); len(pools) != 0 {
+		res = State(ctx).ACL.CheckAllPoolsPerm(ctx, pools, perm)
+	} else {
+		res = State(ctx).ACL.CheckServerPerm(ctx, perm)
+	}
+	if !res.Permitted {
+		return res.ToGrpcErr()
+	}
+	return nil
 }
 
 // FetchTaskRequest fetches a task request given its ID.

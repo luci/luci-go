@@ -16,7 +16,6 @@ package rpcs
 
 import (
 	"context"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,29 +39,12 @@ func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountReq
 		req.End = timestamppb.New(clock.Now(ctx))
 	}
 
-	// If tags has length 0, tagsFilter and pools will both just be empty.
-	tagsSP := make([]*apipb.StringPair, len(req.Tags))
-	for i, tag := range req.Tags {
-		parts := strings.SplitN(tag, ":", 2)
-		tagsSP[i] = &apipb.StringPair{Key: parts[0], Value: parts[1]}
-	}
-	tagsFilter, err := model.NewFilter(tagsSP)
+	filter, err := model.NewFilterFromKV(req.Tags)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid tags: %s", err)
 	}
-	pools := tagsFilter.Pools()
-
-	// If the caller has global permission, they can access all tasks
-	// Otherwise, they are required to provide a pool dimension to check ACL.
-	var res acls.CheckResult
-	state := State(ctx)
-	if len(pools) != 0 {
-		res = state.ACL.CheckAllPoolsPerm(ctx, pools, acls.PermPoolsListTasks)
-	} else {
-		res = state.ACL.CheckServerPerm(ctx, acls.PermPoolsListTasks)
-	}
-	if !res.Permitted {
-		return nil, res.ToGrpcErr()
+	if err := CheckListingPerm(ctx, filter, acls.PermPoolsListTasks); err != nil {
+		return nil, err
 	}
 
 	// Limit to the requested time range. An error here means the time range
@@ -83,7 +65,7 @@ func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountReq
 
 	// Filtering by tags may split the query into multiple queries we'll need to
 	// merge.
-	queries := model.FilterTasksByTags(query, srv.TaskQuerySplitMode, tagsFilter)
+	queries := model.FilterTasksByTags(query, srv.TaskQuerySplitMode, filter)
 
 	// If we only have one query to run, we can make use of an aggregation query
 	// and utilize the datastore server-side counting (this requires the query
