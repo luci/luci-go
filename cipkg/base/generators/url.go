@@ -20,6 +20,7 @@ import (
 	"encoding/base32"
 	"fmt"
 	"io/fs"
+	"slices"
 	"strings"
 
 	"go.chromium.org/luci/cipkg/core"
@@ -80,7 +81,11 @@ func (f *FetchURLs) Generate(ctx context.Context, plats Platforms) (*core.Action
 		}
 	}
 
-	// TODO: Sort deps
+	// Make sure deps is sorted so action id can be stable.
+	slices.SortFunc(deps, func(a *core.Action, b *core.Action) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
 	return &core.Action{
 		Name:     f.Name,
 		Metadata: f.Metadata,

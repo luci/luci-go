@@ -104,6 +104,31 @@ func TestFetchURLs(t *testing.T) {
 			So(a.Deps, ShouldHaveLength, 1)
 			So(a.Deps[0].Metadata.GetContextInfo(), ShouldEqual, "info")
 		})
+
+		Convey("stable", func() {
+			g := &FetchURLs{
+				Name: "urls",
+				URLs: map[string]FetchURL{
+					"something1": {
+						URL:  "https://host/path1",
+						Mode: 0o777,
+					},
+					"dir1/something2": {
+						URL:           "https://host/path2",
+						HashAlgorithm: core.HashAlgorithm_HASH_MD5,
+						HashValue:     "abcdef",
+					},
+				},
+			}
+			a, err := g.Generate(ctx, plats)
+			So(err, ShouldBeNil)
+
+			for range 10 {
+				aa, err := g.Generate(ctx, plats)
+				So(err, ShouldBeNil)
+				So(aa, assertions.ShouldResembleProto, a)
+			}
+		})
 	})
 
 }
