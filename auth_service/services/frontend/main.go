@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	srvauthdb "go.chromium.org/luci/server/auth/authdb"
@@ -120,6 +121,12 @@ func main() {
 		rpcpb.RegisterAuthDBServer(srv, authdbServer)
 		rpcpb.RegisterChangeLogsServer(srv, &changelogs.Server{})
 		rpcpb.RegisterReplicasServer(srv, &replicas.Server{})
+
+		// Register pPRC servers.
+		srv.ConfigurePRPC(func(s *prpc.Server) {
+			// Allow cross-origin calls.
+			s.AccessControl = prpc.AllowOriginAll
+		})
 
 		// The middleware chain applied to all plain HTTP routes.
 		mw := router.MiddlewareChain{
