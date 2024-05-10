@@ -81,7 +81,7 @@ func TestPopulateOwnerKinds(t *testing.T) {
 		}
 
 		Convey("With human CL author", func() {
-			augmentedSources, err := PopulateOwnerKinds(ctx, "testproject", sources)
+			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			So(err, ShouldBeNil)
 			So(augmentedSources, ShouldResembleProto, expectedSources)
 
@@ -93,7 +93,7 @@ func TestPopulateOwnerKinds(t *testing.T) {
 		Convey("With automation CL author", func() {
 			clsByHost["chromium-review.googlesource.com"][0].Owner.Email = "robot@chromium.gserviceaccount.com"
 
-			augmentedSources, err := PopulateOwnerKinds(ctx, "testproject", sources)
+			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			So(err, ShouldBeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
 			So(augmentedSources, ShouldResembleProto, expectedSources)
@@ -107,7 +107,7 @@ func TestPopulateOwnerKinds(t *testing.T) {
 		Convey("With CL not existing", func() {
 			clsByHost["chromium-review.googlesource.com"] = []*gerritpb.ChangeInfo{}
 
-			augmentedSources, err := PopulateOwnerKinds(ctx, "testproject", sources)
+			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			So(err, ShouldBeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED
 			So(augmentedSources, ShouldResembleProto, expectedSources)
@@ -123,7 +123,7 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			expectedChangelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
 			So(SetGerritChangelistsForTesting(ctx, expectedChangelists), ShouldBeNil)
 
-			augmentedSources, err := PopulateOwnerKinds(ctx, "testproject", sources)
+			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			So(err, ShouldBeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
 			So(augmentedSources, ShouldResembleProto, expectedSources)
@@ -136,7 +136,7 @@ func TestPopulateOwnerKinds(t *testing.T) {
 		Convey("With no changelists", func() {
 			sources["sources-1"].Changelists = nil
 
-			augmentedSources, err := PopulateOwnerKinds(ctx, "testproject", sources)
+			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			So(err, ShouldBeNil)
 			expectedSources["sources-1"].Changelists = nil
 			So(augmentedSources, ShouldResembleProto, expectedSources)
@@ -263,7 +263,7 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			}
 
 			Convey("Without cache entries", func() {
-				augmentedSources, err := PopulateOwnerKinds(ctx, "testproject", sources)
+				augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 				So(err, ShouldBeNil)
 				So(augmentedSources, ShouldResembleProto, expectedSources)
 
@@ -277,7 +277,7 @@ func TestPopulateOwnerKinds(t *testing.T) {
 				// Remove CLs from gerrit to verify we did infact use the cache.
 				clsByHost["chromium-review.googlesource.com"] = nil
 
-				augmentedSources, err := PopulateOwnerKinds(ctx, "testproject", sources)
+				augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 				So(err, ShouldBeNil)
 				So(augmentedSources, ShouldResembleProto, expectedSources)
 

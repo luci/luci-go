@@ -44,71 +44,81 @@ type TestResult struct {
 	Status           pb.TestResultStatus
 }
 
-// ReadTestResults reads test results from the TestResults table.
+// ReadAllForTesting reads all test results from the
+// TestResultsBySourcePosition table for testing.
 // Must be called in a spanner transactional context.
-func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestResult) error) error {
+func ReadAllForTesting(ctx context.Context) ([]*TestResult, error) {
+	sql := `SELECT Project, TestId, VariantHash, SourceRefHash, SourcePosition,
+		RootInvocationId, InvocationId, ResultId, PartitionTime, SubRealm,
+		IsUnexpected, Status, ChangelistHosts, ChangelistChanges,
+		ChangelistPatchsets, ChangelistOwnerKinds, HasDirtySources
+	FROM TestResultsBySourcePosition
+	ORDER BY Project, TestId, VariantHash, RootInvocationId, InvocationId, ResultId`
+
+	stmt := spanner.NewStatement(sql)
 	var b spanutil.Buffer
-	fields := []string{
-		"Project", "TestId", "VariantHash", "SourceRefHash", "SourcePosition",
-		"RootInvocationId", "InvocationId", "ResultId",
-		"PartitionTime", "SubRealm", "IsUnexpected", "Status",
-		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets", "ChangelistOwnerKinds",
-		"HasDirtySources",
+	var results []*TestResult
+	it := span.Query(ctx, stmt)
+
+	f := func(row *spanner.Row) error {
+		tr := &TestResult{}
+		var changelistHosts []string
+		var changelistChanges []int64
+		var changelistPatchsets []int64
+		var changelistOwnerKinds []string
+		err := b.FromSpanner(
+			row,
+			&tr.Project,
+			&tr.TestID,
+			&tr.VariantHash,
+			&tr.Sources.RefHash,
+			&tr.Sources.Position,
+			&tr.RootInvocationID,
+			&tr.InvocationID,
+			&tr.ResultID,
+			&tr.PartitionTime,
+			&tr.SubRealm,
+			&tr.IsUnexpected,
+			&tr.Status,
+			&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
+			&tr.Sources.IsDirty,
+		)
+		if err != nil {
+			return err
+		}
+
+		// Data in spanner should be consistent, so
+		// len(changelistHosts) == len(changelistChanges)
+		//    == len(changelistPatchsets)
+		//    == len(changelistOwnerKinds).
+		if len(changelistHosts) != len(changelistChanges) ||
+			len(changelistHosts) != len(changelistPatchsets) ||
+			len(changelistHosts) != len(changelistOwnerKinds) {
+			panic("Changelist arrays have mismatched length in Spanner")
+		}
+		changelists := make([]testresults.Changelist, 0, len(changelistHosts))
+		for i := range changelistHosts {
+			var ownerKind pb.ChangelistOwnerKind
+			if changelistOwnerKinds != nil {
+				ownerKind = testresults.OwnerKindFromDB(changelistOwnerKinds[i])
+			}
+			changelists = append(changelists, testresults.Changelist{
+				Host:      testresults.DecompressHost(changelistHosts[i]),
+				Change:    changelistChanges[i],
+				Patchset:  changelistPatchsets[i],
+				OwnerKind: ownerKind,
+			})
+		}
+		tr.Sources.Changelists = changelists
+
+		results = append(results, tr)
+		return nil
 	}
-	return span.Read(ctx, "TestResultsBySourcePosition", keys, fields).Do(
-		func(row *spanner.Row) error {
-			tr := &TestResult{}
-			var changelistHosts []string
-			var changelistChanges []int64
-			var changelistPatchsets []int64
-			var changelistOwnerKinds []string
-			err := b.FromSpanner(
-				row,
-				&tr.Project,
-				&tr.TestID,
-				&tr.VariantHash,
-				&tr.Sources.RefHash,
-				&tr.Sources.Position,
-				&tr.RootInvocationID,
-				&tr.InvocationID,
-				&tr.ResultID,
-				&tr.PartitionTime,
-				&tr.SubRealm,
-				&tr.IsUnexpected,
-				&tr.Status,
-				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
-				&tr.Sources.IsDirty,
-			)
-			if err != nil {
-				return err
-			}
-
-			// Data in spanner should be consistent, so
-			// len(changelistHosts) == len(changelistChanges)
-			//    == len(changelistPatchsets)
-			//    == len(changelistOwnerKinds).
-			if len(changelistHosts) != len(changelistChanges) ||
-				len(changelistHosts) != len(changelistPatchsets) ||
-				len(changelistHosts) != len(changelistOwnerKinds) {
-				panic("Changelist arrays have mismatched length in Spanner")
-			}
-			changelists := make([]testresults.Changelist, 0, len(changelistHosts))
-			for i := range changelistHosts {
-				var ownerKind pb.ChangelistOwnerKind
-				if changelistOwnerKinds != nil {
-					ownerKind = testresults.OwnerKindFromDB(changelistOwnerKinds[i])
-				}
-				changelists = append(changelists, testresults.Changelist{
-					Host:      testresults.DecompressHost(changelistHosts[i]),
-					Change:    changelistChanges[i],
-					Patchset:  changelistPatchsets[i],
-					OwnerKind: ownerKind,
-				})
-			}
-			tr.Sources.Changelists = changelists
-
-			return fn(tr)
-		})
+	err := it.Do(f)
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 // TestResultSaveCols is the set of columns written to in a test result save.
@@ -121,7 +131,7 @@ var TestResultSaveCols = []string{
 }
 
 // SaveUnverified prepare a mutation to insert the test result into the
-// TestResults table. The test result is not validated.
+// TestResultsBySourcePosition table. The test result is not validated.
 func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	changelistHosts := make([]string, 0, len(tr.Sources.Changelists))
 	changelistChanges := make([]int64, 0, len(tr.Sources.Changelists))

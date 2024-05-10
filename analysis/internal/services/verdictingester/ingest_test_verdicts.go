@@ -47,10 +47,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
-	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -290,7 +290,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 		return transient.Tag.Apply(err)
 	}
 
-	sources, err := gerritchangelists.PopulateOwnerKinds(ctx, payload.Build.Project, rsp.Sources)
+	sources, err := gerritchangelists.PopulateOwnerKindsBatch(ctx, payload.Build.Project, rsp.Sources)
 	if err != nil {
 		err = errors.Annotate(err, "populate changelist owner kinds").Err()
 		return transient.Tag.Apply(err)

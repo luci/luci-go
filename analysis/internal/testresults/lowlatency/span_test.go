@@ -18,8 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"cloud.google.com/go/spanner"
-
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -40,11 +38,7 @@ func TestSaveTestResults(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		var results []*TestResult
-		err = ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *TestResult) error {
-			results = append(results, tr)
-			return nil
-		})
+		results, err := ReadAllForTesting(span.Single(ctx))
 		So(err, ShouldBeNil)
 		So(results, ShouldResembleProto, []*TestResult{result})
 	})

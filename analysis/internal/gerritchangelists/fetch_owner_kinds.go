@@ -122,7 +122,29 @@ func FetchOwnerKinds(ctx context.Context, reqs map[Key]LookupRequest) (map[Key]p
 	return result, nil
 }
 
-// PopulateOwnerKinds augments the given sources information to include
+// PopulateOwnerKinds augments the given sources to include the
+// owner kind of each changelist.
+//
+// If you have multiple sources objects, prefer to use the batch
+// method PopulateOwnerKindsBatch instead.
+//
+// For each changelist for which the owner kind is not cached in Spanner,
+// this method will make an RPC to gerrit.
+//
+// This method must NOT be called within a Spanner transaction
+// context, as it will create its own transactions.
+func PopulateOwnerKinds(ctx context.Context, project string, sources *rdbpb.Sources) (*pb.Sources, error) {
+	sourcesByID := map[string]*rdbpb.Sources{
+		"1": sources,
+	}
+	augmentedSources, err := PopulateOwnerKindsBatch(ctx, project, sourcesByID)
+	if err != nil {
+		return nil, err
+	}
+	return augmentedSources["1"], nil
+}
+
+// PopulateOwnerKindsBatch augments the given sources information to include
 // the owner kind of each changelist.
 //
 // For each changelist for which the owner kind is not cached in Spanner,
@@ -131,7 +153,7 @@ func FetchOwnerKinds(ctx context.Context, reqs map[Key]LookupRequest) (map[Key]p
 // This method must NOT be called within a Spanner transaction
 // context, as it will create its own transactions to access
 // the changelist cache.
-func PopulateOwnerKinds(ctx context.Context, project string, sourcesByID map[string]*rdbpb.Sources) (map[string]*pb.Sources, error) {
+func PopulateOwnerKindsBatch(ctx context.Context, project string, sourcesByID map[string]*rdbpb.Sources) (map[string]*pb.Sources, error) {
 	if sourcesByID == nil {
 		return make(map[string]*pb.Sources), nil
 	}

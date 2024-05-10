@@ -52,40 +52,5 @@ func TestResultDB(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(invProto, ShouldResembleProto, res)
 		})
-
-		Convey(`BatchGetTestVariants`, func() {
-			req := &rdbpb.BatchGetTestVariantsRequest{
-				Invocation: inv,
-				TestVariants: []*rdbpb.BatchGetTestVariantsRequest_TestVariantIdentifier{
-					{
-						TestId:      "ninja://test1",
-						VariantHash: "hash1",
-					},
-					{
-						TestId:      "ninja://test2",
-						VariantHash: "hash2",
-					},
-				},
-			}
-
-			res := &rdbpb.BatchGetTestVariantsResponse{
-				TestVariants: []*rdbpb.TestVariant{
-					{
-						TestId:      "ninja://test1",
-						VariantHash: "hash1",
-						Status:      rdbpb.TestVariantStatus_UNEXPECTED,
-					},
-					{
-						TestId:      "ninja://test2",
-						VariantHash: "hash2",
-						Status:      rdbpb.TestVariantStatus_FLAKY,
-					},
-				},
-			}
-			mc.BatchGetTestVariants(req, res)
-			tvs, err := rc.BatchGetTestVariants(mc.Ctx, req)
-			So(err, ShouldBeNil)
-			So(len(tvs), ShouldEqual, 2)
-		})
 	})
 }

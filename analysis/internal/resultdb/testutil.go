@@ -45,6 +45,12 @@ func (mc *MockedClient) QueryTestVariants(req *rdbpb.QueryTestVariantsRequest, r
 		gomock.Any()).Return(res, nil)
 }
 
+// QueryRunTestVerdicts mocks the QueryRunTestVerdicts RPC.
+func (mc *MockedClient) QueryRunTestVerdicts(req *rdbpb.QueryRunTestVerdictsRequest, res *rdbpb.QueryRunTestVerdictsResponse) {
+	mc.Client.EXPECT().QueryRunTestVerdicts(gomock.Any(), proto.MatcherEqual(req),
+		gomock.Any()).Return(res, nil)
+}
+
 // GetInvocation mocks the GetInvocation RPC.
 func (mc *MockedClient) GetInvocation(req *rdbpb.GetInvocationRequest, res *rdbpb.Invocation) {
 	mc.Client.EXPECT().GetInvocation(gomock.Any(), proto.MatcherEqual(req),

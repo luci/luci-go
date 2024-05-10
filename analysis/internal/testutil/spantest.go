@@ -42,6 +42,7 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 		spanner.Delete("ReclusteringRuns", spanner.AllKeys()),
 		spanner.Delete("ReclusteringShards", spanner.AllKeys()),
 		spanner.Delete("TestResults", spanner.AllKeys()),
+		spanner.Delete("TestResultsBySourcePosition", spanner.AllKeys()),
 		spanner.Delete("TestVariantRealms", spanner.AllKeys()),
 		spanner.Delete("TestRealms", spanner.AllKeys()),
 		spanner.Delete("TestVariantBranch", spanner.AllKeys()),

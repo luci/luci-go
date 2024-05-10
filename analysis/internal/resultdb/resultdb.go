@@ -98,6 +98,11 @@ func (c *Client) QueryTestVariants(ctx context.Context, req *rdbpb.QueryTestVari
 	return c.client.QueryTestVariants(ctx, req)
 }
 
+// QueryRunTestVerdicts queries a single page of test variants from a test run.
+func (c *Client) QueryRunTestVerdicts(ctx context.Context, req *rdbpb.QueryRunTestVerdictsRequest) (*rdbpb.QueryRunTestVerdictsResponse, error) {
+	return c.client.QueryRunTestVerdicts(ctx, req)
+}
+
 // GetInvocation retrieves the invocation.
 func (c *Client) GetInvocation(ctx context.Context, invName string) (*rdbpb.Invocation, error) {
 	inv, err := c.client.GetInvocation(ctx, &rdbpb.GetInvocationRequest{
@@ -107,13 +112,4 @@ func (c *Client) GetInvocation(ctx context.Context, invName string) (*rdbpb.Invo
 		return nil, err
 	}
 	return inv, nil
-}
-
-// BatchGetTestVariants retrieves the requested test variants.
-func (c *Client) BatchGetTestVariants(ctx context.Context, req *rdbpb.BatchGetTestVariantsRequest) ([]*rdbpb.TestVariant, error) {
-	rsp, err := c.client.BatchGetTestVariants(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return rsp.GetTestVariants(), nil
 }
