@@ -130,3 +130,15 @@ func (fb *FailureBuilder) WarnIfLong() *FailureBuilder {
 	}
 	return fb
 }
+
+// GetFailure returns fb.Failure if it contains any Findings, otherwise returns
+// nil.
+//
+// This is useful if you build your comparison with a series of conditional
+// findings.
+func (fb *FailureBuilder) GetFailure() *Failure {
+	if fb.Failure == nil || len(fb.Findings) == 0 {
+		return nil
+	}
+	return fb.Failure
+}
