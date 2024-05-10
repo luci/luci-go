@@ -39,7 +39,7 @@ require (
 	github.com/armon/go-radix v1.0.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20240215191509-9ff14cecffe5
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20240304155856-a108ad8bbbf4
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20240508160443-20c1af50b823
 	github.com/danjacques/gofslock v0.0.0-20240212154529-d899e02bfe22
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.1
@@ -55,7 +55,7 @@ require (
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/klauspost/compress v1.17.6
+	github.com/klauspost/compress v1.17.8
 	github.com/luci/gtreap v0.0.0-20161228054646-35df89791e8f
 	github.com/maruel/subcommands v1.1.1
 	github.com/mattn/go-tty v0.0.5
@@ -79,13 +79,13 @@ require (
 	go.opentelemetry.io/otel/sdk v1.23.1
 	go.opentelemetry.io/otel/trace v1.23.1
 	go.starlark.net v0.0.0-20240123142251-f86470692795
-	golang.org/x/crypto v0.19.0
+	golang.org/x/crypto v0.21.0
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/net v0.21.0
+	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.17.0
 	golang.org/x/sync v0.6.0
-	golang.org/x/sys v0.17.0
-	golang.org/x/term v0.17.0
+	golang.org/x/sys v0.18.0
+	golang.org/x/term v0.18.0
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.18.0
@@ -150,8 +150,6 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/mostynb/zstdpool-syncpool v0.0.12 // indirect
-	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/xattr v0.4.9 // indirect

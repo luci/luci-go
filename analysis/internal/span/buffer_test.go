@@ -113,7 +113,7 @@ func TestTypeConversion(t *testing.T) {
 		Convey(`non-Empty`, func() {
 			test(
 				Compressed("aaaaaaaaaaaaaaaaaaaa"),
-				[]byte{122, 116, 100, 10, 40, 181, 47, 253, 4, 0, 69, 0, 0, 8, 97, 1, 84, 1, 2, 16, 4, 247, 175, 71, 227})
+				[]byte{122, 116, 100, 10, 40, 181, 47, 253, 4, 0, 163, 0, 0, 97, 247, 175, 71, 227})
 		})
 	})
 

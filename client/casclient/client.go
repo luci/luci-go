@@ -26,6 +26,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/contextmd"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
@@ -68,7 +69,11 @@ func New(ctx context.Context, addr string, instance string, opts auth.Options, r
 		}
 	}
 
-	conn, _, err := client.Dial(ctx, dialParams.Service, dialParams)
+	grpcOpts, _, err := client.OptsFromParams(ctx, dialParams)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get grpc opts").Err()
+	}
+	conn, err := grpc.Dial(dialParams.Service, grpcOpts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to dial RBE").Err()
 	}
