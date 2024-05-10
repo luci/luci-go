@@ -16,7 +16,6 @@ package rpcs
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -26,107 +25,11 @@ import (
 	"go.chromium.org/luci/server/secrets"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-// setupTestBots mocks a bunch of bots and pools.
-func setupTestBots(ctx context.Context) *MockedRequestState {
-	state := NewMockedRequestState()
-	state.Configs.Settings.BotDeathTimeoutSecs = 1234
-
-	state.MockPool("visible-pool1", "project:visible-realm")
-	state.MockPool("visible-pool2", "project:visible-realm")
-	state.MockPool("hidden-pool1", "project:hidden-realm")
-	state.MockPool("hidden-pool2", "project:hidden-realm")
-
-	state.MockPerm("project:visible-realm", acls.PermPoolsListBots)
-
-	type testBot struct {
-		id          string
-		pool        string
-		dims        []string
-		quarantined bool
-		maintenance bool
-		busy        bool
-		dead        bool
-	}
-
-	testBots := []testBot{}
-	addMany := func(num int, pfx testBot) {
-		id := pfx.id
-		for i := 0; i < num; i++ {
-			pfx.id = fmt.Sprintf("%s-%d", id, i)
-			pfx.dims = []string{fmt.Sprintf("idx:%d", i), fmt.Sprintf("dup:%d", i)}
-			testBots = append(testBots, pfx)
-		}
-	}
-
-	addMany(3, testBot{
-		id:   "visible1",
-		pool: "visible-pool1",
-	})
-	addMany(3, testBot{
-		id:   "visible2",
-		pool: "visible-pool2",
-	})
-	addMany(3, testBot{
-		id:          "quarantined",
-		pool:        "visible-pool1",
-		quarantined: true,
-	})
-	addMany(3, testBot{
-		id:          "maintenance",
-		pool:        "visible-pool1",
-		maintenance: true,
-	})
-	addMany(3, testBot{
-		id:   "busy",
-		pool: "visible-pool1",
-		busy: true,
-	})
-	addMany(3, testBot{
-		id:   "dead",
-		pool: "visible-pool1",
-		dead: true,
-	})
-	addMany(3, testBot{
-		id:   "hidden1",
-		pool: "hidden-pool1",
-	})
-	addMany(3, testBot{
-		id:   "hidden2",
-		pool: "hidden-pool2",
-	})
-
-	for _, bot := range testBots {
-		pick := func(attr bool, yes model.BotStateEnum, no model.BotStateEnum) model.BotStateEnum {
-			if attr {
-				return yes
-			}
-			return no
-		}
-		state.MockBot(bot.id, bot.pool) // add it to ACLs
-		err := datastore.Put(ctx, &model.BotInfo{
-			Key:        model.BotInfoKey(ctx, bot.id),
-			Dimensions: append(bot.dims, "pool:"+bot.pool),
-			Composite: []model.BotStateEnum{
-				pick(bot.maintenance, model.BotStateInMaintenance, model.BotStateNotInMaintenance),
-				pick(bot.dead, model.BotStateDead, model.BotStateAlive),
-				pick(bot.quarantined, model.BotStateQuarantined, model.BotStateHealthy),
-				pick(bot.busy, model.BotStateBusy, model.BotStateIdle),
-			},
-		})
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return state
-}
 
 func TestListBots(t *testing.T) {
 	t.Parallel()
@@ -136,7 +39,7 @@ func TestListBots(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
-	state := setupTestBots(ctx)
+	state := SetupTestBots(ctx)
 
 	callImpl := func(ctx context.Context, req *apipb.BotsRequest) (*apipb.BotInfoListResponse, error) {
 		return (&BotsServer{

@@ -54,8 +54,6 @@ func TestGetBot(t *testing.T) {
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
-
 	fakeBotCommon := func(id string) model.BotCommon {
 		return model.BotCommon{
 			State:           []byte(`{"state": "1"}`),
@@ -65,8 +63,8 @@ func TestGetBot(t *testing.T) {
 			Quarantined:     false,
 			Maintenance:     "maintenance msg",
 			TaskID:          "task-id",
-			LastSeen:        datastore.NewUnindexedOptional(testTime.Add(1 * time.Hour)),
-			IdleSince:       datastore.NewUnindexedOptional(testTime.Add(2 * time.Hour)),
+			LastSeen:        datastore.NewUnindexedOptional(TestTime.Add(1 * time.Hour)),
+			IdleSince:       datastore.NewUnindexedOptional(TestTime.Add(2 * time.Hour)),
 		}
 	}
 
@@ -80,19 +78,19 @@ func TestGetBot(t *testing.T) {
 				model.BotStateHealthy,
 				model.BotStateBusy,
 			},
-			FirstSeen: testTime,
+			FirstSeen: TestTime,
 			TaskName:  "task-name",
 			BotCommon: fakeBotCommon("alive-bot"),
 		},
 		&model.BotEvent{
 			Key:        datastore.NewKey(ctx, "BotEvent", "", 200, model.BotRootKey(ctx, "deleted-bot")),
-			Timestamp:  testTime, // old event, should be ignored
+			Timestamp:  TestTime, // old event, should be ignored
 			Dimensions: []string{"ignore:me"},
 			BotCommon:  fakeBotCommon("deleted-bot"),
 		},
 		&model.BotEvent{
 			Key:        datastore.NewKey(ctx, "BotEvent", "", 100, model.BotRootKey(ctx, "deleted-bot")),
-			Timestamp:  testTime.Add(time.Hour), // the most recent event, should be used
+			Timestamp:  TestTime.Add(time.Hour), // the most recent event, should be used
 			Dimensions: []string{"use:me"},
 			BotCommon:  fakeBotCommon("deleted-bot"),
 		},
@@ -134,8 +132,8 @@ func TestGetBot(t *testing.T) {
 			TaskName:        "task-name",
 			ExternalIp:      "1.2.3.4",
 			AuthenticatedAs: "bot:alive-bot",
-			FirstSeenTs:     timestamppb.New(testTime),
-			LastSeenTs:      timestamppb.New(testTime.Add(1 * time.Hour)),
+			FirstSeenTs:     timestamppb.New(TestTime),
+			LastSeenTs:      timestamppb.New(TestTime.Add(1 * time.Hour)),
 			MaintenanceMsg:  "maintenance msg",
 			Dimensions: []*apipb.StringListPair{
 				{Key: "a", Value: []string{"1"}},
@@ -154,7 +152,7 @@ func TestGetBot(t *testing.T) {
 			TaskId:          "task-id",
 			ExternalIp:      "1.2.3.4",
 			AuthenticatedAs: "bot:deleted-bot",
-			LastSeenTs:      timestamppb.New(testTime.Add(1 * time.Hour)),
+			LastSeenTs:      timestamppb.New(TestTime.Add(1 * time.Hour)),
 			MaintenanceMsg:  "maintenance msg",
 			Dimensions: []*apipb.StringListPair{
 				{Key: "use", Value: []string{"me"}},

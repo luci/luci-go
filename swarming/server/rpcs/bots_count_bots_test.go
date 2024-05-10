@@ -38,8 +38,7 @@ func TestCountBots(t *testing.T) {
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	// See bots_list_bots_test.go
-	state := setupTestBots(ctx)
+	state := SetupTestBots(ctx)
 
 	callImpl := func(ctx context.Context, req *apipb.BotsCountRequest) (*apipb.BotsCount, error) {
 		return (&BotsServer{

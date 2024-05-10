@@ -55,10 +55,8 @@ func TestListBotTasks(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
-	testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
-
 	putTask := func(botID string, state apipb.TaskState, ts time.Duration) {
-		reqKey, err := model.TimestampToRequestKey(ctx, testTime.Add(ts), 0)
+		reqKey, err := model.TimestampToRequestKey(ctx, TestTime.Add(ts), 0)
 		if err != nil {
 			panic(err)
 		}
@@ -66,8 +64,8 @@ func TestListBotTasks(t *testing.T) {
 			TaskResultCommon: model.TaskResultCommon{
 				State:         state,
 				BotDimensions: map[string][]string{"payload": {fmt.Sprintf("%s-%s", state, ts)}},
-				Started:       datastore.NewIndexedNullable(testTime.Add(ts)),
-				Completed:     datastore.NewIndexedNullable(testTime.Add(ts)),
+				Started:       datastore.NewIndexedNullable(TestTime.Add(ts)),
+				Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
 			},
 			Key:   model.TaskRunResultKey(ctx, reqKey),
 			BotID: botID,
@@ -264,8 +262,8 @@ func TestListBotTasks(t *testing.T) {
 		Convey("Unpaginated, filtered, all states", func() {
 			resp, err := call(&apipb.BotTasksRequest{
 				BotId: botID,
-				Start: timestamppb.New(testTime.Add(2 * time.Second)), // inclusive
-				End:   timestamppb.New(testTime.Add(8 * time.Second)), // non-inclusive
+				Start: timestamppb.New(TestTime.Add(2 * time.Second)), // inclusive
+				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			So(err, ShouldBeNil)
@@ -282,8 +280,8 @@ func TestListBotTasks(t *testing.T) {
 		Convey("Paginated, filtered, all states", func() {
 			resp, err := paginatedCall(&apipb.BotTasksRequest{
 				BotId: botID,
-				Start: timestamppb.New(testTime.Add(2 * time.Second)), // inclusive
-				End:   timestamppb.New(testTime.Add(8 * time.Second)), // non-inclusive
+				Start: timestamppb.New(TestTime.Add(2 * time.Second)), // inclusive
+				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			So(err, ShouldBeNil)
@@ -327,8 +325,8 @@ func TestListBotTasks(t *testing.T) {
 			resp, err := call(&apipb.BotTasksRequest{
 				BotId: botID,
 				Sort:  apipb.SortQuery_QUERY_STARTED_TS,
-				Start: timestamppb.New(testTime.Add(2 * time.Second)), // inclusive
-				End:   timestamppb.New(testTime.Add(8 * time.Second)), // non-inclusive
+				Start: timestamppb.New(TestTime.Add(2 * time.Second)), // inclusive
+				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			So(err, ShouldBeNil)
@@ -346,8 +344,8 @@ func TestListBotTasks(t *testing.T) {
 			resp, err := paginatedCall(&apipb.BotTasksRequest{
 				BotId: botID,
 				Sort:  apipb.SortQuery_QUERY_STARTED_TS,
-				Start: timestamppb.New(testTime.Add(2 * time.Second)), // inclusive
-				End:   timestamppb.New(testTime.Add(8 * time.Second)), // non-inclusive
+				Start: timestamppb.New(TestTime.Add(2 * time.Second)), // inclusive
+				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			So(err, ShouldBeNil)

@@ -22,176 +22,192 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func createMockTaskResult(ctx context.Context, tags []string, state apipb.TaskState, testTime time.Time) *model.TaskResultSummary {
-	reqKey, err := model.TimestampToRequestKey(ctx, testTime.Add(-2*time.Hour), 0)
-	if err != nil {
-		panic(err)
-	}
-	tags = append(tags, "pool:example-pool")
-	trs := &model.TaskResultSummary{
-		TaskResultCommon: model.TaskResultCommon{
-			State:            state,
-			Modified:         testTime,
-			BotVersion:       "bot_version_123",
-			BotDimensions:    model.BotDimensions{"os": []string{"linux"}, "cpu": []string{"x86_64"}},
-			CurrentTaskSlice: 1,
-			Started:          datastore.NewIndexedNullable(testTime.Add(-1 * time.Hour)),
-			Completed:        datastore.NewIndexedNullable(testTime),
-			DurationSecs:     datastore.NewUnindexedOptional(3600.0),
-			ExitCode:         datastore.NewUnindexedOptional(int64(0)),
-			Failure:          false,
-			InternalFailure:  false,
-		},
-		Key:                  model.TaskResultSummaryKey(ctx, reqKey),
-		BotID:                datastore.NewUnindexedOptional("bot123"),
-		Created:              testTime.Add(-2 * time.Hour),
-		Tags:                 tags,
-		RequestName:          "example-request",
-		RequestUser:          "user@example.com",
-		RequestPriority:      50,
-		RequestAuthenticated: "authenticated-user@example.com",
-		RequestRealm:         "project:visible-realm",
-		RequestPool:          "example-pool",
-		RequestBotID:         "bot123",
-		PropertiesHash:       datastore.NewIndexedOptional([]byte("prop-hash")),
-		TryNumber:            datastore.NewIndexedNullable(int64(1)),
-		CostUSD:              0.05,
-		CostSavedUSD:         0.00,
-		DedupedFrom:          "",
-		ExpirationDelay:      datastore.NewUnindexedOptional(0.0),
-	}
-	return trs
-}
-
 func TestCountTasks(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestCountTasks", t, func() {
-		ctx := memory.Use(context.Background())
-		datastore.GetTestable(ctx).Consistent(true)
-		state := NewMockedRequestState()
-		state.MockPool("example-pool", "project:visible-realm")
-		state.MockPerm("project:visible-realm", acls.PermPoolsListTasks)
-		srv := TasksServer{TaskQuerySplitMode: model.SplitCompletely}
-		testTime := time.Date(2023, 1, 1, 2, 3, 4, 0, time.UTC)
+	ctx := memory.Use(context.Background())
+	datastore.GetTestable(ctx).AutoIndex(true)
+	datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("ok; no tags in req", func() {
-			one := createMockTaskResult(ctx, nil, apipb.TaskState_CANCELED, testTime)
-			two := createMockTaskResult(ctx, nil, apipb.TaskState_CANCELED, testTime.Add(time.Minute*10))
-			So(datastore.Put(ctx, one, two), ShouldBeNil)
-			req := &apipb.TasksCountRequest{
-				Start: timestamppb.New(testTime.Add(-10 * time.Hour)),
-				State: apipb.StateQuery_QUERY_ALL,
-			}
-			resp, err := srv.CountTasks(MockRequestState(ctx, state.SetCaller(AdminFakeCaller)), req)
-			So(err, ShouldBeNil)
-			So(resp.Count, ShouldEqual, 2)
-			So(resp.Now, ShouldNotBeNil)
+	state := SetupTestTasks(ctx)
+
+	startTS := timestamppb.New(TestTime)
+	endTS := timestamppb.New(TestTime.Add(time.Hour))
+
+	callImpl := func(ctx context.Context, req *apipb.TasksCountRequest) (*apipb.TasksCount, error) {
+		return (&TasksServer{
+			// memory.Use(...) datastore fake doesn't support IN queries currently.
+			TaskQuerySplitMode: model.SplitCompletely,
+		}).CountTasks(ctx, req)
+	}
+	call := func(req *apipb.TasksCountRequest) (*apipb.TasksCount, error) {
+		return callImpl(MockRequestState(ctx, state), req)
+	}
+	callAsAdmin := func(req *apipb.TasksCountRequest) (*apipb.TasksCount, error) {
+		return callImpl(MockRequestState(ctx, state.SetCaller(AdminFakeCaller)), req)
+	}
+
+	Convey("Tags filter is checked", t, func() {
+		_, err := callAsAdmin(&apipb.TasksCountRequest{
+			Start: startTS,
+			End:   endTS,
+			Tags:  []string{"k:"},
 		})
+		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+	})
 
-		Convey("ok; tags in req", func() {
-			tags := []string{"os:ubuntu", "os:ubuntu22"}
-			one := createMockTaskResult(ctx, tags, apipb.TaskState_CANCELED, testTime)
-			two := createMockTaskResult(ctx, tags, apipb.TaskState_CANCELED, testTime.Add(time.Minute*10))
-			So(datastore.Put(ctx, one, two), ShouldBeNil)
-			req := &apipb.TasksCountRequest{
-				Start: timestamppb.New(testTime.Add(-10 * time.Hour)),
-				State: apipb.StateQuery_QUERY_ALL,
-				Tags:  []string{"pool:example-pool", "os:ubuntu|ubuntu22"},
-			}
-			resp, err := srv.CountTasks(MockRequestState(ctx, state), req)
-			So(err, ShouldBeNil)
-			So(resp.Count, ShouldEqual, 2)
-			So(resp.Now, ShouldNotBeNil)
-		})
-
-		Convey("ok; tags in req; no entities", func() {
-			tags := []string{"os:ubuntu"}
-			one := createMockTaskResult(ctx, tags, apipb.TaskState_CANCELED, testTime)
-			two := createMockTaskResult(ctx, tags, apipb.TaskState_CANCELED, testTime.Add(time.Minute*10))
-			So(datastore.Put(ctx, one, two), ShouldBeNil)
-			req := &apipb.TasksCountRequest{
-				Start: timestamppb.New(testTime.Add(-10 * time.Hour)),
-				State: apipb.StateQuery_QUERY_ALL,
-				Tags:  []string{"pool:example-pool", "os:ubuntu15|ubuntu22"},
-			}
-			resp, err := srv.CountTasks(MockRequestState(ctx, state), req)
-			So(err, ShouldBeNil)
-			So(resp.Count, ShouldEqual, 0)
-			So(resp.Now, ShouldNotBeNil)
-		})
-
-		Convey("not ok; no pool ACL", func() {
-			tags := []string{"os:ubuntu|ubuntu22"}
-			one := createMockTaskResult(ctx, tags, apipb.TaskState_CANCELED, testTime)
-			two := createMockTaskResult(ctx, tags, apipb.TaskState_CANCELED, testTime.Add(time.Minute*10))
-			So(datastore.Put(ctx, one, two), ShouldBeNil)
-			req := &apipb.TasksCountRequest{
-				Start: timestamppb.New(testTime.Add(-10 * time.Hour)),
-				State: apipb.StateQuery_QUERY_ALL,
-				Tags:  []string{"pool:example-pool", "os:ubuntu15|ubuntu22"},
-			}
-			resp, err := srv.CountTasks(MockRequestState(ctx, state.SetCaller(identity.AnonymousIdentity)), req)
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "the caller \"anonymous:anonymous\" doesn't have permission \"swarming.pools.listTasks\" in the pool \"example-pool\" or the pool doesn't exist")
-			So(resp, ShouldBeNil)
-		})
-
-		Convey("not ok; bad query filter", func() {
-			one := createMockTaskResult(ctx, nil, apipb.TaskState_CANCELED, testTime)
-			two := createMockTaskResult(ctx, nil, apipb.TaskState_CANCELED, testTime.Add(time.Minute*10))
-			So(datastore.Put(ctx, one, two), ShouldBeNil)
-			req := &apipb.TasksCountRequest{
-				Start: timestamppb.New(testTime.Add(-10 * time.Hour)),
-				State: apipb.StateQuery_QUERY_ALL,
-				End:   timestamppb.New(testTime.Add(-115 * time.Hour)),
-				Tags:  []string{"pool:example-pool"},
-			}
-			resp, err := srv.CountTasks(MockRequestState(ctx, state), req)
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err, ShouldErrLike, "datastore error counting tasks")
-			So(resp, ShouldBeNil)
-		})
-
-		Convey("not ok; start time before 2010", func() {
-			one := createMockTaskResult(ctx, nil, apipb.TaskState_CANCELED, testTime)
-			two := createMockTaskResult(ctx, nil, apipb.TaskState_CANCELED, testTime.Add(time.Minute*10))
-			So(datastore.Put(ctx, one, two), ShouldBeNil)
-			req := &apipb.TasksCountRequest{
-				Start: timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
-				State: apipb.StateQuery_QUERY_ALL,
-				Tags:  []string{"pool:example-pool"},
-			}
-			resp, err := srv.CountTasks(MockRequestState(ctx, state), req)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invalid time range")
-			So(resp, ShouldBeNil)
-		})
-
-		Convey("not ok; no start time", func() {
-			one := createMockTaskResult(ctx, nil, apipb.TaskState_CANCELED, testTime)
-			two := createMockTaskResult(ctx, nil, apipb.TaskState_CANCELED, testTime.Add(time.Minute*10))
-			So(datastore.Put(ctx, one, two), ShouldBeNil)
-			req := &apipb.TasksCountRequest{
-				State: apipb.StateQuery_QUERY_ALL,
-				Tags:  []string{"pool:example-pool"},
-			}
-			resp, err := srv.CountTasks(MockRequestState(ctx, state), req)
+	Convey("Time range is checked", t, func() {
+		Convey("No start time", func() {
+			_, err := callAsAdmin(&apipb.TasksCountRequest{})
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 			So(err, ShouldErrLike, "start timestamp is required")
-			So(resp, ShouldBeNil)
 		})
+
+		Convey("Ancient start time", func() {
+			_, err := callAsAdmin(&apipb.TasksCountRequest{
+				Start: timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid time range")
+		})
+
+		Convey("Ancient end time", func() {
+			_, err := callAsAdmin(&apipb.TasksCountRequest{
+				Start: startTS,
+				End:   timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid time range")
+		})
+
+		Convey("End must be after start", func() {
+			_, err := callAsAdmin(&apipb.TasksCountRequest{
+				Start: endTS,
+				End:   startTS,
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid time range")
+		})
+	})
+
+	Convey("ACLs", t, func() {
+		Convey("Listing only visible pools: OK", func() {
+			_, err := call(&apipb.TasksCountRequest{
+				Start: startTS,
+				End:   endTS,
+				Tags:  []string{"pool:visible-pool1|visible-pool2"},
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Listing visible and invisible pool: permission denied", func() {
+			_, err := call(&apipb.TasksCountRequest{
+				Start: startTS,
+				End:   endTS,
+				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
+			})
+			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		})
+
+		Convey("Listing visible and invisible pool as admin: OK", func() {
+			_, err := callAsAdmin(&apipb.TasksCountRequest{
+				Start: startTS,
+				End:   endTS,
+				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Listing all pools as non-admin: permission denied", func() {
+			_, err := call(&apipb.TasksCountRequest{
+				Start: startTS,
+				End:   endTS,
+			})
+			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+		})
+
+		Convey("Listing all pools as admin: OK", func() {
+			_, err := callAsAdmin(&apipb.TasksCountRequest{
+				Start: startTS,
+				End:   endTS,
+			})
+			So(err, ShouldBeNil)
+		})
+	})
+
+	Convey("Filtering", t, func() {
+		endRange := endTS
+
+		count := func(state apipb.StateQuery, tags ...string) int {
+			resp, err := callAsAdmin(&apipb.TasksCountRequest{
+				State: state,
+				Start: startTS,
+				End:   endRange,
+				Tags:  tags,
+			})
+			So(err, ShouldBeNil)
+			So(resp.Now, ShouldNotBeNil)
+			return int(resp.Count)
+		}
+
+		// No filters at all.
+		So(count(apipb.StateQuery_QUERY_ALL), ShouldEqual, 36)
+
+		// State filters on their own (without tag filtering).
+		So(count(apipb.StateQuery_QUERY_PENDING), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_RUNNING), ShouldEqual, 3)
+		// TODO: Broken.
+		// So(count(apipb.StateQuery_QUERY_PENDING_RUNNING), ShouldEqual, 6)
+		So(count(apipb.StateQuery_QUERY_COMPLETED), ShouldEqual, 9)         // success+failure+dedup
+		So(count(apipb.StateQuery_QUERY_COMPLETED_SUCCESS), ShouldEqual, 6) // success+dedup
+		So(count(apipb.StateQuery_QUERY_COMPLETED_FAILURE), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_EXPIRED), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_TIMED_OUT), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_BOT_DIED), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_CANCELED), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_DEDUPED), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_KILLED), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_NO_RESOURCE), ShouldEqual, 3)
+		So(count(apipb.StateQuery_QUERY_CLIENT_ERROR), ShouldEqual, 3)
+
+		// Simple tags filter.
+		So(count(apipb.StateQuery_QUERY_ALL, "idx:0"), ShouldEqual, 12)
+		// AND tags filter.
+		So(count(apipb.StateQuery_QUERY_ALL, "idx:0", "pfx:pending"), ShouldEqual, 1)
+		// OR tags filter.
+		So(count(apipb.StateQuery_QUERY_ALL, "idx:0|1"), ShouldEqual, 24)
+		// OR tags filter with intersecting results.
+		So(count(apipb.StateQuery_QUERY_ALL, "idx:0|1", "dup:0|1"), ShouldEqual, 24)
+		// OR tags filter with no results.
+		So(count(apipb.StateQuery_QUERY_ALL, "idx:4|5|6"), ShouldEqual, 0)
+
+		// Filtering on state + tags (selected non-trivial cases).
+		So(count(apipb.StateQuery_QUERY_PENDING, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
+		// TODO: Broken.
+		// So(count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), ShouldEqual, 4)
+		So(count(apipb.StateQuery_QUERY_COMPLETED, "idx:0|1", "dup:0|1"), ShouldEqual, 6)
+		So(count(apipb.StateQuery_QUERY_COMPLETED_SUCCESS, "idx:0|1", "dup:0|1"), ShouldEqual, 4)
+		So(count(apipb.StateQuery_QUERY_DEDUPED, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
+
+		// Limited time range (covers only 1 mocked task per category instead of 3).
+		endRange = timestamppb.New(TestTime.Add(5 * time.Minute))
+
+		So(count(apipb.StateQuery_QUERY_ALL), ShouldEqual, 12)
+		So(count(apipb.StateQuery_QUERY_ALL, "idx:0"), ShouldEqual, 12)
+		So(count(apipb.StateQuery_QUERY_ALL, "idx:1"), ShouldEqual, 0)
+		So(count(apipb.StateQuery_QUERY_COMPLETED), ShouldEqual, 3)
+		// TODO: Broken.
+		// So(count(apipb.StateQuery_QUERY_PENDING_RUNNING), ShouldEqual, 2)
+		// So(count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
 	})
 }

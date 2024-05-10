@@ -836,6 +836,11 @@ func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, e
 		panic(fmt.Sprintf("FilterTasksByCreationTime is used with a query over kind %q", f.Kind()))
 	}
 
+	// Refuse reversed time range, it makes queries fail with ErrNullQuery.
+	if !start.IsZero() && !end.IsZero() && start.After(end) {
+		return nil, errors.Reason("start time must be before the end time").Err()
+	}
+
 	// Keys are ordered by timestamp. Transform the provided timestamps into keys
 	// to filter entities by key. The inequalities are inverted because keys are
 	// in reverse chronological order.
@@ -911,8 +916,10 @@ func FilterTasksByState(q *datastore.Query, state apipb.StateQuery) *datastore.Q
 		q = q.Eq("state", apipb.TaskState_NO_RESOURCE)
 	case apipb.StateQuery_QUERY_CLIENT_ERROR:
 		q = q.Eq("state", apipb.TaskState_CLIENT_ERROR)
+	case apipb.StateQuery_QUERY_ALL:
+		// No restrictions.
 	default:
-		// default case is apipb.StateQuery_QUERY_ALL, where the query is unchanged.
+		panic(fmt.Sprintf("unexpected StateQuery %q", state))
 	}
 	return q
 }

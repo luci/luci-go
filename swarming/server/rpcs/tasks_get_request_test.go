@@ -37,7 +37,6 @@ func TestTaskRequestToResponse(t *testing.T) {
 
 	Convey("TestTaskRequestToResponse", t, func() {
 		ctx := memory.Use(context.Background())
-		testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
 		key, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
 		So(err, ShouldBeNil)
@@ -105,12 +104,12 @@ func TestTaskRequestToResponse(t *testing.T) {
 							LimitTotalCommittedMemory: 789,
 						},
 					},
-					ExpirationSecs:  int64(testTime.Add(10 * time.Minute).Sub(testTime).Seconds()),
+					ExpirationSecs:  int64(TestTime.Add(10 * time.Minute).Sub(TestTime).Seconds()),
 					WaitForCapacity: true,
 				},
 			},
-			Created:              testTime,
-			Expiration:           testTime.Add(20 * time.Minute),
+			Created:              TestTime,
+			Expiration:           TestTime.Add(20 * time.Minute),
 			Name:                 "name",
 			ParentTaskID:         datastore.NewIndexedNullable("parent-task-id"),
 			Authenticated:        "user:authenticated",

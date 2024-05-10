@@ -16,7 +16,9 @@ package rpcs
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -27,6 +29,7 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
@@ -35,6 +38,7 @@ import (
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -45,6 +49,9 @@ const (
 	// AdminFakeCaller is used in unit tests to make calls as an admin.
 	AdminFakeCaller identity.Identity = "user:admin@example.com"
 )
+
+// TestTime is used in mocked entities in RPC tests.
+var TestTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 
 // MockedConfig is a bundle of configs to use in tests.
 type MockedConfigs struct {
@@ -175,6 +182,177 @@ func MockRequestState(ctx context.Context, state *MockedRequestState) context.Co
 		Config: cfg,
 		ACL:    acls.NewChecker(ctx, cfg),
 	})
+}
+
+// SetupTestBots mocks a bunch of bots and pools.
+func SetupTestBots(ctx context.Context) *MockedRequestState {
+	state := NewMockedRequestState()
+	state.Configs.Settings.BotDeathTimeoutSecs = 1234
+
+	state.MockPool("visible-pool1", "project:visible-realm")
+	state.MockPool("visible-pool2", "project:visible-realm")
+	state.MockPool("hidden-pool1", "project:hidden-realm")
+	state.MockPool("hidden-pool2", "project:hidden-realm")
+
+	state.MockPerm("project:visible-realm", acls.PermPoolsListBots)
+
+	type testBot struct {
+		id          string
+		pool        string
+		dims        []string
+		quarantined bool
+		maintenance bool
+		busy        bool
+		dead        bool
+	}
+
+	testBots := []testBot{}
+	addMany := func(num int, pfx testBot) {
+		id := pfx.id
+		for i := 0; i < num; i++ {
+			pfx.id = fmt.Sprintf("%s-%d", id, i)
+			pfx.dims = []string{fmt.Sprintf("idx:%d", i), fmt.Sprintf("dup:%d", i)}
+			testBots = append(testBots, pfx)
+		}
+	}
+
+	addMany(3, testBot{
+		id:   "visible1",
+		pool: "visible-pool1",
+	})
+	addMany(3, testBot{
+		id:   "visible2",
+		pool: "visible-pool2",
+	})
+	addMany(3, testBot{
+		id:          "quarantined",
+		pool:        "visible-pool1",
+		quarantined: true,
+	})
+	addMany(3, testBot{
+		id:          "maintenance",
+		pool:        "visible-pool1",
+		maintenance: true,
+	})
+	addMany(3, testBot{
+		id:   "busy",
+		pool: "visible-pool1",
+		busy: true,
+	})
+	addMany(3, testBot{
+		id:   "dead",
+		pool: "visible-pool1",
+		dead: true,
+	})
+	addMany(3, testBot{
+		id:   "hidden1",
+		pool: "hidden-pool1",
+	})
+	addMany(3, testBot{
+		id:   "hidden2",
+		pool: "hidden-pool2",
+	})
+
+	for _, bot := range testBots {
+		pick := func(attr bool, yes model.BotStateEnum, no model.BotStateEnum) model.BotStateEnum {
+			if attr {
+				return yes
+			}
+			return no
+		}
+		state.MockBot(bot.id, bot.pool) // add it to ACLs
+		err := datastore.Put(ctx, &model.BotInfo{
+			Key:        model.BotInfoKey(ctx, bot.id),
+			Dimensions: append(bot.dims, "pool:"+bot.pool),
+			Composite: []model.BotStateEnum{
+				pick(bot.maintenance, model.BotStateInMaintenance, model.BotStateNotInMaintenance),
+				pick(bot.dead, model.BotStateDead, model.BotStateAlive),
+				pick(bot.quarantined, model.BotStateQuarantined, model.BotStateHealthy),
+				pick(bot.busy, model.BotStateBusy, model.BotStateIdle),
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return state
+}
+
+// SetupTestTasks mocks a bunch of tasks and pools.
+func SetupTestTasks(ctx context.Context) *MockedRequestState {
+	state := NewMockedRequestState()
+
+	state.MockPool("visible-pool1", "project:visible-realm")
+	state.MockPool("visible-pool2", "project:visible-realm")
+	state.MockPool("hidden-pool1", "project:hidden-realm")
+	state.MockPool("hidden-pool2", "project:hidden-realm")
+
+	state.MockPerm("project:visible-realm", acls.PermPoolsListTasks)
+
+	// This is used to make sure all task keys are unique, even if they are
+	// created at the exact same (mocked) timestamp. In the prod implementation
+	// this is a random number.
+	var taskCounter int64
+
+	putTask := func(name string, tags []string, state apipb.TaskState, failure, dedup bool, ts time.Duration) {
+		reqKey, err := model.TimestampToRequestKey(ctx, TestTime.Add(ts), taskCounter)
+		if err != nil {
+			panic(err)
+		}
+		taskCounter++
+		var tryNumber datastore.Nullable[int64, datastore.Indexed]
+		if dedup {
+			tryNumber = datastore.NewIndexedNullable[int64](0)
+		}
+		err = datastore.Put(ctx, &model.TaskResultSummary{
+			TaskResultCommon: model.TaskResultCommon{
+				State:         state,
+				BotDimensions: map[string][]string{"payload": {fmt.Sprintf("%s-%s", state, ts)}},
+				Started:       datastore.NewIndexedNullable(TestTime.Add(ts)),
+				Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
+				Failure:       failure,
+			},
+			Key:         model.TaskResultSummaryKey(ctx, reqKey),
+			RequestName: name,
+			Tags:        tags,
+			TryNumber:   tryNumber,
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	putMany := func(pfx string, state apipb.TaskState, failure, dedup bool) {
+		for i := 0; i < 3; i++ {
+			putTask(
+				fmt.Sprintf("%s-%d", pfx, i),
+				[]string{
+					fmt.Sprintf("pfx:%s", pfx),
+					fmt.Sprintf("idx:%d", i),
+					fmt.Sprintf("dup:%d", i),
+				},
+				state, failure, dedup,
+				time.Duration(10*i)*time.Minute,
+			)
+		}
+	}
+
+	// 12 groups of tasks, 3 tasks in each group => 36 tasks total.
+	putMany("pending", apipb.TaskState_PENDING, false, false)
+	putMany("running", apipb.TaskState_RUNNING, false, false)
+	putMany("success", apipb.TaskState_COMPLETED, false, false)
+	putMany("failure", apipb.TaskState_COMPLETED, true, false)
+	putMany("dedup", apipb.TaskState_COMPLETED, false, true)
+	putMany("expired", apipb.TaskState_EXPIRED, false, false)
+	putMany("timeout", apipb.TaskState_TIMED_OUT, false, false)
+	putMany("botdead", apipb.TaskState_BOT_DIED, false, false)
+	putMany("canceled", apipb.TaskState_CANCELED, false, false)
+	putMany("killed", apipb.TaskState_KILLED, false, false)
+	putMany("noresource", apipb.TaskState_NO_RESOURCE, false, false)
+	putMany("clienterror", apipb.TaskState_CLIENT_ERROR, false, false)
+
+	return state
 }
 
 func TestServerInterceptor(t *testing.T) {

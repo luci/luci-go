@@ -55,14 +55,12 @@ func TestListBotEvents(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
-	testTime := time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
-
 	total := 0
 	putEvent := func(botID string, ts time.Duration) {
 		total += 1
 		err := datastore.Put(ctx, &model.BotEvent{
 			Key:        datastore.NewKey(ctx, "BotEvent", "", int64(1000-total), model.BotRootKey(ctx, botID)),
-			Timestamp:  testTime.Add(ts),
+			Timestamp:  TestTime.Add(ts),
 			EventType:  model.BotEventLog,
 			Message:    fmt.Sprintf("at %s", ts),
 			Dimensions: []string{"a:1", "b:2"},
@@ -83,7 +81,7 @@ func TestListBotEvents(t *testing.T) {
 
 	expectedEvent := func(botID string, ts time.Duration) *apipb.BotEventResponse {
 		return &apipb.BotEventResponse{
-			Ts:        timestamppb.New(testTime.Add(ts)),
+			Ts:        timestamppb.New(TestTime.Add(ts)),
 			EventType: string(model.BotEventLog),
 			Message:   fmt.Sprintf("at %s", ts),
 			Dimensions: []*apipb.StringListPair{
@@ -198,8 +196,8 @@ func TestListBotEvents(t *testing.T) {
 	Convey("Time range", t, func() {
 		resp, err := call(&apipb.BotEventsRequest{
 			BotId: "visible-bot",
-			Start: timestamppb.New(testTime.Add(time.Hour)),     // inclusive range
-			End:   timestamppb.New(testTime.Add(4 * time.Hour)), // exclusive range
+			Start: timestamppb.New(TestTime.Add(time.Hour)),     // inclusive range
+			End:   timestamppb.New(TestTime.Add(4 * time.Hour)), // exclusive range
 		})
 		So(err, ShouldBeNil)
 		So(resp.Cursor, ShouldEqual, "")
