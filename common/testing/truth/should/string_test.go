@@ -59,3 +59,26 @@ func TestNotHavePrefix(t *testing.T) {
 	t.Run("pass", shouldPass(NotHavePrefix("nerp.")("exe.hello")))
 	t.Run("fail", shouldFail(NotHavePrefix("nerp.")("nerp.hello")))
 }
+
+func TestBeBlank(t *testing.T) {
+	t.Parallel()
+
+	t.Run("pass1", shouldPass(BeBlank("")))
+	t.Run("pass2", shouldPass(BeBlank("  ")))
+	t.Run("pass3", shouldPass(BeBlank("\t")))
+	t.Run("fail1", shouldFail(BeBlank("a")))
+	t.Run("fail2", shouldFail(BeBlank("a ")))
+	t.Run("fail3", shouldFail(BeBlank("4")))
+}
+
+
+func TestNotBeBlank(t *testing.T) {
+	t.Parallel()
+
+	t.Run("fail1", shouldFail(NotBeBlank("")))
+	t.Run("fail2", shouldFail(NotBeBlank("  ")))
+	t.Run("fail3", shouldFail(NotBeBlank("\t")))
+	t.Run("pass1", shouldPass(NotBeBlank("a")))
+	t.Run("pass2", shouldPass(NotBeBlank("a ")))
+	t.Run("pass3", shouldPass(NotBeBlank("4")))
+}

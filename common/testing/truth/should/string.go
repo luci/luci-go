@@ -16,6 +16,7 @@ package should
 
 import (
 	"strings"
+	"unicode"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
 )
@@ -102,4 +103,40 @@ func NotHavePrefix(prefix string) comparison.Func[string] {
 			RenameFinding("Expected", "Prefix").
 			Failure
 	}
+}
+
+// BeBlank implements comparison.Func[string] and asserts that `actual` contains
+// only whitespace chars.
+func BeBlank(actual string) *comparison.Failure {
+	const cmpName = "should.BeBlank"
+
+	for i, ch := range actual {
+		if unicode.IsSpace(ch) {
+			continue
+		}
+		return comparison.NewFailureBuilder(cmpName).
+			Because("string contains non-blank character").
+			Actual(actual).
+			AddFindingf("non-whitespace char", "%q", ch).
+			AddFindingf("rune index", "%d", i).
+			Failure
+	}
+
+	return nil
+}
+
+// NotBeBlank implements comparison.Func[string] and asserts that `actual`
+// contains at least one non-whitespace char.
+func NotBeBlank(actual string) *comparison.Failure {
+	const cmpName = "should.NotBeBlank"
+
+	isBlank := BeBlank(actual) == nil
+
+	if isBlank {
+		return comparison.NewFailureBuilder(cmpName).
+			Because("string contains only whitespace").
+			Actual(actual).
+			Failure
+	}
+	return nil
 }
