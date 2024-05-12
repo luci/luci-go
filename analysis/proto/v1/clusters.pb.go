@@ -2156,7 +2156,7 @@ type DistinctClusterFailure_PresubmitRun struct {
 	// Identity of the presubmit run that contains this test result.
 	// This should be unique per "CQ+1"/"CQ+2" attempt on gerrit.
 	//
-	// One presumbit run MAY have many ingested invocation IDs (e.g. for its
+	// One presubmit run MAY have many ingested invocation IDs (e.g. for its
 	// various tryjobs), but every ingested invocation ID only ever has one
 	// presubmit run ID (if any).
 	//
