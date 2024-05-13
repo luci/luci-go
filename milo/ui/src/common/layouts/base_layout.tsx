@@ -13,31 +13,26 @@
 // limitations under the License.
 
 import { styled } from '@mui/material';
-import Box from '@mui/material/Box';
 import { Outlet } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
+import {
+  QueuedStickyScrollingBase,
+  StickyOffset,
+  Sticky,
+} from '@/generic_libs/components/queued_sticky';
+
 import { AppBar } from './app_bar';
-import { drawerWidth } from './constants';
 import { Sidebar } from './side_bar';
 
-const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
-  open?: boolean;
-}>(({ theme, open }) => ({
-  flexGrow: 1,
-  transition: theme.transitions.create('margin', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  marginLeft: `-${drawerWidth}px`,
-  ...(open && {
-    transition: theme.transitions.create('margin', {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-    marginLeft: 0,
-  }),
-}));
+const ScrollingBase = styled(QueuedStickyScrollingBase)`
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'app-bar app-bar'
+    'sidebar main';
+`;
 
 export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
 
@@ -47,17 +42,27 @@ export const BaseLayout = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', pt: 6 }}>
-      <AppBar open={sidebarOpen} handleSidebarChanged={setSidebarOpen} />
-      <Sidebar open={sidebarOpen} />
-      <Main open={sidebarOpen}>
+    <ScrollingBase>
+      <Sticky
+        top
+        sx={{ gridArea: 'app-bar', zIndex: (theme) => theme.zIndex.appBar }}
+      >
+        <AppBar open={sidebarOpen} handleSidebarChanged={setSidebarOpen} />
+      </Sticky>
+      <Sticky
+        left
+        sx={{ gridArea: 'sidebar', zIndex: (theme) => theme.zIndex.drawer }}
+      >
+        <Sidebar open={sidebarOpen} />
+      </Sticky>
+      <StickyOffset component="main" sx={{ gridArea: 'main' }}>
         {/* Do not conditionally render the <Outlet /> base on the navigation
          ** state. Otherwise the page state will be reset if a page navigates
          ** to itself, which can happen when the query search param is updated.
          ** In the worst case, this may lead to infinite reload if the query
          ** search param is updated when the component is mounted. */}
         <Outlet />
-      </Main>
-    </Box>
+      </StickyOffset>
+    </ScrollingBase>
   );
 };

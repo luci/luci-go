@@ -38,6 +38,11 @@ export const theme = createTheme({
       main: '#e0e0e0',
     },
   },
+  zIndex: {
+    // Swap app bar and drawer.
+    appBar: 1200,
+    drawer: 1100,
+  },
 });
 
 declare module '@mui/material/styles' {

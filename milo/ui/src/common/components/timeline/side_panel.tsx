@@ -81,7 +81,7 @@ const SidePanelSvg = forwardRef<HTMLDivElement, OptionalChildrenProps>(
 const Container = styled(Box)`
   grid-area: side-panel;
   position: sticky;
-  left: 0;
+  left: var(--accumulated-left);
   z-index: 1;
 `;
 

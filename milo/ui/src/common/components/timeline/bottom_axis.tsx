@@ -36,7 +36,7 @@ export function BottomAxis() {
       css={{
         gridArea: 'bottom-axis',
         position: 'sticky',
-        bottom: 0,
+        bottom: 'var(--accumulated-bottom)',
         zIndex: 1,
         background: theme.palette.background.default,
       }}

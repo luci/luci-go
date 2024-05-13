@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box, styled } from '@mui/material';
 import MuiAppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
@@ -22,6 +22,12 @@ import { LoginStatus } from '@/common/components/user';
 import { AppDetails } from './app_details';
 import { AppMenu } from './app_menu';
 import { FeedbackButton } from './feedback';
+
+const ItemGroup = styled(Box)`
+  display: flex;
+  align-items: center;
+  position: sticky;
+`;
 
 interface Props {
   open: boolean;
@@ -33,19 +39,31 @@ export const AppBar = ({ open, handleSidebarChanged }: Props) => {
 
   return (
     <MuiAppBar
-      position="fixed"
-      sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      // Use static so the element occupies space so we can calculate its
+      // height by measuring its parent. The height will be used to calculate
+      // how much offset the next sticky item needs to avoid overlapping.
+      //
+      // The sticky behavior of the App bar is implemented by the parent.
+      position="static"
     >
       <Toolbar variant="dense">
-        <AppDetails open={open} handleSidebarChanged={handleSidebarChanged} />
+        {/* AppBar can grow wider than the viewport. Divide the items into left
+         ** group and right group and make them sticky to ensure they always
+         ** stay at the same place.
+         */}
+        <ItemGroup sx={{ left: 'calc(var(--accumulated-left) + 25px)' }}>
+          <AppDetails open={open} handleSidebarChanged={handleSidebarChanged} />
+        </ItemGroup>
         <Box sx={{ flexGrow: 1 }}></Box>
-        <FeedbackButton />
-        <AppMenu />
-        <LoginStatus
-          identity={authState.identity}
-          email={authState.email}
-          picture={authState.picture}
-        />
+        <ItemGroup sx={{ right: 'calc(var(--accumulated-right) + 30px)' }}>
+          <FeedbackButton />
+          <AppMenu />
+          <LoginStatus
+            identity={authState.identity}
+            email={authState.email}
+            picture={authState.picture}
+          />
+        </ItemGroup>
       </Toolbar>
     </MuiAppBar>
   );

@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
+import ResizeObserver from 'resize-observer-polyfill';
 
 import { UiPage } from '@/common/constants/view';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
@@ -23,7 +24,9 @@ import { SIDE_BAR_OPEN_CACHE_KEY } from './base_layout';
 import { BaseLayout } from './base_layout';
 import { PAGE_LABEL_MAP } from './constants';
 
-describe('BaseLayout', () => {
+global.ResizeObserver = ResizeObserver;
+
+describe('<BaseLayout />', () => {
   const storageList = new Map<string, string>();
   let store: StoreInstance;
 

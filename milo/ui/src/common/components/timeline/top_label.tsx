@@ -32,8 +32,8 @@ export function TopLabel({ label }: TopLabelProps) {
       css={{
         gridArea: 'top-label',
         position: 'sticky',
-        top: 0,
-        left: 0,
+        top: 'var(--accumulated-top)',
+        left: 'var(--accumulated-left)',
         backgroundColor: theme.palette.background.default,
         zIndex: 2,
       }}

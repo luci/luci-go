@@ -82,7 +82,7 @@ export function TopAxis() {
       css={{
         gridArea: 'top-axis',
         position: 'sticky',
-        top: 0,
+        top: 'var(--accumulated-top)',
         zIndex: 1,
         background: theme.palette.background.default,
       }}

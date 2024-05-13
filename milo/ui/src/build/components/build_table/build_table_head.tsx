@@ -28,7 +28,7 @@ export function BuildTableHead({
     <TableHead
       sx={{
         position: 'sticky',
-        top: 0,
+        top: 'var(--accumulated-top)',
         backgroundColor: 'white',
         zIndex: 2,
         '& th': {

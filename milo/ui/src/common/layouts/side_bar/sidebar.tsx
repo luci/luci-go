@@ -14,8 +14,8 @@
 
 import LaunchIcon from '@mui/icons-material/Launch';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Typography } from '@mui/material';
-import Drawer from '@mui/material/Drawer';
+import { styled, Typography } from '@mui/material';
+import MuiDrawer from '@mui/material/Drawer';
 import MaterialLink from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -37,6 +37,21 @@ import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
 
 import { generateSidebarSections } from './pages';
 
+const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
+  width: 0,
+  transition: theme.transitions.create('width', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    transition: theme.transitions.create('width', {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    width: `${drawerWidth}px`,
+  }),
+}));
+
 interface Props {
   open: boolean;
 }
@@ -52,8 +67,6 @@ export const Sidebar = ({ open }: Props) => {
   return (
     <Drawer
       sx={{
-        width: drawerWidth,
-        flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',

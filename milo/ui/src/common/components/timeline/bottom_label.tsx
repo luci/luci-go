@@ -32,8 +32,8 @@ export function BottomLabel({ label }: BottomLabelProps) {
       css={{
         gridArea: 'bottom-label',
         position: 'sticky',
-        bottom: 0,
-        left: 0,
+        bottom: 'var(--accumulated-bottom)',
+        left: 'var(--accumulated-left)',
         backgroundColor: theme.palette.background.default,
         zIndex: 2,
       }}
