@@ -21,8 +21,16 @@
  * coercion (i.e. `object.nullable!`) everywhere.
  */
 
-import { ChangepointGroupSummary } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
+import {
+  Changepoint,
+  ChangepointGroupSummary,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { ClusterResponse_ClusteredTestResult_ClusterEntry } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { Variant } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
+import {
+  Segment,
+  TestVariantBranch,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import {
   TestResultBundle,
   TestVariant,
@@ -53,6 +61,17 @@ export type OutputChangepointGroupSummary = DeepNonNullableProps<
   ChangepointGroupSummary,
   'canonicalChangepoint' | 'statistics'
 >;
+
+export type OutputSegment = NonNullableProps<Segment, 'counts'>;
+
+export type OutputTestVariantBranch = NonNullableProps<
+  TestVariantBranch,
+  'variant'
+> & {
+  segments: readonly OutputSegment[];
+};
+
+export type OutputChangepoint = NonNullableProps<Changepoint, 'variant'>;
 
 export interface ParsedTestVariantBranchName {
   readonly project: string;
@@ -86,3 +105,7 @@ export const ParsedTestVariantBranchName = {
     return `projects/${project}/tests/${urlEscapedTestId}/variants/${variantHash}/refs/${refHash}`;
   },
 };
+
+export interface TestVariantBranchDef extends ParsedTestVariantBranchName {
+  readonly variant: Variant;
+}

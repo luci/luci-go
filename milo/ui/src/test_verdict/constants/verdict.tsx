@@ -30,6 +30,14 @@ export const VERDICT_STATUS_COLOR_MAP = Object.freeze({
   [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'var(--critical-failure-color)',
 });
 
+export const VERDICT_STATUS_ICON_FONT_MAP = Object.freeze({
+  [TestVariantStatus.EXONERATED]: 'remove_circle',
+  [TestVariantStatus.EXPECTED]: 'check_circle',
+  [TestVariantStatus.FLAKY]: 'warning',
+  [TestVariantStatus.UNEXPECTED]: 'cancel',
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'report',
+});
+
 export const VERDICT_STATUS_ICON_MAP = Object.freeze({
   [TestVariantStatus.EXONERATED]: (
     <RemoveCircle sx={{ color: 'var(--exonerated-color)' }} />

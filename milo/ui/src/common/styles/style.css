@@ -33,6 +33,7 @@ html {
   --failure-color: #d23a2d;
   --warning-text-color: #ff9900;
   --warning-color: #ffae00;
+  --warning-bg-color: #ffe09e;
   --scheduled-color: #73808c;
   --started-color: #ff8000;
   --critical-failure-color: #6c40bf;

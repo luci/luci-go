@@ -45,7 +45,7 @@ export interface RegressionDetailsDialogProps {
 export function RegressionDetailsDialog({
   changepoint,
 }: RegressionDetailsDialogProps) {
-  const [showOverlay, setShowOverlay] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(false);
   const client = useTestVariantBranchesClient();
   const {
     project,

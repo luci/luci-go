@@ -20,7 +20,11 @@ import {
   ChangepointPredicate,
   QueryChangepointsInGroupRequest,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
-import { ParsedTestVariantBranchName } from '@/test_verdict/types';
+import { ChangepointTable } from '@/test_verdict/components/changepoint_table';
+import {
+  OutputChangepoint,
+  ParsedTestVariantBranchName,
+} from '@/test_verdict/types';
 
 import { RegressionDetailsDialog } from './regression_details_dialog';
 
@@ -38,8 +42,8 @@ export function RegressionDetails({
   predicate,
 }: RegressionDetailsProps) {
   const client = useChangepointsClient();
-  const { data, isLoading, isError, error } = useQuery(
-    client.QueryChangepointsInGroup.query(
+  const { data, isLoading, isError, error } = useQuery({
+    ...client.QueryChangepointsInGroup.query(
       QueryChangepointsInGroupRequest.fromPartial({
         project: testVariantBranch.project,
         groupKey: {
@@ -52,7 +56,8 @@ export function RegressionDetails({
         predicate,
       }),
     ),
-  );
+    select: (data) => data.changepoints as readonly OutputChangepoint[],
+  });
 
   if (isError) {
     throw error;
@@ -70,10 +75,10 @@ export function RegressionDetails({
   // all the associated changepoints.
   return (
     <>
-      {JSON.stringify(data.changepoints, undefined, 2)}
+      <ChangepointTable testVariantBranches={data} />
       {/* TODO: open the dialog when a changepoint is selected.
       For now, always open dialog for the first changepoint in the group */}
-      <RegressionDetailsDialog changepoint={data.changepoints[0]} />
+      <RegressionDetailsDialog changepoint={data[0]} />
     </>
   );
 }
