@@ -17,23 +17,33 @@ package gaesettings
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/txnBuf"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
+func TestMain(m *testing.M) {
+	registry.RegisterCmpOption(cmp.AllowUnexported(settingsEntity{}))
+	os.Exit(m.Run())
+}
+
 func TestWorks(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = dscache.FilterRDS(ctx, nil)
 		ctx, tc := testclock.UseTime(ctx, time.Unix(1444945245, 0))
@@ -45,47 +55,47 @@ func TestWorks(t *testing.T) {
 
 		// Nothing's there yet.
 		bundle, exp, err := s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(exp, ShouldEqual, time.Second)
-		So(len(bundle.Values), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, exp, should.Equal(time.Second))
+		assert.Loosely(t, len(bundle.Values), should.BeZero)
 
 		conTime, err := s.GetConsistencyTime(ctx)
-		So(conTime.IsZero(), ShouldBeTrue)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, conTime.IsZero(), should.BeTrue)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Produce a bunch of versions.
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
+		assert.Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), should.BeNil)
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val2"`)), ShouldBeNil)
+		assert.Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val2"`)), should.BeNil)
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val3"`)), ShouldBeNil)
+		assert.Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val3"`)), should.BeNil)
 
 		bundle, exp, err = s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(exp, ShouldEqual, time.Second)
-		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val3"`))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, exp, should.Equal(time.Second))
+		assert.Loosely(t, *bundle.Values["key"], should.Resemble(json.RawMessage(`"val3"`)))
 
 		conTime, err = s.GetConsistencyTime(ctx)
-		So(conTime, ShouldResemble, clock.Now(ctx).UTC().Add(time.Second))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, conTime, should.Resemble(clock.Now(ctx).UTC().Add(time.Second)))
+		assert.Loosely(t, err, should.BeNil)
 
 		// Check all log entities is there.
 		ds.GetTestable(ctx).CatchupIndexes()
 		entities := []settingsEntity{}
-		So(ds.GetAll(ctx, ds.NewQuery("gaesettings.SettingsLog"), &entities), ShouldBeNil)
-		So(len(entities), ShouldEqual, 2)
+		assert.Loosely(t, ds.GetAll(ctx, ds.NewQuery("gaesettings.SettingsLog"), &entities), should.BeNil)
+		assert.Loosely(t, len(entities), should.Resemble(2))
 		asMap := map[string]settingsEntity{}
 		for _, e := range entities {
-			So(e.Kind, ShouldEqual, "gaesettings.SettingsLog")
-			So(e.Parent.Kind(), ShouldEqual, "gaesettings.Settings")
+			assert.Loosely(t, e.Kind, should.Resemble("gaesettings.SettingsLog"))
+			assert.Loosely(t, e.Parent.Kind(), should.Resemble("gaesettings.Settings"))
 			// Clear some fields to simplify assert below.
 			e.Kind = ""
 			e.Parent = nil
 			e.When = time.Time{}
 			asMap[e.ID] = e
 		}
-		So(asMap, ShouldResemble, map[string]settingsEntity{
+		assert.Loosely(t, asMap, should.Resemble(map[string]settingsEntity{
 			"1": {
 				ID:      "1",
 				Version: 1,
@@ -96,127 +106,134 @@ func TestWorks(t *testing.T) {
 				Version: 2,
 				Value:   "{\n  \"key\": \"val2\"\n}",
 			},
-		})
+		}))
+		assert.
 
-		// Memcache must not be used even if dscache is installed in the context.
-		So(mcOps.AddMulti.Total(), ShouldEqual, 0)
-		So(mcOps.GetMulti.Total(), ShouldEqual, 0)
-		So(mcOps.SetMulti.Total(), ShouldEqual, 0)
-		So(mcOps.DeleteMulti.Total(), ShouldEqual, 0)
+			// Memcache must not be used even if dscache is installed in the context.
+			Loosely(t, mcOps.AddMulti.Total(), should.BeZero)
+		assert.Loosely(t, mcOps.GetMulti.Total(), should.BeZero)
+		assert.Loosely(t, mcOps.SetMulti.Total(), should.BeZero)
+		assert.Loosely(t, mcOps.DeleteMulti.Total(), should.BeZero)
 	})
 
-	Convey("Handles namespace switch", t, func() {
+	ftt.Run("Handles namespace switch", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = dscache.FilterRDS(ctx, nil)
 
 		namespaced := info.MustNamespace(ctx, "blah")
 
 		s := Storage{}
+		assert.
 
-		// Put something using default namespace.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
+			// Put something using default namespace.
+			Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), should.BeNil)
 
 		// Works when using default namespace.
 		bundle, _, err := s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val1"`))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, *bundle.Values["key"], should.Resemble(json.RawMessage(`"val1"`)))
 
 		// Works when using non-default namespace too.
 		bundle, _, err = s.FetchAllSettings(namespaced)
-		So(err, ShouldBeNil)
-		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val1"`))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, *bundle.Values["key"], should.Resemble(json.RawMessage(`"val1"`)))
+		assert.
 
-		// Update using non-default namespace.
-		So(s.UpdateSetting(namespaced, "key", json.RawMessage(`"val2"`)), ShouldBeNil)
+			// Update using non-default namespace.
+			Loosely(t, s.UpdateSetting(namespaced, "key", json.RawMessage(`"val2"`)), should.BeNil)
 
 		// Works when using default namespace.
 		bundle, _, err = s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val2"`))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, *bundle.Values["key"], should.Resemble(json.RawMessage(`"val2"`)))
 	})
 
-	Convey("Ignores transactions", t, func() {
+	ftt.Run("Ignores transactions", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		s := Storage{}
+		assert.
 
-		// Put something.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
+			// Put something.
+			Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), should.BeNil)
 
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(len(bundle.Values), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(bundle.Values), should.Resemble(1))
 
 		// Works when fetching from inside of a transaction.
 		ds.RunInTransaction(ctx, func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
-			So(err, ShouldBeNil)
-			So(len(bundle.Values), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(bundle.Values), should.Resemble(1))
 			return nil
 		}, nil)
 	})
 
-	Convey("Ignores transactions and namespaces", t, func() {
+	ftt.Run("Ignores transactions and namespaces", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		s := Storage{}
+		assert.
 
-		// Put something.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
+			// Put something.
+			Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), should.BeNil)
 
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(len(bundle.Values), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(bundle.Values), should.Resemble(1))
 
 		// Works when fetching from inside of a transaction.
 		namespaced := info.MustNamespace(ctx, "blah")
 		ds.RunInTransaction(namespaced, func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
-			So(err, ShouldBeNil)
-			So(len(bundle.Values), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(bundle.Values), should.Resemble(1))
 			return nil
 		}, nil)
 	})
 
-	Convey("Ignores transactions and txnBuf", t, func() {
+	ftt.Run("Ignores transactions and txnBuf", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		s := Storage{}
+		assert.
 
-		// Put something.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
+			// Put something.
+			Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), should.BeNil)
 
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(len(bundle.Values), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(bundle.Values), should.Resemble(1))
 
 		// Works when fetching from inside of a transaction.
 		ds.RunInTransaction(txnBuf.FilterRDS(ctx), func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
-			So(err, ShouldBeNil)
-			So(len(bundle.Values), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(bundle.Values), should.Resemble(1))
 			return nil
 		}, nil)
 	})
 
-	Convey("Ignores transactions and namespaces and txnBuf", t, func() {
+	ftt.Run("Ignores transactions and namespaces and txnBuf", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		s := Storage{}
+		assert.
 
-		// Put something.
-		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), ShouldBeNil)
+			// Put something.
+			Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), should.BeNil)
 
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(len(bundle.Values), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(bundle.Values), should.Resemble(1))
 
 		// Works when fetching from inside of a transaction.
 		namespaced := info.MustNamespace(ctx, "blah")
 		ds.RunInTransaction(txnBuf.FilterRDS(namespaced), func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
-			So(err, ShouldBeNil)
-			So(len(bundle.Values), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(bundle.Values), should.Resemble(1))
 			return nil
 		}, nil)
 	})
