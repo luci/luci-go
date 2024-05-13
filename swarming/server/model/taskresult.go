@@ -881,19 +881,52 @@ func FilterTasksByTimestampField(q *datastore.Query, field string, start, end ti
 
 // FilterTasksByState limits a TaskResultSummary query to return tasks in
 // particular state.
-func FilterTasksByState(q *datastore.Query, state apipb.StateQuery) *datastore.Query {
+//
+// For StateQuery_QUERY_PENDING_RUNNING filter, depending on passed SplitMode,
+// may either split the query into multiple queries that need to run in
+// parallel, or append an "IN" filter to the original query. For all other state
+// filters just adds simple "EQ" query filters.
+//
+// Per current datastore limitations (see Filter.SplitForQuery), a query can
+// have at most one "IN" filter. Thus if FilterTasksByState returns a query with
+// an "IN" filter, all queries built on top of it must not add any more "IN"
+// filters. This is communicated by returning SplitCompletely SplitMode that
+// should be applied to all subsequent splittings (if any).
+func FilterTasksByState(q *datastore.Query, state apipb.StateQuery, splitMode SplitMode) ([]*datastore.Query, SplitMode) {
+	// Special case that requires merging results of multiple queries.
+	if state == apipb.StateQuery_QUERY_PENDING_RUNNING {
+		// Note that it is tempting to use `q.Lte("state", apipb.TaskState_PENDING)`
+		// since TaskState_RUNNING < TaskState_PENDING and there are no other states
+		// like that. But Datastore allows an inequality filter on at least one
+		// property. Queries that use `q.Lte("state", ...)` won't be able to use
+		// an inequality filter for filtering by timestamp. So we are forced to use
+		// `In("state", ...)` query (if supported) or merge to parallel queries
+		// (when In queries are not supported, e.g. when running in dev mode). This
+		// is communicated by splitMode.
+		switch splitMode {
+		case SplitOptimally:
+			// It is OK to use an IN filter.
+			return []*datastore.Query{
+				q.In("state", apipb.TaskState_RUNNING, apipb.TaskState_PENDING),
+			}, SplitCompletely
+		case SplitCompletely:
+			// Asked to avoid IN filters. Run two queries.
+			return []*datastore.Query{
+				q.Eq("state", apipb.TaskState_RUNNING),
+				q.Eq("state", apipb.TaskState_PENDING),
+			}, SplitCompletely
+		default:
+			panic(fmt.Sprintf("unexpected SplitMode %d", splitMode))
+		}
+	}
+
 	switch state {
 	case apipb.StateQuery_QUERY_PENDING:
 		q = q.Eq("state", apipb.TaskState_PENDING)
 	case apipb.StateQuery_QUERY_RUNNING:
 		q = q.Eq("state", apipb.TaskState_RUNNING)
 	case apipb.StateQuery_QUERY_PENDING_RUNNING:
-		// This assumes that no task has the state INVALID. Since the enum values
-		// for TaskState_PENDING = 32 and TaskState_RUNNING = 16, we can use Lte.
-		// Otherwise we would have to use
-		//   q = q.In("state", apipb.TaskState_PENDING, apipb.TaskState_RUNNING)
-		// which would add more complexity to the query.
-		q = q.Lte("state", apipb.TaskState_PENDING)
+		panic("already handled above")
 	case apipb.StateQuery_QUERY_COMPLETED:
 		q = q.Eq("state", apipb.TaskState_COMPLETED)
 	case apipb.StateQuery_QUERY_COMPLETED_SUCCESS:
@@ -921,5 +954,5 @@ func FilterTasksByState(q *datastore.Query, state apipb.StateQuery) *datastore.Q
 	default:
 		panic(fmt.Sprintf("unexpected StateQuery %q", state))
 	}
-	return q
+	return []*datastore.Query{q}, splitMode
 }

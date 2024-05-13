@@ -75,7 +75,14 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 
 	q := model.TaskRunResultQuery().Eq("bot_id", req.BotId)
 	if req.State != apipb.StateQuery_QUERY_ALL {
-		q = model.FilterTasksByState(q, req.State)
+		// QUERY_PENDING_RUNNING triggers an edge case in FilterTasksByState making
+		// it return multiple queries. But we can ignore this, since this state
+		// filter is forbidden here, as checked in validateBotTasksQueryStateFilter.
+		qs, mode := model.FilterTasksByState(q, req.State, model.SplitOptimally)
+		if len(qs) != 1 || mode != model.SplitOptimally {
+			panic("impossible, QUERY_PENDING_RUNNING filter was already rejected in validateBotTasksQueryStateFilter")
+		}
+		q = qs[0]
 	}
 	q = q.Limit(req.Limit)
 	if dscursor != nil {

@@ -58,14 +58,25 @@ func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountReq
 		return nil, status.Errorf(codes.InvalidArgument, "invalid time range: %s", err)
 	}
 
-	// Limit to the requested state, if any.
+	// Limit to the requested state, if any. This may split the query into
+	// multiple queries to be run in parallel. This can also update the split
+	// mode to SplitCompletely if FilterTasksByState needs to add an IN filter,
+	// see its doc.
+	var stateQueries []*datastore.Query
+	var splitMode model.SplitMode
 	if req.State != apipb.StateQuery_QUERY_ALL {
-		query = model.FilterTasksByState(query, req.State)
+		stateQueries, splitMode = model.FilterTasksByState(query, req.State, srv.TaskQuerySplitMode)
+	} else {
+		stateQueries = []*datastore.Query{query}
+		splitMode = srv.TaskQuerySplitMode
 	}
 
-	// Filtering by tags may split the query into multiple queries we'll need to
-	// merge.
-	queries := model.FilterTasksByTags(query, srv.TaskQuerySplitMode, filter)
+	// Filtering by tags may split the query even further. We'll need to merge
+	// all resulting subqueries.
+	var queries []*datastore.Query
+	for _, query := range stateQueries {
+		queries = append(queries, model.FilterTasksByTags(query, splitMode, filter)...)
+	}
 
 	// If we only have one query to run, we can make use of an aggregation query
 	// and utilize the datastore server-side counting (this requires the query

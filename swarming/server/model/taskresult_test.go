@@ -744,19 +744,41 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 	})
 
 	Convey("FilterTasksByState: running", t, func() {
-		q := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_RUNNING)
-		fq, err := q.Finalize()
+		qs, mode := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_RUNNING, SplitOptimally)
+		So(qs, ShouldHaveLength, 1)
+		So(mode, ShouldEqual, SplitOptimally)
+		fq, err := qs[0].Finalize()
 		So(err, ShouldBeNil)
 		So(fq.GQL(), ShouldEqual,
 			"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`")
 	})
 
 	Convey("FilterTasksByState: pending+running", t, func() {
-		q := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_PENDING_RUNNING)
-		fq, err := q.Finalize()
-		So(err, ShouldBeNil)
-		So(fq.GQL(), ShouldEqual,
-			"SELECT * FROM `TaskResultSummary` WHERE `state` <= 32 ORDER BY `state`, `__key__`")
+		Convey("SplitOptimally", func() {
+			qs, mode := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_PENDING_RUNNING, SplitOptimally)
+			So(qs, ShouldHaveLength, 1)
+			So(mode, ShouldEqual, SplitCompletely)
+			fq, err := qs[0].Finalize()
+			So(err, ShouldBeNil)
+			So(fq.GQL(), ShouldEqual,
+				"SELECT * FROM `TaskResultSummary` WHERE `state` IN ARRAY(16, 32) ORDER BY `__key__`")
+		})
+
+		Convey("SplitCompletely", func() {
+			qs, mode := FilterTasksByState(TaskResultSummaryQuery(), apipb.StateQuery_QUERY_PENDING_RUNNING, SplitCompletely)
+			So(qs, ShouldHaveLength, 2)
+			So(mode, ShouldEqual, SplitCompletely)
+
+			fq0, err := qs[0].Finalize()
+			So(err, ShouldBeNil)
+			So(fq0.GQL(), ShouldEqual,
+				"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`")
+
+			fq1, err := qs[1].Finalize()
+			So(err, ShouldBeNil)
+			So(fq1.GQL(), ShouldEqual,
+				"SELECT * FROM `TaskResultSummary` WHERE `state` = 32 ORDER BY `__key__`")
+		})
 	})
 
 	Convey("FilterTasksByTags", t, func() {

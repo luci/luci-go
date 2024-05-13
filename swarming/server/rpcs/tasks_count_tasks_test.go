@@ -166,8 +166,7 @@ func TestCountTasks(t *testing.T) {
 		// State filters on their own (without tag filtering).
 		So(count(apipb.StateQuery_QUERY_PENDING), ShouldEqual, 3)
 		So(count(apipb.StateQuery_QUERY_RUNNING), ShouldEqual, 3)
-		// TODO: Broken.
-		// So(count(apipb.StateQuery_QUERY_PENDING_RUNNING), ShouldEqual, 6)
+		So(count(apipb.StateQuery_QUERY_PENDING_RUNNING), ShouldEqual, 6)
 		So(count(apipb.StateQuery_QUERY_COMPLETED), ShouldEqual, 9)         // success+failure+dedup
 		So(count(apipb.StateQuery_QUERY_COMPLETED_SUCCESS), ShouldEqual, 6) // success+dedup
 		So(count(apipb.StateQuery_QUERY_COMPLETED_FAILURE), ShouldEqual, 3)
@@ -193,8 +192,7 @@ func TestCountTasks(t *testing.T) {
 
 		// Filtering on state + tags (selected non-trivial cases).
 		So(count(apipb.StateQuery_QUERY_PENDING, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
-		// TODO: Broken.
-		// So(count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), ShouldEqual, 4)
+		So(count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), ShouldEqual, 4)
 		So(count(apipb.StateQuery_QUERY_COMPLETED, "idx:0|1", "dup:0|1"), ShouldEqual, 6)
 		So(count(apipb.StateQuery_QUERY_COMPLETED_SUCCESS, "idx:0|1", "dup:0|1"), ShouldEqual, 4)
 		So(count(apipb.StateQuery_QUERY_DEDUPED, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
@@ -206,8 +204,7 @@ func TestCountTasks(t *testing.T) {
 		So(count(apipb.StateQuery_QUERY_ALL, "idx:0"), ShouldEqual, 12)
 		So(count(apipb.StateQuery_QUERY_ALL, "idx:1"), ShouldEqual, 0)
 		So(count(apipb.StateQuery_QUERY_COMPLETED), ShouldEqual, 3)
-		// TODO: Broken.
-		// So(count(apipb.StateQuery_QUERY_PENDING_RUNNING), ShouldEqual, 2)
-		// So(count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
+		So(count(apipb.StateQuery_QUERY_PENDING_RUNNING), ShouldEqual, 2)
+		So(count(apipb.StateQuery_QUERY_PENDING_RUNNING, "idx:0|1", "dup:0|1"), ShouldEqual, 2)
 	})
 }
