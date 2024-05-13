@@ -201,10 +201,8 @@ func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*mo
 			Realms: expandedRev,
 		})
 
-		dt := time.Since(start)
-
-		if dt.Seconds() > 5.0 {
-			logging.Errorf(ctx, "realms expansion of \"%s\" is slow: %1.f", r.ProjectID, dt)
+		if dt := time.Since(start).Seconds(); dt > 5.0 {
+			logging.Warningf(ctx, "realms expansion of \"%s\" is slow: %1.f seconds", r.ProjectID, dt)
 		}
 	}
 	if len(expanded) == 0 {
