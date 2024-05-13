@@ -50,6 +50,15 @@ export const BUILD_STATUS_COLOR_MAP = Object.freeze({
   [BuildStatus.CANCELED]: 'var(--canceled-color)',
 });
 
+export const BUILD_STATUS_BG_COLOR_MAP = Object.freeze({
+  [BuildStatus.SCHEDULED]: 'var(--scheduled-bg-color)',
+  [BuildStatus.STARTED]: 'var(--started-bg-color)',
+  [BuildStatus.SUCCESS]: 'var(--success-bg-color)',
+  [BuildStatus.FAILURE]: 'var(--failure-bg-color)',
+  [BuildStatus.INFRA_FAILURE]: 'var(--critical-failure-bg-color)',
+  [BuildStatus.CANCELED]: 'var(--canceled-bg-color)',
+});
+
 export const BUILD_STATUS_COLOR_THEME_MAP = Object.freeze({
   [BuildStatus.SCHEDULED]: 'scheduled',
   [BuildStatus.STARTED]: 'started',

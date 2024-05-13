@@ -23,13 +23,16 @@
 
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import { Step } from '@/proto/go.chromium.org/luci/buildbucket/proto/step.pb';
 
 export type SpecifiedBuildStatus = Exclude<
   BuildStatus,
   BuildStatus.UNSPECIFIED | BuildStatus.ENDED_MASK
 >;
 
+export type OutputStep = Step & { status: SpecifiedBuildStatus };
+
 export type OutputBuild = DeepNonNullableProps<
-  Build & { status: SpecifiedBuildStatus },
+  Build & { status: SpecifiedBuildStatus; steps: readonly OutputStep[] },
   'builder' | 'createTime'
 >;
