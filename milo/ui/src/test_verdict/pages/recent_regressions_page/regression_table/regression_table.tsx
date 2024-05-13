@@ -108,10 +108,10 @@ export function RegressionTable({
       <Table width="100%">
         <TableHead>
           <TableRow>
-            <TextCell rowSpan={2} width="75px">
+            <TextCell rowSpan={2} width="80px">
               Start Time
             </TextCell>
-            <TextCell rowSpan={2} width="130px">
+            <TextCell rowSpan={2} width="80px">
               Blamelist
             </TextCell>
             <NumberCell rowSpan={2} width="40px">

@@ -56,12 +56,17 @@ export function RegressionRow({ regression }: RegressionRowProps) {
   }
   const detailsUrlPath = useDetailsUrlPath(regression);
 
+  const blamelistCommitCount =
+    parseInt(canonicalChangepoint.nominalStartPosition) -
+    parseInt(canonicalChangepoint.previousSegmentNominalEndPosition) +
+    1;
+
   return (
     <TableRow>
       <TextCell>
         <Timestamp
           datetime={DateTime.fromISO(canonicalChangepoint.startHour)}
-          format="MM-dd HH:mm"
+          format="MMM dd, HH:mm"
           extra={{ format: SHORT_TIME_FORMAT }}
         />
       </TextCell>
@@ -72,8 +77,7 @@ export function RegressionRow({ regression }: RegressionRowProps) {
           target="_blank"
           rel="noopener"
         >
-          {canonicalChangepoint.nominalStartPosition}..
-          {canonicalChangepoint.previousSegmentNominalEndPosition}
+          {blamelistCommitCount} commits
         </Link>
       </TextCell>
       <NumberCell>{statistics.count}</NumberCell>
