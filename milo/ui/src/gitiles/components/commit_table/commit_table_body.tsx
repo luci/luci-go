@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableBody } from '@mui/material';
+import { SxProps, TableBody, Theme } from '@mui/material';
 import { ReactNode } from 'react';
 
 export interface CommitTableBodyProps {
+  readonly sx?: SxProps<Theme>;
   readonly children: ReactNode;
 }
 
-export function CommitTableBody({ children }: CommitTableBodyProps) {
-  return <TableBody>{children}</TableBody>;
+export function CommitTableBody({ sx, children }: CommitTableBodyProps) {
+  return <TableBody sx={sx}>{children}</TableBody>;
 }

@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableHead, TableRow } from '@mui/material';
+import { SxProps, TableHead, TableRow, Theme } from '@mui/material';
 import { ReactNode } from 'react';
 
 export interface CommitTableHeadProps {
+  readonly sx?: SxProps<Theme>;
   readonly children: ReactNode;
 }
 
-export function CommitTableHead({ children }: CommitTableHeadProps) {
+export function CommitTableHead({ sx, children }: CommitTableHeadProps) {
   return (
     <TableHead
       sx={{
@@ -27,6 +28,7 @@ export function CommitTableHead({ children }: CommitTableHeadProps) {
         top: 'var(--accumulated-top)',
         backgroundColor: 'white',
         zIndex: 2,
+        ...sx,
       }}
     >
       <TableRow

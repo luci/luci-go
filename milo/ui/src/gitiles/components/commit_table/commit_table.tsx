@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Table } from '@mui/material';
+import { SxProps, Table, Theme } from '@mui/material';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 
@@ -26,6 +26,7 @@ export interface CommitTableProps {
   readonly repoUrl: string;
   readonly initDefaultExpanded?: boolean;
   readonly onDefaultExpandedChanged?: (expand: boolean) => void;
+  readonly sx?: SxProps<Theme>;
   readonly children: ReactNode;
 }
 
@@ -35,6 +36,7 @@ export function CommitTable({
   onDefaultExpandedChanged = () => {
     /* Noop by default. */
   },
+  sx,
   children,
 }: CommitTableProps) {
   const [defaultExpanded, setDefaultExpanded] = useState(initDefaultExpanded);
@@ -59,6 +61,7 @@ export function CommitTable({
           padding: '0px 8px',
         },
         minWidth: '1000px',
+        ...sx,
       }}
     >
       <SetDefaultExpandedProvider value={setDefaultExpanded}>

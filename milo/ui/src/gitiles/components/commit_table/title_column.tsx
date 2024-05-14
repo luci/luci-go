@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableCell } from '@mui/material';
+import { Box, TableCell } from '@mui/material';
 
 import { useCommit } from './context';
 
@@ -25,8 +25,21 @@ export function TitleContentCell() {
   const title = commit.message.split('\n', 1)[0];
 
   return (
-    <TableCell sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-      {title}
+    <TableCell>
+      {/* Use a grid to isolate the size of the title container with the size of
+       ** the cell. This ensures the title will render its content in the
+       ** available width assigned to the column, instead of causing the cell,
+       ** therefore the table, to grow and potentially overflow the parent
+       ** container.
+       **/}
+      <Box sx={{ display: 'grid' }}>
+        <Box
+          sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+          title={title}
+        >
+          {title}
+        </Box>
+      </Box>
     </TableCell>
   );
 }
