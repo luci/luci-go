@@ -44,30 +44,35 @@ export function VerdictInfo() {
 
   return (
     <Grid item container columnGap={1} alignItems="center" sx={{ ml: 0.5 }}>
-      <Typography fontSize="0.9rem">
-        {getSortedTestVariantDef(verdict.variant?.def || {}).map((entry, i) => (
-          <Fragment key={entry[0]}>
-            {i > 0 && ', '}
-            {entry[0]}: {entry[1]}
-          </Fragment>
-        ))}
-      </Typography>
-
-      <Divider orientation="vertical" flexItem />
-      <Link
-        target="_blank"
-        href={getTestHistoryURLWithSearchParam(
-          project,
-          verdict.testId,
-          generateTestHistoryURLSearchParams(verdict.variant),
-        )}
-      >
-        History
-      </Link>
+      {verdict.variant && (
+        <>
+          <Typography fontSize="0.9rem">
+            {getSortedTestVariantDef(verdict.variant.def || {}).map(
+              (entry, i) => (
+                <Fragment key={entry[0]}>
+                  {i > 0 && ', '}
+                  {entry[0]}: {entry[1]}
+                </Fragment>
+              ),
+            )}
+          </Typography>
+          <Divider orientation="vertical" flexItem />
+          <Link
+            target="_blank"
+            href={getTestHistoryURLWithSearchParam(
+              project,
+              verdict.testId,
+              generateTestHistoryURLSearchParams(verdict.variant),
+            )}
+          >
+            History
+          </Link>
+        </>
+      )}
 
       {verdict.testMetadata?.location && (
         <>
-          <Divider orientation="vertical" flexItem />
+          {verdict.variant && <Divider orientation="vertical" flexItem />}
           <Link
             target="_blank"
             href={getCodeSourceUrl(verdict.testMetadata.location)}
