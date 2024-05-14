@@ -47,6 +47,8 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	r.GET("/build/*BuildID", mw, handleViewBuild)
 	r.GET("/builds/*BuildID", mw, handleViewBuild)
 	r.GET("/log/:BuildID/*StepName", mw, handleViewBuild)
+	r.GET("/builder/:Project/:Bucket/*Builder", mw, handleViewBuilder)
+	r.GET("/builders/:Project/:Bucket/*Builder", mw, handleViewBuilder)
 }
 
 func handleViewLog(c *router.Context) {
@@ -196,6 +198,38 @@ func getBuildURL(ctx context.Context, bld *model.Build) (string, error) {
 		}
 	}
 	return fmt.Sprintf("https://%s/b/%d", globalCfg.Swarming.MiloHostname, bld.ID), nil
+}
+
+// handleViewBuilder redirects to Milo builder page.
+// It simply generates the milo url without checking the existence of the
+// builder or if the user has access to it.
+func handleViewBuilder(c *router.Context) {
+	ctx := c.Request.Context()
+	project := c.Params.ByName("Project")
+	bucket := c.Params.ByName("Bucket")
+	builder := strings.Trim(c.Params.ByName("Builder"), "/")
+
+	var errMsg string
+	switch {
+	case project == "":
+		errMsg = "missing project"
+	case bucket == "":
+		errMsg = "missing bucket"
+	case builder == "":
+		errMsg = "missing builder"
+	}
+	if errMsg != "" {
+		replyError(c, errors.Reason(errMsg).Err(), "invalid parameters", http.StatusBadRequest)
+		return
+	}
+
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		replyError(c, err, "failed to generate the builder url", http.StatusInternalServerError)
+		return
+	}
+	url := fmt.Sprintf("https://%s/ui/p/%s/builders/%s/%s", globalCfg.Swarming.MiloHostname, project, bucket, builder)
+	http.Redirect(c.Writer, c.Request, url, http.StatusFound)
 }
 
 // replyError convert the provided error to http error and also logs the error.

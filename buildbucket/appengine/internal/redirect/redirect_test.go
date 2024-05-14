@@ -248,6 +248,54 @@ func TestHandleViewBuild(t *testing.T) {
 				So(rsp.Header().Get("Location"), ShouldEqual, "https://milo.com/b/123")
 			})
 		})
+		Convey("builder redirect", func() {
+			rsp := httptest.NewRecorder()
+			rctx := &router.Context{
+				Writer: rsp,
+			}
+			ctx := memory.Use(context.Background())
+			settingsCfg := &pb.SettingsCfg{
+				Swarming: &pb.SwarmingSettings{
+					MiloHostname: "milo.com",
+				},
+			}
+			So(config.SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
+			rctx.Request = (&http.Request{}).WithContext(ctx)
+
+			Convey("invalid parameters", func() {
+				Convey("project", func() {
+					rctx.Params = httprouter.Params{}
+					handleViewBuilder(rctx)
+					So(rsp.Code, ShouldEqual, http.StatusBadRequest)
+				})
+				Convey("bucket", func() {
+					rctx.Params = httprouter.Params{
+						{Key: "Project", Value: "project"},
+					}
+					handleViewBuilder(rctx)
+					So(rsp.Code, ShouldEqual, http.StatusBadRequest)
+				})
+				Convey("builder", func() {
+					rctx.Params = httprouter.Params{
+						{Key: "Project", Value: "project"},
+						{Key: "Bucket", Value: "bucket"},
+					}
+					handleViewBuilder(rctx)
+					So(rsp.Code, ShouldEqual, http.StatusBadRequest)
+				})
+			})
+
+			Convey("ok", func() {
+				rctx.Params = httprouter.Params{
+					{Key: "Project", Value: "project"},
+					{Key: "Bucket", Value: "bucket"},
+					{Key: "Builder", Value: "builder"},
+				}
+				handleViewBuilder(rctx)
+				So(rsp.Code, ShouldEqual, http.StatusFound)
+				So(rsp.Header().Get("Location"), ShouldEqual, "https://milo.com/ui/p/project/builders/bucket/builder")
+			})
+		})
 	})
 }
 
