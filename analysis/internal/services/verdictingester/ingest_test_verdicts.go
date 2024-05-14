@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	tvbexporter "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
+	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
@@ -404,26 +405,23 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 		// last page. We should not schedule a continuation task.
 		panic("next page token cannot be the empty page token")
 	}
-	buildID := control.BuildID(task.Build.Host, task.Build.Id)
+	rdbHost := task.Build.ResultdbHost
+	invID := control.BuildInvocationID(task.Build.Id)
 
 	// Schedule the task transactionally, conditioned on it not having been
 	// scheduled before.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		entries, err := control.Read(ctx, []string{buildID})
+		key := checkpoints.Key{
+			Project:    task.Build.Project,
+			ResourceID: fmt.Sprintf("%s/%s", rdbHost, invID),
+			ProcessID:  "verdict-ingestion",
+			Uniquifier: fmt.Sprintf("schedule-continuation/%v", task.TaskIndex),
+		}
+		exists, err := checkpoints.Exists(ctx, key)
 		if err != nil {
-			return errors.Annotate(err, "read ingestion record").Err()
+			return errors.Annotate(err, "test existance of checkpoint").Err()
 		}
-
-		entry := entries[0]
-		if entry == nil {
-			return errors.Reason("build %v does not have ingestion record", buildID).Err()
-		}
-		if task.TaskIndex >= entry.TaskCount {
-			// This should nver happen.
-			panic("current ingestion task not recorded on ingestion control record")
-		}
-		nextTaskIndex := task.TaskIndex + 1
-		if nextTaskIndex != entry.TaskCount {
+		if exists {
 			// Next task has already been created in the past. Do not create
 			// it again.
 			// This can happen if the ingestion task failed after
@@ -431,10 +429,11 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 			// and was subsequently retried.
 			return nil
 		}
-		entry.TaskCount = entry.TaskCount + 1
-		if err := control.InsertOrUpdate(ctx, entry); err != nil {
-			return errors.Annotate(err, "update ingestion record").Err()
-		}
+		// Insert checkpoint.
+		m := checkpoints.Insert(ctx, key, 30*24*time.Hour)
+		span.BufferWrite(ctx, m)
+
+		nextTaskIndex := task.TaskIndex + 1
 
 		itvTask := &taskspb.IngestTestVerdicts{
 			PartitionTime: task.PartitionTime,

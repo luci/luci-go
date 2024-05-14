@@ -95,13 +95,6 @@ type Entry struct {
 
 	// LastUpdated is the Spanner commit time the row was last updated.
 	LastUpdated time.Time
-
-	// The number of test result ingestion tasks have been created for this
-	// invocation.
-	// Used to avoid duplicate scheduling of ingestion tasks. If the page_index
-	// is the index of the page being processed, an ingestion task for the next
-	// page will only be created if (page_index + 1) == TaskCount.
-	TaskCount int64
 }
 
 // BuildID returns the control record key for a buildbucket build with the
@@ -139,7 +132,6 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 		"PresubmitResult",
 		"PresubmitJoinedTime",
 		"LastUpdated",
-		"TaskCount",
 	}
 	entryByBuildID := make(map[string]*Entry)
 	rows := span.Read(ctx, "Ingestions", spanner.KeySetFromKeys(keys...), cols)
@@ -157,7 +149,6 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 		var presubmitResultBytes []byte
 		var presubmitJoinedTime spanner.NullTime
 		var lastUpdated time.Time
-		var taskCount spanner.NullInt64
 
 		err := r.Columns(
 			&buildID,
@@ -172,8 +163,7 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 			&presubmitProject,
 			&presubmitResultBytes,
 			&presubmitJoinedTime,
-			&lastUpdated,
-			&taskCount)
+			&lastUpdated)
 		if err != nil {
 			return errors.Annotate(err, "read Ingestions row").Err()
 		}
@@ -215,7 +205,6 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 			PresubmitResult:     presubmitResult,
 			PresubmitJoinedTime: presubmitJoinedTime.Time,
 			LastUpdated:         lastUpdated,
-			TaskCount:           taskCount.Int64,
 		}
 		return nil
 	}
@@ -254,7 +243,6 @@ func InsertOrUpdate(ctx context.Context, e *Entry) error {
 		"PresubmitResult":      e.PresubmitResult,
 		"PresubmitJoinedTime":  spanner.NullTime{Valid: e.PresubmitJoinedTime != time.Time{}, Time: e.PresubmitJoinedTime},
 		"LastUpdated":          spanner.CommitTimestamp,
-		"TaskCount":            e.TaskCount,
 	}
 	m := spanutil.InsertOrUpdateMap("Ingestions", update)
 	span.BufferWrite(ctx, m)
@@ -469,9 +457,6 @@ func validateEntry(e *Entry) error {
 		}
 	}
 
-	if e.TaskCount < 0 {
-		return errors.New("task count must be non-negative")
-	}
 	return nil
 }
 

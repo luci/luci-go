@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 )
 
-var processIDRe = regexp.MustCompile(`^[a-z0-9\-]{1,64}$`)
+var processIDRe = regexp.MustCompile(`^[a-z0-9\-/]{1,64}$`)
 
 // Key is the primary key of a checkpoint.
 type Key struct {
@@ -42,7 +42,7 @@ type Key struct {
 	// Free-form field, but must be non-empty.
 	ResourceID string
 	// ProcessID is the identifier of the process requiring checkpointing.
-	// Valid pattern: ^[a-z0-9\-]{1,64}$.
+	// Valid pattern: ^[a-z0-9\-/]{1,64}$.
 	ProcessID string
 	// Unique identifier of the checkpoint within the process and resource.
 	// Free-form field.
@@ -92,43 +92,4 @@ func Insert(ctx context.Context, key Key, ttl time.Duration) *spanner.Mutation {
 		"ExpiryTime":   clock.Now(ctx).Add(ttl),
 	}
 	return spanner.InsertMap("Checkpoints", values)
-}
-
-// ReadAllForTesting reads all checkpoints for testing, e.g. to assert
-// all expected checkpoints were made.
-// Do not use in production, will not scale.
-// Must be called in a spanner transactional context.
-func ReadAllForTesting(ctx context.Context) ([]Checkpoint, error) {
-	sql := `SELECT Project, ResourceId, ProcessId, Uniquifier, CreationTime,
-		ExpiryTime
-	FROM Checkpoints
-	ORDER BY Project, ResourceId, ProcessId, Uniquifier`
-
-	stmt := spanner.NewStatement(sql)
-
-	var results []Checkpoint
-	it := span.Query(ctx, stmt)
-
-	f := func(row *spanner.Row) error {
-		c := Checkpoint{}
-		err := row.Columns(
-			&c.Project,
-			&c.ResourceID,
-			&c.ProcessID,
-			&c.Uniquifier,
-			&c.CreationTime,
-			&c.ExpiryTime,
-		)
-		if err != nil {
-			return err
-		}
-
-		results = append(results, c)
-		return nil
-	}
-	err := it.Do(f)
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
 }

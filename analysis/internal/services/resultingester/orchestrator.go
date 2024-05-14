@@ -35,8 +35,10 @@ import (
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
@@ -176,11 +178,15 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 		return transient.Tag.Apply(errors.Annotate(err, "query run test variants").Err())
 	}
 
-	// TODO: create continuation task (conditional on unreached checkpoint).
-
 	input, err := prepareInputs(ctx, n, rootInv, rsp.RunTestVerdicts)
 	if err != nil {
 		return transient.Tag.Apply(errors.Annotate(err, "prepare ingestion inputs").Err())
+	}
+
+	if rsp.NextPageToken != "" {
+		if err := scheduleNextTask(ctx, payload, rsp.NextPageToken); err != nil {
+			return transient.Tag.Apply(err)
+		}
 	}
 
 	for _, sink := range o.sinks {
@@ -223,4 +229,64 @@ func prepareInputs(ctx context.Context, notification *resultpb.InvocationReadyFo
 		result.Sources = sources
 	}
 	return result, nil
+}
+
+// scheduleNextTask schedules a task to continue the ingestion,
+// starting at the given page token.
+// If a continuation task for this task has been previously scheduled
+// (e.g. in a previous try of this task), this method does nothing.
+func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, nextPageToken string) error {
+	if nextPageToken == "" {
+		// If the next page token is "", it means ResultDB returned the
+		// last page. We should not schedule a continuation task.
+		panic("next page token cannot be the empty page token")
+	}
+	rootProject, _ := realms.Split(task.Notification.RootInvocationRealm)
+	rdbHost := task.Notification.ResultdbHost
+	rootInvID, err := pbutil.ParseInvocationName(task.Notification.RootInvocation)
+	if err != nil {
+		return errors.Annotate(err, "parse root invocation name").Err()
+	}
+	invID, err := pbutil.ParseInvocationName(task.Notification.Invocation)
+	if err != nil {
+		return errors.Annotate(err, "parse invocation name").Err()
+	}
+
+	// Schedule the task transactionally, conditioned on it not having been
+	// scheduled before.
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		key := checkpoints.Key{
+			Project:    rootProject,
+			ResourceID: fmt.Sprintf("%s/%s/%s", rdbHost, rootInvID, invID),
+			ProcessID:  "result-ingestion/schedule-continuation",
+			Uniquifier: fmt.Sprintf("%v", task.TaskIndex),
+		}
+		exists, err := checkpoints.Exists(ctx, key)
+		if err != nil {
+			return errors.Annotate(err, "test existance of checkpoint").Err()
+		}
+		if exists {
+			// Next task has already been created in the past. Do not create
+			// it again.
+			// This can happen if the ingestion task failed after
+			// it scheduled the ingestion task for the next page,
+			// and was subsequently retried.
+			return nil
+		}
+		// Insert checkpoint.
+		m := checkpoints.Insert(ctx, key, 30*24*time.Hour)
+		span.BufferWrite(ctx, m)
+
+		nextTaskIndex := task.TaskIndex + 1
+
+		itrTask := &taskspb.IngestTestResults{
+			Notification: task.Notification,
+			PageToken:    nextPageToken,
+			TaskIndex:    nextTaskIndex,
+		}
+		Schedule(ctx, itrTask)
+
+		return nil
+	})
+	return err
 }

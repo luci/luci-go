@@ -164,7 +164,6 @@ func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresub
 		isTaskCreated := createTasksIfNeeded(ctx, entry)
 		if isTaskCreated {
 			createdTask = newTaskDetails(entry)
-			entry.TaskCount = 1
 		}
 
 		if err := control.InsertOrUpdate(ctx, entry); err != nil {
@@ -252,7 +251,6 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[strin
 			isTaskCreated := createTasksIfNeeded(ctx, entry)
 			if isTaskCreated {
 				tasksCreated = append(tasksCreated, newTaskDetails(entry))
-				entry.TaskCount = 1
 			}
 			if err := control.InsertOrUpdate(ctx, entry); err != nil {
 				return err
@@ -329,7 +327,6 @@ func JoinInvocationResult(ctx context.Context, buildID, invocationProject string
 		isTaskCreated := createTasksIfNeeded(ctx, entry)
 		if isTaskCreated {
 			createdTask = newTaskDetails(entry)
-			entry.TaskCount = 1
 		}
 
 		if err := control.InsertOrUpdate(ctx, entry); err != nil {

@@ -269,11 +269,8 @@ CREATE TABLE Ingestions (
   PresubmitJoinedTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
   -- The Spanner commit time the row last last updated.
   LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-  -- The number of test result ingestion tasks have been created for this
-  -- invocation.
-  -- Used to avoid duplicate scheduling of ingestion tasks. If the page_index
-  -- is the index of the page being processed, an ingestion task for the next
-  -- page will only be created if (page_index + 1) == TaskCount.
+  -- Deprecated. Can remove July 2024 or earlier if recent LUCI Analysis
+  -- has been rolled to prod and is unlikely to be rolled back.
   TaskCount INT64,
 ) PRIMARY KEY (BuildId)
 -- 90 days retention, plus some margin (10 days) to ensure ingestion records
@@ -736,9 +733,9 @@ CREATE TABLE Checkpoints (
   -- For example, the ResultDB invocation being ingested.
   ResourceId STRING(MAX) NOT NULL,
   -- The name of process for which checkpointing is occuring. For example,
-  -- "result-ingestion".
+  -- "result-ingestion/schedule-continuation".
   -- Used to namespace checkpoints between processes.
-  -- Valid pattern: ^[a-z0-9\-]{1,64}$.
+  -- Valid pattern: ^[a-z0-9\-/]{1,64}$.
   ProcessId STRING(MAX) NOT NULL,
   -- A uniqifier for the checkpoint.
   -- This could be the page number processed, or the starting test identifier

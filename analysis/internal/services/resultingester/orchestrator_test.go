@@ -25,9 +25,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
+	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/gerrit"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
@@ -74,6 +77,7 @@ func TestSchedule(t *testing.T) {
 func TestOrchestrator(t *testing.T) {
 	Convey(`TestOrchestrator`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
+		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -120,7 +124,7 @@ func TestOrchestrator(t *testing.T) {
 		}
 
 		notification := &rdbpb.InvocationReadyForExportNotification{
-			ResultdbHost:        "fake-host",
+			ResultdbHost:        "fake.rdb.host",
 			Invocation:          "invocations/test-invocation-name",
 			InvocationRealm:     "invproject:inv",
 			RootInvocation:      "invocations/test-root-invocation-name",
@@ -138,17 +142,39 @@ func TestOrchestrator(t *testing.T) {
 			Verdicts:         mockedQueryRunTestVerdictsRsp().RunTestVerdicts,
 		}
 
-		Convey(`With sources`, func() {
+		task := &taskspb.IngestTestResults{
+			Notification: notification,
+			PageToken:    "expected_token",
+			TaskIndex:    1,
+		}
+		expectedContinuationTask := &taskspb.IngestTestResults{
+			Notification: notification,
+			PageToken:    "continuation_token",
+			TaskIndex:    2,
+		}
+
+		expectedCheckpoint := checkpoints.Checkpoint{
+			Key: checkpoints.Key{
+				Project:    "rootproject",
+				ResourceID: "fake.rdb.host/test-root-invocation-name/test-invocation-name",
+				ProcessID:  "result-ingestion/schedule-continuation",
+				Uniquifier: "1",
+			},
+			// Creation and expiry time not validated.
+		}
+
+		Convey(`Baseline`, func() {
 			setupGetInvocationMock()
 			setupQueryRunTestVariantsMock()
-			err := o.run(ctx, &taskspb.IngestTestResults{
-				Notification: notification,
-				PageToken:    "expected_token",
-			})
+			err := o.run(ctx, task)
 			So(err, ShouldBeNil)
 
 			So(testIngestor.called, ShouldBeTrue)
 			So(testIngestor.gotInputs, ShouldResembleProto, expectedInputs)
+
+			// Expect continuation task.
+			verifyContinuationTask(skdr, expectedContinuationTask)
+			verifyCheckpoints(ctx, expectedCheckpoint)
 		})
 		Convey(`Without sources`, func() {
 			notification.Sources = nil
@@ -156,14 +182,48 @@ func TestOrchestrator(t *testing.T) {
 
 			setupGetInvocationMock()
 			setupQueryRunTestVariantsMock()
-			err := o.run(ctx, &taskspb.IngestTestResults{
-				Notification: notification,
-				PageToken:    "expected_token",
-			})
+			err := o.run(ctx, task)
 			So(err, ShouldBeNil)
 
 			So(testIngestor.called, ShouldBeTrue)
 			So(testIngestor.gotInputs, ShouldResembleProto, expectedInputs)
+
+			// Expect continuation task.
+			verifyContinuationTask(skdr, expectedContinuationTask)
+			verifyCheckpoints(ctx, expectedCheckpoint)
+		})
+		Convey(`Continuation previously scheduled`, func() {
+			// Create a checkpoint for the previous scheduling.
+			err := checkpoints.SetForTesting(ctx, expectedCheckpoint)
+			So(err, ShouldBeNil)
+
+			setupGetInvocationMock()
+			setupQueryRunTestVariantsMock()
+			err = o.run(ctx, task)
+			So(err, ShouldBeNil)
+
+			So(testIngestor.called, ShouldBeTrue)
+			So(testIngestor.gotInputs, ShouldResembleProto, expectedInputs)
+
+			// Expect no further continuation task.
+			verifyContinuationTask(skdr, nil)
+			verifyCheckpoints(ctx, expectedCheckpoint)
+		})
+		Convey(`Final page of results`, func() {
+			setupGetInvocationMock()
+			setupQueryRunTestVariantsMock(func(qrtvr *rdbpb.QueryRunTestVerdictsResponse) {
+				qrtvr.NextPageToken = ""
+			})
+			err := o.run(ctx, task)
+			So(err, ShouldBeNil)
+
+			So(testIngestor.called, ShouldBeTrue)
+			So(testIngestor.gotInputs, ShouldResembleProto, expectedInputs)
+
+			// Expect no continuation task.
+			verifyContinuationTask(skdr, nil)
+			// Expect no checkpoint.
+			verifyCheckpoints(ctx)
 		})
 	})
 }
@@ -184,4 +244,34 @@ func (t *testIngester) Ingest(ctx context.Context, inputs Inputs) error {
 	t.gotInputs = inputs
 	t.called = true
 	return nil
+}
+
+func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *taskspb.IngestTestResults) {
+	count := 0
+	for _, pl := range skdr.Tasks().Payloads() {
+		if pl, ok := pl.(*taskspb.IngestTestResults); ok {
+			So(pl, ShouldResembleProto, expectedContinuation)
+			count++
+		}
+	}
+	if expectedContinuation != nil {
+		So(count, ShouldEqual, 1)
+	} else {
+		So(count, ShouldEqual, 0)
+	}
+}
+
+func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) {
+	result, err := checkpoints.ReadAllForTesting(span.Single(ctx))
+	So(err, ShouldBeNil)
+
+	var wantKeys []checkpoints.Key
+	var gotKeys []checkpoints.Key
+	for _, c := range expected {
+		wantKeys = append(wantKeys, c.Key)
+	}
+	for _, c := range result {
+		gotKeys = append(gotKeys, c.Key)
+	}
+	So(gotKeys, ShouldResemble, wantKeys)
 }

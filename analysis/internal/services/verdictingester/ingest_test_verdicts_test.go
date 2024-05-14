@@ -17,6 +17,7 @@ package verdictingester
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"sort"
 	"strings"
 	"testing"
@@ -45,6 +46,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -222,7 +224,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 						Position: 111888,
 					},
 					HasInvocation:        true,
-					ResultdbHost:         "results.api.cr.dev",
+					ResultdbHost:         "test.results.api.cr.dev",
 					IsIncludedByAncestor: false,
 					GardenerRotations:    []string{"rotation1", "rotation2"},
 				},
@@ -238,19 +240,28 @@ func TestIngestTestVerdicts(t *testing.T) {
 					CreationTime: timestamppb.New(time.Date(2021, time.April, 1, 2, 3, 4, 5, time.UTC)),
 				},
 				PageToken: "expected_token",
-				TaskIndex: 0,
+				TaskIndex: 1,
 			}
 			expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
 			expectedContinuation.PageToken = "continuation_token"
-			expectedContinuation.TaskIndex = 1
+			expectedContinuation.TaskIndex = 2
 
 			ingestionCtl :=
 				control.NewEntry(0).
 					WithBuildID(control.BuildID(bHost, testBuildID)).
 					WithBuildResult(proto.Clone(payload.Build).(*ctrlpb.BuildResult)).
 					WithPresubmitResult(proto.Clone(payload.PresubmitRun).(*ctrlpb.PresubmitResult)).
-					WithTaskCount(1).
 					Build()
+
+			expectedCheckpoint := checkpoints.Checkpoint{
+				Key: checkpoints.Key{
+					Project:    "project",
+					ResourceID: fmt.Sprintf("test.results.api.cr.dev/build-%v", testBuildID),
+					ProcessID:  "verdict-ingestion",
+					Uniquifier: "schedule-continuation/1",
+				},
+				// Creation and expiry time not validated.
+			}
 
 			Convey(`First task`, func() {
 				setupGetInvocationMock()
@@ -267,7 +278,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Expect a continuation task to be created.
 				verifyContinuationTask(skdr, expectedContinuation)
-				ingestionCtl.TaskCount = ingestionCtl.TaskCount + 1 // Expect to have been incremented.
+				verifyCheckpoints(ctx, expectedCheckpoint)
 				verifyIngestionControl(ctx, ingestionCtl)
 				verifyTestResults(ctx, partitionTime)
 				verifyClustering(chunkStore, clusteredFailures)
@@ -276,7 +287,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 			})
 			Convey(`Last task`, func() {
 				payload.TaskIndex = 10
-				ingestionCtl.TaskCount = 11
+				expectedCheckpoint.Uniquifier = "schedule-continuation/10"
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock(func(rsp *rdbpb.QueryTestVariantsResponse) {
@@ -296,6 +307,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				// As this is the last task, do not expect a continuation
 				// task to be created.
 				verifyContinuationTask(skdr, nil)
+				verifyCheckpoints(ctx) // Expect no checkpoints to be created.
 				verifyIngestionControl(ctx, ingestionCtl)
 				verifyTestResults(ctx, partitionTime)
 				verifyClustering(chunkStore, clusteredFailures)
@@ -306,13 +318,14 @@ func TestIngestTestVerdicts(t *testing.T) {
 			Convey(`Retry task after continuation task already created`, func() {
 				// Scenario: First task fails after it has already scheduled
 				// its continuation.
-				ingestionCtl.TaskCount = 2
+				err := checkpoints.SetForTesting(ctx, expectedCheckpoint)
+				So(err, ShouldBeNil)
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
 				setupConfig(ctx, cfg)
 
-				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
+				_, err = control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
 				// Act
@@ -324,6 +337,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				// Do not expect a continuation task to be created,
 				// as it was already scheduled.
 				verifyContinuationTask(skdr, nil)
+				verifyCheckpoints(ctx, expectedCheckpoint)
 				verifyIngestionControl(ctx, ingestionCtl)
 				verifyTestResults(ctx, partitionTime)
 				verifyClustering(chunkStore, clusteredFailures)
@@ -1417,4 +1431,19 @@ func verifyIngestionControl(ctx context.Context, expected *control.Entry) {
 	e.LastUpdated = a.LastUpdated
 
 	So(a, ShouldResemble, e)
+}
+
+func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) {
+	result, err := checkpoints.ReadAllForTesting(span.Single(ctx))
+	So(err, ShouldBeNil)
+
+	var wantKeys []checkpoints.Key
+	var gotKeys []checkpoints.Key
+	for _, c := range expected {
+		wantKeys = append(wantKeys, c.Key)
+	}
+	for _, c := range result {
+		gotKeys = append(gotKeys, c.Key)
+	}
+	So(gotKeys, ShouldResemble, wantKeys)
 }
