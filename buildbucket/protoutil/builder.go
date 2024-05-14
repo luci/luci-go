@@ -19,8 +19,9 @@ import (
 	"regexp"
 	"strings"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 var (
