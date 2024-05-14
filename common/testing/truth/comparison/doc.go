@@ -12,148 +12,150 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package comparison contains symbols for making your own [Comparison]
-// implementations for use with [go.chromium.org/luci/common/testing/assert].
+// Package comparison contains symbols for making your own comparison.Func
+// implementations for use with [go.chromium.org/luci/common/testing/truth].
 //
-// Please see [go.chromium.org/luci/common/testing/assert/should] for a set of
-// ready-made Comparisons.
+// Please see [go.chromium.org/luci/common/testing/truth/should] for a set of
+// ready-made comparison functions.
 //
-// # Implementing Comparisons
+// # Implementing comparisons
 //
-// Comparison implementations will be used in the context of an
-// [go.chromium.org/luci/common/testing/assert.Assert] or a
-// [go.chromium.org/luci/common/testing/assert.Check] call like:
+// Comparison implementations will be used in the context of
+// [go.chromium.org/luci/common/testing/truth/assert] and
+// [go.chromium.org/luci/common/testing/truth/check] like:
 //
-//	Assert(t, actualValue, comparisonName(comparisonArguments))
-//	if Check(t, actualValue, comparisonName(comparisonArguments)) {
+//	assert.That(t, actualValue, comparisonName(comparisonArguments))
+//
+//	if check.That(t, actualValue, comparisonName(comparisonArguments)) {
 //	   // code if comparison passed
 //	}
 //
 // With this in mind, try to pick comparisonName so that it reads well in this
 // context. The default set of comparison implementations have the form
-// "should.XXX", e.g. "should.Equal" or "should.NotBeNil" which work well in
-// this context. If you are implementing comparisons in your own tests, you can
-// achieve a similar result by dropping the ".", e.g. "shouldBeComplete", but
-// you can also use other natural syntax like "isConsistentWith(databaseKey)",
-// etc.
+// "should.XXX", e.g. "should.Equal" or "should.NotBeNil" which work well here.
+// If you are implementing comparisons in your own tests, you can make
+// a similar Failure by dropping the ".", e.g. "shouldBeComplete", but you can
+// also use other natural syntax like "isConsistentWith(databaseKey)", etc.
 //
-// Typically, Comparisons require additional data to produce a [*OldResult] for
+// Typically, comparisons require additional data to produce a [*Failure] for
 // a given value. Implementations which take additional data typically look
 // like:
 //
-//	func isConsistentWith(databaseKey *concreteType) results.Comparison[expectedType] {
-//	  return func(actualValue expectedType) *results.Result {
+//	func isConsistentWith(databaseKey *concreteType) comparison.Func[expectedType] {
+//	  return func(actualValue expectedType) *comparison.Failure {
 //	     // compare databaseKey with actualValue here
 //	  }
 //	}
 //
-// Functions returning Comparisons may be generic, if necessary, but frequently
-// when writing them in package-specific contexts, generic type arguments are
+// Functions returning comparison.Func may be generic, if necessary, but when
+// writing them in package-specific contexts, generic type arguments are usually
 // not needed. In general, if you can make your function accept a narrow,
-// specific, type, it will be better. If you feel like you really need to make a
-// generic Comparison or function returning a Comparison, please discuss
-// directly contributing it to [go.chromium.org/luci/common/testing/assert/should].
+// specific, type, it will be better. If you feel like you really need to make
+// a generic comparison or function returning a comparison, please discuss
+// directly contributing it to
+// [go.chromium.org/luci/common/testing/truth/should].
 //
-// When the assert library uses a Comparison, it will attempt to losslessly
-// convert the actual value to the T type of the Comparison. The high-level
+// When the truth library uses a comparison with a 'loosely' variant (e.g.
+// truth.AssertLoosely, or assert.Loosely), it will attempt to losslessly
+// convert the actual value to the T type of the comparison.Func. The high-level
 // takeaway is that it implements simple conversions which preserve the actual
 // data, but may adjust the type. These conversion rules ONLY look at the types,
-// not the value, so e.g. 'int64(1) -> float32 will not work, even though
-// float32(1) is storable exactly.
+// not the value, so e.g. 'int64(1) -> float32' will not work, even though
+// float32(1) is storable exactly, because in general, not all int64 fit into
+// float32.
 //
-// See [go.chromium.org/luci/common/data/convert.LosslesslyTo] for how this conversion
-// works in more detail.
+// See [go.chromium.org/luci/common/data/convert.LosslesslyTo] for how this
+// conversion works in more detail.
 //
 // With that in mind, if you don't want any of this conversion to take place
 // (e.g. customStringType -> string, int8 -> int64, etc.), you can use "any" for
-// T in the Comparison.
+// T in the comparison (in which case your comparison will need to do work to
+// pull supported types out itself via type switches or reflect) OR you can use
+// the `truth.Assert`, `truth.Check`, `assert.That`, or `check.That` functions
+// to ensure that the actual value exactly matches the comparison.Func[T] type
+// at compile-time.
 //
-// # Crafting *Results
+// # Crafting *Failure
 //
-// After your [Comparison] makes its evaluation of the actual data, if it
-// fails, it needs to return a [*OldResult].
+// After your [Func] makes its evaluation of the actual data, if it
+// fails, it needs to return a [*Failure], which is a proto message.
 //
-// The cardinal rule to follow is that [*OldResult] should contain
-// exactly the necessary+sufficient information to let a reader understand why
-// the Comparison failed. Try to avoid populating Values with redundant information
-// just because it's easily available.
+// As a proto, you can construct [*Failure] however you like, but most
+// comparison implementations will use [NewFailureBuilder] to construct
+// a [*Failure] using a 'fluent' interface.
 //
-// For example, it is not necessary to have all of the following in a comparison named
-// 'shouldContain':
+// The cardinal rule to follow is that [*Failure] should contain exactly the
+// information which allows the reader understand why the comparison failed. If
+// you have Findings which are possibly redundant, you can mark them with the
+// 'Warn' level to hide them from the test output until the user passes `go test
+// -v`.
 //
-// 1) a 'Because' line explaining that "a" is not in "b".
-// 2) the actual value of "a"
-// 3) the expected value of "b"
-// 4) a Diff demonstrating that "a" is not in "b".
+// For example, in a comparison named 'shouldEqual', including all of the
+// following would be redundant, even though they are all individually helpful:
 //
-// (4) alone would be enough.
+//	Check shouldEqual[string] FAILED
+//	  Because: "actual" does not equal "hello"
+//	  Actual: "actual"
+//	  Expected: "hello"
+//	  Diff: \
+//	        string(
+//	      -  "actual",
+//	      +  "hello",
+//	        )
 //
-// A *Result has a couple different pieces:
+// (4) alone would be enough, but if necessary, you could have (2) and (3)
+// marked with a warning-level level, in case the diff can be hard to interpret.
 //
-//   - The name of the Comparison (or the function which generated the
-//     Comparison)
-//   - (optional) A series of "Values".
-//   - (optional) A diff of two pieces of data.
+// A *Failure has a couple different pieces:
 //
-// The name of the *Result is always required, and will be rendered like:
+//   - The name of the comparison (or the function which generated the
+//     comparison), its type arguments (if any), and any particularly
+//     helpful expected arguments (e.g. the expected length of
+//     should.HaveLength).
+//   - Zero or more "Findings".
+//
+// The name of the *Failure is always required, and will be rendered like:
 //
 //	resultName FAILED
 //
-// For some Comparisons (like should.BeTrue or should.NotBeEmpty, etc.) this
+// For some comparisons (like should.BeTrue or should.NotBeEmpty, etc.) this
 // is enough context for the user to figure out what happened.
 //
-// However, most Comparisons will need to give additional context to the
-// failure, which is where values and diff come in.
+// However, most comparisons will need to give additional context to the
+// failure, which is where findings come in.
 //
-// Values are named data items, and can be added with [*OldResult.Value] or
-// [*OldResult.Valuef]. These will be rendered under the name like:
+// Findings are named data items in sequence. These will be rendered under the
+// name like:
 //
 //	resultName FAILED
 //	  ValueName: value contents
 //
-// If you use Value() to add the data item, it will be rendered with
-// [fmt.Sprintf]("%#v"). If you use Valuef(), this allows you to directly set
-// the text which will be displayed. Values which have newlines in their
-// representation will be split across lines like:
+// Finding values are a list of lines - in the event that the value contains
+// multiple lines, you'll see it rendered like:
 //
 //	resultName FAILED
-//	  ValueName:
-//	  | This is a very long
-//	  | value with
-//	  | linebreaks.
+//	  ValueName: \
+//	    This is a very long
+//	    value with
+//	    multiple lines.
 //
-// By convention, this package defines a couple different common labels w/
-// helper functions which are useful in many, but not all, Comparisons.
+// By convention, this package defines a couple different common Finding labels
+// w/ helper functions which are useful in many, but not all, comparisons.
 //
-//   - [*Result.Because]: This formats a string with fmt.Sprintf and sets it to
-//     have the "Because" name. This should be a descriptive explaination of why
-//     the Comparison failed.
-//   - [*OldResult.Actual]/[*Result.Actualf]: These can be used to reflect the
-//     "actual" value of the assertion back to the reader of the assertion
-//     failure. Sometimes this is useful (e.g. should.AlmostEqual reflects the
-//     actual value back, which is a float32). However, sometimes this is not
-//     useful, e.g. when the actual value is a gigantic struct (see
-//     [*OldResult.Diff]).
-//   - [*OldResult.Expected]/[*Result.Expected]: These can be used to reflect the
-//     "expected" value of the comparison back to the reader of the assertion
-//     failure. This has very similar tradeoffs to Actual/Actualf.
+//   - "Because" - This Finding should have a descriptive explanation of why
+//     the comparison failed.
+//   - "Actual"/"Expected" - These reflect the actual or expected value of the
+//     assertion back to the reader of the assertion failure. Sometimes this is
+//     useful (e.g. should.AlmostEqual[float32] reflects the actual value back).
+//     However, sometimes this is not useful, e.g. when the value is a gigantic
+//     struct.
+//   - "Diff" - This is the difference between Actual and Expected, usually
+//     computed with cmp.Diff (or, alternately, as a unified diff). These
+//     Findings should be marked with a diff type hint, so that they can have
+//     syntax coloring applied to them when rendered in a terminal.
 //
-// Finally, *Result can have a Diff, which is what you will likely want to use
-// if the actual and expected values have large representations (long lists,
-// structs, potentially large maps, etc.). This is usually set with [*OldResult.Diff],
-// and will use [github.com/google/go-cmp] to generate the difference between
-// two arbitrary objects. This function accepts zero or more
-// [github.com/google/go-cmp/cmp.Option] objects, which can allow you to compare
-// more advanced structures, or structures which contain important unexported
-// fields, etc.
-//
-// Diff will also generate a simpler 1-line diff for simple object kinds
-// (numbers, strings, etc.) if both objects have matching types and have
-// small representations (e.g. for strings, it would only use this form if the
-// length of both strings sum to less than 60 characters or so).
-//
-// By default, the diff will print a hint like "(-actual, +expected)" or "(actual
-// != expected)" to help orient the reader about how to interpret the diff. This
-// hint works well, but occasionally a Comparison may need to set different
-// labels for these. To do this, refer to the [*OldResult.DiffHintNames] method.
+// As the implementor of the comparison, it is up to you to decide what Findings
+// are the best way to explain to the test failure reader what happened and,
+// potentially why. Sometimes none of these finding labels will be the right way
+// to communicate that, and that's OK :).
 package comparison
