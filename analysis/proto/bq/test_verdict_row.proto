@@ -35,7 +35,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 //
 // BigQuery tables using this schema will use the following settings:
 // - Partition by TIMESTAMP_TRUNC(partition_time, DAY),
-//   retain data for 540 days.
+//   retain data for 510 days.
 // - Cluster by project, test_id.
 //
 // NextId: 17

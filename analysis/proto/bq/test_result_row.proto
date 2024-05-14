@@ -1,0 +1,183 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq;
+
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
+import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
+import "go.chromium.org/luci/analysis/proto/v1/test_metadata.proto";
+import "go.chromium.org/luci/analysis/proto/v1/test_verdict.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
+
+// Represents a test result exported to BigQuery.
+//
+// A test result is the outcome of a single execution of a test variant
+// (a way of running a test) in an invocation (a container of test
+// results, such as a build).
+//
+// BigQuery tables using this schema will use the following settings:
+// - Partition by TIMESTAMP_TRUNC(partition_time, DAY),
+//   retain data for 510 days.
+// - Cluster by project, test_id.
+//
+// NextId: 23
+message TestResultRow {
+  // The LUCI Project. E.g. "chromium".
+  string project = 1;
+
+  // Is a unique identifier of the test in a LUCI project.
+  // Refer to TestResult.test_id for details.
+  string test_id = 2;
+
+  // Describes one specific way of running the test,
+  // e.g. a specific bucket, builder and a test suite.
+  //
+  // This will be encoded as a JSON object like
+  // {"builder":"linux-rel","os":"Ubuntu-18.04",...}
+  // to take advantage of BigQuery's JSON support, so that
+  // the query will only be billed for the variant
+  // keys it reads.
+  //
+  // In the protocol buffer, it must be a string as per
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  string variant = 3 [(bqschema.options).bq_type = "JSON"];
+
+  // A hash of the variant, encoded as lowercase hexadecimal characters.
+  // The computation is an implementation detail of ResultDB.
+  string variant_hash = 4;
+
+  message InvocationRecord {
+    // The ID of the invocation.
+    string id = 1;
+
+    // The LUCI Realm the invocation exists under.
+    // For example, "chromium:try".
+    string realm = 2;
+  }
+
+  // Invocation is the ResultDB invocation marked is_export_root
+  // that the test result is being exported under.
+  //
+  // Note: The test result may not have been directly uploaded to
+  // this invocation, but rather one of its included invocations.
+  // See `parent`.
+  InvocationRecord invocation = 5;
+
+  // Partition_time is used to partition the table.
+  // It is the time when exported invocation was created in Spanner.
+  // Note: it is NOT the time when the row is inserted into BigQuery table.
+  // https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
+  // mentions "The partitioning column must be a top-level field."
+  // So we keep this column here instead of adding the CreateTime to InvocationRecord.
+  google.protobuf.Timestamp partition_time = 6;
+
+  // ParentInvocationRecord for a test result is the immediate parent invocation
+  // that directly contains the test result.
+  message ParentInvocationRecord {
+    // The ID of the invocation.
+    string id = 1;
+
+    // Tags represents Invocation-level string key-value pairs.
+    // A key can be repeated.
+    repeated luci.analysis.v1.StringPair tags = 2;
+
+    // The LUCI Realm the invocation exists under.
+    // For example, "chromium:try".
+    string realm = 3;
+
+    // Arbitrary JSON object that contains structured, domain-specific properties
+    // of the invocation. Stored here stringified as this is the only protocol
+    // buffer type that maps to the JSON BigQuery type:
+    // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+    string properties = 4 [(bqschema.options).bq_type = "JSON"];
+  }
+
+  // Parent contains info of the result's immediate parent invocation.
+  ParentInvocationRecord parent = 7;
+
+  // The global identifier of a test result in ResultDB.
+  // Format:
+  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
+  string name = 8;
+
+  // Identifies a test result in a given invocation and test id.
+  string result_id = 9;
+
+  // Expected is a flag indicating whether the result of test case execution is
+  // expected. Refer to TestResult.Expected for details.
+  bool expected = 10;
+
+  // Status of the test result.
+  luci.analysis.v1.TestResultStatus status = 11;
+
+  // A human-readable explanation of the result, in HTML.
+  // MUST be sanitized before rendering in the browser.
+  string summary_html = 12;
+
+  // The point in time when the test case started to execute.
+  google.protobuf.Timestamp start_time = 13;
+
+  // Duration of the test case execution in seconds.
+  double duration_secs = 14;
+
+  // Tags contains metadata for this test result.
+  // It might describe this particular execution or the test case.
+  repeated luci.analysis.v1.StringPair tags = 15;
+
+  // Information about failed tests.
+  // e.g. the assertion failure message.
+  luci.analysis.v1.FailureReason failure_reason = 16;
+
+  // Reasoning behind a test skip, in machine-readable form.
+  // Only set when status is SKIP.
+  // It is the string representation of luci.analysis.v1.SkipReason when
+  // specified and "" when the skip reason is unspecified.
+  string skip_reason = 17;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the test result. Stored here stringified as this is the only protocol
+  // buffer type that maps to the JSON BigQuery type:
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  string properties = 18 [(bqschema.options).bq_type = "JSON"];
+
+  // The code sources tested. Obtained from one of the verdict's test results.
+  // If the invocation which contained the test result
+  // specified that code sources directly, this is those sources.
+  // If the code sources were marked as are inherited from the including
+  // invocation, this is the resolved code sources (if they could be resolved).
+  // Unset otherwise.
+  luci.analysis.v1.Sources sources = 19;
+
+  // The branch in source control that was tested, if known.
+  // For example, the `refs/heads/main` branch in the `chromium/src` repo
+  // hosted by `chromium.googlesource.com`.
+  // This is a subset of the information in the `sources` field.
+  luci.analysis.v1.SourceRef source_ref = 20;
+
+  // Hash of the source_ref field, as 16 lowercase hexadecimal characters.
+  // Can be used to uniquely identify a branch in a source code
+  // version control system.
+  string source_ref_hash = 21;
+
+  // Metadata of the test case,
+  // e.g. the original test name and test location.
+  luci.analysis.v1.TestMetadata test_metadata = 22;
+}
