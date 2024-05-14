@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -245,4 +246,27 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 	s.ac.schedule(uts...)
 
 	return &emptypb.Empty{}, nil
+}
+
+// UpdateInvocation implement sinkpb.SinkServer
+func (s *sinkServer) UpdateInvocation(ctx context.Context, sinkin *sinkpb.UpdateInvocationRequest) (*sinkpb.Invocation, error) {
+	// We are running this method (but ignoring its result) to validate the
+	// mask only refers to fields in the sinkpb.Invocation proto.
+	if _, err := mask.FromFieldMask(sinkin.UpdateMask, sinkin.Invocation, false, true); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "update_mask: %s", err)
+	}
+	inv, err := s.cfg.Recorder.UpdateInvocation(ctx, &pb.UpdateInvocationRequest{
+		Invocation: &pb.Invocation{
+			Name:               pbutil.InvocationName(s.cfg.invocationID),
+			ExtendedProperties: sinkin.Invocation.GetExtendedProperties(),
+		},
+		UpdateMask: sinkin.GetUpdateMask(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	ret := &sinkpb.Invocation{
+		ExtendedProperties: inv.GetExtendedProperties(),
+	}
+	return ret, nil
 }

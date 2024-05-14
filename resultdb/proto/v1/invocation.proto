@@ -256,10 +256,9 @@ message Invocation {
   // The total size of the map (as measured by proto.Size())
   // is limited to <= 100,000 bytes.
   //
-  // Valid field masks:
-  //  * extended_properties
-  //  * extended_properties.exception_occurances
-  //  * extended_properties.test_script_metrics
+  // The following paths can be used for field masks:
+  // * "extended_properties" to target the whole extended_properties,
+  // * "extended_properties.some_key" to target one key of extended_properties.
   map<string, google.protobuf.Struct> extended_properties = 22;
 }
 

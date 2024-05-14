@@ -143,6 +143,7 @@ type mockRecorder struct {
 	batchCreateTestResults      func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error)
 	batchCreateArtifacts        func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error)
 	batchCreateTestExonerations func(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (*pb.BatchCreateTestExonerationsResponse, error)
+	updateInvocation            func(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error)
 }
 
 func (m *mockRecorder) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*pb.BatchCreateTestResultsResponse, error) {
@@ -162,6 +163,13 @@ func (m *mockRecorder) BatchCreateArtifacts(ctx context.Context, in *pb.BatchCre
 func (m *mockRecorder) BatchCreateTestExonerations(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest, opts ...grpc.CallOption) (*pb.BatchCreateTestExonerationsResponse, error) {
 	if m.batchCreateTestExonerations != nil {
 		return m.batchCreateTestExonerations(ctx, in)
+	}
+	return nil, nil
+}
+
+func (m *mockRecorder) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	if m.updateInvocation != nil {
+		return m.updateInvocation(ctx, in)
 	}
 	return nil, nil
 }

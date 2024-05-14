@@ -58,3 +58,20 @@ func (s *DecoratedSink) ReportInvocationLevelArtifacts(ctx context.Context, req 
 	}
 	return
 }
+
+func (s *DecoratedSink) UpdateInvocation(ctx context.Context, req *UpdateInvocationRequest) (rsp *Invocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UpdateInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UpdateInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UpdateInvocation", rsp, err)
+	}
+	return
+}

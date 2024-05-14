@@ -282,10 +282,9 @@ type Invocation struct {
 	// The total size of the map (as measured by proto.Size())
 	// is limited to <= 100,000 bytes.
 	//
-	// Valid field masks:
-	//   - extended_properties
-	//   - extended_properties.exception_occurances
-	//   - extended_properties.test_script_metrics
+	// The following paths can be used for field masks:
+	// * "extended_properties" to target the whole extended_properties,
+	// * "extended_properties.some_key" to target one key of extended_properties.
 	ExtendedProperties map[string]*structpb.Struct `protobuf:"bytes,22,rep,name=extended_properties,json=extendedProperties,proto3" json:"extended_properties,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 

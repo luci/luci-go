@@ -17,6 +17,8 @@ syntax = "proto3";
 package luci.resultsink.v1;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
 import "go.chromium.org/luci/resultdb/sink/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
@@ -39,6 +41,10 @@ service Sink {
   // To upload result-level artifact, use ReportTestResults instead.
   rpc ReportInvocationLevelArtifacts(ReportInvocationLevelArtifactsRequest)
       returns (google.protobuf.Empty) {};
+
+  // Update an invocation
+  rpc UpdateInvocation(UpdateInvocationRequest)
+      returns (Invocation) {};
 }
 
 message ReportTestResultsRequest {
@@ -56,4 +62,26 @@ message ReportInvocationLevelArtifactsRequest {
   // Invocation-level artifacts to report.
   // The map key is an artifact id.
   map<string, Artifact> artifacts = 1;
+}
+
+message UpdateInvocationRequest {
+  // Invocation to update.
+  Invocation invocation = 1;
+
+  // The list of fields to be updated. See https://google.aip.dev/161.
+  //
+  // The following paths can be used for extended_properties:
+  // * "extended_properties" to target the whole extended_properties,
+  // * "extended_properties.some_key" to target one key of extended_properties.
+  // See sink/sink_server.go for implementation.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// A local equivalent of the luci.resultdb.v1.Invocation message.
+// The 'name' field is omitted as result sink keeps track of which invocation
+// is being uploaded to.
+message Invocation {
+  // See 'extended_properties' field of the luci.resultdb.v1.Invocation message
+  // for details.
+  map<string, google.protobuf.Struct> extended_properties = 1;
 }

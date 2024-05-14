@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -552,5 +553,55 @@ func TestReportInvocationLevelArtifacts(t *testing.T) {
 		// Duplicated artifact will be rejected.
 		_, err = sink.ReportInvocationLevelArtifacts(ctx, req)
 		So(err, ShouldErrLike, ` has already been uploaded`)
+	})
+}
+
+func TestUpdateInvocation(t *testing.T) {
+	t.Parallel()
+
+	Convey("UpdateInvocation", t, func() {
+		ctx := metadata.NewIncomingContext(
+			context.Background(),
+			metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+
+		cfg := testServerConfig("", "secret")
+		sink, err := newSinkServer(ctx, cfg)
+		So(err, ShouldBeNil)
+		defer closeSinkServer(ctx, sink)
+
+		sinkInv := &sinkpb.Invocation{
+			ExtendedProperties: map[string]*structpb.Struct{
+				"abc": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":     structpb.NewStringValue("some.package.MyMessage"),
+						"child_key": structpb.NewStringValue("child_value"),
+					},
+				},
+			},
+		}
+
+		Convey("invalid update mask", func() {
+			req := &sinkpb.UpdateInvocationRequest{
+				Invocation: sinkInv,
+				UpdateMask: &fieldmaskpb.FieldMask{
+					Paths: []string{"deadline"},
+				},
+			}
+			_, err := sink.UpdateInvocation(ctx, req)
+			So(err, ShouldErrLike, "update_mask", "does not exist in message Invocation")
+		})
+
+		Convey("valid update mask", func() {
+			req := &sinkpb.UpdateInvocationRequest{
+				Invocation: sinkInv,
+				UpdateMask: &fieldmaskpb.FieldMask{
+					Paths: []string{"extended_properties.abc"},
+				},
+			}
+			_, err := sink.UpdateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+		})
 	})
 }
