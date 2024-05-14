@@ -70,19 +70,3 @@ func (fb *FailureBuilder) SmartCmpDiff(actual, expected any, extraCmpOpts ...cmp
 
 	return fb
 }
-
-// RenameFinding finds the first Finding with the name `oldname` and renames it
-// to `newname`.
-//
-// Does nothing if `oldname` is not one of the current Findings.
-func (fb *FailureBuilder) RenameFinding(oldname, newname string) *FailureBuilder {
-	fb.fixNilFailure()
-
-	for _, finding := range fb.Findings {
-		if finding.Name == oldname {
-			finding.Name = newname
-		}
-	}
-
-	return fb
-}

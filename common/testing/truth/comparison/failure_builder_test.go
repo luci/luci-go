@@ -152,3 +152,96 @@ func TestActualExpected(t *testing.T) {
 		})
 	}
 }
+
+func TestAddComparisonArgs(t *testing.T) {
+	t.Parallel()
+
+	fb := NewFailureBuilder("hello")
+	if diff := typed.Diff(fb.Failure, &Failure{
+		Comparison: &Failure_ComparisonFunc{
+			Name: "hello",
+		},
+	}); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+
+	fb.AddComparisonArgs(1, 2, "hi")
+	if diff := typed.Diff(fb.Failure, &Failure{
+		Comparison: &Failure_ComparisonFunc{
+			Name:      "hello",
+			Arguments: []string{"1", "2", "hi"},
+		},
+	}); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+}
+
+func TestGetFailure(t *testing.T) {
+	t.Parallel()
+
+	fb := NewFailureBuilder("hello")
+	if diff := typed.Diff(fb.GetFailure(), nil); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+
+	fb.AddComparisonArgs(1, 2, "hi")
+	if diff := typed.Diff(fb.GetFailure(), nil); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+
+	fb.Actual("something")
+	if diff := typed.Diff(fb.GetFailure(), &Failure{
+		Comparison: &Failure_ComparisonFunc{
+			Name:      "hello",
+			Arguments: []string{"1", "2", "hi"},
+		},
+		Findings: []*Failure_Finding{
+			{Name: "Actual", Value: []string{`"something"`}},
+		},
+	}); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+}
+
+func TestRenameFinding(t *testing.T) {
+	fb := NewFailureBuilder("test")
+	fb.Expected("something")
+	fb.AddFindingf("Extra", "stuff")
+
+	// Make sure that we have the order Expected, Extra
+	if diff := typed.Diff(fb.Failure, &Failure{
+		Comparison: &Failure_ComparisonFunc{Name: "test"},
+		Findings: []*Failure_Finding{
+			{Name: "Expected", Value: []string{`"something"`}},
+			{Name: "Extra", Value: []string{"stuff"}},
+		},
+	}); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+
+	// Make sure that we have the order Morples, Extra (renaming doesn't
+	// reorder stuff)
+	fb.RenameFinding("Expected", "Morples")
+	if diff := typed.Diff(fb.Failure, &Failure{
+		Comparison: &Failure_ComparisonFunc{Name: "test"},
+		Findings: []*Failure_Finding{
+			{Name: "Morples", Value: []string{`"something"`}},
+			{Name: "Extra", Value: []string{"stuff"}},
+		},
+	}); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+
+	// Make sure that we have the same thing, renaming a finding that doesn't
+	// exist is a no-op.
+	fb.RenameFinding("NotHere", "Oh No!")
+	if diff := typed.Diff(fb.Failure, &Failure{
+		Comparison: &Failure_ComparisonFunc{Name: "test"},
+		Findings: []*Failure_Finding{
+			{Name: "Morples", Value: []string{`"something"`}},
+			{Name: "Extra", Value: []string{"stuff"}},
+		},
+	}); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+}

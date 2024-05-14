@@ -110,9 +110,13 @@ func (r RenderCLI) Failure(prefix string, f *Failure) string {
 	if args := f.GetComparison().GetTypeArguments(); len(args) > 0 {
 		testTypeArgs = fmt.Sprintf("[%s]", strings.Join(args, ", "))
 	}
+	var testArgs string
+	if args := f.GetComparison().GetArguments(); len(args) > 0 {
+		testArgs = fmt.Sprintf("(%s)", strings.Join(args, ", "))
+	}
 
 	if len(f.Findings) == 0 {
-		return fmt.Sprintf("%s%s FAILED", testName, testTypeArgs)
+		return fmt.Sprintf("%s%s%s FAILED", testName, testTypeArgs, testArgs)
 	}
 
 	findingLines := make([]string, 0, len(f.Findings))
@@ -120,5 +124,5 @@ func (r RenderCLI) Failure(prefix string, f *Failure) string {
 		findingLines = append(findingLines, r.Finding(prefix, finding))
 	}
 
-	return fmt.Sprintf("%s%s FAILED\n%s", testName, testTypeArgs, strings.Join(findingLines, "\n"))
+	return fmt.Sprintf("%s%s%s FAILED\n%s", testName, testTypeArgs, testArgs, strings.Join(findingLines, "\n"))
 }

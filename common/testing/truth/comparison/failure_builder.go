@@ -63,6 +63,18 @@ func NewFailureBuilder(comparisonName string, typeArgs ...any) *FailureBuilder {
 	return ret
 }
 
+// AddComparisonArgs adds new arguments to the Failure.ComparisonFunc formatted
+// with %v.
+func (fb *FailureBuilder) AddComparisonArgs(args ...any) *FailureBuilder {
+	fb.fixNilFailure()
+	slc := make([]string, len(args))
+	for i := range slc {
+		slc[i] = fmt.Sprintf("%v", args[i])
+	}
+	fb.Comparison.Arguments = append(fb.Comparison.Arguments, slc...)
+	return fb
+}
+
 // AddFindingf adds a new single-line Finding to this Failure with the
 // given `name`.
 //
@@ -141,4 +153,20 @@ func (fb *FailureBuilder) GetFailure() *Failure {
 		return nil
 	}
 	return fb.Failure
+}
+
+// RenameFinding finds the first Finding with the name `oldname` and renames it
+// to `newname`.
+//
+// Does nothing if `oldname` is not one of the current Findings.
+func (fb *FailureBuilder) RenameFinding(oldname, newname string) *FailureBuilder {
+	fb.fixNilFailure()
+
+	for _, finding := range fb.Findings {
+		if finding.Name == oldname {
+			finding.Name = newname
+		}
+	}
+
+	return fb
 }

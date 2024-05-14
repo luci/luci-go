@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package luci.common.testing.assert.comparison;
 
-option go_package = "go.chromium.org/luci/common/testing/assert/comparison;comparison";
+option go_package = "go.chromium.org/luci/common/testing/truth/comparison;comparison";
 
 // Failure is the factual outcome of a failing Comparison.
 //
@@ -40,15 +40,19 @@ option go_package = "go.chromium.org/luci/common/testing/assert/comparison;compa
 message Failure {
   message ComparisonFunc {
     // This is the logical name of the comparison function that produced this
-    // Failure, e.g. `should.Equal`.
+    // Failure, e.g. `should.Equal` or `should.HaveLength`.
     string name = 1;
 
-    // Optional type argument names. Will be used with comparison_name like
+    // Optional type argument names. Will be used with name like
     // `should.Equal[T[0], ...]`.
     //
     // Non-primitive types should be the short Go type name like
     // `pkgname.TypeName`.
     repeated string type_arguments = 2;
+
+    // Optional argument values. Will be used with name like
+    // `should.HaveLength(arg)`.
+    repeated string arguments = 3;
   }
   // Information about the ComparisonFunc which produced this Failure.
   ComparisonFunc comparison = 1;

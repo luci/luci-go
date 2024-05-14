@@ -222,3 +222,54 @@ func TestRenderCLIFinding(t *testing.T) {
 		},
 	}))
 }
+
+func TestRenderCLIFailureComparisonFunc(t *testing.T) {
+	type caseT struct {
+		render   RenderCLI
+		input    *Failure_ComparisonFunc
+		expected []string
+	}
+	testCase := func(tt caseT) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+			t.Helper()
+			actual := tt.render.Failure("", &Failure{Comparison: tt.input})
+
+			if diff := typed.Diff(strings.Join(tt.expected, "\n"), actual); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		}
+	}
+
+	t.Run("basic", testCase(caseT{
+		input: &Failure_ComparisonFunc{
+			Name: "basic",
+		},
+		expected: []string{`basic FAILED`},
+	}))
+
+	t.Run("basic (type args)", testCase(caseT{
+		input: &Failure_ComparisonFunc{
+			Name:          "basic",
+			TypeArguments: []string{"string", "int"},
+		},
+		expected: []string{`basic[string, int] FAILED`},
+	}))
+
+	t.Run("basic (args)", testCase(caseT{
+		input: &Failure_ComparisonFunc{
+			Name:      "basic",
+			Arguments: []string{"1", `"yo"`},
+		},
+		expected: []string{`basic(1, "yo") FAILED`},
+	}))
+
+	t.Run("basic (type args, args)", testCase(caseT{
+		input: &Failure_ComparisonFunc{
+			Name:      "basic",
+			Arguments: []string{"1", `"yo"`},
+		},
+		expected: []string{`basic(1, "yo") FAILED`},
+	}))
+
+}
