@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testverdicts
+package bqutil
 
 import (
 	"strings"
@@ -25,10 +25,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestVariantJSON(t *testing.T) {
-	Convey(`variantJSON`, t, func() {
+func TestJSON(t *testing.T) {
+	Convey(`VariantJSON`, t, func() {
 		Convey(`empty`, func() {
-			result, err := variantJSON(nil)
+			result, err := VariantJSON(nil)
 			So(err, ShouldBeNil)
 			So(result, ShouldEqual, "{}")
 		})
@@ -40,7 +40,7 @@ func TestVariantJSON(t *testing.T) {
 					"pathological-case": "\000\001\n\r\f",
 				},
 			}
-			result, err := variantJSON(variant)
+			result, err := VariantJSON(variant)
 			So(err, ShouldBeNil)
 			So(result, ShouldEqual, `{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`)
 		})

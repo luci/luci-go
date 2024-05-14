@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testverdicts
+package exporter
 
 import (
 	"time"
@@ -31,11 +31,11 @@ import (
 )
 
 // tableName is the name of the exported BigQuery table.
-const tableName = "test_verdicts"
+const tableName = "test_results"
 
 const partitionExpirationTime = 510 * 24 * time.Hour // 510 days, or 540 days minus 30 days deletion time.
 
-const rowMessage = "luci.analysis.bq.TestVerdictRow"
+const rowMessage = "luci.analysis.bq.TestResultRow"
 
 var tableMetadata *bigquery.TableMetadata
 
@@ -62,7 +62,7 @@ func init() {
 		Clustering: &bigquery.Clustering{
 			Fields: []string{"project", "test_id"},
 		},
-		Description: "Contains test verdicts produced by all LUCI Projects.",
+		Description: "Contains test results produced by all LUCI Projects.",
 		// Relax ensures no fields are marked "required".
 		Schema: schema.Relax(),
 		Labels: map[string]string{bq.MetadataVersionKey: "1"},
@@ -70,7 +70,7 @@ func init() {
 }
 
 func generateRowSchema() (schema bigquery.Schema, err error) {
-	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TestVerdictRow{})
+	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TestResultRow{})
 	// We also need to get FileDescriptorProto for StringPair, FailureReason,
 	// Sources, GitilesCommit, Changelist, TestMetadata, TestLocation and
 	// BugComponent.
@@ -89,7 +89,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 }
 
 func generateRowSchemaDescriptor() (*desc.DescriptorProto, error) {
-	m := &bqpb.TestVerdictRow{}
+	m := &bqpb.TestResultRow{}
 	descriptorProto, err := adapt.NormalizeDescriptor(m.ProtoReflect().Descriptor())
 	if err != nil {
 		return nil, err

@@ -19,14 +19,12 @@ import (
 	"context"
 	"encoding/hex"
 
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/types/known/structpb"
-
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
+	"go.chromium.org/luci/analysis/internal/bqutil"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/perms"
@@ -129,7 +127,7 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions) (*bqpb.TestVerd
 		return nil, errors.Annotate(err, "invocation").Err()
 	}
 
-	variant, err := variantJSON(tv.Variant)
+	variant, err := bqutil.VariantJSON(tv.Variant)
 	if err != nil {
 		return nil, errors.Annotate(err, "variant").Err()
 	}
@@ -159,7 +157,7 @@ func invocation(invocation *rdbpb.Invocation) (*bqpb.TestVerdictRow_InvocationRe
 	if err != nil {
 		return nil, errors.Annotate(err, "invalid invocation name %q", invocationID).Err()
 	}
-	propertiesJSON, err := MarshalStructPB(invocation.Properties)
+	propertiesJSON, err := bqutil.MarshalStructPB(invocation.Properties)
 	if err != nil {
 		return nil, errors.Annotate(err, "marshal properties").Err()
 	}
@@ -222,7 +220,7 @@ func buildbucketBuild(build *controlpb.BuildResult) *bqpb.TestVerdictRow_Buildbu
 }
 
 func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
-	propertiesJSON, err := MarshalStructPB(result.Properties)
+	propertiesJSON, err := bqutil.MarshalStructPB(result.Properties)
 	if err != nil {
 		return nil, errors.Annotate(err, "marshal properties").Err()
 	}
@@ -255,33 +253,4 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 	}
 
 	return tr, nil
-}
-
-// variantJSON returns the JSON equivalent for a variant.
-// Each key in the variant is mapped to a top-level key in the
-// JSON object.
-// e.g. `{"builder":"linux-rel","os":"Ubuntu-18.04"}`
-func variantJSON(variant *rdbpb.Variant) (string, error) {
-	return pbutil.VariantToJSON(pbutil.VariantFromResultDB(variant))
-}
-
-// MarshalStructPB serialises a structpb.Struct as a JSONPB.
-func MarshalStructPB(s *structpb.Struct) (string, error) {
-	if s == nil {
-		// There is no string value we can send to BigQuery that will
-		// interpret as a NULL value for a JSON column:
-		// - "" (empty string) is rejected as invalid JSON.
-		// - "null" is interpreted as the JSON value null, not the
-		//   absence of a value.
-		// Consequently, the next best thing is to return an empty
-		// JSON object.
-		return pbutil.EmptyJSON, nil
-	}
-	// Structs are persisted as JSONPB strings.
-	// See also https://bit.ly/chromium-bq-struct
-	b, err := (&protojson.MarshalOptions{}).Marshal(s)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
 }

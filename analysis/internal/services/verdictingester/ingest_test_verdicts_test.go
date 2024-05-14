@@ -40,6 +40,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
+	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
@@ -989,7 +990,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 
 	// Different platforms may use different spacing when serializing
 	// JSONPB. Expect the spacing scheme used by this platform.
-	expectedProperties, err := testverdicts.MarshalStructPB(testProperties)
+	expectedProperties, err := bqutil.MarshalStructPB(testProperties)
 	So(err, ShouldBeNil)
 
 	sr := &pb.SourceRef{

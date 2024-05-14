@@ -74,40 +74,19 @@ func mockedQueryRunTestVerdictsRsp() *rdbpb.QueryRunTestVerdictsResponse {
 	response := &rdbpb.QueryRunTestVerdictsResponse{
 		RunTestVerdicts: []*rdbpb.RunTestVerdict{
 			{
-				TestId:      "ninja://test_failure",
-				Variant:     sampleVar,
-				VariantHash: pbutil.VariantHash(sampleVar),
-				Results: []*rdbpb.TestResultBundle{
-					{
-						Result: &rdbpb.TestResult{
-							ResultId:    "one",
-							Name:        "invocations/build-1234/tests/ninja%3A%2F%2Ftest_failure/results/one",
-							Expected:    false,
-							Status:      rdbpb.TestStatus_FAIL,
-							SummaryHtml: "SummaryHTML",
-							StartTime:   timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
-							Duration:    durationpb.New(time.Second*3 + time.Microsecond),
-							FailureReason: &rdbpb.FailureReason{
-								PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
-							},
-							Properties: testProperties,
-						},
-					},
-				},
-				TestMetadata: originalTmd,
-			},
-			{
 				TestId:      "ninja://test_expected",
 				VariantHash: "hash",
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							ResultId:  "one",
-							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_expected/results/one",
-							StartTime: timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
-							Status:    rdbpb.TestStatus_PASS,
-							Expected:  true,
-							Duration:  durationpb.New(time.Second * 5),
+							ResultId:    "one",
+							Name:        "invocations/test-invocation-name/tests/ninja%3A%2F%2Ftest_expected/results/one",
+							Status:      rdbpb.TestStatus_PASS,
+							SummaryHtml: "SummaryHTML for test_expected/one",
+							Expected:    true,
+							StartTime:   timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
+							Duration:    durationpb.New(time.Second*3 + time.Microsecond),
+							Tags:        []*rdbpb.StringPair{{Key: "test-key", Value: "test-value"}},
 						},
 					},
 				},
@@ -119,28 +98,74 @@ func mockedQueryRunTestVerdictsRsp() *rdbpb.QueryRunTestVerdictsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							ResultId:  "one",
-							Name:      "invocations/invocation-0b/tests/ninja%3A%2F%2Ftest_flaky/results/one",
-							StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
-							Status:    rdbpb.TestStatus_FAIL,
-							Expected:  false,
+							ResultId:    "one",
+							Name:        "invocations/test-invocation-name/tests/ninja%3A%2F%2Ftest_flaky/results/one",
+							StartTime:   timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
+							Status:      rdbpb.TestStatus_FAIL,
+							SummaryHtml: "SummaryHTML for test_flaky/one",
+							FailureReason: &rdbpb.FailureReason{
+								PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
+							},
+							Expected: false,
 						},
 					},
 					{
 						Result: &rdbpb.TestResult{
-							ResultId:  "two",
-							Name:      "invocations/invocation-0a/tests/ninja%3A%2F%2Ftest_flaky/results/two",
-							StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
-							Status:    rdbpb.TestStatus_PASS,
-							Expected:  true,
+							ResultId:    "two",
+							Name:        "invocations/test-invocation-name/tests/ninja%3A%2F%2Ftest_flaky/results/two",
+							StartTime:   timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
+							Status:      rdbpb.TestStatus_PASS,
+							SummaryHtml: "SummaryHTML for test_flaky/two",
+							Expected:    true,
 						},
 					},
 				},
+			},
+			{
+				TestId:      "ninja://test_skip",
+				Variant:     sampleVar,
+				VariantHash: pbutil.VariantHash(sampleVar),
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							ResultId:    "one",
+							Name:        "invocations/test-invocation-name/tests/ninja%3A%2F%2Ftest_skip/results/one",
+							Expected:    true,
+							Status:      rdbpb.TestStatus_SKIP,
+							SummaryHtml: "SummaryHTML for test_skip/one",
+							SkipReason:  rdbpb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
+							Properties:  testProperties,
+						},
+					},
+				},
+				TestMetadata: originalTmd,
 			},
 		},
 	}
 
 	return response
+}
+
+func resultdbParentInvocationForTesting() *rdbpb.Invocation {
+	return &rdbpb.Invocation{
+		Name:  "invocations/test-invocation-name",
+		Realm: "invproject:inv",
+		Tags: []*rdbpb.StringPair{
+			{
+				Key:   "tag-key",
+				Value: "tag-value",
+			},
+			{
+				Key:   "tag-key2",
+				Value: "tag-value2",
+			},
+		},
+		Properties: &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"prop-key": structpb.NewStringValue("prop-value"),
+			},
+		},
+	}
 }
 
 func gerritChangesByHostForTesting() map[string][]*gerritpb.ChangeInfo {
@@ -204,10 +229,12 @@ func testInputs() Inputs {
 	return Inputs{
 		Project:          "rootproject",
 		SubRealm:         "root",
+		ResultDBHost:     "fake.rdb.host",
 		RootInvocationID: "test-root-invocation-name",
 		InvocationID:     "test-invocation-name",
 		PartitionTime:    time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC),
 		Sources:          resolvedSourcesForTesting(),
+		Parent:           resultdbParentInvocationForTesting(),
 		Verdicts:         mockedQueryRunTestVerdictsRsp().RunTestVerdicts,
 	}
 }

@@ -89,7 +89,7 @@ func TestOrchestrator(t *testing.T) {
 		clsByHost := gerritChangesByHostForTesting()
 		ctx = gerrit.UseFakeClient(ctx, clsByHost)
 
-		setupGetInvocationMock := func() {
+		setupGetRootInvocationMock := func() {
 			invReq := &rdbpb.GetInvocationRequest{
 				Name: "invocations/test-root-invocation-name",
 			}
@@ -98,6 +98,14 @@ func TestOrchestrator(t *testing.T) {
 				Realm:      "rootproject:root",
 				CreateTime: timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
 			}
+			mrc.GetInvocation(invReq, invRes)
+		}
+
+		setupGetParentInvocationMock := func() {
+			invReq := &rdbpb.GetInvocationRequest{
+				Name: "invocations/test-invocation-name",
+			}
+			invRes := resultdbParentInvocationForTesting()
 			mrc.GetInvocation(invReq, invRes)
 		}
 
@@ -135,10 +143,12 @@ func TestOrchestrator(t *testing.T) {
 		expectedInputs := Inputs{
 			Project:          "rootproject",
 			SubRealm:         "root",
+			ResultDBHost:     "fake.rdb.host",
 			RootInvocationID: "test-root-invocation-name",
 			InvocationID:     "test-invocation-name",
 			PartitionTime:    time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC),
 			Sources:          resolvedSourcesForTesting(),
+			Parent:           resultdbParentInvocationForTesting(),
 			Verdicts:         mockedQueryRunTestVerdictsRsp().RunTestVerdicts,
 		}
 
@@ -164,7 +174,8 @@ func TestOrchestrator(t *testing.T) {
 		}
 
 		Convey(`Baseline`, func() {
-			setupGetInvocationMock()
+			setupGetRootInvocationMock()
+			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err := o.run(ctx, task)
 			So(err, ShouldBeNil)
@@ -180,7 +191,8 @@ func TestOrchestrator(t *testing.T) {
 			notification.Sources = nil
 			expectedInputs.Sources = nil
 
-			setupGetInvocationMock()
+			setupGetRootInvocationMock()
+			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err := o.run(ctx, task)
 			So(err, ShouldBeNil)
@@ -192,12 +204,14 @@ func TestOrchestrator(t *testing.T) {
 			verifyContinuationTask(skdr, expectedContinuationTask)
 			verifyCheckpoints(ctx, expectedCheckpoint)
 		})
-		Convey(`Continuation previously scheduled`, func() {
-			// Create a checkpoint for the previous scheduling.
+		Convey(`Continuation task previously scheduled`, func() {
+			// Create a checkpoint for the previous scheduling
+			// of the continuation task.
 			err := checkpoints.SetForTesting(ctx, expectedCheckpoint)
 			So(err, ShouldBeNil)
 
-			setupGetInvocationMock()
+			setupGetRootInvocationMock()
+			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err = o.run(ctx, task)
 			So(err, ShouldBeNil)
@@ -210,7 +224,8 @@ func TestOrchestrator(t *testing.T) {
 			verifyCheckpoints(ctx, expectedCheckpoint)
 		})
 		Convey(`Final page of results`, func() {
-			setupGetInvocationMock()
+			setupGetRootInvocationMock()
+			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock(func(qrtvr *rdbpb.QueryRunTestVerdictsResponse) {
 				qrtvr.NextPageToken = ""
 			})

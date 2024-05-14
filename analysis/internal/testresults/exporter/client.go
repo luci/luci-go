@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testverdicts
+package exporter
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 )
 
-// NewClient creates a new client for exporting test verdicts
+// NewClient creates a new client for exporting test results
 // via the BigQuery Write API.
 func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) {
 	if projectID == "" {
@@ -73,7 +73,7 @@ func (c *Client) Close() (reterr error) {
 	return c.bqClient.Close()
 }
 
-// Client provides methods to export test verdicts to BigQuery
+// Client provides methods to export test results to BigQuery
 // via the BigQuery Write API.
 type Client struct {
 	// projectID is the name of the GCP project that contains LUCI Analysis
@@ -91,13 +91,13 @@ func (c *Client) ensureSchema(ctx context.Context) error {
 	// created.
 	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
 	if err := schemaApplier.EnsureTable(ctx, table, tableMetadata, bq.UpdateMetadata()); err != nil {
-		return errors.Annotate(err, "ensuring test verdicts table").Err()
+		return errors.Annotate(err, "ensuring test results table").Err()
 	}
 	return nil
 }
 
 // Insert inserts the given rows in BigQuery.
-func (c *Client) Insert(ctx context.Context, rows []*bqpb.TestVerdictRow) error {
+func (c *Client) Insert(ctx context.Context, rows []*bqpb.TestResultRow) error {
 	if err := c.ensureSchema(ctx); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}

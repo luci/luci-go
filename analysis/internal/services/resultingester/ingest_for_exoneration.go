@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
-	// Add support for Spanner transactions in TQ.
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testresults"
@@ -35,16 +34,18 @@ import (
 	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-
-	_ "go.chromium.org/luci/server/tq/txn/spanner"
 )
 
+// IngestForExoneration implements an ingestion stage that writes test
+// results to the TestResultsBySourcePosition table.
 type IngestForExoneration struct{}
 
+// Name returns a unique name for the ingestion stage.
 func (IngestForExoneration) Name() string {
 	return "ingest-for-exoneration"
 }
 
+// Ingest writes test results to the TestResultsBySourcePosition table.
 func (IngestForExoneration) Ingest(ctx context.Context, input Inputs) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForExoneration.Ingest")
 	defer func() { tracing.End(s, err) }()

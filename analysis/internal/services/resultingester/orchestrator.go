@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+	"go.chromium.org/luci/analysis/internal/testresults/exporter"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 
 	// Add support for Spanner transactions in TQ.
@@ -53,6 +54,9 @@ const (
 	resultIngestionQueue     = "result-ingestion"
 )
 
+// Keep checkpoints for 90 days, so that task retries within 90 days are safe.
+const checkpointTTL = 90 * 24 * time.Hour
+
 var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        resultIngestionTaskClass,
 	Prototype: &taskspb.IngestTestResults{},
@@ -62,10 +66,15 @@ var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
 
 // RegisterTaskHandler registers the handler for result ingestion tasks.
 func RegisterTaskHandler(srv *server.Server) error {
+	resultsClient, err := exporter.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "create test results BigQuery client").Err()
+	}
+
 	o := &orchestrator{
 		sinks: []IngestionSink{
 			IngestForExoneration{},
-			// TODO(meiring): Add sinks for changepoint ingestion and BigQuery export.
+			NewTestResultsExporter(resultsClient),
 		},
 	}
 	resultIngestion.AttachHandler(func(ctx context.Context, payload proto.Message) error {
@@ -90,6 +99,8 @@ type Inputs struct {
 	Project string
 	// The subrealm of the export root. This is the realm, minus the LUCI project.
 	SubRealm string
+	// The ResultDB host.
+	ResultDBHost string
 	// The invocation ID of the export root.
 	RootInvocationID string
 	// The invocation ID of the invocation we are ingesting.
@@ -99,10 +110,14 @@ type Inputs struct {
 	// The sources tested by the invocation. May be nil if no sources
 	// are specified.
 	Sources *analysispb.Sources
+	// The immediate parent resultdb invocation.
+	Parent *resultpb.Invocation
 	// The test verdicts to ingest.
 	Verdicts []*resultpb.RunTestVerdict
 }
 
+// IngestionSink is the interface implemented by consumers of test results
+// in the ingestion pipeline.
 type IngestionSink interface {
 	// A short identifier for the sink, for use in errors.
 	Name() string
@@ -133,7 +148,6 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	rootInv, err := rootClient.GetInvocation(ctx, n.RootInvocation)
 	code := status.Code(err)
 	if code == codes.NotFound {
-		// Invocation not found, end the task gracefully.
 		logging.Warningf(ctx, "Root invocation not found.")
 		return tq.Fatal.Apply(errors.Annotate(err, "read root invocation").Err())
 	}
@@ -146,6 +160,10 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 		// Other error.
 		return transient.Tag.Apply(errors.Annotate(err, "read root invocation").Err())
 	}
+	// Use the creation time of the root invocation as the partition time.
+	// Do not use other properties of the root invocation as it may not
+	// have finalized yet and is subject to change.
+	partitionTime := rootInv.CreateTime.AsTime()
 
 	// For reading the to-be-ingested invocation, use a ResultDB client
 	// acting as the project of that invocation.
@@ -153,6 +171,22 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	invClient, err := resultdb.NewClient(ctx, n.ResultdbHost, project)
 	if err != nil {
 		return transient.Tag.Apply(err)
+	}
+
+	parentInv, err := invClient.GetInvocation(ctx, n.Invocation)
+	code = status.Code(err)
+	if code == codes.NotFound {
+		logging.Warningf(ctx, "Parent invocation not found.")
+		return tq.Fatal.Apply(errors.Annotate(err, "read parent invocation").Err())
+	}
+	if code == codes.PermissionDenied {
+		// Invocation not found, end the task gracefully.
+		logging.Warningf(ctx, "Parent invocation permission denied.")
+		return nil
+	}
+	if err != nil {
+		// Other error.
+		return transient.Tag.Apply(errors.Annotate(err, "read parent invocation").Err())
 	}
 
 	req := &resultpb.QueryRunTestVerdictsRequest{
@@ -163,22 +197,17 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	}
 	rsp, err := invClient.QueryRunTestVerdicts(ctx, req)
 	code = status.Code(err)
-	if code == codes.NotFound {
-		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Invocation not found.")
-		return tq.Fatal.Apply(errors.Annotate(err, "query test verdicts").Err())
-	}
 	if code == codes.PermissionDenied {
-		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Invocation permission denied.")
+		// Invocation permission denied, end the task gracefully.
+		logging.Warningf(ctx, "Invocation query test results permission denied.")
 		return nil
 	}
 	if err != nil {
 		// Other error.
-		return transient.Tag.Apply(errors.Annotate(err, "query run test variants").Err())
+		return transient.Tag.Apply(errors.Annotate(err, "query test run verdicts").Err())
 	}
 
-	input, err := prepareInputs(ctx, n, rootInv, rsp.RunTestVerdicts)
+	input, err := prepareInputs(ctx, n, parentInv, partitionTime, rsp.RunTestVerdicts)
 	if err != nil {
 		return transient.Tag.Apply(errors.Annotate(err, "prepare ingestion inputs").Err())
 	}
@@ -189,16 +218,19 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 		}
 	}
 
-	for _, sink := range o.sinks {
-		if err := sink.Ingest(ctx, input); err != nil {
-			return transient.Tag.Apply(errors.Annotate(err, "ingest: %q", sink.Name()).Err())
+	// Only run ingestion sinks if there is something to ingest.
+	if len(input.Verdicts) > 0 {
+		for _, sink := range o.sinks {
+			if err := sink.Ingest(ctx, input); err != nil {
+				return transient.Tag.Apply(errors.Annotate(err, "ingest: %q", sink.Name()).Err())
+			}
 		}
 	}
 
 	return nil
 }
 
-func prepareInputs(ctx context.Context, notification *resultpb.InvocationReadyForExportNotification, rootInv *resultpb.Invocation, tvs []*resultpb.RunTestVerdict) (Inputs, error) {
+func prepareInputs(ctx context.Context, notification *resultpb.InvocationReadyForExportNotification, parent *resultpb.Invocation, partitionTime time.Time, tvs []*resultpb.RunTestVerdict) (Inputs, error) {
 	project, subRealm := realms.Split(notification.RootInvocationRealm)
 
 	rootInvocationID, err := pbutil.ParseInvocationName(notification.RootInvocation)
@@ -213,9 +245,11 @@ func prepareInputs(ctx context.Context, notification *resultpb.InvocationReadyFo
 	result := Inputs{
 		Project:          project,
 		SubRealm:         subRealm,
+		ResultDBHost:     notification.ResultdbHost,
 		RootInvocationID: rootInvocationID,
 		InvocationID:     invocationID,
-		PartitionTime:    rootInv.CreateTime.AsTime(),
+		PartitionTime:    partitionTime,
+		Parent:           parent,
 		Verdicts:         tvs,
 	}
 
@@ -274,7 +308,7 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 			return nil
 		}
 		// Insert checkpoint.
-		m := checkpoints.Insert(ctx, key, 30*24*time.Hour)
+		m := checkpoints.Insert(ctx, key, checkpointTTL)
 		span.BufferWrite(ctx, m)
 
 		nextTaskIndex := task.TaskIndex + 1
