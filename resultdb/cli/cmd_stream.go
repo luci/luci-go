@@ -178,10 +178,6 @@ func cmdStream(p Params) *subcommands.Command {
 				{buildbucket bucket}:{buildbucket builder name}.
 				For example, 'try:linux-rel'.
 			`))
-			r.Flags.StringVar(&r.instructionFile, "instruction-file", "", text.Doc(`
-				Path to the file that contains test reproduction instruction in JSONPB format. See
-				https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/resultdb/proto/v1/instruction.proto
-			`))
 			return r
 		},
 	}
@@ -382,12 +378,8 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if err != nil {
 		return r.done(errors.Annotate(err, "get source spec from arguments").Err())
 	}
-	instruction, err := r.testInstructionFromArgs()
-	if err != nil {
-		return r.done(errors.Annotate(err, "get test instruction from arguments").Err())
-	}
 
-	if err := r.updateInvocation(ctx, invProperties, sourceSpec, r.baselineID, instruction); err != nil {
+	if err := r.updateInvocation(ctx, invProperties, sourceSpec, r.baselineID); err != nil {
 		return r.done(err)
 	}
 
@@ -565,23 +557,6 @@ func (r *streamRun) sourceSpecFromArgs(ctx context.Context) (*pb.SourceSpec, err
 	return &pb.SourceSpec{Sources: sources}, nil
 }
 
-func (r *streamRun) testInstructionFromArgs() (*pb.Instruction, error) {
-	if r.instructionFile == "" {
-		return nil, nil
-	}
-	f, err := os.ReadFile(r.instructionFile)
-	if err != nil {
-		return nil, errors.Annotate(err, "read file").Err()
-	}
-
-	instruction := &pb.Instruction{}
-	if err = protojson.Unmarshal(f, instruction); err != nil {
-		return nil, errors.Annotate(err, "unmarshal file").Err()
-	}
-
-	return instruction, nil
-}
-
 func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret lucictx.ResultDBInvocation, err error) {
 	invID, err := GenInvID(ctx)
 	if err != nil {
@@ -619,7 +594,7 @@ func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucict
 }
 
 // updateInvocation sets the properties and/or source spec on the invocation.
-func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.Struct, sourceSpec *pb.SourceSpec, baselineID string, testInstruction *pb.Instruction) error {
+func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.Struct, sourceSpec *pb.SourceSpec, baselineID string) error {
 	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, r.invocation.UpdateToken)
 	request := &pb.UpdateInvocationRequest{
 		Invocation: &pb.Invocation{
@@ -638,10 +613,6 @@ func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.S
 	if baselineID != "" {
 		request.Invocation.BaselineId = baselineID
 		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "baseline_id")
-	}
-	if testInstruction != nil {
-		request.Invocation.TestInstruction = testInstruction
-		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "test_instruction")
 	}
 	if len(request.UpdateMask.Paths) > 0 {
 		_, err := r.recorder.UpdateInvocation(ctx, request)

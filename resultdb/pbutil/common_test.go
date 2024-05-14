@@ -166,10 +166,11 @@ func TestValidate(t *testing.T) {
 	})
 
 	Convey("ValidateInstruction", t, func() {
-		stepInstructions := &pb.Instructions{
+		instructions := &pb.Instructions{
 			Instructions: []*pb.Instruction{
 				{
-					Id: "instruction1",
+					Id:   "step_instruction1",
+					Type: pb.InstructionType_STEP_INSTRUCTION,
 					TargetedInstructions: []*pb.TargetedInstruction{
 						{
 							Targets: []pb.InstructionTarget{
@@ -180,7 +181,8 @@ func TestValidate(t *testing.T) {
 					},
 				},
 				{
-					Id: "instruction2",
+					Id:   "step_instruction2",
+					Type: pb.InstructionType_STEP_INSTRUCTION,
 					TargetedInstructions: []*pb.TargetedInstruction{
 						{
 							Targets: []pb.InstructionTarget{
@@ -190,149 +192,102 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				},
-			},
-		}
-		Convey("Valid Step Instructions", func() {
-			So(ValidateStepInstructions(stepInstructions), ShouldBeNil)
-		})
-		Convey("Step Instruction can be nil", func() {
-			So(ValidateStepInstructions(nil), ShouldBeNil)
-		})
-		Convey("Step Instruction too big", func() {
-			stepInstructions.Instructions[0].Id = stringWithLength(2 * 1024 * 1024)
-			So(ValidateStepInstructions(stepInstructions), ShouldErrLike, "step instructions: bigger than 1048576 bytes")
-		})
-		Convey("No ID", func() {
-			stepInstructions.Instructions[0].Id = ""
-			So(ValidateStepInstructions(stepInstructions), ShouldErrLike, "step instructions: unspecified id")
-		})
-		Convey("Duplicate ID", func() {
-			stepInstructions.Instructions[0].Id = "instruction2"
-			So(ValidateStepInstructions(stepInstructions), ShouldErrLike, `step instructions: ID "instruction2" is re-used at index 0 and 1`)
-		})
-
-		instruction := &pb.Instruction{
-			TargetedInstructions: []*pb.TargetedInstruction{
 				{
-					Targets: []pb.InstructionTarget{
-						pb.InstructionTarget_LOCAL,
-					},
-					Content: "content1",
-				},
-				{
-					Targets: []pb.InstructionTarget{
-						pb.InstructionTarget_REMOTE,
-					},
-					Content: "content2",
-					Dependency: []*pb.InstructionDependency{
+					Id:   "test_instruction1",
+					Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+					TargetedInstructions: []*pb.TargetedInstruction{
 						{
-							BuildId:  "8000",
-							StepName: "compile",
+							Targets: []pb.InstructionTarget{
+								pb.InstructionTarget_LOCAL,
+							},
+							Content: "content1",
+						},
+						{
+							Targets: []pb.InstructionTarget{
+								pb.InstructionTarget_REMOTE,
+							},
+							Content: "content2",
+							Dependencies: []*pb.InstructionDependency{
+								{
+									InvocationId:  "inv1",
+									InstructionId: "anotherinstruction",
+								},
+							},
+						},
+					},
+					InstructionFilter: &pb.InstructionFilter{
+						FilterType: &pb.InstructionFilter_InvocationIds{
+							InvocationIds: &pb.InstructionFilterByInvocationID{
+								InvocationIds: []string{"swarming-task-1"},
+							},
 						},
 					},
 				},
 			},
 		}
-		Convey("Valid Test Instruction", func() {
-			So(ValidateTestInstruction(instruction), ShouldBeNil)
+		Convey("Valid instructions", func() {
+			So(ValidateInstructions(instructions), ShouldBeNil)
 		})
-		Convey("Test instruction can be nil", func() {
-			So(ValidateTestInstruction(nil), ShouldBeNil)
+		Convey("Instructions can be nil", func() {
+			So(ValidateInstructions(nil), ShouldBeNil)
+		})
+		Convey("Instructions too big", func() {
+			instructions.Instructions[0].Id = strings.Repeat("a", 2*1024*1024)
+			So(ValidateInstructions(instructions), ShouldErrLike, "bigger than 1048576 bytes")
+		})
+		Convey("No ID", func() {
+			instructions.Instructions[0].Id = ""
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: id: unspecified")
+		})
+		Convey("Duplicate ID", func() {
+			instructions.Instructions[0].Id = "step_instruction2"
+			So(ValidateInstructions(instructions), ShouldErrLike, `instructions[1]: id: "step_instruction2" is re-used at index 0`)
+		})
+		Convey("No Type", func() {
+			instructions.Instructions[0].Type = pb.InstructionType_INSTRUCTION_TYPE_UNSPECIFIED
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: type: unspecified")
 		})
 		Convey("Empty target", func() {
-			instruction.TargetedInstructions[0].Targets = []pb.InstructionTarget{}
-			So(ValidateInstruction(instruction), ShouldErrLike, "target: empty")
+			instructions.Instructions[0].TargetedInstructions[0].Targets = []pb.InstructionTarget{}
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: targeted_instructions[0]: targets: empty")
 		})
 		Convey("Unspecified target", func() {
-			instruction.TargetedInstructions[0].Targets = []pb.InstructionTarget{
+			instructions.Instructions[0].TargetedInstructions[0].Targets = []pb.InstructionTarget{
 				pb.InstructionTarget_INSTRUCTION_TARGET_UNSPECIFIED,
 			}
-			So(ValidateInstruction(instruction), ShouldErrLike, "target: unspecified")
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: targeted_instructions[0]: targets[0]: unspecified")
 		})
 		Convey("Duplicated target", func() {
-			instruction.TargetedInstructions[0].Targets = []pb.InstructionTarget{
+			instructions.Instructions[2].TargetedInstructions[0].Targets = []pb.InstructionTarget{
 				pb.InstructionTarget_REMOTE,
 			}
-			So(ValidateInstruction(instruction), ShouldErrLike, `target: duplicated "REMOTE"`)
+			So(ValidateInstructions(instructions), ShouldErrLike, `instructions[2]: targeted_instructions[1]: targets[0]: duplicated target "REMOTE"`)
 		})
 		Convey("Content exceeds size limit", func() {
-			content := ""
-			for i := 0; i < 120000; i++ {
-				content += "a"
-			}
-			instruction.TargetedInstructions[0].Content = content
-			So(ValidateInstruction(instruction), ShouldErrLike, "content: longer than 10240 bytes")
+			instructions.Instructions[2].TargetedInstructions[0].Content = strings.Repeat("a", 120000)
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[2]: targeted_instructions[0]: content: longer than 10240 bytes")
 		})
 		Convey("More than 1 dependency", func() {
-			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
+			instructions.Instructions[2].TargetedInstructions[0].Dependencies = []*pb.InstructionDependency{
 				{
-					BuildId:  "8000",
-					StepName: "dep1",
+					InvocationId:  "inv1",
+					InstructionId: "instruction",
 				},
 				{
-					BuildId:  "8000",
-					StepName: "dep2",
+					InvocationId:  "inv2",
+					InstructionId: "instruction",
 				},
 			}
-			So(ValidateInstruction(instruction), ShouldErrLike, "dependency: more than 1")
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[2]: targeted_instructions[0]: dependencies: more than 1")
 		})
-		Convey("Dependency buildID exceeds limit", func() {
-			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
+		Convey("Dependency invocation id invalid", func() {
+			instructions.Instructions[2].TargetedInstructions[0].Dependencies = []*pb.InstructionDependency{
 				{
-					BuildId:  stringWithLength(101),
-					StepName: "dep",
+					InvocationId:  strings.Repeat("a", 101),
+					InstructionId: "instruction_id",
 				},
 			}
-			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: build_id: longer than 100 bytes")
-		})
-		Convey("Dependency empty step name", func() {
-			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
-				{
-					BuildId: "8000",
-				},
-			}
-			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: step_name: empty")
-		})
-		Convey("Dependency step name exceeds limit", func() {
-			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
-				{
-					BuildId:  "8000",
-					StepName: stringWithLength(1025),
-				},
-			}
-			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: step_name: longer than 1024 bytes")
-		})
-
-		Convey("Dependency step tag key exceeds limit", func() {
-			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
-				{
-					BuildId:  "8000",
-					StepName: "step",
-					StepTag: &pb.StringPair{
-						Key:   stringWithLength(257),
-						Value: "val",
-					},
-				},
-			}
-			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: step_tag_key: longer than 256 bytes")
-		})
-
-		Convey("Dependency step tag value exceeds limit", func() {
-			instruction.TargetedInstructions[0].Dependency = []*pb.InstructionDependency{
-				{
-					BuildId:  "8000",
-					StepName: "step",
-					StepTag: &pb.StringPair{
-						Key:   "key",
-						Value: stringWithLength(1025),
-					},
-				},
-			}
-			So(ValidateInstruction(instruction), ShouldErrLike, "dependencies[0]: step_tag_val: longer than 1024 bytes")
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[2]: targeted_instructions[0]: dependencies: [0]: invocation_id")
 		})
 	})
-}
-
-func stringWithLength(l int) string {
-	return strings.Repeat("a", l)
 }

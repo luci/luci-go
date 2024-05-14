@@ -269,93 +269,72 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			})
 		})
 
-		Convey(`test instruction`, func() {
-			request.UpdateMask.Paths = []string{"test_instruction"}
+		Convey(`instructions`, func() {
+			request.UpdateMask.Paths = []string{"instructions"}
 
 			Convey(`empty`, func() {
-				request.Invocation.TestInstruction = nil
+				request.Invocation.Instructions = nil
 				err := validateUpdateInvocationRequest(request, now)
 				So(err, ShouldBeNil)
 			})
 			Convey(`valid`, func() {
-				request.Invocation.TestInstruction = &pb.Instruction{
-					TargetedInstructions: []*pb.TargetedInstruction{
-						{
-							Targets: []pb.InstructionTarget{
-								pb.InstructionTarget_LOCAL,
-							},
-							Content: "content1",
-						},
-					},
-				}
-				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
-			})
-			Convey(`invalid`, func() {
-				request.Invocation.TestInstruction = &pb.Instruction{
-					TargetedInstructions: []*pb.TargetedInstruction{
-						{
-							Targets: []pb.InstructionTarget{
-								pb.InstructionTarget_LOCAL,
-							},
-							Content: "content1",
-						},
-						{
-							Targets: []pb.InstructionTarget{
-								pb.InstructionTarget_LOCAL,
-							},
-							Content: "content1",
-						},
-					},
-				}
-				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: test_instruction: test instruction: target: duplicated`)
-			})
-		})
-
-		Convey(`step instructions`, func() {
-			request.UpdateMask.Paths = []string{"step_instructions"}
-
-			Convey(`empty`, func() {
-				request.Invocation.StepInstructions = nil
-				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
-			})
-			Convey(`valid`, func() {
-				request.Invocation.StepInstructions = &pb.Instructions{
+				request.Invocation.Instructions = &pb.Instructions{
 					Instructions: []*pb.Instruction{
 						{
-							Id: "instruction1",
+							Id:   "step",
+							Type: pb.InstructionType_STEP_INSTRUCTION,
 							TargetedInstructions: []*pb.TargetedInstruction{
 								{
 									Targets: []pb.InstructionTarget{
 										pb.InstructionTarget_LOCAL,
+										pb.InstructionTarget_REMOTE,
 									},
-									Content: "content1",
+									Content: "step instruction",
+									Dependencies: []*pb.InstructionDependency{
+										{
+											InvocationId:  "dep_inv_id",
+											InstructionId: "dep_ins_id",
+										},
+									},
 								},
 							},
 						},
 						{
-							Id: "instruction2",
+							Id:   "test",
+							Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
 							TargetedInstructions: []*pb.TargetedInstruction{
 								{
 									Targets: []pb.InstructionTarget{
 										pb.InstructionTarget_LOCAL,
+										pb.InstructionTarget_REMOTE,
 									},
-									Content: "content2",
+									Content: "test instruction",
+									Dependencies: []*pb.InstructionDependency{
+										{
+											InvocationId:  "dep_inv_id",
+											InstructionId: "dep_ins_id",
+										},
+									},
+								},
+							},
+							InstructionFilter: &pb.InstructionFilter{
+								FilterType: &pb.InstructionFilter_InvocationIds{
+									InvocationIds: &pb.InstructionFilterByInvocationID{
+										InvocationIds: []string{"swarming_task_1"},
+									},
 								},
 							},
 						},
-					},
-				}
+					}}
 				err := validateUpdateInvocationRequest(request, now)
 				So(err, ShouldBeNil)
 			})
 			Convey(`invalid`, func() {
-				request.Invocation.StepInstructions = &pb.Instructions{
+				request.Invocation.Instructions = &pb.Instructions{
 					Instructions: []*pb.Instruction{
 						{
-							Id: "instruction1",
+							Id:   "instruction1",
+							Type: pb.InstructionType_STEP_INSTRUCTION,
 							TargetedInstructions: []*pb.TargetedInstruction{
 								{
 									Targets: []pb.InstructionTarget{
@@ -372,7 +351,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					},
 				}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: step_instructions: step instructions: ID "instruction1" is re-used at index 0 and 1`)
+				So(err, ShouldErrLike, `invocation: instructions: instructions[1]: id: "instruction1" is re-used at index 0`)
 			})
 		})
 
@@ -951,50 +930,50 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 			}
 
-			stepInstructions := &pb.Instructions{
+			instructions := &pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
-						Id: "instruction1",
+						Id:   "step",
+						Type: pb.InstructionType_STEP_INSTRUCTION,
 						TargetedInstructions: []*pb.TargetedInstruction{
 							{
 								Targets: []pb.InstructionTarget{
 									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
 								},
-								Content: "content1",
+								Content: "step instruction",
+								Dependencies: []*pb.InstructionDependency{
+									{
+										InvocationId:  "dep_inv_id",
+										InstructionId: "dep_ins_id",
+									},
+								},
 							},
 						},
 					},
 					{
-						Id: "instruction2",
+						Id:   "test",
+						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
 						TargetedInstructions: []*pb.TargetedInstruction{
 							{
 								Targets: []pb.InstructionTarget{
 									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
 								},
-								Content: "content2",
+								Content: "test instruction",
+								Dependencies: []*pb.InstructionDependency{
+									{
+										InvocationId:  "dep_inv_id",
+										InstructionId: "dep_ins_id",
+									},
+								},
 							},
 						},
-					},
-				},
-			}
-
-			testInstruction := &pb.Instruction{
-				TargetedInstructions: []*pb.TargetedInstruction{
-					{
-						Targets: []pb.InstructionTarget{
-							pb.InstructionTarget_LOCAL,
-						},
-						Content: "content1",
-					},
-					{
-						Targets: []pb.InstructionTarget{
-							pb.InstructionTarget_REMOTE,
-						},
-						Content: "content2",
-						Dependency: []*pb.InstructionDependency{
-							{
-								BuildId:  "8000",
-								StepName: "compile",
+						InstructionFilter: &pb.InstructionFilter{
+							FilterType: &pb.InstructionFilter_InvocationIds{
+								InvocationIds: &pb.InstructionFilterByInvocationID{
+									InvocationIds: []string{"swarming_task_1"},
+								},
 							},
 						},
 					},
@@ -1002,7 +981,7 @@ func TestUpdateInvocation(t *testing.T) {
 			}
 
 			updateMask := &field_mask.FieldMask{
-				Paths: []string{"deadline", "bigquery_exports", "properties", "is_source_spec_final", "source_spec", "baseline_id", "realm", "test_instruction", "step_instructions"},
+				Paths: []string{"deadline", "bigquery_exports", "properties", "is_source_spec_final", "source_spec", "baseline_id", "realm", "instructions"},
 			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
@@ -1016,8 +995,7 @@ func TestUpdateInvocation(t *testing.T) {
 					IsSourceSpecFinal: true,
 					BaselineId:        "try:linux-rel",
 					Realm:             "testproject:newrealm",
-					TestInstruction:   testInstruction,
-					StepInstructions:  stepInstructions,
+					Instructions:      instructions,
 				},
 				UpdateMask: updateMask,
 			}
@@ -1037,8 +1015,7 @@ func TestUpdateInvocation(t *testing.T) {
 				IsSourceSpecFinal: true,
 				BaselineId:        "try:linux-rel",
 				Realm:             "testproject:newrealm",
-				TestInstruction:   testInstruction,
-				StepInstructions:  stepInstructions,
+				Instructions:      instructions,
 			}
 			So(inv.Name, ShouldEqual, expected.Name)
 			So(inv.State, ShouldEqual, pb.Invocation_ACTIVE)
@@ -1048,8 +1025,7 @@ func TestUpdateInvocation(t *testing.T) {
 			So(inv.IsSourceSpecFinal, ShouldEqual, expected.IsSourceSpecFinal)
 			So(inv.BaselineId, ShouldEqual, expected.BaselineId)
 			So(inv.Realm, ShouldEqual, expected.Realm)
-			So(inv.TestInstruction, ShouldResembleProto, expected.TestInstruction)
-			So(inv.StepInstructions, ShouldResembleProto, expected.StepInstructions)
+			So(inv.Instructions, ShouldResembleProto, expected.Instructions)
 
 			// Read from the database.
 			actual := &pb.Invocation{
@@ -1060,8 +1036,7 @@ func TestUpdateInvocation(t *testing.T) {
 			var compressedProperties spanutil.Compressed
 			var compressedSources spanutil.Compressed
 			var isSourceSpecFinal spanner.NullBool
-			var compressedTestInstruction spanutil.Compressed
-			var compressedStepInstructions spanutil.Compressed
+			var compressedInstructions spanutil.Compressed
 			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]any{
 				"Deadline":          &actual.Deadline,
 				"BigQueryExports":   &actual.BigqueryExports,
@@ -1071,8 +1046,7 @@ func TestUpdateInvocation(t *testing.T) {
 				"IsSourceSpecFinal": &isSourceSpecFinal,
 				"BaselineId":        &actual.BaselineId,
 				"Realm":             &actual.Realm,
-				"TestInstruction":   &compressedTestInstruction,
-				"StepInstructions":  &compressedStepInstructions,
+				"Instructions":      &compressedInstructions,
 			})
 			actual.Properties = &structpb.Struct{}
 			err = proto.Unmarshal(compressedProperties, actual.Properties)
@@ -1080,11 +1054,8 @@ func TestUpdateInvocation(t *testing.T) {
 			actual.SourceSpec.Sources = &pb.Sources{}
 			err = proto.Unmarshal(compressedSources, actual.SourceSpec.Sources)
 			So(err, ShouldBeNil)
-			actual.TestInstruction = &pb.Instruction{}
-			err = proto.Unmarshal(compressedTestInstruction, actual.TestInstruction)
-			So(err, ShouldBeNil)
-			actual.StepInstructions = &pb.Instructions{}
-			err = proto.Unmarshal(compressedStepInstructions, actual.StepInstructions)
+			actual.Instructions = &pb.Instructions{}
+			err = proto.Unmarshal(compressedInstructions, actual.Instructions)
 			So(err, ShouldBeNil)
 			if isSourceSpecFinal.Valid && isSourceSpecFinal.Bool {
 				actual.IsSourceSpecFinal = true

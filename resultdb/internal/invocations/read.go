@@ -80,8 +80,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.InheritSources,
 		 i.IsSourceSpecFinal,
 		 i.BaselineId,
-		 i.TestInstruction,
-		 i.StepInstructions,
+		 i.Instructions,
 		 i.ExtendedProperties,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
@@ -105,8 +104,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			inheritSources     spanner.NullBool
 			isSourceSpecFinal  spanner.NullBool
 			baselineID         spanner.NullString
-			testInstruction    spanutil.Compressed
-			stepInstructions   spanutil.Compressed
+			instructions       spanutil.Compressed
 			extendedProperties spanutil.Compressed
 		)
 		err := b.FromSpanner(row, &id,
@@ -127,8 +125,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&inheritSources,
 			&isSourceSpecFinal,
 			&baselineID,
-			&testInstruction,
-			&stepInstructions,
+			&instructions,
 			&extendedProperties,
 		)
 		if err != nil {
@@ -171,16 +168,9 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			inv.BaselineId = baselineID.StringVal
 		}
 
-		if len(testInstruction) > 0 {
-			inv.TestInstruction = &pb.Instruction{}
-			if err := proto.Unmarshal(testInstruction, inv.TestInstruction); err != nil {
-				return err
-			}
-		}
-
-		if len(stepInstructions) > 0 {
-			inv.StepInstructions = &pb.Instructions{}
-			if err := proto.Unmarshal(stepInstructions, inv.StepInstructions); err != nil {
+		if len(instructions) > 0 {
+			inv.Instructions = &pb.Instructions{}
+			if err := proto.Unmarshal(instructions, inv.Instructions); err != nil {
 				return err
 			}
 		}

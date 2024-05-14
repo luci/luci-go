@@ -147,15 +147,11 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		return errors.Annotate(err, "properties").Err()
 	}
 
-	if err := pbutil.ValidateTestInstruction(req.Invocation.GetTestInstruction()); err != nil {
-		return errors.Annotate(err, "test_instruction").Err()
-	}
-
 	// In the current flow, step instructions are populated by UpdateInvocation,
 	// instead of CreateInvocation.
 	// However, we will also store step instructions if they are passed in during creation.
-	if err := pbutil.ValidateStepInstructions(req.Invocation.GetStepInstructions()); err != nil {
-		return errors.Annotate(err, "step_instructions").Err()
+	if err := pbutil.ValidateInstructions(req.Invocation.GetInstructions()); err != nil {
+		return errors.Annotate(err, "instructions").Err()
 	}
 
 	if err := pbutil.ValidateInvocationExtendedProperties(req.Invocation.GetExtendedProperties()); err != nil {

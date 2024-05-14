@@ -163,8 +163,7 @@ func (s *recorderServer) createInvocationsInternal(ctx context.Context, now time
 			SourceSpec:         req.Invocation.GetSourceSpec(),
 			IsSourceSpecFinal:  req.Invocation.GetIsSourceSpecFinal(),
 			BaselineId:         req.Invocation.GetBaselineId(),
-			TestInstruction:    req.Invocation.GetTestInstruction(),
-			StepInstructions:   req.Invocation.GetStepInstructions(),
+			Instructions:       req.Invocation.GetInstructions(),
 			ExtendedProperties: req.Invocation.GetExtendedProperties(),
 		}
 

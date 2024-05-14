@@ -262,68 +262,88 @@ func ValidateGerritChange(change *pb.GerritChange) error {
 	}
 }
 
-func ValidateTestInstruction(instruction *pb.Instruction) error {
-	// We allows invocation with no test instructions.
-	if instruction == nil {
-		return nil
-	}
-	if err := ValidateInstruction(instruction); err != nil {
-		return errors.Annotate(err, "test instruction").Err()
-	}
-	return nil
-}
-
-func ValidateStepInstructions(instructions *pb.Instructions) error {
-	// We allows invocation with no step instructions.
+func ValidateInstructions(instructions *pb.Instructions) error {
+	// We allows invocation with no instructions.
 	if instructions == nil {
 		return nil
 	}
 	if proto.Size(instructions) > MaxInstructionsSize {
-		return errors.Reason("step instructions: bigger than %d bytes", MaxInstructionsSize).Err()
+		return errors.Reason("bigger than %d bytes", MaxInstructionsSize).Err()
 	}
 
 	idMap := map[string]int{}
 	for i, instruction := range instructions.Instructions {
 		// Make sure that all instructions have id, and id are unique.
 		if instruction.Id == "" {
-			return errors.Reason("step instructions: unspecified id").Err()
+			return errors.Reason("instructions[%v]: id: unspecified", i).Err()
 		}
 		if index, ok := idMap[instruction.Id]; ok {
-			return errors.Reason("step instructions: ID %q is re-used at index %d and %d", instruction.Id, index, i).Err()
+			return errors.Reason("instructions[%v]: id: %q is re-used at index %d", i, instruction.Id, index).Err()
 		}
 		idMap[instruction.Id] = i
 		if err := ValidateInstruction(instruction); err != nil {
-			return errors.Annotate(err, "step instructions").Err()
+			return errors.Annotate(err, "instructions[%v]", i).Err()
 		}
 	}
 	return nil
 }
 
 func ValidateInstruction(instruction *pb.Instruction) error {
+	if instruction.Type == pb.InstructionType_INSTRUCTION_TYPE_UNSPECIFIED {
+		return errors.Reason("type: unspecified").Err()
+	}
 	targetMap := map[pb.InstructionTarget]bool{}
-	for _, targetedInstruction := range instruction.TargetedInstructions {
-		// Check that targets are not empty.
-		if len(targetedInstruction.Targets) == 0 {
-			return errors.Reason("target: empty").Err()
+	for i, targetedInstruction := range instruction.TargetedInstructions {
+		err := ValidateTargetedInstruction(targetedInstruction, targetMap)
+		if err != nil {
+			return errors.Annotate(err, "targeted_instructions[%v]", i).Err()
 		}
-		// Check that targets are valid.
-		for _, target := range targetedInstruction.Targets {
-			if target == pb.InstructionTarget_INSTRUCTION_TARGET_UNSPECIFIED {
-				return errors.Reason("target: unspecified").Err()
+	}
+	// Check instruction filter.
+	if err := ValidateInstructionFilter(instruction.InstructionFilter); err != nil {
+		return errors.Annotate(err, "instruction_filter").Err()
+	}
+	return nil
+}
+
+func ValidateTargetedInstruction(targetedInstruction *pb.TargetedInstruction, targetMap map[pb.InstructionTarget]bool) error {
+	// Check that targets are not empty.
+	if len(targetedInstruction.Targets) == 0 {
+		return errors.Reason("targets: empty").Err()
+	}
+	// Check that targets are valid.
+	for i, target := range targetedInstruction.Targets {
+		if target == pb.InstructionTarget_INSTRUCTION_TARGET_UNSPECIFIED {
+			return errors.Reason("targets[%v]: unspecified", i).Err()
+		}
+		if _, ok := targetMap[target]; ok {
+			return errors.Reason("targets[%v]: duplicated target %q", i, target).Err()
+		}
+		targetMap[target] = true
+	}
+	// Make sure content size <= 10KB.
+	// TODO (nqmtuan): Validate this is a valid mustache template.
+	if len(targetedInstruction.Content) > MaxInstructionSize {
+		return errors.Reason("content: longer than %v bytes", MaxInstructionSize).Err()
+	}
+	// Check dependency.
+	if err := ValidateDependencies(targetedInstruction.Dependencies); err != nil {
+		return errors.Annotate(err, "dependencies").Err()
+	}
+	return nil
+}
+
+func ValidateInstructionFilter(filter *pb.InstructionFilter) error {
+	// We allow instruction without filter.
+	if filter == nil {
+		return nil
+	}
+	if filter.GetInvocationIds() != nil {
+		for i, invID := range filter.GetInvocationIds().InvocationIds {
+			err := ValidateInvocationID(invID)
+			if err != nil {
+				return errors.Annotate(err, "invocation_ids[%v]", i).Err()
 			}
-			if _, ok := targetMap[target]; ok {
-				return errors.Reason("target: duplicated %q", target).Err()
-			}
-			targetMap[target] = true
-		}
-		// Make sure content size <= 10KB.
-		// TODO (nqmtuan): Validate this is a valid mustache template.
-		if len(targetedInstruction.Content) > MaxInstructionSize {
-			return errors.Reason("content: longer than %v bytes", MaxInstructionSize).Err()
-		}
-		// Check dependency.
-		if err := ValidateDependencies(targetedInstruction.Dependency); err != nil {
-			return err
 		}
 	}
 	return nil
@@ -334,33 +354,20 @@ func ValidateDependencies(dependencies []*pb.InstructionDependency) error {
 		return nil
 	}
 	if len(dependencies) > 1 {
-		return errors.Reason("dependency: more than 1").Err()
+		return errors.Reason("more than 1").Err()
 	}
 	for i, dep := range dependencies {
 		if err := ValidateDependency(dep); err != nil {
-			return errors.Annotate(err, "dependencies[%v]", i).Err()
+			return errors.Annotate(err, "[%v]", i).Err()
 		}
 	}
 	return nil
 }
 
 func ValidateDependency(dependency *pb.InstructionDependency) error {
-	if len(dependency.BuildId) > MaxDependencyBuildIDSize {
-		return errors.Reason("build_id: longer than %v bytes", MaxDependencyBuildIDSize).Err()
+	if err := ValidateInvocationID(dependency.InvocationId); err != nil {
+		return errors.Annotate(err, "invocation_id").Err()
 	}
-	if dependency.StepName == "" {
-		return errors.Reason("step_name: empty").Err()
-	}
-	if len(dependency.StepName) > MaxDependencyStepNameSize {
-		return errors.Reason("step_name: longer than %v bytes", MaxDependencyStepNameSize).Err()
-	}
-	if len(dependency.GetStepTag().GetKey()) > MaxDependencyStepTagKeySize {
-		return errors.Reason("step_tag_key: longer than %v bytes", MaxDependencyStepTagKeySize).Err()
-	}
-	if len(dependency.GetStepTag().GetValue()) > MaxDependencyStepTagValSize {
-		return errors.Reason("step_tag_val: longer than %v bytes", MaxDependencyStepTagValSize).Err()
-	}
-	// TODO (nqmtuan): Validate dependency.build_id is either integer or mustache format.
 	return nil
 }
 

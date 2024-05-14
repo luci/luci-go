@@ -150,8 +150,7 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"Sources":           spanutil.Compressed(pbutil.MustMarshal(inv.SourceSpec.GetSources())),
 		"IsSourceSpecFinal": spanner.NullBool{Valid: inv.IsSourceSpecFinal, Bool: inv.IsSourceSpecFinal},
 		"BaselineId":        inv.BaselineId,
-		"TestInstruction":   spanutil.Compressed(pbutil.MustMarshal(inv.TestInstruction)),
-		"StepInstructions":  spanutil.Compressed(pbutil.MustMarshal(inv.StepInstructions)),
+		"Instructions":      spanutil.Compressed(pbutil.MustMarshal(inv.Instructions)),
 	}
 
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that

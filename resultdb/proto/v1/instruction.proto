@@ -16,66 +16,78 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
-import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
-
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // A collection of instructions.
-// Used for step instruction.
+// Used for step and test result instructions.
+// Instructions may mixed between step and test instructions.
 // This has a size limit of 1MB.
 message Instructions {
   repeated Instruction instructions = 1;
 }
 
-// Instruction is one failure reproduction instruction for a step or invocation.
-// Instruction can have different target, like "local" or "remote".
-// When converted to JSONPB format, it will look like below:
-// {
-//   "id" : "my_id",
-//   "targetedInstructions": [
-//     {
-//       "targets": [
-//         "LOCAL",
-//       ],
-//       "content": "my content",
-//       "dependency": [
-//         {
-//           "buildId": "80000",
-//           "stepName": "my step name",
-//           "stepTag": {
-//             "key": "my key",
-//             "value": "my value",
-//           },
-//         },
-//       ],
-//     },
-//   ],
-// }
-//
+// Instruction is one failure reproduction instruction for a step or test result.
+// Instruction can have different targets, like "local" or "remote".
+// Instructions are stored in invocation level.
 message Instruction {
-  // ID of the instruction, used for step instruction.
-  // It is consumer-defined and is unique within the build-level invocation.
-  // For test instruction, we will ignore this field.
-  // Included invocation may have the same instruction id with the parent invocation.
+  // ID of the instruction. Required.
+  // It is consumer-defined and is unique within the an invocation.
+  // The tuple (invocation_id, instruction_id) can uniquely identify an instruction.
+  // At this moment, we only has use cases for instruction ID for step instructions,
+  // but we also require test instruction to have ID, for possible features
+  // or enhancements in the future.
+  // Limit: 100 bytes.
   string id = 1;
+
+  // Either step or test instruction.
+  InstructionType type = 2;
 
   // List of instruction for different targets.
   // There is at most 1 instruction per target.
   // If there is more than 1, an error will be returned.
-  repeated TargetedInstruction targeted_instructions = 2;
+  repeated TargetedInstruction targeted_instructions = 3;
+
+  // Specified the collection of test results that this instruction applies to.
+  // For example, we can target all test results within a child invocation.
+  // The consumer needs to make sure that any test result only has at most 1 instruction.
+  // Otherwise, the behavior is undeterministic.
+  // If no filter is applied, assume this applies to all test results contained
+  // in this invocation and included invocations.
+  // Only applicable for test instructions. This field will be ignored for step instructions.
+  InstructionFilter instruction_filter = 4;
 }
+
+// InstructionFilter specifies the test results that this instruction applies to.
+message InstructionFilter{
+  // TODO (nqmtuan): We may support filter by invocation tags if requested.
+  oneof filter_type {
+    InstructionFilterByInvocationID invocation_ids = 1;
+  }
+}
+
+message InstructionFilterByInvocationID {
+  // Only test results contained in these invocation IDs will be selected.
+  repeated string invocation_ids = 1;
+
+  // Whether the check is recursive (i.e. whether it applies to test results
+  // in included invocation).
+  bool recursive = 2;
+}
+
 
 // Instruction for specific targets.
 // Instruction for different targets may have the same or different dependency
 // and content.
 message TargetedInstruction {
-  // The targets that this instruction is for, like "local", "remote" or "prebuilt"
+  // The targets that this instruction is for, like "LOCAL", "REMOTE" or "PREBUILT".
+  // A targeted instruction can only depend on another instruction with the same target.
+  // For example, a "LOCAL" instruction can only depend on another "LOCAL" instruction.
   repeated InstructionTarget targets = 1;
 
   // Another instruction that this instruction depends on.
   // At the moment, one instruction can have at most 1 dependency.
   // Make this repeated for forward compatibility.
-  repeated InstructionDependency dependency = 2;
+  repeated InstructionDependency dependencies = 2;
 
   // The content of the instruction, in markdown format.
   // Placeholders may be used and will be populated with real
@@ -92,27 +104,13 @@ message TargetedInstruction {
 // the dependency chain will stop and Milo will not display the dependency.
 // If a dependency cycle is detected, we will stop showing dependency once we detected the cycle.
 message InstructionDependency {
-  // The build ID of the instruction being depended on.
-  // This can be a build id or a templated string with placeholders.
-  // Because test results instructions are stored in leaf invocation,
-  // we can use placeholders to refer to the top-level build.
-  // For example, "{{build_tags.parent_build_id}}" to refer to the parent build.
-  // If not specified, assuming to be of the same build.
+  // The invocation ID of the instruction being depended on.
   // Limit: 100 bytes
-  string build_id = 1;
+  string invocation_id = 1;
 
-  // The step name of the instruction being depended on.
-  // If this is a nested step, this field should contain both
-  // parent and child step names, separated by "|".
-  // For example "parent_step_name|child_step_name".
-  // Limit: 1024 bytes
-  string step_name = 2;
-
-  // Optional: In case there are more than one step with the same name
-  // in the build, the step_tag is used to select the exact step to depend on.
-  // This have the same size limit as step tag, 256 bytes for the key,
-  // and 1024 bytes for the value.
-  StringPair step_tag = 3;
+  // The instruction ID of the instruction being depended on.
+  // (invocation_id, instruction_id) uniquely identify an invocation.
+  string instruction_id = 2;
 }
 
 enum InstructionTarget {
@@ -123,4 +121,12 @@ enum InstructionTarget {
   REMOTE = 2;
   // For prebuilt images.
   PREBUILT = 3;
+}
+
+enum InstructionType {
+  INSTRUCTION_TYPE_UNSPECIFIED = 0;
+  // Instruction for step.
+  STEP_INSTRUCTION = 1;
+  // Instruction for test result.
+  TEST_RESULT_INSTRUCTION = 2;
 }

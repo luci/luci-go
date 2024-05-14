@@ -118,14 +118,9 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 				return errors.Annotate(err, "invocation: realm").Err()
 			}
 
-		case "test_instruction":
-			if err := pbutil.ValidateTestInstruction(req.Invocation.GetTestInstruction()); err != nil {
-				return errors.Annotate(err, "invocation: test_instruction").Err()
-			}
-
-		case "step_instructions":
-			if err := pbutil.ValidateStepInstructions(req.Invocation.GetStepInstructions()); err != nil {
-				return errors.Annotate(err, "invocation: step_instructions").Err()
+		case "instructions":
+			if err := pbutil.ValidateInstructions(req.Invocation.GetInstructions()); err != nil {
+				return errors.Annotate(err, "invocation: instructions").Err()
 			}
 
 		case "is_source_spec_final":
@@ -365,13 +360,9 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 					ret.Realm = realm
 				}
 
-			case "test_instruction":
-				values["TestInstruction"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.GetTestInstruction()))
-				ret.TestInstruction = in.Invocation.GetTestInstruction()
-
-			case "step_instructions":
-				values["StepInstructions"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.GetStepInstructions()))
-				ret.StepInstructions = in.Invocation.GetStepInstructions()
+			case "instructions":
+				values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.GetInstructions()))
+				ret.Instructions = in.Invocation.GetInstructions()
 
 			case "extended_properties":
 				extendedProperties := in.Invocation.GetExtendedProperties()

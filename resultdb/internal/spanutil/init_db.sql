@@ -151,15 +151,11 @@ CREATE TABLE Invocations (
   -- after the invocation has been finalized.
   Submitted BOOL,
 
-  -- A serialized luci.resultdb.v1.Instruction describing instructions for the invocation.
-  -- Only applicable to test results directly contained in this invocation,
-  -- i.e. it does not apply to test results in included invocations.
-  TestInstruction BYTES(MAX),
-
-  -- A serialized luci.resultdb.v1.Instructions describing instructions for the steps.
-  -- Only useful for a build-level invocation.
-  -- It contains all instructions of steps which belong to the build.
-  StepInstructions BYTES(MAX),
+  -- A serialized luci.resultdb.v1.Instructions describing instructions for this invocation.
+  -- It may contains instructions for steps (for build-level invocation) and test results.
+  -- It may contain instructions to test results directly contained in this invocation,
+  -- and test results in included invocations.
+  Instructions BYTES(MAX),
 
   -- A compressed, serialized luci.resultdb.internal.invocations.ExtendedProperties message.
   ExtendedProperties BYTES(MAX),

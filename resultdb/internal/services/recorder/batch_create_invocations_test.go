@@ -236,27 +236,11 @@ func TestBatchCreateInvocations(t *testing.T) {
 							},
 							IsSourceSpecFinal: true,
 							BaselineId:        "testrealm:testbuilder",
-							TestInstruction: &pb.Instruction{
-								TargetedInstructions: []*pb.TargetedInstruction{
-									{
-										Targets: []pb.InstructionTarget{
-											pb.InstructionTarget_LOCAL,
-											pb.InstructionTarget_REMOTE,
-										},
-										Content: "test instruction",
-										Dependency: []*pb.InstructionDependency{
-											{
-												BuildId:  "8000",
-												StepName: "step",
-											},
-										},
-									},
-								},
-							},
-							StepInstructions: &pb.Instructions{
+							Instructions: &pb.Instructions{
 								Instructions: []*pb.Instruction{
 									{
-										Id: "step",
+										Id:   "step",
+										Type: pb.InstructionType_STEP_INSTRUCTION,
 										TargetedInstructions: []*pb.TargetedInstruction{
 											{
 												Targets: []pb.InstructionTarget{
@@ -264,11 +248,37 @@ func TestBatchCreateInvocations(t *testing.T) {
 													pb.InstructionTarget_REMOTE,
 												},
 												Content: "step instruction",
-												Dependency: []*pb.InstructionDependency{
+												Dependencies: []*pb.InstructionDependency{
 													{
-														BuildId:  "8001",
-														StepName: "dep_step",
+														InvocationId:  "dep_inv_id",
+														InstructionId: "dep_ins_id",
 													},
+												},
+											},
+										},
+									},
+									{
+										Id:   "test",
+										Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+										TargetedInstructions: []*pb.TargetedInstruction{
+											{
+												Targets: []pb.InstructionTarget{
+													pb.InstructionTarget_LOCAL,
+													pb.InstructionTarget_REMOTE,
+												},
+												Content: "test instruction",
+												Dependencies: []*pb.InstructionDependency{
+													{
+														InvocationId:  "dep_inv_id",
+														InstructionId: "dep_ins_id",
+													},
+												},
+											},
+										},
+										InstructionFilter: &pb.InstructionFilter{
+											FilterType: &pb.InstructionFilter_InvocationIds{
+												InvocationIds: &pb.InstructionFilterByInvocationID{
+													InvocationIds: []string{"swarming_task_1"},
 												},
 											},
 										},
