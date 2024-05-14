@@ -35,6 +35,7 @@ import (
 func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 	_, err := client.Apply(ctx, []*spanner.Mutation{
 		// No need to explicitly delete interleaved tables.
+		spanner.Delete("Checkpoints", spanner.AllKeys()),
 		spanner.Delete("ClusteringState", spanner.AllKeys()),
 		spanner.Delete("FailureAssociationRules", spanner.AllKeys()),
 		spanner.Delete("GerritChangelists", spanner.AllKeys()),
