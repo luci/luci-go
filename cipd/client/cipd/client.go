@@ -63,6 +63,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -198,6 +199,14 @@ type Client interface {
 	// value will list all roles implied by being an OWNER (e.g. READER, WRITER,
 	// ...).
 	FetchRoles(ctx context.Context, prefix string) ([]string, error)
+
+	// FetchRolesOnBehalfOf returns all roles the given user has in the given package prefix.
+	//
+	// This works the same way as FetchRoles, except:
+	//   * The caller requires the same permission as GetPrefixMetadata.
+	//   * Uses the given id identity.Identity, rather than the caller's
+	//   identity, for determining the returned Roles.
+	FetchRolesOnBehalfOf(ctx context.Context, prefix string, id identity.Identity) ([]string, error)
 
 	// ResolveVersion converts an instance ID, a tag or a ref into a concrete Pin.
 	ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error)
@@ -1011,6 +1020,36 @@ func (c *clientImpl) FetchRoles(ctx context.Context, prefix string) (roles []str
 
 	resp, err := c.repo.GetRolesInPrefix(ctx, &api.PrefixRequest{
 		Prefix: prefix,
+	}, expectedCodes)
+	if err != nil {
+		return nil, c.rpcErr(err, nil)
+	}
+
+	out := make([]string, len(resp.Roles))
+	for i, r := range resp.Roles {
+		out[i] = r.Role.String()
+	}
+	return out, nil
+}
+
+func (c *clientImpl) FetchRolesOnBehalfOf(ctx context.Context, prefix string, id identity.Identity) (roles []string, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: prefix,
+		})
+	}()
+
+	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
+		return nil, err
+	}
+
+	if err := id.Validate(); err != nil {
+		return nil, err
+	}
+
+	resp, err := c.repo.GetRolesInPrefixOnBehalfOf(ctx, &api.PrefixRequestOnBehalfOf{
+		PrefixRequest: &api.PrefixRequest{Prefix: prefix},
+		Identity:      string(id),
 	}, expectedCodes)
 	if err != nil {
 		return nil, c.rpcErr(err, nil)

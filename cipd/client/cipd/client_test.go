@@ -32,6 +32,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/system/environ"
@@ -236,6 +237,62 @@ func TestFetchRoles(t *testing.T) {
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.FetchRoles(ctx, "a/b/c")
+			So(err, ShouldErrLike, "blah error")
+		})
+	})
+}
+
+func TestFetchRolesOnBehalfOf(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func(c C) {
+		ctx := context.Background()
+		client, _, repo, _ := mockedCipdClient(c)
+
+		Convey("Works", func() {
+			repo.expect(rpcCall{
+				method: "GetRolesInPrefixOnBehalfOf",
+				in: &api.PrefixRequestOnBehalfOf{
+					PrefixRequest: &api.PrefixRequest{Prefix: "a/b/c"},
+					Identity:      "anonymous:anonymous",
+				},
+				out: &api.RolesInPrefixResponse{
+					Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
+						{Role: api.Role_OWNER},
+						{Role: api.Role_WRITER},
+						{Role: api.Role_READER},
+					},
+				},
+			})
+			id := identity.Identity("anonymous:anonymous")
+			roles, err := client.FetchRolesOnBehalfOf(ctx, "a/b/c", id)
+			So(err, ShouldBeNil)
+			So(roles, ShouldResemble, []string{"OWNER", "WRITER", "READER"})
+		})
+
+		Convey("Bad prefix", func() {
+			id := identity.Identity("anonymous:anonymous")
+			_, err := client.FetchRolesOnBehalfOf(ctx, "a/b////", id)
+			So(err, ShouldErrLike, "invalid package prefix")
+		})
+
+		Convey("Bad id", func() {
+			id := identity.Identity("chicken")
+			_, err := client.FetchRolesOnBehalfOf(ctx, "a/b/c", id)
+			So(err, ShouldErrLike, "auth: bad identity string \"chicken\"")
+		})
+
+		Convey("Error response", func() {
+			repo.expect(rpcCall{
+				method: "GetRolesInPrefixOnBehalfOf",
+				in: &api.PrefixRequestOnBehalfOf{
+					PrefixRequest: &api.PrefixRequest{Prefix: "a/b/c"},
+					Identity:      "anonymous:anonymous",
+				},
+				err: status.Errorf(codes.PermissionDenied, "blah error"),
+			})
+			id := identity.Identity("anonymous:anonymous")
+			_, err := client.FetchRolesOnBehalfOf(ctx, "a/b/c", id)
 			So(err, ShouldErrLike, "blah error")
 		})
 	})
