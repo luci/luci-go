@@ -16,45 +16,88 @@ import { Dispatch, SetStateAction, createContext, useContext } from 'react';
 
 import { OutputCommit } from '@/gitiles/types';
 
-const RepoContext = createContext<string | null>(null);
+const RepoContext = createContext<string | undefined>(undefined);
 
 export const RepoUrlProvider = RepoContext.Provider;
 
 export function useRepoUrl() {
   const ctx = useContext(RepoContext);
 
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error('useRepoUrl must be used within CommitTable');
   }
 
   return ctx;
 }
 
-const DefaultExpandedStateContext = createContext<
-  readonly [boolean, Dispatch<SetStateAction<boolean>>] | null
->(null);
+const DefaultExpandedContext = createContext<boolean | undefined>(undefined);
 
-export const DefaultExpandedStateProvider =
-  DefaultExpandedStateContext.Provider;
+export const DefaultExpandedProvider = DefaultExpandedContext.Provider;
 
-export function useDefaultExpandedState() {
-  const ctx = useContext(DefaultExpandedStateContext);
+export function useDefaultExpanded() {
+  const ctx = useContext(DefaultExpandedContext);
 
-  if (ctx === null) {
-    throw new Error('useDefaultExpandedState must be used within CommitTable');
+  if (ctx === undefined) {
+    throw new Error('useDefaultExpanded must be used within CommitTable');
   }
 
   return ctx;
 }
 
-const CommitContext = createContext<OutputCommit | null>(null);
+const SetDefaultExpandedContext = createContext<
+  Dispatch<SetStateAction<boolean>> | undefined
+>(undefined);
+
+export const SetDefaultExpandedProvider = SetDefaultExpandedContext.Provider;
+
+export function useSetDefaultExpanded() {
+  const ctx = useContext(SetDefaultExpandedContext);
+
+  if (ctx === undefined) {
+    throw new Error('useSetDefaultExpanded must be used within CommitTable');
+  }
+
+  return ctx;
+}
+
+const ExpandedContext = createContext<boolean | undefined>(undefined);
+
+export const ExpandedProvider = ExpandedContext.Provider;
+
+export function useExpanded() {
+  const ctx = useContext(ExpandedContext);
+
+  if (ctx === undefined) {
+    throw new Error('useExpanded must be used within CommitTableRow');
+  }
+
+  return ctx;
+}
+
+const SetExpandedContext = createContext<
+  Dispatch<SetStateAction<boolean>> | undefined
+>(undefined);
+
+export const SetExpandedProvider = SetExpandedContext.Provider;
+
+export function useSetExpanded() {
+  const ctx = useContext(SetExpandedContext);
+
+  if (ctx === undefined) {
+    throw new Error('useSetExpanded must be used within CommitTable');
+  }
+
+  return ctx;
+}
+
+const CommitContext = createContext<OutputCommit | undefined>(undefined);
 
 export const CommitProvider = CommitContext.Provider;
 
 export function useCommit() {
   const ctx = useContext(CommitContext);
 
-  if (ctx === null) {
+  if (ctx === undefined) {
     throw new Error('useCommit must be used within CommitTableRow');
   }
 

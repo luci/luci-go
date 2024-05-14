@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { act, cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from '@testing-library/user-event';
 
 import { OutputCommit } from '@/gitiles/types';
 import { Commit_TreeDiff_ChangeType } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
@@ -23,6 +23,7 @@ import { CommitTable } from './commit_table';
 import { CommitTableBody } from './commit_table_body';
 import { CommitTableHead } from './commit_table_head';
 import { CommitTableRow } from './commit_table_row';
+import { ToggleContentCell, ToggleHeadCell } from './toggle_column';
 
 const commit: OutputCommit = {
   id: '1234567890abcdef',
@@ -52,7 +53,7 @@ const commit: OutputCommit = {
   ],
 };
 
-describe('CommitTable', () => {
+describe('<CommitTable />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -67,11 +68,11 @@ describe('CommitTable', () => {
       <FakeContextProvider>
         <CommitTable repoUrl="https://repo.url">
           <CommitTableHead>
-            <></>
+            <ToggleHeadCell />
           </CommitTableHead>
           <CommitTableBody>
             <CommitTableRow commit={commit}>
-              <></>
+              <ToggleContentCell />
             </CommitTableRow>
           </CommitTableBody>
         </CommitTable>
@@ -137,12 +138,12 @@ describe('CommitTable', () => {
     render(
       <FakeContextProvider>
         <CommitTable repoUrl="https://repo.url">
-          <CommitTableHead toggleExpandHotkey="x">
-            <></>
+          <CommitTableHead>
+            <ToggleHeadCell hotkey="x" />
           </CommitTableHead>
           <CommitTableBody>
             <CommitTableRow commit={commit}>
-              <></>
+              <ToggleContentCell />
             </CommitTableRow>
           </CommitTableBody>
         </CommitTable>
@@ -215,7 +216,7 @@ describe('CommitTable', () => {
           repoUrl="https://repo.url"
         >
           <CommitTableHead>
-            <></>
+            <ToggleHeadCell />
           </CommitTableHead>
           <CommitTableBody>
             <></>

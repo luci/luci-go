@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { IconButton, TableCell, TableRow, styled } from '@mui/material';
+import { TableCell, TableRow, styled } from '@mui/material';
 import markdownIt from 'markdown-it';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -25,7 +24,12 @@ import { defaultTarget } from '@/common/tools/markdown/plugins/default_target';
 import { reviewerLine } from '@/common/tools/markdown/plugins/reviewer_line';
 import { OutputCommit } from '@/gitiles/types';
 
-import { CommitProvider, useDefaultExpandedState } from './context';
+import {
+  CommitProvider,
+  ExpandedProvider,
+  SetExpandedProvider,
+  useDefaultExpanded,
+} from './context';
 
 const md = markdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])
@@ -50,11 +54,9 @@ export interface CommitTableRowProps {
 }
 
 export function CommitTableRow({ commit, children }: CommitTableRowProps) {
-  const [defaultExpanded] = useDefaultExpandedState();
+  const defaultExpanded = useDefaultExpanded();
   const [expanded, setExpanded] = useState(() => defaultExpanded);
-  useEffect(() => {
-    setExpanded(defaultExpanded);
-  }, [defaultExpanded]);
+  useEffect(() => setExpanded(defaultExpanded), [defaultExpanded]);
 
   const { descriptionHtml, changedFiles } = useMemo(
     () => ({
@@ -73,47 +75,35 @@ export function CommitTableRow({ commit, children }: CommitTableRowProps) {
   );
 
   return (
-    <>
-      <TableRow
-        sx={{
-          '& > td': {
-            whiteSpace: 'nowrap',
-          },
-        }}
-      >
-        <TableCell>
-          <IconButton
-            aria-label="toggle-row"
-            size="small"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? <ExpandMore /> : <ChevronRight />}
-          </IconButton>
-        </TableCell>
-        {/* Pass commit to cells via context so composing a row require less
-         ** boilerplate. */}
-        <CommitProvider value={commit}>{children}</CommitProvider>
-      </TableRow>
-      {/* Always render the content row to DOM to ensure a stable DOM structure.
-       **/}
-      <TableRow
-        data-testid="content-row"
-        sx={{ display: expanded ? '' : 'none' }}
-      >
-        <TableCell colSpan={100} sx={{ 'tr > &': { padding: 0 } }}>
-          <div css={{ padding: '10px 20px' }}>
-            <SummaryContainer html={descriptionHtml} />
-            <h4 css={{ marginBlockEnd: '0px' }}>
-              Changed files: {changedFiles.length}
-            </h4>
-            <ul>
-              {changedFiles.map((filename, i) => (
-                <li key={i}>{filename}</li>
-              ))}
-            </ul>
-          </div>
-        </TableCell>
-      </TableRow>
-    </>
+    <SetExpandedProvider value={setExpanded}>
+      <ExpandedProvider value={expanded}>
+        <TableRow sx={{ '& > td': { whiteSpace: 'nowrap' } }}>
+          {/* Pass commit to cells via context so composing a row require less
+           ** boilerplate. */}
+          <CommitProvider value={commit}>{children}</CommitProvider>
+        </TableRow>
+        {/* Always render the content row to DOM to ensure a stable DOM
+         ** structure.
+         **/}
+        <TableRow
+          data-testid="content-row"
+          sx={{ display: expanded ? '' : 'none' }}
+        >
+          <TableCell colSpan={100} sx={{ 'tr > &': { padding: 0 } }}>
+            <div css={{ padding: '10px 20px' }}>
+              <SummaryContainer html={descriptionHtml} />
+              <h4 css={{ marginBlockEnd: '0px' }}>
+                Changed files: {changedFiles.length}
+              </h4>
+              <ul>
+                {changedFiles.map((filename, i) => (
+                  <li key={i}>{filename}</li>
+                ))}
+              </ul>
+            </div>
+          </TableCell>
+        </TableRow>
+      </ExpandedProvider>
+    </SetExpandedProvider>
   );
 }

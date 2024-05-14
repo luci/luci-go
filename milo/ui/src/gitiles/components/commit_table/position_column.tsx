@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,20 @@
 
 import { Link, TableCell } from '@mui/material';
 
-import { useCommit, useRepoUrl } from './context';
+import {
+  useCommit,
+  useRepoUrl,
+} from '@/gitiles/components/commit_table/context';
 
-export function IdHeadCell() {
-  return <TableCell width="1px">ID</TableCell>;
+export function PositionHeadCell() {
+  return <TableCell width="1px">Commit</TableCell>;
 }
 
-export function IdContentCell() {
+export interface PositionContentCellProps {
+  readonly position: string;
+}
+
+export function PositionContentCell({ position }: PositionContentCellProps) {
   const repoUrl = useRepoUrl();
   const commit = useCommit();
 
@@ -32,7 +39,7 @@ export function IdContentCell() {
         rel="noreferrer"
         sx={{ fontWeight: 'bold' }}
       >
-        {commit.id.substring(0, 8)}
+        {position}
       </Link>
     </TableCell>
   );

@@ -20,15 +20,5 @@ export interface CommitTableBodyProps {
 }
 
 export function CommitTableBody({ children }: CommitTableBodyProps) {
-  return (
-    <TableBody
-      sx={{
-        '& > tr:nth-of-type(4n + 1)': {
-          backgroundColor: 'var(--block-background-color)',
-        },
-      }}
-    >
-      {children}
-    </TableBody>
-  );
+  return <TableBody>{children}</TableBody>;
 }

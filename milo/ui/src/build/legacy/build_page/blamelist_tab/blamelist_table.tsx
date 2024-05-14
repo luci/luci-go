@@ -29,6 +29,8 @@ import {
   TimeHeadCell,
   TitleContentCell,
   TitleHeadCell,
+  ToggleContentCell,
+  ToggleHeadCell,
 } from '@/gitiles/components/commit_table';
 import { CommitTableBody } from '@/gitiles/components/commit_table/commit_table_body';
 
@@ -55,6 +57,7 @@ const CommitTablePage = memo(function CommitTablePage({
     <>
       {page.commits.map((commit, i) => (
         <CommitTableRow key={i} commit={commit}>
+          <ToggleContentCell />
           <NumContentCell num={prevCommitCount + i + 1} />
           <IdContentCell />
           <AuthorContentCell />
@@ -82,7 +85,8 @@ export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
       initDefaultExpanded={defaultExpanded}
       onDefaultExpandedChanged={(expand) => setDefaultExpanded(expand)}
     >
-      <CommitTableHead toggleExpandHotkey="x">
+      <CommitTableHead>
+        <ToggleHeadCell hotkey="x" />
         <NumHeadCell />
         <IdHeadCell />
         <AuthorHeadCell />

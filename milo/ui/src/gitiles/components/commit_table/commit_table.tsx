@@ -13,10 +13,14 @@
 // limitations under the License.
 
 import { Table } from '@mui/material';
-import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 
-import { DefaultExpandedStateProvider, RepoUrlProvider } from './context';
+import {
+  DefaultExpandedProvider,
+  RepoUrlProvider,
+  SetDefaultExpandedProvider,
+} from './context';
 
 export interface CommitTableProps {
   readonly repoUrl: string;
@@ -34,10 +38,6 @@ export function CommitTable({
   children,
 }: CommitTableProps) {
   const [defaultExpanded, setDefaultExpanded] = useState(initDefaultExpanded);
-  const defaultExpandedState = useMemo(
-    () => [defaultExpanded, setDefaultExpanded] as const,
-    [defaultExpanded],
-  );
 
   const onDefaultExpandedChangedRef = useLatest(onDefaultExpandedChanged);
   const isFirstCall = useRef(true);
@@ -61,9 +61,11 @@ export function CommitTable({
         minWidth: '1000px',
       }}
     >
-      <DefaultExpandedStateProvider value={defaultExpandedState}>
-        <RepoUrlProvider value={repoUrl}>{children}</RepoUrlProvider>
-      </DefaultExpandedStateProvider>
+      <SetDefaultExpandedProvider value={setDefaultExpanded}>
+        <DefaultExpandedProvider value={defaultExpanded}>
+          <RepoUrlProvider value={repoUrl}>{children}</RepoUrlProvider>
+        </DefaultExpandedProvider>
+      </SetDefaultExpandedProvider>
     </Table>
   );
 }
