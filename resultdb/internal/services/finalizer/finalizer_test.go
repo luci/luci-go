@@ -150,7 +150,8 @@ func TestFinalizeInvocation(t *testing.T) {
 		Convey(`Enqueues a finalization notification and update test metadata tasks`, func() {
 			testutil.MustApply(ctx,
 				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]any{
-					"Realm": "myproject:myrealm",
+					"Realm":        "myproject:myrealm",
+					"IsExportRoot": true,
 				}),
 			)
 
@@ -167,8 +168,9 @@ func TestFinalizeInvocation(t *testing.T) {
 			// Enqueued pub/sub notification.
 			So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
 				Message: &pb.InvocationFinalizedNotification{
-					Invocation: "invocations/x",
-					Realm:      "myproject:myrealm",
+					Invocation:   "invocations/x",
+					Realm:        "myproject:myrealm",
+					IsExportRoot: true,
 				},
 			})
 		})

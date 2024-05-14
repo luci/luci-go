@@ -267,16 +267,18 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 
 				// Enqueue a notification to pub/sub listeners that the invocation
 				// has been finalized.
-				realm, err := invocations.ReadRealm(ctx, invID)
-				if err != nil {
+				var realm string
+				var isExportRoot spanner.NullBool
+				if err := invocations.ReadColumns(ctx, invID, map[string]any{"Realm": &realm, "IsExportRoot": &isExportRoot}); err != nil {
 					return err
 				}
 
 				// Note that this submits the notification transactionally,
 				// i.e. conditionally on this transaction committing.
 				notification := &pb.InvocationFinalizedNotification{
-					Invocation: invID.Name(),
-					Realm:      realm,
+					Invocation:   invID.Name(),
+					Realm:        realm,
+					IsExportRoot: isExportRoot.Valid && isExportRoot.Bool,
 				}
 				tasks.NotifyInvocationFinalized(ctx, notification)
 

@@ -36,6 +36,15 @@ message InvocationFinalizedNotification {
     // The LUCI realm that owns the invocation.
     // E.g. "chromium:ci".
     string realm = 2;
+
+    // Whether this invocation is a root of the invocation graph for export purposes.
+    //
+    // To help downstream systems (like LUCI Analysis) make sense of test results,
+    // and gather overall context for a result, ResultDB data export is centered
+    // around export roots.
+    //
+    // See more in invocation.proto.
+    bool is_export_root = 3;
 }
 
 // InvocationReadyForExportNotification notifies that the properties, test results
