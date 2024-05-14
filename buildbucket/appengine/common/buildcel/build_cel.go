@@ -20,7 +20,9 @@ import (
 	"strings"
 
 	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types"
 	"github.com/google/cel-go/common/types/ref"
+	"github.com/google/cel-go/common/types/traits"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
@@ -50,9 +52,23 @@ func fullName(msg proto.Message) string {
 // newBuildCELEnv creates a CEL environment to work with Build proto.
 func newBuildCELEnv() (*buildCELEnv, error) {
 	bldMsg := &pb.Build{}
+	spM := &pb.StringPair{}
 	env, err := cel.NewEnv(
-		cel.Types(bldMsg),
+		cel.Types(bldMsg, spM),
 		cel.Variable("build", cel.ObjectType(fullName(bldMsg))),
+		// `build.tags.get_value("key")`
+		cel.Function(
+			"get_value",
+			cel.MemberOverload(
+				"string_pairs_get_value",
+				[]*cel.Type{
+					cel.ListType(cel.ObjectType(fullName(spM))),
+					cel.StringType,
+				},
+				cel.StringType,
+				cel.BinaryBinding(stringPairsGetValue),
+			),
+		),
 	)
 	if err != nil {
 		return nil, err
@@ -119,6 +135,9 @@ func (bc *base) eval(b *pb.Build) (ref.Val, *cel.EvalDetails, error) {
 //     the value to string.
 //
 // * experiments includes an experiment, e.g. `build.input.experiments.exists(e, e=="luci.buildbucket.exp")`
+// * tags includes a tag with key "key", and there are two ways:
+//   - `build.tags.get_value("key")!=""`
+//   - `build.tags.exists(t, t.key=="key")`
 type Bool struct {
 	base *base
 }
@@ -180,6 +199,8 @@ func (bbc *Bool) Eval(b *pb.Build) (bool, error) {
 // * value of an input/output property, e.g. `string(build.input.properties.key)`
 //   - Note: because input/output properties are Struct, we have to cast
 //     the value to string.
+//
+// * value of a tag, e.g. `build.tags.get_value("key")`
 type StringMap struct {
 	base *base
 }
@@ -245,4 +266,20 @@ func (smbc *StringMap) Eval(b *pb.Build) (map[string]string, error) {
 	}
 
 	return outVal.(map[string]string), nil
+}
+
+// custom functions.
+
+// stringPairsGetValue implements the custom function
+// `build.tags.get_value("key") string`.
+func stringPairsGetValue(strPairsVal ref.Val, keyVal ref.Val) ref.Val {
+	sPirs := strPairsVal.(traits.Lister)
+	key := string(keyVal.(types.String))
+	for it := sPirs.Iterator(); it.HasNext() == types.True; {
+		sp := it.Next().Value().(*pb.StringPair)
+		if sp.Key == key {
+			return types.String(sp.Value)
+		}
+	}
+	return types.String("")
 }

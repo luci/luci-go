@@ -188,4 +188,70 @@ func TestBuildCEL(t *testing.T) {
 			So(out, ShouldResemble, expected)
 		})
 	})
+
+	Convey("tags", t, func() {
+		Convey("tag exists", func() {
+			bbc, err := NewBool([]string{
+				`build.tags.exists(t, t.key=="os")`,
+				`build.tags.get_value("os")!=""`,
+			})
+			So(err, ShouldBeNil)
+			Convey("not matched", func() {
+				b := &pb.Build{
+					Tags: []*pb.StringPair{
+						{
+							Key:   "key",
+							Value: "value",
+						},
+					},
+				}
+				pass, err := bbc.Eval(b)
+				So(err, ShouldBeNil)
+				So(pass, ShouldBeFalse)
+			})
+			Convey("matched", func() {
+				b := &pb.Build{
+					Tags: []*pb.StringPair{
+						{
+							Key:   "os",
+							Value: "Mac",
+						},
+					},
+				}
+				pass, err := bbc.Eval(b)
+				So(err, ShouldBeNil)
+				So(pass, ShouldBeTrue)
+			})
+		})
+		Convey("get_value", func() {
+			bbc, err := NewStringMap(map[string]string{"os": `build.tags.get_value("os")`})
+			So(err, ShouldBeNil)
+			Convey("not found", func() {
+				b := &pb.Build{
+					Tags: []*pb.StringPair{
+						{
+							Key:   "key",
+							Value: "value",
+						},
+					},
+				}
+				res, err := bbc.Eval(b)
+				So(err, ShouldBeNil)
+				So(res, ShouldResemble, map[string]string{"os": ""})
+			})
+			Convey("found", func() {
+				b := &pb.Build{
+					Tags: []*pb.StringPair{
+						{
+							Key:   "os",
+							Value: "Mac",
+						},
+					},
+				}
+				res, err := bbc.Eval(b)
+				So(err, ShouldBeNil)
+				So(res, ShouldResemble, map[string]string{"os": "Mac"})
+			})
+		})
+	})
 }
