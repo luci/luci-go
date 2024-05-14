@@ -25,10 +25,11 @@
 //     the error message needs to indicate why. As the error messages get more
 //     complex, you may be tempted to write helpers... at which point you've
 //     built an assertion library.
-//  2. If you refuse to put the helpers in a library, you now have one custom
-//     library per package, which is worse.
+//  2. If you refuse to put the helpers in a library, you now have one or more
+//     custom functions per package, which is worse.
 //  3. If you ignore the problem, you may be tempted to write shorter error
-//     messages, which makes test failures more cumbersome to debug.
+//     messages (or fewer tests), which makes test failures more cumbersome
+//     to debug.
 //
 // So, for our applications, we've found them to be helpful tools to write high
 // quality tests. This library is NOT a requirement, but a tool. If it gets in
@@ -72,11 +73,12 @@
 // `func(any, ...any) string`), had an extra implementation burden for
 // implementing custom checkers (every implementation, even small helpers inside
 // of a test package, had to do type-casting on the expected arguments, ensure
-// that the right number of expected values, etc.).
+// that the right number of expected values were passed, etc.).
 //
 // Further, the return type of `string` is also dissatisfyingly untyped... there
-// were global variables which could manipulate the assertions so that they
-// returned encoded JSON instead of a plain string message.
+// were global variables which could manipulate the goconvey assertions so that
+// they returned encoded JSON instead of a plain string message, but this was
+// even more surprising and dissatisfying.
 //
 // For goconvey assertions, you also had to also use the controversial "Convey"
 // suite syntax (see the sister library `ftt` adjacent to `truth`, which
@@ -103,14 +105,17 @@
 //	  //   * truth.Check
 //	  //   * truth.CheckLoosely
 //
-//	  // Optional; these are a collection of useful common comparisons, but
-//	  // are by no means required.
-//	  "go.chromium.org/luci/common/testing/assert/should"
+//	  // Optional; these are a collection of useful, common, comparisons, but
+//	  // which are not required.
+//	  "go.chromium.org/luci/common/testing/truth/should"
+//
+//	  // Optional; this library will let you write your own comparison functions
+//	  // "go.chromium.org/luci/common/testing/truth/comparison"
 //	)
 //
 //	func TestSomething(t *testing.T) {
-//	   // Checks that `someFunction` returns an `int` (enforced at compile
-//	   // time).
+//	   // Checks that `someFunction` returns an `int` with the value `100`.
+//	   // The type of someFunction() is enforced at compile time.
 //	   assert.That(t, someFunction(), should.Equal(100))
 //
 //	   // Checks that `someFunction` returns some value lossesly assignable to
@@ -176,8 +181,9 @@ func render(f *comparison.Failure) string {
 	}.Failure("", f)
 }
 
-// Assert strictly compares `actual` using `compare`, which is typically
-// a closure over some expected value.
+// Assert compares `actual` using `compare`, which is typically
+// a closure over some expected value (e.g. should.Equal(100) returns
+// comparison.Func[int]).
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
 func Assert[T any](t testing.TB, actual T, compare comparison.Func[T]) {
@@ -189,8 +195,9 @@ func Assert[T any](t testing.TB, actual T, compare comparison.Func[T]) {
 	}
 }
 
-// Check compares `actual` using `compare`, which is typically a closure over some
-// expected value.
+// Check compares `actual` using `compare`, which is typically
+// a closure over some expected value (e.g. should.Equal(100) returns
+// comparison.Func[int]).
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
@@ -206,12 +213,16 @@ func Check[T any](t testing.TB, actual T, compare comparison.Func[T]) (ok bool) 
 	return
 }
 
-// looseCheckImpl allows both Check and Assert to share a single common
-// implementation.
+// doConversion converts `actual` to `compare`'s T value.
 //
-// This will call all functions necessary in `t` EXCEPT for Fail or FailNow,
-// which the caller of this function should call directly.
-func wrapCompare[T any](actual any, compare comparison.Func[T]) (converted T, newCompare comparison.Func[T]) {
+// If the conversion succeeds, this returns the converted value and `compare`.
+//
+// If the conversion fails, this returns an unspecified value and a comparison
+// function which always fails for all inputs with "builtin.LosslessConvertTo".
+//
+// This is so that AssertLoosely and CheckLoosely can call directly into Assert
+// and Check, respectively.
+func doConversion[T any](actual any, compare comparison.Func[T]) (converted T, newCompare comparison.Func[T]) {
 	converted, ok := data.LosslessConvertTo[T](actual)
 	if ok {
 		return converted, compare
@@ -226,35 +237,37 @@ func wrapCompare[T any](actual any, compare comparison.Func[T]) (converted T, ne
 	}
 }
 
-// AssertLoosely loosely compares `actual` using `compare`, which is typically
-// a closure over some expected value.
+// AssertLoosely compares `actual` using `compare`, which is typically
+// a closure over some expected value (e.g. should.Equal(100) returns
+// comparison.Func[int]).
 //
 // `actual` will be converted to T using the function
 // [go.chromium.org/luci/common/data.LosslessConvertTo].
 //
-// If this conversion fails, a descriptive error will be logged and FailNow()
+// If this conversion fails, a descriptive error will be logged and t.FailNow()
 // called.
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
 func AssertLoosely[T any](t testing.TB, actual any, compare comparison.Func[T]) {
-	converted, compare := wrapCompare(actual, compare)
+	converted, compare := doConversion(actual, compare)
 	t.Helper()
 	Assert(t, converted, compare)
 }
 
-// CheckLoosely loosely compares `actual` using `compare`, which is typically
-// a closure over some expected value.
+// CheckLoosely compares `actual` using `compare`, which is typically
+// a closure over some expected value (e.g. should.Equal(100) returns
+// comparison.Func[int]).
 //
 // `actual` will be converted to T using the function
 // [go.chromium.org/luci/common/data.LosslessConvertTo].
 //
-// If this conversion fails, a descriptive error will be logged and FailNow()
+// If this conversion fails, a descriptive error will be logged and t.Fail()
 // called.
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
 func CheckLoosely[T any](t testing.TB, actual any, compare comparison.Func[T]) bool {
-	converted, compare := wrapCompare(actual, compare)
+	converted, compare := doConversion(actual, compare)
 	t.Helper()
 	return Check(t, converted, compare)
 }

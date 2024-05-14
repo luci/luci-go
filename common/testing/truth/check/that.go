@@ -39,9 +39,6 @@ import (
 
 // That is an alternate name for truth.Check.
 //
-// This will check that `compare(actual)` does not produce a Failure. If it
-// does, this will `t.Fail()` the current test.
-//
 // Example: `check.That(t, 10, should.Equal(20))`
 func That[T any](t testing.TB, actual T, compare comparison.Func[T]) (ok bool) {
 	t.Helper()
@@ -49,9 +46,6 @@ func That[T any](t testing.TB, actual T, compare comparison.Func[T]) (ok bool) {
 }
 
 // Loosely is an alternate name for truth.CheckLoosely.
-//
-// This will check that `compare(data.LosslessConvertTo[T](actual))` does not
-// produce a Failure. If it does, this will `t.Fail()` the current test.
 //
 // Example: `check.Loosely(t, myCustomInt(10), should.Equal(20))`
 func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T]) (ok bool) {

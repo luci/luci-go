@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package should contains comparisons such as should.Equal.
+// Package should contains comparisons such as should.Equal to be used with the
+// "go.chromium.org/luci/common/testing/truth" library.
 //
-// These are meant to be used with the 'assert' library like:
+// Example:
 //
-//     import "testing"
-//     import . "go.chromium.org/luci/common/testing/assert"
-//     import "go.chromium.org/luci/common/testing/assert/should"
+//	import (
+//	  "testing"
+//	  "go.chromium.org/luci/common/testing/truth/assert"
+//	  "go.chromium.org/luci/common/testing/truth/should"
+//	)
 //
-//     func TestSomething(t *testing.T) {
-//         Assert(t, something(), should.Equal("hello"))
-//     }
+//	func TestSomething(t *testing.T) {
+//	    assert.That(t, something(), should.Equal("hello"))
+//	}
 package should

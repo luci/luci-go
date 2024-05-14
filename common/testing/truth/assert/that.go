@@ -16,7 +16,7 @@
 // truth.AssertLoosely, spelled `assert.That` and `assert.Loosely`
 // respectively.
 //
-// This allows test writers to have fluent expressions in tests such allows
+// This allows test writers to more concisely express assertions like:
 //
 //	assert.That(t, 10, should.Equal(20))
 //	assert.Loosely(t, myCustomInt(10), should.Equal(20))
@@ -26,8 +26,8 @@
 //	truth.Assert(t, 10, should.Equal(20))
 //	truth.AssertLoosely(t, myCustomInt(10), should.Equal(20))
 //
-// This package has a counterpart sibling `assert` which cover `Assert` and
-// `AssertLoosely`.
+// This package has a counterpart sibling `check` which covers `Check` and
+// `CheckLoosely`.
 package assert
 
 import (
@@ -39,9 +39,6 @@ import (
 
 // That is an alternate name for truth.Assert.
 //
-// This will assert that `compare(actual)` does not produce a Failure. If it
-// does, this will `t.FailNow()` the current test.
-//
 // Example: `assert.That(t, 10, should.Equal(20))`
 func That[T any](t testing.TB, actual T, compare comparison.Func[T]) {
 	t.Helper()
@@ -49,9 +46,6 @@ func That[T any](t testing.TB, actual T, compare comparison.Func[T]) {
 }
 
 // Loosely is an alternate name for truth.AssertLoosely.
-//
-// This will assert that `compare(data.LosslessConvertTo[T](actual))` does not
-// produce a Failure. If it does, this will `t.FailNow()` the current test.
 //
 // Example: `assert.Loosely(t, myCustomInt(10), should.Equal(20))`
 func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T]) {
