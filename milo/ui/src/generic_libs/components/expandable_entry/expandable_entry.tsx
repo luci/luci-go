@@ -106,6 +106,7 @@ export function ExpandableEntryBody({
 
 export interface ExpandableEntryProps {
   readonly expanded: boolean;
+  readonly sx?: SxProps<Theme>;
   /**
    * The first child should be an <ExpandableEntryHeader />.
    * The second child should be an <ExpandableEntryBody />.
@@ -116,9 +117,13 @@ export interface ExpandableEntryProps {
 /**
  * Renders an expandable entry.
  */
-export function ExpandableEntry({ expanded, children }: ExpandableEntryProps) {
+export function ExpandableEntry({
+  expanded,
+  sx,
+  children,
+}: ExpandableEntryProps) {
   return (
-    <Box>
+    <Box sx={sx}>
       <ExpandedContext.Provider value={expanded}>
         {children}
       </ExpandedContext.Provider>

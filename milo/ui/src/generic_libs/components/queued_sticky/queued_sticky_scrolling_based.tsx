@@ -13,11 +13,12 @@
 // limitations under the License.
 
 import { Box, SxProps, Theme } from '@mui/material';
-import { ReactNode } from 'react';
+import { ElementType, ReactNode } from 'react';
 
 import { QueuedStickyContextProvider, DepthCtx } from './context';
 
 export interface QueuedStickyScrollingBaseProps {
+  readonly component?: ElementType;
   readonly sx?: SxProps<Theme>;
   readonly className?: string;
   readonly children: ReactNode;
@@ -29,6 +30,7 @@ export interface QueuedStickyScrollingBaseProps {
  * [the documentation](./doc.md) for examples.
  */
 export function QueuedStickyScrollingBase({
+  component,
   sx,
   className,
   children,
@@ -36,6 +38,7 @@ export function QueuedStickyScrollingBase({
   return (
     <Box
       className={className}
+      component={component}
       sx={{
         ...sx,
 

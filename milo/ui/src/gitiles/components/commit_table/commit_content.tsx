@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { styled } from '@mui/material';
+import { Box, styled, SxProps, Theme } from '@mui/material';
 import markdownIt from 'markdown-it';
 import { useMemo } from 'react';
 
@@ -44,7 +44,11 @@ const SummaryContainer = styled(SanitizedHtml)({
   },
 });
 
-export function CommitContent() {
+export interface CommitContentProps {
+  readonly sx?: SxProps<Theme>;
+}
+
+export function CommitContent({ sx }: CommitContentProps) {
   const commit = useCommit();
 
   const { descriptionHtml, changedFiles } = useMemo(
@@ -64,7 +68,7 @@ export function CommitContent() {
   );
 
   return (
-    <div css={{ padding: '10px 20px' }}>
+    <Box sx={{ padding: '10px 20px', ...sx }}>
       <SummaryContainer html={descriptionHtml} />
       <h4 css={{ marginBlockEnd: '0px' }}>
         Changed files: {changedFiles.length}
@@ -74,6 +78,6 @@ export function CommitContent() {
           <li key={i}>{filename}</li>
         ))}
       </ul>
-    </div>
+    </Box>
   );
 }
