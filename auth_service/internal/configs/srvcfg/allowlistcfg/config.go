@@ -34,9 +34,21 @@ func Get(ctx context.Context) (*configspb.IPAllowlistConfig, error) {
 	return cfg.(*configspb.IPAllowlistConfig), err
 }
 
+// GetMetadata returns the config's metadata stored in context.
+func GetMetadata(ctx context.Context) (*config.Meta, error) {
+	meta := &config.Meta{}
+	_, err := cachedAllowlistCfg.Get(ctx, meta)
+	return meta, err
+}
+
 // SetConfig installs the cfg into the context ctx.
 func SetConfig(ctx context.Context, cfg *configspb.IPAllowlistConfig) error {
 	return cachedAllowlistCfg.Set(ctx, cfg, &config.Meta{})
+}
+
+// SetConfigWithMetadata installs the cfg with the given metadata into the context ctx.
+func SetConfigWithMetadata(ctx context.Context, cfg *configspb.IPAllowlistConfig, meta *config.Meta) error {
+	return cachedAllowlistCfg.Set(ctx, cfg, meta)
 }
 
 // Update fetches the config and puts it into the datastore.

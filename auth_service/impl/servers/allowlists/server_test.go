@@ -23,11 +23,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -116,6 +119,19 @@ func TestAllowlistsServer(t *testing.T) {
 				CreatedBy:                "user:test-user-3",
 			}), ShouldBeNil)
 
+		_, err := srv.ListAllowlists(ctx, &emptypb.Empty{})
+		So(err, ShouldHaveGRPCStatus, codes.Internal)
+		So(err, ShouldErrLike, "failed to get config metadata")
+
+		// Set up the allowlist config and its metadata.
+		testConfig := &configspb.IPAllowlistConfig{}
+		testConfigMetadata := &config.Meta{
+			Path:     "ip_allowlist.cfg",
+			Revision: "123abc",
+			ViewURL:  "https://example.com/config/revision/123abc",
+		}
+		So(allowlistcfg.SetConfigWithMetadata(ctx, testConfig, testConfigMetadata), ShouldBeNil)
+
 		// Expected response, build with pb.
 		expectedAllowlists := &rpcpb.ListAllowlistsResponse{
 			Allowlists: []*rpcpb.Allowlist{
@@ -146,6 +162,8 @@ func TestAllowlistsServer(t *testing.T) {
 					CreatedBy:   "user:test-user-2",
 				},
 			},
+			ConfigViewUrl:  testConfigMetadata.ViewURL,
+			ConfigRevision: testConfigMetadata.Revision,
 		}
 
 		actualResponse, err := srv.ListAllowlists(ctx, &emptypb.Empty{})

@@ -36,6 +36,13 @@ service Allowlists {
 message ListAllowlistsResponse {
   // List of all allowlists.
   repeated Allowlist allowlists = 1;
+
+  // The URL to view the IP Allowlists config file.
+  string config_view_url = 2;
+
+  // The revision of the IP allowlists config corresponding to the returned IP
+  // allowlists.
+  string config_revision = 3;
 }
 
 // GetAllowlistRequest is to specify the allowlist being requested.

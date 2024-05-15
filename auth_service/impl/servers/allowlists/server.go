@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
 )
 
 // Server implements Allowlists server.
@@ -47,8 +48,15 @@ func (*Server) ListAllowlists(ctx context.Context, _ *emptypb.Empty) (*rpcpb.Lis
 		allowlistList[idx] = entity.ToProto()
 	}
 
+	metadata, err := allowlistcfg.GetMetadata(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get config metadata: %s", err)
+	}
+
 	return &rpcpb.ListAllowlistsResponse{
-		Allowlists: allowlistList,
+		Allowlists:     allowlistList,
+		ConfigViewUrl:  metadata.ViewURL,
+		ConfigRevision: metadata.Revision,
 	}, nil
 }
 

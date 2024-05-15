@@ -18,22 +18,22 @@
           <label>Description</label>
           <input id="description-box" type="text" class="form-control" readonly="" name="description"></input>
         </div>
-        <div class="row mb-4" style="font-family: monospace">
+        <div class="row mb-4 font-monospace">
           <textarea id="subnet-box" class="form-control" rows="5" name="subnets" readonly="" wrap="off"></textarea>
         </div>
       </div>
       <div class="row">
         <hr/>
-        <p>
+      </div>
+      <div class="d-flex flew-row my-2">
+        <div class="me-1">
           The configuration is distributed by
-          <a target="_blank" href="https://config.luci.app">
-            luci-config
-          </a>
-          . Using revision
-          <a target="_blank" href="#" style="font-family: monospace">
-            1234
-          </a>.
-        </p>
+          <a target="_blank" href="https://luci-config.appspot.com">luci-config</a>.
+        </div>
+        <div id="revision-details">
+          Using revision
+          <a class="font-monospace" target="_blank"></a>.
+        </div>
       </div>
     </div>
   </div>

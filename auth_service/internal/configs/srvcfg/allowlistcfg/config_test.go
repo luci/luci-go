@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
@@ -57,5 +58,17 @@ func TestConfigContext(t *testing.T) {
 		cfgFromGet, err := Get(ctx)
 		So(err, ShouldBeNil)
 		So(cfgFromGet, ShouldResembleProto, allowlistCfg)
+	})
+
+	Convey("Testing config operations with metadata", t, func() {
+		metadata := &config.Meta{
+			Path:     "ip_allowlist.cfg",
+			Revision: "123abc",
+			ViewURL:  "https://example.com/config/revision/123abc",
+		}
+		So(SetConfigWithMetadata(ctx, allowlistCfg, metadata), ShouldBeNil)
+		metadataFromGet, err := GetMetadata(ctx)
+		So(err, ShouldBeNil)
+		So(metadataFromGet, ShouldResembleProto, metadata)
 	})
 }

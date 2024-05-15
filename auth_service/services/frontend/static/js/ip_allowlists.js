@@ -92,11 +92,29 @@ class AllowlistPane {
   }
 }
 
-const reloadAllowlists = (selector) => {
+
+////////////////////////////////////////////////////////////////////////////////
+// RevisionDetails is the inline text which specifies the IP allowlist
+// config revision and view URL.
+class RevisionDetails {
+  constructor(element) {
+    this.element = document.getElementById(element);
+    this.linkElement = this.element.querySelector('a');
+  }
+
+  setLink(viewURL, revision) {
+    this.linkElement.setAttribute('href', viewURL);
+    this.linkElement.textContent = revision;
+  }
+}
+
+
+const reloadAllowlists = (selector, revisionDetails) => {
   let defer = api.ipAllowlists();
   defer
     .then((response) => {
       selector.populate(response.allowlists);
+      revisionDetails.setLink(response.configViewUrl, response.configRevision);
     })
     .catch((err) => {
       console.log(err);
@@ -105,10 +123,11 @@ const reloadAllowlists = (selector) => {
 };
 
 window.onload = () => {
-  let selector = new Selector('allowlist-selector');
-  let allowlistPane = new AllowlistPane();
+  const selector = new Selector('allowlist-selector');
+  const allowlistPane = new AllowlistPane();
+  const revisionDetails = new RevisionDetails('revision-details');
 
-  reloadAllowlists(selector);
+  reloadAllowlists(selector, revisionDetails);
 
   selector.element.addEventListener('allowlistSelected', (event) => {
     if (event.detail.ip_allowlist === null) {
