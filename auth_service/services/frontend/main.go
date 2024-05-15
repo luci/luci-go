@@ -162,6 +162,9 @@ func main() {
 		srv.Routes.GET("/groups/*groupName", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/groups.html", nil)
 		})
+		srv.Routes.GET("/listing", mw, func(ctx *router.Context) {
+			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/listing.html", nil)
+		})
 		srv.Routes.GET("/change_log", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/change_log.html", nil)
 		})

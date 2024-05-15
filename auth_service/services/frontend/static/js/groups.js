@@ -668,7 +668,7 @@ class EditGroupForm extends GroupForm {
     changeLogLink.setAttribute('href',
       common.getChangeLogTargetURL('AuthGroup', group.name));
     lookupLink.setAttribute('href', common.getLookupURL(group.name));
-    // TODO: implement then link to full listing page for the group.
+    listingLink.setAttribute('href', common.getGroupListingURL(group.name));
 
     // Enable tooltips for the group's links.
     this.tooltips.push(new bootstrap.Tooltip(changeLogLink));

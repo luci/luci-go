@@ -147,6 +147,11 @@ var api = (function () {
     return call('auth.service.Groups', 'GetGroup', { 'name': request });
   };
 
+  // Get the exhaustive membership listing of an individual group.
+  exports.groupExpand = function (name) {
+    return call('auth.service.Groups', 'GetExpandedGroup', { 'name': name });
+  };
+
   // Delete individual group.
   exports.groupDelete = function (name, etag) {
     return call('auth.service.Groups', 'DeleteGroup', { 'name': name, 'etag': etag });

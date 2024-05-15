@@ -103,6 +103,14 @@ var common = (function () {
     return '/groups/' + encodeURIComponent(name);
   };
 
+  // Returns URL for the given group's full listing page.
+  exports.getGroupListingURL = (name) => {
+    if (name) {
+      return '/listing?group=' + encodeURIComponent(name);
+    }
+    return '/groups';
+  };
+
   // Returns URL to a page with lookup results.
   exports.getLookupURL = (principal) => {
     if (principal) {
@@ -165,7 +173,13 @@ var common = (function () {
   };
 
   exports.setMainNavbarActiveLink = () => {
-    const path = window.location.pathname;
+    let path = window.location.pathname;
+
+    // If listing a group, make the active link match the link for groups.
+    if (path === '/listing') {
+      path = '/groups';
+    }
+
     document.querySelectorAll('#main-navbar a').forEach((link) => {
       const target = link.getAttribute('href');
       if (target && path.startsWith(target)) {

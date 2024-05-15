@@ -1,0 +1,85 @@
+{{define "title"}}CrIA v2{{end}}
+
+{{define "content"}}
+
+<script type="text/javascript" src="/static/js/listing.js"></script>
+
+<template id="descendant-item-template">
+  <tr>
+    <td>
+      <a></a>
+    </td>
+  </tr>
+</template>
+
+<template id="group-listing-template">
+  <div class="row my-3 text-center">
+    <div class="h4">
+      <a id="title"></a>
+    </div>
+    <div id="summary-totals" class="small text-muted">
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="row my-3">
+    <div class="col-8 border-end">
+      <div class="h4">
+        Members
+      </div>
+      <div>
+        <table id="members-table" class="table table-sm table-borderless">
+          <tbody>
+            <tr>
+              <td>
+                <i class="text-muted">No members</i>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="h4">
+        Nested groups
+      </div>
+      <div>
+        <table id="nested-groups-table" class="table table-sm table-borderless">
+          <tbody>
+            <tr>
+              <td>
+                <i class="text-muted">No nested groups</i>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
+
+<div class="container px-0 py-2" id="content-box">
+
+  <!-- Placeholder for loading box. -->
+  <div id="loading-box-placeholder"></div>
+
+  <!-- Placeholder for listing results. -->
+  <div id="group-listing" class="col px-0"></div>
+
+  <!-- Placeholder for listing error. -->
+  <div id="listing-error" style="display: none;">
+    <div class="alert alert-danger my-3" role="alert">
+      <h5 class="alert-heading">
+        <i class="bi bi-exclamation-circle me-2"></i>
+        <span>Error listing group memberships</span>
+      </h5>
+      <span id="listing-error-message"></span>
+    </div>
+  </div>
+
+</div>
+
+
+{{end}}
