@@ -226,7 +226,6 @@ func (state *coordinatorState[T]) handleResult(ctx context.Context, result worke
 
 	state.dbg("    NACK")
 	state.buf.NACK(ctx, result.err, result.batch)
-	return
 }
 
 // coordinator is the main goroutine for managing the state of the Channel.

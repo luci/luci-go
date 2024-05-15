@@ -214,7 +214,6 @@ func (buf *Buffer[T]) Flush(now time.Time) {
 	buf.unleased.PushBatch(batch)
 	buf.batchItemsGuess.record(batch.countedItems)
 	buf.currentBatch = nil
-	return
 }
 
 // NextSendTime returns the send time for the next-most-available-to-send Batch,
@@ -376,8 +375,6 @@ func (buf *Buffer[T]) NACK(ctx context.Context, err error, leased *Batch[T]) {
 
 	buf.unleased.PushBatch(leased)
 	buf.stats.add(leased, categoryUnleased)
-
-	return
 }
 
 func intMin(a, b int) int {
