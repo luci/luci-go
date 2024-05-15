@@ -147,6 +147,18 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
 		}
 	},
+	"test_results": func(luciProject string) *bigquery.TableMetadata {
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
+		}
+		return &bigquery.TableMetadata{
+			Description: "Contains all test results produced by " + luciProject + "." +
+				" See go/luci-reference#test-results.",
+			ViewQuery: `SELECT * FROM internal.test_results WHERE ` + projectWhereClause(luciProject),
+			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
+		}
+	},
 	"test_verdicts": func(luciProject string) *bigquery.TableMetadata {
 		// Revalidate project as safeguard against SQL-Injection.
 		if err := pbutil.ValidateProject(luciProject); err != nil {
