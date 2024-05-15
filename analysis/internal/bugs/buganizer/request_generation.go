@@ -97,7 +97,7 @@ func NewRequestGenerator(
 
 // PrepareNew generates a CreateIssueRequest for a new issue.
 func (rg *RequestGenerator) PrepareNew(description *clustering.ClusterDescription, activePolicyIDs map[bugs.PolicyID]struct{},
-	ruleID string, componentID int64) (*issuetracker.CreateIssueRequest, error) {
+	ruleID string, component *issuetracker.Component) (*issuetracker.CreateIssueRequest, error) {
 	priority, verified := rg.policyApplyer.RecommendedPriorityAndVerified(activePolicyIDs)
 	if verified {
 		return nil, errors.Reason("issue is recommended to be verified from time of creation; are no policies active?").Err()
@@ -109,10 +109,17 @@ func (rg *RequestGenerator) PrepareNew(description *clustering.ClusterDescriptio
 	if rg.buganizerCfg.FileWithoutLimitViewTrusted {
 		accessLimit = issuetracker.IssueAccessLimit_LIMIT_NONE
 	}
+	// Issues under internal components cannot be viewed by the public regardless
+	// of the access limit setting on the issues themselves.
+	// Attaching `LIMIT_VIEW_TRUSTED` to those issues causes automation tools,
+	// including LUCI Analysis itself, to lose access to those issues.
+	if component.AccessLimit.AccessLevel == issuetracker.AccessLimit_INTERNAL {
+		accessLimit = issuetracker.IssueAccessLimit_LIMIT_NONE
+	}
 
 	issue := &issuetracker.Issue{
 		IssueState: &issuetracker.IssueState{
-			ComponentId: componentID,
+			ComponentId: component.ComponentId,
 			Type:        issuetracker.Issue_BUG,
 			Status:      issuetracker.Issue_NEW,
 			Priority:    toBuganizerPriority(priority),

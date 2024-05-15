@@ -123,6 +123,12 @@ func (w *RPCClient) BatchGetIssues(ctx context.Context, in *issuetracker.BatchGe
 	return w.Client.BatchGetIssues(ctx, in)
 }
 
+// GetComponent delegates a call to Client.GetComponent and
+// returns the component returned or the error that occured.
+func (w *RPCClient) GetComponent(ctx context.Context, in *issuetracker.GetComponentRequest) (*issuetracker.Component, error) {
+	return w.Client.GetComponent(ctx, in)
+}
+
 // GetIssue delegates a call to Client.GetIssue and returns the issue
 // returned or the error that occured.
 func (w *RPCClient) GetIssue(ctx context.Context, in *issuetracker.GetIssueRequest) (*issuetracker.Issue, error) {

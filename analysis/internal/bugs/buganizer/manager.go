@@ -49,6 +49,8 @@ type Client interface {
 	Close()
 	// BatchGetIssues returns a list of issues matching the BatchGetIssuesRequest.
 	BatchGetIssues(ctx context.Context, in *issuetracker.BatchGetIssuesRequest) (*issuetracker.BatchGetIssuesResponse, error)
+	// GetComponent gets a component, including its parent hierarchy info.
+	GetComponent(ctx context.Context, in *issuetracker.GetComponentRequest) (*issuetracker.Component, error)
 	// GetIssue returns data about a single issue.
 	GetIssue(ctx context.Context, in *issuetracker.GetIssueRequest) (*issuetracker.Issue, error)
 	// CreateIssue creates an issue using the data provided.
@@ -153,12 +155,17 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 			}
 		}
 	}
+	component, err := bm.client.GetComponent(ctx, &issuetracker.GetComponentRequest{ComponentId: componentID})
+	if err != nil {
+		response.Error = errors.Annotate(err, "get Buganizer component").Err()
+		return response
+	}
 
 	createIssueRequest, err := bm.requestGenerator.PrepareNew(
 		createRequest.Description,
 		createRequest.ActivePolicyIDs,
 		createRequest.RuleID,
-		componentID,
+		component,
 	)
 	if err != nil {
 		response.Error = errors.Annotate(err, "prepare new issue").Err()

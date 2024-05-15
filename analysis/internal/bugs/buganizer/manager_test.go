@@ -319,16 +319,33 @@ func TestBugManager(t *testing.T) {
 				bm, err := NewBugManager(fakeClient, "https://luci-analysis-test.appspot.com", "chromeos", "email@test.com", projectCfg)
 				So(err, ShouldBeNil)
 
-				response := bm.Create(ctx, createRequest)
-				So(response, ShouldResemble, bugs.BugCreateResponse{
-					ID: "1",
-					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
-						"policy-a": {},
-					},
+				Convey("With internal component", func() {
+					fakeClient.ComponentAccessLevel = issuetracker.AccessLimit_INTERNAL
+					response := bm.Create(ctx, createRequest)
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
+							"policy-a": {},
+						},
+					})
+					So(len(fakeStore.Issues), ShouldEqual, 1)
+					issue := fakeStore.Issues[1]
+					So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_NONE)
 				})
-				So(len(fakeStore.Issues), ShouldEqual, 1)
-				issue := fakeStore.Issues[1]
-				So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED)
+
+				Convey("With public component", func() {
+					fakeClient.ComponentAccessLevel = issuetracker.AccessLimit_EXTERNAL_PUBLIC
+					response := bm.Create(ctx, createRequest)
+					So(response, ShouldResemble, bugs.BugCreateResponse{
+						ID: "1",
+						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
+							"policy-a": {},
+						},
+					})
+					So(len(fakeStore.Issues), ShouldEqual, 1)
+					issue := fakeStore.Issues[1]
+					So(issue.Issue.IssueState.AccessLimit.AccessLevel, ShouldEqual, issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED)
+				})
 			})
 		})
 		Convey("Update", func() {

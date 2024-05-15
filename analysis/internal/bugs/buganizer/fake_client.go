@@ -42,6 +42,8 @@ type FakeClient struct {
 	// Defines a custom error to return when attempting to create
 	// an issue comment. Use this to test failed updates.
 	CreateCommentError error
+	// Defines the component access level. Defaults to `AccessLimit_INTERNAL`.
+	ComponentAccessLevel issuetracker.AccessLimit_AccessLevel
 }
 
 func NewFakeClient() *FakeClient {
@@ -62,6 +64,20 @@ func (fic *FakeClient) BatchGetIssues(ctx context.Context, in *issuetracker.Batc
 	}
 	return &issuetracker.BatchGetIssuesResponse{
 		Issues: issues,
+	}, nil
+}
+
+func (fic *FakeClient) GetComponent(ctx context.Context, in *issuetracker.GetComponentRequest) (*issuetracker.Component, error) {
+	accessLevel := fic.ComponentAccessLevel
+	if accessLevel == issuetracker.AccessLimit_ACCESS_LEVEL_UNSPECIFIED {
+		accessLevel = issuetracker.AccessLimit_INTERNAL
+	}
+
+	return &issuetracker.Component{
+		ComponentId: in.ComponentId,
+		AccessLimit: &issuetracker.AccessLimit{
+			AccessLevel: accessLevel,
+		},
 	}, nil
 }
 
