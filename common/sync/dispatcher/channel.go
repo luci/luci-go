@@ -60,6 +60,44 @@ func (c Channel[T]) IsDrained() bool {
 	}
 }
 
+// Consume takes a source channel of items and feeds each item into the
+// dispatcher.Channel. We then call SendFn repeatedly on batches of elements as
+// usual.
+//
+// Control is handed back to the caller when the deadline is exceeded or every
+// item from the channel is consumed.
+//
+// Consume returns a non-nil error precisely when the deadline was exceeded.
+func (c Channel[T]) Consume(ctx context.Context, source <-chan T) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case item, more := <-source:
+			if !more {
+				return nil
+			}
+			c.C <- item
+		}
+	}
+}
+
+// Process consumes a standard channel and blocks until all the items are consumed.
+// It accepts the same arguments as NewChannel.
+//
+// This function is named by analogy with joining a thread in other languages.
+func Process[T any](ctx context.Context, source <-chan T, options *Options[T], consumer SendFn[T]) error {
+	sink, err := NewChannel(ctx, options, consumer)
+	if err != nil {
+		return err
+	}
+	if err := sink.Consume(ctx, source); err != nil {
+		return err
+	}
+	sink.CloseAndDrain(ctx)
+	return nil
+}
+
 // SendFn is the function which does the work to actually transmit the Batch to
 // the next stage of your processing pipeline (e.g. do an RPC to a remote
 // service).

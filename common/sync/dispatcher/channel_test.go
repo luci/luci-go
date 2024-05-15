@@ -745,3 +745,30 @@ func TestMinQPS(t *testing.T) {
 		})
 	})
 }
+
+// TestProcess tests writing to a channel from one goroutine and reading it from
+// another.
+func TestProcess(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	ch := make(chan int)
+	go func() {
+		for i := 1000; i < 2000; i++ {
+			ch <- i
+			t.Logf("send: %d\n", i)
+		}
+		close(ch)
+	}()
+
+	err := Process[int](ctx, ch, nil, func(buf *buffer.Batch[int]) error {
+		for i, item := range buf.Data {
+			t.Logf("receive: %d (%d of %d in batch)\n", item.Item, i, len(buf.Data))
+		}
+		return nil
+	})
+
+	if err != nil {
+		t.Error(err)
+	}
+}
