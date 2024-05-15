@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/internal/checkpoints"
+	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
@@ -139,6 +140,15 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	// the project of the root invocation.
 	rootProject, _ := realms.Split(n.RootInvocationRealm)
 	ctx = logging.SetFields(ctx, logging.Fields{"Project": rootProject, "RootInvocation": n.RootInvocation, "Invocation": n.Invocation})
+
+	isProjectEnabled, err := config.IsProjectEnabledForIngestion(ctx, rootProject)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+	if !isProjectEnabled {
+		// Project not enabled for data ingestion.
+		return nil
+	}
 
 	rootClient, err := resultdb.NewClient(ctx, n.ResultdbHost, rootProject)
 	if err != nil {

@@ -221,7 +221,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 		return tq.Fatal.Apply(err)
 	}
 
-	isProjectEnabled, err := isProjectEnabledForIngestion(ctx, payload.Build.Project)
+	isProjectEnabled, err := config.IsProjectEnabledForIngestion(ctx, payload.Build.Project)
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}
@@ -344,27 +344,6 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 		taskCounter.Add(ctx, 1, payload.Build.Project, "success")
 	}
 	return nil
-}
-
-// isProjectEnabledForIngestion returns if the LUCI project is enabled for
-// ingestion. By default, all LUCI projects are enabled for ingestion, but
-// it is possible to limit ingestion to an allowlisted set in the
-// service configuration.
-func isProjectEnabledForIngestion(ctx context.Context, project string) (bool, error) {
-	cfg, err := config.Get(ctx)
-	if err != nil {
-		return false, errors.Annotate(err, "get service config").Err()
-	}
-	if !cfg.Ingestion.GetProjectAllowlistEnabled() {
-		return true, nil
-	}
-	allowList := cfg.Ingestion.GetProjectAllowlist()
-	for _, entry := range allowList {
-		if project == entry {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 // filterToTestVariantsWithUnexpectedFailures filters the given list of

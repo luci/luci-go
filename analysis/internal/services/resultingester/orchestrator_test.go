@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -31,10 +32,12 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
+	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/gerrit"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
 
@@ -78,6 +81,7 @@ func TestOrchestrator(t *testing.T) {
 	Convey(`TestOrchestrator`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
+		ctx = memory.Use(ctx)
 
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -173,6 +177,10 @@ func TestOrchestrator(t *testing.T) {
 			// Creation and expiry time not validated.
 		}
 
+		cfg := &configpb.Config{}
+		err := config.SetTestConfig(ctx, cfg)
+		So(err, ShouldBeNil)
+
 		Convey(`Baseline`, func() {
 			setupGetRootInvocationMock()
 			setupGetParentInvocationMock()
@@ -239,6 +247,19 @@ func TestOrchestrator(t *testing.T) {
 			verifyContinuationTask(skdr, nil)
 			// Expect no checkpoint.
 			verifyCheckpoints(ctx)
+		})
+		Convey(`Project not allowlisted for ingestion`, func() {
+			cfg.Ingestion = &configpb.Ingestion{
+				ProjectAllowlistEnabled: true,
+				ProjectAllowlist:        []string{"other"},
+			}
+			err := config.SetTestConfig(ctx, cfg)
+			So(err, ShouldBeNil)
+
+			err = o.run(ctx, task)
+			So(err, ShouldBeNil)
+
+			So(testIngestor.called, ShouldBeFalse)
 		})
 	})
 }
