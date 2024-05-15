@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { IconButton, TableCell } from '@mui/material';
+import { Box, IconButton, TableCell } from '@mui/material';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 import {
@@ -37,7 +37,7 @@ export function ToggleHeadCell({ hotkey }: ToggleHeadCellProps) {
   );
 
   return (
-    <TableCell width="1px">
+    <TableCell width="1px" colSpan={2}>
       <IconButton
         aria-label="toggle-all-rows"
         size="small"
@@ -55,14 +55,49 @@ export function ToggleContentCell() {
   const setExpanded = useSetExpanded();
 
   return (
-    <TableCell>
-      <IconButton
-        aria-label="toggle-row"
-        size="small"
-        onClick={() => setExpanded(!expanded)}
+    <>
+      <TableCell
+        // Span through the content row so we can
+        // 1. display a vertical ruler on the side of the content, and
+        // 2. hide a section of the bottom border between the title row and the
+        //    content row.
+        // This makes it easier to tell that the title row and the content are
+        // grouped together.
+        rowSpan={2}
+        sx={{ height: 'inherit' }}
+        width="34px"
       >
-        {expanded ? <ExpandMore /> : <ChevronRight />}
-      </IconButton>
-    </TableCell>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateRows: 'auto 1fr',
+            height: '100%',
+          }}
+        >
+          <IconButton
+            aria-label="toggle-row"
+            size="small"
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? <ExpandMore /> : <ChevronRight />}
+          </IconButton>
+          <Box
+            sx={{
+              borderLeft: 'solid 1px var(--divider-color)',
+              height: '100%',
+              marginLeft: '16.5px',
+            }}
+          />
+        </Box>
+      </TableCell>
+      {/* When the content is expanded, the expand icon button now have a larger
+       ** space to render itself in. This can cause the entry row to shrink when
+       ** the icon button cell is the tallest cell in the title row.
+       **
+       ** Add an invisible (width = 0) cell to ensure the height of the entry
+       ** row does not shrink when the content is expanded.
+       **/}
+      <TableCell sx={{ padding: '0 !important' }} height="34px" />
+    </>
   );
 }

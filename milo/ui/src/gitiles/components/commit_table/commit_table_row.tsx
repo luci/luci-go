@@ -12,18 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableCell, TableRow, styled } from '@mui/material';
-import markdownIt from 'markdown-it';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { TableCell, TableRow } from '@mui/material';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 
-import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { bugLine } from '@/common/tools/markdown/plugins/bug_line';
-import { bugnizerLink } from '@/common/tools/markdown/plugins/bugnizer_link';
-import { crbugLink } from '@/common/tools/markdown/plugins/crbug_link';
-import { defaultTarget } from '@/common/tools/markdown/plugins/default_target';
-import { reviewerLine } from '@/common/tools/markdown/plugins/reviewer_line';
 import { OutputCommit } from '@/gitiles/types';
 
+import { CommitContent } from './commit_content';
 import {
   CommitProvider,
   ExpandedProvider,
@@ -31,78 +25,69 @@ import {
   useDefaultExpanded,
 } from './context';
 
-const md = markdownIt('zero', { breaks: true, linkify: true })
-  .enable(['linkify', 'newline'])
-  .use(bugLine)
-  .use(reviewerLine)
-  .use(crbugLink)
-  .use(bugnizerLink)
-  .use(defaultTarget, '_blank');
-
-const SummaryContainer = styled(SanitizedHtml)({
-  '& > p:first-of-type': {
-    marginBlockStart: 0,
-  },
-  '& > p:last-of-type': {
-    marginBlockEnd: 0,
-  },
-});
-
 export interface CommitTableRowProps {
   readonly commit: OutputCommit;
+  /**
+   * The content to be rendered when expanded.
+   *
+   *  Defaults to `<CommitContent />`.
+   */
+  readonly content?: ReactNode;
   readonly children: ReactNode;
 }
 
-export function CommitTableRow({ commit, children }: CommitTableRowProps) {
+export function CommitTableRow({
+  commit,
+  content,
+  children,
+}: CommitTableRowProps) {
   const defaultExpanded = useDefaultExpanded();
   const [expanded, setExpanded] = useState(() => defaultExpanded);
   useEffect(() => setExpanded(defaultExpanded), [defaultExpanded]);
 
-  const { descriptionHtml, changedFiles } = useMemo(
-    () => ({
-      descriptionHtml: md.render(commit.message),
-      changedFiles: commit.treeDiff.map((diff) =>
-        // If a file was moved, there is both an old and a new path, from which
-        // we take only the new path.
-        // If a file was deleted, its new path is /dev/null. In that case, we're
-        // only interested in the old path.
-        !diff.newPath || diff.newPath === '/dev/null'
-          ? diff.oldPath
-          : diff.newPath,
-      ),
-    }),
-    [commit],
-  );
+  // We do not need `wasExpanded` to be a state because it could only change
+  // when another state, `expanded`, is updated. Keeping it in a ref reduces
+  // 1 rerendering cycle.
+  const wasExpanded = useRef(expanded);
+  wasExpanded.current ||= expanded;
 
   return (
     <SetExpandedProvider value={setExpanded}>
       <ExpandedProvider value={expanded}>
-        <TableRow sx={{ '& > td': { whiteSpace: 'nowrap' } }}>
-          {/* Pass commit to cells via context so composing a row require less
-           ** boilerplate. */}
-          <CommitProvider value={commit}>{children}</CommitProvider>
-        </TableRow>
-        {/* Always render the content row to DOM to ensure a stable DOM
-         ** structure.
-         **/}
-        <TableRow
-          data-testid="content-row"
-          sx={{ display: expanded ? '' : 'none' }}
-        >
-          <TableCell colSpan={100} sx={{ 'tr > &': { padding: 0 } }}>
-            <div css={{ padding: '10px 20px' }}>
-              <SummaryContainer html={descriptionHtml} />
-              <h4 css={{ marginBlockEnd: '0px' }}>
-                Changed files: {changedFiles.length}
-              </h4>
-              <ul>
-                {changedFiles.map((filename, i) => (
-                  <li key={i}>{filename}</li>
-                ))}
-              </ul>
-            </div>
-          </TableCell>
-        </TableRow>
+        {/* Pass commit to cells via context so composing a row require less
+         ** boilerplate. */}
+        <CommitProvider value={commit}>
+          <TableRow
+            sx={{
+              '& > td': { whiteSpace: 'nowrap' },
+              // Add a fixed height to allow children to use `height: 100%`.
+              // The actual height of the row will expand to contain the
+              // children.
+              height: '1px',
+            }}
+          >
+            {children}
+          </TableRow>
+          {/* Always render the content row to DOM to ensure a stable DOM
+           ** structure.
+           **/}
+          <TableRow>
+            <TableCell
+              data-testid="content-cell"
+              colSpan={100}
+              sx={{ display: expanded ? '' : 'none', 'tr > &': { padding: 0 } }}
+            >
+              {/* Don't always render the content because the content
+               ** (especially a customized content) could be expensive to
+               ** render.
+               **
+               ** Once the content was rendered, keep it in the tree so we don't
+               ** constantly trigger mounting/unmounting events.
+               **/}
+              {wasExpanded.current ? content || <CommitContent /> : <></>}
+            </TableCell>
+          </TableRow>
+        </CommitProvider>
       </ExpandedProvider>
     </SetExpandedProvider>
   );

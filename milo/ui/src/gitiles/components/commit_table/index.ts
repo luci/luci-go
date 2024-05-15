@@ -15,6 +15,7 @@
 export * from './commit_table';
 export * from './commit_table_head';
 export * from './commit_table_row';
+export * from './commit_content';
 export * from './toggle_column';
 export * from './num_column';
 export * from './position_column';

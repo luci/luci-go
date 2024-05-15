@@ -81,7 +81,7 @@ describe('<CommitTable />', () => {
 
     const toggleRowButton = screen.getByLabelText('toggle-row');
     const toggleAllRowsButton = screen.getByLabelText('toggle-all-rows');
-    const contentRow = screen.getByTestId('content-row');
+    const contentCell = screen.getByTestId('content-cell');
 
     expect(
       toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
@@ -89,7 +89,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).not.toBeInTheDocument();
-    expect(contentRow).toHaveStyle({ display: 'none' });
+    expect(contentCell).toHaveStyle({ display: 'none' });
 
     // Expand by clicking on toggle button.
     act(() => toggleRowButton.click());
@@ -99,7 +99,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).toBeInTheDocument();
-    expect(contentRow).not.toHaveStyle({ display: 'none' });
+    expect(contentCell).not.toHaveStyle({ display: 'none' });
 
     // Collapse by clicking on toggle button.
     act(() => toggleRowButton.click());
@@ -109,7 +109,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).not.toBeInTheDocument();
-    expect(contentRow).toHaveStyle({ display: 'none' });
+    expect(contentCell).toHaveStyle({ display: 'none' });
 
     // Expand again by changing the default state.
     act(() => toggleAllRowsButton.click());
@@ -120,7 +120,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).toBeInTheDocument();
-    expect(contentRow).not.toHaveStyle({ display: 'none' });
+    expect(contentCell).not.toHaveStyle({ display: 'none' });
 
     // Collapse again by changing the default state.
     act(() => toggleAllRowsButton.click());
@@ -131,7 +131,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).not.toBeInTheDocument();
-    expect(contentRow).toHaveStyle({ display: 'none' });
+    expect(contentCell).toHaveStyle({ display: 'none' });
   });
 
   it('should expand/collapse correctly with hotkey', async () => {
@@ -151,7 +151,7 @@ describe('<CommitTable />', () => {
     );
 
     const toggleRowButton = screen.getByLabelText('toggle-row');
-    const contentRow = screen.getByTestId('content-row');
+    const contentCell = screen.getByTestId('content-cell');
 
     expect(
       toggleRowButton.querySelector("[data-testid='ChevronRightIcon']"),
@@ -159,7 +159,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).not.toBeInTheDocument();
-    expect(contentRow).toHaveStyle({ display: 'none' });
+    expect(contentCell).toHaveStyle({ display: 'none' });
 
     // Expand by clicking on toggle button.
     act(() => toggleRowButton.click());
@@ -169,7 +169,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).toBeInTheDocument();
-    expect(contentRow).not.toHaveStyle({ display: 'none' });
+    expect(contentCell).not.toHaveStyle({ display: 'none' });
 
     // Collapse by clicking on toggle button.
     act(() => toggleRowButton.click());
@@ -179,7 +179,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).not.toBeInTheDocument();
-    expect(contentRow).toHaveStyle({ display: 'none' });
+    expect(contentCell).toHaveStyle({ display: 'none' });
 
     // Expand again by changing the default state.
     await act(() =>
@@ -191,7 +191,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).toBeInTheDocument();
-    expect(contentRow).not.toHaveStyle({ display: 'none' });
+    expect(contentCell).not.toHaveStyle({ display: 'none' });
 
     // Collapse again by changing the default state.
     await act(() =>
@@ -203,7 +203,7 @@ describe('<CommitTable />', () => {
     expect(
       toggleRowButton.querySelector("[data-testid='ExpandMoreIcon']"),
     ).not.toBeInTheDocument();
-    expect(contentRow).toHaveStyle({ display: 'none' });
+    expect(contentCell).toHaveStyle({ display: 'none' });
   });
 
   it('should notify default state update correctly', async () => {
