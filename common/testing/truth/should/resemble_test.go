@@ -31,7 +31,7 @@ func TestResemble(t *testing.T) {
 	t.Run("simple proto", shouldPass(
 		Resemble(&buildbucketpb.Build{Id: 12345})(&buildbucketpb.Build{Id: 12345})))
 
-	props, err := structpb.NewStruct(map[string]interface{}{
+	props, err := structpb.NewStruct(map[string]any{
 		"heyo": 100,
 	})
 	if err != nil {

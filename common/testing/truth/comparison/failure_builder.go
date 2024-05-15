@@ -105,7 +105,7 @@ func (fb *FailureBuilder) fixNilFailure() {
 }
 
 // Because adds a new finding "Because" to the Failure with AddFormattedFinding.
-func (fb *FailureBuilder) Because(format string, args ...interface{}) *FailureBuilder {
+func (fb *FailureBuilder) Because(format string, args ...any) *FailureBuilder {
 	return fb.AddFindingf("Because", format, args...)
 }
 

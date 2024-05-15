@@ -30,7 +30,7 @@ import (
 )
 
 type fakeBQDataset struct {
-	result map[string]interface{}
+	result map[string]any
 }
 
 func (f *fakeBQDataset) putToTable(c context.Context, table string, src []proto.Message) error {
@@ -44,10 +44,10 @@ func TestDumper(t *testing.T) {
 	Convey("dumpDatastore", t, func() {
 		c := memory.Use(context.Background())
 		datastore.GetTestable(c).Consistent(true)
-		bq := &fakeBQDataset{result: make(map[string]interface{})}
+		bq := &fakeBQDataset{result: make(map[string]any)}
 		Convey("none", func() {
 			So(uploadToBQ(c, bq), ShouldBeNil)
-			So(bq.result, ShouldResemble, map[string]interface{}{})
+			So(bq.result, ShouldResemble, map[string]any{})
 		})
 		Convey("one config", func() {
 			So(datastore.Put(c, &model.Config{

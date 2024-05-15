@@ -114,9 +114,9 @@ func TestPropagate(t *testing.T) {
 			})
 			Convey(`Setting sources as final, inherited sources are propagated and notifications are sent`, func() {
 				_, err := span.Apply(ctx, []*spanner.Mutation{
-					spanutil.UpdateMap("Invocations", map[string]interface{}{"InvocationId": invocations.ID("inv-root-a"), "IsSourceSpecFinal": true}),
-					spanutil.UpdateMap("Invocations", map[string]interface{}{"InvocationId": invocations.ID("inv-a"), "State": pb.Invocation_FINALIZING}),
-					spanutil.UpdateMap("Invocations", map[string]interface{}{"InvocationId": invocations.ID("inv-a1"), "State": pb.Invocation_FINALIZED}),
+					spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-root-a"), "IsSourceSpecFinal": true}),
+					spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-a"), "State": pb.Invocation_FINALIZING}),
+					spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-a1"), "State": pb.Invocation_FINALIZED}),
 				})
 				So(err, ShouldBeNil)
 
@@ -190,9 +190,9 @@ func TestPropagate(t *testing.T) {
 			// Sources should propogate through inv-a to inv-a1 and inv-a2, and
 			// pub/sub notification should be sent for inv-a and inv-a1.
 			_, err := span.Apply(ctx, []*spanner.Mutation{
-				spanutil.UpdateMap("Invocations", map[string]interface{}{"InvocationId": invocations.ID("inv-root-a"), "IsSourceSpecFinal": true}),
-				spanutil.UpdateMap("Invocations", map[string]interface{}{"InvocationId": invocations.ID("inv-a"), "State": pb.Invocation_FINALIZING}),
-				spanutil.UpdateMap("Invocations", map[string]interface{}{"InvocationId": invocations.ID("inv-a1"), "State": pb.Invocation_FINALIZED}),
+				spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-root-a"), "IsSourceSpecFinal": true}),
+				spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-a"), "State": pb.Invocation_FINALIZING}),
+				spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-a1"), "State": pb.Invocation_FINALIZED}),
 			})
 			So(err, ShouldBeNil)
 

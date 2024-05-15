@@ -548,7 +548,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 				}
 			}()
 		}
-		var data interface{}
+		var data any
 		switch c.jsonFormat {
 		case "luci":
 			data = struct {

@@ -191,7 +191,7 @@ func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f
 	}
 
 	stmt := spanner.NewStatement(querySQL)
-	stmt.Params = spanutil.ToSpannerMap(map[string]interface{}{
+	stmt.Params = spanutil.ToSpannerMap(map[string]any{
 		"invID":            q.InvocationID,
 		"afterTestId":      start.AfterTestID,
 		"afterVariantHash": start.AfterVariantHash,

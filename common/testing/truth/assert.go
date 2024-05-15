@@ -42,8 +42,8 @@
 // legwork to make sure all the types lined up correctly when possible.
 //
 // One of the really bad things about early assertion libraries was that they
-// were almost always forced to use `interface{}` (a.k.a. `any`) for inputs, and
-// extensive amounts of "reflect" based code.
+// were almost always forced to use `any` for inputs, and extensive amounts of
+// "reflect" based code.
 //
 // This made the APIs of such assertion libraries more difficult to grok for
 // readers, and meant that a large class of assertion failures only showed up at
