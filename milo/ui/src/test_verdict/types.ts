@@ -47,7 +47,7 @@ export type OutputTestResultBundle = NonNullableProps<
   'result'
 >;
 
-export type OutputTestVerdict = NonNullableProps<TestVariant, 'variant'> & {
+export type OutputTestVerdict = TestVariant & {
   status: SpecifiedTestVerdictStatus;
   results: readonly OutputTestResultBundle[];
 };
@@ -64,10 +64,7 @@ export type OutputChangepointGroupSummary = DeepNonNullableProps<
 
 export type OutputSegment = NonNullableProps<Segment, 'counts'>;
 
-export type OutputTestVariantBranch = NonNullableProps<
-  TestVariantBranch,
-  'variant'
-> & {
+export type OutputTestVariantBranch = TestVariantBranch & {
   segments: readonly OutputSegment[];
 };
 
@@ -107,5 +104,5 @@ export const ParsedTestVariantBranchName = {
 };
 
 export interface TestVariantBranchDef extends ParsedTestVariantBranchName {
-  readonly variant: Variant;
+  readonly variant: Variant | undefined;
 }

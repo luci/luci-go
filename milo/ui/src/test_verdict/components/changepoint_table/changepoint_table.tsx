@@ -81,7 +81,9 @@ export function ChangepointTable({
 
   const criticalVariantKeys = useMemo(() => {
     return getCriticalVariantKeys(
-      testVariantBranches.map((tvb) => tvb.variant),
+      testVariantBranches
+        .map((tvb) => tvb.variant)
+        .filter((v) => v !== undefined),
     );
   }, [testVariantBranches]);
 
