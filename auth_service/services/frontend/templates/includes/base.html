@@ -83,6 +83,14 @@ that can be found in the LICENSE file. -->
       common.setMainNavbarActiveLink();
     </script>
 
+    <!-- Template for loading box, to be shown while results are fetched. -->
+    <template id="loading-box-template">
+      <div class="d-flex justify-content-center">
+        <div id="spinner" class="spinner-border text-secondary my-5" style="display: none;">
+        </div>
+      </div>
+    </template>
+
   </body>
 
   {{template "script" .}}

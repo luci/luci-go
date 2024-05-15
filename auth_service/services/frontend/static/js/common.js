@@ -51,6 +51,26 @@ class HidableElement {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+// Component with centered spinner to represent loading.
+class LoadingBox {
+  constructor(parent) {
+    const template = document.querySelector('#loading-box-template');
+    const loadingBox = template.content.cloneNode(true);
+
+    this.spinner = loadingBox.querySelector('#spinner');
+    this.setLoadStatus(false);
+
+    const parentElement = document.querySelector(parent);
+    parentElement.appendChild(loadingBox);
+  }
+
+  setLoadStatus(isLoading) {
+    this.spinner.style.display = isLoading ? 'block' : 'none';
+  }
+}
+
+
 var common = (function () {
   'use strict';
 
@@ -159,6 +179,7 @@ var common = (function () {
   };
 
   exports.HidableElement = HidableElement;
+  exports.LoadingBox = LoadingBox;
 
   return exports;
 })();

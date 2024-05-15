@@ -109,7 +109,7 @@ class RefreshBtn {
 
 
 window.onload = () => {
-    const loadingBox = new common.HidableElement('#loading-box', true);
+    const loadingBox = new common.LoadingBox('#loading-box-placeholder');
     const servicesContent = new common.HidableElement('#services-content', false);
     const servicesTableContainer = document.querySelector('#services-table-container');
 
@@ -130,8 +130,9 @@ window.onload = () => {
     const refreshBtn = new RefreshBtn('#refresh-btn', updateServiceListing);
 
     // Do the initial page load.
+    loadingBox.setLoadStatus(true);
     updateServiceListing().then(() => {
-        loadingBox.hide();
+        loadingBox.setLoadStatus(false);
         refreshBtn.enable();
         servicesContent.show();
     });

@@ -215,23 +215,6 @@ class SearchBar {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Component with centered spinner to represent loading.
-class LoadingBox extends common.HidableElement {
-  constructor(element) {
-    super(element, false);
-  }
-
-  setLoadStatus(isLoading) {
-    if (isLoading) {
-      this.show();
-    } else {
-      this.hide();
-    }
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 // Component to display a lookup error.
 class LookupErrorAlert extends common.HidableElement {
   constructor(element) {
@@ -412,7 +395,7 @@ const onCurrentPrincipalInURLChange = (cb) => {
 
 window.onload = () => {
   const searchBar = new SearchBar('#search-bar');
-  const loadingBox = new LoadingBox('#loading-box');
+  const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const searchResults = new SearchResults('#all-results');
   const lookupErrorAlert = new LookupErrorAlert('#lookup-error');
 
