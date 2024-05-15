@@ -16,16 +16,11 @@ import { Box } from '@mui/material';
 import { axisTop, select } from 'd3';
 import { useEffect, useRef } from 'react';
 
-import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
-import { QuerySourcePositionsRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-
 import { CELL_WIDTH } from './constants';
 import { useConfig } from './context';
 
 export function TopAxis() {
   const { criticalCommits, rowHeight, xScale } = useConfig();
-  const client = useTestVariantBranchesClient();
-  client.QuerySourcePositions(QuerySourcePositionsRequest.fromPartial({}));
 
   const gridLineElement = useRef<SVGGElement | null>(null);
   useEffect(() => {

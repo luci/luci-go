@@ -19,6 +19,10 @@ import {
   VERDICT_STATUS_COLOR_MAP,
   VERDICT_STATUS_ICON_FONT_MAP,
 } from '@/test_verdict/constants/verdict';
+import {
+  getBackgroundColor,
+  getBorderColor,
+} from '@/test_verdict/tools/segment_color';
 import { OutputSegment } from '@/test_verdict/types';
 
 import { ROW_PADDING, SPAN_MARGIN, SPAN_PADDING } from '../constants';
@@ -36,17 +40,6 @@ export function SegmentSpan({ segment }: SegmentSpanProps) {
 
   const start = commitMap[segment.endPosition];
   const end = commitMap[segment.startPosition] + 1;
-  let color = 'var(--success-color)';
-  let bgColor = 'var(--success-bg-color)';
-  if (segment.counts.unexpectedVerdicts > 0) {
-    color = 'var(--failure-color)';
-    bgColor = 'var(--failure-bg-color)';
-  } else if (segment.counts.flakyVerdicts) {
-    color = 'var(--warning-color)';
-    bgColor = 'var(--warning-bg-color)';
-  }
-  segment.counts.flakyVerdicts;
-  segment.counts.totalVerdicts;
 
   const rowUnitHeight = (rowHeight - 2 * ROW_PADDING) / 3;
   const x = xScale(start);
@@ -61,8 +54,8 @@ export function SegmentSpan({ segment }: SegmentSpanProps) {
         y={SPAN_MARGIN}
         width={spanWidth}
         height={spanHeight}
-        stroke={color}
-        fill={bgColor}
+        stroke={getBorderColor(segment)}
+        fill={getBackgroundColor(segment)}
       />
       <foreignObject
         x={SPAN_MARGIN + SPAN_PADDING}

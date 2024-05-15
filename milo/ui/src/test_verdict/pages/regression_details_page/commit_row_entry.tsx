@@ -29,8 +29,7 @@ import {
 } from '@/generic_libs/components/expandable_entry';
 import { SourceRef } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 import { SourcePosition } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-
-import { VerdictsStatusIcon } from './verdicts_status_icon';
+import { VerdictsStatusIcon } from '@/test_verdict/components/verdicts_status_icon';
 
 const md = markdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])
@@ -77,7 +76,7 @@ export function CommitRowEntry({
         onToggle={setExpanded}
       >
         <Box>
-          <VerdictsStatusIcon testVerdicts={[...sourcePosition.verdicts]} />
+          <VerdictsStatusIcon testVerdicts={sourcePosition.verdicts} />
         </Box>
 
         <Box>

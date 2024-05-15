@@ -25,7 +25,7 @@ import {
 } from '@/test_verdict/constants/verdict';
 
 export interface VerdictsStatusIconProps {
-  readonly testVerdicts: TestVerdict[];
+  readonly testVerdicts: readonly TestVerdict[];
 }
 
 const status: TestVerdictStatus[] = [
@@ -61,7 +61,7 @@ const pieGenerator = pie<unknown, VerdictGroup>()
 const arcPathGenerator = arc();
 
 export interface TestVerdictsPieChartProps {
-  readonly testVerdicts: TestVerdict[];
+  readonly testVerdicts: readonly TestVerdict[];
 }
 
 export function TestVerdictsPieChart({
