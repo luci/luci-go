@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/data"
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // ContainKey returns a comparison.Func which checks to see if some `map[~K]?`
@@ -31,12 +32,12 @@ import (
 func ContainKey[K comparable](key K) comparison.Func[any] {
 	const cmpName = "should.ContainKey"
 
-	return func(actual any) *comparison.Failure {
+	return func(actual any) *failure.Summary {
 		has, fail := mapContainsImpl(cmpName, actual, key)
 		if has || fail != nil {
 			return fail
 		}
-		return comparison.NewFailureBuilder(cmpName, key).Expected(key).Failure
+		return comparison.NewSummaryBuilder(cmpName, key).Expected(key).Summary
 	}
 }
 
@@ -50,14 +51,14 @@ func ContainKey[K comparable](key K) comparison.Func[any] {
 func NotContainKey[K comparable](key K) comparison.Func[any] {
 	const cmpName = "should.NotContainKey"
 
-	return func(actual any) *comparison.Failure {
+	return func(actual any) *failure.Summary {
 		has, fail := mapContainsImpl(cmpName, actual, key)
 		if !has || fail != nil {
 			return fail
 		}
-		return comparison.NewFailureBuilder(cmpName, key).
+		return comparison.NewSummaryBuilder(cmpName, key).
 			AddFindingf("Unexpected Key", "%#v", key).
-			Failure
+			Summary
 	}
 }
 
@@ -68,20 +69,20 @@ func NotContainKey[K comparable](key K) comparison.Func[any] {
 //
 // Returns has=true if aMap contains key. Returns fail != nil if aMap is not
 // a map type or does not have a key type which `key` can convert to losslessly.
-func mapContainsImpl[K comparable](cmpName string, aMap any, key K) (has bool, fail *comparison.Failure) {
+func mapContainsImpl[K comparable](cmpName string, aMap any, key K) (has bool, fail *failure.Summary) {
 	aMapT := reflect.TypeOf(aMap)
 	if aMapT.Kind() != reflect.Map {
-		return false, comparison.NewFailureBuilder(cmpName).
+		return false, comparison.NewSummaryBuilder(cmpName).
 			Because("Actual is not a map (got %T)", aMap).
-			Failure
+			Summary
 	}
 	keyT := aMapT.Key()
 
 	toLookup := reflect.New(keyT).Elem()
 	if !data.LosslessConvertToReflect(key, toLookup) {
-		return false, comparison.NewFailureBuilder(cmpName).
+		return false, comparison.NewSummaryBuilder(cmpName).
 			Because("map's key type (%s) is not convertible to %T", keyT, key).
-			Failure
+			Summary
 	}
 	val := reflect.ValueOf(aMap).MapIndex(toLookup)
 	return val.IsValid(), nil

@@ -19,6 +19,8 @@ import (
 	"strings"
 
 	"github.com/mgutz/ansi"
+
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 type RenderCLI struct {
@@ -37,7 +39,7 @@ type RenderCLI struct {
 // Finding renders a Finding to a set of output lines which would be
 // suitable for display as CLI output (e.g. to be logged with testing.T.Log
 // calls).
-func (r RenderCLI) Finding(prefix string, f *Failure_Finding) (ret string) {
+func (r RenderCLI) Finding(prefix string, f *failure.Finding) (ret string) {
 	if len(f.Value) == 0 {
 		return fmt.Sprintf("%s%s [no value]", prefix, f.Name)
 	}
@@ -45,7 +47,7 @@ func (r RenderCLI) Finding(prefix string, f *Failure_Finding) (ret string) {
 		return fmt.Sprintf("%s%s [blank one-line value]", prefix, f.Name)
 	}
 
-	if f.Level > FindingLogLevel_Error && !r.Verbose {
+	if f.Level > failure.FindingLogLevel_Error && !r.Verbose {
 		valLen := len(f.Value) - 1 // one per newline
 		for _, line := range f.Value {
 			valLen += len(line)
@@ -61,7 +63,7 @@ func (r RenderCLI) Finding(prefix string, f *Failure_Finding) (ret string) {
 	copy(value, f.Value)
 	if r.Colorize {
 		switch f.Type {
-		case FindingTypeHint_CmpDiff, FindingTypeHint_UnifiedDiff:
+		case failure.FindingTypeHint_CmpDiff, failure.FindingTypeHint_UnifiedDiff:
 			for i, line := range value {
 				code := ""
 				if strings.HasPrefix(line, "-") {
@@ -91,13 +93,13 @@ func (r RenderCLI) Finding(prefix string, f *Failure_Finding) (ret string) {
 	return fmt.Sprintf("%s%s: \\\n%s", prefix, f.Name, strings.Join(value, "\n"))
 }
 
-// Failure pretty-prints the result as a list of lines for display via the `go
+// Summary pretty-prints the result as a list of lines for display via the `go
 // test` CLI output.
 //
 // If verbose is true, will render all verbose Findings.
 // If colorize is true, will attempt to add ANSI coloring (currently just very
 // basic per-line colors for diffs).
-func (r RenderCLI) Failure(prefix string, f *Failure) string {
+func (r RenderCLI) Summary(prefix string, f *failure.Summary) string {
 	if f == nil {
 		return ""
 	}

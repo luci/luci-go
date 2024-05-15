@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -55,11 +56,11 @@ func (m *mockTB) FailNow() { m.FailNowCalls++ }
 
 var _ testing.TB = (*mockTB)(nil)
 
-func isEmptyCmp(x string) *comparison.Failure {
+func isEmptyCmp(x string) *failure.Summary {
 	if x == "" {
 		return nil
 	}
-	return comparison.NewFailureBuilder("string not empty").Failure
+	return comparison.NewSummaryBuilder("string not empty").Summary
 }
 
 func TestCheckLoosely(t *testing.T) {

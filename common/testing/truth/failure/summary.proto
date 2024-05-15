@@ -1,0 +1,164 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.common.testing.assert.failure;
+
+option go_package = "go.chromium.org/luci/common/testing/truth/failure";
+
+// Summary is the factual outcome of a failing Comparison.
+//
+// As an example:
+//
+//   comparison { name: "should.Equal" type_arguments: "string" }
+//   findings { name: "Expected" value: "\"hello\"" }
+//   findings { name: "Actual" value: "\"meepmorp\"" }
+//
+// Will be rendered for the CLI like:
+//
+//   filename_test.go:123: Check should.Equal[string] FAILED
+//                           Expected: "hello"
+//                           Actual: "meepmorp"
+//
+// In the future we expect other interfaces (like a web browser) to render these
+// in a similarly suitable way.
+//
+// Note that failure.Summary is not intended to be hand-assembled, but is meant
+// to be built with the FailureBuilder functionality in the comparison package.
+message Summary {
+  // Information about the Comparison which produced this failure Summary.
+  Comparison comparison = 1;
+
+  // TODO - can put filename/lineno of the assert here
+  //
+  // At some point it would be good to be able to consume this Summary directly,
+  // for example filing a bug for a Summary, or uploading directly to SummaryDB.
+
+  // The list of findings that describe this failure.
+  repeated Finding findings = 2;
+}
+
+// Comparison describes the comparison function or operation which produced
+// a failure.Summary.
+message Comparison {
+  // This is the logical name of the comparison function that produced this
+  // Summary, e.g. `should.Equal` or `should.HaveLength`.
+  string name = 1;
+
+  // Optional type argument names. Will be used with name like
+  // `should.Equal[T[0], ...]`.
+  //
+  // Non-primitive types should be the short Go type name like
+  // `pkgname.TypeName`.
+  repeated string type_arguments = 2;
+
+  // Optional argument values. Will be used with name like
+  // `should.HaveLength(arg)`.
+  repeated string arguments = 3;
+}
+
+// Finding is a fact which is logically associated with this Summary
+// (which, in turn, is the outcome of a failing Comparison).
+//
+// Each finding has a 'name' and a 'value'.
+//
+// Typically, these can be renderings of the compared values (typically
+// named "Expected" and/or "Actual"), a combination of the compared values
+// (e.g. "Diff"), or a summary of why the comparison failed (e.g. "Because").
+//
+// A Finding may also have a hint to the renderer about how `value` could be
+// interpreted. This can be used to e.g. add color to a diff.
+//
+// We previously considered storing the ACTUAL values, and then having the
+// rendering process compute the diff, but:
+//   * This is generally impossible if the Summary needs to traverse a process
+//   boundary.
+//   * It turns out computing the diff on a Go type is tricky! See: go-cmp and
+//   protobuf comparison.
+//   * These are test results... carrying a full Go type all the way to the
+//   renderer is mega-overkill. Usually you can just add another Finding to
+//   clarify what's going on and this is sufficient to fix the test, which is
+//   why we're doing all this stuff... right? :)
+message Finding {
+  // The name of this finding. Some conventional values:
+  //   * Expected - the Go rendering of the actual value that the Comparison
+  //   evaluated.
+  //   * Actual - the Go rendering of the actual value that the Comparison
+  //   evaluated.
+  //   * Diff - a combination of the Expected and Actual values which reveals
+  //   something useful about the comparison. Usually computed with go-cmp,
+  //   but it doesn't have to be!
+  //   * Because - an explaination (in English :/) of why the Comparison
+  //   failed.
+  //
+  // However, the name only needs to make sense in the context of the
+  // Comparison, so use a name which makes sense.
+  //
+  // Also recall that you can have multiple Findings, and they will be
+  // rendered in order.
+  string name = 1;
+
+  // The value of this Finding as a list of lines.
+  //
+  // The content here is completely up to you and needs to make sense in the
+  // context of the Comparison and this Finding's name.
+  //
+  // See also `type`.
+  repeated string value = 2;
+
+  // This is a type hint for the renderer, when the renderer may like to
+  // interpret `value` in some way to display it better (for example - to
+  // colorize the output).
+  //
+  // This hint system is expected to be a 'good enough' compromise vs. trying
+  // to have the renderer directly compute things like diffs.
+  FindingTypeHint type = 3;
+
+  // Level is the "log level" of this finding.
+  FindingLogLevel level = 4;
+}
+
+
+// FindingTypeHint is a type hint for the Summary.Finding.type field.
+//
+// This is declared as a top-level type to avoid ugly
+// Summary_Finding_FindingTypeXXX symbols.
+enum FindingTypeHint {
+  // Indicates that `value` is just a verbatim string and needs no special
+  // rendering.
+  Text = 0;
+
+  // These indicate that `value` is a kind of diff and MAY be colorized by
+  // the renderer if appropriate.
+  UnifiedDiff = 1;
+  CmpDiff = 2;
+}
+
+// FindingLogLevel is the "log level" (like debug, info &c) of the finding.
+//
+// We are not including the full suite of log4j-esque levels because we don't
+// need them all.
+enum FindingLogLevel {
+  // Unknown is the default value.
+  Unknown = 0;
+
+  // Error indicates that the finding is an error-level finding.
+  // These are always shown.
+  Error = 1;
+
+  // Warn indicates that the finding is a warn-level finding.
+  // These should only be shown when the user wants verbose stuff.
+  Warn = 2;
+}

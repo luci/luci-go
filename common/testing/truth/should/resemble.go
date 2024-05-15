@@ -18,6 +18,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -39,17 +40,17 @@ import (
 func Resemble[T any](expected T, opts ...cmp.Option) comparison.Func[T] {
 	cmpName := "should.Resemble"
 
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		diff := typed.Diff(expected, actual)
 
 		if diff == "" {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder(cmpName, expected).
+		return comparison.NewSummaryBuilder(cmpName, expected).
 			Actual(actual).WarnIfLong().
 			Expected(expected).WarnIfLong().
 			AddCmpDiff(diff).
-			Failure
+			Summary
 	}
 }

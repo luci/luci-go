@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -27,14 +28,14 @@ import (
 // cmp.Diff.
 //
 // The diff is split into multiple lines, but is otherwise untouched.
-func (fb *FailureBuilder) AddCmpDiff(diff string) *FailureBuilder {
-	fb.fixNilFailure()
-	fb.Findings = append(fb.Findings, &Failure_Finding{
+func (sb *SummaryBuilder) AddCmpDiff(diff string) *SummaryBuilder {
+	sb.fixNilFailure()
+	sb.Findings = append(sb.Findings, &failure.Finding{
 		Name:  "Diff",
 		Value: strings.Split(diff, "\n"),
-		Type:  FindingTypeHint_CmpDiff,
+		Type:  failure.FindingTypeHint_CmpDiff,
 	})
-	return fb
+	return sb
 }
 
 // SmartCmpDiff does a couple things:
@@ -49,24 +50,24 @@ func (fb *FailureBuilder) AddCmpDiff(diff string) *FailureBuilder {
 // The default cmp.Options include a Transformer to handle protobufs. If you
 // want to extend the default Options see
 // `go.chromium.org/luci/common/testing/registry`.
-func (fb *FailureBuilder) SmartCmpDiff(actual, expected any, extraCmpOpts ...cmp.Option) *FailureBuilder {
-	fb.fixNilFailure()
+func (sb *SummaryBuilder) SmartCmpDiff(actual, expected any, extraCmpOpts ...cmp.Option) *SummaryBuilder {
+	sb.fixNilFailure()
 
-	fb = fb.Actual(actual).WarnIfLong().
+	sb = sb.Actual(actual).WarnIfLong().
 		Expected(expected).WarnIfLong()
 
-	added := fb.Findings[len(fb.Findings)-2:]
+	added := sb.Findings[len(sb.Findings)-2:]
 	hasLong := false
 	for _, finding := range added {
-		if finding.Level == FindingLogLevel_Warn {
+		if finding.Level == failure.FindingLogLevel_Warn {
 			hasLong = true
 			break
 		}
 	}
 
 	if hasLong || slices.Equal(added[0].Value, added[1].Value) {
-		fb.AddCmpDiff(typed.Diff(actual, expected, extraCmpOpts...))
+		sb.AddCmpDiff(typed.Diff(actual, expected, extraCmpOpts...))
 	}
 
-	return fb
+	return sb
 }

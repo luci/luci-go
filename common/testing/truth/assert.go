@@ -143,6 +143,7 @@ import (
 
 	"go.chromium.org/luci/common/data"
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // Verbose indicates that the truth library should always render verbose
@@ -174,11 +175,11 @@ func init() {
 	}
 }
 
-func render(f *comparison.Failure) string {
+func render(f *failure.Summary) string {
 	return comparison.RenderCLI{
 		Verbose:  Verbose,
 		Colorize: Colorize,
-	}.Failure("", f)
+	}.Summary("", f)
 }
 
 // Assert compares `actual` using `compare`, which is typically
@@ -227,13 +228,13 @@ func doConversion[T any](actual any, compare comparison.Func[T]) (converted T, n
 	if ok {
 		return converted, compare
 	}
-	return converted, func(t T) *comparison.Failure {
-		fb := comparison.NewFailureBuilder("builtin.LosslessConvertTo", t)
-		fb.Findings = append(fb.Findings, &comparison.Failure_Finding{
+	return converted, func(t T) *failure.Summary {
+		sb := comparison.NewSummaryBuilder("builtin.LosslessConvertTo", t)
+		sb.Findings = append(sb.Findings, &failure.Finding{
 			Name:  "ActualType",
 			Value: []string{fmt.Sprintf("%T", actual)},
 		})
-		return fb.Failure
+		return sb.Summary
 	}
 }
 

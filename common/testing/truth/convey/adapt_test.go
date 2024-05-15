@@ -20,7 +20,7 @@ import (
 
 	"github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -68,19 +68,19 @@ func TestAdapt(t *testing.T) {
 	assert.Loosely(t, exampleMyTypeFromProdCode, Adapt(shouldMatchMyType)(myType{intVal: 100}))
 
 	// check for failures
-	assert.That(t, Adapt(shouldMatchMyType)(myType{intVal: 100})("smarfle"), should.Resemble(&comparison.Failure{
-		Comparison: &comparison.Failure_ComparisonFunc{
+	assert.That(t, Adapt(shouldMatchMyType)(myType{intVal: 100})("smarfle"), should.Resemble(&failure.Summary{
+		Comparison: &failure.Comparison{
 			Name: "adapt.Convey(go.chromium.org/luci/common/testing/truth/convey.shouldMatchMyType)",
 		},
-		Findings: []*comparison.Failure_Finding{
+		Findings: []*failure.Finding{
 			{Name: "Because", Value: []string{"actual must be myType, got string"}},
 		},
 	}))
-	assert.That(t, Adapt(shouldMatchMyType)(myType{intVal: 100})(myType{strVal: "100"}), should.Resemble(&comparison.Failure{
-		Comparison: &comparison.Failure_ComparisonFunc{
+	assert.That(t, Adapt(shouldMatchMyType)(myType{intVal: 100})(myType{strVal: "100"}), should.Resemble(&failure.Summary{
+		Comparison: &failure.Comparison{
 			Name: "adapt.Convey(go.chromium.org/luci/common/testing/truth/convey.shouldMatchMyType)",
 		},
-		Findings: []*comparison.Failure_Finding{
+		Findings: []*failure.Finding{
 			{Name: "Because", Value: []string{`actual.strVal != other.strVal: "100" vs ""`}},
 		},
 	}))

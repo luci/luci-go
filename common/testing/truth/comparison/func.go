@@ -14,15 +14,19 @@
 
 package comparison
 
-// Func takes in a value-to-be-compared and returns a Failure if the value
+import "go.chromium.org/luci/common/testing/truth/failure"
+
+// Func takes in a value-to-be-compared and returns a failure.Summary if the value
 // does not meet the expectation of this comparison.Func.
 //
 // Example:
 //
-//	func BeTrue(value bool) *Failure {
-//	  if !value { return NewFailureBuilder("should.BeTrue").(*Failure) }
+//	func BeTrue(value bool) *failure.Summary {
+//	  if !value {
+//	    return comparison.NewSummaryBuilder("should.BeTrue").Summary
+//	  }
 //	  return nil
 //	}
 //
 // In this example, BeTrue is a comparison.Func.
-type Func[T any] func(T) *Failure
+type Func[T any] func(T) *failure.Summary

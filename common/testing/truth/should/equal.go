@@ -19,6 +19,7 @@ import (
 	"reflect"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 func checkIsNaN[T comparable](cmpName string, expected T) comparison.Func[T] {
@@ -26,10 +27,10 @@ func checkIsNaN[T comparable](cmpName string, expected T) comparison.Func[T] {
 	switch kind := val.Kind(); kind {
 	case reflect.Float32, reflect.Float64:
 		if math.IsNaN(val.Float()) {
-			return func(t T) *comparison.Failure {
-				return comparison.NewFailureBuilder(cmpName, expected).
+			return func(t T) *failure.Summary {
+				return comparison.NewSummaryBuilder(cmpName, expected).
 					Because("Cannot compare to float(NaN), use should.BeNaN instead.").
-					Failure
+					Summary
 			}
 		}
 	}
@@ -49,14 +50,14 @@ func Equal[T comparable](expected T) comparison.Func[T] {
 		return fn
 	}
 
-	return func(actual T) (ret *comparison.Failure) {
+	return func(actual T) (ret *failure.Summary) {
 		if actual == expected {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder(cmpName, expected).
+		return comparison.NewSummaryBuilder(cmpName, expected).
 			SmartCmpDiff(actual, expected).
-			Failure
+			Summary
 	}
 }
 
@@ -73,13 +74,13 @@ func NotEqual[T comparable](expected T) comparison.Func[T] {
 		return fn
 	}
 
-	return func(actual T) (ret *comparison.Failure) {
+	return func(actual T) (ret *failure.Summary) {
 		if actual != expected {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder(cmpName, expected).
+		return comparison.NewSummaryBuilder(cmpName, expected).
 			Actual(actual).
-			Failure
+			Summary
 	}
 }

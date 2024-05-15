@@ -17,6 +17,7 @@ package comparison
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -24,9 +25,9 @@ import (
 func TestAddValuef(t *testing.T) {
 	t.Parallel()
 
-	failure := NewFailureBuilder("test").AddFindingf("a", "%d", 4)
+	summary := NewSummaryBuilder("test").AddFindingf("a", "%d", 4)
 
-	if diff := typed.Got(failure.Findings[0]).Want(&Failure_Finding{Name: "a", Value: []string{"4"}}).Diff(); diff != "" {
+	if diff := typed.Got(summary.Findings[0]).Want(&failure.Finding{Name: "a", Value: []string{"4"}}).Diff(); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}
 }

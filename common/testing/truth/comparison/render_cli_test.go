@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -27,7 +28,7 @@ func TestRenderFinding(t *testing.T) {
 	type caseT struct {
 		prefix   string
 		render   RenderCLI
-		input    *Failure_Finding
+		input    *failure.Finding
 		expected []string
 	}
 	testCase := func(tt caseT) func(t *testing.T) {
@@ -44,7 +45,7 @@ func TestRenderFinding(t *testing.T) {
 
 	t.Run("no lines", testCase(caseT{
 		prefix: "  ",
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name: "Because",
 		},
 		expected: []string{
@@ -54,7 +55,7 @@ func TestRenderFinding(t *testing.T) {
 
 	t.Run("empty oneline", testCase(caseT{
 		prefix: "  ",
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name:  "Because",
 			Value: []string{""},
 		},
@@ -65,7 +66,7 @@ func TestRenderFinding(t *testing.T) {
 
 	t.Run("oneline", testCase(caseT{
 		prefix: "  ",
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name: "Because",
 			Value: []string{
 				`meepmorp`,
@@ -78,7 +79,7 @@ func TestRenderFinding(t *testing.T) {
 
 	t.Run("multiline", testCase(caseT{
 		prefix: "  ",
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name: "Because",
 			Value: []string{
 				`here`,
@@ -102,7 +103,7 @@ func TestRenderCLIFinding(t *testing.T) {
 
 	type caseT struct {
 		render   RenderCLI
-		input    *Failure_Finding
+		input    *failure.Finding
 		expected []string
 	}
 	testCase := func(tt caseT) func(t *testing.T) {
@@ -118,7 +119,7 @@ func TestRenderCLIFinding(t *testing.T) {
 	}
 
 	t.Run("basic", testCase(caseT{
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name: "Because",
 		},
 		expected: []string{
@@ -127,12 +128,12 @@ func TestRenderCLIFinding(t *testing.T) {
 	}))
 
 	t.Run("long value", testCase(caseT{
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name: "Because",
 			Value: []string{
 				strings.Repeat("hi", 30),
 			},
-			Level: FindingLogLevel_Warn,
+			Level: failure.FindingLogLevel_Warn,
 		},
 		expected: []string{
 			`Because [verbose value len=60 (pass -v to see)]`,
@@ -143,7 +144,7 @@ func TestRenderCLIFinding(t *testing.T) {
 		render: RenderCLI{
 			Verbose: true,
 		},
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name: "Because",
 			Value: []string{
 				strings.Repeat("hi", 30),
@@ -158,7 +159,7 @@ func TestRenderCLIFinding(t *testing.T) {
 		render: RenderCLI{
 			Colorize: true,
 		},
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name: "Because",
 			Value: []string{
 				"strings.Join({",
@@ -172,7 +173,7 @@ func TestRenderCLIFinding(t *testing.T) {
 				"  \t... // 872 identical bytes",
 				"}, \"\")",
 			},
-			Type: FindingTypeHint_CmpDiff,
+			Type: failure.FindingTypeHint_CmpDiff,
 		},
 		expected: []string{
 			"Because: \\",
@@ -193,7 +194,7 @@ func TestRenderCLIFinding(t *testing.T) {
 		render: RenderCLI{
 			Colorize: true,
 		},
-		input: &Failure_Finding{
+		input: &failure.Finding{
 			Name: "Because",
 			Value: []string{
 				"--- lao\t2002-02-21 23:30:39.942229878 -0800",
@@ -206,7 +207,7 @@ func TestRenderCLIFinding(t *testing.T) {
 				"+The named is the mother of all things.",
 				"+",
 			},
-			Type: FindingTypeHint_UnifiedDiff,
+			Type: failure.FindingTypeHint_UnifiedDiff,
 		},
 		expected: []string{
 			"Because: \\",
@@ -226,14 +227,14 @@ func TestRenderCLIFinding(t *testing.T) {
 func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 	type caseT struct {
 		render   RenderCLI
-		input    *Failure_ComparisonFunc
+		input    *failure.Comparison
 		expected []string
 	}
 	testCase := func(tt caseT) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 			t.Helper()
-			actual := tt.render.Failure("", &Failure{Comparison: tt.input})
+			actual := tt.render.Summary("", &failure.Summary{Comparison: tt.input})
 
 			if diff := typed.Diff(strings.Join(tt.expected, "\n"), actual); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
@@ -242,14 +243,14 @@ func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 	}
 
 	t.Run("basic", testCase(caseT{
-		input: &Failure_ComparisonFunc{
+		input: &failure.Comparison{
 			Name: "basic",
 		},
 		expected: []string{`basic FAILED`},
 	}))
 
 	t.Run("basic (type args)", testCase(caseT{
-		input: &Failure_ComparisonFunc{
+		input: &failure.Comparison{
 			Name:          "basic",
 			TypeArguments: []string{"string", "int"},
 		},
@@ -257,7 +258,7 @@ func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 	}))
 
 	t.Run("basic (args)", testCase(caseT{
-		input: &Failure_ComparisonFunc{
+		input: &failure.Comparison{
 			Name:      "basic",
 			Arguments: []string{"1", `"yo"`},
 		},
@@ -265,7 +266,7 @@ func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 	}))
 
 	t.Run("basic (type args, args)", testCase(caseT{
-		input: &Failure_ComparisonFunc{
+		input: &failure.Comparison{
 			Name:      "basic",
 			Arguments: []string{"1", `"yo"`},
 		},

@@ -17,52 +17,53 @@ package comparison
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
-// Check that calling NewFailureBuilder does something remotely reasonable.
-func TestNewResultBuilderSmokeTest(t *testing.T) {
+// Check that calling NewSummaryBuilder does something remotely reasonable.
+func TestNewSummaryBuilderSmokeTest(t *testing.T) {
 	t.Parallel()
 
-	res := NewFailureBuilder("test").Failure
-	if diff := typed.Diff(res, &Failure{Comparison: &Failure_ComparisonFunc{Name: "test"}}); diff != "" {
+	res := NewSummaryBuilder("test").Summary
+	if diff := typed.Diff(res, &failure.Summary{Comparison: &failure.Comparison{Name: "test"}}); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}
 }
 
-// Check that a FailureBuilder{} does something remotely reasonable.
-func TestResultBuilderNil(t *testing.T) {
+// Check that a SummaryBuilder{} does something remotely reasonable.
+func TestSummaryBuilderNil(t *testing.T) {
 	t.Parallel()
 
-	res := (&FailureBuilder{}).Because("reasons").Failure
-	if diff := typed.Diff(res, &Failure{Findings: []*Failure_Finding{{Name: "Because", Value: []string{"reasons"}}}}); diff != "" {
+	res := (&SummaryBuilder{}).Because("reasons").Summary
+	if diff := typed.Diff(res, &failure.Summary{Findings: []*failure.Finding{{Name: "Because", Value: []string{"reasons"}}}}); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}
 }
 
-// TestNewResultBuilder tests using a ResultBuilder to build a failure.
-func TestNewResultBuilder(t *testing.T) {
+// TestNewSummaryBuilder tests using a SummaryBuilder to build a failure.Summary.
+func TestNewSummaryBuilder(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
 		name     string
-		expected *Failure
-		actual   *Failure
+		expected *failure.Summary
+		actual   *failure.Summary
 	}{
 		{
 			name:     "equal",
-			expected: NewFailureBuilder("equal").Failure,
-			actual: &Failure{
-				Comparison: &Failure_ComparisonFunc{
+			expected: NewSummaryBuilder("equal").Summary,
+			actual: &failure.Summary{
+				Comparison: &failure.Comparison{
 					Name: "equal",
 				},
 			},
 		},
 		{
 			name:     "equal[int]",
-			expected: NewFailureBuilder("equal", 100).Failure,
-			actual: &Failure{
-				Comparison: &Failure_ComparisonFunc{
+			expected: NewSummaryBuilder("equal", 100).Summary,
+			actual: &failure.Summary{
+				Comparison: &failure.Comparison{
 					Name:          "equal",
 					TypeArguments: []string{"int"},
 				},
@@ -81,7 +82,7 @@ func TestNewResultBuilder(t *testing.T) {
 	}
 }
 
-// TestBecause tests setting the because field of a failure.
+// TestBecause tests setting the because field of a failure.Summary.
 func TestBecause(t *testing.T) {
 	t.Parallel()
 
@@ -89,15 +90,15 @@ func TestBecause(t *testing.T) {
 		name    string
 		format  string
 		args    []any
-		failure *Failure
+		summary *failure.Summary
 	}{
 		{
 			name:   "because",
 			format: "%d",
 			args:   []any{7},
-			failure: &Failure{
-				Comparison: &Failure_ComparisonFunc{Name: "test"},
-				Findings: []*Failure_Finding{
+			summary: &failure.Summary{
+				Comparison: &failure.Comparison{Name: "test"},
+				Findings: []*failure.Finding{
 					{Name: "Because", Value: []string{"7"}},
 				},
 			},
@@ -108,8 +109,8 @@ func TestBecause(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			expected := tt.failure
-			actual := NewFailureBuilder("test").Because(tt.format, tt.args...).Failure
+			expected := tt.summary
+			actual := NewSummaryBuilder("test").Because(tt.format, tt.args...).Summary
 			if diff := typed.Diff(expected, actual); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
@@ -117,7 +118,7 @@ func TestBecause(t *testing.T) {
 	}
 }
 
-// TestActualExpected tests setting the actual/expected fields of a failure.
+// TestActualExpected tests setting the actual/expected fields of a failure.Summary.
 func TestActualExpected(t *testing.T) {
 	t.Parallel()
 
@@ -125,15 +126,15 @@ func TestActualExpected(t *testing.T) {
 		name          string
 		expectedValue any
 		actualValue   any
-		failure       *Failure
+		summary       *failure.Summary
 	}{
 		{
 			name:          "actual/expected",
 			expectedValue: 7,
 			actualValue:   8,
-			failure: &Failure{
-				Comparison: &Failure_ComparisonFunc{Name: "test"},
-				Findings: []*Failure_Finding{
+			summary: &failure.Summary{
+				Comparison: &failure.Comparison{Name: "test"},
+				Findings: []*failure.Finding{
 					{Name: "Expected", Value: []string{"7"}},
 					{Name: "Actual", Value: []string{"8"}},
 				},
@@ -144,8 +145,8 @@ func TestActualExpected(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			expected := tt.failure
-			actual := NewFailureBuilder("test").Expected(tt.expectedValue).Actual(tt.actualValue).Failure
+			expected := tt.summary
+			actual := NewSummaryBuilder("test").Expected(tt.expectedValue).Actual(tt.actualValue).Summary
 			if diff := typed.Diff(expected, actual); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
@@ -156,18 +157,18 @@ func TestActualExpected(t *testing.T) {
 func TestAddComparisonArgs(t *testing.T) {
 	t.Parallel()
 
-	fb := NewFailureBuilder("hello")
-	if diff := typed.Diff(fb.Failure, &Failure{
-		Comparison: &Failure_ComparisonFunc{
+	sb := NewSummaryBuilder("hello")
+	if diff := typed.Diff(sb.Summary, &failure.Summary{
+		Comparison: &failure.Comparison{
 			Name: "hello",
 		},
 	}); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}
 
-	fb.AddComparisonArgs(1, 2, "hi")
-	if diff := typed.Diff(fb.Failure, &Failure{
-		Comparison: &Failure_ComparisonFunc{
+	sb.AddComparisonArgs(1, 2, "hi")
+	if diff := typed.Diff(sb.Summary, &failure.Summary{
+		Comparison: &failure.Comparison{
 			Name:      "hello",
 			Arguments: []string{"1", "2", "hi"},
 		},
@@ -179,23 +180,23 @@ func TestAddComparisonArgs(t *testing.T) {
 func TestGetFailure(t *testing.T) {
 	t.Parallel()
 
-	fb := NewFailureBuilder("hello")
-	if diff := typed.Diff(fb.GetFailure(), nil); diff != "" {
+	sb := NewSummaryBuilder("hello")
+	if diff := typed.Diff(sb.GetFailure(), nil); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}
 
-	fb.AddComparisonArgs(1, 2, "hi")
-	if diff := typed.Diff(fb.GetFailure(), nil); diff != "" {
+	sb.AddComparisonArgs(1, 2, "hi")
+	if diff := typed.Diff(sb.GetFailure(), nil); diff != "" {
 		t.Errorf("unexpected diff (-want +got): %s", diff)
 	}
 
-	fb.Actual("something")
-	if diff := typed.Diff(fb.GetFailure(), &Failure{
-		Comparison: &Failure_ComparisonFunc{
+	sb.Actual("something")
+	if diff := typed.Diff(sb.GetFailure(), &failure.Summary{
+		Comparison: &failure.Comparison{
 			Name:      "hello",
 			Arguments: []string{"1", "2", "hi"},
 		},
-		Findings: []*Failure_Finding{
+		Findings: []*failure.Finding{
 			{Name: "Actual", Value: []string{`"something"`}},
 		},
 	}); diff != "" {
@@ -204,14 +205,14 @@ func TestGetFailure(t *testing.T) {
 }
 
 func TestRenameFinding(t *testing.T) {
-	fb := NewFailureBuilder("test")
-	fb.Expected("something")
-	fb.AddFindingf("Extra", "stuff")
+	sb := NewSummaryBuilder("test")
+	sb.Expected("something")
+	sb.AddFindingf("Extra", "stuff")
 
 	// Make sure that we have the order Expected, Extra
-	if diff := typed.Diff(fb.Failure, &Failure{
-		Comparison: &Failure_ComparisonFunc{Name: "test"},
-		Findings: []*Failure_Finding{
+	if diff := typed.Diff(sb.Summary, &failure.Summary{
+		Comparison: &failure.Comparison{Name: "test"},
+		Findings: []*failure.Finding{
 			{Name: "Expected", Value: []string{`"something"`}},
 			{Name: "Extra", Value: []string{"stuff"}},
 		},
@@ -221,10 +222,10 @@ func TestRenameFinding(t *testing.T) {
 
 	// Make sure that we have the order Morples, Extra (renaming doesn't
 	// reorder stuff)
-	fb.RenameFinding("Expected", "Morples")
-	if diff := typed.Diff(fb.Failure, &Failure{
-		Comparison: &Failure_ComparisonFunc{Name: "test"},
-		Findings: []*Failure_Finding{
+	sb.RenameFinding("Expected", "Morples")
+	if diff := typed.Diff(sb.Summary, &failure.Summary{
+		Comparison: &failure.Comparison{Name: "test"},
+		Findings: []*failure.Finding{
 			{Name: "Morples", Value: []string{`"something"`}},
 			{Name: "Extra", Value: []string{"stuff"}},
 		},
@@ -234,10 +235,10 @@ func TestRenameFinding(t *testing.T) {
 
 	// Make sure that we have the same thing, renaming a finding that doesn't
 	// exist is a no-op.
-	fb.RenameFinding("NotHere", "Oh No!")
-	if diff := typed.Diff(fb.Failure, &Failure{
-		Comparison: &Failure_ComparisonFunc{Name: "test"},
-		Findings: []*Failure_Finding{
+	sb.RenameFinding("NotHere", "Oh No!")
+	if diff := typed.Diff(sb.Summary, &failure.Summary{
+		Comparison: &failure.Comparison{Name: "test"},
+		Findings: []*failure.Finding{
 			{Name: "Morples", Value: []string{`"something"`}},
 			{Name: "Extra", Value: []string{"stuff"}},
 		},

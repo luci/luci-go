@@ -28,6 +28,7 @@ import (
 	"runtime"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // Adapt takes an old convey-style comparison function and converts it to a
@@ -42,13 +43,13 @@ import (
 //	assert.That(t, actualValue, convey.Adapt(myCustomShouldFunction)(expected))
 func Adapt(oldComparison func(actual any, expected ...any) string) func(expected ...any) comparison.Func[any] {
 	return func(expected ...any) comparison.Func[any] {
-		return func(actual any) *comparison.Failure {
+		return func(actual any) *failure.Summary {
 			text := oldComparison(actual, expected...)
 			if text == "" {
 				return nil
 			}
 			name := runtime.FuncForPC(reflect.ValueOf(oldComparison).Pointer()).Name()
-			return comparison.NewFailureBuilder(fmt.Sprintf("adapt.Convey(%s)", name)).Because(text).Failure
+			return comparison.NewSummaryBuilder(fmt.Sprintf("adapt.Convey(%s)", name)).Because(text).Summary
 		}
 	}
 }

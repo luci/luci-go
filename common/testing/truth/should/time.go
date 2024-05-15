@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // HappenBefore returns a comparison.Func which checks that some actual time happened
@@ -26,35 +27,35 @@ import (
 func HappenBefore(target time.Time) comparison.Func[time.Time] {
 	const cmpName = "should.HappenBefore"
 
-	return func(actual time.Time) *comparison.Failure {
+	return func(actual time.Time) *failure.Summary {
 		if actual.Before(target) {
 			return nil
 		}
 
 		// check for equal because otherwise Diff will be empty.
 		if actual.Equal(target) {
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("Times were equal: %s", actual).
-				Failure
+				Summary
 		}
 
-		return comparison.NewFailureBuilder(cmpName).
+		return comparison.NewSummaryBuilder(cmpName).
 			SmartCmpDiff(actual, target).
-			Failure
+			Summary
 	}
 }
 
 // HappenOnOrBefore returns a comparison.Func which checks that some actual time
 // happened on or before 'target'.
 func HappenOnOrBefore(target time.Time) comparison.Func[time.Time] {
-	return func(actual time.Time) *comparison.Failure {
+	return func(actual time.Time) *failure.Summary {
 		if actual.Equal(target) || actual.Before(target) {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder("should.HappenOnOrBefore").
+		return comparison.NewSummaryBuilder("should.HappenOnOrBefore").
 			SmartCmpDiff(actual, target).
-			Failure
+			Summary
 	}
 }
 
@@ -63,35 +64,35 @@ func HappenOnOrBefore(target time.Time) comparison.Func[time.Time] {
 func HappenAfter(target time.Time) comparison.Func[time.Time] {
 	const cmpName = "should.HappenAfter"
 
-	return func(actual time.Time) *comparison.Failure {
+	return func(actual time.Time) *failure.Summary {
 		if actual.After(target) {
 			return nil
 		}
 
 		// check for equal because otherwise Diff will be empty.
 		if actual.Equal(target) {
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("Times were equal: %s", actual).
-				Failure
+				Summary
 		}
 
-		return comparison.NewFailureBuilder(cmpName).
+		return comparison.NewSummaryBuilder(cmpName).
 			SmartCmpDiff(actual, target).
-			Failure
+			Summary
 	}
 }
 
 // HappenOnOrAfter returns a comparison.Func which checks that some actual time
 // happened on or after 'target'.
 func HappenOnOrAfter(target time.Time) comparison.Func[time.Time] {
-	return func(actual time.Time) *comparison.Failure {
+	return func(actual time.Time) *failure.Summary {
 		if actual.Equal(target) || actual.After(target) {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder("should.HappenOnOrAfter").
+		return comparison.NewSummaryBuilder("should.HappenOnOrAfter").
 			SmartCmpDiff(actual, target).
-			Failure
+			Summary
 	}
 }
 
@@ -106,7 +107,7 @@ func HappenOnOrBetween(lower, upper time.Time) comparison.Func[time.Time] {
 		panic(fmt.Errorf("%s: !lower.Before(upper)", cmpName))
 	}
 
-	return func(actual time.Time) *comparison.Failure {
+	return func(actual time.Time) *failure.Summary {
 		if actual.Equal(lower) || actual.Equal(upper) {
 			return nil
 		}
@@ -114,10 +115,10 @@ func HappenOnOrBetween(lower, upper time.Time) comparison.Func[time.Time] {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder(cmpName).
+		return comparison.NewSummaryBuilder(cmpName).
 			Actual(actual).
 			AddFindingf("Expected", "[%s, %s]", lower, upper).
-			Failure
+			Summary
 	}
 }
 
@@ -133,7 +134,7 @@ func HappenWithin(target time.Time, delta time.Duration) comparison.Func[time.Ti
 	lower := target.Add(-delta)
 	upper := target.Add(delta)
 
-	return func(actual time.Time) *comparison.Failure {
+	return func(actual time.Time) *failure.Summary {
 		if actual.Equal(lower) || actual.Equal(upper) {
 			return nil
 		}
@@ -141,9 +142,9 @@ func HappenWithin(target time.Time, delta time.Duration) comparison.Func[time.Ti
 			return nil
 		}
 
-		return comparison.NewFailureBuilder(cmpName).
+		return comparison.NewSummaryBuilder(cmpName).
 			Actual(actual).
 			AddFindingf("Expected", "%v ± %v", target, delta).
-			Failure
+			Summary
 	}
 }

@@ -21,13 +21,14 @@ import (
 
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // Panic checks whether a function panics.
-func Panic(fn func()) *comparison.Failure {
+func Panic(fn func()) *failure.Summary {
 	thing := paniccatcher.PCall(fn)
 	if thing == nil {
-		return comparison.NewFailureBuilder("should.Panic").Failure
+		return comparison.NewSummaryBuilder("should.Panic").Summary
 	}
 	return nil
 }
@@ -37,12 +38,12 @@ func Panic(fn func()) *comparison.Failure {
 // It fails when you panic with anything that is NOT a string or an error.
 func PanicLikeString(substring string) comparison.Func[func()] {
 	const cmpName = "should.PanicLikeString"
-	return func(fn func()) *comparison.Failure {
+	return func(fn func()) *failure.Summary {
 		caught := paniccatcher.PCall(fn)
 		if caught == nil {
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("function did not panic").
-				Failure
+				Summary
 		}
 		exn := caught.Reason
 		var str string
@@ -52,55 +53,55 @@ func PanicLikeString(substring string) comparison.Func[func()] {
 		case error:
 			str = v.Error()
 		default:
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("panic reason is neither error nor string").
 				Actual(substring).
 				Expected(str).
-				Failure
+				Summary
 		}
 		if strings.Contains(str, substring) {
 			return nil
 		}
-		return comparison.NewFailureBuilder(cmpName).
+		return comparison.NewSummaryBuilder(cmpName).
 			Because("Actual is missing substring.").
 			Actual(str).
 			AddFindingf("Substring", substring).
-			Failure
+			Summary
 	}
 }
 
 // PanicLikeError checks if something panics like a given error.
 func PanicLikeError(target error) comparison.Func[func()] {
 	const cmpName = "should.PanicLikeError"
-	return func(fn func()) *comparison.Failure {
+	return func(fn func()) *failure.Summary {
 		if target == nil {
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("nil as expected panic is not allowed; use runtime.PanicNilError instead").
-				Failure
+				Summary
 		}
 		thing := paniccatcher.PCall(fn)
 		if thing == nil {
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("function did not panic").
-				Failure
+				Summary
 		}
 		exn := thing.Reason
 		e, ok := exn.(error)
 		if !ok {
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("caught panic is not an error").
 				Actual(e).
 				Expected(target).
 				AddFindingf("stack", thing.Stack).
 				WarnIfLong().
-				Failure
+				Summary
 		}
 		if !errors.Is(e, target) {
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("error does not match target").
 				Actual(e).
 				Expected(target).
-				Failure
+				Summary
 		}
 		return nil
 	}

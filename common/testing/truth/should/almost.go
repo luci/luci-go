@@ -19,14 +19,15 @@ import (
 	"reflect"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 func almostEqualComputeEpsilon[T ~float32 | ~float64](cmpName string, bits int, epsilon ...T) (ep T, errFn comparison.Func[T]) {
 	if len(epsilon) > 1 {
-		errFn = func(t T) *comparison.Failure {
-			return comparison.NewFailureBuilder(cmpName, t).
+		errFn = func(t T) *failure.Summary {
+			return comparison.NewSummaryBuilder(cmpName, t).
 				Because("%s: `epsilon` is a single optional value, got %d values", cmpName, len(epsilon)).
-				Failure
+				Summary
 		}
 		return
 	}
@@ -45,10 +46,10 @@ func almostEqualComputeEpsilon[T ~float32 | ~float64](cmpName string, bits int, 
 		}
 	}
 	if ep < 0 {
-		errFn = func(t T) *comparison.Failure {
-			return comparison.NewFailureBuilder(cmpName, t).
+		errFn = func(t T) *failure.Summary {
+			return comparison.NewSummaryBuilder(cmpName, t).
 				Because("%s: `epsilon` is negative: %v", cmpName, ep).
-				Failure
+				Summary
 		}
 	}
 
@@ -80,16 +81,16 @@ func AlmostEqual[T ~float32 | ~float64](target T, epsilon ...T) comparison.Func[
 		return errFn
 	}
 
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		delta, inEpsilon := almostEqualCheck(actual, target, ep)
 		if inEpsilon {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder(cmpName, target).
+		return comparison.NewSummaryBuilder(cmpName, target).
 			Because("Actual value was %g off of target.", delta).
 			Actual(actual).
 			AddFindingf("Expected", "%g ± %g", target, ep).
-			Failure
+			Summary
 	}
 }

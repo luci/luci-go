@@ -18,6 +18,7 @@ import (
 	"reflect"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // canLen returns true iff the `anything` Value can safely use with
@@ -34,12 +35,12 @@ func canLen(anything reflect.Value) bool {
 
 // getLen returns the length of `anything` equivalent to the builtin `len()`
 // function.
-func getLen(cmpName string, anything any) (int, *comparison.Failure) {
+func getLen(cmpName string, anything any) (int, *failure.Summary) {
 	val := reflect.ValueOf(anything)
 	if !canLen(val) {
-		return 0, comparison.NewFailureBuilder(cmpName).
+		return 0, comparison.NewSummaryBuilder(cmpName).
 			Because("%T does not support `len()`", anything).
-			Failure
+			Summary
 	}
 	return reflect.ValueOf(anything).Len(), nil
 }
@@ -52,15 +53,15 @@ func HaveLength(expected int) comparison.Func[any] {
 	const cmpName = "should.HaveLength"
 
 	if expected < 0 {
-		return func(a any) *comparison.Failure {
-			return comparison.NewFailureBuilder(cmpName).
+		return func(a any) *failure.Summary {
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("Expected value is a negative length").
 				Expected(expected).
-				Failure
+				Summary
 		}
 	}
 
-	return func(actual any) *comparison.Failure {
+	return func(actual any) *failure.Summary {
 		l, fail := getLen(cmpName, actual)
 		if fail != nil {
 			return fail
@@ -69,10 +70,10 @@ func HaveLength(expected int) comparison.Func[any] {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder(cmpName, actual).
+		return comparison.NewSummaryBuilder(cmpName, actual).
 			AddFindingf("len(Actual)", "%d", actual).
 			Expected(expected).
-			Failure
+			Summary
 	}
 }
 
@@ -81,7 +82,7 @@ func HaveLength(expected int) comparison.Func[any] {
 // Supports all values which work with the `len()` builtin function.
 //
 // TODO: Improve this when there is a `Lengthable` type constraint.
-func BeEmpty(actual any) *comparison.Failure {
+func BeEmpty(actual any) *failure.Summary {
 	const cmpName = "should.BeEmpty"
 
 	l, fail := getLen(cmpName, actual)
@@ -91,14 +92,14 @@ func BeEmpty(actual any) *comparison.Failure {
 	if l == 0 {
 		return nil
 	}
-	return comparison.NewFailureBuilder(cmpName, actual).Failure
+	return comparison.NewSummaryBuilder(cmpName, actual).Summary
 }
 
 // NotBeEmpty is a Comparison which expects `actual` to have a non-0
 // length.
 //
 // Supports all values which work with the `len()` builtin function.
-func NotBeEmpty(actual any) *comparison.Failure {
+func NotBeEmpty(actual any) *failure.Summary {
 	const cmpName = "should.NotBeEmpty"
 
 	l, fail := getLen(cmpName, actual)
@@ -108,5 +109,5 @@ func NotBeEmpty(actual any) *comparison.Failure {
 	if l != 0 {
 		return nil
 	}
-	return comparison.NewFailureBuilder(cmpName, actual).Failure
+	return comparison.NewSummaryBuilder(cmpName, actual).Summary
 }

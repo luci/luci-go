@@ -18,14 +18,14 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // shouldPass returns a function you can pass to `t.Run` which tests that `f`
 // 'passed' (i.e., is nil).
 //
 // Otherwise it has a fatal error and prints the Failure.
-func shouldPass(f *comparison.Failure) func(t *testing.T) {
+func shouldPass(f *failure.Summary) func(t *testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
 		t.Helper()
@@ -45,7 +45,7 @@ func shouldPass(f *comparison.Failure) func(t *testing.T) {
 // Failure object.
 //
 // Otherwise it has a fatal error.
-func shouldFail(f *comparison.Failure, containing ...string) func(t *testing.T) {
+func shouldFail(f *failure.Summary, containing ...string) func(t *testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
 		t.Helper()

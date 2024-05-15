@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // ErrLikeString returns failure when the stringified error is not a substring
@@ -32,31 +33,31 @@ import (
 func ErrLikeString(substring string) comparison.Func[error] {
 	const cmpName = "should.ErrLikeString"
 	if substring == "" {
-		return func(error) *comparison.Failure {
-			return comparison.NewFailureBuilder(cmpName).
+		return func(error) *failure.Summary {
+			return comparison.NewSummaryBuilder(cmpName).
 				Because(`"" is a substring of every string. Use ErrLikeError(nil) or BeNil.`).
-				Failure
+				Summary
 		}
 	}
-	return func(actual error) *comparison.Failure {
+	return func(actual error) *failure.Summary {
 		if actual == nil {
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("actual is nil and therefore doesn't contain any non-empty substrings").
 				Actual(substring).
 				AddFindingf("substring", substring).
-				Failure
+				Summary
 		}
 		a := actual.Error()
 		if strings.Contains(a, substring) {
 			return nil
 		}
-		return comparison.NewFailureBuilder(cmpName).
+		return comparison.NewSummaryBuilder(cmpName).
 			Because("`actual.Error()` is missing substring.").
 			Actual(a).
 			AddFindingf("actual.Error()", "%q", a).
 			Expected(substring).
 			AddFindingf("Substring", substring).
-			Failure
+			Summary
 	}
 }
 
@@ -66,31 +67,31 @@ func ErrLikeString(substring string) comparison.Func[error] {
 func ErrLikeError(target error) comparison.Func[error] {
 	const cmpName = "ErrLikeError"
 	if target == nil {
-		return func(actual error) *comparison.Failure {
+		return func(actual error) *failure.Summary {
 			if actual == nil {
 				return nil
 			}
-			return comparison.NewFailureBuilder(cmpName).
+			return comparison.NewSummaryBuilder(cmpName).
 				Because("Actual is not nil").
 				Actual(actual).
-				Failure
+				Summary
 		}
 	}
-	return func(actual error) *comparison.Failure {
+	return func(actual error) *failure.Summary {
 		// target MUST be non-nil at this point
 		if actual == nil {
-			return comparison.NewFailureBuilder(cmpName, target).
+			return comparison.NewSummaryBuilder(cmpName, target).
 				Because("Actual is nil but target is not").
 				Expected(target).
-				Failure
+				Summary
 		}
 		if errors.Is(actual, target) {
 			return nil
 		}
-		return comparison.NewFailureBuilder(cmpName, target).
+		return comparison.NewSummaryBuilder(cmpName, target).
 			Because("Actual does not contain the expected error.").
 			SmartCmpDiff(actual, target, cmpopts.EquateErrors()).
-			Failure
+			Summary
 	}
 }
 

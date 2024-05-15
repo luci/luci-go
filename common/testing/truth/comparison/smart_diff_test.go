@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -32,7 +33,7 @@ func TestSmartCmpDiff(t *testing.T) {
 		expectedIn any
 		extraOpts  []cmp.Option
 
-		expectedFailure *Failure
+		expectedFailure *failure.Summary
 
 		// cmp.Diff has unstable output - for any Finding with Type of CmpDiff,
 		// assert that it contains all of these strings and then redact the value of
@@ -44,12 +45,12 @@ func TestSmartCmpDiff(t *testing.T) {
 			t.Parallel()
 			t.Helper()
 
-			got := NewFailureBuilder("test").
+			got := NewSummaryBuilder("test").
 				SmartCmpDiff(tt.actualIn, tt.expectedIn, tt.extraOpts...).
-				Failure
+				Summary
 
 			for _, finding := range got.Findings {
-				if finding.Type == FindingTypeHint_CmpDiff {
+				if finding.Type == failure.FindingTypeHint_CmpDiff {
 					needles := stringset.NewFromSlice(tt.diffContains...)
 					for _, candidate := range finding.Value {
 						found := stringset.New(needles.Len())
@@ -90,11 +91,11 @@ func TestSmartCmpDiff(t *testing.T) {
 	t.Run("simple", testCase(caseT{
 		actualIn:   10,
 		expectedIn: 20,
-		expectedFailure: &Failure{
-			Comparison: &Failure_ComparisonFunc{
+		expectedFailure: &failure.Summary{
+			Comparison: &failure.Comparison{
 				Name: "test",
 			},
-			Findings: []*Failure_Finding{
+			Findings: []*failure.Finding{
 				{Name: "Actual", Value: []string{"10"}},
 				{Name: "Expected", Value: []string{"20"}},
 			},
@@ -106,14 +107,14 @@ func TestSmartCmpDiff(t *testing.T) {
 	t.Run("simple mismatched types", testCase(caseT{
 		actualIn:   10,
 		expectedIn: myCustomInt(10),
-		expectedFailure: &Failure{
-			Comparison: &Failure_ComparisonFunc{
+		expectedFailure: &failure.Summary{
+			Comparison: &failure.Comparison{
 				Name: "test",
 			},
-			Findings: []*Failure_Finding{
+			Findings: []*failure.Finding{
 				{Name: "Actual", Value: []string{"10"}},
 				{Name: "Expected", Value: []string{"10"}},
-				{Name: "Diff", Value: []string{"[REMOVED]"}, Type: FindingTypeHint_CmpDiff},
+				{Name: "Diff", Value: []string{"[REMOVED]"}, Type: failure.FindingTypeHint_CmpDiff},
 			},
 		},
 		diffContains: []string{
@@ -125,18 +126,18 @@ func TestSmartCmpDiff(t *testing.T) {
 	t.Run("long value", testCase(caseT{
 		actualIn:   10,
 		expectedIn: strings.Repeat("hi", 16),
-		expectedFailure: &Failure{
-			Comparison: &Failure_ComparisonFunc{
+		expectedFailure: &failure.Summary{
+			Comparison: &failure.Comparison{
 				Name: "test",
 			},
-			Findings: []*Failure_Finding{
+			Findings: []*failure.Finding{
 				{Name: "Actual", Value: []string{"10"}},
 				{
 					Name:  "Expected",
 					Value: []string{`"hihihihihihihihihihihihihihihihi"`},
-					Level: FindingLogLevel_Warn,
+					Level: failure.FindingLogLevel_Warn,
 				},
-				{Name: "Diff", Value: []string{"[REMOVED]"}, Type: FindingTypeHint_CmpDiff},
+				{Name: "Diff", Value: []string{"[REMOVED]"}, Type: failure.FindingTypeHint_CmpDiff},
 			},
 		},
 		diffContains: []string{"10", "hihihihihi"},

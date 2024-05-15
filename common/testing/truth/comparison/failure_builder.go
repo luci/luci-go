@@ -17,23 +17,25 @@ package comparison
 import (
 	"fmt"
 	"strings"
+
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
-// A FailureBuilder builds a Failure and has a fluent interface.
-type FailureBuilder struct {
-	*Failure
+// A SummaryBuilder builds a failure.Summary and has a fluent interface.
+type SummaryBuilder struct {
+	*failure.Summary
 }
 
-// SetFailureComparison sets the Comparison field of `Failure`, formating
+// SetComparison sets the Comparison field of `failure.Summary`, formating
 // `typeArgs` into strings with `fmt.Sprintf("%T")`.
 //
 // Example:
 //
 //	actual := 123
-//	SetFailureComparison(f, "should.Equal", &actual)
+//	SetComparison(f, "should.Equal", &actual)
 //
-// Will FailureBuilder for a comparison `should.Equal[*int]`.
-func SetFailureComparison(f *Failure, comparisonName string, typeArgs ...any) {
+// Will SummaryBuilder for a comparison `should.Equal[*int]`.
+func SetComparison(f *failure.Summary, comparisonName string, typeArgs ...any) {
 	var typeArgsS []string
 	if len(typeArgs) > 0 {
 		typeArgsS = make([]string, len(typeArgs))
@@ -42,85 +44,85 @@ func SetFailureComparison(f *Failure, comparisonName string, typeArgs ...any) {
 		}
 	}
 
-	f.Comparison = &Failure_ComparisonFunc{
+	f.Comparison = &failure.Comparison{
 		Name:          comparisonName,
 		TypeArguments: typeArgsS,
 	}
 }
 
-// NewFailureBuilder makes a new FailureBuilder, filling in the  for the given
+// NewSummaryBuilder makes a new SummaryBuilder, filling in the  for the given
 // comparisonName and exemplar type arguments.
 //
 // For example:
 //
 //	actual := 123
-//	NewFailureBuilder("should.Equal", &actual)
+//	NewSummaryBuilder("should.Equal", &actual)
 //
-// Will make a new FailureBuilder for a comparison `should.Equal[*int]`.
-func NewFailureBuilder(comparisonName string, typeArgs ...any) *FailureBuilder {
-	ret := &FailureBuilder{&Failure{}}
-	SetFailureComparison(ret.Failure, comparisonName, typeArgs...)
+// Will make a new SummaryBuilder for a comparison `should.Equal[*int]`.
+func NewSummaryBuilder(comparisonName string, typeArgs ...any) *SummaryBuilder {
+	ret := &SummaryBuilder{&failure.Summary{}}
+	SetComparison(ret.Summary, comparisonName, typeArgs...)
 	return ret
 }
 
-// AddComparisonArgs adds new arguments to the Failure.ComparisonFunc formatted
+// AddComparisonArgs adds new arguments to the failure.Summary.ComparisonFunc formatted
 // with %v.
-func (fb *FailureBuilder) AddComparisonArgs(args ...any) *FailureBuilder {
-	fb.fixNilFailure()
+func (sb *SummaryBuilder) AddComparisonArgs(args ...any) *SummaryBuilder {
+	sb.fixNilFailure()
 	slc := make([]string, len(args))
 	for i := range slc {
 		slc[i] = fmt.Sprintf("%v", args[i])
 	}
-	fb.Comparison.Arguments = append(fb.Comparison.Arguments, slc...)
-	return fb
+	sb.Comparison.Arguments = append(sb.Comparison.Arguments, slc...)
+	return sb
 }
 
-// AddFindingf adds a new single-line Finding to this Failure with the
+// AddFindingf adds a new single-line Finding to this failure.Summary with the
 // given `name`.
 //
 // If `args` is empty, then `format` will be used as the Finding value verbatim.
 // Otherwise the value will be formatted as `fmt.Sprintf(format, args...)`.
 //
 // The finding will have the type "FindingTypeHint_Text".
-func (fb *FailureBuilder) AddFindingf(name, format string, args ...any) *FailureBuilder {
-	fb.fixNilFailure()
+func (sb *SummaryBuilder) AddFindingf(name, format string, args ...any) *SummaryBuilder {
+	sb.fixNilFailure()
 
 	value := format
 	if len(args) > 0 {
 		value = fmt.Sprintf(format, args...)
 	}
-	fb.Findings = append(fb.Findings, &Failure_Finding{
+	sb.Findings = append(sb.Findings, &failure.Finding{
 		Name:  name,
 		Value: strings.Split(value, "\n"),
-		Type:  FindingTypeHint_Text,
+		Type:  failure.FindingTypeHint_Text,
 	})
-	return fb
+	return sb
 }
 
-// fixNilFailure will populate fb.Failure with an empty Failure iff it is nil.
-func (fb *FailureBuilder) fixNilFailure() {
-	if fb.Failure == nil {
-		fb.Failure = &Failure{}
+// fixNilFailure will populate sb.Summary with an empty failure.Summary iff it is nil.
+func (sb *SummaryBuilder) fixNilFailure() {
+	if sb.Summary == nil {
+		sb.Summary = &failure.Summary{}
 	}
 }
 
-// Because adds a new finding "Because" to the Failure with AddFormattedFinding.
-func (fb *FailureBuilder) Because(format string, args ...any) *FailureBuilder {
-	return fb.AddFindingf("Because", format, args...)
+// Because adds a new finding "Because" to the failure.Summary with AddFormattedFinding.
+func (sb *SummaryBuilder) Because(format string, args ...any) *SummaryBuilder {
+	return sb.AddFindingf("Because", format, args...)
 }
 
-// Actual adds a new finding "Actual" to the Failure.
+// Actual adds a new finding "Actual" to the failure.Summary.
 //
 // `actual` will be rendered with fmt.Sprintf("%#v").
-func (fb *FailureBuilder) Actual(actual any) *FailureBuilder {
-	return fb.AddFindingf("Actual", "%#v", actual)
+func (sb *SummaryBuilder) Actual(actual any) *SummaryBuilder {
+	return sb.AddFindingf("Actual", "%#v", actual)
 }
 
-// Expected adds a new finding "Expected" to the Failure.
+// Expected adds a new finding "Expected" to the failure.Summary.
 //
 // `Expected` will be rendered with fmt.Sprintf("%#v").
-func (fb *FailureBuilder) Expected(Expected any) *FailureBuilder {
-	return fb.AddFindingf("Expected", "%#v", Expected)
+func (sb *SummaryBuilder) Expected(Expected any) *SummaryBuilder {
+	return sb.AddFindingf("Expected", "%#v", Expected)
 }
 
 // WarnIfLong marks the previously-added Finding with Level 'Warn' if it has a long value.
@@ -130,43 +132,43 @@ func (fb *FailureBuilder) Expected(Expected any) *FailureBuilder {
 //   - A line exceeding 30 characters in length.
 //
 // No-op if there are no findings in the failure yet.
-func (fb *FailureBuilder) WarnIfLong() *FailureBuilder {
+func (sb *SummaryBuilder) WarnIfLong() *SummaryBuilder {
 	const lengthThreshold = 30
 
-	fb.fixNilFailure()
-	if len(fb.Findings) > 0 {
-		f := fb.Findings[len(fb.Findings)-1]
+	sb.fixNilFailure()
+	if len(sb.Findings) > 0 {
+		f := sb.Findings[len(sb.Findings)-1]
 		if len(f.Value) > 1 || len(f.Value[0]) > lengthThreshold {
-			f.Level = FindingLogLevel_Warn
+			f.Level = failure.FindingLogLevel_Warn
 		}
 	}
-	return fb
+	return sb
 }
 
-// GetFailure returns fb.Failure if it contains any Findings, otherwise returns
+// GetFailure returns sb.Summary if it contains any Findings, otherwise returns
 // nil.
 //
 // This is useful if you build your comparison with a series of conditional
 // findings.
-func (fb *FailureBuilder) GetFailure() *Failure {
-	if fb.Failure == nil || len(fb.Findings) == 0 {
+func (sb *SummaryBuilder) GetFailure() *failure.Summary {
+	if sb.Summary == nil || len(sb.Findings) == 0 {
 		return nil
 	}
-	return fb.Failure
+	return sb.Summary
 }
 
 // RenameFinding finds the first Finding with the name `oldname` and renames it
 // to `newname`.
 //
 // Does nothing if `oldname` is not one of the current Findings.
-func (fb *FailureBuilder) RenameFinding(oldname, newname string) *FailureBuilder {
-	fb.fixNilFailure()
+func (sb *SummaryBuilder) RenameFinding(oldname, newname string) *SummaryBuilder {
+	sb.fixNilFailure()
 
-	for _, finding := range fb.Findings {
+	for _, finding := range sb.Findings {
 		if finding.Name == oldname {
 			finding.Name = newname
 		}
 	}
 
-	return fb
+	return sb
 }

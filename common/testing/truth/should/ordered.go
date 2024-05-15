@@ -21,6 +21,7 @@ import (
 	"golang.org/x/exp/constraints"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // TODO(iannucci): these implementations are all extremely similar; consider
@@ -32,27 +33,27 @@ func BeBetween[T constraints.Ordered](lower, upper T) comparison.Func[T] {
 	const cmpName = "should.BeBetween"
 
 	if lower >= upper {
-		return func(t T) *comparison.Failure {
-			return comparison.NewFailureBuilder(cmpName, lower).
+		return func(t T) *failure.Summary {
+			return comparison.NewSummaryBuilder(cmpName, lower).
 				Because("%s: `lower` >= `upper`: %#v >= %#v", cmpName, lower, upper).
-				Failure
+				Summary
 		}
 	}
 
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		if actual <= lower {
-			return comparison.NewFailureBuilder(cmpName, lower).
+			return comparison.NewSummaryBuilder(cmpName, lower).
 				Because("Actual value was too low.").
 				Actual(actual).
 				AddFindingf("Expected", "> %#v", lower).
-				Failure
+				Summary
 		}
 		if actual >= upper {
-			return comparison.NewFailureBuilder(cmpName, lower).
+			return comparison.NewSummaryBuilder(cmpName, lower).
 				Because("Actual value was too high.").
 				Actual(actual).
 				AddFindingf("Expected", "< %#v", upper).
-				Failure
+				Summary
 		}
 
 		return nil
@@ -65,27 +66,27 @@ func BeBetweenOrEqual[T constraints.Ordered](lower, upper T) comparison.Func[T] 
 	const cmpName = "should.BeBetweenOrEqual"
 
 	if lower > upper {
-		return func(t T) *comparison.Failure {
-			return comparison.NewFailureBuilder(cmpName, lower).
+		return func(t T) *failure.Summary {
+			return comparison.NewSummaryBuilder(cmpName, lower).
 				Because("%s: `lower` > `upper`: %#v > %#v", cmpName, lower, upper).
-				Failure
+				Summary
 		}
 	}
 
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		if actual < lower {
-			return comparison.NewFailureBuilder(cmpName, lower).
+			return comparison.NewSummaryBuilder(cmpName, lower).
 				Because("Actual value was too low.").
 				Actual(actual).
 				AddFindingf("Expected", ">= %#v", lower).
-				Failure
+				Summary
 		}
 		if actual > upper {
-			return comparison.NewFailureBuilder(cmpName, lower).
+			return comparison.NewSummaryBuilder(cmpName, lower).
 				Because("Actual value was too high.").
 				Actual(actual).
 				AddFindingf("Expected", "<= %#v", upper).
-				Failure
+				Summary
 		}
 
 		return nil
@@ -95,70 +96,70 @@ func BeBetweenOrEqual[T constraints.Ordered](lower, upper T) comparison.Func[T] 
 // BeLessThan returns a comparison.Func which checks if an ordered value sorts between
 // (or equal to) a lower and upper bound.
 func BeLessThan[T constraints.Ordered](upper T) comparison.Func[T] {
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		if actual < upper {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder("should.BeLessThan", upper).
+		return comparison.NewSummaryBuilder("should.BeLessThan", upper).
 			Because("Actual value was too high.").
 			Actual(actual).
 			AddFindingf("Expected", fmt.Sprintf("< %#v", upper)).
-			Failure
+			Summary
 	}
 }
 
 // BeLessThanOrEqual returns a comparison.Func which checks if an ordered value sorts between
 // (or equal to) a lower and upper bound.
 func BeLessThanOrEqual[T constraints.Ordered](upper T) comparison.Func[T] {
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		if actual <= upper {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder("should.BeLessThanOrEqual", upper).
+		return comparison.NewSummaryBuilder("should.BeLessThanOrEqual", upper).
 			Because("Actual value was too high.").
 			Actual(actual).
 			AddFindingf("Expected", fmt.Sprintf("<= %#v", upper)).
-			Failure
+			Summary
 	}
 }
 
 // BeGreaterThan returns a comparison.Func which checks if an ordered value is
 // greater than a lower bound.
 func BeGreaterThan[T constraints.Ordered](lower T) comparison.Func[T] {
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		if actual > lower {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder("should.BeGreaterThan", lower).
+		return comparison.NewSummaryBuilder("should.BeGreaterThan", lower).
 			Because("Actual value was too low.").
 			Actual(actual).
 			AddFindingf("Expected", fmt.Sprintf("> %#v", lower)).
-			Failure
+			Summary
 	}
 }
 
 // BeGreaterThanOrEqual returns a comparison.Func which checks if an ordered value is
 // greater than (or equal to) a lower bound.
 func BeGreaterThanOrEqual[T constraints.Ordered](lower T) comparison.Func[T] {
-	return func(actual T) (fail *comparison.Failure) {
+	return func(actual T) (fail *failure.Summary) {
 		if actual >= lower {
 			return nil
 		}
 
-		return comparison.NewFailureBuilder("should.BeGreaterThanOrEqual", lower).
+		return comparison.NewSummaryBuilder("should.BeGreaterThanOrEqual", lower).
 			Because("Actual value was too low.").
 			Actual(actual).
 			AddFindingf("Expected", fmt.Sprintf(">= %#v", lower)).
-			Failure
+			Summary
 	}
 }
 
 // BeSorted is a comparison.Func which ensures that a given slice is in sorted
 // order.
-func BeSorted[T constraints.Ordered](actual []T) (fail *comparison.Failure) {
+func BeSorted[T constraints.Ordered](actual []T) (fail *failure.Summary) {
 	if slices.IsSorted(actual) {
 		return nil
 	}
@@ -166,7 +167,7 @@ func BeSorted[T constraints.Ordered](actual []T) (fail *comparison.Failure) {
 	sorted := slices.Clone(actual)
 	slices.Sort(sorted)
 
-	return comparison.NewFailureBuilder("should.BeSorted", actual).
+	return comparison.NewSummaryBuilder("should.BeSorted", actual).
 		SmartCmpDiff(actual, sorted).
-		Failure
+		Summary
 }

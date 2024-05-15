@@ -19,107 +19,108 @@ import (
 	"unicode"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // ContainSubstring returns a comparison.Func which checks to see if a string
 // contains `substr`.
 func ContainSubstring(substr string) comparison.Func[string] {
-	return func(actual string) *comparison.Failure {
+	return func(actual string) *failure.Summary {
 		if strings.Contains(actual, substr) {
 			return nil
 		}
-		return comparison.NewFailureBuilder("should.ContainSubstring").
+		return comparison.NewSummaryBuilder("should.ContainSubstring").
 			SmartCmpDiff(actual, substr).
 			RenameFinding("Expected", "Substring").
-			Failure
+			Summary
 	}
 }
 
 // NotContainSubstring returns a comparison.Func which checks to see if a string
 // does not contain `substr`.
 func NotContainSubstring(substr string) comparison.Func[string] {
-	return func(actual string) *comparison.Failure {
+	return func(actual string) *failure.Summary {
 		if !strings.Contains(actual, substr) {
 			return nil
 		}
-		return comparison.NewFailureBuilder("should.NotContainSubstring").
+		return comparison.NewSummaryBuilder("should.NotContainSubstring").
 			SmartCmpDiff(actual, substr).
 			RenameFinding("Expected", "Substring").
-			Failure
+			Summary
 	}
 }
 
 // HaveSuffix returns a comparison.Func which checks to see if a string
 // ends with `suffix`.
 func HaveSuffix(suffix string) comparison.Func[string] {
-	return func(actual string) *comparison.Failure {
+	return func(actual string) *failure.Summary {
 		if strings.HasSuffix(actual, suffix) {
 			return nil
 		}
-		return comparison.NewFailureBuilder("should.HaveSuffix").
+		return comparison.NewSummaryBuilder("should.HaveSuffix").
 			SmartCmpDiff(actual, suffix).
 			RenameFinding("Expected", "Suffix").
-			Failure
+			Summary
 	}
 }
 
 // NotHaveSuffix returns a comparison.Func which checks to see if a string
 // does not end with `suffix`.
 func NotHaveSuffix(suffix string) comparison.Func[string] {
-	return func(actual string) *comparison.Failure {
+	return func(actual string) *failure.Summary {
 		if !strings.HasSuffix(actual, suffix) {
 			return nil
 		}
-		return comparison.NewFailureBuilder("should.NotHaveSuffix").
+		return comparison.NewSummaryBuilder("should.NotHaveSuffix").
 			SmartCmpDiff(actual, suffix).
 			RenameFinding("Expected", "Suffix").
-			Failure
+			Summary
 	}
 }
 
 // HavePrefix returns a comparison.Func which checks to see if a string
 // ends with `prefix`.
 func HavePrefix(prefix string) comparison.Func[string] {
-	return func(actual string) *comparison.Failure {
+	return func(actual string) *failure.Summary {
 		if strings.HasPrefix(actual, prefix) {
 			return nil
 		}
-		return comparison.NewFailureBuilder("should.HavePrefix").
+		return comparison.NewSummaryBuilder("should.HavePrefix").
 			SmartCmpDiff(actual, prefix).
 			RenameFinding("Expected", "Prefix").
-			Failure
+			Summary
 	}
 }
 
 // NotHavePrefix returns a comparison.Func which checks to see if a string
 // does not end with `prefix`.
 func NotHavePrefix(prefix string) comparison.Func[string] {
-	return func(actual string) *comparison.Failure {
+	return func(actual string) *failure.Summary {
 		if !strings.HasPrefix(actual, prefix) {
 			return nil
 		}
-		return comparison.NewFailureBuilder("should.NotHavePrefix").
+		return comparison.NewSummaryBuilder("should.NotHavePrefix").
 			SmartCmpDiff(actual, prefix).
 			RenameFinding("Expected", "Prefix").
-			Failure
+			Summary
 	}
 }
 
 // BeBlank implements comparison.Func[string] and asserts that `actual` contains
 // only whitespace chars.
-func BeBlank(actual string) *comparison.Failure {
+func BeBlank(actual string) *failure.Summary {
 	const cmpName = "should.BeBlank"
 
 	for i, ch := range actual {
 		if unicode.IsSpace(ch) {
 			continue
 		}
-		return comparison.NewFailureBuilder(cmpName).
+		return comparison.NewSummaryBuilder(cmpName).
 			Because("string contains non-blank character").
 			Actual(actual).
 			AddFindingf("non-whitespace char", "%q", ch).
 			AddFindingf("rune index", "%d", i).
-			Failure
+			Summary
 	}
 
 	return nil
@@ -127,16 +128,16 @@ func BeBlank(actual string) *comparison.Failure {
 
 // NotBeBlank implements comparison.Func[string] and asserts that `actual`
 // contains at least one non-whitespace char.
-func NotBeBlank(actual string) *comparison.Failure {
+func NotBeBlank(actual string) *failure.Summary {
 	const cmpName = "should.NotBeBlank"
 
 	isBlank := BeBlank(actual) == nil
 
 	if isBlank {
-		return comparison.NewFailureBuilder(cmpName).
+		return comparison.NewSummaryBuilder(cmpName).
 			Because("string contains only whitespace").
 			Actual(actual).
-			Failure
+			Summary
 	}
 	return nil
 }

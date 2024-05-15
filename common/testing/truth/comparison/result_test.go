@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
@@ -29,7 +30,7 @@ func TestResultRender(t *testing.T) {
 		name    string
 		prefix  string
 		render  RenderCLI
-		failure *Failure
+		failure *failure.Summary
 		lines   []string
 	}{
 		{
@@ -39,15 +40,15 @@ func TestResultRender(t *testing.T) {
 		},
 		{
 			name:    "empty",
-			failure: &Failure{},
+			failure: &failure.Summary{},
 			lines: []string{
 				`UNKNOWN COMPARISON FAILED`,
 			},
 		},
 		{
 			name: "simple failure",
-			failure: &Failure{
-				Comparison: &Failure_ComparisonFunc{
+			failure: &failure.Summary{
+				Comparison: &failure.Comparison{
 					Name: "testfunc",
 				},
 			},
@@ -57,9 +58,9 @@ func TestResultRender(t *testing.T) {
 		},
 		{
 			name: "failure with value",
-			failure: &Failure{
-				Comparison: &Failure_ComparisonFunc{Name: "equal", TypeArguments: []string{"int", "int"}},
-				Findings: []*Failure_Finding{
+			failure: &failure.Summary{
+				Comparison: &failure.Comparison{Name: "equal", TypeArguments: []string{"int", "int"}},
+				Findings: []*failure.Finding{
 					{Name: "left", Value: []string{"4"}},
 					{Name: "right", Value: []string{"7"}},
 				},
@@ -76,7 +77,7 @@ func TestResultRender(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if diff := typed.Diff(tt.render.Failure(tt.prefix, tt.failure), strings.Join(tt.lines, "\n")); diff != "" {
+			if diff := typed.Diff(tt.render.Summary(tt.prefix, tt.failure), strings.Join(tt.lines, "\n")); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
 		})

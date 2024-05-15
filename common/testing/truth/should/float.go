@@ -16,12 +16,13 @@ package should
 
 import (
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // BeNaN checks that `actual` is a floating point NaN.
-func BeNaN[T ~float32 | ~float64](actual T) *comparison.Failure {
+func BeNaN[T ~float32 | ~float64](actual T) *failure.Summary {
 	if actual != actual { // see `math.IsNaN` for why this works.
 		return nil
 	}
-	return comparison.NewFailureBuilder("should.BeNaN", actual).Actual(actual).Failure
+	return comparison.NewSummaryBuilder("should.BeNaN", actual).Actual(actual).Summary
 }

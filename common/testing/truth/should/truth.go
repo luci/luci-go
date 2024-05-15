@@ -14,20 +14,23 @@
 
 package should
 
-import "go.chromium.org/luci/common/testing/truth/comparison"
+import (
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+)
 
 // BeTrue is a comparison.Func[bool] which asserts that the actual value is `true`.
-func BeTrue(actual bool) *comparison.Failure {
+func BeTrue(actual bool) *failure.Summary {
 	if actual {
 		return nil
 	}
-	return comparison.NewFailureBuilder("should.BeTrue").Failure
+	return comparison.NewSummaryBuilder("should.BeTrue").Summary
 }
 
 // BeFalse is a comparison.Func[bool] which asserts that the actual value is `false`.
-func BeFalse(actual bool) *comparison.Failure {
+func BeFalse(actual bool) *failure.Summary {
 	if !actual {
 		return nil
 	}
-	return comparison.NewFailureBuilder("should.BeFalse").Failure
+	return comparison.NewSummaryBuilder("should.BeFalse").Summary
 }

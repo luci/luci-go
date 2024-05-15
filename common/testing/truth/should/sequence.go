@@ -16,6 +16,7 @@ package should
 
 import (
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // BeIn returns a Comparison which checks to see if `actual` is equal to any of
@@ -23,16 +24,16 @@ import (
 //
 // Comparison is done via simple equality check.
 func BeIn[T comparable](collection ...T) comparison.Func[T] {
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		for _, obj := range collection {
 			if actual == obj {
 				return nil
 			}
 		}
-		return comparison.NewFailureBuilder("should.BeIn", actual).
+		return comparison.NewSummaryBuilder("should.BeIn", actual).
 			AddFindingf("Item", "%#v", actual).
 			AddFindingf("Collection", "%#v", collection).
-			Failure
+			Summary
 	}
 }
 
@@ -41,13 +42,13 @@ func BeIn[T comparable](collection ...T) comparison.Func[T] {
 //
 // Comparison is done via simple equality check.
 func NotBeIn[T comparable](collection ...T) comparison.Func[T] {
-	return func(actual T) *comparison.Failure {
+	return func(actual T) *failure.Summary {
 		for _, item := range collection {
 			if actual == item {
-				return comparison.NewFailureBuilder("should.NotBeIn", actual).
+				return comparison.NewSummaryBuilder("should.NotBeIn", actual).
 					AddFindingf("Item", "%#v", actual).
 					AddFindingf("Collection", "%#v", collection).
-					Failure
+					Summary
 			}
 		}
 		return nil
@@ -58,16 +59,16 @@ func NotBeIn[T comparable](collection ...T) comparison.Func[T] {
 //
 // Comparison is done via simple equality check.
 func Contain[T comparable](target T) comparison.Func[[]T] {
-	return func(actual []T) *comparison.Failure {
+	return func(actual []T) *failure.Summary {
 		for _, item := range actual {
 			if item == target {
 				return nil
 			}
 		}
-		return comparison.NewFailureBuilder("should.Contain", actual).
+		return comparison.NewSummaryBuilder("should.Contain", actual).
 			AddFindingf("Collection", "%#v", actual).
 			AddFindingf("Item", "%#v", target).
-			Failure
+			Summary
 	}
 }
 
@@ -75,13 +76,13 @@ func Contain[T comparable](target T) comparison.Func[[]T] {
 //
 // Comparison is done via simple equality check.
 func NotContain[T comparable](target T) comparison.Func[[]T] {
-	return func(actual []T) *comparison.Failure {
+	return func(actual []T) *failure.Summary {
 		for _, item := range actual {
 			if item == target {
-				return comparison.NewFailureBuilder("should.NotContain", actual).
+				return comparison.NewSummaryBuilder("should.NotContain", actual).
 					AddFindingf("Collection", "%#v", actual).
 					AddFindingf("Item", "%#v", target).
-					Failure
+					Summary
 			}
 		}
 		return nil

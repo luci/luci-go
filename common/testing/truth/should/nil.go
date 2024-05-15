@@ -18,14 +18,15 @@ import (
 	"reflect"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
-func isNil(cmpName string, actual any) (isNil bool, ret *comparison.Failure) {
+func isNil(cmpName string, actual any) (isNil bool, ret *failure.Summary) {
 	defer func() {
 		if recover() != nil {
-			ret = comparison.NewFailureBuilder(cmpName).
+			ret = comparison.NewSummaryBuilder(cmpName).
 				Because("`%T` cannot be checked for nil", actual).
-				Failure
+				Summary
 		}
 	}()
 	isNil = reflect.ValueOf(actual).IsNil()
@@ -37,7 +38,7 @@ func isNil(cmpName string, actual any) (isNil bool, ret *comparison.Failure) {
 // untyped nils (e.g. `any(nil)`).
 //
 // Note that this is a stricter form than should.BeZero.
-func BeNil(actual any) *comparison.Failure {
+func BeNil(actual any) *failure.Summary {
 	const cmpName = "should.BeNil"
 
 	if actual == nil {
@@ -47,14 +48,14 @@ func BeNil(actual any) *comparison.Failure {
 		return rslt
 	}
 
-	return comparison.NewFailureBuilder(cmpName).Actual(actual).Failure
+	return comparison.NewSummaryBuilder(cmpName).Actual(actual).Summary
 }
 
 // NotBeNil implements comparison.Func[any] and asserts that `actual` is a nillable
 // type (like a pointer, slice, channel, etc) and is not nil.
 //
 // Note that this is a slightly stricter form than should.NotBeZero.
-func NotBeNil(actual any) *comparison.Failure {
+func NotBeNil(actual any) *failure.Summary {
 	const cmpName = "should.NotBeNil"
 
 	if actual != nil {
@@ -63,13 +64,13 @@ func NotBeNil(actual any) *comparison.Failure {
 		}
 	}
 
-	return comparison.NewFailureBuilder(cmpName).Failure
+	return comparison.NewSummaryBuilder(cmpName).Summary
 }
 
 // BeZero implements comparison.Func[any] and asserts that `actual` is
 // a zero value (by Go's definition of zero values, e.g. empty strings, structs,
 // nil pointers, etc).
-func BeZero(actual any) *comparison.Failure {
+func BeZero(actual any) *failure.Summary {
 	const cmpName = "should.BeZero"
 
 	if actual == nil {
@@ -79,14 +80,14 @@ func BeZero(actual any) *comparison.Failure {
 		return nil
 	}
 
-	return comparison.NewFailureBuilder(cmpName, actual).
-		Actual(actual).Failure
+	return comparison.NewSummaryBuilder(cmpName, actual).
+		Actual(actual).Summary
 }
 
 // NotBeZero implements comparison.Func[any] and asserts that `actual` is
 // a non-zero value (by Go's definition of zero values, e.g. empty strings, structs,
 // nil pointers, etc).
-func NotBeZero(actual any) *comparison.Failure {
+func NotBeZero(actual any) *failure.Summary {
 	const cmpName = "should.NotBeZero"
 
 	if actual != nil {
@@ -95,5 +96,5 @@ func NotBeZero(actual any) *comparison.Failure {
 		}
 	}
 
-	return comparison.NewFailureBuilder(cmpName, actual).Failure
+	return comparison.NewSummaryBuilder(cmpName, actual).Summary
 }
