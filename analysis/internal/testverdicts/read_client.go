@@ -99,6 +99,7 @@ type Changelist struct {
 }
 
 // ReadTestVerdictsPerSourcePosition returns commits with test verdicts in source position ascending order.
+// Only return commits within the last 90 days.
 func (c *ReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, options ReadTestVerdictsPerSourcePositionOptions) ([]*CommitWithVerdicts, error) {
 	query := `
 	SELECT
@@ -120,6 +121,7 @@ func (c *ReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, opti
 		AND variant_hash = @variantHash
 		AND source_ref_hash = @refHash
 		AND sources.gitiles_commit.position > @positionMustGreater
+		AND partition_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 day)
 	GROUP BY sources.gitiles_commit.position
 	ORDER BY sources.gitiles_commit.position
 	LIMIT @limit
