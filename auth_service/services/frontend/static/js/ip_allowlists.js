@@ -109,25 +109,13 @@ class RevisionDetails {
 }
 
 
-const reloadAllowlists = (selector, revisionDetails) => {
-  let defer = api.ipAllowlists();
-  defer
-    .then((response) => {
-      selector.populate(response.allowlists);
-      revisionDetails.setLink(response.configViewUrl, response.configRevision);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-  return defer;
-};
-
 window.onload = () => {
+  const loadingBox = new common.LoadingBox('#loading-box-placeholder');
+  const allowlistsContent = new common.HidableElement('#allowlists-content', false);
+
   const selector = new Selector('allowlist-selector');
   const allowlistPane = new AllowlistPane();
   const revisionDetails = new RevisionDetails('revision-details');
-
-  reloadAllowlists(selector, revisionDetails);
 
   selector.element.addEventListener('allowlistSelected', (event) => {
     if (event.detail.ip_allowlist === null) {
@@ -136,4 +124,25 @@ window.onload = () => {
       allowlistPane.populate(selector.allowlistMap[event.detail.ip_allowlist]);
     }
   });
+
+  const reloadAllowlists = () => {
+    loadingBox.setLoadStatus(true);
+    allowlistsContent.hide();
+    let defer = api.ipAllowlists();
+    defer
+      .then((response) => {
+        selector.populate(response.allowlists);
+        revisionDetails.setLink(response.configViewUrl, response.configRevision);
+        allowlistsContent.show();
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+      .finally(() => {
+        loadingBox.setLoadStatus(false);
+      });
+    return defer;
+  };
+
+  reloadAllowlists();
 };
