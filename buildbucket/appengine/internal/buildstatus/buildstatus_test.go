@@ -18,9 +18,11 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/gae/impl/memory"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -304,6 +306,46 @@ func TestUpdate(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(bs.Status, ShouldEqual, pb.Status_FAILURE)
 						So(updatedStatus, ShouldEqual, pb.Status_FAILURE)
+					})
+					Convey("output status CANCEL intentially, task status INFRA_FAILURE", func() {
+						b.Proto.Output.Status = pb.Status_CANCELED
+						b.Proto.CancelTime = timestamppb.New(testclock.TestRecentTimeLocal)
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{
+							Status: pb.Status_INFRA_FAILURE,
+							Details: &pb.StatusDetails{
+								Timeout: &pb.StatusDetails_Timeout{},
+							},
+						}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_CANCELED)
+						So(updatedStatus, ShouldEqual, pb.Status_CANCELED)
+					})
+					Convey("output status CANCEL unintentially, task status INFRA_FAILURE", func() {
+						b.Proto.Output.Status = pb.Status_CANCELED
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{
+							Status: pb.Status_INFRA_FAILURE,
+							Details: &pb.StatusDetails{
+								Timeout: &pb.StatusDetails_Timeout{},
+							},
+						}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+					})
+					Convey("output status CANCEL unintentially, task status SUCCESS", func() {
+						b.Proto.Output.Status = pb.Status_CANCELED
+						So(datastore.Put(ctx, b), ShouldBeNil)
+						u.TaskStatus = &StatusWithDetails{
+							Status: pb.Status_SUCCESS,
+						}
+						bs, err := update(ctx, u)
+						So(err, ShouldBeNil)
+						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
 					})
 					Convey("both infra_failure with different details", func() {
 						b.Proto.Output.Status = pb.Status_INFRA_FAILURE

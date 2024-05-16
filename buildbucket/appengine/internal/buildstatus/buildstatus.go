@@ -53,10 +53,10 @@ type Updater struct {
 
 // buildEndStatus calculates the final status of a build based on its output
 // status and backend task status.
-func buildEndStatus(outStatus, taskStatus *StatusWithDetails, useTaskSuccess bool) *StatusWithDetails {
+func (u *Updater) buildEndStatus(outStatus, taskStatus *StatusWithDetails) *StatusWithDetails {
 	switch {
 	case !outStatus.isSet() || !protoutil.IsEnded(outStatus.Status):
-		if taskStatus.Status == pb.Status_SUCCESS && !useTaskSuccess {
+		if taskStatus.Status == pb.Status_SUCCESS && !u.SucceedBuildIfTaskSucceeded {
 			// outStatus should have been an ended status since taskStatus is.
 			// Something must be wrong.
 			return &StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
@@ -69,6 +69,19 @@ func buildEndStatus(outStatus, taskStatus *StatusWithDetails, useTaskSuccess boo
 		// Either taskStatus.Status is also SUCCESS or a failure, can use taskStatus
 		// as the final one.
 		return taskStatus
+	case outStatus.Status == pb.Status_CANCELED:
+		if u.Build.Proto.CancelTime != nil {
+			// The build is canceled intentially through the CancelBuild RPC.
+			// So it means the build is no longer needed.
+			return outStatus
+		} else {
+			// The build is canceled by backend, likely because of an issue.
+			if taskStatus.Status == pb.Status_SUCCESS {
+				// Should not happen.
+				return &StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
+			}
+			return taskStatus
+		}
 	default:
 		// outStatus already contains failure, use outStatus as the final one.
 		return outStatus
@@ -86,10 +99,10 @@ func (u *Updater) calculateBuildStatus() *StatusWithDetails {
 	case u.OutputStatus.isSet() && u.OutputStatus.Status == pb.Status_STARTED:
 		return &StatusWithDetails{Status: pb.Status_STARTED}
 	case u.TaskStatus.isSet() && protoutil.IsEnded(u.TaskStatus.Status):
-		return buildEndStatus(&StatusWithDetails{
+		return u.buildEndStatus(&StatusWithDetails{
 			Status:  u.Build.Proto.Output.GetStatus(),
 			Details: u.Build.Proto.Output.GetStatusDetails()},
-			u.TaskStatus, u.SucceedBuildIfTaskSucceeded)
+			u.TaskStatus)
 	default:
 		// no change.
 		return &StatusWithDetails{Status: u.Build.Proto.Status, Details: u.Build.Proto.StatusDetails}
