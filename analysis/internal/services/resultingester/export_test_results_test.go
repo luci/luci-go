@@ -201,7 +201,7 @@ func TestExportTestResults(t *testing.T) {
 				Project:    "rootproject",
 				ResourceID: "fake.rdb.host/test-root-invocation-name/test-invocation-name",
 				ProcessID:  "result-ingestion/export-test-results",
-				Uniquifier: "",
+				Uniquifier: "1",
 			},
 			// Creation and expiry time not validated.
 		}

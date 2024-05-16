@@ -106,6 +106,8 @@ type Inputs struct {
 	RootInvocationID string
 	// The invocation ID of the invocation we are ingesting.
 	InvocationID string
+	// The page number we are ingesting.
+	PageNumber int
 	// The start of the data retention period for the data being ingested.
 	PartitionTime time.Time
 	// The sources tested by the invocation. May be nil if no sources
@@ -217,7 +219,7 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 		return transient.Tag.Apply(errors.Annotate(err, "query test run verdicts").Err())
 	}
 
-	input, err := prepareInputs(ctx, n, parentInv, partitionTime, rsp.RunTestVerdicts)
+	input, err := prepareInputs(ctx, payload, parentInv, partitionTime, rsp.RunTestVerdicts)
 	if err != nil {
 		return transient.Tag.Apply(errors.Annotate(err, "prepare ingestion inputs").Err())
 	}
@@ -240,7 +242,8 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	return nil
 }
 
-func prepareInputs(ctx context.Context, notification *resultpb.InvocationReadyForExportNotification, parent *resultpb.Invocation, partitionTime time.Time, tvs []*resultpb.RunTestVerdict) (Inputs, error) {
+func prepareInputs(ctx context.Context, task *taskspb.IngestTestResults, parent *resultpb.Invocation, partitionTime time.Time, tvs []*resultpb.RunTestVerdict) (Inputs, error) {
+	notification := task.Notification
 	project, subRealm := realms.Split(notification.RootInvocationRealm)
 
 	rootInvocationID, err := pbutil.ParseInvocationName(notification.RootInvocation)
@@ -258,6 +261,7 @@ func prepareInputs(ctx context.Context, notification *resultpb.InvocationReadyFo
 		ResultDBHost:     notification.ResultdbHost,
 		RootInvocationID: rootInvocationID,
 		InvocationID:     invocationID,
+		PageNumber:       int(task.TaskIndex),
 		PartitionTime:    partitionTime,
 		Parent:           parent,
 		Verdicts:         tvs,

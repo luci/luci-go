@@ -232,6 +232,7 @@ func testInputs() Inputs {
 		ResultDBHost:     "fake.rdb.host",
 		RootInvocationID: "test-root-invocation-name",
 		InvocationID:     "test-invocation-name",
+		PageNumber:       1,
 		PartitionTime:    time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC),
 		Sources:          resolvedSourcesForTesting(),
 		Parent:           resultdbParentInvocationForTesting(),

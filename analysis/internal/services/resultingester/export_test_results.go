@@ -57,7 +57,7 @@ func (e *TestResultsExporter) Ingest(ctx context.Context, input Inputs) (err err
 		Project:    input.Project,
 		ResourceID: fmt.Sprintf("%s/%s/%s", input.ResultDBHost, input.RootInvocationID, input.InvocationID),
 		ProcessID:  "result-ingestion/export-test-results",
-		Uniquifier: "",
+		Uniquifier: fmt.Sprintf("%v", input.PageNumber),
 	}
 	exists, err := checkpoints.Exists(span.Single(ctx), key)
 	if err != nil {
