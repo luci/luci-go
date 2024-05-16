@@ -136,38 +136,45 @@
   </form>
 </template>
 
-<div class="row">
-  <div class="col-4 my-2 border rounded">
-    <div class="row mt-2">
-      <div class="input-group">
-        <input id="search-box" class="form-control" type="search" aria-label="Search"
-          placeholder="Search for an existing group">
-      </div>
-    </div>
-    <div class="row justify-content-between align-items-center">
-      <div class="col-auto my-2">
-        <div class="form-check sm-6">
-          <input class="form-check-input" type="checkbox" value="" id="external-check">
-          <label class="form-check-label" for="external-check">
-            Show external groups
-          </label>
+<div class="mb-2 px-0">
+  <div id="loading-box-placeholder"></div>
+
+  <div id="main-content" style="display: none;">
+    <div class="row">
+      <div class="col-4 my-2 border rounded">
+        <div class="row mt-2">
+          <div class="input-group">
+            <input id="search-box" class="form-control" type="search" aria-label="Search"
+              placeholder="Search for an existing group">
+          </div>
+        </div>
+        <div class="row justify-content-between align-items-center">
+          <div class="col-auto my-2">
+            <div class="form-check sm-6">
+              <input class="form-check-input" type="checkbox" value="" id="external-check">
+              <label class="form-check-label" for="external-check">
+                Show external groups
+              </label>
+            </div>
+          </div>
+          {{if .IsAdmin}}
+          <div class="col-auto my-2">
+            <button type="button" class="btn btn-outline-primary" id="create-group-btn">Create</button>
+          </div>
+          {{end}}
+        </div>
+        <div class="row">
+          <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">
+            <!-- Load group-scroller-row template. -->
+          </ul>
         </div>
       </div>
-      {{if .IsAdmin}}
-      <div class="col-auto my-2">
-        <button type="button" class="btn btn-outline-primary" id="create-group-btn">Create</button>
+      <div class="col my-2 ms-2 border rounded" id="group-content">
+        <!-- Load group-form template here -->
       </div>
-      {{end}}
-    </div>
-    <div class="row">
-      <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">
-        <!-- Load group-scroller-row template. -->
-      </ul>
     </div>
   </div>
-  <div class="col my-2 ms-2 border rounded" id="group-content">
-    <!-- Load group-form template here -->
-  </div>
+
 </div>
 
 {{end}}

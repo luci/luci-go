@@ -741,6 +741,8 @@ class NewGroupForm extends GroupForm {
 
 window.onload = () => {
   // Setup global UI elements.
+  const loadingBox = new common.LoadingBox('#loading-box-placeholder');
+  const mainContent = new common.HidableElement('#main-content', false);
   const groupChooser = new GroupChooser('#group-chooser');
   const contentFrame = new ContentFrame('#group-content');
   const searchBox = new SearchBox('#search-box');
@@ -788,16 +790,6 @@ window.onload = () => {
     }
   };
 
-  groupChooser.refetchGroups().then(() => {
-    jumpToCurrentGroup(true);
-    onCurrentGroupInURLChange(() => {
-      jumpToCurrentGroup(false);
-    });
-  }, function (error) {
-    // TODO: replace this with an error modal.
-    console.log('error refetching groups:', error.text);
-  });
-
   // Allow selecting a group via search box.
   searchBox.element.addEventListener('input', () => {
     var found = longestMatch(groupChooser.getGroupSet(), searchBox.element.value);
@@ -812,4 +804,23 @@ window.onload = () => {
       contentFrame.element.querySelector('#membersAndGlobs').focus();
     }
   });
+
+  // Show a loading spinner when first fetching all groups.
+  loadingBox.setLoadStatus(true);
+  mainContent.hide();
+  groupChooser.refetchGroups()
+    .then(() => {
+      jumpToCurrentGroup(true);
+      onCurrentGroupInURLChange(() => {
+        jumpToCurrentGroup(false);
+      });
+      mainContent.show();
+    })
+    .catch((err) => {
+    // TODO: replace this with an error modal.
+    console.log('error refetching groups:', err.text);
+    })
+    .finally(() => {
+      loadingBox.setLoadStatus(false);
+    });
 };
