@@ -120,9 +120,6 @@ func TestAuthDBServing(t *testing.T) {
 			}
 			_, err = server.GetSnapshot(ctx, requestNotPresent)
 			So(err, ShouldHaveGRPCStatus, codes.NotFound)
-
-			requestNotPresent.Revision, err = getLatestRevision(ctx, requestNotPresent)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
 		})
 
 		Convey("Testing valid revision ID", func() {

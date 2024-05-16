@@ -50,7 +50,7 @@ func (*Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotReques
 		return nil, status.Errorf(codes.InvalidArgument, "Negative revision numbers are not valid")
 	} else if request.Revision == 0 {
 		var err error
-		if request.Revision, err = getLatestRevision(ctx, request); err != nil {
+		if request.Revision, err = getLatestRevision(ctx, false); err != nil {
 			logging.Errorf(ctx, err.Error())
 			return nil, err
 		}
@@ -69,8 +69,8 @@ func (*Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotReques
 }
 
 // getLatestRevision is a helper function to set the latest revision number for the GetSnapshotRequest.
-func getLatestRevision(ctx context.Context, request *rpcpb.GetSnapshotRequest) (int64, error) {
-	switch latest, err := model.GetAuthDBSnapshotLatest(ctx, false); {
+func getLatestRevision(ctx context.Context, dryRun bool) (int64, error) {
+	switch latest, err := model.GetAuthDBSnapshotLatest(ctx, dryRun); {
 	case err == nil:
 		return latest.AuthDBRev, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
@@ -82,51 +82,55 @@ func getLatestRevision(ctx context.Context, request *rpcpb.GetSnapshotRequest) (
 	}
 }
 
-// HandleLegacyAuthDBServing handles the AuthDBSnapshot serving for legacy
-// services. Writes the AuthDBSnapshot JSON to the router.Writer. gRPC Error is returned
-// and adapted to HTTP format if operation is unsuccesful.
-func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
+// getLegacyAuthDBSnapshot is a helper function to serve an AuthDBSnapshot or a
+// V2AuthDBSnapshot.
+func (s *Server) getLegacyAuthDBSnapshot(ctx *router.Context, dryRun bool) error {
 	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
-	var snap *rpcpb.Snapshot
+
+	// Parse the `revID`  param for the requested AuthDB revision.
+	var revID int64
 	var err error
-
-	skipBody := r.URL.Query().Get("skip_body") == "1"
-
-	if revIDStr := ctx.Params.ByName("revID"); revIDStr != "latest" {
-		revID, err := strconv.ParseInt(revIDStr, 10, 64)
-		switch {
-		case err != nil:
-			errors.Log(c, errors.Annotate(err, "issue while parsing revID %s", revIDStr).Err())
-			return status.Errorf(codes.InvalidArgument, "unable to parse revID: %s", revIDStr)
-		case revID < 0:
-			return status.Errorf(codes.InvalidArgument, "Negative revision numbers are not valid")
-		default:
-			snap, err = s.GetSnapshot(c, &rpcpb.GetSnapshotRequest{
-				Revision: revID,
-				SkipBody: skipBody,
-			})
-			if err != nil {
-				return errors.Annotate(err, "Error while getting snapshot %d", revID).Err()
-			}
-		}
-	} else {
-		snap, err = s.GetSnapshot(c, &rpcpb.GetSnapshotRequest{
-			Revision: 0,
-			SkipBody: skipBody,
-		})
+	revIDStr := ctx.Params.ByName("revID")
+	switch revIDStr {
+	case "", "latest":
+		revID, err = getLatestRevision(c, dryRun)
 		if err != nil {
-			return errors.Annotate(err, "Error while getting latest snapshot").Err()
+			logging.Errorf(c, err.Error())
+			return err
+		}
+	default:
+		revID, err = strconv.ParseInt(revIDStr, 10, 64)
+		if err != nil {
+			err = errors.Annotate(err, "issue while parsing revID %s", revIDStr).Err()
+			logging.Errorf(c, err.Error())
+			return status.Errorf(codes.InvalidArgument, "unable to parse revID: %s", revIDStr)
+		}
+
+		if revID < 0 {
+			return status.Errorf(codes.InvalidArgument, "Negative revision numbers are not valid")
 		}
 	}
 
-	unixMicro := snap.CreatedTs.AsTime().UnixNano() / 1000
+	skipBody := r.URL.Query().Get("skip_body") == "1"
+	snapshot, err := model.GetAuthDBSnapshot(c, revID, skipBody, dryRun)
+	if err != nil {
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			return status.Errorf(codes.NotFound, "AuthDB revision %d not found", revID)
+		}
+
+		exposedErr := "unknown error while calling GetAuthDBSnapshot"
+		// Log the actual error so we can debug.
+		logging.Errorf(c, "%s: %s", exposedErr, err)
+		// Return only the exposed error message.
+		return status.Errorf(codes.Internal, exposedErr)
+	}
 
 	blob, err := json.Marshal(map[string]any{
 		"snapshot": SnapshotJSON{
-			AuthDBRev:      snap.AuthDbRev,
-			AuthDBDeflated: snap.AuthDbDeflated,
-			AuthDBSha256:   snap.AuthDbSha256,
-			CreatedTS:      unixMicro,
+			AuthDBRev:      snapshot.ID,
+			AuthDBDeflated: snapshot.AuthDBDeflated,
+			AuthDBSha256:   snapshot.AuthDBSha256,
+			CreatedTS:      snapshot.CreatedTS.UnixMicro(),
 		},
 	})
 
@@ -141,6 +145,13 @@ func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 	return nil
 }
 
+// HandleLegacyAuthDBServing handles the AuthDBSnapshot serving for legacy
+// services. Writes the AuthDBSnapshot JSON to the router.Writer. gRPC Error is returned
+// and adapted to HTTP format if operation is unsuccesful.
+func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
+	return s.getLegacyAuthDBSnapshot(ctx, false)
+}
+
 // HandleV2AuthDBServing handles the V2AuthDBSnapshot serving for
 // validation. Writes the V2AuthDBSnapshot JSON to the router.Writer.
 // gRPC Error is returned and adapted to HTTP format if operation is
@@ -149,61 +160,5 @@ func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 // TODO: Remove this once we have fully rolled out Auth Service v2
 // (b/321019030).
 func (s *Server) HandleV2AuthDBServing(ctx *router.Context) error {
-	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
-
-	var revID int64
-	if revIDStr := ctx.Params.ByName("revID"); revIDStr != "latest" {
-		revID, err := strconv.ParseInt(revIDStr, 10, 64)
-		if err != nil {
-			errors.Log(c, errors.Annotate(err, "issue while parsing revID %s", revIDStr).Err())
-			return status.Errorf(codes.InvalidArgument, "unable to parse revID: %s", revIDStr)
-		}
-		if revID < 0 {
-			return status.Errorf(codes.InvalidArgument, "Negative revision numbers are not valid")
-		}
-	} else {
-		switch latest, err := model.GetAuthDBSnapshotLatest(c, true); {
-		case err == nil:
-			revID = latest.AuthDBRev
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return status.Errorf(codes.NotFound, "V2AuthDBSnapshotLatest not found")
-		default:
-			errStr := "unknown error while getting V2AuthDBSnapshotLatest"
-			logging.Errorf(c, errStr)
-			return status.Errorf(codes.Internal, errStr)
-		}
-	}
-
-	skipBody := r.URL.Query().Get("skip_body") == "1"
-
-	snapshot, err := model.GetAuthDBSnapshot(c, revID, skipBody, true)
-	if err != nil {
-		if errors.Is(err, datastore.ErrNoSuchEntity) {
-			return status.Errorf(codes.NotFound, "V2 AuthDB revision %v not found", revID)
-		}
-		// Unexpected error.
-		errStr := "unknown error while getting V2AuthDBSnapshot"
-		logging.Errorf(c, errStr)
-		return status.Errorf(codes.Internal, errStr)
-	}
-
-	snap := snapshot.ToProto()
-	unixMicro := snap.CreatedTs.AsTime().UnixNano() / 1000
-	blob, err := json.Marshal(map[string]any{
-		"snapshot": SnapshotJSON{
-			AuthDBRev:      snap.AuthDbRev,
-			AuthDBDeflated: snap.AuthDbDeflated,
-			AuthDBSha256:   snap.AuthDbSha256,
-			CreatedTS:      unixMicro,
-		},
-	})
-	if err != nil {
-		return errors.Annotate(err, "Error while marshalling JSON").Err()
-	}
-
-	if _, err = w.Write(blob); err != nil {
-		return errors.Annotate(err, "Error while writing json").Err()
-	}
-
-	return nil
+	return s.getLegacyAuthDBSnapshot(ctx, true)
 }
