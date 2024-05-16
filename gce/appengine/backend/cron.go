@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 
@@ -57,9 +58,14 @@ type payloadFn func(string) proto.Message
 // proto.Message to use as the Payload in a *tq.Task.
 func payloadFactory(t tasks.Task) payloadFn {
 	rt := reflect.TypeOf(t).Elem()
+	now := time.Now().Unix()
 	return func(id string) proto.Message {
 		p := reflect.New(rt)
 		p.Elem().FieldByName("Id").SetString(id)
+		// Some tasks may don't need to track the created time.
+		if v := p.Elem().FieldByName("TriggeredUnixTime"); v.IsValid() {
+			v.SetInt(now)
+		}
 		return p.Interface().(proto.Message)
 	}
 }

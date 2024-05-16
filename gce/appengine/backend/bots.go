@@ -90,7 +90,7 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 	}, nil)
 	if put && err == nil {
 		metrics.ReportConnectionTime(c, float64(vm.Connected-vm.Created), vm.Prefix, vm.Attributes.GetProject(), vm.Swarming, vm.Attributes.GetZone())
-		metrics.ReportBotConnectionTime(c, float64(vm.Connected-vm.Configured), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetLabel()["resource_group"], vm.Swarming, vm.Attributes.GetZone())
+		metrics.ReportBotConnectionTime(c, float64(vm.Connected-vm.ConfigExpanded), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetLabel()["resource_group"], vm.Swarming, vm.Attributes.GetZone())
 	}
 	return err
 }

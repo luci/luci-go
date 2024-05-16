@@ -204,17 +204,17 @@ func createVM(c context.Context, payload proto.Message) error {
 		hostname = fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c))
 	}
 	vm := &model.VM{
-		ID:         task.Id,
-		Config:     task.Config,
-		Configured: clock.Now(c).Unix(),
-		DUT:        task.DUT,
-		Hostname:   hostname,
-		Index:      task.Index,
-		Lifetime:   task.Lifetime,
-		Prefix:     task.Prefix,
-		Revision:   task.Revision,
-		Swarming:   task.Swarming,
-		Timeout:    task.Timeout,
+		ID:             task.Id,
+		Config:         task.Config,
+		ConfigExpanded: task.ConfigExpandTime.AsTime().Unix(),
+		DUT:            task.DUT,
+		Hostname:       hostname,
+		Index:          task.Index,
+		Lifetime:       task.Lifetime,
+		Prefix:         task.Prefix,
+		Revision:       task.Revision,
+		Swarming:       task.Swarming,
+		Timeout:        task.Timeout,
 	}
 	if task.Attributes != nil {
 		vm.Attributes = *task.Attributes
@@ -248,7 +248,7 @@ func createVM(c context.Context, payload proto.Message) error {
 
 // updateCurrentAmount updates CurrentAmount if necessary.
 // Returns up-to-date config entity and the reference timestamp.
-func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, now time.Time, err error) {
+func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, err error) {
 	cfg = &model.Config{
 		ID: id,
 	}
@@ -258,9 +258,8 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, now t
 		return
 	}
 
-	now = clock.Now(c)
 	var amt int32
-	switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, now); {
+	switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, clock.Now(c)); {
 	case err != nil:
 		err = errors.Annotate(err, "failed to parse amount").Err()
 		return
@@ -274,8 +273,7 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, now t
 			return errors.Annotate(err, "failed to fetch config").Err()
 		}
 
-		now = clock.Now(c)
-		switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, now); {
+		switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, clock.Now(c)); {
 		case err != nil:
 			return errors.Annotate(err, "failed to parse amount").Err()
 		case cfg.Config.CurrentAmount == amt:
@@ -315,7 +313,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
-	cfg, now, err := updateCurrentAmount(c, task.Id)
+	cfg, err := updateCurrentAmount(c, task.Id)
 	if err != nil {
 		return err
 	}
@@ -328,12 +326,13 @@ func expandConfig(c context.Context, payload proto.Message) error {
 		return err
 	}
 
+	expandTime := &timestamppb.Timestamp{Seconds: task.TriggeredUnixTime}
 	var t []*tq.Task
 	// DUTs take priority.
 	if len(cfg.Config.GetDuts()) > 0 {
-		t, err = createTasksPerDUT(c, vms, cfg, now)
+		t, err = createTasksPerDUT(c, vms, cfg, expandTime)
 	} else {
-		t, err = createTasksPerAmount(c, vms, cfg, now)
+		t, err = createTasksPerAmount(c, vms, cfg, expandTime)
 	}
 	if err != nil {
 		return err
@@ -353,7 +352,7 @@ func getUniqueID(c context.Context, prefix string) string {
 }
 
 // createTasksPerDUT returns a slice of CreateVM tasks based on config.Duts.
-func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, now time.Time) ([]*tq.Task, error) {
+func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, expandTime *timestamppb.Timestamp) ([]*tq.Task, error) {
 	logging.Debugf(c, "CloudBots flow entered for config %s", cfg.Config.Prefix)
 	if len(cfg.Config.Duts) == 0 {
 		return nil, errors.Reason("config.DUTs cannot be empty").Err()
@@ -371,12 +370,14 @@ func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, no
 		}
 		t = append(t, &tq.Task{
 			Payload: &tasks.CreateVM{
-				Id:         getUniqueID(c, cfg.Config.Prefix),
-				Attributes: cfg.Config.Attributes,
-				Config:     cfg.ID,
+				Id:               getUniqueID(c, cfg.Config.Prefix),
+				Attributes:       cfg.Config.Attributes,
+				Config:           cfg.ID,
+				ConfigExpandTime: expandTime,
 				Created: &timestamppb.Timestamp{
-					Seconds: now.Unix(),
+					Seconds: clock.Now(c).Unix(),
 				},
+
 				// Index is not needed here.
 				// CloudBots flow does not rely on Index for VM hostname uniqueness.
 				DUT:      dut,
@@ -393,7 +394,7 @@ func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, no
 }
 
 // createTasksPerAmount returns a slice of CreateVM tasks based on config.CurrentAmount.
-func createTasksPerAmount(c context.Context, vms []*model.VM, cfg *model.Config, now time.Time) ([]*tq.Task, error) {
+func createTasksPerAmount(c context.Context, vms []*model.VM, cfg *model.Config, expandTime *timestamppb.Timestamp) ([]*tq.Task, error) {
 	logging.Debugf(c, "default flow entered for config %s", cfg.Config.Prefix)
 	if len(cfg.Config.Duts) > 0 {
 		return nil, errors.Reason("config.Duts should be empty").Err()
@@ -408,11 +409,12 @@ func createTasksPerAmount(c context.Context, vms []*model.VM, cfg *model.Config,
 		if !existingVMs.Has(id) {
 			t = append(t, &tq.Task{
 				Payload: &tasks.CreateVM{
-					Id:         id,
-					Attributes: cfg.Config.Attributes,
-					Config:     cfg.ID,
+					Id:               id,
+					Attributes:       cfg.Config.Attributes,
+					Config:           cfg.ID,
+					ConfigExpandTime: expandTime,
 					Created: &timestamppb.Timestamp{
-						Seconds: now.Unix(),
+						Seconds: clock.Now(c).Unix(),
 					},
 					Index:    i,
 					Lifetime: randomizeLifetime(cfg.Config.Lifetime.GetSeconds()),

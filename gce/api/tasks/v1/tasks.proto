@@ -63,12 +63,17 @@ message CreateVM {
   int64 timeout = 10;
   // the lab DUT assigned to the VM.
   string DUT = 11;
+  // The timestamp when we expand the config and decide to create the vm.
+  google.protobuf.Timestamp config_expand_time = 12;
 }
 
 // A task to expand a config.
 message ExpandConfig {
   // The ID of the config to expand.
   string id = 1;
+  // The Unix time (number of seconds since 1970-01-01 UTC) when this task was
+  // triggered.
+  int64 triggered_unix_time = 2;
 }
 
 // A task to manage a Swarming bot associated with a VM.

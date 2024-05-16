@@ -82,7 +82,7 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 		return nil
 	}, nil)
 	if put && err == nil {
-		metrics.ReportCreationTime(c, float64(vm.Created-vm.Configured), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone())
+		metrics.ReportCreationTime(c, float64(vm.Created-vm.ConfigExpanded), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone())
 	}
 	return err
 }

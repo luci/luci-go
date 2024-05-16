@@ -100,8 +100,9 @@ type VM struct {
 	AttributesIndexed []string `gae:"attributes_indexed"`
 	// Config is the ID of the config this VM was created from.
 	Config string `gae:"config"`
-	// Configured is the Unix time when the GCE instance was configured.
-	Configured int64 `gae:"configured"`
+	// ConfigExpanded is the Unix time when the GCE instance was configured, i.e.
+	// the time we expand user config and decide to create the VM.
+	ConfigExpanded int64 `gae:"configured"`
 	// Connected is the Unix time when the GCE instance connected to Swarming.
 	Connected int64 `gae:"connected"`
 	// Created is the Unix time when the GCE instance was created.

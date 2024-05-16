@@ -129,7 +129,12 @@ func TestCron(t *testing.T) {
 					ID: "id",
 				})
 				So(expandConfigsAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				ts := tqt.GetScheduledTasks()
+				So(ts, ShouldHaveLength, 1)
+				cfg, ok := ts[0].Payload.(*tasks.ExpandConfig)
+				So(ok, ShouldBeTrue)
+				So(cfg.GetId(), ShouldNotBeEmpty)
+				So(cfg.GetTriggeredUnixTime(), ShouldBeGreaterThan, 1704096000) // 2024-01-01
 			})
 
 			Convey("many", func() {

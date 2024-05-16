@@ -25,6 +25,7 @@ import (
 	"google.golang.org/genproto/googleapis/type/dayofweek"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
@@ -82,8 +83,6 @@ func TestQueues(t *testing.T) {
 		})
 
 		Convey("createVM", func() {
-			c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-
 			Convey("invalid", func() {
 				Convey("nil", func() {
 					err := createVM(c, nil)
@@ -152,9 +151,10 @@ func TestQueues(t *testing.T) {
 								},
 							},
 						},
-						Index:  2,
-						Config: "config",
-						Prefix: "prefix",
+						ConfigExpandTime: &timestamppb.Timestamp{Seconds: testclock.TestTimeUTC.Unix()},
+						Index:            2,
+						Config:           "config",
+						Prefix:           "prefix",
 					})
 					So(err, ShouldBeNil)
 					v := &model.VM{
@@ -173,11 +173,11 @@ func TestQueues(t *testing.T) {
 						AttributesIndexed: []string{
 							"disk.image:image",
 						},
-						Config:     "config",
-						Configured: testclock.TestTimeUTC.Unix(),
-						Hostname:   "prefix-2-fpll",
-						Index:      2,
-						Prefix:     "prefix",
+						Config:         "config",
+						ConfigExpanded: testclock.TestTimeUTC.Unix(),
+						Hostname:       "prefix-2-fpll",
+						Index:          2,
+						Prefix:         "prefix",
 					}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), ShouldBeEmpty)
 				})
 
@@ -592,7 +592,7 @@ func TestQueues(t *testing.T) {
 							Prefix: "prefix",
 						},
 					}
-					n := time.Now()
+					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
 					t, err := createTasksPerAmount(c, vms, m, n)
 					So(err, ShouldErrLike, "config.Duts should be empty")
 					So(t, ShouldBeEmpty)
@@ -612,7 +612,7 @@ func TestQueues(t *testing.T) {
 							Prefix:        "prefix",
 						},
 					}
-					n := time.Now()
+					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
 					t, err := createTasksPerAmount(c, vms, m, n)
 					So(err, ShouldBeNil)
 					So(len(t), ShouldEqual, 3)
@@ -636,7 +636,7 @@ func TestQueues(t *testing.T) {
 							Prefix:        "prefix",
 						},
 					}
-					n := time.Now()
+					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
 					t, err := createTasksPerAmount(c, vms, m, n)
 					So(err, ShouldBeNil)
 					So(t, ShouldHaveLength, 2)
@@ -670,7 +670,7 @@ func TestQueues(t *testing.T) {
 							Prefix:        "prefix",
 						},
 					}
-					n := time.Now()
+					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
 					t, err := createTasksPerAmount(c, vms, m, n)
 					So(err, ShouldBeNil)
 					So(t, ShouldHaveLength, 0)
@@ -691,7 +691,7 @@ func TestQueues(t *testing.T) {
 							Prefix: "prefix",
 						},
 					}
-					n := time.Now()
+					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
 					t, err := createTasksPerDUT(c, vms, m, n)
 					So(err, ShouldErrLike, "config.DUTs cannot be empty")
 					So(t, ShouldBeEmpty)
@@ -708,7 +708,7 @@ func TestQueues(t *testing.T) {
 							Prefix: "prefix",
 						},
 					}
-					n := time.Now()
+					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
 					t, err := createTasksPerDUT(c, vms, m, n)
 					So(err, ShouldErrLike, "config.DUTs cannot be empty")
 					So(t, ShouldBeEmpty)
@@ -733,7 +733,7 @@ func TestQueues(t *testing.T) {
 						Prefix: "prefix",
 					},
 				}
-				n := time.Now()
+				n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
 				t, err := createTasksPerDUT(c, vms, m, n)
 				So(err, ShouldBeNil)
 				So(len(t), ShouldEqual, 3)
@@ -753,7 +753,7 @@ func TestQueues(t *testing.T) {
 						Prefix: "prefix",
 					},
 				}
-				n := time.Now()
+				n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
 				t, err := createTasksPerDUT(c, vms, m, n)
 				So(err, ShouldBeNil)
 				vm := t[0].Payload.(*tasks.CreateVM)
