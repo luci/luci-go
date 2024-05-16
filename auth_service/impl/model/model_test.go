@@ -1757,29 +1757,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 
 		Convey("updating permissions entity already present", func() {
 			ctx, ts := getCtx()
-
-			permCreate, _ := proto.Marshal(&protocol.Permission{
-				Name: "test.perm.create",
-			})
-			permTwoCreate, _ := proto.Marshal(&protocol.Permission{
-				Name: "testtwo.perm.delete",
-			})
-			permIntSched, _ := proto.Marshal(&protocol.Permission{
-				Name:     "testint.perm.schedule",
-				Internal: true,
-			})
-
 			authRealmGlobals := testAuthRealmsGlobals(ctx)
-			// This is a little inconsistent with how exactly it'll be in datastore but
-			// since we can't get the exact format that the Python version got, this is
-			// the closest we can get which is what it looks like after it's been unmarshalled
-			// from Python.
-			authRealmGlobals.Permissions = []string{
-				string(permCreate),
-				string(permTwoCreate),
-				string(permIntSched),
-			}
-
 			So(datastore.Put(ctx, authRealmGlobals), ShouldBeNil)
 
 			permsCfg := &configspb.PermissionsConfig{
@@ -1837,18 +1815,6 @@ func TestAuthRealmsConfig(t *testing.T) {
 
 		Convey("skip update if permissions unchanged", func() {
 			ctx, ts := getCtx()
-
-			permCreate, _ := proto.Marshal(&protocol.Permission{
-				Name: "test.perm.create",
-			})
-			permTwoCreate, _ := proto.Marshal(&protocol.Permission{
-				Name: "testtwo.perm.delete",
-			})
-			permIntSched, _ := proto.Marshal(&protocol.Permission{
-				Name:     "testint.perm.schedule",
-				Internal: true,
-			})
-
 			authRealmGlobals := testAuthRealmsGlobals(ctx)
 			authRealmGlobals.PermissionsList = &permissions.PermissionsList{
 				Permissions: []*protocol.Permission{
@@ -1866,16 +1832,6 @@ func TestAuthRealmsConfig(t *testing.T) {
 					},
 				},
 			}
-			// This is a little inconsistent with how exactly it'll be in datastore but
-			// since we can't get the exact format that the Python version got, this is
-			// the closest we can get which is what it looks like after it's been unmarshalled
-			// from Python.
-			authRealmGlobals.Permissions = []string{
-				string(permCreate),
-				string(permTwoCreate),
-				string(permIntSched),
-			}
-
 			So(datastore.Put(ctx, authRealmGlobals), ShouldBeNil)
 
 			permsCfg := &configspb.PermissionsConfig{

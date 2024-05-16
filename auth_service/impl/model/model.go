@@ -1518,26 +1518,10 @@ func permsEqual(permsA, permsB []*protocol.Permission) bool {
 	})
 }
 
-// UpdateAuthRealmsGlobals updates the AuthRealmsGlobals singleton entity in datastore, creating
-// the entity if necessary.
+// UpdateAuthRealmsGlobals updates the AuthRealmsGlobals singleton entity in
+// datastore, creating the entity if necessary.
 //
-// Returns
-//
-//	formatted error if stored permissions and permissions.cfg don't match
-//	proto unmarshalling error if format in datastore is incorrect.
-//	internal annotated error for all other
-//
-// NOTE:
-// Since the original property that is used to store permissions was
-// of type []*protocol.Permission, we have to convert twice. This is because
-// slices of pointers are not supported in luci-go gae/datastore package
-// and it converts to a weird format when using datastore.Get.
-// As a result we will also use the dryRun flag to just log the results
-// until we don't depend on it, then once we switch we'll just stop
-// writing to the entity.
-//
-// TODO(crbug/1336137): Remove all references and checks to old permissions
-// once Python version knows how to work with permissions.cfg.
+// Returns an annotated error if one occurs.
 func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.PermissionsConfig, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		stored, err := GetAuthRealmsGlobals(ctx)
@@ -1562,39 +1546,20 @@ func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 		for _, r := range permsCfg.GetRole() {
 			for _, p := range r.GetPermissions() {
 				name := p.GetName()
+				if cfgPermsNames.Has(name) {
+					continue
+				}
+
 				cfgPermsNames.Add(name)
 				cfgPermsMap[name] = p
 			}
 		}
 
+		// The list of permissions must be in alphabetical order. See
+		// https://pkg.go.dev/go.chromium.org/luci/server/auth/service/protocol#Realms
 		orderedCfgPerms := make([]*protocol.Permission, len(cfgPermsNames))
 		for i, name := range cfgPermsNames.ToSortedSlice() {
 			orderedCfgPerms[i] = cfgPermsMap[name]
-		}
-
-		// convert what is stored by Python to proto to compare to cfg we pulled
-		storedPermProto := make([]*protocol.Permission, len(stored.Permissions))
-
-		// converting again from format we got from datastore.Get
-		for i, s := range stored.Permissions {
-			tempProto := &protocol.Permission{}
-			err := proto.Unmarshal([]byte(s), tempProto)
-			if err != nil {
-				return errors.Annotate(err, "error while unmarshalling stored proto").Err()
-			}
-			storedPermProto[i] = tempProto
-		}
-
-		// make a set of the permission names
-		storedPermsSet := stringset.New(len(storedPermProto))
-		for _, p := range storedPermProto {
-			storedPermsSet.Add(p.GetName())
-		}
-
-		// enforce that permissions match each other
-		diff := storedPermsSet.Difference(cfgPermsNames)
-		if len(diff) != 0 && stored.Permissions != nil {
-			return fmt.Errorf("the stored permissions and the permissions.cfg are not the same... diff: %v", diff)
 		}
 
 		// Exit early if the permissions haven't actually changed.
@@ -1603,15 +1568,16 @@ func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 			return nil
 		}
 
+		// Exit early if in dry run mode.
+		if dryRun {
+			logging.Infof(ctx, "(dry run) updating AuthRealmsGlobals entity")
+			return nil
+		}
+
 		stored.PermissionsList = &permissions.PermissionsList{
 			Permissions: orderedCfgPerms,
 		}
-
-		if !dryRun {
-			return commitEntity(stored, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
-		}
-		logging.Infof(ctx, "(dry run) updating AuthRealmsGlobals entity")
-		return nil
+		return commitEntity(stored, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
 	})
 }
 
