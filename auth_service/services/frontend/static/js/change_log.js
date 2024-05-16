@@ -227,7 +227,7 @@ class ChangeLogTable {
         target.href = t.changeLogTargetURL;
         target.textContent = t.title;
 
-        type.addEventListener('click', ()=>{
+        type.addEventListener('click', () => {
           this.presentChange(log);
         });
 
@@ -316,13 +316,25 @@ class ChangeLogTable {
 }
 
 window.onload = () => {
-  var target = common.getQueryParameter('target');
-  var authDbRev = common.getQueryParameter('auth_db_rev');
+  const loadingBox = new common.LoadingBox('#loading-box-placeholder');
+  const changeLogContent = new common.HidableElement('#change-log-content', false);
+
+  const target = common.getQueryParameter('target');
+  let authDbRev = common.getQueryParameter('auth_db_rev');
   if (authDbRev) {
     authDbRev = parseInt(authDbRev);
   }
 
-  var changeLogTable = new ChangeLogTable('change-log-header', 'change-log-content', 'change-log-details', target, authDbRev)
-  changeLogTable.refresh();
+  const changeLogTable = new ChangeLogTable('change-log-header', 'change-log-body', 'change-log-details', target, authDbRev)
   changeLogTable.updateHeader();
+
+  loadingBox.setLoadStatus(true);
+  changeLogContent.hide();
+  changeLogTable.refresh()
+    .then(() => {
+      changeLogContent.show();
+    })
+    .finally(() => {
+      loadingBox.setLoadStatus(false);
+    });
 }

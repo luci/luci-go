@@ -30,36 +30,41 @@
 </template>
 
 <div class="container">
-  <div id="change-log-header">
-    <!-- Load change-log-header-template -->
+  <div id="loading-box-placeholder"></div>
+
+  <div id="change-log-content" style="display: none;">
+    <div id="change-log-header">
+      <!-- Load change-log-header-template -->
+    </div>
+
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 80px">Rev</th>
+          <th scope="col" style="width: 250px">Change</th>
+          <th scope="col" style="width: 200px">When</th>
+          <th scope="col" style="width: 280px">Who</th>
+          <th>What</th>
+        </tr>
+      </thead>
+      <tbody id="change-log-body">
+        <!-- Load change-log-row-template -->
+      </tbody>
+    </table>
+
+    <hr>
+    <nav id="change-log-pager">
+      <ul class="pagination justify-content-between">
+        <li id="prev" class="page-item">
+          <a class="page-link" href="#"><span aria-hidden="true">&laquo;</span> Newer</a>
+        </li>
+        <li id="next" class="page-item">
+          <a class="page-link" href="#">Older <span aria-hidden="true">&raquo;</span></a>
+        </li>
+      </ul>
+    </nav>
   </div>
 
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th scope="col" style="width: 80px">Rev</th>
-        <th scope="col" style="width: 250px">Change</th>
-        <th scope="col" style="width: 200px">When</th>
-        <th scope="col" style="width: 280px">Who</th>
-        <th>What</th>
-      </tr>
-    </thead>
-    <tbody id="change-log-content">
-      <!-- Load change-log-row-template -->
-    </tbody>
-  </table>
-
-  <hr>
-  <nav id="change-log-pager">
-    <ul class="pagination justify-content-between">
-      <li id="prev" class="page-item">
-        <a class="page-link" href="#"><span aria-hidden="true">&laquo;</span> Newer</a>
-      </li>
-      <li id="next" class="page-item">
-        <a class="page-link" href="#">Older <span aria-hidden="true">&raquo;</span></a>
-      </li>
-    </ul>
-  </nav>
 </div>
 
 <div class="modal fade" id="change-log-details" tabindex="-1" role="dialog" aria-labelledby="title-label"
