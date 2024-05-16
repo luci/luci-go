@@ -90,6 +90,10 @@ func DefaultConfig() cas.ClientConfig {
 	cfg := cas.DefaultClientConfig()
 	cfg.CompressedBytestreamThreshold = 0 // compress always
 
+	// The default 1 min timeout seems slow for some kinds of uploads, see also
+	// Options().
+	cfg.ByteStreamWrite.Timeout = 2 * time.Minute
+
 	// Do not read file less than 10MiB twice.
 	cfg.SmallFileThreshold = 10 * 1024 * 1024
 
