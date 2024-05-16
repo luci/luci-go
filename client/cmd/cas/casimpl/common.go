@@ -93,10 +93,10 @@ func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
 }
 
 func enableGlogVerbosity(level int) error {
-	// extract glog flag used in remote-apis-sdks
+	// extract glog flag used in remote-apis-sdks, if available
 	logtostderr := flag.Lookup("logtostderr")
 	if logtostderr == nil {
-		return errors.Reason("logtostderr flag for glog not found").Err()
+		return nil
 	}
 	if err := logtostderr.Value.Set("true"); err != nil {
 		return errors.Annotate(err, "failed to set logstderr to true").Err()

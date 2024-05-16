@@ -69,10 +69,10 @@ func (c *baseCommandRun) Init() {
 
 func (c *baseCommandRun) Parse() error {
 	if c.logConfig.Level == logging.Debug {
-		// extract glog flag used in remote-apis-sdks
+		// extract glog flag used in remote-apis-sdks, if available
 		logtostderr := flag.Lookup("logtostderr")
 		if logtostderr == nil {
-			return errors.Reason("logtostderr flag for glog not found").Err()
+			return nil
 		}
 		v := flag.Lookup("v")
 		if v == nil {
