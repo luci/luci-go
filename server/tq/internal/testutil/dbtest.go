@@ -19,11 +19,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/partition"
 	"go.chromium.org/luci/server/tq/internal/reminder"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // RunDBAcceptance tests a database implementation.
@@ -36,6 +40,11 @@ import (
 // Or, you can copy this file to your package during debugging.
 func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 	t.Parallel()
+
+	// TODO(gregorynisbet): Put this setup logic in TestMain.
+	// Putting this registration logic here works, but putting it in TestMain does not.
+	// I don't know why.
+	registry.RegisterCmpOption(cmp.AllowUnexported(reminder.Reminder{}))
 
 	epoch := time.Date(2020, time.February, 3, 4, 5, 6, 0, time.UTC)
 
@@ -53,50 +62,50 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 		}
 	}
 
-	Convey("Test DB "+db.Kind(), t, func() {
-		Convey("Save & Delete", func() {
+	ftt.Run("Test DB "+db.Kind(), t, func(t *ftt.Test) {
+		t.Run("Save & Delete", func(t *ftt.Test) {
 			r := mkReminder(1, epoch, "payload")
-			So(db.SaveReminder(ctx, r), ShouldBeNil)
-			So(db.DeleteReminder(ctx, r), ShouldBeNil)
-			Convey("Delete non-existing is a noop", func() {
-				So(db.DeleteReminder(ctx, r), ShouldBeNil)
+			assert.Loosely(t, db.SaveReminder(ctx, r), should.BeNil)
+			assert.Loosely(t, db.DeleteReminder(ctx, r), should.BeNil)
+			t.Run("Delete non-existing is a noop", func(t *ftt.Test) {
+				assert.Loosely(t, db.DeleteReminder(ctx, r), should.BeNil)
 			})
 		})
 
-		Convey("FetchRemindersMeta", func() {
-			So(db.SaveReminder(ctx, mkReminder(254, epoch.Add(time.Second), "254")), ShouldBeNil)
-			So(db.SaveReminder(ctx, mkReminder(100, epoch.Add(time.Minute), "pay")), ShouldBeNil)
-			So(db.SaveReminder(ctx, mkReminder(255, epoch.Add(time.Hour), "load")), ShouldBeNil)
+		t.Run("FetchRemindersMeta", func(t *ftt.Test) {
+			assert.Loosely(t, db.SaveReminder(ctx, mkReminder(254, epoch.Add(time.Second), "254")), should.BeNil)
+			assert.Loosely(t, db.SaveReminder(ctx, mkReminder(100, epoch.Add(time.Minute), "pay")), should.BeNil)
+			assert.Loosely(t, db.SaveReminder(ctx, mkReminder(255, epoch.Add(time.Hour), "load")), should.BeNil)
 
-			Convey("All + sorted", func() {
+			t.Run("All + sorted", func(t *ftt.Test) {
 				res, err := db.FetchRemindersMeta(ctx, "00", "g", 5)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, []*reminder.Reminder{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble([]*reminder.Reminder{
 					mkReminder(100, epoch.Add(time.Minute), ""),
 					mkReminder(254, epoch.Add(time.Second), ""),
 					mkReminder(255, epoch.Add(time.Hour), ""),
-				})
+				}))
 			})
 
-			Convey("Limit", func() {
+			t.Run("Limit", func(t *ftt.Test) {
 				res, err := db.FetchRemindersMeta(ctx, "00", "g", 2)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, []*reminder.Reminder{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble([]*reminder.Reminder{
 					mkReminder(100, epoch.Add(time.Minute), ""),
 					mkReminder(254, epoch.Add(time.Second), ""),
-				})
+				}))
 			})
 
-			Convey("Obey partition", func() {
+			t.Run("Obey partition", func(t *ftt.Test) {
 				res, err := db.FetchRemindersMeta(ctx, "00", "ee", 5)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, []*reminder.Reminder{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble([]*reminder.Reminder{
 					mkReminder(100, epoch.Add(time.Minute), ""),
-				})
+				}))
 			})
 		})
 
-		Convey("FetchReminderRawPayloads", func() {
+		t.Run("FetchReminderRawPayloads", func(t *ftt.Test) {
 			all := []*reminder.Reminder{
 				mkReminder(100, epoch.Add(time.Minute), "pay"),
 				mkReminder(254, epoch.Add(time.Second), "254"),
@@ -105,27 +114,27 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 			meta := make([]*reminder.Reminder, len(all))
 			for i, r := range all {
 				meta[i] = &reminder.Reminder{ID: r.ID, FreshUntil: r.FreshUntil}
-				So(db.SaveReminder(ctx, r), ShouldBeNil)
+				assert.Loosely(t, db.SaveReminder(ctx, r), should.BeNil)
 			}
 
-			Convey("All", func() {
+			t.Run("All", func(t *ftt.Test) {
 				res, err := db.FetchReminderRawPayloads(ctx, meta)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, all)
-				Convey("Re-use objects", func() {
-					So(meta, ShouldResemble, all)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(all))
+				t.Run("Re-use objects", func(t *ftt.Test) {
+					assert.Loosely(t, meta, should.Resemble(all))
 				})
 			})
 
-			Convey("Some", func() {
+			t.Run("Some", func(t *ftt.Test) {
 				second := &reminder.Reminder{ID: meta[1].ID, FreshUntil: meta[1].FreshUntil}
-				So(db.DeleteReminder(ctx, second), ShouldBeNil)
+				assert.Loosely(t, db.DeleteReminder(ctx, second), should.BeNil)
 				res, err := db.FetchReminderRawPayloads(ctx, meta)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, []*reminder.Reminder{all[0], all[2]})
-				Convey("Re-use objects", func() {
-					So(meta[0], ShouldResemble, all[0])
-					So(meta[2], ShouldResemble, all[2])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble([]*reminder.Reminder{all[0], all[2]}))
+				t.Run("Re-use objects", func(t *ftt.Test) {
+					assert.Loosely(t, meta[0], should.Resemble(all[0]))
+					assert.Loosely(t, meta[2], should.Resemble(all[2]))
 				})
 			})
 		})
