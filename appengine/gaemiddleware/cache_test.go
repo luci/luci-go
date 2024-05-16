@@ -21,16 +21,17 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGlobalCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Parallel("Works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = memory.Use(ctx)
@@ -40,31 +41,30 @@ func TestGlobalCache(t *testing.T) {
 
 		// Cache miss.
 		val, err := cache.Get(ctx, "key")
-		So(err, ShouldEqual, caching.ErrCacheMiss)
-		So(val, ShouldBeNil)
-
-		So(cache.Set(ctx, "key_permanent", []byte("1"), 0), ShouldBeNil)
-		So(cache.Set(ctx, "key_temp", []byte("2"), time.Minute), ShouldBeNil)
+		assert.Loosely(t, err, should.Equal(caching.ErrCacheMiss))
+		assert.Loosely(t, val, should.BeNil)
+		assert.Loosely(t, cache.Set(ctx, "key_permanent", []byte("1"), 0), should.BeNil)
+		assert.Loosely(t, cache.Set(ctx, "key_temp", []byte("2"), time.Minute), should.BeNil)
 
 		// Cache hit.
 		val, err = cache.Get(ctx, "key_permanent")
-		So(err, ShouldBeNil)
-		So(val, ShouldResemble, []byte("1"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, val, should.Resemble([]byte("1")))
 
 		val, err = cache.Get(ctx, "key_temp")
-		So(err, ShouldBeNil)
-		So(val, ShouldResemble, []byte("2"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, val, should.Resemble([]byte("2")))
 
 		// Expire one item.
 		clock.Get(ctx).(testclock.TestClock).Add(2 * time.Minute)
 
 		val, err = cache.Get(ctx, "key_permanent")
-		So(err, ShouldBeNil)
-		So(val, ShouldResemble, []byte("1"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, val, should.Resemble([]byte("1")))
 
 		// Expired!
 		val, err = cache.Get(ctx, "key_temp")
-		So(err, ShouldEqual, caching.ErrCacheMiss)
-		So(val, ShouldBeNil)
+		assert.Loosely(t, err, should.Equal(caching.ErrCacheMiss))
+		assert.Loosely(t, val, should.BeNil)
 	})
 }
