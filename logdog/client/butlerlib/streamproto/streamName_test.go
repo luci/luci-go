@@ -19,49 +19,51 @@ import (
 	"flag"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestStreamName(t *testing.T) {
-	Convey(`A StreamNameFlag`, t, func() {
+	ftt.Run(`A StreamNameFlag`, t, func(t *ftt.Test) {
 		sn := StreamNameFlag("")
 
-		Convey(`When attached to a flag.`, func() {
+		t.Run(`When attached to a flag.`, func(t *ftt.Test) {
 			fs := flag.FlagSet{}
 			fs.Var(&sn, "name", "Test stream name.")
 
-			Convey(`Will successfully parse a valid stream name.`, func() {
+			t.Run(`Will successfully parse a valid stream name.`, func(t *ftt.Test) {
 				err := fs.Parse([]string{"-name", "test/stream/name"})
-				So(err, ShouldBeNil)
-				So(sn, ShouldEqual, StreamNameFlag("test/stream/name"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sn, should.Equal(StreamNameFlag("test/stream/name")))
 			})
 
-			Convey(`Will fail to parse an invalid stream name.`, func() {
+			t.Run(`Will fail to parse an invalid stream name.`, func(t *ftt.Test) {
 				err := fs.Parse([]string{"-name", "test;stream;name"})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 
-		Convey(`With valid value "test/stream/name"`, func() {
-			Convey(`Will marshal into a JSON string.`, func() {
+		t.Run(`With valid value "test/stream/name"`, func(t *ftt.Test) {
+			t.Run(`Will marshal into a JSON string.`, func(t *ftt.Test) {
 				sn = "test/stream/name"
 				d, err := json.Marshal(&sn)
-				So(err, ShouldBeNil)
-				So(string(d), ShouldEqual, `"test/stream/name"`)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(d), should.Resemble(`"test/stream/name"`))
 
-				Convey(`And successfully unmarshal.`, func() {
+				t.Run(`And successfully unmarshal.`, func(t *ftt.Test) {
 					sn = ""
 					err := json.Unmarshal(d, &sn)
-					So(err, ShouldBeNil)
-					So(sn, ShouldEqual, StreamNameFlag("test/stream/name"))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, sn, should.Equal(StreamNameFlag("test/stream/name")))
 				})
 			})
 		})
 
-		Convey(`JSON with an invalid value "test;stream;name" will fail to Unmarshal.`, func() {
+		t.Run(`JSON with an invalid value "test;stream;name" will fail to Unmarshal.`, func(t *ftt.Test) {
 			sn := StreamNameFlag("")
 			err := json.Unmarshal([]byte(`"test;stream;name"`), &sn)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
