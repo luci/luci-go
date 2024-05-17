@@ -16,27 +16,11 @@ package should
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
 )
-
-func mustErrPanicLike(t *testing.T, substr string, toCheck func()) {
-	t.Helper()
-	caught := func() (caught any) {
-		defer func() { caught = recover() }()
-		toCheck()
-		return nil
-	}()
-	if caught == nil {
-		t.Fatal("didn't panic")
-	}
-	if errS := caught.(error).Error(); !strings.Contains(errS, substr) {
-		t.Fatalf("caught error did not contain %q: %q", substr, errS)
-	}
-}
 
 func TestHappenBefore(t *testing.T) {
 	t.Parallel()
@@ -92,7 +76,7 @@ func TestHappenOnOrBetween(t *testing.T) {
 	t.Run("simple false", shouldFail(HappenOnOrBetween(now, later)(now.Add(-time.Second)), fmt.Sprintf("[%s, %s]", now, later)))
 
 	t.Run("panic with bad bounds", func(t *testing.T) {
-		mustErrPanicLike(t, "should.HappenOnOrBetween", func() {
+		mustPanicLike(t, "should.HappenOnOrBetween", func() {
 			HappenOnOrBetween(now.Add(time.Second), now)
 		})
 	})
@@ -109,7 +93,7 @@ func TestHappenWithin(t *testing.T) {
 	t.Run("simple false", shouldFail(HappenWithin(now, time.Second)(now.Add(-2*time.Second)), "± 1s"))
 
 	t.Run("panic with bad bounds", func(t *testing.T) {
-		mustErrPanicLike(t, "should.HappenWithin", func() {
+		mustPanicLike(t, "should.HappenWithin", func() {
 			HappenWithin(now, -time.Second)
 		})
 	})

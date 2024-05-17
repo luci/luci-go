@@ -15,6 +15,7 @@
 package should
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -68,5 +69,21 @@ func shouldFail(f *failure.Summary, containing ...string) func(t *testing.T) {
 		if failing {
 			t.FailNow()
 		}
+	}
+}
+
+// checks to see if `toCheck` panics with a string or error containing `substr`.
+func mustPanicLike(t *testing.T, substr string, toCheck func()) {
+	t.Helper()
+	caught := func() (caught any) {
+		defer func() { caught = recover() }()
+		toCheck()
+		return nil
+	}()
+	if caught == nil {
+		t.Fatal("didn't panic")
+	}
+	if errS := fmt.Sprint(caught); !strings.Contains(errS, substr) {
+		t.Fatalf("caught error did not contain %q: %q", substr, errS)
 	}
 }

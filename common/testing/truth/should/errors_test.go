@@ -37,7 +37,7 @@ func TestErrLike(t *testing.T) {
 	t.Run("different error", shouldFail(ErrLike(err)(errors.New("else")), "does not contain"))
 
 	t.Run("bad type", func(t *testing.T) {
-		mustErrPanicLike(t, "got `int`", func() {
+		mustPanicLike(t, "got `int`", func() {
 			ErrLike(100)
 		})
 	})

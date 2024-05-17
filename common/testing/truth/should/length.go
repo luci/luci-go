@@ -50,8 +50,21 @@ func getLen(cmpName string, anything any) (int, *failure.Summary) {
 //
 // Supports all values which work with the `len()` builtin function.
 func HaveLength(expected int) comparison.Func[any] {
-	const cmpName = "should.HaveLength"
+	if expected == 0 {
+		return BeEmpty
+	}
+	return haveLengthImpl("should.HaveLength", true, expected)
+}
 
+// BeEmpty is a Comparison which expects `actual` to have length 0.
+//
+// Supports all values which work with the `len()` builtin function.
+func BeEmpty(actual any) *failure.Summary {
+	return haveLengthImpl("should.BeEmpty", false, 0)(actual)
+}
+
+// haveLengthImpl is the implementation of HaveLength and BeEmpty.
+func haveLengthImpl(cmpName string, withArgs bool, expected int) comparison.Func[any] {
 	if expected < 0 {
 		return func(a any) *failure.Summary {
 			return comparison.NewSummaryBuilder(cmpName).
@@ -70,29 +83,14 @@ func HaveLength(expected int) comparison.Func[any] {
 			return nil
 		}
 
-		return comparison.NewSummaryBuilder(cmpName, actual).
-			AddFindingf("len(Actual)", "%d", actual).
-			Expected(expected).
+		fb := comparison.NewSummaryBuilder(cmpName)
+		if withArgs {
+			fb = fb.AddComparisonArgs(expected)
+		}
+		return fb.Actual(actual).WarnIfLong().
+			Because("len(actual) == %d", l).
 			Summary
 	}
-}
-
-// BeEmpty is a Comparison which expects `actual` to have length 0.
-//
-// Supports all values which work with the `len()` builtin function.
-//
-// TODO: Improve this when there is a `Lengthable` type constraint.
-func BeEmpty(actual any) *failure.Summary {
-	const cmpName = "should.BeEmpty"
-
-	l, fail := getLen(cmpName, actual)
-	if fail != nil {
-		return fail
-	}
-	if l == 0 {
-		return nil
-	}
-	return comparison.NewSummaryBuilder(cmpName, actual).Summary
 }
 
 // NotBeEmpty is a Comparison which expects `actual` to have a non-0

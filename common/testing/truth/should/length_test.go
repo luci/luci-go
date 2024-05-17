@@ -39,7 +39,8 @@ func TestHaveLength(t *testing.T) {
 	}
 	t.Run("chan", shouldPass(HaveLength(5)(ch)))
 
-	t.Run("fail length", shouldFail(HaveLength(7)("hello"), "len(Actual)", "Expected"))
+	t.Run("fail length", shouldFail(HaveLength(7)("hello"), "len(actual) == 5"))
+	t.Run("fail length 0", shouldFail(HaveLength(0)("hello"), "BeEmpty", "len(actual) == 5"))
 	t.Run("negative length", shouldFail(HaveLength(-5)("hello"), "negative", "Expected"))
 	t.Run("non-lengthable", shouldFail(HaveLength(5)(struct{}{}), "does not support"))
 }
