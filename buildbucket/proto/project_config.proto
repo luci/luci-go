@@ -52,7 +52,7 @@ message Acl {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 40.
+// Next tag: 41.
 message BuilderConfig {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -495,6 +495,77 @@ message BuilderConfig {
   // Will be validated as an email address, but nothing else.
   // It will display on milo and could be public facing, so please don't put anything sensitive.
   string contact_team_email = 38;
+
+  message CustomBuildMetric {
+    // Name of custom metrics to report build events.
+    //
+    // It must be a pre-registered custom metric in buildbucket's service config.
+    string name = 1;
+
+    // Predicates for the build metadata. A build has to meet all the predicates
+    // in order for its build events to be reported.
+    //
+    // This is a required field.
+    //
+    // If this is to report events of all builds under the builder, use
+    // the standard build metrics instead.
+    //
+    // If this is to report events of all builds under the builder, but
+    // with additional metric fields, copied from a build metadata, such as
+    // tags, then add a predicate for the metadata.
+    // e.g., `build.tags.get_value("key")!=""`
+    //
+    // Each item must be a boolean expression formatted in
+    // https://github.com/google/cel-spec.
+    //
+    // Example predicates that are supported currently:
+    // * a build field has non-default value, e.g. `has(build.tags)` means
+    //   build.tags is not empty,
+    // * input/output properties has a key, e.g. `has(build.input.properties.pro_key)`
+    // * an input/output property with key "key" has "value":
+    //   `string(build.output.properties.key) == "value"`
+    //   - Note that because input/output properties are Struct, we have to cast
+    //     the value to string.
+    // * experiments includes an experiment, e.g.
+    //  `build.input.experiments.exists(e, e=="luci.buildbucket.exp")`
+    // * tags includes a tag with key "key", and there are two ways:
+    //   - `build.tags.get_value("key")!=""`
+    //   - `build.tags.exists(t, t.key=="key")`
+    repeated string predicates = 2;
+
+    // Describes how to generate metric field values.
+    //
+    // In the map,
+    // - each key is a custom metric field name, configured in the reference metric.
+    // - each value is a string expression formatted in
+    // https://github.com/google/cel-spec to set the field with.
+    //
+    // Example of the string experssions that are currently supported:
+    // * value of any build string field, e.g. `build.summary_markdown`
+    // * value of an input/output property, e.g. `string(build.input.properties.key)`
+    //   - Note that because input/output properties are Struct, we have to cast
+    //     the value to string.
+    // * value of a tag, e.g. `build.tags.get_value("os")`
+    //
+    // Must include all the metric fields defined in the referenced metrics.
+    // May include additional fields that are not defined in the referenced
+    // metrics, but those fields will be ignored (this is helpful for adding
+    // new fields into existing custom metrics).
+    //
+    // Note that the possible values of each field should be bounded.
+    // So below fields should not be included:
+    // * build id
+    // * any timestamp (e.g. build's creation time)
+    // * any markdown strings (e.g. build's summary_markdown)
+    // * any log strings (e.g. build's output logs)
+    // * any PII
+    // * build's gitiles commit hash
+    // * build's gerrit change number
+    // * etc
+    map<string, string> fields = 3;
+  }
+  // Custom metrics for the builds.
+  repeated CustomBuildMetric custom_build_metrics = 40;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.

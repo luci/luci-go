@@ -792,6 +792,9 @@ type CustomMetric struct {
 
 	// Name of the metric.
 	//
+	// Each builder that uses this metric needs to add a CustomBuildMetric entry in
+	// their config, with the same name as here.
+	//
 	// Must be unique globally across all LUCI projects.
 	// Must conform to ^(/[a-zA-Z0-9_-]+)+$ (See
 	// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/tsmon/registry/registry.go;l=33;drc=b77d0c2bd4bbb536f8e349e993e3ca18818c51e7).
@@ -800,8 +803,8 @@ type CustomMetric struct {
 	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// Metric field names.
 	//
-	// Each builder uses this metric must specify how to populate the values of
-	// each field in their configurations.
+	// Each builder that uses this metric must specify how to populate each
+	// field's value in their configurations, see BuilderConfig.CustomBuildMetric.Fields.
 	//
 	// The value type of all metric fields is always string.
 	// Each Field must conform to ^[A-Za-z_][A-Za-z0-9_]*$ (See
