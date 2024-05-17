@@ -80,3 +80,8 @@ func disableVerbosity() func() {
 	truth.Verbose = false
 	return func() { truth.Verbose = old }
 }
+func disableFullpath() func() {
+	old := truth.FullSourceContextFilenames
+	truth.FullSourceContextFilenames = false
+	return func() { truth.FullSourceContextFilenames = old }
+}

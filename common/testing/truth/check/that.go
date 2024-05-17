@@ -26,8 +26,8 @@
 //	truth.Check(t, 10, should.Equal(20))
 //	truth.CheckLoosely(t, myCustomInt(10), should.Equal(20))
 //
-// This package has a counterpart sibling `assert` which cover `Assert` and
-// `AssertLoosely`.
+// This package has a counterpart sibling `assert` which cover `Check` and
+// `CheckLoosely`.
 package check
 
 import (

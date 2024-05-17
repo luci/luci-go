@@ -224,7 +224,7 @@ func TestRenderCLIFinding(t *testing.T) {
 	}))
 }
 
-func TestRenderCLIFailureComparisonFunc(t *testing.T) {
+func TestRenderCLIFailureComparison(t *testing.T) {
 	type caseT struct {
 		render   RenderCLI
 		input    *failure.Comparison
@@ -234,7 +234,7 @@ func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 			t.Helper()
-			actual := tt.render.Summary("", &failure.Summary{Comparison: tt.input})
+			actual := tt.render.Comparison("", tt.input)
 
 			if diff := typed.Diff(strings.Join(tt.expected, "\n"), actual); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
@@ -246,7 +246,7 @@ func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 		input: &failure.Comparison{
 			Name: "basic",
 		},
-		expected: []string{`basic FAILED`},
+		expected: []string{`basic`},
 	}))
 
 	t.Run("basic (type args)", testCase(caseT{
@@ -254,7 +254,7 @@ func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 			Name:          "basic",
 			TypeArguments: []string{"string", "int"},
 		},
-		expected: []string{`basic[string, int] FAILED`},
+		expected: []string{`basic[string, int]`},
 	}))
 
 	t.Run("basic (args)", testCase(caseT{
@@ -262,7 +262,7 @@ func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 			Name:      "basic",
 			Arguments: []string{"1", `"yo"`},
 		},
-		expected: []string{`basic(1, "yo") FAILED`},
+		expected: []string{`basic(1, "yo")`},
 	}))
 
 	t.Run("basic (type args, args)", testCase(caseT{
@@ -270,7 +270,109 @@ func TestRenderCLIFailureComparisonFunc(t *testing.T) {
 			Name:      "basic",
 			Arguments: []string{"1", `"yo"`},
 		},
-		expected: []string{`basic(1, "yo") FAILED`},
+		expected: []string{`basic(1, "yo")`},
+	}))
+}
+
+func TestRenderCLIStack(t *testing.T) {
+	type caseT struct {
+		render   RenderCLI
+		input    *failure.Stack
+		expected []string
+	}
+	testCase := func(tt caseT) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+			t.Helper()
+			actual := tt.render.Stack("", tt.input)
+			if diff := typed.Diff(strings.Join(tt.expected, "\n"), actual); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		}
+	}
+
+	t.Run("basic (no frames)", testCase(caseT{
+		input: &failure.Stack{
+			Name: "at",
+		},
+	}))
+
+	t.Run("basic (one frame)", testCase(caseT{
+		input: &failure.Stack{
+			Name: "at",
+			Frames: []*failure.Stack_Frame{
+				{Filename: "some/path.go", Lineno: 100},
+			},
+		},
+		expected: []string{
+			"(at path.go:100)",
+		},
+	}))
+
+	t.Run("basic (multi-frame)", testCase(caseT{
+		input: &failure.Stack{
+			Name: "at",
+			Frames: []*failure.Stack_Frame{
+				{Filename: "some/path.go", Lineno: 100},
+				{Filename: "other/place.go", Lineno: 77},
+			},
+		},
+		expected: []string{
+			"at:",
+			"    path.go:100",
+			"    place.go:77",
+		},
+	}))
+
+	t.Run("basic (multi-frame, fullpath)", testCase(caseT{
+		render: RenderCLI{FullFilenames: true},
+		input: &failure.Stack{
+			Name: "at",
+			Frames: []*failure.Stack_Frame{
+				{Filename: "some/path.go", Lineno: 100},
+				{Filename: "other/place.go", Lineno: 77},
+			},
+		},
+		expected: []string{
+			"at:",
+			"    some/path.go:100",
+			"    other/place.go:77",
+		},
+	}))
+}
+
+func TestRenderCLISummary(t *testing.T) {
+	type caseT struct {
+		render   RenderCLI
+		input    *failure.Summary
+		expected []string
+	}
+	testCase := func(tt caseT) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+			t.Helper()
+			actual := tt.render.Summary("", tt.input)
+			if diff := typed.Diff(strings.Join(tt.expected, "\n"), actual); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		}
+	}
+
+	t.Run("basic", testCase(caseT{
+		input: &failure.Summary{
+			Comparison: &failure.Comparison{Name: "test", TypeArguments: []string{"int"}, Arguments: []string{"10"}},
+			SourceContext: []*failure.Stack{
+				{Name: "at", Frames: []*failure.Stack_Frame{{Filename: "source.go", Lineno: 13}}},
+			},
+			Findings: []*failure.Finding{
+				{Name: "Because", Value: []string{"reasons"}},
+			},
+		},
+		expected: []string{
+			`test[int](10) FAILED`,
+			`(at source.go:13)`,
+			`Because: reasons`,
+		},
 	}))
 
 }

@@ -164,12 +164,63 @@ var Verbose bool
 // You may override this in your TestMain function.
 var Colorize bool
 
+// FullSourceContextFilenames indicates that the truth library should print out
+// full file paths for any SourceContexts in failure.Summaries.
+//
+// By default, this is true when the '-test.fullpath' flag is passed to the
+// binary (this is what gets set on the binary when you run `go test
+// -fullpath`).
+//
+// You may override this in your TestMain function.
+var FullSourceContextFilenames bool
+
 func init() {
 	Colorize = term.IsTerminal(int(os.Stdout.Fd()))
 
+	// We tried to do this the right way, but were thwarted:
+	//
+	// Strike 1: Use testing.Verbose()
+	// (ignore for a moment that testing does not expose fullpath).
+	//
+	// Unfortunately, this will panic if the flags have not yet been parsed (which
+	// is reasonable), but flag parsing happens in TestMain, meaning that we
+	// cannot initialize these from our own init() (which would run before
+	// TestMain).
+	//
+	// Strike 2: Re-define flags "-test.v" and "-test.fullpath" on flag.CommandLine
+	// Unfortunately, flag does not allow this, and will panic.
+	//
+	// Strike 3: Use flag.CommandLine.Lookup plus a sync.Once
+	// Ok, so we could look up the '-test.fullpath' and '-test.v' flags in the
+	// global command. We still know that we can't actually initialize these in
+	// init(), so we'll use sync.Once to pick these up once in render().
+	//
+	// Unfortunately this means that users attempting to set these values in
+	// TestMain will then not be able to affect them, meaning that these module
+	// booleans would need to be something like *bool. Meh.
+	//
+	// Strike 4: Require all tests using this to call truth.Initialize() or
+	// similar.
+	// These features are so niche that it's unlikely that anyone will remember to
+	// do this, so they will just always be `false`. Meh.
+	//
+	// Strike 5: Even if someone wanted to use one of these as a positional
+	// argument... eh.
+	//
+	// This is technically possible, but would be extremely convoluted, and likely
+	// to be a bad idea for other reasons.
+
+	var foundFP bool
+	var foundV bool
 	for _, val := range os.Args {
-		if val == "-test.v" || val == "-test.v=true" {
+		if !foundFP && (val == "-test.fullpath" || val == "-test.fullpath=true") {
+			FullSourceContextFilenames = true
+			foundFP = true
+		} else if !foundV && (val == "-test.v" || val == "-test.v=true") {
 			Verbose = true
+			foundV = true
+		}
+		if foundFP && foundV {
 			break
 		}
 	}
@@ -177,8 +228,9 @@ func init() {
 
 func render(f *failure.Summary) string {
 	return comparison.RenderCLI{
-		Verbose:  Verbose,
-		Colorize: Colorize,
+		Verbose:       Verbose,
+		Colorize:      Colorize,
+		FullFilenames: FullSourceContextFilenames,
 	}.Summary("", f)
 }
 

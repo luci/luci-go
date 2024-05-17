@@ -41,13 +41,12 @@ message Summary {
   // Information about the Comparison which produced this failure Summary.
   Comparison comparison = 1;
 
-  // TODO - can put filename/lineno of the assert here
-  //
-  // At some point it would be good to be able to consume this Summary directly,
-  // for example filing a bug for a Summary, or uploading directly to SummaryDB.
+  // Optional list of source code context, in the form of whole or partial stack
+  // traces.
+  repeated Stack source_context = 2;
 
   // The list of findings that describe this failure.
-  repeated Finding findings = 2;
+  repeated Finding findings = 3;
 }
 
 // Comparison describes the comparison function or operation which produced
@@ -67,6 +66,29 @@ message Comparison {
   // Optional argument values. Will be used with name like
   // `should.HaveLength(arg)`.
   repeated string arguments = 3;
+}
+
+// Stack is an arbitrary source code context attached to a failure.Summary.
+//
+// Conventional names:
+//   * "at" - The single filename/lineno of where the assertion took place.
+//   This can be added by using `comparison.WithLineContext()` on a returned
+//   *Failure from a comparison.Func, or by using `assert.WithContext...` or
+//   `check.WithContext...`. This is useful when writing assertion helper
+//   functions - Go will report the filename:NN of the 'top most' stack frame,
+//   as calculated via testing.T.Helper calls, but sometimes you also want to
+//   add the location of the assert itself, inside the helper.
+//
+// This can also be used to attach things like panic stack traces, etc. to
+// a Failure.
+message Stack {
+  string name = 1;
+
+  message Frame {
+    string filename = 1;
+    int64 lineno = 2;
+  }
+  repeated Frame frames = 2;
 }
 
 // Finding is a fact which is logically associated with this Summary

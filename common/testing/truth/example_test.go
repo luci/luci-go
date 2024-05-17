@@ -21,11 +21,12 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func ExampleAssert() {
-	// For the example we disable colorization and verbosity to make the Output
-	// stable.
+func Example_basic_usage() {
+	// For the example we disable colorization, verbosity and fullpaths to make
+	// the Output stable.
 	defer disableColorization()()
 	defer disableVerbosity()()
+	defer disableFullpath()()
 
 	// NOTE: in a real test, you would use `*testing.T` or similar - not something
 	// like FakeTB. This will also show filename:lineno in the Output below, but
@@ -74,4 +75,36 @@ func ExampleAssert() {
 	//               	"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 	//               	... // 872 identical bytes
 	//               }, "")
+}
+
+func Example_helpers_with_line_context() {
+	// For the example we disable colorization, verbosity and fullpaths to make
+	// the Output stable.
+	defer disableColorization()()
+	defer disableVerbosity()()
+	defer disableFullpath()()
+
+	// NOTE: in a real test, you would use `*testing.T` or similar - not something
+	// like FakeTB. This will also show filename:lineno in the Output below, but
+	// this is omitted for this example.
+	t := new(fakeTB)
+
+	helper := func(expect int) {
+		// tell go testing that it should skip this function when finding
+		// the filename.go:NN value to print next to the error message.
+		t.Helper()
+
+		check.That(t, 10, should.Equal(expect).WithLineContext()) // line 97
+	}
+
+	helper(10) // line 100
+
+	helper(20) // line 102
+
+	// Output:
+	// --- FAIL: FakeTestName (0.00s)
+	//     filename.go:NN: Check should.Equal[int] FAILED
+	//         (at example_test.go:97)
+	//         Actual: 10
+	//         Expected: 20
 }
