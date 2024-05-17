@@ -28,8 +28,8 @@ export function Row({ testVariantBranch }: RowProps) {
     <>
       {testVariantBranch.segments.map((seg: OutputSegment) => (
         <Fragment key={seg.endPosition}>
-          <StartPointSpan segment={seg} />
-          <SegmentSpan segment={seg} />
+          <StartPointSpan testVariantBranch={testVariantBranch} segment={seg} />
+          <SegmentSpan testVariantBranch={testVariantBranch} segment={seg} />
         </Fragment>
       ))}
     </>

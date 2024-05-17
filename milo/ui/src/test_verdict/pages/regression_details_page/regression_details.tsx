@@ -26,6 +26,7 @@ import {
   ParsedTestVariantBranchName,
 } from '@/test_verdict/types';
 
+import { BlamelistStateProvider } from './context';
 import { RegressionDetailsDialog } from './regression_details_dialog';
 
 export interface RegressionDetailsProps {
@@ -74,11 +75,9 @@ export function RegressionDetails({
   // TODO(b/321110247): Display all the test variant branches in a table with
   // all the associated changepoints.
   return (
-    <>
+    <BlamelistStateProvider>
       <ChangepointTable testVariantBranches={data} />
-      {/* TODO: open the dialog when a changepoint is selected.
-      For now, always open dialog for the first changepoint in the group */}
-      <RegressionDetailsDialog changepoint={data[0]} />
-    </>
+      <RegressionDetailsDialog />
+    </BlamelistStateProvider>
   );
 }

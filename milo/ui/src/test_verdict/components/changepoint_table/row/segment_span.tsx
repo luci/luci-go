@@ -19,23 +19,26 @@ import {
   VERDICT_STATUS_COLOR_MAP,
   VERDICT_STATUS_ICON_FONT_MAP,
 } from '@/test_verdict/constants/verdict';
+import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 import {
   getBackgroundColor,
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
-import { OutputSegment } from '@/test_verdict/types';
+import { OutputSegment, OutputTestVariantBranch } from '@/test_verdict/types';
 
 import { ROW_PADDING, SPAN_MARGIN, SPAN_PADDING } from '../constants';
 import { useConfig } from '../context';
 
 export interface SegmentSpanProps {
+  readonly testVariantBranch: OutputTestVariantBranch;
   readonly segment: OutputSegment;
 }
 
 /**
  * Renders a span that represents the segment.
  */
-export function SegmentSpan({ segment }: SegmentSpanProps) {
+export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
+  const dispatch = useBlamelistDispatch();
   const { commitMap, xScale, rowHeight } = useConfig();
 
   const start = commitMap[segment.endPosition];
@@ -62,6 +65,14 @@ export function SegmentSpan({ segment }: SegmentSpanProps) {
         y={SPAN_MARGIN + SPAN_PADDING}
         width={spanWidth - 2 * SPAN_PADDING}
         height={spanHeight - 2 * SPAN_PADDING}
+        css={{ cursor: 'pointer' }}
+        onClick={() =>
+          dispatch({
+            type: 'showBlamelist',
+            testVariantBranch,
+            focusCommitPosition: segment.endPosition,
+          })
+        }
       >
         {segment.counts.unexpectedVerdicts ? (
           <Box>

@@ -13,11 +13,14 @@
 // limitations under the License.
 
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
+import { OutputTestVariantBranch } from '@/test_verdict/types';
 
 import { ROW_PADDING, SPAN_MARGIN } from '../constants';
 import { useConfig } from '../context';
 
 export interface StartPointSpanProps {
+  readonly testVariantBranch: OutputTestVariantBranch;
   readonly segment: Segment;
 }
 
@@ -25,7 +28,11 @@ export interface StartPointSpanProps {
  * Renders a span that represents the 99th confidence interval of the segment
  * start point.
  */
-export function StartPointSpan({ segment }: StartPointSpanProps) {
+export function StartPointSpan({
+  testVariantBranch,
+  segment,
+}: StartPointSpanProps) {
+  const dispatch = useBlamelistDispatch();
   const { commitMap, xScale, rowHeight } = useConfig();
 
   if (!segment.hasStartChangepoint) {
@@ -44,6 +51,14 @@ export function StartPointSpan({ segment }: StartPointSpanProps) {
       height={rowUnitHeight - 2 * SPAN_MARGIN}
       stroke="#08aaff"
       fill="#b3e5ff"
+      css={{ cursor: 'pointer' }}
+      onClick={() =>
+        dispatch({
+          type: 'showBlamelist',
+          testVariantBranch,
+          focusCommitPosition: segment.startPositionUpperBound99th,
+        })
+      }
     />
   );
 }

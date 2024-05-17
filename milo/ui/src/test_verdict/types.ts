@@ -21,14 +21,18 @@
  * coercion (i.e. `object.nullable!`) everywhere.
  */
 
+import { OutputCommit } from '@/gitiles/types';
 import {
   Changepoint,
   ChangepointGroupSummary,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { ClusterResponse_ClusteredTestResult_ClusterEntry } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { Variant } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
+import { SourceRef } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 import {
+  QuerySourcePositionsResponse,
   Segment,
+  SourcePosition,
   TestVariantBranch,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import {
@@ -48,8 +52,8 @@ export type OutputTestResultBundle = NonNullableProps<
 >;
 
 export type OutputTestVerdict = TestVariant & {
-  status: SpecifiedTestVerdictStatus;
-  results: readonly OutputTestResultBundle[];
+  readonly status: SpecifiedTestVerdictStatus;
+  readonly results: readonly OutputTestResultBundle[];
 };
 
 export type OutputClusterEntry = NonNullableProps<
@@ -65,8 +69,18 @@ export type OutputChangepointGroupSummary = DeepNonNullableProps<
 export type OutputSegment = NonNullableProps<Segment, 'counts'>;
 
 export type OutputTestVariantBranch = TestVariantBranch & {
-  segments: readonly OutputSegment[];
+  readonly segments: readonly OutputSegment[];
+  readonly ref: NonNullableProps<SourceRef, 'gitiles'>;
 };
+
+export type OutputSourcePosition = SourcePosition & {
+  readonly commit: OutputCommit;
+};
+
+export type OutputQuerySourcePositionsResponse =
+  QuerySourcePositionsResponse & {
+    readonly sourcePositions: readonly OutputSourcePosition[];
+  };
 
 export type OutputChangepoint = NonNullableProps<Changepoint, 'variant'>;
 
