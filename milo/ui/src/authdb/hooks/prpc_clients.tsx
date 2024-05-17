@@ -11,25 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {GroupsList} from '@/authdb/components/groups_list';
-import Grid from '@mui/material/Grid';
 
-export function GroupsPage() {
-  return (
-    <Grid container>
-      <Grid item xs={1}>
-      </Grid>
-      <Grid item xs={4}>
-        <GroupsList />
-      </Grid>
-      <Grid item xs={6}>
-      </Grid>
-      <Grid item xs={1}>
-      </Grid>
-    </Grid>
-  );
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { GroupsClientImpl } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+
+export function useAuthServiceClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.authService.host,
+    ClientImpl: GroupsClientImpl,
+  });
 }
-
-export const element = (
-    <GroupsPage />
-);
