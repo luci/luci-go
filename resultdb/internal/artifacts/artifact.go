@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package artifacts contains tools for reading and processing artifacts.
 package artifacts
 
 import (
@@ -27,9 +28,11 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // MustParseName extracts invocation, test, result and artifactIDs.
@@ -72,11 +75,13 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 	return parentID[:lastSlash], parentID[lastSlash+1:], nil
 }
 
-// Read reads an artifact from Spanner with GCS URI if one is available.
-// If it does not exist, the returned error is annotated with NotFound GRPC
-// code.
-// Does not return artifact content.
-func Read(ctx context.Context, name string) (*pb.Artifact, error) {
+// Read reads an artifact and returns and Artifact row from the database.
+// It contains the following fields:
+// * ContentType
+// * Size
+// * GcsURI
+// * RBECASHash
+func Read(ctx context.Context, name string) (*Artifact, error) {
 	invIDStr, testID, resultID, artifactID, err := pbutil.ParseArtifactName(name)
 	if err != nil {
 		return nil, err
@@ -84,32 +89,36 @@ func Read(ctx context.Context, name string) (*pb.Artifact, error) {
 	invID := invocations.ID(invIDStr)
 	parentID := ParentID(testID, resultID)
 
-	ret := &pb.Artifact{
-		Name:       name,
-		ArtifactId: artifactID,
+	ret := &Artifact{
+		Artifact: &pb.Artifact{
+			Name:       name,
+			ArtifactId: artifactID,
+		},
 	}
 
-	// Populate fields from Artifacts table.
 	var contentType spanner.NullString
 	var size spanner.NullInt64
 	var gcsURI spanner.NullString
+	var rbeCASHash spanner.NullString
+	// Populate fields from Artifacts table.
 	err = spanutil.ReadRow(ctx, "Artifacts", invID.Key(parentID, artifactID), map[string]any{
 		"ContentType": &contentType,
 		"Size":        &size,
 		"GcsURI":      &gcsURI,
+		"RBECASHash":  &rbeCASHash,
 	})
 
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", ret.Name)
+		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", name)
 
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", ret.Name).Err()
-
+		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
 	default:
 		ret.ContentType = contentType.StringVal
 		ret.SizeBytes = size.Int64
 		ret.GcsUri = gcsURI.StringVal
+		ret.RBECASHash = rbeCASHash.StringVal
 		return ret, nil
 	}
 }
@@ -131,4 +140,14 @@ func AddHashPrefix(hash string) string {
 // TrimHashPrefix removes HashFunc from a given hash string.
 func TrimHashPrefix(hash string) string {
 	return strings.TrimPrefix(hash, hashPrefix)
+}
+
+// VerifyReadArtifactPermission verifies if the caller has enough permissions to read the artifact.
+func VerifyReadArtifactPermission(ctx context.Context, name string) error {
+	invIDStr, _, _, _, inputErr := pbutil.ParseArtifactName(name)
+	if inputErr != nil {
+		return appstatus.BadRequest(inputErr)
+	}
+
+	return permissions.VerifyInvocation(ctx, invocations.ID(invIDStr), rdbperms.PermGetArtifact)
 }

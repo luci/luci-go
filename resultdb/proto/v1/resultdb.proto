@@ -114,6 +114,13 @@ service ResultDB {
   // on the queried invocation.
   rpc QueryRunTestVerdicts(QueryRunTestVerdictsRequest) returns (QueryRunTestVerdictsResponse) {};
 
+  // Lists the artifact contents as a list of log lines and
+  // performs best effort extraction of log information
+  // such as severity and timestamp for each line.
+  //
+  // Currently supports artifacts with content types: [text/plain,]
+  rpc ListArtifactLines(ListArtifactLinesRequest) returns (ListArtifactLinesResponse) {};
+
   // Retrieves test verdicts from an invocation, recursively.
   // Supports invocation inclusions.
   rpc QueryTestVariants(QueryTestVariantsRequest) returns (QueryTestVariantsResponse) {};
@@ -394,6 +401,33 @@ message QueryArtifactsResponse {
   // If this field is omitted, there were no subsequent pages at the time of
   // request.
   string next_page_token = 2;
+}
+
+// A request message for ListArtifactLines RPC.
+message ListArtifactLinesRequest {
+  // Retrieve log lines for this artifact.
+  // Format:
+  // - For invocation-level artifacts:
+  //   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
+  // - For test-result-level artifacts:
+  //   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+  string parent = 1;
+
+  // The maximum number of log lines to return.
+  //
+  // The service may return fewer than this value.
+  // The response size will be truncated to 10MB
+  // if the size of matching lines is larger than 10MB.
+  // If unspecified or is equal to 0, a max of 10MB of lines will be returned.
+  // Negative page sizes are not allowed.
+  int32 page_size = 2;
+}
+
+// A response for ListArtifactLines RPC
+message ListArtifactLinesResponse {
+
+  // The log lines in the artifact.
+  repeated ArtifactLine lines = 1;
 }
 
 // A request message for QueryTestVariants RPC.

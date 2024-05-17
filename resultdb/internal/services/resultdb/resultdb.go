@@ -18,7 +18,6 @@ package resultdb
 
 import (
 	"context"
-	"time"
 
 	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
 	"google.golang.org/genproto/googleapis/bytestream"
@@ -44,7 +43,7 @@ import (
 // It does not return gRPC-native errors; use DecoratedResultDB with
 // internal.CommonPostlude.
 type resultDBServer struct {
-	generateArtifactURL func(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error)
+	contentServer *artifactcontent.Server
 }
 
 // Options is resultdb server configuration.
@@ -87,7 +86,7 @@ func InitServer(srv *server.Server, opts Options) error {
 	})
 
 	rdbSvr := &resultDBServer{
-		generateArtifactURL: contentServer.GenerateSignedURL,
+		contentServer: contentServer,
 	}
 	pb.RegisterResultDBServer(srv, &pb.DecoratedResultDB{
 		Service:  rdbSvr,

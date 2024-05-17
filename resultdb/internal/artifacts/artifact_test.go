@@ -91,7 +91,7 @@ func TestRead(t *testing.T) {
 			const name = "invocations/inv/tests/t/results/r/artifacts/a"
 			a, err := Read(ctx, name)
 			So(err, ShouldBeNil)
-			So(a, ShouldResembleProto, &pb.Artifact{
+			So(a.Artifact, ShouldResembleProto, &pb.Artifact{
 				Name:        name,
 				ArtifactId:  "a",
 				ContentType: "text/plain",
@@ -108,7 +108,7 @@ func TestRead(t *testing.T) {
 			const name = "invocations/inv/tests/t/results/r/artifacts/b"
 			a, err := Read(ctx, name)
 			So(err, ShouldBeNil)
-			So(a, ShouldResembleProto, &pb.Artifact{
+			So(a.Artifact, ShouldResembleProto, &pb.Artifact{
 				Name:        name,
 				ArtifactId:  "b",
 				ContentType: "text/plain",

@@ -16,6 +16,7 @@ package resultdb
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/server/auth"
@@ -147,7 +148,7 @@ func TestListArtifacts(t *testing.T) {
 			)
 			actual, _ := mustFetch(req)
 			So(actual, ShouldHaveLength, 1)
-			So(actual[0].FetchUrl, ShouldEqual, "https://signed-url.example.com/invocations/inv1/artifacts/a")
+			So(strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), ShouldBeTrue)
 		})
 
 		Convey(`Fetch URL with Gcs URI`, func() {

@@ -244,6 +244,23 @@ func (s *DecoratedResultDB) QueryRunTestVerdicts(ctx context.Context, req *Query
 	return
 }
 
+func (s *DecoratedResultDB) ListArtifactLines(ctx context.Context, req *ListArtifactLinesRequest) (rsp *ListArtifactLinesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ListArtifactLines", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ListArtifactLines(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ListArtifactLines", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedResultDB) QueryTestVariants(ctx context.Context, req *QueryTestVariantsRequest) (rsp *QueryTestVariantsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

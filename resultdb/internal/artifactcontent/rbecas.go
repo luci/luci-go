@@ -74,7 +74,7 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 
 	// Start a reading stream.
 	stream, err := r.ReadCASBlob(c.Request.Context(), &bytestream.ReadRequest{
-		ResourceName: resourceName(r.RBECASInstanceName, hash, r.size.Int64),
+		ResourceName: ResourceName(r.RBECASInstanceName, hash, r.size.Int64),
 		ReadLimit:    r.limit,
 	})
 	if err != nil {
@@ -142,7 +142,7 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 	}
 }
 
-func resourceName(instance, hash string, size int64) string {
+func ResourceName(instance, hash string, size int64) string {
 	return fmt.Sprintf("%s/blobs/%s/%d", instance, strings.TrimPrefix(hash, "sha256:"), size)
 }
 
@@ -160,7 +160,7 @@ type Reader struct {
 // DownloadRBECASContent calls f for the downloaded artifact content.
 func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteStreamClient, f func(context.Context, io.Reader) error) error {
 	stream, err := bs.Read(ctx, &bytestream.ReadRequest{
-		ResourceName: resourceName(r.RBEInstance, r.Hash, r.Size),
+		ResourceName: ResourceName(r.RBEInstance, r.Hash, r.Size),
 	})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {

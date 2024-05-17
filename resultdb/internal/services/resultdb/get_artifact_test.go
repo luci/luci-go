@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -100,7 +101,7 @@ func TestGetArtifact(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(art.Name, ShouldEqual, name)
 			So(art.ArtifactId, ShouldEqual, "a")
-			So(art.FetchUrl, ShouldEqual, "https://signed-url.example.com/invocations/inv/artifacts/a")
+			So(strings.HasPrefix(art.FetchUrl, "https://signed-url.example.com/invocations/inv/artifacts/a"), ShouldBeTrue)
 		})
 
 		Convey(`Exists with gcsURI`, func() {

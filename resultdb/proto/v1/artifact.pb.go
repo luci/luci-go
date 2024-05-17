@@ -36,13 +36,83 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ArtifactLine_Severity int32
+
+const (
+	ArtifactLine_SEVERITY_UNSPECIFIED ArtifactLine_Severity = 0
+	ArtifactLine_VERBOSE              ArtifactLine_Severity = 10
+	ArtifactLine_TRACE                ArtifactLine_Severity = 20
+	ArtifactLine_DEBUG                ArtifactLine_Severity = 30
+	ArtifactLine_INFO                 ArtifactLine_Severity = 40
+	ArtifactLine_NOTICE               ArtifactLine_Severity = 50
+	ArtifactLine_WARNING              ArtifactLine_Severity = 60
+	ArtifactLine_ERROR                ArtifactLine_Severity = 70
+	ArtifactLine_CRITICAL             ArtifactLine_Severity = 80
+	ArtifactLine_FATAL                ArtifactLine_Severity = 90
+)
+
+// Enum value maps for ArtifactLine_Severity.
+var (
+	ArtifactLine_Severity_name = map[int32]string{
+		0:  "SEVERITY_UNSPECIFIED",
+		10: "VERBOSE",
+		20: "TRACE",
+		30: "DEBUG",
+		40: "INFO",
+		50: "NOTICE",
+		60: "WARNING",
+		70: "ERROR",
+		80: "CRITICAL",
+		90: "FATAL",
+	}
+	ArtifactLine_Severity_value = map[string]int32{
+		"SEVERITY_UNSPECIFIED": 0,
+		"VERBOSE":              10,
+		"TRACE":                20,
+		"DEBUG":                30,
+		"INFO":                 40,
+		"NOTICE":               50,
+		"WARNING":              60,
+		"ERROR":                70,
+		"CRITICAL":             80,
+		"FATAL":                90,
+	}
+)
+
+func (x ArtifactLine_Severity) Enum() *ArtifactLine_Severity {
+	p := new(ArtifactLine_Severity)
+	*p = x
+	return p
+}
+
+func (x ArtifactLine_Severity) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ArtifactLine_Severity) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_enumTypes[0].Descriptor()
+}
+
+func (ArtifactLine_Severity) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_enumTypes[0]
+}
+
+func (x ArtifactLine_Severity) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ArtifactLine_Severity.Descriptor instead.
+func (ArtifactLine_Severity) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDescGZIP(), []int{1, 0}
+}
+
 // A file produced during a build/test, typically a test artifact.
 // The parent resource is either a TestResult or an Invocation.
 //
 // An invocation-level artifact might be related to tests, or it might not, for
 // example it may be used to store build step logs when streaming support is
 // added.
-// Next id: 10.
+// Next id: 11.
 type Artifact struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -191,6 +261,84 @@ func (x *Artifact) GetTestStatus() TestStatus {
 	return TestStatus_STATUS_UNSPECIFIED
 }
 
+type ArtifactLine struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The position of this line in the artifact.
+	// The numbers start from 1.
+	Number int64 `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
+	// The extracted timestamp of the log line. Extraction is best effort only.
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// The extracted severity of the line. Extraction is best effort only.
+	Severity ArtifactLine_Severity `protobuf:"varint,3,opt,name=severity,proto3,enum=luci.resultdb.v1.ArtifactLine_Severity" json:"severity,omitempty"`
+	// The content of the line as it is found in the log file.
+	// Lines are split on the \n character and the character is included in the line content that immediately precedes it.
+	// Empty lines will be included in the response.
+	Content []byte `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+}
+
+func (x *ArtifactLine) Reset() {
+	*x = ArtifactLine{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ArtifactLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ArtifactLine) ProtoMessage() {}
+
+func (x *ArtifactLine) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ArtifactLine.ProtoReflect.Descriptor instead.
+func (*ArtifactLine) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ArtifactLine) GetNumber() int64 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *ArtifactLine) GetTimestamp() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Timestamp
+	}
+	return nil
+}
+
+func (x *ArtifactLine) GetSeverity() ArtifactLine_Severity {
+	if x != nil {
+		return x.Severity
+	}
+	return ArtifactLine_SEVERITY_UNSPECIFIED
+}
+
+func (x *ArtifactLine) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_resultdb_proto_v1_artifact_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDesc = []byte{
@@ -228,11 +376,32 @@ var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDesc = []byte{
 	0x0a, 0x0b, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x09, 0x20,
 	0x01, 0x28, 0x0e, 0x32, 0x1c, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c,
 	0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x52, 0x0a, 0x74, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0x31, 0x5a,
-	0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
-	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x52, 0x0a, 0x74, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0xd0, 0x02,
+	0x0a, 0x0c, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x4c, 0x69, 0x6e, 0x65, 0x12, 0x16,
+	0x0a, 0x06, 0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06,
+	0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x12, 0x38, 0x0a, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65,
+	0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
+	0x12, 0x43, 0x0a, 0x08, 0x73, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0e, 0x32, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x4c, 0x69,
+	0x6e, 0x65, 0x2e, 0x53, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79, 0x52, 0x08, 0x73, 0x65, 0x76,
+	0x65, 0x72, 0x69, 0x74, 0x79, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22,
+	0x8e, 0x01, 0x0a, 0x08, 0x53, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79, 0x12, 0x18, 0x0a, 0x14,
+	0x53, 0x45, 0x56, 0x45, 0x52, 0x49, 0x54, 0x59, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49,
+	0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x56, 0x45, 0x52, 0x42, 0x4f, 0x53,
+	0x45, 0x10, 0x0a, 0x12, 0x09, 0x0a, 0x05, 0x54, 0x52, 0x41, 0x43, 0x45, 0x10, 0x14, 0x12, 0x09,
+	0x0a, 0x05, 0x44, 0x45, 0x42, 0x55, 0x47, 0x10, 0x1e, 0x12, 0x08, 0x0a, 0x04, 0x49, 0x4e, 0x46,
+	0x4f, 0x10, 0x28, 0x12, 0x0a, 0x0a, 0x06, 0x4e, 0x4f, 0x54, 0x49, 0x43, 0x45, 0x10, 0x32, 0x12,
+	0x0b, 0x0a, 0x07, 0x57, 0x41, 0x52, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x3c, 0x12, 0x09, 0x0a, 0x05,
+	0x45, 0x52, 0x52, 0x4f, 0x52, 0x10, 0x46, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x52, 0x49, 0x54, 0x49,
+	0x43, 0x41, 0x4c, 0x10, 0x50, 0x12, 0x09, 0x0a, 0x05, 0x46, 0x41, 0x54, 0x41, 0x4c, 0x10, 0x5a,
+	0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e,
+	0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64,
+	0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -247,20 +416,25 @@ func file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDescGZIP() []
 	return file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_goTypes = []interface{}{
-	(*Artifact)(nil),              // 0: luci.resultdb.v1.Artifact
-	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
-	(TestStatus)(0),               // 2: luci.resultdb.v1.TestStatus
+	(ArtifactLine_Severity)(0),    // 0: luci.resultdb.v1.ArtifactLine.Severity
+	(*Artifact)(nil),              // 1: luci.resultdb.v1.Artifact
+	(*ArtifactLine)(nil),          // 2: luci.resultdb.v1.ArtifactLine
+	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(TestStatus)(0),               // 4: luci.resultdb.v1.TestStatus
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_depIdxs = []int32{
-	1, // 0: luci.resultdb.v1.Artifact.fetch_url_expiration:type_name -> google.protobuf.Timestamp
-	2, // 1: luci.resultdb.v1.Artifact.test_status:type_name -> luci.resultdb.v1.TestStatus
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 0: luci.resultdb.v1.Artifact.fetch_url_expiration:type_name -> google.protobuf.Timestamp
+	4, // 1: luci.resultdb.v1.Artifact.test_status:type_name -> luci.resultdb.v1.TestStatus
+	3, // 2: luci.resultdb.v1.ArtifactLine.timestamp:type_name -> google.protobuf.Timestamp
+	0, // 3: luci.resultdb.v1.ArtifactLine.severity:type_name -> luci.resultdb.v1.ArtifactLine.Severity
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_init() }
@@ -282,19 +456,32 @@ func file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ArtifactLine); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   1,
+			NumEnums:      1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_depIdxs,
+		EnumInfos:         file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_resultdb_proto_v1_artifact_proto = out.File

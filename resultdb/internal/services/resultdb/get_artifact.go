@@ -29,20 +29,9 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/rdbperms"
 )
-
-func verifyReadArtifactPermission(ctx context.Context, name string) error {
-	invIDStr, _, _, _, inputErr := pbutil.ParseArtifactName(name)
-	if inputErr != nil {
-		return appstatus.BadRequest(inputErr)
-	}
-
-	return permissions.VerifyInvocation(ctx, invocations.ID(invIDStr), rdbperms.PermGetArtifact)
-}
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
 	if err := pbutil.ValidateArtifactName(req.Name); err != nil {
@@ -57,7 +46,7 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	if err := verifyReadArtifactPermission(ctx, in.Name); err != nil {
+	if err := artifacts.VerifyReadArtifactPermission(ctx, in.Name); err != nil {
 		return nil, err
 	}
 
@@ -65,10 +54,12 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 		return nil, appstatus.BadRequest(err)
 	}
 
-	art, err := artifacts.Read(ctx, in.Name)
+	artData, err := artifacts.Read(ctx, in.Name)
 	if err != nil {
 		return nil, err
 	}
+
+	art := artData.Artifact
 
 	invIDStr, _, _, _, _ := pbutil.ParseArtifactName(in.Name)
 	realm, err := invocations.ReadRealm(ctx, invocations.ID(invIDStr))
@@ -126,7 +117,7 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, queriedRealms []
 			a.FetchUrl = url
 			a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
 		} else {
-			url, exp, err := s.generateArtifactURL(ctx, requestHost, a.Name)
+			url, exp, err := s.contentServer.GenerateSignedURL(ctx, requestHost, a.Name)
 			if err != nil {
 				return err
 			}

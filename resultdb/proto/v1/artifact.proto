@@ -28,7 +28,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // An invocation-level artifact might be related to tests, or it might not, for
 // example it may be used to store build step logs when streaming support is
 // added.
-// Next id: 10.
+// Next id: 11.
 message Artifact {
   // Can be used to refer to this artifact.
   // Format:
@@ -83,4 +83,34 @@ message Artifact {
   // are created in different channels from result sink.
   // Having the test status here allows setting the correct status of artifact in BigQuery.
   TestStatus test_status = 9;
+}
+
+message ArtifactLine {
+  enum Severity {
+    SEVERITY_UNSPECIFIED = 0;
+    VERBOSE = 10;
+    TRACE = 20;
+    DEBUG = 30;
+    INFO = 40;
+    NOTICE = 50;
+    WARNING = 60;
+    ERROR = 70;
+    CRITICAL = 80;
+    FATAL = 90;
+  }
+
+  // The position of this line in the artifact.
+  // The numbers start from 1.
+  int64 number = 1;
+
+  // The extracted timestamp of the log line. Extraction is best effort only.
+  google.protobuf.Timestamp timestamp = 2;
+
+  // The extracted severity of the line. Extraction is best effort only.
+  Severity severity = 3;
+
+  // The content of the line as it is found in the log file.
+  // Lines are split on the \n character and the character is included in the line content that immediately precedes it.
+  // Empty lines will be included in the response.
+  bytes content = 4;
 }

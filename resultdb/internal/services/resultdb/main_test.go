@@ -17,11 +17,12 @@ package resultdb
 import (
 	"context"
 	"testing"
-	"time"
 
-	"go.chromium.org/luci/common/clock"
+	"google.golang.org/genproto/googleapis/bytestream"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
+	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -31,11 +32,25 @@ func TestMain(m *testing.M) {
 }
 
 func newTestResultDBService() pb.ResultDBServer {
+	return newTestResultDBServiceWithArtifactContent("contents")
+}
+
+func newTestResultDBServiceWithArtifactContent(artifactContent string) pb.ResultDBServer {
+	casReader := &artifactcontenttest.FakeCASReader{
+		Res: []*bytestream.ReadResponse{
+			{Data: []byte(artifactContent)},
+		},
+	}
 	svr := &resultDBServer{
-		generateArtifactURL: func(ctx context.Context, requestHost, artifactName string) (u string, expiration time.Time, err error) {
-			u = "https://signed-url.example.com/" + artifactName
-			expiration = clock.Now(ctx).UTC().Add(time.Hour)
-			return
+		contentServer: &artifactcontent.Server{
+			HostnameProvider: func(string) string {
+				return "signed-url.example.com"
+			},
+			RBECASInstanceName: "projects/example/instances/artifacts",
+			ReadCASBlob: func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
+				casReader.ReadLimit = int(req.ReadLimit)
+				return casReader, nil
+			},
 		},
 	}
 	return &pb.DecoratedResultDB{
