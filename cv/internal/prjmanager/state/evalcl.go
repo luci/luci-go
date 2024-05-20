@@ -289,6 +289,12 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		}
 	}
 
+	// cl.Snapshot.IsSubmittable() returns an error if it's not a Gerrit CL.
+	// If so, log the error, and mark the PCL as not submittable.
+	var err error
+	if pcl.Submittable, err = cl.Snapshot.IsSubmittable(); err != nil {
+		logging.Errorf(ctx, "prjmanager.State.makePCL: IsSubmittable failed with %s", err)
+	}
 	ci := cl.Snapshot.GetGerrit().GetInfo()
 	if ci.GetStatus() == gerritpb.ChangeStatus_MERGED {
 		pcl.Submitted = true

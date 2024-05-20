@@ -193,6 +193,8 @@ message PCL {
   // a dep of another CL or as a member of an incomplete Run (though the other
   // Run will probably finish soon).
   bool submitted = 13;
+  // Submittable means the CL satisfies all the submission requirements.
+  bool submittable = 19;
 
   // Deprecated in favor of purge_reasons.
   repeated cv.internal.changelist.CLError errors = 15 [deprecated=true];

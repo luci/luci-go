@@ -535,6 +535,8 @@ func (m *PCL) validate(all bool) error {
 
 	// no validation rules for Submitted
 
+	// no validation rules for Submittable
+
 	for idx, item := range m.GetErrors() {
 		_, _ = idx, item
 

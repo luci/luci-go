@@ -448,6 +448,11 @@ func TestUpdateConfig(t *testing.T) {
 					expected.Submitted = true
 					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
 				})
+				Convey("Submittable if the snapshot is", func() {
+					cl101.Snapshot.GetGerrit().GetInfo().Submittable = true
+					expected.Submittable = true
+					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
+				})
 			})
 
 			Convey("outdated snapshot requires waiting", func() {
