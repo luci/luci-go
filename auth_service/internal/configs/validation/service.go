@@ -68,9 +68,9 @@ func validateAllowlistCfg(cfg *configspb.IPAllowlistConfig) error {
 	for _, a := range cfg.GetIpAllowlists() {
 		switch name := a.GetName(); {
 		case !ipAllowlistNameRE.MatchString(name):
-			return errors.New(fmt.Sprintf("invalid ip allowlist name %s", name))
+			return errors.New(fmt.Sprintf("invalid IP allowlist name %s", name))
 		case allowlists.Has(name):
-			return errors.New(fmt.Sprintf("ip allowlist is defined twice %s", name))
+			return errors.New(fmt.Sprintf("IP allowlist is defined twice %s", name))
 		default:
 			allowlists.Add(name)
 		}
@@ -80,14 +80,8 @@ func validateAllowlistCfg(cfg *configspb.IPAllowlistConfig) error {
 		// of an IP.
 		// e.g. "192.0.0.1", "127.0.0.1/23"
 		for _, subnet := range a.Subnets {
-			if strings.Contains(subnet, "/") {
-				if _, _, err := net.ParseCIDR(subnet); err != nil {
-					return err
-				}
-			} else {
-				if ip := net.ParseIP(subnet); ip == nil {
-					return errors.New(fmt.Sprintf("unable to parse ip for subnet: %s", subnet))
-				}
+			if _, err := normalizeSubnet(subnet); err != nil {
+				return err
 			}
 		}
 	}
@@ -442,12 +436,20 @@ func getSubnetsRecursive(al *configspb.IPAllowlistConfig_IPAllowlist, visiting [
 	}
 
 	visiting = append(visiting, alName)
-	// TODO (b/341226615): "normalize" the subnet values.
-	subnets := stringset.NewFromSlice(al.GetSubnets()...)
+	rawSubnets := al.GetSubnets()
+	subnets := stringset.New(len(rawSubnets))
+	for _, rawSubnet := range rawSubnets {
+		subnet, err := normalizeSubnet(rawSubnet)
+		if err != nil {
+			// Ignore invalid subnets.
+			continue
+		}
+		subnets.Add(subnet)
+	}
 	for _, inc := range al.GetIncludes() {
 		val, ok := allowlistsByName[inc]
 		if !ok {
-			return nil, errors.New(fmt.Sprintf("IP Allowlist contains unknown allowlist %s", inc))
+			return nil, errors.New(fmt.Sprintf("IP allowlist contains unknown allowlist %s", inc))
 		}
 
 		resolved, err := getSubnetsRecursive(val, visiting, allowlistsByName, subnetMap)
@@ -457,6 +459,37 @@ func getSubnetsRecursive(al *configspb.IPAllowlistConfig_IPAllowlist, visiting [
 		subnets.AddAll(resolved)
 	}
 	return subnets.ToSortedSlice(), nil
+}
+
+// normalizeSubnet attempts to normalize the given raw subnet string.
+// Valid subnets are either in CIDR format or just a textual representation of
+// an IP, e.g. "192.0.0.1", "127.0.0.1/23", "123:a:b:c::4567".
+//
+// Returns:
+// - the normalized subnet as a string; or
+// - an error if the raw subnet string is invalid.
+func normalizeSubnet(raw string) (string, error) {
+	if strings.Contains(raw, "/") {
+		// Must be in CIDR format.
+		_, ipNetwork, err := net.ParseCIDR(raw)
+		if err != nil {
+			return "", errors.Annotate(err, "invalid subnet string").Err()
+		}
+		return ipNetwork.String(), nil
+	}
+
+	// Single IP, but could be either IPv4 or IPv6.
+	ip := net.ParseIP(raw)
+	if ip == nil {
+		return "", errors.New(fmt.Sprintf("unable to parse IP for subnet: %s", raw))
+	}
+
+	// The number of mask bits depends on whether the IP is IPv4 or IPv6.
+	maskBits := 128
+	if ip.To4() != nil {
+		maskBits = 32
+	}
+	return fmt.Sprintf("%s/%d", ip.String(), maskBits), nil
 }
 
 func contains(s []string, val string) bool {

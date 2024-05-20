@@ -80,7 +80,7 @@ func TestAllowlistConfigValidation(t *testing.T) {
 				}
 			`
 			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "invalid ip allowlist name")
+			So(vctx.Finalize(), ShouldErrLike, "invalid IP allowlist name")
 		})
 
 		Convey("Catches duplicate allowlist bug", func() {
@@ -97,7 +97,7 @@ func TestAllowlistConfigValidation(t *testing.T) {
 				}
 			`
 			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "ip allowlist is defined twice")
+			So(vctx.Finalize(), ShouldErrLike, "IP allowlist is defined twice")
 		})
 
 		Convey("Bad CIDR format", func() {
@@ -119,7 +119,7 @@ func TestAllowlistConfigValidation(t *testing.T) {
 				}
 			`
 			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "unable to parse ip for subnet")
+			So(vctx.Finalize(), ShouldErrLike, "unable to parse IP for subnet")
 		})
 
 		Convey("Bad Identity format", func() {
@@ -825,6 +825,46 @@ func TestPermissionsConfigValidation(t *testing.T) {
 				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
+		})
+	})
+}
+
+func TestNormalizeSubnet(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test normalizeSubnet works", t, func() {
+		Convey("Invalid IP", func() {
+			invalidValues := []string{
+				"not a subnet",
+				"still not/",
+				"123.4.05.6",   // check error returned for leading zero
+				"123.4.5.6/33", // IPv4 is 32 bits
+				"123::/129",    // IPv6 is 128 bits
+			}
+			for _, value := range invalidValues {
+				_, err := normalizeSubnet(value)
+				So(err, ShouldNotBeNil)
+			}
+		})
+		Convey("IPv4 CIDR", func() {
+			subnet, err := normalizeSubnet("123.4.5.64/26")
+			So(err, ShouldBeNil)
+			So(subnet, ShouldEqual, "123.4.5.64/26")
+		})
+		Convey("IPv6 CIDR", func() {
+			subnet, err := normalizeSubnet("123:0004:0050:0:0000:0:0:abcd/120")
+			So(err, ShouldBeNil)
+			So(subnet, ShouldEqual, "123:4:50::ab00/120")
+		})
+		Convey("Single IPv4", func() {
+			subnet, err := normalizeSubnet("123.4.5.6")
+			So(err, ShouldBeNil)
+			So(subnet, ShouldEqual, "123.4.5.6/32")
+		})
+		Convey("Single IPv6", func() {
+			subnet, err := normalizeSubnet("123:0004:0050:0:0000:0:0:abcd")
+			So(err, ShouldBeNil)
+			So(subnet, ShouldEqual, "123:4:50::abcd/128")
 		})
 	})
 }
