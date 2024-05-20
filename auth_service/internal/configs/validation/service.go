@@ -442,6 +442,7 @@ func getSubnetsRecursive(al *configspb.IPAllowlistConfig_IPAllowlist, visiting [
 	}
 
 	visiting = append(visiting, alName)
+	// TODO (b/341226615): "normalize" the subnet values.
 	subnets := stringset.NewFromSlice(al.GetSubnets()...)
 	for _, inc := range al.GetIncludes() {
 		val, ok := allowlistsByName[inc]

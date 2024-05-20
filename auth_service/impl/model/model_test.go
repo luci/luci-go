@@ -1182,36 +1182,8 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			"test-allowlist-2": {"0.0.0.0/24", "127.0.0.1/20"},
 		}
 		baseAllowlistSlice := []*AuthIPAllowlist{
-			{
-				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
-					ModifiedTS:    testCreatedTS,
-					ModifiedBy:    "user:someone@example.com",
-					AuthDBRev:     1,
-					AuthDBPrevRev: 1337,
-				},
-				Kind:        "AuthIPWhitelist",
-				ID:          "test-allowlist-1",
-				Parent:      RootKey(ctx),
-				Subnets:     []string{"127.0.0.1/10", "127.0.0.1/20"},
-				Description: fmt.Sprintf("This is a test AuthIPAllowlist %q.", "test-allowlist-1"),
-				CreatedTS:   testCreatedTS,
-				CreatedBy:   "user:test-creator@example.com",
-			},
-			{
-				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
-					ModifiedTS:    testCreatedTS,
-					ModifiedBy:    "user:someone@example.com",
-					AuthDBRev:     1,
-					AuthDBPrevRev: 1337,
-				},
-				Kind:        "AuthIPWhitelist",
-				ID:          "test-allowlist-2",
-				Parent:      RootKey(ctx),
-				Subnets:     []string{"0.0.0.0/24", "127.0.0.1/20"},
-				Description: fmt.Sprintf("This is a test AuthIPAllowlist %q.", "test-allowlist-2"),
-				CreatedTS:   testCreatedTS,
-				CreatedBy:   "user:test-creator@example.com",
-			},
+			testIPAllowlist(ctx, "test-allowlist-1", nil),
+			testIPAllowlist(ctx, "test-allowlist-2", []string{"0.0.0.0/24", "127.0.0.1/20"}),
 		}
 
 		allowlistToCreate := &AuthIPAllowlist{
@@ -1230,6 +1202,15 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			CreatedBy:   "user:someone@example.com",
 		}
 
+		Convey("no-op for identical subnet map", func() {
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			allowlists, err := GetAllAuthIPAllowlists(ctx)
+			So(err, ShouldBeNil)
+			So(allowlists, ShouldResemble, baseAllowlistSlice)
+			So(taskScheduler.Tasks(), ShouldBeEmpty)
+
+		})
+
 		Convey("Create allowlist entity", func() {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
 			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
@@ -1243,6 +1224,12 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
 			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
+			baseAllowlistSlice[0].AuthVersionedEntityMixin = AuthVersionedEntityMixin{
+				ModifiedTS:    testCreatedTS,
+				ModifiedBy:    "user:someone@example.com",
+				AuthDBRev:     1,
+				AuthDBPrevRev: 1337,
+			}
 			baseAllowlistSlice[0].Subnets = []string{"122.22.44.66"}
 			So(err, ShouldBeNil)
 			So(allowlists, ShouldResemble, baseAllowlistSlice)
@@ -1264,6 +1251,12 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			allowlist0Copy := *baseAllowlistSlice[0]
+			allowlist0Copy.AuthVersionedEntityMixin = AuthVersionedEntityMixin{
+				ModifiedTS:    testCreatedTS,
+				ModifiedBy:    "user:someone@example.com",
+				AuthDBRev:     1,
+				AuthDBPrevRev: 1337,
+			}
 			allowlist0Copy.Subnets = baseSubnetMap["test-allowlist-1"]
 			expectedAllowlists := []*AuthIPAllowlist{&allowlist0Copy, allowlistToCreate}
 			So(err, ShouldBeNil)

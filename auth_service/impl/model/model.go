@@ -1253,39 +1253,53 @@ func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string,
 			entity.CreatedTS = createdTS
 
 			if dryRun {
-				logging.Infof(ctx, "(dry run) creating:\n%+v", entity)
-			} else {
-				if err := commitEntity(entity, createdTS, creator, false); err != nil {
-					return err
-				}
+				logging.Infof(ctx, "(dry run) creating IPAllowlist %s", id)
+				continue
+			}
+
+			if err := commitEntity(entity, createdTS, creator, false); err != nil {
+				return err
 			}
 		}
 
 		toUpdate := oldAllowlistSet.Intersect(updatedAllowlistSet)
 		for id := range toUpdate {
-			if len(oldAllowlistMap[id].Subnets) == len(subnetMap[id]) && oldAllowlistSet.HasAll(subnetMap[id]...) {
+			entity := oldAllowlistMap[id]
+			oldSubnets := entity.Subnets
+			newSubnets := subnetMap[id]
+
+			// Do a simple slice comparison. It is assumed the given subnetMap
+			// slice values have been normalized and ordered already.
+			if slices.Equal(oldSubnets, newSubnets) {
+				// No value change, so skip update.
 				continue
 			}
-			entity := oldAllowlistMap[id]
-			entity.Subnets = subnetMap[id]
+
+			logging.Debugf(ctx,
+				"Identified change in subnets for IPAllowlist %s:\n(old) %v\n(new) %v",
+				id, oldSubnets, newSubnets,
+			)
 
 			if dryRun {
-				logging.Infof(ctx, "(dry run) updating:\n%+v", entity)
-			} else {
-				if err := commitEntity(entity, now, currentIdentity, false); err != nil {
-					return err
-				}
+				logging.Infof(ctx, "(dry run) updating IPAllowlist %s", id)
+				continue
+			}
+
+			entity.Subnets = newSubnets
+			if err := commitEntity(entity, now, currentIdentity, false); err != nil {
+				return err
 			}
 		}
 
 		toDelete := oldAllowlistSet.Difference(updatedAllowlistSet)
 		for id := range toDelete {
 			if dryRun {
-				logging.Infof(ctx, "(dry run) deleting:\n%v", id)
-			} else {
-				if err := commitEntity(oldAllowlistMap[id], now, currentIdentity, true); err != nil {
-					return err
-				}
+				logging.Infof(ctx, "(dry run) deleting IPAllowlist %s", id)
+				continue
+			}
+
+			if err := commitEntity(oldAllowlistMap[id], now, currentIdentity, true); err != nil {
+				return err
 			}
 		}
 
