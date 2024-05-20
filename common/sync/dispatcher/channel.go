@@ -84,8 +84,6 @@ func (c Channel[T]) Consume(ctx context.Context, source <-chan T) error {
 
 // Process consumes a standard channel and blocks until all the items are consumed.
 // It accepts the same arguments as NewChannel.
-//
-// This function is named by analogy with joining a thread in other languages.
 func Process[T any](ctx context.Context, source <-chan T, options *Options[T], consumer SendFn[T]) error {
 	sink, err := NewChannel(ctx, options, consumer)
 	if err != nil {
