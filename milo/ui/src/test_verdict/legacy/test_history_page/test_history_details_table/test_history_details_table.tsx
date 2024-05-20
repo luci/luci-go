@@ -14,6 +14,10 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
+import '@/generic_libs/components/dot_spinner';
+import '@/common/components/column_header';
+import './test_history_details_entry';
+
 import { Interpolation, Theme } from '@emotion/react';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
@@ -22,9 +26,6 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ForwardedRef, forwardRef } from 'react';
 
-import '@/generic_libs/components/dot_spinner';
-import '@/common/components/column_header';
-import './test_history_details_entry';
 import {
   createTVPropGetter,
   getPropKeyLabel,
@@ -32,6 +33,7 @@ import {
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { PortalScope } from '@/generic_libs/components/lit_react_portal';
 import { reportErrorAsync } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { assertNonNullable } from '@/generic_libs/tools/utils';
@@ -323,7 +325,9 @@ export const DetailsTable = forwardRef(
     ref: ForwardedRef<TestHistoryDetailsTableElement>,
   ) => {
     return (
-      <milo-th-details-table {...props} ref={ref} class={props.className} />
+      <PortalScope>
+        <milo-th-details-table {...props} ref={ref} class={props.className} />
+      </PortalScope>
     );
   },
 );

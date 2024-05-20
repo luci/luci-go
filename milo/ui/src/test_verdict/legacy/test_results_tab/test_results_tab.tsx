@@ -13,15 +13,16 @@
 // limitations under the License.
 
 import '@material/mwc-button';
-import { css, html } from 'lit';
-import { customElement } from 'lit/decorators.js';
-import { makeObservable, observable, reaction } from 'mobx';
-
 import '@/generic_libs/components/dot_spinner';
 import '@/generic_libs/components/hotkey';
 import './test_variants_table/test_variants_table';
 import './test_variants_table/config_widget';
 import './search_box';
+
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { makeObservable, observable, reaction } from 'mobx';
+
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { consumeStore, StoreInstance } from '@/common/store';
 import {
@@ -30,6 +31,7 @@ import {
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { PortalScope } from '@/generic_libs/components/lit_react_portal';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import {
   errorHandler,
@@ -245,7 +247,11 @@ declare global {
 }
 
 export function TestResultsTab() {
-  return <milo-test-results-tab />;
+  return (
+    <PortalScope>
+      <milo-test-results-tab />
+    </PortalScope>
+  );
 }
 
 export function Component() {

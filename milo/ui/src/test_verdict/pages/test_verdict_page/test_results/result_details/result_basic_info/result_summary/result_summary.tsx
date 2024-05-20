@@ -13,13 +13,10 @@
 // limitations under the License.
 
 import Grid from '@mui/material/Grid';
-import { useLayoutEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { TextArtifactEvent } from '@/common/components/text_artifact';
-import { ON_TEST_RESULT_DATA_READY } from '@/common/constants/event';
-
-import '@/common/components/text_artifact';
+import { ArtifactTagScope } from '@/test_verdict/components/artifact_tags';
 
 interface Props {
   summaryHtml: string;
@@ -27,55 +24,29 @@ interface Props {
   invId: string;
 }
 
-export function ResultSummary({ summaryHtml, resultName, invId }: Props) {
+export function ResultSummary({ summaryHtml, resultName }: Props) {
   const mainRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    function handleGetTextArtifactData(e: Event) {
-      (e as CustomEvent<TextArtifactEvent>).detail.setData(
-        `invocations/${invId}`,
-        resultName,
-      );
-    }
-
-    if (mainRef.current) {
-      const elem = mainRef.current;
-      elem.addEventListener(
-        ON_TEST_RESULT_DATA_READY,
-        handleGetTextArtifactData,
-      );
-
-      return () => {
-        elem.removeEventListener(
-          ON_TEST_RESULT_DATA_READY,
-          handleGetTextArtifactData,
-        );
-      };
-    }
-    return;
-  }, [invId, resultName]);
 
   return (
     <Grid item ref={mainRef}>
-      <SanitizedHtml
-        // Key is required to force a remount of the text-artifact element
-        // to force refetching for the new result data.
-        key={resultName}
-        sx={{
-          backgroundColor: 'var(--block-background-color)',
-          paddingX: 1,
-          maxHeight: '54vh',
-          overflowX: 'auto',
-          whiteSpace: 'pre-wrap',
-          '& pre': {
-            margin: 0,
-            fontSize: '12px',
+      <ArtifactTagScope resultName={resultName}>
+        <SanitizedHtml
+          sx={{
+            backgroundColor: 'var(--block-background-color)',
+            paddingX: 1,
+            maxHeight: '54vh',
+            overflowX: 'auto',
             whiteSpace: 'pre-wrap',
-            overflowWrap: 'break-word',
-          },
-        }}
-        html={summaryHtml}
-      />
+            '& pre': {
+              margin: 0,
+              fontSize: '12px',
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'break-word',
+            },
+          }}
+          html={summaryHtml}
+        />
+      </ArtifactTagScope>
     </Grid>
   );
 }
