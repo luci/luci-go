@@ -57,7 +57,15 @@ message ActionFilesCopy {
 
   // Source defines the source file we want to copied from.
   message Source {
+    // Mode is unix file mode.
     uint32 mode = 1;
+
+    // Win_attrs is windows file attributes.
+    uint32 win_attrs = 7;
+
+    // Version is the version string for the file.
+    string version = 6;
+
     oneof content {
       // Raw contains the literal content of the file.
       bytes raw = 2;
@@ -72,8 +80,6 @@ message ActionFilesCopy {
     message Local {
       // Path is the local filesystem absolute path to the file.
       string path = 1;
-      // Version is the version string for the file.
-      string version = 2;
       // Follow_symlinks, if set to true, will follow all the symlinks in the
       // directories while copying.
       bool follow_symlinks = 3;

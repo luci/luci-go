@@ -15,6 +15,7 @@
 package generators
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"fmt"
@@ -23,8 +24,11 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"go.chromium.org/luci/cipkg/core"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 )
 
 type ImportTarget struct {
@@ -37,6 +41,9 @@ type ImportTarget struct {
 	// Tf true, the import target will be considered different if source path
 	// changed. Otherwise only Version will be take into account.
 	SourcePathDependent bool
+
+	GenerateBatShim bool // Generate bat shim instead of symlink source file.
+	MinGWSymlink    bool // Create MinGW's symlink instead of os symlink.
 }
 
 // ImportTargets is used to import file/directory from host environment. The
@@ -90,12 +97,35 @@ func (i *ImportTargets) Generate(ctx context.Context, plats Platforms) (*core.Ac
 			ver = fmt.Sprintf("%s:%s", ver, v.Source)
 		}
 
-		// By default, create a symlink for the target.
-		files[dst] = &core.ActionFilesCopy_Source{
-			Content: &core.ActionFilesCopy_Source_Local_{
-				Local: &core.ActionFilesCopy_Source_Local{Path: src, Version: ver, FollowSymlinks: v.FollowSymlinks},
-			},
-			Mode: uint32(m),
+		switch {
+		case v.GenerateBatShim:
+			batDst := strings.TrimSuffix(dst, ".exe") + ".bat"
+			files[batDst] = &core.ActionFilesCopy_Source{
+				Content: &core.ActionFilesCopy_Source_Raw{Raw: []byte(
+					fmt.Sprintf("@%s %%*", src),
+				)},
+				Mode: 0o666,
+			}
+		case v.MinGWSymlink:
+			buf := bytes.NewBufferString("!<symlink>")
+			enc := unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewEncoder()
+			if _, err := transform.NewWriter(buf, enc).Write([]byte(src + "\x00")); err != nil {
+				return nil, err
+			}
+
+			files[dst] = &core.ActionFilesCopy_Source{
+				Content:  &core.ActionFilesCopy_Source_Raw{Raw: buf.Bytes()},
+				Mode:     0o666,
+				WinAttrs: 0x4, // FILE_ATTRIBUTE_SYSTEM
+			}
+		default:
+			files[dst] = &core.ActionFilesCopy_Source{
+				Content: &core.ActionFilesCopy_Source_Local_{
+					Local: &core.ActionFilesCopy_Source_Local{Path: src, FollowSymlinks: v.FollowSymlinks},
+				},
+				Mode:    uint32(m),
+				Version: ver,
+			}
 		}
 	}
 
@@ -123,9 +153,8 @@ func (i *ImportTargets) Generate(ctx context.Context, plats Platforms) (*core.Ac
 }
 
 // 1. If any permission bit set, return mode as it is.
-// 2. If mode is empty, use ModeSymlink by default.
-// 3. Use 0o777 as default permission for directories.
-// 4. Use 0o666 as default permission for file.
+// 2. Use 0o777 as default permission for directories.
+// 3. Use 0o666 as default permission for file.
 func getMode(i ImportTarget) fs.FileMode {
 	if i.Mode.Perm() != 0 || i.Mode.Type() == fs.ModeSymlink {
 		return i.Mode

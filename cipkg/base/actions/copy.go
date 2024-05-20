@@ -20,7 +20,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -46,7 +45,7 @@ func ActionFilesCopyTransformer(a *core.ActionFilesCopy, deps []Package) (*core.
 	// changed. Recalculate the hash based on the assumption.
 	m := proto.Clone(a).(*core.ActionFilesCopy)
 	for _, f := range m.Files {
-		if l := f.GetLocal(); l.GetVersion() != "" && fs.FileMode(f.Mode).Type() != fs.ModeSymlink {
+		if l := f.GetLocal(); f.GetVersion() != "" && fs.FileMode(f.Mode).Type() != fs.ModeSymlink {
 			l.Path = ""
 		}
 	}
@@ -69,6 +68,24 @@ var defaultFilesCopyExecutor = newFilesCopyExecutor()
 // re-exec executor.
 func RegisterEmbed(ref string, e embed.FS) {
 	defaultFilesCopyExecutor.StoreEmbed(ref, e)
+}
+
+type fileInfo struct {
+	Mode     fs.FileMode
+	WinAttrs uint32
+}
+
+func fileInfoFromSrc(src *core.ActionFilesCopy_Source) fileInfo {
+	return fileInfo{
+		Mode:     fs.FileMode(src.Mode),
+		WinAttrs: src.WinAttrs,
+	}
+}
+
+func fileInfoFromFS(fi fs.FileInfo) fileInfo {
+	return fileInfo{
+		Mode: fi.Mode(),
+	}
 }
 
 // FilesCopyExecutor is the default executor for core.ActionFilesCopy.
@@ -113,54 +130,54 @@ func (f *filesCopyExecutor) Execute(ctx context.Context, a *core.ActionFilesCopy
 		if err := os.MkdirAll(filepath.Dir(dst), fs.ModePerm); err != nil {
 			return fmt.Errorf("failed to create directory: %s: %w", path.Base(dst), err)
 		}
-		m := fs.FileMode(srcFile.Mode)
+		fi := fileInfoFromSrc(srcFile)
 
 		switch c := srcFile.Content.(type) {
 		case *core.ActionFilesCopy_Source_Raw:
-			if err := copyRaw(c.Raw, dst, m); err != nil {
+			if err := copyRaw(c.Raw, dst, fi); err != nil {
 				return err
 			}
 		case *core.ActionFilesCopy_Source_Local_:
-			if err := copyLocal(c.Local, dst, m); err != nil {
+			if err := copyLocal(c.Local, dst, fi); err != nil {
 				return err
 			}
 		case *core.ActionFilesCopy_Source_Embed_:
-			if err := f.copyEmbed(c.Embed, dst, m); err != nil {
+			if err := f.copyEmbed(c.Embed, dst, fi); err != nil {
 				return err
 			}
 		case *core.ActionFilesCopy_Source_Output_:
-			if err := copyOutput(c.Output, environ.FromCtx(ctx), dst, m); err != nil {
+			if err := copyOutput(c.Output, environ.FromCtx(ctx), dst, fi); err != nil {
 				return err
 			}
 		default:
-			return fmt.Errorf("unknown file type for %s: %s", dst, m.Type())
+			return fmt.Errorf("unknown file type for %s: %s", dst, fi.Mode.Type())
 		}
 	}
 	return nil
 }
 
-func copyRaw(raw []byte, dst string, m fs.FileMode) error {
-	switch m.Type() {
+func copyRaw(raw []byte, dst string, fi fileInfo) error {
+	switch fi.Mode.Type() {
 	case fs.ModeSymlink:
 		return fmt.Errorf("symlink is not supported for the source type")
 	case fs.ModeDir:
-		if err := os.MkdirAll(dst, m); err != nil {
+		if err := os.MkdirAll(dst, fi.Mode); err != nil {
 			return fmt.Errorf("failed to create directory: %s: %w", path.Base(dst), err)
 		}
 		return nil
 	case 0: // Regular File
-		if err := createFile(dst, m, bytes.NewReader(raw)); err != nil {
+		if err := createFile(dst, fi, bytes.NewReader(raw)); err != nil {
 			return fmt.Errorf("failed to create file: %s: %w", dst, err)
 		}
 		return nil
 	default:
-		return fmt.Errorf("unknown file type for %s: %s", dst, m.Type())
+		return fmt.Errorf("unknown file type for %s: %s", dst, fi.Mode.Type())
 	}
 }
 
-func copyLocal(s *core.ActionFilesCopy_Source_Local, dst string, m fs.FileMode) error {
+func copyLocal(s *core.ActionFilesCopy_Source_Local, dst string, fi fileInfo) error {
 	src := s.Path
-	switch m.Type() {
+	switch fi.Mode.Type() {
 	case fs.ModeSymlink:
 		if s.FollowSymlinks {
 			return fmt.Errorf("invalid file spec: followSymlinks can't be used with symlink dst: %s", dst)
@@ -177,22 +194,22 @@ func copyLocal(s *core.ActionFilesCopy_Source_Local, dst string, m fs.FileMode) 
 			return fmt.Errorf("failed to open source file for %s: %s: %w", dst, src, err)
 		}
 		defer f.Close()
-		if err := createFile(dst, m, f); err != nil {
+		if err := createFile(dst, fi, f); err != nil {
 			return fmt.Errorf("failed to create file for %s: %s: %w", dst, src, err)
 		}
 		return nil
 	default:
-		return fmt.Errorf("unknown file type for %s: %s", dst, m.Type())
+		return fmt.Errorf("unknown file type for %s: %s", dst, fi.Mode.Type())
 	}
 }
 
-func (f *filesCopyExecutor) copyEmbed(s *core.ActionFilesCopy_Source_Embed, dst string, m fs.FileMode) error {
+func (f *filesCopyExecutor) copyEmbed(s *core.ActionFilesCopy_Source_Embed, dst string, fi fileInfo) error {
 	e, ok := f.LoadEmbed(s.Ref)
 	if !ok {
 		return fmt.Errorf("failed to load embedded fs for %s: %s", dst, s)
 	}
 
-	switch m.Type() {
+	switch fi.Mode.Type() {
 	case fs.ModeSymlink:
 		return fmt.Errorf("symlink not supported for the source type")
 	case fs.ModeDir:
@@ -211,16 +228,16 @@ func (f *filesCopyExecutor) copyEmbed(s *core.ActionFilesCopy_Source_Embed, dst 
 			return fmt.Errorf("failed to open source file for %s: %s: %w", dst, s, err)
 		}
 		defer f.Close()
-		if err := createFile(dst, m, f); err != nil {
+		if err := createFile(dst, fi, f); err != nil {
 			return fmt.Errorf("failed to create file for %s: %s: %w", dst, s, err)
 		}
 		return nil
 	default:
-		return fmt.Errorf("unknown file type for %s: %s", dst, m.Type())
+		return fmt.Errorf("unknown file type for %s: %s", dst, fi.Mode.Type())
 	}
 }
 
-func copyOutput(s *core.ActionFilesCopy_Source_Output, env environ.Env, dst string, m fs.FileMode) error {
+func copyOutput(s *core.ActionFilesCopy_Source_Output, env environ.Env, dst string, fi fileInfo) error {
 	out := env.Get(s.Name)
 	if out == "" {
 		return fmt.Errorf("output not found: %s: %s", dst, s)
@@ -228,7 +245,7 @@ func copyOutput(s *core.ActionFilesCopy_Source_Output, env environ.Env, dst stri
 	return copyLocal(&core.ActionFilesCopy_Source_Local{
 		Path:           filepath.Join(out, s.Path),
 		FollowSymlinks: false,
-	}, dst, m)
+	}, dst, fi)
 }
 
 func copyFS(src fs.FS, followSymlinks bool, dst string) error {
@@ -277,7 +294,7 @@ func copyFS(src fs.FS, followSymlinks bool, dst string) error {
 					return fmt.Errorf("failed to get file mode: %s: %w", name, err)
 				}
 
-				if err := createFile(dstName, info.Mode(), srcFile); err != nil {
+				if err := createFile(dstName, fileInfoFromFS(info), srcFile); err != nil {
 					return fmt.Errorf("failed to create file: %s: %w", name, err)
 				}
 			}
@@ -286,19 +303,4 @@ func copyFS(src fs.FS, followSymlinks bool, dst string) error {
 
 		return errors.Join(err, cerr)
 	})
-}
-
-func createFile(dst string, m fs.FileMode, r io.Reader) error {
-	f, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if _, err := io.Copy(f, r); err != nil {
-		return err
-	}
-	if err := os.Chmod(dst, m); err != nil {
-		return err
-	}
-	return nil
 }

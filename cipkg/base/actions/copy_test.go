@@ -21,6 +21,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"testing"
 
@@ -67,9 +68,10 @@ func TestProcessCopy(t *testing.T) {
 				Files: map[string]*core.ActionFilesCopy_Source{
 					"test/file": {
 						Content: &core.ActionFilesCopy_Source_Local_{
-							Local: &core.ActionFilesCopy_Source_Local{Path: "something", Version: "abc"},
+							Local: &core.ActionFilesCopy_Source_Local{Path: "something"},
 						},
-						Mode: uint32(fs.ModeDir),
+						Mode:    uint32(fs.ModeDir),
+						Version: "abc",
 					},
 				},
 			}
@@ -87,9 +89,10 @@ func TestProcessCopy(t *testing.T) {
 				Files: map[string]*core.ActionFilesCopy_Source{
 					"test/file": {
 						Content: &core.ActionFilesCopy_Source_Local_{
-							Local: &core.ActionFilesCopy_Source_Local{Path: "somethingelse", Version: "abc"},
+							Local: &core.ActionFilesCopy_Source_Local{Path: "somethingelse"},
 						},
-						Mode: uint32(fs.ModeDir),
+						Mode:    uint32(fs.ModeDir),
+						Version: "abc",
 					},
 				},
 			}
@@ -362,6 +365,40 @@ func TestExecuteCopy(t *testing.T) {
 					}
 				}
 			})
+		})
+
+		Convey("mode/attrs", func() {
+			a := &core.ActionFilesCopy{
+				Files: map[string]*core.ActionFilesCopy_Source{
+					filepath.FromSlash("test/file"): {
+						Content:  &core.ActionFilesCopy_Source_Raw{Raw: []byte("something")},
+						Mode:     0o777,
+						WinAttrs: 0x4, // FILE_ATTRIBUTE_SYSTEM
+					},
+				},
+			}
+
+			e := newFilesCopyExecutor()
+			err := e.Execute(ctx, a, out)
+			So(err, ShouldBeNil)
+
+			{
+				f, err := os.Open(filepath.Join(out, filepath.FromSlash("test/file")))
+				So(err, ShouldBeNil)
+				defer f.Close()
+				b, err := io.ReadAll(f)
+				So(err, ShouldBeNil)
+				So(string(b), ShouldEqual, "something")
+
+				info, err := f.Stat()
+				So(err, ShouldBeNil)
+				if runtime.GOOS == "windows" {
+					// *syscall.Win32FileAttributeData
+					So(reflect.ValueOf(info.Sys()).Elem().FieldByName("FileAttributes").Uint()&0x4, ShouldNotBeZeroValue)
+				} else {
+					So(info.Mode().Perm(), ShouldEqual, 0o777)
+				}
+			}
 		})
 	})
 }
