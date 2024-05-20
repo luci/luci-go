@@ -729,13 +729,13 @@ type sourceVerdict struct {
 	SourcePosition int64
 	// Verdicts considered by the analysis have at most one CL tested,
 	// which is set below (if present).
-	ChangelistHost        spanner.NullString
-	ChangelistChange      spanner.NullInt64
-	ChangelistPatchset    spanner.NullInt64
-	ChangelistOwnerKind   spanner.NullString
-	IngestedInvocationIds []string
-	UnexpectedRuns        int64
-	ExpectedRuns          int64
+	ChangelistHost      spanner.NullString
+	ChangelistChange    spanner.NullInt64
+	ChangelistPatchset  spanner.NullInt64
+	ChangelistOwnerKind spanner.NullString
+	RootInvocationIds   []string
+	UnexpectedRuns      int64
+	ExpectedRuns        int64
 }
 
 func toPBFailureRateRecentVerdict(verdicts []*sourceVerdict) []*pb.TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
@@ -754,7 +754,7 @@ func toPBFailureRateRecentVerdict(verdicts []*sourceVerdict) []*pb.TestVariantSt
 		results = append(results, &pb.TestVariantStabilityAnalysis_FailureRate_RecentVerdict{
 			Position:       v.SourcePosition,
 			Changelists:    changelists,
-			Invocations:    sortStrings(v.IngestedInvocationIds),
+			Invocations:    sortStrings(v.RootInvocationIds),
 			UnexpectedRuns: int32(v.UnexpectedRuns),
 			TotalRuns:      int32(v.ExpectedRuns + v.UnexpectedRuns),
 		})
@@ -785,7 +785,7 @@ func toPBFlakeRateVerdictExample(verdicts []*sourceVerdict) []*pb.TestVariantSta
 		results = append(results, &pb.TestVariantStabilityAnalysis_FlakeRate_VerdictExample{
 			Position:    v.SourcePosition,
 			Changelists: changelists,
-			Invocations: sortStrings(v.IngestedInvocationIds),
+			Invocations: sortStrings(v.RootInvocationIds),
 		})
 	}
 	return results
@@ -808,15 +808,15 @@ type sourcePositionBucket struct {
 }
 
 var testStabilityQuery = `
-WITH test_variant_verdicts AS (
+WITH test_variants_with_source_verdicts AS (
 	SELECT
 		Index,
 		tv.TestId,
 		tv.VariantHash,
 		tv.QuerySourcePosition,
 		ARRAY(
-			-- Filter verdicts to at most one per changelist under test.
-			-- Don't filter verdicts without an unsubmitted changelist
+			-- Filter source verdicts to at most one per changelist under test.
+			-- Don't filter source verdicts without any unsubmitted changelists
 			-- under test (i.e. postsubmit data).
 			SELECT
 				ANY_VALUE(
@@ -826,7 +826,7 @@ WITH test_variant_verdicts AS (
 						ChangelistChange,
 						ChangelistPatchset,
 						ChangelistOwnerKind,
-						IngestedInvocationIds,
+						RootInvocationIds,
 						MaxPartitionTime,
 						MinPartitionTime,
 						UnexpectedRuns,
@@ -836,7 +836,7 @@ WITH test_variant_verdicts AS (
 					-- Then prefer the verdict that is closest to the queried
 					-- source position.
 					HAVING MIN ABS(SourcePosition - tv.QuerySourcePosition) + IF(UnexpectedRuns > 0 AND ExpectedRuns > 0, -1000 * 1000 * 1000, 0)
-				) AS Verdict,
+				) AS SourceVerdict,
 			FROM (
 				-- Flatten test runs to source verdicts.
 				SELECT
@@ -846,33 +846,34 @@ WITH test_variant_verdicts AS (
 					ChangelistPatchset,
           ANY_VALUE(ChangelistOwnerKind) AS ChangelistOwnerKind,
 					ANY_VALUE(HasDirtySources) AS HasDirtySources,
-					ANY_VALUE(IF(HasDirtySources, IngestedInvocationId, NULL)) AS DirtySourcesUniqifier,
-					ARRAY_AGG(DISTINCT IngestedInvocationId) as IngestedInvocationIds,
+					ANY_VALUE(IF(HasDirtySources, RootInvocationId, NULL)) AS DirtySourcesUniqifier,
+					ARRAY_AGG(DISTINCT RootInvocationId) as RootInvocationIds,
 					MAX(PartitionTime) as MaxPartitionTime,
 					MIN(PartitionTime) as MinPartitionTime,
-					COUNTIF(UnexpectedRun) as UnexpectedRuns,
-					COUNTIF(NOT UnexpectedRun) as ExpectedRuns,
+					COUNTIF(IsUnexpectedRun) as UnexpectedRuns,
+					COUNTIF(NOT IsUnexpectedRun) as ExpectedRuns,
 				FROM (
 					-- Flatten test results to test runs.
 					SELECT
-						PartitionTime,
-						IngestedInvocationId,
-						RunIndex,
-						LOGICAL_AND(COALESCE(IsUnexpected, FALSE)) AS UnexpectedRun,
+						RootInvocationId,
+						InvocationId,
+						ANY_VALUE(PartitionTime) as PartitionTime,
+						LOGICAL_AND(COALESCE(IsUnexpected, FALSE)) AS IsUnexpectedRun,
 						ANY_VALUE(SourcePosition) AS SourcePosition,
 						ANY_VALUE(ChangelistHosts)[SAFE_OFFSET(0)] AS ChangelistHost,
 						ANY_VALUE(ChangelistChanges)[SAFE_OFFSET(0)] AS ChangelistChange,
 						ANY_VALUE(ChangelistPatchsets)[SAFE_OFFSET(0)] AS ChangelistPatchset,
 						ANY_VALUE(ChangelistOwnerKinds)[SAFE_OFFSET(0)] AS ChangelistOwnerKind,
 						ANY_VALUE(HasDirtySources) AS HasDirtySources
-					FROM TestResults
+					FROM TestResultsBySourcePosition
 					WHERE Project = @project
-						AND PartitionTime >= TIMESTAMP_SUB(@asAtTime, INTERVAL 14 DAY)
-						AND PartitionTime < @asAtTime
 						AND TestId = tv.TestId
 						AND VariantHash = tv.VariantHash
 						AND SourceRefHash = tv.SourceRefHash
 						AND SubRealm IN UNNEST(@subRealms)
+						-- Limit to the last 14 days of data.
+						AND PartitionTime >= TIMESTAMP_SUB(@asAtTime, INTERVAL 14 DAY)
+						AND PartitionTime < @asAtTime
 						-- Exclude skipped results.
 						AND Status <> @skip
 						AND (
@@ -896,7 +897,7 @@ WITH test_variant_verdicts AS (
 									NOT IN UNNEST(tv.ExcludedChangelists)
 							)
 						)
-					GROUP BY PartitionTime, IngestedInvocationId, RunIndex
+					GROUP BY RootInvocationId, InvocationId
 				)
 				GROUP BY
 					-- Base source position tested
@@ -904,8 +905,8 @@ WITH test_variant_verdicts AS (
 					-- Patchset applied ontop of base sources (if any)
 					ChangelistHost, ChangelistChange, ChangelistPatchset,
 					-- If sources are marked dirty, then sources must be treated as unique
-					-- per invocation. (I.E. then source verdict == test verdict).
-					IF(HasDirtySources, IngestedInvocationId, NULL)
+					-- per root invocation. (I.E. then source verdict == test verdict).
+					IF(HasDirtySources, RootInvocationId, NULL)
 			)
 			-- Deduplicate to at most one per CL. For source verdicts not related
 			-- to a CL, no deduplication shall occur.
@@ -916,8 +917,8 @@ WITH test_variant_verdicts AS (
 				-- may be kept.
 				IF(ChangelistHost IS NULL, SourcePosition, NULL),
 				IF(ChangelistHost IS NULL, DirtySourcesUniqifier, NULL)
-			ORDER BY Verdict.SourcePosition DESC, Verdict.MaxPartitionTime DESC
-		) AS Verdicts,
+			ORDER BY SourceVerdict.SourcePosition DESC, SourceVerdict.MaxPartitionTime DESC
+		) AS SourceVerdicts,
 	FROM UNNEST(@testVariantPositions) tv WITH OFFSET Index
 )
 
@@ -931,10 +932,10 @@ SELECT
 			ChangelistChange,
 			ChangelistPatchset,
 			ChangelistOwnerKind,
-			IngestedInvocationIds,
+			RootInvocationIds,
 			UnexpectedRuns,
 			ExpectedRuns
-		FROM UNNEST(Verdicts) v
+		FROM UNNEST(SourceVerdicts) v
 		WHERE v.SourcePosition < QuerySourcePosition
 		ORDER BY SourcePosition DESC, MaxPartitionTime DESC
 		-- The actual criteria is for 10 runs, not 10 source verdicts,
@@ -949,10 +950,10 @@ SELECT
 			ChangelistChange,
 			ChangelistPatchset,
 			ChangelistOwnerKind,
-			IngestedInvocationIds,
+			RootInvocationIds,
 			UnexpectedRuns,
 			ExpectedRuns
-		FROM UNNEST(Verdicts) v
+		FROM UNNEST(SourceVerdicts) v
 		WHERE v.SourcePosition >= QuerySourcePosition
 		ORDER BY SourcePosition ASC, MaxPartitionTime DESC
 		-- The actual criteria is for 10 runs, not 10 source verdicts,
@@ -1006,7 +1007,7 @@ SELECT
 						MIN(MinPartitionTime) as EarliestPartitionTime,
 						COUNT(1) as TotalVerdicts,
 						COUNTIF(UnexpectedRuns > 0 AND ExpectedRuns > 0) as RunFlakyVerdicts,
-					FROM UNNEST(Verdicts) v
+					FROM UNNEST(SourceVerdicts) v
 					GROUP BY SourcePosition
 					ORDER BY SourcePosition
 				) AS SourcePositions
@@ -1026,10 +1027,10 @@ SELECT
 			ChangelistChange,
 			ChangelistPatchset,
 			ChangelistOwnerKind,
-			IngestedInvocationIds,
+			RootInvocationIds,
 			UnexpectedRuns,
 			ExpectedRuns
-		FROM UNNEST(Verdicts) v WITH OFFSET Index
+		FROM UNNEST(SourceVerdicts) v WITH OFFSET Index
 		WHERE UnexpectedRuns > 0 AND ExpectedRuns > 0
 		  AND v.SourcePosition < QuerySourcePosition
 		ORDER BY SourcePosition DESC, MaxPartitionTime DESC
@@ -1042,15 +1043,15 @@ SELECT
 			ChangelistChange,
 			ChangelistPatchset,
 			ChangelistOwnerKind,
-			IngestedInvocationIds,
+			RootInvocationIds,
 			UnexpectedRuns,
 			ExpectedRuns
-		FROM UNNEST(Verdicts) v WITH OFFSET Index
+		FROM UNNEST(SourceVerdicts) v WITH OFFSET Index
 		WHERE UnexpectedRuns > 0 AND ExpectedRuns > 0
 		  AND v.SourcePosition >= QuerySourcePosition
 		ORDER BY SourcePosition ASC, MaxPartitionTime DESC
 		LIMIT 10
 	) as FlakeExamplesOnOrAfter,
-FROM test_variant_verdicts
+FROM test_variants_with_source_verdicts
 ORDER BY Index
 `

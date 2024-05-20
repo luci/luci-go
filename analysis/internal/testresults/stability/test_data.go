@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -57,7 +58,7 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 		partitionTime time.Time
 		variant       *pb.Variant
 		invocationID  string
-		runStatuses   []testresults.RunStatus
+		runStatuses   []lowlatency.RunStatus
 		sources       testresults.Sources
 	}
 
@@ -78,11 +79,11 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 		// pass, fail is shorthand here for expected and unexpected run,
 		// where for the purposes of this RPC, a flaky run counts as
 		// "expected" (as it has at least one expected result).
-		failPass := []testresults.RunStatus{testresults.Unexpected, testresults.Flaky}
-		failPassPass := []testresults.RunStatus{testresults.Unexpected, testresults.Flaky, testresults.Flaky}
-		pass := []testresults.RunStatus{testresults.Flaky}
-		fail := []testresults.RunStatus{testresults.Unexpected}
-		failFail := []testresults.RunStatus{testresults.Unexpected, testresults.Unexpected}
+		failPass := []lowlatency.RunStatus{lowlatency.Unexpected, lowlatency.Flaky}
+		failPassPass := []lowlatency.RunStatus{lowlatency.Unexpected, lowlatency.Flaky, lowlatency.Flaky}
+		pass := []lowlatency.RunStatus{lowlatency.Flaky}
+		fail := []lowlatency.RunStatus{lowlatency.Unexpected}
+		failFail := []lowlatency.RunStatus{lowlatency.Unexpected, lowlatency.Unexpected}
 
 		day := 24 * time.Hour
 
@@ -264,16 +265,6 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 			{
 				partitionTime: referenceTime.Add(-7 * day),
 				variant:       var1,
-				invocationID:  "sourceverdict13-ignore-no-sources",
-				runStatuses:   pass,
-				sources: testresults.Sources{
-					// Has no branch and position information, so should be ignored.
-					Changelists: changelists(pb.ChangelistOwnerKind_HUMAN, 10),
-				},
-			},
-			{
-				partitionTime: referenceTime.Add(-7 * day),
-				variant:       var1,
 				// A result for the same CL as being queried, so should be ignored
 				// to avoid CLs contributing to their own exoneration.
 				invocationID: "sourceverdict14-ignore-same-cl-as-query",
@@ -332,17 +323,17 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 		}
 
 		for _, v := range verdicts {
-			baseTestResult := testresults.NewTestResult().
+			baseTestResult := lowlatency.NewTestResult().
 				WithProject("project").
 				WithTestID("test_id").
 				WithVariantHash(pbutil.VariantHash(v.variant)).
 				WithPartitionTime(v.partitionTime).
-				WithIngestedInvocationID(v.invocationID).
+				WithRootInvocationID(v.invocationID).
 				WithSubRealm("realm").
 				WithStatus(pb.TestResultStatus_PASS).
 				WithSources(v.sources)
 
-			trs := testresults.NewTestVerdict().
+			trs := lowlatency.NewTestVerdict().
 				WithBaseTestResult(baseTestResult.Build()).
 				WithRunStatus(v.runStatuses...).
 				Build()
