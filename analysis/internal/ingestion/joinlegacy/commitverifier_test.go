@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package join
+package joinlegacy
 
 import (
 	"fmt"
@@ -37,6 +37,7 @@ import (
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // bbCreateTime is the create time assigned to buildbucket builds, for testing.
@@ -57,11 +58,12 @@ func TestHandleCVRun(t *testing.T) {
 		buildTwo := newBuildBuilder(87654322).
 			WithCreateTime(bbCreateTime).
 			WithTags([]string{"user_agent:cq"})
+		builds := []*buildBuilder{buildOne, buildTwo}
 		So(ingestBuild(ctx, buildOne), ShouldBeNil)
 		So(ingestBuild(ctx, buildTwo), ShouldBeNil)
 
 		// Ingest the invocation finalization.
-		So(ingestFinalization(ctx, fmt.Sprintf("build-%d", buildOne.buildID), false), ShouldBeNil)
+		So(ingestFinalization(ctx, buildOne.buildID), ShouldBeNil)
 
 		So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
@@ -123,9 +125,8 @@ func TestHandleCVRun(t *testing.T) {
 			Convey(`Baseline`, func() {
 				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 
 				Convey(`Re-processing CV run should not result in further ingestion tasks`, func() {
 					processed, tasks = processCVRun(run)
@@ -137,41 +138,37 @@ func TestHandleCVRun(t *testing.T) {
 				run.Mode = "DRY_RUN"
 				expectedTaskTemplate.PresubmitRun.Mode = pb.PresubmitRunMode_DRY_RUN
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 			Convey(`New patchset run`, func() {
 				run.Mode = "NEW_PATCHSET_RUN"
 				expectedTaskTemplate.PresubmitRun.Mode = pb.PresubmitRunMode_NEW_PATCHSET_RUN
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 			Convey(`CV Run owned by Automation`, func() {
 				run.Owner = "chromium-autoroll@skia-public.iam.gserviceaccount.com"
 				expectedTaskTemplate.PresubmitRun.Owner = "automation"
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 			Convey(`CV Run owned by Automation 2`, func() {
 				run.Owner = "3su6n15k.default@developer.gserviceaccount.com"
 				expectedTaskTemplate.PresubmitRun.Owner = "automation"
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 			Convey(`With non-buildbucket tryjob`, func() {
 				// Should be ignored.
@@ -179,22 +176,20 @@ func TestHandleCVRun(t *testing.T) {
 					Result: &cvv0.Tryjob_Result{},
 				})
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 			Convey(`With re-used tryjob`, func() {
 				// Assume that this tryjob was created by another CV run,
 				// so should not be ingested with this CV run.
 				run.TryjobInvocations[0].Attempts[0].Reuse = true
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds[1:])))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds[1:])))
 			})
 			Convey(`With retried tryjob`, func() {
 				// Despite tryjob group being marked critical,
@@ -206,31 +201,28 @@ func TestHandleCVRun(t *testing.T) {
 				}
 				run.TryjobInvocations[0].Critical = true
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 			Convey(`Failing Run`, func() {
 				run.Status = cvv0.Run_FAILED
 				expectedTaskTemplate.PresubmitRun.Status = pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 			Convey(`Cancelled Run`, func() {
 				run.Status = cvv0.Run_CANCELLED
 				expectedTaskTemplate.PresubmitRun.Status = pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_CANCELED
 
-				processed, _ := processCVRun(run)
+				processed, tasks := processCVRun(run)
 				So(processed, ShouldBeTrue)
-				// TODO: assert ingestion task has been scheduled.
-				// So(sortTasks(tasks), ShouldResembleProto,
-				// 	sortTasks(expectedTasks(expectedTaskTemplate, builds)))
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, builds)))
 			})
 		})
 	})

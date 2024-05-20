@@ -279,6 +279,71 @@ CREATE TABLE Ingestions (
 -- time if clocks are not synchronised).
 , ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 100 DAY));
 
+
+-- IngestionJoins is used to synchronise and deduplicate the ingestion
+-- of test results which require data from one or more sources.
+--
+-- Ingestion may only start after the following events are received:
+-- 1. The build (if any) has completed.
+-- 2. The invocation containing its test results (if any)
+--    has been finalized.
+-- 3. The presubmit run (if any) has completed.
+-- These events may occur in any order (e.g. 3 can occur before 1 if the
+-- presubmit run fails before all builds are complete).
+CREATE TABLE IngestionJoins (
+  -- The unique key for the ingestion.
+  -- The IngestionID is of the format {RDB_HOST}/{INVOCATION_ID}.
+  -- When the ingestion doesn't have an invocation, the INVOCATION_ID part of the IngestionID is a logical invocation id derived from the build ID.
+  -- IngestionID is at most 356 characters long. DNS names are restricted to ~255 ASCII characters, '/' is one, InvocationID is limited to 100.
+  IngestionID STRING(356) NOT NULL,
+  -- Is the invocation associated with a buildbucket build? If yes, then ingestion should
+  -- wait for the build result to be populated before commencing ingestion.
+  -- Use 'true' to indicate true and NULL to indicate false.
+  -- Only populated once the invocation has been set.
+  HasBuildBucketBuild BOOL,
+  -- The LUCI Project to which the build belongs. Populated at the same
+  -- time as the build result.
+  BuildProject STRING(40),
+  -- The build result.
+  BuildResult BYTES(MAX),
+  -- The Spanner commit time the build result was populated.
+  BuildJoinedTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+  -- Does the build have a ResultDB invocation? If yes, then ingestion should
+  -- wait for the invocation result to be populated before commencing ingestion.
+  -- (In practice, ingestion of a build without an invocation does nothing, but
+  -- we schedule an ingestion for it anyway as for monitoring purposes it is
+  -- convenient if all builds yield an ingestion task.)
+  -- Only populated once either the BuildResult or InvocationResult has been set.
+  HasInvocation BOOL,
+  -- The LUCI Project to which the invocation belongs. Populated at the same
+  -- time as the invocation result.
+  InvocationProject STRING(40),
+  -- The invocation result.
+  InvocationResult BYTES(MAX),
+  -- The Spanner commit time the invocation result was populated.
+  InvocationJoinedTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+  -- Is the build part of a presubmit run? If yes, then ingestion should
+  -- wait for the presubmit result to be populated before commencing ingestion.
+  -- Use 'true' to indicate true and NULL to indicate false.
+  -- Only populated once either the BuildResult or PresubmitResult has been set.
+  IsPresubmit BOOL,
+  -- The LUCI Project to which the presubmit run belongs. Populated at the
+  -- same time as the presubmit run result.
+  PresubmitProject STRING(40),
+  -- The presubmit result.
+  PresubmitResult BYTES(MAX),
+  -- The Spanner commit time the presubmit result was populated.
+  PresubmitJoinedTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+  -- The Spanner commit time the row last last updated.
+  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (IngestionID)
+-- 90 days retention, plus some margin (10 days) to ensure ingestion records
+-- are always retained longer than the ingested results (acknowledging
+-- the partition time on ingested chunks may be later than the LastUpdated
+-- time if clocks are not synchronised).
+, ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 100 DAY));
+
+
 -- Stores transactional tasks reminders.
 -- See https://go.chromium.org/luci/server/tq. Scanned by tq-sweeper-spanner.
 CREATE TABLE TQReminders (

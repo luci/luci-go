@@ -55,11 +55,17 @@ func TestCVRunHandler(t *testing.T) {
 
 			called := false
 			var processed bool
-			h.handleCVRun = func(ctx context.Context, psRun *cvv1.PubSubRun) (project string, wasProcessed bool, err error) {
+			h.handleCVRunLegacy = func(ctx context.Context, psRun *cvv1.PubSubRun) (project string, wasProcessed bool, err error) {
 				So(called, ShouldBeFalse)
 				So(psRun, ShouldResembleProto, message)
 
 				called = true
+				return "cvproject", processed, nil
+			}
+			h.handleCVRun = func(ctx context.Context, psRun *cvv1.PubSubRun) (project string, wasProcessed bool, err error) {
+				So(called, ShouldBeTrue)
+				So(psRun, ShouldResembleProto, message)
+
 				return "cvproject", processed, nil
 			}
 

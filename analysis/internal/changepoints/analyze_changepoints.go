@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/config"
-	"go.chromium.org/luci/analysis/internal/ingestion/control"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -121,7 +121,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 	firstTV := tvs[0]
 	checkPoint := CheckPoint{
-		InvocationID:        control.BuildInvocationName(payload.GetBuild().Id),
+		InvocationID:        controllegacy.BuildInvocationName(payload.GetBuild().Id),
 		StartingTestID:      firstTV.TestId,
 		StartingVariantHash: firstTV.VariantHash,
 	}
@@ -197,7 +197,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		ingestedVerdictCount := len(mutations)
 
 		// Store new Invocations to Invocations table.
-		ingestedInvID := control.BuildInvocationID(payload.Build.Id)
+		ingestedInvID := controllegacy.BuildInvocationID(payload.Build.Id)
 		invMuts := invocationsToMutations(ctx, payload.Build.Project, newInvIDs, ingestedInvID)
 		mutations = append(mutations, invMuts...)
 

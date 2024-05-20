@@ -20,8 +20,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
-	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 )
 
@@ -42,7 +42,7 @@ func readDuplicateInvocations(ctx context.Context, tvs []*rdbpb.TestVariant, bui
 		return nil, nil, errors.Annotate(err, "read invocations").Err()
 	}
 	dupMap := map[string]bool{}
-	buildInvID := control.BuildInvocationID(buildResult.Id)
+	buildInvID := controllegacy.BuildInvocationID(buildResult.Id)
 	for invID, ingestedInvID := range invMap {
 		// If the ingested invocation ID stored in Spanner is different from the
 		// current invocation ID, it means this is a duplicate run.

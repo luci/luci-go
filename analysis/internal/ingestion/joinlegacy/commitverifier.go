@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package join
+package joinlegacy
 
 import (
 	"context"
@@ -30,8 +30,15 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/cv"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+)
+
+const (
+	// TODO(chanli@@) Removing the hosts after CVPubSub and GetRun RPC added them.
+	// Host name of buildbucket.
+	bbHost = "cr-buildbucket.appspot.com"
 )
 
 var (
@@ -42,8 +49,8 @@ var (
 )
 
 // JoinCVRun notifies ingestion that the given LUCI CV Run has finished.
-// Ingestion tasks are created when all required data for an ingestion
-// (including any associated LUCI CV run, build and invocation) is available.
+// Ingestion tasks are created for buildbucket builds when all required data
+// for a build (including any associated LUCI CV run) is available.
 func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, processed bool, err error) {
 	project, runID, err := parseRunID(psRun.Id)
 	if err != nil {
@@ -81,7 +88,7 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 		return project, false, errors.Annotate(err, "failed to parse run mode").Err()
 	}
 
-	presubmitResultByBuildID := make(map[int64]*ctlpb.PresubmitResult)
+	presubmitResultByBuildID := make(map[string]*ctlpb.PresubmitResult)
 	for _, tji := range run.TryjobInvocations {
 		for attemptIndex, attempt := range tji.Attempts {
 			b := attempt.GetResult().GetBuildbucket()
@@ -101,8 +108,9 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 				continue
 			}
 
-			if _, ok := presubmitResultByBuildID[b.Id]; ok {
-				logging.Warningf(ctx, "CV Run %s has build %d as tryjob multiple times, ignoring the second occurances", psRun.Id, b.Id)
+			buildID := controllegacy.BuildID(bbHost, b.Id)
+			if _, ok := presubmitResultByBuildID[buildID]; ok {
+				logging.Warningf(ctx, "CV Run %s has build %s as tryjob multiple times, ignoring the second occurances", psRun.Id, buildID)
 				continue
 			}
 
@@ -111,7 +119,7 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 				return project, false, errors.Annotate(err, "failed to parse run status").Err()
 			}
 
-			presubmitResultByBuildID[b.Id] = &ctlpb.PresubmitResult{
+			presubmitResultByBuildID[buildID] = &ctlpb.PresubmitResult{
 				PresubmitRunId: &pb.PresubmitRunId{
 					System: "luci-cv",
 					Id:     fmt.Sprintf("%s/%s", project, runID),

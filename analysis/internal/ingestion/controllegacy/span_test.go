@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package control
+package controllegacy
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -33,37 +34,37 @@ func TestSpan(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		Convey(`Read`, func() {
 			entriesToCreate := []*Entry{
-				NewEntry(0).WithIngestionID("rdb-host/1").Build(),
-				NewEntry(2).WithIngestionID("rdb-host/2").WithBuildResult(nil).Build(),
-				NewEntry(3).WithIngestionID("rdb-host/3").WithPresubmitResult(nil).Build(),
-				NewEntry(4).WithIngestionID("rdb-host/4").WithInvocationResult(nil).Build(),
+				NewEntry(0).WithBuildID("buildbucket-instance/1").Build(),
+				NewEntry(2).WithBuildID("buildbucket-instance/2").WithBuildResult(nil).Build(),
+				NewEntry(3).WithBuildID("buildbucket-instance/3").WithPresubmitResult(nil).Build(),
+				NewEntry(4).WithBuildID("buildbucket-instance/4").WithInvocationResult(nil).Build(),
 			}
 			_, err := SetEntriesForTesting(ctx, entriesToCreate...)
 			So(err, ShouldBeNil)
 
 			Convey(`None exist`, func() {
-				ingestionIDs := []IngestionID{"rdb-host/5"}
-				results, err := Read(span.Single(ctx), ingestionIDs)
+				buildIDs := []string{"buildbucket-instance/5"}
+				results, err := Read(span.Single(ctx), buildIDs)
 				So(err, ShouldBeNil)
 				So(len(results), ShouldEqual, 1)
-				So(results[0], ShouldBeNil)
+				So(results[0], ShouldResembleEntry, nil)
 			})
 			Convey(`Some exist`, func() {
-				ingestionIDs := []IngestionID{
-					"rdb-host/3",
-					"rdb-host/4",
-					"rdb-host/5",
-					"rdb-host/2",
-					"rdb-host/1",
+				buildIDs := []string{
+					"buildbucket-instance/3",
+					"buildbucket-instance/4",
+					"buildbucket-instance/5",
+					"buildbucket-instance/2",
+					"buildbucket-instance/1",
 				}
-				results, err := Read(span.Single(ctx), ingestionIDs)
+				results, err := Read(span.Single(ctx), buildIDs)
 				So(err, ShouldBeNil)
 				So(len(results), ShouldEqual, 5)
-				So(results[0], ShouldResembleProto, entriesToCreate[2])
-				So(results[1], ShouldResembleProto, entriesToCreate[3])
-				So(results[2], ShouldBeNil)
-				So(results[3], ShouldResembleProto, entriesToCreate[1])
-				So(results[4], ShouldResembleProto, entriesToCreate[0])
+				So(results[0], ShouldResembleEntry, entriesToCreate[2])
+				So(results[1], ShouldResembleEntry, entriesToCreate[3])
+				So(results[2], ShouldResembleEntry, nil)
+				So(results[3], ShouldResembleEntry, entriesToCreate[1])
+				So(results[4], ShouldResembleEntry, entriesToCreate[0])
 			})
 		})
 		Convey(`InsertOrUpdate`, func() {
@@ -87,29 +88,29 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldBeNil)
 					e.LastUpdated = commitTime
 
-					result, err := Read(span.Single(ctx), []IngestionID{e.IngestionID})
+					result, err := Read(span.Single(ctx), []string{e.BuildID})
 					So(err, ShouldBeNil)
 					So(len(result), ShouldEqual, 1)
-					So(result[0], ShouldResembleProto, e)
+					So(result[0], ShouldResembleEntry, e)
 				})
 				Convey(`Update`, func() {
 					// Update the existing entry.
-					e.IngestionID = entryToCreate.IngestionID
+					e.BuildID = entryToCreate.BuildID
 
 					commitTime, err := testInsertOrUpdate(e)
 					So(err, ShouldBeNil)
 					e.LastUpdated = commitTime
 
-					result, err := Read(span.Single(ctx), []IngestionID{e.IngestionID})
+					result, err := Read(span.Single(ctx), []string{e.BuildID})
 					So(err, ShouldBeNil)
 					So(len(result), ShouldEqual, 1)
-					So(result[0], ShouldResembleProto, e)
+					So(result[0], ShouldResembleEntry, e)
 				})
 			})
-			Convey(`With invalid Ingestion ID`, func() {
-				e.IngestionID = IngestionID("")
+			Convey(`With missing Build ID`, func() {
+				e.BuildID = ""
 				_, err := testInsertOrUpdate(e)
-				So(err, ShouldErrLike, "ingestionID must be set")
+				So(err, ShouldErrLike, "build ID must be specified")
 			})
 			Convey(`With invalid Build Project`, func() {
 				Convey(`Missing`, func() {
@@ -473,4 +474,41 @@ func TestSpan(t *testing.T) {
 			})
 		})
 	})
+}
+
+func ShouldResembleEntry(actual any, expected ...any) string {
+	if len(expected) != 1 {
+		return fmt.Sprintf("ShouldResembleEntry expects 1 value, got %d", len(expected))
+	}
+	exp := expected[0]
+	if exp == nil {
+		return ShouldBeNil(actual)
+	}
+
+	a, ok := actual.(*Entry)
+	if !ok {
+		return "actual should be of type *Entry"
+	}
+	e, ok := exp.(*Entry)
+	if !ok {
+		return "expected value should be of type *Entry"
+	}
+
+	// Check equality of non-proto fields.
+	a.BuildResult = nil
+	a.PresubmitResult = nil
+	e.BuildResult = nil
+	e.PresubmitResult = nil
+	if msg := ShouldResemble(a, e); msg != "" {
+		return msg
+	}
+
+	// Check equality of proto fields.
+	if msg := ShouldResembleProto(a.BuildResult, e.BuildResult); msg != "" {
+		return msg
+	}
+	if msg := ShouldResembleProto(a.PresubmitResult, e.PresubmitResult); msg != "" {
+		return msg
+	}
+	return ""
 }

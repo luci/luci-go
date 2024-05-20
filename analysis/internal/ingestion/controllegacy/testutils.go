@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package control
+package controllegacy
 
 import (
 	"context"
@@ -41,9 +41,8 @@ type EntryBuilder struct {
 func NewEntry(uniqifier int) *EntryBuilder {
 	return &EntryBuilder{
 		record: &Entry{
-			IngestionID:         IngestionID(fmt.Sprintf("rdb-host/%v", uniqifier)),
-			HasBuildBucketBuild: true,
-			BuildProject:        "build-project",
+			BuildID:      fmt.Sprintf("buildbucket-host/%v", uniqifier),
+			BuildProject: "build-project",
 			BuildResult: &controlpb.BuildResult{
 				Host:         "buildbucket-host",
 				Id:           int64(uniqifier),
@@ -93,9 +92,9 @@ func NewEntry(uniqifier int) *EntryBuilder {
 	}
 }
 
-// WithIngestionID specifies the ingestion ID to use on the ingestion control record.
-func (b *EntryBuilder) WithIngestionID(id IngestionID) *EntryBuilder {
-	b.record.IngestionID = id
+// WithBuildID specifies the build ID to use on the ingestion control record.
+func (b *EntryBuilder) WithBuildID(id string) *EntryBuilder {
+	b.record.BuildID = id
 	return b
 }
 
@@ -178,9 +177,8 @@ func SetEntriesForTesting(ctx context.Context, es ...*Entry) (time.Time, error) 
 	// Insert some Ingestion records.
 	commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, r := range es {
-			ms := spanutil.InsertMap("IngestionJoins", map[string]any{
-				"IngestionID":          string(r.IngestionID),
-				"HasBuildBucketBuild":  r.HasBuildBucketBuild,
+			ms := spanutil.InsertMap("Ingestions", map[string]any{
+				"BuildId":              r.BuildID,
 				"BuildProject":         r.BuildProject,
 				"BuildResult":          r.BuildResult,
 				"BuildJoinedTime":      r.BuildJoinedTime,

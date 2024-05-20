@@ -40,6 +40,7 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 		spanner.Delete("FailureAssociationRules", spanner.AllKeys()),
 		spanner.Delete("GerritChangelists", spanner.AllKeys()),
 		spanner.Delete("Ingestions", spanner.AllKeys()),
+		spanner.Delete("IngestionJoins", spanner.AllKeys()),
 		spanner.Delete("ReclusteringRuns", spanner.AllKeys()),
 		spanner.Delete("ReclusteringShards", spanner.AllKeys()),
 		spanner.Delete("TestResults", spanner.AllKeys()),

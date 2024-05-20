@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package join
+package joinlegacy
 
 import (
 	"context"
@@ -40,15 +40,13 @@ import (
 // cvCreateTime is the create time assigned to CV Runs, for testing.
 var cvCreateTime = time.Date(2025, time.December, 1, 2, 3, 4, 5678, time.UTC)
 
-var fakeBBHost = "fakebbhost"
-
 func ingestBuild(ctx context.Context, build *buildBuilder) error {
 	builds := map[int64]*bbpb.Build{
 		build.buildID: build.BuildProto(),
 	}
 	ctx = buildbucket.UseFakeClient(ctx, builds)
 
-	processed, err := JoinBuild(ctx, fakeBBHost, "buildproject", build.buildID)
+	processed, err := JoinBuild(ctx, bbHost, "buildproject", build.buildID)
 	if err != nil {
 		return err
 	}
@@ -58,9 +56,9 @@ func ingestBuild(ctx context.Context, build *buildBuilder) error {
 	return nil
 }
 
-func ingestFinalization(ctx context.Context, invocationID string, isExportRoot bool) error {
+func ingestFinalization(ctx context.Context, buildID int64) error {
 	// Process invocation finalization.
-	notification := makeInvocationFinalizedNotification(invocationID, "invproject:realm", isExportRoot)
+	notification := makeInvocationFinalizedNotification(buildID, "invproject:realm")
 	processed, err := JoinInvocation(ctx, notification)
 	if err != nil {
 		return err
@@ -240,7 +238,7 @@ func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 	}
 
 	return &controlpb.BuildResult{
-		Host:         fakeBBHost,
+		Host:         bbHost,
 		Id:           b.buildID,
 		CreationTime: timestamppb.New(b.createTime),
 		Project:      "buildproject",
@@ -269,10 +267,9 @@ func makeCVRunPubSub(runID string) *cvv1.PubSubRun {
 	}
 }
 
-func makeInvocationFinalizedNotification(invocationID string, realm string, isExportRoot bool) *rdbpb.InvocationFinalizedNotification {
+func makeInvocationFinalizedNotification(buildID int64, realm string) *rdbpb.InvocationFinalizedNotification {
 	return &rdbpb.InvocationFinalizedNotification{
-		Invocation:   fmt.Sprintf("invocations/%s", invocationID),
-		Realm:        realm,
-		IsExportRoot: isExportRoot,
+		Invocation: fmt.Sprintf("invocations/build-%v", buildID),
+		Realm:      realm,
 	}
 }

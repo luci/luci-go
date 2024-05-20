@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
-	"go.chromium.org/luci/analysis/internal/ingestion/control"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 
@@ -52,8 +52,8 @@ func TestGlobalMetrics(t *testing.T) {
 
 		// Create some ingestion control records.
 		reference := time.Now().Add(-1 * time.Minute)
-		entriesToCreate := []*control.Entry{
-			control.NewEntry(0).
+		entriesToCreate := []*controllegacy.Entry{
+			controllegacy.NewEntry(0).
 				WithBuildProject("project-a").
 				WithPresubmitProject("project-b").
 				WithInvocationProject("project-c").
@@ -61,23 +61,23 @@ func TestGlobalMetrics(t *testing.T) {
 				WithPresubmitJoinedTime(reference).
 				WithInvocationJoinedTime(reference).
 				Build(),
-			control.NewEntry(1).
+			controllegacy.NewEntry(1).
 				WithBuildProject("project-d").
 				WithBuildJoinedTime(reference).
 				WithInvocationResult(nil).
 				WithPresubmitResult(nil).Build(),
-			control.NewEntry(2).
+			controllegacy.NewEntry(2).
 				WithPresubmitProject("project-e").
 				WithPresubmitJoinedTime(reference).
 				WithBuildResult(nil).
 				WithInvocationResult(nil).Build(),
-			control.NewEntry(3).
+			controllegacy.NewEntry(3).
 				WithInvocationProject("project-f").
 				WithInvocationJoinedTime(reference).
 				WithBuildResult(nil).
 				WithPresubmitResult(nil).Build(),
 		}
-		_, err = control.SetEntriesForTesting(ctx, entriesToCreate...)
+		_, err = controllegacy.SetEntriesForTesting(ctx, entriesToCreate...)
 		So(err, ShouldBeNil)
 
 		err = GlobalMetrics(ctx)

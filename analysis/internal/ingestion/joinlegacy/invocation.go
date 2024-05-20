@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package join
+package joinlegacy
 
 import (
 	"context"
+	"strconv"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -23,11 +24,12 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 )
 
 // JoinInvocation notifies ingestion that the given invocation has finalized.
-// Ingestion tasks are created when all required data for a ingestion
-// (including any associated LUCI CV run, build and invocation) is available.
+// Ingestion tasks are created for buildbucket builds when all required data
+// for a build (including any invocation) is available.
 func JoinInvocation(ctx context.Context, notification *rdbpb.InvocationFinalizedNotification) (processed bool, err error) {
 	project, _ := realms.Split(notification.Realm)
 	id, err := pbutil.ParseInvocationName(notification.Invocation)
@@ -35,21 +37,23 @@ func JoinInvocation(ctx context.Context, notification *rdbpb.InvocationFinalized
 		return false, errors.Annotate(err, "parse invocation name").Err()
 	}
 
-	if !isBuildbucketBuildInvocation(id) && !notification.IsExportRoot {
-		// Invocations that are not associated with a buildbucket build and not a export root are ignored.
+	match := buildInvocationRE.FindStringSubmatch(id)
+	if match == nil {
+		// Invocations that are not of the form build-<BUILD ID> are ignored.
 		return false, nil
+	}
+	bbBuildID, err := strconv.ParseInt(match[1], 10, 64)
+	if err != nil {
+		return false, errors.Annotate(err, "parse build ID").Err()
 	}
 
 	// This proto has no fields for now. If we need to pass anything about the invocation,
 	// we can add it in here in future.
 	result := &controlpb.InvocationResult{}
-	if err := JoinInvocationResult(ctx, id, project, result); err != nil {
+
+	buildID := controllegacy.BuildID(bbHost, bbBuildID)
+	if err := JoinInvocationResult(ctx, buildID, project, result); err != nil {
 		return true, errors.Annotate(err, "joining invocation result").Err()
 	}
 	return true, nil
-}
-
-// Invocation is a buildbucket build invocation if invocation id is of the form build-<BUILD ID>.
-func isBuildbucketBuildInvocation(invocationID string) bool {
-	return buildInvocationRE.MatchString(invocationID)
 }

@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package join
+package joinlegacy
 
 import (
 	"fmt"
@@ -34,6 +34,7 @@ import (
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestHandleBuild(t *testing.T) {
@@ -52,10 +53,9 @@ func TestHandleBuild(t *testing.T) {
 		}
 
 		assertTasksExpected := func() {
-			// TODO: assert ingestion task has been scheduled.
-			// So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-			// resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestVerdicts)
-			// So(resultsTask, ShouldResembleProto, expectedTask)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestVerdicts)
+			So(resultsTask, ShouldResembleProto, expectedTask)
 		}
 
 		Convey(`With vanilla build`, func() {
@@ -104,7 +104,7 @@ func TestHandleBuild(t *testing.T) {
 				assertTasksExpected()
 			})
 			Convey(`With invocation`, func() {
-				So(ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false), ShouldBeNil)
+				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
 				Convey(`Not contained by ancestor`, func() {
@@ -176,15 +176,15 @@ func TestHandleBuild(t *testing.T) {
 				}
 				assertTasksExpected()
 
-				// TODO: Check metrics were reported correctly for this sequence.
-				// isPresubmit := true
-				// hasInvocation := false
-				// So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				// So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				// So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 2)
-				// So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
-				// So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
-				// So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
+				// Check metrics were reported correctly for this sequence.
+				isPresubmit := true
+				hasInvocation := false
+				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 2)
+				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
+				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
+				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
 			})
 		})
 		Convey(`With build that has a ResultDB invocation`, func() {
@@ -197,7 +197,7 @@ func TestHandleBuild(t *testing.T) {
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 			})
 			Convey(`With invocation finalization acknowledged previously`, func() {
-				So(ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false), ShouldBeNil)
+				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
 
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
@@ -205,15 +205,15 @@ func TestHandleBuild(t *testing.T) {
 
 				assertTasksExpected()
 
-				// TODO: Check metrics were reported correctly for this sequence.
-				// isPresubmit := false
-				// hasInvocation := true
-				// So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				// So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				// So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
-				// So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
-				// So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
-				// So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
+				// Check metrics were reported correctly for this sequence.
+				isPresubmit := false
+				hasInvocation := true
+				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
+				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
+				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
+				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
 			})
 		})
 	})

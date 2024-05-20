@@ -47,13 +47,21 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 		Convey(`Valid message`, func() {
 			called := false
 			var processed bool
-			h.handleInvocation = func(ctx context.Context, notification *resultpb.InvocationFinalizedNotification) (bool, error) {
+			h.handleInvocationLegacy = func(ctx context.Context, notification *resultpb.InvocationFinalizedNotification) (bool, error) {
 				So(called, ShouldBeFalse)
 				So(notification, ShouldResembleProto, &resultpb.InvocationFinalizedNotification{
 					Invocation: "invocations/build-6363636363",
 					Realm:      "invproject:realm",
 				})
 				called = true
+				return processed, nil
+			}
+			h.handleInvocation = func(ctx context.Context, notification *resultpb.InvocationFinalizedNotification) (bool, error) {
+				So(called, ShouldBeTrue)
+				So(notification, ShouldResembleProto, &resultpb.InvocationFinalizedNotification{
+					Invocation: "invocations/build-6363636363",
+					Realm:      "invproject:realm",
+				})
 				return processed, nil
 			}
 

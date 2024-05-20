@@ -49,7 +49,7 @@ import (
 	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
-	"go.chromium.org/luci/analysis/internal/ingestion/control"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
@@ -246,7 +246,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	}
 
 	rdbHost := payload.Build.ResultdbHost
-	invName := control.BuildInvocationName(payload.Build.Id)
+	invName := controllegacy.BuildInvocationName(payload.Build.Id)
 	rc, err := resultdb.NewClient(ctx, rdbHost, payload.Build.Project)
 	if err != nil {
 		return transient.Tag.Apply(err)
@@ -385,7 +385,7 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 		panic("next page token cannot be the empty page token")
 	}
 	rdbHost := task.Build.ResultdbHost
-	invID := control.BuildInvocationID(task.Build.Id)
+	invID := controllegacy.BuildInvocationID(task.Build.Id)
 
 	// Schedule the task transactionally, conditioned on it not having been
 	// scheduled before.
@@ -583,7 +583,7 @@ func validateRequest(ctx context.Context, payload *taskspb.IngestTestVerdicts) e
 	if payload.Build == nil {
 		return errors.New("build must be specified")
 	}
-	if err := control.ValidateBuildResult(payload.Build); err != nil {
+	if err := controllegacy.ValidateBuildResult(payload.Build); err != nil {
 		return err
 	}
 	return nil

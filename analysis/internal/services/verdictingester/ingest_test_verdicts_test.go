@@ -52,8 +52,8 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/gerrit"
-	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctrlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
@@ -248,8 +248,8 @@ func TestIngestTestVerdicts(t *testing.T) {
 			expectedContinuation.TaskIndex = 2
 
 			ingestionCtl :=
-				control.NewEntry(0).
-					WithBuildID(control.BuildID(bHost, testBuildID)).
+				controllegacy.NewEntry(0).
+					WithBuildID(controllegacy.BuildID(bHost, testBuildID)).
 					WithBuildResult(proto.Clone(payload.Build).(*ctrlpb.BuildResult)).
 					WithPresubmitResult(proto.Clone(payload.PresubmitRun).(*ctrlpb.PresubmitResult)).
 					Build()
@@ -268,7 +268,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
 				setupConfig(ctx, cfg)
-				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
+				_, err := controllegacy.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
 				// Act
@@ -296,7 +296,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				})
 				setupConfig(ctx, cfg)
 
-				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
+				_, err := controllegacy.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
 				// Act
@@ -326,7 +326,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				setupQueryTestVariantsMock()
 				setupConfig(ctx, cfg)
 
-				_, err = control.SetEntriesForTesting(ctx, ingestionCtl)
+				_, err = controllegacy.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
 				// Act
@@ -355,7 +355,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				setupQueryTestVariantsMock()
 				setupConfig(ctx, cfg)
 
-				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
+				_, err := controllegacy.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
 				// Act
@@ -1405,8 +1405,8 @@ func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *tas
 	}
 }
 
-func verifyIngestionControl(ctx context.Context, expected *control.Entry) {
-	actual, err := control.Read(span.Single(ctx), []string{expected.BuildID})
+func verifyIngestionControl(ctx context.Context, expected *controllegacy.Entry) {
+	actual, err := controllegacy.Read(span.Single(ctx), []string{expected.BuildID})
 	So(err, ShouldBeNil)
 	So(actual, ShouldHaveLength, 1)
 	a := *actual[0]
