@@ -23,7 +23,7 @@ import {
   styled,
 } from '@mui/material';
 
-import { OutputChangepointGroupSummary } from '@/test_verdict/types';
+import { OutputChangepointGroupSummary } from '@/analysis/types';
 
 import { RegressionTableContextProvider } from './context';
 import { RegressionRow } from './regression_row';

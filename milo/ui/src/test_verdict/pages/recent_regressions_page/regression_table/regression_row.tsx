@@ -16,11 +16,11 @@ import { Link, TableCell, TableRow, styled } from '@mui/material';
 import { DateTime } from 'luxon';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { OutputChangepointGroupSummary } from '@/analysis/types';
 import { Timestamp } from '@/common/components/timestamp';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { getGitilesCommitURL } from '@/gitiles/tools/utils';
-import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
 import { useDetailsUrlPath } from './context';
 import { FailureRatePieChart } from './failure_rate_pie_chart';

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { OutputTestVariantBranch } from '@/test_verdict/types';
+import { OutputTestVariantBranch } from '@/analysis/types';
 
 export interface BlamelistState {
   readonly testVariantBranch: OutputTestVariantBranch | null;

@@ -30,9 +30,12 @@ export type SpecifiedBuildStatus = Exclude<
   BuildStatus.UNSPECIFIED | BuildStatus.ENDED_MASK
 >;
 
-export type OutputStep = Step & { status: SpecifiedBuildStatus };
+export interface OutputStep extends Step {
+  readonly status: SpecifiedBuildStatus;
+}
 
-export type OutputBuild = DeepNonNullableProps<
-  Build & { status: SpecifiedBuildStatus; steps: readonly OutputStep[] },
-  'builder' | 'createTime'
->;
+export interface OutputBuild
+  extends DeepNonNullableProps<Build, 'builder' | 'createTime'> {
+  readonly status: SpecifiedBuildStatus;
+  readonly steps: readonly OutputStep[];
+}

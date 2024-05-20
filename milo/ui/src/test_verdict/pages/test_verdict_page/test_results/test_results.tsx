@@ -17,16 +17,14 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import { useQuery } from '@tanstack/react-query';
 
+import { OutputClusterEntry } from '@/analysis/types';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import {
   ClusterRequest_TestResult,
   ClustersClientImpl,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import {
-  OutputClusterEntry,
-  OutputTestResultBundle,
-} from '@/test_verdict/types';
+import { OutputTestResultBundle } from '@/test_verdict/types';
 
 import { useProject, useTestVerdict } from '../context';
 

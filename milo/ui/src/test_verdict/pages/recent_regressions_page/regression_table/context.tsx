@@ -14,7 +14,7 @@
 
 import { ReactNode, createContext, useContext } from 'react';
 
-import { OutputChangepointGroupSummary } from '@/test_verdict/types';
+import { OutputChangepointGroupSummary } from '@/analysis/types';
 
 import { GetDetailsUrlPath } from './types';
 

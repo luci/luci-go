@@ -14,7 +14,7 @@
 
 import { createContext, ReactNode, useContext, useMemo } from 'react';
 
-import { OutputSegment, OutputTestVariantBranch } from '@/test_verdict/types';
+import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 
 interface BlamelistContext {
   readonly segmentsSortedByEnd: readonly OutputSegment[];
@@ -37,7 +37,7 @@ export function BlamelistContextProvider({
       (seg1, seg2) => parseInt(seg1.endPosition) - parseInt(seg2.endPosition),
     );
     const segmentsSortedByStartUpperBound = testVariantBranch.segments
-      .filter((seg: OutputSegment) => seg.hasStartChangepoint)
+      .filter((seg) => seg.hasStartChangepoint)
       .sort(
         (seg1, seg2) =>
           parseInt(seg1.startPositionUpperBound99th) -

@@ -17,13 +17,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
-import { BatchGetTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import { getCriticalVariantKeys } from '@/test_verdict/tools/variant_utils';
 import {
   OutputTestVariantBranch,
   ParsedTestVariantBranchName,
   TestVariantBranchDef,
-} from '@/test_verdict/types';
+} from '@/analysis/types';
+import { BatchGetTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { getCriticalVariantKeys } from '@/test_verdict/tools/variant_utils';
 
 import { Body } from './body';
 import { ChangepointTableContextProvider } from './context';

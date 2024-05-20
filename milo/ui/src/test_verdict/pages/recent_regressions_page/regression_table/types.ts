@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { OutputChangepointGroupSummary } from '@/test_verdict/types';
+import { OutputChangepointGroupSummary } from '@/analysis/types';
 
 export type GetDetailsUrlPath = (
   regression: OutputChangepointGroupSummary,

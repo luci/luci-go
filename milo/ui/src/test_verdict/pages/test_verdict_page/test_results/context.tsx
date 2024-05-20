@@ -14,10 +14,8 @@
 
 import { ReactNode, createContext, useContext } from 'react';
 
-import {
-  OutputClusterEntry,
-  OutputTestResultBundle,
-} from '@/test_verdict/types';
+import { OutputClusterEntry } from '@/analysis/types';
+import { OutputTestResultBundle } from '@/test_verdict/types';
 
 interface TestResultsContext {
   readonly results: readonly OutputTestResultBundle[];

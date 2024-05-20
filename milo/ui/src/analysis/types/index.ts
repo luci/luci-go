@@ -12,11 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { OutputCommit } from '@/gitiles/types';
-import { QueryBlamelistResponse } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
-
-export interface OutputQueryBlamelistResponse
-  extends Omit<QueryBlamelistResponse, 'commits' | 'precedingCommit'> {
-  readonly commits: readonly OutputCommit[];
-  readonly precedingCommit?: OutputCommit;
-}
+export * from './types';

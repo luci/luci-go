@@ -18,6 +18,10 @@ import { memo, useMemo } from 'react';
 
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
+  OutputQuerySourcePositionsResponse,
+  OutputTestVariantBranch,
+} from '@/analysis/types';
+import {
   AuthorContentCell,
   AuthorHeadCell,
   CommitTable,
@@ -35,11 +39,6 @@ import {
 import { CommitTableBody } from '@/gitiles/components/commit_table/commit_table_body';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 import { QuerySourcePositionsRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import {
-  OutputQuerySourcePositionsResponse,
-  OutputSourcePosition,
-  OutputTestVariantBranch,
-} from '@/test_verdict/types';
 
 import { BlamelistContextProvider } from './context';
 import { EntryContent } from './entry_content';
@@ -65,7 +64,7 @@ const CommitTablePage = memo(function CommitTablePage({
 }: CommitTablePageProps) {
   return (
     <>
-      {page.sourcePositions.map((sp: OutputSourcePosition, i) => (
+      {page.sourcePositions.map((sp, i) => (
         <CommitTableRow key={i} commit={sp.commit} content={<EntryContent />}>
           <SegmentContentCell position={sp.position} />
           <ToggleContentCell />

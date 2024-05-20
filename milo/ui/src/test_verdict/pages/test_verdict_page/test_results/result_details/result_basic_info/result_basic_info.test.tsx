@@ -15,11 +15,11 @@
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 
+import { OutputClusterEntry } from '@/analysis/types';
 import {
   TestResult,
   TestStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { OutputClusterEntry } from '@/test_verdict/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { FakeTestVerdictContextProvider } from '../../../testing_tools/fake_context';

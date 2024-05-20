@@ -17,14 +17,14 @@ import { useQuery } from '@tanstack/react-query';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
 import {
+  OutputChangepoint,
+  ParsedTestVariantBranchName,
+} from '@/analysis/types';
+import {
   ChangepointPredicate,
   QueryChangepointsInGroupRequest,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { ChangepointTable } from '@/test_verdict/components/changepoint_table';
-import {
-  OutputChangepoint,
-  ParsedTestVariantBranchName,
-} from '@/test_verdict/types';
 
 import { BlamelistStateProvider } from './context';
 import { RegressionDetailsDialog } from './regression_details_dialog';

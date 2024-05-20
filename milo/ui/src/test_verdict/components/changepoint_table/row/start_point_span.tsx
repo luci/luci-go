@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { OutputTestVariantBranch } from '@/analysis/types';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
-import { OutputTestVariantBranch } from '@/test_verdict/types';
 
 import { ROW_PADDING, SPAN_MARGIN } from '../constants';
 import { useConfig } from '../context';

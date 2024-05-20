@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { OutputSegment } from '@/test_verdict/types';
+import { OutputSegment } from '@/analysis/types';
 
 export function getBorderColor(segment: OutputSegment) {
   if (segment.counts.unexpectedVerdicts > 0) {

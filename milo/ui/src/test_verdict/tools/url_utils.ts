@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ParsedTestVariantBranchName } from '@/analysis/types';
 import {
   Changepoint,
   ChangepointPredicate,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
-import { ParsedTestVariantBranchName } from '@/test_verdict/types';
 
 export interface GetRegressionDetailsUrlPathOpts {
   readonly canonicalChangepoint: Changepoint;

@@ -17,7 +17,7 @@ import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
 import { buildCategoryTree } from '@/build/tools/category_tree';
-import { OutputBuild, OutputStep } from '@/build/types';
+import { OutputBuild } from '@/build/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   Body,
@@ -69,7 +69,7 @@ interface TimelineTabImplProps {
 function TimelineTabImpl({ build }: TimelineTabImplProps) {
   const steps = useMemo(() => {
     const tree = buildCategoryTree(
-      build.steps.map((step: OutputStep) => {
+      build.steps.map((step) => {
         const splitName = step.name.split('|');
         return {
           category: splitName,

@@ -19,7 +19,7 @@ import { useEffect, useRef } from 'react';
 import {
   ParsedTestVariantBranchName,
   TestVariantBranchDef,
-} from '@/test_verdict/types';
+} from '@/analysis/types';
 
 import { SIDE_PANEL_WIDTH } from './constants';
 import { useConfig } from './context';
@@ -71,7 +71,7 @@ export function SidePanel({ testVariantBranches }: SidePanelProps) {
         >
           <foreignObject height={rowHeight} width={SIDE_PANEL_WIDTH}>
             {criticalVariantKeys.map((k) => (
-              <Box key={k}>{tvb.variant.def[k] || ''}</Box>
+              <Box key={k}>{tvb.variant?.def[k] || ''}</Box>
             ))}
           </foreignObject>
         </g>

@@ -14,6 +14,7 @@
 
 import { Box, Icon } from '@mui/material';
 
+import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import {
   VERDICT_STATUS_COLOR_MAP,
@@ -24,7 +25,6 @@ import {
   getBackgroundColor,
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
-import { OutputSegment, OutputTestVariantBranch } from '@/test_verdict/types';
 
 import { ROW_PADDING, SPAN_MARGIN, SPAN_PADDING } from '../constants';
 import { useConfig } from '../context';

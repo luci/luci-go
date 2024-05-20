@@ -17,13 +17,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
+import { OutputChangepointGroupSummary } from '@/analysis/types';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   ChangepointPredicate,
   QueryChangepointGroupSummariesRequest,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { getRegressionDetailsURLPath } from '@/test_verdict/tools/url_utils';
-import { OutputChangepointGroupSummary } from '@/test_verdict/types';
 
 import { RegressionFilters } from './regression_filters';
 import { RegressionTable } from './regression_table';

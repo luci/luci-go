@@ -18,7 +18,7 @@ import { useEffect, useRef } from 'react';
 import {
   OutputTestVariantBranch,
   ParsedTestVariantBranchName,
-} from '@/test_verdict/types';
+} from '@/analysis/types';
 
 import { useConfig } from './context';
 import { Row } from './row';

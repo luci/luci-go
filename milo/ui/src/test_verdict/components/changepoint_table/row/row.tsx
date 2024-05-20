@@ -14,7 +14,7 @@
 
 import { Fragment } from 'react';
 
-import { OutputSegment, OutputTestVariantBranch } from '@/test_verdict/types';
+import { OutputTestVariantBranch } from '@/analysis/types';
 
 import { SegmentSpan } from './segment_span';
 import { StartPointSpan } from './start_point_span';
@@ -26,7 +26,7 @@ export interface RowProps {
 export function Row({ testVariantBranch }: RowProps) {
   return (
     <>
-      {testVariantBranch.segments.map((seg: OutputSegment) => (
+      {testVariantBranch.segments.map((seg) => (
         <Fragment key={seg.endPosition}>
           <StartPointSpan testVariantBranch={testVariantBranch} segment={seg} />
           <SegmentSpan testVariantBranch={testVariantBranch} segment={seg} />

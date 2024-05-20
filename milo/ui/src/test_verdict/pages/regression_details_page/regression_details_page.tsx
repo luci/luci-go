@@ -14,12 +14,12 @@
 
 import { useParams } from 'react-router-dom';
 
+import { ParsedTestVariantBranchName } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ChangepointPredicate } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
-import { ParsedTestVariantBranchName } from '@/test_verdict/types';
 
 import { RegressionDetails } from './regression_details';
 
