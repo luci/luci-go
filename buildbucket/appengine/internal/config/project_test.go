@@ -1079,6 +1079,270 @@ func TestValidateProject(t *testing.T) {
 			So(ve.Errors[1].Error(), ShouldContainSubstring, "(default) execution_timeout_secs 10800 + expiration_secs 432000 exceeds max build completion time 432000")
 			So(ve.Errors[2].Error(), ShouldContainSubstring, "execution_timeout_secs 172800 + expiration_secs 432000 exceeds max build completion time 432000")
 		})
+
+		Convey("custom metrics", func() {
+			settingsCfg := &pb.SettingsCfg{
+				CustomMetrics: []*pb.CustomMetric{
+					{
+						Name:   "chrome/infra/custom/builds/started",
+						Fields: []string{"os"},
+					},
+					{
+						Name:   "chrome/infra/custom/builds/completed",
+						Fields: []string{"os"},
+					},
+				},
+			}
+			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+
+			Convey("metric name empty", func() {
+				content := `
+					builders {
+						name: "both default"
+						swarming_host: "example.com"
+						dimensions: "os:Linux"
+						dimensions: "cpu:x86-64"
+						dimensions: "cores:8"
+						dimensions: "60:cores:64"
+						service_account: "robot@example.com"
+						caches {
+							name: "git_chromium"
+							path: "git_cache"
+						}
+						recipe {
+							name: "foo"
+							cipd_package: "infra/recipe_bundle"
+							cipd_version: "refs/heads/main"
+							properties: "a:b'"
+							properties_j: "x:true"
+						}
+						custom_build_metrics {}
+					}
+				`
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "name is required")
+			})
+
+			Convey("metric name not registered", func() {
+				content := `
+					builders {
+						name: "both default"
+						swarming_host: "example.com"
+						dimensions: "os:Linux"
+						dimensions: "cpu:x86-64"
+						dimensions: "cores:8"
+						dimensions: "60:cores:64"
+						service_account: "robot@example.com"
+						caches {
+							name: "git_chromium"
+							path: "git_cache"
+						}
+						recipe {
+							name: "foo"
+							cipd_package: "infra/recipe_bundle"
+							cipd_version: "refs/heads/main"
+							properties: "a:b'"
+							properties_j: "x:true"
+						}
+						custom_build_metrics {
+							name: "chrome/infra/not/registered"
+						}
+					}
+				`
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "not registered in Buildbucket service config")
+			})
+
+			Convey("metric predicates empty", func() {
+				content := `
+					builders {
+						name: "both default"
+						swarming_host: "example.com"
+						dimensions: "os:Linux"
+						dimensions: "cpu:x86-64"
+						dimensions: "cores:8"
+						dimensions: "60:cores:64"
+						service_account: "robot@example.com"
+						caches {
+							name: "git_chromium"
+							path: "git_cache"
+						}
+						recipe {
+							name: "foo"
+							cipd_package: "infra/recipe_bundle"
+							cipd_version: "refs/heads/main"
+							properties: "a:b'"
+							properties_j: "x:true"
+						}
+						custom_build_metrics {
+							name: "chrome/infra/custom/builds/started"
+						}
+					}
+				`
+
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 2)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "predicates are required")
+			})
+
+			Convey("metric predicates invalid", func() {
+				content := `
+					builders {
+						name: "both default"
+						swarming_host: "example.com"
+						dimensions: "os:Linux"
+						dimensions: "cpu:x86-64"
+						dimensions: "cores:8"
+						dimensions: "60:cores:64"
+						service_account: "robot@example.com"
+						caches {
+							name: "git_chromium"
+							path: "git_cache"
+						}
+						recipe {
+							name: "foo"
+							cipd_package: "infra/recipe_bundle"
+							cipd_version: "refs/heads/main"
+							properties: "a:b'"
+							properties_j: "x:true"
+						}
+						custom_build_metrics {
+							name: "chrome/infra/custom/builds/started"
+							predicates: "not_a_bool_expression"
+						}
+					}
+				`
+
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 2)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "failed to generate CEL expression")
+			})
+
+			Convey("metric fields empty", func() {
+				content := `
+					builders {
+						name: "both default"
+						swarming_host: "example.com"
+						dimensions: "os:Linux"
+						dimensions: "cpu:x86-64"
+						dimensions: "cores:8"
+						dimensions: "60:cores:64"
+						service_account: "robot@example.com"
+						caches {
+							name: "git_chromium"
+							path: "git_cache"
+						}
+						recipe {
+							name: "foo"
+							cipd_package: "infra/recipe_bundle"
+							cipd_version: "refs/heads/main"
+							properties: "a:b'"
+							properties_j: "x:true"
+						}
+						custom_build_metrics {
+							name: "chrome/infra/custom/builds/started"
+							predicates: "build.tags.get_value(\"os\")!=\"\""
+						}
+					}
+				`
+
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, `field(s) ["os"] must be included`)
+			})
+
+			Convey("metric fields invalid", func() {
+				content := `
+					builders {
+						name: "both default"
+						swarming_host: "example.com"
+						dimensions: "os:Linux"
+						dimensions: "cpu:x86-64"
+						dimensions: "cores:8"
+						dimensions: "60:cores:64"
+						service_account: "robot@example.com"
+						caches {
+							name: "git_chromium"
+							path: "git_cache"
+						}
+						recipe {
+							name: "foo"
+							cipd_package: "infra/recipe_bundle"
+							cipd_version: "refs/heads/main"
+							properties: "a:b'"
+							properties_j: "x:true"
+						}
+						custom_build_metrics {
+							name: "chrome/infra/custom/builds/started"
+							predicates: "build.tags.get_value(\"os\")!=\"\""
+							fields {
+								key: "os",
+								value: "build.tags.get_value(\"os\")!=\"\"",
+							}
+						}
+					}
+				`
+
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
+				ve, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, `failed to generate CEL expression`)
+			})
+
+			Convey("OK", func() {
+				content := `
+					builders {
+						name: "both default"
+						swarming_host: "example.com"
+						dimensions: "os:Linux"
+						dimensions: "cpu:x86-64"
+						dimensions: "cores:8"
+						dimensions: "60:cores:64"
+						service_account: "robot@example.com"
+						caches {
+							name: "git_chromium"
+							path: "git_cache"
+						}
+						recipe {
+							name: "foo"
+							cipd_package: "infra/recipe_bundle"
+							cipd_version: "refs/heads/main"
+							properties: "a:b'"
+							properties_j: "x:true"
+						}
+						custom_build_metrics {
+							name: "chrome/infra/custom/builds/started"
+							predicates: "build.tags.get_value(\"os\")!=\"\""
+							fields {
+								key: "os",
+								value: "build.tags.get_value(\"os\")",
+							}
+							fields {
+								key: "additional",
+								value: "build.tags.get_value(\"additional\")",
+							}
+						}
+					}
+				`
+
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
+				_, ok := vctx.Finalize().(*validation.Error)
+				So(ok, ShouldEqual, false)
+			})
+		})
 	})
 
 	Convey("validate dimensions", t, func() {

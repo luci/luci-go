@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
+	"go.chromium.org/luci/buildbucket/appengine/common/buildcel"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -839,11 +840,10 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 
 	// shadow_builder_adjustments
 	if b.ShadowBuilderAdjustments != nil {
+		ctx.Enter("shadow_builder_adjustments")
 		if isDynamic {
 			ctx.Errorf("cannot set shadow_builder_adjustments in a dynamic builder template")
 		} else {
-			ctx.Enter("shadow_builder_adjustments")
-
 			if b.ShadowBuilderAdjustments.GetProperties() != "" {
 				if !strings.HasPrefix(b.ShadowBuilderAdjustments.Properties, "{") || !json.Valid([]byte(b.ShadowBuilderAdjustments.Properties)) {
 					ctx.Errorf("properties is not a JSON object")
@@ -883,8 +883,64 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 				}
 			}
 		}
-
 		ctx.Exit()
+	}
+
+	// custome_build_metrics
+	if len(b.CustomBuildMetrics) > 0 {
+		validateCustomBuildMetrics(ctx, b.CustomBuildMetrics, globalCfg)
+	}
+}
+
+func validateCustomBuildMetrics(ctx *validation.Context, cms []*pb.BuilderConfig_CustomBuildMetric, globalCfg *pb.SettingsCfg) {
+	ctx.Enter("custome_build_metrics")
+	defer ctx.Exit()
+
+	registeredMetrics := make(map[string][]string, len(globalCfg.GetCustomMetrics()))
+	for _, gm := range globalCfg.GetCustomMetrics() {
+		registeredMetrics[gm.Name] = gm.GetFields()
+	}
+
+	for _, cm := range cms {
+		validateCustomBuildMetric(ctx, cm, registeredMetrics)
+	}
+}
+
+func validateCustomBuildMetric(ctx *validation.Context, cm *pb.BuilderConfig_CustomBuildMetric, registeredMetrics map[string][]string) {
+	ctx.Enter("custome_build_metrics %s", cm.Name)
+	defer ctx.Exit()
+	// Name
+	if cm.Name == "" {
+		ctx.Errorf("name is required")
+		return
+	}
+
+	gmFields, ok := registeredMetrics[cm.Name]
+	if !ok {
+		ctx.Errorf("not registered in Buildbucket service config")
+		return
+	}
+
+	// Predicates
+	if _, err := buildcel.NewBool(cm.Predicates); err != nil {
+		ctx.Errorf("predicates: %s", err)
+	}
+
+	// Fields
+	var missedFs []string
+	for _, f := range gmFields {
+		if _, ok := cm.GetFields()[f]; !ok {
+			missedFs = append(missedFs, f)
+		}
+	}
+	if len(missedFs) > 0 {
+		ctx.Errorf(fmt.Sprintf("field(s) %q must be included", missedFs))
+	}
+
+	if len(cm.GetFields()) > 0 {
+		if _, err := buildcel.NewStringMap(cm.GetFields()); err != nil {
+			ctx.Errorf("fields: %s", err)
+		}
 	}
 }
 
