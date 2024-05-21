@@ -205,33 +205,18 @@ func createVM(c context.Context, payload proto.Message) error {
 	}
 	logging.Debugf(c, "Staring create VM: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 	vm := &model.VM{
-		ID:             task.Id,
-		Config:         task.Config,
-		ConfigExpanded: task.ConfigExpandTime.AsTime().Unix(),
-		DUT:            task.DUT,
-		Hostname:       hostname,
-		Index:          task.Index,
-		Lifetime:       task.Lifetime,
-		Prefix:         task.Prefix,
-		Revision:       task.Revision,
-		Swarming:       task.Swarming,
-		Timeout:        task.Timeout,
+		ID: task.Id,
 	}
-	if task.Attributes != nil {
-		vm.Attributes = *task.Attributes
-		// TODO(crbug/942301): Auto-select zone if zone is unspecified.
-		vm.Attributes.SetZone(vm.Attributes.GetZone())
-		vm.IndexAttributes()
-	}
+
 	// createVM is called repeatedly, so do a fast check outside the transaction.
 	// In most cases, this will skip the more expensive transactional check.
 	switch err := datastore.Get(c, vm); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		logging.Debugf(c, "Create VM: VM not exists, so proceed with creation: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
+		logging.Debugf(c, "Create VM: VM not exists, so proceed with creation: hostname:%q, ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch VM %q", hostname).Err()
 	default:
-		logging.Debugf(c, "Create VM: VM already exists: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
+		logging.Debugf(c, "Create VM: VM already exists: hostname:%q, ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 		return nil
 	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
@@ -240,9 +225,30 @@ func createVM(c context.Context, payload proto.Message) error {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM %q", hostname).Err()
 		default:
-			logging.Debugf(c, "Create VM: VM found: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
+			logging.Debugf(c, "Create VM: VM found: hostname:%q, ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 			return nil
 		}
+
+		logging.Debugf(c, "Create VM: updating VM data: hostname:%q, ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
+		vm.ID = task.Id
+		vm.Config = task.Config
+		vm.ConfigExpanded = task.ConfigExpandTime.AsTime().Unix()
+		vm.DUT = task.DUT
+		vm.Hostname = hostname
+		vm.Index = task.Index
+		vm.Lifetime = task.Lifetime
+		vm.Prefix = task.Prefix
+		vm.Revision = task.Revision
+		vm.Swarming = task.Swarming
+		vm.Timeout = task.Timeout
+
+		if task.Attributes != nil {
+			vm.Attributes = *task.Attributes
+			// TODO(crbug/942301): Auto-select zone if zone is unspecified.
+			vm.Attributes.SetZone(vm.Attributes.GetZone())
+			vm.IndexAttributes()
+		}
+
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
