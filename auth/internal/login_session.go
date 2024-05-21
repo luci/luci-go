@@ -192,12 +192,9 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 	// We've got the authorization code and the redirect URL needed to complete
 	// the flow on our side. Note that we need to use codeVerifier here that only
 	// we know.
-	tok, err := (&oauth2.Config{
-		ClientID:     p.clientID,
-		ClientSecret: p.clientSecret,
-		RedirectURL:  session.OauthRedirectUrl,
-		Endpoint:     google.Endpoint,
-	}).Exchange(ctx,
+	cfg := p.oauthConfig()
+	cfg.RedirectURL = session.OauthRedirectUrl
+	tok, err := cfg.Exchange(ctx,
 		session.OauthAuthorizationCode,
 		oauth2.SetAuthURLParam("code_verifier", codeVerifier),
 	)
@@ -212,11 +209,7 @@ func (p *loginSessionTokenProvider) RefreshToken(ctx context.Context, prev, base
 	// that token never expires.
 	t := prev.Token
 	t.Expiry = time.Unix(1, 0)
-	cfg := &oauth2.Config{
-		ClientID:     p.clientID,
-		ClientSecret: p.clientSecret,
-		Endpoint:     google.Endpoint,
-	}
+	cfg := p.oauthConfig()
 	switch newTok, err := grabToken(cfg.TokenSource(ctx, &t)); {
 	case err == nil:
 		return processProviderReply(ctx, newTok, prev.Email)
@@ -226,6 +219,14 @@ func (p *loginSessionTokenProvider) RefreshToken(ctx context.Context, prev, base
 	default:
 		logging.Warningf(ctx, "Bad refresh token - %s", err)
 		return nil, ErrBadRefreshToken
+	}
+}
+
+func (p *loginSessionTokenProvider) oauthConfig() *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     p.clientID,
+		ClientSecret: p.clientSecret,
+		Endpoint:     google.Endpoint,
 	}
 }
 
