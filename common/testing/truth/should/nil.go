@@ -39,6 +39,10 @@ func isNil(cmpName string, actual any) (isNil bool, ret *failure.Summary) {
 //
 // Note that this is a stricter form than should.BeZero.
 func BeNil(actual any) *failure.Summary {
+	if err, ok := actual.(error); ok {
+		return ErrLikeError(nil)(err)
+	}
+
 	const cmpName = "should.BeNil"
 
 	if actual == nil {

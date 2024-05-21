@@ -65,15 +65,16 @@ func ErrLikeString(substring string) comparison.Func[error] {
 //
 // nil is an acceptable target here indicating the absence of an error.
 func ErrLikeError(target error) comparison.Func[error] {
-	const cmpName = "ErrLikeError"
+	const cmpName = "should.ErrLikeError"
 	if target == nil {
 		return func(actual error) *failure.Summary {
 			if actual == nil {
 				return nil
 			}
 			return comparison.NewSummaryBuilder(cmpName).
-				Because("Actual is not nil").
+				AddComparisonArgs("nil").
 				Actual(actual).
+				AddFindingf("actual.Error()", actual.Error()).
 				Summary
 		}
 	}
@@ -83,6 +84,7 @@ func ErrLikeError(target error) comparison.Func[error] {
 			return comparison.NewSummaryBuilder(cmpName, target).
 				Because("Actual is nil but target is not").
 				Expected(target).
+				AddFindingf("target.Error()", target.Error()).
 				Summary
 		}
 		if errors.Is(actual, target) {

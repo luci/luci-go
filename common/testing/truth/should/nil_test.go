@@ -15,6 +15,7 @@
 package should
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -25,6 +26,8 @@ func TestBeNil(t *testing.T) {
 	t.Run("slice", shouldPass(BeNil([]int(nil))))
 	t.Run("pointer", shouldPass(BeNil((*struct{})(nil))))
 
+	// error is specially cased
+	t.Run("error", shouldFail(BeNil(fmt.Errorf("what")), "ErrLikeError"))
 	t.Run("empty string not nil", shouldFail(BeNil(""), "cannot be checked for nil"))
 	t.Run("non-empty slice", shouldFail(BeNil([]string{"yo"}), "Actual"))
 }

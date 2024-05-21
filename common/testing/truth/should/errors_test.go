@@ -31,7 +31,7 @@ func TestErrLike(t *testing.T) {
 	t.Run("self", shouldPass(ErrLike(err)(err)))
 	t.Run("derived", shouldPass(ErrLike(err)(fmt.Errorf("derived: %w", err))))
 
-	t.Run("expect nil but isn't", shouldFail(ErrLike(nil)(err), "not nil"))
+	t.Run("expect nil but isn't", shouldFail(ErrLike(nil)(err), "arguments", "nil"))
 
 	t.Run("missing substring", shouldFail(ErrLike("wow")(err), "missing substring"))
 	t.Run("different error", shouldFail(ErrLike(err)(errors.New("else")), "does not contain"))
