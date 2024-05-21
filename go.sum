@@ -116,8 +116,8 @@ github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b h1:jhiMzJ+8u
 github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b/go.mod h1:689QdV3hBP7Vo9dJMmzhoYIyo/9iMhEmHkJcnaPRCbo=
 github.com/bazelbuild/remote-apis v0.0.0-20240215191509-9ff14cecffe5 h1:fm5Ceq2rIwkGYaaw40jjd8y1x0iOuKRnvxdoipWr2JA=
 github.com/bazelbuild/remote-apis v0.0.0-20240215191509-9ff14cecffe5/go.mod h1:ry8Y6CkQqCVcYsjPOlLXDX2iRVjOnjogdNwhvHmRcz8=
-github.com/bazelbuild/remote-apis-sdks v0.0.0-20240516144943-e74bc3da2efc h1:GfYKt7dmQqMEfHZPNPwBCc7b82qQQ+4ZRmJwtrVlsAU=
-github.com/bazelbuild/remote-apis-sdks v0.0.0-20240516144943-e74bc3da2efc/go.mod h1:xTnFpTrMb0eMa4bsueAUc3/K2MSLiTwhrTjpuDJVSSQ=
+github.com/bazelbuild/remote-apis-sdks v0.0.0-20240521192600-a5e60eb5cc47 h1:R7ZHLLrKhwDTe7iyJJ6KlmEQBIfzl5MVoRaZqQP/QpY=
+github.com/bazelbuild/remote-apis-sdks v0.0.0-20240521192600-a5e60eb5cc47/go.mod h1:xTnFpTrMb0eMa4bsueAUc3/K2MSLiTwhrTjpuDJVSSQ=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/census-instrumentation/opencensus-proto v0.4.1 h1:iKLQ0xPNFxR/2hzXZMrBo8f1j86j5WHzznCCQxV/b8g=
 github.com/census-instrumentation/opencensus-proto v0.4.1/go.mod h1:4T9NM4+4Vw91VeyqjLS6ao50K5bOcLKN6Q42XnYaRYw=
