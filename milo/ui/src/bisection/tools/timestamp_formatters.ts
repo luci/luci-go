@@ -12,31 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import dayjs from 'dayjs';
-import advancedFormat from 'dayjs/plugin/advancedFormat';
-import duration from 'dayjs/plugin/duration';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
-
-dayjs.extend(duration);
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(advancedFormat);
+import { LONG_TIME_FORMAT } from '@/common/tools/time_utils';
+import { DateTime } from 'luxon';
 
 export function getFormattedDuration(start?: string, end?: string): string {
   if (!start || !end) {
     return '';
   }
 
-  const startTime = dayjs(start);
-  const endTime = dayjs(end);
+  const startTime = DateTime.fromISO(start);
+  const endTime = DateTime.fromISO(end);
 
   if (endTime < startTime) {
     return '';
   }
 
-  const diff = dayjs.duration(endTime.diff(startTime));
-  return diff.format('HH:mm:ss');
+  const diff = endTime.diff(startTime);
+  return diff.toFormat('hh:mm:ss');
 }
 
 export function getFormattedTimestamp(datetime?: string): string {
@@ -44,5 +36,5 @@ export function getFormattedTimestamp(datetime?: string): string {
     return '';
   }
 
-  return dayjs(datetime).format('HH:mm:ss ddd, MMM DD YYYY z');
+  return DateTime.fromISO(datetime).toFormat(LONG_TIME_FORMAT);
 }
