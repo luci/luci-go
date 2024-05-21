@@ -216,7 +216,7 @@ func createVM(c context.Context, payload proto.Message) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch VM %q", hostname).Err()
 	default:
-		logging.Debugf(c, "Create VM: VM already exists: hostname:%q, ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
+		logging.Debugf(c, "Create VM: VM already exists: hostname:%q, ID:%q, prefix:%q", vm.Hostname, vm.ID, vm.Prefix)
 		return nil
 	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
@@ -225,12 +225,11 @@ func createVM(c context.Context, payload proto.Message) error {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM %q", hostname).Err()
 		default:
-			logging.Debugf(c, "Create VM: VM found: hostname:%q, ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
+			logging.Debugf(c, "Create VM: VM found: hostname:%q, ID:%q, prefix:%q", vm.Hostname, vm.ID, vm.Prefix)
 			return nil
 		}
 
 		logging.Debugf(c, "Create VM: updating VM data: hostname:%q, ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
-		vm.ID = task.Id
 		vm.Config = task.Config
 		vm.ConfigExpanded = task.ConfigExpandTime.AsTime().Unix()
 		vm.DUT = task.DUT
