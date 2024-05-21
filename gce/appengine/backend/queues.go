@@ -60,7 +60,7 @@ func countVMs(c context.Context, payload proto.Message) error {
 		ID: task.Id,
 	}
 	switch err := datastore.Get(c, cfg); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
 	default:
@@ -74,10 +74,10 @@ func countVMs(c context.Context, payload proto.Message) error {
 		id := k.StringID()
 		vm.ID = id
 		switch err := datastore.Get(c, vm); {
-		case err == datastore.ErrNoSuchEntity:
+		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
+			return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
 		default:
 			if vm.Created > 0 {
 				vms.AddCreated(1, vm.Attributes.Project, vm.Attributes.Zone)
@@ -114,7 +114,7 @@ func drainVMQueueHandler(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
+		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
 	case vm.URL == "":
 		logging.Debugf(c, "instance %q does not exist", vm.Hostname)
 		return nil
@@ -131,7 +131,7 @@ func drainVM(c context.Context, vm *model.VM) error {
 		ID: vm.Config,
 	}
 	switch err := datastore.Get(c, cfg); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		logging.Debugf(c, "config %q does not exist", cfg.ID)
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
@@ -153,18 +153,18 @@ func drainVM(c context.Context, vm *model.VM) error {
 	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
-		case err == datastore.ErrNoSuchEntity:
+		case errors.Is(err, datastore.ErrNoSuchEntity):
 			vm.Drained = true
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
+			return errors.Annotate(err, "failed to fetch VM prefix: %q", vm.Config).Err()
 		case vm.Drained:
 			return nil
 		}
 		vm.Drained = true
 		logging.Debugf(c, "set VM %s as drained in db", vm.Hostname)
 		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
+			return errors.Annotate(err, "failed to store VM prefix: %q", vm.Config).Err()
 		}
 		return nil
 	}, nil)
@@ -203,6 +203,7 @@ func createVM(c context.Context, payload proto.Message) error {
 	} else {
 		hostname = fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c))
 	}
+	logging.Debugf(c, "Staring create VM: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 	vm := &model.VM{
 		ID:             task.Id,
 		Config:         task.Config,
@@ -225,23 +226,27 @@ func createVM(c context.Context, payload proto.Message) error {
 	// createVM is called repeatedly, so do a fast check outside the transaction.
 	// In most cases, this will skip the more expensive transactional check.
 	switch err := datastore.Get(c, vm); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		logging.Debugf(c, "Create VM: VM not exists, so proceed with creation: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
+		return errors.Annotate(err, "failed to fetch VM %q", hostname).Err()
 	default:
+		logging.Debugf(c, "Create VM: VM already exists: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 		return nil
 	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
-		case err == datastore.ErrNoSuchEntity:
+		case errors.Is(err, datastore.ErrNoSuchEntity):
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
+			return errors.Annotate(err, "failed to fetch VM %q", hostname).Err()
 		default:
+			logging.Debugf(c, "Create VM: VM found: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 			return nil
 		}
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
+		logging.Debugf(c, "VM created: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 		return nil
 	}, nil)
 }
@@ -340,7 +345,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 
 	logging.Debugf(c, "for config %s, creating %d VMs", cfg.Config.Prefix, len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
-		return errors.Annotate(err, "failed to schedule tasks").Err()
+		return errors.Annotate(err, "expend config: failed to schedule tasks").Err()
 	}
 	return nil
 }

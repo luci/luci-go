@@ -152,7 +152,7 @@ func drainVMsAsync(c context.Context) error {
 	}
 	if len(taskList) > 0 {
 		if err := getDispatcher(c).AddTask(c, taskList...); err != nil {
-			return errors.Annotate(err, "failed to schedule tasks").Err()
+			return errors.Annotate(err, "drain vms: failed to schedule tasks").Err()
 		}
 	}
 	return nil
@@ -187,7 +187,7 @@ func auditInstances(c context.Context) error {
 		}
 	}
 	if err := getDispatcher(c).AddTask(c, jobs...); err != nil {
-		return errors.Annotate(err, "failed to schedule tasks").Err()
+		return errors.Annotate(err, "audit instances: failed to schedule tasks").Err()
 	}
 	return nil
 }

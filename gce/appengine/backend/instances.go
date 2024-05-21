@@ -68,7 +68,7 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 		put = false
 		switch err := datastore.Get(c, vm); {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
+			return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
 		case vm.Created > 0:
 			return nil
 		}
@@ -76,7 +76,7 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 		vm.NetworkInterfaces = nics
 		vm.URL = inst.SelfLink
 		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
+			return errors.Annotate(err, "failed to store VM %q", id).Err()
 		}
 		put = true
 		return nil
@@ -155,7 +155,7 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 	}
 	switch err := datastore.Get(ctx, vm); {
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
+		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
 	case vm.URL != "":
 		logging.Debugf(ctx, "instance exists: %s", vm.URL)
 		return nil
@@ -238,7 +238,7 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 		ID: task.Id,
 	}
 	switch err := datastore.Get(c, vm); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch VM %s", vm.ID).Err()

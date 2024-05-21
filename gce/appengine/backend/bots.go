@@ -64,7 +64,7 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 	}
 	switch err := datastore.Get(c, vm); {
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
+		return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
 	case vm.Hostname != hostname:
 		return errors.Reason("bot %q does not exist", hostname).Err()
 	case vm.Connected > 0:
@@ -75,7 +75,7 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 		put = false
 		switch err := datastore.Get(c, vm); {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
+			return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
 		case vm.Hostname != hostname:
 			return errors.Reason("bot %q does not exist", hostname).Err()
 		case vm.Connected > 0:
@@ -135,10 +135,10 @@ func manageBot(c context.Context, payload proto.Message) error {
 		ID: task.Id,
 	}
 	switch err := datastore.Get(c, vm); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
+		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
 	case vm.URL == "":
 		logging.Debugf(c, "instance %q does not exist", vm.Hostname)
 		return nil
@@ -293,10 +293,10 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		ID: task.Id,
 	}
 	switch err := datastore.Get(c, vm); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
+		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
 	case vm.Hostname != task.Hostname:
 		// Instance is already destroyed and replaced. Don't terminate the new bot.
 		logging.Debugf(c, "bot %q does not exist", task.Hostname)
@@ -363,10 +363,10 @@ func deleteBot(c context.Context, payload proto.Message) error {
 		ID: task.Id,
 	}
 	switch err := datastore.Get(c, vm); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
+		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
 	case vm.Hostname != task.Hostname:
 		// Instance is already destroyed and replaced. Don't delete the new bot.
 		return errors.Reason("bot %q does not exist", task.Hostname).Err()
@@ -394,10 +394,10 @@ func deleteVM(c context.Context, id, hostname string) error {
 	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
-		case err == datastore.ErrNoSuchEntity:
+		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
+			return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
 		case vm.Hostname != hostname:
 			logging.Debugf(c, "VM %q does not exist", hostname)
 			return nil

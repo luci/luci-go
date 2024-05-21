@@ -70,7 +70,7 @@ func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Con
 			// Don't forget potentially custom amount set via Update RPC.
 			priorAmount = cfg.Config.CurrentAmount
 			priorDUTs = cfg.Config.GetDuts()
-		case err == datastore.ErrNoSuchEntity:
+		case errors.Is(err, datastore.ErrNoSuchEntity):
 			priorAmount = 0
 		default:
 			return errors.Annotate(err, "failed to fetch config").Err()

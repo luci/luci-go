@@ -50,10 +50,10 @@ func deleteByID(c context.Context, id string) (*emptypb.Empty, error) {
 	}
 	if err := datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
-		case err == datastore.ErrNoSuchEntity:
+		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM").Err()
+			return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
 		case vm.Drained:
 			return nil
 		}
@@ -76,7 +76,7 @@ func deleteByHostname(c context.Context, hostname string) (*emptypb.Empty, error
 	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
 	switch err := datastore.GetAll(c, q, &vms); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch VM").Err()
+		return nil, errors.Annotate(err, "failed to fetch VM with hostname: %q", hostname).Err()
 	case len(vms) == 0:
 		return &emptypb.Empty{}, nil
 	default:
@@ -152,10 +152,10 @@ func getByID(c context.Context, id string) (*instances.Instance, error) {
 		ID: id,
 	}
 	switch err := datastore.Get(c, vm); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no VM found with ID %q", id)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch VM").Err()
+		return nil, errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
 	default:
 		return toInstance(vm), nil
 	}
@@ -173,11 +173,11 @@ func getByHostname(c context.Context, hostname string) (*instances.Instance, err
 	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
 	switch err := datastore.GetAll(c, q, &vms); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch VM").Err()
+		return nil, errors.Annotate(err, "failed to fetch VM with hostname: %q", hostname).Err()
 	case len(vms) == 0:
 		if vmtoken.Has(c) {
 			metrics.UpdateUntrackedGets(c, hostname)
-			logging.Warningf(c, "no VMs found by hostname %q", hostname)
+			logging.Warningf(c, "no VMs found with hostname %q", hostname)
 			return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
 		}
 		return nil, status.Errorf(codes.NotFound, "no VM found with hostname %q", hostname)
