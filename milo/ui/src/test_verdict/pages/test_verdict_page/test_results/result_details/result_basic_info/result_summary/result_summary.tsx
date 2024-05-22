@@ -15,6 +15,7 @@
 import Grid from '@mui/material/Grid';
 import { useRef } from 'react';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { ArtifactTagScope } from '@/test_verdict/components/artifact_tags';
 
@@ -28,25 +29,27 @@ export function ResultSummary({ summaryHtml, resultName }: Props) {
   const mainRef = useRef<HTMLDivElement>(null);
 
   return (
-    <Grid item ref={mainRef}>
-      <ArtifactTagScope resultName={resultName}>
-        <SanitizedHtml
-          sx={{
-            backgroundColor: 'var(--block-background-color)',
-            paddingX: 1,
-            maxHeight: '54vh',
-            overflowX: 'auto',
-            whiteSpace: 'pre-wrap',
-            '& pre': {
-              margin: 0,
-              fontSize: '12px',
+    <RecoverableErrorBoundary>
+      <Grid item ref={mainRef}>
+        <ArtifactTagScope resultName={resultName}>
+          <SanitizedHtml
+            sx={{
+              backgroundColor: 'var(--block-background-color)',
+              paddingX: 1,
+              maxHeight: '54vh',
+              overflowX: 'auto',
               whiteSpace: 'pre-wrap',
-              overflowWrap: 'break-word',
-            },
-          }}
-          html={summaryHtml}
-        />
-      </ArtifactTagScope>
-    </Grid>
+              '& pre': {
+                margin: 0,
+                fontSize: '12px',
+                whiteSpace: 'pre-wrap',
+                overflowWrap: 'break-word',
+              },
+            }}
+            html={summaryHtml}
+          />
+        </ArtifactTagScope>
+      </Grid>
+    </RecoverableErrorBoundary>
   );
 }
