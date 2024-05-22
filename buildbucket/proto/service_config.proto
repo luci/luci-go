@@ -368,6 +368,13 @@ enum CustomBuildMetricBase {
 //
 // Builders can then reference a custom metric by name to report their build
 // metrics.
+//
+// Note: if you ever want to remove a custom metric, the best practice is to
+// remove its references from builders first, then remove it from the service
+// config. Otherwise any change to a builder config refers to this custom metric
+// would fail validation (for using an unregistered custom metric). But this
+// is not a hard error for build creation or event reporting: missing metric
+// would just be silently ignored.
 message CustomMetric {
   // Name of the metric.
   //

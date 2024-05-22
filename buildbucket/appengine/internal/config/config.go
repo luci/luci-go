@@ -107,9 +107,13 @@ func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
 		ctx.Errorf("%s", err)
 	}
 
+	seen := stringset.New(len(cm.GetFields()))
 	for _, field := range cm.GetFields() {
 		if err := registry.ValidateMetricFieldName(field); err != nil {
 			ctx.Errorf("%s", err)
+		}
+		if !seen.Add(field) {
+			ctx.Errorf("%q is duplicated", field)
 		}
 	}
 }

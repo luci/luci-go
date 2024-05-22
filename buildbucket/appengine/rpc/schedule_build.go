@@ -1505,6 +1505,32 @@ func getShadowBuckets(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map
 	return shadows, nil
 }
 
+func builderCustomMetrics(ctx context.Context, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) []model.CustomMetric {
+	if len(cfg.GetCustomBuildMetrics()) == 0 {
+		return nil
+	}
+
+	gms := make(map[string]pb.CustomBuildMetricBase, len(globalCfg.GetCustomMetrics()))
+	for _, gm := range globalCfg.GetCustomMetrics() {
+		gms[gm.Name] = gm.GetMetricBase()
+	}
+
+	cms := make([]model.CustomMetric, 0, len(cfg.CustomBuildMetrics))
+	for _, bcm := range cfg.CustomBuildMetrics {
+		base, ok := gms[bcm.Name]
+		if !ok {
+			// Was the metric removed from our global settings?
+			logging.Warningf(ctx, "metric %s for builder %s not found in global settings", bcm.Name, cfg.Name)
+			continue
+		}
+		cms = append(cms, model.CustomMetric{
+			Base:   base,
+			Metric: bcm,
+		})
+	}
+	return cms
+}
+
 // scheduleBuilds handles requests to schedule builds. Requests must be validated and authorized.
 // The length of returned builds always equal to len(reqs).
 // A single returned error means a global error which applies to every request.
@@ -1617,6 +1643,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		tags = stringset.NewFromSlice(tags...).ToSlice() // Deduplicate tags.
 		sort.Strings(tags)
 		blds[i].Tags = tags
+		blds[i].CustomMetrics = builderCustomMetrics(ctx, globalCfg, cfg)
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {

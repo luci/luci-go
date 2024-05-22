@@ -6554,6 +6554,111 @@ func TestScheduleBuild(t *testing.T) {
 			})
 		})
 
+		Convey("one with custom metrics", func() {
+			globalCfg := &pb.SettingsCfg{
+				Resultdb: &pb.ResultDBSettings{
+					Hostname: "rdbHost",
+				},
+				Swarming: &pb.SwarmingSettings{
+					BbagentPackage: &pb.SwarmingSettings_Package{
+						PackageName: "bbagent",
+						Version:     "bbagent-version",
+					},
+					KitchenPackage: &pb.SwarmingSettings_Package{
+						PackageName: "kitchen",
+						Version:     "kitchen-version",
+					},
+				},
+				CustomMetrics: []*pb.CustomMetric{
+					{
+						Name:   "chrome/infra/custom/builds/started",
+						Fields: []string{"os"},
+						Class: &pb.CustomMetric_MetricBase{
+							MetricBase: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
+						},
+					},
+					{
+						Name:   "chrome/infra/custom/builds/completed",
+						Fields: []string{"os"},
+						Class: &pb.CustomMetric_MetricBase{
+							MetricBase: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED,
+						},
+					},
+				},
+			}
+			cm1 := &pb.BuilderConfig_CustomBuildMetric{
+				Name:       "chrome/infra/custom/builds/started",
+				Predicates: []string{`build.tags.get_value("os")!=""`},
+				Fields:     map[string]string{"os": `build.tags.get_value("os")`},
+			}
+			cm2 := &pb.BuilderConfig_CustomBuildMetric{
+				Name:       "chrome/infra/custom/builds/completed",
+				Predicates: []string{`build.tags.get_value("os")!=""`},
+				Fields:     map[string]string{"os": `build.tags.get_value("os")`},
+			}
+			cm3 := &pb.BuilderConfig_CustomBuildMetric{
+				Name:       "chrome/infra/custom/builds/missing",
+				Predicates: []string{`build.tags.get_value("os")!=""`},
+				Fields:     map[string]string{"os": `build.tags.get_value("os")`},
+			}
+			So(datastore.Put(ctx, &model.Builder{
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				ID:     "builder",
+				Config: &pb.BuilderConfig{
+					BuildNumbers:       pb.Toggle_YES,
+					Name:               "builder",
+					SwarmingHost:       "host",
+					CustomBuildMetrics: []*pb.BuilderConfig_CustomBuildMetric{cm1, cm2, cm3},
+				},
+			}), ShouldBeNil)
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					TemplateBuildId: 1000,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "buildset",
+							Value: "buildset",
+						},
+					},
+				},
+			}
+			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+			So(merr, ShouldBeNil)
+			So(rsp, ShouldHaveLength, 1)
+			So(rsp[0], ShouldResembleProto, &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				CreatedBy:  string(userID),
+				CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+				Id:         9021868963221667745,
+				Input:      &pb.Build_Input{},
+				Number:     1,
+				Status:     pb.Status_SCHEDULED,
+			})
+			So(sch.Tasks(), ShouldHaveLength, 3)
+
+			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
+			So(err, ShouldBeNil)
+			So(ind, ShouldResemble, []*model.TagIndexEntry{
+				{
+					BuildID:     9021868963221667745,
+					BucketID:    "project/bucket",
+					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
+				},
+			})
+			bld := &model.Build{ID: 9021868963221667745}
+			So(datastore.Get(ctx, bld), ShouldBeNil)
+			So(len(bld.CustomMetrics), ShouldEqual, 2)
+			So(bld.CustomMetrics[0].Base, ShouldEqual, pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED)
+			So(bld.CustomMetrics[0].Metric, ShouldResembleProto, cm1)
+			So(bld.CustomMetrics[1].Base, ShouldEqual, pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED)
+			So(bld.CustomMetrics[1].Metric, ShouldResembleProto, cm2)
+		})
+
 		Convey("many", func() {
 			Convey("one of TemplateBuildId builds not found", func() {
 				reqs := []*pb.ScheduleBuildRequest{
