@@ -14,7 +14,7 @@
 
 import { ReactNode } from 'react';
 
-import { PortalScope } from '@/generic_libs/components/lit_react_portal';
+import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 
 import { ArtifactContextProvider } from './context';
 
@@ -29,7 +29,7 @@ export function ArtifactTagScope({
 }: ArtifactTagScopeProps) {
   return (
     <ArtifactContextProvider resultName={resultName}>
-      <PortalScope>{children}</PortalScope>
+      <ReactLitBridge>{children}</ReactLitBridge>
     </ArtifactContextProvider>
   );
 }

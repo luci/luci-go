@@ -33,7 +33,7 @@ import {
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
-import { PortalScope } from '@/generic_libs/components/lit_react_portal';
+import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import { reportErrorAsync } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { assertNonNullable } from '@/generic_libs/tools/utils';
@@ -325,9 +325,9 @@ export const DetailsTable = forwardRef(
     ref: ForwardedRef<TestHistoryDetailsTableElement>,
   ) => {
     return (
-      <PortalScope>
+      <ReactLitBridge>
         <milo-th-details-table {...props} ref={ref} class={props.className} />
-      </PortalScope>
+      </ReactLitBridge>
     );
   },
 );

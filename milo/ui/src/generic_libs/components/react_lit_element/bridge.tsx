@@ -23,23 +23,26 @@ import {
 } from 'react';
 
 import {
-  CLOSE_PORTAL_EVENT,
-  LitReactPortalElement,
   OPEN_PORTAL_EVENT,
-} from './lit_react_portal';
-import { PortalRenderer } from './portal_renderer';
+  ReactLitElement,
+  CLOSE_PORTAL_EVENT,
+} from './react_lit_element';
+import { ReactLitRenderer } from './renderer';
 
-export interface PortalScopeProps {
+export interface ReactLitBridgeProps {
   readonly children: ReactNode;
 }
 
 /**
- * Enables the use of `LitReactPortalElement` based custom web components.
+ * Enables the use of `ReactLitElement` based custom web components.
+ *
+ * React context available to this component will also be available to all
+ * `ReactLitElement` descendants.
  */
-export function PortalScope({ children }: PortalScopeProps) {
+export function ReactLitBridge({ children }: ReactLitBridgeProps) {
   const [_, setState] = useState({});
-  const portalsRef = useRef<Map<LitReactPortalElement, number>>();
-  const trackerRef = useRef<LitReactPortalTrackerElement>();
+  const portalsRef = useRef<Map<ReactLitElement, number>>();
+  const trackerRef = useRef<ReactLitElementTrackerElement>();
   useEffect(() => {
     const tracker = trackerRef.current!;
 
@@ -66,17 +69,17 @@ export function PortalScope({ children }: PortalScopeProps) {
     // In Lit, the portal open event is fired during connection phase. In React,
     // we can only add custom event handler to an element after it's rendered
     // (and connected), therefore the custom event handler may miss portals
-    // that are rendered in the same rendering cycle as `<PortalScope />`.
+    // that are rendered in the same rendering cycle as `<ReactLitBridge />`.
     //
     // Custom web component can attach event handlers during connection phase.
     // Use a web component to collect all the portals so we don't miss any
     // event fired during the connection phase.
-    <lit-react-portal-tracker ref={trackerRef}>
+    <react-lit-element-tracker ref={trackerRef}>
       {children}
-      {[...(portalsRef.current?.entries() || [])].map(([node, id]) => (
-        <PortalRenderer key={id} portal={node} />
+      {[...(portalsRef.current?.entries() || [])].map(([portal, id]) => (
+        <ReactLitRenderer key={id} portal={portal} />
       ))}
-    </lit-react-portal-tracker>
+    </react-lit-element-tracker>
   );
 }
 
@@ -85,13 +88,13 @@ const PORTALS_UPDATED_EVENT = 'portals-updated';
 // Use a symbol to ensure the property cannot be accessed anywhere else.
 const PORTALS = Symbol('portals');
 
-@customElement('lit-react-portal-tracker')
-class LitReactPortalTrackerElement extends LitElement {
+@customElement('react-lit-element-tracker')
+class ReactLitElementTrackerElement extends LitElement {
   private nextId = 0;
-  readonly [PORTALS] = new Map<LitReactPortalElement, number>();
+  readonly [PORTALS] = new Map<ReactLitElement, number>();
 
   private onOpenPortal = (e: Event) => {
-    const event = e as CustomEvent<LitReactPortalElement>;
+    const event = e as CustomEvent<ReactLitElement>;
     if (this[PORTALS].has(event.detail)) {
       return;
     }
@@ -101,7 +104,7 @@ class LitReactPortalTrackerElement extends LitElement {
   };
 
   private onClosePortal = (e: Event) => {
-    const event = e as CustomEvent<LitReactPortalElement>;
+    const event = e as CustomEvent<ReactLitElement>;
     if (!this[PORTALS].has(event.detail)) {
       return;
     }
@@ -136,9 +139,9 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'lit-react-portal-tracker': {
+      'react-lit-element-tracker': {
         readonly ref: MutableRefObject<
-          LitReactPortalTrackerElement | undefined
+          ReactLitElementTrackerElement | undefined
         >;
         readonly children: ReactNode;
       };

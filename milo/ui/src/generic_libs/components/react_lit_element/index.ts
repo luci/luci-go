@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { LitReactPortalElement } from './lit_react_portal';
-export { PortalScope, type PortalScopeProps } from './portal_scope';
+export { ReactLitElement } from './react_lit_element';
+export { ReactLitBridge, type ReactLitBridgeProps } from './bridge';

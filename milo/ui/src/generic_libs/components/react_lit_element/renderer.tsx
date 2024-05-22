@@ -15,19 +15,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import {
-  ELEMENT_UPDATED_EVENT,
-  LitReactPortalElement,
-} from './lit_react_portal';
+import { ELEMENT_UPDATED_EVENT, ReactLitElement } from './react_lit_element';
 
-export interface PortalRendererProps {
-  readonly portal: LitReactPortalElement;
+export interface ReactLitRendererProps {
+  readonly portal: ReactLitElement;
 }
 
 /**
- * Renders a LitReactPortalElement as a React component.
+ * Renders a ReactLitElement as a React component.
  */
-export function PortalRenderer({ portal }: PortalRendererProps) {
+export function ReactLitRenderer({ portal }: ReactLitRendererProps) {
   const [_, setState] = useState({});
 
   // Portal's state is tracked by lit-element state management.
@@ -36,7 +33,7 @@ export function PortalRenderer({ portal }: PortalRendererProps) {
 
   // Subscribe immediately before rendering when a new portal is received so we
   // don't miss any update events.
-  const portalRef = useRef<LitReactPortalElement | null>(null);
+  const portalRef = useRef<ReactLitElement | null>(null);
   if (portalRef.current !== portal) {
     portal.addEventListener(ELEMENT_UPDATED_EVENT, onElementUpdatedRef.current);
     portalRef.current = portal;

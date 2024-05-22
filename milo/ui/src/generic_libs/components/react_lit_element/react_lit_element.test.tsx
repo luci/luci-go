@@ -16,12 +16,12 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { createContext, useContext, useState } from 'react';
 
-import { LitReactPortalElement } from './lit_react_portal';
-import { PortalScope } from './portal_scope';
+import { ReactLitBridge } from './bridge';
+import { ReactLitElement } from './react_lit_element';
 
 const TestContext = createContext('val');
 
-class TestElement extends LitReactPortalElement {
+class TestElement extends ReactLitElement {
   static get properties() {
     return {
       property: {
@@ -79,7 +79,7 @@ declare global {
   }
 }
 
-describe('LitReactPortalElement', () => {
+describe('ReactLitElement', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -90,17 +90,17 @@ describe('LitReactPortalElement', () => {
 
   it('can handle property update', async () => {
     const { rerender } = render(
-      <PortalScope>
+      <ReactLitBridge>
         <milo-test-element property="val1"></milo-test-element>
-      </PortalScope>,
+      </ReactLitBridge>,
     );
     await act(() => jest.runAllTimersAsync());
     expect(screen.getByTestId('property')).toHaveTextContent('val1');
 
     rerender(
-      <PortalScope>
+      <ReactLitBridge>
         <milo-test-element property="val2"></milo-test-element>
-      </PortalScope>,
+      </ReactLitBridge>,
     );
     await act(() => jest.runAllTimersAsync());
     expect(screen.getByTestId('property')).toHaveTextContent('val2');
@@ -109,12 +109,12 @@ describe('LitReactPortalElement', () => {
   it('can handle context update', async () => {
     const { rerender } = render(
       <TestContext.Provider value="val1">
-        <PortalScope>
+        <ReactLitBridge>
           <milo-test-element
             data-testid="element"
             property="val"
           ></milo-test-element>
-        </PortalScope>
+        </ReactLitBridge>
       </TestContext.Provider>,
     );
     await act(() => jest.runAllTimersAsync());
@@ -122,12 +122,12 @@ describe('LitReactPortalElement', () => {
 
     rerender(
       <TestContext.Provider value="val2">
-        <PortalScope>
+        <ReactLitBridge>
           <milo-test-element
             data-testid="element"
             property="val"
           ></milo-test-element>
-        </PortalScope>
+        </ReactLitBridge>
       </TestContext.Provider>,
     );
     await act(() => jest.runAllTimersAsync());
@@ -136,9 +136,9 @@ describe('LitReactPortalElement', () => {
 
   it('can handle state update', async () => {
     render(
-      <PortalScope>
+      <ReactLitBridge>
         <milo-test-element property="val1"></milo-test-element>
-      </PortalScope>,
+      </ReactLitBridge>,
     );
     await act(() => jest.runAllTimersAsync());
     expect(screen.getByTestId('state')).toHaveTextContent('0');
@@ -150,12 +150,12 @@ describe('LitReactPortalElement', () => {
 
   it('can handle adding element', async () => {
     const { rerender } = render(
-      <PortalScope>
+      <ReactLitBridge>
         <milo-test-element
           data-testid="element1"
           property="val1"
         ></milo-test-element>
-      </PortalScope>,
+      </ReactLitBridge>,
     );
     await act(() => jest.runAllTimersAsync());
     expect(
@@ -163,7 +163,7 @@ describe('LitReactPortalElement', () => {
     ).toHaveTextContent('val1');
 
     rerender(
-      <PortalScope>
+      <ReactLitBridge>
         <milo-test-element
           data-testid="element1"
           property="val1"
@@ -172,7 +172,7 @@ describe('LitReactPortalElement', () => {
           data-testid="element2"
           property="val2"
         ></milo-test-element>
-      </PortalScope>,
+      </ReactLitBridge>,
     );
     await act(() => jest.runAllTimersAsync());
     expect(
@@ -185,7 +185,7 @@ describe('LitReactPortalElement', () => {
 
   it('can handle removing element', async () => {
     const { rerender } = render(
-      <PortalScope>
+      <ReactLitBridge>
         <milo-test-element
           data-testid="element1"
           property="val1"
@@ -194,7 +194,7 @@ describe('LitReactPortalElement', () => {
           data-testid="element2"
           property="val2"
         ></milo-test-element>
-      </PortalScope>,
+      </ReactLitBridge>,
     );
     await act(() => jest.runAllTimersAsync());
     expect(
@@ -205,12 +205,12 @@ describe('LitReactPortalElement', () => {
     ).toHaveTextContent('val2');
 
     rerender(
-      <PortalScope>
+      <ReactLitBridge>
         <milo-test-element
           data-testid="element1"
           property="val1"
         ></milo-test-element>
-      </PortalScope>,
+      </ReactLitBridge>,
     );
     await act(() => jest.runAllTimersAsync());
     expect(

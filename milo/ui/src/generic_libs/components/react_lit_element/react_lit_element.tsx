@@ -25,13 +25,16 @@ export const ELEMENT_UPDATED_EVENT = 'element-updated';
  * Extends this class like `LitElement` except that
  * 1. use `.renderReact()` instead of `.render()` to render a component,
  * 2. the created custom web component can only be used under a
- *    `<PortalScope />`.
+ *    `<ReactLitBridge />`.
  */
-export abstract class LitReactPortalElement extends LitElement {
+export abstract class ReactLitElement extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
+
+    // Tells the parent (`<ReactLitBridge />`) that there's a new
+    // `ReactLitElement`, so the parent will render it.
     this.dispatchEvent(
-      new CustomEvent<LitReactPortalElement>(OPEN_PORTAL_EVENT, {
+      new CustomEvent<ReactLitElement>(OPEN_PORTAL_EVENT, {
         detail: this,
         bubbles: true,
         composed: true,
@@ -40,8 +43,10 @@ export abstract class LitReactPortalElement extends LitElement {
   }
 
   disconnectedCallback(): void {
+    // Tells the parent (`<ReactLitBridge />`) that this element is going
+    // to be removed from DOM, so the parent will stop render it.
     this.dispatchEvent(
-      new CustomEvent<LitReactPortalElement>(CLOSE_PORTAL_EVENT, {
+      new CustomEvent<ReactLitElement>(CLOSE_PORTAL_EVENT, {
         detail: this,
         bubbles: true,
         composed: true,
@@ -50,9 +55,11 @@ export abstract class LitReactPortalElement extends LitElement {
     super.disconnectedCallback();
   }
 
-  protected render() {
+  // Use `readonly` to prevent child class from overriding this method.
+  readonly render = () => {
+    // Renders a slot so it will show the content from the light DOM child.
     return html`<slot></slot>`;
-  }
+  };
 
   protected updated(
     // Use the same type definition as the super class.
@@ -60,17 +67,19 @@ export abstract class LitReactPortalElement extends LitElement {
     changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
   ): void {
     super.update(changedProperties);
+    // Trigger an update on the React side.
     this.dispatchEvent(new CustomEvent(ELEMENT_UPDATED_EVENT));
   }
 
   /**
-   * Similar to `.render()` but uses React node instead of lit-html template
-   * to define the output content.
+   * Similar to `LitElement.render()` but uses React node instead of lit-html
+   * template to define the output content.
    *
    * In the real DOM tree, the content is rendered as children of this node in
    * the light DOM.
    * In the React virtual DOM tree, the content is rendered as children of the
-   * nearest ancestor `<PortalScope />`.
+   * nearest ancestor `<ReactLitBridge />`, which means it can use the React
+   * context avaiable to that `<ReactLitBridge />`.
    */
   abstract renderReact(): ReactNode;
 }

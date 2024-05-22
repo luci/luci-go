@@ -31,7 +31,7 @@ import {
 } from '@/common/store/invocation_state';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
-import { PortalScope } from '@/generic_libs/components/lit_react_portal';
+import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import {
   errorHandler,
@@ -248,9 +248,9 @@ declare global {
 
 export function TestResultsTab() {
   return (
-    <PortalScope>
+    <ReactLitBridge>
       <milo-test-results-tab />
-    </PortalScope>
+    </ReactLitBridge>
   );
 }
 

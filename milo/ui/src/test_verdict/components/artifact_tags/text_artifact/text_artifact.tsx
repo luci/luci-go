@@ -23,7 +23,7 @@ import { useAuthState } from '@/common/components/auth_state_provider';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
-import { LitReactPortalElement } from '@/generic_libs/components/lit_react_portal';
+import { ReactLitElement } from '@/generic_libs/components/react_lit_element';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 
@@ -133,7 +133,7 @@ export function TextArtifact({
  */
 @customElement('text-artifact')
 @consumer
-export class TextArtifactElement extends LitReactPortalElement {
+export class TextArtifactElement extends ReactLitElement {
   static get properties() {
     return {
       artifactId: {
