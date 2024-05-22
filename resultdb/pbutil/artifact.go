@@ -26,7 +26,7 @@ const (
 	// Unicode character classes L, M, N, P, S, Zs are the "graphic" type code points,
 	// so a good approximation of all the printable characters.
 	// Also accept '.' as the first character to enable upload of files starting with .
-	artifactIDPattern = `(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,254}[[:word:]])?`
+	artifactIDPattern = `(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,508}[[:word:]])?`
 )
 
 var (

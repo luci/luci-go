@@ -15,6 +15,7 @@
 package pbutil
 
 import (
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,6 +40,26 @@ func TestParseArtifactName(t *testing.T) {
 				_, _, _, artifactID, err := ParseArtifactName("invocations/inv/artifacts/a%2Fb")
 				So(err, ShouldBeNil)
 				So(artifactID, ShouldEqual, "a/b")
+			})
+
+			Convey(`With a percent sign`, func() {
+				_, _, _, artifactID, err := ParseArtifactName("invocations/inv/artifacts/a%25b")
+				So(err, ShouldBeNil)
+				So(artifactID, ShouldEqual, "a%b")
+			})
+
+			Convey(`Success with a long artifact name`, func() {
+				artName := strings.Repeat("a%2Fb", 100) // 500 characters
+				wantArtID := strings.Repeat("a/b", 100)
+				_, _, _, gotArtID, err := ParseArtifactName("invocations/inv/artifacts/" + artName)
+				So(err, ShouldBeNil)
+				So(gotArtID, ShouldEqual, wantArtID)
+			})
+
+			Convey(`Failure with a long artifact name over the character limit`, func() {
+				artName := strings.Repeat("a", 600)
+				_, _, _, _, err := ParseArtifactName("invocations/inv/artifacts/" + artName)
+				So(err, ShouldNotBeNil)
 			})
 		})
 
