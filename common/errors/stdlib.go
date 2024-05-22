@@ -18,17 +18,20 @@ import (
 	"errors"
 )
 
-// Is re-exports errors.Is from the standard library.
+// ErrUnsupported re-exports [errors.ErrUnsupported] from the standard library.
+var ErrUnsupported = errors.ErrUnsupported
+
+// Is re-exports [errors.Is] from the standard library.
 func Is(e error, target error) bool {
 	return errors.Is(e, target)
 }
 
-// As re-exports errors.As from the standard library.
+// As re-exports [errors.As] from the standard library.
 func As(e error, target any) bool {
 	return errors.As(e, target)
 }
 
-// Join re-exports errors.Join from the standard library.
+// Join re-exports [errors.Join] from the standard library.
 func Join(errs ...error) error {
 	return errors.Join(errs...)
 }
