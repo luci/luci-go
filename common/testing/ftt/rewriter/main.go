@@ -38,6 +38,7 @@ import (
 	"log"
 	"os"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/ftt/rewriter/rewriteimpl"
 )
 
@@ -73,13 +74,14 @@ func init() {
 }
 
 func main() {
+	adaptedAssertions := stringset.New(0)
 	for _, fname := range flag.Args() {
 		dec, file, err := rewriteimpl.ParseOne(fname)
 		if err != nil {
 			log.Printf("ERROR: %s: %s\n", fname, err)
 		}
 
-		newFile, rewrote, warn, err := rewriteimpl.Rewrite(dec, file)
+		newFile, rewrote, warn, err := rewriteimpl.Rewrite(dec, file, adaptedAssertions)
 		if !rewrote {
 			log.Printf("SKIP: %s: no convey import\n", fname)
 			continue

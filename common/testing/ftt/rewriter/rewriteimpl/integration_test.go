@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -47,7 +48,7 @@ func TestRewriter(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			newFil, rewrote, warned, err := Rewrite(dec, fil)
+			newFil, rewrote, warned, err := Rewrite(dec, fil, stringset.New(0))
 			assert.Loosely(t, err, should.BeNil)
 
 			if warned {

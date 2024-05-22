@@ -22,6 +22,7 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+	"go.chromium.org/luci/common/data/stringset"
 	"golang.org/x/tools/go/ast/astutil"
 )
 
@@ -172,7 +173,7 @@ func rewriteConvey(convCall *dst.CallExpr, conveyContextName string) (newContext
 // to
 //
 //	assert.Loosely(t,
-func rewriteSoCall(soCall *dst.CallExpr, conveyImportName, assertionsImportName, conveyContextName string) (usedAssertionsLib, usedAdapter bool) {
+func rewriteSoCall(soCall *dst.CallExpr, conveyImportName, assertionsImportName, conveyContextName string, adaptedAssertions stringset.Set) (usedAssertionsLib, usedAdapter bool) {
 	origComparison := soCall.Args[1]
 
 	// First pick the remapper, checking for:
@@ -224,11 +225,16 @@ func rewriteSoCall(soCall *dst.CallExpr, conveyImportName, assertionsImportName,
 //	ftt.Run / t.Run instead of Convey
 //	should.X instead of ShouldX
 //
+// adaptedAssertions is an input and output parameter which is state of the
+// assertions that have been adapted with convey.Adapt(old). This is used by
+// rewrite to only emit an FYI message for the first time each unique assertion
+// is adapted.
+//
 // Returns the new file (even if no rewrite took place).
 // Rewrote will be true if the file was rewritten.
 // Warned will be true if the file contained warnings (e.g. convey suites or
 // SoMsg assertions that we couldn't translate).
-func Rewrite(dec *decorator.Decorator, f *dst.File) (newFile *ast.File, rewrote, warned bool, err error) {
+func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.Set) (newFile *ast.File, rewrote, warned bool, err error) {
 	res := decorator.NewRestorer()
 	res.Fset = dec.Fset
 
@@ -284,7 +290,8 @@ func Rewrite(dec *decorator.Decorator, f *dst.File) (newFile *ast.File, rewrote,
 			if soCall := isConveyCall(c, []string{"c", conveyImportName, conveyContextName}, "So"); soCall != nil {
 				// conveyContextName.So(...)
 				usedAssertionsLib, usedAdapter := rewriteSoCall(
-					soCall, conveyImportName, assertionsImportName, conveyContextName)
+					soCall, conveyImportName, assertionsImportName, conveyContextName,
+					adaptedAssertions)
 
 				needAdapter = needAdapter || usedAdapter
 				needShould = needShould || !usedAdapter

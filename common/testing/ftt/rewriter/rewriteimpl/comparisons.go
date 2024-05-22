@@ -19,7 +19,6 @@ import (
 	"go/token"
 
 	"github.com/dave/dst"
-	"go.chromium.org/luci/common/data/stringset"
 )
 
 // argState is used to indicate for some comparison if it has no args,
@@ -254,13 +253,3 @@ var assertionMap = map[assertionKey]*mappedComp{
 	{originalAssertionsPkg, "ShouldPanicLike"}:     {name: "PanicLike"},
 	{originalAssertionsPkg, "ShouldUnwrapTo"}:      {name: "ErrLike"},
 }
-
-// this is a set of adapted comparisons from the luci `assertions` library; if
-// we encounter none of these while processing a file, we will remove `assertions`
-// from the imports.
-//
-// Note that some assertions (like ShouldResembleProto) are handled above, so
-// they will not end up in this stringset.
-//
-// Notably; the ShouldResembleProto family is all just should.Resemble now.
-var adaptedAssertions = stringset.NewFromSlice()
