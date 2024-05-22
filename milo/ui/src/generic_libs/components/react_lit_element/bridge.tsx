@@ -23,11 +23,11 @@ import {
 } from 'react';
 
 import {
-  OPEN_PORTAL_EVENT,
+  ATTACHED_REACT_LIT_ELEMENT_EVENT,
   ReactLitElement,
-  CLOSE_PORTAL_EVENT,
+  DETACHED_REACT_LIT_ELEMENT_EVENT,
+  ReactLitRenderer,
 } from './react_lit_element';
-import { ReactLitRenderer } from './renderer';
 
 export interface ReactLitBridgeProps {
   readonly children: ReactNode;
@@ -41,90 +41,106 @@ export interface ReactLitBridgeProps {
  */
 export function ReactLitBridge({ children }: ReactLitBridgeProps) {
   const [_, setState] = useState({});
-  const portalsRef = useRef<Map<ReactLitElement, number>>();
+  const elementsRef = useRef<Map<ReactLitElement, number>>();
   const trackerRef = useRef<ReactLitElementTrackerElement>();
   useEffect(() => {
     const tracker = trackerRef.current!;
 
-    if (portalsRef.current === undefined) {
-      // When `portalsRef` is initialized and there are some registered portals
-      // already, trigger a rerender immediately.
-      if (tracker[PORTALS].size !== 0) {
+    if (elementsRef.current === undefined) {
+      // When `elementsRef` is initialized and there are some registered
+      // elements already, trigger a rerender immediately.
+      if (tracker[ELEMENTS].size !== 0) {
         setState({});
       }
     }
-    portalsRef.current = tracker[PORTALS];
+    elementsRef.current = tracker[ELEMENTS];
 
-    // Rerender whenever there's an update on the portals set.
-    function onPortalsUpdated(e: Event) {
+    // Rerender whenever there's an update on the element set.
+    function onElementSetUpdated(e: Event) {
       e.stopPropagation();
       setState({});
     }
-    tracker.addEventListener(PORTALS_UPDATED_EVENT, onPortalsUpdated);
+    tracker.addEventListener(ELEMENT_SET_UPDATED_EVENT, onElementSetUpdated);
     return () =>
-      tracker.removeEventListener(PORTALS_UPDATED_EVENT, onPortalsUpdated);
+      tracker.removeEventListener(
+        ELEMENT_SET_UPDATED_EVENT,
+        onElementSetUpdated,
+      );
   }, []);
 
   return (
-    // In Lit, the portal open event is fired during connection phase. In React,
-    // we can only add custom event handler to an element after it's rendered
-    // (and connected), therefore the custom event handler may miss portals
-    // that are rendered in the same rendering cycle as `<ReactLitBridge />`.
+    // In Lit, the element created event is fired during connection phase. In
+    // React, we can only add custom event handler to an element after it's
+    // rendered (and connected), therefore the custom event handler may miss
+    // elements that are created in the same rendering cycle as
+    // `<ReactLitBridge />`.
     //
     // Custom web component can attach event handlers during connection phase.
-    // Use a web component to collect all the portals so we don't miss any
-    // event fired during the connection phase.
+    // Use a web component so we don't miss any element created during the
+    // connection phase.
     <react-lit-element-tracker ref={trackerRef}>
       {children}
-      {[...(portalsRef.current?.entries() || [])].map(([portal, id]) => (
-        <ReactLitRenderer key={id} portal={portal} />
+      {[...(elementsRef.current?.entries() || [])].map(([ele, id]) => (
+        <ReactLitRenderer key={id} element={ele} />
       ))}
     </react-lit-element-tracker>
   );
 }
 
-const PORTALS_UPDATED_EVENT = 'portals-updated';
+const ELEMENT_SET_UPDATED_EVENT = 'element-set-updated';
 
 // Use a symbol to ensure the property cannot be accessed anywhere else.
-const PORTALS = Symbol('portals');
+const ELEMENTS = Symbol('elements');
 
 @customElement('react-lit-element-tracker')
 class ReactLitElementTrackerElement extends LitElement {
   private nextId = 0;
-  readonly [PORTALS] = new Map<ReactLitElement, number>();
+  readonly [ELEMENTS] = new Map<ReactLitElement, number>();
 
-  private onOpenPortal = (e: Event) => {
+  private onAttachedElement = (e: Event) => {
     const event = e as CustomEvent<ReactLitElement>;
-    if (this[PORTALS].has(event.detail)) {
+    if (this[ELEMENTS].has(event.detail)) {
       return;
     }
-    this[PORTALS].set(event.detail, this.nextId);
+    this[ELEMENTS].set(event.detail, this.nextId);
     this.nextId++;
-    this.dispatchEvent(new CustomEvent(PORTALS_UPDATED_EVENT));
+    this.dispatchEvent(new CustomEvent(ELEMENT_SET_UPDATED_EVENT));
   };
 
-  private onClosePortal = (e: Event) => {
+  private onDetachedElement = (e: Event) => {
     const event = e as CustomEvent<ReactLitElement>;
-    if (!this[PORTALS].has(event.detail)) {
+    if (!this[ELEMENTS].has(event.detail)) {
       return;
     }
-    this[PORTALS].delete(event.detail);
-    this.dispatchEvent(new CustomEvent(PORTALS_UPDATED_EVENT));
+    this[ELEMENTS].delete(event.detail);
+    this.dispatchEvent(new CustomEvent(ELEMENT_SET_UPDATED_EVENT));
   };
 
   connectedCallback(): void {
     super.connectedCallback();
-    this.addEventListener(OPEN_PORTAL_EVENT, this.onOpenPortal);
-    this.addEventListener(CLOSE_PORTAL_EVENT, this.onClosePortal);
+    this.addEventListener(
+      ATTACHED_REACT_LIT_ELEMENT_EVENT,
+      this.onAttachedElement,
+    );
+    this.addEventListener(
+      DETACHED_REACT_LIT_ELEMENT_EVENT,
+      this.onDetachedElement,
+    );
   }
 
   disconnectedCallback(): void {
-    this.removeEventListener(CLOSE_PORTAL_EVENT, this.onClosePortal);
-    this.removeEventListener(OPEN_PORTAL_EVENT, this.onOpenPortal);
+    this.removeEventListener(
+      ATTACHED_REACT_LIT_ELEMENT_EVENT,
+      this.onDetachedElement,
+    );
+    this.removeEventListener(
+      DETACHED_REACT_LIT_ELEMENT_EVENT,
+      this.onAttachedElement,
+    );
 
-    if (this[PORTALS].size !== 0) {
-      this[PORTALS].clear();
-      this.dispatchEvent(new CustomEvent(PORTALS_UPDATED_EVENT));
+    if (this[ELEMENTS].size !== 0) {
+      this[ELEMENTS].clear();
+      this.dispatchEvent(new CustomEvent(ELEMENT_SET_UPDATED_EVENT));
     }
 
     super.connectedCallback();

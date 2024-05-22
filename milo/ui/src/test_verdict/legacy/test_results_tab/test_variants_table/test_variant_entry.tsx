@@ -41,6 +41,7 @@ import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
 import { logging } from '@/common/tools/logging';
 import { getCodeSourceUrl } from '@/common/tools/url_utils';
+import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
 import {
   lazyRendering,
@@ -521,5 +522,9 @@ export function TestVariantEntry({
     );
   }, [variant, columnGetters, historyUrl]);
 
-  return <div ref={container} />;
+  return (
+    <ReactLitBridge>
+      <div ref={container} />
+    </ReactLitBridge>
+  );
 }
