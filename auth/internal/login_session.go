@@ -276,7 +276,7 @@ type dumbTerminal struct{}
 func (dt *dumbTerminal) setup() {}
 
 func (dt *dumbTerminal) updateCode(code string) {
-	fmt.Printf("%s\r", code)
+	fmt.Printf("%s\n", code)
 }
 
 // refreshAnimation does nothing for dumbTerminal, we do not animate.
