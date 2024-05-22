@@ -46,7 +46,8 @@ export function GroupsListItem({ group } :GroupsItemProps) {
     <ListItemButton>
         <ListItemText
             primary={group.name}
-            secondary={description} />
+            secondary={description}
+            data-testid="groups_item_list_item_text" />
     </ListItemButton>
   </ListItem>
 );
