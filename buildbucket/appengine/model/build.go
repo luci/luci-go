@@ -77,6 +77,13 @@ type PubSubCallback struct {
 	UserData  []byte `gae:"user_data,noindex"`
 }
 
+// CustomMetric encapsulates information of one custom metric this build
+// may report to.
+type CustomMetric struct {
+	Base   pb.CustomBuildMetricBase            `gae:"base,noindex"`
+	Metric *pb.BuilderConfig_CustomBuildMetric `gae:"metric"`
+}
+
 // Build is a representation of a build in the datastore.
 // Implements datastore.PropertyLoadSaver.
 type Build struct {
@@ -190,6 +197,10 @@ type Build struct {
 
 	// How far into the future should NextBackendSyncTime be set after a build update.
 	BackendSyncInterval time.Duration `gae:"backend_sync_interval,noindex"`
+
+	// The list of custom metrics that the build may report to.
+	// Copied from the builder config when the build is created.
+	CustomMetrics []CustomMetric `gae:"custome_metrics"`
 }
 
 // Realm returns this build's auth realm, or an empty string if not opted into the

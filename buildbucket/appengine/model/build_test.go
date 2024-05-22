@@ -60,6 +60,30 @@ func TestBuild(t *testing.T) {
 		m := NoopBuildMask
 
 		Convey("read/write", func() {
+			cms := []CustomMetric{
+				{
+					Base: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
+					Metric: &pb.BuilderConfig_CustomBuildMetric{
+						Name:       "custom_metric_created",
+						Predicates: []string{`build.tags.get_value("os")!=""`},
+						Fields: map[string]string{
+							"os":     `build.tags.get_value("os")`,
+							"random": `"random"`,
+						},
+					},
+				},
+				{
+					Base: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED,
+					Metric: &pb.BuilderConfig_CustomBuildMetric{
+						Name:       "custom_metric_completed",
+						Predicates: []string{`build.tags.get_value("os")!=""`},
+						Fields: map[string]string{
+							"os":     `build.tags.get_value("os")`,
+							"random": `"random"`,
+						},
+					},
+				},
+			}
 			So(datastore.Put(ctx, &Build{
 				ID: 1,
 				Proto: &pb.Build{
@@ -74,6 +98,7 @@ func TestBuild(t *testing.T) {
 					UpdateTime:  t0pb,
 					AncestorIds: []int64{2, 3, 4},
 				},
+				CustomMetrics: cms,
 			}), ShouldBeNil)
 
 			b := &Build{
@@ -83,6 +108,14 @@ func TestBuild(t *testing.T) {
 			p := proto.Clone(b.Proto).(*pb.Build)
 			b.Proto = &pb.Build{}
 			b.NextBackendSyncTime = ""
+			expectedCms := make([]CustomMetric, len(b.CustomMetrics))
+			for i, cm := range b.CustomMetrics {
+				expectedCms[i] = CustomMetric{
+					Base:   cm.Base,
+					Metric: proto.Clone(cm.Metric).(*pb.BuilderConfig_CustomBuildMetric),
+				}
+			}
+			b.CustomMetrics = nil
 			So(b, ShouldResemble, &Build{
 				ID:                1,
 				Proto:             &pb.Build{},
@@ -114,6 +147,12 @@ func TestBuild(t *testing.T) {
 				UpdateTime:  t0pb,
 				AncestorIds: []int64{2, 3, 4},
 			})
+
+			So(len(expectedCms), ShouldEqual, len(cms))
+			for i, cm := range expectedCms {
+				So(cm.Base, ShouldEqual, cms[i].Base)
+				So(cm.Metric, ShouldResembleProto, cms[i].Metric)
+			}
 		})
 
 		Convey("legacy", func() {
