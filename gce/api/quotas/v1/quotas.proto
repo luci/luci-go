@@ -1,0 +1,51 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/gce/api/quotas/v1;quotas";
+
+package quotas;
+
+// Hold known quotas.
+message Quotas {
+  // list of known assigned quotas.
+  repeated AssignedQuota assigned_quotas = 1;
+}
+
+// A description of an assigned quota for each resource-group.
+message AssignedQuota {
+  // The name of a GCP project.
+  string project = 1;
+  // The name of a resource-group.
+  string resource_group = 2;
+  // Quota for count of created VM.
+  int32 total_vms = 3;
+  // Quota Allowed total CPUs.
+  int32 total_cpus = 4;
+
+  // CPU quota for: e2,f1,g1,n1 machines.
+  int32 quota_cpus = 5;
+  // CPU quota for: c2 machines.
+  int32 quota_c2_cpus = 6;
+  // CPU quota for: c2d machines.
+  int32 quota_c2d_cpus = 7;
+  // CPU quota for: c3 machines.
+  int32 quota_c3_cpus = 8;
+  // CPU quota for: n2 machines.
+  int32 quota_n2_cpus = 9;
+  // CPU quota for: n2d machines.
+  int32 quota_n2d_cpus = 10;
+  // CPU quota for: t2a machines.
+  int32 quota_t2a_cpus = 11;
+  // CPU quota for: t2d machines.
+  int32 quota_t2d_cpus = 12;
+
+  // Storage quota for: pd-ssd.
+  int32 quota_pd_ssd = 13;
+  // Storage quota for: pd-standard.
+  int32 quota_pd_standard = 14;
+  // Storage quota for: local-ssd.
+  int32 quota_local_ssd = 15;
+}
