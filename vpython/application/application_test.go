@@ -77,8 +77,20 @@ func TestParseArguments(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
-		Convey("Test no user cache dir", func() {
+		Convey("Test no user cache dir - with uid", func() {
 			app.userCacheDir = func() (string, error) { return "", errors.New("error") }
+			app.getuid = func() int { return 10 }
+
+			err := app.ParseEnvs(ctx)
+			So(err, ShouldBeNil)
+			err = app.ParseArgs(ctx)
+			So(err, ShouldBeNil)
+			So(app.VpythonRoot, ShouldEndWith, "vpython-root_10")
+		})
+
+		Convey("Test no user cache dir - without uid", func() {
+			app.userCacheDir = func() (string, error) { return "", errors.New("error") }
+			app.getuid = func() int { return -1 }
 
 			err := app.ParseEnvs(ctx)
 			So(err, ShouldBeNil)

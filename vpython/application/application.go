@@ -137,8 +137,11 @@ type Application struct {
 	PythonCommandLine *python.CommandLine
 	PythonExecutable  string
 
-	// Use os.UserCacheDir by default.
+	// Testing mock functions.
+	// os.UserCacheDir
 	userCacheDir func() (string, error)
+	// os.Getuid
+	getuid func() int
 	// close() is usually unnecessary since resources will be released after
 	// process exited. However we need to release them manually in the tests.
 	close func()
@@ -152,6 +155,7 @@ func (a *Application) Initialize(ctx context.Context) context.Context {
 	}
 	a.close = func() {}
 	a.userCacheDir = os.UserCacheDir
+	a.getuid = os.Getuid
 
 	ctx = gologger.StdConfig.Use(ctx)
 	return logging.SetLevel(ctx, a.LogLevel)
@@ -236,7 +240,14 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 		// considered as part of the normal workflow.
 		// We won't be able to cleanup this temporary directory after execve.
 		logging.Warningf(ctx, "fallback to temporary directory for vpython root")
-		if a.VpythonRoot, err = os.MkdirTemp("", "vpython"); err != nil {
+		if uid := a.getuid(); uid != -1 {
+			// This is a workaround to prevent vpython consuming all disk storage.
+			// It's much easier to (unintentionally or intentionally) eliminate HOME
+			// from environment which causing UserCacheDir() returns error on Linux.
+			// By using a temp directory with a fixed name, at least root directories
+			// won't blow up.
+			a.VpythonRoot = filepath.Join(os.TempDir(), fmt.Sprintf("vpython-root_%d", uid))
+		} else if a.VpythonRoot, err = os.MkdirTemp("", "vpython"); err != nil {
 			return errors.Annotate(err, "failed to create temporary vpython root").Err()
 		}
 	}
