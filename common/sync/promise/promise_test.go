@@ -43,12 +43,6 @@ func TestPromise(t *testing.T) {
 			return op.d, op.e
 		})
 
-		Convey(`Has no data by default.`, func() {
-			data, err := p.Peek()
-			So(data, ShouldBeNil)
-			So(err, ShouldEqual, ErrNoData)
-		})
-
 		Convey(`Will timeout with no data.`, func() {
 			// Wait until our Promise starts its timer. Then signal it.
 			readyC := make(chan struct{})
@@ -74,12 +68,6 @@ func TestPromise(t *testing.T) {
 			data, err := p.Get(ctx)
 			So(data, ShouldEqual, "DATA")
 			So(err, ShouldEqual, e)
-
-			Convey(`Will return data immediately.`, func() {
-				data, err = p.Peek()
-				So(data, ShouldEqual, "DATA")
-				So(err, ShouldEqual, e)
-			})
 
 			Convey(`Will return data instead of timing out.`, func() {
 				ctx, cancelFunc := context.WithCancel(ctx)

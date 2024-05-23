@@ -114,16 +114,3 @@ func (p *Promise[T]) Get(ctx context.Context) (T, error) {
 		}
 	}
 }
-
-// Peek returns the promise's current value. If the value isn't set, Peek will
-// return immediately with ErrNoData.
-func (p *Promise[T]) Peek() (T, error) {
-	var zero T
-	select {
-	case <-p.signalC:
-		return p.data, p.err
-
-	default:
-		return zero, ErrNoData
-	}
-}
