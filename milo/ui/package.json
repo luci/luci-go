@@ -11,9 +11,10 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "gen_proto": "sh ./scripts/gen_proto.sh",
+    "gen-proto": "sh ./scripts/gen_proto.sh",
     "postinstall": "patch-package",
-    "lint": "eslint ./src",
+    "type-check": "tsc --noEmit --skipLibCheck",
+    "lint": "eslint -c .eslintrc.js ./",
     "test": "jest"
   },
   "dependencies": {
