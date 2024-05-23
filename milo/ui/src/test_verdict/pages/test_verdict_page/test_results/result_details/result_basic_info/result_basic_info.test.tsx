@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import fetchMockJest from 'fetch-mock-jest';
 
 import { OutputClusterEntry } from '@/analysis/types';
+import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {
   TestResult,
   TestStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { mockFetchTextArtifact } from '@/test_verdict/components/artifact_tags/text_artifact/testing_tools/text_artifact_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { NEVER_PROMISE } from '@/testing_tools/utils';
 
 import { FakeTestVerdictContextProvider } from '../../../testing_tools/fake_context';
 import { TestResultsProvider } from '../../context';
@@ -29,11 +33,29 @@ import { ResultDataProvider } from '../context';
 import { ResultBasicInfo } from './result_basic_info';
 
 describe('<ResultBasicInfo />', () => {
+  const resultName =
+    'invocations/u-chrome-bot-2023-10-25-09-08-00-26592efa1f477db0/tests/' +
+    'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y/results/87ecc8c3-00063';
+  beforeEach(() => {
+    jest.useFakeTimers();
+    mockFetchTextArtifact(
+      resultName + '/artifacts/Test%20Log',
+      'artifact-content',
+    );
+    jest
+      .spyOn(ResultDBClientImpl.prototype, 'ListArtifacts')
+      .mockImplementation(() => NEVER_PROMISE);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    fetchMockJest.restore();
+    jest.restoreAllMocks();
+  });
+
   const failedResult = TestResult.fromPartial({
     testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
-    name:
-      'invocations/u-chrome-bot-2023-10-25-09-08-00-26592efa1f477db0/tests/' +
-      'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y/results/87ecc8c3-00063',
+    name: resultName,
     resultId: '87ecc8c3-00063',
     status: TestStatus.FAIL,
     summaryHtml: '<text-artifact artifact-id="Test Log" />',
@@ -79,6 +101,7 @@ describe('<ResultBasicInfo />', () => {
 
   it('given error reason, should display error block', async () => {
     renderBasicInfo(failedResult);
+    await act(() => jest.runAllTimersAsync());
     await screen.findByText('Details');
     expect(
       screen.getByText(
@@ -90,6 +113,7 @@ describe('<ResultBasicInfo />', () => {
 
   it.skip('given error reason, should be displayed instead of `Details` when collapsed', async () => {
     renderBasicInfo(failedResult);
+    await act(() => jest.runAllTimersAsync());
 
     await screen.findByText('Details');
     await userEvent.click(screen.getByText('Details'));
@@ -105,6 +129,7 @@ describe('<ResultBasicInfo />', () => {
 
   it('given a duration, then should be displayed and formatted correctly', async () => {
     renderBasicInfo(failedResult);
+    await act(() => jest.runAllTimersAsync());
 
     await screen.findByText('Details');
 
@@ -113,11 +138,16 @@ describe('<ResultBasicInfo />', () => {
 
   it('given an invocation id that belongs to a task, then should display swarming task link', async () => {
     // set up
+    const resultName =
+      'invocations/task-chromium-swarm.appspot.com-659c82e40f213711/tests/' +
+      'ninja:%2F%2F:blink_web_tests%2Ffast%2Fbackgrounds%2Fbackground-position-parsing.html/results/b5b8a970-03989';
+    mockFetchTextArtifact(
+      resultName + '/artifacts/Test%20Log',
+      'artifact-content',
+    );
     const failedResult = TestResult.fromPartial({
       testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
-      name:
-        'invocations/task-chromium-swarm.appspot.com-659c82e40f213711/tests/' +
-        'ninja:%2F%2F:blink_web_tests%2Ffast%2Fbackgrounds%2Fbackground-position-parsing.html/results/b5b8a970-03989',
+      name: resultName,
       resultId: '87ecc8c3-00063',
       status: TestStatus.FAIL,
       summaryHtml: '<text-artifact artifact-id="Test Log" />',
@@ -131,6 +161,7 @@ describe('<ResultBasicInfo />', () => {
 
     // act
     renderBasicInfo(failedResult);
+    await act(() => jest.runAllTimersAsync());
 
     // verify
     expect(screen.getByText('659c82e40f213711')).toBeInTheDocument();
@@ -140,9 +171,7 @@ describe('<ResultBasicInfo />', () => {
     // set up
     const failedResult = TestResult.fromPartial({
       testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
-      name:
-        'invocations/task-chromium-swarm.appspot.com-659c82e40f213711/tests/' +
-        'ninja:%2F%2F:blink_web_tests%2Ffast%2Fbackgrounds%2Fbackground-position-parsing.html/results/b5b8a970-03989',
+      name: resultName,
       resultId: '87ecc8c3-00063',
       status: TestStatus.FAIL,
       summaryHtml: '<text-artifact artifact-id="Test Log" />',
@@ -179,6 +208,7 @@ describe('<ResultBasicInfo />', () => {
         </FakeTestVerdictContextProvider>
       </FakeContextProvider>,
     );
+    await act(() => jest.runAllTimersAsync());
 
     // verify
     await screen.findByText('Details');
@@ -190,9 +220,7 @@ describe('<ResultBasicInfo />', () => {
     // set up
     const failedResult = TestResult.fromPartial({
       testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
-      name:
-        'invocations/task-chromium-swarm.appspot.com-659c82e40f213711/tests/' +
-        'ninja:%2F%2F:blink_web_tests%2Ffast%2Fbackgrounds%2Fbackground-position-parsing.html/results/b5b8a970-03989',
+      name: resultName,
       resultId: '87ecc8c3-00063',
       status: TestStatus.FAIL,
       summaryHtml: '<text-artifact artifact-id="Test Log" />',
@@ -247,6 +275,7 @@ describe('<ResultBasicInfo />', () => {
         </FakeTestVerdictContextProvider>
       </FakeContextProvider>,
     );
+    await act(() => jest.runAllTimersAsync());
 
     // verify
     await screen.findByText('Details');
