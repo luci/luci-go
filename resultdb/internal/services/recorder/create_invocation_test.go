@@ -397,7 +397,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 					"mykey_": &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"@type":     structpb.NewStringValue("some.package.MyMessage"),
+							"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 							"child_key": structpb.NewStringValue("child_value"),
 						},
 					},
@@ -414,27 +414,27 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					},
 				}
 				err := validateCreateInvocationRequest(request, now, addedInvs)
-				So(err, ShouldErrLike, `extended_properties: ["mykey"] should have a key "@type"`)
+				So(err, ShouldErrLike, `extended_properties: ["mykey"]: must have a field "@type"`)
 			})
 
 			Convey(`invalid @type`, func() {
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 					"mykey": &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"@type":     structpb.NewStringValue("_some.package.MyMessage"),
+							"@type":     structpb.NewStringValue("foo.bar.com/x/_some.package.MyMessage"),
 							"child_key": structpb.NewStringValue("child_value"),
 						},
 					},
 				}
 				err := validateCreateInvocationRequest(request, now, addedInvs)
-				So(err, ShouldErrLike, `extended_properties: ["mykey"]["@type"]: does not match`)
+				So(err, ShouldErrLike, `extended_properties: ["mykey"]: "@type" type name "_some.package.MyMessage": does not match`)
 			})
 
 			Convey(`max size of value`, func() {
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 					"mykey": &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"@type":     structpb.NewStringValue("some.package.MyMessage"),
+							"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 							"child_key": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue)),
 						},
 					},
@@ -446,8 +446,8 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			Convey(`max size of extended properties`, func() {
 				tempValue := &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"@type":       structpb.NewStringValue("some.package.MyMessage"),
-						"child_key_1": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue-60)),
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue-80)),
 					},
 				}
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{

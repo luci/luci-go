@@ -389,7 +389,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 						"abc": &structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"@type":     structpb.NewStringValue("some.package.MyMessage"),
+								"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 								"child_key": structpb.NewStringValue("child_value"),
 							},
 						},
@@ -402,7 +402,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 						"abc": &structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"@type":     structpb.NewStringValue("some.package.MyMessage"),
+								"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 								"child_key": structpb.NewStringValue("child_value"),
 							},
 						},
@@ -415,7 +415,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 						"abc_": &structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"@type":     structpb.NewStringValue("some.package.MyMessage"),
+								"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 								"child_key": structpb.NewStringValue("child_value"),
 							},
 						},
@@ -798,7 +798,7 @@ func TestUpdateInvocation(t *testing.T) {
 		Convey("extended_properties", func() {
 			structValueOrg := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"@type":       structpb.NewStringValue("some.package.MyMessage"),
+					"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 					"child_key_1": structpb.NewStringValue("child_value_1"),
 				},
 			}
@@ -831,7 +831,7 @@ func TestUpdateInvocation(t *testing.T) {
 			Convey("add, replace, and delete keys", func() {
 				structValueNew := &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key_2": structpb.NewStringValue("child_value_2"),
 					},
 				}
@@ -873,8 +873,8 @@ func TestUpdateInvocation(t *testing.T) {
 			Convey("valid request but overall size exceed limit", func() {
 				structValueLong := &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"@type":       structpb.NewStringValue("some.package.MyMessage"),
-						"child_key_1": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue-60)),
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue-80)),
 					},
 				}
 				internalExtendedProperties := &invocationspb.ExtendedProperties{

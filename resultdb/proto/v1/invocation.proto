@@ -242,9 +242,11 @@ message Invocation {
   // in the test results export, it is only available in the finalized
   // invocations BigQuery export.
   //
-  // All google.protobuf.Struct values must contain a field '@type' at the
-  // top-level that defines the fully-qualified name of the source protocol
-  // buffer that was used to populate this field (e.g. some.package.MyMessage).
+  // All google.protobuf.Struct values must contain a field '@type' which is
+  // a URL/resource name that uniquely identifies the type of the source
+  // protocol buffer message. This string must contain at least
+  // one "/" character. The last segment of the URL's path must represent the
+  // fully qualified name of the type (e.g. foo.com/x/some.package.MyMessage)
   //
   // ResultDB will not validate the contents with respect to this schema, but
   // downstream systems may depend on the '@type' field to inform how the

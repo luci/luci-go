@@ -304,24 +304,60 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `["mykey"] should have a key "@type"`)
+			So(err, ShouldErrLike, `["mykey"]: must have a field "@type"`)
 		})
-		Convey(`Invalid @type`, func() {
+		Convey(`Invalid @type, missing slash`, func() {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"@type":       structpb.NewStringValue("_some.package.MyMessage"),
+						"@type":       structpb.NewStringValue("some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),
 					},
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `["mykey"]["@type"]: does not match`)
+			So(err, ShouldErrLike, `["mykey"]: "@type" value "some.package.MyMessage" must contain at least one "/" character`)
+		})
+		Convey(`Invalid @type, invalid type url`, func() {
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("[::1]/some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldErrLike, `["mykey"]: "@type" value "[::1]/some.package.MyMessage":`)
+		})
+		Convey(`Invalid @type, invalid type name`, func() {
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("foo.bar.com/x/_some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldErrLike, `["mykey"]: "@type" type name "_some.package.MyMessage": does not match`)
+		})
+		Convey(`Valid @type`, func() {
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			err := ValidateInvocationExtendedProperties(extendedProperties)
+			So(err, ShouldBeNil)
 		})
 		Convey(`Max size of extended properties`, func() {
 			structValueLong := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"@type":       structpb.NewStringValue("some.package.MyMessage"),
+					"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 					"child_key_1": structpb.NewStringValue(strings.Repeat("a", MaxSizeInvocationExtendedPropertyValue-60)),
 				},
 			}
@@ -339,7 +375,7 @@ func TestValidateInvocation(t *testing.T) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),
 					},
 				},

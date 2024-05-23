@@ -63,13 +63,13 @@ func TestInvocationExtendedProperties() map[string]*structpb.Struct {
 	return map[string]*structpb.Struct{
 		"key_1": &structpb.Struct{
 			Fields: map[string]*structpb.Value{
-				"@type":       structpb.NewStringValue("some.package.MyMessage"),
+				"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 				"child_key_1": structpb.NewStringValue("child_value_1"),
 			},
 		},
 		"key_2": &structpb.Struct{
 			Fields: map[string]*structpb.Value{
-				"@type":       structpb.NewStringValue("some.package.MyMessage"),
+				"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 				"child_key_1": structpb.NewStringValue("child_value_2"),
 			},
 		},

@@ -15,6 +15,9 @@
 package pbutil
 
 import (
+	"net/url"
+	"strings"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -25,18 +28,18 @@ import (
 )
 
 const (
-	invocationIDPattern                     = `[a-z][a-z0-9_\-:.]{0,99}`
-	invocationExtendedPropertyKeyPattern    = `[a-z]([a-z0-9_]{0,61}[a-z0-9])?`
-	invocationExtendedPropertySchemaPattern = `[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+`
-	MaxSizeInvocationExtendedPropertyValue  = 20 * 1024  // 20 KB
-	MaxSizeInvocationExtendedProperties     = 100 * 1024 // 100 KB
+	invocationIDPattern                       = `[a-z][a-z0-9_\-:.]{0,99}`
+	invocationExtendedPropertyKeyPattern      = `[a-z]([a-z0-9_]{0,61}[a-z0-9])?`
+	invocationExtendedPropertyTypeNamePattern = `[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+`
+	MaxSizeInvocationExtendedPropertyValue    = 20 * 1024  // 20 KB
+	MaxSizeInvocationExtendedProperties       = 100 * 1024 // 100 KB
 
 )
 
 var invocationIDRe = regexpf("^%s$", invocationIDPattern)
 var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
 var invocationExtendedPropertyKeyRe = regexpf("^%s$", invocationExtendedPropertyKeyPattern)
-var invocationExtendedPropertySchemaRe = regexpf("^%s$", invocationExtendedPropertySchemaPattern)
+var invocationExtendedPropertyTypeNameRe = regexpf("^%s$", invocationExtendedPropertyTypeNamePattern)
 
 // ValidateInvocationID returns a non-nil error if id is invalid.
 func ValidateInvocationID(id string) error {
@@ -138,12 +141,8 @@ func ValidateInvocationExtendedProperties(extendedProperties map[string]*structp
 		if err := validateProperties(value, MaxSizeInvocationExtendedPropertyValue); err != nil {
 			return errors.Annotate(err, "[%q]", key).Err()
 		}
-		schemaVal, schemaExist := value.Fields["@type"]
-		if !schemaExist {
-			return errors.Reason("[%q] should have a key \"@type\"", key).Err()
-		}
-		if err := validateWithRe(invocationExtendedPropertySchemaRe, schemaVal.GetStringValue()); err != nil {
-			return errors.Annotate(err, "[%q][\"@type\"]", key).Err()
+		if err := validateInvocationExtendedPropertyTypeField(value); err != nil {
+			return errors.Annotate(err, "[%q]", key).Err()
 		}
 	}
 	internalExtendedProperties := &invocationspb.ExtendedProperties{
@@ -151,6 +150,26 @@ func ValidateInvocationExtendedProperties(extendedProperties map[string]*structp
 	}
 	if proto.Size(internalExtendedProperties) > MaxSizeInvocationExtendedProperties {
 		return errors.Reason("exceeds the maximum size of %d bytes", MaxSizeInvocationExtendedProperties).Err()
+	}
+	return nil
+}
+
+func validateInvocationExtendedPropertyTypeField(value *structpb.Struct) error {
+	typeVal, typeExist := value.Fields["@type"]
+	if !typeExist {
+		return errors.Reason(`must have a field "@type"`).Err()
+	}
+	typeStr := typeVal.GetStringValue()
+	slashIndex := strings.LastIndex(typeStr, "/")
+	if slashIndex == -1 {
+		return errors.Reason(`"@type" value %q must contain at least one "/" character`, typeStr).Err()
+	}
+	if _, err := url.Parse(typeStr); err != nil {
+		return errors.Annotate(err, `"@type" value %q`, typeStr).Err()
+	}
+	typeName := typeStr[slashIndex+1:]
+	if err := validateWithRe(invocationExtendedPropertyTypeNameRe, typeName); err != nil {
+		return errors.Annotate(err, `"@type" type name %q`, typeName).Err()
 	}
 	return nil
 }
