@@ -58,8 +58,8 @@ type Resolver struct {
 	// version resolutions (when the version is already given as an instance ID).
 	Visitor func(pkg, ver, iid string)
 
-	resolving promise.Map[any, any] // unresolvedPkg => (common.Pin, error)
-	verifying promise.Map[any, any] // common.Pin => (nil, error)
+	resolving promise.Map[unresolvedPkg, common.Pin]
+	verifying promise.Map[common.Pin, struct{}]
 }
 
 type unresolvedPkg struct {
@@ -171,7 +171,7 @@ func (r *Resolver) ResolveAllPlatforms(ctx context.Context, file *ensure.File) (
 func (r *Resolver) resolveVersion(ctx context.Context, pkg, ver string) (common.Pin, error) {
 	unresolved := unresolvedPkg{pkg, ver}
 
-	promise := r.resolving.Get(ctx, unresolved, func(ctx context.Context) (any, error) {
+	promise := r.resolving.Get(ctx, unresolved, func(ctx context.Context) (common.Pin, error) {
 		logging.Debugf(ctx, "Resolving package %s ...", unresolved)
 		pin, err := r.Client.ResolveVersion(ctx, unresolved.pkg, unresolved.ver)
 		if err == nil {
@@ -186,12 +186,12 @@ func (r *Resolver) resolveVersion(ctx context.Context, pkg, ver string) (common.
 	if err != nil {
 		return common.Pin{}, err
 	}
-	return pin.(common.Pin), nil
+	return pin, nil
 }
 
 // verifyPin returns nil if the given pin exists on the backend.
 func (r *Resolver) verifyPin(ctx context.Context, pin common.Pin) error {
-	promise := r.verifying.Get(ctx, pin, func(ctx context.Context) (any, error) {
+	promise := r.verifying.Get(ctx, pin, func(ctx context.Context) (struct{}, error) {
 		logging.Debugf(ctx, "Validating pin %s...", pin)
 		_, err := r.Client.DescribeInstance(ctx, pin, nil)
 		if err == nil {
@@ -199,7 +199,7 @@ func (r *Resolver) verifyPin(ctx context.Context, pin common.Pin) error {
 		} else {
 			logging.Debugf(ctx, "Failed to resolve instance info for %s: %s", pin, err)
 		}
-		return nil, err
+		return struct{}{}, err
 	})
 	_, err := promise.Get(ctx)
 	return err
