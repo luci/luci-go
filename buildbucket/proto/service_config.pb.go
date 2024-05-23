@@ -813,6 +813,8 @@ type CustomMetric struct {
 	// Each builder that uses this metric must specify how to populate each
 	// field's value in their configurations, see BuilderConfig.CustomBuildMetric.Fields.
 	//
+	// Must not have duplicates.
+	//
 	// The value type of all metric fields is always string.
 	// Each Field must conform to ^[A-Za-z_][A-Za-z0-9_]*$ (See
 	// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/tsmon/registry/registry.go;l=34;drc=b77d0c2bd4bbb536f8e349e993e3ca18818c51e7).

@@ -344,6 +344,25 @@ func TestConfig(t *testing.T) {
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid field name "$status": doesn't match ^[A-Za-z_][A-Za-z0-9_]*$`)
 			})
+
+			Convey("duplicated field", func() {
+				content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						custom_metrics {
+							name: "/chrome/infra/custom/builds/started",
+							fields: "status",
+							fields: "status",
+							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+						}
+					`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `"status" is duplicated`)
+			})
 		})
 
 		Convey("OK", func() {
