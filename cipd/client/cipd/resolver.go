@@ -58,8 +58,8 @@ type Resolver struct {
 	// version resolutions (when the version is already given as an instance ID).
 	Visitor func(pkg, ver, iid string)
 
-	resolving promise.Map // unresolvedPkg => (common.Pin, error)
-	verifying promise.Map // common.Pin => (nil, error)
+	resolving promise.Map[any, any] // unresolvedPkg => (common.Pin, error)
+	verifying promise.Map[any, any] // common.Pin => (nil, error)
 }
 
 type unresolvedPkg struct {

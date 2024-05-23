@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPromise(t *testing.T) {

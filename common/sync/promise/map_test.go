@@ -26,18 +26,18 @@ func TestMap(t *testing.T) {
 
 	Convey(`Works`, t, func() {
 		c := context.Background()
-		m := Map{}
+		m := Map[int, string]{}
 
-		p1 := m.Get(c, 1, func(context.Context) (any, error) {
+		p1 := m.Get(c, 1, func(context.Context) (string, error) {
 			return "hello", nil
 		})
-		p2 := m.Get(c, 1, func(context.Context) (any, error) {
+		p2 := m.Get(c, 1, func(context.Context) (string, error) {
 			panic("must not be called")
 		})
 		So(p1, ShouldEqual, p2)
 
 		res, err := p1.Get(c)
 		So(err, ShouldBeNil)
-		So(res.(string), ShouldEqual, "hello")
+		So(res, ShouldEqual, "hello")
 	})
 }

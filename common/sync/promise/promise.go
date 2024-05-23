@@ -26,7 +26,7 @@ var (
 )
 
 // Generator is the Promise's generator type.
-type Generator func(context.Context) (any, error)
+type Generator[T any] func(context.Context) (T, error)
 
 // Promise is a promise structure with goroutine-safe methods that is
 // responsible for owning a single piece of data. Promises have multiple readers
@@ -36,22 +36,22 @@ type Generator func(context.Context) (any, error)
 // populated, the reader will block pending the data. Once the data has been
 // delivered, all readers will unblock and receive a reference to the Promise's
 // data.
-type Promise struct {
+type Promise[T any] struct {
 	signalC chan struct{} // Channel whose closing signals that the data is available.
 
 	// onGet, if not nil, is invoked when Get is called.
 	onGet func(context.Context)
 
-	data any // The Promise's data.
-	err  error       // The error status.
+	data T     // The Promise's data.
+	err  error // The error status.
 }
 
 // New instantiates a new, empty Promise instance. The Promise's value will be
 // the value returned by the supplied generator function.
 //
 // The generator will be invoked immediately in its own goroutine.
-func New(ctx context.Context, gen Generator) *Promise {
-	p := Promise{
+func New[T any](ctx context.Context, gen Generator[T]) *Promise[T] {
+	p := Promise[T]{
 		signalC: make(chan struct{}),
 	}
 
@@ -67,10 +67,10 @@ func New(ctx context.Context, gen Generator) *Promise {
 // it will be run when the first call to Get is made, and will use one of the
 // Get callers' goroutines.
 // goroutine a Get caller.
-func NewDeferred(gen Generator) *Promise {
+func NewDeferred[T any](gen Generator[T]) *Promise[T] {
 	var startOnce sync.Once
 
-	p := Promise{
+	p := Promise[T]{
 		signalC: make(chan struct{}),
 	}
 	p.onGet = func(ctx context.Context) {
@@ -79,7 +79,7 @@ func NewDeferred(gen Generator) *Promise {
 	return &p
 }
 
-func (p *Promise) runGen(ctx context.Context, gen Generator) {
+func (p *Promise[T]) runGen(ctx context.Context, gen Generator[T]) {
 	defer close(p.signalC)
 	p.data, p.err = gen(ctx)
 }
@@ -90,7 +90,8 @@ func (p *Promise) runGen(ctx context.Context, gen Generator) {
 // If the value is available, it will be returned with its error status. If the
 // context times out or is cancelled, the appropriate context error will be
 // returned.
-func (p *Promise) Get(ctx context.Context) (any, error) {
+func (p *Promise[T]) Get(ctx context.Context) (T, error) {
+	var zero T
 	// If we have an onGet function, run it (deferred case).
 	if p.onGet != nil {
 		p.onGet(ctx)
@@ -109,19 +110,20 @@ func (p *Promise) Get(ctx context.Context) (any, error) {
 			return p.data, p.err
 
 		default:
-			return nil, ctx.Err()
+			return zero, ctx.Err()
 		}
 	}
 }
 
 // Peek returns the promise's current value. If the value isn't set, Peek will
 // return immediately with ErrNoData.
-func (p *Promise) Peek() (any, error) {
+func (p *Promise[T]) Peek() (T, error) {
+	var zero T
 	select {
 	case <-p.signalC:
 		return p.data, p.err
 
 	default:
-		return nil, ErrNoData
+		return zero, ErrNoData
 	}
 }

@@ -158,10 +158,10 @@ type cacheEntry struct {
 
 	// registerP is a Promise that is blocking pending stream registration.
 	// Upon successful resolution, it will contain a *LogStreamState.
-	registerP *promise.Promise
+	registerP *promise.Promise[any]
 	// terminateP is a Promise that is blocking pending stream termination.
 	// Upon successful resolution, it will contain a nil result with no error.
-	terminateP *promise.Promise
+	terminateP *promise.Promise[any]
 }
 
 // registerStream performs a RegisterStream Coordinator RPC.
@@ -171,7 +171,7 @@ func (ce *cacheEntry) registerStream(ctx context.Context, coord Coordinator, st 
 	// While locked, load the current registration promise and the local
 	// terminal index value.
 	var (
-		p    *promise.Promise
+		p    *promise.Promise[any]
 		tidx types.MessageIndex
 	)
 	ce.withLock(func() {
@@ -224,7 +224,7 @@ func (ce *cacheEntry) terminateStream(ctx context.Context, coord Coordinator, tr
 	// Initialize the termination Promise if one is not defined. Also, grab our
 	// cached remote terminal index.
 	var (
-		p    *promise.Promise
+		p    *promise.Promise[any]
 		tidx types.MessageIndex = -1
 	)
 	ce.withLock(func() {

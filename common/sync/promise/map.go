@@ -24,14 +24,14 @@ import (
 //
 // First call to Get initiates a new promise. All subsequent calls return exact
 // same promise (even if it has finished).
-type Map struct {
+type Map[K comparable, V any] struct {
 	mu sync.RWMutex
-	m  map[any]*Promise
+	m  map[K]*Promise[V]
 }
 
 // Get either returns an existing promise for the given key or creates and
 // immediately launches a new promise.
-func (pm *Map) Get(ctx context.Context, key any, gen Generator) *Promise {
+func (pm *Map[K, V]) Get(ctx context.Context, key K, gen Generator[V]) *Promise[V] {
 	pm.mu.RLock()
 	p := pm.m[key]
 	pm.mu.RUnlock()
@@ -46,7 +46,7 @@ func (pm *Map) Get(ctx context.Context, key any, gen Generator) *Promise {
 	if p = pm.m[key]; p == nil {
 		p = New(ctx, gen)
 		if pm.m == nil {
-			pm.m = make(map[any]*Promise, 1)
+			pm.m = make(map[K]*Promise[V], 1)
 		}
 		pm.m[key] = p
 	}
