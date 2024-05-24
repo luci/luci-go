@@ -27,7 +27,7 @@ describe('<GroupsListItem />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsListItem group={mockGroup} />
+            <GroupsListItem group={mockGroup} setSelected={() => {}} selected={false}/>
         </List>
       </FakeContextProvider>,
     );

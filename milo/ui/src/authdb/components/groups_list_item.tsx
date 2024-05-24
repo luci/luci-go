@@ -18,6 +18,8 @@ import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/g
 
 interface GroupsItemProps {
     readonly group: AuthGroup;
+    setSelected: () => void;
+    selected: boolean;
 }
 
 // True if group name starts with '<something>/' prefix, where
@@ -38,17 +40,21 @@ const trimGroupDescription = (desc: string) => {
   return firstLine;
 }
 
-export function GroupsListItem({ group } :GroupsItemProps) {
+export function GroupsListItem({ group, setSelected, selected } :GroupsItemProps) {
   let description = isExternalGroupName(group.name) ? 'External' : trimGroupDescription(group.description);
 
   return (
     <ListItem disablePadding>
-    <ListItemButton>
+      <ListItemButton
+       onClick={setSelected}
+       selected={selected}
+        >
         <ListItemText
             primary={group.name}
             secondary={description}
-            data-testid="groups_item_list_item_text" />
-    </ListItemButton>
-  </ListItem>
+            data-testid="groups_item_list_item_text"
+            />
+      </ListItemButton>
+    </ListItem>
 );
 }

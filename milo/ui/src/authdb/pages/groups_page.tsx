@@ -19,10 +19,8 @@ export function GroupsPage() {
     <Grid container>
       <Grid item xs={1}>
       </Grid>
-      <Grid item xs={4}>
+      <Grid item xs={10}>
         <GroupsList />
-      </Grid>
-      <Grid item xs={6}>
       </Grid>
       <Grid item xs={1}>
       </Grid>

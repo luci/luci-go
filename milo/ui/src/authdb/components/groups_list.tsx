@@ -22,8 +22,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
+import { useState } from 'react';
+import {GroupsForm} from '@/authdb/components/groups_form';
+import Grid from '@mui/material/Grid';
 
 export function GroupsList() {
+  const [selectedGroup, setSelectedGroup] = useState<string>();
+
   const client = useAuthServiceClient();
   const {
     isLoading,
@@ -53,14 +58,29 @@ export function GroupsList() {
       </div>
     );
   }
+  const setSelected = (name: string) => {
+    setSelectedGroup(name);
+  };
 
   return (
-    <Box className="groups-list-container">
-      <List data-testid="groups-list">
-        {allGroups && allGroups.map((group) => (
-          <GroupsListItem key={group.name} group={group} />
-        ))}
-      </List>
-    </Box>
+    <Grid container className="groups-container">
+      <Grid item xs={5}>
+        <Box className="groups-list-container">
+          <List data-testid="groups-list">
+            {allGroups && allGroups.map((group) => (
+            <GroupsListItem
+              key={group.name}
+              group={group}
+              setSelected={() => {setSelected(group.name)}}
+              selected={group.name === selectedGroup}
+            />
+            ))}
+          </List>
+        </Box>
+      </Grid>
+      <Grid item xs={7}>
+        {selectedGroup && <GroupsForm name={selectedGroup}/>}
+      </Grid>
+    </Grid>
   );
 }

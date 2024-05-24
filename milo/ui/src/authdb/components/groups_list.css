@@ -18,3 +18,8 @@
     overflow:hidden;
     overflow-y:auto;
 }
+
+.groups-container {
+    display: flex;
+    flex-direction: row;
+}
