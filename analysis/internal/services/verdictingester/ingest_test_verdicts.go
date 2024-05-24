@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
@@ -50,7 +49,7 @@ import (
 	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
-	"go.chromium.org/luci/analysis/internal/ingestion/control"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
@@ -207,7 +206,7 @@ func RegisterTaskHandler(srv *server.Server) error {
 // Schedule enqueues a task to ingest test verdicts from a build.
 func Schedule(ctx context.Context, task *taskspb.IngestTestVerdicts) {
 	tq.MustAddTask(ctx, &tq.Task{
-		Title:   fmt.Sprintf("%s-%s-page-%v", task.Project, task.IngestionId, task.TaskIndex),
+		Title:   fmt.Sprintf("%s-%s-%d-page-%v", task.Build.Project, task.Build.Host, task.Build.Id, task.TaskIndex),
 		Payload: task,
 	})
 }
@@ -215,43 +214,40 @@ func Schedule(ctx context.Context, task *taskspb.IngestTestVerdicts) {
 func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *taskspb.IngestTestVerdicts) error {
 	if err := validateRequest(ctx, payload); err != nil {
 		project := "(unknown)"
-		if payload.Project != "" {
-			project = payload.Project
+		if payload.GetBuild().GetProject() != "" {
+			project = payload.Build.Project
 		}
 		taskCounter.Add(ctx, 1, project, "failed_validation")
 		return tq.Fatal.Apply(err)
 	}
 
-	isProjectEnabled, err := config.IsProjectEnabledForIngestion(ctx, payload.Project)
+	isProjectEnabled, err := config.IsProjectEnabledForIngestion(ctx, payload.Build.Project)
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}
 	if !isProjectEnabled {
-		taskCounter.Add(ctx, 1, payload.Project, "ignored_project_not_allowlisted")
+		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_project_not_allowlisted")
 		return nil
 	}
 
-	if payload.Invocation == nil {
-		if payload.Build != nil {
-			// Ingestion has a build that does not have a ResultDB invocation to ingest.
-			logging.Debugf(ctx, "Skipping ingestion of build %s-%d because it has no ResultDB invocation.",
-				payload.Build.Host, payload.Build.Id)
-			taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_no_invocation")
-			return nil
-		}
-		return errors.Reason("ingestion with no build and no invocation should not be scheduled").Err()
+	if !payload.Build.HasInvocation {
+		// Build does not have a ResultDB invocation to ingest.
+		logging.Debugf(ctx, "Skipping ingestion of build %s-%d because it has no ResultDB invocation.",
+			payload.Build.Host, payload.Build.Id)
+		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_no_invocation")
+		return nil
 	}
 
-	if payload.Build != nil && payload.Build.IsIncludedByAncestor {
+	if payload.Build.IsIncludedByAncestor {
 		// Yes. Do not ingest this build to avoid ingesting the same test
 		// results multiple times.
 		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_has_ancestor")
 		return nil
 	}
 
-	rdbHost := payload.Invocation.ResultdbHost
-	invName := pbutil.InvocationName(payload.Invocation.InvocationId)
-	rc, err := resultdb.NewClient(ctx, rdbHost, payload.Project)
+	rdbHost := payload.Build.ResultdbHost
+	invName := controllegacy.BuildInvocationName(payload.Build.Id)
+	rc, err := resultdb.NewClient(ctx, rdbHost, payload.Build.Project)
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}
@@ -260,15 +256,15 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	if code == codes.NotFound {
 		// Invocation not found, end the task gracefully.
 		logging.Warningf(ctx, "Invocation %s for project %s not found.",
-			invName, payload.Project)
-		taskCounter.Add(ctx, 1, payload.Project, "ignored_invocation_not_found")
+			invName, payload.Build.Project)
+		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_invocation_not_found")
 		return nil
 	}
 	if code == codes.PermissionDenied {
 		// Invocation not found, end the task gracefully.
 		logging.Warningf(ctx, "Permission denied to read invocation %s for project %s.",
-			invName, payload.Project)
-		taskCounter.Add(ctx, 1, payload.Project, "ignored_resultdb_permission_denied")
+			invName, payload.Build.Project)
+		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_resultdb_permission_denied")
 		return nil
 	}
 	if err != nil {
@@ -295,7 +291,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 		return transient.Tag.Apply(err)
 	}
 
-	sources, err := gerritchangelists.PopulateOwnerKindsBatch(ctx, payload.Project, rsp.Sources)
+	sources, err := gerritchangelists.PopulateOwnerKindsBatch(ctx, payload.Build.Project, rsp.Sources)
 	if err != nil {
 		err = errors.Annotate(err, "populate changelist owner kinds").Err()
 		return transient.Tag.Apply(err)
@@ -345,7 +341,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 
 	if nextPageToken == "" {
 		// In the last task.
-		taskCounter.Add(ctx, 1, payload.Project, "success")
+		taskCounter.Add(ctx, 1, payload.Build.Project, "success")
 	}
 	return nil
 }
@@ -388,13 +384,15 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 		// last page. We should not schedule a continuation task.
 		panic("next page token cannot be the empty page token")
 	}
+	rdbHost := task.Build.ResultdbHost
+	invID := controllegacy.BuildInvocationID(task.Build.Id)
 
 	// Schedule the task transactionally, conditioned on it not having been
 	// scheduled before.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		key := checkpoints.Key{
-			Project:    task.Project,
-			ResourceID: fmt.Sprintf("%s/%s", task.Invocation.ResultdbHost, task.Invocation.InvocationId),
+			Project:    task.Build.Project,
+			ResourceID: fmt.Sprintf("%s/%s", rdbHost, invID),
 			ProcessID:  "verdict-ingestion",
 			Uniquifier: fmt.Sprintf("schedule-continuation/%v", task.TaskIndex),
 		}
@@ -418,9 +416,6 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 
 		itvTask := &taskspb.IngestTestVerdicts{
 			PartitionTime: task.PartitionTime,
-			IngestionId:   task.IngestionId,
-			Project:       task.Project,
-			Invocation:    task.Invocation,
 			Build:         task.Build,
 			PresubmitRun:  task.PresubmitRun,
 			PageToken:     nextPageToken,
@@ -437,10 +432,6 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ingestForClustering")
 	defer func() { tracing.End(s, err) }()
 
-	if payload.Build == nil {
-		// TODO: support clustering for invocation without a build.
-		return nil
-	}
 	cfg, err := config.Project(ctx, ing.Project)
 	if err != nil {
 		return errors.Annotate(err, "read project config").Err()
@@ -535,11 +526,7 @@ func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.Tes
 func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, payload *taskspb.IngestTestVerdicts) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ingestForChangePointAnalysis")
 	defer func() { tracing.End(s, err) }()
-	if payload.Build == nil {
-		// Ingest for changepoint analysis not supported here.
-		// But the result ingestion pipeline will ingest these test results to changepoint analysis.
-		return nil
-	}
+
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return errors.Annotate(err, "read config").Err()
@@ -583,12 +570,6 @@ func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.E
 }
 
 func validateRequest(ctx context.Context, payload *taskspb.IngestTestVerdicts) error {
-	if payload.IngestionId == "" {
-		return errors.New("ingestion ID must be specified")
-	}
-	if err := pbutil.ValidateProject(payload.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
-	}
 	if !payload.PartitionTime.IsValid() {
 		return errors.New("partition time must be specified and valid")
 	}
@@ -599,15 +580,11 @@ func validateRequest(ctx context.Context, payload *taskspb.IngestTestVerdicts) e
 	} else if t.After(now.Add(ingestionLatest)) {
 		return fmt.Errorf("partition time (%v) is too far in the future", t)
 	}
-	if payload.Build != nil {
-		if err := control.ValidateBuildResult(payload.Build); err != nil {
-			return err
-		}
+	if payload.Build == nil {
+		return errors.New("build must be specified")
 	}
-	if payload.Invocation != nil {
-		if err := control.ValidateInvocationResult(payload.Invocation); err != nil {
-			return err
-		}
+	if err := controllegacy.ValidateBuildResult(payload.Build); err != nil {
+		return err
 	}
 	return nil
 }

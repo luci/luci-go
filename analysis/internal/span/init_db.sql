@@ -279,6 +279,7 @@ CREATE TABLE Ingestions (
 -- time if clocks are not synchronised).
 , ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 100 DAY));
 
+
 -- IngestionJoins is used to synchronise and deduplicate the ingestion
 -- of test results which require data from one or more sources.
 --

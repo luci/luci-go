@@ -28,14 +28,9 @@ import (
 
 func SamplePayload() *taskspb.IngestTestVerdicts {
 	return &taskspb.IngestTestVerdicts{
-		Project: "chromium",
 		Build: &controlpb.BuildResult{
 			Id:      1234,
 			Project: "chromium",
-		},
-		Invocation: &controlpb.InvocationResult{
-			InvocationId: "build-1234",
-			ResultdbHost: "rdbHost",
 		},
 		PartitionTime: timestamppb.New(time.Unix(3600*10, 0)),
 	}

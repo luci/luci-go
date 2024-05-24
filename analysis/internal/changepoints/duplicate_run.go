@@ -20,6 +20,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
+	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 )
 
@@ -30,20 +32,21 @@ import (
 // It also returns a slice of invocation IDs that are not in Invocations
 // table in Spanner. This is used to insert new Invocations row to Spanner.
 // Note: This function should be called with a transactional context.
-func readDuplicateInvocations(ctx context.Context, tvs []*rdbpb.TestVariant, project, invocationID string) (map[string]bool, []string, error) {
+func readDuplicateInvocations(ctx context.Context, tvs []*rdbpb.TestVariant, buildResult *controlpb.BuildResult) (map[string]bool, []string, error) {
 	invIDs, err := invocationIDsFromTestVariants(tvs)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "invocation ids from test variant").Err()
 	}
-	invMap, err := readInvocations(ctx, project, invIDs)
+	invMap, err := readInvocations(ctx, buildResult.Project, invIDs)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "read invocations").Err()
 	}
 	dupMap := map[string]bool{}
+	buildInvID := controllegacy.BuildInvocationID(buildResult.Id)
 	for invID, ingestedInvID := range invMap {
 		// If the ingested invocation ID stored in Spanner is different from the
 		// current invocation ID, it means this is a duplicate run.
-		if ingestedInvID != invocationID {
+		if ingestedInvID != buildInvID {
 			dupMap[invID] = true
 		}
 	}

@@ -24,6 +24,7 @@ import (
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
+	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -71,7 +72,12 @@ func TestDuplicateRun(t *testing.T) {
 			},
 		}
 
-		m, nonDups, err := readDuplicateInvocations(span.Single(ctx), tvs, "chromium", "build-8000")
+		buildResult := &controlpb.BuildResult{
+			Id:      8000,
+			Project: "chromium",
+		}
+
+		m, nonDups, err := readDuplicateInvocations(span.Single(ctx), tvs, buildResult)
 		So(err, ShouldBeNil)
 		So(m, ShouldResemble, map[string]bool{
 			"inv-1": true,

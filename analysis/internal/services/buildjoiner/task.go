@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
+	"go.chromium.org/luci/analysis/internal/ingestion/joinlegacy"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
@@ -46,8 +47,13 @@ func RegisterTaskClass() {
 		Kind:      tq.NonTransactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*taskspb.JoinBuild)
-			if _, err := join.JoinBuild(ctx, task.Host, task.Project, task.Id); err != nil {
+			if _, err := joinlegacy.JoinBuild(ctx, task.Host, task.Project, task.Id); err != nil {
 				return errors.Annotate(err, "join build %s/%v", task.Host, task.Id).Err()
+			}
+			// Run the new join after the existing join,
+			// so that failure of the new join doesn't affect the existing join.
+			if _, err := join.JoinBuild(ctx, task.Host, task.Project, task.Id); err != nil {
+				return errors.Annotate(err, "join build new %s/%v", task.Host, task.Id).Err()
 			}
 			return nil
 		},

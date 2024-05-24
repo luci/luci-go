@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package control
+package controllegacy
 
 import (
 	"context"
@@ -37,22 +37,10 @@ const JoinStatsHours = 36
 
 // Entry is an ingestion control record, used to de-duplicate build ingestions
 // and synchronise them with presubmit results (if required).
-// An ingestion might contain the following entities.
-// * A buildbucket build (not exist if the ingestion has an ResultDB invocation which does not associate with a buildbucket build).
-// * A ResultDB invocation (not exist if the ingestion has an buildbucket build which does not contain invocation).
-// * A CV run (only exist when the ingestion has buildbucket build and the build is a presubmit build).
-// The ingestion task is only scheduled when all entities that exists are received.
 type Entry struct {
-	// IngestionID uniquely identifies an ingestion.
-	// The IngestionID is of the format {RDB_HOST}/{INVOCATION_ID}.
-	// When the ingestion doesn't have an invocation, the INVOCATION_ID part of the IngestionID is a logical invocation id derived from the build ID.
-	IngestionID IngestionID
-
-	// Whether the invocation is from an build bucket build.
-	// If true, ingestion should wait for the build result to be
-	// populated before commencing ingestion.
-	// Value only populated once either BuildResult or InvocationResult populated
-	HasBuildBucketBuild bool
+	// The identity of the build which is being ingested.
+	// The scheme is: {buildbucket host name}/{build id}.
+	BuildID string
 
 	// Project is the LUCI Project the build belongs to. Used for
 	// metrics monitoring join performance.
@@ -109,39 +97,29 @@ type Entry struct {
 	LastUpdated time.Time
 }
 
-// IngestionID represents the join logic between invocation, build and cv runs.
-// IngestionID can be derived from build ID or invocation ID.
-// Entities with the same ingestionID belongs to the same ingestion.
-type IngestionID string
-
-// IngestionIDFromBuildID returns the ingestionID for a given build id.
-func IngestionIDFromBuildID(rdbHost string, buildID int64) IngestionID {
-	return IngestionID(fmt.Sprintf("%s/build-%d", rdbHost, buildID))
+// BuildID returns the control record key for a buildbucket build with the
+// given hostname and ID.
+func BuildID(hostname string, id int64) string {
+	return fmt.Sprintf("%s/%v", hostname, id)
 }
 
-// IngestionIDFromInvocationID returns the ingestionID for a given invocation id.
-func IngestionIDFromInvocationID(rdbHost, invocationID string) IngestionID {
-	return IngestionID(fmt.Sprintf("%s/%s", rdbHost, invocationID))
-}
-
-// Read reads ingestion control records for the specified ingestionIDs.
-// Exactly one *Entry is returned for each ingestionID. The result entry
-// at index i corresponds to the ingestionIDs[i].
-// If a record does not exist for the given ingestionID, an *Entry of
-// nil is returned for that ingestionID.
-func Read(ctx context.Context, ingestionIDs []IngestionID) ([]*Entry, error) {
-	uniqueIDs := make(map[IngestionID]struct{})
+// Read reads ingestion control records for the specified build IDs.
+// Exactly one *Entry is returned for each build ID. The result entry
+// at index i corresponds to the buildIDs[i].
+// If a record does not exist for the given build ID, an *Entry of
+// nil is returned for that build ID.
+func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
+	uniqueIDs := make(map[string]struct{})
 	var keys []spanner.Key
-	for _, ingestionID := range ingestionIDs {
-		keys = append(keys, spanner.Key{string(ingestionID)})
-		if _, ok := uniqueIDs[ingestionID]; ok {
-			return nil, fmt.Errorf("duplicate ingestion ID %s", ingestionID)
+	for _, buildID := range buildIDs {
+		keys = append(keys, spanner.Key{buildID})
+		if _, ok := uniqueIDs[buildID]; ok {
+			return nil, fmt.Errorf("duplicate build ID %s", buildID)
 		}
-		uniqueIDs[ingestionID] = struct{}{}
+		uniqueIDs[buildID] = struct{}{}
 	}
 	cols := []string{
-		"IngestionID",
-		"HasBuildBucketBuild",
+		"BuildID",
 		"BuildProject",
 		"BuildResult",
 		"BuildJoinedTime",
@@ -155,11 +133,10 @@ func Read(ctx context.Context, ingestionIDs []IngestionID) ([]*Entry, error) {
 		"PresubmitJoinedTime",
 		"LastUpdated",
 	}
-	entryByIngestionID := make(map[IngestionID]*Entry)
-	rows := span.Read(ctx, "IngestionJoins", spanner.KeySetFromKeys(keys...), cols)
+	entryByBuildID := make(map[string]*Entry)
+	rows := span.Read(ctx, "Ingestions", spanner.KeySetFromKeys(keys...), cols)
 	f := func(r *spanner.Row) error {
-		var ingestionIDString string
-		var hasBuildBucketBuild spanner.NullBool
+		var buildID string
 		var buildProject spanner.NullString
 		var buildResultBytes []byte
 		var buildJoinedTime spanner.NullTime
@@ -174,8 +151,7 @@ func Read(ctx context.Context, ingestionIDs []IngestionID) ([]*Entry, error) {
 		var lastUpdated time.Time
 
 		err := r.Columns(
-			&ingestionIDString,
-			&hasBuildBucketBuild,
+			&buildID,
 			&buildProject,
 			&buildResultBytes,
 			&buildJoinedTime,
@@ -212,13 +188,12 @@ func Read(ctx context.Context, ingestionIDs []IngestionID) ([]*Entry, error) {
 				return errors.Annotate(err, "unmarshal presubmit result").Err()
 			}
 		}
-		ingestionID := IngestionID(ingestionIDString)
-		entryByIngestionID[ingestionID] = &Entry{
-			IngestionID:         ingestionID,
-			HasBuildBucketBuild: hasBuildBucketBuild.Valid && hasBuildBucketBuild.Bool,
-			BuildProject:        buildProject.StringVal,
-			BuildResult:         buildResult,
-			BuildJoinedTime:     buildJoinedTime.Time,
+
+		entryByBuildID[buildID] = &Entry{
+			BuildID:         buildID,
+			BuildProject:    buildProject.StringVal,
+			BuildResult:     buildResult,
+			BuildJoinedTime: buildJoinedTime.Time,
 			// HasInvocation uses NULL to indicate false.
 			HasInvocation:        hasInvocation.Valid && hasInvocation.Bool,
 			InvocationProject:    invocationProject.StringVal,
@@ -239,9 +214,9 @@ func Read(ctx context.Context, ingestionIDs []IngestionID) ([]*Entry, error) {
 	}
 
 	var result []*Entry
-	for _, ingestionID := range ingestionIDs {
-		// If the entry does not exist, return nil for that ingestion ID.
-		entry := entryByIngestionID[ingestionID]
+	for _, buildID := range buildIDs {
+		// If the entry does not exist, return nil for that build ID.
+		entry := entryByBuildID[buildID]
 		result = append(result, entry)
 	}
 	return result, nil
@@ -255,8 +230,7 @@ func InsertOrUpdate(ctx context.Context, e *Entry) error {
 		return err
 	}
 	update := map[string]any{
-		"IngestionID":          string(e.IngestionID),
-		"HasBuildBucketBuild":  spanner.NullBool{Valid: e.HasBuildBucketBuild, Bool: e.HasBuildBucketBuild},
+		"BuildId":              e.BuildID,
 		"BuildProject":         spanner.NullString{Valid: e.BuildProject != "", StringVal: e.BuildProject},
 		"BuildResult":          e.BuildResult,
 		"BuildJoinedTime":      spanner.NullTime{Valid: e.BuildJoinedTime != time.Time{}, Time: e.BuildJoinedTime},
@@ -270,7 +244,7 @@ func InsertOrUpdate(ctx context.Context, e *Entry) error {
 		"PresubmitJoinedTime":  spanner.NullTime{Valid: e.PresubmitJoinedTime != time.Time{}, Time: e.PresubmitJoinedTime},
 		"LastUpdated":          spanner.CommitTimestamp,
 	}
-	m := spanutil.InsertOrUpdateMap("IngestionJoins", update)
+	m := spanutil.InsertOrUpdateMap("Ingestions", update)
 	span.BufferWrite(ctx, m)
 	return nil
 }
@@ -314,7 +288,7 @@ func ReadBuildToPresubmitRunJoinStatistics(ctx context.Context) (map[string]Join
 		  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), BuildJoinedTime, HOUR) as hour,
 		  COUNT(*) as total,
 		  COUNTIF(PresubmitResult IS NOT NULL) as joined,
-		FROM IngestionJoins
+		FROM Ingestions
 		WHERE IsPresubmit
 		  AND BuildJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
@@ -339,7 +313,7 @@ func ReadPresubmitToBuildJoinStatistics(ctx context.Context) (map[string]JoinSta
 		  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), PresubmitJoinedTime, HOUR) as hour,
 		  COUNT(*) as total,
 		  COUNTIF(BuildResult IS NOT NULL) as joined,
-		FROM IngestionJoins
+		FROM Ingestions
 		WHERE IsPresubmit
 		  AND PresubmitJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
@@ -364,7 +338,7 @@ func ReadBuildToInvocationJoinStatistics(ctx context.Context) (map[string]JoinSt
 		  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), BuildJoinedTime, HOUR) as hour,
 		  COUNT(*) as total,
 		  COUNTIF(InvocationResult IS NOT NULL) as joined,
-		FROM IngestionJoins
+		FROM Ingestions
 		WHERE HasInvocation
 		  AND BuildJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
@@ -391,7 +365,7 @@ func ReadInvocationToBuildJoinStatistics(ctx context.Context) (map[string]JoinSt
 		  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), InvocationJoinedTime, HOUR) as hour,
 		  COUNT(*) as total,
 		  COUNTIF(BuildResult IS NOT NULL) as joined,
-		FROM IngestionJoins
+		FROM Ingestions
 		WHERE HasInvocation
 		  AND InvocationJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
@@ -434,13 +408,11 @@ func readJoinStatistics(ctx context.Context, stmt spanner.Statement) (map[string
 }
 
 func validateEntry(e *Entry) error {
-	if e.IngestionID == "" {
-		return errors.New("ingestionID must be set")
+	if e.BuildID == "" {
+		return errors.New("build ID must be specified")
 	}
+
 	if e.BuildResult != nil {
-		if !e.HasBuildBucketBuild {
-			return errors.New("build result must not be set unless hasBuildBucketBuild is set")
-		}
 		if err := ValidateBuildResult(e.BuildResult); err != nil {
 			return errors.Annotate(err, "build result").Err()
 		}

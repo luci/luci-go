@@ -113,8 +113,4 @@ message PresubmitResult {
 // InvocationResult represents the result from the invocation finalization
 // pub/sub that should be passed to the result ingestion task.
 message InvocationResult {
-  // The ResultDB host which contains this ResultDB invocation.
-  string resultdb_host = 1;
-  // The id of this invocation.
-  string invocation_id = 2;
 }
