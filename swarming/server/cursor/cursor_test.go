@@ -86,7 +86,7 @@ func TestCursor(t *testing.T) {
 				cursorpb.RequestKind_CANCEL_TASKS,
 			} {
 				cur, err := Encode(ctx, kind, &cursorpb.TasksCursor{
-					LastTaskId: "hello",
+					LastTaskRequestEntityId: 12345,
 				})
 				So(err, ShouldBeNil)
 
@@ -96,7 +96,7 @@ func TestCursor(t *testing.T) {
 
 				dec, err := Decode[cursorpb.TasksCursor](ctx, kind, cur)
 				So(err, ShouldBeNil)
-				So(dec.LastTaskId, ShouldEqual, "hello")
+				So(dec.LastTaskRequestEntityId, ShouldEqual, 12345)
 
 				So(func() { _, _ = Encode(ctx, kind, &cursorpb.OpaqueCursor{}) }, ShouldPanic)
 				So(func() { _, _ = Decode[cursorpb.OpaqueCursor](ctx, kind, cur) }, ShouldPanic)
@@ -105,7 +105,7 @@ func TestCursor(t *testing.T) {
 
 		Convey("With encrypted cursor", func() {
 			cur, err := Encode(ctx, cursorpb.RequestKind_LIST_TASKS, &cursorpb.TasksCursor{
-				LastTaskId: "hello",
+				LastTaskRequestEntityId: 12345,
 			})
 			So(err, ShouldBeNil)
 

@@ -25,11 +25,13 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/packedintset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -706,6 +708,7 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			TaskResultSummaryQuery(),
 			testTime,
 			testTime.Add(1*time.Hour),
+			nil,
 		)
 		So(err, ShouldBeNil)
 		fq, err := q.Finalize()
@@ -723,6 +726,7 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			TaskResultSummaryQuery(),
 			testTime,
 			time.Time{},
+			nil,
 		)
 		So(err, ShouldBeNil)
 		fq, err := q.Finalize()
@@ -739,8 +743,127 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			TaskResultSummaryQuery(),
 			time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Time{},
+			nil,
 		)
 		So(err, ShouldErrLike, "invalid start time")
+	})
+
+	Convey("FilterTasksByCreationTime: with cursor", t, func() {
+		q, err := FilterTasksByCreationTime(ctx,
+			TaskResultSummaryQuery(),
+			testTime,
+			testTime.Add(1*time.Hour),
+			&cursorpb.TasksCursor{
+				LastTaskRequestEntityId: 8793206122828796666, // larger than the original end age
+			},
+		)
+		So(err, ShouldBeNil)
+		fq, err := q.Finalize()
+		So(err, ShouldBeNil)
+		So(fq.GQL(), ShouldEqual,
+			"SELECT * FROM `TaskResultSummary` WHERE "+
+				"`__key__` > KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828796666, \"TaskResultSummary\", 1) AND "+
+				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
+				"ORDER BY `__key__`",
+		)
+	})
+
+	Convey("FilterTasksByCreationTime: with cursor past the start time", t, func() {
+		_, err := FilterTasksByCreationTime(ctx,
+			TaskResultSummaryQuery(),
+			testTime,
+			testTime.Add(1*time.Hour),
+			&cursorpb.TasksCursor{
+				LastTaskRequestEntityId: 8793209897702391807, // larger than the start age
+			},
+		)
+		So(err, ShouldErrLike, "the cursor is outside of the requested time range")
+	})
+
+	Convey("FilterTasksByCreationTime: many tasks in a millisecond", t, func() {
+		put := func(when time.Time, sfx int64) {
+			reqKey, err := TimestampToRequestKey(ctx, when, sfx)
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &TaskResultSummary{
+				Key:     TaskResultSummaryKey(ctx, reqKey),
+				Created: when,
+			}), ShouldBeNil)
+		}
+
+		// Create a bunch of tasks, all within the same millisecond.
+		put(testTime, 0)
+		put(testTime, 1)
+		put(testTime, 2)
+		put(testTime, 3)
+		put(testTime, 4)
+		put(testTime, 0xffff) // the last allowed suffix
+
+		// The previous millisecond should be ignored.
+		put(testTime.Add(-time.Millisecond), 0)
+		put(testTime.Add(-time.Millisecond), 0xffff)
+		// The next millisecond should be ignored.
+		put(testTime.Add(time.Millisecond), 0)
+		put(testTime.Add(time.Millisecond), 0xffff)
+
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		// Query tasks that happened within the testTime millisecond.
+		query := func(lastSeenID int64, limit int) []int64 {
+			var cur *cursorpb.TasksCursor
+			if lastSeenID != 0 {
+				cur = &cursorpb.TasksCursor{LastTaskRequestEntityId: lastSeenID}
+			}
+			q, err := FilterTasksByCreationTime(ctx,
+				TaskResultSummaryQuery(),
+				testTime,
+				testTime.Add(time.Millisecond),
+				cur,
+			)
+			if errors.Is(err, datastore.ErrNullQuery) {
+				return nil
+			}
+			So(err, ShouldBeNil)
+			var out []int64
+			err = datastore.Run(ctx, q, func(e *TaskResultSummary) error {
+				So(e.Created.Equal(testTime), ShouldBeTrue)
+				out = append(out, e.TaskRequestKey().IntID())
+				if len(out) == limit {
+					return datastore.Stop
+				}
+				return nil
+			})
+			So(err, ShouldBeNil)
+			return out
+		}
+
+		// Entity IDs => suffixes passed to TimestampToRequestKey.
+		suffixes := func(ids []int64) (out []int) {
+			for _, id := range ids {
+				id = id ^ taskRequestIDMask
+				out = append(out, int(id>>4)&0xffff)
+			}
+			return
+		}
+
+		// Querying all tasks at once. Note that tasks scheduled within the same
+		// millisecond are not ordered (that are ordered by an ID suffix, which is
+		// random in prod, but deterministic in this test).
+		So(suffixes(query(0, 100)), ShouldResemble, []int{0xffff, 4, 3, 2, 1, 0})
+
+		// Querying with a cursor.
+		q := query(0, 2)
+		So(suffixes(q), ShouldResemble, []int{0xffff, 4})
+		q = query(q[1], 2)
+		So(suffixes(q), ShouldResemble, []int{3, 2})
+		q = query(q[1], 2)
+		So(suffixes(q), ShouldResemble, []int{1, 0})
+
+		// This was the last page, but callers don't really know that yet (because
+		// the listing ends exactly on the page boundary). When querying the next
+		// page, we should get no results: this signals to callers the end of the
+		// listing.
+		q = query(q[1], 2)
+		So(suffixes(q), ShouldResemble, []int(nil))
 	})
 
 	Convey("FilterTasksByState: running", t, func() {

@@ -32,6 +32,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
 )
 
 const (
@@ -808,14 +809,22 @@ func FilterTasksByTags(q *datastore.Query, mode SplitMode, tags Filter) []*datas
 }
 
 // FilterTasksByCreationTime limits a TaskResultSummary or TaskRunResult query
-// to return tasks created within the given time range [start, end).
+// to return tasks created within the given time range [start, end), applying
+// a task pagination cursor as well if given (since it also just modifies the
+// query time range).
 //
 // Works only for queries ordered by key. Returns an error if timestamps are
 // outside of expected range (e.g. before BeginningOfTheWorld).
 //
-// Zero time means no limit on the corresponding side of the range.
-func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, end time.Time) (*datastore.Query, error) {
-	if start.IsZero() && end.IsZero() {
+// Timestamp precision is truncated to milliseconds. Zero time means no limit on
+// the corresponding side of the range.
+//
+// Returns datastore.ErrNullQuery if the pagination cursor points exactly at the
+// `start` end of the query's time range. This is rare, but possible. Such query
+// will always produce no results (we've "seen" the last result already, since
+// it is in the cursor) and can be skipped.
+func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, end time.Time, cursor *cursorpb.TasksCursor) (*datastore.Query, error) {
+	if start.IsZero() && end.IsZero() && cursor == nil {
 		return q, nil
 	}
 
@@ -836,28 +845,95 @@ func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, e
 		panic(fmt.Sprintf("FilterTasksByCreationTime is used with a query over kind %q", f.Kind()))
 	}
 
-	// Refuse reversed time range, it makes queries fail with ErrNullQuery.
-	if !start.IsZero() && !end.IsZero() && start.After(end) {
+	// TimestampToRequestKey will do truncation to 1 ms precision. Do it earlier
+	// to be able to reject time ranges smaller than 1 ms sooner.
+	if !start.IsZero() {
+		start = start.Truncate(time.Millisecond)
+	}
+	if !end.IsZero() {
+		end = end.Truncate(time.Millisecond)
+	}
+
+	// Refuse reversed or empty time range, such request is likely a client error.
+	// It will be more helpful if it fails rather than silently returns no data.
+	if !start.IsZero() && !end.IsZero() && !start.Before(end) {
 		return nil, errors.Reason("start time must be before the end time").Err()
 	}
 
-	// Keys are ordered by timestamp. Transform the provided timestamps into keys
-	// to filter entities by key. The inequalities are inverted because keys are
-	// in reverse chronological order.
+	// Datastore entities are ordered by key (smaller to larger). Tasks need to
+	// be ordered by their creation timestamp (more recent tasks first, e.g.
+	// larger timestamp to smaller timestamp). To make this work, a timestamp
+	// encoded by the key is inverted via negation in TimestampToRequestKey.
+	//
+	// In other words, task entities are ordered by their *age*, younger to older,
+	// since to calculate the age we also need to negate the timestamp. So think
+	// of the entity ID as an "age" expressed in some weird int64 units
+	// calculated relative to some weird epoch.
+	//
+	// To limit the query to return entities with timestamps in `[start, end)`
+	// range we convert the interval ends to these "age" units and then swap them.
+	//
+	// E.g. `[start, end)` that looks like `[9:00, 11:00)` becomes
+	// `(endAge, startAge]` that looks kind of like `(5h old, 7h old]` (assuming
+	// "now" is 16:00). Conversion from the timestamp to age happens in
+	// TimestampToRequestKey.
+	var startReqKey, endReqKey *datastore.Key
 	if !start.IsZero() {
-		startReqKey, err := TimestampToRequestKey(ctx, start, 0)
-		if err != nil {
+		if startReqKey, err = TimestampToRequestKey(ctx, start, 0); err != nil {
 			return nil, errors.Annotate(err, "invalid start time").Err()
 		}
-		q = q.Lte("__key__", keyCB(ctx, startReqKey))
 	}
 	if !end.IsZero() {
-		endReqKey, err := TimestampToRequestKey(ctx, end, 0)
-		if err != nil {
+		if endReqKey, err = TimestampToRequestKey(ctx, end, 0); err != nil {
 			return nil, errors.Annotate(err, "invalid end time").Err()
 		}
+	}
+
+	// In paginated listings, we page from "younger" entities to more and more
+	// older ones, until hitting the "oldest" end of the requested time interval
+	// (aka `start`). The cursor contains the last returned entity ID (which is
+	// the last entity's "age"). To resume from the cursor, we need to query the
+	// age interval `(lastSeenAge, startAge]`. Thus the ID from the cursor should
+	// replace the left side of the "age" query interval, i.e. the side originally
+	// derived from `end`.
+	if cursor != nil {
+		cursorKey := datastore.NewKey(ctx, "TaskRequest", "", cursor.LastTaskRequestEntityId, nil)
+		if endReqKey == nil {
+			// The original query had no "youngest" age limit, but now it is limited
+			// by the cursor.
+			endReqKey = cursorKey
+		} else if cursorKey.IntID() > endReqKey.IntID() {
+			// The cursor is pointing to an entity "older" than the current range,
+			// narrow down the query. This is how the actual "pagination" happens.
+			endReqKey = cursorKey
+		} else {
+			// This can happen if the query time range has changed between pages and
+			// the new time range is now more restrictive than what cursor points to.
+			// We do not allow that.
+			return nil, errors.Reason("the cursor is outside of the requested time range").Err()
+		}
+		// If `start` was changed between calls, the range may be empty now. We do
+		// not allow that.
+		if startReqKey != nil && endReqKey.IntID() > startReqKey.IntID() {
+			return nil, errors.Reason("the cursor is outside of the requested time range").Err()
+		}
+		// It is theoretically possible that `startReqKey` matches some real entity
+		// and we used this entity as the last cursor (since `startReqKey` end of
+		// the query interval is inclusive). When resuming from such cursor, we'll
+		// end up with an impossible query `id > startReqKey && id <= startReqKey`.
+		// Communicate this via datastore.ErrNullQuery.
+		if startReqKey != nil && endReqKey.IntID() == startReqKey.IntID() {
+			return nil, datastore.ErrNullQuery
+		}
+	}
+
+	if endReqKey != nil {
 		q = q.Gt("__key__", keyCB(ctx, endReqKey))
 	}
+	if startReqKey != nil {
+		q = q.Lte("__key__", keyCB(ctx, startReqKey))
+	}
+
 	return q, nil
 }
 

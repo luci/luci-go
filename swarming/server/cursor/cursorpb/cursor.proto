@@ -74,13 +74,11 @@ message BotsCursor {
 
 // Cursor used in various task listing queries.
 //
-// Task listing can be ordered by e.g. task completion timestamp. The cursor
-// thus encodes not only the last seen task ID, but also the last seen timestamp
-// (it is theoretically possible many tasks have the same timestamp, so we
-// need to return both pieces of data).
+// Tasks are currently always ordered by their entity IDs (which encode their
+// creation time). This cursor just contains the latest returned task ID (as
+// the corresponding TaskRequest datastore ID). To resume from it, we query for
+// all entities with the ID larger than the one in the cursor.
 message TasksCursor {
-  // The last returned task ID.
-  string last_task_id = 1;
-
-  // TODO: Add more when really implementing tasks pagination cursors.
+  // The ID of TaskRequest entity of the latest returned task.
+  int64 last_task_request_entity_id = 1;
 }

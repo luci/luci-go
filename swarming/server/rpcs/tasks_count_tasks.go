@@ -53,6 +53,7 @@ func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountReq
 		model.TaskResultSummaryQuery(),
 		req.Start.AsTime(),
 		req.End.AsTime(),
+		nil,
 	)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid time range: %s", err)

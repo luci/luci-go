@@ -105,9 +105,11 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		// Note that this sorts based on when the task was submitted to the server,
 		// not by when it was assigned to this bot. The timestamp when a task is
 		// assigned to the bot is stored in "started_ts" field and it used with
-		// QUERY_STARTED_TS sort order.
+		// QUERY_STARTED_TS sort order. Note also that we use native datastore
+		// cursors for this query (already applied above), not a custom
+		// cursorpb.TasksCursor, so pass nil to FilterTasksByCreationTime.
 		var err error
-		q, err = model.FilterTasksByCreationTime(ctx, q, startTS, endTS)
+		q, err = model.FilterTasksByCreationTime(ctx, q, startTS, endTS, nil)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid time range: %s", err)
 		}
