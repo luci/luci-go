@@ -255,9 +255,10 @@ func (s *sinkServer) UpdateInvocation(ctx context.Context, sinkin *sinkpb.Update
 	if _, err := mask.FromFieldMask(sinkin.UpdateMask, sinkin.Invocation, false, true); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "update_mask: %s", err)
 	}
+	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, s.cfg.UpdateToken)
 	inv, err := s.cfg.Recorder.UpdateInvocation(ctx, &pb.UpdateInvocationRequest{
 		Invocation: &pb.Invocation{
-			Name:               pbutil.InvocationName(s.cfg.invocationID),
+			Name:               s.cfg.Invocation,
 			ExtendedProperties: sinkin.Invocation.GetExtendedProperties(),
 		},
 		UpdateMask: sinkin.GetUpdateMask(),
