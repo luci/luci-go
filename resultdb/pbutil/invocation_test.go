@@ -275,7 +275,7 @@ func TestValidateInvocation(t *testing.T) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey_": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),
 					},
 				},
@@ -287,7 +287,7 @@ func TestValidateInvocation(t *testing.T) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"@type":       structpb.NewStringValue("some.package.MyMessage"),
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue(strings.Repeat("a", MaxSizeInvocationExtendedPropertyValue)),
 					},
 				},

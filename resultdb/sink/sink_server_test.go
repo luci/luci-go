@@ -575,7 +575,7 @@ func TestUpdateInvocation(t *testing.T) {
 			ExtendedProperties: map[string]*structpb.Struct{
 				"abc": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"@type":     structpb.NewStringValue("some.package.MyMessage"),
+						"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key": structpb.NewStringValue("child_value"),
 					},
 				},
