@@ -27,9 +27,3 @@ import (
 func BuildInvocationName(buildID int64) string {
 	return pbutil.InvocationName(fmt.Sprintf("build-%v", buildID))
 }
-
-// BuildInvocationID returns the invocation ID corresponding to a
-// buildbucket build.
-func BuildInvocationID(buildID int64) string {
-	return fmt.Sprintf("build-%v", buildID)
-}

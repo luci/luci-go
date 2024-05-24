@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
-	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
+	"go.chromium.org/luci/analysis/internal/ingestion/control"
 )
 
 var (
@@ -49,9 +49,9 @@ var (
 				" Age is measured as hours since the presubmit run result was"+
 				" recorded. Only recent data (age < %v hours) is included."+
 				" Used to measure LUCI Analysis's performance joining"+
-				" presubmit runs to buildbucket builds.", controllegacy.JoinStatsHours),
+				" presubmit runs to buildbucket builds.", control.JoinStatsHours),
 		&types.MetricMetadata{Units: "hours ago"},
-		distribution.FixedWidthBucketer(1, controllegacy.JoinStatsHours),
+		distribution.FixedWidthBucketer(1, control.JoinStatsHours),
 		// The LUCI Project of the presubmit run.
 		field.String("project"),
 		field.Bool("joined"))
@@ -67,9 +67,9 @@ var (
 				" result was recorded. Only recent data (age < %v hours)"+
 				" is included."+
 				" Used to measure LUCI Analysis's performance joining"+
-				" builds to presubmit runs.", controllegacy.JoinStatsHours),
+				" builds to presubmit runs.", control.JoinStatsHours),
 		&types.MetricMetadata{Units: "hours ago"},
-		distribution.FixedWidthBucketer(1, controllegacy.JoinStatsHours),
+		distribution.FixedWidthBucketer(1, control.JoinStatsHours),
 		// The LUCI Project of the buildbucket run.
 		field.String("project"),
 		field.Bool("joined"))
@@ -84,9 +84,9 @@ var (
 				" Age is measured as hours since the finalized invocation was"+
 				" recorded. Only recent data (age < %v hours) is included."+
 				" Used to measure LUCI Analysis's performance joining"+
-				" invocations to buildbucket builds.", controllegacy.JoinStatsHours),
+				" invocations to buildbucket builds.", control.JoinStatsHours),
 		&types.MetricMetadata{Units: "hours ago"},
-		distribution.FixedWidthBucketer(1, controllegacy.JoinStatsHours),
+		distribution.FixedWidthBucketer(1, control.JoinStatsHours),
 		// The LUCI Project of the presubmit run.
 		field.String("project"),
 		field.Bool("joined"))
@@ -102,9 +102,9 @@ var (
 				" result was recorded. Only recent data (age < %v hours)"+
 				" is included."+
 				" Used to measure LUCI Analysis's performance joining"+
-				" builds to invocations.", controllegacy.JoinStatsHours),
+				" builds to invocations.", control.JoinStatsHours),
 		&types.MetricMetadata{Units: "hours ago"},
-		distribution.FixedWidthBucketer(1, controllegacy.JoinStatsHours),
+		distribution.FixedWidthBucketer(1, control.JoinStatsHours),
 		// The LUCI Project of the buildbucket run.
 		field.String("project"),
 		field.Bool("joined"))
@@ -144,28 +144,28 @@ func GlobalMetrics(ctx context.Context) error {
 	}
 
 	// Performance joining presubmit runs to buildbucket builds in ingestion.
-	psToBuildJoinStats, err := controllegacy.ReadPresubmitToBuildJoinStatistics(span.Single(ctx))
+	psToBuildJoinStats, err := control.ReadPresubmitToBuildJoinStatistics(span.Single(ctx))
 	if err != nil {
 		return errors.Annotate(err, "collect presubmit run to buildbucket build join statistics").Err()
 	}
 	reportJoinStats(ctx, presubmitToBuildJoinGauge, psToBuildJoinStats)
 
 	// Performance joining buildbucket builds to presubmit runs in ingestion.
-	buildToPSJoinStats, err := controllegacy.ReadBuildToPresubmitRunJoinStatistics(span.Single(ctx))
+	buildToPSJoinStats, err := control.ReadBuildToPresubmitRunJoinStatistics(span.Single(ctx))
 	if err != nil {
 		return errors.Annotate(err, "collect buildbucket build to presubmit run join statistics").Err()
 	}
 	reportJoinStats(ctx, buildToPresubmitJoinGauge, buildToPSJoinStats)
 
 	// Performance joining finalized invocations to buildbucket builds in ingestion.
-	invToBuildJoinStats, err := controllegacy.ReadInvocationToBuildJoinStatistics(span.Single(ctx))
+	invToBuildJoinStats, err := control.ReadInvocationToBuildJoinStatistics(span.Single(ctx))
 	if err != nil {
 		return errors.Annotate(err, "collect invocation to buildbucket build join statistics").Err()
 	}
 	reportJoinStats(ctx, invocationToBuildJoinGauge, invToBuildJoinStats)
 
 	// Performance joining buildbucket builds to finalized invocations in ingestion.
-	buildToInvJoinStats, err := controllegacy.ReadBuildToInvocationJoinStatistics(span.Single(ctx))
+	buildToInvJoinStats, err := control.ReadBuildToInvocationJoinStatistics(span.Single(ctx))
 	if err != nil {
 		return errors.Annotate(err, "collect buildbucket build to invocation join statistics").Err()
 	}
@@ -174,12 +174,12 @@ func GlobalMetrics(ctx context.Context) error {
 	return nil
 }
 
-func reportJoinStats(ctx context.Context, metric metric.NonCumulativeDistribution, resultsByProject map[string]controllegacy.JoinStatistics) {
+func reportJoinStats(ctx context.Context, metric metric.NonCumulativeDistribution, resultsByProject map[string]control.JoinStatistics) {
 	for project, stats := range resultsByProject {
 		joinedDist := distribution.New(metric.Bucketer())
 		unjoinedDist := distribution.New(metric.Bucketer())
 
-		for hoursAgo := 0; hoursAgo < controllegacy.JoinStatsHours; hoursAgo++ {
+		for hoursAgo := 0; hoursAgo < control.JoinStatsHours; hoursAgo++ {
 			joinedBuilds := stats.JoinedByHour[hoursAgo]
 			unjoinedBuilds := stats.TotalByHour[hoursAgo] - joinedBuilds
 			for i := int64(0); i < joinedBuilds; i++ {

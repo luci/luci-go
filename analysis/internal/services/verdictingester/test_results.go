@@ -70,23 +70,23 @@ func extractIngestionContext(task *taskspb.IngestTestVerdicts, inv *rdbpb.Invoca
 	if err != nil {
 		return nil, errors.Annotate(err, "invocation has invalid realm: %q", inv.Realm).Err()
 	}
-	if proj != task.Build.Project {
-		return nil, errors.Reason("invocation project (%q) does not match build project (%q) for build %s-%d",
-			proj, task.Build.Project, task.Build.Host, task.Build.Id).Err()
-	}
-
-	gerritChanges := task.Build.Changelists
-	changelists := make([]testresults.Changelist, 0, len(gerritChanges))
-	for _, change := range gerritChanges {
-		if err := testresults.ValidateGerritHostname(change.Host); err != nil {
-			return nil, err
+	buildStatus := pb.BuildStatus_BUILD_STATUS_UNSPECIFIED
+	var changelists []testresults.Changelist
+	if task.Build != nil {
+		buildStatus = task.Build.Status
+		gerritChanges := task.Build.Changelists
+		changelists = make([]testresults.Changelist, 0, len(gerritChanges))
+		for _, change := range gerritChanges {
+			if err := testresults.ValidateGerritHostname(change.Host); err != nil {
+				return nil, err
+			}
+			changelists = append(changelists, testresults.Changelist{
+				Host:      change.Host,
+				Change:    change.Change,
+				Patchset:  int64(change.Patchset),
+				OwnerKind: change.OwnerKind,
+			})
 		}
-		changelists = append(changelists, testresults.Changelist{
-			Host:      change.Host,
-			Change:    change.Change,
-			Patchset:  int64(change.Patchset),
-			OwnerKind: change.OwnerKind,
-		})
 	}
 
 	ingestion := &IngestionContext{
@@ -94,7 +94,7 @@ func extractIngestionContext(task *taskspb.IngestTestVerdicts, inv *rdbpb.Invoca
 		IngestedInvocationID: invID,
 		SubRealm:             subRealm,
 		PartitionTime:        task.PartitionTime.AsTime(),
-		BuildStatus:          task.Build.Status,
+		BuildStatus:          buildStatus,
 		Changelists:          changelists,
 	}
 

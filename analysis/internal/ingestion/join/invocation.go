@@ -42,7 +42,10 @@ func JoinInvocation(ctx context.Context, notification *rdbpb.InvocationFinalized
 
 	// This proto has no fields for now. If we need to pass anything about the invocation,
 	// we can add it in here in future.
-	result := &controlpb.InvocationResult{}
+	result := &controlpb.InvocationResult{
+		ResultdbHost: rdbHost,
+		InvocationId: id,
+	}
 	if err := JoinInvocationResult(ctx, id, project, result); err != nil {
 		return true, errors.Annotate(err, "joining invocation result").Err()
 	}

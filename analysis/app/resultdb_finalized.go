@@ -23,7 +23,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -31,7 +30,6 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
-	"go.chromium.org/luci/analysis/internal/ingestion/joinlegacy"
 )
 
 var (
@@ -52,15 +50,13 @@ type handleInvocationMethod func(ctx context.Context, notification *rdbpb.Invoca
 type InvocationFinalizedHandler struct {
 	// The method to use to handle the deserialized invocation finalized
 	// notification. Used to allow the handler to be replaced for testing.
-	handleInvocation       handleInvocationMethod
-	handleInvocationLegacy handleInvocationMethod
+	handleInvocation handleInvocationMethod
 }
 
 // NewInvocationFinalizedHandler initialises a new InvocationFinalizedHandler.
 func NewInvocationFinalizedHandler() *InvocationFinalizedHandler {
 	return &InvocationFinalizedHandler{
-		handleInvocation:       join.JoinInvocation,
-		handleInvocationLegacy: joinlegacy.JoinInvocation,
+		handleInvocation: join.JoinInvocation,
 	}
 }
 
@@ -99,15 +95,9 @@ func (h *InvocationFinalizedHandler) handleImpl(ctx context.Context, request *ht
 	}
 
 	project, _ = realms.Split(notification.Realm)
-	processed, err = h.handleInvocationLegacy(ctx, notification)
+	processed, err = h.handleInvocation(ctx, notification)
 	if err != nil {
 		return project, false, errors.Annotate(err, "processing notification").Err()
-	}
-	// Run the WIP handler after the legacy handler,
-	// so that failure of the WIP handler doesn't affect the existing handler.
-	if _, handleInvocationErr := h.handleInvocation(ctx, notification); handleInvocationErr != nil {
-		// Don't return the error so that it doesn't interrupt the existing handler.
-		logging.Errorf(ctx, "failed to handle invocation with the new handler: %v", handleInvocationErr)
 	}
 	return project, processed, nil
 }

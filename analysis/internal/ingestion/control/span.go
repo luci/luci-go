@@ -56,6 +56,7 @@ type Entry struct {
 
 	// Project is the LUCI Project the build belongs to. Used for
 	// metrics monitoring join performance.
+	// This should be the same as InvocationProject.
 	BuildProject string
 
 	// BuildResult is the result of the build bucket build, to be passed
@@ -74,6 +75,7 @@ type Entry struct {
 
 	// Project is the LUCI Project the invocation belongs to. Used for
 	// metrics monitoring join performance.
+	// This should be the same as BuildProject.
 	InvocationProject string
 
 	// InvocationResult is the result of the invocation, to be passed
@@ -93,7 +95,7 @@ type Entry struct {
 	IsPresubmit bool
 
 	// PresubmitProject is the LUCI Project the presubmit run belongs to.
-	// This may differ from the LUCI Project teh build belongs to. Used for
+	// This may differ from the LUCI Project the build belongs to. Used for
 	// metrics monitoring join performance.
 	PresubmitProject string
 
@@ -189,7 +191,7 @@ func Read(ctx context.Context, ingestionIDs []IngestionID) ([]*Entry, error) {
 			&presubmitJoinedTime,
 			&lastUpdated)
 		if err != nil {
-			return errors.Annotate(err, "read Ingestions row").Err()
+			return errors.Annotate(err, "read IngestionJoins row").Err()
 		}
 		var buildResult *ctlpb.BuildResult
 		if buildResultBytes != nil {
@@ -280,7 +282,7 @@ func InsertOrUpdate(ctx context.Context, e *Entry) error {
 // or buildbucket build completions and invocation finalizations)
 // are being joined.
 type JoinStatistics struct {
-	// TotalByHour captures the number of builds in the ingestions
+	// TotalByHour captures the number of builds in the ingestionJoins
 	// table eligible to be joined (i.e. have the left-hand join input).
 	//
 	// Data is broken down by by hours since the build became
@@ -288,7 +290,7 @@ type JoinStatistics struct {
 	// from ]-1 hour, now], index 1 indicates [-2 hour, -1 hour] and so on.
 	TotalByHour []int64
 
-	// JoinedByHour captures the number of builds in the ingestions
+	// JoinedByHour captures the number of builds in the ingestionJoins
 	// table eligible to be joined, which were successfully joined (have
 	// results for both join inputs present).
 	//
@@ -366,6 +368,7 @@ func ReadBuildToInvocationJoinStatistics(ctx context.Context) (map[string]JoinSt
 		  COUNTIF(InvocationResult IS NOT NULL) as joined,
 		FROM IngestionJoins
 		WHERE HasInvocation
+		  AND HasBuildBucketBuild
 		  AND BuildJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
 	`)
@@ -393,6 +396,7 @@ func ReadInvocationToBuildJoinStatistics(ctx context.Context) (map[string]JoinSt
 		  COUNTIF(BuildResult IS NOT NULL) as joined,
 		FROM IngestionJoins
 		WHERE HasInvocation
+		  AND HasBuildBucketBuild
 		  AND InvocationJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
 	`)
@@ -458,6 +462,9 @@ func validateEntry(e *Entry) error {
 		if !e.HasInvocation {
 			return errors.New("invocation result must not be set unless HasInvocation is set")
 		}
+		if err := ValidateInvocationResult(e.InvocationResult); err != nil {
+			return errors.Annotate(err, "invocation result").Err()
+		}
 		if err := pbutil.ValidateProject(e.InvocationProject); err != nil {
 			return errors.Annotate(err, "invocation project").Err()
 		}
@@ -504,6 +511,16 @@ func ValidateBuildResult(r *ctlpb.BuildResult) error {
 		return errors.New("builder must be specified")
 	case r.Status == analysispb.BuildStatus_BUILD_STATUS_UNSPECIFIED:
 		return errors.New("build status must be specified")
+	}
+	return nil
+}
+
+func ValidateInvocationResult(r *ctlpb.InvocationResult) error {
+	switch {
+	case r.InvocationId == "":
+		return errors.New("invocation ID must be specified")
+	case r.ResultdbHost == "":
+		return errors.New("host must be specified")
 	}
 	return nil
 }

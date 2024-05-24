@@ -22,14 +22,12 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
-	"go.chromium.org/luci/analysis/internal/ingestion/joinlegacy"
 )
 
 var (
@@ -49,15 +47,13 @@ type handleCVRunMethod func(ctx context.Context, psRun *cvv1.PubSubRun) (project
 type CVRunHandler struct {
 	// The method to use to handle the deserialized CV Run pub/sub message.
 	// Used to allow the handler to be replaced for testing.
-	handleCVRun       handleCVRunMethod
-	handleCVRunLegacy handleCVRunMethod
+	handleCVRun handleCVRunMethod
 }
 
 // NewCVRunHandler initialises a new CVRunHandler.
 func NewCVRunHandler() *CVRunHandler {
 	return &CVRunHandler{
-		handleCVRun:       join.JoinCVRun,
-		handleCVRunLegacy: joinlegacy.JoinCVRun,
+		handleCVRun: join.JoinCVRun,
 	}
 }
 
@@ -94,14 +90,7 @@ func (h *CVRunHandler) handlerImpl(ctx context.Context, request *http.Request) (
 	if err != nil {
 		return "unknown", false, errors.Annotate(err, "failed to extract run").Err()
 	}
-	project, processed, err = h.handleCVRunLegacy(ctx, psRun)
-	// Run the WIP handler after the legacy handler,
-	// so that failure of the WIP handler doesn't affect the existing handler.
-	if _, _, handleCVRunErr := h.handleCVRun(ctx, psRun); handleCVRunErr != nil {
-		// Don't return the error so that it doesn't interrupt the existing handler.
-		logging.Errorf(ctx, "failed to handle cv run with the new handler: %v", err)
-	}
-	return project, processed, err
+	return h.handleCVRun(ctx, psRun)
 }
 
 func extractPubSubRun(r *http.Request) (*cvv1.PubSubRun, error) {

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
@@ -35,7 +36,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/config"
-	"go.chromium.org/luci/analysis/internal/ingestion/controllegacy"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -121,7 +121,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 	firstTV := tvs[0]
 	checkPoint := CheckPoint{
-		InvocationID:        controllegacy.BuildInvocationName(payload.GetBuild().Id),
+		InvocationID:        rdbpbutil.InvocationName(payload.Invocation.InvocationId),
 		StartingTestID:      firstTV.TestId,
 		StartingVariantHash: firstTV.VariantHash,
 	}
@@ -141,7 +141,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			return nil
 		}
 
-		duplicateMap, newInvIDs, err := readDuplicateInvocations(ctx, tvs, payload.Build)
+		duplicateMap, newInvIDs, err := readDuplicateInvocations(ctx, tvs, payload.Project, payload.Invocation.InvocationId)
 		if err != nil {
 			return errors.Annotate(err, "duplicate map").Err()
 		}
@@ -197,7 +197,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		ingestedVerdictCount := len(mutations)
 
 		// Store new Invocations to Invocations table.
-		ingestedInvID := controllegacy.BuildInvocationID(payload.Build.Id)
+		ingestedInvID := payload.Invocation.InvocationId
 		invMuts := invocationsToMutations(ctx, payload.Build.Project, newInvIDs, ingestedInvID)
 		mutations = append(mutations, invMuts...)
 

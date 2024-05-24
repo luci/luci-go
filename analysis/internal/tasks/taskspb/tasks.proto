@@ -23,14 +23,27 @@ import "go.chromium.org/luci/resultdb/proto/v1/notification.proto";
 option go_package = "go.chromium.org/luci/analysis/internal/tasks/taskspb";
 
 // Payload of IngestTestVerdicts task.
+// Next ID: 9.
 message IngestTestVerdicts {
+  // The LUCI project of the invocation and build (if exists) in this ingestion task.
+  string project = 6;
+
   // Timestamp representing the start of the data retention period
   // for the ingested test verdicts. In case of multiple builds
   // ingested for one CV run, the partition_time used for all
   // builds must be the same.
   google.protobuf.Timestamp partition_time = 1;
 
-  // The build that is being ingested.
+  // ID of this ingestion.
+  // This matches to the ingestionID in the IngestionJoins spanner table.
+  string ingestion_id = 7;
+
+  // The invocation that is being ingested. Only
+  // populated if the ingestion has an invocation.
+  luci.analysis.internal.ingestion.control.InvocationResult invocation = 8;
+
+  // The build that is being ingested. Only
+  // populated if the ingestion has a build.
   luci.analysis.internal.ingestion.control.BuildResult build = 2;
 
   // Context about the presubmit run the build was a part of. Only

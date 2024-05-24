@@ -446,6 +446,7 @@ func TestSpan(t *testing.T) {
 					NewEntry(5).WithInvocationProject("alpha").WithInvocationJoinedTime(reference.Add(-35 * time.Hour)).Build(),
 					NewEntry(6).WithInvocationProject("alpha").WithInvocationJoinedTime(reference.Add(-36 * time.Hour)).Build(),
 					NewEntry(7).WithInvocationProject("beta").WithInvocationJoinedTime(reference.Add(-36 * time.Hour)).WithBuildResult(nil).Build(),
+					NewEntry(8).WithInvocationProject("beta").WithInvocationJoinedTime(reference).WithBuildResult(nil).WithHasBuildbucketBuild(false).Build(),
 				}
 				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
 				So(err, ShouldBeNil)

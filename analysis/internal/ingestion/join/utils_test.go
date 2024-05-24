@@ -60,7 +60,7 @@ func ingestBuild(ctx context.Context, build *buildBuilder) error {
 
 func ingestFinalization(ctx context.Context, invocationID string, isExportRoot bool) error {
 	// Process invocation finalization.
-	notification := makeInvocationFinalizedNotification(invocationID, "invproject:realm", isExportRoot)
+	notification := makeInvocationFinalizedNotification(invocationID, "buildproject:realm", isExportRoot)
 	processed, err := JoinInvocation(ctx, notification)
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func (b *buildBuilder) WithGardenerRotations(rotations []string) *buildBuilder {
 func (b *buildBuilder) BuildProto() *bbpb.Build {
 	rdb := &bbpb.BuildInfra_ResultDB{}
 	if b.hasInvocation {
-		rdb.Hostname = "rdb.test.instance"
+		rdb.Hostname = rdbHost
 		rdb.Invocation = fmt.Sprintf("invocations/build-%v", b.buildID)
 	}
 	var tags []*bbpb.StringPair
@@ -234,9 +234,9 @@ func (b *buildBuilder) BuildProto() *bbpb.Build {
 }
 
 func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
-	var rdbHost string
+	var resultdbHost string
 	if b.hasInvocation {
-		rdbHost = "rdb.test.instance"
+		resultdbHost = rdbHost
 	}
 
 	return &controlpb.BuildResult{
@@ -255,7 +255,7 @@ func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 			Position: 555888,
 		},
 		HasInvocation:        b.hasInvocation,
-		ResultdbHost:         rdbHost,
+		ResultdbHost:         resultdbHost,
 		IsIncludedByAncestor: b.containedByAncestor,
 		GardenerRotations:    b.gardenerRotations,
 	}
