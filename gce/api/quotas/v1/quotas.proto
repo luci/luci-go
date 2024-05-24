@@ -24,28 +24,30 @@ message AssignedQuota {
   int32 total_vms = 3;
   // Quota Allowed total CPUs.
   int32 total_cpus = 4;
+  // List of quota limits.
+  repeated AssignedQuotaLimit limits = 5;
+}
 
-  // CPU quota for: e2,f1,g1,n1 machines.
-  int32 quota_cpus = 5;
-  // CPU quota for: c2 machines.
-  int32 quota_c2_cpus = 6;
-  // CPU quota for: c2d machines.
-  int32 quota_c2d_cpus = 7;
-  // CPU quota for: c3 machines.
-  int32 quota_c3_cpus = 8;
-  // CPU quota for: n2 machines.
-  int32 quota_n2_cpus = 9;
-  // CPU quota for: n2d machines.
-  int32 quota_n2d_cpus = 10;
-  // CPU quota for: t2a machines.
-  int32 quota_t2a_cpus = 11;
-  // CPU quota for: t2d machines.
-  int32 quota_t2d_cpus = 12;
-
-  // Storage quota for: pd-ssd.
-  int32 quota_pd_ssd = 13;
-  // Storage quota for: pd-standard.
-  int32 quota_pd_standard = 14;
-  // Storage quota for: local-ssd.
-  int32 quota_local_ssd = 15;
+// A description of single quota limit.
+message AssignedQuotaLimit {
+  // Quota names like CPUS, C2_CPUS which assosiated with machine-famalies.
+  //
+  // Details:
+  // CPUS for e2, f1, g1, n1
+  // C2_CPUS for c2
+  // C2D_CPUS for c2d
+  // C3_CPUS for c3
+  // N2_CPUS for n2
+  // N2D_CPUS for n2d
+  // T2D_CPUS for t2d
+  // T2A_CPUS for t2a
+  // pd-ssd, pd-standart and local-ssd for storages.
+  // and more https://cloud.google.com/compute/resource-usage#cpu_quota.
+  string name = 1;
+  // Type of quota.
+  // Expected values: 'cpu', 'storage'.
+  string type = 2;
+  // Value of the limit.
+  // Using flowtigng value as we have instances like g1 which os 0.5 CPUS.
+  float value = 3;
 }
