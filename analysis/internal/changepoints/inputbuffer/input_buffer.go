@@ -229,18 +229,30 @@ func (ib *Buffer) InsertVerdict(v PositionVerdict) {
 	}
 	verdicts[pos] = v
 	ib.HotBuffer.Verdicts = verdicts
-
-	if len(verdicts) == ib.HotBufferCapacity {
-		ib.IsColdBufferDirty = true
-		ib.Compact()
-	}
 }
 
-// Compact moves the content from the hot buffer to the cold buffer.
+// CompactIfRequired moves the content from the hot buffer to the cold buffer,
+// if:
+//   - the hot buffer is at capacity, or
+//   - the cold buffer is at capacity and an eviction from the cold buffer
+//     is going to be required (this case is important for buffers
+//     stored in legacy data formats, where the buffer may immediately be
+//     beyond its capacity). Note that eviction from the cold buffer requires
+//     the hot buffer to be empty.
+//
+// If a compaction occurs, the IsColdBufferDirty flag will be set to true,
+// implying that the cold buffer content needs to be written to Spanner.
+//
 // Note: It is possible that the cold buffer overflows after the compaction,
 // i.e., len(ColdBuffer.Verdicts) > ColdBufferCapacity.
 // This needs to be handled separately.
-func (ib *Buffer) Compact() {
+func (ib *Buffer) CompactIfRequired() {
+	if len(ib.HotBuffer.Verdicts) < ib.HotBufferCapacity && len(ib.ColdBuffer.Verdicts) < ib.ColdBufferCapacity {
+		// No compaction required.
+		return
+	}
+	ib.IsColdBufferDirty = true
+
 	var merged []PositionVerdict
 	ib.MergeBuffer(&merged)
 	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[:0]

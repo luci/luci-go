@@ -179,22 +179,18 @@ func TestInputBuffer(t *testing.T) {
 
 		// Insert 9 verdicts into hot buffer.
 		ib.InsertVerdict(createTestVerdict(1, 4))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		ib.InsertVerdict(createTestVerdict(2, 2))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		ib.InsertVerdict(createTestVerdict(3, 3))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		ib.InsertVerdict(createTestVerdict(2, 3))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		ib.InsertVerdict(createTestVerdict(4, 5))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		ib.InsertVerdict(createTestVerdict(1, 1))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		ib.InsertVerdict(createTestVerdict(2, 3))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		ib.InsertVerdict(createTestVerdict(7, 8))
-		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		ib.InsertVerdict(createTestVerdict(7, 7))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+
+		// Expect compaction to have no effect.
+		ib.CompactIfRequired()
 		So(ib.IsColdBufferDirty, ShouldBeFalse)
 		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 9)
 		So(ib.HotBuffer.Verdicts, ShouldResemble, []PositionVerdict{
@@ -208,8 +204,13 @@ func TestInputBuffer(t *testing.T) {
 			createTestVerdict(7, 7),
 			createTestVerdict(7, 8),
 		})
-		// Insert the last verdict, expecting a compaction.
+
+		// Insert the last verdict.
 		ib.InsertVerdict(createTestVerdict(6, 2))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+
+		// Compaction should have an effect.
+		ib.CompactIfRequired()
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 0)
 		So(len(ib.ColdBuffer.Verdicts), ShouldEqual, 10)
@@ -260,7 +261,7 @@ func TestInputBuffer(t *testing.T) {
 		originalColdBuffer := ib.ColdBuffer.Verdicts
 		So(cap(originalColdBuffer), ShouldEqual, 10)
 
-		ib.Compact()
+		ib.CompactIfRequired()
 		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 0)
 		So(len(ib.ColdBuffer.Verdicts), ShouldEqual, 10)
 		So(ib.ColdBuffer.Verdicts, ShouldResemble, []PositionVerdict{
@@ -302,7 +303,7 @@ func TestInputBuffer(t *testing.T) {
 			},
 		}
 
-		ib.Compact()
+		ib.CompactIfRequired()
 		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 0)
 		So(len(ib.ColdBuffer.Verdicts), ShouldEqual, 7)
 		So(ib.ColdBuffer.Verdicts, ShouldResemble, []PositionVerdict{

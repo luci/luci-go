@@ -287,7 +287,9 @@ type Analyzer struct {
 	mergeBuffer []inputbuffer.PositionVerdict
 }
 
-// Run runs change point analysis and returns the
+// Run runs change point analysis, performs any required
+// evictions (from the hot input buffer to the cold input buffer,
+// and from the input buffer to the output buffer), and returns the
 // remaining segment in the input buffer after eviction.
 func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []*inputbuffer.Segment {
 	predictor := bayesian.ChangepointPredictor{
@@ -302,6 +304,7 @@ func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []*inputbuffer.Segment {
 			Beta:  0.5,
 		},
 	}
+	tvb.InputBuffer.CompactIfRequired()
 	tvb.InputBuffer.MergeBuffer(&a.mergeBuffer)
 	changePoints := predictor.ChangePoints(a.mergeBuffer, bayesian.ConfidenceIntervalTail)
 	sib := tvb.InputBuffer.Segmentize(a.mergeBuffer, changePoints)
