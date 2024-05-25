@@ -27,11 +27,11 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
-	"go.chromium.org/luci/swarming/server/model"
 )
 
 // CountTasks returns the latest task count for the given request.
 func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountRequest) (*apipb.TasksCount, error) {
+	// Require a limited time range. Counting all tasks ever is very expensive.
 	if req.Start == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "start timestamp is required")
 	}
@@ -39,44 +39,20 @@ func (srv *TasksServer) CountTasks(ctx context.Context, req *apipb.TasksCountReq
 		req.End = timestamppb.New(clock.Now(ctx))
 	}
 
-	filter, err := model.NewFilterFromKV(req.Tags)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid tags: %s", err)
-	}
-	if err := CheckListingPerm(ctx, filter, acls.PermPoolsListTasks); err != nil {
+	// Validate the rest of arguments and get TaskResultSummary datastore queries.
+	queries, err := StartTaskListingRequest(ctx, &TaskListingRequest{
+		Perm:      acls.PermPoolsListTasks,
+		Start:     req.Start,
+		End:       req.End,
+		State:     req.State,
+		Tags:      req.Tags,
+		SplitMode: srv.TaskQuerySplitMode,
+	})
+	switch {
+	case err != nil:
 		return nil, err
-	}
-
-	// Limit to the requested time range. An error here means the time range
-	// itself is invalid.
-	query, err := model.FilterTasksByCreationTime(ctx,
-		model.TaskResultSummaryQuery(),
-		req.Start.AsTime(),
-		req.End.AsTime(),
-		nil,
-	)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid time range: %s", err)
-	}
-
-	// Limit to the requested state, if any. This may split the query into
-	// multiple queries to be run in parallel. This can also update the split
-	// mode to SplitCompletely if FilterTasksByState needs to add an IN filter,
-	// see its doc.
-	var stateQueries []*datastore.Query
-	var splitMode model.SplitMode
-	if req.State != apipb.StateQuery_QUERY_ALL {
-		stateQueries, splitMode = model.FilterTasksByState(query, req.State, srv.TaskQuerySplitMode)
-	} else {
-		stateQueries = []*datastore.Query{query}
-		splitMode = srv.TaskQuerySplitMode
-	}
-
-	// Filtering by tags may split the query even further. We'll need to merge
-	// all resulting subqueries.
-	var queries []*datastore.Query
-	for _, query := range stateQueries {
-		queries = append(queries, model.FilterTasksByTags(query, splitMode, filter)...)
+	case len(queries) == 0:
+		panic("impossible, not using cursors")
 	}
 
 	// If we only have one query to run, we can make use of an aggregation query

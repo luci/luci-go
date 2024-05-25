@@ -19,10 +19,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -34,6 +36,8 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/cursor"
+	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -167,6 +171,117 @@ func CheckListingPerm(ctx context.Context, filter model.Filter, perm realms.Perm
 		return res.ToGrpcErr()
 	}
 	return nil
+}
+
+// TaskListingRequest describes details of a task listing request.
+type TaskListingRequest struct {
+	// Permission that the caller must have in all requested pools.
+	Perm realms.Permission
+	// Start of the time range to query or nil if unlimited.
+	Start *timestamppb.Timestamp
+	// End of the time range to query or nil if unlimited.
+	End *timestamppb.Timestamp
+	// Filter on the task state.
+	State apipb.StateQuery
+	// How to sort the tasks.
+	Sort apipb.SortQuery
+	// Filter on the task tags.
+	Tags []string
+	// Serialized cursor.
+	Cursor string
+	// Expected kind of the cursor (ignored if there's no cursor).
+	CursorKind cursorpb.RequestKind
+	// How many entities each subquery can return at most (or 0 for unlimited).
+	Limit int32
+	// How to split complex queries into parallel queries.
+	SplitMode model.SplitMode
+}
+
+// StartTaskListingRequest is a common part of all requests that list or count
+// tasks with filtering by tags and state.
+//
+// It checks ACLs based on what pools are queried and prepares datastore queries
+// (to be run in parallel) that return the matching TaskResultSummary entities.
+//
+// Returns gRPC errors. If the query is already known to produce no results at
+// all (may happen when using time range filters with cursors), returns an empty
+// list of queries.
+func StartTaskListingRequest(ctx context.Context, req *TaskListingRequest) ([]*datastore.Query, error) {
+	// Right now only SortQuery_QUERY_CREATED_TS is supported. Swarming lacks
+	// necessary indices and actual functionality to support any other order. They
+	// were never supported in ListTasks RPC, even in the older Python version.
+	// They are partially supported in ListBotTasks RPC though (which doesn't use
+	// this function).
+	if req.Sort != apipb.SortQuery_QUERY_CREATED_TS {
+		return nil, status.Errorf(codes.InvalidArgument, "sort order %q is not supported currently, open a bug if needed", req.Sort)
+	}
+
+	var dscursor *cursorpb.TasksCursor
+	if req.Cursor != "" {
+		var err error
+		dscursor, err = cursor.Decode[cursorpb.TasksCursor](ctx, req.CursorKind, req.Cursor)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	filter, err := model.NewFilterFromKV(req.Tags)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid tags: %s", err)
+	}
+	if err := CheckListingPerm(ctx, filter, req.Perm); err != nil {
+		return nil, err
+	}
+
+	var startTime time.Time
+	if req.Start != nil {
+		startTime = req.Start.AsTime()
+	}
+	var endTime time.Time
+	if req.End != nil {
+		endTime = req.End.AsTime()
+	}
+
+	// Limit to the requested time range (+ whatever range cursor is scanning).
+	// An error here means the time range itself is invalid.
+	query, err := model.FilterTasksByCreationTime(ctx,
+		model.TaskResultSummaryQuery(),
+		startTime,
+		endTime,
+		dscursor,
+	)
+	if err != nil {
+		if errors.Is(err, datastore.ErrNullQuery) {
+			return nil, nil
+		}
+		return nil, status.Errorf(codes.InvalidArgument, "invalid time range: %s", err)
+	}
+
+	// This limit will be inherited by all subqueries below.
+	if req.Limit != 0 {
+		query = query.Limit(req.Limit)
+	}
+
+	// Limit to the requested state, if any. This may split the query into
+	// multiple queries to be run in parallel. This can also update the split
+	// mode to SplitCompletely if FilterTasksByState needs to add an IN filter,
+	// see its doc.
+	var stateQueries []*datastore.Query
+	var splitMode model.SplitMode
+	if req.State != apipb.StateQuery_QUERY_ALL {
+		stateQueries, splitMode = model.FilterTasksByState(query, req.State, req.SplitMode)
+	} else {
+		stateQueries = []*datastore.Query{query}
+		splitMode = req.SplitMode
+	}
+
+	// Filtering by tags may split the query even further. We'll need to merge
+	// all resulting subqueries.
+	var queries []*datastore.Query
+	for _, query := range stateQueries {
+		queries = append(queries, model.FilterTasksByTags(query, splitMode, filter)...)
+	}
+	return queries, nil
 }
 
 // FetchTaskRequest fetches a task request given its ID.
