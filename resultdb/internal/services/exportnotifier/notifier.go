@@ -31,6 +31,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
@@ -158,9 +159,10 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts O
 				continue
 			}
 
-			rootRealm, err := invocations.ReadRealm(ctx, root.RootInvocation)
-			if err != nil {
-				return errors.Annotate(err, "read realm of root invocation").Err()
+			var rootRealm string
+			var rootCreateTime *timestamppb.Timestamp
+			if err := invocations.ReadColumns(ctx, root.RootInvocation, map[string]any{"Realm": &rootRealm, "CreateTime": &rootCreateTime}); err != nil {
+				return errors.Annotate(err, "read root invocation").Err()
 			}
 
 			var sources *pb.Sources
@@ -175,6 +177,7 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts O
 				ResultdbHost:        opts.ResultDBHostname,
 				RootInvocation:      root.RootInvocation.Name(),
 				RootInvocationRealm: rootRealm,
+				RootCreateTime:      rootCreateTime,
 				Invocation:          root.Invocation.Name(),
 				InvocationRealm:     inv.Realm,
 				Sources:             sources,

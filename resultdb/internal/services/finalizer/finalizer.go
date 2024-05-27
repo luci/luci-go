@@ -27,6 +27,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/artifactexporter"
 	"go.chromium.org/luci/resultdb/internal/services/baselineupdater"
@@ -37,20 +41,20 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 )
 
-// InitServer initializes a finalizer server.
-func InitServer(srv *server.Server) {
-	// init() below takes care of everything.
+type Options struct {
+	// Hostname of the luci.resultdb.v1.ResultDB service which can be
+	// queried to fetch the details of invocations being sent via pubsub.
+	// E.g. "results.api.cr.dev".
+	ResultDBHostname string
 }
 
-func init() {
+// InitServer initializes a finalizer server.
+func InitServer(srv *server.Server, opts Options) {
 	tasks.FinalizationTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.TryFinalizeInvocation)
-		return tryFinalizeInvocation(ctx, invocations.ID(task.InvocationId))
+		return tryFinalizeInvocation(ctx, invocations.ID(task.InvocationId), opts)
 	})
 }
 
@@ -99,7 +103,7 @@ func init() {
 // indirectly includes an ACTIVE invocation.
 // If the invocation is too early to finalize, logs the reason and returns nil.
 // Idempotent.
-func tryFinalizeInvocation(ctx context.Context, invID invocations.ID) error {
+func tryFinalizeInvocation(ctx context.Context, invID invocations.ID, opts Options) error {
 	// The check whether the invocation is ready to finalize involves traversing
 	// the invocation graph and reading Invocations.State column. Doing so in a
 	// RW transaction will cause contention. Fortunately, once an invocation
@@ -114,7 +118,7 @@ func tryFinalizeInvocation(ctx context.Context, invID invocations.ID) error {
 
 	default:
 		logging.Infof(ctx, "decided to finalize %s...", invID.Name())
-		return finalizeInvocation(ctx, invID)
+		return finalizeInvocation(ctx, invID, opts)
 	}
 }
 
@@ -239,7 +243,7 @@ func ensureFinalizing(ctx context.Context, invID invocations.ID) error {
 // Enqueues BigQuery export tasks.
 // For each FINALIZING invocation that includes the given one, enqueues
 // a finalization task.
-func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
+func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options) error {
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check the state before proceeding, so that if the invocation already
 		// finalized, we return errAlreadyFinalized.
@@ -267,18 +271,19 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 
 				// Enqueue a notification to pub/sub listeners that the invocation
 				// has been finalized.
-				var realm string
-				var isExportRoot spanner.NullBool
-				if err := invocations.ReadColumns(ctx, invID, map[string]any{"Realm": &realm, "IsExportRoot": &isExportRoot}); err != nil {
-					return err
+				inv, err := invocations.ReadFinalizedNotificationInfo(ctx, invID)
+				if err != nil {
+					return errors.Annotate(err, "failed to read finalized notification info").Err()
 				}
 
 				// Note that this submits the notification transactionally,
 				// i.e. conditionally on this transaction committing.
 				notification := &pb.InvocationFinalizedNotification{
 					Invocation:   invID.Name(),
-					Realm:        realm,
-					IsExportRoot: isExportRoot.Valid && isExportRoot.Bool,
+					Realm:        inv.Realm,
+					IsExportRoot: inv.IsExportRoot,
+					ResultdbHost: opts.ResultDBHostname,
+					CreateTime:   inv.CreateTime,
 				}
 				tasks.NotifyInvocationFinalized(ctx, notification)
 

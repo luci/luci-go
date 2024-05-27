@@ -19,16 +19,19 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/tq"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestShouldFinalize(t *testing.T) {
@@ -105,12 +108,15 @@ func TestFinalizeInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, sched := tq.TestingContext(ctx, nil)
 
+		opts := Options{
+			ResultDBHostname: "rdb-host",
+		}
 		Convey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
 			)...)
 
-			err := finalizeInvocation(ctx, "x")
+			err := finalizeInvocation(ctx, "x", opts)
 			So(err, ShouldBeNil)
 
 			var state pb.Invocation_State
@@ -131,7 +137,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
 			)...)
 
-			err := finalizeInvocation(ctx, "x")
+			err := finalizeInvocation(ctx, "x", opts)
 			So(err, ShouldBeNil)
 
 			// Enqueued TQ tasks.
@@ -148,14 +154,16 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`Enqueues a finalization notification and update test metadata tasks`, func() {
+			createTime := timestamppb.New(time.Unix(1000, 0))
 			testutil.MustApply(ctx,
 				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]any{
 					"Realm":        "myproject:myrealm",
 					"IsExportRoot": true,
+					"CreateTime":   createTime,
 				}),
 			)
 
-			err := finalizeInvocation(ctx, "x")
+			err := finalizeInvocation(ctx, "x", opts)
 			So(err, ShouldBeNil)
 
 			So(sched.Tasks().Payloads(), ShouldHaveLength, 3)
@@ -171,6 +179,8 @@ func TestFinalizeInvocation(t *testing.T) {
 					Invocation:   "invocations/x",
 					Realm:        "myproject:myrealm",
 					IsExportRoot: true,
+					ResultdbHost: "rdb-host",
+					CreateTime:   createTime,
 				},
 			})
 		})
@@ -194,7 +204,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				}),
 			)
 
-			err := finalizeInvocation(ctx, "x")
+			err := finalizeInvocation(ctx, "x", opts)
 			So(err, ShouldBeNil)
 			// Enqueued TQ tasks.
 			So(sched.Tasks().Payloads()[0], ShouldResembleProto,
@@ -226,7 +236,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				}),
 			)...)
 
-			err := finalizeInvocation(ctx, "x")
+			err := finalizeInvocation(ctx, "x", opts)
 			So(err, ShouldBeNil)
 			// there should be two tasks ahead, test metadata and notify finalized.
 			So(sched.Tasks().Payloads()[0], ShouldResembleProto,

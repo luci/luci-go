@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
@@ -27,7 +28,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // The message is sent over the `v1.invocation_finalized` Cloud Pub/Sub
 // topic in JSON-serialized form.
 //
-// Next id: 3.
+// Next id: 6.
 message InvocationFinalizedNotification {
     // The name of the invocation that was finalized.
     // Format: invocations/{INVOCATION_ID}.
@@ -45,6 +46,14 @@ message InvocationFinalizedNotification {
     //
     // See more in invocation.proto.
     bool is_export_root = 3;
+
+    // The hostname of the luci.resultdb.v1.ResultDB service which
+    // can be used to query more information about the invocation(s)
+    // notified in this message.
+    string resultdb_host = 4;
+
+    // When the invocation was created.
+    google.protobuf.Timestamp create_time = 5;
 }
 
 // InvocationReadyForExportNotification notifies that the properties, test results
@@ -59,7 +68,7 @@ message InvocationFinalizedNotification {
 // "luci_project" will be attached to the message, which will contain the
 // LUCI Project of the `root_invocation_realm`.
 //
-// Next ID: 7.
+// Next ID: 8.
 message InvocationReadyForExportNotification {
     // The hostname of the luci.resultdb.v1.ResultDB service which
     // can be used to query more information about the invocation(s)
@@ -73,6 +82,9 @@ message InvocationReadyForExportNotification {
 
     // The LUCI realm that owns the root invocation.
     string root_invocation_realm = 2;
+
+    // When the root invocation was created.
+    google.protobuf.Timestamp root_create_time = 7;
 
     // The name of the ResultDB invocation included by root_invocation whose
     // immediate properties, test results and artifacts are now immutable

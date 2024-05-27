@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -411,4 +412,30 @@ func ReadExportInfo(ctx context.Context, invID ID) (ExportInfo, error) {
 	}
 
 	return result, nil
+}
+
+// FinalizedNotificationInfo captures information for sending an invocation finalized notification.
+type FinalizedNotificationInfo struct {
+	// The realm of the invocation.
+	Realm string
+	// Whether this invocation is a root of the invocation graph for export purposes.
+	IsExportRoot bool
+	// When the invocation was created.
+	CreateTime *timestamppb.Timestamp
+}
+
+// ReadFinalizedNotificationInfo reads information for sending an invocation finalized notification.
+func ReadFinalizedNotificationInfo(ctx context.Context, invID ID) (FinalizedNotificationInfo, error) {
+	var isExportRoot spanner.NullBool
+	var info FinalizedNotificationInfo
+
+	if err := ReadColumns(ctx, invID, map[string]any{
+		"Realm":        &info.Realm,
+		"IsExportRoot": &isExportRoot,
+		"CreateTime":   &info.CreateTime,
+	}); err != nil {
+		return FinalizedNotificationInfo{}, errors.Annotate(err, "read columns").Err()
+	}
+	info.IsExportRoot = isExportRoot.Valid && isExportRoot.Bool
+	return info, nil
 }

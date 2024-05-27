@@ -17,8 +17,10 @@ package exportnotifier
 import (
 	"context"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
@@ -46,12 +48,13 @@ func TestPropagate(t *testing.T) {
 		ctx, sched := tq.TestingContext(ctx, nil)
 
 		sources := testutil.TestSourcesWithChangelistNumbers(1)
-
+		rootCreateTime := timestamppb.New(time.Unix(1000, 0))
 		_, err := span.Apply(ctx, testutil.CombineMutations(
 			insert.InvocationWithInclusions("inv-root-a", pb.Invocation_ACTIVE, map[string]any{
 				"Realm":        "projecta:root",
 				"IsExportRoot": true,
 				"Sources":      spanutil.Compressed(pbutil.MustMarshal(sources)),
+				"CreateTime":   rootCreateTime,
 			}, "inv-a"),
 			insert.InvocationWithInclusions("inv-a", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true}, "inv-a1", "inv-a2"),
 			insert.InvocationWithInclusions("inv-a1", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true}),
@@ -135,6 +138,7 @@ func TestPropagate(t *testing.T) {
 						Invocation:          "invocations/inv-a",
 						InvocationRealm:     "testproject:testrealm",
 						Sources:             sources,
+						RootCreateTime:      rootCreateTime,
 					},
 					{
 						ResultdbHost:        testHostname,
@@ -143,6 +147,7 @@ func TestPropagate(t *testing.T) {
 						Invocation:          "invocations/inv-a1",
 						InvocationRealm:     "testproject:testrealm",
 						Sources:             sources,
+						RootCreateTime:      rootCreateTime,
 					},
 				})
 
@@ -218,6 +223,7 @@ func TestPropagate(t *testing.T) {
 					Invocation:          "invocations/inv-a",
 					InvocationRealm:     "testproject:testrealm",
 					Sources:             sources,
+					RootCreateTime:      rootCreateTime,
 				},
 				{
 					ResultdbHost:        testHostname,
@@ -226,6 +232,7 @@ func TestPropagate(t *testing.T) {
 					Invocation:          "invocations/inv-a1",
 					InvocationRealm:     "testproject:testrealm",
 					Sources:             sources,
+					RootCreateTime:      rootCreateTime,
 				},
 			})
 
@@ -291,6 +298,7 @@ func TestPropagate(t *testing.T) {
 				insert.InvocationWithInclusions("inv-root-d", pb.Invocation_FINALIZING, map[string]any{
 					"IsExportRoot": true,
 					"Sources":      spanutil.Compressed(pbutil.MustMarshal(sources)),
+					"CreateTime":   rootCreateTime,
 				}, "inv-d1", "inv-d2"),
 				insert.InvocationWithInclusions("inv-d1", pb.Invocation_FINALIZING, map[string]any{"InheritSources": true}, "inv-d1a"),
 				insert.InvocationWithInclusions("inv-d1a", pb.Invocation_FINALIZING, map[string]any{"InheritSources": true}),
@@ -324,6 +332,7 @@ func TestPropagate(t *testing.T) {
 					Invocation:          "invocations/inv-root-d",
 					InvocationRealm:     "testproject:testrealm",
 					Sources:             sources,
+					RootCreateTime:      rootCreateTime,
 				},
 				{
 					ResultdbHost:        testHostname,
@@ -332,6 +341,7 @@ func TestPropagate(t *testing.T) {
 					Invocation:          "invocations/inv-d1",
 					InvocationRealm:     "testproject:testrealm",
 					Sources:             sources,
+					RootCreateTime:      rootCreateTime,
 				},
 				{
 					ResultdbHost:        testHostname,
@@ -340,6 +350,7 @@ func TestPropagate(t *testing.T) {
 					Invocation:          "invocations/inv-d1a",
 					InvocationRealm:     "testproject:testrealm",
 					Sources:             sources,
+					RootCreateTime:      rootCreateTime,
 				},
 			})
 
@@ -359,6 +370,7 @@ func TestPropagate(t *testing.T) {
 				insert.InvocationWithInclusions("inv-root-e", pb.Invocation_ACTIVE, map[string]any{
 					"IsExportRoot": true,
 					"Realm":        "projecte:root",
+					"CreateTime":   rootCreateTime,
 				}, "inv-e"),
 				insert.InvocationWithInclusions("inv-e", pb.Invocation_FINALIZING, map[string]any{
 					"Sources": spanutil.Compressed(pbutil.MustMarshal(sources)),
@@ -389,6 +401,7 @@ func TestPropagate(t *testing.T) {
 					Invocation:          "invocations/inv-e",
 					InvocationRealm:     "projecte:included",
 					Sources:             sources,
+					RootCreateTime:      rootCreateTime,
 				},
 			})
 

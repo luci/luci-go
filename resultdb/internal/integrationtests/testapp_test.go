@@ -194,7 +194,10 @@ func (t *testApp) initServers(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	finalizer.InitServer(finalizerServer)
+	opts := finalizer.Options{
+		ResultDBHostname: "rdb-host",
+	}
+	finalizer.InitServer(finalizerServer, opts)
 
 	// bqexporter is not needed.
 
