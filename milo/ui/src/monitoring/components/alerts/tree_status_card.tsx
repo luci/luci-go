@@ -55,12 +55,12 @@ export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
     // eslint-disable-next-line new-cap
     ...treeStatusClient.ListStatus.query(
       ListStatusRequest.fromPartial({
-        parent: `trees/${tree.name}/status`,
+        parent: `trees/${tree.treeStatusName}/status`,
         pageSize: 5,
       }),
     ),
     refetchInterval: 60000,
-    enabled: !!tree.name,
+    enabled: !!tree.treeStatusName,
   });
 
   if (statusQuery.isError) {
@@ -96,7 +96,7 @@ export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
           variant="outlined"
         />
         <Typography>
-          {tree.display_name} Tree Status{' '}
+          {tree.treeStatusName} Tree Status{' '}
           <small style={{ opacity: '50%' }}>
             <LinkifiedText text={latest?.message} />
           </small>
@@ -108,7 +108,7 @@ export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
           sx={{ marginTop: '16px' }}
           size="small"
           component={Link}
-          to={`/ui/labs/tree-status/${tree.name}`}
+          to={`/ui/labs/tree-status/${tree.treeStatusName}`}
           target="_blank"
           variant="outlined"
         >

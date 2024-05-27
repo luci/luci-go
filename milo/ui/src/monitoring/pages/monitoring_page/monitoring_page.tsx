@@ -12,12 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, CircularProgress, LinearProgress } from '@mui/material';
+import NotesIcon from '@mui/icons-material/Notes';
+import {
+  Alert,
+  Avatar,
+  CircularProgress,
+  LinearProgress,
+  List,
+  ListItemAvatar,
+  ListItemButton,
+  ListItemText,
+  Typography,
+} from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { uniq } from 'lodash-es';
-import { Link, useParams } from 'react-router-dom';
+import { forwardRef } from 'react';
+import {
+  Link as RouterLink,
+  LinkProps as RouterLinkProps,
+  useParams,
+} from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants/view';
 import { useIssueListQuery } from '@/common/hooks/gapi_query/corp_issuetracker';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { Alerts } from '@/monitoring/components/alerts';
@@ -75,7 +93,7 @@ export const MonitoringPage = () => {
 
   const bugQuery = useIssueListQuery(
     {
-      query: `(status:open AND hotlistid:${tree.hotlistId})${
+      query: `(status:open AND hotlistid:${tree?.hotlistId})${
         linkedBugs.length > 0 ? ' OR ' : ''
       }${linkedBugs.map((b) => 'id:' + b).join(' OR ')}`,
       orderBy: 'priority',
@@ -89,14 +107,27 @@ export const MonitoringPage = () => {
   if (!treeName || !tree) {
     return (
       <>
-        <p>Please choose a tree to monitor:</p>
-        <ul>
+        <PageMeta title="Monitoring" selectedPage={UiPage.Monitoring} />
+        <Typography variant="h4">Monitoring: Trees</Typography>
+        <List
+          component="nav"
+          sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}
+        >
           {configuredTrees.map((t) => (
-            <li key={t.name}>
-              <Link to={`/ui/labs/monitoring/${t.name}`}>{t.name}</Link>
-            </li>
+            <ListItemButton
+              key={t.display_name}
+              component={Link}
+              to={`/ui/labs/monitoring/${t.name}`}
+            >
+              <ListItemAvatar>
+                <Avatar>
+                  <NotesIcon />
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText primary={t.display_name} secondary={t.name} />
+            </ListItemButton>
           ))}
-        </ul>
+        </List>
       </>
     );
   }
@@ -123,6 +154,11 @@ export const MonitoringPage = () => {
   });
   return (
     <>
+      <PageMeta
+        title="Monitoring"
+        selectedPage={UiPage.Monitoring}
+        project={tree?.project}
+      />
       {bugQuery.isLoading ? <LinearProgress /> : null}
       {bugQuery.isError ? (
         <Alert severity="error">
@@ -133,6 +169,12 @@ export const MonitoringPage = () => {
     </>
   );
 };
+
+const Link = forwardRef<HTMLAnchorElement, RouterLinkProps>(
+  function Link(itemProps, ref) {
+    return <RouterLink ref={ref} {...itemProps} role={undefined} />;
+  },
+);
 
 export const element = (
   // See the documentation for `<LoginPage />` for why we handle error this way.

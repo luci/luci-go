@@ -33,6 +33,7 @@ export enum UiPage {
   ReleaseNotes = 'release-notes',
   TestVerdict = 'test-verdict',
   TreeStatus = 'tree-status',
+  Monitoring = 'monitoring',
   RecentRegressions = 'recent-regressions',
   RegressionDetails = 'regression-details',
 }

@@ -34,6 +34,7 @@ export const PAGE_LABEL_MAP = Object.freeze({
   [UiPage.ReleaseNotes]: "What's new",
   [UiPage.TestVerdict]: 'Test verdict',
   [UiPage.TreeStatus]: 'Tree status',
+  [UiPage.Monitoring]: 'Monitoring',
   [UiPage.RecentRegressions]: 'Recent regressions',
   [UiPage.RegressionDetails]: 'Regression details',
 });

@@ -23,6 +23,8 @@ export interface TreeJson {
   default_monorail_project_name?: string; // default to 'chromium' if undefined.
   bug_queue_label?: string;
   hotlistId?: string;
+  project: string;
+  treeStatusName: string;
 }
 
 export const treeJsonFromName = (treeName: string): TreeJson | null => {
