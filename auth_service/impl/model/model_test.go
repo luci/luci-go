@@ -1455,6 +1455,30 @@ func TestAuthGlobalConfig(t *testing.T) {
 			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
 			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
 		})
+		Convey("no-op for identical configs", func() {
+			// Set up an initial global config.
+			So(datastore.Put(ctx, testAuthGlobalConfig(ctx)), ShouldBeNil)
+
+			// Update global config with identical configs.
+			sameOauthCfg := &configspb.OAuthConfig{
+				PrimaryClientId:     "test-client-id",
+				PrimaryClientSecret: "test-client-secret",
+				ClientIds: []string{
+					"additional-client-id-0",
+					"additional-client-id-1",
+				},
+				TokenServerUrl: "https://token-server.example.com",
+			}
+			So(UpdateAuthGlobalConfig(ctx, sameOauthCfg, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
+
+			// Check this is a no-op.
+			So(taskScheduler.Tasks(), ShouldHaveLength, 0)
+
+			// AuthGlobalConfig should be unchanged.
+			updatedCfg, err := GetAuthGlobalConfig(ctx)
+			So(err, ShouldBeNil)
+			So(updatedCfg, ShouldResemble, testAuthGlobalConfig(ctx))
+		})
 	})
 }
 

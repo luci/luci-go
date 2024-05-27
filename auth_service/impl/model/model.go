@@ -1327,36 +1327,80 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 	}
 }
 
+func hasSameOauthCfg(authGlobalConfig *AuthGlobalConfig, oauthCfg *configspb.OAuthConfig) bool {
+	if oauthCfg.GetPrimaryClientId() != authGlobalConfig.OAuthClientID {
+		return false
+	}
+	if oauthCfg.GetPrimaryClientSecret() != authGlobalConfig.OAuthClientSecret {
+		return false
+	}
+	if oauthCfg.GetTokenServerUrl() != authGlobalConfig.TokenServerURL {
+		return false
+	}
+	if !slices.Equal(oauthCfg.GetClientIds(), authGlobalConfig.OAuthAdditionalClientIDs) {
+		return false
+	}
+	return true
+}
+
+func hasSameSecurityCfg(authGlobalConfig *AuthGlobalConfig, securityCfg *protocol.SecurityConfig) (bool, error) {
+	storedSecurityCfg := &protocol.SecurityConfig{}
+	if err := proto.Unmarshal(authGlobalConfig.SecurityConfig, storedSecurityCfg); err != nil {
+		return false, errors.Annotate(err, "failed to unmarshal stored AuthGlobalConfig security config").Err()
+	}
+
+	return proto.Equal(securityCfg, storedSecurityCfg), nil
+}
+
 // UpdateAuthGlobalConfig updates the AuthGlobalConfig datastore entity.
 // If there is no AuthGlobalConfig entity present in the datastore, one will be
 // created.
 //
 // TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
-func UpdateAuthGlobalConfig(ctx context.Context, oauthcfg *configspb.OAuthConfig, seccfg *protocol.SecurityConfig, dryRun bool, historicalComment string) error {
+func UpdateAuthGlobalConfig(ctx context.Context, oauthCfg *configspb.OAuthConfig, securityCfg *protocol.SecurityConfig, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
+		shouldCreate := false
+
+		// Get current AuthGlobalConfig entity.
 		rootAuthGlobalCfg, err := GetAuthGlobalConfig(ctx)
 		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
 			return err
 		}
-
 		if rootAuthGlobalCfg == nil {
+			// No previous AuthGlobalConfig - need to store a new one.
+			shouldCreate = true
 			rootAuthGlobalCfg = makeAuthGlobalConfig(ctx)
 		}
-		rootAuthGlobalCfg.OAuthClientID = oauthcfg.GetPrimaryClientId()
-		rootAuthGlobalCfg.OAuthAdditionalClientIDs = oauthcfg.GetClientIds()
-		rootAuthGlobalCfg.OAuthClientSecret = oauthcfg.GetPrimaryClientSecret()
-		rootAuthGlobalCfg.TokenServerURL = oauthcfg.GetTokenServerUrl()
-		seccfgBlob, err := proto.Marshal(seccfg)
+
+		sameOauth := hasSameOauthCfg(rootAuthGlobalCfg, oauthCfg)
+		sameSecurity, err := hasSameSecurityCfg(rootAuthGlobalCfg, securityCfg)
 		if err != nil {
 			return err
 		}
-		rootAuthGlobalCfg.SecurityConfig = seccfgBlob
+
+		// Exit early if the global config exists and hasn't actually changed.
+		if !shouldCreate && sameOauth && sameSecurity {
+			logging.Infof(ctx, "skipping update of AuthGlobalConfig; already up to date")
+			return nil
+		}
+
+		// AuthGlobalConfig needs to be updated.
+		rootAuthGlobalCfg.OAuthClientID = oauthCfg.GetPrimaryClientId()
+		rootAuthGlobalCfg.OAuthAdditionalClientIDs = oauthCfg.GetClientIds()
+		rootAuthGlobalCfg.OAuthClientSecret = oauthCfg.GetPrimaryClientSecret()
+		rootAuthGlobalCfg.TokenServerURL = oauthCfg.GetTokenServerUrl()
+		securityCfgBlob, err := proto.Marshal(securityCfg)
+		if err != nil {
+			return err
+		}
+		rootAuthGlobalCfg.SecurityConfig = securityCfgBlob
 		if dryRun {
-			logging.Infof(ctx, "(dry run) updating:\n%+v", rootAuthGlobalCfg)
-		} else {
-			if err := commitEntity(rootAuthGlobalCfg, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false); err != nil {
-				return err
-			}
+			logging.Infof(ctx, "(dry run) updating AuthGlobalConfig")
+			return nil
+		}
+
+		if err := commitEntity(rootAuthGlobalCfg, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false); err != nil {
+			return err
 		}
 		return nil
 	})
