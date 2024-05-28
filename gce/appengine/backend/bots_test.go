@@ -330,6 +330,30 @@ func TestManageBot(t *testing.T) {
 			})
 
 			Convey("found", func() {
+				Convey("deleted", func() {
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:   "id",
+						Deleted: true,
+					}
+					So(datastore.Put(c, &model.VM{
+						ID:       "id",
+						Config:   "config",
+						Hostname: "name",
+						URL:      "url",
+						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
+						Created: time.Now().Unix() - 10000,
+					}), ShouldBeNil)
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+				})
 				Convey("deleted but newly created", func() {
 					swr.getBotResponse = &swarmingpb.BotInfo{
 						BotId:   "id",
@@ -348,6 +372,32 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					// Won't destroy the instance if it's a newly created VM
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+				})
+
+				Convey("dead", func() {
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:       "id",
+						FirstSeenTs: someTimeAgo,
+						IsDead:      true,
+					}
+					So(datastore.Put(c, &model.VM{
+						ID:       "id",
+						Config:   "config",
+						Hostname: "name",
+						URL:      "url",
+						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
+						Created: time.Now().Unix() - 10000,
+					}), ShouldBeNil)
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
 				})
 
 				Convey("dead but newly created", func() {

@@ -145,7 +145,7 @@ func manageBot(c context.Context, payload proto.Message) error {
 	}
 
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
-	_, err := getSwarming(c, vm.Swarming).GetBot(c, &swarmingpb.BotRequest{
+	bot, err := getSwarming(c, vm.Swarming).GetBot(c, &swarmingpb.BotRequest{
 		BotId: vm.Hostname,
 	})
 	if err != nil {
@@ -155,6 +155,16 @@ func manageBot(c context.Context, payload proto.Message) error {
 		}
 		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "failed to fetch bot").Err()
+	}
+	if bot.IsDead || bot.Deleted {
+		// If the bot is dead or deleted, schedule a task to destroy the instance
+		logging.Debugf(c, "manageBot: bot %s is dead[%v]/deleted[%v]. Destroying instance", bot.BotId, bot.IsDead, bot.Deleted)
+		// A bot may be returned as deleted or dead if a bot with the same ID was previously connected to Swarming, but this new VM's bot hasn't connected yet
+		if time.Since(time.Unix(vm.Created, 0)) <= minPendingForBotConnected {
+			logging.Debugf(c, "bot %s is newly created, wait for %s minutes at least to destroy", vm.Hostname, minPendingForBotConnected.Minutes())
+			return nil
+		}
+		return destroyInstanceAsync(c, vm.ID, vm.URL)
 	}
 	return nil
 }
