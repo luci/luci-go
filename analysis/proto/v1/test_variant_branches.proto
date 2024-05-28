@@ -46,6 +46,9 @@ service TestVariantBranches {
     QueryTestVariantBranchResponse) {};
   // Lists commits and the test verdicts at these commits, starting from a source position.
   rpc QuerySourcePositions(QuerySourcePositionsRequest) returns (QuerySourcePositionsResponse) {};
+  // Query for AI analysis of the possible culprits of a test changepoint.
+  // Note: to use this RPC, you must be a member of the group `googlers`.
+  rpc QueryChangepointAIAnalysis(QueryChangepointAIAnalysisRequest) returns (QueryChangepointAIAnalysisResponse) {};
 }
 
 // A request message for `TestVariantBranches.Get` RPC.
@@ -405,4 +408,51 @@ message SourcePosition {
   // At most 20 verdicts will be returned here.
   // Most of time, a test variant at the same source position has less than 20 verdicts.
   repeated luci.analysis.v1.TestVerdict verdicts = 3;
+}
+
+message QueryChangepointAIAnalysisRequest {
+  // The LUCI project.
+  string project = 1;
+  // The identifier of a test.
+  string test_id = 2;
+  // The hash of the variant.
+  string variant_hash = 3;
+  // Hash of the source branch, as 16 lowercase hexadecimal characters.
+  string ref_hash = 4;
+  // The nominal starting source position of the changepoint to query.
+  // As the change point analysis is constantly changing and the current
+  // nominal start position of the changepoint may have moved, the changepoint
+  // nearest the queried position is returned.
+  // If no changepoint is found near the given position, the error NOT_FOUND
+  // is returned.
+  int64 start_source_position = 5;
+  // Approximate start hour of the changepoint. This is used to inform
+  // the range of test history that is queried. This is ideally what was
+  // reported in the test_variant_segments table but can be your best guess.
+  google.protobuf.Timestamp start_hour = 6;
+  // Settings to control the prompt used. To assist experimentation.
+  // Optional.
+  PromptOptions prompt_options = 7;
+
+  message PromptOptions {
+    // The prompt prefix to use. If set, replaces the
+    // default prompt prefix. Optional.
+    string prefix = 1;
+
+    // The prompt suffix to use. If set, replaces the
+    // default prompt suffix. Optional.
+    string suffix = 2;
+
+    // TODO: Add options to control how CL details are presented
+    // to the model.
+  }
+}
+
+message QueryChangepointAIAnalysisResponse {
+  // The AI-generated analysis markdown. This content is produced by
+  // generative AI and is experimental.
+  string analysis_markdown = 1;
+
+  // The prompt provided to generative AI. For debugging purposes only.
+  string prompt = 2;
 }

@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -588,6 +589,10 @@ func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTest
 		TestVariantBranch: tvbpbs,
 		NextPageToken:     nextPageToken,
 	}, nil
+}
+
+func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Context, req *pb.QueryChangepointAIAnalysisRequest) (*pb.QueryChangepointAIAnalysisResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "not yet implemented")
 }
 
 func validateQueryTestVariantBranchRequest(req *pb.QueryTestVariantBranchRequest) error {
