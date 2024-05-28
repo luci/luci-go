@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './expandable_entry';
+import './lit_expandable_entry';
+export * from './lit_expandable_entry';
 export * from './expandable_entry';

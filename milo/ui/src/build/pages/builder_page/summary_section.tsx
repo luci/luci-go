@@ -35,17 +35,7 @@ export function BuilderDescriptionSection({
 
   return (
     <ExpandableEntry expanded={expanded}>
-      <ExpandableEntryHeader
-        sx={{
-          lineHeight: '19px',
-          gridTemplateColumns: 'auto 1fr',
-          gridTemplateRows: 'auto',
-          '& > svg': {
-            marginTop: '50%',
-          },
-        }}
-        onToggle={setExpanded}
-      >
+      <ExpandableEntryHeader sx={{ lineHeight: '19px' }} onToggle={setExpanded}>
         <h3>Builder Description</h3>
       </ExpandableEntryHeader>
       <ExpandableEntryBody ruler="none">

@@ -73,9 +73,11 @@ export function BotTable({ swarmingHost, bots }: BotTableProps) {
       }}
     >
       <thead>
-        <th>Name</th>
-        <th>Status</th>
-        <th>Last Seen</th>
+        <tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Last Seen</th>
+        </tr>
       </thead>
       <tbody>
         {bots.map((bot) => (
