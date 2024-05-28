@@ -15,6 +15,14 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import List from '@mui/material/List';
+import ListItemText from '@mui/material/ListItemText';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
 import { FormControl } from '@mui/material';
 import { FormLabel } from '@mui/material';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
@@ -71,16 +79,46 @@ export function GroupsForm({ name } : GroupsFormProps) {
       }
 
   return (
-    <FormControl data-testid="groups-form">
-        <h2> {name} </h2>
-        <FormLabel>Description</FormLabel>
-        <span> {description} </span>
-        <FormLabel>Owners</FormLabel>
-        <span> {owners} </span>
-        <FormLabel>Members</FormLabel>
-        {members.map((member, index) => <span key={index}>{member}</span>)}
-        <FormLabel>Subgroups</FormLabel>
-        {subgroups.map((subgroup, index) => <span key={index}>{subgroup}</span>)}
-    </FormControl>
-);
+    <Paper elevation={3} sx={{minHeight:'500px', p:'20px', ml:'5px'}}>
+      <FormControl data-testid="groups-form">
+        <Typography variant="h4" sx={{pb: 1.5}}> {name} </Typography>
+        <TableContainer>
+          <Table sx={{ p: 0, width: '100%' }}>
+              <TableRow>
+                <TableCell>
+                  <Typography variant="h6"> Description</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body1"> {description} </Typography>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>
+                  <Typography variant="h6"> Owners</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body1"> {owners} </Typography>
+                </TableCell>
+              </TableRow>
+          </Table>
+        </TableContainer>
+        <div>
+          <FormLabel>
+            <Typography variant="h6"> Members</Typography>
+          </FormLabel>
+          <List disablePadding>
+            {members.map((member, index) => <ListItemText key={index}>{member}</ListItemText>)}
+          </List>
+        </div>
+        <div>
+          <FormLabel>
+            <Typography variant="h6"> Subgroups</Typography>
+          </FormLabel>
+          <List disablePadding>
+            {subgroups.map((subgroup, index) => <ListItemText key={index}>{subgroup}</ListItemText>)}
+          </List>
+        </div>
+      </FormControl>
+    </Paper>
+  );
 }
