@@ -824,11 +824,43 @@ func TestQueues(t *testing.T) {
 			})
 		})
 
-		Convey("getUniqueID", func() {
-			c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
-			c = mathrand.Set(c, rand.New(rand.NewSource(1)))
-			id := getUniqueID(c, "prefix")
-			So(id, ShouldEqual, "prefix-1454472306000-fpll")
+		Convey("abbreviate", func() {
+			cases := []struct {
+				input string
+				limit int
+				want  string
+			}{
+				{
+					input: "crossk-chromeos8-row10-rack2-host32-labstation1as",
+					limit: 50,
+					want:  "c-c8-r10-r2-h32-l1a",
+				},
+				{
+					input: "abc123-def456",
+					limit: 50,
+					want:  "a123-d456",
+				},
+				{
+					input: "loremipsumdolorsitametconsecteturadipiscingelit",
+					limit: 15,
+					want:  "l",
+				},
+				{
+					input: "cros---chromium-chromeos8--row29-rack2-host43--",
+					limit: 50,
+					want:  "c-c-c8-r29-r2-h43-",
+				},
+				{
+					input: "chromeos8-row10-rack12-host13",
+					limit: 5,
+					want:  "c8-r1",
+				},
+			}
+			for _, c := range cases {
+				Convey(c.input, func() {
+					So(abbreviate(c.input, c.limit), ShouldEqual, c.want)
+				})
+			}
 		})
 	})
 }

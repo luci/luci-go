@@ -196,10 +196,10 @@ func createVM(c context.Context, payload proto.Message) error {
 	}
 
 	// VMs paired with DUTs cannot rely on index for hostname uniqueness.
-	// Instead, we rely on timestamp see getUniqueID.
+	// Instead, we rely on the DUT name.
 	var hostname string
 	if task.DUT != "" {
-		hostname = task.Id
+		hostname = fmt.Sprintf("%s-%s", task.Id, getSuffix(c))
 	} else {
 		hostname = fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c))
 	}
@@ -355,12 +355,6 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	return nil
 }
 
-// getUniqueID returns a unique ID based on Unix time in milliseconds.
-func getUniqueID(c context.Context, prefix string) string {
-	ms := clock.Now(c).UnixMilli()
-	return fmt.Sprintf("%s-%d-%s", prefix, ms, getSuffix(c))
-}
-
 // createTasksPerDUT returns a slice of CreateVM tasks based on config.Duts.
 func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, expandTime *timestamppb.Timestamp) ([]*tq.Task, error) {
 	logging.Debugf(c, "CloudBots flow entered for config %s", cfg.Config.Prefix)
@@ -378,9 +372,12 @@ func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, ex
 			logging.Debugf(c, "the DUT %s is already assigned to an existing VM %s, skipping", dut, vm)
 			continue
 		}
+		// The max length for VMs name is 63 chars.
+		// Setting abbreviate output to 40 chars max should give us some breathing room.
+		id := fmt.Sprintf("%s-%s", cfg.Config.Prefix, abbreviate(dut, 40))
 		t = append(t, &tq.Task{
 			Payload: &tasks.CreateVM{
-				Id:               getUniqueID(c, cfg.Config.Prefix),
+				Id:               id,
 				Attributes:       cfg.Config.Attributes,
 				Config:           cfg.ID,
 				ConfigExpandTime: expandTime,
@@ -487,4 +484,41 @@ func reportQuota(c context.Context, payload proto.Message) error {
 		}
 	}
 	return nil
+}
+
+// Enum used to make the abbreviate function more readable.
+const (
+	other = iota
+	letter
+	dash
+)
+
+// abbreviate shortens a hostname (dash-delimited string) by
+// removing all letters but the first of each group of successive letters encountered.
+// Also, removes any dash ("-") repetition.
+// limit represents the max length of the returned string.
+// E.g. abbreviate("abc123--def456su", ...) === "a123-d456s"
+func abbreviate(hostname string, limit int) string {
+	var out []rune
+	lastChar := other
+	for _, r := range hostname {
+		if len(out) == limit {
+			break
+		}
+		// that is  number
+		if r >= 48 && r <= 57 {
+			out = append(out, r)
+			lastChar = other
+		} else if r == '-' {
+			if lastChar == dash {
+				continue
+			}
+			out = append(out, r)
+			lastChar = dash
+		} else if lastChar != letter {
+			out = append(out, r)
+			lastChar = letter
+		}
+	}
+	return string(out)
 }
