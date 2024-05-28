@@ -29,7 +29,7 @@ type Client struct {
 }
 
 func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
-	location := "" // Fall back to inferred location or default (us-central1).
+	location := "us-central1" // Fall back to inferred location or default (us-central1).
 	client, err := gai.NewClient(ctx, gcpProject, location)
 	if err != nil {
 		return nil, errors.Annotate(err, "create sorbet client").Err()
@@ -37,19 +37,26 @@ func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
 	return &Client{client: client}, nil
 }
 
+type GenerateResponse struct {
+	// The generated response.
+	Candidate string
+	// If the response is blocked, the reason why. Set if Candidate is empty.
+	BlockReason string
+}
+
 // Generate generates a response for the given prompt.
-func (c *Client) Generate(ctx context.Context, prompt string) (string, error) {
+func (c *Client) Generate(ctx context.Context, prompt string) (GenerateResponse, error) {
 	m := c.client.GenerativeModel("gemini-1.5-pro")
 	m.SetCandidateCount(1)
 
 	response, err := m.GenerateContent(ctx, gai.Text(prompt))
 	if err != nil {
-		return "", errors.Annotate(err, "generate content").Err()
+		return GenerateResponse{}, errors.Annotate(err, "generate content").Err()
 	}
 
 	if len(response.Candidates) == 0 {
 		// No candidates could be generated for content reasons.
-		return "", errors.Reason("prompt blocked, %s", response.PromptFeedback.BlockReason).Err()
+		return GenerateResponse{BlockReason: response.PromptFeedback.BlockReasonMessage}, nil
 	}
 
 	// Concatenate the result parts.
@@ -64,5 +71,5 @@ func (c *Client) Generate(ctx context.Context, prompt string) (string, error) {
 		}
 		result.WriteString(string(text))
 	}
-	return result.String(), nil
+	return GenerateResponse{Candidate: result.String()}, nil
 }

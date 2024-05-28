@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
+	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/gitiles"
 	"go.chromium.org/luci/analysis/internal/pagination"
@@ -51,7 +52,9 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		tvc := testverdicts.FakeReadClient{}
-		server := NewTestVariantBranchesServer(&tvc)
+		sorbetClient := sorbet.NewFakeClient()
+
+		server := NewTestVariantBranchesServer(&tvc, sorbetClient)
 		Convey("GetRaw", func() {
 			Convey("permission denied", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -823,7 +826,69 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 			})
 
 		})
+		Convey("QueryChangepointAIAnalysis", func() {
+			authState := &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityGroups: []string{
+					"googlers",
+					"luci-analysis-access",
+				},
+			}
+			ctx = auth.WithState(ctx, authState)
 
+			req := &pb.QueryChangepointAIAnalysisRequest{
+				Project: "testproject",
+				TestId:  "mytest",
+			}
+
+			Convey("permission denied - not in group luci-analysis-accesss", func() {
+				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "luci-analysis-access")
+
+				res, err := server.QueryChangepointAIAnalysis(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(res, ShouldBeNil)
+			})
+			Convey("permission denied - not in group googlers", func() {
+				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "googlers")
+
+				res, err := server.QueryChangepointAIAnalysis(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(res, ShouldBeNil)
+			})
+			Convey("invalid request", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{"googlers", "luci-analysis-access"},
+				})
+				Convey("invalid project", func() {
+					req.Project = ""
+
+					_, err := server.QueryChangepointAIAnalysis(ctx, req)
+					So(err, ShouldNotBeNil)
+					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+					So(err.Error(), ShouldContainSubstring, "project")
+				})
+				Convey("invalid test id", func() {
+					req.TestId = ""
+
+					_, err := server.QueryChangepointAIAnalysis(ctx, req)
+					So(err, ShouldNotBeNil)
+					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+					So(err.Error(), ShouldContainSubstring, "test_id")
+				})
+			})
+			Convey("valid", func() {
+				sorbetClient.Response.Candidate = "Test response."
+
+				rsp, err := server.QueryChangepointAIAnalysis(ctx, req)
+				So(err, ShouldBeNil)
+
+				So(rsp.Prompt, ShouldNotBeEmpty)
+				So(rsp.AnalysisMarkdown, ShouldEqual, "Test response.")
+			})
+		})
 	})
 }
 

@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -36,6 +35,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
+	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/gitiles"
 	"go.chromium.org/luci/analysis/internal/pagination"
@@ -50,10 +50,10 @@ type TestVerdictClient interface {
 }
 
 // NewTestVariantBranchesServer returns a new pb.TestVariantBranchesServer.
-func NewTestVariantBranchesServer(tvc TestVerdictClient) pb.TestVariantBranchesServer {
+func NewTestVariantBranchesServer(tvc TestVerdictClient, sc sorbet.GenerateClient) pb.TestVariantBranchesServer {
 	return &pb.DecoratedTestVariantBranches{
 		Prelude:  checkAllowedPrelude,
-		Service:  &testVariantBranchesServer{testVerdictClient: tvc},
+		Service:  &testVariantBranchesServer{testVerdictClient: tvc, sorbetAnalyzer: sorbet.NewAnalyzer(sc)},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
@@ -61,6 +61,7 @@ func NewTestVariantBranchesServer(tvc TestVerdictClient) pb.TestVariantBranchesS
 // testVariantBranchesServer implements pb.TestVariantAnalysesServer.
 type testVariantBranchesServer struct {
 	testVerdictClient TestVerdictClient
+	sorbetAnalyzer    *sorbet.Analyzer
 }
 
 // Get fetches Spanner for test variant analysis.
@@ -591,10 +592,6 @@ func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTest
 	}, nil
 }
 
-func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Context, req *pb.QueryChangepointAIAnalysisRequest) (*pb.QueryChangepointAIAnalysisResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "not yet implemented")
-}
-
 func validateQueryTestVariantBranchRequest(req *pb.QueryTestVariantBranchRequest) error {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
 		return errors.Annotate(err, "project").Err()
@@ -607,6 +604,38 @@ func validateQueryTestVariantBranchRequest(req *pb.QueryTestVariantBranchRequest
 	}
 	if err := pbutil.ValidateSourceRef(req.Ref); err != nil {
 		return errors.Annotate(err, "ref").Err()
+	}
+	return nil
+}
+
+func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Context, req *pb.QueryChangepointAIAnalysisRequest) (*pb.QueryChangepointAIAnalysisResponse, error) {
+	if err := checkAllowed(ctx, googlerOnlyGroup); err != nil {
+		return nil, err
+	}
+	if err := validateQueryChangepointAIAnalysisRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+
+	request := sorbet.AnalysisRequest{
+		Project: req.Project,
+		TestID:  req.TestId,
+	}
+	response, err := s.sorbetAnalyzer.Analyze(ctx, request)
+	if err != nil {
+		return nil, errors.Annotate(err, "analyze").Err()
+	}
+	return &pb.QueryChangepointAIAnalysisResponse{
+		AnalysisMarkdown: response.Response,
+		Prompt:           response.Prompt,
+	}, nil
+}
+
+func validateQueryChangepointAIAnalysisRequest(req *pb.QueryChangepointAIAnalysisRequest) error {
+	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
 	}
 	return nil
 }

@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	bqupdator "go.chromium.org/luci/analysis/internal/changepoints/bqupdater"
+	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -108,6 +109,11 @@ func Main(init func(srv *luciserver.Server) error) {
 			return errors.Annotate(err, "creating test verdicts read client").Err()
 		}
 
+		sc, err := sorbet.NewClient(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return errors.Annotate(err, "creating sorbet client").Err()
+		}
+
 		// May be nil on deployments where Buganizer is not configured.
 		bc, err := buganizer.CreateBuganizerClient(srv.Context)
 		if err != nil {
@@ -125,7 +131,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
 		analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
 		analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
-		analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc))
+		analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, sc))
 		migrationpb.RegisterMonorailMigrationServer(srv, migration.NewMonorailMigrationServer())
 		analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
 
