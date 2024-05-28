@@ -22,6 +22,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -367,6 +368,10 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "extended_properties":
 				extendedProperties := in.Invocation.GetExtendedProperties()
 				if len(submask.Children()) > 0 {
+					// Init if nil map
+					if ret.ExtendedProperties == nil {
+						ret.ExtendedProperties = make(map[string]*structpb.Struct)
+					}
 					// If the update_mask has masks like "extended_properties.some_key".
 					for extPropKey := range submask.Children() {
 						if _, exist := extendedProperties[extPropKey]; exist {

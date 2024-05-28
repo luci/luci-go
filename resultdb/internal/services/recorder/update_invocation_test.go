@@ -802,72 +802,89 @@ func TestUpdateInvocation(t *testing.T) {
 					"child_key_1": structpb.NewStringValue("child_value_1"),
 				},
 			}
-			Convey("replace entire field", func() {
+			structValueNew := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+					"child_key_2": structpb.NewStringValue("child_value_2"),
+				},
+			}
+			run := func(extendedPropertiesOrg map[string]*structpb.Struct, extendedPropertiesNew map[string]*structpb.Struct, updateMask *field_mask.FieldMask) (*pb.Invocation, error) {
 				internalExtendedProperties := &invocationspb.ExtendedProperties{
-					ExtendedProperties: map[string]*structpb.Struct{
-						"old_key": structValueOrg,
-					},
+					ExtendedProperties: extendedPropertiesOrg,
 				}
-				testutil.MustApply(ctx, insert.Invocation("entire-extended_properties", pb.Invocation_ACTIVE, map[string]any{
+				testutil.MustApply(ctx, insert.Invocation("update_extended_properties", pb.Invocation_ACTIVE, map[string]any{
 					"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
 				}))
-				token, err := generateInvocationToken(ctx, "entire-extended_properties")
+				token, err := generateInvocationToken(ctx, "update_extended_properties")
 				So(err, ShouldBeNil)
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
-				newExtendedProperties := map[string]*structpb.Struct{
+				req := &pb.UpdateInvocationRequest{
+					Invocation: &pb.Invocation{
+						Name:               "invocations/update_extended_properties",
+						ExtendedProperties: extendedPropertiesNew,
+					},
+					UpdateMask: updateMask,
+				}
+				return recorder.UpdateInvocation(ctx, req)
+			}
+
+			Convey("replace entire field", func() {
+				extendedPropertiesOrg := map[string]*structpb.Struct{
+					"old_key": structValueOrg,
+				}
+				extendedPropertiesNew := map[string]*structpb.Struct{
 					"new_key": structValueOrg,
 				}
-				req := &pb.UpdateInvocationRequest{
-					Invocation: &pb.Invocation{
-						Name:               "invocations/entire-extended_properties",
-						ExtendedProperties: newExtendedProperties,
-					},
-					UpdateMask: &field_mask.FieldMask{Paths: []string{"extended_properties"}},
-				}
-				inv, err := recorder.UpdateInvocation(ctx, req)
+				updateMask := &field_mask.FieldMask{Paths: []string{"extended_properties"}}
+				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
 				So(err, ShouldBeNil)
-				So(inv.ExtendedProperties, ShouldResembleProto, newExtendedProperties)
+				So(inv.ExtendedProperties, ShouldResembleProto, extendedPropertiesNew)
 			})
-			Convey("add, replace, and delete keys", func() {
-				structValueNew := &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
-						"child_key_2": structpb.NewStringValue("child_value_2"),
-					},
+			Convey("add keys to nil field", func() {
+				var extendedPropertiesOrg map[string]*structpb.Struct // a nil map
+				extendedPropertiesNew := map[string]*structpb.Struct{
+					"to_be_added_1": structValueNew,
+					"to_be_added_2": structValueNew,
 				}
-				internalExtendedProperties := &invocationspb.ExtendedProperties{
-					ExtendedProperties: map[string]*structpb.Struct{
-						"to_be_kept":    structValueOrg,
-						"to_be_updated": structValueOrg,
-						"to_be_deleted": structValueOrg,
-					},
-				}
-				testutil.MustApply(ctx, insert.Invocation("entire-extended_properties", pb.Invocation_ACTIVE, map[string]any{
-					"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
-				}))
-				token, err := generateInvocationToken(ctx, "entire-extended_properties")
+				updateMask := &field_mask.FieldMask{Paths: []string{
+					"extended_properties.to_be_added_1",
+					"extended_properties.to_be_added_2",
+				}}
+				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
 				So(err, ShouldBeNil)
-				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
-				req := &pb.UpdateInvocationRequest{
-					Invocation: &pb.Invocation{
-						Name: "invocations/entire-extended_properties",
-						ExtendedProperties: map[string]*structpb.Struct{
-							"to_be_added":   structValueNew,
-							"to_be_updated": structValueNew,
-						},
-					},
-					UpdateMask: &field_mask.FieldMask{Paths: []string{
-						"extended_properties.to_be_added",
-						"extended_properties.to_be_updated",
-						"extended_properties.to_be_deleted",
-					}},
+				So(inv.ExtendedProperties, ShouldResembleProto, extendedPropertiesNew)
+			})
+			Convey("delete a key to nil field", func() {
+				var extendedPropertiesOrg map[string]*structpb.Struct // a nil map
+				var extendedPropertiesNew map[string]*structpb.Struct // a nil map
+				updateMask := &field_mask.FieldMask{Paths: []string{
+					"extended_properties.to_be_deleted",
+				}}
+				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
+				So(err, ShouldBeNil)
+				So(inv.ExtendedProperties, ShouldBeEmpty)
+			})
+			Convey("add, replace, and delete keys to existing field", func() {
+				extendedPropertiesOrg := map[string]*structpb.Struct{
+					"to_be_kept":     structValueOrg,
+					"to_be_replaced": structValueOrg,
+					"to_be_deleted":  structValueOrg,
 				}
-				inv, err := recorder.UpdateInvocation(ctx, req)
+				extendedPropertiesNew := map[string]*structpb.Struct{
+					"to_be_added":    structValueNew,
+					"to_be_replaced": structValueNew,
+				}
+				updateMask := &field_mask.FieldMask{Paths: []string{
+					"extended_properties.to_be_added",
+					"extended_properties.to_be_replaced",
+					"extended_properties.to_be_deleted",
+				}}
+				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
 				So(err, ShouldBeNil)
 				So(inv.ExtendedProperties, ShouldResembleProto, map[string]*structpb.Struct{
-					"to_be_kept":    structValueOrg,
-					"to_be_added":   structValueNew,
-					"to_be_updated": structValueNew,
+					"to_be_kept":     structValueOrg,
+					"to_be_added":    structValueNew,
+					"to_be_replaced": structValueNew,
 				})
 			})
 			Convey("valid request but overall size exceed limit", func() {
@@ -877,33 +894,20 @@ func TestUpdateInvocation(t *testing.T) {
 						"child_key_1": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue-80)),
 					},
 				}
-				internalExtendedProperties := &invocationspb.ExtendedProperties{
-					ExtendedProperties: map[string]*structpb.Struct{
-						"mykey_1": structValueLong,
-						"mykey_2": structValueLong,
-						"mykey_3": structValueLong,
-						"mykey_4": structValueLong,
-						"mykey_5": structValueOrg,
-					},
+				extendedPropertiesOrg := map[string]*structpb.Struct{
+					"mykey_1": structValueLong,
+					"mykey_2": structValueLong,
+					"mykey_3": structValueLong,
+					"mykey_4": structValueLong,
+					"mykey_5": structValueOrg,
 				}
-				testutil.MustApply(ctx, insert.Invocation("entire-extended_properties", pb.Invocation_ACTIVE, map[string]any{
-					"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
-				}))
-				token, err := generateInvocationToken(ctx, "entire-extended_properties")
-				So(err, ShouldBeNil)
-				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
-				req := &pb.UpdateInvocationRequest{
-					Invocation: &pb.Invocation{
-						Name: "invocations/entire-extended_properties",
-						ExtendedProperties: map[string]*structpb.Struct{
-							"mykey_5": structValueLong,
-						},
-					},
-					UpdateMask: &field_mask.FieldMask{Paths: []string{
-						"extended_properties.mykey_5",
-					}},
+				extendedPropertiesNew := map[string]*structpb.Struct{
+					"mykey_5": structValueLong,
 				}
-				inv, err := recorder.UpdateInvocation(ctx, req)
+				updateMask := &field_mask.FieldMask{Paths: []string{
+					"extended_properties.mykey_5",
+				}}
+				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
 				So(err, ShouldBeRPCInvalidArgument, `invocation: extended_properties: exceeds the maximum size of`)
 				So(inv, ShouldBeNil)
 			})
