@@ -44,7 +44,7 @@ import {
 import { provideInvId, provideProject, provideTestTabUrl } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
-jest.mock('@/common/components/result_entry', () => ({}));
+jest.mock('@/test_verdict/components/result_entry', () => ({}));
 
 const clusteringVersion = {
   algorithmsVersion: '1',

@@ -44,27 +44,3 @@ export function genFeedbackUrl(errMsg?: string, stacktrace?: string) {
 export function extractProject(projectOrRealm: string): string {
   return projectOrRealm.split(':', 2)[0];
 }
-
-interface SwarmingTaskIdentifier {
-  readonly swarmingHost: string;
-  readonly taskId: string;
-}
-
-/**
- * Parses the invocation and returns the task id and host.
- *
- * @param invocationId The invocation to parse if it has a swarming task.
- * @returns The parsed details or null if no task data was found.
- */
-export function parseSwarmingTaskFromInvId(
-  invocationId: string,
-): SwarmingTaskIdentifier | null {
-  const matchSwarming = invocationId.match(/^task-(.+)-([0-9a-f]+)$/);
-  if (matchSwarming) {
-    return {
-      swarmingHost: matchSwarming[1],
-      taskId: matchSwarming[2],
-    };
-  }
-  return null;
-}

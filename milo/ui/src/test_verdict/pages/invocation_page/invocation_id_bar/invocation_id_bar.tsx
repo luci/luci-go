@@ -24,13 +24,7 @@ import {
 } from '@/common/tools/url_utils';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/test_verdict/constants/invocation';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
-
-// Should be checked upstream, but allowlist URLs here just to be safe.
-const ALLOWED_SWARMING_HOSTS = [
-  'chromium-swarm-dev.appspot.com',
-  'chromium-swarm.appspot.com',
-  'chrome-swarming.appspot.com',
-];
+import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 
 export interface InvocationIdBarProps {
   readonly invName: string;
@@ -52,10 +46,7 @@ export function InvocationIdBar({ invName }: InvocationIdBarProps) {
   }
 
   const invId = invName.slice('invocations/'.length);
-  const buildId = invId.match(/^build-(?<id>\d+)/)?.groups?.['id'];
-  const { swarmingHost, taskId } =
-    invId.match(/^task-(?<swarmingHost>.*)-(?<taskId>[0-9a-fA-F]+)$/)?.groups ||
-    {};
+  const parsedInvId = parseInvId(invId);
 
   return (
     <div
@@ -68,13 +59,13 @@ export function InvocationIdBar({ invName }: InvocationIdBarProps) {
       <div css={{ flex: '0 auto' }}>
         <span css={{ color: 'var(--light-text-color)' }}>Invocation ID </span>
         <span>{invId}</span>
-        {buildId && (
+        {parsedInvId.type === 'build' && (
           <>
             {' '}
             (
             <Link
               component={RouterLink}
-              to={getBuildURLPathFromBuildId(buildId)}
+              to={getBuildURLPathFromBuildId(parsedInvId.buildId)}
               target="_blank"
               rel="noreferrer"
             >
@@ -83,9 +74,12 @@ export function InvocationIdBar({ invName }: InvocationIdBarProps) {
             )
           </>
         )}
-        {ALLOWED_SWARMING_HOSTS.includes(swarmingHost) && taskId && (
+        {parsedInvId.type === 'swarming-task' && (
           <Link
-            href={getSwarmingTaskURL(swarmingHost, taskId)}
+            href={getSwarmingTaskURL(
+              parsedInvId.swarmingHost,
+              parsedInvId.taskId,
+            )}
             target="_blank"
             rel="noreferrer"
           >

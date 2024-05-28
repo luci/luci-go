@@ -25,7 +25,7 @@ import { useEffect, useRef } from 'react';
 import '@/common/components/associated_bugs_badge';
 import '@/generic_libs/components/expandable_entry';
 import '@/generic_libs/components/copy_to_clipboard';
-import '@/common/components/result_entry';
+import '@/test_verdict/components/result_entry';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '@/common/common_tags';
 import {
   VARIANT_STATUS_CLASS_MAP,

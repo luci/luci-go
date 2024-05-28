@@ -23,7 +23,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import '@/generic_libs/components/expandable_entry';
-import '@/common/components/result_entry';
+import '@/test_verdict/components/result_entry';
 import '@/common/components/changelists_badge';
 import {
   VARIANT_STATUS_CLASS_MAP,
@@ -46,6 +46,7 @@ import {
   RenderPlaceHolder,
 } from '@/generic_libs/tools/observer_element';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
+import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -173,12 +174,11 @@ export class TestHistoryDetailsEntryElement
 
   @computed private get invocationUrl() {
     const invId = this.verdictBundle.verdict.invocationId;
-    const match = invId.match(/^build-(?<id>\d+)/);
-    const buildId = match?.groups?.['id'];
-    if (!buildId) {
+    const parsedInvId = parseInvId(invId);
+    if (parsedInvId.type !== 'build') {
       return `${getInvURLPath(invId)}/test-results`;
     }
-    return `${getBuildURLPathFromBuildId(buildId)}/test-results`;
+    return `${getBuildURLPathFromBuildId(parsedInvId.buildId)}/test-results`;
   }
 
   constructor() {

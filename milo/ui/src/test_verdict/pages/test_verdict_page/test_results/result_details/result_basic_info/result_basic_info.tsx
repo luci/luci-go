@@ -27,9 +27,9 @@ import { DurationBadge } from '@/common/components/duration_badge';
 import { getUniqueBugs } from '@/common/tools/cluster_utils/cluster_utils';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
-import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
 import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { useProject } from '../../../context';
@@ -73,9 +73,7 @@ export function ResultBasicInfo() {
   );
 
   const parsedResultName = parseTestResultName(result.name);
-  const swarmingTaskId = parseSwarmingTaskFromInvId(
-    parsedResultName.invocationId,
-  );
+  const parsedInvId = parseInvId(parsedResultName.invocationId);
   // There can be at most one failureReason cluster.
   const reasonCluster = clustersByResultId?.filter((c) =>
     c.clusterId.algorithm.startsWith('reason-'),
@@ -119,21 +117,21 @@ export function ResultBasicInfo() {
             {result.duration && (
               <DurationBadge duration={parseProtoDuration(result.duration)} />
             )}
-            {result.duration && swarmingTaskId !== null && (
+            {result.duration && parsedInvId.type === 'swarming-task' && (
               <Divider orientation="vertical" />
             )}
-            {swarmingTaskId !== null && (
+            {parsedInvId.type === 'swarming-task' && (
               <>
                 Swarming Task:
                 <Link
                   href={getSwarmingTaskURL(
-                    swarmingTaskId.swarmingHost,
-                    swarmingTaskId.taskId,
+                    parsedInvId.swarmingHost,
+                    parsedInvId.taskId,
                   )}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {swarmingTaskId.taskId}
+                  {parsedInvId.taskId}
                 </Link>
               </>
             )}

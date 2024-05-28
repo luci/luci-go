@@ -26,17 +26,13 @@ import {
   getBuildURLPathFromBuildId,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
+import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 
 import { CountIndicator } from '../test_results_tab/count_indicator';
 
 import { InvLitEnvProvider } from './inv_lit_env_provider';
 
 // Should be checked upstream, but allowlist URLs here just to be safe.
-const ALLOWED_SWARMING_HOSTS = [
-  'chromium-swarm-dev.appspot.com',
-  'chromium-swarm.appspot.com',
-  'chrome-swarming.appspot.com',
-];
 
 export const InvocationPage = observer(() => {
   const { invId } = useParams();
@@ -52,10 +48,7 @@ export const InvocationPage = observer(() => {
 
   const inv = store.invocationPage.invocation.invocation;
   const project = store.invocationPage.invocation.project;
-  const buildId = invId.match(/^build-(?<id>\d+)/)?.groups?.['id'];
-  const { swarmingHost, taskId } =
-    invId.match(/^task-(?<swarmingHost>.*)-(?<taskId>[0-9a-fA-F]+)$/)?.groups ||
-    {};
+  const parsedInvId = parseInvId(invId);
 
   return (
     <InvLitEnvProvider>
@@ -70,12 +63,12 @@ export const InvocationPage = observer(() => {
         <div css={{ flex: '0 auto' }}>
           <span css={{ color: 'var(--light-text-color)' }}>Invocation ID </span>
           <span>{invId}</span>
-          {buildId && (
+          {parsedInvId.type === 'build' && (
             <>
               {' '}
               (
               <a
-                href={getBuildURLPathFromBuildId(buildId)}
+                href={getBuildURLPathFromBuildId(parsedInvId.buildId)}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -84,9 +77,12 @@ export const InvocationPage = observer(() => {
               )
             </>
           )}
-          {ALLOWED_SWARMING_HOSTS.includes(swarmingHost) && taskId && (
+          {parsedInvId.type === 'swarming-task' && (
             <a
-              href={getSwarmingTaskURL(swarmingHost, taskId)}
+              href={getSwarmingTaskURL(
+                parsedInvId.swarmingHost,
+                parsedInvId.taskId,
+              )}
               target="_blank"
               rel="noreferrer"
             >

@@ -50,11 +50,11 @@ import {
   getRawArtifactURLPath,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
-import { parseSwarmingTaskFromInvId } from '@/common/tools/utils';
 import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
 import { unwrapOrElse } from '@/generic_libs/tools/utils';
+import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 /**
@@ -402,41 +402,32 @@ ${errMsg}</pre
   });
 
   private renderParentLink() {
-    const swarmingTaskId = parseSwarmingTaskFromInvId(this.parentInvId);
-    if (swarmingTaskId !== null) {
+    const parsedInvId = parseInvId(this.parentInvId);
+    if (parsedInvId.type === 'swarming-task') {
       return html`
         in task:
         <a
           href="${getSwarmingTaskURL(
-            swarmingTaskId.swarmingHost,
-            swarmingTaskId.taskId,
+            parsedInvId.swarmingHost,
+            parsedInvId.taskId,
           )}"
           target="_blank"
           @click=${(e: Event) => e.stopPropagation()}
         >
-          ${swarmingTaskId.taskId}
+          ${parsedInvId.taskId}
         </a>
       `;
     }
 
-    // There's an alternative format for build invocation:
-    // `build-${builderIdHash}-${buildNum}`.
-    // We don't match that because:
-    // 1. we can't get back the build link because the builderID is hashed, and
-    // 2. typically those invocations are only used as wrapper invocations that
-    // points to the `build-${buildId}` for the same build for speeding up
-    // queries when buildId is not yet known to the client. We don't expect them
-    // to be used here.
-    const matchBuild = this.parentInvId.match(/^build-([0-9]+)$/);
-    if (matchBuild) {
+    if (parsedInvId.type === 'build') {
       return html`
         in build:
         <a
-          href="/ui/b/${matchBuild[1]}"
+          href="/ui/b/${parsedInvId.buildId}"
           target="_blank"
           @click=${(e: Event) => e.stopPropagation()}
         >
-          ${matchBuild[1]}
+          ${parsedInvId.buildId}
         </a>
       `;
     }
