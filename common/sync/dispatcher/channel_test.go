@@ -772,3 +772,22 @@ func TestProcess(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+// TestNilSafety tests that calling Close or CloseDrain safely does nothing on
+// a nil channel.
+//
+// If this test "fails", then an exception will be thrown, so we don't have an
+// explicit test.
+func TestNilSafety(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	var zero Channel[bool]
+	zero.Close()
+	zero.CloseAndDrain(ctx)
+
+	var nilPtr *Channel[bool]
+	nilPtr.Close()
+	nilPtr.CloseAndDrain(ctx)
+}

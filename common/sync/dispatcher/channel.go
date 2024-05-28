@@ -35,14 +35,34 @@ type Channel[T any] struct {
 
 // Close is a convenience function which closes C (and swallows panic if
 // already closed).
-func (c Channel[T]) Close() {
+//
+// Close is safe to call on a nil pointer or a Channel containing a nil chan<-.
+// It is safe and recommended to call close in a defer block before checking
+// for errors.
+//
+//	c, err := NewChannel(...)
+//	defer c.Close()
+//	if err != nil {
+//		...
+//	}
+func (c *Channel[T]) Close() {
+	if c == nil || c.C == nil {
+		return
+	}
 	defer func() { recover() }()
 	close(c.C)
 }
 
 // CloseAndDrain is a convenience function which closes C (and swallows panic if
 // already closed) and then blocks on DrainC/ctx.Done().
-func (c Channel[T]) CloseAndDrain(ctx context.Context) {
+//
+// CloseAndDrain is safe to call on a nil pointer or a channel containing a nil
+// chan<-. It is safe and recommended to call close in a defer block before
+// checking for errors.  See close for an example.
+func (c *Channel[T]) CloseAndDrain(ctx context.Context) {
+	if c == nil || c.C == nil {
+		return
+	}
 	c.Close()
 	select {
 	case <-ctx.Done():
