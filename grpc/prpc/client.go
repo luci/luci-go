@@ -327,9 +327,9 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 		// The context error is more interesting if it is present.
 		switch cerr := ctx.Err(); {
 		case cerr == context.DeadlineExceeded:
-			err = status.Error(codes.DeadlineExceeded, "prpc: overall deadline exceeded")
+			err = status.Errorf(codes.DeadlineExceeded, "prpc: overall deadline exceeded: %s", context.Cause(ctx))
 		case cerr == context.Canceled:
-			err = status.Error(codes.Canceled, "prpc: call canceled")
+			err = status.Errorf(codes.Canceled, "prpc: call canceled: %s", context.Cause(ctx))
 		case cerr != nil:
 			err = status.Error(codes.Unknown, cerr.Error())
 		}
@@ -429,9 +429,9 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 		if err != nil {
 			switch cerr := ctx.Err(); {
 			case cerr == context.DeadlineExceeded:
-				err = status.Error(codes.DeadlineExceeded, "prpc: attempt deadline exceeded")
+				err = status.Errorf(codes.DeadlineExceeded, "prpc: attempt deadline exceeded: %s", context.Cause(ctx))
 			case cerr == context.Canceled:
-				err = status.Error(codes.Canceled, "prpc: attempt canceled")
+				err = status.Errorf(codes.Canceled, "prpc: attempt canceled: %s", context.Cause(ctx))
 			case cerr != nil:
 				err = status.Error(codes.Unknown, cerr.Error())
 			}
@@ -445,7 +445,7 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 			// The request has already expired. This will likely never happen, since
 			// the outer Retry loop will have expired, but there is a very slight
 			// possibility of a race.
-			return "", status.Error(codes.DeadlineExceeded, "prpc: attempt deadline exceeded")
+			return "", status.Errorf(codes.DeadlineExceeded, "prpc: attempt deadline exceeded: %s", context.Cause(ctx))
 		}
 		logging.Debugf(ctx, "RPC %s/%s.%s [deadline %s]", options.host, options.serviceName, options.methodName, delta)
 		req.Header.Set(HeaderTimeout, EncodeTimeout(delta))

@@ -1830,14 +1830,20 @@ func (s *Server) httpRoot(next http.Handler) http.Handler {
 		// that http.Server cancels it when the client disconnects, which we want.
 		ctx := r.Context()
 
-		// Apply per-request HTTP timeout, if any.
-		timeout := s.Options.DefaultRequestTimeout
+		// Apply per-request HTTP timeout and corresponding context
+		// cancellation cause, if any.
+		var timeout time.Duration
+		var cause error
 		if strings.HasPrefix(r.URL.Path, "/internal/") {
 			timeout = s.Options.InternalRequestTimeout
+			cause = fmt.Errorf("request hit InternalRequestTimeout %v", timeout)
+		} else {
+			timeout = s.Options.DefaultRequestTimeout
+			cause = fmt.Errorf("request hit DefaultRequestTimeout %v", timeout)
 		}
 		if timeout != 0 {
 			var cancelCtx context.CancelFunc
-			ctx, cancelCtx = context.WithTimeout(ctx, timeout)
+			ctx, cancelCtx = context.WithTimeoutCause(ctx, timeout, cause)
 			defer cancelCtx()
 		}
 
