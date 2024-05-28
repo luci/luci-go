@@ -426,13 +426,9 @@ message QueryChangepointAIAnalysisRequest {
   // If no changepoint is found near the given position, the error NOT_FOUND
   // is returned.
   int64 start_source_position = 5;
-  // Approximate start hour of the changepoint. This is used to inform
-  // the range of test history that is queried. This is ideally what was
-  // reported in the test_variant_segments table but can be your best guess.
-  google.protobuf.Timestamp start_hour = 6;
   // Settings to control the prompt used. To assist experimentation.
   // Optional.
-  PromptOptions prompt_options = 7;
+  PromptOptions prompt_options = 6;
 
   message PromptOptions {
     // The prompt prefix to use. If set, replaces the

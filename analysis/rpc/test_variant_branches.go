@@ -616,9 +616,18 @@ func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Conte
 		return nil, invalidArgumentError(err)
 	}
 
+	refHashBytes, err := hex.DecodeString(req.RefHash)
+	if err != nil {
+		// This line is unreachable as ref hash should be validated already.
+		return nil, invalidArgumentError(errors.Reason("ref hash must be an encoded hexadecimal string").Err())
+	}
+
 	request := sorbet.AnalysisRequest{
-		Project: req.Project,
-		TestID:  req.TestId,
+		Project:             req.Project,
+		TestID:              req.TestId,
+		VariantHash:         req.VariantHash,
+		RefHash:             testvariantbranch.RefHash(refHashBytes),
+		StartSourcePosition: req.StartSourcePosition,
 	}
 	response, err := s.sorbetAnalyzer.Analyze(ctx, request)
 	if err != nil {
@@ -636,6 +645,15 @@ func validateQueryChangepointAIAnalysisRequest(req *pb.QueryChangepointAIAnalysi
 	}
 	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
 		return errors.Annotate(err, "test_id").Err()
+	}
+	if err := ValidateVariantHash(req.VariantHash); err != nil {
+		return errors.Annotate(err, "variant_hash").Err()
+	}
+	if err := ValidateRefHash(req.RefHash); err != nil {
+		return errors.Annotate(err, "ref_hash").Err()
+	}
+	if req.StartSourcePosition <= 0 {
+		return errors.Reason("start_source_position: must be a positive number").Err()
 	}
 	return nil
 }

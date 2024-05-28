@@ -47,8 +47,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestTestVariantAnalysesServer(t *testing.T) {
-	Convey("TestVariantAnalysesServer", t, func() {
+func TestTestVariantBranchesServer(t *testing.T) {
+	Convey("TestVariantBranchesServer", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 
 		tvc := testverdicts.FakeReadClient{}
@@ -836,25 +836,42 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 			}
 			ctx = auth.WithState(ctx, authState)
 
+			var1 := pbutil.Variant("key1", "val1", "key2", "val1")
+			ref := &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host",
+						Project: "project",
+						Ref:     "ref",
+					},
+				},
+			}
+			refHash := pbutil.SourceRefHash(ref)
+
+			tvb1 := newBuilder().WithProject("testproject").WithTestID("mytest").WithVariantHash(pbutil.VariantHash(var1)).WithRefHash(refHash)
+			var hs inputbuffer.HistorySerializer
+			tvb1.saveInDB(ctx, hs)
+
 			req := &pb.QueryChangepointAIAnalysisRequest{
-				Project: "testproject",
-				TestId:  "mytest",
+				Project:             "testproject",
+				TestId:              "mytest",
+				VariantHash:         pbutil.VariantHash(var1),
+				RefHash:             hex.EncodeToString(refHash),
+				StartSourcePosition: 97, // tvb1 has a changepoint at position 100 (99% confidence interval: 95-105)
 			}
 
 			Convey("permission denied - not in group luci-analysis-accesss", func() {
 				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "luci-analysis-access")
 
 				res, err := server.QueryChangepointAIAnalysis(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
 				So(res, ShouldBeNil)
 			})
 			Convey("permission denied - not in group googlers", func() {
 				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "googlers")
 
 				res, err := server.QueryChangepointAIAnalysis(ctx, req)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				So(err, ShouldBeRPCPermissionDenied, "not a member of googlers")
 				So(res, ShouldBeNil)
 			})
 			Convey("invalid request", func() {
@@ -866,18 +883,48 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 					req.Project = ""
 
 					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err.Error(), ShouldContainSubstring, "project")
+					So(err, ShouldBeRPCInvalidArgument, "project")
 				})
 				Convey("invalid test id", func() {
 					req.TestId = ""
 
 					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					So(err, ShouldNotBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-					So(err.Error(), ShouldContainSubstring, "test_id")
+					So(err, ShouldBeRPCInvalidArgument, "test_id")
 				})
+				Convey("invalid variant hash", func() {
+					req.VariantHash = ""
+
+					_, err := server.QueryChangepointAIAnalysis(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, "variant_hash")
+				})
+				Convey("invalid ref hash", func() {
+					req.RefHash = ""
+
+					_, err := server.QueryChangepointAIAnalysis(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, "ref_hash")
+				})
+				Convey("invalid start source position", func() {
+					req.StartSourcePosition = 0
+
+					_, err := server.QueryChangepointAIAnalysis(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, "start_source_position")
+				})
+			})
+			Convey("test variant branch not found", func() {
+				req.TestId = "not_exists"
+
+				_, err := server.QueryChangepointAIAnalysis(ctx, req)
+				So(err, ShouldBeRPCNotFound, "test variant branch not found")
+			})
+			Convey("changepoint not found", func() {
+				// This position is closer to the start of the first segment
+				// than it is to the second segment. Just the first segment
+				// does not give us enough information to analyse the changepoint,
+				// we need the prior segment too.
+				req.StartSourcePosition = 11
+
+				_, err := server.QueryChangepointAIAnalysis(ctx, req)
+				So(err, ShouldBeRPCNotFound, "test variant branch changepoint not found")
 			})
 			Convey("valid", func() {
 				sorbetClient.Response.Candidate = "Test response."
@@ -1053,6 +1100,7 @@ func (b *testVariantBranchBuilder) buildProto() *pb.TestVariantBranch {
 				},
 			},
 			{
+				StartPosition:                10,
 				StartPositionLowerBound_99Th: 45,
 				StartPositionUpperBound_99Th: 55,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
@@ -1124,6 +1172,7 @@ func (b *testVariantBranchBuilder) buildEntry() *testvariantbranch.Entry {
 			Segments: []*cpb.Segment{
 				{
 					State:                        cpb.SegmentState_FINALIZED,
+					StartPosition:                10,
 					StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 					StartPositionLowerBound_99Th: 45,
 					StartPositionUpperBound_99Th: 55,

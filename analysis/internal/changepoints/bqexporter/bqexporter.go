@@ -113,7 +113,7 @@ func ToPartialBigQueryRow(tvb *testvariantbranch.Entry, inputBufferSegments []*i
 	row.Variant = variant
 
 	// Segments.
-	row.Segments = toSegments(tvb, inputBufferSegments)
+	row.Segments = ToSegments(tvb, inputBufferSegments)
 
 	// The row is partial because HasRecentUnexpectedResults and Version
 	// is not yet populated. Wrap it in another type to prevent export as-is.
@@ -136,10 +136,10 @@ func (r PartialBigQueryRow) Complete(commitTimestamp time.Time) *bqpb.TestVarian
 	return row
 }
 
-// toSegments returns the segments for row input.
+// ToSegments returns the segments for row input.
 // The segments returned will be sorted, with the most recent segment
 // comes first.
-func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment) []*bqpb.Segment {
+func ToSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment) []*bqpb.Segment {
 	results := []*bqpb.Segment{}
 
 	// The index where the active segments starts.
