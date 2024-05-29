@@ -17,11 +17,8 @@ package rpcs
 import (
 	"context"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
-	"go.chromium.org/luci/swarming/server/model"
 )
 
 // GetRequest fetches a model.TaskRequest for a given apipb.TaskIdRequest.
@@ -34,39 +31,5 @@ func (*TasksServer) GetRequest(ctx context.Context, req *apipb.TaskIdRequest) (*
 	if !res.Permitted {
 		return nil, res.ToGrpcErr()
 	}
-	return taskRequestToResponse(ctx, req, taskRequest)
-}
-
-// taskRequestToResponse converts a model.TaskRequest to apipb.TaskRequestResponse.
-func taskRequestToResponse(ctx context.Context, req *apipb.TaskIdRequest, taskRequest *model.TaskRequest) (*apipb.TaskRequestResponse, error) {
-	// Create the list of task slices.
-	taskSlices := make([]*apipb.TaskSlice, len(taskRequest.TaskSlices))
-	for i, slice := range taskRequest.TaskSlices {
-		taskSlices[i] = slice.ToProto()
-	}
-	// Ensure that there is a task slice to pull TaskProperties from.
-	properties := &apipb.TaskProperties{}
-	if len(taskSlices) != 0 {
-		properties = taskSlices[0].Properties
-	}
-	return &apipb.TaskRequestResponse{
-		TaskId:               req.TaskId,
-		ExpirationSecs:       int32(taskRequest.Expiration.Second()),
-		Name:                 taskRequest.Name,
-		ParentTaskId:         taskRequest.ParentTaskID.Get(),
-		Priority:             int32(taskRequest.Priority),
-		Properties:           properties,
-		Tags:                 taskRequest.Tags,
-		CreatedTs:            timestamppb.New(taskRequest.Created),
-		User:                 taskRequest.User,
-		Authenticated:        string(taskRequest.Authenticated),
-		TaskSlices:           taskSlices,
-		ServiceAccount:       taskRequest.ServiceAccount,
-		Realm:                taskRequest.Realm,
-		PubsubTopic:          taskRequest.PubSubTopic,
-		PubsubUserdata:       taskRequest.PubSubUserData,
-		BotPingToleranceSecs: int32(taskRequest.BotPingToleranceSecs),
-		RbeInstance:          taskRequest.RBEInstance,
-		Resultdb:             taskRequest.ResultDB.ToProto(),
-	}, nil
+	return taskRequest.ToProto(), nil
 }

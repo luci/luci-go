@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -219,6 +221,38 @@ func (p *TaskRequest) TaskAuthInfo() acls.TaskAuthInfo {
 		Pool:      p.Pool(),
 		BotID:     p.BotID(),
 		Submitter: p.Authenticated,
+	}
+}
+
+// ToProto converts a TaskRequest to apipb.TaskRequestResponse.
+func (p *TaskRequest) ToProto() *apipb.TaskRequestResponse {
+	taskSlices := make([]*apipb.TaskSlice, len(p.TaskSlices))
+	for i, slice := range p.TaskSlices {
+		taskSlices[i] = slice.ToProto()
+	}
+	properties := &apipb.TaskProperties{}
+	if len(taskSlices) != 0 {
+		properties = taskSlices[0].Properties
+	}
+	return &apipb.TaskRequestResponse{
+		TaskId:               RequestKeyToTaskID(p.Key, AsRequest),
+		ExpirationSecs:       int32(p.Expiration.Second()),
+		Name:                 p.Name,
+		ParentTaskId:         p.ParentTaskID.Get(),
+		Priority:             int32(p.Priority),
+		Properties:           properties,
+		Tags:                 p.Tags,
+		CreatedTs:            timestamppb.New(p.Created),
+		User:                 p.User,
+		Authenticated:        string(p.Authenticated),
+		TaskSlices:           taskSlices,
+		ServiceAccount:       p.ServiceAccount,
+		Realm:                p.Realm,
+		PubsubTopic:          p.PubSubTopic,
+		PubsubUserdata:       p.PubSubUserData,
+		BotPingToleranceSecs: int32(p.BotPingToleranceSecs),
+		RbeInstance:          p.RBEInstance,
+		Resultdb:             p.ResultDB.ToProto(),
 	}
 }
 
