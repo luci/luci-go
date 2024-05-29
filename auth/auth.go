@@ -426,6 +426,9 @@ type Options struct {
 	// SecretsDir can be used to set the path to a directory where tokens
 	// are cached.
 	//
+	// Do not try to extract or use the tokens stored in this
+	// directory, as the format is not guaranteed.
+	//
 	// If not set, tokens will be cached only in the process memory. For refresh
 	// tokens it means the user would have to go through the login process each
 	// time process is started. For service account tokens it means there'll be
