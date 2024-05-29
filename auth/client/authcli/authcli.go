@@ -84,6 +84,7 @@ package authcli
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -349,7 +350,21 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err)
 		return ExitCodeBadLogin
 	}
-	return checkToken(ctx, &opts, authenticator)
+	var tokenInfo tokenInfo
+	if opts.UseIDTokens {
+		tokenInfo, err = idTokenInfo(authenticator)
+	} else {
+		tokenInfo, err = oauthTokenInfo(ctx, authenticator)
+	}
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+		if errors.Is(err, errTokenInternal) {
+			return ExitCodeInternalError
+		}
+		return ExitCodeNoValidToken
+	}
+	tokenInfo.PrintFormatted()
+	return ExitCodeSuccess
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -418,10 +433,13 @@ func SubcommandInfoWithParams(params CommandParams) *subcommands.Command {
 		Advanced:  params.Advanced,
 		UsageLine: params.Name,
 		ShortDesc: "prints an email address associated with currently cached token",
-		LongDesc:  "Prints an email address associated with currently cached token",
+		LongDesc:  "Prints or writes it to a JSON file an email address associated with currently cached token",
 		CommandRun: func() subcommands.CommandRun {
 			c := &infoRun{}
 			c.registerBaseFlags(params)
+			c.Flags.StringVar(
+				&c.jsonOutput, "json-output", "",
+				`Path to a JSON file to write the token into. Use "-" for standard output.`)
 			return c
 		},
 	}
@@ -429,9 +447,10 @@ func SubcommandInfoWithParams(params CommandParams) *subcommands.Command {
 
 type infoRun struct {
 	commandRunBase
+	jsonOutput string
 }
 
-func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.Env) (exitCode int) {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -447,7 +466,56 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 		fmt.Fprintln(os.Stderr, err)
 		return ExitCodeInternalError
 	}
-	return checkToken(ctx, &opts, authenticator)
+
+	var tokenInfo tokenInfo
+	if opts.UseIDTokens {
+		tokenInfo, err = idTokenInfo(authenticator)
+	} else {
+		tokenInfo, err = oauthTokenInfo(ctx, authenticator)
+	}
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		if errors.Is(err, errTokenInternal) {
+			return ExitCodeInternalError
+		}
+		return ExitCodeNoValidToken
+	}
+
+	exitCode = ExitCodeSuccess
+
+	if c.jsonOutput == "" {
+		// Print formatted info if -json-output is unset.
+		tokenInfo.PrintFormatted()
+	} else {
+		// Print JSON to stdout by default.
+		jsonWriter := os.Stdout
+
+		// Otherwise, redirect JSON to the specified file.
+		if c.jsonOutput != "-" {
+			// If JSON is sent to a file, print formatted info to stdout.
+			tokenInfo.PrintFormatted()
+
+			jsonWriter, err = os.Create(c.jsonOutput)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return ExitCodeInvalidInput
+			}
+			defer func() {
+				if err := jsonWriter.Close(); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					exitCode = ExitCodeInternalError
+				}
+			}()
+		}
+
+		// Write JSON to the destination determined above.
+		if err = json.NewEncoder(jsonWriter).Encode(tokenInfo); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return ExitCodeInternalError
+		}
+	}
+	return exitCode
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -744,54 +812,108 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// checkToken prints information about the token carried by the authenticator.
+// errTokenInternal indicates a token could not be retrieved due to an internal error,
+// rather than no token being available to retrieve.
+var errTokenInternal = errors.New("internal error fetching token")
+
+// tokenInfo interface defines how to print token information in a human-friendly manner.
+type tokenInfo interface {
+	PrintFormatted()
+}
+
+// IDTokenInfo contains details about an ID token.
+type IDTokenInfo struct {
+	Email    string `json:"email"`
+	Issuer   string `json:"issuer"`
+	Subject  string `json:"subject"`
+	Audience string `json:"audience"`
+}
+
+// PrintFormatted prints the token in a human-friendly manner.
+func (tokenInfo IDTokenInfo) PrintFormatted() {
+	fmt.Printf("Logged in as %s.\n\n", tokenInfo.Email)
+	fmt.Printf("ID token details:\n")
+	fmt.Printf("  Issuer: %s\n", tokenInfo.Issuer)
+	fmt.Printf("  Subject: %s\n", tokenInfo.Subject)
+	fmt.Printf("  Audience: %s\n", tokenInfo.Audience)
+}
+
+// OAuthTokenInfo contains details about an OAuth access token.
+type OAuthTokenInfo struct {
+	Email    string   `json:"email,omitempty"`
+	UID      string   `json:"uid,omitempty"`
+	ClientID string   `json:"client_id"`
+	Scopes   []string `json:"scopes"`
+}
+
+// PrintFormatted prints the token in a human-friendly manner.
+func (tokenInfo OAuthTokenInfo) PrintFormatted() {
+	if tokenInfo.Email != "" {
+		fmt.Printf("Logged in as %s.\n\n", tokenInfo.Email)
+	} else if tokenInfo.UID != "" {
+		fmt.Printf("Logged in as uid %q.\n\n", tokenInfo.UID)
+	}
+	fmt.Printf("OAuth token details:\n")
+	fmt.Printf("  Client ID: %s\n", tokenInfo.ClientID)
+	fmt.Printf("  Scopes:\n")
+	for _, scope := range tokenInfo.Scopes {
+		fmt.Printf("    %s\n", scope)
+	}
+}
+
+// idTokenInfo provides information about the token carried by the authenticator.
 //
-// Prints errors to stderr and returns corresponding process exit code.
-func checkToken(ctx context.Context, opts *auth.Options, a *auth.Authenticator) int {
+// Returns an IDTokenInfo struct.
+func idTokenInfo(a *auth.Authenticator) (*IDTokenInfo, error) {
 	// Grab the active token.
 	tok, err := a.GetAccessToken(time.Minute)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Can't grab an access token: %s\n", err)
-		return ExitCodeNoValidToken
+		return nil, fmt.Errorf("can't grab an access token: %w", err)
 	}
 
-	if opts.UseIDTokens {
-		// When using ID tokens, decode the claims and show some interesting ones.
-		claims, err := internal.ParseIDTokenClaims(tok.AccessToken)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to decode ID token: %s\n", err)
-			return ExitCodeNoValidToken
-		}
-		fmt.Printf("Logged in as %s.\n\n", claims.Email)
-		fmt.Printf("ID token details:\n")
-		fmt.Printf("  Issuer: %s\n", claims.Iss)
-		fmt.Printf("  Subject: %s\n", claims.Sub)
-		fmt.Printf("  Audience: %s\n", claims.Aud)
-	} else {
-		// When using access tokens, ask the Google endpoint for details of the
-		// token.
-		info, err := googleoauth.GetTokenInfo(ctx, googleoauth.TokenInfoParams{
-			AccessToken: tok.AccessToken,
-		})
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to call token info endpoint: %s\n", err)
-			if err == googleoauth.ErrBadToken {
-				return ExitCodeNoValidToken
-			}
-			return ExitCodeInternalError
-		}
-		if info.Email != "" {
-			fmt.Printf("Logged in as %s.\n\n", info.Email)
-		} else if info.Sub != "" {
-			fmt.Printf("Logged in as uid %q.\n\n", info.Sub)
-		}
-		fmt.Printf("OAuth token details:\n")
-		fmt.Printf("  Client ID: %s\n", info.Aud)
-		fmt.Printf("  Scopes:\n")
-		for _, scope := range strings.Split(info.Scope, " ") {
-			fmt.Printf("    %s\n", scope)
-		}
+	// When using ID tokens, decode the claims and show some interesting ones.
+	claims, err := internal.ParseIDTokenClaims(tok.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode ID token: %w", err)
 	}
 
-	return ExitCodeSuccess
+	return &IDTokenInfo{
+		Email:    claims.Email,
+		Issuer:   claims.Iss,
+		Subject:  claims.Sub,
+		Audience: claims.Aud,
+	}, nil
+}
+
+// oauthTokenInfo provides information about the token carried by the authenticator.
+//
+// Returns an OAuthTokenInfo struct.
+func oauthTokenInfo(ctx context.Context, a *auth.Authenticator) (*OAuthTokenInfo, error) {
+	// Grab the active token.
+	tok, err := a.GetAccessToken(time.Minute)
+	if err != nil {
+		return nil, fmt.Errorf("can't grab an access token: %w", err)
+	}
+
+	// When using access tokens, ask the Google endpoint for details of the token.
+	info, err := googleoauth.GetTokenInfo(ctx, googleoauth.TokenInfoParams{
+		AccessToken: tok.AccessToken,
+	})
+
+	if errors.Is(err, googleoauth.ErrBadToken) {
+		return nil, fmt.Errorf("failed to call token info endpoint: %w", err)
+	} else if err != nil {
+		return nil, fmt.Errorf("%w: %w", errTokenInternal, err)
+	}
+
+	oauthTokenInfo := &OAuthTokenInfo{
+		ClientID: info.Aud,
+		Scopes:   strings.Split(info.Scope, " "),
+	}
+	if info.Email != "" {
+		oauthTokenInfo.Email = info.Email
+	} else if info.Sub != "" {
+		oauthTokenInfo.UID = info.Sub
+	}
+	return oauthTokenInfo, nil
 }
