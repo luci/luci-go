@@ -20,10 +20,8 @@ import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { formatNum } from '@/generic_libs/tools/string_utils';
 import { QueryTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import {
-  VERDICT_STATUS_COLOR_MAP,
-  VERDICT_STATUS_ICON_MAP,
-} from '@/test_verdict/constants/verdict';
+import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
+import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { SpecifiedTestVerdictStatus } from '@/test_verdict/types';
 
@@ -119,7 +117,11 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
   }
 
   if (worstStatus >= TestVariantStatus.EXONERATED) {
-    return <Container>{VERDICT_STATUS_ICON_MAP[worstStatus]}</Container>;
+    return (
+      <Container>
+        <VerdictStatusIcon status={worstStatus} />
+      </Container>
+    );
   }
 
   const hasMore = Boolean(!countedAll && hasNextPage);

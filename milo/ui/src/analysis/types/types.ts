@@ -30,6 +30,10 @@ import {
   SourcePosition,
   TestVariantBranch,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import {
+  TestVerdict,
+  TestVerdictStatus,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 
 /**
  * @fileoverview
@@ -39,6 +43,15 @@ import {
  * casting to only where the data is queried instead of having to use non-null
  * coercion (i.e. `object.nullable!`) everywhere.
  */
+
+export type SpecifiedTestVerdictStatus = Exclude<
+  TestVerdictStatus,
+  TestVerdictStatus.UNSPECIFIED
+>;
+
+export interface OutputTestVerdict extends TestVerdict {
+  readonly status: SpecifiedTestVerdictStatus;
+}
 
 export type OutputClusterEntry = NonNullableProps<
   ClusterResponse_ClusteredTestResult_ClusterEntry,
@@ -68,6 +81,7 @@ export interface OutputTestVariantBranch extends TestVariantBranch {
 
 export interface OutputSourcePosition extends SourcePosition {
   readonly commit: OutputCommit;
+  readonly verdicts: readonly OutputTestVerdict[];
 }
 
 export interface OutputQuerySourcePositionsResponse

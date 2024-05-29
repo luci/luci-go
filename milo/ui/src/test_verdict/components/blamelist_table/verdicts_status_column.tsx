@@ -14,8 +14,8 @@
 
 import { TableCell } from '@mui/material';
 
-import { TestVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
-import { VerdictsStatusIcon } from '@/test_verdict/components/verdicts_status_icon';
+import { OutputTestVerdict } from '@/analysis/types';
+import { VerdictSetStatus } from '@/test_verdict/components/verdict_set_status';
 
 export function VerdictsStatusHeadCell() {
   return (
@@ -29,7 +29,7 @@ export function VerdictsStatusHeadCell() {
 }
 
 export interface VerdictsStatusContentCellProps {
-  readonly testVerdicts: readonly TestVerdict[];
+  readonly testVerdicts: readonly OutputTestVerdict[];
 }
 
 export function VerdictStatusesContentCell({
@@ -37,7 +37,7 @@ export function VerdictStatusesContentCell({
 }: VerdictsStatusContentCellProps) {
   return (
     <TableCell>
-      <VerdictsStatusIcon testVerdicts={testVerdicts} />
+      <VerdictSetStatus testVerdicts={testVerdicts} />
     </TableCell>
   );
 }

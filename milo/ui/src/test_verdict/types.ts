@@ -21,6 +21,8 @@
  * coercion (i.e. `object.nullable!`) everywhere.
  */
 
+import { SpecifiedTestVerdictStatus as AnalysisVerdictStatus } from '@/analysis/types';
+import { TestVerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import {
   TestResultBundle,
   TestVariant,
@@ -31,6 +33,33 @@ export type SpecifiedTestVerdictStatus = Exclude<
   TestVariantStatus,
   TestVariantStatus.UNSPECIFIED | TestVariantStatus.UNEXPECTED_MASK
 >;
+
+const VERDICT_STATUS_MAP_FROM_ANALYSIS = Object.freeze({
+  [TestVerdictStatus.UNEXPECTED]: TestVariantStatus.UNEXPECTED,
+  [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]:
+    TestVariantStatus.UNEXPECTEDLY_SKIPPED,
+  [TestVerdictStatus.FLAKY]: TestVariantStatus.FLAKY,
+  [TestVerdictStatus.EXONERATED]: TestVariantStatus.EXONERATED,
+  [TestVerdictStatus.EXPECTED]: TestVariantStatus.EXPECTED,
+});
+
+const VERDICT_STATUS_MAP_TO_ANALYSIS = Object.freeze({
+  [TestVariantStatus.UNEXPECTED]: TestVerdictStatus.UNEXPECTED,
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]:
+    TestVerdictStatus.UNEXPECTEDLY_SKIPPED,
+  [TestVariantStatus.FLAKY]: TestVerdictStatus.FLAKY,
+  [TestVariantStatus.EXONERATED]: TestVerdictStatus.EXONERATED,
+  [TestVariantStatus.EXPECTED]: TestVerdictStatus.EXPECTED,
+});
+
+export const SpecifiedTestVerdictStatus = {
+  fromAnalysis(status: AnalysisVerdictStatus): SpecifiedTestVerdictStatus {
+    return VERDICT_STATUS_MAP_FROM_ANALYSIS[status];
+  },
+  toAnalysis(status: SpecifiedTestVerdictStatus): AnalysisVerdictStatus {
+    return VERDICT_STATUS_MAP_TO_ANALYSIS[status];
+  },
+};
 
 export type OutputTestResultBundle = NonNullableProps<
   TestResultBundle,

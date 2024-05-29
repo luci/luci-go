@@ -105,7 +105,7 @@ describe('<VerdictCountIndicator />', () => {
     expect(
       screen.queryByTestId('verdict-count-indicator'),
     ).not.toBeInTheDocument();
-    expect(screen.getByTestId('RemoveCircleIcon')).toBeInTheDocument();
+    expect(screen.getByText('remove_circle')).toBeInTheDocument();
   });
 
   it("show no count when there's no verdict", async () => {
@@ -124,7 +124,7 @@ describe('<VerdictCountIndicator />', () => {
     expect(
       screen.queryByTestId('verdict-count-indicator'),
     ).not.toBeInTheDocument();
-    expect(screen.queryByTestId('RemoveCircleIcon')).not.toBeInTheDocument();
+    expect(screen.queryByText('remove_circle')).not.toBeInTheDocument();
     expect(screen.getByTestId('no-error')).toBeInTheDocument();
   });
 

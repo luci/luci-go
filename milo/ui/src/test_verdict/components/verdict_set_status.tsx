@@ -16,36 +16,36 @@ import { arc, pie } from 'd3';
 import { useMemo } from 'react';
 
 import {
-  TestVerdict,
-  TestVerdictStatus,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
-import {
-  VERDICT_STATUS_COLOR_MAP,
-  VERDICT_STATUS_ICON_MAP,
-} from '@/test_verdict/constants/verdict';
+  OutputTestVerdict,
+  SpecifiedTestVerdictStatus as AnalysisVerdictStatus,
+} from '@/analysis/types';
+import { TestVerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
 
-export interface VerdictsStatusIconProps {
-  readonly testVerdicts: readonly TestVerdict[];
+import { SpecifiedTestVerdictStatus } from '../types';
+
+import { VerdictStatusIcon } from './verdict_status_icon';
+
+export interface VerdictSetStatusProps {
+  readonly testVerdicts: readonly OutputTestVerdict[];
 }
 
-const status: TestVerdictStatus[] = [
-  TestVerdictStatus.EXPECTED,
-  TestVerdictStatus.UNEXPECTED,
-  TestVerdictStatus.EXONERATED,
-  TestVerdictStatus.FLAKY,
-  TestVerdictStatus.UNEXPECTEDLY_SKIPPED,
-];
-
-// VerdictsStatusIcon display statuses when there's a list of verdicts.
-export function VerdictsStatusIcon({ testVerdicts }: VerdictsStatusIconProps) {
+/**
+ * VerdictSetStatus display statuses when there's a list of verdicts.
+ */
+export function VerdictSetStatus({ testVerdicts }: VerdictSetStatusProps) {
   if (testVerdicts.length === 0) {
     return <></>;
   }
-  for (const s of status) {
-    const allStatusEqual = testVerdicts.every((tv) => tv.status === s);
-    if (allStatusEqual && s !== TestVerdictStatus.UNSPECIFIED) {
-      return VERDICT_STATUS_ICON_MAP[s];
-    }
+
+  const allStatuses = new Set(testVerdicts.map((tv) => tv.status));
+  if (allStatuses.size === 1) {
+    return (
+      <VerdictStatusIcon
+        status={SpecifiedTestVerdictStatus.fromAnalysis(testVerdicts[0].status)}
+        sx={{ verticalAlign: 'middle' }}
+      />
+    );
   }
   return <TestVerdictsPieChart testVerdicts={testVerdicts} />;
 }
@@ -60,8 +60,16 @@ const pieGenerator = pie<unknown, VerdictGroup>()
   .sort(null);
 const arcPathGenerator = arc();
 
+const status: AnalysisVerdictStatus[] = [
+  TestVerdictStatus.EXPECTED,
+  TestVerdictStatus.UNEXPECTED,
+  TestVerdictStatus.EXONERATED,
+  TestVerdictStatus.FLAKY,
+  TestVerdictStatus.UNEXPECTEDLY_SKIPPED,
+];
+
 export interface TestVerdictsPieChartProps {
-  readonly testVerdicts: readonly TestVerdict[];
+  readonly testVerdicts: readonly OutputTestVerdict[];
 }
 
 export function TestVerdictsPieChart({
@@ -74,12 +82,10 @@ export function TestVerdictsPieChart({
         (c, tv) => (tv.status === s ? c + 1 : c),
         0,
       );
-      if (s !== TestVerdictStatus.UNSPECIFIED) {
-        groups.push({
-          color: VERDICT_STATUS_COLOR_MAP[s],
-          count,
-        });
-      }
+      groups.push({
+        color: VERDICT_STATUS_COLOR_MAP[s],
+        count,
+      });
     }
     const arcs = pieGenerator(groups).map((p) =>
       arcPathGenerator({
