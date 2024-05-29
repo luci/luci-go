@@ -33,3 +33,17 @@ export SPANNER_EMULATOR=1
 Then run go test as usual.
 
 > Note: If you run tests on Mac, please start Docker Desktop before running tests.
+
+## Running a binary locally
+
+It can be useful to run the ResultDB service locally if you are testing new query functionality:
+
+```
+cd cmd/resultdb
+luci-auth login -scopes "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email"
+go run main.go \
+ -cloud-project luci-resultdb-dev \
+ -spanner-database projects/chops-spanner-testing/instances/testing/databases/luci-resultdb-staging \
+ -auth-service-host chrome-infra-auth-dev.appspot.com \
+ -artifact-rbe-instance projects/luci-resultdb-dev/instances/artifacts
+```

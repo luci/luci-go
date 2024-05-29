@@ -214,6 +214,26 @@ func (mr *MockResultDBClientMockRecorder) ListTestResults(ctx, in interface{}, o
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTestResults", reflect.TypeOf((*MockResultDBClient)(nil).ListTestResults), varargs...)
 }
 
+// QueryArtifactFailureOnlyLines mocks base method.
+func (m *MockResultDBClient) QueryArtifactFailureOnlyLines(ctx context.Context, in *QueryArtifactFailureOnlyLinesRequest, opts ...grpc.CallOption) (*QueryArtifactFailureOnlyLinesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryArtifactFailureOnlyLines", varargs...)
+	ret0, _ := ret[0].(*QueryArtifactFailureOnlyLinesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryArtifactFailureOnlyLines indicates an expected call of QueryArtifactFailureOnlyLines.
+func (mr *MockResultDBClientMockRecorder) QueryArtifactFailureOnlyLines(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryArtifactFailureOnlyLines", reflect.TypeOf((*MockResultDBClient)(nil).QueryArtifactFailureOnlyLines), varargs...)
+}
+
 // QueryArtifacts mocks base method.
 func (m *MockResultDBClient) QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error) {
 	m.ctrl.T.Helper()
@@ -530,6 +550,21 @@ func (m *MockResultDBServer) ListTestResults(arg0 context.Context, arg1 *ListTes
 func (mr *MockResultDBServerMockRecorder) ListTestResults(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTestResults", reflect.TypeOf((*MockResultDBServer)(nil).ListTestResults), arg0, arg1)
+}
+
+// QueryArtifactFailureOnlyLines mocks base method.
+func (m *MockResultDBServer) QueryArtifactFailureOnlyLines(arg0 context.Context, arg1 *QueryArtifactFailureOnlyLinesRequest) (*QueryArtifactFailureOnlyLinesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryArtifactFailureOnlyLines", arg0, arg1)
+	ret0, _ := ret[0].(*QueryArtifactFailureOnlyLinesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryArtifactFailureOnlyLines indicates an expected call of QueryArtifactFailureOnlyLines.
+func (mr *MockResultDBServerMockRecorder) QueryArtifactFailureOnlyLines(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryArtifactFailureOnlyLines", reflect.TypeOf((*MockResultDBServer)(nil).QueryArtifactFailureOnlyLines), arg0, arg1)
 }
 
 // QueryArtifacts mocks base method.

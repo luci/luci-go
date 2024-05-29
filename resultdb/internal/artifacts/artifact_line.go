@@ -42,7 +42,6 @@ import (
 // The max specified the maximum number of results to return,
 // if the max <= 0 it will return all lines.
 func ToLogLines(artifactID string, contentType string, content []byte, year, maxLines, maxBytes int) ([]*pb.ArtifactLine, error) {
-
 	isSupported := isLogSupportedArtifact(artifactID, contentType)
 
 	if !isSupported {

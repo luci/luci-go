@@ -19,6 +19,7 @@ package resultdb
 import (
 	"context"
 
+	"cloud.google.com/go/bigquery"
 	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
 	"google.golang.org/genproto/googleapis/bytestream"
 
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gerritauth"
 
+	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/config"
@@ -44,6 +46,7 @@ import (
 // internal.CommonPostlude.
 type resultDBServer struct {
 	contentServer *artifactcontent.Server
+	bqClient      *bigquery.Client
 }
 
 // Options is resultdb server configuration.
@@ -79,6 +82,11 @@ func InitServer(srv *server.Server, opts Options) error {
 		contentServer.InstallHandlers(srv.VirtualHost(host))
 	}
 
+	bqClient, err := bqutil.Client(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "creating BQ client").Err()
+	}
+
 	// Serve cron jobs endpoints.
 	cron.RegisterHandler("read-config", config.UpdateConfig)
 	cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
@@ -87,6 +95,7 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	rdbSvr := &resultDBServer{
 		contentServer: contentServer,
+		bqClient:      bqClient,
 	}
 	pb.RegisterResultDBServer(srv, &pb.DecoratedResultDB{
 		Service:  rdbSvr,

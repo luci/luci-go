@@ -372,7 +372,6 @@ func TestToLogLines(t *testing.T) {
 }`
 
 	Convey(`ToLogLines`, t, func() {
-
 		Convey(`given a list of lines, should return valid line entries`, func() {
 			contentBytes := []byte(contentString)
 			lines, err := ToLogLines("log.text", "text/log", contentBytes, 2024, -1, 1000000)

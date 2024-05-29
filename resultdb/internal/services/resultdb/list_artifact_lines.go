@@ -65,7 +65,6 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 	}
 
 	content, err := s.readArtifactData(ctx, art)
-
 	if err != nil {
 		return nil, errors.Annotate(err, "read artifact").Err()
 	}

@@ -75,7 +75,7 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 	return parentID[:lastSlash], parentID[lastSlash+1:], nil
 }
 
-// Read reads an artifact and returns and Artifact row from the database.
+// Read reads an artifact and returns an Artifact row from the database.
 // It contains the following fields:
 // * ContentType
 // * Size
