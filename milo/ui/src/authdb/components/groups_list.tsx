@@ -18,6 +18,8 @@ import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import List from '@mui/material/List';
+import Paper from '@mui/material/Paper';
+import TextField from '@mui/material/TextField';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
@@ -28,6 +30,8 @@ import Grid from '@mui/material/Grid';
 
 export function GroupsList() {
   const [selectedGroup, setSelectedGroup] = useState<string>();
+  const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
+  const [searchQuery, setSearchQuery] = useState<string>();
 
   const client = useAuthServiceClient();
   const {
@@ -39,7 +43,6 @@ export function GroupsList() {
     ...client.ListGroups.query({})
   })
   const allGroups: readonly AuthGroup[] = response?.groups || [];
-
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
@@ -58,29 +61,46 @@ export function GroupsList() {
       </div>
     );
   }
+
   const setSelected = (name: string) => {
     setSelectedGroup(name);
   };
 
+  const changeSearchQuery = (query: string) => {
+    setSearchQuery(query.toLowerCase());
+    if (searchQuery) {
+      setFilteredGroups(allGroups.filter(group => group.name.includes(searchQuery)));
+    }
+  }
+
+  const groups = searchQuery ? filteredGroups : allGroups;
   return (
-    <Grid container className="groups-container">
-      <Grid item xs={5}>
-        <Box className="groups-list-container">
-          <List data-testid="groups-list">
-            {allGroups && allGroups.map((group) => (
-            <GroupsListItem
-              key={group.name}
-              group={group}
-              setSelected={() => {setSelected(group.name)}}
-              selected={group.name === selectedGroup}
-            />
-            ))}
-          </List>
-        </Box>
+    <Paper>
+      <Grid container className="groups-container">
+        <Grid item xs={5}>
+        <TextField
+            id="outlined-basic"
+            label="Search for an existing group"
+            variant="outlined"
+            sx={{m: 2}}
+            onChange={e => changeSearchQuery(e.target.value)}/>
+          <Box className="groups-list-container">
+            <List data-testid="groups-list" disablePadding>
+              {groups && groups.map((group) => (
+              <GroupsListItem
+                key={group.name}
+                group={group}
+                setSelected={() => {setSelected(group.name)}}
+                selected={group.name === selectedGroup}
+              />
+              ))}
+            </List>
+          </Box>
+        </Grid>
+        <Grid item xs={7}>
+          {selectedGroup && <GroupsForm name={selectedGroup}/>}
+        </Grid>
       </Grid>
-      <Grid item xs={7}>
-        {selectedGroup && <GroupsForm name={selectedGroup}/>}
-      </Grid>
-    </Grid>
+    </Paper>
   );
 }
