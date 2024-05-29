@@ -23,6 +23,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // ErrNoSuchFetchOperation is returned when trying to get result of an unknown
@@ -234,4 +236,61 @@ func (b *BatchFetcher[K, E]) flush(batch *batch[K, E]) {
 
 		return nil
 	})
+}
+
+// PerformanceStatsHolder provides the PerformanceStats entity key.
+//
+// It is implemented by TaskRunResult and TaskResultSummary.
+type PerformanceStatsHolder interface {
+	PerformanceStatsKey(ctx context.Context) *datastore.Key
+}
+
+// PerformanceStatsFetcher can fetch PerformanceStats entities in parallel.
+//
+// It is a wrapper over generic BatchFetcher.
+type PerformanceStatsFetcher struct {
+	fetcher *BatchFetcher[*apipb.TaskResultResponse, PerformanceStats]
+}
+
+// NewPerformanceStatsFetcher constructs a new fetcher.
+//
+// It should be closed with Close to avoid leaking goroutines.
+func NewPerformanceStatsFetcher(ctx context.Context) *PerformanceStatsFetcher {
+	return &PerformanceStatsFetcher{
+		fetcher: NewBatchFetcher[*apipb.TaskResultResponse, PerformanceStats](ctx, 300, 5),
+	}
+}
+
+// Close makes sure all internal goroutines are canceled and stopped.
+func (f *PerformanceStatsFetcher) Close() {
+	f.fetcher.Close()
+}
+
+// Fetch starts fetching PerformanceStats of the task if it has them.
+func (f *PerformanceStatsFetcher) Fetch(ctx context.Context, task *apipb.TaskResultResponse, key PerformanceStatsHolder) {
+	if dskey := key.PerformanceStatsKey(ctx); dskey != nil {
+		f.fetcher.Fetch(task, &PerformanceStats{Key: dskey})
+	}
+}
+
+// Finish waits for all fetches to finish and populates PerformanceStats fields.
+//
+// Updates protos in `tasks` in-place.
+func (f *PerformanceStatsFetcher) Finish(tasks []*apipb.TaskResultResponse) error {
+	f.fetcher.Wait()
+	for _, task := range tasks {
+		switch stat, err := f.fetcher.Get(task); {
+		case errors.Is(err, ErrNoSuchFetchOperation):
+			// Didn't even try to fetch it, e.g. the task is pending, this is fine.
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			// The task has no stats attached, this is fine.
+		case err != nil:
+			return errors.Annotate(err, "fetching stats of %q", task.TaskId).Err()
+		default:
+			if task.PerformanceStats, err = stat.ToProto(); err != nil {
+				return errors.Annotate(err, "processing stats of %q", task.TaskId).Err()
+			}
+		}
+	}
+	return nil
 }

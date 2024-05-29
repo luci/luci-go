@@ -121,13 +121,21 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		panic("impossible, already checked")
 	}
 
-	// TODO: Handle req.IncludePerformanceStats.
+	var stats *model.PerformanceStatsFetcher
+	if req.IncludePerformanceStats {
+		stats = model.NewPerformanceStatsFetcher(ctx)
+		defer stats.Close()
+	}
 
 	out := &apipb.TaskListResponse{}
 
 	dscursor = nil
 	err = datastore.Run(ctx, q, func(task *model.TaskRunResult, cb datastore.CursorCB) error {
-		out.Items = append(out.Items, task.ToProto())
+		taskpb := task.ToProto()
+		if stats != nil {
+			stats.Fetch(ctx, taskpb, task)
+		}
+		out.Items = append(out.Items, taskpb)
 		if len(out.Items) == int(req.Limit) {
 			var err error
 			if dscursor, err = cb(); err != nil {
@@ -141,11 +149,17 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		logging.Errorf(ctx, "Error querying TaskRunResult for %q: %s", req.BotId, err)
 		return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
 	}
-
 	if dscursor != nil {
 		out.Cursor, err = cursor.EncodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_TASKS, dscursor)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	if stats != nil {
+		if err := stats.Finish(out.Items); err != nil {
+			logging.Errorf(ctx, "Error fetching PerformanceStats: %s", err)
+			return nil, status.Errorf(codes.Internal, "error fetching performance stats")
 		}
 	}
 

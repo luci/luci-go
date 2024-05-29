@@ -302,22 +302,39 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 		}
 		taskCounter++
 		var tryNumber datastore.Nullable[int64, datastore.Indexed]
+		var dedupedFrom string
 		if dedup {
 			tryNumber = datastore.NewIndexedNullable[int64](0)
+			dupKey, err := model.TimestampToRequestKey(ctx, TestTime.Add(-time.Hour), taskCounter)
+			if err != nil {
+				panic(err)
+			}
+			dedupedFrom = model.RequestKeyToTaskID(
+				dupKey, // doesn't really exist, but it is not a problem for tests
+				model.AsRunResult,
+			)
 		}
-		err = datastore.Put(ctx, &model.TaskResultSummary{
-			TaskResultCommon: model.TaskResultCommon{
-				State:         state,
-				BotDimensions: map[string][]string{"payload": {fmt.Sprintf("%s-%s", state, ts)}},
-				Started:       datastore.NewIndexedNullable(TestTime.Add(ts)),
-				Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
-				Failure:       failure,
+		err = datastore.Put(ctx,
+			&model.TaskResultSummary{
+				TaskResultCommon: model.TaskResultCommon{
+					State:         state,
+					BotDimensions: map[string][]string{"payload": {fmt.Sprintf("%s-%s", state, ts)}},
+					Started:       datastore.NewIndexedNullable(TestTime.Add(ts)),
+					Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
+					Failure:       failure,
+				},
+				Key:         model.TaskResultSummaryKey(ctx, reqKey),
+				RequestName: name,
+				Tags:        tags,
+				TryNumber:   tryNumber,
+				DedupedFrom: dedupedFrom,
 			},
-			Key:         model.TaskResultSummaryKey(ctx, reqKey),
-			RequestName: name,
-			Tags:        tags,
-			TryNumber:   tryNumber,
-		})
+			// Note: this is actually ignored for tasks that didn't run at all.
+			&model.PerformanceStats{
+				Key:             model.PerformanceStatsKey(ctx, reqKey),
+				BotOverheadSecs: 123.0,
+			},
+		)
 		if err != nil {
 			panic(err)
 		}

@@ -60,16 +60,22 @@ func TestListBotTasks(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		err = datastore.Put(ctx, &model.TaskRunResult{
-			TaskResultCommon: model.TaskResultCommon{
-				State:         state,
-				BotDimensions: map[string][]string{"payload": {fmt.Sprintf("%s-%s", state, ts)}},
-				Started:       datastore.NewIndexedNullable(TestTime.Add(ts)),
-				Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
+		err = datastore.Put(ctx,
+			&model.TaskRunResult{
+				TaskResultCommon: model.TaskResultCommon{
+					State:         state,
+					BotDimensions: map[string][]string{"payload": {fmt.Sprintf("%s-%s", state, ts)}},
+					Started:       datastore.NewIndexedNullable(TestTime.Add(ts)),
+					Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
+				},
+				Key:   model.TaskRunResultKey(ctx, reqKey),
+				BotID: botID,
 			},
-			Key:   model.TaskRunResultKey(ctx, reqKey),
-			BotID: botID,
-		})
+			&model.PerformanceStats{
+				Key:             model.PerformanceStatsKey(ctx, reqKey),
+				BotOverheadSecs: 123.0,
+			},
+		)
 		if err != nil {
 			panic(err)
 		}
@@ -358,5 +364,36 @@ func TestListBotTasks(t *testing.T) {
 				"COMPLETED-2s",
 			})
 		})
+	})
+
+	Convey("Performance stats included", t, func() {
+		countTasksWithPerf := func(tasks []*apipb.TaskResultResponse) int {
+			tasksWithPerf := 0
+			for _, task := range tasks {
+				if task.PerformanceStats != nil {
+					So(task.PerformanceStats.BotOverhead, ShouldEqual, float32(123.0))
+					tasksWithPerf++
+				}
+			}
+			return tasksWithPerf
+		}
+
+		resp, err := call(&apipb.BotTasksRequest{
+			BotId:                   botID,
+			State:                   apipb.StateQuery_QUERY_ALL,
+			IncludePerformanceStats: true,
+		})
+		So(err, ShouldBeNil)
+		// All tasks have performance stats (since they ran on the bot).
+		So(countTasksWithPerf(resp.Items), ShouldEqual, len(resp.Items))
+
+		resp, err = call(&apipb.BotTasksRequest{
+			BotId:                   botID,
+			State:                   apipb.StateQuery_QUERY_ALL,
+			IncludePerformanceStats: false,
+		})
+		So(err, ShouldBeNil)
+		// All performance stats are omitted if IncludePerformanceStats is false.
+		So(countTasksWithPerf(resp.Items), ShouldEqual, 0)
 	})
 }

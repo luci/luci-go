@@ -160,6 +160,55 @@ func TestListTasks(t *testing.T) {
 		})
 	})
 
+	Convey("Performance stats included", t, func() {
+		tasksWithPerf := func(tasks []*apipb.TaskResultResponse) []string {
+			var tasksWithPerf []string
+			for _, task := range tasks {
+				if task.PerformanceStats != nil {
+					So(task.PerformanceStats.BotOverhead, ShouldEqual, float32(123.0))
+					tasksWithPerf = append(tasksWithPerf, task.Name)
+				}
+			}
+			return tasksWithPerf
+		}
+
+		resp, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+			State:                   apipb.StateQuery_QUERY_ALL,
+			Start:                   startTS,
+			End:                     endTS,
+			IncludePerformanceStats: true,
+		})
+		So(err, ShouldBeNil)
+		// Only tasks that ran on the bot have perf stats.
+		So(tasksWithPerf(resp.Items), ShouldResemble, []string{
+			"clienterror-2",
+			"killed-2",
+			"timeout-2",
+			"failure-2",
+			"success-2",
+			"clienterror-1",
+			"killed-1",
+			"timeout-1",
+			"failure-1",
+			"success-1",
+			"clienterror-0",
+			"killed-0",
+			"timeout-0",
+			"failure-0",
+			"success-0",
+		})
+
+		resp, err = callAsAdmin(&apipb.TasksWithPerfRequest{
+			State:                   apipb.StateQuery_QUERY_ALL,
+			Start:                   startTS,
+			End:                     endTS,
+			IncludePerformanceStats: false,
+		})
+		So(err, ShouldBeNil)
+		// All performance stats are omitted if IncludePerformanceStats is false.
+		So(tasksWithPerf(resp.Items), ShouldResemble, []string(nil))
+	})
+
 	Convey("Filtering", t, func() {
 		endRange := endTS
 

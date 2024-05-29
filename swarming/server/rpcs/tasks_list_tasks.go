@@ -59,13 +59,21 @@ func (srv *TasksServer) ListTasks(ctx context.Context, req *apipb.TasksWithPerfR
 		return &apipb.TaskListResponse{Now: timestamppb.New(clock.Now(ctx))}, nil
 	}
 
-	// TODO: Handle req.IncludePerformanceStats.
+	var stats *model.PerformanceStatsFetcher
+	if req.IncludePerformanceStats {
+		stats = model.NewPerformanceStatsFetcher(ctx)
+		defer stats.Close()
+	}
 
 	out := &apipb.TaskListResponse{}
 
 	var dscursor *cursorpb.TasksCursor
 	err = datastore.RunMulti(ctx, queries, func(task *model.TaskResultSummary) error {
-		out.Items = append(out.Items, task.ToProto())
+		taskpb := task.ToProto()
+		if stats != nil {
+			stats.Fetch(ctx, taskpb, task)
+		}
+		out.Items = append(out.Items, taskpb)
 		if len(out.Items) == int(req.Limit) {
 			dscursor = &cursorpb.TasksCursor{LastTaskRequestEntityId: task.TaskRequestKey().IntID()}
 			return datastore.Stop
@@ -80,6 +88,13 @@ func (srv *TasksServer) ListTasks(ctx context.Context, req *apipb.TasksWithPerfR
 		out.Cursor, err = cursor.Encode(ctx, cursorpb.RequestKind_LIST_TASKS, dscursor)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	if stats != nil {
+		if err := stats.Finish(out.Items); err != nil {
+			logging.Errorf(ctx, "Error fetching PerformanceStats: %s", err)
+			return nil, status.Errorf(codes.Internal, "error fetching performance stats")
 		}
 	}
 
