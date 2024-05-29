@@ -81,6 +81,9 @@ func newUploadTask(name string, art *sinkpb.Artifact, testStatus pb.TestStatus) 
 // if necessary.
 func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 	invID, tID, rID, aID, err := pbutil.ParseArtifactName(t.artName)
+	if err != nil {
+		return nil, err
+	}
 	req := &pb.CreateArtifactRequest{
 		Artifact: &pb.Artifact{
 			ArtifactId:  aID,
@@ -94,10 +97,6 @@ func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 
 	// parent
 	switch {
-	case err != nil:
-		// This should not happen.
-		// uploadTask should be created with validated artifacts only.
-		panic(fmt.Sprintf("invalid uploadTask.artName %q: %s", t.artName, err))
 	case tID == "":
 		// Invocation-level artifact
 		req.Parent = pbutil.InvocationName(invID)

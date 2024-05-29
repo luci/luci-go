@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -204,6 +205,16 @@ func TestUploadTask(t *testing.T) {
 			req, err := ut.CreateRequest()
 			So(err, ShouldBeNil)
 			So(req.Artifact.ContentType, ShouldEqual, "text/plain")
+		})
+
+		Convey("Fails when the artifact name is too long", func() {
+			artifactID := strings.Repeat("a", 600)
+			name := "invocations/inv/tests/t1/results/r1/artifacts/" + artifactID
+			ut, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
+			So(err, ShouldBeNil)
+
+			_, err = ut.CreateRequest()
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("works", func() {
