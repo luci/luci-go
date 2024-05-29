@@ -10,6 +10,7 @@ package bigquery;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/gce/api/config/v1/config.proto";
+import "go.chromium.org/luci/gce/api/quotas/v1/quotas.proto";
 
 // Configured count of a prefix.
 message ConfiguredCount {
@@ -76,4 +77,13 @@ message MachineTypeRow {
 
     // Allowed count of disks.
     repeated int64 disks = 6;
+}
+
+// The BigQuery table row for an AssignedQuota.
+message AssignedQuotaRow {
+    // Ingest time of the row.
+    google.protobuf.Timestamp snapshot_time = 1;
+
+    // The assigned quota.
+    quotas.AssignedQuota assigned_quota = 2;
 }
