@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, cleanup, act } from '@testing-library/react';
+import { render, cleanup } from '@testing-library/react';
+import { act } from 'react';
 
 import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
 import { TestHistoryService } from '@/common/services/luci_analysis';

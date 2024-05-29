@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import fetchMockJest from 'fetch-mock-jest';
+import { act } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import {

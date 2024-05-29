@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { act } from 'react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';

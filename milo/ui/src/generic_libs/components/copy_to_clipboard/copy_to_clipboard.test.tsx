@@ -14,7 +14,7 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import copy from 'copy-to-clipboard';
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 
 import { CopyToClipboard } from './copy_to_clipboard';
 

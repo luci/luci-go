@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
+import { act } from 'react';
 
 import { OutputBuild } from '@/build/types';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';

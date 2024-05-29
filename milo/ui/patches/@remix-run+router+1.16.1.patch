@@ -1,0 +1,56 @@
+diff --git a/node_modules/@remix-run/router/dist/router.js b/node_modules/@remix-run/router/dist/router.js
+index d70796d..35172ba 100644
+--- a/node_modules/@remix-run/router/dist/router.js
++++ b/node_modules/@remix-run/router/dist/router.js
+@@ -533,8 +533,20 @@ function matchRoutes(routes, locationArg, basename) {
+     // encoded here but there also shouldn't be anything to decode so this
+     // should be a safe operation.  This avoids needing matchRoutes to be
+     // history-aware.
+-    let decoded = decodePath(pathname);
+-    matches = matchRouteBranch(branches[i], decoded);
++
++    // PATCH by weiweilin:
++    // Decoding the pathname here means we may not be able to recover the raw
++    // pathname. This is especially important for splash matcher ('*') because
++    // otherwise we won't be able to tell whether the different between
++    // 'prefix/a/b' and 'prefix/a%2fb' when matching against 'prefix/*'.
++    // Also it causes '%252F' to be double decoded.
++    // See https://github.com/remix-run/react-router/issues/11293.
++    //
++    // Decoding here allows us to match against the unencoded paths in the route
++    // definitions but the benefit is very small (one could just encode the
++    // route definition). Because this is technically a feature removal, not
++    // sure if the react-router team will ever accept this change.
++    matches = matchRouteBranch(branches[i], pathname);
+   }
+   return matches;
+ }
+@@ -792,8 +804,27 @@ function matchPath(pattern, pathname) {
+     const value = captureGroups[index];
+     if (isOptional && !value) {
+       memo[paramName] = undefined;
++      // PATCH by weiweilin:
++      // To be consistent with the raw value property below.
++      memo['__luci_ui__-raw-'+paramName] = undefined;
+     } else {
+-      memo[paramName] = (value || "").replace(/%2F/g, "/");
++      // PATCH by weiweilin:
++      // Since we no longer decode the pathname when maching, we need to
++      // decode the param here to preserve the original behavior.
++      //
++      // Previously `.replace(/%2F/g, "/")` is used to decode the final
++      // undecoded character by `decodePath`. This is an attempt to decode all
++      // characters eaxctly once. We no longer need it. And it doesn't work
++      // anyway since `decodePath("%252F").replace(/%2F/g, "/")` will cause
++      // "%252F" to be double decoded.
++      // See https://github.com/remix-run/react-router/issues/11293.
++      //
++      // Also make the raw value available. This is especially important for
++      // splash matcher ('*') because otherwise we won't be able to tell whether
++      // the different between 'prefix/a/b' and 'prefix/a%2fb' when matching
++      // against 'prefix/*'.
++      memo[paramName] = value ? decodeURIComponent(value) : "";
++      memo['__luci_ui__-raw-' + paramName] = value || "";
+     }
+     return memo;
+   }, {});

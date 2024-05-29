@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { DateTime, Duration } from 'luxon';
+import { act } from 'react';
 
 import './relative_timestamp';
 import { RelativeTimestamp } from './relative_timestamp';

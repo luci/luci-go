@@ -12,14 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  render,
-  screen,
-  fireEvent,
-  act,
-  cleanup,
-} from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { DateTime } from 'luxon';
+import { act } from 'react';
 
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import {

@@ -12,13 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act } from 'react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { UiPage } from '@/common/constants/view';

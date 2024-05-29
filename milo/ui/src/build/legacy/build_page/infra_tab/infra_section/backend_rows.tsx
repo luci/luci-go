@@ -35,14 +35,12 @@ export function BackendRows({ backend }: BackendRowsProps) {
         json: task.details,
         path: '$.bot_dimensions.id[0]@string()',
         wrap: false,
-        preventEval: true,
       })
     : undefined;
   const serviceAccount = jsonpath<string | undefined>({
     json: backend.config,
     path: '$.service_account@string()',
     wrap: false,
-    preventEval: true,
   });
 
   return (

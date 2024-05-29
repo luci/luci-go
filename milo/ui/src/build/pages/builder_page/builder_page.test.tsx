@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { act } from 'react';
 
 import { CacheOption } from '@/generic_libs/tools/cached_fn';
 import { BuilderItem } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';

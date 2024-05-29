@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { createContext, useContext, useState } from 'react';
+import { act, createContext, useContext, useState } from 'react';
 
 import { ReactLitBridge } from './bridge';
 import { ReactLitElement } from './react_lit_element';

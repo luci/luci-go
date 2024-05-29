@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import fetchMockJest from 'fetch-mock-jest';
+import { act } from 'react';
 
 import { OutputClusterEntry } from '@/analysis/types';
 import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
@@ -131,6 +132,7 @@ describe('<ResultBasicInfo />', () => {
     renderBasicInfo(failedResult);
     await act(() => jest.runAllTimersAsync());
 
+    await act(() => jest.runAllTimersAsync());
     await screen.findByText('Details');
 
     expect(screen.getByText('56s')).toBeInTheDocument();

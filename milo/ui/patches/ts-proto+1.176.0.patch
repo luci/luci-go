@@ -1,0 +1,72 @@
+diff --git a/node_modules/ts-proto/build/generate-services.js b/node_modules/ts-proto/build/generate-services.js
+index 3c83aba..b1e4f02 100644
+--- a/node_modules/ts-proto/build/generate-services.js
++++ b/node_modules/ts-proto/build/generate-services.js
+@@ -99,7 +99,10 @@ function generateRegularRpcMethod(ctx, methodDesc) {
+       return Promise.reject(error);
+     `;
+     }
+-    let encode = (0, ts_poet_1.code) `${rawInputType}.encode(request).finish()`;
++    // PATCH by weiweilin:
++    // Use JSON encoding to make debugging the RPC calls in the network tab
++    // easier.
++    let encode = (0, ts_poet_1.code) `${rawInputType}.toJSON(request)`;
+     let beforeRequest;
+     if (options.rpcBeforeRequest && !methodDesc.clientStreaming) {
+         beforeRequest = generateBeforeRequest(methodDesc.name);
+@@ -107,10 +110,13 @@ function generateRegularRpcMethod(ctx, methodDesc) {
+     else if (methodDesc.clientStreaming && options.rpcBeforeRequest) {
+         encode = (0, ts_poet_1.code) `{const encodedRequest = ${encode}; ${generateBeforeRequest(methodDesc.name, "encodedRequest")}; return encodedRequest}`;
+     }
+-    let decode = (0, ts_poet_1.code) `${rawOutputType}.decode(${Reader}.create(data))`;
++    // PATCH by weiweilin:
++    // Use JSON encoding to make debugging the RPC calls in the network tab
++    // easier.
++    let decode = (0, ts_poet_1.code) `${rawOutputType}.fromJSON(data)`;
+     if (options.rpcAfterResponse) {
+         decode = (0, ts_poet_1.code) `
+-      const response = ${rawOutputType}.decode(${Reader}.create(data));
++      const response = ${rawOutputType}.fromJSON(data);
+       if (this.rpc.afterResponse) {
+         this.rpc.afterResponse(this.service, "${methodDesc.name}", response);
+       }
+@@ -211,6 +217,9 @@ function generateServiceClientImpl(ctx, fileDesc, serviceDesc) {
+     chunks.push((0, ts_poet_1.code) `export class ${name}ClientImpl${t} implements ${(0, ts_poet_1.def)(i)} {`);
+     // Create the constructor(rpc: Rpc)
+     const rpcType = options.context ? "Rpc<Context>" : "Rpc";
++    // PATCH by weiweilin:
++    // Expose the default service name so we can use it to construct cache keys.
++    chunks.push((0, ts_poet_1.code) `static readonly DEFAULT_SERVICE = ${serviceNameConst};`);
+     chunks.push((0, ts_poet_1.code) `private readonly rpc: ${rpcType};`);
+     chunks.push((0, ts_poet_1.code) `private readonly service: string;`);
+     chunks.push((0, ts_poet_1.code) `constructor(rpc: ${rpcType}, opts?: {service?: string}) {`);
+@@ -295,12 +304,16 @@ function generateCachingRpcMethod(ctx, fileDesc, serviceDesc, methodDesc) {
+     const outputType = (0, types_1.responseType)(ctx, methodDesc);
+     const uniqueIdentifier = `${(0, utils_1.maybePrefixPackage)(fileDesc, serviceDesc.name)}.${methodDesc.name}`;
+     const Reader = (0, utils_1.impFile)(ctx.options, "Reader@protobufjs/minimal");
++
++    // PATCH by weiweilin:
++    // Use JSON encoding to make debugging the RPC calls in the network tab
++    // easier.
+     const lambda = (0, ts_poet_1.code) `
+     (requests) => {
+       const responses = requests.map(async request => {
+-        const data = ${inputType}.encode(request).finish()
++        const data = ${inputType}.toJSON(request);
+         const response = await this.rpc.request(ctx, "${(0, utils_1.maybePrefixPackage)(fileDesc, serviceDesc.name)}", "${methodDesc.name}", data);
+-        return ${outputType}.decode(${Reader}.create(response));
++        return ${outputType}.fromJSON(response);
+       });
+       return Promise.all(responses);
+     }
+@@ -340,7 +353,9 @@ function generateRpcType(ctx, hasStreamingMethods) {
+     const maybeContextParam = options.context ? "ctx: Context," : "";
+     const maybeMetadataParam = options.metadataType || options.addGrpcMetadata ? `metadata?: ${metadataType},` : "";
+     const maybeAbortSignalParam = options.useAbortSignal ? "abortSignal?: AbortSignal," : "";
+-    const methods = [[(0, ts_poet_1.code) `request`, (0, ts_poet_1.code) `Uint8Array`, (0, ts_poet_1.code) `Promise<Uint8Array>`]];
++    // PATCH by weiweilin:
++    // Change the type signature to support JSON encoding.
++    const methods = [[(0, ts_poet_1.code) `request`, (0, ts_poet_1.code) `unknown`, (0, ts_poet_1.code) `Promise<unknown>`]];
+     const additionalMethods = [];
+     if (options.rpcBeforeRequest) {
+         additionalMethods.push((0, ts_poet_1.code) `beforeRequest?<T extends { [k in keyof T]: unknown }>(service: string, method: string, request: T): void;`);

@@ -20,6 +20,7 @@ import {
   applySnapshot,
   getEnv,
   getSnapshot,
+  hasEnv,
   Instance,
   SnapshotIn,
   SnapshotOut,
@@ -65,7 +66,7 @@ export const UserConfig = types
       }
     },
     enableCaching() {
-      const env: UserConfigEnv = getEnv(self) || {};
+      const env: UserConfigEnv = hasEnv(self) ? getEnv(self) : {};
       const storage = env.storage || window.localStorage;
       const ttl = env.transientKeysTTL || DEFAULT_TRANSIENT_KEY_TTL;
 

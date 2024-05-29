@@ -56,7 +56,6 @@ function propertiesToDisplay(
       json: testMetadata.properties,
       path: `$.${item.path}@string()`,
       wrap: false,
-      preventEval: true,
     });
     if (value && typeof value === 'string') {
       pairs.push({ key: item.displayName, value });

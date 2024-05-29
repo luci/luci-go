@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, cleanup, render } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { DateTime } from 'luxon';
 import { destroy } from 'mobx-state-tree';
+import { act } from 'react';
 
 import * as authStateLib from '@/common/api/auth_state';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { cleanup, render, screen } from '@testing-library/react';
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import {

@@ -83,7 +83,10 @@ export function ChangepointTable({
     return getCriticalVariantKeys(
       testVariantBranches
         .map((tvb) => tvb.variant)
-        .filter((v) => v !== undefined),
+        .filter((v) => v !== undefined)
+        // Do a `.map()` for type casting. In a future TypeScript version, tsc
+        // will be able to infer this.
+        .map((v) => v!),
     );
   }, [testVariantBranches]);
 
