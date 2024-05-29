@@ -69,6 +69,7 @@ type CommitWithVerdicts struct {
 	// Returns at most 20 test verdicts at this commit.
 	TestVerdicts []*TestVerdict
 }
+
 type TestVerdict struct {
 	TestID                string
 	VariantHash           string

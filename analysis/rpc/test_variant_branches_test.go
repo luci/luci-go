@@ -775,32 +775,14 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						},
 					},
 				}
-				makeCommit := func(i int32) *git.Commit {
-					return &git.Commit{
-						Id:      fmt.Sprintf("id %d", i),
-						Tree:    "tree",
-						Parents: []string{},
-						Author: &git.Commit_User{
-							Name:  "userX",
-							Email: "userx@google.com",
-							Time:  timestamppb.New(time.Unix(1000, 0)),
-						},
-						Committer: &git.Commit_User{
-							Name:  "userY",
-							Email: "usery@google.com",
-							Time:  timestamppb.New(time.Unix(1100, 0)),
-						},
-						Message: fmt.Sprintf("message %d", i),
-					}
-				}
-				ctx := gitiles.UseFakeClient(ctx, makeCommit)
+				ctx := gitiles.UseFakeClient(ctx, makeFakeCommit)
 
 				res, err := server.QuerySourcePositions(ctx, req)
 				So(err, ShouldBeNil)
 				cwvs := []*pb.SourcePosition{}
 				for i := req.StartSourcePosition; i > req.StartSourcePosition-int64(req.PageSize); i-- {
 					cwv := &pb.SourcePosition{
-						Commit:   makeCommit(int32(i - req.StartSourcePosition + int64(req.PageSize))),
+						Commit:   makeFakeCommit(int32(i - req.StartSourcePosition + int64(req.PageSize))),
 						Position: i,
 					}
 					// Attach verdicts.
@@ -832,6 +814,16 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				IdentityGroups: []string{
 					"googlers",
 					"luci-analysis-access",
+				},
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "testproject:realm",
+						Permission: rdbperms.PermListTestResults,
+					},
+					{
+						Realm:      "testproject:realm",
+						Permission: rdbperms.PermListTestExonerations,
+					},
 				},
 			}
 			ctx = auth.WithState(ctx, authState)
@@ -872,6 +864,13 @@ func TestTestVariantBranchesServer(t *testing.T) {
 
 				res, err := server.QueryChangepointAIAnalysis(ctx, req)
 				So(err, ShouldBeRPCPermissionDenied, "not a member of googlers")
+				So(res, ShouldBeNil)
+			})
+			Convey("permission denied - no permissions to list test results", func() {
+				authState.IdentityPermissions = nil
+
+				res, err := server.QueryChangepointAIAnalysis(ctx, req)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project "testproject"`)
 				So(res, ShouldBeNil)
 			})
 			Convey("invalid request", func() {
@@ -927,12 +926,43 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				So(err, ShouldBeRPCNotFound, "test variant branch changepoint not found")
 			})
 			Convey("valid", func() {
+				ctx = gitiles.UseFakeClient(ctx, makeFakeCommit)
+				tvc.SourceVerdictAfterPosition = &testverdicts.SourceVerdict{
+					Position:     110,
+					CommitHash:   "0011223344556677889900112233445566778899",
+					Variant:      `{"key":"value"}`,
+					TestLocation: "/path/to/test",
+					Ref: &testverdicts.Ref{
+						Gitiles: &testverdicts.Gitiles{
+							Host:    bigquery.NullString{StringVal: "myproject.googlesource.com", Valid: true},
+							Project: bigquery.NullString{StringVal: "project", Valid: true},
+							Ref:     bigquery.NullString{StringVal: "refs/heads/main", Valid: true},
+						},
+					},
+					Results: []testverdicts.TestResult{
+						{
+							ParentInvocationID:   "some-inv",
+							ResultID:             "some-result",
+							Expected:             false,
+							Status:               "FAIL",
+							PrimaryFailureReason: bigquery.NullString{StringVal: "[blah.cc(55)] some failure reason", Valid: true},
+						},
+					},
+				}
+
 				sorbetClient.Response.Candidate = "Test response."
 
 				rsp, err := server.QueryChangepointAIAnalysis(ctx, req)
 				So(err, ShouldBeNil)
 
 				So(rsp.Prompt, ShouldNotBeEmpty)
+				So(rsp.Prompt, ShouldContainSubstring, `testproject`)
+				So(rsp.Prompt, ShouldContainSubstring, `mytest`)
+				So(rsp.Prompt, ShouldContainSubstring, `{"key":"value"}`)
+				So(rsp.Prompt, ShouldContainSubstring, "/path/to/test")
+				So(rsp.Prompt, ShouldContainSubstring, "[blah.cc(55)] some failure reason")
+				So(rsp.Prompt, ShouldContainSubstring, "105")
+				So(rsp.Prompt, ShouldContainSubstring, "95")
 				So(rsp.AnalysisMarkdown, ShouldEqual, "Test response.")
 			})
 		})
@@ -1110,6 +1140,42 @@ func (b *testVariantBranchBuilder) buildProto() *pb.TestVariantBranch {
 					FlakyVerdicts:      0,
 					TotalVerdicts:      2,
 				},
+			},
+		},
+	}
+}
+
+func makeFakeCommit(i int32) *git.Commit {
+	return &git.Commit{
+		Id:      fmt.Sprintf("id %d", i),
+		Tree:    "tree",
+		Parents: []string{},
+		Author: &git.Commit_User{
+			Name:  "userX",
+			Email: "userx@google.com",
+			Time:  timestamppb.New(time.Unix(1000, 0)),
+		},
+		Committer: &git.Commit_User{
+			Name:  "userY",
+			Email: "usery@google.com",
+			Time:  timestamppb.New(time.Unix(1100, 0)),
+		},
+		Message: fmt.Sprintf("message %d", i),
+		TreeDiff: []*git.Commit_TreeDiff{
+			{
+				Type:    git.Commit_TreeDiff_DELETE,
+				OldPath: "/deleted/path",
+				NewPath: "/dev/null",
+			},
+			{
+				Type:    git.Commit_TreeDiff_MODIFY,
+				OldPath: "/modified/path",
+				NewPath: "/modified/path",
+			},
+			{
+				Type:    git.Commit_TreeDiff_ADD,
+				NewPath: "/dev/null",
+				OldPath: "/new/path",
 			},
 		},
 	}

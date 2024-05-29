@@ -44,10 +44,16 @@ func (fc *FakeClient) Insert(ctx context.Context, rows []*bqp.TestVerdictRow) er
 // FakeReadClient represents a fake implementation of the client to read test verdicts
 // from BigQuery, for testing.
 type FakeReadClient struct {
-	CommitsWithVerdicts []*CommitWithVerdicts
+	CommitsWithVerdicts        []*CommitWithVerdicts
+	SourceVerdictAfterPosition *SourceVerdict
 }
 
 // ReadTestVerdictsPerSourcePosition reads test verdicts per source position.
 func (f *FakeReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, options ReadTestVerdictsPerSourcePositionOptions) ([]*CommitWithVerdicts, error) {
 	return f.CommitsWithVerdicts, nil
+}
+
+// ReadTestVerdictAfterPosition reads the source veridct at or after the given source position.
+func (f *FakeReadClient) ReadTestVerdictAfterPosition(ctx context.Context, options ReadVerdictAtOrAfterPositionOptions) (*SourceVerdict, error) {
+	return f.SourceVerdictAfterPosition, nil
 }

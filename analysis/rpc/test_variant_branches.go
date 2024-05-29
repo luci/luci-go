@@ -47,13 +47,14 @@ import (
 
 type TestVerdictClient interface {
 	ReadTestVerdictsPerSourcePosition(ctx context.Context, options testverdicts.ReadTestVerdictsPerSourcePositionOptions) ([]*testverdicts.CommitWithVerdicts, error)
+	ReadTestVerdictAfterPosition(ctx context.Context, options testverdicts.ReadVerdictAtOrAfterPositionOptions) (*testverdicts.SourceVerdict, error)
 }
 
 // NewTestVariantBranchesServer returns a new pb.TestVariantBranchesServer.
 func NewTestVariantBranchesServer(tvc TestVerdictClient, sc sorbet.GenerateClient) pb.TestVariantBranchesServer {
 	return &pb.DecoratedTestVariantBranches{
 		Prelude:  checkAllowedPrelude,
-		Service:  &testVariantBranchesServer{testVerdictClient: tvc, sorbetAnalyzer: sorbet.NewAnalyzer(sc)},
+		Service:  &testVariantBranchesServer{testVerdictClient: tvc, sorbetAnalyzer: sorbet.NewAnalyzer(sc, tvc)},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
@@ -615,6 +616,10 @@ func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Conte
 	if err := validateQueryChangepointAIAnalysisRequest(req); err != nil {
 		return nil, invalidArgumentError(err)
 	}
+	allowedRealms, err := perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)
+	if err != nil {
+		return nil, err
+	}
 
 	refHashBytes, err := hex.DecodeString(req.RefHash)
 	if err != nil {
@@ -628,6 +633,7 @@ func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Conte
 		VariantHash:         req.VariantHash,
 		RefHash:             testvariantbranch.RefHash(refHashBytes),
 		StartSourcePosition: req.StartSourcePosition,
+		AllowedRealms:       allowedRealms,
 	}
 	response, err := s.sorbetAnalyzer.Analyze(ctx, request)
 	if err != nil {

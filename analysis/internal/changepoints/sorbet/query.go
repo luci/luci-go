@@ -16,17 +16,25 @@ package sorbet
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math"
+	"strings"
+	"time"
+
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/gitiles"
+	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/git"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -39,15 +47,22 @@ type GenerateClient interface {
 	Generate(ctx context.Context, prompt string) (GenerateResponse, error)
 }
 
+// TestVerdictClient provides access to test verdicts.
+type TestVerdictClient interface {
+	ReadTestVerdictAfterPosition(ctx context.Context, options testverdicts.ReadVerdictAtOrAfterPositionOptions) (*testverdicts.SourceVerdict, error)
+}
+
 // Analyzer provides analysis on the possible culprits of a changepoint.
 type Analyzer struct {
-	client GenerateClient
+	generateClient    GenerateClient
+	testVerdictClient TestVerdictClient
 }
 
 // NewAnalyzer initialises a new Analyzer.
-func NewAnalyzer(client GenerateClient) *Analyzer {
+func NewAnalyzer(gc GenerateClient, tvc TestVerdictClient) *Analyzer {
 	return &Analyzer{
-		client: client,
+		generateClient:    gc,
+		testVerdictClient: tvc,
 	}
 }
 
@@ -59,6 +74,8 @@ type AnalysisRequest struct {
 	VariantHash         string
 	RefHash             testvariantbranch.RefHash
 	StartSourcePosition int64
+	// The realms the user is allowed to query test results for in the project.
+	AllowedRealms []string
 }
 
 type AnalysisResponse struct {
@@ -73,20 +90,30 @@ type AnalysisResponse struct {
 func (a *Analyzer) Analyze(ctx context.Context, request AnalysisRequest) (AnalysisResponse, error) {
 	cp, err := fetchChangepoint(ctx, request)
 	if err != nil {
-		return AnalysisResponse{}, err
+		return AnalysisResponse{}, errors.Annotate(err, "fetch changepoint").Err()
 	}
 	logging.Debugf(ctx, "The changepoint matched to the request has a nominal range of [%d, %d] and 99th percentile range of [%d, %d].",
 		cp.NominalEndPreviousSegment, cp.NominalStartNextSegment, cp.StartLowerBound99th, cp.StartUpperBound99th)
 
-	start, end := identifySearchBounds(cp, MaxSuspectCLs)
-	logging.Debugf(ctx, "The search bounds were identified to be commit positions [%d, %d] (%d positions).", start, end, end-start+1)
+	bounds := identifySearchBounds(cp, MaxSuspectCLs)
+	logging.Debugf(ctx, "The search bounds were identified to be commit positions [%d, %d] (%d positions).", bounds.startPosition, bounds.endPosition, bounds.endPosition-bounds.startPosition+1)
 
-	// TODO: Fetch more data relevant to the analysis and include it in the prompt.
-	prompt := fmt.Sprintf("Your job is to help the software engineer try to identify which code change caused a test to start failing. "+
-		"The software project is %s.\n\n"+
-		"The failing test is %q.\n\n", request.Project, request.TestID)
+	verdict, err := a.querySourceVerdictAtOrAfterEnd(ctx, request, bounds)
+	if err != nil {
+		return AnalysisResponse{}, errors.Annotate(err, "query verdict at or after end of searched range").Err()
+	}
+	logging.Debugf(ctx, "Retrieved source verdict at position %d.", verdict.Position)
 
-	result, err := a.client.Generate(ctx, prompt)
+	cls, err := queryChangelists(ctx, request, verdict, bounds)
+	if err != nil {
+		return AnalysisResponse{}, errors.Annotate(err, "query changelists").Err()
+	}
+	logging.Debugf(ctx, "Retrieved %d changelists.", len(cls))
+
+	prompt := preparePrompt(request, verdict, cls)
+
+	logging.Debugf(ctx, "Generating AI response...")
+	result, err := a.generateClient.Generate(ctx, prompt)
 	if err != nil {
 		return AnalysisResponse{}, errors.Annotate(err, "generate").Err()
 	}
@@ -100,12 +127,20 @@ func (a *Analyzer) Analyze(ctx context.Context, request AnalysisRequest) (Analys
 	return response, nil
 }
 
-// Changepoint
+// changepoint specifies the location of a changepoint.
 type changepoint struct {
-	StartLowerBound99th       int64
-	StartUpperBound99th       int64
-	NominalStartNextSegment   int64
+	// The lower bound of the 99% confidence interval of the start source position.
+	StartLowerBound99th int64
+	// The upper bound of the 99% confidence interval of the start source position.
+	StartUpperBound99th int64
+	// The nominal start of the new (failing) segment. In case of deterministic
+	// pass -> fail transitions, this is the source position of the first known failure.
+	NominalStartNextSegment int64
+	// The nominal end of the old (passing) segment. In case of deterministic
+	// pass -> fail transitions, this is the source position of the last known pass.
 	NominalEndPreviousSegment int64
+	// The approximate wall-clock time the new failing segment started.
+	ApproxStartHour time.Time
 }
 
 // fetchChangepoint fetches the changepoint closest to the given request.
@@ -163,60 +198,208 @@ func fetchChangepoint(ctx context.Context, request AnalysisRequest) (changepoint
 		StartUpperBound99th:       nextSegment.StartPositionUpperBound_99Th,
 		NominalStartNextSegment:   nextSegment.StartPosition,
 		NominalEndPreviousSegment: previousSegment.EndPosition,
+		ApproxStartHour:           nextSegment.StartHour.AsTime(),
 	}
 
 	return result, nil
 }
 
+type searchBounds struct {
+	// The source position of the first suspected culprit CL.
+	startPosition int64
+	// The source position of the last suspected culprit CL.
+	// endPosition > startPosition.
+	endPosition int64
+	// The minimum partition time to search.
+	startTime time.Time
+	// The maximum partition time to search.
+	endTime time.Time
+}
+
 // identifySearchBounds recommends a range of commit positions to search
 // for the culprit, assuming the search is bounded to at most maxSuspects CLs.
-// The range returned is inclusive.
-func identifySearchBounds(c changepoint, maxSuspects int) (start, end int64) {
-	start = c.StartLowerBound99th
-	end = c.StartUpperBound99th
+// The range returned is inclusive, where end >= start.
+func identifySearchBounds(c changepoint, maxSuspects int) searchBounds {
+	startPos := c.StartLowerBound99th
+	endPos := c.StartUpperBound99th
 
-	if int(end-start+1) <= maxSuspects {
+	// Search +/- 7 days around the approximate time of the changepoint.
+	// If the changepoint is so unclear that more than 7 days of CLs
+	// are suspects, then good luck finding the culprit... in chromium
+	// repo there would be thousands of commits to sift through.
+	startTime := c.ApproxStartHour.Add(-7 * 24 * time.Hour)
+	endTime := c.ApproxStartHour.Add(7 * 24 * time.Hour)
+
+	if int(endPos-startPos+1) <= maxSuspects {
 		// 99% confidence range is satisfactory.
-		return start, end
+		return searchBounds{
+			startPosition: startPos,
+			endPosition:   endPos,
+			startTime:     startTime,
+			endTime:       endTime,
+		}
 	}
 
 	// There are too many suspects.
 	// Focus on the nominal range only (accurate for deterministic regressions only).
-	start = c.NominalEndPreviousSegment + 1
-	end = c.NominalStartNextSegment
+	startPos = c.NominalEndPreviousSegment + 1
+	endPos = c.NominalStartNextSegment
 
-	if int(end-start+1) > maxSuspects {
+	if int(endPos-startPos+1) > maxSuspects {
 		// Still too large. Look at the 50 prior to the start of the
 		// new behaviour.
-		start = end - 50
-		if start < 1 {
-			start = 1
+		startPos = endPos - 50
+		if startPos < 1 {
+			startPos = 1
 		}
 	}
 
-	// If there are available slots for suspects, expand to fill the number of
-	// available suspects, remaining constrained by the 99% confidence
-	// interval (N.B. that range is often assymetric)
-	var alternate bool
-	for int(end-start+1) <= maxSuspects {
-		canAddToStart := start > c.StartLowerBound99th
-		canAddToEnd := end < c.StartUpperBound99th
-		if canAddToStart && canAddToEnd {
-			if alternate {
-				start--
-			} else {
-				end++
-			}
-			alternate = !alternate
-		} else if canAddToStart {
-			start--
-		} else if canAddToEnd {
-			end++
-		} else {
-			// We only entered this path because the 99th range was
-			// too large in and of itself.
-			panic("should be unreachable")
-		}
+	return searchBounds{
+		startPosition: startPos,
+		endPosition:   endPos,
+		startTime:     startTime,
+		endTime:       endTime,
 	}
-	return start, end
+}
+
+type changelist struct {
+	Position int64
+	Commit   *git.Commit
+}
+
+// querySourceVerdictAtOrAfterEnd queries details about the first source verdict
+// at or after the end of the search bounds. By virtue of its position, this
+// verdict should be within the new segment and therefore exhibit
+// the failure reason(s) of that segment.
+//
+// The verdict can also be useful in querying logs from gitiles.
+func (a *Analyzer) querySourceVerdictAtOrAfterEnd(ctx context.Context, req AnalysisRequest, bounds searchBounds) (*testverdicts.SourceVerdict, error) {
+	if bounds.startPosition > bounds.endPosition {
+		panic("bounds end position must be after the start position")
+	}
+
+	// Gitiles log requires us to supply a commit hash to fetch a commit log.
+	// Ideally, if we know the commit hash of the requested endPosition, we can just
+	// call gitiles with that, and page (backwards) through the commit history.
+	//
+	// However, as test verdicts are sparse, we may not have the commit hash for
+	// the given endPosition. Therefore, we need to find the commit which
+	// is the closest to or after the given endPosition.
+	options := testverdicts.ReadVerdictAtOrAfterPositionOptions{
+		Project:            req.Project,
+		TestID:             req.TestID,
+		VariantHash:        req.VariantHash,
+		RefHash:            hex.EncodeToString([]byte(req.RefHash)),
+		AtOrAfterPosition:  bounds.endPosition,
+		PartitionTimeStart: bounds.startTime,
+		PartitionTimeEnd:   bounds.endTime,
+		AllowedRealms:      req.AllowedRealms,
+	}
+	closestAfterCommit, err := a.testVerdictClient.ReadTestVerdictAfterPosition(ctx, options)
+	if err != nil {
+		return nil, errors.Annotate(err, "read test verdict at or after position from BigQuery").Err()
+	}
+	if closestAfterCommit == nil {
+		return nil, appstatus.Errorf(codes.NotFound, "no commit could be located at or after position %v in partition time range %s to %s", bounds.endPosition, bounds.startTime, bounds.endTime)
+	}
+	return closestAfterCommit, nil
+}
+
+func queryChangelists(ctx context.Context, req AnalysisRequest, closestAfterVerdict *testverdicts.SourceVerdict, bounds searchBounds) ([]changelist, error) {
+	// Work out the number of commits to fetch from gitiles.
+	requiredNumCommits := closestAfterVerdict.Position - bounds.startPosition + 1
+	if requiredNumCommits > 10000 {
+		// One gitiles log call returns at most 10000 commits.
+		// It is unlikely that (pagesize + offset) will be greater than 10000, we just throw NotFound here if that happens.
+		return nil, appstatus.Errorf(codes.NotFound, "cannot find relevant commits for position %v because nearest known commit hash is at position %v (>10000 positions away)", bounds.startPosition, closestAfterVerdict.Position)
+	}
+	ref := closestAfterVerdict.Ref
+	// N.B. gitiles host is untrusted user input, but gitiles.NewClient validates we
+	// are not connecting to an arbitrary host on the internet.
+	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String())
+	if err != nil {
+		return nil, errors.Annotate(err, "create gitiles client").Err()
+	}
+	logReq := &gitilespb.LogRequest{
+		Project:    ref.Gitiles.Project.String(),
+		Committish: closestAfterVerdict.CommitHash,
+		PageSize:   int32(requiredNumCommits),
+		TreeDiff:   true,
+	}
+	logRes, err := gitilesClient.Log(ctx, logReq)
+	if err != nil {
+		return nil, errors.Annotate(err, "gitiles log").Err()
+	}
+	// The response from gitiles contains commits from closestAfterVerdict.
+	// Commit at the requested end position is at offset.
+	offset := closestAfterVerdict.Position - bounds.endPosition
+	logs := logRes.Log[offset:]
+
+	var results []changelist
+	for i, commit := range logs {
+		results = append(results, changelist{
+			Position: bounds.endPosition - int64(i),
+			Commit:   commit,
+		})
+	}
+	return results, nil
+}
+
+func preparePrompt(req AnalysisRequest, verdict *testverdicts.SourceVerdict, cls []changelist) string {
+	// TODO: Fetch more data relevant to the analysis and include it in the prompt.
+	var prompt strings.Builder
+	prompt.WriteString("Your job is to help the software engineer try to identify which code change (commit) caused a test to start failing.\n")
+	prompt.WriteString("\n")
+	prompt.WriteString(fmt.Sprintf("The software project is %q.\n", req.Project))
+	prompt.WriteString(fmt.Sprintf("The failing test is %q.\n", req.TestID))
+	prompt.WriteString(fmt.Sprintf("The failing test variant (test configuration) is %s.\n", verdict.Variant))
+	if verdict.TestLocation != "" {
+		prompt.WriteString(fmt.Sprintf("The location of the failing test in the source repository is %s.\n", verdict.TestLocation))
+	}
+	if verdict.Results[0].PrimaryFailureReason.StringVal != "" {
+		prompt.WriteString("The test is failing with the reason:\n")
+		prompt.WriteString("```\n")
+		prompt.WriteString(fmt.Sprintf("%s\n", verdict.Results[0].PrimaryFailureReason.StringVal))
+		prompt.WriteString("```\n")
+	}
+	prompt.WriteString("\n")
+	prompt.WriteString("Test results analysis has identified a range of commits amongst " +
+		"which the culprit of the regression is likely to be found. The possible culprits are:\n")
+	prompt.WriteString("\n")
+	for _, cl := range cls {
+		prompt.WriteString(fmt.Sprintf("Commit Position %d\n", cl.Position))
+		prompt.WriteString("```\n")
+		prompt.WriteString(cl.Commit.Message)
+		prompt.WriteString("```\n")
+		prompt.WriteString("Touched files:\n")
+		for i, file := range cl.Commit.TreeDiff {
+			if i > 100 {
+				prompt.WriteString(fmt.Sprintf("(%v other files changed, details omitted for brevity)", len(cl.Commit.TreeDiff)-100))
+				// Limit how many files we include per changelist
+				break
+			}
+			prompt.WriteString(treeDiffDescription(file))
+		}
+		prompt.WriteString("")
+		prompt.WriteString("\n")
+		prompt.WriteString("\n")
+	}
+	prompt.WriteString("\n")
+	prompt.WriteString("Please start by discussing each of the changelists and whether they may be related to the test failure.\n")
+	prompt.WriteString("Then summarise your conclusion. In your response, please use markdown format and " +
+		"link to commit position using the format [Commit Position 987654](https://crrev.com/987654).\n")
+	return prompt.String()
+}
+
+func treeDiffDescription(diff *git.Commit_TreeDiff) string {
+	switch diff.Type {
+	case git.Commit_TreeDiff_ADD, git.Commit_TreeDiff_COPY:
+		return fmt.Sprintf("+ %s (added)\n", diff.NewPath)
+	case git.Commit_TreeDiff_MODIFY, git.Commit_TreeDiff_RENAME:
+		return fmt.Sprintf("* %s (modified)\n", diff.NewPath)
+	case git.Commit_TreeDiff_DELETE:
+		return fmt.Sprintf("- %s (deleted)\n", diff.OldPath)
+	default:
+		panic(fmt.Sprintf("unexpected diff type: %s", diff.Type.String()))
+	}
 }
