@@ -46,7 +46,7 @@ func FetchPassingHashes(ctx context.Context, client *bigquery.Client, realm stri
 		SELECT
 		content
 		FROM
-		` + "`luci-resultdb.internal.text_artifacts`" + `
+		` + "`internal.text_artifacts`" + `
 		WHERE
 		DATE(partition_time) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
 		AND project = @project
