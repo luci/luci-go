@@ -15,6 +15,7 @@
 import Link from '@mui/material/Link';
 import { useQuery } from '@tanstack/react-query';
 
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
 import { logging } from '@/common/tools/logging';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
@@ -40,14 +41,20 @@ interface Props {
  * it then downloads the contents of that file and generate a link to the URL in the file.
  */
 export function ArtifactContentLink({ artifact, label }: Props) {
+  const { identity } = useAuthState();
+
   const { data, error, isError } = useQuery({
     queryFn: async () => {
       const res = await fetch(
-        urlSetSearchQueryParam(artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT),
+        urlSetSearchQueryParam(
+          getRawArtifactURLPath(artifact.name),
+          'n',
+          ARTIFACT_LENGTH_LIMIT,
+        ),
       );
       return res.text();
     },
-    queryKey: ['artifact-content-link', artifact.name],
+    queryKey: [identity, 'fetch-raw-artifact', artifact.name],
   });
 
   if (isError) {

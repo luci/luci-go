@@ -29,12 +29,12 @@ import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { ArtifactLink } from '@/test_verdict/components/artifact_link';
 import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { useProject } from '../../../context';
 import { useClustersByResultId } from '../../context';
-import { ArtifactContentLink } from '../artifact_content_link';
 import { useCombinedArtifacts, useResult } from '../context';
 
 import { ResultSummary } from './result_summary';
@@ -51,11 +51,11 @@ function LogsArtifacts({ stainlessLogs, testhausLogs }: LogArtifactsProps) {
       View logs in:&nbsp;
       {testhausLogs && (
         <>
-          <ArtifactContentLink artifact={testhausLogs} />
+          <ArtifactLink artifact={testhausLogs} />
         </>
       )}
       {bothExist && <>, </>}
-      {stainlessLogs && <ArtifactContentLink artifact={stainlessLogs} />}
+      {stainlessLogs && <ArtifactLink artifact={stainlessLogs} />}
     </>
   );
 }

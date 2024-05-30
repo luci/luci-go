@@ -17,14 +17,12 @@ import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Grid from '@mui/material/Grid';
-import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
-import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { ArtifactLink } from '@/test_verdict/components/artifact_link';
 
-import { ArtifactContentLink } from '../artifact_content_link';
 import { useCombinedArtifacts } from '../context';
 
 interface ProcessedArtifacts {
@@ -34,13 +32,11 @@ interface ProcessedArtifacts {
     actual?: Artifact;
     diff?: Artifact;
   };
-  linkFiles: Artifact[];
   links: Artifact[];
 }
 
 function processArtifacts(artifacts: readonly Artifact[]): ProcessedArtifacts {
   const result: ProcessedArtifacts = {
-    linkFiles: [],
     imageDiffGroup: {},
     links: [],
   };
@@ -53,8 +49,6 @@ function processArtifacts(artifacts: readonly Artifact[]): ProcessedArtifacts {
       result.imageDiffGroup!.actual = artifact;
     } else if (artifact.artifactId === 'image_diff') {
       result.imageDiffGroup!.diff = artifact;
-    } else if (artifact.contentType === 'text/x-uri') {
-      result.linkFiles.push(artifact);
     } else {
       result.links.push(artifact);
     }
@@ -89,16 +83,9 @@ export function ResultArtifacts() {
       </AccordionSummary>
       <AccordionDetails>
         <Grid container direction="column" rowSpacing="5">
-          {processedArtifacts.linkFiles.map((artifact) => (
-            <Grid item key={artifact.artifactId}>
-              <ArtifactContentLink artifact={artifact} />
-            </Grid>
-          ))}
           {processedArtifacts.links.map((artifact) => (
             <Grid item key={artifact.artifactId}>
-              <Link target="_blank" href={getRawArtifactURLPath(artifact.name)}>
-                {artifact.artifactId}
-              </Link>
+              <ArtifactLink artifact={artifact} />
             </Grid>
           ))}
         </Grid>
