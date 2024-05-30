@@ -24,6 +24,9 @@ var (
 	PermGetTestResult      = realms.RegisterPermission("resultdb.testResults.get")
 	PermGetArtifact        = realms.RegisterPermission("resultdb.artifacts.get")
 	PermGetBaseline        = realms.RegisterPermission("resultdb.baselines.get")
+	// TODO (nqmtuan): Add resultdb.instructions.get to resultdb.reader role.
+	// https://source.corp.google.com/h/chromium/infra/infra_superproject/+/main:data/config/configs/chrome-infra-auth/permissions.cfg;l=192;bpv=0
+	PermGetInstruction = realms.RegisterPermission("resultdb.instructions.get")
 
 	PermListTestExonerations        = realms.RegisterPermission("resultdb.testExonerations.list")
 	PermListLimitedTestExonerations = realms.RegisterPermission("resultdb.testExonerations.listLimited")

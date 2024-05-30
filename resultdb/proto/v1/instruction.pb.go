@@ -205,6 +205,7 @@ type Instruction struct {
 	// At this moment, we only has use cases for instruction ID for step instructions,
 	// but we also require test instruction to have ID, for possible features
 	// or enhancements in the future.
+	// Format [a-z][a-z0-9_\-:.]{0,99}
 	// Limit: 100 bytes.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Either step or test instruction.

@@ -74,6 +74,26 @@ func (mr *MockResultDBClientMockRecorder) GetArtifact(ctx, in interface{}, opts 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetArtifact", reflect.TypeOf((*MockResultDBClient)(nil).GetArtifact), varargs...)
 }
 
+// GetInstruction mocks base method.
+func (m *MockResultDBClient) GetInstruction(ctx context.Context, in *GetInstructionRequest, opts ...grpc.CallOption) (*Instruction, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetInstruction", varargs...)
+	ret0, _ := ret[0].(*Instruction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInstruction indicates an expected call of GetInstruction.
+func (mr *MockResultDBClientMockRecorder) GetInstruction(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstruction", reflect.TypeOf((*MockResultDBClient)(nil).GetInstruction), varargs...)
+}
+
 // GetInvocation mocks base method.
 func (m *MockResultDBClient) GetInvocation(ctx context.Context, in *GetInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	m.ctrl.T.Helper()
@@ -445,6 +465,21 @@ func (m *MockResultDBServer) GetArtifact(arg0 context.Context, arg1 *GetArtifact
 func (mr *MockResultDBServerMockRecorder) GetArtifact(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetArtifact", reflect.TypeOf((*MockResultDBServer)(nil).GetArtifact), arg0, arg1)
+}
+
+// GetInstruction mocks base method.
+func (m *MockResultDBServer) GetInstruction(arg0 context.Context, arg1 *GetInstructionRequest) (*Instruction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInstruction", arg0, arg1)
+	ret0, _ := ret[0].(*Instruction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInstruction indicates an expected call of GetInstruction.
+func (mr *MockResultDBServerMockRecorder) GetInstruction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstruction", reflect.TypeOf((*MockResultDBServer)(nil).GetInstruction), arg0, arg1)
 }
 
 // GetInvocation mocks base method.

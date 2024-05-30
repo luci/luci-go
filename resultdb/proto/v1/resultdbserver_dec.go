@@ -328,3 +328,20 @@ func (s *DecoratedResultDB) QueryTestMetadata(ctx context.Context, req *QueryTes
 	}
 	return
 }
+
+func (s *DecoratedResultDB) GetInstruction(ctx context.Context, req *GetInstructionRequest) (rsp *Instruction, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetInstruction", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetInstruction(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetInstruction", rsp, err)
+	}
+	return
+}

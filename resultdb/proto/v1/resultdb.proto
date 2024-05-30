@@ -19,6 +19,7 @@ package luci.resultdb.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/artifact.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
@@ -141,6 +142,11 @@ service ResultDB {
 
   // Retrieves test metadata from a LUCI project, matching the predicate.
   rpc QueryTestMetadata(QueryTestMetadataRequest) returns (QueryTestMetadataResponse) {};
+
+  // Retrieves an instruction for step or test result.
+  // If the instruction contains placeholders, they will not be replaced.
+  // The callers of this RPC are responsible to populate the placeholders with real data.
+  rpc GetInstruction(GetInstructionRequest) returns (Instruction) {};
 }
 
 // A request message for GetInvocation RPC.
@@ -736,4 +742,10 @@ message QueryNewTestVariantsResponse {
   // Test variants that are new, meaning that they have not been part of
   // a submitted run prior.
   repeated NewTestVariant new_test_variants = 2;
+}
+
+message GetInstructionRequest {
+  // Name of the instruction. The format is:
+  // invocations/{invocation_id}/instructions/{instruction_id}
+  string name = 1;
 }
