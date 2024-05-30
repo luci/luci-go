@@ -31,7 +31,6 @@ import Grid from '@mui/material/Grid';
 export function GroupsList() {
   const [selectedGroup, setSelectedGroup] = useState<string>();
   const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
-  const [searchQuery, setSearchQuery] = useState<string>();
 
   const client = useAuthServiceClient();
   const {
@@ -67,13 +66,10 @@ export function GroupsList() {
   };
 
   const changeSearchQuery = (query: string) => {
-    setSearchQuery(query.toLowerCase());
-    if (searchQuery) {
-      setFilteredGroups(allGroups.filter(group => group.name.includes(searchQuery)));
-    }
+    setFilteredGroups(allGroups.filter(group => group.name.includes(query.toLowerCase())));
   }
 
-  const groups = searchQuery ? filteredGroups : allGroups;
+  const groups = (filteredGroups) ? filteredGroups : allGroups;
   return (
     <Paper>
       <Grid container className="groups-container">
