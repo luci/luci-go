@@ -109,6 +109,27 @@ func TestListAccountEmails(t *testing.T) {
 			So(res, ShouldResembleProto, expectedResponse)
 			So(actualRequest.RequestURI, ShouldContainSubstring, "/accounts/foo@google.com/emails")
 		})
+
+		Convey("escape + in email", func() {
+			var actualRequest *http.Request
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				actualRequest = r
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `)]}'[
+					{
+						"email": "foo+review@google.com",
+						"preferred": true
+					}
+				]`)
+			})
+			defer srv.Close()
+			_, err := c.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
+				Email: "foo+review@google.com",
+			})
+			So(err, ShouldBeNil)
+			So(actualRequest.RequestURI, ShouldContainSubstring, "/accounts/foo%2Breview@google.com/emails")
+		})
 	})
 }
 

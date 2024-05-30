@@ -103,7 +103,11 @@ func (c *client) ListAccountEmails(ctx context.Context, req *gerritpb.ListAccoun
 	if email == "" {
 		return nil, errors.Reason("The email field must be present").Err()
 	}
-
+	// Gerrit will interpret '+' as a space. Although in Golang, url.PathEscape
+	// won't do anything to '+'. A quick search tells me that different
+	// implementation tends to do different things to treat '+'. Therefore,
+	// explicitly escape '+' sign here to make Gerrit happy.
+	email = strings.ReplaceAll(email, "+", "%2B")
 	urlPath := fmt.Sprintf("/accounts/%s/emails", email)
 	var emails []*gerritpb.EmailInfo
 	if _, err := c.call(ctx, "GET", urlPath, nil, nil, &emails, opts); err != nil {
