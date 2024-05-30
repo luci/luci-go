@@ -1409,6 +1409,10 @@ func setInfraBackend(ctx context.Context, globalCfg *pb.SettingsCfg, build *pb.B
 		logging.Warningf(ctx, err.Error())
 	}
 
+	if build.WaitForCapacity {
+		config.Fields["wait_for_capacity"] = structpb.NewBoolValue(true)
+	}
+
 	build.Infra.Backend = &pb.BuildInfra_Backend{
 		Caches: taskCaches,
 		Config: config,
