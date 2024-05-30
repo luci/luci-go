@@ -86,6 +86,7 @@ message TextArtifactRow {
 
   // String of the format <artifact_id>:<shard_id>.
   // This is for the purpose of clustering.
+  // TODO (nqmtuan): Remove this one once no longer used.
   string artifact_shard = 14;
 
   // Status of the test result that contains the artifact.
@@ -93,4 +94,3 @@ message TextArtifactRow {
   // For invocation-level artifact, an this will be an empty string.
   string test_status = 15;
 }
-

@@ -343,10 +343,9 @@ func TestDownloadArtifactContent(t *testing.T) {
 			for r := range rowC {
 				rows = append(rows, r)
 			}
-			// So(len(rows), ShouldEqual, 3)
 			// Sort the rows for deterministism.
 			sort.Slice(rows, func(i, j int) bool {
-				return (rows[i].ArtifactShard < rows[j].ArtifactShard)
+				return (rows[i].ArtifactId < rows[j].ArtifactId)
 			})
 			So(rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
 				{
@@ -362,7 +361,6 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ArtifactContentSize: int32(3),
 					ShardContentSize:    int32(3),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
-					ArtifactShard:       "a0:0",
 					TestStatus:          "",
 				},
 				{
@@ -378,7 +376,6 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ArtifactContentSize: int32(450),
 					ShardContentSize:    int32(300),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
-					ArtifactShard:       "a2:0",
 					TestStatus:          "FAIL",
 				},
 				{
@@ -394,7 +391,6 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ArtifactContentSize: int32(450),
 					ShardContentSize:    int32(150),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
-					ArtifactShard:       "a2:1",
 					TestStatus:          "FAIL",
 				},
 				{
@@ -410,7 +406,6 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ArtifactContentSize: int32(97),
 					ShardContentSize:    int32(97),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
-					ArtifactShard:       "a4:0",
 					TestStatus:          "FAIL",
 				},
 			})
@@ -514,7 +509,7 @@ func TestExportArtifacts(t *testing.T) {
 				rows = append(rows, r...)
 			}
 			sort.Slice(rows, func(i, j int) bool {
-				return (rows[i].ArtifactShard < rows[j].ArtifactShard)
+				return (rows[i].ArtifactId < rows[j].ArtifactId)
 			})
 
 			So(rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
@@ -529,7 +524,6 @@ func TestExportArtifacts(t *testing.T) {
 					ContentType:         "text/plain; encoding=utf-8",
 					Content:             "batchdata",
 					ArtifactContentSize: 4,
-					ArtifactShard:       "a0:0",
 					ShardContentSize:    4,
 					PartitionTime:       timestamppb.New(commitTime),
 				},
@@ -544,7 +538,6 @@ func TestExportArtifacts(t *testing.T) {
 					ContentType:         "text/html",
 					Content:             "batchdata",
 					ArtifactContentSize: 4,
-					ArtifactShard:       "a1:0",
 					TestStatus:          "PASS",
 					ShardContentSize:    4,
 					PartitionTime:       timestamppb.New(commitTime),
@@ -583,7 +576,6 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 				ArtifactContentSize: 4 * 1024 * 1024,
 				Content:             strings.Repeat("a", 4*1024*1024),
 				ShardContentSize:    4 * 1024 * 1024,
-				ArtifactShard:       fmt.Sprintf("artifact%d:0", i),
 				TestStatus:          "PASS",
 				PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
 			}

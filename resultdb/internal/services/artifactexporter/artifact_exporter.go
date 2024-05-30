@@ -545,7 +545,6 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 			ShardContentSize:    int32(artifact.Size),
 			TestStatus:          testStatusToString(artifact.TestStatus),
 			PartitionTime:       timestamppb.New(inv.CreateTime.AsTime()),
-			ArtifactShard:       fmt.Sprintf("%s:0", artifact.ArtifactID),
 		}
 		rowC <- row
 	}
@@ -579,7 +578,6 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 			ShardContentSize:    int32(str.Len()),
 			TestStatus:          testStatusToString(a.TestStatus),
 			PartitionTime:       timestamppb.New(inv.CreateTime.AsTime()),
-			ArtifactShard:       fmt.Sprintf("%s:%d", a.ArtifactID, shardID),
 			// We don't populated numshards here because we don't know
 			// exactly how many shards we need until we finish scanning.
 			// Still we are not sure if this field is useful (e.g. from bigquery, we can

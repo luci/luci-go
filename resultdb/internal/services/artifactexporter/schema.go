@@ -61,11 +61,11 @@ func init() {
 		},
 		// Clustering on these fields will allow good compression rate and query performance.
 		Clustering: &bigquery.Clustering{
-			Fields: []string{"project", "test_id", "artifact_shard", "invocation_id"},
+			Fields: []string{"project", "test_id", "artifact_id", "invocation_id"},
 		},
 		// Relax ensures no fields are marked "required".
 		Schema: schema.Relax(),
-		Labels: map[string]string{bq.MetadataVersionKey: "1"},
+		Labels: map[string]string{bq.MetadataVersionKey: "2"},
 	}
 }
 
