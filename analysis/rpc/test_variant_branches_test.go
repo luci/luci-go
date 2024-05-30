@@ -928,10 +928,13 @@ func TestTestVariantBranchesServer(t *testing.T) {
 			Convey("valid", func() {
 				ctx = gitiles.UseFakeClient(ctx, makeFakeCommit)
 				tvc.SourceVerdictAfterPosition = &testverdicts.SourceVerdict{
-					Position:     110,
-					CommitHash:   "0011223344556677889900112233445566778899",
-					Variant:      `{"key":"value"}`,
-					TestLocation: "/path/to/test",
+					Position:   110,
+					CommitHash: "0011223344556677889900112233445566778899",
+					Variant:    `{"key":"value"}`,
+					TestLocation: &testverdicts.TestLocation{
+						Repo:     "https://chromium.googlesource.com/chromium/src",
+						FileName: "//path/to/test",
+					},
 					Ref: &testverdicts.Ref{
 						Gitiles: &testverdicts.Gitiles{
 							Host:    bigquery.NullString{StringVal: "myproject.googlesource.com", Valid: true},

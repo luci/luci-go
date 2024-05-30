@@ -51,13 +51,21 @@ type SourceVerdict struct {
 	CommitHash string
 	// The variant, as a JSON blob.
 	Variant string
-	// The file name of the test, from test metadata, if available.
-	TestLocation string
+	// The location of the test, if available.
+	TestLocation *TestLocation
 	// Represent a branch in the source control.
 	Ref *Ref
 	// A selection of test results at the position.
 	// May contain 0 or 1 items.
 	Results []TestResult
+}
+
+type TestLocation struct {
+	// The repository, e.g. "https://chromium.googlesource.com/chromium/src".
+	Repo string
+	// The file name in the repository, e.g.
+	// "//third_party/blink/web_tests/external/wpt/html/semantics/scripting-1/the-script-element/json-module-assertions/load-error-events.html".
+	FileName string
 }
 
 type TestResult struct {
@@ -77,7 +85,10 @@ func (c *ReadClient) ReadTestVerdictAfterPosition(ctx context.Context, options R
 		sources.gitiles_commit.position as Position,
 		ANY_VALUE(sources.gitiles_commit.commit_hash) as CommitHash,
 		ANY_VALUE(variant) as Variant,
-		ANY_VALUE(test_metadata.location.file_name) as TestLocation,
+		ANY_VALUE(STRUCT(
+			test_metadata.location.file_name as FileName,
+			test_metadata.location.repo as Repo
+		)) as TestLocation,
 		ANY_VALUE(source_ref) as Ref,
 		ARRAY_AGG(STRUCT(
 				result.parent.id as ParentInvocationID,

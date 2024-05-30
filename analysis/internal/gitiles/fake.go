@@ -17,6 +17,7 @@ package gitiles
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 
@@ -55,7 +56,9 @@ func (f *FakeClient) Archive(ctx context.Context, in *gitilespb.ArchiveRequest, 
 }
 
 func (f *FakeClient) DownloadFile(ctx context.Context, in *gitilespb.DownloadFileRequest, opts ...grpc.CallOption) (*gitilespb.DownloadFileResponse, error) {
-	panic("not implemented")
+	return &gitilespb.DownloadFileResponse{
+		Contents: fmt.Sprintf("Contents of the file at %s\nLine 2\nLine3\n", in.Path),
+	}, nil
 }
 
 func (f *FakeClient) DownloadDiff(ctx context.Context, in *gitilespb.DownloadDiffRequest, opts ...grpc.CallOption) (*gitilespb.DownloadDiffResponse, error) {

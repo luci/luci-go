@@ -49,11 +49,11 @@ func newGitilesClient(ctx context.Context, host string, as auth.RPCAuthorityKind
 	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
 }
 
-func NewClient(ctx context.Context, host string) (*Client, error) {
+func NewClient(ctx context.Context, host string, as auth.RPCAuthorityKind) (*Client, error) {
 	if err := validHostname(host); err != nil {
 		return nil, err
 	}
-	gitilesClient, err := newGitilesClient(ctx, host, auth.AsCredentialsForwarder)
+	gitilesClient, err := newGitilesClient(ctx, host, as)
 	if err != nil {
 		return nil, errors.Annotate(err, "creating Gitiles client for host %s", host).Err()
 	}
@@ -64,6 +64,10 @@ func NewClient(ctx context.Context, host string) (*Client, error) {
 
 func (c *Client) Log(ctx context.Context, req *gitilespb.LogRequest) (*gitilespb.LogResponse, error) {
 	return c.gitilesClient.Log(ctx, req)
+}
+
+func (c *Client) DownloadFile(ctx context.Context, req *gitilespb.DownloadFileRequest) (*gitilespb.DownloadFileResponse, error) {
+	return c.gitilesClient.DownloadFile(ctx, req)
 }
 
 var hostnameRe = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])*.googlesource.com$`)

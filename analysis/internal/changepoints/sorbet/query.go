@@ -24,17 +24,19 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/analysis/internal/changepoints"
-	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
-	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
-	"go.chromium.org/luci/analysis/internal/gitiles"
-	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/gitiles"
+	"go.chromium.org/luci/analysis/internal/testverdicts"
 )
 
 const (
@@ -110,7 +112,13 @@ func (a *Analyzer) Analyze(ctx context.Context, request AnalysisRequest) (Analys
 	}
 	logging.Debugf(ctx, "Retrieved %d changelists.", len(cls))
 
-	prompt := preparePrompt(request, verdict, cls)
+	testCode, err := fetchCode(ctx, verdict)
+	if err != nil {
+		return AnalysisResponse{}, errors.Annotate(err, "query test code").Err()
+	}
+	logging.Debugf(ctx, "Test code retrieval complete.")
+
+	prompt := preparePrompt(request, verdict, cls, testCode)
 
 	logging.Debugf(ctx, "Generating AI response...")
 	result, err := a.generateClient.Generate(ctx, prompt)
@@ -316,7 +324,8 @@ func queryChangelists(ctx context.Context, req AnalysisRequest, closestAfterVerd
 	ref := closestAfterVerdict.Ref
 	// N.B. gitiles host is untrusted user input, but gitiles.NewClient validates we
 	// are not connecting to an arbitrary host on the internet.
-	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String())
+	// TODO: Supports open-source gitiles only. Investigate auth for general case.
+	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String(), auth.NoAuth)
 	if err != nil {
 		return nil, errors.Annotate(err, "create gitiles client").Err()
 	}
@@ -345,17 +354,14 @@ func queryChangelists(ctx context.Context, req AnalysisRequest, closestAfterVerd
 	return results, nil
 }
 
-func preparePrompt(req AnalysisRequest, verdict *testverdicts.SourceVerdict, cls []changelist) string {
+func preparePrompt(req AnalysisRequest, verdict *testverdicts.SourceVerdict, cls []changelist, testCode string) string {
 	// TODO: Fetch more data relevant to the analysis and include it in the prompt.
 	var prompt strings.Builder
-	prompt.WriteString("Your job is to help the software engineer try to identify which code change (commit) caused a test to start failing.\n")
+	prompt.WriteString("You are a software engineer tasked with identifying the code change (commit) that caused a test to start failing.\n")
 	prompt.WriteString("\n")
 	prompt.WriteString(fmt.Sprintf("The software project is %q.\n", req.Project))
 	prompt.WriteString(fmt.Sprintf("The failing test is %q.\n", req.TestID))
 	prompt.WriteString(fmt.Sprintf("The failing test variant (test configuration) is %s.\n", verdict.Variant))
-	if verdict.TestLocation != "" {
-		prompt.WriteString(fmt.Sprintf("The location of the failing test in the source repository is %s.\n", verdict.TestLocation))
-	}
 	if verdict.Results[0].PrimaryFailureReason.StringVal != "" {
 		prompt.WriteString("The test is failing with the reason:\n")
 		prompt.WriteString("```\n")
@@ -363,8 +369,17 @@ func preparePrompt(req AnalysisRequest, verdict *testverdicts.SourceVerdict, cls
 		prompt.WriteString("```\n")
 	}
 	prompt.WriteString("\n")
-	prompt.WriteString("Test results analysis has identified a range of commits amongst " +
-		"which the culprit of the regression is likely to be found. The possible culprits are:\n")
+	if verdict.TestLocation != nil && verdict.TestLocation.FileName != "" {
+		prompt.WriteString(fmt.Sprintf("The location of the failing test in the source repository is %s.\n", verdict.TestLocation.FileName))
+		if testCode != "" {
+			prompt.WriteString("The content of that file is:\n")
+			prompt.WriteString("```START OF FILE\n")
+			prompt.WriteString(testCode)
+			prompt.WriteString("```END OF FILE\n")
+		}
+	}
+	prompt.WriteString("\n")
+	prompt.WriteString("The culprit for the test failure is one of the following commits:\n")
 	prompt.WriteString("\n")
 	for _, cl := range cls {
 		prompt.WriteString(fmt.Sprintf("Commit Position %d\n", cl.Position))
@@ -385,9 +400,36 @@ func preparePrompt(req AnalysisRequest, verdict *testverdicts.SourceVerdict, cls
 		prompt.WriteString("\n")
 	}
 	prompt.WriteString("\n")
-	prompt.WriteString("Please start by discussing each of the changelists and whether they may be related to the test failure.\n")
-	prompt.WriteString("Then summarise your conclusion. In your response, please use markdown format and " +
+	prompt.WriteString("Go through each commit in order, and write out:\n")
+	prompt.WriteString("- a description of the change\n")
+	prompt.WriteString("- factors that may rule the change in and/or out from causing the test failure\n")
+	prompt.WriteString("- your assessment of whether the change made the test failure appear\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("Then, under a section heading for conclusions, identify the most likely commit(s).\n")
+	prompt.WriteString("In your answer, please use markdown format and " +
 		"link to commit position using the format [Commit Position 987654](https://crrev.com/987654).\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("For example:\n")
+	prompt.WriteString("## Commit Analysis\n")
+	prompt.WriteString("**[Commit Position 987654](https://crrev.com/987654)**\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("* **Description:** <description of change>\n")
+	prompt.WriteString("* **Relevant parts:** <discussion of factors that may rule the change in or out from causing the test failure>\n")
+	prompt.WriteString("* **Assessment:** <assessment>\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("<more commits...>")
+	prompt.WriteString("\n")
+	prompt.WriteString("## Conclusions\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("The following commit(s) have been flagged as potentially related to the test failure:\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("**High Priority:**\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("* **[Commit Position 123456](https://crrev.com/123456):** <reason>\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("**Medium Priority:** (this section is optional and may be omitted if there are no medium priority commits)\n")
+	prompt.WriteString("\n")
+	prompt.WriteString("* **[Commit Position 234567](https://crrev.com/123456):** <reason>\n")
 	return prompt.String()
 }
 
@@ -402,4 +444,35 @@ func treeDiffDescription(diff *git.Commit_TreeDiff) string {
 	default:
 		panic(fmt.Sprintf("unexpected diff type: %s", diff.Type.String()))
 	}
+}
+
+func fetchCode(ctx context.Context, verdict *testverdicts.SourceVerdict) (string, error) {
+	ref := verdict.Ref
+	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String(), auth.NoAuth)
+	if err != nil {
+		return "", errors.Annotate(err, "create gitiles client").Err()
+	}
+	path := strings.TrimLeft(verdict.TestLocation.FileName, "/")
+
+	fileReq := &gitilespb.DownloadFileRequest{
+		Project:    ref.Gitiles.Project.String(),
+		Committish: verdict.CommitHash,
+		Path:       path,
+	}
+	rsp, err := gitilesClient.DownloadFile(ctx, fileReq)
+	if err != nil {
+		// Downloading code is best effort only, it should not block analysis.
+		logging.Debugf(ctx, "Unable to fetch file from gerrit: %s", path)
+		return "", nil
+	}
+	return formatCodeFile(rsp.Contents), nil
+}
+
+func formatCodeFile(content string) string {
+	lines := strings.Split(content, "\n")
+	var result strings.Builder
+	for i, line := range lines {
+		result.WriteString(fmt.Sprintf("line %v: %s\n", i+1, line))
+	}
+	return result.String()
 }

@@ -30,6 +30,7 @@ import (
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/appstatus"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
@@ -430,7 +431,7 @@ func (s *testVariantBranchesServer) QuerySourcePositions(ctx context.Context, re
 		return nil, appstatus.Errorf(codes.NotFound, "cannot find source positions because test verdicts is too sparse")
 	}
 	ref := commitsWithVerdicts[0].Ref
-	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String())
+	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String(), auth.AsCredentialsForwarder)
 	if err != nil {
 		return nil, errors.Annotate(err, "create gitiles client").Err()
 	}
