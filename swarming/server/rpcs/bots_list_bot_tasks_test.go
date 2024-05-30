@@ -55,22 +55,37 @@ func TestListBotTasks(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
-	putTask := func(botID string, state apipb.TaskState, ts time.Duration) {
+	putTask := func(botID string, state apipb.TaskState, ts time.Duration, old bool) {
 		reqKey, err := model.TimestampToRequestKey(ctx, TestTime.Add(ts), 0)
 		if err != nil {
 			panic(err)
 		}
-		err = datastore.Put(ctx,
-			&model.TaskRunResult{
-				TaskResultCommon: model.TaskResultCommon{
-					State:         state,
-					BotDimensions: map[string][]string{"payload": {fmt.Sprintf("%s-%s", state, ts)}},
-					Started:       datastore.NewIndexedNullable(TestTime.Add(ts)),
-					Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
-				},
-				Key:   model.TaskRunResultKey(ctx, reqKey),
-				BotID: botID,
+		taskReq := &model.TaskRequest{
+			Key:     reqKey,
+			Created: TestTime,
+			Name:    fmt.Sprintf("%s-%s", state, ts),
+			Tags:    []string{"a:b", "c:d"},
+			User:    "request-user",
+		}
+		taskRunRes := &model.TaskRunResult{
+			TaskResultCommon: model.TaskResultCommon{
+				State:         state,
+				BotDimensions: map[string][]string{"payload": {fmt.Sprintf("%s-%s", state, ts)}},
+				Started:       datastore.NewIndexedNullable(TestTime.Add(ts)),
+				Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
 			},
+			Key:   model.TaskRunResultKey(ctx, reqKey),
+			BotID: botID,
+		}
+		if !old {
+			taskRunRes.RequestCreated = taskReq.Created
+			taskRunRes.RequestName = taskReq.Name
+			taskRunRes.RequestTags = taskReq.Tags
+			taskRunRes.RequestUser = taskReq.User
+		}
+		err = datastore.Put(ctx,
+			taskReq,
+			taskRunRes,
 			&model.PerformanceStats{
 				Key:             model.PerformanceStatsKey(ctx, reqKey),
 				BotOverheadSecs: 123.0,
@@ -116,14 +131,17 @@ func TestListBotTasks(t *testing.T) {
 	var now time.Duration
 	for i := 0; i < 10; i++ {
 		var state apipb.TaskState
+		var old bool
 		if i%2 == 0 {
 			state = apipb.TaskState_COMPLETED
+			old = false
 		} else {
 			state = apipb.TaskState_KILLED
+			old = true
 		}
-		putTask(botID, state, now)
+		putTask(botID, state, now, old)
 		now += 500 * time.Millisecond
-		putTask("another-bot", state, now)
+		putTask("another-bot", state, now, old)
 		now += 500 * time.Millisecond
 	}
 
@@ -395,5 +413,32 @@ func TestListBotTasks(t *testing.T) {
 		So(err, ShouldBeNil)
 		// All performance stats are omitted if IncludePerformanceStats is false.
 		So(countTasksWithPerf(resp.Items), ShouldEqual, 0)
+	})
+
+	Convey("Fetches TaskRequest fields", t, func() {
+		resp, err := call(&apipb.BotTasksRequest{
+			BotId: botID,
+			State: apipb.StateQuery_QUERY_ALL,
+		})
+		So(err, ShouldBeNil)
+		var names []string
+		for _, task := range resp.Items {
+			names = append(names, task.Name)
+			So(task.CreatedTs, ShouldResembleProto, timestamppb.New(TestTime))
+			So(task.Tags, ShouldResemble, []string{"a:b", "c:d"})
+			So(task.User, ShouldEqual, "request-user")
+		}
+		So(names, ShouldResemble, []string{
+			"KILLED-9s",
+			"COMPLETED-8s",
+			"KILLED-7s",
+			"COMPLETED-6s",
+			"KILLED-5s",
+			"COMPLETED-4s",
+			"KILLED-3s",
+			"COMPLETED-2s",
+			"KILLED-1s",
+			"COMPLETED-0s",
+		})
 	})
 }

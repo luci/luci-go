@@ -473,11 +473,15 @@ func TestTaskRunResult(t *testing.T) {
 					},
 				},
 			},
-			Key:       TaskRunResultKey(ctx, reqKey),
-			BotID:     "some-bot-id",
-			CostUSD:   123.456,
-			Killing:   true,
-			DeadAfter: datastore.NewUnindexedOptional(testTime.Add(time.Hour)),
+			Key:            TaskRunResultKey(ctx, reqKey),
+			RequestCreated: testTime,
+			RequestTags:    []string{"a:b", "c:d"},
+			RequestName:    "request-name",
+			RequestUser:    "request-user",
+			BotID:          "some-bot-id",
+			CostUSD:        123.456,
+			Killing:        true,
+			DeadAfter:      datastore.NewUnindexedOptional(testTime.Add(time.Hour)),
 		}
 
 		Convey("Can round-trip", func() {
@@ -513,7 +517,7 @@ func TestTaskRunResult(t *testing.T) {
 				},
 				CompletedTs:      timestamppb.New(testTime),
 				CostsUsd:         []float32{123.456},
-				CreatedTs:        nil, // TODO
+				CreatedTs:        timestamppb.New(testTime),
 				CurrentTaskSlice: int32(1),
 				Duration:         float32(3600),
 				MissingCas: []*apipb.CASReference{
@@ -533,7 +537,7 @@ func TestTaskRunResult(t *testing.T) {
 					},
 				},
 				ModifiedTs: timestamppb.New(testTime),
-				Name:       "", // TODO
+				Name:       "request-name",
 				ResultdbInfo: &apipb.ResultDBInfo{
 					Hostname:   "results.api.example.dev",
 					Invocation: "inv123",
@@ -542,9 +546,9 @@ func TestTaskRunResult(t *testing.T) {
 				ServerVersions: []string{"v1.0"},
 				StartedTs:      timestamppb.New(testTime.Add(-1 * time.Hour)),
 				State:          apipb.TaskState_COMPLETED,
-				Tags:           nil, // TODO
+				Tags:           []string{"a:b", "c:d"},
 				TaskId:         "65aba3a3e6b99310",
-				User:           "", // TODO
+				User:           "request-user",
 			})
 		})
 	})

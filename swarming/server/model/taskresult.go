@@ -531,6 +531,18 @@ type TaskRunResult struct {
 	// Key identifies the task, see TaskRunResultKey().
 	Key *datastore.Key `gae:"$key"`
 
+	// RequestCreated is copied from the corresponding TaskRequest entity.
+	RequestCreated time.Time `gae:"request_created,noindex"`
+
+	// RequestTags are copied from the corresponding TaskRequest entity.
+	RequestTags []string `gae:"request_tags,noindex"`
+
+	// RequestName is copied from the corresponding TaskRequest entity.
+	RequestName string `gae:"request_name,noindex"`
+
+	// RequestUser is copied from the corresponding TaskRequest entity.
+	RequestUser string `gae:"request_user,noindex"`
+
 	// BotID is ID of a bot that runs this task attempt.
 	//
 	// The index is used in task listing queries to filter by a specific bot.
@@ -585,20 +597,36 @@ func (p *TaskRunResult) PerformanceStatsKey(ctx context.Context) *datastore.Key 
 // Note: This function will not handle PerformanceStats due to the requirement
 // of fetching another datastore entity. Please refer to PerformanceStats to
 // fetch them.
+//
+// TODO(2026): Older entities do not have some fields populated (in particular
+// Name). The caller will have to fetch them separately from the corresponding
+// TaskRequest entity. See TaskRunResultMissingFieldsFromRequest. This fallback
+// can be removed in ~2026.
 func (p *TaskRunResult) ToProto() *apipb.TaskResultResponse {
 	pb := p.TaskResultCommon.toProto()
 	pb.BotId = p.BotID
 	pb.CostSavedUsd = 0 // the task is running, it doesn't save any cost
 	pb.CostsUsd = []float32{float32(p.CostUSD)}
-	pb.CreatedTs = nil        // TODO
 	pb.DedupedFrom = ""       // the task is running, not deduped
-	pb.Name = ""              // TODO
 	pb.PerformanceStats = nil // will need to be filled in later
 	pb.RunId = RequestKeyToTaskID(p.TaskRequestKey(), AsRunResult)
-	pb.Tags = nil // TODO
 	pb.TaskId = RequestKeyToTaskID(p.TaskRequestKey(), AsRequest)
-	pb.User = "" // TODO
+	if p.RequestName != "" {
+		pb.CreatedTs = timestamppb.New(p.RequestCreated)
+		pb.Name = p.RequestName
+		pb.Tags = p.RequestTags
+		pb.User = p.RequestUser
+	}
 	return pb
+}
+
+// TaskRunResultMissingFieldsFromRequest sets fields that TaskRunResult.ToProto
+// could not set if the entity is too old.
+func TaskRunResultMissingFieldsFromRequest(pb *apipb.TaskResultResponse, req *TaskRequest) {
+	pb.CreatedTs = timestamppb.New(req.Created)
+	pb.Name = req.Name
+	pb.Tags = req.Tags
+	pb.User = req.User
 }
 
 // PerformanceStats contains various timing and performance information about

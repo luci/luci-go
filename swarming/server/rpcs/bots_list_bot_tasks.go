@@ -127,6 +127,14 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		defer stats.Close()
 	}
 
+	// TODO(2026): Older entities do not have some fields (like Name) populated.
+	// We'll need to fetch them separately from TaskRequest entities. This will
+	// only slow down RPCs that list old tasks. This fallback can be removed
+	// in ~2026.
+	requests := model.NewBatchFetcher[*apipb.TaskResultResponse, model.TaskRequest](ctx, 300, 5)
+	defer requests.Close()
+	var backfilled []*apipb.TaskResultResponse
+
 	out := &apipb.TaskListResponse{}
 
 	dscursor = nil
@@ -134,6 +142,10 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		taskpb := task.ToProto()
 		if stats != nil {
 			stats.Fetch(ctx, taskpb, task)
+		}
+		if taskpb.Name == "" {
+			requests.Fetch(taskpb, &model.TaskRequest{Key: task.TaskRequestKey()})
+			backfilled = append(backfilled, taskpb)
 		}
 		out.Items = append(out.Items, taskpb)
 		if len(out.Items) == int(req.Limit) {
@@ -160,6 +172,19 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		if err := stats.Finish(out.Items); err != nil {
 			logging.Errorf(ctx, "Error fetching PerformanceStats: %s", err)
 			return nil, status.Errorf(codes.Internal, "error fetching performance stats")
+		}
+	}
+
+	if len(backfilled) != 0 {
+		requests.Wait()
+		logging.Infof(ctx, "%d/%d entities required backfill", len(backfilled), len(out.Items))
+		for _, taskpb := range backfilled {
+			req, err := requests.Get(taskpb)
+			if err != nil {
+				logging.Errorf(ctx, "Error fetching TaskRequest %q: %s", taskpb.TaskId, err)
+				return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
+			}
+			model.TaskRunResultMissingFieldsFromRequest(taskpb, req)
 		}
 	}
 
