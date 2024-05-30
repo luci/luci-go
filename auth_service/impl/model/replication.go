@@ -268,17 +268,3 @@ func updateReplicas(ctx context.Context, authDBRev int64, authDBBlob, sig []byte
 
 	return nil
 }
-
-func getServiceAccountName(ctx context.Context) (string, error) {
-	signer := auth.GetSigner(ctx)
-	if signer == nil {
-		return "", errors.New("error getting the Signer instance for the service")
-	}
-
-	info, err := signer.ServiceInfo(ctx)
-	if err != nil {
-		return "", errors.Annotate(err, "failed to get service info").Err()
-	}
-
-	return info.ServiceAccountName, nil
-}

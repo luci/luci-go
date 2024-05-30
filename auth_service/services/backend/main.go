@@ -17,36 +17,16 @@
 // It handles task queue tasks and cron jobs.
 package main
 
-// Disable linting for imports, because of the dependency on config
-// validation globals.
-//nolint:all
 import (
-	"context"
-	"fmt"
-	"time"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/module"
 
 	"go.chromium.org/luci/auth_service/impl"
 	"go.chromium.org/luci/auth_service/impl/model"
 
 	// Ensure registration of validation rules.
-	// NOTE: this must go before anything that depends on validation globals,
-	// e.g. cfgcache.Register in srvcfg files in allowlistcfg/ or oauthcfg/.
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/securitycfg"
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
-	"go.chromium.org/luci/auth_service/internal/configs/validation"
-
-	"go.chromium.org/luci/auth_service/internal/permissions"
-	"go.chromium.org/luci/auth_service/internal/pubsub"
-	"go.chromium.org/luci/auth_service/internal/realmsinternals"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/module"
+	_ "go.chromium.org/luci/auth_service/internal/configs/validation"
 )
 
 func main() {
@@ -59,140 +39,17 @@ func main() {
 	dryRunCronRealms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
 	dryRunCronStaleAuth := model.ParseDryRunEnvVar(model.DryRunCronStaleAuthEnvVar)
 
-	impl.Main(modules, func(srv *server.Server) error {
-		cron.RegisterHandler("update-config", func(ctx context.Context) error {
-			historicalComment := "Updated from update-config cron"
+	impl.Main(modules,
+		func(srv *server.Server) error {
+			cron.RegisterHandler("revoke-stale-authorization",
+				model.StaleAuthorizationCronHandler(dryRunCronStaleAuth))
 
-			// ip_allowlist.cfg handling.
-			if err := allowlistcfg.Update(ctx); err != nil {
-				return err
-			}
-			cfg, err := allowlistcfg.Get(ctx)
-			if err != nil {
-				return err
-			}
-			subnets, err := validation.GetSubnets(cfg.IpAllowlists)
-			if err != nil {
-				return err
-			}
-			if err := model.UpdateAllowlistEntities(ctx, subnets, dryRunCronConfig, historicalComment); err != nil {
-				return err
-			}
+			cron.RegisterHandler("update-config",
+				model.ServiceConfigCronHandler(dryRunCronConfig))
 
-			// oauth.cfg handling.
-			if err := oauthcfg.Update(ctx); err != nil {
-				return err
-			}
-			oauthcfg, err := oauthcfg.Get(ctx)
-			if err != nil {
-				return err
-			}
-
-			// security.cfg handling.
-			if err := securitycfg.Update(ctx); err != nil {
-				return err
-			}
-			securitycfg, err := securitycfg.Get(ctx)
-			if err != nil {
-				return err
-			}
-
-			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, dryRunCronConfig, historicalComment); err != nil {
-				return err
-			}
-
-			// settings.cfg handling
-			if err := settingscfg.Update(ctx); err != nil {
-				return err
-			}
+			cron.RegisterHandler("update-realms",
+				model.RealmsConfigCronHandler(dryRunCronRealms))
 
 			return nil
 		})
-
-		cron.RegisterHandler("update-realms", func(ctx context.Context) error {
-			historicalComment := "Updated from update-realms cron"
-
-			// permissions.cfg handling.
-			if err := permissionscfg.Update(ctx); err != nil {
-				return err
-			}
-			permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
-			if err != nil {
-				return err
-			}
-			if err := model.UpdateAuthRealmsGlobals(ctx, permsCfg, dryRunCronRealms, historicalComment); err != nil {
-				return err
-			}
-
-			// Make the PermissionsDB for realms expansion.
-			permsDB := permissions.NewPermissionsDB(permsCfg, permsMeta)
-
-			// realms.cfg handling.
-			latestRealms, storedRealms, err := realmsinternals.GetConfigs(ctx)
-			if err != nil {
-				logging.Errorf(ctx, "aborting realms update - failed to fetch latest for all configs: %v", err)
-				return err
-			}
-			jobs, err := realmsinternals.CheckConfigChanges(ctx, permsDB, latestRealms, storedRealms, dryRunCronRealms, historicalComment)
-			if err != nil {
-				return err
-			}
-			if !executeJobs(ctx, jobs, 2*time.Second) {
-				return fmt.Errorf("not all jobs succeeded when refreshing realms")
-			}
-
-			return nil
-		})
-
-		cron.RegisterHandler("revoke-stale-authorization", func(ctx context.Context) error {
-			// Only members of the below trusted group are eligible to:
-			// * be authorized to subscribe to PubSub notifications of AuthDB changes
-			// * be authorized to read the AuthDB from Google Storage.
-			// This cron revokes all stale authorizations for accounts that are no
-			// longer in the trusted group.
-			trustedGroup := model.TrustedServicesGroup
-
-			if err := pubsub.RevokeStaleAuthorization(ctx, trustedGroup, dryRunCronStaleAuth); err != nil {
-				err = errors.Annotate(err, "error revoking stale PubSub authorizations").Err()
-				logging.Errorf(ctx, err.Error())
-				return err
-			}
-
-			if err := model.RevokeStaleReaderAccess(ctx, trustedGroup, dryRunCronStaleAuth); err != nil {
-				err = errors.Annotate(err, "error revoking stale AuthDB reader access").Err()
-				logging.Errorf(ctx, err.Error())
-				return err
-			}
-
-			return nil
-		})
-
-		// TODO: Remove comparison code once we have fully rolled out Auth
-		// Service v2 (b/321019030).
-		cron.RegisterHandler("auth-service-v2-validation", func(ctx context.Context) error {
-			logging.Infof(ctx, "starting comparison of V2 entities for validation")
-			return model.CompareV2Entities(ctx)
-		})
-
-		return nil
-	})
-}
-
-// executeJobs executes the callbacks, sleeping the set amount of time
-// between each. Note: all callbacks will be run, even if a previous job
-// returned an error.
-//
-// Returns whether any job returned an error.
-func executeJobs(ctx context.Context, jobs []func() error, sleepTime time.Duration) bool {
-	success := true
-	for i, job := range jobs {
-		if i > 0 {
-			time.Sleep(sleepTime)
-		}
-		if err := job(); err != nil {
-			logging.Errorf(ctx, "job %d out of %d failed: %s", i+1, len(jobs), err)
-			success = false
-		}
-	}
-	return success
 }

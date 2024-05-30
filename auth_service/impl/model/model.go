@@ -1215,10 +1215,11 @@ func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
 	return authIPAllowlists, nil
 }
 
-// UpdateAllowlistEntities updates all the entities in datastore from ip_allowlist.cfg.
+// updateAllAuthIPAllowlists updates all the entities in datastore from the
+// subnet map, which should be the result of parsing an ip_allowlist.cfg.
 //
 // TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
-func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string, dryRun bool, historicalComment string) error {
+func updateAllAuthIPAllowlists(ctx context.Context, subnetMap map[string][]string, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		oldAllowlists, err := GetAllAuthIPAllowlists(ctx)
 		if err != nil {
@@ -1236,7 +1237,10 @@ func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string,
 			updatedAllowlistSet.Add(id)
 		}
 
-		currentIdentity := auth.CurrentIdentity(ctx)
+		serviceIdentity, err := getServiceIdentity(ctx)
+		if err != nil {
+			return err
+		}
 		now := clock.Now(ctx).UTC()
 
 		toCreate := updatedAllowlistSet.Difference(oldAllowlistSet)
@@ -1245,19 +1249,15 @@ func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string,
 
 			entity.Subnets = subnetMap[id]
 			entity.Description = "Imported from ip_allowlist.cfg"
-
-			creator := currentIdentity
-			createdTS := now
-
-			entity.CreatedBy = string(creator)
-			entity.CreatedTS = createdTS
+			entity.CreatedBy = string(serviceIdentity)
+			entity.CreatedTS = now
 
 			if dryRun {
 				logging.Infof(ctx, "(dry run) creating IPAllowlist %s", id)
 				continue
 			}
 
-			if err := commitEntity(entity, createdTS, creator, false); err != nil {
+			if err := commitEntity(entity, now, serviceIdentity, false); err != nil {
 				return err
 			}
 		}
@@ -1286,7 +1286,7 @@ func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string,
 			}
 
 			entity.Subnets = newSubnets
-			if err := commitEntity(entity, now, currentIdentity, false); err != nil {
+			if err := commitEntity(entity, now, serviceIdentity, false); err != nil {
 				return err
 			}
 		}
@@ -1298,7 +1298,7 @@ func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string,
 				continue
 			}
 
-			if err := commitEntity(oldAllowlistMap[id], now, currentIdentity, true); err != nil {
+			if err := commitEntity(oldAllowlistMap[id], now, serviceIdentity, true); err != nil {
 				return err
 			}
 		}
@@ -1352,12 +1352,12 @@ func hasSameSecurityCfg(authGlobalConfig *AuthGlobalConfig, securityCfg *protoco
 	return proto.Equal(securityCfg, storedSecurityCfg), nil
 }
 
-// UpdateAuthGlobalConfig updates the AuthGlobalConfig datastore entity.
+// updateAuthGlobalConfig updates the AuthGlobalConfig datastore entity.
 // If there is no AuthGlobalConfig entity present in the datastore, one will be
 // created.
 //
 // TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
-func UpdateAuthGlobalConfig(ctx context.Context, oauthCfg *configspb.OAuthConfig, securityCfg *protocol.SecurityConfig, dryRun bool, historicalComment string) error {
+func updateAuthGlobalConfig(ctx context.Context, oauthCfg *configspb.OAuthConfig, securityCfg *protocol.SecurityConfig, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		shouldCreate := false
 
@@ -1394,12 +1394,18 @@ func UpdateAuthGlobalConfig(ctx context.Context, oauthCfg *configspb.OAuthConfig
 			return err
 		}
 		rootAuthGlobalCfg.SecurityConfig = securityCfgBlob
+
+		serviceIdentity, err := getServiceIdentity(ctx)
+		if err != nil {
+			return err
+		}
+
 		if dryRun {
 			logging.Infof(ctx, "(dry run) updating AuthGlobalConfig")
 			return nil
 		}
 
-		if err := commitEntity(rootAuthGlobalCfg, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false); err != nil {
+		if err := commitEntity(rootAuthGlobalCfg, clock.Now(ctx).UTC(), serviceIdentity, false); err != nil {
 			return err
 		}
 		return nil
@@ -1576,11 +1582,11 @@ func permsEqual(permsA, permsB []*protocol.Permission) bool {
 	})
 }
 
-// UpdateAuthRealmsGlobals updates the AuthRealmsGlobals singleton entity in
+// updateAuthRealmsGlobals updates the AuthRealmsGlobals singleton entity in
 // datastore, creating the entity if necessary.
 //
 // Returns an annotated error if one occurs.
-func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.PermissionsConfig, dryRun bool, historicalComment string) error {
+func updateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.PermissionsConfig, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		stored, err := GetAuthRealmsGlobals(ctx)
 		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
@@ -1626,6 +1632,11 @@ func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 			return nil
 		}
 
+		serviceIdentity, err := getServiceIdentity(ctx)
+		if err != nil {
+			return err
+		}
+
 		// Exit early if in dry run mode.
 		if dryRun {
 			logging.Infof(ctx, "(dry run) updating AuthRealmsGlobals entity")
@@ -1635,7 +1646,7 @@ func UpdateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 		stored.PermissionsList = &permissions.PermissionsList{
 			Permissions: orderedCfgPerms,
 		}
-		return commitEntity(stored, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
+		return commitEntity(stored, clock.Now(ctx).UTC(), serviceIdentity, false)
 	})
 }
 
@@ -1668,14 +1679,19 @@ func GetAllAuthProjectRealms(ctx context.Context) ([]*AuthProjectRealms, error) 
 	return authProjectRealms, nil
 }
 
-// DeleteAuthProjectRealms deletes an AuthProjectRealms entity from datastore.
+// deleteAuthProjectRealms deletes an AuthProjectRealms entity from datastore.
 // The caller is expected to handle the error.
 //
 // Returns error if Get from datastore failed
 // Returns error if transaction delete failed
-func DeleteAuthProjectRealms(ctx context.Context, project string, dryRun bool, historicalComment string) error {
+func deleteAuthProjectRealms(ctx context.Context, project string, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		authProjectRealms, err := GetAuthProjectRealms(ctx, project)
+		if err != nil {
+			return err
+		}
+
+		serviceIdentity, err := getServiceIdentity(ctx)
 		if err != nil {
 			return err
 		}
@@ -1685,7 +1701,7 @@ func DeleteAuthProjectRealms(ctx context.Context, project string, dryRun bool, h
 			return nil
 		}
 
-		return commitEntity(authProjectRealms, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), true)
+		return commitEntity(authProjectRealms, clock.Now(ctx).UTC(), serviceIdentity, true)
 	})
 }
 
@@ -1711,7 +1727,7 @@ type ExpandedRealms struct {
 	Realms *protocol.Realms
 }
 
-// UpdateAuthProjectRealms updates all the realms for a specific LUCI Project.
+// updateAuthProjectRealms updates all the realms for a specific LUCI Project.
 // If an entity does not exist in datastore for a given AuthProjectRealm, one
 // will be created.
 //
@@ -1722,7 +1738,7 @@ type ExpandedRealms struct {
 //		Failed to create new AuthProjectRealm entity
 //		Failed to update AuthProjectRealm entity
 //		Failed to put AuthProjectRealmsMeta entity
-func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string, dryRun bool, historicalComment string) error {
+func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string, dryRun bool, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		metas := []*AuthProjectRealmsMeta{}
 		existing := []*AuthProjectRealms{}
@@ -1734,7 +1750,12 @@ func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 			existing = append(existing, currentProjectRealms)
 		}
 
+		serviceIdentity, err := getServiceIdentity(ctx)
+		if err != nil {
+			return err
+		}
 		now := clock.Now(ctx).UTC()
+
 		for idx, r := range eRealms {
 			realms, err := proto.Marshal(r.Realms)
 			if err != nil {
@@ -1749,7 +1770,7 @@ func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 				if dryRun {
 					logging.Infof(ctx, "(dry run) creating realms for project %s", newRealm.ID)
 				} else {
-					if err := commitEntity(newRealm, now, auth.CurrentIdentity(ctx), false); err != nil {
+					if err := commitEntity(newRealm, now, serviceIdentity, false); err != nil {
 						return errors.Annotate(err, "failed to create new AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
 					}
 				}
@@ -1761,7 +1782,7 @@ func UpdateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 				if dryRun {
 					logging.Infof(ctx, "(dry run) updating realms for project %s", existing[idx].ID)
 				} else {
-					if err := commitEntity(existing[idx], now, auth.CurrentIdentity(ctx), false); err != nil {
+					if err := commitEntity(existing[idx], now, serviceIdentity, false); err != nil {
 						return errors.Annotate(err, "failed to update AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
 					}
 				}

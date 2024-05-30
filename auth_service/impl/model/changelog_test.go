@@ -37,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/testsupport"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -242,6 +243,7 @@ func TestGenerateChanges(t *testing.T) {
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{AdminGroup},
 		})
+		ctx = testsupport.SetTestContextSigner(ctx, "test-app-id", "test-app-id@example.com")
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
@@ -557,7 +559,7 @@ func TestGenerateChanges(t *testing.T) {
 				// Creation with no subnet
 				baseSubnetMap := make(map[string][]string)
 				baseSubnetMap["test-allowlist-1"] = []string{}
-				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
@@ -568,7 +570,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Deletion with no subnet
 				baseSubnetMap = map[string][]string{}
-				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
@@ -579,7 +581,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Creation with subnets
 				baseSubnetMap["test-allowlist-1"] = []string{"123.4.5.6"}
-				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)
@@ -593,7 +595,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add subnet
 				baseSubnetMap["test-allowlist-1"] = append(baseSubnetMap["test-allowlist-1"], "567.8.9.10")
-				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 8)
 				actualChanges, err = generateChanges(ctx, 4, false)
 				So(err, ShouldBeNil)
@@ -604,7 +606,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Remove subnet
 				baseSubnetMap["test-allowlist-1"] = baseSubnetMap["test-allowlist-1"][1:]
-				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 10)
 				actualChanges, err = generateChanges(ctx, 5, false)
 				So(err, ShouldBeNil)
@@ -615,7 +617,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Delete allowlist with subnet
 				baseSubnetMap = map[string][]string{}
-				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 12)
 				actualChanges, err = generateChanges(ctx, 6, false)
 				So(err, ShouldBeNil)
@@ -631,7 +633,7 @@ func TestGenerateChanges(t *testing.T) {
 			Convey("AuthIPAllowlist description changed", func() {
 				baseSubnetMap := make(map[string][]string)
 				baseSubnetMap["test-allowlist-1"] = []string{}
-				So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				_, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
@@ -660,7 +662,7 @@ func TestGenerateChanges(t *testing.T) {
 				}
 
 				// Old doesn't exist yet
-				So(UpdateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
@@ -673,7 +675,7 @@ func TestGenerateChanges(t *testing.T) {
 				newCfg := &configspb.OAuthConfig{
 					PrimaryClientId: "diff-client-id",
 				}
-				So(UpdateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
@@ -688,7 +690,7 @@ func TestGenerateChanges(t *testing.T) {
 					ClientIds: []string{"test.example.com"},
 				}
 
-				So(UpdateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
@@ -700,7 +702,7 @@ func TestGenerateChanges(t *testing.T) {
 				newCfg := &configspb.OAuthConfig{
 					ClientIds: []string{"not-test.example.com"},
 				}
-				So(UpdateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
@@ -719,7 +721,7 @@ func TestGenerateChanges(t *testing.T) {
 					TokenServerUrl: "test-token-server-url.example.com",
 				}
 
-				So(UpdateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
@@ -734,7 +736,7 @@ func TestGenerateChanges(t *testing.T) {
 				secCfg := &protocol.SecurityConfig{
 					InternalServiceRegexp: []string{"abc"},
 				}
-				So(UpdateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
@@ -749,7 +751,7 @@ func TestGenerateChanges(t *testing.T) {
 				}
 				expectedOldConfig := expectedNewConfig
 				expectedNewConfig, _ = proto.Marshal(secCfg)
-				So(UpdateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
@@ -771,7 +773,7 @@ func TestGenerateChanges(t *testing.T) {
 					InternalServiceRegexp: []string{"test"},
 				}
 				expectedNewConfig, _ := proto.Marshal(secCfg)
-				So(UpdateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
@@ -820,7 +822,7 @@ func TestGenerateChanges(t *testing.T) {
 					Realms: proj1Realms,
 				},
 			}
-			err := UpdateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+			err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
 			So(err, ShouldBeNil)
 
 			Convey("project realms created", func() {
@@ -834,7 +836,7 @@ func TestGenerateChanges(t *testing.T) {
 					},
 				}
 
-				err := UpdateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
 				So(err, ShouldBeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
@@ -847,7 +849,7 @@ func TestGenerateChanges(t *testing.T) {
 			})
 
 			Convey("project realms deleted", func() {
-				err = DeleteAuthProjectRealms(ctx, "proj1", false, "Go pRPC API")
+				err = deleteAuthProjectRealms(ctx, "proj1", false, "Go pRPC API")
 				So(err, ShouldBeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
@@ -871,7 +873,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: proj1Realms,
 					},
 				}
-				err = UpdateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
 				So(err, ShouldBeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
@@ -890,7 +892,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: nil,
 					},
 				}
-				err = UpdateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
 				So(err, ShouldBeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
@@ -913,7 +915,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: nil,
 					},
 				}
-				err = UpdateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
 				So(err, ShouldBeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
@@ -951,7 +953,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: updatedProj1Realms,
 					},
 				}
-				err = UpdateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:def", false, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:def", false, "Go pRPC API")
 				So(err, ShouldBeNil)
 
 				actualChanges, err := generateChanges(ctx, 2, false)
@@ -1057,7 +1059,7 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				So(UpdateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 				actualChanges, err := generateChanges(ctx, 1, false)
 				So(err, ShouldBeNil)
@@ -1079,7 +1081,7 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				So(UpdateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 				actualChanges, err = generateChanges(ctx, 2, false)
 				So(err, ShouldBeNil)
@@ -1109,7 +1111,7 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				So(UpdateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
+				So(updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 6)
 				actualChanges, err = generateChanges(ctx, 3, false)
 				So(err, ShouldBeNil)

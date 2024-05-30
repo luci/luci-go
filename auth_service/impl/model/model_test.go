@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/util/zlib"
 	"go.chromium.org/luci/auth_service/internal/permissions"
+	"go.chromium.org/luci/auth_service/testsupport"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -1160,14 +1161,15 @@ func TestGetAllAuthIPAllowlists(t *testing.T) {
 	})
 }
 
-func TestUpdateAllowlistEntities(t *testing.T) {
+func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 	t.Parallel()
 
-	Convey("Testing UpdateAllowlistEntities", t, func() {
+	Convey("Testing updateAllAuthIPAllowlists", t, func() {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{AdminGroup},
 		})
+		ctx = testsupport.SetTestContextSigner(ctx, "test-app-id", "test-app-id@example.com")
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
@@ -1189,7 +1191,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 		allowlistToCreate := &AuthIPAllowlist{
 			AuthVersionedEntityMixin: AuthVersionedEntityMixin{
 				ModifiedTS:    testCreatedTS,
-				ModifiedBy:    "user:someone@example.com",
+				ModifiedBy:    "user:test-app-id@example.com",
 				AuthDBRev:     1,
 				AuthDBPrevRev: 0,
 			},
@@ -1199,11 +1201,11 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			Subnets:     []string{"123.4.5.6"},
 			Description: "Imported from ip_allowlist.cfg",
 			CreatedTS:   testCreatedTS,
-			CreatedBy:   "user:someone@example.com",
+			CreatedBy:   "user:test-app-id@example.com",
 		}
 
 		Convey("no-op for identical subnet map", func() {
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			So(err, ShouldBeNil)
 			So(allowlists, ShouldResemble, baseAllowlistSlice)
@@ -1213,7 +1215,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 
 		Convey("Create allowlist entity", func() {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			So(err, ShouldBeNil)
 			expectedSlice := append(baseAllowlistSlice, allowlistToCreate)
@@ -1222,11 +1224,11 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 
 		Convey("Update allowlist entity", func() {
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			baseAllowlistSlice[0].AuthVersionedEntityMixin = AuthVersionedEntityMixin{
 				ModifiedTS:    testCreatedTS,
-				ModifiedBy:    "user:someone@example.com",
+				ModifiedBy:    "user:test-app-id@example.com",
 				AuthDBRev:     1,
 				AuthDBPrevRev: 1337,
 			}
@@ -1237,7 +1239,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 
 		Convey("Delete allowlist entity", func() {
 			delete(baseSubnetMap, "test-allowlist-1")
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			expectedSlice := baseAllowlistSlice[1:]
 			So(err, ShouldBeNil)
@@ -1248,12 +1250,12 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
 			delete(baseSubnetMap, "test-allowlist-2")
-			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), ShouldBeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			allowlist0Copy := *baseAllowlistSlice[0]
 			allowlist0Copy.AuthVersionedEntityMixin = AuthVersionedEntityMixin{
 				ModifiedTS:    testCreatedTS,
-				ModifiedBy:    "user:someone@example.com",
+				ModifiedBy:    "user:test-app-id@example.com",
 				AuthDBRev:     1,
 				AuthDBPrevRev: 1337,
 			}
@@ -1281,7 +1283,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-1\"")
 			So(getStringProp(historicalEntity, "description"), ShouldEqual, baseAllowlistSlice[0].Description)
 			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, allowlist0Copy.Subnets)
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
 			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
 			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
 			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
@@ -1292,7 +1294,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-2\"")
 			So(getStringProp(historicalEntity, "description"), ShouldEqual, baseAllowlistSlice[1].Description)
 			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, baseAllowlistSlice[1].Subnets)
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
 			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
 			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
 			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
@@ -1304,7 +1306,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-3\"")
 			So(getStringProp(historicalEntity, "description"), ShouldEqual, allowlistToCreate.Description)
 			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, allowlistToCreate.Subnets)
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
 			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
 			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
 			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
@@ -1337,11 +1339,12 @@ func TestAuthGlobalConfig(t *testing.T) {
 		So(actual, ShouldResemble, cfg)
 	})
 
-	Convey("Testing UpdateAuthGlobalConfig", t, func() {
+	Convey("Testing updateAuthGlobalConfig", t, func() {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{AdminGroup},
 		})
+		ctx = testsupport.SetTestContextSigner(ctx, "test-app-id", "test-app-id@example.com")
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
@@ -1357,13 +1360,13 @@ func TestAuthGlobalConfig(t *testing.T) {
 		seccfgpb := testSecurityConfig()
 
 		Convey("Creating new AuthGlobalConfig", func() {
-			So(UpdateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
 			So(err, ShouldBeNil)
 			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
 				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
 					ModifiedTS:    testCreatedTS,
-					ModifiedBy:    "user:someone@example.com",
+					ModifiedBy:    "user:test-app-id@example.com",
 					AuthDBRev:     1,
 					AuthDBPrevRev: 0,
 				},
@@ -1396,7 +1399,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 			So(getStringProp(historicalEntity, "oauth_client_secret"), ShouldEqual, "new-test-client-secret")
 			So(getStringProp(historicalEntity, "token_server_url"), ShouldEqual, "https://new-token-server-url.example.com")
 			So(getStringSliceProp(historicalEntity, "oauth_additional_client_ids"), ShouldResemble, []string{"new-test-client-id-1", "new-test-client-id-2"})
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
 			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
 			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
 			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
@@ -1407,13 +1410,13 @@ func TestAuthGlobalConfig(t *testing.T) {
 
 		Convey("Updating AuthGlobalConfig", func() {
 			So(datastore.Put(ctx, testAuthGlobalConfig(ctx)), ShouldBeNil)
-			So(UpdateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
 			So(err, ShouldBeNil)
 			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
 				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
 					ModifiedTS:    testCreatedTS,
-					ModifiedBy:    "user:someone@example.com",
+					ModifiedBy:    "user:test-app-id@example.com",
 					AuthDBRev:     1,
 					AuthDBPrevRev: 1337,
 				},
@@ -1447,7 +1450,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 			So(getStringProp(historicalEntity, "token_server_url"), ShouldEqual, "https://new-token-server-url.example.com")
 			So(getByteSliceProp(historicalEntity, "security_config"), ShouldResemble, testSecurityConfigBlob())
 			So(getStringSliceProp(historicalEntity, "oauth_additional_client_ids"), ShouldResemble, []string{"new-test-client-id-1", "new-test-client-id-2"})
-			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:test-app-id@example.com")
 			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
 			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
 			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
@@ -1469,7 +1472,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 				},
 				TokenServerUrl: "https://token-server.example.com",
 			}
-			So(UpdateAuthGlobalConfig(ctx, sameOauthCfg, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAuthGlobalConfig(ctx, sameOauthCfg, seccfgpb, false, "Go pRPC API"), ShouldBeNil)
 
 			// Check this is a no-op.
 			So(taskScheduler.Tasks(), ShouldHaveLength, 0)
@@ -1489,6 +1492,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 		})
+		ctx = testsupport.SetTestContextSigner(ctx, "test-app-id", "test-app-id@example.com")
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx = info.SetImageVersion(ctx, "test-version")
 		return tq.TestingContext(txndefer.FilterRDS(ctx), nil)
@@ -1551,7 +1555,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 		})
 	})
 
-	Convey("Testing UpdateAuthProjectRealms", t, func() {
+	Convey("Testing updateAuthProjectRealms", t, func() {
 		permissionsRev := "permissions.cfg:abc"
 		proj1Realms := &protocol.Realms{
 			Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
@@ -1586,13 +1590,14 @@ func TestAuthRealmsConfig(t *testing.T) {
 			ctx, ts := getCtx()
 
 			// Check updating realms for a new project works.
-			err := UpdateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
+			err := updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(ts.Tasks(), ShouldHaveLength, 2)
 			// Check the newly added project realms are as expected.
 			authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
 			So(err, ShouldBeNil)
 			So(authProjectRealms.ID, ShouldEqual, "proj1")
+			So(authProjectRealms.ModifiedBy, ShouldEqual, "user:test-app-id@example.com")
 			So(authProjectRealms.Realms, ShouldResembleProto, expectedRealms)
 			authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
 			So(err, ShouldBeNil)
@@ -1615,13 +1620,14 @@ func TestAuthRealmsConfig(t *testing.T) {
 			So(datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), ShouldBeNil)
 
 			// Check updating realms for an existing project works.
-			err = UpdateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
+			err = updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(ts.Tasks(), ShouldHaveLength, 2)
 			// Check the newly added project realms are as expected.
 			authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
 			So(err, ShouldBeNil)
 			So(authProjectRealms.ID, ShouldEqual, "proj1")
+			So(authProjectRealms.ModifiedBy, ShouldEqual, "user:test-app-id@example.com")
 			So(authProjectRealms.Realms, ShouldResembleProto, expectedRealms)
 			authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
 			So(err, ShouldBeNil)
@@ -1642,7 +1648,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 
 				// Check updating realms for a new project succeeds but doesn't
 				// create an AuthProjectRealms or AuthProjectRealmsMeta entity.
-				err := UpdateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
+				err := updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
 				So(err, ShouldBeNil)
 				So(ts.Tasks(), ShouldHaveLength, 0)
 				authProjectRealms, err := GetAllAuthProjectRealms(ctx)
@@ -1662,7 +1668,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 
 				// Check updating realms for a new project succeeds but doesn't
 				// update the AuthProjectRealms or AuthProjectRealmsMeta entity.
-				err = UpdateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
 				So(err, ShouldBeNil)
 				So(ts.Tasks(), ShouldHaveLength, 0)
 
@@ -1688,11 +1694,11 @@ func TestAuthRealmsConfig(t *testing.T) {
 		_, err = GetAuthProjectRealms(ctx, testProject)
 		So(err, ShouldBeNil)
 
-		err = DeleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
+		err = deleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
 		So(err, ShouldBeNil)
 		So(ts.Tasks(), ShouldHaveLength, 2)
 
-		err = DeleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
+		err = deleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
 		So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
 	})
 
@@ -1740,7 +1746,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 		}
 	})
 
-	Convey("Testing UpdateAuthRealmsGlobals", t, func() {
+	Convey("Testing updateAuthRealmsGlobals", t, func() {
 		Convey("no previous AuthRealmsGlobals entity present", func() {
 			ctx, ts := getCtx()
 
@@ -1757,7 +1763,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			err := UpdateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API")
+			err := updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API")
 			So(err, ShouldBeNil)
 			So(ts.Tasks(), ShouldHaveLength, 2)
 
@@ -1808,7 +1814,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			So(UpdateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
 			So(ts.Tasks(), ShouldHaveLength, 2)
 
 			fetched, err := GetAuthRealmsGlobals(ctx)
@@ -1882,7 +1888,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			So(UpdateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
+			So(updateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), ShouldBeNil)
 			So(ts.Tasks(), ShouldHaveLength, 0)
 
 			fetched, err := GetAuthRealmsGlobals(ctx)

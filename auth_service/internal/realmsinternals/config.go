@@ -23,12 +23,9 @@ import (
 	"math"
 	"sort"
 	"sync"
-	"time"
 
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/encoding/prototext"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -36,12 +33,10 @@ import (
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 )
 
@@ -61,173 +56,9 @@ const (
 	RealmsDevCfgPath = "realms-dev.cfg"
 )
 
-// The maximum number of AuthDB revisions to produce when permissions
-// change and realms need to be reevaluated.
-const maxReevaluationRevisions int = 10
-
 type realmsMap struct {
 	mu     *sync.Mutex
 	cfgMap map[string]*config.Config
-}
-
-// CheckConfigChanges returns a slice of parameterless callbacks to
-// update the AuthDB based on detected realms.cfg and permissions
-// changes.
-//
-// Args:
-//   - permissionsDB: the current permissions and roles;
-//   - latest: RealmsCfgRev's for the realms configs fetched from
-//     LUCI Config;
-//   - stored: RealmsCfgRev's for the last processed realms configs;
-//   - dryRun: whether this is a dry run (if yes, changes wil not be
-//     committed in the AuthDB);
-//   - historicalComment: the comment to use in entities' history if
-//     changes are committed.
-//
-// Returns:
-//   - jobs: parameterless callbacks to update the AuthDB.
-func CheckConfigChanges(
-	ctx context.Context, permissionsDB *permissions.PermissionsDB,
-	latest []*model.RealmsCfgRev, stored []*model.RealmsCfgRev,
-	dryRun bool, historicalComment string) ([]func() error, error) {
-	toMap := func(revisions []*model.RealmsCfgRev) (map[string]*model.RealmsCfgRev, error) {
-		result := make(map[string]*model.RealmsCfgRev, len(revisions))
-		for _, cfgRev := range revisions {
-			result[cfgRev.ProjectID] = cfgRev
-		}
-
-		if len(result) != len(revisions) {
-			return nil, fmt.Errorf("multiple realms configs for the same project ID")
-		}
-		return result, nil
-	}
-
-	latestMap, err := toMap(latest)
-	if err != nil {
-		return nil, err
-	}
-	storedMap, err := toMap(stored)
-	if err != nil {
-		return nil, err
-	}
-
-	var jobs []func() error
-
-	// For the realms configs that should be reevaluated, because they
-	// were generated with a previous revision of permissions.
-	toReevaluate := []*model.RealmsCfgRev{}
-
-	// Detect changes to realms configs. Going through the latest
-	// configs in a random order helps to progress if one of the configs
-	// is somehow very problematic (e.g. causes OOM). When the cron job
-	// is repeatedly retried, all healthy configs will eventually be
-	// processed before the problematic ones.
-	randomOrder := mathrand.Perm(ctx, len(latest))
-	for _, i := range randomOrder {
-		latestCfgRev := latest[i]
-		storedCfgRev, ok := storedMap[latestCfgRev.ProjectID]
-		if !ok || (storedCfgRev.ConfigDigest != latestCfgRev.ConfigDigest) {
-			// Add a job to update this project's realms.
-			revs := []*model.RealmsCfgRev{latestCfgRev}
-			comment := fmt.Sprintf("%s - using realms config rev %s", historicalComment, latestCfgRev.ConfigRev)
-			jobs = append(jobs, func() error {
-				return UpdateRealms(ctx, permissionsDB, revs, dryRun, comment)
-			})
-		} else if storedCfgRev.PermsRev != permissionsDB.Rev {
-			// This config needs to be reevaluated.
-			toReevaluate = append(toReevaluate, latestCfgRev)
-		}
-	}
-
-	// Detect realms.cfg that were removed completely.
-	for _, storedCfgRev := range stored {
-		if _, ok := latestMap[storedCfgRev.ProjectID]; !ok {
-			// Add a job to delete this project's realms.
-			projID := storedCfgRev.ProjectID
-			comment := fmt.Sprintf("%s - config no longer exists", historicalComment)
-			jobs = append(jobs, func() error {
-				return DeleteRealms(ctx, projID, dryRun, comment)
-			})
-		}
-	}
-
-	// Changing the permissions (e.g. adding a new permission to a widely used
-	// role) may affect ALL projects. In this case, generating a ton of AuthDB
-	// revisions is wasteful. We could try to generate a single giant revision,
-	// but it may end up being too big, hitting datastore limits. So we
-	// "heuristically" split it into at most maxReevaluationRevisions, hoping
-	// for the best.
-	reevaluations := len(toReevaluate)
-	batchSize := reevaluations / maxReevaluationRevisions
-	if batchSize < 1 {
-		batchSize = 1
-	}
-	for i := 0; i < reevaluations; i = i + batchSize {
-		revs := toReevaluate[i : i+batchSize]
-		comment := fmt.Sprintf("%s - generating realms with permissions rev %s",
-			historicalComment, permissionsDB.Rev)
-		jobs = append(jobs, func() error {
-			return UpdateRealms(ctx, permissionsDB, revs, dryRun, comment)
-		})
-	}
-
-	return jobs, nil
-}
-
-// UpdateRealms updates realms for projects given the fetched or previously processed realms.cfg.
-//
-// Returns
-//
-//	Annotated Error
-//		Unmarshalling proto error
-//		Failed Realm Expansion
-//		Failed to update datastore with Realms changes
-func UpdateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*model.RealmsCfgRev, dryRun bool, historicalComment string) error {
-	expanded := []*model.ExpandedRealms{}
-	for _, r := range revs {
-		logging.Infof(ctx, "expanding realms of project \"%s\"...", r.ProjectID)
-		start := time.Now()
-
-		parsed := &realmsconf.RealmsCfg{}
-		if err := prototext.Unmarshal(r.ConfigBody, parsed); err != nil {
-			return errors.Annotate(err, "couldn't unmarshal config body").Err()
-		}
-		expandedRev, err := ExpandRealms(db, r.ProjectID, parsed)
-		if err != nil {
-			return errors.Annotate(err, "failed to process realms of \"%s\"", r.ProjectID).Err()
-		}
-		expanded = append(expanded, &model.ExpandedRealms{
-			CfgRev: r,
-			Realms: expandedRev,
-		})
-
-		if dt := time.Since(start).Seconds(); dt > 5.0 {
-			logging.Warningf(ctx, "realms expansion of \"%s\" is slow: %1.f seconds", r.ProjectID, dt)
-		}
-	}
-	if len(expanded) == 0 {
-		return nil
-	}
-
-	logging.Infof(ctx, "entering transaction")
-	if err := model.UpdateAuthProjectRealms(ctx, expanded, db.Rev, dryRun, historicalComment); err != nil {
-		return err
-	}
-	logging.Infof(ctx, "transaction landed")
-	return nil
-}
-
-// DeleteRealms will try to delete the AuthProjectRealms for a given projectID.
-func DeleteRealms(ctx context.Context, projectID string, dryRun bool, historicalComment string) error {
-	switch err := model.DeleteAuthProjectRealms(ctx, projectID, dryRun, historicalComment); {
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return errors.Annotate(err, "realms for %s do not exist or have already been deleted", projectID).Err()
-	case err != nil:
-		return err
-	default:
-		logging.Infof(ctx, "deleted realms for %s", projectID)
-		return nil
-	}
 }
 
 // ExpandRealms expands a realmsconf.RealmsCfg into a flat protocol.Realms.
@@ -516,33 +347,27 @@ func sliceCompare[T string | uint32](sli []T, slj []T) bool {
 	return len(sli) < len(slj)
 }
 
-// GetConfigs fetches the configs concurrently; the
-// latest configs from luci-cfg, the stored config meta from datastore.
+// FetchLatestRealmsConfigs fetches the latest configs from luci-cfg
+// concurrently.
 //
-// Errors
-//
-//	ErrNoConfig -- config is not found
-//	annotated error -- for all other errors
-func GetConfigs(ctx context.Context) ([]*model.RealmsCfgRev, []*model.RealmsCfgRev, error) {
+// Errors:
+//   - ErrNoConfig if config is not found
+//   - annotated error for all other errors
+func FetchLatestRealmsConfigs(ctx context.Context) (map[string]*config.Config, error) {
 	targetCfgPath := cfgPath(ctx)
 	projects, err := cfgclient.ProjectsWithConfig(ctx, targetCfgPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	logging.Debugf(ctx, "%d projects with %s: %s", len(projects), targetCfgPath, projects)
 
-	// client to fetch configs
+	// Client to fetch configs.
 	client := cfgclient.Client(ctx)
-	latestRevs := make([]*model.RealmsCfgRev, len(projects)+1)
-
-	eg, childCtx := errgroup.WithContext(ctx)
 
 	latestMap := realmsMap{
 		mu:     &sync.Mutex{},
 		cfgMap: make(map[string]*config.Config, len(projects)+1),
 	}
-
-	storedMeta := []*model.AuthProjectRealmsMeta{}
 
 	self := func(ctx context.Context) string {
 		if cfgPath(ctx) == RealmsDevCfgPath {
@@ -551,22 +376,14 @@ func GetConfigs(ctx context.Context) ([]*model.RealmsCfgRev, []*model.RealmsCfgR
 		return Cria
 	}
 
-	// Get Project Metadata configs stored in datastore
-	eg.Go(func() error {
-		storedMeta, err = model.GetAllAuthProjectRealmsMeta(ctx)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
 	// Get self config i.e. services/chrome-infra-auth-dev/realms-dev.cfg
 	// or services/chrome-infra-auth/realms.cfg.
+	eg, childCtx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
 		return latestMap.getLatestConfig(childCtx, client, self(ctx))
 	})
 
-	// Get Project Configs
+	// Get other projects' realms configs.
 	for _, project := range projects {
 		project := project
 		eg.Go(func() error {
@@ -576,49 +393,10 @@ func GetConfigs(ctx context.Context) ([]*model.RealmsCfgRev, []*model.RealmsCfgR
 
 	err = eg.Wait()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// Log the projects that have stored AuthProjectRealmsMeta, to aid in
-	// debugging.
-	projectsWithMeta := make([]string, len(storedMeta))
-	for i, meta := range storedMeta {
-		metaProj, _ := meta.ProjectID()
-		projectsWithMeta[i] = metaProj
-	}
-	logging.Debugf(ctx, "fetched realms metadata for %d projects: %s", len(storedMeta), projectsWithMeta)
-
-	storedRevs := make([]*model.RealmsCfgRev, len(storedMeta))
-
-	idx := 0
-	for projID, cfg := range latestMap.cfgMap {
-		latestRevs[idx] = &model.RealmsCfgRev{
-			ProjectID:    projID,
-			ConfigRev:    cfg.Revision,
-			ConfigDigest: cfg.ContentHash,
-			ConfigBody:   []byte(cfg.Content),
-		}
-		idx++
-	}
-
-	for i, meta := range storedMeta {
-		projID, err := meta.ProjectID()
-		if err != nil {
-			return nil, nil, err
-		}
-		storedRevs[i] = &model.RealmsCfgRev{
-			ProjectID:    projID,
-			ConfigRev:    meta.ConfigRev,
-			ConfigDigest: meta.ConfigDigest,
-			PermsRev:     meta.PermsRev,
-		}
-	}
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return latestRevs, storedRevs, nil
+	return latestMap.cfgMap, nil
 }
 
 // getLatestConfig fetches the most up to date realms.cfg for a given project, unless

@@ -19,6 +19,18 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
+	"fmt"
+
+	realmsconf "go.chromium.org/luci/common/proto/realms"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
+
+	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/internal/permissions"
 )
 
 // BuildTargz builds a tar bundle.
@@ -52,4 +64,113 @@ func BuildTargz(files map[string][]byte) []byte {
 		return nil
 	}
 	return buf.Bytes()
+}
+
+// SetTestContextSigner is a helper functionfor unit tests.
+//
+// It installs a test Signer implementation into the context, with the given
+// app ID and service account.
+func SetTestContextSigner(ctx context.Context, appID, serviceAccount string) context.Context {
+	return auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
+		cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
+			AppID:              appID,
+			ServiceAccountName: serviceAccount,
+		})
+		return cfg
+	})
+}
+
+// PermissionsDB creates a PermissionsDB for tests.
+func PermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
+	db := permissions.NewPermissionsDB(&configspb.PermissionsConfig{
+		Role: []*configspb.PermissionsConfig_Role{
+			{
+				Name: "role/dev.a",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.p1",
+					},
+					{
+						Name: "luci.dev.p2",
+					},
+				},
+			},
+			{
+				Name: "role/dev.b",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.p2",
+					},
+					{
+						Name: "luci.dev.p3",
+					},
+				},
+			},
+			{
+				Name: "role/dev.all",
+				Includes: []string{
+					"role/dev.a",
+					"role/dev.b",
+				},
+			},
+			{
+				Name: "role/dev.unused",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.p2",
+					},
+					{
+						Name: "luci.dev.p3",
+					},
+					{
+						Name: "luci.dev.p4",
+					},
+					{
+						Name: "luci.dev.p5",
+					},
+					{
+						Name: "luci.dev.unused",
+					},
+				},
+			},
+			{
+				Name: "role/implicitRoot",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.implicitRoot",
+					},
+				},
+			},
+		},
+		Attribute: []string{"a1", "a2", "root"},
+	}, &config.Meta{
+		Path:     "permissions.cfg",
+		Revision: "123",
+	})
+	db.ImplicitRootBindings = func(s string) []*realmsconf.Binding { return nil }
+	if implicitRootBindings {
+		db.ImplicitRootBindings = func(projectID string) []*realmsconf.Binding {
+			return []*realmsconf.Binding{
+				{
+					Role:       "role/implicitRoot",
+					Principals: []string{fmt.Sprintf("project:%s", projectID)},
+				},
+				{
+					Role:       "role/implicitRoot",
+					Principals: []string{"group:root"},
+					Conditions: []*realmsconf.Condition{
+						{
+							Op: &realmsconf.Condition_Restrict{
+								Restrict: &realmsconf.Condition_AttributeRestriction{
+									Attribute: "root",
+									Values:    []string{"yes"},
+								},
+							},
+						},
+					},
+				},
+			}
+		}
+	}
+	return db
 }
