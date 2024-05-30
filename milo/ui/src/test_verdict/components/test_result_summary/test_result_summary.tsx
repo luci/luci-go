@@ -12,44 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
-import { useRef } from 'react';
-
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
+import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { ArtifactTagScope } from '@/test_verdict/components/artifact_tags';
 
-interface Props {
-  summaryHtml: string;
-  resultName: string;
-  invId: string;
+export interface TestResultSummaryProps {
+  readonly testResult: TestResult;
 }
 
-export function ResultSummary({ summaryHtml, resultName }: Props) {
-  const mainRef = useRef<HTMLDivElement>(null);
-
+export function TestResultSummary({ testResult }: TestResultSummaryProps) {
   return (
     <RecoverableErrorBoundary>
-      <Grid item ref={mainRef}>
-        <ArtifactTagScope resultName={resultName}>
-          <SanitizedHtml
-            sx={{
-              backgroundColor: 'var(--block-background-color)',
-              paddingX: 1,
-              maxHeight: '54vh',
-              overflowX: 'auto',
+      <ArtifactTagScope resultName={testResult.name}>
+        <SanitizedHtml
+          sx={{
+            backgroundColor: 'var(--block-background-color)',
+            padding: '5px',
+            maxHeight: '54vh',
+            overflowX: 'auto',
+            whiteSpace: 'pre-wrap',
+            '&>p:first-of-type': {
+              marginTop: 0,
+            },
+            '&>p:last-of-type': {
+              marginBottom: 0,
+            },
+            '& pre': {
+              margin: 0,
+              fontSize: '12px',
               whiteSpace: 'pre-wrap',
-              '& pre': {
-                margin: 0,
-                fontSize: '12px',
-                whiteSpace: 'pre-wrap',
-                overflowWrap: 'break-word',
-              },
-            }}
-            html={summaryHtml}
-          />
-        </ArtifactTagScope>
-      </Grid>
+              overflowWrap: 'break-word',
+            },
+          }}
+          html={testResult.summaryHtml}
+        />
+      </ArtifactTagScope>
     </RecoverableErrorBoundary>
   );
 }

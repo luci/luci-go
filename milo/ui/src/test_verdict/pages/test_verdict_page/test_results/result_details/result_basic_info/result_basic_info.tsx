@@ -30,14 +30,13 @@ import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ArtifactLink } from '@/test_verdict/components/artifact_link';
+import { TestResultSummary } from '@/test_verdict/components/test_result_summary';
 import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { useProject } from '../../../context';
 import { useClustersByResultId } from '../../context';
 import { useCombinedArtifacts, useResult } from '../context';
-
-import { ResultSummary } from './result_summary';
 
 interface LogArtifactsProps {
   testhausLogs?: Artifact;
@@ -164,11 +163,9 @@ export function ResultBasicInfo() {
           {result.summaryHtml && (
             <Grid item container rowGap={1} direction="column">
               <Grid item>Summary:</Grid>
-              <ResultSummary
-                summaryHtml={result.summaryHtml}
-                resultName={result.name}
-                invId={parsedResultName.invocationId}
-              />
+              <Grid item>
+                <TestResultSummary testResult={result} />
+              </Grid>
             </Grid>
           )}
           <Grid container item>
