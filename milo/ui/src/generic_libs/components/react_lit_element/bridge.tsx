@@ -98,6 +98,7 @@ class ReactLitElementTrackerElement extends LitElement {
   readonly [ELEMENTS] = new Map<ReactLitElement, number>();
 
   private onAttachedElement = (e: Event) => {
+    e.stopPropagation();
     const event = e as CustomEvent<ReactLitElement>;
     if (this[ELEMENTS].has(event.detail)) {
       return;
@@ -108,6 +109,7 @@ class ReactLitElementTrackerElement extends LitElement {
   };
 
   private onDetachedElement = (e: Event) => {
+    e.stopPropagation();
     const event = e as CustomEvent<ReactLitElement>;
     if (!this[ELEMENTS].has(event.detail)) {
       return;
@@ -131,11 +133,11 @@ class ReactLitElementTrackerElement extends LitElement {
   disconnectedCallback(): void {
     this.removeEventListener(
       ATTACHED_REACT_LIT_ELEMENT_EVENT,
-      this.onDetachedElement,
+      this.onAttachedElement,
     );
     this.removeEventListener(
       DETACHED_REACT_LIT_ELEMENT_EVENT,
-      this.onAttachedElement,
+      this.onDetachedElement,
     );
 
     if (this[ELEMENTS].size !== 0) {

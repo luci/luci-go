@@ -218,4 +218,16 @@ describe('ReactLitElement', () => {
     ).toHaveTextContent('val1');
     expect(screen.queryByTestId('element2')).not.toBeInTheDocument();
   });
+
+  it('only render once when there are multiple <ReactLitBridge />', async () => {
+    render(
+      <ReactLitBridge>
+        <ReactLitBridge>
+          <milo-test-element property="val1"></milo-test-element>
+        </ReactLitBridge>
+      </ReactLitBridge>,
+    );
+    await act(() => jest.runAllTimersAsync());
+    expect(screen.getAllByTestId('property')).toHaveLength(1);
+  });
 });
