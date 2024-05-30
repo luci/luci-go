@@ -20,8 +20,8 @@ import {
   ExpandableEntryHeader,
 } from './expandable_entry';
 
-describe('ExpandableEntry', () => {
-  test('collapsed', () => {
+describe('<ExpandableEntry />', () => {
+  it('collapsed', () => {
     render(
       <ExpandableEntry expanded={false}>
         <ExpandableEntryHeader onToggle={() => {}}>
@@ -38,7 +38,7 @@ describe('ExpandableEntry', () => {
     expect(screen.queryByText('Content')).toBeNull();
   });
 
-  test('expanded', () => {
+  it('expanded', () => {
     render(
       <ExpandableEntry expanded={true}>
         <ExpandableEntryHeader onToggle={() => {}}>
@@ -55,7 +55,7 @@ describe('ExpandableEntry', () => {
     expect(screen.queryByText('Content')).not.toBeNull();
   });
 
-  test('onToggle should be fired when the header is clicked', () => {
+  it('onToggle should be called when the header is clicked', () => {
     const onToggleStub = jest.fn();
     const { rerender } = render(
       <ExpandableEntry expanded={false}>
@@ -71,21 +71,21 @@ describe('ExpandableEntry', () => {
     let headerIconEle = screen.getByTestId('ChevronRightIcon');
     const headerContentEle = screen.getByText('Header');
 
-    expect(onToggleStub.mock.calls.length).toStrictEqual(0);
+    expect(onToggleStub).toHaveBeenCalledTimes(0);
     fireEvent.click(headerIconEle);
-    expect(onToggleStub.mock.calls.length).toStrictEqual(1);
-    expect(onToggleStub.mock.lastCall).toEqual([true]);
+    expect(onToggleStub).toHaveBeenCalledTimes(1);
+    expect(onToggleStub).toHaveBeenLastCalledWith(true);
 
     // Clicking on the header the second time should not change the param passed
     // to onToggle.
     fireEvent.click(headerIconEle);
-    expect(onToggleStub.mock.calls.length).toStrictEqual(2);
-    expect(onToggleStub.mock.lastCall).toEqual([true]);
+    expect(onToggleStub).toHaveBeenCalledTimes(2);
+    expect(onToggleStub).toHaveBeenLastCalledWith(true);
 
     // Clicking on the header content should work as well.
     fireEvent.click(headerContentEle);
-    expect(onToggleStub.mock.calls.length).toStrictEqual(3);
-    expect(onToggleStub.mock.lastCall).toEqual([true]);
+    expect(onToggleStub).toHaveBeenCalledTimes(3);
+    expect(onToggleStub).toHaveBeenLastCalledWith(true);
 
     rerender(
       <ExpandableEntry expanded={true}>
@@ -102,9 +102,34 @@ describe('ExpandableEntry', () => {
 
     // Updating the expanded prop is updated should change the param passed to
     // onToggle.
-    expect(onToggleStub.mock.calls.length).toStrictEqual(3);
+    expect(onToggleStub).toHaveBeenCalledTimes(3);
     fireEvent.click(headerIconEle);
-    expect(onToggleStub.mock.calls.length).toStrictEqual(4);
-    expect(onToggleStub.mock.lastCall).toEqual([false]);
+    expect(onToggleStub).toHaveBeenCalledTimes(4);
+    expect(onToggleStub).toHaveBeenLastCalledWith(false);
+  });
+
+  it('onToggle should not be called when the header is clicked when disabled', () => {
+    const onToggleStub = jest.fn();
+    render(
+      <ExpandableEntry expanded={false}>
+        <ExpandableEntryHeader disabled onToggle={onToggleStub}>
+          <span>Header</span>
+        </ExpandableEntryHeader>
+        <ExpandableEntryBody>
+          <span>Content</span>
+        </ExpandableEntryBody>
+      </ExpandableEntry>,
+    );
+
+    const headerIconEle = screen.getByTestId('ChevronRightIcon');
+    const headerContentEle = screen.getByText('Header');
+
+    expect(onToggleStub).not.toHaveBeenCalled();
+    fireEvent.click(headerIconEle);
+    expect(onToggleStub).not.toHaveBeenCalled();
+
+    // Clicking on the header content should not trigger callback either.
+    fireEvent.click(headerContentEle);
+    expect(onToggleStub).not.toHaveBeenCalled();
   });
 });

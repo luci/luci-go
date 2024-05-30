@@ -20,6 +20,8 @@ const ExpandedContext = createContext(false);
 
 export interface ExpandableEntryHeaderProps {
   readonly onToggle: (expand: boolean) => void;
+  readonly disabled?: boolean;
+  readonly title?: string;
   readonly sx?: SxProps<Theme>;
   readonly children: React.ReactNode;
 }
@@ -29,6 +31,8 @@ export interface ExpandableEntryHeaderProps {
  */
 export function ExpandableEntryHeader({
   onToggle,
+  disabled = false,
+  title,
   sx,
   children,
 }: ExpandableEntryHeaderProps) {
@@ -36,12 +40,14 @@ export function ExpandableEntryHeader({
 
   return (
     <Box
-      onClick={() => onToggle(!expanded)}
+      onClick={() => disabled || onToggle(!expanded)}
+      title={title}
       sx={{
         display: 'grid',
         gridTemplateColumns: '24px 1fr',
         gridGap: '5px',
-        cursor: 'pointer',
+        cursor: disabled ? 'unset' : 'pointer',
+        color: (theme) => (disabled ? theme.palette.action.disabled : 'unset'),
         lineHeight: '24px',
       }}
     >
