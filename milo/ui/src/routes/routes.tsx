@@ -24,6 +24,10 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/core/pages/login_page'),
   },
   {
+    path: 'local-login-instruction',
+    lazy: () => import('@/core/pages/local_login_instruction_page'),
+  },
+  {
     path: 'search',
     lazy: () => import('@/routes/search_loader/search_redirection_loader'),
   },

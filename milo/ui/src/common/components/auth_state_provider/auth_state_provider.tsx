@@ -45,6 +45,8 @@ interface AuthStateContextValue {
   readonly getValidAuthState: () => Promise<AuthState>;
 }
 
+export const AUTH_STATE_QUERY_KEY = Object.freeze(['auth-state']);
+
 export const AuthStateContext = createContext<AuthStateContextValue | null>(
   null,
 );
@@ -62,7 +64,7 @@ export function AuthStateProvider({
   // do not wait until the initial value expires before sending out the first
   // query.
   const { data, isPlaceholderData } = useQuery({
-    queryKey: ['auth-state'],
+    queryKey: AUTH_STATE_QUERY_KEY,
     queryFn: () => queryAuthState(),
     placeholderData: initialValue,
     refetchInterval(prevData) {

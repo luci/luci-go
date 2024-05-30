@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { ContentCopy, Done } from '@mui/icons-material';
-import { Box, styled } from '@mui/material';
+import { Box, styled, SxProps, Theme } from '@mui/material';
 import copy from 'copy-to-clipboard';
 import { useState } from 'react';
 import { useTimeoutFn } from 'react-use';
@@ -40,12 +40,17 @@ export interface CopyToClipboardProps {
    */
   readonly textToCopy: string | (() => string);
   readonly title?: string;
+  readonly sx?: SxProps<Theme>;
 }
 
 /**
  * A simple icon that copies textToCopy to clipboard onclick.
  */
-export function CopyToClipboard({ textToCopy, title }: CopyToClipboardProps) {
+export function CopyToClipboard({
+  textToCopy,
+  title,
+  sx,
+}: CopyToClipboardProps) {
   const [justCopied, setJustCopied] = useState(false);
   const [_isReady, _cancel, reset] = useTimeoutFn(() => {
     setJustCopied(false);
@@ -59,7 +64,7 @@ export function CopyToClipboard({ textToCopy, title }: CopyToClipboardProps) {
   }
 
   return (
-    <Container title={title}>
+    <Container title={title} sx={sx}>
       {justCopied ? (
         <Done fontSize="inherit" />
       ) : (

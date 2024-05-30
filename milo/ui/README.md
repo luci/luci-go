@@ -35,25 +35,8 @@ servers and other local development settings.
 
 
 #### Login on a local UI server
-Currently, there's no easy way to perform a login flow on a local UI server. To
-test the page with a logged in session, you can
-
- - deploy to a personal staging server with the following command, or
-
-   1. `npm run build && yes | gae.py upload -p ../ -A luci-milo-dev default`
-
- - use an auth state obtained from staging or prod environment with the
-   following steps.
-
-   1. open `` `https://${singleUiHost}/ui/search` `` in a browser tab, then
-   2. perform a login flow, then
-   3. run `copy(JSON.stringify(__STORE.authState.value))` in the browser devtool
-   console to copy the auth state, then
-   4. paste the output to [auth_state.local.json](auth_state.local.json), then
-   5. visit any pages under http://localhost:8080/ui/.
-
-   note that the auth state obtained from a dev environment cannot be used to
-      query prod services and vice versa.
+When developing with a local UI server, the login flow is different from a
+deployed version. Click the login button and you should see the instruction.
 
 ### Deploy a demo to GAE dev instance
 This deploys your local code to GAE as a dev instance that uses real auth
