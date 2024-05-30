@@ -15,20 +15,23 @@
 import { render, screen } from '@testing-library/react';
 
 import { configuredTrees } from '@/monitoring/util/config';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ReasonSection } from './reason_section';
 
 it('displays message when no test results', async () => {
   render(
-    <ReasonSection
-      failureBuildUrl="https://ci.chromium.org/p/chromium/b/1234"
-      tree={configuredTrees[0]}
-      reason={{
-        num_failing_tests: 0,
-        step: 'test step',
-        tests: [],
-      }}
-    />,
+    <FakeContextProvider>
+      <ReasonSection
+        failureBuildUrl="https://ci.chromium.org/p/chromium/b/1234"
+        tree={configuredTrees[0]}
+        reason={{
+          num_failing_tests: 0,
+          step: 'test step',
+          tests: [],
+        }}
+      />
+    </FakeContextProvider>,
   );
   expect(
     screen.getByText('No test result data available.'),
@@ -37,36 +40,38 @@ it('displays message when no test results', async () => {
 
 it('displays test info', async () => {
   render(
-    <ReasonSection
-      failureBuildUrl="https://ci.chromium.org/p/chromium/b/1234"
-      tree={configuredTrees[0]}
-      reason={{
-        num_failing_tests: 0,
-        step: 'test step',
-        tests: [
-          {
-            test_id: 'ninja://test.Example',
-            realm: 'ci',
-            test_name: 'test.Example',
-            cluster_name: 'chromium/rules-v2/4242',
-            variant_hash: '1234',
-            cur_counts: {
-              unexpected_results: 10,
-              total_results: 10,
+    <FakeContextProvider>
+      <ReasonSection
+        failureBuildUrl="https://ci.chromium.org/p/chromium/b/1234"
+        tree={configuredTrees[0]}
+        reason={{
+          num_failing_tests: 0,
+          step: 'test step',
+          tests: [
+            {
+              test_id: 'ninja://test.Example',
+              realm: 'ci',
+              test_name: 'test.Example',
+              cluster_name: 'chromium/rules-v2/4242',
+              variant_hash: '1234',
+              cur_counts: {
+                unexpected_results: 10,
+                total_results: 10,
+              },
+              cur_start_hour: '9:00',
+              regression_start_position: 123450,
+              prev_counts: {
+                unexpected_results: 1,
+                total_results: 100,
+              },
+              prev_end_hour: '8:00',
+              regression_end_position: 123456,
+              ref_hash: '5678',
             },
-            cur_start_hour: '9:00',
-            regression_start_position: 123450,
-            prev_counts: {
-              unexpected_results: 1,
-              total_results: 100,
-            },
-            prev_end_hour: '8:00',
-            regression_end_position: 123456,
-            ref_hash: '5678',
-          },
-        ],
-      }}
-    />,
+          ],
+        }}
+      />
+    </FakeContextProvider>,
   );
   expect(screen.getByText('test.Example')).toBeInTheDocument();
   expect(screen.getByText('0% Passing (0/10)')).toBeInTheDocument();

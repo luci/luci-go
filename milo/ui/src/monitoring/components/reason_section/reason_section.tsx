@@ -22,6 +22,7 @@ import {
   TableRow,
 } from '@mui/material';
 
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { DisableTestButton } from '@/monitoring/components/disable_button';
 import {
   AlertReasonJson,
@@ -30,17 +31,28 @@ import {
   TreeJson,
 } from '@/monitoring/util/server_json';
 
+import { AIAnalysis } from './ai_analysis';
+
 interface ReasonSectionProps {
   failureBuildUrl: string;
   tree: TreeJson;
-  reason: AlertReasonJson | null | undefined;
+  reason?: AlertReasonJson;
   bug?: Bug;
 }
 
-export const ReasonSection = (props: ReasonSectionProps) => {
-  if (!props.reason?.tests?.length) {
+export const ReasonSection = ({
+  tree,
+  failureBuildUrl,
+  reason,
+  bug,
+}: ReasonSectionProps) => {
+  const [searchParams] = useSyncedSearchParams();
+  const useAIAnalysis = searchParams.get('aia');
+
+  if (!reason?.tests?.length) {
     return <>No test result data available.</>;
   }
+
   return (
     <>
       <Table size="small" sx={{ border: 'solid 1px rgb(224, 224, 224)' }}>
@@ -52,23 +64,24 @@ export const ReasonSection = (props: ReasonSectionProps) => {
             <TableCell width={125}>Previous Pass Rate</TableCell>
             <TableCell width={250}>Links</TableCell>
             <TableCell width={80}>Actions</TableCell>
+            {useAIAnalysis && <TableCell width={80}></TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
-          {props.reason.tests?.map((t) => (
+          {reason.tests.map((t) => (
             <TestFailureRow
               key={t.test_id}
               test={t}
-              tree={props.tree}
-              bug={props.bug}
-              failureBuildUrl={props.failureBuildUrl}
+              tree={tree}
+              bug={bug}
+              failureBuildUrl={failureBuildUrl}
             />
           ))}
-          {props.reason.tests.length < props.reason.num_failing_tests && (
+          {reason.tests.length < reason.num_failing_tests && (
             <TableRow>
               <TableCell colSpan={100}>
-                {props.reason.num_failing_tests - props.reason.tests.length}{' '}
-                more failing tests not shown
+                {reason.num_failing_tests - reason.tests.length} more failing
+                tests not shown
               </TableCell>
             </TableRow>
           )}
@@ -149,6 +162,9 @@ const TestFailureRow = ({
   bug,
   failureBuildUrl,
 }: TestFailureRowProps) => {
+  const [searchParams] = useSyncedSearchParams();
+  const useAIAnalysis = searchParams.get('aia');
+
   const currentRate =
     test.cur_counts.total_results === 0
       ? undefined
@@ -245,6 +261,11 @@ const TestFailureRow = ({
           />
         ) : null}
       </TableCell>
+      {useAIAnalysis && (
+        <TableCell>
+          <AIAnalysis project={tree.project} test={test} />
+        </TableCell>
+      )}
     </TableRow>
   );
 };

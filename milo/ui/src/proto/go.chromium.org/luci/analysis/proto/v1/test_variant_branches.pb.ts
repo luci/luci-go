@@ -422,6 +422,54 @@ export interface SourcePosition {
   readonly verdicts: readonly TestVerdict[];
 }
 
+export interface QueryChangepointAIAnalysisRequest {
+  /** The LUCI project. */
+  readonly project: string;
+  /** The identifier of a test. */
+  readonly testId: string;
+  /** The hash of the variant. */
+  readonly variantHash: string;
+  /** Hash of the source branch, as 16 lowercase hexadecimal characters. */
+  readonly refHash: string;
+  /**
+   * The nominal starting source position of the changepoint to query.
+   * As the change point analysis is constantly changing and the current
+   * nominal start position of the changepoint may have moved, the changepoint
+   * nearest the queried position is returned.
+   * If no changepoint is found near the given position, the error NOT_FOUND
+   * is returned.
+   */
+  readonly startSourcePosition: string;
+  /**
+   * Settings to control the prompt used. To assist experimentation.
+   * Optional.
+   */
+  readonly promptOptions: QueryChangepointAIAnalysisRequest_PromptOptions | undefined;
+}
+
+export interface QueryChangepointAIAnalysisRequest_PromptOptions {
+  /**
+   * The prompt prefix to use. If set, replaces the
+   * default prompt prefix. Optional.
+   */
+  readonly prefix: string;
+  /**
+   * The prompt suffix to use. If set, replaces the
+   * default prompt suffix. Optional.
+   */
+  readonly suffix: string;
+}
+
+export interface QueryChangepointAIAnalysisResponse {
+  /**
+   * The AI-generated analysis markdown. This content is produced by
+   * generative AI and is experimental.
+   */
+  readonly analysisMarkdown: string;
+  /** The prompt provided to generative AI. For debugging purposes only. */
+  readonly prompt: string;
+}
+
 function createBaseGetRawTestVariantBranchRequest(): GetRawTestVariantBranchRequest {
   return { name: "" };
 }
@@ -2193,6 +2241,307 @@ export const SourcePosition = {
   },
 };
 
+function createBaseQueryChangepointAIAnalysisRequest(): QueryChangepointAIAnalysisRequest {
+  return { project: "", testId: "", variantHash: "", refHash: "", startSourcePosition: "0", promptOptions: undefined };
+}
+
+export const QueryChangepointAIAnalysisRequest = {
+  encode(message: QueryChangepointAIAnalysisRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    if (message.testId !== "") {
+      writer.uint32(18).string(message.testId);
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(26).string(message.variantHash);
+    }
+    if (message.refHash !== "") {
+      writer.uint32(34).string(message.refHash);
+    }
+    if (message.startSourcePosition !== "0") {
+      writer.uint32(40).int64(message.startSourcePosition);
+    }
+    if (message.promptOptions !== undefined) {
+      QueryChangepointAIAnalysisRequest_PromptOptions.encode(message.promptOptions, writer.uint32(50).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryChangepointAIAnalysisRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryChangepointAIAnalysisRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.refHash = reader.string();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.startSourcePosition = longToString(reader.int64() as Long);
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.promptOptions = QueryChangepointAIAnalysisRequest_PromptOptions.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryChangepointAIAnalysisRequest {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      refHash: isSet(object.refHash) ? globalThis.String(object.refHash) : "",
+      startSourcePosition: isSet(object.startSourcePosition) ? globalThis.String(object.startSourcePosition) : "0",
+      promptOptions: isSet(object.promptOptions)
+        ? QueryChangepointAIAnalysisRequest_PromptOptions.fromJSON(object.promptOptions)
+        : undefined,
+    };
+  },
+
+  toJSON(message: QueryChangepointAIAnalysisRequest): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    if (message.refHash !== "") {
+      obj.refHash = message.refHash;
+    }
+    if (message.startSourcePosition !== "0") {
+      obj.startSourcePosition = message.startSourcePosition;
+    }
+    if (message.promptOptions !== undefined) {
+      obj.promptOptions = QueryChangepointAIAnalysisRequest_PromptOptions.toJSON(message.promptOptions);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryChangepointAIAnalysisRequest>, I>>(
+    base?: I,
+  ): QueryChangepointAIAnalysisRequest {
+    return QueryChangepointAIAnalysisRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryChangepointAIAnalysisRequest>, I>>(
+    object: I,
+  ): QueryChangepointAIAnalysisRequest {
+    const message = createBaseQueryChangepointAIAnalysisRequest() as any;
+    message.project = object.project ?? "";
+    message.testId = object.testId ?? "";
+    message.variantHash = object.variantHash ?? "";
+    message.refHash = object.refHash ?? "";
+    message.startSourcePosition = object.startSourcePosition ?? "0";
+    message.promptOptions = (object.promptOptions !== undefined && object.promptOptions !== null)
+      ? QueryChangepointAIAnalysisRequest_PromptOptions.fromPartial(object.promptOptions)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQueryChangepointAIAnalysisRequest_PromptOptions(): QueryChangepointAIAnalysisRequest_PromptOptions {
+  return { prefix: "", suffix: "" };
+}
+
+export const QueryChangepointAIAnalysisRequest_PromptOptions = {
+  encode(
+    message: QueryChangepointAIAnalysisRequest_PromptOptions,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.prefix !== "") {
+      writer.uint32(10).string(message.prefix);
+    }
+    if (message.suffix !== "") {
+      writer.uint32(18).string(message.suffix);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryChangepointAIAnalysisRequest_PromptOptions {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryChangepointAIAnalysisRequest_PromptOptions() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.prefix = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.suffix = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryChangepointAIAnalysisRequest_PromptOptions {
+    return {
+      prefix: isSet(object.prefix) ? globalThis.String(object.prefix) : "",
+      suffix: isSet(object.suffix) ? globalThis.String(object.suffix) : "",
+    };
+  },
+
+  toJSON(message: QueryChangepointAIAnalysisRequest_PromptOptions): unknown {
+    const obj: any = {};
+    if (message.prefix !== "") {
+      obj.prefix = message.prefix;
+    }
+    if (message.suffix !== "") {
+      obj.suffix = message.suffix;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryChangepointAIAnalysisRequest_PromptOptions>, I>>(
+    base?: I,
+  ): QueryChangepointAIAnalysisRequest_PromptOptions {
+    return QueryChangepointAIAnalysisRequest_PromptOptions.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryChangepointAIAnalysisRequest_PromptOptions>, I>>(
+    object: I,
+  ): QueryChangepointAIAnalysisRequest_PromptOptions {
+    const message = createBaseQueryChangepointAIAnalysisRequest_PromptOptions() as any;
+    message.prefix = object.prefix ?? "";
+    message.suffix = object.suffix ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryChangepointAIAnalysisResponse(): QueryChangepointAIAnalysisResponse {
+  return { analysisMarkdown: "", prompt: "" };
+}
+
+export const QueryChangepointAIAnalysisResponse = {
+  encode(message: QueryChangepointAIAnalysisResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.analysisMarkdown !== "") {
+      writer.uint32(10).string(message.analysisMarkdown);
+    }
+    if (message.prompt !== "") {
+      writer.uint32(18).string(message.prompt);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryChangepointAIAnalysisResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryChangepointAIAnalysisResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.analysisMarkdown = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.prompt = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryChangepointAIAnalysisResponse {
+    return {
+      analysisMarkdown: isSet(object.analysisMarkdown) ? globalThis.String(object.analysisMarkdown) : "",
+      prompt: isSet(object.prompt) ? globalThis.String(object.prompt) : "",
+    };
+  },
+
+  toJSON(message: QueryChangepointAIAnalysisResponse): unknown {
+    const obj: any = {};
+    if (message.analysisMarkdown !== "") {
+      obj.analysisMarkdown = message.analysisMarkdown;
+    }
+    if (message.prompt !== "") {
+      obj.prompt = message.prompt;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryChangepointAIAnalysisResponse>, I>>(
+    base?: I,
+  ): QueryChangepointAIAnalysisResponse {
+    return QueryChangepointAIAnalysisResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryChangepointAIAnalysisResponse>, I>>(
+    object: I,
+  ): QueryChangepointAIAnalysisResponse {
+    const message = createBaseQueryChangepointAIAnalysisResponse() as any;
+    message.analysisMarkdown = object.analysisMarkdown ?? "";
+    message.prompt = object.prompt ?? "";
+    return message;
+  },
+};
+
 /**
  * Provide methods to read data for test variant branches including
  * results from changepoint analysis, and test verdicts.
@@ -2213,6 +2562,11 @@ export interface TestVariantBranches {
   Query(request: QueryTestVariantBranchRequest): Promise<QueryTestVariantBranchResponse>;
   /** Lists commits and the test verdicts at these commits, starting from a source position. */
   QuerySourcePositions(request: QuerySourcePositionsRequest): Promise<QuerySourcePositionsResponse>;
+  /**
+   * Query for AI analysis of the possible culprits of a test changepoint.
+   * Note: to use this RPC, you must be a member of the group `googlers`.
+   */
+  QueryChangepointAIAnalysis(request: QueryChangepointAIAnalysisRequest): Promise<QueryChangepointAIAnalysisResponse>;
 }
 
 export const TestVariantBranchesServiceName = "luci.analysis.v1.TestVariantBranches";
@@ -2227,6 +2581,7 @@ export class TestVariantBranchesClientImpl implements TestVariantBranches {
     this.BatchGet = this.BatchGet.bind(this);
     this.Query = this.Query.bind(this);
     this.QuerySourcePositions = this.QuerySourcePositions.bind(this);
+    this.QueryChangepointAIAnalysis = this.QueryChangepointAIAnalysis.bind(this);
   }
   GetRaw(request: GetRawTestVariantBranchRequest): Promise<TestVariantBranchRaw> {
     const data = GetRawTestVariantBranchRequest.toJSON(request);
@@ -2250,6 +2605,12 @@ export class TestVariantBranchesClientImpl implements TestVariantBranches {
     const data = QuerySourcePositionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QuerySourcePositions", data);
     return promise.then((data) => QuerySourcePositionsResponse.fromJSON(data));
+  }
+
+  QueryChangepointAIAnalysis(request: QueryChangepointAIAnalysisRequest): Promise<QueryChangepointAIAnalysisResponse> {
+    const data = QueryChangepointAIAnalysisRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryChangepointAIAnalysis", data);
+    return promise.then((data) => QueryChangepointAIAnalysisResponse.fromJSON(data));
   }
 }
 

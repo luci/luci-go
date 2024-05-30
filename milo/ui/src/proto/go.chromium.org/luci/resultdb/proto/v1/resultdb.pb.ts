@@ -359,6 +359,78 @@ export interface ListArtifactLinesResponse {
   readonly lines: readonly ArtifactLine[];
 }
 
+/** A request for the QueryArtifactFailureOnlyLines RPC. */
+export interface QueryArtifactFailureOnlyLinesRequest {
+  /**
+   * Retrieve log lines for this artifact.
+   * Invocation level artifacts are not yet supported.
+   * Format:
+   * - For test-result-level artifacts:
+   *   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+   */
+  readonly parent: string;
+  /**
+   * If set to true, the content of the log lines will be returned in the
+   * response.  If left missing or false, only the line range indexes will
+   * be returned.
+   */
+  readonly includeContent: boolean;
+  /**
+   * The maximum number of line ranges to return.
+   *
+   * The service may return fewer than this value.
+   * If unspecified, at most 1000 line ranges will be returned.
+   * The maximum value is 10,000; values above 10,000 will be coerced to 10,000.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `QueryArtifactFailureOnlyLines` call.
+   * Provide this to retrieve the subsequent page.
+   *
+   * When paginating, all other parameters provided to `QueryArtifactFailureOnlyLines` MUST
+   * match the call that provided the page token.
+   */
+  readonly pageToken: string;
+}
+
+/** A response for the QueryArtifactFailureOnlyLines RPC. */
+export interface QueryArtifactFailureOnlyLinesResponse {
+  /**
+   * Line ranges [start, end) in the requested artifact that do not typically
+   * appear versions of the artifact from passing test results.
+   * Line ranges are returned in sorted ascending order.
+   */
+  readonly failureOnlyLineRanges: readonly QueryArtifactFailureOnlyLinesResponse_LineRange[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there were no subsequent pages at the time of
+   * request.
+   */
+  readonly nextPageToken: string;
+}
+
+/**
+ * A representation of a range of lines in an artifact, where lines are
+ * represented by their index.  The first line is line 0.
+ */
+export interface QueryArtifactFailureOnlyLinesResponse_LineRange {
+  /**
+   * The line index of the start of the line range.  The start is inclusive,
+   * i.e. the start line is included in the range.
+   */
+  readonly start: number;
+  /**
+   * The line index of the end of the line range.  The end is exclusive, i.e.
+   * the end line is not included in the range.
+   */
+  readonly end: number;
+  /**
+   * The content of the lines in the range.
+   * Only included if include_content in the request is set to true.
+   */
+  readonly lines: readonly string[];
+}
+
 /**
  * A request message for QueryTestVariants RPC.
  * Next id: 9.
@@ -2217,6 +2289,295 @@ export const ListArtifactLinesResponse = {
   },
 };
 
+function createBaseQueryArtifactFailureOnlyLinesRequest(): QueryArtifactFailureOnlyLinesRequest {
+  return { parent: "", includeContent: false, pageSize: 0, pageToken: "" };
+}
+
+export const QueryArtifactFailureOnlyLinesRequest = {
+  encode(message: QueryArtifactFailureOnlyLinesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
+    }
+    if (message.includeContent !== false) {
+      writer.uint32(16).bool(message.includeContent);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(32).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(42).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryArtifactFailureOnlyLinesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryArtifactFailureOnlyLinesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.includeContent = reader.bool();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryArtifactFailureOnlyLinesRequest {
+    return {
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
+      includeContent: isSet(object.includeContent) ? globalThis.Boolean(object.includeContent) : false,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryArtifactFailureOnlyLinesRequest): unknown {
+    const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
+    if (message.includeContent !== false) {
+      obj.includeContent = message.includeContent;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesRequest>, I>>(
+    base?: I,
+  ): QueryArtifactFailureOnlyLinesRequest {
+    return QueryArtifactFailureOnlyLinesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesRequest>, I>>(
+    object: I,
+  ): QueryArtifactFailureOnlyLinesRequest {
+    const message = createBaseQueryArtifactFailureOnlyLinesRequest() as any;
+    message.parent = object.parent ?? "";
+    message.includeContent = object.includeContent ?? false;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryArtifactFailureOnlyLinesResponse(): QueryArtifactFailureOnlyLinesResponse {
+  return { failureOnlyLineRanges: [], nextPageToken: "" };
+}
+
+export const QueryArtifactFailureOnlyLinesResponse = {
+  encode(message: QueryArtifactFailureOnlyLinesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.failureOnlyLineRanges) {
+      QueryArtifactFailureOnlyLinesResponse_LineRange.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryArtifactFailureOnlyLinesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryArtifactFailureOnlyLinesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.failureOnlyLineRanges.push(
+            QueryArtifactFailureOnlyLinesResponse_LineRange.decode(reader, reader.uint32()),
+          );
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryArtifactFailureOnlyLinesResponse {
+    return {
+      failureOnlyLineRanges: globalThis.Array.isArray(object?.failureOnlyLineRanges)
+        ? object.failureOnlyLineRanges.map((e: any) => QueryArtifactFailureOnlyLinesResponse_LineRange.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryArtifactFailureOnlyLinesResponse): unknown {
+    const obj: any = {};
+    if (message.failureOnlyLineRanges?.length) {
+      obj.failureOnlyLineRanges = message.failureOnlyLineRanges.map((e) =>
+        QueryArtifactFailureOnlyLinesResponse_LineRange.toJSON(e)
+      );
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesResponse>, I>>(
+    base?: I,
+  ): QueryArtifactFailureOnlyLinesResponse {
+    return QueryArtifactFailureOnlyLinesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesResponse>, I>>(
+    object: I,
+  ): QueryArtifactFailureOnlyLinesResponse {
+    const message = createBaseQueryArtifactFailureOnlyLinesResponse() as any;
+    message.failureOnlyLineRanges =
+      object.failureOnlyLineRanges?.map((e) => QueryArtifactFailureOnlyLinesResponse_LineRange.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryArtifactFailureOnlyLinesResponse_LineRange(): QueryArtifactFailureOnlyLinesResponse_LineRange {
+  return { start: 0, end: 0, lines: [] };
+}
+
+export const QueryArtifactFailureOnlyLinesResponse_LineRange = {
+  encode(
+    message: QueryArtifactFailureOnlyLinesResponse_LineRange,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.start !== 0) {
+      writer.uint32(8).int32(message.start);
+    }
+    if (message.end !== 0) {
+      writer.uint32(16).int32(message.end);
+    }
+    for (const v of message.lines) {
+      writer.uint32(26).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryArtifactFailureOnlyLinesResponse_LineRange {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryArtifactFailureOnlyLinesResponse_LineRange() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.start = reader.int32();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.end = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.lines.push(reader.string());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryArtifactFailureOnlyLinesResponse_LineRange {
+    return {
+      start: isSet(object.start) ? globalThis.Number(object.start) : 0,
+      end: isSet(object.end) ? globalThis.Number(object.end) : 0,
+      lines: globalThis.Array.isArray(object?.lines) ? object.lines.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: QueryArtifactFailureOnlyLinesResponse_LineRange): unknown {
+    const obj: any = {};
+    if (message.start !== 0) {
+      obj.start = Math.round(message.start);
+    }
+    if (message.end !== 0) {
+      obj.end = Math.round(message.end);
+    }
+    if (message.lines?.length) {
+      obj.lines = message.lines;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesResponse_LineRange>, I>>(
+    base?: I,
+  ): QueryArtifactFailureOnlyLinesResponse_LineRange {
+    return QueryArtifactFailureOnlyLinesResponse_LineRange.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesResponse_LineRange>, I>>(
+    object: I,
+  ): QueryArtifactFailureOnlyLinesResponse_LineRange {
+    const message = createBaseQueryArtifactFailureOnlyLinesResponse_LineRange() as any;
+    message.start = object.start ?? 0;
+    message.end = object.end ?? 0;
+    message.lines = object.lines?.map((e) => e) || [];
+    return message;
+  },
+};
+
 function createBaseQueryTestVariantsRequest(): QueryTestVariantsRequest {
   return { invocations: [], predicate: undefined, resultLimit: 0, pageSize: 0, pageToken: "", readMask: undefined };
 }
@@ -3574,6 +3935,19 @@ export interface ResultDB {
    */
   ListArtifactLines(request: ListArtifactLinesRequest): Promise<ListArtifactLinesResponse>;
   /**
+   * Retrieves the line ranges in the given failure that do not usually appear
+   * in logs from passes.
+   *
+   * Lines are normalized before comparison to remove numbers, dates, tmp file
+   * paths, etc.
+   *
+   * Due to missed normalizations, sampling error or other reasons, this may
+   * not eliminate all lines that appear in passes.
+   */
+  QueryArtifactFailureOnlyLines(
+    request: QueryArtifactFailureOnlyLinesRequest,
+  ): Promise<QueryArtifactFailureOnlyLinesResponse>;
+  /**
    * Retrieves test verdicts from an invocation, recursively.
    * Supports invocation inclusions.
    */
@@ -3609,6 +3983,7 @@ export class ResultDBClientImpl implements ResultDB {
     this.QueryArtifacts = this.QueryArtifacts.bind(this);
     this.QueryRunTestVerdicts = this.QueryRunTestVerdicts.bind(this);
     this.ListArtifactLines = this.ListArtifactLines.bind(this);
+    this.QueryArtifactFailureOnlyLines = this.QueryArtifactFailureOnlyLines.bind(this);
     this.QueryTestVariants = this.QueryTestVariants.bind(this);
     this.BatchGetTestVariants = this.BatchGetTestVariants.bind(this);
     this.QueryTestMetadata = this.QueryTestMetadata.bind(this);
@@ -3695,6 +4070,14 @@ export class ResultDBClientImpl implements ResultDB {
     const data = ListArtifactLinesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListArtifactLines", data);
     return promise.then((data) => ListArtifactLinesResponse.fromJSON(data));
+  }
+
+  QueryArtifactFailureOnlyLines(
+    request: QueryArtifactFailureOnlyLinesRequest,
+  ): Promise<QueryArtifactFailureOnlyLinesResponse> {
+    const data = QueryArtifactFailureOnlyLinesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryArtifactFailureOnlyLines", data);
+    return promise.then((data) => QueryArtifactFailureOnlyLinesResponse.fromJSON(data));
   }
 
   QueryTestVariants(request: QueryTestVariantsRequest): Promise<QueryTestVariantsResponse> {
