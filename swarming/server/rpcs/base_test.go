@@ -315,6 +315,19 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 			)
 		}
 		err = datastore.Put(ctx,
+			&model.TaskRequest{
+				Key:  reqKey,
+				Name: name,
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Dimensions: model.TaskDimensions{
+								"pool": {"visible-pool1"},
+							},
+						},
+					},
+				},
+			},
 			&model.TaskResultSummary{
 				TaskResultCommon: model.TaskResultCommon{
 					State:         state,

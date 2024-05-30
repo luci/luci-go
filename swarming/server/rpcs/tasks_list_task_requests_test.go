@@ -34,9 +34,9 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestListTasks(t *testing.T) {
-	// Note: this test is extremely similar to TestListTaskRequests. They should
-	// likely be updated at the same time.
+func TestListTaskRequests(t *testing.T) {
+	// Note: this test is extremely similar to TestListTasks. They should likely
+	// be updated at the same time.
 
 	t.Parallel()
 
@@ -50,39 +50,39 @@ func TestListTasks(t *testing.T) {
 	startTS := timestamppb.New(TestTime)
 	endTS := timestamppb.New(TestTime.Add(time.Hour))
 
-	callImpl := func(ctx context.Context, req *apipb.TasksWithPerfRequest) (*apipb.TaskListResponse, error) {
+	callImpl := func(ctx context.Context, req *apipb.TasksRequest) (*apipb.TaskRequestsResponse, error) {
 		return (&TasksServer{
 			// memory.Use(...) datastore fake doesn't support IN queries currently.
 			TaskQuerySplitMode: model.SplitCompletely,
-		}).ListTasks(ctx, req)
+		}).ListTaskRequests(ctx, req)
 	}
-	call := func(req *apipb.TasksWithPerfRequest) (*apipb.TaskListResponse, error) {
+	call := func(req *apipb.TasksRequest) (*apipb.TaskRequestsResponse, error) {
 		return callImpl(MockRequestState(ctx, state), req)
 	}
-	callAsAdmin := func(req *apipb.TasksWithPerfRequest) (*apipb.TaskListResponse, error) {
+	callAsAdmin := func(req *apipb.TasksRequest) (*apipb.TaskRequestsResponse, error) {
 		return callImpl(MockRequestState(ctx, state.SetCaller(AdminFakeCaller)), req)
 	}
 
 	Convey("Limit is checked", t, func() {
-		_, err := call(&apipb.TasksWithPerfRequest{
+		_, err := call(&apipb.TasksRequest{
 			Limit: -10,
 		})
 		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-		_, err = call(&apipb.TasksWithPerfRequest{
+		_, err = call(&apipb.TasksRequest{
 			Limit: 1001,
 		})
 		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 	})
 
 	Convey("Cursor is checked", t, func() {
-		_, err := call(&apipb.TasksWithPerfRequest{
+		_, err := call(&apipb.TasksRequest{
 			Cursor: "!!!!",
 		})
 		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 	})
 
 	Convey("Tags filter is checked", t, func() {
-		_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+		_, err := callAsAdmin(&apipb.TasksRequest{
 			Start: startTS,
 			End:   endTS,
 			Tags:  []string{"k:"},
@@ -92,7 +92,7 @@ func TestListTasks(t *testing.T) {
 
 	Convey("Time range is checked", t, func() {
 		Convey("Ancient start time", func() {
-			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+			_, err := callAsAdmin(&apipb.TasksRequest{
 				Start: timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 			})
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
@@ -100,7 +100,7 @@ func TestListTasks(t *testing.T) {
 		})
 
 		Convey("Ancient end time", func() {
-			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+			_, err := callAsAdmin(&apipb.TasksRequest{
 				Start: startTS,
 				End:   timestamppb.New(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 			})
@@ -109,7 +109,7 @@ func TestListTasks(t *testing.T) {
 		})
 
 		Convey("End must be after start", func() {
-			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+			_, err := callAsAdmin(&apipb.TasksRequest{
 				Start: endTS,
 				End:   startTS,
 			})
@@ -120,7 +120,7 @@ func TestListTasks(t *testing.T) {
 
 	Convey("ACLs", t, func() {
 		Convey("Listing only visible pools: OK", func() {
-			_, err := call(&apipb.TasksWithPerfRequest{
+			_, err := call(&apipb.TasksRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|visible-pool2"},
@@ -129,7 +129,7 @@ func TestListTasks(t *testing.T) {
 		})
 
 		Convey("Listing visible and invisible pool: permission denied", func() {
-			_, err := call(&apipb.TasksWithPerfRequest{
+			_, err := call(&apipb.TasksRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
@@ -138,7 +138,7 @@ func TestListTasks(t *testing.T) {
 		})
 
 		Convey("Listing visible and invisible pool as admin: OK", func() {
-			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+			_, err := callAsAdmin(&apipb.TasksRequest{
 				Start: startTS,
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
@@ -147,7 +147,7 @@ func TestListTasks(t *testing.T) {
 		})
 
 		Convey("Listing all pools as non-admin: permission denied", func() {
-			_, err := call(&apipb.TasksWithPerfRequest{
+			_, err := call(&apipb.TasksRequest{
 				Start: startTS,
 				End:   endTS,
 			})
@@ -155,7 +155,7 @@ func TestListTasks(t *testing.T) {
 		})
 
 		Convey("Listing all pools as admin: OK", func() {
-			_, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+			_, err := callAsAdmin(&apipb.TasksRequest{
 				Start: startTS,
 				End:   endTS,
 			})
@@ -163,61 +163,12 @@ func TestListTasks(t *testing.T) {
 		})
 	})
 
-	Convey("Performance stats included", t, func() {
-		tasksWithPerf := func(tasks []*apipb.TaskResultResponse) []string {
-			var tasksWithPerf []string
-			for _, task := range tasks {
-				if task.PerformanceStats != nil {
-					So(task.PerformanceStats.BotOverhead, ShouldEqual, float32(123.0))
-					tasksWithPerf = append(tasksWithPerf, task.Name)
-				}
-			}
-			return tasksWithPerf
-		}
-
-		resp, err := callAsAdmin(&apipb.TasksWithPerfRequest{
-			State:                   apipb.StateQuery_QUERY_ALL,
-			Start:                   startTS,
-			End:                     endTS,
-			IncludePerformanceStats: true,
-		})
-		So(err, ShouldBeNil)
-		// Only tasks that ran on the bot have perf stats.
-		So(tasksWithPerf(resp.Items), ShouldResemble, []string{
-			"clienterror-2",
-			"killed-2",
-			"timeout-2",
-			"failure-2",
-			"success-2",
-			"clienterror-1",
-			"killed-1",
-			"timeout-1",
-			"failure-1",
-			"success-1",
-			"clienterror-0",
-			"killed-0",
-			"timeout-0",
-			"failure-0",
-			"success-0",
-		})
-
-		resp, err = callAsAdmin(&apipb.TasksWithPerfRequest{
-			State:                   apipb.StateQuery_QUERY_ALL,
-			Start:                   startTS,
-			End:                     endTS,
-			IncludePerformanceStats: false,
-		})
-		So(err, ShouldBeNil)
-		// All performance stats are omitted if IncludePerformanceStats is false.
-		So(tasksWithPerf(resp.Items), ShouldResemble, []string(nil))
-	})
-
 	Convey("Filtering", t, func() {
 		endRange := endTS
 
 		checkQuery := func(state apipb.StateQuery, tags []string, expected []string) {
 			// One single fetch.
-			resp, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+			resp, err := callAsAdmin(&apipb.TasksRequest{
 				State: state,
 				Start: startTS,
 				End:   endRange,
@@ -235,7 +186,7 @@ func TestListTasks(t *testing.T) {
 			cursor := ""
 			got = nil
 			for {
-				resp, err := callAsAdmin(&apipb.TasksWithPerfRequest{
+				resp, err := callAsAdmin(&apipb.TasksRequest{
 					State:  state,
 					Start:  startTS,
 					End:    endRange,
