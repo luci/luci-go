@@ -12,20 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Interpolation, Theme, css } from '@emotion/react';
+import { styled, SxProps, Theme } from '@mui/material';
 import { scaleThreshold } from 'd3';
-import { html, render } from 'lit';
 import { DateTime, Duration } from 'luxon';
 
-import {
-  HideTooltipEventDetail,
-  ShowTooltipEventDetail,
-} from '@/common/components/tooltip';
-import {
-  LONG_TIME_FORMAT,
-  displayCompactDuration,
-  displayDuration,
-} from '@/common/tools/time_utils';
+import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { displayCompactDuration } from '@/common/tools/time_utils';
+
+import { DurationTooltip } from './tooltip';
 
 const defaultColorScaleMs = scaleThreshold(
   [
@@ -57,7 +51,7 @@ const defaultColorScaleMs = scaleThreshold(
 
 const defaultColorScale = (d: Duration) => defaultColorScaleMs(d.toMillis());
 
-const durationBadge = css`
+const Badge = styled('span')`
   color: var(--light-text-color);
   background-color: var(--light-active-color);
   display: inline-block;
@@ -73,31 +67,11 @@ const durationBadge = css`
   width: 35px;
 `;
 
-function renderTooltip(
-  duration: Duration,
-  from?: DateTime | null,
-  to?: DateTime | null,
-) {
-  return html`
-    <table>
-      <tr>
-        <td>Duration:</td>
-        <td>${displayDuration(duration)}</td>
-      </tr>
-      <tr>
-        <td>From:</td>
-        <td>${from ? from.toFormat(LONG_TIME_FORMAT) : 'N/A'}</td>
-      </tr>
-      <tr>
-        <td>To:</td>
-        <td>${to ? to.toFormat(LONG_TIME_FORMAT) : 'N/A'}</td>
-      </tr>
-    </table>
-  `;
-}
-
-interface DurationBadgeProps {
-  readonly duration: Duration;
+export interface DurationBadgeProps {
+  /**
+   * When unspecified, renders N/A.
+   */
+  readonly duration?: Duration | null;
   /**
    * When specified, renders start time in the tooltip.
    */
@@ -114,7 +88,7 @@ interface DurationBadgeProps {
     color: string;
   };
 
-  readonly css?: Interpolation<Theme>;
+  readonly sx?: SxProps<Theme>;
   readonly className?: string;
 }
 
@@ -126,45 +100,28 @@ export function DurationBadge({
   from,
   to,
   colorScale = defaultColorScale,
-  css,
+  sx,
   className,
 }: DurationBadgeProps) {
-  function onShowTooltip(target: HTMLElement) {
-    const tooltip = document.createElement('div');
-    render(renderTooltip(duration, from, to), tooltip);
-
-    window.dispatchEvent(
-      new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: {
-          tooltip,
-          targetRect: target.getBoundingClientRect(),
-          gapSize: 2,
-        },
-      }),
-    );
-  }
-
-  function onHideTooltip() {
-    window.dispatchEvent(
-      new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
-        detail: { delay: 50 },
-      }),
-    );
-  }
-
-  const [compactDuration] = displayCompactDuration(duration);
+  const [compactDuration] = duration
+    ? displayCompactDuration(duration)
+    : ['N/A'];
 
   return (
-    <span
-      css={[durationBadge, css, colorScale(duration)]}
-      className={className}
-      onMouseOver={(e) => onShowTooltip(e.target as HTMLElement)}
-      onFocus={(e) => onShowTooltip(e.target as HTMLElement)}
-      onMouseOut={onHideTooltip}
-      onBlur={onHideTooltip}
-      data-testid="duration"
+    <HtmlTooltip
+      title={<DurationTooltip duration={duration} from={from} to={to} />}
+      arrow
     >
-      {compactDuration}
-    </span>
+      <Badge
+        sx={{
+          ...(duration ? colorScale(duration) : {}),
+          ...sx,
+        }}
+        className={className}
+        data-testid="duration"
+      >
+        {compactDuration}
+      </Badge>
+    </HtmlTooltip>
   );
 }

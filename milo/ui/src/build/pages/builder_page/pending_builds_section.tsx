@@ -86,7 +86,7 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
                   {b.number || `b${b.id}`}
                 </Link>{' '}
                 <RelativeDurationBadge
-                  css={{ verticalAlign: 'text-top' }}
+                  sx={{ verticalAlign: 'text-top' }}
                   from={DateTime.fromISO(b.createTime!)}
                 />{' '}
                 ago

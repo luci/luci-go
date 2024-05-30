@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Interpolation, Theme } from '@emotion/react';
+import { SxProps, Theme } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useEffect, useState } from 'react';
 
@@ -36,7 +36,7 @@ interface RelativeDurationBadgeProps {
    */
   readonly tickMs?: number;
 
-  readonly css?: Interpolation<Theme>;
+  readonly sx?: SxProps<Theme>;
   readonly className?: string;
 }
 
@@ -45,7 +45,7 @@ interface RelativeDurationBadgeProps {
  * specified start time and end time.
  */
 export function RelativeDurationBadge(props: RelativeDurationBadgeProps) {
-  const { css, className } = props;
+  const { sx, className } = props;
   const tickMs = props.to ? Infinity : props.tickMs || DEFAULT_TICK_MS;
   const from = props.from;
   const [now, setNow] = useState(() => DateTime.now());
@@ -64,7 +64,7 @@ export function RelativeDurationBadge(props: RelativeDurationBadgeProps) {
     <DurationBadge
       duration={duration}
       from={from}
-      css={css}
+      sx={sx}
       className={className}
     />
   );

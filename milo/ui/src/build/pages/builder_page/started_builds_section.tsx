@@ -86,7 +86,7 @@ export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
                   {b.number || `b${b.id}`}
                 </Link>{' '}
                 <RelativeDurationBadge
-                  css={{ verticalAlign: 'text-top' }}
+                  sx={{ verticalAlign: 'text-top' }}
                   // Started builds always have a start time.
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   from={DateTime.fromISO(b.startTime!)}

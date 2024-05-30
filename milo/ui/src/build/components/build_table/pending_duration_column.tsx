@@ -38,7 +38,7 @@ export function PendingDurationContentCell() {
     <TableCell>
       {pendingDuration ? (
         <DurationBadge
-          css={{ verticalAlign: 'text-top' }}
+          sx={{ verticalAlign: 'text-top' }}
           duration={pendingDuration}
           from={createTime}
           to={startTime}

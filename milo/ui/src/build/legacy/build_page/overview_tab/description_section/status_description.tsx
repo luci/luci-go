@@ -49,7 +49,7 @@ export function StatusDescription({ build }: StatusDescriptionProps) {
           duration={endTime.diff(startTime)}
           from={startTime}
           to={endTime}
-          css={{ verticalAlign: 'middle' }}
+          sx={{ verticalAlign: 'middle' }}
         />{' '}
         after it started
       </>

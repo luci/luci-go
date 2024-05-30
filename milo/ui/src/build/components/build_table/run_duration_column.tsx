@@ -38,7 +38,7 @@ export function RunDurationContentCell() {
     <TableCell>
       {runDuration ? (
         <DurationBadge
-          css={{ verticalAlign: 'text-top' }}
+          sx={{ verticalAlign: 'text-top' }}
           duration={runDuration}
           from={startTime}
           to={endTime}
