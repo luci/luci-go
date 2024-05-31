@@ -74,6 +74,19 @@ message TestVariant {
   //
   // If the code sources tested are not available, this field is blank.
   string sources_id = 9;
+
+  // Contain the data for instruction for the test verdict.
+  // To find out the instruction for a test verdict, we select an *arbitrary*
+  // test result in the test verdict and get its instruction.
+  // Note: If in this test verdict, if there are different instructions for
+  // test result, the result may be undeterministic.
+  VerdictInstruction instruction = 10;
+}
+
+message VerdictInstruction {
+  // Name of the instruction.
+  // Format: invocations/<invocation id>/instructions/<instruction id>
+  string instruction = 1;
 }
 
 // Outcomes of an execution of the test variant.

@@ -534,12 +534,24 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (Pag
 	// Sources referenced from each test variant's source_id.
 	distinctSources := make(map[string]*pb.Sources)
 
+	instructionMap, err := q.ReachableInvocations.InstructionMap()
+	if err != nil {
+		return Page{}, errors.Annotate(err, "instruction map").Err()
+	}
+
 	// Fetch test variants with unexpected results.
-	err := q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
+	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
 		// Populate the code sources tested.
 		if err := q.populateSources(tv, distinctSources); err != nil {
 			return errors.Annotate(err, "resolving sources").Err()
 		}
+
+		// Get instruction of the invocation of the first test result.
+		instruction, err := fetchVerdictInstruction(tv, instructionMap)
+		if err != nil {
+			return errors.Annotate(err, "get verdict instruction").Err()
+		}
+		tv.Instruction = instruction
 
 		// Restrict test variant data as required.
 		if q.AccessLevel != AccessLevelUnrestricted {
@@ -751,6 +763,11 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (P
 	// Sources referenced from each test variant's source_id.
 	distinctSources := make(map[string]*pb.Sources)
 
+	instructionMap, err := q.ReachableInvocations.InstructionMap()
+	if err != nil {
+		return Page{}, errors.Annotate(err, "instruction map").Err()
+	}
+
 	// The last test variant we have completely processed.
 	var lastProcessedTestID string
 	var lastProcessedVariantHash string
@@ -770,6 +787,13 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (P
 			if err := q.populateSources(tv, distinctSources); err != nil {
 				return errors.Annotate(err, "resolving sources").Err()
 			}
+
+			// Get instruction of the invocation of the first test result.
+			instruction, err := fetchVerdictInstruction(tv, instructionMap)
+			if err != nil {
+				return errors.Annotate(err, "get verdict instruction").Err()
+			}
+			tv.Instruction = instruction
 
 			// Restrict test variant data as required.
 			if q.AccessLevel != AccessLevelUnrestricted {
@@ -805,6 +829,21 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (P
 	}
 
 	return Page{TestVariants: tvs, DistinctSources: distinctSources, NextPageToken: nextPageToken}, nil
+}
+
+// fetchVerdictInstruction gets the instruction for test variant.
+// Returns instruction of the invocation of the first test result.
+func fetchVerdictInstruction(tv *pb.TestVariant, instructionMap map[invocations.ID]*pb.VerdictInstruction) (*pb.VerdictInstruction, error) {
+	resultName := tv.Results[0].Result.Name
+	invID, _, _, err := pbutil.ParseTestResultName(resultName)
+	if err != nil {
+		return nil, errors.Annotate(err, "parse test result name").Err()
+	}
+	invocationID := invocations.ID(invID)
+	if instruction, ok := instructionMap[invocationID]; ok {
+		return instruction, nil
+	}
+	return nil, nil
 }
 
 // Fetch returns a page of test variants matching q.

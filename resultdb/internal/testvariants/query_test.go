@@ -61,14 +61,42 @@ func TestQueryTestVariants(t *testing.T) {
 		reachableInvs.Invocations["inv0"] = graph.ReachableInvocation{
 			HasTestResults:      true,
 			HasTestExonerations: true,
+			Instructions: &pb.Instructions{
+				Instructions: []*pb.Instruction{
+					{
+						Id:   "test",
+						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+					},
+				},
+			},
 		}
 		reachableInvs.Invocations["inv1"] = graph.ReachableInvocation{
 			HasTestResults: true,
 			SourceHash:     graph.HashSources(sources),
+			Instructions: &pb.Instructions{
+				Instructions: []*pb.Instruction{
+					{
+						Id:   "test",
+						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						InstructionFilter: &pb.InstructionFilter{
+							FilterType: &pb.InstructionFilter_InvocationIds{
+								InvocationIds: &pb.InstructionFilterByInvocationID{
+									InvocationIds: []string{"inv3"},
+								},
+							},
+						},
+					},
+				},
+			},
+			IncludedInvocationIDs: []invocations.ID{"inv3"},
 		}
 		reachableInvs.Invocations["inv2"] = graph.ReachableInvocation{
 			HasTestExonerations: true,
 		}
+		reachableInvs.Invocations["inv3"] = graph.ReachableInvocation{
+			HasTestResults: true,
+		}
+
 		reachableInvs.Sources[graph.HashSources(sources)] = sources
 
 		q := &Query{
@@ -111,7 +139,8 @@ func TestQueryTestVariants(t *testing.T) {
 		tvStrings := func(tvs []*pb.TestVariant) []string {
 			keys := make([]string, len(tvs))
 			for i, tv := range tvs {
-				keys[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
+				instructionName := tv.GetInstruction().GetInstruction()
+				keys[i] = fmt.Sprintf("%d/%s/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash, instructionName)
 			}
 			return keys
 		}
@@ -119,6 +148,7 @@ func TestQueryTestVariants(t *testing.T) {
 		testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, insert.Invocation("inv3", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 			insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
@@ -150,6 +180,7 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			insert.TestExonerations("inv2", "T2", nil, pb.ExonerationReason_UNEXPECTED_PASS),
+			insert.TestResults("inv3", "Tw", nil, pb.TestStatus_PASS),
 		)...)
 
 		// Insert an additional TestResult for comparing TestVariant.Results.Result.
@@ -239,15 +270,15 @@ func TestQueryTestVariants(t *testing.T) {
 			tvs := page.TestVariants
 			tvStrings := tvStrings(tvs)
 			So(tvStrings, ShouldResemble, []string{
-				"10/T4/c467ccce5a16dc72",
-				"10/T5/e3b0c44298fc1c14",
-				"10/Ty/e3b0c44298fc1c14",
-				"20/Tz/e3b0c44298fc1c14",
-				"30/T5/c467ccce5a16dc72",
-				"30/T8/e3b0c44298fc1c14",
-				"30/Tx/e3b0c44298fc1c14",
-				"40/T1/e3b0c44298fc1c14",
-				"40/T2/e3b0c44298fc1c14",
+				"10/T4/c467ccce5a16dc72/",
+				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/",
+				"20/Tz/e3b0c44298fc1c14/",
+				"30/T5/c467ccce5a16dc72/",
+				"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/",
+				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 			})
 
 			So(tvs[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
@@ -317,10 +348,11 @@ func TestQueryTestVariants(t *testing.T) {
 			page := mustFetch(q)
 			tvs := page.TestVariants
 			So(tvStrings(tvs), ShouldResemble, []string{
-				"50/T3/e3b0c44298fc1c14",
-				"50/T6/e3b0c44298fc1c14",
-				"50/T7/e3b0c44298fc1c14",
-				"50/T9/e3b0c44298fc1c14",
+				"50/T3/e3b0c44298fc1c14/",
+				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
 			})
 			So(len(tvs[0].Results), ShouldEqual, 2)
 
@@ -473,6 +505,7 @@ func TestQueryTestVariants(t *testing.T) {
 							Variant:      tv.Variant,
 							TestMetadata: tv.TestMetadata,
 							SourcesId:    tv.SourcesId,
+							Instruction:  tv.Instruction,
 						})
 					}
 				}
@@ -508,30 +541,30 @@ func TestQueryTestVariants(t *testing.T) {
 
 			q.PageSize = 15
 			nextToken := page("", 8, []string{
-				"10/T4/c467ccce5a16dc72",
-				"10/T5/e3b0c44298fc1c14",
-				"10/Ty/e3b0c44298fc1c14",
-				"20/Tz/e3b0c44298fc1c14",
-				"30/T5/c467ccce5a16dc72",
-				"30/T8/e3b0c44298fc1c14",
-				"30/Tx/e3b0c44298fc1c14",
-				"40/T1/e3b0c44298fc1c14",
-				"40/T2/e3b0c44298fc1c14",
+				"10/T4/c467ccce5a16dc72/",
+				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/",
+				"20/Tz/e3b0c44298fc1c14/",
+				"30/T5/c467ccce5a16dc72/",
+				"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/",
+				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 			})
 			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
 			nextToken = page(nextToken, 1, []string{
-				"50/T3/e3b0c44298fc1c14",
+				"50/T3/e3b0c44298fc1c14/",
 			})
 			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T5", "e3b0c44298fc1c14"))
 
 			nextToken = page(nextToken, 2, []string{
-				"50/T6/e3b0c44298fc1c14",
-				"50/T7/e3b0c44298fc1c14",
+				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 			})
 			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T8", "e3b0c44298fc1c14"))
 
-			nextToken = page(nextToken, 1, []string{"50/T9/e3b0c44298fc1c14"})
+			nextToken = page(nextToken, 2, []string{"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test", "50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test"})
 			So(nextToken, ShouldEqual, "CghFWFBFQ1RFRAoCVHkKEGUzYjBjNDQyOThmYzFjMTQ=")
 
 			nextToken = page(nextToken, 0, []string{})
@@ -558,9 +591,9 @@ func TestQueryTestVariants(t *testing.T) {
 				page := mustFetch(q)
 				tvStrings := tvStrings(page.TestVariants)
 				So(tvStrings, ShouldResemble, []string{
-					"10/T4/c467ccce5a16dc72",
-					"10/T5/e3b0c44298fc1c14",
-					"10/Ty/e3b0c44298fc1c14",
+					"10/T4/c467ccce5a16dc72/",
+					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"10/Ty/e3b0c44298fc1c14/",
 				})
 				So(page.NextPageToken, ShouldEqual, "")
 			})
@@ -569,10 +602,11 @@ func TestQueryTestVariants(t *testing.T) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_EXPECTED}
 				page := mustFetch(q)
 				So(tvStrings(page.TestVariants), ShouldResemble, []string{
-					"50/T3/e3b0c44298fc1c14",
-					"50/T6/e3b0c44298fc1c14",
-					"50/T7/e3b0c44298fc1c14",
-					"50/T9/e3b0c44298fc1c14",
+					"50/T3/e3b0c44298fc1c14/",
+					"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
 				})
 				So(len(page.TestVariants[0].Results), ShouldEqual, 2)
 			})
@@ -581,15 +615,15 @@ func TestQueryTestVariants(t *testing.T) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_UNEXPECTED_MASK}
 				page := mustFetch(q)
 				So(tvStrings(page.TestVariants), ShouldResemble, []string{
-					"10/T4/c467ccce5a16dc72",
-					"10/T5/e3b0c44298fc1c14",
-					"10/Ty/e3b0c44298fc1c14",
-					"20/Tz/e3b0c44298fc1c14",
-					"30/T5/c467ccce5a16dc72",
-					"30/T8/e3b0c44298fc1c14",
-					"30/Tx/e3b0c44298fc1c14",
-					"40/T1/e3b0c44298fc1c14",
-					"40/T2/e3b0c44298fc1c14",
+					"10/T4/c467ccce5a16dc72/",
+					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"10/Ty/e3b0c44298fc1c14/",
+					"20/Tz/e3b0c44298fc1c14/",
+					"30/T5/c467ccce5a16dc72/",
+					"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"30/Tx/e3b0c44298fc1c14/",
+					"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				})
 			})
 		})
@@ -615,19 +649,20 @@ func TestQueryTestVariants(t *testing.T) {
 
 			// All test variants should be returned.
 			So(tvStrings(allTVs), ShouldResemble, []string{
-				"10/T4/c467ccce5a16dc72",
-				"10/T5/e3b0c44298fc1c14",
-				"10/Ty/e3b0c44298fc1c14",
-				"20/Tz/e3b0c44298fc1c14",
-				"30/T5/c467ccce5a16dc72",
-				"30/T8/e3b0c44298fc1c14",
-				"30/Tx/e3b0c44298fc1c14",
-				"40/T1/e3b0c44298fc1c14",
-				"40/T2/e3b0c44298fc1c14",
-				"50/T3/e3b0c44298fc1c14",
-				"50/T6/e3b0c44298fc1c14",
-				"50/T7/e3b0c44298fc1c14",
-				"50/T9/e3b0c44298fc1c14",
+				"10/T4/c467ccce5a16dc72/",
+				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/",
+				"20/Tz/e3b0c44298fc1c14/",
+				"30/T5/c467ccce5a16dc72/",
+				"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/",
+				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T3/e3b0c44298fc1c14/",
+				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
 			})
 		})
 
@@ -643,19 +678,20 @@ func TestQueryTestVariants(t *testing.T) {
 
 			// All test variants should be returned.
 			So(tvStrings(allTVs), ShouldResemble, []string{
-				"10/T4/c467ccce5a16dc72",
-				"10/T5/e3b0c44298fc1c14",
-				"10/Ty/e3b0c44298fc1c14",
-				"20/Tz/e3b0c44298fc1c14",
-				"30/T5/c467ccce5a16dc72",
-				"30/T8/e3b0c44298fc1c14",
-				"30/Tx/e3b0c44298fc1c14",
-				"40/T1/e3b0c44298fc1c14",
-				"40/T2/e3b0c44298fc1c14",
-				"50/T3/e3b0c44298fc1c14",
-				"50/T6/e3b0c44298fc1c14",
-				"50/T7/e3b0c44298fc1c14",
-				"50/T9/e3b0c44298fc1c14",
+				"10/T4/c467ccce5a16dc72/",
+				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/",
+				"20/Tz/e3b0c44298fc1c14/",
+				"30/T5/c467ccce5a16dc72/",
+				"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/",
+				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T3/e3b0c44298fc1c14/",
+				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
 			})
 		})
 
@@ -665,15 +701,15 @@ func TestQueryTestVariants(t *testing.T) {
 			Convey(`with only limited access`, func() {
 				page := mustFetch(q)
 				So(tvStrings(page.TestVariants), ShouldResemble, []string{
-					"10/T4/c467ccce5a16dc72",
-					"10/T5/e3b0c44298fc1c14",
-					"10/Ty/e3b0c44298fc1c14",
-					"20/Tz/e3b0c44298fc1c14",
-					"30/T5/c467ccce5a16dc72",
-					"30/T8/e3b0c44298fc1c14",
-					"30/Tx/e3b0c44298fc1c14",
-					"40/T1/e3b0c44298fc1c14",
-					"40/T2/e3b0c44298fc1c14",
+					"10/T4/c467ccce5a16dc72/",
+					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"10/Ty/e3b0c44298fc1c14/",
+					"20/Tz/e3b0c44298fc1c14/",
+					"30/T5/c467ccce5a16dc72/",
+					"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"30/Tx/e3b0c44298fc1c14/",
+					"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				})
 
 				// Check the test variant and its test results and test exonerations
@@ -745,15 +781,15 @@ func TestQueryTestVariants(t *testing.T) {
 				page := mustFetch(q)
 				tvs := page.TestVariants
 				So(tvStrings(tvs), ShouldResemble, []string{
-					"10/T4/c467ccce5a16dc72",
-					"10/T5/e3b0c44298fc1c14",
-					"10/Ty/e3b0c44298fc1c14",
-					"20/Tz/e3b0c44298fc1c14",
-					"30/T5/c467ccce5a16dc72",
-					"30/T8/e3b0c44298fc1c14",
-					"30/Tx/e3b0c44298fc1c14",
-					"40/T1/e3b0c44298fc1c14",
-					"40/T2/e3b0c44298fc1c14",
+					"10/T4/c467ccce5a16dc72/",
+					"10/T5/e3b0c44298fc1c14/",
+					"10/Ty/e3b0c44298fc1c14/",
+					"20/Tz/e3b0c44298fc1c14/",
+					"30/T5/c467ccce5a16dc72/",
+					"30/T8/e3b0c44298fc1c14/",
+					"30/Tx/e3b0c44298fc1c14/",
+					"40/T1/e3b0c44298fc1c14/",
+					"40/T2/e3b0c44298fc1c14/",
 				})
 
 				// Check all the test exonerations have been masked.

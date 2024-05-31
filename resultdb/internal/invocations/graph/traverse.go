@@ -20,11 +20,13 @@ import (
 	"sync"
 
 	"cloud.google.com/go/spanner"
-	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
-	"go.chromium.org/luci/server/span"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
 // FindInheritSourcesDescendants finds and return all invocations (including the root)

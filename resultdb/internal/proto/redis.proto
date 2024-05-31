@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.internal;
 
+import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/internal/proto;internalpb";
@@ -40,6 +41,11 @@ message ReachableInvocations {
         // sources are at ReachableInvocations.sources[0], 2 indicates
         // the sources are at ReachableInvocations.sources[1] and so on.
         int64 source_offset = 5;
+        // The instructions for this invocation.
+        // It only contains test result instruction, with all content removed.
+        luci.resultdb.v1.Instructions instructions = 6;
+        // The invocation IDs of invocations included in this invocation.
+        repeated string included_invocation_ids = 7;
     }
     // The invocations reachable. This includes the root invocation
     // (the invocation for which this cache entry is) itself.
@@ -50,3 +56,5 @@ message ReachableInvocations {
     // is used to reduce the stored size.
     repeated luci.resultdb.v1.Sources sources = 2;
 }
+
+

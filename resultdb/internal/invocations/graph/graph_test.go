@@ -16,6 +16,7 @@ package graph
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -23,14 +24,15 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/gomodule/redigo/redis"
 
+	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/redisconn"
-	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -52,43 +54,112 @@ func TestReachable(t *testing.T) {
 			return invs
 		}
 
-		withInheritSources := map[string]any{
-			"InheritSources": true,
+		instructions := &pb.Instructions{
+			Instructions: []*pb.Instruction{
+				{
+					Id:   "step_instruction",
+					Type: pb.InstructionType_STEP_INSTRUCTION,
+				},
+				{
+					Id:   "test_instruction",
+					Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+					TargetedInstructions: []*pb.TargetedInstruction{
+						{
+							Targets: []pb.InstructionTarget{
+								pb.InstructionTarget_LOCAL,
+							},
+							Content: "content",
+							Dependencies: []*pb.InstructionDependency{
+								{
+									InvocationId:  "inv",
+									InstructionId: "ins",
+								},
+							},
+						},
+					},
+					InstructionFilter: &pb.InstructionFilter{
+						FilterType: &pb.InstructionFilter_InvocationIds{
+							InvocationIds: &pb.InstructionFilterByInvocationID{
+								InvocationIds: []string{"some inv"},
+							},
+						},
+					},
+				},
+			},
 		}
-		sources := func(number int) *pb.Sources {
-			return testutil.TestSourcesWithChangelistNumbers(number)
-		}
-		withSources := func(number int) map[string]any {
-			return map[string]any{
-				"Sources": spanutil.Compress(pbutil.MustMarshal(sources(number))),
-			}
+
+		filteredInstruction := &pb.Instructions{
+			Instructions: []*pb.Instruction{
+				{
+					Id:   "test_instruction",
+					Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+					TargetedInstructions: []*pb.TargetedInstruction{
+						{
+							Targets: []pb.InstructionTarget{
+								pb.InstructionTarget_LOCAL,
+							},
+							Dependencies: []*pb.InstructionDependency{
+								{
+									InvocationId:  "inv",
+									InstructionId: "ins",
+								},
+							},
+						},
+					},
+					InstructionFilter: &pb.InstructionFilter{
+						FilterType: &pb.InstructionFilter_InvocationIds{
+							InvocationIds: &pb.InstructionFilterByInvocationID{
+								InvocationIds: []string{"some inv"},
+							},
+						},
+					},
+				},
+			},
 		}
 
 		Convey(`a -> []`, func() {
 			expected := ReachableInvocations{
 				Invocations: map[invocations.ID]ReachableInvocation{
 					"a": {
-						Realm: insert.TestRealm,
+						Realm:                 insert.TestRealm,
+						IncludedInvocationIDs: []invocations.ID{},
+						Instructions:          filteredInstruction,
 					},
 				},
 				Sources: make(map[SourceHash]*pb.Sources),
 			}
 			Convey(`Root has no sources`, func() {
-				testutil.MustApply(ctx, node("a", nil)...)
+				testutil.MustApply(ctx, node("a", newExtraValueBuilder().withInstructions(instructions).Build())...)
 
 				So(mustRead("a"), ShouldResembleReachable, expected)
 			})
+			Convey(`Root has no instructions`, func() {
+				testutil.MustApply(ctx, node("a", nil)...)
+
+				So(mustRead("a"), ShouldResembleReachable, ReachableInvocations{
+					Invocations: map[invocations.ID]ReachableInvocation{
+						"a": {
+							Realm:                 insert.TestRealm,
+							IncludedInvocationIDs: []invocations.ID{},
+						},
+					},
+					Sources: make(map[SourceHash]*pb.Sources),
+				})
+			})
+
 			Convey(`Root has inherit sources`, func() {
-				testutil.MustApply(ctx, node("a", withInheritSources)...)
+				testutil.MustApply(ctx, node("a", newExtraValueBuilder().withInheritSources().withInstructions(instructions).Build())...)
 
 				So(mustRead("a"), ShouldResembleReachable, expected)
 			})
 			Convey(`Root has concrete sources`, func() {
-				testutil.MustApply(ctx, node("a", withSources(1))...)
+				testutil.MustApply(ctx, node("a", newExtraValueBuilder().withSources(1).withInstructions(instructions).Build())...)
 
 				expected.Invocations["a"] = ReachableInvocation{
-					Realm:      insert.TestRealm,
-					SourceHash: HashSources(sources(1)),
+					Realm:                 insert.TestRealm,
+					SourceHash:            HashSources(sources(1)),
+					IncludedInvocationIDs: []invocations.ID{},
+					Instructions:          filteredInstruction,
 				}
 				expected.Sources[HashSources(sources(1))] = sources(1)
 
@@ -98,8 +169,8 @@ func TestReachable(t *testing.T) {
 
 		Convey(`a -> [b, c]`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				node("a", withSources(1), "b", "c"),
-				node("b", withInheritSources),
+				node("a", newExtraValueBuilder().withSources(1).Build(), "b", "c"),
+				node("b", newExtraValueBuilder().withInheritSources().Build()),
 				node("c", nil),
 				insert.TestExonerations("a", "Z", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 				insert.TestResults("c", "Z", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
@@ -109,18 +180,21 @@ func TestReachable(t *testing.T) {
 			expected := ReachableInvocations{
 				Invocations: map[invocations.ID]ReachableInvocation{
 					"a": {
-						HasTestExonerations: true,
-						Realm:               insert.TestRealm,
-						SourceHash:          HashSources(sources(1)),
+						HasTestExonerations:   true,
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(1)),
+						IncludedInvocationIDs: []invocations.ID{"b", "c"},
 					},
 					"b": {
-						Realm:      insert.TestRealm,
-						SourceHash: HashSources(sources(1)),
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(1)),
+						IncludedInvocationIDs: []invocations.ID{},
 					},
 					"c": {
-						HasTestResults:      true,
-						HasTestExonerations: true,
-						Realm:               insert.TestRealm,
+						HasTestResults:        true,
+						HasTestExonerations:   true,
+						Realm:                 insert.TestRealm,
+						IncludedInvocationIDs: []invocations.ID{},
 					},
 				},
 				Sources: map[SourceHash]*pb.Sources{
@@ -133,9 +207,9 @@ func TestReachable(t *testing.T) {
 
 		Convey(`a -> b -> c`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				node("a", withSources(1), "b"),
-				node("b", withInheritSources, "c"),
-				node("c", withInheritSources),
+				node("a", newExtraValueBuilder().withSources(1).Build(), "b"),
+				node("b", newExtraValueBuilder().withInheritSources().Build(), "c"),
+				node("c", newExtraValueBuilder().withInheritSources().Build()),
 				insert.TestExonerations("a", "Z", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 				insert.TestResults("c", "Z", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 				insert.TestExonerations("c", "Z", nil, pb.ExonerationReason_NOT_CRITICAL),
@@ -143,19 +217,22 @@ func TestReachable(t *testing.T) {
 			expected := ReachableInvocations{
 				Invocations: map[invocations.ID]ReachableInvocation{
 					"a": {
-						HasTestExonerations: true,
-						Realm:               insert.TestRealm,
-						SourceHash:          HashSources(sources(1)),
+						HasTestExonerations:   true,
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(1)),
+						IncludedInvocationIDs: []invocations.ID{"b"},
 					},
 					"b": {
-						Realm:      insert.TestRealm,
-						SourceHash: HashSources(sources(1)),
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(1)),
+						IncludedInvocationIDs: []invocations.ID{"c"},
 					},
 					"c": {
-						HasTestResults:      true,
-						HasTestExonerations: true,
-						Realm:               insert.TestRealm,
-						SourceHash:          HashSources(sources(1)),
+						HasTestResults:        true,
+						HasTestExonerations:   true,
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(1)),
+						IncludedInvocationIDs: []invocations.ID{},
 					},
 				},
 				Sources: map[SourceHash]*pb.Sources{
@@ -183,39 +260,45 @@ func TestReachable(t *testing.T) {
 			// 2. Minimal invocation name.
 			// In this case, e should inherit sources from c.
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				node("a", withSources(1), "b1", "c", "d"),
-				node("b1", withInheritSources, "b2"),
-				node("b2", withInheritSources, "e"),
-				node("c", withSources(2), "e"),
-				node("d", withSources(3), "e"),
-				node("e", withInheritSources),
+				node("a", newExtraValueBuilder().withSources(1).Build(), "b1", "c", "d"),
+				node("b1", newExtraValueBuilder().withInheritSources().Build(), "b2"),
+				node("b2", newExtraValueBuilder().withInheritSources().Build(), "e"),
+				node("c", newExtraValueBuilder().withSources(2).Build(), "e"),
+				node("d", newExtraValueBuilder().withSources(3).Build(), "e"),
+				node("e", newExtraValueBuilder().withInheritSources().Build()),
 			)...)
 
 			expected := ReachableInvocations{
 				Invocations: map[invocations.ID]ReachableInvocation{
 					"a": {
-						Realm:      insert.TestRealm,
-						SourceHash: HashSources(sources(1)),
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(1)),
+						IncludedInvocationIDs: []invocations.ID{"b1", "c", "d"},
 					},
 					"b1": {
-						Realm:      insert.TestRealm,
-						SourceHash: HashSources(sources(1)),
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(1)),
+						IncludedInvocationIDs: []invocations.ID{"b2"},
 					},
 					"b2": {
-						Realm:      insert.TestRealm,
-						SourceHash: HashSources(sources(1)),
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(1)),
+						IncludedInvocationIDs: []invocations.ID{"e"},
 					},
 					"c": {
-						Realm:      insert.TestRealm,
-						SourceHash: HashSources(sources(2)),
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(2)),
+						IncludedInvocationIDs: []invocations.ID{"e"},
 					},
 					"d": {
-						Realm:      insert.TestRealm,
-						SourceHash: HashSources(sources(3)),
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(3)),
+						IncludedInvocationIDs: []invocations.ID{"e"},
 					},
 					"e": {
-						Realm:      insert.TestRealm,
-						SourceHash: HashSources(sources(2)),
+						Realm:                 insert.TestRealm,
+						SourceHash:            HashSources(sources(2)),
+						IncludedInvocationIDs: []invocations.ID{},
 					},
 				},
 				Sources: map[SourceHash]*pb.Sources{
@@ -231,17 +314,19 @@ func TestReachable(t *testing.T) {
 			// Test a graph with cycles to make sure
 			// source resolution always terminates.
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				node("a", withInheritSources, "b"),
-				node("b", withInheritSources, "a"),
+				node("a", newExtraValueBuilder().withInheritSources().Build(), "b"),
+				node("b", newExtraValueBuilder().withInheritSources().Build(), "a"),
 			)...)
 
 			expected := ReachableInvocations{
 				Invocations: map[invocations.ID]ReachableInvocation{
 					"a": {
-						Realm: insert.TestRealm,
+						Realm:                 insert.TestRealm,
+						IncludedInvocationIDs: []invocations.ID{"b"},
 					},
 					"b": {
-						Realm: insert.TestRealm,
+						Realm:                 insert.TestRealm,
+						IncludedInvocationIDs: []invocations.ID{"a"},
 					},
 				},
 				Sources: map[SourceHash]*pb.Sources{},
@@ -253,8 +338,10 @@ func TestReachable(t *testing.T) {
 		Convey(`a -> [100 invocations]`, func() {
 			nodes := [][]*spanner.Mutation{}
 			nodeSet := []invocations.ID{}
+			childInvs := []invocations.ID{}
 			for i := 0; i < 100; i++ {
 				name := invocations.ID("b" + strconv.FormatInt(int64(i), 10))
+				childInvs = append(childInvs, name)
 				nodes = append(nodes, node(name, nil))
 				nodes = append(nodes, insert.TestResults(string(name), "testID", nil, pb.TestStatus_SKIP))
 				nodes = append(nodes, insert.TestExonerations(name, "testID", nil, pb.ExonerationReason_NOT_CRITICAL))
@@ -264,15 +351,22 @@ func TestReachable(t *testing.T) {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				nodes...,
 			)...)
+
+			sort.Slice(childInvs, func(i, j int) bool {
+				return childInvs[i] < childInvs[j]
+			})
 			expectedInvs := NewReachableInvocations()
 			expectedInvs.Invocations["a"] = ReachableInvocation{
-				Realm: insert.TestRealm,
+				Realm:                 insert.TestRealm,
+				IncludedInvocationIDs: childInvs,
 			}
+
 			for _, id := range nodeSet {
 				expectedInvs.Invocations[id] = ReachableInvocation{
-					HasTestResults:      true,
-					HasTestExonerations: true,
-					Realm:               insert.TestRealm,
+					HasTestResults:        true,
+					HasTestExonerations:   true,
+					Realm:                 insert.TestRealm,
+					IncludedInvocationIDs: []invocations.ID{},
 				}
 			}
 			So(mustRead("a"), ShouldResembleReachable, expectedInvs)
@@ -381,15 +475,35 @@ func TestReachCache(t *testing.T) {
 			HasTestResults:      true,
 			HasTestExonerations: true,
 			Realm:               insert.TestRealm,
+			Instructions: &pb.Instructions{
+				Instructions: []*pb.Instruction{
+					{
+						Id:   "instruction0",
+						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						InstructionFilter: &pb.InstructionFilter{
+							FilterType: &pb.InstructionFilter_InvocationIds{
+								InvocationIds: &pb.InstructionFilterByInvocationID{
+									InvocationIds: []string{
+										"inv1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			IncludedInvocationIDs: []invocations.ID{"a", "b"},
 		}
 		invs.Invocations["a"] = ReachableInvocation{
-			HasTestResults: true,
-			Realm:          insert.TestRealm,
-			SourceHash:     HashSources(source1),
+			HasTestResults:        true,
+			Realm:                 insert.TestRealm,
+			SourceHash:            HashSources(source1),
+			IncludedInvocationIDs: []invocations.ID{},
 		}
 		invs.Invocations["b"] = ReachableInvocation{
-			HasTestExonerations: true,
-			Realm:               insert.TestRealm,
+			HasTestExonerations:   true,
+			Realm:                 insert.TestRealm,
+			IncludedInvocationIDs: []invocations.ID{},
 		}
 
 		Convey(`Read`, func() {
@@ -398,7 +512,7 @@ func TestReachCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			actual, err := cache.Read(ctx)
 			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, invs)
+			So(actual, ShouldResembleProto, invs)
 			So(conn.received, ShouldResemble, [][]any{
 				{"GET", "reach4:inv"},
 			})
@@ -420,7 +534,7 @@ func TestReachCache(t *testing.T) {
 			})
 			actual, err := unmarshalReachableInvocations(conn.received[0][2].([]byte))
 			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, invs)
+			So(actual, ShouldResembleProto, invs)
 		})
 	})
 }
@@ -438,7 +552,7 @@ func ShouldResembleReachable(actual any, expected ...any) string {
 		return "expected expected to be of type ReachableInvocations"
 	}
 
-	if msg := ShouldResemble(a.Invocations, e.Invocations); msg != "" {
+	if msg := ShouldResembleProto(a.Invocations, e.Invocations); msg != "" {
 		return msg
 	}
 	if msg := ShouldEqual(len(a.Sources), len(e.Sources)); msg != "" {
@@ -450,4 +564,37 @@ func ShouldResembleReachable(actual any, expected ...any) string {
 		}
 	}
 	return ""
+}
+
+type ExtraValueBuilder struct {
+	values map[string]any
+}
+
+func newExtraValueBuilder() *ExtraValueBuilder {
+	return &ExtraValueBuilder{
+		values: map[string]any{},
+	}
+}
+
+func (b *ExtraValueBuilder) withInheritSources() *ExtraValueBuilder {
+	b.values["InheritSources"] = true
+	return b
+}
+
+func (b *ExtraValueBuilder) withSources(number int) *ExtraValueBuilder {
+	b.values["Sources"] = spanutil.Compress(pbutil.MustMarshal(sources(number)))
+	return b
+}
+
+func (b *ExtraValueBuilder) withInstructions(instructions *pb.Instructions) *ExtraValueBuilder {
+	b.values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(instructions))
+	return b
+}
+
+func (b *ExtraValueBuilder) Build() map[string]any {
+	return b.values
+}
+
+func sources(number int) *pb.Sources {
+	return testutil.TestSourcesWithChangelistNumbers(number)
 }

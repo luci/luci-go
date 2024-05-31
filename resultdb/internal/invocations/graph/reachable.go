@@ -16,9 +16,12 @@
 package graph
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -38,6 +41,12 @@ type ReachableInvocation struct {
 	// ReachableInvocations.Sources.
 	// If no sources could be resolved, this is EmptySourceHash.
 	SourceHash SourceHash
+	// The instructions associated with this invocation.
+	// Note that all contents will be set to empty string "", to reduce
+	// the memory footprint when we load the invocation tree.
+	Instructions *pb.Instructions
+	// Contains the invocation IDs that this invocation includes.
+	IncludedInvocationIDs []invocations.ID
 }
 
 // ReachableInvocations is a set of reachable invocations,
@@ -141,6 +150,74 @@ func (r ReachableInvocations) WithExonerationsIDSet() (invocations.IDSet, error)
 	return result, nil
 }
 
+// InstructionMap returns a mapping invocation_id => VerdictInstruction.
+// It tells where the instructions for each invocation locates.
+// If an invocation does not have instruction, it will not have an entry in the map.
+func (r ReachableInvocations) InstructionMap() (map[invocations.ID]*pb.VerdictInstruction, error) {
+	instructionMap := map[invocations.ID]*pb.VerdictInstruction{}
+	// Sort the keys to introduce determinisim.
+	idSet := invocations.NewIDSet()
+	for invID := range r.Invocations {
+		idSet.Add(invID)
+	}
+	for _, invID := range idSet.SortByRowID() {
+		inv := r.Invocations[invID]
+		if inv.Instructions != nil {
+			for _, instruction := range inv.Instructions.GetInstructions() {
+				// We don't care about step instructions.
+				if instruction.Type != pb.InstructionType_TEST_RESULT_INSTRUCTION {
+					continue
+				}
+				instructionName := fmt.Sprintf("invocations/%s/instructions/%s", invID, instruction.Id)
+				filter := instruction.InstructionFilter
+				// If there is no filter, the instruction is for this invocation and
+				// all included invocations (recursively).
+				if filter == nil {
+					r.applyInstruction(instructionName, instructionMap, invID, true)
+				} else {
+					switch filterType := filter.FilterType.(type) {
+					case *pb.InstructionFilter_InvocationIds:
+						invIDs := filterType.InvocationIds.InvocationIds
+						for _, invID := range invIDs {
+							r.applyInstruction(instructionName, instructionMap, invocations.ID(invID), filterType.InvocationIds.Recursive)
+						}
+					default:
+						return nil, errors.Reason("invalid filter type %v", filter.FilterType).Err()
+					}
+				}
+			}
+		}
+	}
+	return instructionMap, nil
+}
+
+// applyInstruction applies instructionName to root invocation.
+// If recursive is set to true, it also applies the instruction to included invocations.
+// instructionMap is to map each invocation to its instruction.
+func (r ReachableInvocations) applyInstruction(instructionName string, instructionMap map[invocations.ID]*pb.VerdictInstruction, root invocations.ID, recursive bool) {
+	// We have processed this. Exit early.
+	if _, ok := instructionMap[root]; ok {
+		return
+	}
+	// Invocation not in reachable invocations. Exit early.
+	// It may happen when a user specifies a non-existing invocation ID in
+	// the instruction filter.
+	if _, ok := r.Invocations[root]; !ok {
+		return
+	}
+	instructionMap[root] = &pb.VerdictInstruction{
+		Instruction: instructionName,
+	}
+	if !recursive {
+		return
+	}
+	childInvIDs := r.Invocations[root].IncludedInvocationIDs
+	for _, childID := range childInvIDs {
+		r.applyInstruction(instructionName, instructionMap, childID, true)
+	}
+}
+
+// batches breaks ReachableInvocations into batches.
 func (r ReachableInvocations) batches(size int) []ReachableInvocations {
 	ids := r.idSetNoLimit().SortByRowID()
 	batches := make([]ReachableInvocations, 0, 1+len(ids)/size)
@@ -178,17 +255,25 @@ func (r ReachableInvocations) marshal() ([]byte, error) {
 
 	invocations := make([]*internalpb.ReachableInvocations_ReachableInvocation, 0, len(r.Invocations))
 	for id, inv := range r.Invocations {
+		ids := make([]string, len(inv.IncludedInvocationIDs))
+		for i, childInvID := range inv.IncludedInvocationIDs {
+			ids[i] = string(childInvID)
+		}
+
 		proto := &internalpb.ReachableInvocations_ReachableInvocation{
-			InvocationId:        string(id),
-			HasTestResults:      inv.HasTestResults,
-			HasTestExonerations: inv.HasTestExonerations,
-			Realm:               inv.Realm,
+			InvocationId:          string(id),
+			HasTestResults:        inv.HasTestResults,
+			HasTestExonerations:   inv.HasTestExonerations,
+			Realm:                 inv.Realm,
+			Instructions:          inv.Instructions,
+			IncludedInvocationIds: ids,
 		}
 		if inv.SourceHash != EmptySourceHash {
 			proto.SourceOffset = int64(indexBySourceHash[inv.SourceHash]) + 1
 		}
 		invocations = append(invocations, proto)
 	}
+
 	message := &internalpb.ReachableInvocations{
 		Invocations: invocations,
 		Sources:     distinctSources,
@@ -224,17 +309,24 @@ func unmarshalReachableInvocations(value []byte) (ReachableInvocations, error) {
 
 	invs := make(map[invocations.ID]ReachableInvocation, len(message.Invocations))
 	for _, entry := range message.Invocations {
+		ids := make([]invocations.ID, len(entry.IncludedInvocationIds))
+		for i, invID := range entry.IncludedInvocationIds {
+			ids[i] = invocations.ID(invID)
+		}
 		inv := ReachableInvocation{
-			HasTestResults:      entry.HasTestResults,
-			HasTestExonerations: entry.HasTestExonerations,
-			Realm:               entry.Realm,
-			SourceHash:          EmptySourceHash,
+			HasTestResults:        entry.HasTestResults,
+			HasTestExonerations:   entry.HasTestExonerations,
+			Realm:                 entry.Realm,
+			SourceHash:            EmptySourceHash,
+			Instructions:          entry.Instructions,
+			IncludedInvocationIDs: ids,
 		}
 		if entry.SourceOffset > 0 {
 			inv.SourceHash = sourceHashByIndex[entry.SourceOffset-1]
 		}
 		invs[invocations.ID(entry.InvocationId)] = inv
 	}
+
 	return ReachableInvocations{
 		Invocations: invs,
 		Sources:     sources,

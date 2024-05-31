@@ -62,6 +62,14 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.InvocationWithInclusions("inv0", pb.Invocation_ACTIVE, map[string]any{
 				"Realm":   "testproject:testrealm",
 				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSourcesWithChangelistNumbers(1))),
+				"Instructions": spanutil.Compress(pbutil.MustMarshal(&pb.Instructions{
+					Instructions: []*pb.Instruction{
+						{
+							Id:   "test",
+							Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						},
+					},
+				})),
 			}, "inv1", "invmissing")...,
 		)
 		testutil.MustApply(
@@ -85,6 +93,21 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.InvocationWithInclusions("inv2", pb.Invocation_ACTIVE, map[string]any{
 				"Realm":   "testproject:testlimitedrealm",
 				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSourcesWithChangelistNumbers(2))),
+				"Instructions": spanutil.Compress(pbutil.MustMarshal(&pb.Instructions{
+					Instructions: []*pb.Instruction{
+						{
+							Id:   "test",
+							Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+							InstructionFilter: &pb.InstructionFilter{
+								FilterType: &pb.InstructionFilter_InvocationIds{
+									InvocationIds: &pb.InstructionFilterByInvocationID{
+										InvocationIds: []string{"inv3"},
+									},
+								},
+							},
+						},
+					},
+				})),
 			}, "inv3", "inv4", "inv5")...,
 		)
 		testutil.MustApply(
@@ -208,6 +231,9 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 					TestMetadata: &pb.TestMetadata{Name: "testname"},
 					SourcesId:    graph.HashSources(testutil.TestSourcesWithChangelistNumbers(2)).String(),
+					Instruction: &pb.VerdictInstruction{
+						Instruction: "invocations/inv2/instructions/test",
+					},
 				},
 				{
 					TestId:      "T1004",

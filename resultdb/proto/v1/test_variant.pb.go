@@ -156,6 +156,12 @@ type TestVariant struct {
 	//
 	// If the code sources tested are not available, this field is blank.
 	SourcesId string `protobuf:"bytes,9,opt,name=sources_id,json=sourcesId,proto3" json:"sources_id,omitempty"`
+	// Contain the data for instruction for the test verdict.
+	// To find out the instruction for a test verdict, we select an *arbitrary*
+	// test result in the test verdict and get its instruction.
+	// Note: If in this test verdict, if there are different instructions for
+	// test result, the result may be undeterministic.
+	Instruction *VerdictInstruction `protobuf:"bytes,10,opt,name=instruction,proto3" json:"instruction,omitempty"`
 }
 
 func (x *TestVariant) Reset() {
@@ -253,6 +259,62 @@ func (x *TestVariant) GetSourcesId() string {
 	return ""
 }
 
+func (x *TestVariant) GetInstruction() *VerdictInstruction {
+	if x != nil {
+		return x.Instruction
+	}
+	return nil
+}
+
+type VerdictInstruction struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Name of the instruction.
+	// Format: invocations/<invocation id>/instructions/<instruction id>
+	Instruction string `protobuf:"bytes,1,opt,name=instruction,proto3" json:"instruction,omitempty"`
+}
+
+func (x *VerdictInstruction) Reset() {
+	*x = VerdictInstruction{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *VerdictInstruction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerdictInstruction) ProtoMessage() {}
+
+func (x *VerdictInstruction) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerdictInstruction.ProtoReflect.Descriptor instead.
+func (*VerdictInstruction) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *VerdictInstruction) GetInstruction() string {
+	if x != nil {
+		return x.Instruction
+	}
+	return ""
+}
+
 // Outcomes of an execution of the test variant.
 type TestResultBundle struct {
 	state         protoimpl.MessageState
@@ -266,7 +328,7 @@ type TestResultBundle struct {
 func (x *TestResultBundle) Reset() {
 	*x = TestResultBundle{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[1]
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -279,7 +341,7 @@ func (x *TestResultBundle) String() string {
 func (*TestResultBundle) ProtoMessage() {}
 
 func (x *TestResultBundle) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[1]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -292,7 +354,7 @@ func (x *TestResultBundle) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestResultBundle.ProtoReflect.Descriptor instead.
 func (*TestResultBundle) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(), []int{1}
+	return file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *TestResultBundle) GetResult() *TestResult {
@@ -316,7 +378,7 @@ type TestVariantPredicate struct {
 func (x *TestVariantPredicate) Reset() {
 	*x = TestVariantPredicate{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[2]
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -329,7 +391,7 @@ func (x *TestVariantPredicate) String() string {
 func (*TestVariantPredicate) ProtoMessage() {}
 
 func (x *TestVariantPredicate) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -342,7 +404,7 @@ func (x *TestVariantPredicate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestVariantPredicate.ProtoReflect.Descriptor instead.
 func (*TestVariantPredicate) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(), []int{2}
+	return file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *TestVariantPredicate) GetStatus() TestVariantStatus {
@@ -383,7 +445,7 @@ type RunTestVerdict struct {
 func (x *RunTestVerdict) Reset() {
 	*x = RunTestVerdict{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[3]
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -396,7 +458,7 @@ func (x *RunTestVerdict) String() string {
 func (*RunTestVerdict) ProtoMessage() {}
 
 func (x *RunTestVerdict) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -409,7 +471,7 @@ func (x *RunTestVerdict) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunTestVerdict.ProtoReflect.Descriptor instead.
 func (*RunTestVerdict) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RunTestVerdict) GetTestId() string {
@@ -467,7 +529,7 @@ var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDesc = []b
 	0x38, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
 	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x72, 0x65, 0x73,
-	0x75, 0x6c, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc6, 0x03, 0x0a, 0x0b, 0x54, 0x65,
+	0x75, 0x6c, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8e, 0x04, 0x0a, 0x0b, 0x54, 0x65,
 	0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73,
 	0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x65, 0x73, 0x74,
 	0x49, 0x64, 0x12, 0x33, 0x0a, 0x07, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x18, 0x02, 0x20,
@@ -496,7 +558,15 @@ var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDesc = []b
 	0x20, 0x01, 0x28, 0x08, 0x42, 0x03, 0xe0, 0x41, 0x03, 0x52, 0x08, 0x69, 0x73, 0x4d, 0x61, 0x73,
 	0x6b, 0x65, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x5f, 0x69,
 	0x64, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73,
-	0x49, 0x64, 0x22, 0x48, 0x0a, 0x10, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x49, 0x64, 0x12, 0x46, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x65, 0x72, 0x64, 0x69,
+	0x63, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x69,
+	0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x36, 0x0a, 0x12, 0x56, 0x65,
+	0x72, 0x64, 0x69, 0x63, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e,
+	0x12, 0x20, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x22, 0x48, 0x0a, 0x10, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74,
 	0x42, 0x75, 0x6e, 0x64, 0x6c, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65,
 	0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65,
@@ -552,34 +622,36 @@ func file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(
 }
 
 var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_goTypes = []interface{}{
 	(TestVariantStatus)(0),       // 0: luci.resultdb.v1.TestVariantStatus
 	(*TestVariant)(nil),          // 1: luci.resultdb.v1.TestVariant
-	(*TestResultBundle)(nil),     // 2: luci.resultdb.v1.TestResultBundle
-	(*TestVariantPredicate)(nil), // 3: luci.resultdb.v1.TestVariantPredicate
-	(*RunTestVerdict)(nil),       // 4: luci.resultdb.v1.RunTestVerdict
-	(*Variant)(nil),              // 5: luci.resultdb.v1.Variant
-	(*TestExoneration)(nil),      // 6: luci.resultdb.v1.TestExoneration
-	(*TestMetadata)(nil),         // 7: luci.resultdb.v1.TestMetadata
-	(*TestResult)(nil),           // 8: luci.resultdb.v1.TestResult
+	(*VerdictInstruction)(nil),   // 2: luci.resultdb.v1.VerdictInstruction
+	(*TestResultBundle)(nil),     // 3: luci.resultdb.v1.TestResultBundle
+	(*TestVariantPredicate)(nil), // 4: luci.resultdb.v1.TestVariantPredicate
+	(*RunTestVerdict)(nil),       // 5: luci.resultdb.v1.RunTestVerdict
+	(*Variant)(nil),              // 6: luci.resultdb.v1.Variant
+	(*TestExoneration)(nil),      // 7: luci.resultdb.v1.TestExoneration
+	(*TestMetadata)(nil),         // 8: luci.resultdb.v1.TestMetadata
+	(*TestResult)(nil),           // 9: luci.resultdb.v1.TestResult
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_depIdxs = []int32{
-	5,  // 0: luci.resultdb.v1.TestVariant.variant:type_name -> luci.resultdb.v1.Variant
+	6,  // 0: luci.resultdb.v1.TestVariant.variant:type_name -> luci.resultdb.v1.Variant
 	0,  // 1: luci.resultdb.v1.TestVariant.status:type_name -> luci.resultdb.v1.TestVariantStatus
-	2,  // 2: luci.resultdb.v1.TestVariant.results:type_name -> luci.resultdb.v1.TestResultBundle
-	6,  // 3: luci.resultdb.v1.TestVariant.exonerations:type_name -> luci.resultdb.v1.TestExoneration
-	7,  // 4: luci.resultdb.v1.TestVariant.test_metadata:type_name -> luci.resultdb.v1.TestMetadata
-	8,  // 5: luci.resultdb.v1.TestResultBundle.result:type_name -> luci.resultdb.v1.TestResult
-	0,  // 6: luci.resultdb.v1.TestVariantPredicate.status:type_name -> luci.resultdb.v1.TestVariantStatus
-	5,  // 7: luci.resultdb.v1.RunTestVerdict.variant:type_name -> luci.resultdb.v1.Variant
-	2,  // 8: luci.resultdb.v1.RunTestVerdict.results:type_name -> luci.resultdb.v1.TestResultBundle
-	7,  // 9: luci.resultdb.v1.RunTestVerdict.test_metadata:type_name -> luci.resultdb.v1.TestMetadata
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	3,  // 2: luci.resultdb.v1.TestVariant.results:type_name -> luci.resultdb.v1.TestResultBundle
+	7,  // 3: luci.resultdb.v1.TestVariant.exonerations:type_name -> luci.resultdb.v1.TestExoneration
+	8,  // 4: luci.resultdb.v1.TestVariant.test_metadata:type_name -> luci.resultdb.v1.TestMetadata
+	2,  // 5: luci.resultdb.v1.TestVariant.instruction:type_name -> luci.resultdb.v1.VerdictInstruction
+	9,  // 6: luci.resultdb.v1.TestResultBundle.result:type_name -> luci.resultdb.v1.TestResult
+	0,  // 7: luci.resultdb.v1.TestVariantPredicate.status:type_name -> luci.resultdb.v1.TestVariantStatus
+	6,  // 8: luci.resultdb.v1.RunTestVerdict.variant:type_name -> luci.resultdb.v1.Variant
+	3,  // 9: luci.resultdb.v1.RunTestVerdict.results:type_name -> luci.resultdb.v1.TestResultBundle
+	8,  // 10: luci.resultdb.v1.RunTestVerdict.test_metadata:type_name -> luci.resultdb.v1.TestMetadata
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_init() }
@@ -604,7 +676,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TestResultBundle); i {
+			switch v := v.(*VerdictInstruction); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -616,7 +688,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TestVariantPredicate); i {
+			switch v := v.(*TestResultBundle); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -628,6 +700,18 @@ func file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestVariantPredicate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RunTestVerdict); i {
 			case 0:
 				return &v.state
@@ -646,7 +730,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

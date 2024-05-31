@@ -17,6 +17,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -27,12 +28,14 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/redisconn"
-	"go.chromium.org/luci/server/span"
 )
 
 // MaxNodes is the maximum number of invocation nodes that ResultDB
@@ -54,6 +57,7 @@ var TooManyTag = errors.BoolTag{
 // Reachable returns all invocations reachable from roots along the inclusion
 // edges. May return an appstatus-annotated error.
 func Reachable(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
+	// TODO (nqmtuan): useRootCache should be set to true.
 	invs, err := reachable(ctx, roots, false)
 	if err != nil {
 		return ReachableInvocations{}, err
@@ -146,11 +150,14 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 	// parent graph).
 	reachableInvocationToParent := make(map[invocations.ID]invocations.ID)
 
+	// Map back from parent to child invocations.
+	includedMap := map[invocations.ID][]invocations.ID{}
+
 	// Find all reachable invocations traversing the graph one level at a time.
 	nextLevel := invocations.NewIDSet()
 	nextLevel.Union(roots)
 	for len(nextLevel) > 0 {
-		includedInvs, err := queryIncludedInvocations(ctx, nextLevel)
+		includedInvs, err := queryIncludedInvocations(ctx, nextLevel, includedMap)
 		if err != nil {
 			return ReachableInvocations{}, err
 		}
@@ -201,15 +208,23 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 		return ReachableInvocations{}, err
 	}
 
+	sortIncludedMap(includedMap)
+
 	// Limit the returned reachable invocations to those that exist in the
 	// Invocations table; they will have a realm.
-	invocations := make(map[invocations.ID]ReachableInvocation, len(reachableInvocations))
+	invs := make(map[invocations.ID]ReachableInvocation, len(reachableInvocations))
 	distinctSources := make(map[SourceHash]*pb.Sources)
 	for id, details := range invDetails {
+		includedIds := []invocations.ID{}
+		if _, ok := includedMap[id]; ok {
+			includedIds = includedMap[id]
+		}
 		inv := ReachableInvocation{
-			HasTestResults:      withTestResults.Has(id),
-			HasTestExonerations: withExonerations.Has(id),
-			Realm:               details.Realm,
+			HasTestResults:        withTestResults.Has(id),
+			HasTestExonerations:   withExonerations.Has(id),
+			Realm:                 details.Realm,
+			Instructions:          details.Instructions,
+			IncludedInvocationIDs: includedIds,
 		}
 
 		sources := resolveSources(id, reachableInvocationToParent, invDetails)
@@ -218,12 +233,23 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 			distinctSources[sourceHash] = sources
 			inv.SourceHash = sourceHash
 		}
-		invocations[id] = inv
+		invs[id] = inv
 	}
-	return ReachableInvocations{
-		Invocations: invocations,
+
+	r := ReachableInvocations{
+		Invocations: invs,
 		Sources:     distinctSources,
-	}, nil
+	}
+
+	return r, nil
+}
+
+func sortIncludedMap(includedMap map[invocations.ID][]invocations.ID) {
+	for invID, childrenInvIDs := range includedMap {
+		sort.Slice(includedMap[invID], func(i, j int) bool {
+			return childrenInvIDs[i] < childrenInvIDs[j]
+		})
+	}
 }
 
 // resolveSources resolves the sources tested by the given invocation.
@@ -257,6 +283,8 @@ type invocationDetails struct {
 	Realm          string
 	InheritSources bool
 	Sources        *pb.Sources
+	// Instructions will have its content set to empty string.
+	Instructions *pb.Instructions
 }
 
 // queryInvocationDetails reads realm and source information
@@ -268,6 +296,7 @@ func queryInvocationDetails(ctx context.Context, ids invocations.IDSet) (map[inv
 			i.Realm,
 			i.InheritSources,
 			i.Sources,
+			i.Instructions,
 		FROM UNNEST(@invIDs) inv
 		JOIN Invocations i
 		ON i.InvocationId = inv`)
@@ -281,7 +310,8 @@ func queryInvocationDetails(ctx context.Context, ids invocations.IDSet) (map[inv
 		var realm spanner.NullString
 		var inheritSources spanner.NullBool
 		var sources spanutil.Compressed
-		if err := b.FromSpanner(r, &invocationID, &realm, &inheritSources, &sources); err != nil {
+		var instructions spanutil.Compressed
+		if err := b.FromSpanner(r, &invocationID, &realm, &inheritSources, &sources, &instructions); err != nil {
 			return err
 		}
 		var sourcesProto *pb.Sources
@@ -292,10 +322,23 @@ func queryInvocationDetails(ctx context.Context, ids invocations.IDSet) (map[inv
 				return err
 			}
 		}
+		var instructionsProto *pb.Instructions
+		if len(instructions) > 0 {
+			instructionsProto = &pb.Instructions{}
+			err := proto.Unmarshal(instructions, instructionsProto)
+			if err != nil {
+				return err
+			}
+			// We do not care about step instructions in this case.
+			// Filter them out to reduce the memory consumption.
+			instructionsProto = instructionutil.FilterInstructionType(instructionsProto, pb.InstructionType_TEST_RESULT_INSTRUCTION)
+			instructionsProto = instructionutil.RemoveInstructionsContent(instructionsProto)
+		}
 		results[invocationID] = invocationDetails{
 			Realm:          realm.StringVal,
 			InheritSources: inheritSources.Valid && inheritSources.Bool,
 			Sources:        sourcesProto,
+			Instructions:   instructionsProto,
 		}
 		return nil
 	})
@@ -315,7 +358,7 @@ func queryInvocationDetails(ctx context.Context, ids invocations.IDSet) (map[inv
 // The same invocation can be included from multiple invocations,
 // i.e. there are multiple parents, then the parent in the map
 // is selected arbitrarily.
-func queryIncludedInvocations(ctx context.Context, ids invocations.IDSet) (map[invocations.ID]invocations.ID, error) {
+func queryIncludedInvocations(ctx context.Context, ids invocations.IDSet, includedMap map[invocations.ID][]invocations.ID) (map[invocations.ID]invocations.ID, error) {
 	st := spanner.NewStatement(`
 	SELECT
 		ii.InvocationID,
@@ -335,6 +378,9 @@ func queryIncludedInvocations(ctx context.Context, ids invocations.IDSet) (map[i
 		if err := b.FromSpanner(r, &invocationID, &includedInvocationID); err != nil {
 			return err
 		}
+
+		includedMap[invocationID] = append(includedMap[invocationID], includedInvocationID)
+
 		if includingInvocationID, ok := results[includedInvocationID]; ok {
 			// If this invocation was included via multiple paths,
 			// keep just the one with the lexicographically first
