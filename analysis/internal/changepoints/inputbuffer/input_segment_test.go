@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,25 +41,14 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			ibSegments := sib.Segments
 			So(len(ibSegments), ShouldEqual, 1)
 			So(ibSegments[0], ShouldResembleProto, &Segment{
-				StartIndex:          0,
-				EndIndex:            5,
-				HasStartChangepoint: false,
-				StartPosition:       1,
-				EndPosition:         6,
-				StartHour:           timestamppb.New(time.Unix(3600, 0)),
-				EndHour:             timestamppb.New(time.Unix(6*3600, 0)),
-				Counts: &cpb.Counts{
-					TotalResults:            9,
-					UnexpectedResults:       3,
-					TotalRuns:               9,
-					UnexpectedUnretriedRuns: 3,
-					TotalVerdicts:           6,
-					FlakyVerdicts:           1,
-					UnexpectedVerdicts:      1,
-					ExpectedPassedResults:   6,
-					UnexpectedFailedResults: 3,
-				},
-				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(4*3600, 0)),
+				StartIndex:                     0,
+				EndIndex:                       5,
+				HasStartChangepoint:            false,
+				StartPosition:                  1,
+				EndPosition:                    6,
+				StartHour:                      time.Unix(3600, 0),
+				EndHour:                        time.Unix(6*3600, 0),
+				MostRecentUnexpectedResultHour: time.Unix(4*3600, 0),
 			})
 		})
 
@@ -102,82 +89,47 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				HasStartChangepoint: false,
 				StartPosition:       1,
 				EndPosition:         3,
-				StartHour:           timestamppb.New(time.Unix(3600, 0)),
-				EndHour:             timestamppb.New(time.Unix(3*3600, 0)),
-				Counts: &cpb.Counts{
-					TotalResults:          3,
-					TotalRuns:             3,
-					TotalVerdicts:         3,
-					ExpectedPassedResults: 3,
-				},
+				StartHour:           time.Unix(3600, 0),
+				EndHour:             time.Unix(3*3600, 0),
 			})
 
 			So(ibSegments[1], ShouldResembleProto, &Segment{
-				StartIndex:                  3,
-				EndIndex:                    5,
-				HasStartChangepoint:         true,
-				StartPosition:               4,
-				StartPositionLowerBound99Th: 3,
-				StartPositionUpperBound99Th: 5,
-				EndPosition:                 6,
-				StartHour:                   timestamppb.New(time.Unix(4*3600, 0)),
-				EndHour:                     timestamppb.New(time.Unix(6*3600, 0)),
-				Counts: &cpb.Counts{
-					TotalResults:             12,
-					UnexpectedResults:        12,
-					TotalRuns:                6,
-					UnexpectedAfterRetryRuns: 6,
-					TotalVerdicts:            3,
-					UnexpectedVerdicts:       3,
-					UnexpectedFailedResults:  6,
-					UnexpectedCrashedResults: 6,
-				},
-				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(6*3600, 0)),
+				StartIndex:                     3,
+				EndIndex:                       5,
+				HasStartChangepoint:            true,
+				StartPosition:                  4,
+				StartPositionLowerBound99Th:    3,
+				StartPositionUpperBound99Th:    5,
+				EndPosition:                    6,
+				StartHour:                      time.Unix(4*3600, 0),
+				EndHour:                        time.Unix(6*3600, 0),
+				MostRecentUnexpectedResultHour: time.Unix(6*3600, 0),
 			})
 
 			So(ibSegments[2], ShouldResembleProto, &Segment{
-				StartIndex:                  6,
-				EndIndex:                    8,
-				HasStartChangepoint:         true,
-				StartPosition:               7,
-				StartPositionLowerBound99Th: 6,
-				StartPositionUpperBound99Th: 8,
-				EndPosition:                 9,
-				StartHour:                   timestamppb.New(time.Unix(7*3600, 0)),
-				EndHour:                     timestamppb.New(time.Unix(9*3600, 0)),
-				Counts: &cpb.Counts{
-					TotalResults:            12,
-					UnexpectedResults:       6,
-					TotalRuns:               6,
-					FlakyRuns:               6,
-					TotalVerdicts:           3,
-					FlakyVerdicts:           3,
-					ExpectedPassedResults:   6,
-					UnexpectedFailedResults: 6,
-				},
-				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(9*3600, 0)),
+				StartIndex:                     6,
+				EndIndex:                       8,
+				HasStartChangepoint:            true,
+				StartPosition:                  7,
+				StartPositionLowerBound99Th:    6,
+				StartPositionUpperBound99Th:    8,
+				EndPosition:                    9,
+				StartHour:                      time.Unix(7*3600, 0),
+				EndHour:                        time.Unix(9*3600, 0),
+				MostRecentUnexpectedResultHour: time.Unix(9*3600, 0),
 			})
 
 			So(ibSegments[3], ShouldResembleProto, &Segment{
-				StartIndex:                  9,
-				EndIndex:                    11,
-				HasStartChangepoint:         true,
-				StartPosition:               10,
-				StartPositionLowerBound99Th: 9,
-				StartPositionUpperBound99Th: 11,
-				EndPosition:                 12,
-				StartHour:                   timestamppb.New(time.Unix(10*3600, 0)),
-				EndHour:                     timestamppb.New(time.Unix(12*3600, 0)),
-				Counts: &cpb.Counts{
-					TotalResults:            3,
-					UnexpectedResults:       3,
-					TotalRuns:               3,
-					UnexpectedUnretriedRuns: 3,
-					TotalVerdicts:           3,
-					UnexpectedVerdicts:      3,
-					UnexpectedFailedResults: 3,
-				},
-				MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(12*3600, 0)),
+				StartIndex:                     9,
+				EndIndex:                       11,
+				HasStartChangepoint:            true,
+				StartPosition:                  10,
+				StartPositionLowerBound99Th:    9,
+				StartPositionUpperBound99Th:    11,
+				EndPosition:                    12,
+				StartHour:                      time.Unix(10*3600, 0),
+				EndHour:                        time.Unix(12*3600, 0),
+				MostRecentUnexpectedResultHour: time.Unix(12*3600, 0),
 			})
 		})
 	})
@@ -188,13 +140,8 @@ func TestEvictSegments(t *testing.T) {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(100, 1, []int{}))
 		segments := []*Segment{
 			{
-				StartIndex: 0,
-				EndIndex:   99,
-				Counts: &cpb.Counts{
-					TotalResults:  100,
-					TotalRuns:     100,
-					TotalVerdicts: 100,
-				},
+				StartIndex:    0,
+				EndIndex:      99,
 				StartPosition: 1,
 				EndPosition:   100,
 			},
@@ -215,33 +162,21 @@ func TestEvictSegments(t *testing.T) {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{50, 1900}))
 		segments := []*Segment{
 			{
-				StartIndex: 0,
-				EndIndex:   2049,
-				Counts: &cpb.Counts{
-					TotalResults:          2050,
-					TotalRuns:             2050,
-					TotalVerdicts:         2050,
-					ExpectedPassedResults: 2050,
-				},
+				StartIndex:          0,
+				EndIndex:            2049,
 				HasStartChangepoint: false,
-				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				StartHour:           time.Unix(1*3600, 0),
 				StartPosition:       1,
-				EndHour:             timestamppb.New(time.Unix(2050*3600, 0)),
+				EndHour:             time.Unix(2050*3600, 0),
 				EndPosition:         2050,
 			},
 			{
-				StartIndex: 2050,
-				EndIndex:   2099,
-				Counts: &cpb.Counts{
-					TotalResults:          50,
-					TotalRuns:             50,
-					TotalVerdicts:         50,
-					ExpectedPassedResults: 50,
-				},
+				StartIndex:          2050,
+				EndIndex:            2099,
 				HasStartChangepoint: true,
-				StartHour:           timestamppb.New(time.Unix(2051*3600, 0)),
+				StartHour:           time.Unix(2051*3600, 0),
 				StartPosition:       2051,
-				EndHour:             timestamppb.New(time.Unix(2100*3600, 0)),
+				EndHour:             time.Unix(2100*3600, 0),
 				EndPosition:         2100,
 			},
 		}
@@ -257,42 +192,22 @@ func TestEvictSegments(t *testing.T) {
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 
 		So(evicted[0], ShouldResembleProto, EvictedSegment{
-			Segment: &cpb.Segment{
-				State:               cpb.SegmentState_FINALIZING,
-				HasStartChangepoint: false,
-				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
-				StartPosition:       1,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:            100,
-					UnexpectedResults:       1,
-					TotalRuns:               100,
-					UnexpectedUnretriedRuns: 1,
-					TotalVerdicts:           100,
-					UnexpectedVerdicts:      1,
-					ExpectedPassedResults:   99,
-					UnexpectedFailedResults: 1,
-				},
-				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(51*3600, 0)),
-			},
-			Verdicts: simpleVerdicts(100, 1, []int{50}),
+			State:                          cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:            false,
+			StartHour:                      time.Unix(1*3600, 0),
+			StartPosition:                  1,
+			MostRecentUnexpectedResultHour: time.Unix(51*3600, 0),
+			Verdicts:                       simpleVerdicts(100, 1, []int{50}),
 		})
 
 		So(remaining[0], ShouldResembleProto, &Segment{
-			StartIndex:  0,
-			EndIndex:    1949,
-			EndPosition: 2050,
-			EndHour:     timestamppb.New(time.Unix(2050*3600, 0)),
-			Counts: &cpb.Counts{
-				TotalResults:            1950,
-				UnexpectedResults:       1,
-				TotalRuns:               1950,
-				UnexpectedUnretriedRuns: 1,
-				TotalVerdicts:           1950,
-				UnexpectedVerdicts:      1,
-				ExpectedPassedResults:   1949,
-				UnexpectedFailedResults: 1,
-			},
-			MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(1901*3600, 0)),
+			StartIndex:                     0,
+			EndIndex:                       1949,
+			StartPosition:                  101,
+			StartHour:                      time.Unix(101*3600, 0),
+			EndPosition:                    2050,
+			EndHour:                        time.Unix(2050*3600, 0),
+			MostRecentUnexpectedResultHour: time.Unix(1901*3600, 0),
 		})
 
 		So(remaining[1], ShouldResembleProto, &Segment{
@@ -300,15 +215,9 @@ func TestEvictSegments(t *testing.T) {
 			EndIndex:            1999,
 			HasStartChangepoint: true,
 			StartPosition:       2051,
-			StartHour:           timestamppb.New(time.Unix(2051*3600, 0)),
+			StartHour:           time.Unix(2051*3600, 0),
 			EndPosition:         2100,
-			EndHour:             timestamppb.New(time.Unix(2100*3600, 0)),
-			Counts: &cpb.Counts{
-				TotalResults:          50,
-				TotalRuns:             50,
-				TotalVerdicts:         50,
-				ExpectedPassedResults: 50,
-			},
+			EndHour:             time.Unix(2100*3600, 0),
 		})
 	})
 
@@ -316,67 +225,43 @@ func TestEvictSegments(t *testing.T) {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{}))
 		segments := []*Segment{
 			{
-				StartIndex: 0, // Finalized segment.
-				EndIndex:   39,
-				Counts: &cpb.Counts{
-					TotalResults:          40,
-					TotalRuns:             40,
-					TotalVerdicts:         40,
-					ExpectedPassedResults: 40,
-				},
+				StartIndex:          0, // Finalized segment.
+				EndIndex:            39,
 				HasStartChangepoint: false,
-				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				StartHour:           time.Unix(1*3600, 0),
 				StartPosition:       1,
-				EndHour:             timestamppb.New(time.Unix(40*3600, 0)),
+				EndHour:             time.Unix(40*3600, 0),
 				EndPosition:         40,
 			},
 			{
-				StartIndex: 40, // Finalized segment.
-				EndIndex:   79,
-				Counts: &cpb.Counts{
-					TotalResults:          40,
-					TotalRuns:             40,
-					TotalVerdicts:         40,
-					ExpectedPassedResults: 40,
-				},
+				StartIndex:                  40, // Finalized segment.
+				EndIndex:                    79,
 				HasStartChangepoint:         true,
-				StartHour:                   timestamppb.New(time.Unix(41*3600, 0)),
+				StartHour:                   time.Unix(41*3600, 0),
 				StartPositionLowerBound99Th: 30,
 				StartPositionUpperBound99Th: 50,
 				StartPosition:               41,
-				EndHour:                     timestamppb.New(time.Unix(80*3600, 0)),
+				EndHour:                     time.Unix(80*3600, 0),
 				EndPosition:                 80,
 			},
 			{
-				StartIndex: 80, // A finalizing segment.
-				EndIndex:   2049,
-				Counts: &cpb.Counts{
-					TotalResults:          1970,
-					TotalRuns:             1970,
-					TotalVerdicts:         1970,
-					ExpectedPassedResults: 1970,
-				},
+				StartIndex:                  80, // A finalizing segment.
+				EndIndex:                    2049,
 				HasStartChangepoint:         true,
-				StartHour:                   timestamppb.New(time.Unix(81*3600, 0)),
+				StartHour:                   time.Unix(81*3600, 0),
 				StartPosition:               81,
 				StartPositionLowerBound99Th: 70,
 				StartPositionUpperBound99Th: 90,
-				EndHour:                     timestamppb.New(time.Unix(2050*3600, 0)),
+				EndHour:                     time.Unix(2050*3600, 0),
 				EndPosition:                 2050,
 			},
 			{
-				StartIndex: 2050, // An active segment.
-				EndIndex:   2099,
-				Counts: &cpb.Counts{
-					TotalResults:          50,
-					TotalRuns:             50,
-					TotalVerdicts:         50,
-					ExpectedPassedResults: 50,
-				},
+				StartIndex:          2050, // An active segment.
+				EndIndex:            2099,
 				HasStartChangepoint: true,
-				StartHour:           timestamppb.New(time.Unix(2051*3600, 0)),
+				StartHour:           time.Unix(2051*3600, 0),
 				StartPosition:       2051,
-				EndHour:             timestamppb.New(time.Unix(2100*3600, 0)),
+				EndHour:             time.Unix(2100*3600, 0),
 				EndPosition:         2100,
 			},
 		}
@@ -392,72 +277,44 @@ func TestEvictSegments(t *testing.T) {
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 
 		So(evicted[0], ShouldResembleProto, EvictedSegment{
-			Segment: &cpb.Segment{
-				State:               cpb.SegmentState_FINALIZED,
-				HasStartChangepoint: false,
-				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
-				StartPosition:       1,
-				EndHour:             timestamppb.New(time.Unix(40*3600, 0)),
-				EndPosition:         40,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:          40,
-					TotalRuns:             40,
-					TotalVerdicts:         40,
-					ExpectedPassedResults: 40,
-				},
-			},
-			Verdicts: simpleVerdicts(40, 1, []int{}),
+			State:               cpb.SegmentState_FINALIZED,
+			HasStartChangepoint: false,
+			StartHour:           time.Unix(1*3600, 0),
+			StartPosition:       1,
+			EndHour:             time.Unix(40*3600, 0),
+			EndPosition:         40,
+			Verdicts:            simpleVerdicts(40, 1, []int{}),
 		})
 
 		So(evicted[1], ShouldResembleProto, EvictedSegment{
-			Segment: &cpb.Segment{
-				State:                        cpb.SegmentState_FINALIZED,
-				HasStartChangepoint:          true,
-				StartHour:                    timestamppb.New(time.Unix(41*3600, 0)),
-				StartPosition:                41,
-				StartPositionLowerBound_99Th: 30,
-				StartPositionUpperBound_99Th: 50,
-				EndHour:                      timestamppb.New(time.Unix(80*3600, 0)),
-				EndPosition:                  80,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:          40,
-					TotalRuns:             40,
-					TotalVerdicts:         40,
-					ExpectedPassedResults: 40,
-				},
-			},
-			Verdicts: simpleVerdicts(40, 41, []int{}),
+			State:                       cpb.SegmentState_FINALIZED,
+			HasStartChangepoint:         true,
+			StartHour:                   time.Unix(41*3600, 0),
+			StartPosition:               41,
+			StartPositionLowerBound99Th: 30,
+			StartPositionUpperBound99Th: 50,
+			EndHour:                     time.Unix(80*3600, 0),
+			EndPosition:                 80,
+			Verdicts:                    simpleVerdicts(40, 41, []int{}),
 		})
 
 		So(evicted[2], ShouldResembleProto, EvictedSegment{
-			Segment: &cpb.Segment{
-				State:                        cpb.SegmentState_FINALIZING,
-				HasStartChangepoint:          true,
-				StartHour:                    timestamppb.New(time.Unix(81*3600, 0)),
-				StartPosition:                81,
-				StartPositionLowerBound_99Th: 70,
-				StartPositionUpperBound_99Th: 90,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:          20,
-					TotalRuns:             20,
-					TotalVerdicts:         20,
-					ExpectedPassedResults: 20,
-				},
-			},
-			Verdicts: simpleVerdicts(20, 81, []int{}),
+			State:                       cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:         true,
+			StartHour:                   time.Unix(81*3600, 0),
+			StartPosition:               81,
+			StartPositionLowerBound99Th: 70,
+			StartPositionUpperBound99Th: 90,
+			Verdicts:                    simpleVerdicts(20, 81, []int{}),
 		})
 
 		So(remaining[0], ShouldResembleProto, &Segment{
-			StartIndex:  0,
-			EndIndex:    1949,
-			EndPosition: 2050,
-			EndHour:     timestamppb.New(time.Unix(2050*3600, 0)),
-			Counts: &cpb.Counts{
-				TotalResults:          1950,
-				TotalRuns:             1950,
-				TotalVerdicts:         1950,
-				ExpectedPassedResults: 1950,
-			},
+			StartIndex:    0,
+			StartPosition: 101,
+			StartHour:     time.Unix(101*3600, 0),
+			EndIndex:      1949,
+			EndPosition:   2050,
+			EndHour:       time.Unix(2050*3600, 0),
 		})
 
 		So(remaining[1], ShouldResembleProto, &Segment{
@@ -465,15 +322,9 @@ func TestEvictSegments(t *testing.T) {
 			EndIndex:            1999,
 			HasStartChangepoint: true,
 			StartPosition:       2051,
-			StartHour:           timestamppb.New(time.Unix(2051*3600, 0)),
+			StartHour:           time.Unix(2051*3600, 0),
 			EndPosition:         2100,
-			EndHour:             timestamppb.New(time.Unix(2100*3600, 0)),
-			Counts: &cpb.Counts{
-				TotalResults:          50,
-				TotalRuns:             50,
-				TotalVerdicts:         50,
-				ExpectedPassedResults: 50,
-			},
+			EndHour:             time.Unix(2100*3600, 0),
 		})
 	})
 
@@ -488,35 +339,23 @@ func TestEvictSegments(t *testing.T) {
 		}
 		segments := []*Segment{
 			{
-				StartIndex: 0, // Finalized segment.
-				EndIndex:   39,
-				Counts: &cpb.Counts{
-					TotalResults:          40,
-					TotalRuns:             40,
-					TotalVerdicts:         40,
-					ExpectedPassedResults: 40,
-				},
+				StartIndex:          0, // Finalized segment.
+				EndIndex:            39,
 				HasStartChangepoint: false,
-				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				StartHour:           time.Unix(1*3600, 0),
 				StartPosition:       1,
-				EndHour:             timestamppb.New(time.Unix(39*3600, 0)),
+				EndHour:             time.Unix(39*3600, 0),
 				EndPosition:         39,
 			},
 			{
-				StartIndex: 40, // A finalizing segment.
-				EndIndex:   2000,
-				Counts: &cpb.Counts{
-					TotalResults:          1961,
-					TotalRuns:             1961,
-					TotalVerdicts:         1961,
-					ExpectedPassedResults: 1961,
-				},
+				StartIndex:                  40, // A finalizing segment.
+				EndIndex:                    2000,
 				HasStartChangepoint:         true,
-				StartHour:                   timestamppb.New(time.Unix(40*3600, 0)),
+				StartHour:                   time.Unix(40*3600, 0),
 				StartPosition:               40,
 				StartPositionLowerBound99Th: 30,
 				StartPositionUpperBound99Th: 50,
-				EndHour:                     timestamppb.New(time.Unix(2000*3600, 0)),
+				EndHour:                     time.Unix(2000*3600, 0),
 				EndPosition:                 2000,
 			},
 		}
@@ -543,34 +382,23 @@ func TestEvictSegments(t *testing.T) {
 		expectedVerdicts = append(expectedVerdicts, simpleVerdicts(39, 1, []int{})...)
 
 		So(evicted[0], ShouldResembleProto, EvictedSegment{
-			Segment: &cpb.Segment{
-				State:               cpb.SegmentState_FINALIZED,
-				HasStartChangepoint: false,
-				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
-				StartPosition:       1,
-				EndHour:             timestamppb.New(time.Unix(39*3600, 0)),
-				EndPosition:         39,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:          40,
-					TotalRuns:             40,
-					TotalVerdicts:         40,
-					ExpectedPassedResults: 40,
-				},
-			},
-			Verdicts: expectedVerdicts,
+			State:               cpb.SegmentState_FINALIZED,
+			HasStartChangepoint: false,
+			StartHour:           time.Unix(1*3600, 0),
+			StartPosition:       1,
+			EndHour:             time.Unix(39*3600, 0),
+			EndPosition:         39,
+			Verdicts:            expectedVerdicts,
 		})
 
 		So(evicted[1], ShouldResembleProto, EvictedSegment{
-			Segment: &cpb.Segment{
-				State:                        cpb.SegmentState_FINALIZING,
-				HasStartChangepoint:          true,
-				StartHour:                    timestamppb.New(time.Unix(40*3600, 0)),
-				StartPosition:                40,
-				StartPositionLowerBound_99Th: 30,
-				StartPositionUpperBound_99Th: 50,
-				FinalizedCounts:              &cpb.Counts{},
-			},
-			Verdicts: []PositionVerdict{},
+			State:                       cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:         true,
+			StartHour:                   time.Unix(40*3600, 0),
+			StartPosition:               40,
+			StartPositionLowerBound99Th: 30,
+			StartPositionUpperBound99Th: 50,
+			Verdicts:                    []PositionVerdict{},
 		})
 
 		So(remaining[0], ShouldResembleProto, segments[1])

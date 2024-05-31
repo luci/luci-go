@@ -26,8 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
+	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
@@ -88,15 +87,14 @@ type PartialBigQueryRow struct {
 // All fields except those dependent on the commit timestamp, (i.e.
 // Version and HasRecentUnexpectedResults) are populated.
 //
-// inputBufferSegments is the remaining segments in the input buffer of
-// TestVariantBranch, after changepoint analysis and eviction process.
-// Segments are sorted by commit position (lowest/oldest first).
+// segments is the logical segments on the TestVariantBranch.
+// Segments are sorted by commit position (most recent first).
 //
 // To support re-use of the *testvariantbranch.Entry buffer, no reference
 // to tvb or inputBufferSegments or their fields (except immutable strings)
 // will be retained by this method or its result. (All data will
 // be copied.)
-func ToPartialBigQueryRow(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment) (PartialBigQueryRow, error) {
+func ToPartialBigQueryRow(tvb *testvariantbranch.Entry, segments []analyzer.Segment) (PartialBigQueryRow, error) {
 	row := &bqpb.TestVariantBranchRow{
 		Project:     tvb.Project,
 		TestId:      tvb.TestID,
@@ -113,13 +111,13 @@ func ToPartialBigQueryRow(tvb *testvariantbranch.Entry, inputBufferSegments []*i
 	row.Variant = variant
 
 	// Segments.
-	row.Segments = ToSegments(tvb, inputBufferSegments)
+	row.Segments = toBQSegments(segments)
 
 	// The row is partial because HasRecentUnexpectedResults and Version
 	// is not yet populated. Wrap it in another type to prevent export as-is.
 	return PartialBigQueryRow{
 		row:                            row,
-		mostRecentUnexpectedResultHour: mostRecentUnexpectedResult(tvb, inputBufferSegments),
+		mostRecentUnexpectedResultHour: mostRecentUnexpectedResult(segments),
 	}, nil
 }
 
@@ -136,96 +134,29 @@ func (r PartialBigQueryRow) Complete(commitTimestamp time.Time) *bqpb.TestVarian
 	return row
 }
 
-// ToSegments returns the segments for row input.
-// The segments returned will be sorted, with the most recent segment
-// comes first.
-func ToSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment) []*bqpb.Segment {
-	results := []*bqpb.Segment{}
-
-	// The index where the active segments starts.
-	// If there is a finalizing segment, then the we need to first combine it will
-	// the first segment from the input buffer.
-	activeStartIndex := 0
-	if tvb.FinalizingSegment != nil {
-		activeStartIndex = 1
+func toBQSegments(segments []analyzer.Segment) []*bqpb.Segment {
+	result := make([]*bqpb.Segment, 0, len(segments))
+	for _, s := range segments {
+		result = append(result, toBQSegment(s))
 	}
-
-	// Add the active segments.
-	for i := len(inputBufferSegments) - 1; i >= activeStartIndex; i-- {
-		inputSegment := inputBufferSegments[i]
-		bqSegment := inputSegmentToBQSegment(inputSegment)
-		results = append(results, bqSegment)
-	}
-
-	// Add the finalizing segment.
-	if tvb.FinalizingSegment != nil {
-		bqSegment := combineSegment(tvb.FinalizingSegment, inputBufferSegments[0])
-		results = append(results, bqSegment)
-	}
-
-	// Add the finalized segments.
-	if tvb.FinalizedSegments != nil {
-		// More recent segments are on the back.
-		for i := len(tvb.FinalizedSegments.Segments) - 1; i >= 0; i-- {
-			segment := tvb.FinalizedSegments.Segments[i]
-			bqSegment := segmentToBQSegment(segment)
-			results = append(results, bqSegment)
-		}
-	}
-
-	return results
+	return result
 }
 
-// combineSegment constructs a finalizing segment from its finalized part in
-// the output buffer and its unfinalized part in the input buffer.
-func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Segment) *bqpb.Segment {
+func toBQSegment(s analyzer.Segment) *bqpb.Segment {
 	return &bqpb.Segment{
-		HasStartChangepoint:          finalizingSegment.HasStartChangepoint,
-		StartPosition:                finalizingSegment.StartPosition,
-		StartHour:                    timestamppb.New(finalizingSegment.StartHour.AsTime()),
-		StartPositionLowerBound_99Th: finalizingSegment.StartPositionLowerBound_99Th,
-		StartPositionUpperBound_99Th: finalizingSegment.StartPositionUpperBound_99Th,
-		EndPosition:                  inputSegment.EndPosition,
-		EndHour:                      timestamppb.New(inputSegment.EndHour.AsTime()),
-		Counts:                       countsToBQCounts(testvariantbranch.AddCounts(finalizingSegment.FinalizedCounts, inputSegment.Counts)),
+		HasStartChangepoint:          s.HasStartChangepoint,
+		StartPosition:                s.StartPosition,
+		StartHour:                    timestamppb.New(s.StartHour),
+		StartPositionLowerBound_99Th: s.StartPositionLowerBound99Th,
+		StartPositionUpperBound_99Th: s.StartPositionUpperBound99Th,
+		EndPosition:                  s.EndPosition,
+		EndHour:                      timestamppb.New(s.EndHour),
+		Counts:                       toBQCounts(s.Counts),
 	}
 }
 
-func inputSegmentToBQSegment(segment *inputbuffer.Segment) *bqpb.Segment {
-	return &bqpb.Segment{
-		HasStartChangepoint:          segment.HasStartChangepoint,
-		StartPosition:                segment.StartPosition,
-		StartPositionLowerBound_99Th: segment.StartPositionLowerBound99Th,
-		StartPositionUpperBound_99Th: segment.StartPositionUpperBound99Th,
-		StartHour:                    timestamppb.New(segment.StartHour.AsTime()),
-		EndPosition:                  segment.EndPosition,
-		EndHour:                      timestamppb.New(segment.EndHour.AsTime()),
-		Counts:                       countsToBQCounts(segment.Counts),
-	}
-}
-
-func segmentToBQSegment(segment *cpb.Segment) *bqpb.Segment {
-	return &bqpb.Segment{
-		HasStartChangepoint:          segment.HasStartChangepoint,
-		StartPosition:                segment.StartPosition,
-		StartPositionLowerBound_99Th: segment.StartPositionLowerBound_99Th,
-		StartPositionUpperBound_99Th: segment.StartPositionUpperBound_99Th,
-		StartHour:                    timestamppb.New(segment.StartHour.AsTime()),
-		EndPosition:                  segment.EndPosition,
-		EndHour:                      timestamppb.New(segment.EndHour.AsTime()),
-		Counts:                       countsToBQCounts(segment.FinalizedCounts),
-	}
-}
-
-func countsToBQCounts(counts *cpb.Counts) *bqpb.Segment_Counts {
+func toBQCounts(counts analyzer.Counts) *bqpb.Segment_Counts {
 	return &bqpb.Segment_Counts{
-		TotalVerdicts:            counts.TotalVerdicts,
-		UnexpectedVerdicts:       counts.UnexpectedVerdicts,
-		FlakyVerdicts:            counts.FlakyVerdicts,
-		TotalRuns:                counts.TotalRuns,
-		FlakyRuns:                counts.FlakyRuns,
-		UnexpectedUnretriedRuns:  counts.UnexpectedUnretriedRuns,
-		UnexpectedAfterRetryRuns: counts.UnexpectedAfterRetryRuns,
 		TotalResults:             counts.TotalResults,
 		UnexpectedResults:        counts.UnexpectedResults,
 		ExpectedPassedResults:    counts.ExpectedPassedResults,
@@ -236,43 +167,27 @@ func countsToBQCounts(counts *cpb.Counts) *bqpb.Segment_Counts {
 		UnexpectedFailedResults:  counts.UnexpectedFailedResults,
 		UnexpectedCrashedResults: counts.UnexpectedCrashedResults,
 		UnexpectedAbortedResults: counts.UnexpectedAbortedResults,
+
+		TotalRuns:                counts.TotalRuns,
+		FlakyRuns:                counts.FlakyRuns,
+		UnexpectedUnretriedRuns:  counts.UnexpectedUnretriedRuns,
+		UnexpectedAfterRetryRuns: counts.UnexpectedAfterRetryRuns,
+
+		TotalVerdicts:      counts.TotalVerdicts,
+		UnexpectedVerdicts: counts.UnexpectedVerdicts,
+		FlakyVerdicts:      counts.FlakyVerdicts,
 	}
 }
 
 // mostRecentUnexpectedResult returns the most recent unexpected result,
 // if any. If there is no recent unexpected result, return the zero time
 // (time.Time{}).
-func mostRecentUnexpectedResult(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment) time.Time {
+func mostRecentUnexpectedResult(segments []analyzer.Segment) time.Time {
 	var mostRecentUnexpected time.Time
 
-	// Check input segments.
-	for _, segment := range inputBufferSegments {
-		if segment.MostRecentUnexpectedResultHourAllVerdicts != nil {
-			time := segment.MostRecentUnexpectedResultHourAllVerdicts.AsTime()
-			if time.After(mostRecentUnexpected) {
-				mostRecentUnexpected = time
-			}
-		}
-
-	}
-
-	// Check finalizing segment.
-	if tvb.FinalizingSegment != nil && tvb.FinalizingSegment.MostRecentUnexpectedResultHour != nil {
-		time := tvb.FinalizingSegment.MostRecentUnexpectedResultHour.AsTime()
-		if time.After(mostRecentUnexpected) {
-			mostRecentUnexpected = time
-		}
-	}
-
-	// Check finalized segments.
-	if tvb.FinalizedSegments != nil {
-		for _, segment := range tvb.FinalizedSegments.Segments {
-			if segment.MostRecentUnexpectedResultHour != nil {
-				time := segment.MostRecentUnexpectedResultHour.AsTime()
-				if time.After(mostRecentUnexpected) {
-					mostRecentUnexpected = time
-				}
-			}
+	for _, segment := range segments {
+		if segment.MostRecentUnexpectedResultHour.After(mostRecentUnexpected) {
+			mostRecentUnexpected = segment.MostRecentUnexpectedResultHour
 		}
 	}
 

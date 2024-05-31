@@ -29,7 +29,7 @@ import (
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/analysis/internal/changepoints/bayesian"
+	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
@@ -161,7 +161,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		// Buffers allocated once and re-used for processing
 		// all test variant branches.
 		var hs inputbuffer.HistorySerializer
-		var analysis Analyzer
+		var analysis analyzer.Analyzer
 
 		// Handle each read test variant branch.
 		f := func(i int, tvb *testvariantbranch.Entry) error {
@@ -176,14 +176,14 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			if err != nil {
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
-			inputSegments := analysis.Run(tvb)
+			segments := analysis.Run(tvb)
 			tvb.ApplyRetentionPolicyForFinalizedSegments(payload.PartitionTime.AsTime())
 			mut, err := tvb.ToMutation(&hs)
 			if err != nil {
 				return errors.Annotate(err, "test variant branch to mutation").Err()
 			}
 			mutations = append(mutations, mut)
-			bqRow, err := bqexporter.ToPartialBigQueryRow(tvb, inputSegments)
+			bqRow, err := bqexporter.ToPartialBigQueryRow(tvb, segments)
 			if err != nil {
 				return errors.Annotate(err, "test variant branch to bigquery row").Err()
 			}
@@ -278,39 +278,6 @@ func isOutOfOrderAndShouldBeDiscarded(tvb *testvariantbranch.Entry, src *pb.Sour
 		minPos = coldVerdicts[0].CommitPosition
 	}
 	return position < minPos
-}
-
-type Analyzer struct {
-	// MergeBuffer is a preallocated buffer used to store the result of
-	// merging hot and cold input buffers. Reusing the same buffer avoids
-	// allocating a new buffer for each test variant branch processed.
-	mergeBuffer []inputbuffer.PositionVerdict
-}
-
-// Run runs change point analysis, performs any required
-// evictions (from the hot input buffer to the cold input buffer,
-// and from the input buffer to the output buffer), and returns the
-// remaining segment in the input buffer after eviction.
-func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []*inputbuffer.Segment {
-	predictor := bayesian.ChangepointPredictor{
-		ChangepointLikelihood: 0.0001,
-		// We are leaning toward consistently passing test results.
-		HasUnexpectedPrior: bayesian.BetaDistribution{
-			Alpha: 0.3,
-			Beta:  0.5,
-		},
-		UnexpectedAfterRetryPrior: bayesian.BetaDistribution{
-			Alpha: 0.5,
-			Beta:  0.5,
-		},
-	}
-	tvb.InputBuffer.CompactIfRequired()
-	tvb.InputBuffer.MergeBuffer(&a.mergeBuffer)
-	changePoints := predictor.ChangePoints(a.mergeBuffer, bayesian.ConfidenceIntervalTail)
-	sib := tvb.InputBuffer.Segmentize(a.mergeBuffer, changePoints)
-	evictedSegment := sib.EvictSegments()
-	tvb.UpdateOutputBuffer(evictedSegment)
-	return sib.Segments
 }
 
 // insertIntoInputBuffer inserts the new test variant tv into the input buffer

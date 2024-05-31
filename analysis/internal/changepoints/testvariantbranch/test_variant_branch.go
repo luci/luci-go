@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
@@ -171,7 +172,7 @@ func (tvb *Entry) UpdateOutputBuffer(evictedSegments []inputbuffer.EvictedSegmen
 	segmentIndex := 0
 	if tvb.FinalizingSegment != nil {
 		segmentIndex = 1
-		combinedSegment := combineSegment(tvb.FinalizingSegment, evictedSegments[0].Segment)
+		combinedSegment := combineSegment(tvb.FinalizingSegment, evictedSegments[0])
 		tvb.IsFinalizingSegmentDirty = true
 		if combinedSegment.State == cpb.SegmentState_FINALIZING {
 			// Replace the finalizing segment.
@@ -184,10 +185,10 @@ func (tvb *Entry) UpdateOutputBuffer(evictedSegments []inputbuffer.EvictedSegmen
 
 	for ; segmentIndex < len(evictedSegments); segmentIndex++ {
 		segment := evictedSegments[segmentIndex]
-		if segment.Segment.State == cpb.SegmentState_FINALIZED {
-			tvb.InsertFinalizedSegment(segment.Segment)
+		if segment.State == cpb.SegmentState_FINALIZED {
+			tvb.InsertFinalizedSegment(toSegment(segment))
 		} else { // Finalizing segment.
-			tvb.FinalizingSegment = segment.Segment
+			tvb.FinalizingSegment = toSegment(segment)
 			tvb.IsFinalizingSegmentDirty = true
 		}
 	}
@@ -208,11 +209,11 @@ func verifyEvictedSegments(evictedSegments []inputbuffer.EvictedSegment) {
 	// the last segment.
 	for i, seg := range evictedSegments {
 		if i != len(evictedSegments)-1 {
-			if seg.Segment.State != cpb.SegmentState_FINALIZED {
+			if seg.State != cpb.SegmentState_FINALIZED {
 				panic("evictedSegments should contains all finalized segments, except the last one")
 			}
 		} else {
-			if seg.Segment.State != cpb.SegmentState_FINALIZING {
+			if seg.State != cpb.SegmentState_FINALIZING {
 				panic("last segment of evicted segments should be finalizing")
 			}
 		}
@@ -274,7 +275,10 @@ func (tvb *Entry) ApplyRetentionPolicyForFinalizedSegments(fromTime time.Time) {
 
 // combineSegment combines the finalizing segment from the output buffer with
 // another partial segment evicted from the input buffer.
-func combineSegment(finalizingSegment, evictedSegment *cpb.Segment) *cpb.Segment {
+func combineSegment(finalizingSegment *cpb.Segment, evictedSegment inputbuffer.EvictedSegment) *cpb.Segment {
+	if finalizingSegment.State != cpb.SegmentState_FINALIZING {
+		panic("finalizing segment should be in FINALIZING state")
+	}
 	result := &cpb.Segment{
 		State: evictedSegment.State,
 		// Use the start position information provided by prior evictions.
@@ -283,40 +287,121 @@ func combineSegment(finalizingSegment, evictedSegment *cpb.Segment) *cpb.Segment
 		StartHour:                    finalizingSegment.StartHour,
 		StartPositionLowerBound_99Th: finalizingSegment.StartPositionLowerBound_99Th,
 		StartPositionUpperBound_99Th: finalizingSegment.StartPositionUpperBound_99Th,
-		// Use end position information provided by later evictions.
-		EndPosition: evictedSegment.EndPosition,
-		EndHour:     evictedSegment.EndHour,
-		// Combine counts.
-		FinalizedCounts: AddCounts(finalizingSegment.FinalizedCounts, evictedSegment.FinalizedCounts),
+		// Update counts.
+		FinalizedCounts: AddCounts(finalizingSegment.FinalizedCounts, evictedSegment.Verdicts),
 	}
-	result.MostRecentUnexpectedResultHour = finalizingSegment.MostRecentUnexpectedResultHour
-	if result.MostRecentUnexpectedResultHour.GetSeconds() < evictedSegment.MostRecentUnexpectedResultHour.GetSeconds() {
-		result.MostRecentUnexpectedResultHour = evictedSegment.MostRecentUnexpectedResultHour
+	var lastUnexpectedResultHour time.Time
+	if finalizingSegment.MostRecentUnexpectedResultHour != nil {
+		lastUnexpectedResultHour = finalizingSegment.MostRecentUnexpectedResultHour.AsTime()
+	}
+	if evictedSegment.MostRecentUnexpectedResultHour.After(lastUnexpectedResultHour) {
+		lastUnexpectedResultHour = evictedSegment.MostRecentUnexpectedResultHour
+	}
+	result.MostRecentUnexpectedResultHour = toTimestampOrNil(lastUnexpectedResultHour)
+
+	if evictedSegment.State == cpb.SegmentState_FINALIZED {
+		// Copy properties only set on finalized segments.
+		result.EndPosition = evictedSegment.EndPosition
+		result.EndHour = timestamppb.New(evictedSegment.EndHour)
 	}
 	return result
 }
 
-// AddCounts returns the sum of 2 statistics counts.
-func AddCounts(count1 *cpb.Counts, count2 *cpb.Counts) *cpb.Counts {
-	return &cpb.Counts{
-		TotalResults:             count1.TotalResults + count2.TotalResults,
-		UnexpectedResults:        count1.UnexpectedResults + count2.UnexpectedResults,
-		ExpectedPassedResults:    count1.ExpectedPassedResults + count2.ExpectedPassedResults,
-		ExpectedFailedResults:    count1.ExpectedFailedResults + count2.ExpectedFailedResults,
-		ExpectedCrashedResults:   count1.ExpectedCrashedResults + count2.ExpectedCrashedResults,
-		ExpectedAbortedResults:   count1.ExpectedAbortedResults + count2.ExpectedAbortedResults,
-		UnexpectedPassedResults:  count1.UnexpectedPassedResults + count2.UnexpectedPassedResults,
-		UnexpectedFailedResults:  count1.UnexpectedFailedResults + count2.UnexpectedFailedResults,
-		UnexpectedCrashedResults: count1.UnexpectedCrashedResults + count2.UnexpectedCrashedResults,
-		UnexpectedAbortedResults: count1.UnexpectedAbortedResults + count2.UnexpectedAbortedResults,
-		TotalRuns:                count1.TotalRuns + count2.TotalRuns,
-		UnexpectedUnretriedRuns:  count1.UnexpectedUnretriedRuns + count2.UnexpectedUnretriedRuns,
-		UnexpectedAfterRetryRuns: count1.UnexpectedAfterRetryRuns + count2.UnexpectedAfterRetryRuns,
-		FlakyRuns:                count1.FlakyRuns + count2.FlakyRuns,
-		TotalVerdicts:            count1.TotalVerdicts + count2.TotalVerdicts,
-		UnexpectedVerdicts:       count1.UnexpectedVerdicts + count2.UnexpectedVerdicts,
-		FlakyVerdicts:            count1.FlakyVerdicts + count2.FlakyVerdicts,
+// toSegment converts an evicted segment to a new segment. This method
+// should only be used when there is no need to merge with a previous
+// finalizing segment.
+func toSegment(evictedSegment inputbuffer.EvictedSegment) *cpb.Segment {
+	result := &cpb.Segment{
+		State:                          evictedSegment.State,
+		HasStartChangepoint:            evictedSegment.HasStartChangepoint,
+		StartPosition:                  evictedSegment.StartPosition,
+		StartHour:                      timestamppb.New(evictedSegment.StartHour),
+		StartPositionLowerBound_99Th:   evictedSegment.StartPositionLowerBound99Th,
+		StartPositionUpperBound_99Th:   evictedSegment.StartPositionUpperBound99Th,
+		MostRecentUnexpectedResultHour: toTimestampOrNil(evictedSegment.MostRecentUnexpectedResultHour),
+		FinalizedCounts:                AddCounts(nil, evictedSegment.Verdicts),
 	}
+	if evictedSegment.State == cpb.SegmentState_FINALIZED {
+		// Copy properties only set on finalized segments.
+		result.EndPosition = evictedSegment.EndPosition
+		result.EndHour = timestamppb.New(evictedSegment.EndHour)
+	}
+	return result
+}
+
+func toTimestampOrNil(t time.Time) *timestamppb.Timestamp {
+	if t == (time.Time{}) {
+		return nil
+	}
+	return timestamppb.New(t)
+}
+
+// AddCounts updates counts with the given new runs.
+func AddCounts(counts *cpb.Counts, verdicts []inputbuffer.PositionVerdict) *cpb.Counts {
+	var result *cpb.Counts
+	if counts == nil {
+		result = &cpb.Counts{}
+	} else {
+		result = proto.Clone(counts).(*cpb.Counts)
+	}
+
+	for _, verdict := range verdicts {
+		result.TotalVerdicts++
+		if verdict.IsSimpleExpectedPass {
+			result.TotalRuns++
+			result.TotalResults++
+			result.ExpectedPassedResults++
+		} else {
+			verdictHasExpectedResults := false
+			verdictHasUnexpectedResults := false
+			for _, run := range verdict.Details.Runs {
+				// Verdict-level statistics.
+				verdictHasExpectedResults = verdictHasExpectedResults || (run.Expected.Count() > 0)
+				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.Unexpected.Count() > 0)
+
+				if run.IsDuplicate {
+					continue
+				}
+				// Result-level statistics (ignores duplicate runs).
+				result.TotalResults += int64(run.Expected.Count() + run.Unexpected.Count())
+				result.UnexpectedResults += int64(run.Unexpected.Count())
+				result.ExpectedPassedResults += int64(run.Expected.PassCount)
+				result.ExpectedFailedResults += int64(run.Expected.FailCount)
+				result.ExpectedCrashedResults += int64(run.Expected.CrashCount)
+				result.ExpectedAbortedResults += int64(run.Expected.AbortCount)
+				result.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
+				result.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
+				result.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
+				result.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
+
+				// Run-level statistics (ignores duplicate runs).
+				result.TotalRuns++
+				// flaky run.
+				isFlakyRun := run.Expected.Count() > 0 && run.Unexpected.Count() > 0
+				if isFlakyRun {
+					result.FlakyRuns++
+				}
+				// unexpected unretried run.
+				isUnexpectedUnretried := run.Unexpected.Count() == 1 && run.Expected.Count() == 0
+				if isUnexpectedUnretried {
+					result.UnexpectedUnretriedRuns++
+				}
+				// unexpected after retries run.
+				isUnexpectedAfterRetries := run.Unexpected.Count() > 1 && run.Expected.Count() == 0
+				if isUnexpectedAfterRetries {
+					result.UnexpectedAfterRetryRuns++
+				}
+			}
+			if verdictHasUnexpectedResults && !verdictHasExpectedResults {
+				result.UnexpectedVerdicts++
+			}
+			if verdictHasUnexpectedResults && verdictHasExpectedResults {
+				result.FlakyVerdicts++
+			}
+		}
+	}
+
+	return result
 }
 
 // insertVerdictsIntoStatistics updates the given statistics to include

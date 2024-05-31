@@ -32,8 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/analysis/internal/changepoints"
-	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
+	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/gitiles"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
@@ -170,12 +169,8 @@ func fetchChangepoint(ctx context.Context, request AnalysisRequest) (changepoint
 		return changepoint{}, appstatus.Errorf(codes.NotFound, "test variant branch not found")
 	}
 
-	var analyzer changepoints.Analyzer
-	inputSegments := analyzer.Run(tvb)
-
-	// TODO(meiring): It is a bit clumsy to use the BigQuery export segments here but
-	// until another pending refactoring CL lands this appears to be the best option.
-	segments := bqexporter.ToSegments(tvb, inputSegments)
+	var analyzer analyzer.Analyzer
+	segments := analyzer.Run(tvb)
 
 	// Find the segment with the start position closest to request.StartSourcePosition.
 	closestSegmentIndex := 0
@@ -202,11 +197,11 @@ func fetchChangepoint(ctx context.Context, request AnalysisRequest) (changepoint
 	previousSegment := segments[closestSegmentIndex+1]
 
 	result := changepoint{
-		StartLowerBound99th:       nextSegment.StartPositionLowerBound_99Th,
-		StartUpperBound99th:       nextSegment.StartPositionUpperBound_99Th,
+		StartLowerBound99th:       nextSegment.StartPositionLowerBound99Th,
+		StartUpperBound99th:       nextSegment.StartPositionUpperBound99Th,
 		NominalStartNextSegment:   nextSegment.StartPosition,
 		NominalEndPreviousSegment: previousSegment.EndPosition,
-		ApproxStartHour:           nextSegment.StartHour.AsTime(),
+		ApproxStartHour:           nextSegment.StartHour,
 	}
 
 	return result, nil

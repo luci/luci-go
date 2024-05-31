@@ -17,8 +17,6 @@ package inputbuffer
 import (
 	"time"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 )
 
@@ -33,15 +31,6 @@ type Segment struct {
 	// As in the history slice, verdicts are store oldest first, so EndIndex
 	// corresponds to the newest verdict in the segment.
 	EndIndex int
-	// Counts the statistics of the segment.
-	// Note that this includes all verdicts, as opposed to Segment.FinalizedCount
-	// which only includes finalized verdicts.
-	Counts *cpb.Counts
-	// The hour the most recent verdict with an unexpected test result
-	// was produced.
-	// Note that this includes all verdicts, as opposed to Segment.FinalizedCount
-	// which only includes finalized verdicts.
-	MostRecentUnexpectedResultHourAllVerdicts *timestamppb.Timestamp
 
 	// The following fields are copied from the Segment proto.
 
@@ -50,13 +39,13 @@ type Segment struct {
 	// The earliest commit position included in the segment.
 	StartPosition int64
 	// The earliest hour a verdict with the given start_position was recorded.
-	StartHour *timestamppb.Timestamp
+	StartHour time.Time
 	// The end commit position of the segment.
 	// If set, the invariant end_position >= start_position holds.
 	EndPosition int64
 	// The latest hour a verdict with the last commit position in the segment
 	// was recorded.
-	EndHour *timestamppb.Timestamp
+	EndHour time.Time
 	// The lower bound of the change point position at the start of the segment
 	// in a 99% two-tailed confidence interval. Inclusive.
 	// Only set if has_start_changepoint is set. If set, the invariant
@@ -68,6 +57,10 @@ type Segment struct {
 	// start_position <= start_position_upper_bound_99th <= end_position
 	// holds.
 	StartPositionUpperBound99Th int64
+
+	// The hour the most recent verdict with an unexpected test result
+	// was produced.
+	MostRecentUnexpectedResultHour time.Time
 }
 
 func (s *Segment) Length() int {
@@ -76,21 +69,51 @@ func (s *Segment) Length() int {
 
 // EvictedSegment represents a segment or segment part which was evicted
 // from the input buffer.
+//
+// A segment may be partially evicted for one or both of the following reasons:
+//   - The eviction is occuring because of limited input buffer space
+//     (not because of a finalized changepoint), so only a fraction
+//     of the segment needs to be evicted.
+//   - Previously, part of the segment was evicted (for the above
+//     reason), so subsequent evictions are necessarily only
+//     in relation to the remaining part of that segment.
+//
+// The consumer generally does not need to be concerned about which
+// of these cases applies, and should always process evicted segments
+// in commit position order, merging them with any previously
+// evicted finalizing segment in the output buffer (if any) (but not
+// any previously evicted FINALIZED segment).
 type EvictedSegment struct {
-	// The segment (either full or partial) which is being evicted.
-	// A segment may be partial for one or both of the following reasons:
-	// - The eviction is occuring because of limited input buffer space
-	//   (not because of a finalized changepoint), so only a fraction
-	//   of the segment needs to be evicted.
-	// - Previously, part of the segment was evicted (for the above
-	//   reason), so subsequent evictions are necessarily only
-	//   in relation to the remaining part of that segment.
-	//
-	// The consumer generally does not need to be concerned about which
-	// of these cases applies, and should always process evicted segments
-	// in commit position order, merging them with any previously
-	// evicted finalizing segment (if any).
-	Segment *cpb.Segment
+	// The state of the segment. Will be FINALIZING or FINALIZED.
+	State cpb.SegmentState
+	// Whether the segment is the first segment in the input buffer.
+	HasStartChangepoint bool
+	// The earliest commit position included in the segment.
+	StartPosition int64
+	// The earliest hour a verdict with the given start_position was recorded.
+	StartHour time.Time
+	// The end commit position of the segment.
+	// Only set on FINALIZED segments where the end position is known.
+	// If set, the invariant EndPosition >= StartPosition holds.
+	EndPosition int64
+	// The latest hour a verdict with the last commit position in the segment
+	// was recorded.
+	// Only set if EndPosition is set.
+	EndHour time.Time
+	// The lower bound of the change point position at the start of the segment
+	// in a 99% two-tailed confidence interval. Inclusive.
+	// Only set if HasStartChangepoint is set. If set, the invariant
+	// previous_segment.StartPosition <= StartPositionLowerBound99Th <= StartPosition.
+	StartPositionLowerBound99Th int64
+	// The upper bound of the change point position at the start of the segment
+	// in a 99% two-tailed confidence interval. Inclusive.
+	// Only set if HasStartChangepoint is set. If set, the invariant
+	// StartPosition <= StartPositionUpperBound99Th <= EndPosition
+	// holds.
+	StartPositionUpperBound99Th int64
+	// The hour the most recent run with an unexpected test result
+	// was produced.
+	MostRecentUnexpectedResultHour time.Time
 
 	// The verdicts which are being evicted. These correspond to the
 	// Segment above. Not in any particular order.
@@ -164,14 +187,13 @@ func inputBufferSegment(startIndex, endIndex int, history []PositionVerdict) *Se
 		panic("invalid segment index: startIndex > endIndex")
 	}
 	return &Segment{
-		StartIndex:    startIndex,
-		EndIndex:      endIndex,
-		StartPosition: int64(history[startIndex].CommitPosition),
-		EndPosition:   int64(history[endIndex].CommitPosition),
-		StartHour:     timestamppb.New(history[startIndex].Hour),
-		EndHour:       timestamppb.New(history[endIndex].Hour),
-		Counts:        segmentCounts(history[startIndex : endIndex+1]),
-		MostRecentUnexpectedResultHourAllVerdicts: mostRecentUnexpectedResultHour(history[startIndex : endIndex+1]),
+		StartIndex:                     startIndex,
+		EndIndex:                       endIndex,
+		StartPosition:                  int64(history[startIndex].CommitPosition),
+		EndPosition:                    int64(history[endIndex].CommitPosition),
+		StartHour:                      history[startIndex].Hour,
+		EndHour:                        history[endIndex].Hour,
+		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour(history[startIndex : endIndex+1]),
 	}
 }
 
@@ -252,19 +274,16 @@ func (sib *SegmentedInputBuffer) EvictSegments() []EvictedSegment {
 	// to the end of the evicted segments, to record the start position
 	// (and confidence interval) of the following segment.
 	l := len(evictedSegments)
-	if l > 0 && evictedSegments[l-1].Segment.State == cpb.SegmentState_FINALIZED {
+	if l > 0 && evictedSegments[l-1].State == cpb.SegmentState_FINALIZED {
 		firstRemainingSeg := remainingSegments[0]
 		evictedSegments = append(evictedSegments, EvictedSegment{
-			Segment: &cpb.Segment{
-				State:                        cpb.SegmentState_FINALIZING,
-				HasStartChangepoint:          true,
-				StartPosition:                firstRemainingSeg.StartPosition,
-				StartHour:                    firstRemainingSeg.StartHour,
-				StartPositionLowerBound_99Th: firstRemainingSeg.StartPositionLowerBound99Th,
-				StartPositionUpperBound_99Th: firstRemainingSeg.StartPositionUpperBound99Th,
-				FinalizedCounts:              &cpb.Counts{},
-			},
-			Verdicts: []PositionVerdict{},
+			State:                       cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:         true,
+			StartPosition:               firstRemainingSeg.StartPosition,
+			StartHour:                   firstRemainingSeg.StartHour,
+			StartPositionLowerBound99Th: firstRemainingSeg.StartPositionLowerBound99Th,
+			StartPositionUpperBound99Th: firstRemainingSeg.StartPositionUpperBound99Th,
+			Verdicts:                    []PositionVerdict{},
 		})
 	}
 	return evictedSegments
@@ -279,7 +298,7 @@ func (ib *Buffer) isSegmentFinalized(seg *Segment) bool {
 	// The number of verdicts which have commit positions newer than the segment.
 	// Note that verdicts are stored in the input buffer from oldest to newest,
 	// so those after seg.EndIndex are newer than the segment.
-	verdictsNewerThanSegment := (ib.Size() - seg.EndIndex)
+	verdictsNewerThanSegment := (ib.Size() - (seg.EndIndex + 1))
 	return verdictsNewerThanSegment >= (capacity / 2)
 }
 
@@ -322,21 +341,17 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) EvictedSegment {
 	}
 
 	// Return evicted segment.
-	segment := &cpb.Segment{
+	return EvictedSegment{
 		State:                          cpb.SegmentState_FINALIZED,
-		FinalizedCounts:                seg.Counts,
 		HasStartChangepoint:            seg.HasStartChangepoint,
 		StartPosition:                  seg.StartPosition,
 		StartHour:                      seg.StartHour,
 		EndPosition:                    seg.EndPosition,
 		EndHour:                        seg.EndHour,
-		StartPositionLowerBound_99Th:   seg.StartPositionLowerBound99Th,
-		StartPositionUpperBound_99Th:   seg.StartPositionUpperBound99Th,
-		MostRecentUnexpectedResultHour: seg.MostRecentUnexpectedResultHourAllVerdicts,
-	}
-	return EvictedSegment{
-		Segment:  segment,
-		Verdicts: evictedVerdicts,
+		StartPositionLowerBound99Th:    seg.StartPositionLowerBound99Th,
+		StartPositionUpperBound99Th:    seg.StartPositionUpperBound99Th,
+		MostRecentUnexpectedResultHour: seg.MostRecentUnexpectedResultHour,
+		Verdicts:                       evictedVerdicts,
 	}
 }
 
@@ -352,111 +367,59 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted Evic
 		// This indicates a logic error.
 		panic("hot buffer is not empty during eviction")
 	}
-
-	remainingCount := segmentCounts(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
-	evictedMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[:endPos+1])
-	remainingMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
+	if seg.StartIndex != 0 {
+		panic("may only evict from the oldest segment in the buffer")
+	}
+	if endPos >= seg.EndIndex-1 {
+		// The whole segment should have been finalized and evicted if its end index was
+		// in the older half of the buffer. Less than the whole old half of the buffer
+		// is evicted due to space pressure at a time.
+		panic("at least one run should be left in segment if evicting due to space pressure")
+	}
 
 	// EvictBefore(...) will modify the Verdicts in-place, we should
 	// copy verdicts to a new slice to avoid them being overwritten.
 	evictedVerdicts := append([]PositionVerdict(nil), ib.ColdBuffer.Verdicts[:endPos+1]...)
-	evictedCount := segmentCounts(evictedVerdicts)
+
+	// Note: The retained runs are: ib.ColdBuffer.Runs[endPos+1 : seg.EndIndex+1].
+	// After EvictBefore, they are ib.ColdBuffer.Runs[0 : (seg.EndIndex+1)-(endPos+1)]
+	// (as we evict from the front of the buffer, where the oldest runs by commit position
+	// are).
+
 	ib.ColdBuffer.EvictBefore(endPos + 1)
 	ib.IsColdBufferDirty = true
 	// Evicted segment.
 	evicted = EvictedSegment{
-		Segment: &cpb.Segment{
-			State:                          cpb.SegmentState_FINALIZING,
-			FinalizedCounts:                evictedCount,
-			HasStartChangepoint:            seg.HasStartChangepoint,
-			StartPosition:                  seg.StartPosition,
-			StartHour:                      seg.StartHour,
-			StartPositionLowerBound_99Th:   seg.StartPositionLowerBound99Th,
-			StartPositionUpperBound_99Th:   seg.StartPositionUpperBound99Th,
-			MostRecentUnexpectedResultHour: evictedMostRecentHour,
-		},
-		Verdicts: evictedVerdicts,
+		State:                          cpb.SegmentState_FINALIZING,
+		HasStartChangepoint:            seg.HasStartChangepoint,
+		StartPosition:                  seg.StartPosition,
+		StartHour:                      seg.StartHour,
+		StartPositionLowerBound99Th:    seg.StartPositionLowerBound99Th,
+		StartPositionUpperBound99Th:    seg.StartPositionUpperBound99Th,
+		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour(evictedVerdicts),
+		Verdicts:                       evictedVerdicts,
 	}
+
+	remainingVerdicts := ib.ColdBuffer.Verdicts[0 : (seg.EndIndex+1)-(endPos+1)]
 
 	// Remaining segment.
 	remaining = &Segment{
-		StartIndex:  0,
-		EndIndex:    seg.EndIndex - endPos - 1,
-		Counts:      remainingCount,
-		EndPosition: seg.EndPosition,
-		EndHour:     seg.EndHour,
-		MostRecentUnexpectedResultHourAllVerdicts: remainingMostRecentHour,
+		StartIndex:                     0,
+		StartPosition:                  int64(remainingVerdicts[0].CommitPosition),
+		StartHour:                      remainingVerdicts[0].Hour,
+		EndIndex:                       len(remainingVerdicts) - 1,
+		EndPosition:                    int64(remainingVerdicts[len(remainingVerdicts)-1].CommitPosition),
+		EndHour:                        remainingVerdicts[len(remainingVerdicts)-1].Hour,
+		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour(remainingVerdicts),
 	}
 
 	return evicted, remaining
 }
 
-// segmentCount counts the statistics of history.
-func segmentCounts(history []PositionVerdict) *cpb.Counts {
-	counts := &cpb.Counts{}
-	for _, verdict := range history {
-		counts.TotalVerdicts++
-		if verdict.IsSimpleExpectedPass {
-			counts.TotalRuns++
-			counts.TotalResults++
-			counts.ExpectedPassedResults++
-		} else {
-			verdictHasExpectedResults := false
-			verdictHasUnexpectedResults := false
-			for _, run := range verdict.Details.Runs {
-				// Verdict-level statistics.
-				verdictHasExpectedResults = verdictHasExpectedResults || (run.Expected.Count() > 0)
-				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.Unexpected.Count() > 0)
-
-				if run.IsDuplicate {
-					continue
-				}
-				// Result-level statistics (ignores duplicate runs).
-				counts.TotalResults += int64(run.Expected.Count() + run.Unexpected.Count())
-				counts.UnexpectedResults += int64(run.Unexpected.Count())
-				counts.ExpectedPassedResults += int64(run.Expected.PassCount)
-				counts.ExpectedFailedResults += int64(run.Expected.FailCount)
-				counts.ExpectedCrashedResults += int64(run.Expected.CrashCount)
-				counts.ExpectedAbortedResults += int64(run.Expected.AbortCount)
-				counts.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
-				counts.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
-				counts.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
-				counts.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
-
-				// Run-level statistics (ignores duplicate runs).
-				counts.TotalRuns++
-				// flaky run.
-				isFlakyRun := run.Expected.Count() > 0 && run.Unexpected.Count() > 0
-				if isFlakyRun {
-					counts.FlakyRuns++
-				}
-				// unexpected unretried run.
-				isUnexpectedUnretried := run.Unexpected.Count() == 1 && run.Expected.Count() == 0
-				if isUnexpectedUnretried {
-					counts.UnexpectedUnretriedRuns++
-				}
-				// unexpected after retries run.
-				isUnexpectedAfterRetries := run.Unexpected.Count() > 1 && run.Expected.Count() == 0
-				if isUnexpectedAfterRetries {
-					counts.UnexpectedAfterRetryRuns++
-				}
-			}
-			if verdictHasUnexpectedResults && !verdictHasExpectedResults {
-				counts.UnexpectedVerdicts++
-			}
-			if verdictHasUnexpectedResults && verdictHasExpectedResults {
-				counts.FlakyVerdicts++
-			}
-		}
-	}
-	return counts
-}
-
 // mostRecentUnexpectedResultHour return the hours for the most recent
 // verdict that contains unexpected result.
-func mostRecentUnexpectedResultHour(history []PositionVerdict) *timestamppb.Timestamp {
-	latest := time.Unix(0, 0)
-	found := false
+func mostRecentUnexpectedResultHour(history []PositionVerdict) time.Time {
+	var latest time.Time
 	// history is sorted by commit position, not hour, so we need to do a loop.
 	for _, verdict := range history {
 		for _, run := range verdict.Details.Runs {
@@ -464,16 +427,12 @@ func mostRecentUnexpectedResultHour(history []PositionVerdict) *timestamppb.Time
 				continue
 			}
 			if run.Unexpected.Count() > 0 {
-				if verdict.Hour.Unix() > latest.Unix() {
+				if verdict.Hour.After(latest) {
 					latest = verdict.Hour
-					found = true
 				}
 				break
 			}
 		}
 	}
-	if !found {
-		return nil
-	}
-	return timestamppb.New(latest)
+	return latest
 }
