@@ -30,6 +30,7 @@ import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_
 import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
+import { ArtifactsEntry } from './artifacts_entry';
 import { FailureReasonEntry } from './failure_reason_entry';
 import { SummaryHtmlEntry } from './summary_html_entry';
 
@@ -103,6 +104,7 @@ export function TestResultEntry({ index, testResult }: TestResultEntryProps) {
               <FailureReasonEntry failureReason={testResult.failureReason} />
             )}
             <SummaryHtmlEntry testResult={testResult} />
+            <ArtifactsEntry testResultName={testResult.name} />
             {testResult.tags.length > 0 && <TagsEntry tags={testResult.tags} />}
           </>
         )}
