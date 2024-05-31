@@ -19,14 +19,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
-	"net/http/httptrace"
 	"net/url"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
 
-	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
@@ -354,9 +352,6 @@ func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOpti
 		// Further tweak OpenTelemetry tracing wrapper.
 		otelhttp.WithSpanNameFormatter(func(op string, r *http.Request) string {
 			return r.URL.Path
-		}),
-		otelhttp.WithClientTrace(func(ctx context.Context) *httptrace.ClientTrace {
-			return otelhttptrace.NewClientTrace(ctx, otelhttptrace.WithoutSubSpans())
 		}),
 	)
 	if options.kind == NoAuth {
