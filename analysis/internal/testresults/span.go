@@ -926,6 +926,7 @@ var variantsQueryTmpl = template.Must(template.New("variantsQuery").Parse(`
 // `SubRealm IN UNNEST(@subRealms)` check in Filter Scan seek condition, which
 // can significantly increase the time it takes to scan the table.
 var QueryTestsQueryTmpl = template.Must(template.New("QueryTestsQuery").Parse(`
+  @{USE_ADDITIONAL_PARALLELISM=TRUE}
 	WITH Tests as (
 		SELECT DISTINCT TestId, SubRealm IN UNNEST(@subRealms) as HasAccess
 		FROM TestRealms
