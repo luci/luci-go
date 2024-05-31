@@ -23,6 +23,7 @@
 
 import { SpecifiedTestVerdictStatus as AnalysisVerdictStatus } from '@/analysis/types';
 import { TestVerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { BatchGetTestVariantsResponse } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {
   TestResultBundle,
   TestVariant,
@@ -69,4 +70,9 @@ export type OutputTestResultBundle = NonNullableProps<
 export interface OutputTestVerdict extends TestVariant {
   readonly status: SpecifiedTestVerdictStatus;
   readonly results: readonly OutputTestResultBundle[];
+}
+
+export interface OutputBatchGetTestVariantResponse
+  extends BatchGetTestVariantsResponse {
+  readonly testVariants: readonly OutputTestVerdict[];
 }

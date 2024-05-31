@@ -65,7 +65,11 @@ const CommitTablePage = memo(function CommitTablePage({
   return (
     <>
       {page.sourcePositions.map((sp, i) => (
-        <CommitTableRow key={i} commit={sp.commit} content={<EntryContent />}>
+        <CommitTableRow
+          key={i}
+          commit={sp.commit}
+          content={<EntryContent verdicts={sp.verdicts} />}
+        >
           <SegmentContentCell position={sp.position} />
           <ToggleContentCell />
           <VerdictStatusesContentCell testVerdicts={sp.verdicts} />

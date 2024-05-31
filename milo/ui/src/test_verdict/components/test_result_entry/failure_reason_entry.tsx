@@ -19,19 +19,30 @@ import {
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
-import { CommitContent } from '@/gitiles/components/commit_table';
+import { FailureReason } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
 
-export function EntryContent() {
+export interface FailureReasonEntryProps {
+  readonly failureReason: FailureReason;
+}
+
+export function FailureReasonEntry({ failureReason }: FailureReasonEntryProps) {
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <ExpandableEntry expanded={expanded} sx={{ paddingLeft: '8px' }}>
-      <ExpandableEntryHeader onToggle={(expand) => setExpanded(expand)}>
-        Commit
+    <ExpandableEntry expanded={expanded}>
+      <ExpandableEntryHeader onToggle={(expanded) => setExpanded(expanded)}>
+        Failure Reason:
       </ExpandableEntryHeader>
       <ExpandableEntryBody>
-        <CommitContent sx={{ paddingLeft: 0 }} />
-        {/* TODO: display verdict entries. */}
+        <pre
+          css={{
+            backgroundColor: 'var(--block-background-color)',
+            padding: '5px',
+            margin: 0,
+          }}
+        >
+          {failureReason.primaryErrorMessage}
+        </pre>
       </ExpandableEntryBody>
     </ExpandableEntry>
   );
