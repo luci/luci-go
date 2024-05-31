@@ -231,7 +231,33 @@ func TestInputBuffer(t *testing.T) {
 		So(&ib.HotBuffer.Verdicts[0:1][0], ShouldEqual, &originalHotBuffer[0:1][0])
 		So(&ib.ColdBuffer.Verdicts[0], ShouldEqual, &originalColdBuffer[0:1][0])
 	})
+	Convey(`Test result flow is efficient`, t, func() {
+		ib := NewWithCapacity(10, 100)
+		coldBufferDirtyCount := 0
+		evictionCount := 0
+		for i := 0; i < 1000; i++ {
+			ib.InsertVerdict(createTestVerdict(i, i))
+			ib.CompactIfRequired()
 
+			shouldEvict, endIndex := ib.EvictionRange()
+			if shouldEvict {
+				ib.ColdBuffer.EvictBefore(endIndex + 1)
+				evictionCount++
+			}
+
+			if ib.IsColdBufferDirty {
+				coldBufferDirtyCount++
+				// Pretend we flushed out the buffer to Spanner.
+				ib.IsColdBufferDirty = false
+			}
+		}
+		// We should not have to write the cold buffer out to Spanner
+		// every time, but only once per HotBufferCapacity times.
+		So(coldBufferDirtyCount, ShouldBeLessThanOrEqualTo, 100)
+		// Eviction is similar, but only starts once the cold buffer
+		// is full.
+		So(evictionCount, ShouldEqual, 90)
+	})
 	Convey(`Compaction should maintain order`, t, func() {
 		ib := Buffer{
 			HotBufferCapacity: 5,

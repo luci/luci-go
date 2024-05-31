@@ -247,7 +247,7 @@ func (ib *Buffer) InsertVerdict(v PositionVerdict) {
 // i.e., len(ColdBuffer.Verdicts) > ColdBufferCapacity.
 // This needs to be handled separately.
 func (ib *Buffer) CompactIfRequired() {
-	if len(ib.HotBuffer.Verdicts) < ib.HotBufferCapacity && len(ib.ColdBuffer.Verdicts) < ib.ColdBufferCapacity {
+	if len(ib.HotBuffer.Verdicts) < ib.HotBufferCapacity && len(ib.ColdBuffer.Verdicts) <= ib.ColdBufferCapacity {
 		// No compaction required.
 		return
 	}
