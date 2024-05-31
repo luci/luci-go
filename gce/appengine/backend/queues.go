@@ -199,7 +199,7 @@ func createVM(c context.Context, payload proto.Message) error {
 	// Instead, we rely on the DUT name.
 	var hostname string
 	if task.DUT != "" {
-		hostname = fmt.Sprintf("%s-%s", task.Id, getSuffix(c))
+		hostname = task.Id
 	} else {
 		hostname = fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c))
 	}
