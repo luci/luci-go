@@ -23,14 +23,21 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/services/verdictingester"
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 const (
@@ -43,6 +50,64 @@ var (
 	// buildInvocationRE extracts the buildbucket build number from invocations
 	// named after a buildbucket build ID.
 	buildInvocationRE = regexp.MustCompile(`^build-([0-9]+)$`)
+)
+
+var (
+	cvBuildInputCounter = metric.NewCounter(
+		"analysis/ingestion/join/cv_builds_input",
+		"The number of builds for which CV Run completion was received."+
+			" Broken down by project of the CV run.",
+		nil,
+		// The LUCI Project of the CV run.
+		field.String("project"))
+
+	cvBuildOutputCounter = metric.NewCounter(
+		"analysis/ingestion/join/cv_builds_output",
+		"The number of builds associated with a presubmit run which were successfully joined and for which ingestion was queued."+
+			" Broken down by project of the CV run.",
+		nil,
+		// The LUCI Project of the CV run.
+		field.String("project"))
+
+	bbBuildInputCounter = metric.NewCounter(
+		"analysis/ingestion/join/bb_builds_input",
+		"The number of builds for which buildbucket build completion was received."+
+			" Broken down by project of the buildbucket build, whether the build"+
+			" is part of a presubmit run, and whether the build has a ResultDB invocation.",
+		nil,
+		// The LUCI Project of the buildbucket run.
+		field.String("project"),
+		field.Bool("is_presubmit"),
+		field.Bool("has_invocation"))
+
+	bbBuildOutputCounter = metric.NewCounter(
+		"analysis/ingestion/join/bb_builds_output",
+		"The number of builds which were successfully joined and for which ingestion was queued."+
+			" Broken down by project of the buildbucket build, whether the build"+
+			" is part of a presubmit run, and whether the build has a ResultDB invocation.",
+		nil,
+		// The LUCI Project of the buildbucket run.
+		field.String("project"),
+		field.Bool("is_presubmit"),
+		field.Bool("has_invocation"))
+
+	rdbInvocationsInputCounter = metric.NewCounter(
+		"analysis/ingestion/join/rdb_invocations_input",
+		"The number of ResultDB invocation finalization was received."+
+			" Broken down by project of the ResultDB invocation, and whether the invocation has buildbucket build.",
+		nil,
+		// The LUCI Project of the ResultDB invocation.
+		field.String("project"),
+		field.Bool("has_buildbucket_build"))
+
+	rdbInvocationsOutputCounter = metric.NewCounter(
+		"analysis/ingestion/join/rdb_invocations_output",
+		"The number of ResultDBinvocation which were successfully joined and for which ingestion was queued."+
+			" Broken down by project of the ResultDB invocation, and whether the invocation has buildbucket build.",
+		nil,
+		// The LUCI Project of the ResultDB invocation.
+		field.String("project"),
+		field.Bool("has_buildbucket_build"))
 )
 
 // JoinBuildResult sets the build result for the ingestion.
@@ -104,6 +169,9 @@ func JoinBuildResult(ctx context.Context, buildID int64, buildProject string, is
 		if (entry.InvocationResult != nil || entry.PresubmitResult != nil || entry.BuildResult != nil) && !entry.HasBuildBucketBuild {
 			return fmt.Errorf("disagreement about whether build %d has an buildbucket build (got %v, want %v)", buildID, entry.HasBuildBucketBuild, true)
 		}
+		if entry.InvocationProject != "" && entry.InvocationProject != buildProject {
+			return fmt.Errorf("disagreement about LUCI project between build %d and its invocation (invocation project %v, build project %v)", buildID, entry.InvocationProject, buildProject)
+		}
 		if entry.BuildResult != nil {
 			// Build result already recorded. Do not modify and do not
 			// create a duplicate ingestion.
@@ -138,10 +206,10 @@ func JoinBuildResult(ctx context.Context, buildID int64, buildProject string, is
 		logging.Warningf(ctx, "build result for build %d was dropped as one was already recorded", buildID)
 	}
 
-	// TODO: Export metrics.
-	// if saved {
-	// 	bbBuildInputCounter.Add(ctx, 1, buildProject, isPresubmit, hasInvocation)
-	// }
+	// Export metrics.
+	if saved {
+		bbBuildInputCounter.Add(ctx, 1, buildProject, isPresubmit, hasInvocation)
+	}
 	if createdTask != nil {
 		createdTask.reportMetrics(ctx)
 	}
@@ -235,8 +303,8 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[int64
 		logging.Warningf(ctx, "presubmit result for builds %v were dropped as one was already recorded", buildIDsSkipped)
 	}
 
-	// TODO: Export metrics.
-	// cvBuildInputCounter.Add(ctx, int64(len(presubmitResultByBuildID)-len(buildIDsSkipped)), presubmitProject)
+	// Export metrics.
+	cvBuildInputCounter.Add(ctx, int64(len(presubmitResultByBuildID)-len(buildIDsSkipped)), presubmitProject)
 	for _, task := range tasksCreated {
 		task.reportMetrics(ctx)
 	}
@@ -285,6 +353,9 @@ func JoinInvocationResult(ctx context.Context, invocationID, invocationProject s
 		if (entry.InvocationResult != nil || entry.PresubmitResult != nil || entry.BuildResult != nil) && entry.HasBuildBucketBuild != buildBucketBuildInvocation {
 			return fmt.Errorf("disagreement about whether invocation %s has an buildbucket build (got %v, want %v)", invocationID, buildBucketBuildInvocation, entry.HasBuildBucketBuild)
 		}
+		if entry.BuildProject != "" && entry.BuildProject != invocationProject {
+			return fmt.Errorf("disagreement about LUCI project between invocation %s and its build (invocation project %v, build project %v)", invocationID, invocationProject, entry.BuildProject)
+		}
 		if entry.InvocationResult != nil {
 			// Invocation result already recorded. Do not modify and
 			// do not create a duplicate ingestion.
@@ -318,10 +389,10 @@ func JoinInvocationResult(ctx context.Context, invocationID, invocationProject s
 		logging.Warningf(ctx, "invocation result for invocatoin %q was dropped as one was already recorded", invocationID)
 	}
 
-	// TODO: Export metrics.
-	// if saved {
-	// 	rdbInvocationInputCounter.Add(ctx, 1, invocationProject, buildBucketInvocation)
-	// }
+	// Export metrics.
+	if saved {
+		rdbInvocationsInputCounter.Add(ctx, 1, invocationProject, buildBucketBuildInvocation)
+	}
 	if createdTask != nil {
 		createdTask.reportMetrics(ctx)
 	}
@@ -359,20 +430,64 @@ func newTaskDetails(e *control.Entry) *taskDetails {
 }
 
 func (t *taskDetails) reportMetrics(ctx context.Context) {
-	// TODO(beining@): report metrics when the old joining pipeline is deprecated.
+	if t.HasBuildBucketBuild {
+		bbBuildOutputCounter.Add(ctx, 1, t.BuildProject, t.IsPresubmit, t.HasInvocation)
+	}
+	if t.IsPresubmit {
+		cvBuildOutputCounter.Add(ctx, 1, t.PresubmitProject)
+	}
+	if t.HasInvocation {
+		rdbInvocationsOutputCounter.Add(ctx, 1, t.InvocationProject, t.HasBuildBucketBuild)
+	}
 }
 
 // createTaskIfNeeded transactionally creates a result-ingestion task
 // if all necessary data for the ingestion is available. Returns true if the
 // task was created.
 func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
+	// Join is completed if it satisfies all of the conditions.
+	// * It is marked HasBuildBucketBuild and BuildResult is populated.
+	// * It is marked HasInvocation and InvocationResult is populated.
+	// * It is marked IsPresubmit and PresubmitResult is populated.
 	joinComplete := (!e.HasBuildBucketBuild || e.BuildResult != nil) &&
 		(!e.IsPresubmit || e.PresubmitResult != nil) &&
 		(!e.HasInvocation || e.InvocationResult != nil)
+
 	if !joinComplete {
 		return false
 	}
-
-	// TODO(beining@): schedule verdict ingestion task.
+	var itvTask *taskspb.IngestTestVerdicts
+	if e.IsPresubmit {
+		// IsPresubmit is true implies that HasBuildBucketBuild is also true.
+		itvTask = &taskspb.IngestTestVerdicts{
+			IngestionId:   string(e.IngestionID),
+			PartitionTime: e.PresubmitResult.CreationTime,
+			Project:       e.BuildProject,
+			Invocation:    e.InvocationResult,
+			Build:         e.BuildResult,
+			PresubmitRun:  e.PresubmitResult,
+		}
+	} else if e.HasBuildBucketBuild {
+		itvTask = &taskspb.IngestTestVerdicts{
+			IngestionId:   string(e.IngestionID),
+			PartitionTime: e.BuildResult.CreationTime,
+			Project:       e.BuildProject,
+			Invocation:    e.InvocationResult,
+			Build:         e.BuildResult,
+		}
+	} else {
+		itvTask = &taskspb.IngestTestVerdicts{
+			IngestionId: string(e.IngestionID),
+			// TODO: return the invocation creation time from pubsub and use it here.
+			PartitionTime: timestamppb.New(clock.Now(ctx)),
+			Project:       e.InvocationProject,
+			Invocation:    e.InvocationResult,
+		}
+	}
+	// Copy the task to avoid aliasing issues if the caller ever
+	// decides the modify e.PresubmitResult or e.BuildResult
+	// after we return.
+	itvTask = proto.Clone(itvTask).(*taskspb.IngestTestVerdicts)
+	verdictingester.Schedule(ctx, itvTask)
 	return true
 }

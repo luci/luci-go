@@ -29,6 +29,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
@@ -50,6 +52,29 @@ const (
 	maximumCLs = 10
 )
 
+var (
+	buildProcessingOutcomeCounter = metric.NewCounter(
+		"analysis/ingestion/pubsub/buildbucket_build_processing_outcome",
+		"The number of buildbucket builds processed by LUCI Analysis,"+
+			" by processing outcome (e.g. success, permission denied).",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// "success", "permission_denied".
+		field.String("status"))
+
+	ancestorCounter = metric.NewCounter(
+		"analysis/ingestion/ancestor_build_status",
+		"The status retrieving ancestor builds in ingestion tasks, by build project.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// "no_bb_access_to_ancestor",
+		// "no_resultdb_invocation_on_ancestor",
+		// "ok".
+		field.String("ancestor_status"))
+)
+
 // JoinBuild notifies ingestion that the given buildbucket build has finished.
 // Ingestion tasks are created when all required data for this build
 // (including any associated LUCI CV run and invocation) is available.
@@ -63,8 +88,8 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 		// Build not found, handle gracefully.
 		logging.Warningf(ctx, "Buildbucket build %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
 			bbHost, buildID, project)
-		// TODO: report metrics.
-		// buildProcessingOutcomeCounter.Add(ctx, 1, project, "permission_denied")
+		// report metrics.
+		buildProcessingOutcomeCounter.Add(ctx, 1, project, "permission_denied")
 		return false, nil
 	}
 	if err != nil {
@@ -164,8 +189,8 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 	if err := JoinBuildResult(ctx, buildID, project, isPresubmit, hasInvocation, result); err != nil {
 		return false, errors.Annotate(err, "joining build result").Err()
 	}
-	// TODO: report metrics.
-	// buildProcessingOutcomeCounter.Add(ctx, 1, project, "success")
+	// report metrics.
+	buildProcessingOutcomeCounter.Add(ctx, 1, project, "success")
 	return true, nil
 }
 
@@ -240,8 +265,8 @@ func includedByAncestorBuild(ctx context.Context, buildID, ancestorBuildID int64
 			rdbHost, ancestorBuildID, project)
 		// Invocation on the ancestor build not found or permission denied.
 		// Continue ingestion of this build.
-		// TODO: report metrics.
-		//ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_not_found")
+		// report metrics.
+		ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_not_found")
 		return false, nil
 	}
 	if err != nil {
@@ -260,16 +285,16 @@ func includedByAncestorBuild(ctx context.Context, buildID, ancestorBuildID int64
 	if !containsThisBuild {
 		// The ancestor build's invocation does not contain the ResultDB
 		// invocation of this build. Continue ingestion of this build.
-		// TODO: report metrics.
-		// ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_does_not_contain")
+		// report metrics.
+		ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_does_not_contain")
 		return false, nil
 	}
 
 	// The ancestor build also has a ResultDB invocation, and it
 	// contains this invocation. We will ingest the ancestor build
 	// only to avoid ingesting the same test results multiple times.
-	// TODO: report metrics.
-	// ancestorCounter.Add(ctx, 1, project, "ok")
+	// report metrics.
+	ancestorCounter.Add(ctx, 1, project, "ok")
 	return true, nil
 }
 

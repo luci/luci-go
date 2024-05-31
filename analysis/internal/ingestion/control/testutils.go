@@ -70,10 +70,13 @@ func NewEntry(uniqifier int) *EntryBuilder {
 				ResultdbHost:         "resultdb_host",
 				IsIncludedByAncestor: true,
 			},
-			BuildJoinedTime:      time.Date(2020, time.December, 11, 1, 1, 1, uniqifier*1000, time.UTC),
-			HasInvocation:        true,
-			InvocationProject:    "invocation-project",
-			InvocationResult:     &controlpb.InvocationResult{},
+			BuildJoinedTime:   time.Date(2020, time.December, 11, 1, 1, 1, uniqifier*1000, time.UTC),
+			HasInvocation:     true,
+			InvocationProject: "invocation-project",
+			InvocationResult: &controlpb.InvocationResult{
+				ResultdbHost: "rdb-host",
+				InvocationId: "123",
+			},
 			InvocationJoinedTime: time.Date(2020, time.December, 12, 1, 1, 1, uniqifier*1000, time.UTC),
 			IsPresubmit:          true,
 			PresubmitProject:     "presubmit-project",
@@ -121,6 +124,13 @@ func (b *EntryBuilder) WithBuildJoinedTime(value time.Time) *EntryBuilder {
 // has a ResultDB invocation.
 func (b *EntryBuilder) WithHasInvocation(hasInvocation bool) *EntryBuilder {
 	b.record.HasInvocation = hasInvocation
+	return b
+}
+
+// WithHasBuildbucketBuild specifies whether the build that is the subject of the ingestion
+// has a buildbucket build.
+func (b *EntryBuilder) WithHasBuildbucketBuild(hasBuildBucketBuild bool) *EntryBuilder {
+	b.record.HasBuildBucketBuild = hasBuildBucketBuild
 	return b
 }
 
@@ -174,7 +184,7 @@ func (b *EntryBuilder) Build() *Entry {
 // SetEntriesForTesting replaces the set of stored entries to match the given set.
 func SetEntriesForTesting(ctx context.Context, es ...*Entry) (time.Time, error) {
 	testutil.MustApply(ctx,
-		spanner.Delete("Ingestions", spanner.AllKeys()))
+		spanner.Delete("IngestionJoins", spanner.AllKeys()))
 	// Insert some Ingestion records.
 	commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, r := range es {
