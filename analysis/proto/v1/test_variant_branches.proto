@@ -146,47 +146,43 @@ message TestVariantBranchRaw {
 // InputBuffer contains the verdict history of the test variant branch.
 // It is used for both the hot buffer and the cold buffer.
 message InputBuffer {
-  // The number of test verdicts in the input buffer.
+  // The number of test runs in the input buffer.
   int64 length = 1;
 
-  // Verdicts, sorted by commit position (oldest first), and
+  // Runs, sorted by commit position (oldest first), and
   // then result time (oldest first).
-  repeated PositionVerdict verdicts = 2;
-}
+  repeated Run runs = 2;
 
-// PositionVerdict represents a test verdict at a commit position.
-message PositionVerdict {
-  // The commit position for the verdict.
-  int64 commitPosition = 1;
-
-  // The time that this verdict is produced, truncated to the nearest hour.
-  google.protobuf.Timestamp hour = 2;
-
-  // Whether the verdict is exonerated or not.
-  bool is_exonerated = 3;
-
+  // Run represents a test run at a commit position.
   message Run {
-    // Number of expectedly passed results in the run.
-    int64 expected_pass_count = 1;
-    // Number of expectedly failed results in the run.
-    int64 expected_fail_count = 2;
-    // Number of expectedly crashed results in the run.
-    int64 expected_crash_count = 3;
-    // Number of expectedly aborted results in the run.
-    int64 expected_abort_count = 4;
-    // Number of unexpectedly passed results in the run.
-    int64 unexpected_pass_count = 5;
-    // Number of unexpectedly failed results in the run.
-    int64 unexpected_fail_count = 6;
-    // Number of unexpectedly crashed results in the run.
-    int64 unexpected_crash_count = 7;
-    // Number of unexpectedly aborted results in the run.
-    int64 unexpected_abort_count = 8;
-    // Whether this run is a duplicate run.
-    bool is_duplicate = 9;
+    // The commit position of the run.
+    int64 commitPosition = 1;
+
+    // The time that this run was produced, truncated to the nearest hour.
+    google.protobuf.Timestamp hour = 2;
+
+    message Counts {
+      // Number of expectedly passed results in the run.
+      int64 expected_pass_count = 1;
+      // Number of expectedly failed results in the run.
+      int64 expected_fail_count = 2;
+      // Number of expectedly crashed results in the run.
+      int64 expected_crash_count = 3;
+      // Number of expectedly aborted results in the run.
+      int64 expected_abort_count = 4;
+      // Number of unexpectedly passed results in the run.
+      int64 unexpected_pass_count = 5;
+      // Number of unexpectedly failed results in the run.
+      int64 unexpected_fail_count = 6;
+      // Number of unexpectedly crashed results in the run.
+      int64 unexpected_crash_count = 7;
+      // Number of unexpectedly aborted results in the run.
+      int64 unexpected_abort_count = 8;
+    }
+    Counts counts = 3;
   }
-  repeated Run runs = 4;
 }
+
 
 // A request message for `TestVariantBranches.BatchGet` RPC.
 message BatchGetTestVariantBranchRequest {
@@ -322,24 +318,24 @@ message Segment {
   // where previous_segment refers to the chronologically previous segment.
   int64 start_position_upper_bound_99th = 4;
 
-  // The earliest hour a test verdict at the indicated start_position
+  // The earliest hour a test run at the indicated start_position
   // was recorded. Gives an approximate upper bound on the timestamp the
   // changepoint occurred, for systems which need to filter by date.
   google.protobuf.Timestamp start_hour = 5;
 
   // The nominal commit position at which the segment ends (inclusive).
   // This is either the last recorded commit position in the test history
-  // (for this test variant branch), or the position of the last verdict
+  // (for this test variant branch), or the position of the last run
   // seen before the next detected changepoint.
   int64 end_position = 6;
 
-  // The earliest hour a test verdict at the indicated end_position
+  // The latest hour a test run at the indicated end_position
   // was recorded. Gives an approximate lower bound on the  timestamp
   // the changepoint occurred, for systems which need to filter by date.
   google.protobuf.Timestamp end_hour = 7;
 
-  // Counts of verdicts over a time period. Includes only
-  // test verdicts for submitted code changes. This is defined as:
+  // Counts of source verdicts over a time period. Includes only
+  // test results for submitted code changes. This is defined as:
   // (1) where the code under test was already submitted when the test ran
   //       (e.g. postsubmit builders)
   // (2) where the code under test was not submitted at the time the test ran,
@@ -348,15 +344,18 @@ message Segment {
   //     and submitted code as a result).
   //     Currently, when test results lead to CL submission via recycled CQ runs,
   //     they are not counted.
+  // Source verdicts represent the aggregation of all test results at a given
+  // source position.
+  //
   // Statistics for test results and test runs can be added here when needed.
   message Counts {
-    // The number of verdicts with only unexpected test results.
+    // The number of source verdicts with only unexpected test results.
     int32 unexpected_verdicts = 1;
 
-    // The number of verdicts with a mix of expected and unexpected test results.
+    // The number of source verdicts with a mix of expected and unexpected test results.
     int32 flaky_verdicts = 2;
 
-    // The total number of verdicts.
+    // The total number of source verdicts.
     int32 total_verdicts = 3;
   }
 

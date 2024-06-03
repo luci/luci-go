@@ -52,6 +52,6 @@ func HasCommitData(sources *pb.Sources) bool {
 	return commit.GetHost() != "" && commit.GetProject() != "" && commit.GetRef() != "" && commit.GetPosition() != 0
 }
 
-func CommitPosition(sources *pb.Sources) int {
-	return int(sources.GitilesCommit.Position)
+func CommitPosition(sources *pb.Sources) int64 {
+	return sources.GitilesCommit.Position
 }

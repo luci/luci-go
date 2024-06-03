@@ -69,7 +69,6 @@ func TestBQExporter(t *testing.T) {
 				RefHash:     []byte("refhash1"),
 				Variant:     variant,
 				SourceRef:   sourceRef,
-				InputBuffer: &inputbuffer.Buffer{},
 			},
 			Segments: []analyzer.Segment{
 				{
@@ -95,7 +94,6 @@ func TestBQExporter(t *testing.T) {
 				RefHash:     []byte("refhash2"),
 				Variant:     variant,
 				SourceRef:   sourceRef,
-				InputBuffer: &inputbuffer.Buffer{},
 			},
 			Segments: []analyzer.Segment{
 				{
@@ -107,7 +105,7 @@ func TestBQExporter(t *testing.T) {
 					StartHour:                   time.Unix(3600, 0),
 					EndHour:                     time.Unix(6*3600, 0),
 					Counts: analyzer.Counts{
-						TotalVerdicts: 6,
+						TotalSourceVerdicts: 6,
 					},
 				},
 				{
@@ -120,9 +118,9 @@ func TestBQExporter(t *testing.T) {
 					EndHour:                        time.Unix(6*3600, 0),
 					MostRecentUnexpectedResultHour: time.Unix(9000*3600, 0),
 					Counts: analyzer.Counts{
-						TotalVerdicts:            9,
-						UnexpectedVerdicts:       4,
-						FlakyVerdicts:            2,
+						TotalSourceVerdicts:      9,
+						UnexpectedSourceVerdicts: 4,
+						FlakySourceVerdicts:      2,
 						TotalRuns:                13,
 						UnexpectedUnretriedRuns:  5,
 						UnexpectedAfterRetryRuns: 5,
@@ -140,7 +138,7 @@ func TestBQExporter(t *testing.T) {
 					EndPosition:                 20,
 					EndHour:                     time.Unix(8000*3600, 0),
 					Counts: analyzer.Counts{
-						TotalVerdicts: 5,
+						TotalSourceVerdicts: 5,
 					},
 				},
 				{
@@ -152,9 +150,9 @@ func TestBQExporter(t *testing.T) {
 					// Less than 90 days ago
 					MostRecentUnexpectedResultHour: time.Unix(9000*3600, 0),
 					Counts: analyzer.Counts{
-						TotalVerdicts:            3,
-						UnexpectedVerdicts:       2,
-						FlakyVerdicts:            1,
+						TotalSourceVerdicts:      3,
+						UnexpectedSourceVerdicts: 2,
+						FlakySourceVerdicts:      1,
 						TotalRuns:                7,
 						UnexpectedUnretriedRuns:  6,
 						UnexpectedAfterRetryRuns: 5,
@@ -267,11 +265,13 @@ func TestBQExporter(t *testing.T) {
 					EndPosition:                  40,
 					EndHour:                      timestamppb.New(time.Unix(6*3600, 0)),
 					Counts: &bqpb.Segment_Counts{
-						TotalVerdicts:            9,
-						UnexpectedVerdicts:       4,
-						FlakyVerdicts:            2,
-						TotalRuns:                13,
-						UnexpectedUnretriedRuns:  5,
+						TotalVerdicts:      9,
+						UnexpectedVerdicts: 4,
+						FlakyVerdicts:      2,
+
+						TotalRuns:               13,
+						UnexpectedUnretriedRuns: 5,
+
 						UnexpectedAfterRetryRuns: 5,
 						FlakyRuns:                6,
 						TotalResults:             21,

@@ -74,34 +74,28 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       15,
-							IsSimpleExpectedPass: true,
-							Hour:                 time.Unix(0, 0),
+							CommitPosition: 15,
+							Hour:           time.Unix(0, 0),
+							Expected: inputbuffer.ResultCounts{
+								PassCount: 1,
+							},
 						},
 						{
-							CommitPosition:       18,
-							IsSimpleExpectedPass: false,
-							Hour:                 time.Unix(0, 0),
-							Details: inputbuffer.VerdictDetails{
-								IsExonerated: true,
-								Runs: []inputbuffer.Run{
-									{
-										Expected: inputbuffer.ResultCounts{
-											PassCount:  1,
-											FailCount:  2,
-											CrashCount: 3,
-											AbortCount: 4,
-										},
-										Unexpected: inputbuffer.ResultCounts{
-											PassCount:  5,
-											FailCount:  6,
-											CrashCount: 7,
-											AbortCount: 8,
-										},
-									},
-								},
+							CommitPosition: 18,
+							Hour:           time.Unix(0, 0),
+							Expected: inputbuffer.ResultCounts{
+								PassCount:  1,
+								FailCount:  2,
+								CrashCount: 3,
+								AbortCount: 4,
+							},
+							Unexpected: inputbuffer.ResultCounts{
+								PassCount:  5,
+								FailCount:  6,
+								CrashCount: 7,
+								AbortCount: 8,
 							},
 						},
 					},
@@ -128,11 +122,13 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       20,
-							IsSimpleExpectedPass: true,
-							Hour:                 time.Unix(0, 0),
+							CommitPosition: 20,
+							Hour:           time.Unix(0, 0),
+							Expected: inputbuffer.ResultCounts{
+								PassCount: 1,
+							},
 						},
 					},
 				},
@@ -158,14 +154,14 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		// After inserting, the record should not be new anymore.
 		tvb1.IsNew = false
 		// After decoding, cold buffer should be empty.
-		tvb1.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
+		tvb1.InputBuffer.ColdBuffer = inputbuffer.History{Runs: []inputbuffer.Run{}}
 
 		So(tvbs[0], ShouldResembleProto, tvb1)
 
 		So(tvbs[1], ShouldBeNil)
 
 		tvb3.IsNew = false
-		tvb3.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
+		tvb3.InputBuffer.ColdBuffer = inputbuffer.History{Runs: []inputbuffer.Run{}}
 
 		So(tvbs[2], ShouldResembleProto, tvb3)
 	})
@@ -198,11 +194,13 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       15,
-							IsSimpleExpectedPass: true,
-							Hour:                 time.Unix(0, 0),
+							CommitPosition: 15,
+							Hour:           time.Unix(0, 0),
+							Expected: inputbuffer.ResultCounts{
+								PassCount: 1,
+							},
 						},
 					},
 				},
@@ -239,39 +237,33 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       16,
-							IsSimpleExpectedPass: true,
-							Hour:                 time.Unix(0, 0),
+							CommitPosition: 16,
+							Hour:           time.Unix(0, 0),
+							Expected: inputbuffer.ResultCounts{
+								PassCount: 1,
+							},
 						},
 					},
 				},
 				ColdBufferCapacity: 2000,
 				ColdBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       15,
-							IsSimpleExpectedPass: false,
-							Hour:                 time.Unix(0, 0),
-							Details: inputbuffer.VerdictDetails{
-								IsExonerated: false,
-								Runs: []inputbuffer.Run{
-									{
-										Expected: inputbuffer.ResultCounts{
-											PassCount:  1,
-											FailCount:  2,
-											CrashCount: 3,
-											AbortCount: 4,
-										},
-										Unexpected: inputbuffer.ResultCounts{
-											PassCount:  5,
-											FailCount:  6,
-											CrashCount: 7,
-											AbortCount: 8,
-										},
-									},
-								},
+							CommitPosition: 15,
+							Hour:           time.Unix(0, 0),
+							Expected: inputbuffer.ResultCounts{
+								PassCount:  1,
+								FailCount:  2,
+								CrashCount: 3,
+								AbortCount: 4,
+							},
+							Unexpected: inputbuffer.ResultCounts{
+								PassCount:  5,
+								FailCount:  6,
+								CrashCount: 7,
+								AbortCount: 8,
 							},
 						},
 					},
@@ -316,6 +308,12 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 							UnexpectedFailedResults:  6,
 							UnexpectedCrashedResults: 7,
 							UnexpectedAbortedResults: 8,
+							PartialSourceVerdict: &cpb.PartialSourceVerdict{
+								CommitPosition:    987654321987654321,
+								LastHour:          timestamppb.New(time.Date(2222, time.February, 2, 22, 0, 0, 0, time.UTC)),
+								ExpectedResults:   66666,
+								UnexpectedResults: 11111,
+							},
 						},
 					},
 				},
@@ -323,11 +321,17 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			IsFinalizedSegmentsDirty: true,
 			Statistics: &cpb.Statistics{
 				HourlyBuckets: []*cpb.Statistics_HourBucket{{
-					Hour:               100,
-					UnexpectedVerdicts: 1,
-					FlakyVerdicts:      2,
-					TotalVerdicts:      4,
+					Hour:                     100,
+					UnexpectedSourceVerdicts: 1,
+					FlakySourceVerdicts:      2,
+					TotalSourceVerdicts:      4,
 				}},
+				PartialSourceVerdict: &cpb.PartialSourceVerdict{
+					CommitPosition:    1234567890123456789,
+					LastHour:          timestamppb.New(time.Date(2123, time.January, 1, 15, 0, 0, 0, time.UTC)),
+					ExpectedResults:   777,
+					UnexpectedResults: 888,
+				},
 			},
 			IsStatisticsDirty: true,
 		}
@@ -367,6 +371,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			Results: []*rdbpb.TestResultBundle{
 				{
 					Result: &rdbpb.TestResult{
+						Name:     "invocations/run-1/tests/abc",
 						Expected: true,
 						Status:   rdbpb.TestStatus_PASS,
 					},
@@ -374,15 +379,18 @@ func TestInsertToInputBuffer(t *testing.T) {
 			},
 			SourcesId: "sources_id",
 		}
-		pv, err := ToPositionVerdict(tv, payload, map[string]bool{}, sourcesMap["sources_id"])
+		runs, err := ToRuns(tv, payload, map[string]bool{}, sourcesMap["sources_id"])
 		So(err, ShouldBeNil)
-		tvb.InsertToInputBuffer(pv)
-		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
+		So(runs, ShouldHaveLength, 1)
+		tvb.InsertToInputBuffer(runs[0])
+		So(len(tvb.InputBuffer.HotBuffer.Runs), ShouldEqual, 1)
 
-		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, inputbuffer.PositionVerdict{
-			CommitPosition:       12,
-			IsSimpleExpectedPass: true,
-			Hour:                 payload.PartitionTime.AsTime(),
+		So(tvb.InputBuffer.HotBuffer.Runs[0], ShouldResemble, inputbuffer.Run{
+			CommitPosition: 12,
+			Hour:           payload.PartitionTime.AsTime(),
+			Expected: inputbuffer.ResultCounts{
+				PassCount: 1,
+			},
 		})
 	})
 
@@ -455,52 +463,63 @@ func TestInsertToInputBuffer(t *testing.T) {
 						Status:   rdbpb.TestStatus_ABORT,
 					},
 				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:     "invocations/run-5/tests/abc",
+						Expected: true,
+						Status:   rdbpb.TestStatus_PASS,
+					},
+				},
 			},
 		}
 		duplicateMap := map[string]bool{
-			"run-1": true,
-			"run-3": true,
+			"run-5": true,
 		}
-		pv, err := ToPositionVerdict(tv, payload, duplicateMap, sourcesMap["sources_id"])
+		runs, err := ToRuns(tv, payload, duplicateMap, sourcesMap["sources_id"])
 		So(err, ShouldBeNil)
-		tvb.InsertToInputBuffer(pv)
-		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
+		So(runs, ShouldHaveLength, 4)
+		for _, run := range runs {
+			tvb.InsertToInputBuffer(run)
+		}
+		So(len(tvb.InputBuffer.HotBuffer.Runs), ShouldEqual, 4)
 
-		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, inputbuffer.PositionVerdict{
-			CommitPosition:       12,
-			IsSimpleExpectedPass: false,
-			Hour:                 payload.PartitionTime.AsTime(),
-			Details: inputbuffer.VerdictDetails{
-				IsExonerated: false,
-				Runs: []inputbuffer.Run{
-					{
-						Unexpected: inputbuffer.ResultCounts{
-							CrashCount: 1,
-							AbortCount: 1,
-						},
-						IsDuplicate: false,
-					},
-					{
-						Expected: inputbuffer.ResultCounts{
-							AbortCount: 1,
-						},
-						IsDuplicate: false,
-					},
-					{
-						Unexpected: inputbuffer.ResultCounts{
-							PassCount: 1,
-							FailCount: 1,
-						},
-						IsDuplicate: true,
-					},
-					{
-						Expected: inputbuffer.ResultCounts{
-							PassCount:  1,
-							FailCount:  1,
-							CrashCount: 1,
-						},
-						IsDuplicate: true,
-					},
+		// Insertion reverses the order of runs as they are preferentially
+		// added to the end of of the buffer.
+		So(tvb.InputBuffer.HotBuffer.Runs, ShouldResemble, []inputbuffer.Run{
+			{
+				// run-4
+				CommitPosition: 12,
+				Hour:           payload.PartitionTime.AsTime(),
+				Unexpected: inputbuffer.ResultCounts{
+					CrashCount: 1,
+					AbortCount: 1,
+				},
+			},
+			{
+				// run-3
+				CommitPosition: 12,
+				Hour:           payload.PartitionTime.AsTime(),
+				Unexpected: inputbuffer.ResultCounts{
+					PassCount: 1,
+					FailCount: 1,
+				},
+			},
+			{
+				// run-2
+				CommitPosition: 12,
+				Hour:           payload.PartitionTime.AsTime(),
+				Expected: inputbuffer.ResultCounts{
+					AbortCount: 1,
+				},
+			},
+			{
+				// run-1
+				CommitPosition: 12,
+				Hour:           payload.PartitionTime.AsTime(),
+				Expected: inputbuffer.ResultCounts{
+					PassCount:  1,
+					FailCount:  1,
+					CrashCount: 1,
 				},
 			},
 		})
@@ -517,27 +536,21 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartHour:     time.Unix(1*3600, 0),
 				EndPosition:   10,
 				EndHour:       time.Unix(10*3600, 0),
-				Verdicts: []inputbuffer.PositionVerdict{
+				Runs: []inputbuffer.Run{
 					{
 						CommitPosition: 2,
 						Hour:           time.Unix(10*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Expected: inputbuffer.ResultCounts{
-										PassCount:  1,
-										FailCount:  2,
-										CrashCount: 3,
-										AbortCount: 4,
-									},
-									Unexpected: inputbuffer.ResultCounts{
-										PassCount:  5,
-										FailCount:  6,
-										CrashCount: 7,
-										AbortCount: 8,
-									},
-								},
-							},
+						Expected: inputbuffer.ResultCounts{
+							PassCount:  1,
+							FailCount:  2,
+							CrashCount: 3,
+							AbortCount: 4,
+						},
+						Unexpected: inputbuffer.ResultCounts{
+							PassCount:  5,
+							FailCount:  6,
+							CrashCount: 7,
+							AbortCount: 8,
 						},
 					},
 				},
@@ -549,46 +562,36 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                  11,
 				StartHour:                      time.Unix(11*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
-				Verdicts: []inputbuffer.PositionVerdict{
+				Runs: []inputbuffer.Run{
 					{
-						CommitPosition:       11,
-						Hour:                 time.Unix(11*3600, 0),
-						IsSimpleExpectedPass: true,
-					},
-					{
-						CommitPosition:       12,
-						Hour:                 time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
-						IsSimpleExpectedPass: true,
-					},
-					{
-						CommitPosition:       13,
-						Hour:                 time.Unix((100000-StatisticsRetentionDays*24+1)*3600, 0),
-						IsSimpleExpectedPass: false,
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Expected: inputbuffer.ResultCounts{
-										PassCount: 1,
-									},
-									Unexpected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-							},
+						CommitPosition: 11,
+						Hour:           time.Unix(11*3600, 0),
+						Expected: inputbuffer.ResultCounts{
+							PassCount: 1,
 						},
 					},
 					{
-						CommitPosition:       11,
-						Hour:                 time.Unix(100000*3600, 0),
-						IsSimpleExpectedPass: false,
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										CrashCount: 1,
-									},
-								},
-							},
+						CommitPosition: 11,
+						Hour:           time.Unix(100000*3600, 0),
+						Unexpected: inputbuffer.ResultCounts{
+							CrashCount: 1,
+						},
+					},
+					{
+						CommitPosition: 12,
+						Hour:           time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
+						Expected: inputbuffer.ResultCounts{
+							PassCount: 1,
+						},
+					},
+					{
+						CommitPosition: 13,
+						Hour:           time.Unix((100000-StatisticsRetentionDays*24+1)*3600, 0),
+						Expected: inputbuffer.ResultCounts{
+							PassCount: 1,
+						},
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
 						},
 					},
 				},
@@ -596,6 +599,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
 
+		So(tvb.FinalizingSegment, ShouldNotBeNil)
 		So(tvb.FinalizingSegment, ShouldResembleProto, &cpb.Segment{
 			State:               cpb.SegmentState_FINALIZING,
 			HasStartChangepoint: true,
@@ -618,9 +622,15 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				UnexpectedAfterRetryRuns: 0,
 				FlakyRuns:                1,
 
-				TotalVerdicts:      4,
-				FlakyVerdicts:      1,
-				UnexpectedVerdicts: 1,
+				TotalSourceVerdicts:      2,
+				FlakySourceVerdicts:      1,
+				UnexpectedSourceVerdicts: 0,
+				PartialSourceVerdict: &cpb.PartialSourceVerdict{
+					CommitPosition:    13,
+					LastHour:          timestamppb.New(time.Unix((100000-StatisticsRetentionDays*24+1)*3600, 0)),
+					UnexpectedResults: 1,
+					ExpectedResults:   1,
+				},
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix((100000-StatisticsRetentionDays*24)*3600, 0)),
 		})
@@ -649,11 +659,11 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				TotalRuns: 1,
 				FlakyRuns: 1,
 
-				TotalVerdicts: 1,
-				FlakyVerdicts: 1,
+				TotalSourceVerdicts: 1,
+				FlakySourceVerdicts: 1,
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
-		})
+		}) // evictedSegments[0].Segment
 		So(tvb.IsFinalizedSegmentsDirty, ShouldBeTrue)
 
 		So(tvb.Statistics, ShouldResembleProto, &cpb.Statistics{
@@ -661,15 +671,16 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				// Confirm that buckets for hours 11 and (100000 - StatisticsRetentionDays*24)
 				// are not present due to retention policies.
 				{
-					Hour:          (100000 - StatisticsRetentionDays*24 + 1),
-					TotalVerdicts: 1,
-					FlakyVerdicts: 1,
+					Hour:                100000,
+					TotalSourceVerdicts: 1,
+					FlakySourceVerdicts: 1, // commit position 11.
 				},
-				{
-					Hour:               100000,
-					TotalVerdicts:      1,
-					UnexpectedVerdicts: 1,
-				},
+			},
+			PartialSourceVerdict: &cpb.PartialSourceVerdict{
+				CommitPosition:    13,
+				LastHour:          timestamppb.New(time.Unix((100000-StatisticsRetentionDays*24+1)*3600, 0)),
+				ExpectedResults:   1,
+				UnexpectedResults: 1,
 			},
 		})
 		So(tvb.IsStatisticsDirty, ShouldBeTrue)
@@ -701,9 +712,15 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					UnexpectedAfterRetryRuns: 3,
 					FlakyRuns:                4,
 
-					TotalVerdicts:      10,
-					UnexpectedVerdicts: 1,
-					FlakyVerdicts:      2,
+					TotalSourceVerdicts:      10,
+					UnexpectedSourceVerdicts: 1,
+					FlakySourceVerdicts:      2,
+					PartialSourceVerdict: &cpb.PartialSourceVerdict{
+						CommitPosition:    200,
+						LastHour:          timestamppb.New(time.Unix(3*3600, 0)),
+						UnexpectedResults: 1,
+						ExpectedResults:   2,
+					},
 				},
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
@@ -717,41 +734,28 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPositionLowerBound99Th:    190,
 				StartPositionUpperBound99Th:    210,
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Verdicts: []inputbuffer.PositionVerdict{
+				Runs: []inputbuffer.Run{
 					{
-						CommitPosition:       200,
-						Hour:                 time.Unix(5*3600, 0),
-						IsSimpleExpectedPass: false,
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Expected: inputbuffer.ResultCounts{
-										PassCount:  100,
-										FailCount:  200,
-										CrashCount: 300,
-										AbortCount: 400,
-									},
-									Unexpected: inputbuffer.ResultCounts{
-										PassCount:  500,
-										FailCount:  600,
-										CrashCount: 700,
-										AbortCount: 800,
-									},
-								},
-							},
+						CommitPosition: 200,
+						Hour:           time.Unix(5*3600, 0),
+						Expected: inputbuffer.ResultCounts{
+							PassCount:  100,
+							FailCount:  200,
+							CrashCount: 300,
+							AbortCount: 400,
+						},
+						Unexpected: inputbuffer.ResultCounts{
+							PassCount:  500,
+							FailCount:  600,
+							CrashCount: 700,
+							AbortCount: 800,
 						},
 					},
 					{
 						CommitPosition: 250,
 						Hour:           time.Unix(15*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Expected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-							},
+						Expected: inputbuffer.ResultCounts{
+							FailCount: 1,
 						},
 					},
 				},
@@ -785,9 +789,15 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				UnexpectedAfterRetryRuns: 3,  // unchanged
 				FlakyRuns:                5,  // 4+1
 
-				TotalVerdicts:      12, // two more, for positions 200 and 250.
-				UnexpectedVerdicts: 1,
-				FlakyVerdicts:      3, // one more, for commit position 200.
+				TotalSourceVerdicts:      11, // one more, for commit position 200.
+				UnexpectedSourceVerdicts: 1,
+				FlakySourceVerdicts:      3, // one more, for commit position 200.
+
+				PartialSourceVerdict: &cpb.PartialSourceVerdict{
+					CommitPosition:  250,
+					LastHour:        timestamppb.New(time.Unix(15*3600, 0)),
+					ExpectedResults: 1,
+				},
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
@@ -820,9 +830,15 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					UnexpectedAfterRetryRuns: 3,
 					FlakyRuns:                4,
 
-					TotalVerdicts:      10,
-					UnexpectedVerdicts: 1,
-					FlakyVerdicts:      2,
+					TotalSourceVerdicts:      10,
+					UnexpectedSourceVerdicts: 1,
+					FlakySourceVerdicts:      2,
+					PartialSourceVerdict: &cpb.PartialSourceVerdict{
+						CommitPosition:    200,
+						LastHour:          timestamppb.New(time.Unix(3*3600, 0)),
+						UnexpectedResults: 1,
+						ExpectedResults:   2,
+					},
 				},
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
@@ -838,41 +854,28 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				EndPosition:                    400,
 				EndHour:                        time.Unix(400*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Verdicts: []inputbuffer.PositionVerdict{
+				Runs: []inputbuffer.Run{
 					{
-						CommitPosition:       200,
-						Hour:                 time.Unix(5*3600, 0),
-						IsSimpleExpectedPass: false,
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Expected: inputbuffer.ResultCounts{
-										PassCount:  100,
-										FailCount:  200,
-										CrashCount: 300,
-										AbortCount: 400,
-									},
-									Unexpected: inputbuffer.ResultCounts{
-										PassCount:  500,
-										FailCount:  600,
-										CrashCount: 700,
-										AbortCount: 800,
-									},
-								},
-							},
+						CommitPosition: 200,
+						Hour:           time.Unix(5*3600, 0),
+						Expected: inputbuffer.ResultCounts{
+							PassCount:  100,
+							FailCount:  200,
+							CrashCount: 300,
+							AbortCount: 400,
+						},
+						Unexpected: inputbuffer.ResultCounts{
+							PassCount:  500,
+							FailCount:  600,
+							CrashCount: 700,
+							AbortCount: 800,
 						},
 					},
 					{
 						CommitPosition: 250,
 						Hour:           time.Unix(15*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Expected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-							},
+						Expected: inputbuffer.ResultCounts{
+							FailCount: 1,
 						},
 					},
 				},
@@ -885,31 +888,19 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPositionLowerBound99Th: 490,
 				StartPositionUpperBound99Th: 510,
 				EndPosition:                 800,
-				Verdicts: []inputbuffer.PositionVerdict{
+				Runs: []inputbuffer.Run{
 					{
 						CommitPosition: 500,
 						Hour:           time.Unix(20*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										CrashCount: 2,
-									},
-								},
-							},
+						Unexpected: inputbuffer.ResultCounts{
+							CrashCount: 2,
 						},
 					},
 					{
 						CommitPosition: 510,
 						Hour:           time.Unix(25*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										CrashCount: 4,
-									},
-								},
-							},
+						Unexpected: inputbuffer.ResultCounts{
+							CrashCount: 4,
 						},
 					},
 				},
@@ -944,9 +935,9 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				UnexpectedAfterRetryRuns: 3,  // unchanged
 				FlakyRuns:                5,  // 4+1
 
-				TotalVerdicts:      12, // two more, for commit position 200 and 250.
-				UnexpectedVerdicts: 1,
-				FlakyVerdicts:      3, // one more, for commit position 200.
+				TotalSourceVerdicts:      12, // two more, for commit position 200 and 250.
+				UnexpectedSourceVerdicts: 1,
+				FlakySourceVerdicts:      3, // one more, for commit position 200.
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
@@ -968,15 +959,20 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				TotalRuns:                2,
 				UnexpectedAfterRetryRuns: 2,
 
-				TotalVerdicts:      2,
-				UnexpectedVerdicts: 2,
+				TotalSourceVerdicts:      1,
+				UnexpectedSourceVerdicts: 1,
+				PartialSourceVerdict: &cpb.PartialSourceVerdict{
+					CommitPosition:    510,
+					LastHour:          timestamppb.New(time.Unix(25*3600, 0)),
+					UnexpectedResults: 4,
+				},
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(25*3600, 0)),
 		}
 		So(tvb.FinalizingSegment, ShouldResembleProto, expectedFinalizingSegment)
 	})
 
-	Convey("Combine finalizing segment with finalized segment, with a token of finalizing segment in input buffer", t, func() {
+	Convey("Combine finalizing segment with finalized segment, with a token finalizing segment in input buffer", t, func() {
 		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
@@ -1002,9 +998,15 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					UnexpectedAfterRetryRuns: 3,
 					FlakyRuns:                4,
 
-					TotalVerdicts:      10,
-					UnexpectedVerdicts: 1,
-					FlakyVerdicts:      2,
+					TotalSourceVerdicts:      10,
+					UnexpectedSourceVerdicts: 1,
+					FlakySourceVerdicts:      2,
+					PartialSourceVerdict: &cpb.PartialSourceVerdict{
+						CommitPosition:    200,
+						LastHour:          timestamppb.New(time.Unix(3*3600, 0)),
+						UnexpectedResults: 0,
+						ExpectedResults:   2,
+					},
 				},
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
@@ -1018,31 +1020,19 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				EndPosition:                    400,
 				EndHour:                        time.Unix(400*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Verdicts: []inputbuffer.PositionVerdict{
+				Runs: []inputbuffer.Run{
 					{
 						CommitPosition: 200,
 						Hour:           time.Unix(100*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										CrashCount: 1,
-									},
-								},
-							},
+						Unexpected: inputbuffer.ResultCounts{
+							CrashCount: 1,
 						},
 					},
 					{
 						CommitPosition: 400,
 						Hour:           time.Unix(90*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										CrashCount: 1,
-									},
-								},
-							},
+						Unexpected: inputbuffer.ResultCounts{
+							CrashCount: 1,
 						},
 					},
 				},
@@ -1054,7 +1044,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				HasStartChangepoint:         true,
 				StartPositionLowerBound99Th: 490,
 				StartPositionUpperBound99Th: 510,
-				Verdicts:                    []inputbuffer.PositionVerdict{},
+				Runs:                        []inputbuffer.Run{},
 			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
@@ -1085,9 +1075,9 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				UnexpectedAfterRetryRuns: 3,
 				FlakyRuns:                4,
 
-				TotalVerdicts:      12, // 10 (existing) + 2 (positions 200 and 400)
-				UnexpectedVerdicts: 3,  // 1 (existing) + 2 (position 200 and 400)
-				FlakyVerdicts:      2,  // 2 (existing)
+				TotalSourceVerdicts:      12, // 10 (existing) + 2 (positions 200 and 400)
+				UnexpectedSourceVerdicts: 2,  // 1 (existing) + 1 (position 400)
+				FlakySourceVerdicts:      3,  // 2 (existing) + 1 (position 200)
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
@@ -1118,15 +1108,17 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
 				FinalizedCounts: &cpb.Counts{
-					TotalResults:             30,
-					UnexpectedResults:        5,
+					TotalResults:      30,
+					UnexpectedResults: 5,
+
 					TotalRuns:                20,
 					UnexpectedUnretriedRuns:  2,
 					UnexpectedAfterRetryRuns: 3,
 					FlakyRuns:                4,
-					TotalVerdicts:            10,
-					UnexpectedVerdicts:       1,
-					FlakyVerdicts:            2,
+
+					TotalSourceVerdicts:      10,
+					UnexpectedSourceVerdicts: 1,
+					FlakySourceVerdicts:      2,
 				},
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
@@ -1142,7 +1134,8 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				EndPosition:                    400,
 				EndHour:                        time.Unix(400*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Verdicts:                       []inputbuffer.PositionVerdict{},
+				// Verdicts are not relevant to this test.
+				Runs: []inputbuffer.Run{},
 			},
 		}
 		f := func() { tvb.UpdateOutputBuffer(evictedSegments) }
@@ -1154,15 +1147,15 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			Statistics: &cpb.Statistics{
 				HourlyBuckets: []*cpb.Statistics_HourBucket{
 					{
-						Hour:               999,
-						UnexpectedVerdicts: 1,
-						FlakyVerdicts:      2,
-						TotalVerdicts:      3,
+						Hour:                     999,
+						UnexpectedSourceVerdicts: 1,
+						FlakySourceVerdicts:      2,
+						TotalSourceVerdicts:      3,
 					},
 					{
-						Hour:          1000,
-						FlakyVerdicts: 10,
-						TotalVerdicts: 10,
+						Hour:                1000,
+						FlakySourceVerdicts: 10,
+						TotalSourceVerdicts: 10,
 					},
 				},
 			},
@@ -1174,97 +1167,72 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartHour:                      time.Unix(100*3600, 0),
 				HasStartChangepoint:            false,
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Verdicts: []inputbuffer.PositionVerdict{
-					// Expected verdict.
+				Runs: []inputbuffer.Run{
+					// Expected source verdict.
 					{
-						CommitPosition:       190,
-						Hour:                 time.Unix(1000*3600, 0),
-						IsSimpleExpectedPass: true,
+						CommitPosition: 190,
+						Hour:           time.Unix(1000*3600, 0),
+						Expected:       inputbuffer.ResultCounts{PassCount: 1},
 					},
-					// Expected verdict.
+					// Expected source verdict.
 					{
 						CommitPosition: 191,
 						Hour:           time.Unix(1000*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Expected: inputbuffer.ResultCounts{
-										PassCount: 2,
-									},
-								},
-							},
-						},
+						Expected:       inputbuffer.ResultCounts{PassCount: 2},
 					},
-					// Flaky verdict.
+					// Flaky source verdict.
 					{
 						CommitPosition: 192,
 						Hour:           time.Unix(992*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Expected: inputbuffer.ResultCounts{
-										PassCount: 1,
-									},
-								},
-								{
-									IsDuplicate: true,
-									Unexpected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-							},
+						Expected: inputbuffer.ResultCounts{
+							PassCount: 1,
 						},
 					},
-					// Unexpected verdict.
+					{
+						CommitPosition: 192,
+						Hour:           time.Unix(992*3600, 0),
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
+						},
+					},
+					// Unexpected source verdict which is too old for the retention policy.
 					{
 						CommitPosition: 193,
-						Hour:           time.Unix(991*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-							},
+						Hour:           time.Unix(1*3600, 0),
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
 						},
 					},
-					// Verdict which is (just) within the retention policy.
+					{
+						CommitPosition: 193,
+						Hour:           time.Unix((1000-StatisticsRetentionDays*24)*3600, 0),
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
+						},
+					},
+					// Unexpected source verdict which is (just) within the retention policy.
+					{
+						CommitPosition: 194,
+						Hour:           time.Unix(1*3600, 0),
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
+						},
+					},
 					{
 						CommitPosition: 194,
 						Hour:           time.Unix((1000-StatisticsRetentionDays*24+1)*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-							},
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
 						},
 					},
-					// Verdict which is from too old a bucket.
+					// Partial source verdict. While the runs we know about so far suggest
+					// the verdict will be too old to be retained in a bucket, this can change
+					// if a recent run is obtained at this commit position.
 					{
-						CommitPosition: 194,
-						Hour:           time.Unix((1000-StatisticsRetentionDays*24)*3600, 0),
-						Details: inputbuffer.VerdictDetails{
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-							},
+						CommitPosition: 195,
+						Hour:           time.Unix(10*3600, 0),
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
 						},
 					},
 				},
@@ -1275,31 +1243,31 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		expected := &cpb.Statistics{
 			HourlyBuckets: []*cpb.Statistics_HourBucket{
 				{
-					Hour:               (1000 - StatisticsRetentionDays*24 + 1),
-					UnexpectedVerdicts: 1,
-					TotalVerdicts:      1,
+					Hour:                     (1000 - StatisticsRetentionDays*24 + 1),
+					UnexpectedSourceVerdicts: 1,
+					TotalSourceVerdicts:      1,
 				},
 				{
-					Hour:               991,
-					UnexpectedVerdicts: 1,
-					TotalVerdicts:      1,
+					Hour:                992,
+					FlakySourceVerdicts: 1,
+					TotalSourceVerdicts: 1,
 				},
 				{
-					Hour:          992,
-					FlakyVerdicts: 1,
-					TotalVerdicts: 1,
+					Hour:                     999,
+					UnexpectedSourceVerdicts: 1,
+					FlakySourceVerdicts:      2,
+					TotalSourceVerdicts:      3,
 				},
 				{
-					Hour:               999,
-					UnexpectedVerdicts: 1,
-					FlakyVerdicts:      2,
-					TotalVerdicts:      3,
+					Hour:                1000,
+					FlakySourceVerdicts: 10,
+					TotalSourceVerdicts: 12,
 				},
-				{
-					Hour:          1000,
-					FlakyVerdicts: 10,
-					TotalVerdicts: 12,
-				},
+			},
+			PartialSourceVerdict: &cpb.PartialSourceVerdict{
+				CommitPosition:    195,
+				LastHour:          timestamppb.New(time.Unix(10*3600, 0)),
+				UnexpectedResults: 1,
 			},
 		}
 		So(tvb.Statistics, ShouldResembleProto, expected)
@@ -1396,10 +1364,10 @@ func testStatistics() *cpb.Statistics {
 	var buckets []*cpb.Statistics_HourBucket
 	for i := 0; i < StatisticsRetentionDays*24; i++ {
 		buckets = append(buckets, &cpb.Statistics_HourBucket{
-			Hour:               int64(i),
-			UnexpectedVerdicts: int64(i + 1),
-			FlakyVerdicts:      int64(i + 2),
-			TotalVerdicts:      int64(2*i + 3),
+			Hour:                     int64(i),
+			UnexpectedSourceVerdicts: int64(i + 1),
+			FlakySourceVerdicts:      int64(i + 2),
+			TotalSourceVerdicts:      int64(2*i + 3),
 		})
 	}
 	return &cpb.Statistics{HourlyBuckets: buckets}
@@ -1427,9 +1395,9 @@ func testSegments() *cpb.Segments {
 				FlakyRuns:                int64(i + 4),
 				TotalRuns:                int64(4*i + 5),
 
-				UnexpectedVerdicts: int64(i + 6),
-				FlakyVerdicts:      int64(i + 7),
-				TotalVerdicts:      int64(2*i + 8),
+				UnexpectedSourceVerdicts: int64(i + 6),
+				FlakySourceVerdicts:      int64(i + 7),
+				TotalSourceVerdicts:      int64(2*i + 8),
 			},
 		})
 	}

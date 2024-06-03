@@ -37,7 +37,7 @@ const (
 // [3, 9], [10, 15], [16, 21].
 // To analyze the confidence interval around change point at position 16, we
 // will run this function with the slice of history between 10 and 21.
-func (a ChangepointPredictor) changePointPositionConfidenceInterval(history []inputbuffer.PositionVerdict, tail float64) (min int, max int) {
+func (a ChangepointPredictor) changePointPositionConfidenceInterval(history []inputbuffer.Run, tail float64) (min int, max int) {
 	length := len(history)
 	if length == 0 {
 		panic("test history is empty")
@@ -46,11 +46,11 @@ func (a ChangepointPredictor) changePointPositionConfidenceInterval(history []in
 	// Stores the total for the entire history.
 	var total counts
 	for _, v := range history {
-		total = total.addVerdict(v)
+		total = total.addRun(v)
 	}
 
 	// changePointLogLikelihoods stores the log-likelihood of the observing the
-	// given test verdict sequence.
+	// given test run sequence.
 	// i.e. log(P(Y | C = k)),
 	// where Y is the observations, and "C = k" means there is a change point at
 	// position k.
@@ -133,7 +133,7 @@ func (a ChangepointPredictor) changePointPositionConfidenceInterval(history []in
 // ChangePoints runs change point detection and confidence
 // interval analysis for history.
 // history is sorted by commit position ascendingly (oldest commit first).
-func (a ChangepointPredictor) ChangePoints(history []inputbuffer.PositionVerdict, tail float64) []inputbuffer.ChangePoint {
+func (a ChangepointPredictor) ChangePoints(history []inputbuffer.Run, tail float64) []inputbuffer.ChangePoint {
 	changePointIndices := a.identifyChangePoints(history)
 
 	// For simplicity, we add a fake index to the end.

@@ -321,7 +321,7 @@ func (tvb *Entry) ToMutation(hs *inputbuffer.HistorySerializer) (*spanner.Mutati
 		values = append(values, bytes)
 	}
 
-	// Evicted verdict statistics.
+	// Evicted run statistics.
 	// We only write statistics if this is new (because Statistics
 	// is NOT NULL), or there is an update.
 	if tvb.IsStatisticsDirty || tvb.IsNew {

@@ -250,12 +250,12 @@ func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, rowInp
 	return nil
 }
 
-// isOutOfOrderAndShouldBeDiscarded returns true if the verdict is out-of-order
+// isOutOfOrderAndShouldBeDiscarded returns true if the run is out-of-order
 // and should be discarded.
-// This function returns false if the verdict is out-of-order but can still be
+// This function returns false if the run is out-of-order but can still be
 // processed.
-// We only keep out-of-order verdict if either condition occurs:
-//   - The verdict commit position falls within the input buffer
+// We only keep out-of-order run if either condition occurs:
+//   - The run commit position falls within the input buffer
 //     (commit position >= smallest start position), or
 //   - There is no finalizing or finalized segment (i.e. the entire known
 //     test history is inside the input buffer)
@@ -268,14 +268,14 @@ func isOutOfOrderAndShouldBeDiscarded(tvb *testvariantbranch.Entry, src *pb.Sour
 		return false
 	}
 	position := sources.CommitPosition(src)
-	hotVerdicts := tvb.InputBuffer.HotBuffer.Verdicts
-	coldVerdicts := tvb.InputBuffer.ColdBuffer.Verdicts
-	minPos := math.MaxInt
-	if len(hotVerdicts) > 0 && minPos > hotVerdicts[0].CommitPosition {
-		minPos = hotVerdicts[0].CommitPosition
+	hotRuns := tvb.InputBuffer.HotBuffer.Runs
+	coldRuns := tvb.InputBuffer.ColdBuffer.Runs
+	minPos := int64(math.MaxInt64)
+	if len(hotRuns) > 0 && minPos > hotRuns[0].CommitPosition {
+		minPos = hotRuns[0].CommitPosition
 	}
-	if len(coldVerdicts) > 0 && minPos > coldVerdicts[0].CommitPosition {
-		minPos = coldVerdicts[0].CommitPosition
+	if len(coldRuns) > 0 && minPos > coldRuns[0].CommitPosition {
+		minPos = coldRuns[0].CommitPosition
 	}
 	return position < minPos
 }
@@ -303,11 +303,13 @@ func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, 
 		}
 	}
 
-	pv, err := testvariantbranch.ToPositionVerdict(tv, payload, duplicateMap, src)
+	runs, err := testvariantbranch.ToRuns(tv, payload, duplicateMap, src)
 	if err != nil {
 		return nil, err
 	}
-	tvb.InsertToInputBuffer(pv)
+	for _, run := range runs {
+		tvb.InsertToInputBuffer(run)
+	}
 	return tvb, nil
 }
 

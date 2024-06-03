@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,7 @@ type Analyzer struct {
 	// merging hot and cold input buffers. Reusing the same buffer avoids
 	// allocating a new buffer for each test variant branch processed.
 	// Sorted by commit position (oldest first), then result hour (oldest first).
-	mergeBuffer []inputbuffer.PositionVerdict
+	mergeBuffer []inputbuffer.Run
 }
 
 // Run runs changepoint analysis, performs any required
@@ -68,12 +68,13 @@ func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []Segment {
 }
 
 // toSegments returns the segments for a test variant branch, using
-// the provided input buffer segments and merged verdicts for the input buffer
+// the provided input buffer segments and merged runs for the input buffer
 // portion.
 // The segments returned will be sorted, with the most recent segment
 // comes first.
-func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment, mergedVerdicts []inputbuffer.PositionVerdict) []Segment {
+func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment, mergedRuns []inputbuffer.Run) []Segment {
 	results := []Segment{}
+
 	// The index where the active segments starts.
 	// If there is a finalizing segment, then the we need to first combine it will
 	// the first segment from the input buffer.
@@ -81,18 +82,21 @@ func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer
 	if tvb.FinalizingSegment != nil {
 		activeStartIndex = 1
 	}
+
 	// Add the active segments.
 	for i := len(inputBufferSegments) - 1; i >= activeStartIndex; i-- {
 		inputSegment := inputBufferSegments[i]
-		segment := inputSegmentToSegment(inputSegment, mergedVerdicts[inputSegment.StartIndex:inputSegment.EndIndex+1])
+		segment := inputSegmentToSegment(inputSegment, mergedRuns[inputSegment.StartIndex:inputSegment.EndIndex+1])
 		results = append(results, segment)
 	}
+
 	// Add the finalizing segment.
 	if tvb.FinalizingSegment != nil {
 		inputSegment := inputBufferSegments[0]
-		bqSegment := combineSegment(tvb.FinalizingSegment, inputSegment, mergedVerdicts[inputSegment.StartIndex:inputSegment.EndIndex+1])
+		bqSegment := combineSegment(tvb.FinalizingSegment, inputSegment, mergedRuns[inputSegment.StartIndex:inputSegment.EndIndex+1])
 		results = append(results, bqSegment)
 	}
+
 	// Add the finalized segments.
 	if tvb.FinalizedSegments != nil {
 		// More recent segments are on the back.
@@ -102,11 +106,12 @@ func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer
 			results = append(results, segment)
 		}
 	}
+
 	return results
 }
 
 // inputSegmentToSegment constructs a logical segment from an input buffer segment.
-func inputSegmentToSegment(inputSegment *inputbuffer.Segment, verdicts []inputbuffer.PositionVerdict) Segment {
+func inputSegmentToSegment(inputSegment *inputbuffer.Segment, runs []inputbuffer.Run) Segment {
 	return Segment{
 		HasStartChangepoint:            inputSegment.HasStartChangepoint,
 		StartPosition:                  inputSegment.StartPosition,
@@ -116,13 +121,13 @@ func inputSegmentToSegment(inputSegment *inputbuffer.Segment, verdicts []inputbu
 		EndPosition:                    inputSegment.EndPosition,
 		EndHour:                        inputSegment.EndHour,
 		MostRecentUnexpectedResultHour: inputSegment.MostRecentUnexpectedResultHour,
-		Counts:                         segmentCounts(nil, verdicts),
+		Counts:                         segmentCounts(nil, runs),
 	}
 }
 
 // combineSegment constructs a logical segment from its finalizing part in
 // the output buffer and its unfinalized part in the input buffer.
-func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Segment, inputSegmentVerdicts []inputbuffer.PositionVerdict) Segment {
+func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Segment, inputSegmentRuns []inputbuffer.Run) Segment {
 	var mostRecentUnexpectedResultHour time.Time
 	if finalizingSegment.MostRecentUnexpectedResultHour != nil {
 		mostRecentUnexpectedResultHour = finalizingSegment.MostRecentUnexpectedResultHour.AsTime()
@@ -130,6 +135,7 @@ func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Se
 	if inputSegment.MostRecentUnexpectedResultHour.After(mostRecentUnexpectedResultHour) {
 		mostRecentUnexpectedResultHour = inputSegment.MostRecentUnexpectedResultHour
 	}
+
 	return Segment{
 		HasStartChangepoint:            finalizingSegment.HasStartChangepoint,
 		StartPosition:                  finalizingSegment.StartPosition,
@@ -139,7 +145,7 @@ func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Se
 		EndPosition:                    inputSegment.EndPosition,
 		EndHour:                        inputSegment.EndHour,
 		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour,
-		Counts:                         segmentCounts(finalizingSegment.FinalizedCounts, inputSegmentVerdicts),
+		Counts:                         segmentCounts(finalizingSegment.FinalizedCounts, inputSegmentRuns),
 	}
 }
 
@@ -166,11 +172,19 @@ func finalizedSegmentToSegment(finalizedSegment *cpb.Segment) Segment {
 
 // segmentCounts computes counts for logical segment by combining
 // stored segment counts from the output buffer (if any) with
-// counts for verdicts still in the input buffer.
-func segmentCounts(counts *cpb.Counts, verdicts []inputbuffer.PositionVerdict) Counts {
+// counts for runs still in the input buffer.
+func segmentCounts(counts *cpb.Counts, runs []inputbuffer.Run) Counts {
+	var partialSourceVerdict *cpb.PartialSourceVerdict
 	var result Counts
 	if counts != nil {
 		// Start with the counts from the output buffer.
+		//
+		// For source verdict counts, this is stored as two parts:
+		// - a final part and
+		// - a pending part for the last source verdict seen by the
+		//   output buffer, which may only have been partially
+		//   evicted from the input buffer.
+		partialSourceVerdict = counts.PartialSourceVerdict
 		result = Counts{
 			// Test results.
 			UnexpectedResults:        counts.UnexpectedResults,
@@ -188,68 +202,75 @@ func segmentCounts(counts *cpb.Counts, verdicts []inputbuffer.PositionVerdict) C
 			UnexpectedAfterRetryRuns: counts.UnexpectedAfterRetryRuns,
 			FlakyRuns:                counts.FlakyRuns,
 			TotalRuns:                counts.TotalRuns,
-			// Verdicts.
-			FlakyVerdicts:      counts.FlakyVerdicts,
-			UnexpectedVerdicts: counts.UnexpectedVerdicts,
-			TotalVerdicts:      counts.TotalVerdicts,
+			// Source Verdicts.
+			FlakySourceVerdicts:      counts.FlakySourceVerdicts,
+			UnexpectedSourceVerdicts: counts.UnexpectedSourceVerdicts,
+			TotalSourceVerdicts:      counts.TotalSourceVerdicts,
 		}
 	}
 
-	for _, verdict := range verdicts {
-		result.TotalVerdicts++
-		if verdict.IsSimpleExpectedPass {
-			result.TotalRuns++
-			result.TotalResults++
-			result.ExpectedPassedResults++
-		} else {
-			verdictHasExpectedResults := false
-			verdictHasUnexpectedResults := false
-			for _, run := range verdict.Details.Runs {
-				// Verdict-level statistics.
-				verdictHasExpectedResults = verdictHasExpectedResults || (run.Expected.Count() > 0)
-				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.Unexpected.Count() > 0)
+	verdictStream := testvariantbranch.NewRunStreamAggregator(partialSourceVerdict)
+	for _, run := range runs {
 
-				if run.IsDuplicate {
-					continue
-				}
-				// Result-level statistics (ignores duplicate runs).
-				result.TotalResults += int64(run.Expected.Count() + run.Unexpected.Count())
-				result.UnexpectedResults += int64(run.Unexpected.Count())
-				result.ExpectedPassedResults += int64(run.Expected.PassCount)
-				result.ExpectedFailedResults += int64(run.Expected.FailCount)
-				result.ExpectedCrashedResults += int64(run.Expected.CrashCount)
-				result.ExpectedAbortedResults += int64(run.Expected.AbortCount)
-				result.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
-				result.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
-				result.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
-				result.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
+		// Result-level statistics.
+		result.TotalResults += int64(run.Expected.Count() + run.Unexpected.Count())
+		result.UnexpectedResults += int64(run.Unexpected.Count())
+		result.ExpectedPassedResults += int64(run.Expected.PassCount)
+		result.ExpectedFailedResults += int64(run.Expected.FailCount)
+		result.ExpectedCrashedResults += int64(run.Expected.CrashCount)
+		result.ExpectedAbortedResults += int64(run.Expected.AbortCount)
+		result.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
+		result.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
+		result.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
+		result.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
 
-				// Run-level statistics (ignores duplicate runs).
-				result.TotalRuns++
-				// flaky run.
-				isFlakyRun := run.Expected.Count() > 0 && run.Unexpected.Count() > 0
-				if isFlakyRun {
-					result.FlakyRuns++
-				}
-				// unexpected unretried run.
-				isUnexpectedUnretried := run.Unexpected.Count() == 1 && run.Expected.Count() == 0
-				if isUnexpectedUnretried {
-					result.UnexpectedUnretriedRuns++
-				}
-				// unexpected after retries run.
-				isUnexpectedAfterRetries := run.Unexpected.Count() > 1 && run.Expected.Count() == 0
-				if isUnexpectedAfterRetries {
-					result.UnexpectedAfterRetryRuns++
-				}
-			}
-			if verdictHasUnexpectedResults && !verdictHasExpectedResults {
-				result.UnexpectedVerdicts++
-			}
-			if verdictHasUnexpectedResults && verdictHasExpectedResults {
-				result.FlakyVerdicts++
+		// Run-level statistics,
+		result.TotalRuns++
+		// flaky run.
+		isFlakyRun := run.Expected.Count() > 0 && run.Unexpected.Count() > 0
+		if isFlakyRun {
+			result.FlakyRuns++
+		}
+		// unexpected unretried run.
+		isUnexpectedUnretried := run.Unexpected.Count() == 1 && run.Expected.Count() == 0
+		if isUnexpectedUnretried {
+			result.UnexpectedUnretriedRuns++
+		}
+		// unexpected after retries run.
+		isUnexpectedAfterRetries := run.Unexpected.Count() > 1 && run.Expected.Count() == 0
+		if isUnexpectedAfterRetries {
+			result.UnexpectedAfterRetryRuns++
+		}
+
+		v, ok := verdictStream.Insert(run)
+		if !ok {
+			// No verdict yielded.
+			continue
+		}
+		// Add verdict to hourly bucket.
+		result.TotalSourceVerdicts++
+
+		if v.UnexpectedResults > 0 {
+			if v.ExpectedResults > 0 {
+				result.FlakySourceVerdicts++
+			} else {
+				result.UnexpectedSourceVerdicts++
 			}
 		}
 	}
 
+	// Merge the pending verdict into the count, so that we
+	// can give the count at this point in time.
+	lastVerdict := verdictStream.SaveState()
+	if lastVerdict != nil {
+		result.TotalSourceVerdicts++
+		if lastVerdict.UnexpectedResults > 0 {
+			if lastVerdict.ExpectedResults > 0 {
+				result.FlakySourceVerdicts++
+			} else {
+				result.UnexpectedSourceVerdicts++
+			}
+		}
+	}
 	return result
 }

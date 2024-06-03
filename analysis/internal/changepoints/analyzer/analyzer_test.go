@@ -66,41 +66,33 @@ func TestAnalyzer(t *testing.T) {
 				},
 			}
 
-			verdicts := []inputbuffer.PositionVerdict{
+			runs := []inputbuffer.Run{
 				{
-					CommitPosition:       1,
-					Hour:                 time.Unix(1000*3600, 0),
-					IsSimpleExpectedPass: true,
+					CommitPosition: 1,
+					Hour:           time.Unix(1000*3600, 0),
+					Expected: inputbuffer.ResultCounts{
+						PassCount: 1,
+					},
 				},
 				{
-					CommitPosition:       1,
-					Hour:                 time.Unix(1001*3600, 0),
-					IsSimpleExpectedPass: true,
+					CommitPosition: 1,
+					Hour:           time.Unix(1001*3600, 0),
+					Expected: inputbuffer.ResultCounts{
+						PassCount: 1,
+					},
 				},
 				{
 					CommitPosition: 2,
 					Hour:           time.Unix(2000*3600, 0),
-					Details: inputbuffer.VerdictDetails{
-						Runs: []inputbuffer.Run{
-							{
-								Unexpected: inputbuffer.ResultCounts{
-									FailCount: 1,
-								},
-							},
-						},
+					Unexpected: inputbuffer.ResultCounts{
+						FailCount: 1,
 					},
 				},
 				{
 					CommitPosition: 2,
 					Hour:           time.Unix(2001*3600, 0),
-					Details: inputbuffer.VerdictDetails{
-						Runs: []inputbuffer.Run{
-							{
-								Unexpected: inputbuffer.ResultCounts{
-									CrashCount: 1,
-								},
-							},
-						},
+					Unexpected: inputbuffer.ResultCounts{
+						CrashCount: 1,
 					},
 				},
 			}
@@ -122,14 +114,14 @@ func TestAnalyzer(t *testing.T) {
 						TotalRuns:               4,
 						UnexpectedUnretriedRuns: 2,
 
-						TotalVerdicts:      4,
-						UnexpectedVerdicts: 2,
+						TotalSourceVerdicts:      2,
+						UnexpectedSourceVerdicts: 1,
 					},
 				},
 			}
 			Convey("without eviction", func() {
-				for _, v := range verdicts {
-					tvb.InputBuffer.InsertVerdict(v)
+				for _, run := range runs {
+					tvb.InputBuffer.InsertRun(run)
 				}
 
 				segments := a.Run(tvb)
@@ -139,8 +131,8 @@ func TestAnalyzer(t *testing.T) {
 				tvb.InputBuffer.ColdBufferCapacity = 2
 				tvb.InputBuffer.HotBufferCapacity = 1
 
-				for _, v := range verdicts {
-					tvb.InputBuffer.InsertVerdict(v)
+				for _, run := range runs {
+					tvb.InputBuffer.InsertRun(run)
 				}
 
 				segments := a.Run(tvb)
@@ -149,35 +141,23 @@ func TestAnalyzer(t *testing.T) {
 				So(tvb.InputBuffer, ShouldResembleProto, &inputbuffer.Buffer{
 					HotBufferCapacity: 1,
 					HotBuffer: inputbuffer.History{
-						Verdicts: []inputbuffer.PositionVerdict{},
+						Runs: []inputbuffer.Run{},
 					},
 					ColdBufferCapacity: 2,
 					ColdBuffer: inputbuffer.History{
-						Verdicts: []inputbuffer.PositionVerdict{
+						Runs: []inputbuffer.Run{
 							{
 								CommitPosition: 2,
 								Hour:           time.Unix(2000*3600, 0),
-								Details: inputbuffer.VerdictDetails{
-									Runs: []inputbuffer.Run{
-										{
-											Unexpected: inputbuffer.ResultCounts{
-												FailCount: 1,
-											},
-										},
-									},
+								Unexpected: inputbuffer.ResultCounts{
+									FailCount: 1,
 								},
 							},
 							{
 								CommitPosition: 2,
 								Hour:           time.Unix(2001*3600, 0),
-								Details: inputbuffer.VerdictDetails{
-									Runs: []inputbuffer.Run{
-										{
-											Unexpected: inputbuffer.ResultCounts{
-												CrashCount: 1,
-											},
-										},
-									},
+								Unexpected: inputbuffer.ResultCounts{
+									CrashCount: 1,
 								},
 							},
 						},
@@ -193,7 +173,11 @@ func TestAnalyzer(t *testing.T) {
 						TotalResults:          2,
 						ExpectedPassedResults: 2,
 						TotalRuns:             2,
-						TotalVerdicts:         2,
+						PartialSourceVerdict: &cpb.PartialSourceVerdict{
+							CommitPosition:  1,
+							LastHour:        timestamppb.New(time.Unix(1001*3600, 0)),
+							ExpectedResults: 2,
+						},
 					},
 				})
 				So(tvb.IsFinalizingSegmentDirty, ShouldBeTrue)
@@ -218,7 +202,7 @@ func TestAnalyzer(t *testing.T) {
 				InputBuffer: &inputbuffer.Buffer{
 					HotBufferCapacity: 10,
 					HotBuffer: inputbuffer.History{
-						Verdicts: inputbuffer.Verdicts(positions, total, hasUnexpected),
+						Runs: inputbuffer.Verdicts(positions, total, hasUnexpected),
 					},
 					ColdBufferCapacity: 10,
 				},
@@ -241,9 +225,9 @@ func TestAnalyzer(t *testing.T) {
 								UnexpectedAfterRetryRuns: 5,
 								FlakyRuns:                4,
 
-								TotalVerdicts:      3,
-								UnexpectedVerdicts: 2,
-								FlakyVerdicts:      1,
+								TotalSourceVerdicts:      3,
+								UnexpectedSourceVerdicts: 2,
+								FlakySourceVerdicts:      1,
 							},
 						},
 						{
@@ -257,7 +241,7 @@ func TestAnalyzer(t *testing.T) {
 							EndHour:                        timestamppb.New(time.Unix(8000*3600, 0)),
 							MostRecentUnexpectedResultHour: timestamppb.New(time.Time{}),
 							FinalizedCounts: &cpb.Counts{
-								TotalVerdicts: 5,
+								TotalSourceVerdicts: 5,
 							},
 						},
 					},
@@ -282,9 +266,14 @@ func TestAnalyzer(t *testing.T) {
 						UnexpectedUnretriedRuns:  5,
 						UnexpectedAfterRetryRuns: 4,
 
-						TotalVerdicts:      3,
-						UnexpectedVerdicts: 2,
-						FlakyVerdicts:      1,
+						TotalSourceVerdicts:      3,
+						UnexpectedSourceVerdicts: 2,
+						FlakySourceVerdicts:      1,
+						PartialSourceVerdict: &cpb.PartialSourceVerdict{
+							CommitPosition:  30,
+							LastHour:        timestamppb.New(time.Unix(7900*3600, 0)),
+							ExpectedResults: 1,
+						},
 					},
 				},
 			}
@@ -302,7 +291,7 @@ func TestAnalyzer(t *testing.T) {
 						TotalResults:          25,
 						ExpectedPassedResults: 25,
 						TotalRuns:             25,
-						TotalVerdicts:         5,
+						TotalSourceVerdicts:   5,
 					},
 				},
 				{
@@ -325,9 +314,9 @@ func TestAnalyzer(t *testing.T) {
 						UnexpectedUnretriedRuns:  5 + 25,
 						UnexpectedAfterRetryRuns: 4,
 
-						TotalVerdicts:      3 + 5,
-						UnexpectedVerdicts: 2 + 5,
-						FlakyVerdicts:      1,
+						TotalSourceVerdicts:      3 + 5,
+						UnexpectedSourceVerdicts: 2 + 4,
+						FlakySourceVerdicts:      1 + 1, // From merging with expected partial source verdict in finalizing segment.
 					},
 				},
 				{
@@ -339,7 +328,7 @@ func TestAnalyzer(t *testing.T) {
 					EndPosition:                    20,
 					EndHour:                        time.Unix(8000*3600, 0),
 					MostRecentUnexpectedResultHour: time.Time{},
-					Counts:                         Counts{TotalVerdicts: 5},
+					Counts:                         Counts{TotalSourceVerdicts: 5},
 				},
 				{
 					StartPosition:                  1,
@@ -356,13 +345,84 @@ func TestAnalyzer(t *testing.T) {
 						UnexpectedAfterRetryRuns: 5,
 						FlakyRuns:                4,
 
-						TotalVerdicts:      3,
-						UnexpectedVerdicts: 2,
-						FlakyVerdicts:      1,
+						TotalSourceVerdicts:      3,
+						UnexpectedSourceVerdicts: 2,
+						FlakySourceVerdicts:      1,
 					},
 				},
 			}
 
+			segments := a.Run(row)
+			So(segments, ShouldResembleProto, expectedSegments)
+		})
+		Convey("legacy test variant branch which has more runs than capacity", func() {
+			// Legacy data formats may be storing more runs than is now the buffer capacity.
+			// E.g. version 2 was limited to 2000 verdicts (not runs).
+
+			var hotRuns []inputbuffer.Run
+			for i := 0; i < 300; i++ {
+				hotRuns = append(hotRuns, inputbuffer.Run{
+					CommitPosition: int64(i + 1000),
+					Hour:           time.Unix(int64(i)*3600, 0),
+					Expected:       inputbuffer.ResultCounts{PassCount: 1},
+				})
+			}
+			var coldRuns []inputbuffer.Run
+			for i := 0; i < 6000; i++ {
+				coldRuns = append(coldRuns, inputbuffer.Run{
+					CommitPosition: int64(i + 1300),
+					Hour:           time.Unix(int64(i+1300)*3600, 0),
+					Expected:       inputbuffer.ResultCounts{PassCount: 1},
+				})
+			}
+
+			row := &testvariantbranch.Entry{
+				Project:     "chromium",
+				TestID:      "test_id_2",
+				VariantHash: "variant_hash_2",
+				RefHash:     []byte("refhash2"),
+				Variant:     variant,
+				SourceRef:   sourceRef,
+				InputBuffer: &inputbuffer.Buffer{
+					HotBufferCapacity: 1,
+					HotBuffer: inputbuffer.History{
+						Runs: hotRuns,
+					},
+					ColdBufferCapacity: 2,
+					ColdBuffer: inputbuffer.History{
+						Runs: coldRuns,
+					},
+				},
+				FinalizingSegment: &cpb.Segment{
+					State:               cpb.SegmentState_FINALIZING,
+					HasStartChangepoint: true,
+					StartPosition:       1,
+					StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+					EndPosition:         999,
+					FinalizedCounts: &cpb.Counts{
+						TotalResults:          999,
+						ExpectedPassedResults: 999,
+						TotalRuns:             999,
+						TotalSourceVerdicts:   999,
+					},
+				},
+			}
+
+			expectedSegments := []Segment{
+				{
+					HasStartChangepoint: true,
+					StartPosition:       1,
+					StartHour:           time.Unix(1*3600, 0),
+					EndPosition:         7299,
+					EndHour:             time.Unix(7299*3600, 0),
+					Counts: Counts{
+						TotalResults:          7299,
+						ExpectedPassedResults: 7299,
+						TotalRuns:             7299,
+						TotalSourceVerdicts:   7299,
+					},
+				},
+			}
 			segments := a.Run(row)
 			So(segments, ShouldResembleProto, expectedSegments)
 		})

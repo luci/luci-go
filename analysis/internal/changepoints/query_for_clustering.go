@@ -22,7 +22,6 @@ import (
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
-	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -60,7 +59,7 @@ func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, proj
 		var resultItem *clusteringpb.TestVariantBranch
 		if e != nil {
 			// If there are previous verdicts for test variant branch.
-			stats := e.MergedStatistics()
+			stats := e.HourlyStatistics()
 			resultItem = toSummary(stats, partitionTime)
 		} else {
 			// There are no previous known verdicts for the test variant branch,
@@ -87,15 +86,15 @@ func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, proj
 	return result, nil
 }
 
-func toSummary(stats *cpb.Statistics, partitionTime time.Time) *clusteringpb.TestVariantBranch {
+func toSummary(statsByHour map[int64]testvariantbranch.HourlyStats, partitionTime time.Time) *clusteringpb.TestVariantBranch {
 	result := &clusteringpb.TestVariantBranch{}
 	maxHour := int64(partitionTime.Truncate(time.Hour).Unix()) / 3600
 	minHour := maxHour - 24
-	for _, bucket := range stats.HourlyBuckets {
-		if minHour < bucket.Hour && bucket.Hour <= maxHour {
-			result.TotalVerdicts_24H += bucket.TotalVerdicts
-			result.FlakyVerdicts_24H += bucket.FlakyVerdicts
-			result.UnexpectedVerdicts_24H += bucket.UnexpectedVerdicts
+	for hour, bucket := range statsByHour {
+		if minHour < hour && hour <= maxHour {
+			result.TotalVerdicts_24H += bucket.TotalSourceVerdicts
+			result.FlakyVerdicts_24H += bucket.FlakySourceVerdicts
+			result.UnexpectedVerdicts_24H += bucket.UnexpectedSourceVerdicts
 		}
 	}
 	return result

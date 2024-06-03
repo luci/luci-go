@@ -222,7 +222,7 @@ type Segment struct {
 	// (for this test variant branch), or the position of the last verdict
 	// seen before the next detected changepoint.
 	EndPosition int64 `protobuf:"varint,6,opt,name=end_position,json=endPosition,proto3" json:"end_position,omitempty"`
-	// The earliest hour a test verdict at the indicated end_position
+	// The latest hour a test verdict at the indicated end_position
 	// was recorded. Gives an approximate lower bound on the  timestamp
 	// the changepoint occurred, for systems which need to filter by date.
 	EndHour *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=end_hour,json=endHour,proto3" json:"end_hour,omitempty"`
@@ -369,11 +369,17 @@ type Segment_Counts struct {
 	FlakyRuns int64 `protobuf:"varint,5,opt,name=flaky_runs,json=flakyRuns,proto3" json:"flaky_runs,omitempty"`
 	// The total number of test runs.
 	TotalRuns int64 `protobuf:"varint,6,opt,name=total_runs,json=totalRuns,proto3" json:"total_runs,omitempty"`
-	// The number of verdicts with only unexpected test results.
+	// The number of source verdicts with only unexpected test results.
+	// A source verdict refers to all test results at a commit position.
 	UnexpectedVerdicts int64 `protobuf:"varint,7,opt,name=unexpected_verdicts,json=unexpectedVerdicts,proto3" json:"unexpected_verdicts,omitempty"`
-	// The number of verdicts with a mix of expected and unexpected test results.
+	// The number of source verdicts with a mix of expected and unexpected test results.
+	// A source verdict refers to all test results at a commit position.
+	// As such, is a signal of either in- or cross- build flakiness.
 	FlakyVerdicts int64 `protobuf:"varint,8,opt,name=flaky_verdicts,json=flakyVerdicts,proto3" json:"flaky_verdicts,omitempty"`
-	// The total number of verdicts.
+	// The total number of source verdicts.
+	// A source verdict refers to all test results at a commit position.
+	// As such, this is also the total number of source positions with
+	// test results in the segment.
 	TotalVerdicts int64 `protobuf:"varint,9,opt,name=total_verdicts,json=totalVerdicts,proto3" json:"total_verdicts,omitempty"`
 }
 

@@ -18,13 +18,13 @@ import (
 	"time"
 )
 
-func Verdicts(positions, total, hasUnexpected []int) []PositionVerdict {
+func Verdicts(positions, total, hasUnexpected []int) []Run {
 	retried := make([]int, len(total))
 	unexpectedAfterRetry := make([]int, len(total))
 	return VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAfterRetry)
 }
 
-func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAfterRetry []int) []PositionVerdict {
+func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAfterRetry []int) []Run {
 	if len(total) != len(hasUnexpected) {
 		panic("length mismatch between total and hasUnexpected")
 	}
@@ -34,57 +34,43 @@ func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAft
 	if len(total) != len(unexpectedAfterRetry) {
 		panic("length mismatch between total and unexpectedAfterRetry")
 	}
-	result := make([]PositionVerdict, 0, len(total))
+	var result []Run
 	for i := range total {
 		// From top to bottom, these are increasingly restrictive.
-		totalCount := total[i]                          // Total number of test runs in this verdict.
-		hasUnexpectedCount := hasUnexpected[i]          // How many of those test runs had at least one unexpected result.
-		retriedCount := retried[i]                      // As above, plus at least two results in total.
-		unexpectedAfterRetry := unexpectedAfterRetry[i] // As above, plus all test runs have only unexpected results.
+		totalCount := total[i]                               // Total number of test runs in this verdict.
+		hasUnexpectedCount := hasUnexpected[i]               // How many of those test runs had at least one unexpected result.
+		retriedCount := retried[i]                           // As above, plus at least two results in total.
+		unexpectedAfterRetryCount := unexpectedAfterRetry[i] // As above, plus all test runs have only unexpected results.
 
-		verdict := PositionVerdict{
-			CommitPosition: positions[i],
+		baseRun := Run{
+			CommitPosition: int64(positions[i]),
 			Hour:           time.Unix(int64(3600*(positions[i])), 0),
 		}
-		if hasUnexpectedCount == 0 && totalCount == 1 {
-			verdict.IsSimpleExpectedPass = true
-		} else {
-			verdict.Details = VerdictDetails{
-				Runs: []Run{},
-			}
-			for i := 0; i < totalCount; i++ {
-				if i < unexpectedAfterRetry {
-					verdict.Details.Runs = append(verdict.Details.Runs, Run{
-						Unexpected: ResultCounts{
-							FailCount:  1,
-							CrashCount: 1,
-						},
-					})
-				} else if i < retriedCount {
-					verdict.Details.Runs = append(verdict.Details.Runs, Run{
-						Expected: ResultCounts{
-							PassCount: 1,
-						},
-						Unexpected: ResultCounts{
-							FailCount: 1,
-						},
-					})
-				} else if i < hasUnexpectedCount {
-					verdict.Details.Runs = append(verdict.Details.Runs, Run{
-						Unexpected: ResultCounts{
-							FailCount: 1,
-						},
-					})
-				} else {
-					verdict.Details.Runs = append(verdict.Details.Runs, Run{
-						Expected: ResultCounts{
-							PassCount: 1,
-						},
-					})
+		for i := 0; i < totalCount; i++ {
+			run := baseRun
+			if i < unexpectedAfterRetryCount {
+				run.Unexpected = ResultCounts{
+					FailCount:  1,
+					CrashCount: 1,
+				}
+			} else if i < retriedCount {
+				run.Expected = ResultCounts{
+					PassCount: 1,
+				}
+				run.Unexpected = ResultCounts{
+					FailCount: 1,
+				}
+			} else if i < hasUnexpectedCount {
+				run.Unexpected = ResultCounts{
+					FailCount: 1,
+				}
+			} else {
+				run.Expected = ResultCounts{
+					PassCount: 1,
 				}
 			}
+			result = append(result, run)
 		}
-		result = append(result, verdict)
 	}
 	return result
 }

@@ -50,29 +50,20 @@ type counts struct {
 	UnexpectedAfterRetry int
 }
 
-func (h counts) addVerdict(cp inputbuffer.PositionVerdict) counts {
-	if cp.IsSimpleExpectedPass {
-		h.Runs += 1
+func (h counts) addRun(run inputbuffer.Run) counts {
+	h.Runs += 1
+	if run.Unexpected.Count() == 0 {
 		return h
 	}
-	for _, run := range cp.Details.Runs {
-		if run.IsDuplicate {
-			continue
-		}
-		h.Runs += 1
-		if run.Unexpected.Count() == 0 {
-			continue
-		}
-		h.HasUnexpected += 1
-		if run.Expected.Count()+run.Unexpected.Count() < 2 {
-			continue
-		}
-		h.Retried += 1
-		if run.Expected.Count() > 0 {
-			continue
-		}
-		h.UnexpectedAfterRetry += 1
+	h.HasUnexpected += 1
+	if run.Expected.Count()+run.Unexpected.Count() < 2 {
+		return h
 	}
+	h.Retried += 1
+	if run.Expected.Count() > 0 {
+		return h
+	}
+	h.UnexpectedAfterRetry += 1
 	return h
 }
 

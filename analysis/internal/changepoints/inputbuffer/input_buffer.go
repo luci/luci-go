@@ -27,21 +27,21 @@ import (
 )
 
 const (
-	// The version of the encoding to encode the verdict history.
-	EncodingVersion = 2
-	// Capacity of the hot buffer, i.e. how many verdicts it can hold.
+	// The version of the encoding to encode the run history.
+	EncodingVersion = 3
+	// Capacity of the hot buffer, i.e. how many runs it can hold.
 	DefaultHotBufferCapacity = 100
-	// Capacity of the cold buffer, i.e. how many verdicts it can hold.
+	// Capacity of the cold buffer, i.e. how many runs it can hold.
 	DefaultColdBufferCapacity = 2000
-	// VerdictsInsertedHint is the number of verdicts expected
+	// RunsInsertedHint is the number of test expected
 	// to be inserted in one usage of the input buffer. Buffers
 	// will be allocated assuming this is the maximum number
 	// inserted, if the actual number is higher, it may trigger
 	// additional memory allocations.
 	//
-	// Currently a value of 1 is used as ingestion process ingests one
-	// invocation at a time.
-	VerdictsInsertedHint = 1
+	// Currently a value of 100 is used as ingestion process ingests one
+	// verdict at a time, which may consist of up to 100 runs.
+	RunsInsertedHint = 100
 )
 
 type Buffer struct {
@@ -52,35 +52,35 @@ type Buffer struct {
 	// Capacity of the cold buffer.
 	ColdBufferCapacity int
 	ColdBuffer         History
-	// IsColdBufferDirty will be set to 1 if the cold buffer is dirty.
+	// IsColdBufferDirty will be set to true if the cold buffer is dirty.
 	// This means we need to write the cold buffer to Spanner.
 	IsColdBufferDirty bool
 }
 
 type History struct {
-	// Verdicts, sorted by commit position (oldest first), and
+	// Runs, sorted by commit position (oldest first), and
 	// then result time (oldest first).
-	Verdicts []PositionVerdict
-}
-
-type PositionVerdict struct {
-	// The commit position for the verdict.
-	CommitPosition int
-	// Denotes whether this verdict is a simple expected pass verdict or not.
-	// A simple expected pass verdict has only one test result, which is expected pass.
-	IsSimpleExpectedPass bool
-	// The partition time that this PositionVerdict was ingested.
-	// When stored, it is truncated to the nearest hour.
-	Hour time.Time
-	// The details of the verdict.
-	Details VerdictDetails
-}
-
-type VerdictDetails struct {
-	// Whether a verdict is exonerated or not.
-	IsExonerated bool
-	// Details of the runs in the verdict.
 	Runs []Run
+}
+
+// Run represents all tries of a test in a single invocation.
+type Run struct {
+	// The commit position of the run.
+	CommitPosition int64
+	// The partition time for this run, truncated to the nearest hour.
+	Hour time.Time
+	// Counts for expected results.
+	Expected ResultCounts
+	// Counts for unexpected results.
+	Unexpected ResultCounts
+}
+
+// IsSimpleExpectedPass returns whether this run is a simple expected pass run or not.
+// A simple expected pass run has only one test result, which is expected pass.
+// This represents approximately ~97% of runs at time of writing and
+// is a property levereged in the encoding of the input buffer.
+func (r Run) IsSimpleExpectedPass() bool {
+	return r.Expected == ResultCounts{PassCount: 1} && r.Unexpected == ResultCounts{}
 }
 
 type ResultCounts struct {
@@ -94,23 +94,8 @@ type ResultCounts struct {
 	AbortCount int
 }
 
-type Run struct {
-	// Counts for expected results.
-	Expected ResultCounts
-	// Counts for unexpected results.
-	Unexpected ResultCounts
-	// Whether this run is a duplicate run.
-	IsDuplicate bool
-}
-
 func (r ResultCounts) Count() int {
 	return r.PassCount + r.FailCount + r.CrashCount + r.AbortCount
-}
-
-type MergedInputBuffer struct {
-	inputBuffer *Buffer
-	// Buffer contains the merged verdicts.
-	Buffer History
 }
 
 // New allocates an empty input buffer with default capacity.
@@ -121,19 +106,19 @@ func New() *Buffer {
 // NewWithCapacity allocates an empty input buffer with the given capacity.
 func NewWithCapacity(hotBufferCapacity, coldBufferCapacity int) *Buffer {
 	return &Buffer{
-		HotBufferCapacity: hotBufferCapacity,
-		// HotBufferCapacity is a hard limit on the number of verdicts
+		// HotBufferCapacity is a hard limit on the number of runs
 		// stored in Spanner, but only a soft limit during processing.
-		// After new verdicts are ingested, but before eviction is
+		// After new runs are ingested, but before eviction is
 		// considered, the limit can be exceeded.
-		HotBuffer:          History{Verdicts: make([]PositionVerdict, 0, hotBufferCapacity+VerdictsInsertedHint)},
-		ColdBufferCapacity: coldBufferCapacity,
-		// ColdBufferCapacity is a hard limit on the number of verdicts
+		HotBufferCapacity: hotBufferCapacity,
+		HotBuffer:         History{Runs: make([]Run, 0, hotBufferCapacity+RunsInsertedHint)},
+		// ColdBufferCapacity is a hard limit on the number of runs
 		// stored in Spanner, but only a soft limit during processing.
-		// After new verdicts are ingested, but before eviction is
+		// After new runs are ingested, but before eviction is
 		// considered, the limit can be exceeded (due to the new
-		// verdicts or due to compaction from hot buffer to cold buffer).
-		ColdBuffer: History{Verdicts: make([]PositionVerdict, 0, coldBufferCapacity+hotBufferCapacity+VerdictsInsertedHint)},
+		// runs or due to compaction from hot buffer to cold buffer).
+		ColdBufferCapacity: coldBufferCapacity,
+		ColdBuffer:         History{Runs: make([]Run, 0, coldBufferCapacity+hotBufferCapacity+RunsInsertedHint)},
 	}
 }
 
@@ -150,85 +135,75 @@ func (ib *Buffer) Copy() *Buffer {
 
 // Copy makes a deep copy of the History.
 func (h History) Copy() History {
-	// Make a deep copy of verdicts.
-	verdictsCopy := make([]PositionVerdict, len(h.Verdicts), cap(h.Verdicts))
-	copy(verdictsCopy, h.Verdicts)
+	// Make a deep copy of runs.
+	runsCopy := make([]Run, len(h.Runs), cap(h.Runs))
+	copy(runsCopy, h.Runs)
 
-	// Including the nested runs slice.
-	for i, v := range verdictsCopy {
-		if v.Details.Runs != nil {
-			runsCopy := make([]Run, len(v.Details.Runs))
-			copy(runsCopy, v.Details.Runs)
-			verdictsCopy[i].Details.Runs = runsCopy
-		}
-	}
-
-	return History{Verdicts: verdictsCopy}
+	return History{Runs: runsCopy}
 }
 
-// EvictBefore removes all verdicts prior (but not including) the given index.
+// EvictBefore removes all runs prior to (but not including) the given index.
 //
-// This will modify the verdicts buffer in-place, existing subslices
+// This will modify the runs buffer in-place, existing subslices
 // should be treated as invalid following this operation.
 func (h *History) EvictBefore(index int) {
 	// Instead of the obvious:
-	// h.Verdicts = h.Verdicts[index:]
+	// h.Runs = h.Runs[index:]
 	// We shuffle all items forward by index so that we retain
-	// the same underlying Verdicts buffer, with the same capacity.
+	// the same underlying Runs buffer, with the same capacity.
 
 	// Shuffle all items forward by 'index'.
-	for i := index; i < len(h.Verdicts); i++ {
-		h.Verdicts[i-index] = h.Verdicts[i]
+	for i := index; i < len(h.Runs); i++ {
+		h.Runs[i-index] = h.Runs[i]
 	}
-	h.Verdicts = h.Verdicts[:len(h.Verdicts)-index]
+	h.Runs = h.Runs[:len(h.Runs)-index]
 }
 
 // Clear resets the input buffer to an empty state, similar to
 // its state after New().
 func (ib *Buffer) Clear() {
-	if cap(ib.HotBuffer.Verdicts) < ib.HotBufferCapacity+VerdictsInsertedHint {
+	if cap(ib.HotBuffer.Runs) < ib.HotBufferCapacity+RunsInsertedHint {
 		// Indicates a logic error if someone discarded part of the
 		// originally allocated buffer.
 		panic("buffer capacity unexpectedly modified")
 	}
-	if cap(ib.ColdBuffer.Verdicts) < ib.ColdBufferCapacity+ib.HotBufferCapacity+VerdictsInsertedHint {
+	if cap(ib.ColdBuffer.Runs) < ib.ColdBufferCapacity+ib.HotBufferCapacity+RunsInsertedHint {
 		// Indicates a logic error if someone discarded part of the
 		// originally allocated buffer.
 		panic("buffer capacity unexpectedly modified")
 	}
-	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[:0]
-	ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[:0]
+	ib.HotBuffer.Runs = ib.HotBuffer.Runs[:0]
+	ib.ColdBuffer.Runs = ib.ColdBuffer.Runs[:0]
 	ib.IsColdBufferDirty = false
 }
 
-// InsertVerdict inserts a new verdict into the input buffer.
-// It will first try to insert in the hot buffer, and if the hot buffer is full
-// as the result of the insert, then a compaction will occur.
-// If a compaction occurs, the IsColdBufferDirty flag will be set to true,
-// implying that the cold buffer content needs to be written to Spanner.
-func (ib *Buffer) InsertVerdict(v PositionVerdict) {
-	// Find the position to insert the verdict.
-	// As the new verdict is likely to have the latest commit position, we
+// InsertRun inserts a new run into the input buffer.
+//
+// The run is always inserted into the hot buffer, run CompactIfRequired
+// as required after all runs have been inserted.
+func (ib *Buffer) InsertRun(r Run) {
+	// Find the position to insert the run.
+	// As the new run is likely to have the latest commit position, we
 	// will iterate backwards from the end of the slice.
-	verdicts := ib.HotBuffer.Verdicts
-	pos := len(verdicts)
+	runs := ib.HotBuffer.Runs
+	pos := len(runs)
 	for ; pos > 0; pos-- {
-		if compareVerdict(v, verdicts[pos-1]) == 1 {
-			// verdict is after the verdict at position-1,
+		if compareRun(r, runs[pos-1]) > 0 {
+			// run is after the run at position-1,
 			// so insert at position.
 			break
 		}
 	}
 
-	// Shuffle all verdicts in verdicts[pos:] forwards
+	// Shuffle all runs in runs[pos:] forwards
 	// to create a spot at the insertion position.
 	// (We want to avoid allocating a new slice.)
-	verdicts = append(verdicts, PositionVerdict{})
-	for i := len(verdicts) - 1; i > pos; i-- {
-		verdicts[i] = verdicts[i-1]
+	runs = append(runs, Run{})
+	for i := len(runs) - 1; i > pos; i-- {
+		runs[i] = runs[i-1]
 	}
-	verdicts[pos] = v
-	ib.HotBuffer.Verdicts = verdicts
+	runs[pos] = r
+	ib.HotBuffer.Runs = runs
 }
 
 // CompactIfRequired moves the content from the hot buffer to the cold buffer,
@@ -244,67 +219,39 @@ func (ib *Buffer) InsertVerdict(v PositionVerdict) {
 // implying that the cold buffer content needs to be written to Spanner.
 //
 // Note: It is possible that the cold buffer overflows after the compaction,
-// i.e., len(ColdBuffer.Verdicts) > ColdBufferCapacity.
+// i.e., len(ColdBuffer.Runs) > ColdBufferCapacity.
 // This needs to be handled separately.
 func (ib *Buffer) CompactIfRequired() {
-	if len(ib.HotBuffer.Verdicts) < ib.HotBufferCapacity && len(ib.ColdBuffer.Verdicts) <= ib.ColdBufferCapacity {
+	if len(ib.HotBuffer.Runs) < ib.HotBufferCapacity && len(ib.ColdBuffer.Runs) <= ib.ColdBufferCapacity {
 		// No compaction required.
 		return
 	}
 	ib.IsColdBufferDirty = true
 
-	var merged []PositionVerdict
+	var merged []Run
 	ib.MergeBuffer(&merged)
-	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[:0]
+	ib.HotBuffer.Runs = ib.HotBuffer.Runs[:0]
 
-	// Copy the merged verdicts to the ColdBuffer instead of assigning
+	// Copy the merged runs to the ColdBuffer instead of assigning
 	// the merged buffer, so that we keep the same pre-allocated buffer.
-	ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[:0]
-	for _, v := range merged {
-		ib.ColdBuffer.Verdicts = append(ib.ColdBuffer.Verdicts, v)
-	}
+	ib.ColdBuffer.Runs = ib.ColdBuffer.Runs[:0]
+	ib.ColdBuffer.Runs = append(ib.ColdBuffer.Runs, merged...)
 }
 
-// MergeBuffer merges the verdicts of the hot buffer and the cold buffer
+// MergeBuffer merges the runs of the hot buffer and the cold buffer
 // into the provided slice, resizing it if necessary.
 // The returned slice will be sorted by commit position (oldest first), and
 // then by result time (oldest first).
-func (ib *Buffer) MergeBuffer(destination *[]PositionVerdict) {
+func (ib *Buffer) MergeBuffer(destination *[]Run) {
 	// Because the hot buffer and cold buffer are both sorted, we can simply use
 	// a single merge to merge the 2 buffers.
-	hVerdicts := ib.HotBuffer.Verdicts
-	cVerdicts := ib.ColdBuffer.Verdicts
+	hRuns := ib.HotBuffer.Runs
+	cRuns := ib.ColdBuffer.Runs
 
 	if *destination == nil {
-		*destination = make([]PositionVerdict, 0, ib.ColdBufferCapacity+ib.HotBufferCapacity+VerdictsInsertedHint)
+		*destination = make([]Run, 0, ib.ColdBufferCapacity+ib.HotBufferCapacity+RunsInsertedHint)
 	}
-
-	// Reset destination slice to zero length.
-	merged := (*destination)[:0]
-
-	hPos := 0
-	cPos := 0
-	for hPos < len(hVerdicts) && cPos < len(cVerdicts) {
-		cmp := compareVerdict(hVerdicts[hPos], cVerdicts[cPos])
-		// Item in hot buffer is strictly older.
-		if cmp == -1 {
-			merged = append(merged, hVerdicts[hPos])
-			hPos++
-		} else {
-			merged = append(merged, cVerdicts[cPos])
-			cPos++
-		}
-	}
-
-	// Add the remaining items.
-	for ; hPos < len(hVerdicts); hPos++ {
-		merged = append(merged, hVerdicts[hPos])
-	}
-	for ; cPos < len(cVerdicts); cPos++ {
-		merged = append(merged, cVerdicts[cPos])
-	}
-
-	*destination = merged
+	MergeOrderedRuns(hRuns, cRuns, destination)
 }
 
 // EvictionRange returns the part that should be evicted from cold buffer, due
@@ -318,24 +265,24 @@ func (ib *Buffer) MergeBuffer(destination *[]PositionVerdict) {
 // Note that eviction can only occur after a compaction from hot buffer to cold
 // buffer. It means the hot buffer is empty, and the cold buffer overflows.
 func (ib *Buffer) EvictionRange() (shouldEvict bool, endIndex int) {
-	if len(ib.ColdBuffer.Verdicts) <= ib.ColdBufferCapacity {
+	if len(ib.ColdBuffer.Runs) <= ib.ColdBufferCapacity {
 		return false, 0
 	}
-	if len(ib.HotBuffer.Verdicts) > 0 {
+	if len(ib.HotBuffer.Runs) > 0 {
 		panic("hot buffer is not empty during eviction")
 	}
-	return true, len(ib.ColdBuffer.Verdicts) - ib.ColdBufferCapacity - 1
+	return true, len(ib.ColdBuffer.Runs) - ib.ColdBufferCapacity - 1
 }
 
 func (ib *Buffer) Size() int {
-	return len(ib.ColdBuffer.Verdicts) + len(ib.HotBuffer.Verdicts)
+	return len(ib.ColdBuffer.Runs) + len(ib.HotBuffer.Runs)
 }
 
 // HistorySerializer provides methods to decode and encode History objects.
 // Methods on a given instance are only safe to call on one goroutine at
 // a time.
 type HistorySerializer struct {
-	// A preallocated buffer to store encoded, uncompressed verdicts.
+	// A preallocated buffer to store encoded, uncompressed runs.
 	// Avoids needing to allocate a new buffer for every decode/encode
 	// operation, with consequent heap requirements and GC churn.
 	tempBuf []byte
@@ -345,8 +292,8 @@ type HistorySerializer struct {
 // and zero length.
 func (hs *HistorySerializer) ensureAndClearBuf() {
 	if hs.tempBuf == nil {
-		// At most the history will have 2000 verdicts (cold buffer).
-		// Most verdicts will be simple expected verdict, so 30,000 is probably fine
+		// At most the history will have 2000 runs (cold buffer).
+		// Most runs will be simple expected run, so 30,000 is probably fine
 		// for most cases.
 		// In case 30,000 bytes is not enough, Encode() or Decode()
 		// will resize to an appropriate size.
@@ -362,33 +309,39 @@ func (hs *HistorySerializer) Encode(history History) []byte {
 	hs.ensureAndClearBuf()
 	buf := hs.tempBuf
 	buf = binary.AppendUvarint(buf, uint64(EncodingVersion))
-	buf = binary.AppendUvarint(buf, uint64(len(history.Verdicts)))
+	buf = binary.AppendUvarint(buf, uint64(len(history.Runs)))
 
 	var lastPosition uint64
 	var lastHourNumber int64
-	for _, verdict := range history.Verdicts {
-		// We encode the relative deltaPosition between the current verdict and the
-		// previous verdicts.
-		deltaPosition := uint64(verdict.CommitPosition) - lastPosition
-		deltaPosition = deltaPosition << 1
-		if !verdict.IsSimpleExpectedPass {
-			// Set the last bit to 1 if it is not a simple verdict.
+	for i := 0; i < len(history.Runs); i++ {
+		run := &history.Runs[i]
+
+		// We encode the relative deltaPosition between the current run and the
+		// previous runs.
+		deltaPosition := uint64(run.CommitPosition) - lastPosition
+		// Shift two bits to leave space for flags.
+		// The last bit is set to 1 for non-simple runs.
+		// The second last bit is reserved for future use.
+		deltaPosition = deltaPosition << 2
+		isSimpleExpectedPass := run.IsSimpleExpectedPass()
+		if !isSimpleExpectedPass {
+			// Set the last bit to 1 if it is not a single expected passing run.
 			deltaPosition |= 1
 		}
 		buf = binary.AppendUvarint(buf, deltaPosition)
-		lastPosition = uint64(verdict.CommitPosition)
+		lastPosition = uint64(run.CommitPosition)
 
 		// Encode the "relative" hour.
 		// Note that the relative hour may be positive or negative. So we are encoding
 		// it as varint.
-		hourNumber := verdict.Hour.Unix() / 3600
+		hourNumber := run.Hour.Unix() / 3600
 		deltaHour := hourNumber - lastHourNumber
 		buf = binary.AppendVarint(buf, deltaHour)
 		lastHourNumber = hourNumber
 
-		// Encode the verdict details, only if not simple verdict.
-		if !verdict.IsSimpleExpectedPass {
-			buf = appendVerdictDetails(buf, verdict.Details)
+		// Encode the run details, only if not simple expected passing run.
+		if !isSimpleExpectedPass {
+			buf = appendRunDetailedCounts(buf, run.Expected, run.Unexpected)
 		}
 	}
 	// It is possible the size of buf was increased in this method.
@@ -401,11 +354,11 @@ func (hs *HistorySerializer) Encode(history History) []byte {
 	return span.Compress(buf)
 }
 
-// DecodeInto decodes the verdicts in buf, populating the history object.
+// DecodeInto decodes the runs in buf, populating the history object.
 func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
-	// Clear existing verdicts to avoid state from a previous
+	// Clear existing runs to avoid state from a previous
 	// decoding leaking.
-	verdicts := history.Verdicts[:0]
+	runs := history.Runs[:0]
 
 	var err error
 	hs.ensureAndClearBuf()
@@ -423,37 +376,39 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 	if err != nil {
 		return errors.Annotate(err, "read version").Err()
 	}
+	if version == LegacyV2EncodingVersion {
+		return LegacyV2DecodeInto(history, reader)
+	}
 	if version != EncodingVersion {
 		return fmt.Errorf("version mismatched: got version %d, want %d", version, EncodingVersion)
 	}
 
-	// Read verdicts.
-	nVerdicts, err := binary.ReadUvarint(reader)
+	// Read run count.
+	nRuns, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return errors.Annotate(err, "read number of verdicts").Err()
+		return errors.Annotate(err, "read number of runs").Err()
 	}
-	if nVerdicts > uint64(cap(verdicts)) {
+	if nRuns > uint64(cap(runs)) {
 		// The caller has allocated an inappropriately sized buffer.
-		return errors.Reason("found %v verdicts to decode, but capacity is only %v", nVerdicts, cap(verdicts)).Err()
+		return errors.Reason("found %v runs to decode, but capacity is only %v", nRuns, cap(runs)).Err()
 	}
 
-	for i := 0; i < int(nVerdicts); i++ {
-		// Get the commit position for the verdicts, and if the verdict is simple
+	for i := 0; i < int(nRuns); i++ {
+		// Get the commit position for the runs, and if the run is simple
 		// expected.
-		verdict := PositionVerdict{}
+		run := Run{}
 		posSim, err := binary.ReadUvarint(reader)
 		if err != nil {
-			return errors.Annotate(err, "read position simple verdict").Err()
+			return errors.Annotate(err, "read run position and flags").Err()
 		}
-		deltaPos, isSimple := decodePositionSimpleVerdict(posSim)
+		deltaPos, isSimpleExpectedPass := decodePositionAndFlags(posSim)
 
-		verdict.IsSimpleExpectedPass = isSimple
-		// First verdict, deltaPos should be the absolute commit position.
 		if i == 0 {
-			verdict.CommitPosition = deltaPos
+			// For the first run, deltaPos is the absolute commit position.
+			run.CommitPosition = deltaPos
 		} else {
-			// deltaPos records the relative difference.
-			verdict.CommitPosition = verdicts[i-1].CommitPosition + deltaPos
+			// For later runs, deltaPos records the relative difference.
+			run.CommitPosition = runs[i-1].CommitPosition + deltaPos
 		}
 
 		// Get the hour.
@@ -462,157 +417,117 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 			return errors.Annotate(err, "read delta hour").Err()
 		}
 		if i == 0 {
-			verdict.Hour = time.Unix(deltaHour*3600, 0)
+			// For the first run, deltaHour is the absolute hour.
+			run.Hour = time.Unix(deltaHour*3600, 0)
 		} else {
-			secs := verdicts[i-1].Hour.Unix()
-			verdict.Hour = time.Unix(secs+deltaHour*3600, 0)
+			// For later runs, deltaHour records the relative difference.
+			secs := runs[i-1].Hour.Unix()
+			run.Hour = time.Unix(secs+deltaHour*3600, 0)
 		}
 
-		// Read the verdict details.
-		if !isSimple {
-			vd, err := readVerdictDetails(reader)
+		if isSimpleExpectedPass {
+			run.Expected = ResultCounts{PassCount: 1}
+			run.Unexpected = ResultCounts{}
+		} else {
+			// Read the detailed run counts.
+			var err error
+			run.Expected, run.Unexpected, err = readRunDetailedCounts(reader)
 			if err != nil {
-				return errors.Annotate(err, "read verdict details").Err()
+				return errors.Annotate(err, "read run details").Err()
 			}
-			verdict.Details = vd
 		}
-		verdicts = append(verdicts, verdict)
+		runs = append(runs, run)
 	}
-	history.Verdicts = verdicts
+	history.Runs = runs
 
 	return err
 }
 
-func readVerdictDetails(reader *bytes.Reader) (VerdictDetails, error) {
-	vd := VerdictDetails{}
-	// Get IsExonerated.
-	exoInt, err := binary.ReadUvarint(reader)
-	if err != nil {
-		return vd, errors.Annotate(err, "read exoneration status").Err()
-	}
-	vd.IsExonerated = uInt64ToBool(exoInt)
-
-	// Get runs.
-	runCount, err := binary.ReadUvarint(reader)
-	if err != nil {
-		return vd, errors.Annotate(err, "read run count").Err()
-	}
-	vd.Runs = make([]Run, runCount)
-	for i := 0; i < int(runCount); i++ {
-		run, err := readRun(reader)
-		if err != nil {
-			return vd, errors.Annotate(err, "read run").Err()
-		}
-		vd.Runs[i] = run
-	}
-	return vd, nil
-}
-
-func readRun(reader *bytes.Reader) (Run, error) {
-	r := Run{}
+func readRunDetailedCounts(reader *bytes.Reader) (expected, unexpected ResultCounts, err error) {
 	// Read expected passed count.
 	expectedPassedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected passed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read expected passed count").Err()
 	}
-	r.Expected.PassCount = int(expectedPassedCount)
+	expected.PassCount = int(expectedPassedCount)
 
 	// Read expected failed count.
 	expectedFailedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected failed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read expected failed count").Err()
 	}
-	r.Expected.FailCount = int(expectedFailedCount)
+	expected.FailCount = int(expectedFailedCount)
 
 	// Read expected crashed count.
 	expectedCrashedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected crashed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read expected crashed count").Err()
 	}
-	r.Expected.CrashCount = int(expectedCrashedCount)
+	expected.CrashCount = int(expectedCrashedCount)
 
 	// Read expected aborted count.
 	expectedAbortedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected aborted count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read expected aborted count").Err()
 	}
-	r.Expected.AbortCount = int(expectedAbortedCount)
+	expected.AbortCount = int(expectedAbortedCount)
 
 	// Read unexpected passed count.
 	unexpectedPassedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected passed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read unexpected passed count").Err()
 	}
-	r.Unexpected.PassCount = int(unexpectedPassedCount)
+	unexpected.PassCount = int(unexpectedPassedCount)
 
 	// Read unexpected failed count.
 	unexpectedFailedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected failed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read unexpected failed count").Err()
 	}
-	r.Unexpected.FailCount = int(unexpectedFailedCount)
+	unexpected.FailCount = int(unexpectedFailedCount)
 
 	// Read unexpected crashed count.
 	unexpectedCrashedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected crashed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read unexpected crashed count").Err()
 	}
-	r.Unexpected.CrashCount = int(unexpectedCrashedCount)
+	unexpected.CrashCount = int(unexpectedCrashedCount)
 
 	// Read unexpected aborted count.
 	unexpectedAbortedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected aborted count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read unexpected aborted count").Err()
 	}
-	r.Unexpected.AbortCount = int(unexpectedAbortedCount)
+	unexpected.AbortCount = int(unexpectedAbortedCount)
 
-	// Read isDuplicate
-	isDuplicate, err := binary.ReadUvarint(reader)
-	if err != nil {
-		return r, errors.Annotate(err, "read is duplicate").Err()
-	}
-	r.IsDuplicate = uInt64ToBool(isDuplicate)
-
-	return r, nil
+	return expected, unexpected, nil
 }
 
-func appendVerdictDetails(result []byte, vd VerdictDetails) []byte {
-	// Encode IsExonerated.
-	result = binary.AppendUvarint(result, boolToUInt64(vd.IsExonerated))
-
-	// Encode runs.
-	result = binary.AppendUvarint(result, uint64(len(vd.Runs)))
-	for _, r := range vd.Runs {
-		result = appendRun(result, r)
-	}
+func appendRunDetailedCounts(result []byte, expected, unexpected ResultCounts) []byte {
+	result = binary.AppendUvarint(result, uint64(expected.PassCount))
+	result = binary.AppendUvarint(result, uint64(expected.FailCount))
+	result = binary.AppendUvarint(result, uint64(expected.CrashCount))
+	result = binary.AppendUvarint(result, uint64(expected.AbortCount))
+	result = binary.AppendUvarint(result, uint64(unexpected.PassCount))
+	result = binary.AppendUvarint(result, uint64(unexpected.FailCount))
+	result = binary.AppendUvarint(result, uint64(unexpected.CrashCount))
+	result = binary.AppendUvarint(result, uint64(unexpected.AbortCount))
 	return result
 }
 
-func appendRun(result []byte, run Run) []byte {
-	result = binary.AppendUvarint(result, uint64(run.Expected.PassCount))
-	result = binary.AppendUvarint(result, uint64(run.Expected.FailCount))
-	result = binary.AppendUvarint(result, uint64(run.Expected.CrashCount))
-	result = binary.AppendUvarint(result, uint64(run.Expected.AbortCount))
-	result = binary.AppendUvarint(result, uint64(run.Unexpected.PassCount))
-	result = binary.AppendUvarint(result, uint64(run.Unexpected.FailCount))
-	result = binary.AppendUvarint(result, uint64(run.Unexpected.CrashCount))
-	result = binary.AppendUvarint(result, uint64(run.Unexpected.AbortCount))
-	result = binary.AppendUvarint(result, boolToUInt64(run.IsDuplicate))
-	return result
-}
-
-// decodePositionSimpleVerdict decodes the value posSim and returns 2 values.
+// decodePositionAndFlags decodes the value posFlags and returns 2 values.
 // 1. The (delta) commit position.
-// 2. Whether the verdict is a simple expected passed verdict.
-// The last bit of posSim is set to 1 if the verdict is NOT a simple expected pass.
-func decodePositionSimpleVerdict(posSim uint64) (int, bool) {
-	isSimple := false
-	lastBit := posSim & 1
-	if lastBit == 0 {
+// 2. Whether the run is a simple expected pass.
+func decodePositionAndFlags(posFlags uint64) (deltaPos int64, isSimple bool) {
+	isSimple = false
+	// The last bit of posFlags is set to 1 if the run is NOT a simple expected pass.
+	if (posFlags & 1) == 0 {
 		isSimple = true
 	}
-	deltaPos := posSim >> 1
-	return int(deltaPos), isSimple
+	// The second last bit of posFlags is reserved for future use.
+
+	deltaPos = int64(posFlags >> 2)
+	return deltaPos, isSimple
 }
 
 func boolToUInt64(b bool) uint64 {
@@ -627,10 +542,10 @@ func uInt64ToBool(u uint64) bool {
 	return u == 1
 }
 
-// compareVerdict returns 1 if v1 is later than v2, -1 if v1 is earlier than
+// compareRun returns 1 if v1 is later than v2, -1 if v1 is earlier than
 // v2, and 0 if they are at the same time.
 // The comparision is done on commit position, then on hour.
-func compareVerdict(v1 PositionVerdict, v2 PositionVerdict) int {
+func compareRun(v1 Run, v2 Run) int {
 	if v1.CommitPosition > v2.CommitPosition {
 		return 1
 	}

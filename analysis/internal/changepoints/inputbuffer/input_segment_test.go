@@ -15,6 +15,7 @@
 package inputbuffer
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 	Convey("Segmentize input buffer", t, func() {
 		Convey("No change point", func() {
 			var (
+				// index      = []int{0, 1, 3, 4, 6, 7}
 				positions     = []int{1, 2, 3, 4, 5, 6}
 				total         = []int{1, 2, 1, 2, 1, 2}
 				hasUnexpected = []int{0, 1, 0, 2, 0, 0}
@@ -35,14 +37,14 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			ib := genInputBuffer(10, 200, Verdicts(positions, total, hasUnexpected))
 			cps := []ChangePoint{}
 
-			var merged []PositionVerdict
+			var merged []Run
 			ib.MergeBuffer(&merged)
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
 			So(len(ibSegments), ShouldEqual, 1)
 			So(ibSegments[0], ShouldResembleProto, &Segment{
 				StartIndex:                     0,
-				EndIndex:                       5,
+				EndIndex:                       8, // runs
 				HasStartChangepoint:            false,
 				StartPosition:                  1,
 				EndPosition:                    6,
@@ -54,6 +56,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 
 		Convey("With change points and retries", func() {
 			var (
+				// index             = []int{0, 1, 2, 3, 5, 7, 9, 11,13,15, 16, 17}
 				positions            = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 				total                = []int{1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1}
 				hasUnexpected        = []int{0, 0, 0, 2, 2, 2, 2, 2, 2, 1, 1, 1}
@@ -65,20 +68,20 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				{
 					NominalIndex:        3,
 					LowerBound99ThIndex: 2,
-					UpperBound99ThIndex: 4,
-				},
-				{
-					NominalIndex:        6,
-					LowerBound99ThIndex: 5,
-					UpperBound99ThIndex: 7,
+					UpperBound99ThIndex: 5,
 				},
 				{
 					NominalIndex:        9,
-					LowerBound99ThIndex: 8,
-					UpperBound99ThIndex: 10,
+					LowerBound99ThIndex: 7,
+					UpperBound99ThIndex: 11,
+				},
+				{
+					NominalIndex:        15,
+					LowerBound99ThIndex: 13,
+					UpperBound99ThIndex: 16,
 				},
 			}
-			var merged []PositionVerdict
+			var merged []Run
 			ib.MergeBuffer(&merged)
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
@@ -95,7 +98,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 
 			So(ibSegments[1], ShouldResembleProto, &Segment{
 				StartIndex:                     3,
-				EndIndex:                       5,
+				EndIndex:                       8,
 				HasStartChangepoint:            true,
 				StartPosition:                  4,
 				StartPositionLowerBound99Th:    3,
@@ -107,8 +110,8 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			})
 
 			So(ibSegments[2], ShouldResembleProto, &Segment{
-				StartIndex:                     6,
-				EndIndex:                       8,
+				StartIndex:                     9,
+				EndIndex:                       14,
 				HasStartChangepoint:            true,
 				StartPosition:                  7,
 				StartPositionLowerBound99Th:    6,
@@ -120,8 +123,8 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			})
 
 			So(ibSegments[3], ShouldResembleProto, &Segment{
-				StartIndex:                     9,
-				EndIndex:                       11,
+				StartIndex:                     15,
+				EndIndex:                       17,
 				HasStartChangepoint:            true,
 				StartPosition:                  10,
 				StartPositionLowerBound99Th:    9,
@@ -136,7 +139,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 }
 
 func TestEvictSegments(t *testing.T) {
-	Convey("Not evict segment", t, func() {
+	Convey("Does not evict if there is no buffer pressure and no changepoint", t, func() {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(100, 1, []int{}))
 		segments := []*Segment{
 			{
@@ -197,7 +200,7 @@ func TestEvictSegments(t *testing.T) {
 			StartHour:                      time.Unix(1*3600, 0),
 			StartPosition:                  1,
 			MostRecentUnexpectedResultHour: time.Unix(51*3600, 0),
-			Verdicts:                       simpleVerdicts(100, 1, []int{50}),
+			Runs:                           simpleVerdicts(100, 1, []int{50}),
 		})
 
 		So(remaining[0], ShouldResembleProto, &Segment{
@@ -283,7 +286,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPosition:       1,
 			EndHour:             time.Unix(40*3600, 0),
 			EndPosition:         40,
-			Verdicts:            simpleVerdicts(40, 1, []int{}),
+			Runs:                simpleVerdicts(40, 1, []int{}),
 		})
 
 		So(evicted[1], ShouldResembleProto, EvictedSegment{
@@ -295,7 +298,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPositionUpperBound99Th: 50,
 			EndHour:                     time.Unix(80*3600, 0),
 			EndPosition:                 80,
-			Verdicts:                    simpleVerdicts(40, 41, []int{}),
+			Runs:                        simpleVerdicts(40, 41, []int{}),
 		})
 
 		So(evicted[2], ShouldResembleProto, EvictedSegment{
@@ -305,7 +308,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPosition:               81,
 			StartPositionLowerBound99Th: 70,
 			StartPositionUpperBound99Th: 90,
-			Verdicts:                    simpleVerdicts(20, 81, []int{}),
+			Runs:                        simpleVerdicts(20, 81, []int{}),
 		})
 
 		So(remaining[0], ShouldResembleProto, &Segment{
@@ -331,7 +334,7 @@ func TestEvictSegments(t *testing.T) {
 	Convey("Evict all hot buffer", t, func() {
 		ib := genInputBuffer(100, 2000, simpleVerdicts(2000, 1, []int{}))
 		ib.HotBuffer = History{
-			Verdicts: []PositionVerdict{
+			Runs: []Run{
 				{
 					CommitPosition: 10,
 				},
@@ -371,15 +374,22 @@ func TestEvictSegments(t *testing.T) {
 		So(sib.InputBuffer.IsColdBufferDirty, ShouldBeTrue)
 
 		// Hot bufffer should be empty.
-		So(len(sib.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 0)
-		So(len(sib.InputBuffer.ColdBuffer.Verdicts), ShouldEqual, 1961)
+		So(len(sib.InputBuffer.HotBuffer.Runs), ShouldEqual, 0)
+		So(len(sib.InputBuffer.ColdBuffer.Runs), ShouldEqual, 1961)
 
-		expectedVerdicts := []PositionVerdict{
-			// The verdict in the hot buffer.
+		expectedRuns := []Run{
+			// The run in the hot buffer.
 			{CommitPosition: 10},
 		}
-		// Plus the evicted verdicts in the cold buffer.
-		expectedVerdicts = append(expectedVerdicts, simpleVerdicts(39, 1, []int{})...)
+		// Plus the evicted runs in the cold buffer.
+		expectedRuns = append(expectedRuns, simpleVerdicts(39, 1, []int{})...)
+		sort.Slice(expectedRuns, func(i, j int) bool {
+			ri, rj := expectedRuns[i], expectedRuns[j]
+			if ri.CommitPosition != rj.CommitPosition {
+				return ri.CommitPosition < rj.CommitPosition
+			}
+			return ri.Hour.Before(rj.Hour)
+		})
 
 		So(evicted[0], ShouldResembleProto, EvictedSegment{
 			State:               cpb.SegmentState_FINALIZED,
@@ -388,7 +398,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPosition:       1,
 			EndHour:             time.Unix(39*3600, 0),
 			EndPosition:         39,
-			Verdicts:            expectedVerdicts,
+			Runs:                expectedRuns,
 		})
 
 		So(evicted[1], ShouldResembleProto, EvictedSegment{
@@ -398,14 +408,14 @@ func TestEvictSegments(t *testing.T) {
 			StartPosition:               40,
 			StartPositionLowerBound99Th: 30,
 			StartPositionUpperBound99Th: 50,
-			Verdicts:                    []PositionVerdict{},
+			Runs:                        []Run{},
 		})
 
 		So(remaining[0], ShouldResembleProto, segments[1])
 	})
 }
 
-func simpleVerdicts(verdictCount int, startPos int, unexpectedIndices []int) []PositionVerdict {
+func simpleVerdicts(verdictCount int, startPos int, unexpectedIndices []int) []Run {
 	positions := make([]int, verdictCount)
 	total := make([]int, verdictCount)
 	hasUnexpected := make([]int, verdictCount)
@@ -419,13 +429,13 @@ func simpleVerdicts(verdictCount int, startPos int, unexpectedIndices []int) []P
 	return Verdicts(positions, total, hasUnexpected)
 }
 
-func genInputBuffer(hotCap int, coldCap int, history []PositionVerdict) *Buffer {
+func genInputBuffer(hotCap int, coldCap int, history []Run) *Buffer {
 	return &Buffer{
 		HotBufferCapacity:  hotCap,
 		ColdBufferCapacity: coldCap,
 		HotBuffer:          History{},
 		ColdBuffer: History{
-			Verdicts: history,
+			Runs: history,
 		},
 	}
 }
@@ -438,7 +448,7 @@ func genInputbufferWithRetries(hotCap int, coldCap int, positions, total, hasUne
 		ColdBufferCapacity: coldCap,
 		HotBuffer:          History{},
 		ColdBuffer: History{
-			Verdicts: history,
+			Runs: history,
 		},
 	}
 }
@@ -446,16 +456,16 @@ func genInputbufferWithRetries(hotCap int, coldCap int, positions, total, hasUne
 func BenchmarkEncode(b *testing.B) {
 	// Last known result (23-Jun-2023):
 	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-	// BenchmarkEncode-96    	   41640	     31182 ns/op	    2160 B/op	       2 allocs/op
+	// BenchmarkEncode-96    	   25194	     48548 ns/op	    2160 B/op	       2 allocs/op
 
 	b.StopTimer()
 	hs := &HistorySerializer{}
 	hs.ensureAndClearBuf()
 	ib := &Buffer{
 		HotBufferCapacity:  100,
-		HotBuffer:          History{Verdicts: simpleVerdicts(100, 1, []int{5})},
+		HotBuffer:          History{Runs: simpleVerdicts(100, 102_000, []int{5})},
 		ColdBufferCapacity: 2000,
-		ColdBuffer:         History{Verdicts: simpleVerdicts(2000, 1, []int{102, 174, 872, 971})},
+		ColdBuffer:         History{Runs: simpleVerdicts(2000, 100_000, []int{102, 174, 872, 971})},
 	}
 	b.StartTimer()
 
@@ -468,7 +478,7 @@ func BenchmarkEncode(b *testing.B) {
 func BenchmarkDecode(b *testing.B) {
 	// Last known result (23-Jun-2023):
 	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-	// BenchmarkDecode-96    	   20103	     59558 ns/op	     216 B/op	       7 allocs/op
+	// BenchmarkDecode-96    	   17188	     69618 ns/op	      96 B/op	       2 allocs/op
 
 	b.StopTimer()
 	var hs HistorySerializer
@@ -477,12 +487,12 @@ func BenchmarkDecode(b *testing.B) {
 
 	ib := &Buffer{
 		HotBufferCapacity:  100,
-		HotBuffer:          History{Verdicts: simpleVerdicts(100, 1, []int{5})},
+		HotBuffer:          History{Runs: simpleVerdicts(100, 102_000, []int{5})},
 		ColdBufferCapacity: 2000,
-		ColdBuffer:         History{Verdicts: simpleVerdicts(2000, 1, []int{102, 174, 872, 971})},
+		ColdBuffer:         History{Runs: simpleVerdicts(2000, 100_000, []int{102, 174, 872, 971})},
 	}
-	encodedColdBuffer := hs.Encode(ib.ColdBuffer) // 62 bytes compressed
-	encodedHotBuffer := hs.Encode(ib.HotBuffer)   // 38 bytes compressed
+	encodedColdBuffer := hs.Encode(ib.ColdBuffer) // 66 bytes compressed
+	encodedHotBuffer := hs.Encode(ib.HotBuffer)   // 42 bytes compressed
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {

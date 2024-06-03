@@ -173,9 +173,9 @@ func toBQCounts(counts analyzer.Counts) *bqpb.Segment_Counts {
 		UnexpectedUnretriedRuns:  counts.UnexpectedUnretriedRuns,
 		UnexpectedAfterRetryRuns: counts.UnexpectedAfterRetryRuns,
 
-		TotalVerdicts:      counts.TotalVerdicts,
-		UnexpectedVerdicts: counts.UnexpectedVerdicts,
-		FlakyVerdicts:      counts.FlakyVerdicts,
+		TotalVerdicts:      counts.TotalSourceVerdicts,
+		UnexpectedVerdicts: counts.UnexpectedSourceVerdicts,
+		FlakyVerdicts:      counts.FlakySourceVerdicts,
 	}
 }
 

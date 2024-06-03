@@ -15,8 +15,6 @@
 package testvariantbranch
 
 import (
-	"sort"
-
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -27,102 +25,76 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-func ToPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicateMap map[string]bool, src *pb.Sources) (inputbuffer.PositionVerdict, error) {
-	isSimpleExpectedPassed := (tv.Status == rdbpb.TestVariantStatus_EXPECTED && len(tv.Results) == 1 && tv.Results[0].Result.Status == rdbpb.TestStatus_PASS)
-
-	verdict := inputbuffer.PositionVerdict{
-		CommitPosition:       sources.CommitPosition(src),
-		IsSimpleExpectedPass: isSimpleExpectedPassed,
-		Hour:                 payload.PartitionTime.AsTime(),
-	}
-
-	// Add verdict details only if verdict is not simple expected passed.
-	if !isSimpleExpectedPassed {
-		vd, err := toVerdictDetails(tv, duplicateMap)
-		if err != nil {
-			return inputbuffer.PositionVerdict{}, errors.Annotate(err, "to verdict details").Err()
-		}
-		verdict.Details = vd
-	}
-	return verdict, nil
-}
-
-// toVerdictDetails converts a test variant to verdict details.
+// ToRuns converts a test verdict to a set of runs for the
+// input buffer.
 // The runs in verdict details are ordered by:
-// - IsDuplicate, in which non-duplicate runs come first, then
 // - UnexpectedCount, descendingly, then
 // - ExpectedCount, descendingly.
-func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (inputbuffer.VerdictDetails, error) {
-	isExonerated := (tv.Status == rdbpb.TestVariantStatus_EXONERATED)
-	vd := inputbuffer.VerdictDetails{
-		IsExonerated: isExonerated,
-	}
-	// runData maps invocation name to run data.
-	runData := map[string]*inputbuffer.Run{}
+func ToRuns(tv *rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicateMap map[string]bool, src *pb.Sources) ([]inputbuffer.Run, error) {
+	commitPosition := sources.CommitPosition(src)
+	hour := payload.PartitionTime.AsTime()
+
+	var result []inputbuffer.Run
+	// runIndicies maps invocation name to result index.
+	runIndicies := map[string]int{}
+
 	for _, r := range tv.Results {
 		tr := r.GetResult()
 		invocationName, err := resultdb.InvocationFromTestResultName(tr.Name)
 		if err != nil {
-			return vd, errors.Annotate(err, "invocation from test result name").Err()
+			return nil, errors.Annotate(err, "invocation from test result name").Err()
 		}
-		if _, ok := runData[invocationName]; !ok {
-			_, isDuplicate := duplicateMap[invocationName]
-			runData[invocationName] = &inputbuffer.Run{
-				IsDuplicate: isDuplicate,
+		_, isDuplicate := duplicateMap[invocationName]
+		if isDuplicate {
+			// Do not ingest duplicate runs. They cannot be used for changepoint analysis
+			// as they distort counts of independent events in the segment statistics.
+			continue
+		}
+
+		index, ok := runIndicies[invocationName]
+
+		var run inputbuffer.Run
+		if ok {
+			run = result[index]
+		} else {
+			run = inputbuffer.Run{
+				CommitPosition: commitPosition,
+				Hour:           hour,
 			}
+			index = len(result)
+			result = append(result, run)
+			runIndicies[invocationName] = index
 		}
+
 		if tr.Expected {
 			if tr.Status == rdbpb.TestStatus_PASS {
-				runData[invocationName].Expected.PassCount++
+				run.Expected.PassCount++
 			}
 			if tr.Status == rdbpb.TestStatus_FAIL {
-				runData[invocationName].Expected.FailCount++
+				run.Expected.FailCount++
 			}
 			if tr.Status == rdbpb.TestStatus_CRASH {
-				runData[invocationName].Expected.CrashCount++
+				run.Expected.CrashCount++
 			}
 			if tr.Status == rdbpb.TestStatus_ABORT {
-				runData[invocationName].Expected.AbortCount++
+				run.Expected.AbortCount++
 			}
 		} else {
 			if tr.Status == rdbpb.TestStatus_PASS {
-				runData[invocationName].Unexpected.PassCount++
+				run.Unexpected.PassCount++
 			}
 			if tr.Status == rdbpb.TestStatus_FAIL {
-				runData[invocationName].Unexpected.FailCount++
+				run.Unexpected.FailCount++
 			}
 			if tr.Status == rdbpb.TestStatus_CRASH {
-				runData[invocationName].Unexpected.CrashCount++
+				run.Unexpected.CrashCount++
 			}
 			if tr.Status == rdbpb.TestStatus_ABORT {
-				runData[invocationName].Unexpected.AbortCount++
+				run.Unexpected.AbortCount++
 			}
 		}
+		result[index] = run
 	}
 
-	vd.Runs = make([]inputbuffer.Run, len(runData))
-	i := 0
-	for _, run := range runData {
-		vd.Runs[i] = *run
-		i++
-	}
-	// Sort the run to make a fixed order.
-	// Sort by duplicate (non-duplicate first), then by unexpected count (desc),
-	// then by expected count.
-	sort.Slice(vd.Runs, func(i, j int) bool {
-		if !vd.Runs[i].IsDuplicate && vd.Runs[j].IsDuplicate {
-			return true
-		}
-		if vd.Runs[i].IsDuplicate && !vd.Runs[j].IsDuplicate {
-			return false
-		}
-		if vd.Runs[i].Unexpected.Count() < vd.Runs[j].Unexpected.Count() {
-			return false
-		}
-		if vd.Runs[i].Unexpected.Count() > vd.Runs[j].Unexpected.Count() {
-			return true
-		}
-		return vd.Runs[i].Expected.Count() > vd.Runs[j].Expected.Count()
-	})
-	return vd, nil
+	return result, nil
 }

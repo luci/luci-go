@@ -42,7 +42,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{3})
+		So(changePoints, ShouldResemble, []int{sum(total[:3])})
 	})
 
 	Convey("Pass to fail transition 2", t, func() {
@@ -53,7 +53,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{2})
+		So(changePoints, ShouldResemble, []int{sum(total[:2])})
 	})
 
 	Convey("Pass to flake transition", t, func() {
@@ -64,7 +64,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{2})
+		So(changePoints, ShouldResemble, []int{sum(total[:2])})
 	})
 
 	Convey("Pass to fail to pass transition", t, func() {
@@ -75,7 +75,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{5, 12})
+		So(changePoints, ShouldResemble, []int{sum(total[:5]), sum(total[:12])})
 	})
 
 	Convey("Pass to flake transition", t, func() {
@@ -86,7 +86,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{6})
+		So(changePoints, ShouldResemble, []int{sum(total[:6])})
 	})
 
 	Convey("Flake to fail transition", t, func() {
@@ -97,7 +97,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{6})
+		So(changePoints, ShouldResemble, []int{sum(total[:6])})
 	})
 
 	Convey("Pass consistently", t, func() {
@@ -143,7 +143,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{4})
+		So(changePoints, ShouldResemble, []int{sum(total[:4])})
 	})
 
 	Convey("(Fail, Fail after retry) consistently", t, func() {
@@ -170,12 +170,12 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{3})
+		So(changePoints, ShouldResemble, []int{sum(total[:3])})
 	})
 }
 
-// Output as of March 2023 on Intel Skylake CPU @ 2.00GHz:
-// BenchmarkBayesianAnalysisConsistentPass-48    	   30054	     39879 ns/op	      18 B/op	       0 allocs/op
+// Output as of May 2024 on Intel Skylake CPU @ 2.00GHz:
+// BenchmarkBayesianAnalysisConsistentPass-96    	   17976	     67026 ns/op	      33 B/op	       0 allocs/op
 func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
@@ -189,13 +189,13 @@ func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 		},
 	}
 
-	var vs []inputbuffer.PositionVerdict
+	var vs []inputbuffer.Run
 
 	// Consistently passing test. This represents ~99% of tests.
 	for i := 0; i < 2000; i++ {
-		vs = append(vs, inputbuffer.PositionVerdict{
-			CommitPosition:       i,
-			IsSimpleExpectedPass: true,
+		vs = append(vs, inputbuffer.Run{
+			CommitPosition: int64(i),
+			Expected:       inputbuffer.ResultCounts{PassCount: 1},
 		})
 	}
 	for i := 0; i < b.N; i++ {
@@ -206,8 +206,8 @@ func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 	}
 }
 
-// Output as of March 2023 on Intel Skylake CPU @ 2.00GHz:
-// BenchmarkBayesianAnalysisFlaky-48    	    1500	    796446 ns/op	     396 B/op	       0 allocs/op
+// Output as of May 2024 on Intel Skylake CPU @ 2.00GHz:
+// BenchmarkBayesianAnalysisFlaky-96    	    1426	    839940 ns/op	     424 B/op	       0 allocs/op
 func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
@@ -221,27 +221,21 @@ func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 		},
 	}
 	// Flaky test.
-	var vs []inputbuffer.PositionVerdict
+	var vs []inputbuffer.Run
 	for i := 0; i < 2000; i++ {
 		if i%2 == 0 {
-			vs = append(vs, inputbuffer.PositionVerdict{
-				CommitPosition:       i,
-				IsSimpleExpectedPass: true,
+			vs = append(vs, inputbuffer.Run{
+				CommitPosition: int64(i),
+				Expected:       inputbuffer.ResultCounts{PassCount: 1},
 			})
 		} else {
-			vs = append(vs, inputbuffer.PositionVerdict{
-				CommitPosition: i,
-				Details: inputbuffer.VerdictDetails{
-					Runs: []inputbuffer.Run{
-						{
-							Expected: inputbuffer.ResultCounts{
-								PassCount: 1,
-							},
-							Unexpected: inputbuffer.ResultCounts{
-								FailCount: 1,
-							},
-						},
-					},
+			vs = append(vs, inputbuffer.Run{
+				CommitPosition: int64(i),
+				Expected: inputbuffer.ResultCounts{
+					PassCount: 1,
+				},
+				Unexpected: inputbuffer.ResultCounts{
+					FailCount: 1,
 				},
 			})
 		}

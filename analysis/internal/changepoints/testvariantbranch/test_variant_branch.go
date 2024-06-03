@@ -22,6 +22,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -38,10 +40,11 @@ const (
 	maxHoursToRetain = 5 * 365 * 24
 
 	// StatisticsRetentionDays is the number of days to keep statistics about
-	// evicted verdicts. See Statistics proto for more.
+	// evicted source verdicts. See Statistics proto for more.
 	//
-	// This is a minimum period driven by functional and operational requirements,
-	// our deletion logic will tend to keep retain data for longer (but this is
+	// This is a minimum period driven by 7 days of lookback required for
+	// functional reasons, plus four days to allow for late data ingestion.
+	// Our deletion logic will tend to keep retain data for longer (but this is
 	// OK as it is not user data).
 	StatisticsRetentionDays = 11
 )
@@ -133,8 +136,8 @@ func (tvb *Entry) Copy() *Entry {
 
 // InsertToInputBuffer inserts data of a new test variant into the input
 // buffer.
-func (tvb *Entry) InsertToInputBuffer(pv inputbuffer.PositionVerdict) {
-	tvb.InputBuffer.InsertVerdict(pv)
+func (tvb *Entry) InsertToInputBuffer(pv inputbuffer.Run) {
+	tvb.InputBuffer.InsertRun(pv)
 }
 
 // InsertFinalizedSegment inserts a segment to the end of finalized segments.
@@ -187,17 +190,20 @@ func (tvb *Entry) UpdateOutputBuffer(evictedSegments []inputbuffer.EvictedSegmen
 		segment := evictedSegments[segmentIndex]
 		if segment.State == cpb.SegmentState_FINALIZED {
 			tvb.InsertFinalizedSegment(toSegment(segment))
-		} else { // Finalizing segment.
+		} else {
+			// Finalizing segment. This will always ever be the last evicted segment.
 			tvb.FinalizingSegment = toSegment(segment)
 			tvb.IsFinalizingSegmentDirty = true
 		}
 	}
 
-	var evictedVerdicts []inputbuffer.PositionVerdict
+	// evictedRuns is ordered oldest commit position first,
+	// then oldest hour first.
+	var evictedRuns []inputbuffer.Run
 	for _, segments := range evictedSegments {
-		evictedVerdicts = append(evictedVerdicts, segments.Verdicts...)
+		evictedRuns = append(evictedRuns, segments.Runs...)
 	}
-	tvb.Statistics = applyStatisticsRetention(insertVerdictsIntoStatistics(tvb.Statistics, evictedVerdicts))
+	tvb.Statistics = applyStatisticsRetention(insertVerdictsIntoStatistics(tvb.Statistics, evictedRuns))
 	tvb.IsStatisticsDirty = true
 
 	// Assert that finalizing segment is after finalized segments.
@@ -216,6 +222,9 @@ func verifyEvictedSegments(evictedSegments []inputbuffer.EvictedSegment) {
 			if seg.State != cpb.SegmentState_FINALIZING {
 				panic("last segment of evicted segments should be finalizing")
 			}
+		}
+		if err := inputbuffer.VerifyRunsOrdered(seg.Runs); err != nil {
+			panic(errors.Annotate(err, "segment %v", i).Err())
 		}
 	}
 }
@@ -288,7 +297,7 @@ func combineSegment(finalizingSegment *cpb.Segment, evictedSegment inputbuffer.E
 		StartPositionLowerBound_99Th: finalizingSegment.StartPositionLowerBound_99Th,
 		StartPositionUpperBound_99Th: finalizingSegment.StartPositionUpperBound_99Th,
 		// Update counts.
-		FinalizedCounts: AddCounts(finalizingSegment.FinalizedCounts, evictedSegment.Verdicts),
+		FinalizedCounts: AddCounts(finalizingSegment.FinalizedCounts, evictedSegment.Runs),
 	}
 	var lastUnexpectedResultHour time.Time
 	if finalizingSegment.MostRecentUnexpectedResultHour != nil {
@@ -303,6 +312,8 @@ func combineSegment(finalizingSegment *cpb.Segment, evictedSegment inputbuffer.E
 		// Copy properties only set on finalized segments.
 		result.EndPosition = evictedSegment.EndPosition
 		result.EndHour = timestamppb.New(evictedSegment.EndHour)
+
+		result.FinalizedCounts = flattenCounts(result.FinalizedCounts)
 	}
 	return result
 }
@@ -319,12 +330,14 @@ func toSegment(evictedSegment inputbuffer.EvictedSegment) *cpb.Segment {
 		StartPositionLowerBound_99Th:   evictedSegment.StartPositionLowerBound99Th,
 		StartPositionUpperBound_99Th:   evictedSegment.StartPositionUpperBound99Th,
 		MostRecentUnexpectedResultHour: toTimestampOrNil(evictedSegment.MostRecentUnexpectedResultHour),
-		FinalizedCounts:                AddCounts(nil, evictedSegment.Verdicts),
+		FinalizedCounts:                AddCounts(nil, evictedSegment.Runs),
 	}
 	if evictedSegment.State == cpb.SegmentState_FINALIZED {
 		// Copy properties only set on finalized segments.
 		result.EndPosition = evictedSegment.EndPosition
 		result.EndHour = timestamppb.New(evictedSegment.EndHour)
+
+		result.FinalizedCounts = flattenCounts(result.FinalizedCounts)
 	}
 	return result
 }
@@ -337,7 +350,7 @@ func toTimestampOrNil(t time.Time) *timestamppb.Timestamp {
 }
 
 // AddCounts updates counts with the given new runs.
-func AddCounts(counts *cpb.Counts, verdicts []inputbuffer.PositionVerdict) *cpb.Counts {
+func AddCounts(counts *cpb.Counts, runs []inputbuffer.Run) *cpb.Counts {
 	var result *cpb.Counts
 	if counts == nil {
 		result = &cpb.Counts{}
@@ -345,82 +358,111 @@ func AddCounts(counts *cpb.Counts, verdicts []inputbuffer.PositionVerdict) *cpb.
 		result = proto.Clone(counts).(*cpb.Counts)
 	}
 
-	for _, verdict := range verdicts {
-		result.TotalVerdicts++
-		if verdict.IsSimpleExpectedPass {
-			result.TotalRuns++
-			result.TotalResults++
-			result.ExpectedPassedResults++
-		} else {
-			verdictHasExpectedResults := false
-			verdictHasUnexpectedResults := false
-			for _, run := range verdict.Details.Runs {
-				// Verdict-level statistics.
-				verdictHasExpectedResults = verdictHasExpectedResults || (run.Expected.Count() > 0)
-				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.Unexpected.Count() > 0)
+	verdictStream := NewRunStreamAggregator(result.PartialSourceVerdict)
+	for _, run := range runs {
+		// Result-level statistics.
+		result.TotalResults += int64(run.Expected.Count() + run.Unexpected.Count())
+		result.UnexpectedResults += int64(run.Unexpected.Count())
+		result.ExpectedPassedResults += int64(run.Expected.PassCount)
+		result.ExpectedFailedResults += int64(run.Expected.FailCount)
+		result.ExpectedCrashedResults += int64(run.Expected.CrashCount)
+		result.ExpectedAbortedResults += int64(run.Expected.AbortCount)
+		result.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
+		result.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
+		result.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
+		result.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
 
-				if run.IsDuplicate {
-					continue
-				}
-				// Result-level statistics (ignores duplicate runs).
-				result.TotalResults += int64(run.Expected.Count() + run.Unexpected.Count())
-				result.UnexpectedResults += int64(run.Unexpected.Count())
-				result.ExpectedPassedResults += int64(run.Expected.PassCount)
-				result.ExpectedFailedResults += int64(run.Expected.FailCount)
-				result.ExpectedCrashedResults += int64(run.Expected.CrashCount)
-				result.ExpectedAbortedResults += int64(run.Expected.AbortCount)
-				result.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
-				result.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
-				result.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
-				result.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
+		// Run-level statistics.
+		result.TotalRuns++
+		// flaky run.
+		isFlakyRun := run.Expected.Count() > 0 && run.Unexpected.Count() > 0
+		if isFlakyRun {
+			result.FlakyRuns++
+		}
+		// unexpected unretried run.
+		isUnexpectedUnretried := run.Unexpected.Count() == 1 && run.Expected.Count() == 0
+		if isUnexpectedUnretried {
+			result.UnexpectedUnretriedRuns++
+		}
+		// unexpected after retries run.
+		isUnexpectedAfterRetries := run.Unexpected.Count() > 1 && run.Expected.Count() == 0
+		if isUnexpectedAfterRetries {
+			result.UnexpectedAfterRetryRuns++
+		}
 
-				// Run-level statistics (ignores duplicate runs).
-				result.TotalRuns++
-				// flaky run.
-				isFlakyRun := run.Expected.Count() > 0 && run.Unexpected.Count() > 0
-				if isFlakyRun {
-					result.FlakyRuns++
-				}
-				// unexpected unretried run.
-				isUnexpectedUnretried := run.Unexpected.Count() == 1 && run.Expected.Count() == 0
-				if isUnexpectedUnretried {
-					result.UnexpectedUnretriedRuns++
-				}
-				// unexpected after retries run.
-				isUnexpectedAfterRetries := run.Unexpected.Count() > 1 && run.Expected.Count() == 0
-				if isUnexpectedAfterRetries {
-					result.UnexpectedAfterRetryRuns++
-				}
-			}
-			if verdictHasUnexpectedResults && !verdictHasExpectedResults {
-				result.UnexpectedVerdicts++
-			}
-			if verdictHasUnexpectedResults && verdictHasExpectedResults {
-				result.FlakyVerdicts++
+		v, ok := verdictStream.Insert(run)
+		if !ok {
+			// No verdict yielded.
+			continue
+		}
+		// Add verdict to hourly bucket.
+		result.TotalSourceVerdicts++
+
+		if v.UnexpectedResults > 0 {
+			if v.ExpectedResults > 0 {
+				result.FlakySourceVerdicts++
+			} else {
+				result.UnexpectedSourceVerdicts++
 			}
 		}
 	}
+	result.PartialSourceVerdict = verdictStream.SaveState()
+	return result
+}
 
+// flattenCounts flattens the pending source verdict into the stored
+// counts. This be called on the segment's counts when the segment
+// is finalized and no more runs from the input buffer will be streamed
+// into it, but not before.
+//
+// This does not change the semantics of the *cpb.Counts object, but
+// is a slightly cleaner and more efficient representation.
+func flattenCounts(counts *cpb.Counts) *cpb.Counts {
+	result := proto.Clone(counts).(*cpb.Counts)
+
+	if result.PartialSourceVerdict != nil {
+		// Now that the segment is finalized, the partial source verdict
+		// can be considered complete.
+		pv := result.PartialSourceVerdict
+		result.TotalSourceVerdicts++
+		if pv.UnexpectedResults > 0 {
+			if pv.ExpectedResults > 0 {
+				result.FlakySourceVerdicts++
+			} else {
+				result.UnexpectedSourceVerdicts++
+			}
+		}
+		result.PartialSourceVerdict = nil
+	}
 	return result
 }
 
 // insertVerdictsIntoStatistics updates the given statistics to include
-// the given evicted verdicts. Retention policies are applied.
-func insertVerdictsIntoStatistics(stats *cpb.Statistics, verdicts []inputbuffer.PositionVerdict) *cpb.Statistics {
+// the given evicted runs. Retention policies are applied.
+// Runs are sorted oldest commit position first, then oldest hour first.
+func insertVerdictsIntoStatistics(stats *cpb.Statistics, runs []inputbuffer.Run) *cpb.Statistics {
 	bucketByHour := make(map[int64]*cpb.Statistics_HourBucket)
 	for _, bucket := range stats.GetHourlyBuckets() {
 		// Copy hourly bucket to avoid mutating the passed statistics object.
 		bucketByHour[bucket.Hour] = &cpb.Statistics_HourBucket{
-			Hour:               bucket.Hour,
-			UnexpectedVerdicts: bucket.UnexpectedVerdicts,
-			FlakyVerdicts:      bucket.FlakyVerdicts,
-			TotalVerdicts:      bucket.TotalVerdicts,
+			Hour:                     bucket.Hour,
+			UnexpectedSourceVerdicts: bucket.UnexpectedSourceVerdicts,
+			FlakySourceVerdicts:      bucket.FlakySourceVerdicts,
+			TotalSourceVerdicts:      bucket.TotalSourceVerdicts,
 		}
 	}
 
-	for _, v := range verdicts {
+	verdictStream := NewRunStreamAggregator(stats.GetPartialSourceVerdict())
+
+	for _, run := range runs {
+		v, ok := verdictStream.Insert(run)
+		if !ok {
+			// No verdict yielded.
+			continue
+		}
+
 		// Find or create hourly bucket.
-		hour := v.Hour.Unix() / 3600
+		hour := v.LastHour.Unix() / 3600
 		bucket, ok := bucketByHour[hour]
 		if !ok {
 			bucket = &cpb.Statistics_HourBucket{Hour: hour}
@@ -428,22 +470,18 @@ func insertVerdictsIntoStatistics(stats *cpb.Statistics, verdicts []inputbuffer.
 		}
 
 		// Add verdict to hourly bucket.
-		bucket.TotalVerdicts++
-		if !v.IsSimpleExpectedPass {
-			verdictHasExpectedResults := false
-			verdictHasUnexpectedResults := false
-			for _, run := range v.Details.Runs {
-				verdictHasExpectedResults = verdictHasExpectedResults || (run.Expected.Count() > 0)
-				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.Unexpected.Count() > 0)
-			}
-			if verdictHasUnexpectedResults && !verdictHasExpectedResults {
-				bucket.UnexpectedVerdicts++
-			}
-			if verdictHasUnexpectedResults && verdictHasExpectedResults {
-				bucket.FlakyVerdicts++
+		bucket.TotalSourceVerdicts++
+
+		if v.UnexpectedResults > 0 {
+			if v.ExpectedResults > 0 {
+				bucket.FlakySourceVerdicts++
+			} else {
+				bucket.UnexpectedSourceVerdicts++
 			}
 		}
 	}
+
+	partialSourceVerdict := verdictStream.SaveState()
 
 	buckets := make([]*cpb.Statistics_HourBucket, 0, len(bucketByHour))
 	for _, bucket := range bucketByHour {
@@ -456,7 +494,8 @@ func insertVerdictsIntoStatistics(stats *cpb.Statistics, verdicts []inputbuffer.
 	})
 
 	return &cpb.Statistics{
-		HourlyBuckets: buckets,
+		PartialSourceVerdict: partialSourceVerdict,
+		HourlyBuckets:        buckets,
 	}
 }
 
@@ -464,6 +503,8 @@ func insertVerdictsIntoStatistics(stats *cpb.Statistics, verdicts []inputbuffer.
 // to statistics data.
 func applyStatisticsRetention(stats *cpb.Statistics) *cpb.Statistics {
 	buckets := stats.HourlyBuckets
+
+	var result []*cpb.Statistics_HourBucket
 
 	// Apply data deletion policies.
 	if len(buckets) > 0 {
@@ -483,17 +524,51 @@ func applyStatisticsRetention(stats *cpb.Statistics) *cpb.Statistics {
 			}
 			deleteBeforeIndex = i
 		}
-		buckets = buckets[deleteBeforeIndex+1:]
+		result = append(result, buckets[deleteBeforeIndex+1:]...)
 	}
-	return &cpb.Statistics{HourlyBuckets: buckets}
+	return &cpb.Statistics{
+		HourlyBuckets:        result,
+		PartialSourceVerdict: stats.PartialSourceVerdict,
+	}
 }
 
-// MergedStatistics returns statistics about the verdicts ingested for
+type HourlyStats struct {
+	TotalSourceVerdicts      int64
+	FlakySourceVerdicts      int64
+	UnexpectedSourceVerdicts int64
+}
+
+// HourlyStatistics returns statistics about the verdicts ingested for
 // given test variant branch. Statistics comprise data from both the
 // input buffer and the output buffer.
-func (tvb *Entry) MergedStatistics() *cpb.Statistics {
-	verdicts := make([]inputbuffer.PositionVerdict, 0, inputbuffer.DefaultColdBufferCapacity+inputbuffer.DefaultHotBufferCapacity)
-	verdicts = append(verdicts, tvb.InputBuffer.ColdBuffer.Verdicts...)
-	verdicts = append(verdicts, tvb.InputBuffer.HotBuffer.Verdicts...)
-	return insertVerdictsIntoStatistics(tvb.Statistics, verdicts)
+//
+// The results are in a map keyed by hour (unix seconds / 3600).
+func (tvb *Entry) HourlyStatistics() map[int64]HourlyStats {
+	var runs []inputbuffer.Run
+	tvb.InputBuffer.MergeBuffer(&runs)
+	updatedStats := insertVerdictsIntoStatistics(tvb.Statistics, runs)
+
+	result := make(map[int64]HourlyStats)
+	for _, bucket := range updatedStats.HourlyBuckets {
+		result[bucket.Hour] = HourlyStats{
+			TotalSourceVerdicts:      bucket.TotalSourceVerdicts,
+			FlakySourceVerdicts:      bucket.FlakySourceVerdicts,
+			UnexpectedSourceVerdicts: bucket.UnexpectedSourceVerdicts,
+		}
+	}
+	pendingSourceVerdict := updatedStats.PartialSourceVerdict
+	if pendingSourceVerdict != nil {
+		hour := int64(updatedStats.PartialSourceVerdict.LastHour.GetSeconds() / 3600)
+		stats := result[hour]
+		stats.TotalSourceVerdicts++
+		if pendingSourceVerdict.UnexpectedResults > 0 {
+			if pendingSourceVerdict.ExpectedResults > 0 {
+				stats.FlakySourceVerdicts++
+			} else {
+				stats.UnexpectedSourceVerdicts++
+			}
+		}
+		result[hour] = stats
+	}
+	return result
 }

@@ -159,44 +159,40 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					},
 					InputBuffer: &inputbuffer.Buffer{
 						HotBuffer: inputbuffer.History{
-							Verdicts: []inputbuffer.PositionVerdict{
+							Runs: []inputbuffer.Run{
 								{
-									CommitPosition:       20,
-									IsSimpleExpectedPass: true,
-									Hour:                 time.Unix(3600, 0),
+									CommitPosition: 120,
+									Hour:           time.Unix(3600, 0),
+									Expected: inputbuffer.ResultCounts{
+										PassCount: 1,
+									},
 								},
 							},
 						},
 						ColdBuffer: inputbuffer.History{
-							Verdicts: []inputbuffer.PositionVerdict{
+							Runs: []inputbuffer.Run{
 								{
-									CommitPosition: 30,
-									Hour:           time.Unix(7200, 0),
-									Details: inputbuffer.VerdictDetails{
-										IsExonerated: true,
-										Runs: []inputbuffer.Run{
-											{
-												Expected: inputbuffer.ResultCounts{
-													PassCount: 1,
-													FailCount: 2,
-												},
-												Unexpected: inputbuffer.ResultCounts{
-													CrashCount: 3,
-													AbortCount: 4,
-												},
-												IsDuplicate: true,
-											},
-											{
-												Expected: inputbuffer.ResultCounts{
-													CrashCount: 5,
-													AbortCount: 6,
-												},
-												Unexpected: inputbuffer.ResultCounts{
-													PassCount:  7,
-													AbortCount: 8,
-												},
-											},
-										},
+									CommitPosition: 130,
+									Hour:           time.Unix(2*3600, 0),
+									Expected: inputbuffer.ResultCounts{
+										PassCount: 1,
+										FailCount: 2,
+									},
+									Unexpected: inputbuffer.ResultCounts{
+										CrashCount: 3,
+										AbortCount: 4,
+									},
+								},
+								{
+									CommitPosition: 131,
+									Hour:           time.Unix(3*3600, 0),
+									Expected: inputbuffer.ResultCounts{
+										CrashCount: 5,
+										AbortCount: 6,
+									},
+									Unexpected: inputbuffer.ResultCounts{
+										PassCount:  7,
+										AbortCount: 8,
 									},
 								},
 							},
@@ -211,6 +207,11 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						StartPositionUpperBound_99Th: 105,
 						FinalizedCounts: &cpb.Counts{
 							UnexpectedResults: 1,
+							PartialSourceVerdict: &cpb.PartialSourceVerdict{
+								CommitPosition:    110,
+								LastHour:          timestamppb.New(time.Unix(3600, 0)),
+								UnexpectedResults: 1,
+							},
 						},
 					},
 					FinalizedSegments: &cpb.Segments{
@@ -230,17 +231,22 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					Statistics: &cpb.Statistics{
 						HourlyBuckets: []*cpb.Statistics_HourBucket{
 							{
-								Hour:               123456,
-								UnexpectedVerdicts: 1,
-								FlakyVerdicts:      3,
-								TotalVerdicts:      12,
+								Hour:                     123456,
+								UnexpectedSourceVerdicts: 1,
+								FlakySourceVerdicts:      3,
+								TotalSourceVerdicts:      12,
 							},
 							{
-								Hour:               123500,
-								UnexpectedVerdicts: 3,
-								FlakyVerdicts:      7,
-								TotalVerdicts:      93,
+								Hour:                     123500,
+								UnexpectedSourceVerdicts: 3,
+								FlakySourceVerdicts:      7,
+								TotalSourceVerdicts:      93,
 							},
+						},
+						PartialSourceVerdict: &cpb.PartialSourceVerdict{
+							CommitPosition:    99999,
+							LastHour:          timestamppb.New(time.Unix(3600, 0)),
+							UnexpectedResults: 1,
 						},
 					},
 				}
@@ -278,39 +284,37 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					Statistics:        expectedStatistics,
 					HotBuffer: &pb.InputBuffer{
 						Length: 1,
-						Verdicts: []*pb.PositionVerdict{
+						Runs: []*pb.InputBuffer_Run{
 							{
-								CommitPosition: 20,
+								CommitPosition: 120,
 								Hour:           timestamppb.New(time.Unix(3600, 0)),
-								Runs: []*pb.PositionVerdict_Run{
-									{
-										ExpectedPassCount: 1,
-									},
+								Counts: &pb.InputBuffer_Run_Counts{
+									ExpectedPassCount: 1,
 								},
 							},
 						},
 					},
 					ColdBuffer: &pb.InputBuffer{
-						Length: 1,
-						Verdicts: []*pb.PositionVerdict{
+						Length: 2,
+						Runs: []*pb.InputBuffer_Run{
 							{
-								CommitPosition: 30,
-								Hour:           timestamppb.New(time.Unix(7200, 0)),
-								IsExonerated:   true,
-								Runs: []*pb.PositionVerdict_Run{
-									{
-										ExpectedPassCount:    1,
-										ExpectedFailCount:    2,
-										UnexpectedCrashCount: 3,
-										UnexpectedAbortCount: 4,
-										IsDuplicate:          true,
-									},
-									{
-										ExpectedCrashCount:   5,
-										ExpectedAbortCount:   6,
-										UnexpectedPassCount:  7,
-										UnexpectedAbortCount: 8,
-									},
+								CommitPosition: 130,
+								Hour:           timestamppb.New(time.Unix(2*3600, 0)),
+								Counts: &pb.InputBuffer_Run_Counts{
+									ExpectedPassCount:    1,
+									ExpectedFailCount:    2,
+									UnexpectedCrashCount: 3,
+									UnexpectedAbortCount: 4,
+								},
+							},
+							{
+								CommitPosition: 131,
+								Hour:           timestamppb.New(time.Unix(3*3600, 0)),
+								Counts: &pb.InputBuffer_Run_Counts{
+									ExpectedCrashCount:   5,
+									ExpectedAbortCount:   6,
+									UnexpectedPassCount:  7,
+									UnexpectedAbortCount: 8,
 								},
 							},
 						},
@@ -394,16 +398,18 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					},
 					InputBuffer: &inputbuffer.Buffer{
 						HotBuffer: inputbuffer.History{
-							Verdicts: []inputbuffer.PositionVerdict{
+							Runs: []inputbuffer.Run{
 								{
-									CommitPosition:       200,
-									IsSimpleExpectedPass: true,
-									Hour:                 time.Unix(3700, 0),
+									CommitPosition: 200,
+									Hour:           time.Unix(2*3600, 0),
+									Expected: inputbuffer.ResultCounts{
+										PassCount: 1,
+									},
 								},
 							},
 						},
 						ColdBuffer: inputbuffer.History{
-							Verdicts: []inputbuffer.PositionVerdict{},
+							Runs: []inputbuffer.Run{},
 						},
 					},
 					FinalizingSegment: &cpb.Segment{
@@ -414,20 +420,26 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						StartPositionLowerBound_99Th: 95,
 						StartPositionUpperBound_99Th: 105,
 						FinalizedCounts: &cpb.Counts{
-							UnexpectedVerdicts: 1,
-							TotalVerdicts:      1,
+							UnexpectedSourceVerdicts: 1,
+							TotalSourceVerdicts:      1,
+							PartialSourceVerdict: &cpb.PartialSourceVerdict{
+								CommitPosition:  150,
+								LastHour:        timestamppb.New(time.Unix(3600, 0)),
+								ExpectedResults: 1,
+							},
 						},
 					},
 					FinalizedSegments: &cpb.Segments{
 						Segments: []*cpb.Segment{
 							{
 								State:                        cpb.SegmentState_FINALIZED,
+								StartPosition:                50,
 								StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 								StartPositionLowerBound_99Th: 45,
 								StartPositionUpperBound_99Th: 55,
 								FinalizedCounts: &cpb.Counts{
-									UnexpectedVerdicts: 2,
-									TotalVerdicts:      2,
+									UnexpectedSourceVerdicts: 2,
+									TotalSourceVerdicts:      2,
 								},
 							},
 						},
@@ -476,16 +488,17 @@ func TestTestVariantBranchesServer(t *testing.T) {
 							StartPositionUpperBound_99Th: 105,
 							StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 							EndPosition:                  200,
-							EndHour:                      timestamppb.New(time.Unix(3600, 0)),
+							EndHour:                      timestamppb.New(time.Unix(2*3600, 0)),
 							Counts: &pb.Segment_Counts{
 								UnexpectedVerdicts: 1,
 								FlakyVerdicts:      0,
-								TotalVerdicts:      2,
+								TotalVerdicts:      3,
 							},
 						},
 						{
 							StartPositionLowerBound_99Th: 45,
 							StartPositionUpperBound_99Th: 55,
+							StartPosition:                50,
 							StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 							EndHour:                      timestamppb.New(time.Unix(0, 0)),
 							Counts: &pb.Segment_Counts{
@@ -1125,10 +1138,10 @@ func (b *testVariantBranchBuilder) buildProto() *pb.TestVariantBranch {
 				StartPositionUpperBound_99Th: 105,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				EndPosition:                  200,
-				EndHour:                      timestamppb.New(time.Unix(3600, 0)),
+				EndHour:                      timestamppb.New(time.Unix(3*3600, 0)),
 				Counts: &pb.Segment_Counts{
 					UnexpectedVerdicts: 1,
-					FlakyVerdicts:      0,
+					FlakyVerdicts:      1,
 					TotalVerdicts:      2,
 				},
 			},
@@ -1213,16 +1226,18 @@ func (b *testVariantBranchBuilder) buildEntry() *testvariantbranch.Entry {
 		},
 		InputBuffer: &inputbuffer.Buffer{
 			HotBuffer: inputbuffer.History{
-				Verdicts: []inputbuffer.PositionVerdict{
+				Runs: []inputbuffer.Run{
 					{
-						CommitPosition:       200,
-						IsSimpleExpectedPass: true,
-						Hour:                 time.Unix(3700, 0),
+						CommitPosition: 200,
+						Hour:           time.Unix(3*3600, 0),
+						Expected: inputbuffer.ResultCounts{
+							PassCount: 1,
+						},
 					},
 				},
 			},
 			ColdBuffer: inputbuffer.History{
-				Verdicts: []inputbuffer.PositionVerdict{},
+				Runs: []inputbuffer.Run{},
 			},
 		},
 		FinalizingSegment: &cpb.Segment{
@@ -1233,8 +1248,13 @@ func (b *testVariantBranchBuilder) buildEntry() *testvariantbranch.Entry {
 			StartPositionLowerBound_99Th: 95,
 			StartPositionUpperBound_99Th: 105,
 			FinalizedCounts: &cpb.Counts{
-				UnexpectedVerdicts: 1,
-				TotalVerdicts:      1,
+				UnexpectedSourceVerdicts: 1,
+				TotalSourceVerdicts:      1,
+				PartialSourceVerdict: &cpb.PartialSourceVerdict{
+					CommitPosition:    200,
+					LastHour:          timestamppb.New(time.Unix(7200, 0)),
+					UnexpectedResults: 1,
+				},
 			},
 		},
 		FinalizedSegments: &cpb.Segments{
@@ -1246,8 +1266,8 @@ func (b *testVariantBranchBuilder) buildEntry() *testvariantbranch.Entry {
 					StartPositionLowerBound_99Th: 45,
 					StartPositionUpperBound_99Th: 55,
 					FinalizedCounts: &cpb.Counts{
-						UnexpectedVerdicts: 2,
-						TotalVerdicts:      2,
+						UnexpectedSourceVerdicts: 2,
+						TotalSourceVerdicts:      2,
 					},
 				},
 			},

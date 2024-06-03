@@ -42,12 +42,12 @@ message Segment {
   bool has_start_changepoint = 2;
   // The earliest commit position included in the segment.
   int64 start_position = 3;
-  // The earliest hour a verdict with the given start_position was recorded.
+  // The earliest hour a run with the given start_position was recorded.
   google.protobuf.Timestamp start_hour = 4;
   // The end commit position of the segment.
   // If set, the invariant end_position >= start_position holds.
   int64 end_position = 5;
-  // The latest hour a verdict with the last commit position in the segment
+  // The latest hour a run with the last commit position in the segment
   // was recorded.
   google.protobuf.Timestamp end_hour = 6;
   // The lower bound of the change point position at the start of the segment
@@ -61,15 +61,15 @@ message Segment {
   // start_position <= start_position_upper_bound_99th <= end_position
   // holds.
   int64 start_position_upper_bound_99th = 8;
-  // The hour the most recent verdict with an unexpected test result
-  // was produced. *Only* captures the most recent hour for verdicts
+  // The hour the most recent run with an unexpected test result
+  // was produced. *Only* captures the most recent hour for runs
   // that are no longer in the input buffer. Used to set
   // has_recent_unexpected_results on the output.
   google.protobuf.Timestamp most_recent_unexpected_result_hour = 9;
   // Finalized counts for the segment. Note that this should
-  // *only* capture counts for verdicts that are no longer in
+  // *only* capture counts for runs that are no longer in
   // the input buffer.
-  // Counts for verdicts in the input buffer can be obtained from the input
+  // Counts for runs in the input buffer can be obtained from the input
   // buffer.
   Counts finalized_counts = 10;
 }
@@ -89,7 +89,7 @@ enum SegmentState {
 }
 
 // All exclude the effect of skipped test results.
-// Next ID: 18
+// Next ID: 19
 message Counts {
   // The number of unexpected non-skipped test results.
   int64 unexpected_results = 1;
@@ -136,28 +136,40 @@ message Counts {
   // The total number of test runs.
   int64 total_runs = 6;
 
-  // The following verdict statistics exclude the effect of exonerations,
-  // and skipped test results. Verdicts with only skipped results are not counted
-  // at all.
-  // The number of verdicts with only unexpected test results.
-  int64 unexpected_verdicts = 7;
+  // The following statistics are about source verdicts (a source verdict
+  // is the summary of all test results at a source position).
+  // Exoneration is not a concept that applies to source verdicts.
 
-  // The number of verdicts with a mix of expected and unexpected test results.
-  int64 flaky_verdicts = 8;
+  // The number of source verdicts which had only unexpected test results.
+  // Excludes partial_source_verdict (if any).
+  int64 unexpected_source_verdicts = 7;
 
-  // The total number of verdicts.
-  int64 total_verdicts = 9;
+  // The number of source verdicts that had both unexpected and expected
+  // test results.
+  // Excludes partial_source_verdict (if any).
+  int64 flaky_source_verdicts = 8;
+
+  // The total number of source verdicts.
+  // Excludes partial_source_verdict (if any).
+  int64 total_source_verdicts = 9;
+
+  // Statistics about the last (partial) source verdict evicted from
+  // the input buffer (if any).
+  // As not all results at the source position may have been evicted
+  // in one go, it is stored separately here in an incomplete state
+  // until the segment is finalized.
+  PartialSourceVerdict partial_source_verdict = 18;
 }
 
-// Store statistics about verdicts evicted from the input buffer in Spanner.
+// Store statistics about runs evicted from the input buffer in Spanner.
 //
 // Purpose is described in go/luci-analysis-test-variant-analysis-in-clusters.
 //
-// Statistics about verdicts not yet evicted from the input buffer are not
+// Statistics about runs not yet evicted from the input buffer are not
 // stored here because they can be computed directly from the input buffer.
 // This means this proto only needs to be updated in Spanner when
-// verdicts are evicted from the input buffer (approximately every 1/100
-// verdict ingestions), rather than on every verdict ingestion, reducing the
+// runs are evicted from the input buffer (approximately every 1/100
+// run ingestions), rather than on every run ingestion, reducing the
 // number of writes required.
 message Statistics {
   // Statistics by partition time hour. Stored in ascending order (oldest
@@ -179,25 +191,46 @@ message Statistics {
     // (i.e. as a unix timestamp), divided by 3600.
     int64 hour = 1;
 
-    // The following verdict totals are subject to the ingestion criteria
+    // The following source verdict totals are subject to the ingestion criteria
     // for test variant analysis. Broadly speaking, this excludes:
     // - data for tryjobs that were not in submitted CV runs,
-    // - duplicate verdicts (where the same test runs have already been ingested),
-    // - all skipped test results. If a verdict has only skipped results,
-    //   it is not ingested. Otherwise, the verdict is ingested minus its
+    // - duplicate test runs (where the same test runs have already been ingested),
+    // - all skipped test results. If a run has only skipped results,
+    //   it is not ingested. Otherwise, the run is ingested minus its
     //   skipped results and its status (e.g. expected, flaky or unexpected)
     //   is computed based on the remaining non-skipped results.
     //
     // Lastly, the effect of exoneration is excluded (this means that if a
-    // flaky verdict is exonerated, it is counted as flaky, and if an
-    // unexpected verdict is exonerated, it is counted as unexpected).
+    // flaky run is exonerated, it is counted as flaky, and if an
+    // unexpected run is exonerated, it is counted as unexpected).
 
-    // The number of verdicts with only unexpected test results (excluding skips).
-    int64 unexpected_verdicts = 2;
-    // The number of verdicts with a mix of expected and unexpected test results
+    // The number of source verdicts with only unexpected test results (excluding skips).
+    int64 unexpected_source_verdicts = 2;
+    // The number of source verdicts with a mix of expected and unexpected test results
     // (excluding skips.)
-    int64 flaky_verdicts = 3;
-    // The total number of verdicts.
-    int64 total_verdicts = 4;
+    int64 flaky_source_verdicts = 3;
+    // The total number of source verdicts.
+    int64 total_source_verdicts = 4;
   }
+
+  // Statistics about the last (partial) source verdict evicted from
+  // the input buffer (if any).
+  // As not all test runs at the source position may have been evicted
+  // in one go, they are accumulated separately here until the source
+  // verdict is complete and it can be merged into an hour bucket.
+  PartialSourceVerdict partial_source_verdict = 2;
+}
+
+// Statistics about a source verdict. A source verdict comprises
+// all test results at a commit postiion.
+message PartialSourceVerdict {
+  // The source position.
+  int64 commit_position = 1;
+  // The most recent hour at which a result was recorded for this commit
+  // position.
+  google.protobuf.Timestamp last_hour = 2;
+  // The number of unexpected test results at this commit position (so far).
+  int64 unexpected_results = 3;
+  // The number of test results at this commit position (so far).
+  int64 expected_results = 4;
 }

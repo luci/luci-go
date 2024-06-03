@@ -500,19 +500,19 @@ func setupTestVariantAnalysis(ctx context.Context, partitionTime time.Time) *tes
 			HotBufferCapacity:  100,
 			ColdBufferCapacity: 2000,
 			HotBuffer: inputbuffer.History{
-				Verdicts: []inputbuffer.PositionVerdict{},
+				Runs: []inputbuffer.Run{},
 			},
 			ColdBuffer: inputbuffer.History{
-				Verdicts: []inputbuffer.PositionVerdict{},
+				Runs: []inputbuffer.Run{},
 			},
 		},
 		Statistics: &changepointspb.Statistics{
 			HourlyBuckets: []*changepointspb.Statistics_HourBucket{
 				{
-					Hour:               int64(hour - 23),
-					UnexpectedVerdicts: 123,
-					FlakyVerdicts:      456,
-					TotalVerdicts:      1999,
+					Hour:                     int64(hour - 23),
+					UnexpectedSourceVerdicts: 123,
+					FlakySourceVerdicts:      456,
+					TotalSourceVerdicts:      1999,
 				},
 			},
 		},
@@ -550,34 +550,27 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 			HotBufferCapacity:  100,
 			ColdBufferCapacity: 2000,
 			HotBuffer: inputbuffer.History{
-				Verdicts: []inputbuffer.PositionVerdict{
+				Runs: []inputbuffer.Run{
 					{
 						CommitPosition: 16801,
 						Hour:           hour,
-						Details: inputbuffer.VerdictDetails{
-							IsExonerated: true,
-							Runs: []inputbuffer.Run{
-								{
-									Unexpected: inputbuffer.ResultCounts{
-										FailCount: 1,
-									},
-								},
-							},
+						Unexpected: inputbuffer.ResultCounts{
+							FailCount: 1,
 						},
 					},
 				},
 			},
 			ColdBuffer: inputbuffer.History{
-				Verdicts: []inputbuffer.PositionVerdict{},
+				Runs: []inputbuffer.Run{},
 			},
 		},
 		Statistics: &changepointspb.Statistics{
 			HourlyBuckets: []*changepointspb.Statistics_HourBucket{
 				{
-					Hour:               int64(hour.Unix()/3600 - 23),
-					UnexpectedVerdicts: 123,
-					FlakyVerdicts:      456,
-					TotalVerdicts:      1999,
+					Hour:                     int64(hour.Unix()/3600 - 23),
+					UnexpectedSourceVerdicts: 123,
+					FlakySourceVerdicts:      456,
+					TotalSourceVerdicts:      1999,
 				},
 			},
 		},

@@ -41,8 +41,8 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, 1)
-		So(max, ShouldEqual, 4)
+		So(min, ShouldEqual, sum(total[:1]))
+		So(max, ShouldEqual, sum(total[:4]))
 	})
 
 	Convey("4 commit positions, 2 verdict each", t, func() {
@@ -53,8 +53,8 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, 2)
-		So(max, ShouldEqual, 6)
+		So(min, ShouldEqual, sum(total[:2]))
+		So(max, ShouldEqual, sum(total[:6]))
 	})
 
 	Convey("2 commit position with multiple verdicts each", t, func() {
@@ -66,8 +66,8 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		// There is only 1 possible position for change point
-		So(min, ShouldEqual, 2)
-		So(max, ShouldEqual, 2)
+		So(min, ShouldEqual, sum(total[:2]))
+		So(max, ShouldEqual, sum(total[:2]))
 	})
 
 	Convey("Pass to flake transition", t, func() {
@@ -78,8 +78,8 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, 1)
-		So(max, ShouldEqual, 13)
+		So(min, ShouldEqual, sum(total[:1]))
+		So(max, ShouldEqual, sum(total[:13]))
 	})
 
 	Convey("Flake to fail transition", t, func() {
@@ -90,8 +90,8 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, 1)
-		So(max, ShouldEqual, 13)
+		So(min, ShouldEqual, sum(total[:1]))
+		So(max, ShouldEqual, sum(total[:13]))
 	})
 
 	Convey("(Fail, Pass after retry) to (Fail, Fail after retry)", t, func() {
@@ -104,8 +104,8 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, 2)
-		So(max, ShouldEqual, 5)
+		So(min, ShouldEqual, sum(total[:2]))
+		So(max, ShouldEqual, sum(total[:5]))
 	})
 
 	Convey("(Fail, Fail after retry) to (Fail, Flaky on retry)", t, func() {
@@ -118,13 +118,21 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, 1)
-		So(max, ShouldEqual, 3)
+		So(min, ShouldEqual, sum(total[:1]))
+		So(max, ShouldEqual, sum(total[:3]))
 	})
 }
 
-// Output as of March 2023 on Cloudtop CPU AMD EPYC 7B12
-// BenchmarkChangePointPositionConfidenceInterval-24    	    1947	    613173 ns/op
+func sum(totals []int) int {
+	total := 0
+	for _, v := range totals {
+		total += v
+	}
+	return total
+}
+
+// Output as of May 2024 on Intel Skylake CPU @ 2.00GHz:
+// BenchmarkChangePointPositionConfidenceInterval-96    	    1406	    814377 ns/op	  120478 B/op	      28 allocs/op
 func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
@@ -138,27 +146,18 @@ func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 		},
 	}
 
-	var vs []inputbuffer.PositionVerdict
+	var vs []inputbuffer.Run
 
 	for i := 0; i <= 1000; i++ {
-		vs = append(vs, inputbuffer.PositionVerdict{
-			CommitPosition:       i,
-			IsSimpleExpectedPass: true,
+		vs = append(vs, inputbuffer.Run{
+			CommitPosition: int64(i),
+			Expected:       inputbuffer.ResultCounts{PassCount: 1},
 		})
 	}
 	for i := 1001; i < 2000; i++ {
-		vs = append(vs, inputbuffer.PositionVerdict{
-			CommitPosition:       i,
-			IsSimpleExpectedPass: false,
-			Details: inputbuffer.VerdictDetails{
-				Runs: []inputbuffer.Run{
-					{
-						Unexpected: inputbuffer.ResultCounts{
-							FailCount: 1,
-						},
-					},
-				},
-			},
+		vs = append(vs, inputbuffer.Run{
+			CommitPosition: int64(i),
+			Unexpected:     inputbuffer.ResultCounts{FailCount: 1},
 		})
 	}
 

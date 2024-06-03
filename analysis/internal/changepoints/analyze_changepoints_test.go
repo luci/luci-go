@@ -395,16 +395,18 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 			InputBuffer: &inputbuffer.Buffer{
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       10,
-							IsSimpleExpectedPass: true,
-							Hour:                 payload.PartitionTime.AsTime(),
+							CommitPosition: 10,
+							Hour:           payload.PartitionTime.AsTime(),
+							Expected: inputbuffer.ResultCounts{
+								PassCount: 1,
+							},
 						},
 					},
 				},
 				ColdBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{},
+					Runs: []inputbuffer.Run{},
 				},
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
@@ -432,35 +434,27 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 			InputBuffer: &inputbuffer.Buffer{
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       10,
-							IsSimpleExpectedPass: false,
-							Hour:                 payload.PartitionTime.AsTime(),
-							Details: inputbuffer.VerdictDetails{
-								IsExonerated: false,
-								Runs: []inputbuffer.Run{
-									{
-										Expected: inputbuffer.ResultCounts{
-											PassCount:  1,
-											FailCount:  1,
-											CrashCount: 1,
-											AbortCount: 1,
-										},
-										Unexpected: inputbuffer.ResultCounts{
-											PassCount:  1,
-											FailCount:  1,
-											CrashCount: 1,
-											AbortCount: 1,
-										},
-									},
-								},
+							CommitPosition: 10,
+							Hour:           payload.PartitionTime.AsTime(),
+							Expected: inputbuffer.ResultCounts{
+								PassCount:  1,
+								FailCount:  1,
+								CrashCount: 1,
+								AbortCount: 1,
+							},
+							Unexpected: inputbuffer.ResultCounts{
+								PassCount:  1,
+								FailCount:  1,
+								CrashCount: 1,
+								AbortCount: 1,
 							},
 						},
 					},
 				},
 				ColdBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{},
+					Runs: []inputbuffer.Run{},
 				},
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
@@ -556,8 +550,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		ctx := newContext(t)
 		exporter, client := fakeExporter()
 
+		const ingestedVerdictPosition = 10
+
 		// Store some existing data in spanner first.
-		sourcesMap := tu.SampleSourcesMap(10)
+		sourcesMap := tu.SampleSourcesMap(ingestedVerdictPosition)
 		positions := make([]int, 2000)
 		total := make([]int, 2000)
 		hasUnexpected := make([]int, 2000)
@@ -584,10 +580,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 			InputBuffer: &inputbuffer.Buffer{
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{},
+					Runs: []inputbuffer.Run{},
 				},
 				ColdBuffer: inputbuffer.History{
-					Verdicts: vs,
+					Runs: vs,
 				},
 				IsColdBufferDirty: true,
 			},
@@ -610,8 +606,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:   "invocations/abc/tests/xyz",
-							Status: rdbpb.TestStatus_PASS,
+							Name:     "invocations/abc/tests/xyz",
+							Status:   rdbpb.TestStatus_PASS,
+							Expected: true,
 						},
 					},
 				},
@@ -643,15 +640,21 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		// Only statistics for verdicts evicted from the output buffer should be
 		// included in the statistics.
 		var expectedBuckets []*cpb.Statistics_HourBucket
-		for i := 1; i <= 100; i++ {
+		for i := 1; i < 100; i++ {
+			if i == ingestedVerdictPosition {
+				// The verdict at this position was merged with
+				// the ingested verdict, and attracted a later
+				// hour.
+				continue
+			}
 			bucket := &cpb.Statistics_HourBucket{
-				Hour:          int64(i),
-				TotalVerdicts: 1,
+				Hour:                int64(i),
+				TotalSourceVerdicts: 1,
 			}
 			expectedBuckets = append(expectedBuckets, bucket)
 			if bucket.Hour == ingestedVerdictHour {
 				// Add one for the verdict we just ingested.
-				bucket.TotalVerdicts += 1
+				bucket.TotalSourceVerdicts += 1
 			}
 		}
 
@@ -676,10 +679,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 			InputBuffer: &inputbuffer.Buffer{
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{},
+					Runs: []inputbuffer.Run{},
 				},
 				ColdBuffer: inputbuffer.History{
-					Verdicts: vs[100:],
+					Runs: vs[100:],
 				},
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
@@ -705,7 +708,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 						FinalizedCounts: &cpb.Counts{
 							TotalResults:          101,
 							TotalRuns:             101,
-							TotalVerdicts:         101,
+							TotalSourceVerdicts:   100,
 							ExpectedPassedResults: 101,
 						},
 					},
@@ -713,6 +716,11 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 			Statistics: &cpb.Statistics{
 				HourlyBuckets: expectedBuckets,
+				PartialSourceVerdict: &cpb.PartialSourceVerdict{
+					CommitPosition:  100,
+					LastHour:        timestamppb.New(time.Unix(100*3600, 0)),
+					ExpectedResults: 1,
+				},
 			},
 		})
 		So(len(client.Insertions), ShouldEqual, 1)
@@ -749,15 +757,17 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 			InputBuffer: &inputbuffer.Buffer{
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       1,
-							IsSimpleExpectedPass: true,
+							CommitPosition: 1,
+							Expected: inputbuffer.ResultCounts{
+								PassCount: 1,
+							},
 						},
 					},
 				},
 				ColdBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{},
+					Runs: []inputbuffer.Run{},
 				},
 				IsColdBufferDirty: true,
 			},
@@ -781,8 +791,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:   "invocations/abc/tests/xyz",
-							Status: rdbpb.TestStatus_PASS,
+							Name:     "invocations/abc/tests/xyz",
+							Status:   rdbpb.TestStatus_PASS,
+							Expected: true,
 						},
 					},
 				},
@@ -831,20 +842,24 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 			InputBuffer: &inputbuffer.Buffer{
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
+					Runs: []inputbuffer.Run{
 						{
-							CommitPosition:       1,
-							IsSimpleExpectedPass: true,
+							CommitPosition: 1,
+							Expected: inputbuffer.ResultCounts{
+								PassCount: 1,
+							},
 						},
 						{
-							CommitPosition:       10,
-							IsSimpleExpectedPass: true,
-							Hour:                 payload.PartitionTime.AsTime(),
+							CommitPosition: 10,
+							Hour:           payload.PartitionTime.AsTime(),
+							Expected: inputbuffer.ResultCounts{
+								PassCount: 1,
+							},
 						},
 					},
 				},
 				ColdBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{},
+					Runs: []inputbuffer.Run{},
 				},
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
@@ -944,14 +959,14 @@ func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *testva
 		InputBuffer:       &inputbuffer.Buffer{},
 	}
 	for _, pos := range hotPositions {
-		tvb.InputBuffer.HotBuffer.Verdicts = append(tvb.InputBuffer.HotBuffer.Verdicts, inputbuffer.PositionVerdict{
-			CommitPosition: pos,
+		tvb.InputBuffer.HotBuffer.Runs = append(tvb.InputBuffer.HotBuffer.Runs, inputbuffer.Run{
+			CommitPosition: int64(pos),
 		})
 	}
 
 	for _, pos := range coldPositions {
-		tvb.InputBuffer.ColdBuffer.Verdicts = append(tvb.InputBuffer.ColdBuffer.Verdicts, inputbuffer.PositionVerdict{
-			CommitPosition: pos,
+		tvb.InputBuffer.ColdBuffer.Runs = append(tvb.InputBuffer.ColdBuffer.Runs, inputbuffer.Run{
+			CommitPosition: int64(pos),
 		})
 	}
 	return tvb

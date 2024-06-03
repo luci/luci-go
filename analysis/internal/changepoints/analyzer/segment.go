@@ -34,13 +34,13 @@ type Segment struct {
 	// confidence interval. Inclusive.
 	// Only set if HasStartChangepoint is set.
 	StartPositionUpperBound99Th int64
-	// The earliest hour a test verdict at the indicated nominal
+	// The earliest hour a test run at the indicated nominal StartPosition
 	// was recorded. Gives an approximate upper bound on the timestamp the
 	// changepoint occurred, for systems which need to filter by date.
 	StartHour time.Time
 	// The nominal commit position at which the segment ends (inclusive).
 	EndPosition int64
-	// The earliest hour a test verdict at the indicated EndPosition
+	// The earliest hour a test run at the indicated EndPosition
 	// was recorded. Gives an approximate lower bound on the timestamp
 	// the changepoint occurred, for systems which need to filter by date.
 	EndHour time.Time
@@ -86,11 +86,11 @@ type Counts struct {
 	// The total number of test runs.
 	TotalRuns int64
 
-	// The number of verdicts which had only unexpected test results.
-	UnexpectedVerdicts int64
-	// The number of verdicts that had both unexpected and expected
+	// The number of source verdicts which had only unexpected test results.
+	UnexpectedSourceVerdicts int64
+	// The number of source verdicts that had both unexpected and expected
 	// test results.
-	FlakyVerdicts int64
-	// The total number of verdicts.
-	TotalVerdicts int64
+	FlakySourceVerdicts int64
+	// The total number of source verdicts.
+	TotalSourceVerdicts int64
 }

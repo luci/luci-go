@@ -52,14 +52,14 @@ type ChangepointPredictor struct {
 //
 // This method requires the provided history to be sorted by commit position
 // (either ascending or descending is fine).
-// It allows multiple verdicts to be specified per commit position, by
-// including those verdicts as adjacent elements in the history slice.
+// It allows multiple runs to be specified per commit position, by
+// including those runs as adjacent elements in the history slice.
 //
 // This function returns the indices (in the history slice) of the change points
 // identified. If an index i is returned, it means the history is segmented as
 // history[:i] and history[i:].
 // The indices returned are sorted ascendingly (lowest index first).
-func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.PositionVerdict) []int {
+func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.Run) []int {
 	if len(history) == 0 {
 		panic("test history is empty")
 	}
@@ -97,11 +97,11 @@ func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.Positio
 //
 // This method requires the provided history to be sorted by
 // commit position (either ascending or descending is fine).
-// It allows multiple verdicts to be specified per
-// commit position, by including those verdicts as adjacent
+// It allows multiple runs to be specified per
+// commit position, by including those runs as adjacent
 // elements in the history slice.
 //
-// Note that if multiple verdicts are specified per commit position,
+// Note that if multiple runs are specified per commit position,
 // the returned position will only ever be between two commit
 // positions in the history, i.e. it holds that
 // history[position-1].CommitPosition != history[position].CommitPosition
@@ -112,13 +112,13 @@ func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.Positio
 // If we are to bias towards the no change point case, thresholding
 // should be applied to relativeLikelihood before considering the
 // change point real.
-func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.PositionVerdict) (relativeLikelihood float64, position int) {
+func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Run) (relativeLikelihood float64, position int) {
 	length := len(history)
 
 	// Stores the total for the entire history.
 	var total counts
 	for _, v := range history {
-		total = total.addVerdict(v)
+		total = total.addRun(v)
 	}
 
 	// Calculate the absolute log-likelihood of observing the
@@ -144,7 +144,7 @@ func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Position
 	// are interesting to evaluate.
 	var heuristic changePointHeuristic
 
-	// The provided history may have multiple verdicts for the same
+	// The provided history may have multiple runs for the same
 	// commit position. As we should only consider change points between
 	// commit positions (not inside them), we will iterate over the
 	// history using nextPosition().
@@ -190,24 +190,24 @@ func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Position
 // nextPosition allows iterating over test history one commit position at a time.
 //
 // It finds the index `nextIndex` that represents advancing exactly one commit
-// position from `index`, and returns the counts of verdicts that were
+// position from `index`, and returns the counts of runs that were
 // advanced over.
 //
-// If there is only one verdict for a commit position, nextIndex will be index + 1,
-// otherwise, if there are a number of verdicts for a commit position, nextIndex
+// If there is only one run for a commit position, nextIndex will be index + 1,
+// otherwise, if there are a number of runs for a commit position, nextIndex
 // will be advanced by that number.
 //
 // Preconditions:
 // The provided history is in order by commit position (either ascending or
 // descending order is fine).
-func nextPosition(history []inputbuffer.PositionVerdict, index int) (nextIndex int, pending counts) {
+func nextPosition(history []inputbuffer.Run, index int) (nextIndex int, pending counts) {
 	// The commit position for which we are accumulating test runs.
 	commitPosition := history[index].CommitPosition
 
 	var c counts
 	nextIndex = index
 	for ; nextIndex < len(history) && history[nextIndex].CommitPosition == commitPosition; nextIndex++ {
-		c = c.addVerdict(history[nextIndex])
+		c = c.addRun(history[nextIndex])
 	}
 	return nextIndex, c
 }

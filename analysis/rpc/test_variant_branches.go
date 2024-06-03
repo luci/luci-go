@@ -184,6 +184,7 @@ func toTestVariantBranchProto(tvb *testvariantbranch.Entry, segments []analyzer.
 		Segments:    toSegmentsProto(segments),
 	}
 }
+
 func toTestVariantBranchRawProto(tvb *testvariantbranch.Entry) (*pb.TestVariantBranchRaw, error) {
 	var finalizedSegments *anypb.Any
 	var finalizingSegment *anypb.Any
@@ -235,38 +236,25 @@ func toTestVariantBranchRawProto(tvb *testvariantbranch.Entry) (*pb.TestVariantB
 
 func toInputBufferProto(history inputbuffer.History) *pb.InputBuffer {
 	result := &pb.InputBuffer{
-		Length:   int64(len(history.Verdicts)),
-		Verdicts: []*pb.PositionVerdict{},
+		Length: int64(len(history.Runs)),
+		Runs:   []*pb.InputBuffer_Run{},
 	}
-	for _, verdict := range history.Verdicts {
-		pv := &pb.PositionVerdict{
-			CommitPosition: int64(verdict.CommitPosition),
-			Hour:           timestamppb.New(verdict.Hour),
-			Runs:           []*pb.PositionVerdict_Run{},
+	for _, run := range history.Runs {
+		runpb := &pb.InputBuffer_Run{
+			CommitPosition: int64(run.CommitPosition),
+			Hour:           timestamppb.New(run.Hour),
 		}
-		if verdict.IsSimpleExpectedPass {
-			pv.Runs = []*pb.PositionVerdict_Run{
-				{
-					ExpectedPassCount: 1,
-				},
-			}
-		} else {
-			pv.IsExonerated = verdict.Details.IsExonerated
-			for _, r := range verdict.Details.Runs {
-				pv.Runs = append(pv.Runs, &pb.PositionVerdict_Run{
-					ExpectedPassCount:    int64(r.Expected.PassCount),
-					ExpectedFailCount:    int64(r.Expected.FailCount),
-					ExpectedCrashCount:   int64(r.Expected.CrashCount),
-					ExpectedAbortCount:   int64(r.Expected.AbortCount),
-					UnexpectedPassCount:  int64(r.Unexpected.PassCount),
-					UnexpectedFailCount:  int64(r.Unexpected.FailCount),
-					UnexpectedCrashCount: int64(r.Unexpected.CrashCount),
-					UnexpectedAbortCount: int64(r.Unexpected.AbortCount),
-					IsDuplicate:          r.IsDuplicate,
-				})
-			}
+		runpb.Counts = &pb.InputBuffer_Run_Counts{
+			ExpectedPassCount:    int64(run.Expected.PassCount),
+			ExpectedFailCount:    int64(run.Expected.FailCount),
+			ExpectedCrashCount:   int64(run.Expected.CrashCount),
+			ExpectedAbortCount:   int64(run.Expected.AbortCount),
+			UnexpectedPassCount:  int64(run.Unexpected.PassCount),
+			UnexpectedFailCount:  int64(run.Unexpected.FailCount),
+			UnexpectedCrashCount: int64(run.Unexpected.CrashCount),
+			UnexpectedAbortCount: int64(run.Unexpected.AbortCount),
 		}
-		result.Verdicts = append(result.Verdicts, pv)
+		result.Runs = append(result.Runs, runpb)
 	}
 	return result
 }
@@ -295,9 +283,9 @@ func toSegmentProto(segment analyzer.Segment) *pb.Segment {
 
 func toCountsProto(counts analyzer.Counts) *pb.Segment_Counts {
 	return &pb.Segment_Counts{
-		TotalVerdicts:      int32(counts.TotalVerdicts),
-		UnexpectedVerdicts: int32(counts.UnexpectedVerdicts),
-		FlakyVerdicts:      int32(counts.FlakyVerdicts),
+		TotalVerdicts:      int32(counts.TotalSourceVerdicts),
+		UnexpectedVerdicts: int32(counts.UnexpectedSourceVerdicts),
+		FlakyVerdicts:      int32(counts.FlakySourceVerdicts),
 	}
 }
 

@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
@@ -51,42 +53,61 @@ func TestQueryForClustering(t *testing.T) {
 					"k": "v",
 				},
 			},
+			// Final source verdicts:
+			// - At hour 125: 1 flaky verdict (from commit position 10,
+			//   merging unexpected run in the input buffer with the passing
+			//   partial source verdict in the output buffer)
+			// - At hour 124: 1 unexpected verdict (input buffer), plus
+			//   8 flaky verdicts (output buffer).
+			// - At hour 123: 1 unexpected verdict (input buffer), plus
+			//   4 flaky verdicts (output buffer).
+			// - At hour 122: 1 flaky verdict (input buffer).
+			// - At hour 100: 2 flaky verdicts (output buffer), 1 unexpected
+			//   verdict (output buffer), 1 unexpected verdict (input buffer).
+			// - At hour 99: 1 flaky verdict (output buffer).
 			InputBuffer: &inputbuffer.Buffer{
 				HotBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
-						unexpectedVerdictAtHour(99),
-						unexpectedVerdictAtHour(100),
+					Runs: []inputbuffer.Run{
+						unexpectedRunAtPositionAndHour(10, 125),
+						unexpectedRunAtPositionAndHour(12, 100),
 					},
 				},
 				ColdBuffer: inputbuffer.History{
-					Verdicts: []inputbuffer.PositionVerdict{
-						flakyVerdictAtHour(122),
-						unexpectedVerdictAtHour(123),
-						unexpectedVerdictAtHour(124),
+					Runs: []inputbuffer.Run{
+						flakyRunAtPositionAndHour(13, 122),
+						unexpectedRunAtPositionAndHour(14, 123),
+						unexpectedRunAtPositionAndHour(15, 124),
 					},
 				},
 			},
 			Statistics: &cpb.Statistics{
+				PartialSourceVerdict: &cpb.PartialSourceVerdict{
+					// Should merge with unexpectedRunAtPositionAndHour(1, 99) to produce
+					// a flaky verdict at hour 125.
+					CommitPosition:  10,
+					LastHour:        timestamppb.New(time.Unix(int64(99)*3600, 0)),
+					ExpectedResults: 1,
+				},
 				HourlyBuckets: []*cpb.Statistics_HourBucket{
 					{
-						Hour:          99,
-						FlakyVerdicts: 1,
-						TotalVerdicts: 1,
+						Hour:                99,
+						FlakySourceVerdicts: 1,
+						TotalSourceVerdicts: 1,
 					},
 					{
-						Hour:          100,
-						FlakyVerdicts: 2,
-						TotalVerdicts: 3,
+						Hour:                100,
+						FlakySourceVerdicts: 2,
+						TotalSourceVerdicts: 3,
 					},
 					{
-						Hour:          123,
-						FlakyVerdicts: 4,
-						TotalVerdicts: 5,
+						Hour:                123,
+						FlakySourceVerdicts: 4,
+						TotalSourceVerdicts: 5,
 					},
 					{
-						Hour:          124,
-						FlakyVerdicts: 8,
-						TotalVerdicts: 8,
+						Hour:                124,
+						FlakySourceVerdicts: 8,
+						TotalSourceVerdicts: 8,
 					},
 				},
 			},
@@ -197,37 +218,25 @@ func TestQueryForClustering(t *testing.T) {
 	})
 }
 
-func unexpectedVerdictAtHour(hour int) inputbuffer.PositionVerdict {
-	return inputbuffer.PositionVerdict{
-		CommitPosition: 1,
+func unexpectedRunAtPositionAndHour(position, hour int) inputbuffer.Run {
+	return inputbuffer.Run{
+		CommitPosition: int64(position),
 		Hour:           time.Unix(int64(hour)*3600, 0),
-		Details: inputbuffer.VerdictDetails{
-			Runs: []inputbuffer.Run{
-				{
-					Unexpected: inputbuffer.ResultCounts{
-						FailCount: 1,
-					},
-				},
-			},
+		Unexpected: inputbuffer.ResultCounts{
+			FailCount: 1,
 		},
 	}
 }
 
-func flakyVerdictAtHour(hour int) inputbuffer.PositionVerdict {
-	return inputbuffer.PositionVerdict{
-		CommitPosition: 1,
+func flakyRunAtPositionAndHour(position, hour int) inputbuffer.Run {
+	return inputbuffer.Run{
+		CommitPosition: int64(position),
 		Hour:           time.Unix(int64(hour)*3600, 0),
-		Details: inputbuffer.VerdictDetails{
-			Runs: []inputbuffer.Run{
-				{
-					Unexpected: inputbuffer.ResultCounts{
-						FailCount: 1,
-					},
-					Expected: inputbuffer.ResultCounts{
-						PassCount: 1,
-					},
-				},
-			},
+		Unexpected: inputbuffer.ResultCounts{
+			FailCount: 1,
+		},
+		Expected: inputbuffer.ResultCounts{
+			PassCount: 1,
 		},
 	}
 }
