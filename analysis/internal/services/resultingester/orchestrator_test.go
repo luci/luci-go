@@ -93,18 +93,6 @@ func TestOrchestrator(t *testing.T) {
 		clsByHost := gerritChangesByHostForTesting()
 		ctx = gerrit.UseFakeClient(ctx, clsByHost)
 
-		setupGetRootInvocationMock := func() {
-			invReq := &rdbpb.GetInvocationRequest{
-				Name: "invocations/test-root-invocation-name",
-			}
-			invRes := &rdbpb.Invocation{
-				Name:       "invocations/test-root-invocation-name",
-				Realm:      "rootproject:root",
-				CreateTime: timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
-			}
-			mrc.GetInvocation(invReq, invRes)
-		}
-
 		setupGetParentInvocationMock := func() {
 			invReq := &rdbpb.GetInvocationRequest{
 				Name: "invocations/test-invocation-name",
@@ -141,6 +129,7 @@ func TestOrchestrator(t *testing.T) {
 			InvocationRealm:     "invproject:inv",
 			RootInvocation:      "invocations/test-root-invocation-name",
 			RootInvocationRealm: "rootproject:root",
+			RootCreateTime:      timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
 			Sources:             resultdbSourcesForTesting(),
 		}
 
@@ -183,7 +172,6 @@ func TestOrchestrator(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey(`Baseline`, func() {
-			setupGetRootInvocationMock()
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err := o.run(ctx, task)
@@ -200,7 +188,6 @@ func TestOrchestrator(t *testing.T) {
 			notification.Sources = nil
 			expectedInputs.Sources = nil
 
-			setupGetRootInvocationMock()
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err := o.run(ctx, task)
@@ -219,7 +206,6 @@ func TestOrchestrator(t *testing.T) {
 			err := checkpoints.SetForTesting(ctx, expectedCheckpoint)
 			So(err, ShouldBeNil)
 
-			setupGetRootInvocationMock()
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
 			err = o.run(ctx, task)
@@ -233,7 +219,6 @@ func TestOrchestrator(t *testing.T) {
 			verifyCheckpoints(ctx, expectedCheckpoint)
 		})
 		Convey(`Final page of results`, func() {
-			setupGetRootInvocationMock()
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock(func(qrtvr *rdbpb.QueryRunTestVerdictsResponse) {
 				qrtvr.NextPageToken = ""

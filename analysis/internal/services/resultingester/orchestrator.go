@@ -136,6 +136,9 @@ type orchestrator struct {
 }
 
 func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResults) error {
+	if err := validatePayload(payload); err != nil {
+		return tq.Fatal.Apply(errors.Annotate(err, "validate payload").Err())
+	}
 	n := payload.Notification
 
 	// For reading the root invocation, use a ResultDB client acting as
@@ -152,30 +155,10 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 		return nil
 	}
 
-	rootClient, err := resultdb.NewClient(ctx, n.ResultdbHost, rootProject)
-	if err != nil {
-		return transient.Tag.Apply(err)
-	}
-
-	rootInv, err := rootClient.GetInvocation(ctx, n.RootInvocation)
-	code := status.Code(err)
-	if code == codes.NotFound {
-		logging.Warningf(ctx, "Root invocation not found.")
-		return tq.Fatal.Apply(errors.Annotate(err, "read root invocation").Err())
-	}
-	if code == codes.PermissionDenied {
-		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Root invocation permission denied.")
-		return nil
-	}
-	if err != nil {
-		// Other error.
-		return transient.Tag.Apply(errors.Annotate(err, "read root invocation").Err())
-	}
 	// Use the creation time of the root invocation as the partition time.
 	// Do not use other properties of the root invocation as it may not
 	// have finalized yet and is subject to change.
-	partitionTime := rootInv.CreateTime.AsTime()
+	partitionTime := n.RootCreateTime.AsTime()
 
 	// For reading the to-be-ingested invocation, use a ResultDB client
 	// acting as the project of that invocation.
@@ -186,7 +169,7 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	}
 
 	parentInv, err := invClient.GetInvocation(ctx, n.Invocation)
-	code = status.Code(err)
+	code := status.Code(err)
 	if code == codes.NotFound {
 		logging.Warningf(ctx, "Parent invocation not found.")
 		return tq.Fatal.Apply(errors.Annotate(err, "read parent invocation").Err())
@@ -337,4 +320,45 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 		return nil
 	})
 	return err
+}
+
+func validatePayload(payload *taskspb.IngestTestResults) error {
+	if err := validateNotification(payload.Notification); err != nil {
+		return errors.Annotate(err, "notification").Err()
+	}
+	if payload.TaskIndex <= 0 {
+		return errors.New("task index must be positive")
+	}
+	return nil
+}
+
+func validateNotification(n *resultpb.InvocationReadyForExportNotification) error {
+	if n == nil {
+		return errors.New("unspecified")
+	}
+	if n.RootCreateTime == nil {
+		return errors.New("root create time is required")
+	}
+	if n.ResultdbHost == "" {
+		return errors.New("resultdb host is required")
+	}
+	if err := pbutil.ValidateInvocationName(n.RootInvocation); err != nil {
+		return errors.Annotate(err, "root invocation name").Err()
+	}
+	if err := pbutil.ValidateInvocationName(n.Invocation); err != nil {
+		return errors.Annotate(err, "invocation name").Err()
+	}
+	if err := realms.ValidateRealmName(n.RootInvocationRealm, realms.GlobalScope); err != nil {
+		return errors.Annotate(err, "root invocation realm").Err()
+	}
+	if err := realms.ValidateRealmName(n.InvocationRealm, realms.GlobalScope); err != nil {
+		return errors.Annotate(err, "invocation realm").Err()
+	}
+	if n.Sources != nil {
+		// If the invocation has sources, they must be valid.
+		if err := pbutil.ValidateSources(n.Sources); err != nil {
+			return errors.Annotate(err, "sources").Err()
+		}
+	}
+	return nil
 }

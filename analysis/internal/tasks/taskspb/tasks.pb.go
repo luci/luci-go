@@ -174,8 +174,8 @@ type IngestTestResults struct {
 	// For the first task, this should be "". For subsequent tasks,
 	// this is the next_page_token value returned by the last call.
 	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// The task number of test results task. 0 for the first
-	// task, 1 for the second task, and so on. Used to avoid creating
+	// The task number of test results task. 1 for the first
+	// task, 2 for the second task, and so on. Used to avoid creating
 	// duplicate tasks.
 	TaskIndex int64 `protobuf:"varint,3,opt,name=task_index,json=taskIndex,proto3" json:"task_index,omitempty"`
 }

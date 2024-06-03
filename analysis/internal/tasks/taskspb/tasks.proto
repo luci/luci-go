@@ -72,8 +72,8 @@ message IngestTestResults {
   // this is the next_page_token value returned by the last call.
   string page_token = 2;
 
-  // The task number of test results task. 0 for the first
-  // task, 1 for the second task, and so on. Used to avoid creating
+  // The task number of test results task. 1 for the first
+  // task, 2 for the second task, and so on. Used to avoid creating
   // duplicate tasks.
   int64 task_index = 3;
 }
