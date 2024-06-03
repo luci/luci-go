@@ -29,8 +29,7 @@ import (
 )
 
 var (
-	registry          = map[metricRegistryKey]types.Metric{}
-	lock              = sync.RWMutex{}
+	Global            = NewRegistry()
 	metricNameRe      = regexp.MustCompile("^(/[a-zA-Z0-9_-]+)+$")
 	metricFieldNameRe = regexp.MustCompile("^[A-Za-z_][A-Za-z0-9_]*$")
 )
@@ -40,27 +39,39 @@ type metricRegistryKey struct {
 	TargetType types.TargetType
 }
 
+type Registry struct {
+	metrics map[metricRegistryKey]types.Metric
+	lock    sync.RWMutex
+}
+
+// NewRegistry creates a new registry.
+func NewRegistry() *Registry {
+	return &Registry{
+		metrics: map[metricRegistryKey]types.Metric{},
+	}
+}
+
 // Add adds a metric to the metric registry.
 //
 // Panics if
 // - the metric name is invalid.
 // - a metric with the same name and target type is defined already.
 // - a field name is invalid.
-func Add(m types.Metric) {
+func (registry *Registry) Add(m types.Metric) {
 	key := metricRegistryKey{
 		MetricName: m.Info().Name,
 		TargetType: m.Info().TargetType,
 	}
 	fields := m.Info().Fields
 
-	lock.Lock()
-	defer lock.Unlock()
+	registry.lock.Lock()
+	defer registry.lock.Unlock()
 
 	if err := ValidateMetricName(key.MetricName); err != nil {
 		panic(err)
 	}
 
-	switch _, exist := registry[key]; {
+	switch _, exist := registry.metrics[key]; {
 	case exist:
 		panic(fmt.Errorf("duplicate metric name: metric %q with target %q is registered already",
 			key.MetricName, key.TargetType.Name))
@@ -72,17 +83,17 @@ func Add(m types.Metric) {
 		}
 	}
 
-	registry[key] = m
+	registry.metrics[key] = m
 }
 
 // Iter calls a callback for each registered metric.
 //
 // Metrics are visited in no particular order. The callback must not modify
 // the registry.
-func Iter(cb func(m types.Metric)) {
-	lock.RLock()
-	defer lock.RUnlock()
-	for _, v := range registry {
+func (registry *Registry) Iter(cb func(m types.Metric)) {
+	registry.lock.RLock()
+	defer registry.lock.RUnlock()
+	for _, v := range registry.metrics {
 		cb(v)
 	}
 }

@@ -135,7 +135,7 @@ func NewIntWithTargetType(name string, targetType types.TargetType, description 
 		},
 		MetricMetadata: *metadata,
 	}}
-	registry.Add(m)
+	registry.Global.Add(m)
 	return m
 }
 
@@ -159,7 +159,7 @@ func NewCounterWithTargetType(name string, targetType types.TargetType, descript
 		},
 		MetricMetadata: *metadata,
 	}}}
-	registry.Add(m)
+	registry.Global.Add(m)
 	return m
 }
 
@@ -183,7 +183,7 @@ func NewFloatWithTargetType(name string, targetType types.TargetType, descriptio
 		},
 		MetricMetadata: *metadata,
 	}}
-	registry.Add(m)
+	registry.Global.Add(m)
 	return m
 }
 
@@ -207,7 +207,7 @@ func NewFloatCounterWithTargetType(name string, targetType types.TargetType, des
 		},
 		MetricMetadata: *metadata,
 	}}}
-	registry.Add(m)
+	registry.Global.Add(m)
 	return m
 }
 
@@ -238,7 +238,7 @@ func NewStringWithTargetType(name string, targetType types.TargetType, descripti
 		},
 		MetricMetadata: *metadata,
 	}}
-	registry.Add(m)
+	registry.Global.Add(m)
 	return m
 }
 
@@ -269,7 +269,7 @@ func NewBoolWithTargetType(name string, targetType types.TargetType, description
 		},
 		MetricMetadata: *metadata,
 	}}
-	registry.Add(m)
+	registry.Global.Add(m)
 	return m
 }
 
@@ -300,7 +300,7 @@ func NewCumulativeDistributionWithTargetType(name string, targetType types.Targe
 			bucketer: bucketer,
 		},
 	}
-	registry.Add(m)
+	registry.Global.Add(m)
 	return m
 }
 
@@ -329,7 +329,7 @@ func NewNonCumulativeDistributionWithTargetType(name string, targetType types.Ta
 		},
 		bucketer: bucketer,
 	}
-	registry.Add(m)
+	registry.Global.Add(m)
 	return m
 }
 

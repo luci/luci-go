@@ -49,15 +49,15 @@ func TestAdd(t *testing.T) {
 		}
 
 		Convey("works", func() {
-			Add(newMetric("my/metric_/1"))
-			Add(newMetric("my/metriC/2", "field_1"))
-			Add(newMetric("my/metric-/3", "field_1", "field_2"))
-			Add(newMetric("/my/metric_/1"))
+			Global.Add(newMetric("my/metric_/1"))
+			Global.Add(newMetric("my/metriC/2", "field_1"))
+			Global.Add(newMetric("my/metric-/3", "field_1", "field_2"))
+			Global.Add(newMetric("/my/metric_/1"))
 		})
 
 		Convey("panics", func() {
 			m := func(n string, fns ...string) func() {
-				return func() { Add(newMetric(n, fns...)) }
+				return func() { Global.Add(newMetric(n, fns...)) }
 			}
 
 			Convey("if metric name is invalid", func() {

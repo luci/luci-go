@@ -330,7 +330,7 @@ func TestMetricWithRegistry(t *testing.T) {
 		Convey("with TargetType", func() {
 			metric := NewIntWithTargetType("registry/test/1", target.TaskType, "desc", nil)
 			var registered types.Metric
-			registry.Iter(func(m types.Metric) {
+			registry.Global.Iter(func(m types.Metric) {
 				if reflect.DeepEqual(m.Info(), metric.Info()) {
 					registered = m
 				}
@@ -340,7 +340,7 @@ func TestMetricWithRegistry(t *testing.T) {
 		Convey("without TargetType", func() {
 			metric := NewInt("registry/test/1", "desc", nil)
 			var registered types.Metric
-			registry.Iter(func(m types.Metric) {
+			registry.Global.Iter(func(m types.Metric) {
 				if reflect.DeepEqual(m.Info(), metric.Info()) {
 					registered = m
 				}
@@ -363,7 +363,7 @@ func TestMetricWithRegistry(t *testing.T) {
 			mNil := NewInt("registry/test/3", "desc", nil)
 
 			var rTask, rDevice, rNil types.Metric
-			registry.Iter(func(m types.Metric) {
+			registry.Global.Iter(func(m types.Metric) {
 				if reflect.DeepEqual(m.Info(), mTask.Info()) {
 					rTask = m
 				} else if reflect.DeepEqual(m.Info(), mDevice.Info()) {

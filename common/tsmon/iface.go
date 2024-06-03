@@ -43,8 +43,7 @@ func Monitor(ctx context.Context) monitor.Monitor {
 	return GetState(ctx).Monitor()
 }
 
-// SetStore changes the global metric store.  All metrics that were registered
-// with the old store will be re-registered on the new store.
+// SetStore changes the global metric store.
 func SetStore(ctx context.Context, s store.Store) {
 	GetState(ctx).SetStore(s)
 }

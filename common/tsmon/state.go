@@ -141,7 +141,7 @@ func (s *State) SetStore(st store.Store) {
 func (s *State) ResetCumulativeMetrics(ctx context.Context) {
 	store := s.Store()
 
-	registry.Iter(func(m types.Metric) {
+	registry.Global.Iter(func(m types.Metric) {
 		if m.Info().ValueType.IsCumulative() {
 			store.Reset(ctx, m)
 		}
