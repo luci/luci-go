@@ -30,6 +30,8 @@ var (
 		TargetType: (&bbmetrics.BuilderTarget{}).Type(),
 	}
 	// V2 is a collection of metric objects for V2 metrics.
+	// Note: when adding new metrics here, please also update bbInternalMetrics
+	// in config/config.go.
 	V2 = struct {
 		BuildCount              metric.Int
 		BuildCountCreated       metric.Counter

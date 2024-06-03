@@ -306,6 +306,40 @@ func TestConfig(t *testing.T) {
 				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid metric name "/chrome/infra/custom/builds/started/": doesn't match ^(/[a-zA-Z0-9_-]+)+$`)
 			})
 
+			Convey("name without / prefix", func() {
+				content := []byte(`
+							logdog {
+								hostname: "logs.chromium.org"
+							}
+							resultdb {
+								hostname: "results.api.cr.dev"
+							}
+							custom_metrics {
+								name: "custom/builds/started/",
+								metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+							}
+						`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid metric name "custom/builds/started/": must starts with "/"`)
+			})
+
+			Convey("bb reserved name", func() {
+				content := []byte(`
+							logdog {
+								hostname: "logs.chromium.org"
+							}
+							resultdb {
+								hostname: "results.api.cr.dev"
+							}
+							custom_metrics {
+								name: "/chrome/infra/buildbucket/v2/builds/started",
+								metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+							}
+						`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `"/chrome/infra/buildbucket/v2/builds/started" is reserved by Buildbucket`)
+			})
+
 			Convey("duplicated names", func() {
 				content := []byte(`
 						logdog {

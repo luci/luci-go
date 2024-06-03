@@ -32,6 +32,29 @@ import (
 
 const settingsCfgFilename = "settings.cfg"
 
+var bbInternalMetrics = stringset.NewFromSlice([]string{
+	// v1
+	"/chrome/infra/buildbucket/builds/created",
+	"/chrome/infra/buildbucket/builds/started",
+	"/chrome/infra/buildbucket/builds/completed",
+	"/chrome/infra/buildbucket/builds/cycle_durations",
+	"/chrome/infra/buildbucket/builds/run_durations",
+	"/chrome/infra/buildbucket/builds/scheduling_durations",
+	"/chrome/infra/buildbucket/builds/lease_expired",
+	"/chrome/infra/buildbucket/builds/max_age_scheduled",
+	"/chrome/infra/buildbucket/builds/count",
+	// V2
+	"/chrome/infra/buildbucket/v2/builds/created",
+	"/chrome/infra/buildbucket/v2/builds/started",
+	"/chrome/infra/buildbucket/v2/builds/completed",
+	"/chrome/infra/buildbucket/v2/builds/cycle_durations",
+	"/chrome/infra/buildbucket/v2/builds/run_durations",
+	"/chrome/infra/buildbucket/v2/builds/scheduling_durations",
+	"/chrome/infra/buildbucket/v2/builds/max_age_scheduled",
+	"/chrome/infra/buildbucket/v2/builds/count",
+	"/chrome/infra/buildbucket/v2/builds/consecutive_failure_count",
+}...)
+
 // Cached settings config.
 var cachedSettingsCfg = cfgcache.Register(&cfgcache.Entry{
 	Path: settingsCfgFilename,
@@ -103,8 +126,15 @@ func validateCustomMetrics(ctx *validation.Context, cms []*pb.CustomMetric) {
 }
 
 func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
+	if !strings.HasPrefix(cm.GetName(), "/") {
+		ctx.Errorf(`invalid metric name %q: must starts with "/"`, cm.GetName())
+	}
 	if err := registry.ValidateMetricName(cm.GetName()); err != nil {
 		ctx.Errorf("%s", err)
+	}
+
+	if bbInternalMetrics.Has(cm.GetName()) {
+		ctx.Errorf("%q is reserved by Buildbucket", cm.Name)
 	}
 
 	seen := stringset.New(len(cm.GetFields()))

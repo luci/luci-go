@@ -41,6 +41,8 @@ var (
 	}
 
 	// V1 is a collection of metric objects for V1 metrics.
+	// Note: when adding new metrics here, please also update bbInternalMetrics
+	// in config/config.go.
 	V1 = struct {
 		BuildCount              metric.Int
 		BuildCountCreated       metric.Counter
