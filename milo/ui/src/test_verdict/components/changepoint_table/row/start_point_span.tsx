@@ -15,6 +15,8 @@
 import { Box, styled } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
+import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { StartPointInfo } from '@/test_verdict/components/changepoint_analysis';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 
 import { ROW_PADDING, SPAN_MARGIN } from '../constants';
@@ -66,18 +68,37 @@ export function StartPointSpan({
       width={xScale(end) - xScale(start)}
       height={rowUnitHeight}
     >
-      <Span
-        sx={{ lineHeight: `${rowUnitHeight - 2 * SPAN_MARGIN}px` }}
-        onClick={() =>
-          dispatch({
-            type: 'showBlamelist',
-            testVariantBranch,
-            focusCommitPosition: segment.startPositionUpperBound99th,
-          })
+      <HtmlTooltip
+        arrow
+        disableInteractive
+        title={
+          <StartPointInfo
+            segment={segment}
+            instructionRow={
+              <tr>
+                <td colSpan={100}>
+                  <Box sx={{ marginBottom: '5px', fontWeight: 'bold' }}>
+                    Click to view blamelist with test results.
+                  </Box>
+                </td>
+              </tr>
+            }
+          />
         }
       >
-        {commitCount} commits
-      </Span>
+        <Span
+          sx={{ lineHeight: `${rowUnitHeight - 2 * SPAN_MARGIN}px` }}
+          onClick={() =>
+            dispatch({
+              type: 'showBlamelist',
+              testVariantBranch,
+              focusCommitPosition: segment.startPositionUpperBound99th,
+            })
+          }
+        >
+          {commitCount} commits
+        </Span>
+      </HtmlTooltip>
     </foreignObject>
   );
 }

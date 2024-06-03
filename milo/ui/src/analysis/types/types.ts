@@ -72,7 +72,10 @@ export type OutputChangepointGroupSummary = DeepNonNullableProps<
   'canonicalChangepoint' | 'statistics'
 >;
 
-export type OutputSegment = NonNullableProps<Segment, 'counts'>;
+export type OutputSegment = NonNullableProps<
+  Segment,
+  'counts' | 'startHour' | 'endHour'
+>;
 
 export interface OutputTestVariantBranch extends TestVariantBranch {
   readonly segments: readonly OutputSegment[];

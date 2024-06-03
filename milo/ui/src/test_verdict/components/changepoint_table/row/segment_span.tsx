@@ -15,7 +15,9 @@
 import { Box, styled } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { SegmentInfo } from '@/test_verdict/components/changepoint_analysis';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 import {
@@ -71,49 +73,70 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
         })
       }
     >
-      <Span
-        sx={{
-          backgroundColor: getBackgroundColor(segment),
-          borderColor: getBorderColor(segment),
-        }}
+      <HtmlTooltip
+        arrow
+        disableInteractive
+        title={
+          <SegmentInfo
+            segment={segment}
+            instructionRow={
+              <tr>
+                <td colSpan={100}>
+                  <Box sx={{ marginBottom: '5px', fontWeight: 'bold' }}>
+                    Click to view blamelist with test results.
+                  </Box>
+                </td>
+              </tr>
+            }
+          />
+        }
       >
-        {segment.counts.unexpectedVerdicts ? (
-          <Box>
-            <VerdictStatusIcon
-              status={TestVariantStatus.UNEXPECTED}
-              sx={{ verticalAlign: 'bottom' }}
-            />{' '}
-            <span css={{ lineHeight: '24px' }}>
-              {Math.round(
-                (segment.counts.unexpectedVerdicts /
-                  segment.counts.totalVerdicts) *
-                  100,
-              )}
-              % ({segment.counts.unexpectedVerdicts}/
-              {segment.counts.totalVerdicts})
-            </span>
-          </Box>
-        ) : (
-          <></>
-        )}
-        {segment.counts.flakyVerdicts ? (
-          <Box>
-            <VerdictStatusIcon
-              status={TestVariantStatus.FLAKY}
-              sx={{ verticalAlign: 'bottom' }}
-            />{' '}
-            <span css={{ lineHeight: '24px' }}>
-              {Math.round(
-                (segment.counts.flakyVerdicts / segment.counts.totalVerdicts) *
-                  100,
-              )}
-              % ({segment.counts.flakyVerdicts}/{segment.counts.totalVerdicts})
-            </span>
-          </Box>
-        ) : (
-          <></>
-        )}
-      </Span>
+        <Span
+          sx={{
+            backgroundColor: getBackgroundColor(segment),
+            borderColor: getBorderColor(segment),
+          }}
+        >
+          {segment.counts.unexpectedVerdicts ? (
+            <Box>
+              <VerdictStatusIcon
+                status={TestVariantStatus.UNEXPECTED}
+                sx={{ verticalAlign: 'bottom' }}
+              />{' '}
+              <span css={{ lineHeight: '24px' }}>
+                {Math.round(
+                  (segment.counts.unexpectedVerdicts /
+                    segment.counts.totalVerdicts) *
+                    100,
+                )}
+                % ({segment.counts.unexpectedVerdicts}/
+                {segment.counts.totalVerdicts})
+              </span>
+            </Box>
+          ) : (
+            <></>
+          )}
+          {segment.counts.flakyVerdicts ? (
+            <Box>
+              <VerdictStatusIcon
+                status={TestVariantStatus.FLAKY}
+                sx={{ verticalAlign: 'bottom' }}
+              />{' '}
+              <span css={{ lineHeight: '24px' }}>
+                {Math.round(
+                  (segment.counts.flakyVerdicts /
+                    segment.counts.totalVerdicts) *
+                    100,
+                )}
+                % ({segment.counts.flakyVerdicts}/{segment.counts.totalVerdicts}
+                )
+              </span>
+            </Box>
+          ) : (
+            <></>
+          )}
+        </Span>
+      </HtmlTooltip>
     </foreignObject>
   );
 }
