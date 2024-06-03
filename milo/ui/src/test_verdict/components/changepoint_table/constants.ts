@@ -20,5 +20,4 @@ export const CELL_WIDTH = 60;
 export const SIDE_PANEL_WIDTH = 400;
 export const MIN_ROW_HEIGHT = 100;
 export const SPAN_MARGIN = 2;
-export const SPAN_PADDING = 2;
 export const ROW_PADDING = 5;

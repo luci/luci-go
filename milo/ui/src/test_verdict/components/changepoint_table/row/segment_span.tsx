@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
+import { Box, styled } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
@@ -23,8 +23,17 @@ import {
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
 
-import { ROW_PADDING, SPAN_MARGIN, SPAN_PADDING } from '../constants';
+import { ROW_PADDING, SPAN_MARGIN } from '../constants';
 import { useConfig } from '../context';
+
+const Span = styled(Box)`
+  border: solid 1px;
+  box-sizing: border-box;
+  margin: ${SPAN_MARGIN}px;
+  width: calc(100% - ${2 * SPAN_MARGIN}px);
+  height: calc(100% - ${2 * SPAN_MARGIN}px);
+  cursor: pointer;
+`;
 
 export interface SegmentSpanProps {
   readonly testVariantBranch: OutputTestVariantBranch;
@@ -44,32 +53,29 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
   const rowUnitHeight = (rowHeight - 2 * ROW_PADDING) / 3;
   const x = xScale(start);
   const y = ROW_PADDING + rowUnitHeight;
-  const spanWidth = xScale(end) - xScale(start) - 2 * SPAN_MARGIN;
-  const spanHeight = 2 * rowUnitHeight - 2 * SPAN_MARGIN;
+  const spanWidth = xScale(end) - xScale(start);
+  const spanHeight = 2 * rowUnitHeight;
 
   return (
-    <g transform={`translate(${x}, ${y})`}>
-      <rect
-        x={SPAN_MARGIN}
-        y={SPAN_MARGIN}
-        width={spanWidth}
-        height={spanHeight}
-        stroke={getBorderColor(segment)}
-        fill={getBackgroundColor(segment)}
-      />
-      <foreignObject
-        x={SPAN_MARGIN + SPAN_PADDING}
-        y={SPAN_MARGIN + SPAN_PADDING}
-        width={spanWidth - 2 * SPAN_PADDING}
-        height={spanHeight - 2 * SPAN_PADDING}
-        css={{ cursor: 'pointer' }}
-        onClick={() =>
-          dispatch({
-            type: 'showBlamelist',
-            testVariantBranch,
-            focusCommitPosition: segment.endPosition,
-          })
-        }
+    <foreignObject
+      x={x}
+      y={y}
+      width={spanWidth}
+      height={spanHeight}
+      css={{ cursor: 'pointer' }}
+      onClick={() =>
+        dispatch({
+          type: 'showBlamelist',
+          testVariantBranch,
+          focusCommitPosition: segment.endPosition,
+        })
+      }
+    >
+      <Span
+        sx={{
+          backgroundColor: getBackgroundColor(segment),
+          borderColor: getBorderColor(segment),
+        }}
       >
         {segment.counts.unexpectedVerdicts ? (
           <Box>
@@ -107,7 +113,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
         ) : (
           <></>
         )}
-      </foreignObject>
-    </g>
+      </Span>
+    </foreignObject>
   );
 }

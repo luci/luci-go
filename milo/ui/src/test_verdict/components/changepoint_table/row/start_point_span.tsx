@@ -12,16 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { OutputTestVariantBranch } from '@/analysis/types';
-import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { Box, styled } from '@mui/material';
+
+import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 
 import { ROW_PADDING, SPAN_MARGIN } from '../constants';
 import { useConfig } from '../context';
 
+const Span = styled(Box)`
+  background-color: #b3e5ff;
+  border: solid 1px #08aaff;
+  box-sizing: border-box;
+  margin: ${SPAN_MARGIN}px;
+  width: calc(100% - ${2 * SPAN_MARGIN}px);
+  height: calc(100% - ${2 * SPAN_MARGIN}px);
+  text-align: center;
+  cursor: pointer;
+`;
+
 export interface StartPointSpanProps {
   readonly testVariantBranch: OutputTestVariantBranch;
-  readonly segment: Segment;
+  readonly segment: OutputSegment;
 }
 
 /**
@@ -39,26 +51,33 @@ export function StartPointSpan({
     return <></>;
   }
 
-  const start = commitMap[segment.startPositionUpperBound99th] + 1;
-  const end = commitMap[segment.startPositionLowerBound99th] + 2;
+  const start = commitMap[segment.startPositionUpperBound99th];
+  const end = commitMap[segment.startPositionLowerBound99th] + 1;
   const rowUnitHeight = (rowHeight - 2 * ROW_PADDING) / 3;
+  const commitCount =
+    parseInt(segment.startPositionUpperBound99th) -
+    parseInt(segment.startPositionLowerBound99th) +
+    1;
 
   return (
-    <rect
-      x={xScale(start) + SPAN_MARGIN}
-      y={ROW_PADDING + SPAN_MARGIN}
-      width={xScale(end) - xScale(start) - 2 * SPAN_MARGIN}
-      height={rowUnitHeight - 2 * SPAN_MARGIN}
-      stroke="#08aaff"
-      fill="#b3e5ff"
-      css={{ cursor: 'pointer' }}
-      onClick={() =>
-        dispatch({
-          type: 'showBlamelist',
-          testVariantBranch,
-          focusCommitPosition: segment.startPositionUpperBound99th,
-        })
-      }
-    />
+    <foreignObject
+      x={xScale(start)}
+      y={ROW_PADDING}
+      width={xScale(end) - xScale(start)}
+      height={rowUnitHeight}
+    >
+      <Span
+        sx={{ lineHeight: `${rowUnitHeight - 2 * SPAN_MARGIN}px` }}
+        onClick={() =>
+          dispatch({
+            type: 'showBlamelist',
+            testVariantBranch,
+            focusCommitPosition: segment.startPositionUpperBound99th,
+          })
+        }
+      >
+        {commitCount} commits
+      </Span>
+    </foreignObject>
   );
 }
