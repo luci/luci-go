@@ -21,7 +21,7 @@ import {
 } from './expandable_entry';
 
 describe('<ExpandableEntry />', () => {
-  it('collapsed', () => {
+  it('can collapse', () => {
     render(
       <ExpandableEntry expanded={false}>
         <ExpandableEntryHeader onToggle={() => {}}>
@@ -33,12 +33,16 @@ describe('<ExpandableEntry />', () => {
       </ExpandableEntry>,
     );
 
-    expect(screen.findByTestId('ChevronRightIcon')).not.toBeNull();
-    expect(screen.queryByText('Header')).not.toBeNull();
-    expect(screen.queryByText('Content')).toBeNull();
+    expect(screen.getByTestId('ChevronRightIcon')).toBeVisible();
+    expect(screen.queryByText('Header')).toBeVisible();
+
+    // Either the content is not in DOM or its invisible.
+    expect(
+      screen.queryByText('Content') || document.createElement('div'),
+    ).not.toBeVisible();
   });
 
-  it('expanded', () => {
+  it('can expand', () => {
     render(
       <ExpandableEntry expanded={true}>
         <ExpandableEntryHeader onToggle={() => {}}>
@@ -50,9 +54,107 @@ describe('<ExpandableEntry />', () => {
       </ExpandableEntry>,
     );
 
-    expect(screen.getByTestId('ExpandMoreIcon')).not.toBeNull();
-    expect(screen.queryByText('Header')).not.toBeNull();
-    expect(screen.queryByText('Content')).not.toBeNull();
+    expect(screen.getByTestId('ExpandMoreIcon')).toBeVisible();
+    expect(screen.queryByText('Header')).toBeVisible();
+    expect(screen.queryByText('Content')).toBeVisible();
+  });
+
+  it('should keep content in DOM once expanded in "was-expanded" mode', () => {
+    const { rerender } = render(
+      <ExpandableEntry expanded={false}>
+        <ExpandableEntryHeader onToggle={() => {}}>
+          <span>Header</span>
+        </ExpandableEntryHeader>
+        <ExpandableEntryBody renderChildren="was-expanded">
+          <span>Content</span>
+        </ExpandableEntryBody>
+      </ExpandableEntry>,
+    );
+
+    expect(screen.queryByText('Content')).not.toBeInTheDocument();
+
+    rerender(
+      <ExpandableEntry expanded={true}>
+        <ExpandableEntryHeader onToggle={() => {}}>
+          <span>Header</span>
+        </ExpandableEntryHeader>
+        <ExpandableEntryBody renderChildren="was-expanded">
+          <span>Content</span>
+        </ExpandableEntryBody>
+      </ExpandableEntry>,
+    );
+
+    expect(screen.queryByText('Content')).toBeVisible();
+
+    rerender(
+      <ExpandableEntry expanded={false}>
+        <ExpandableEntryHeader onToggle={() => {}}>
+          <span>Header</span>
+        </ExpandableEntryHeader>
+        <ExpandableEntryBody renderChildren="was-expanded">
+          <span>Content</span>
+        </ExpandableEntryBody>
+      </ExpandableEntry>,
+    );
+
+    expect(screen.queryByText('Content')).toBeInTheDocument();
+    expect(screen.queryByText('Content')).not.toBeVisible();
+  });
+
+  it('should always keep content in DOM in "always" mode', () => {
+    const { rerender } = render(
+      <ExpandableEntry expanded={false}>
+        <ExpandableEntryHeader onToggle={() => {}}>
+          <span>Header</span>
+        </ExpandableEntryHeader>
+        <ExpandableEntryBody renderChildren="always">
+          <span>Content</span>
+        </ExpandableEntryBody>
+      </ExpandableEntry>,
+    );
+
+    expect(screen.queryByText('Content')).toBeInTheDocument();
+    expect(screen.queryByText('Content')).not.toBeVisible();
+
+    rerender(
+      <ExpandableEntry expanded={true}>
+        <ExpandableEntryHeader onToggle={() => {}}>
+          <span>Header</span>
+        </ExpandableEntryHeader>
+        <ExpandableEntryBody renderChildren="always">
+          <span>Content</span>
+        </ExpandableEntryBody>
+      </ExpandableEntry>,
+    );
+
+    expect(screen.queryByText('Content')).toBeVisible();
+  });
+
+  it('should remove content in DOM  only when expanded in "expanded" mode', () => {
+    const { rerender } = render(
+      <ExpandableEntry expanded={true}>
+        <ExpandableEntryHeader onToggle={() => {}}>
+          <span>Header</span>
+        </ExpandableEntryHeader>
+        <ExpandableEntryBody renderChildren="expanded">
+          <span>Content</span>
+        </ExpandableEntryBody>
+      </ExpandableEntry>,
+    );
+    expect(screen.queryByText('Content')).toBeVisible();
+
+    rerender(
+      <ExpandableEntry expanded={false}>
+        <ExpandableEntryHeader onToggle={() => {}}>
+          <span>Header</span>
+        </ExpandableEntryHeader>
+        <ExpandableEntryBody renderChildren="expanded">
+          <span>Content</span>
+        </ExpandableEntryBody>
+      </ExpandableEntry>,
+    );
+
+    expect(screen.queryByText('Content')).not.toBeInTheDocument();
   });
 
   it('onToggle should be called when the header is clicked', () => {

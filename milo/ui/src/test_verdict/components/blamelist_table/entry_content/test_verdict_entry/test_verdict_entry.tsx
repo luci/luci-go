@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { OutputTestVerdict } from '@/analysis/types';
 import {
@@ -32,12 +32,6 @@ export interface TestVerdictEntryProps {
 export function TestVerdictEntry({ verdict }: TestVerdictEntryProps) {
   const [expanded, setExpanded] = useState(false);
 
-  // `wasExpanded` does not need to be a state. It can only be updated when
-  // another state, `expanded`, is updated. Making it a state can cause
-  // unnecessary rerendering.
-  const wasExpandedRef = useRef(expanded);
-  wasExpandedRef.current ||= expanded;
-
   return (
     <ExpandableEntry expanded={expanded}>
       <ExpandableEntryHeader
@@ -50,7 +44,7 @@ export function TestVerdictEntry({ verdict }: TestVerdictEntryProps) {
         {verdict.invocationId}
       </ExpandableEntryHeader>
       <ExpandableEntryBody>
-        {wasExpandedRef.current && <EntryContent verdict={verdict} />}
+        <EntryContent verdict={verdict} />
       </ExpandableEntryBody>
     </ExpandableEntry>
   );

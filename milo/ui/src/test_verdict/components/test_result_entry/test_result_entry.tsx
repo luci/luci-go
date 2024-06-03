@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Link } from '@mui/material';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { DurationBadge } from '@/common/components/duration_badge';
@@ -41,12 +41,6 @@ export interface TestResultEntryProps {
 
 export function TestResultEntry({ index, testResult }: TestResultEntryProps) {
   const [expanded, setExpanded] = useState(false);
-
-  // `wasExpanded` does not need to be a state. It can only be updated when
-  // another state, `expanded`, is updated. Making it a state can cause
-  // unnecessary rerendering.
-  const wasExpandedRef = useRef(false);
-  wasExpandedRef.current ||= expanded;
 
   const parsedName = parseTestResultName(testResult.name);
   const parsedInvId = parseInvId(parsedName.invocationId);
@@ -98,16 +92,12 @@ export function TestResultEntry({ index, testResult }: TestResultEntryProps) {
         )}
       </ExpandableEntryHeader>
       <ExpandableEntryBody>
-        {wasExpandedRef.current && (
-          <>
-            {testResult.failureReason && (
-              <FailureReasonEntry failureReason={testResult.failureReason} />
-            )}
-            <SummaryHtmlEntry testResult={testResult} />
-            <ArtifactsEntry testResultName={testResult.name} />
-            {testResult.tags.length > 0 && <TagsEntry tags={testResult.tags} />}
-          </>
+        {testResult.failureReason && (
+          <FailureReasonEntry failureReason={testResult.failureReason} />
         )}
+        <SummaryHtmlEntry testResult={testResult} />
+        <ArtifactsEntry testResultName={testResult.name} />
+        {testResult.tags.length > 0 && <TagsEntry tags={testResult.tags} />}
       </ExpandableEntryBody>
     </ExpandableEntry>
   );

@@ -14,7 +14,7 @@
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { Box, SxProps, Theme } from '@mui/material';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useRef } from 'react';
 
 const ExpandedContext = createContext(false);
 
@@ -77,6 +77,20 @@ export interface ExpandableEntryBodyProps {
    * * none: hide the content ruler and don't keep the indentation.
    */
   readonly ruler?: 'visible' | 'invisible' | 'none';
+  /**
+   * Configure when the children should be rendered to DOM.
+   * * was-expanded: the default option. Renders the children once the entry is
+   *   expanded. Collapsing it does not cause the children to be removed from
+   *   DOM. This is avoid unnecessary (re)rendering and can avoid the children's
+   *   state being reset.
+   * * always: always render the children to DOM. This can be useful when the
+   *   children have some side effects that need to be triggered as soon as
+   *   possible (e.g. a fetch query).
+   * * expanded: only render the children to DOM when the entry is expanded.
+   *   This can be useful when you want to reset internal state of the children
+   *   after collapsing the entry.
+   */
+  readonly renderChildren?: 'was-expanded' | 'always' | 'expanded';
   readonly sx?: SxProps<Theme>;
   readonly children: React.ReactNode;
 }
@@ -87,10 +101,22 @@ export interface ExpandableEntryBodyProps {
  */
 export function ExpandableEntryBody({
   ruler = 'visible',
+  renderChildren = 'was-expanded',
   sx,
   children,
 }: ExpandableEntryBodyProps) {
   const expanded = useContext(ExpandedContext);
+
+  // We do not need `wasExpanded` to be a state because it could only change
+  // when another state, `expanded`, is updated. Keeping it in a ref reduces
+  // 1 rerendering cycle.
+  const wasExpandedRef = useRef(expanded);
+  wasExpandedRef.current ||= expanded;
+
+  const shouldMount =
+    expanded ||
+    renderChildren === 'always' ||
+    (renderChildren === 'was-expanded' && wasExpandedRef.current);
 
   return (
     <Box
@@ -109,8 +135,12 @@ export function ExpandableEntryBody({
           marginLeft: '11.5px',
         }}
       ></Box>
-      {/* Use a Box isolate the children from grid layout. */}
-      <Box sx={sx}>{expanded ? children : <></>}</Box>
+      {shouldMount && (
+        // Use a Box isolate the children from grid layout.
+        <Box sx={sx} hidden={!expanded}>
+          {children}
+        </Box>
+      )}
     </Box>
   );
 }
