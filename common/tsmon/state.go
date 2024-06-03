@@ -39,6 +39,7 @@ type State struct {
 	callbacks                    []Callback
 	globalCallbacks              []GlobalCallback
 	invokeGlobalCallbacksOnFlush int32
+	registry                     *registry.Registry
 }
 
 // NewState returns a new State instance, configured with a nil store and nil
@@ -49,6 +50,7 @@ func NewState() *State {
 		store:                        store.NewNilStore(),
 		monitor:                      monitor.NewNilMonitor(),
 		invokeGlobalCallbacksOnFlush: 1,
+		registry:                     registry.Global,
 	}
 }
 
@@ -112,6 +114,14 @@ func (s *State) RegisterGlobalCallbacks(f ...GlobalCallback) {
 	s.globalCallbacks = append(s.globalCallbacks, f...)
 }
 
+// Registry returns the State's registry.
+func (s *State) Registry() *registry.Registry {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.registry
+}
+
 // Store returns the State's store.
 func (s *State) Store() store.Store {
 	s.mu.RLock()
@@ -128,8 +138,15 @@ func (s *State) SetMonitor(m monitor.Monitor) {
 	s.monitor = m
 }
 
-// SetStore changes the metric store. All metrics that were registered with
-// the old store will be re-registered on the new store.
+// SetRegistry changes the metric registry.
+func (s *State) SetRegistry(r *registry.Registry) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.registry = r
+}
+
+// SetStore changes the metric store.
 func (s *State) SetStore(st store.Store) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -140,8 +157,9 @@ func (s *State) SetStore(st store.Store) {
 // ResetCumulativeMetrics resets only cumulative metrics.
 func (s *State) ResetCumulativeMetrics(ctx context.Context) {
 	store := s.Store()
+	reg := s.Registry()
 
-	registry.Global.Iter(func(m types.Metric) {
+	reg.Iter(func(m types.Metric) {
 		if m.Info().ValueType.IsCumulative() {
 			store.Reset(ctx, m)
 		}

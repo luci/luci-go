@@ -139,9 +139,9 @@ var Public = struct {
 		field.String("config_group"),
 		field.String("mode"),
 	),
-	TryjobLaunched: metric.NewCounterWithTargetType(
+	TryjobLaunched: metric.NewCounterWithOptions(
 		"cv/tryjobs/launched",
-		((*bbmetrics.BuilderTarget)(nil)).Type(),
+		&metric.Options{TargetType: ((*bbmetrics.BuilderTarget)(nil)).Type()},
 		"Count of Tryjobs launched by LUCI CV",
 		nil,
 		field.String("cv_project"),
@@ -149,9 +149,9 @@ var Public = struct {
 		field.Bool("critical"),
 		field.Bool("retry"),
 	),
-	TryjobEnded: metric.NewCounterWithTargetType(
+	TryjobEnded: metric.NewCounterWithOptions(
 		"cv/tryjobs/ended",
-		((*bbmetrics.BuilderTarget)(nil)).Type(),
+		&metric.Options{TargetType: ((*bbmetrics.BuilderTarget)(nil)).Type()},
 		"Count of Tryjobs launched by LUCI CV that have ended",
 		nil,
 		field.String("cv_project"),
@@ -160,9 +160,9 @@ var Public = struct {
 		field.Bool("retry"),
 		field.String("status"),
 	),
-	TryjobBuilderPresence: metric.NewBoolWithTargetType(
+	TryjobBuilderPresence: metric.NewBoolWithOptions(
 		"cv/tryjobs/builders/presence",
-		((*bbmetrics.BuilderTarget)(nil)).Type(),
+		&metric.Options{TargetType: ((*bbmetrics.BuilderTarget)(nil)).Type()},
 		"Provides a list of configured builders in the Project config",
 		nil,
 		field.String("cv_project"),

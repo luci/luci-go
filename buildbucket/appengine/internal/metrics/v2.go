@@ -26,6 +26,9 @@ import (
 )
 
 var (
+	opt = &metric.Options{
+		TargetType: (&bbmetrics.BuilderTarget{}).Type(),
+	}
 	// V2 is a collection of metric objects for V2 metrics.
 	V2 = struct {
 		BuildCount              metric.Int
@@ -39,38 +42,38 @@ var (
 		ConsecutiveFailureCount metric.Int
 		MaxAgeScheduled         metric.Float
 	}{
-		BuildCount: metric.NewIntWithTargetType(
+		BuildCount: metric.NewIntWithOptions(
 			"buildbucket/v2/builds/count",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Number of pending/running prod builds",
 			nil,
 			field.String("status"),
 		),
-		BuildCountCreated: metric.NewCounterWithTargetType(
+		BuildCountCreated: metric.NewCounterWithOptions(
 			"buildbucket/v2/builds/created",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Build creation",
 			nil,
 			field.String("experiments"),
 		),
-		BuildCountStarted: metric.NewCounterWithTargetType(
+		BuildCountStarted: metric.NewCounterWithOptions(
 			"buildbucket/v2/builds/started",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Build start",
 			nil,
 			field.String("experiments"),
 		),
-		BuildCountCompleted: metric.NewCounterWithTargetType(
+		BuildCountCompleted: metric.NewCounterWithOptions(
 			"buildbucket/v2/builds/completed",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Build completion, including success, failure and cancellation",
 			nil,
 			field.String("status"),
 			field.String("experiments"),
 		),
-		BuildDurationCycle: metric.NewCumulativeDistributionWithTargetType(
+		BuildDurationCycle: metric.NewCumulativeDistributionWithOptions(
 			"buildbucket/v2/builds/cycle_durations",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Duration between build creation and completion",
 			&types.MetricMetadata{Units: types.Seconds},
 			// Bucketer for 1s..48h range
@@ -81,9 +84,9 @@ var (
 			field.String("status"),
 			field.String("experiments"),
 		),
-		BuildDurationRun: metric.NewCumulativeDistributionWithTargetType(
+		BuildDurationRun: metric.NewCumulativeDistributionWithOptions(
 			"buildbucket/v2/builds/run_durations",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Duration between build start and completion",
 			&types.MetricMetadata{Units: types.Seconds},
 			// Bucketer for 1s..48h range
@@ -91,31 +94,31 @@ var (
 			field.String("status"),
 			field.String("experiments"),
 		),
-		BuildDurationScheduling: metric.NewCumulativeDistributionWithTargetType(
+		BuildDurationScheduling: metric.NewCumulativeDistributionWithOptions(
 			"buildbucket/v2/builds/scheduling_durations",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Duration between build creation and start",
 			&types.MetricMetadata{Units: types.Seconds},
 			// Bucketer for 1s..48h range
 			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
 			field.String("experiments"),
 		),
-		BuilderPresence: metric.NewBoolWithTargetType(
+		BuilderPresence: metric.NewBoolWithOptions(
 			"buildbucket/v2/builder/presence",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"A constant, always-true metric that indicates the presence of LUCI Builder",
 			nil,
 		),
-		ConsecutiveFailureCount: metric.NewIntWithTargetType(
+		ConsecutiveFailureCount: metric.NewIntWithOptions(
 			"buildbucket/v2/builds/consecutive_failure_count",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Number of consecutive non-successful build terminations since the last successful build.",
 			nil,
 			field.String("status"),
 		),
-		MaxAgeScheduled: metric.NewFloatWithTargetType(
+		MaxAgeScheduled: metric.NewFloatWithOptions(
 			"buildbucket/v2/builds/max_age_scheduled",
-			(&bbmetrics.BuilderTarget{}).Type(),
+			opt,
 			"Age of the oldest SCHEDULED build",
 			&types.MetricMetadata{Units: types.Seconds},
 		),

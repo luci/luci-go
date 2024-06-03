@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/registry"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 )
@@ -36,6 +37,7 @@ func WithFakes(ctx context.Context) (context.Context, *store.Fake, *monitor.Fake
 		store:                        s,
 		monitor:                      m,
 		invokeGlobalCallbacksOnFlush: 1,
+		registry:                     registry.Global,
 	}), s, m
 }
 
@@ -47,6 +49,7 @@ func WithDummyInMemory(ctx context.Context) (context.Context, *monitor.Fake) {
 		store:                        store.NewInMemory(&target.Task{}),
 		monitor:                      m,
 		invokeGlobalCallbacksOnFlush: 1,
+		registry:                     registry.Global,
 	}), m
 }
 

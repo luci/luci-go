@@ -25,11 +25,11 @@
 // Example:
 //
 //	var (
-//	  requests = metric.NewCounterWithTargetType("myapp/requests",
+//	  requests = metric.NewCounterWithOptions("myapp/requests",
+//	    &metric.Options{TargetType: types.TaskType},
 //	    "Number of requests",
 //	    nil,
 //	    field.String("status"),
-//	    types.TaskType),
 //	)
 //	...
 //	func handleRequest() {
@@ -115,111 +115,139 @@ type CumulativeDistribution interface {
 	Add(ctx context.Context, v float64, fieldVals ...any)
 }
 
-// NewInt returns a new non-cumulative integer gauge metric.
-func NewInt(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Int {
-	return NewIntWithTargetType(name, target.NilType, description, metadata, fields...)
+// Options holds options to create a new metric.
+type Options struct {
+	TargetType types.TargetType
+	Registry   *registry.Registry
 }
 
-// NewIntWithTargetType returns a new non-cumulative integer gauge metric with a given TargetType.
-func NewIntWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Int {
+// applyDefaultOptions returns opt with default values for unspecifed options.
+func applyDefaultOptions(opt *Options) *Options {
+	defaultOpt := &Options{
+		TargetType: target.NilType,
+		Registry:   registry.Global,
+	}
+
+	if opt == nil {
+		return defaultOpt
+	}
+
+	if opt.Registry == nil {
+		opt.Registry = defaultOpt.Registry
+	}
+	return opt
+}
+
+// NewInt returns a new non-cumulative integer gauge metric.
+func NewInt(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Int {
+	return NewIntWithOptions(name, nil, description, metadata, fields...)
+}
+
+// NewIntWithOptions creates a new non-cumulative integer gauge metric with given Options.
+func NewIntWithOptions(name string, opt *Options, description string, metadata *types.MetricMetadata, fields ...field.Field) Int {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
+	opt = applyDefaultOptions(opt)
+
 	m := &intMetric{metric{
 		MetricInfo: types.MetricInfo{
 			Name:        name,
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.NonCumulativeIntType,
-			TargetType:  targetType,
+			TargetType:  opt.TargetType,
 		},
 		MetricMetadata: *metadata,
 	}}
-	registry.Global.Add(m)
+	opt.Registry.Add(m)
 	return m
 }
 
 // NewCounter returns a new cumulative integer metric.
 func NewCounter(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Counter {
-	return NewCounterWithTargetType(name, target.NilType, description, metadata, fields...)
+	return NewCounterWithOptions(name, nil, description, metadata, fields...)
 }
 
-// NewCounterWithTargetType returns a new cumulative integer metric with a given TargetType.
-func NewCounterWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Counter {
+// NewCounterWithOptions creates a new cumulative integer metric with given Options.
+func NewCounterWithOptions(name string, opt *Options, description string, metadata *types.MetricMetadata, fields ...field.Field) Counter {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
+	opt = applyDefaultOptions(opt)
 	m := &counter{intMetric{metric{
 		MetricInfo: types.MetricInfo{
 			Name:        name,
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.CumulativeIntType,
-			TargetType:  targetType,
+			TargetType:  opt.TargetType,
 		},
 		MetricMetadata: *metadata,
 	}}}
-	registry.Global.Add(m)
+	opt.Registry.Add(m)
 	return m
 }
 
 // NewFloat returns a new non-cumulative floating-point gauge metric.
 func NewFloat(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Float {
-	return NewFloatWithTargetType(name, target.NilType, description, metadata, fields...)
+	return NewFloatWithOptions(name, nil, description, metadata, fields...)
 }
 
-// NewFloatWithTargetType returns a new non-cumulative floating-point gauge metric with a given TargetType.
-func NewFloatWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Float {
+// NewFloatWithOptions creates a new non-cumulative floating-point gauge metric with given Options.
+func NewFloatWithOptions(name string, opt *Options, description string, metadata *types.MetricMetadata, fields ...field.Field) Float {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
+	opt = applyDefaultOptions(opt)
 	m := &floatMetric{metric{
 		MetricInfo: types.MetricInfo{
 			Name:        name,
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.NonCumulativeFloatType,
-			TargetType:  targetType,
+			TargetType:  opt.TargetType,
 		},
 		MetricMetadata: *metadata,
 	}}
-	registry.Global.Add(m)
+	opt.Registry.Add(m)
 	return m
 }
 
 // NewFloatCounter returns a new cumulative floating-point metric.
 func NewFloatCounter(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) FloatCounter {
-	return NewFloatCounterWithTargetType(name, target.NilType, description, metadata, fields...)
+	return NewFloatCounterWithOptions(name, nil, description, metadata, fields...)
 }
 
-// NewFloatCounterWithTargetType returns a new cumulative floating-point metric with a given TargetType.
-func NewFloatCounterWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) FloatCounter {
+// NewFloatCounterWithOptions creates a new cumulative floating-point metric with given Options.
+func NewFloatCounterWithOptions(name string, opt *Options, description string, metadata *types.MetricMetadata, fields ...field.Field) FloatCounter {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
+	opt = applyDefaultOptions(opt)
 	m := &floatCounter{floatMetric{metric{
 		MetricInfo: types.MetricInfo{
 			Name:        name,
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.CumulativeFloatType,
-			TargetType:  targetType,
+			TargetType:  opt.TargetType,
 		},
 		MetricMetadata: *metadata,
 	}}}
-	registry.Global.Add(m)
+	opt.Registry.Add(m)
 	return m
 }
 
 // NewString returns a new string-valued metric.
 func NewString(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) String {
-	return NewStringWithTargetType(name, target.NilType, description, metadata, fields...)
+	return NewStringWithOptions(name, nil, description, metadata, fields...)
 }
 
-// NewStringWithTargetType returns a new string-valued metric with a given TargetType
+// NewStringWithOptions creates a new string-valued metric with given Options
 //
 // Panics if metadata is set with a timestamp unit.
-func NewStringWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) String {
+func NewStringWithOptions(name string, opt *Options, description string, metadata *types.MetricMetadata, fields ...field.Field) String {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -228,29 +256,30 @@ func NewStringWithTargetType(name string, targetType types.TargetType, descripti
 			"timeunit %q cannot be given to string-valued metric %q",
 			metadata.Units, name))
 	}
+	opt = applyDefaultOptions(opt)
 	m := &stringMetric{metric{
 		MetricInfo: types.MetricInfo{
 			Name:        name,
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.StringType,
-			TargetType:  targetType,
+			TargetType:  opt.TargetType,
 		},
 		MetricMetadata: *metadata,
 	}}
-	registry.Global.Add(m)
+	opt.Registry.Add(m)
 	return m
 }
 
 // NewBool returns a new bool-valued metric.
 func NewBool(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Bool {
-	return NewBoolWithTargetType(name, target.NilType, description, metadata, fields...)
+	return NewBoolWithOptions(name, nil, description, metadata, fields...)
 }
 
-// NewBoolWithTargetType returns a new bool-valued metric with a given TargetType.
+// NewBoolWithOptions creates a new bool-valued metric with given Options.
 //
 // Panics if metadata is set with a timestamp unit.
-func NewBoolWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Bool {
+func NewBoolWithOptions(name string, opt *Options, description string, metadata *types.MetricMetadata, fields ...field.Field) Bool {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
@@ -259,32 +288,34 @@ func NewBoolWithTargetType(name string, targetType types.TargetType, description
 			"timeunit %q cannot be given to bool-valued metric %q",
 			metadata.Units, name))
 	}
+	opt = applyDefaultOptions(opt)
 	m := &boolMetric{metric{
 		MetricInfo: types.MetricInfo{
 			Name:        name,
 			Description: description,
 			Fields:      fields,
 			ValueType:   types.BoolType,
-			TargetType:  targetType,
+			TargetType:  opt.TargetType,
 		},
 		MetricMetadata: *metadata,
 	}}
-	registry.Global.Add(m)
+	opt.Registry.Add(m)
 	return m
 }
 
 // NewCumulativeDistribution returns a new cumulative-distribution-valued
 // metric.
 func NewCumulativeDistribution(name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
-	return NewCumulativeDistributionWithTargetType(name, target.NilType, description, metadata, bucketer, fields...)
+	return NewCumulativeDistributionWithOptions(name, nil, description, metadata, bucketer, fields...)
 }
 
-// NewCumulativeDistributionWithTargetType returns a new cumulative-distribution-valued
-// metric with a given TargetType
-func NewCumulativeDistributionWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
+// NewCumulativeDistributionWithOptions creates a new cumulative-distribution-valued
+// metric with given Options
+func NewCumulativeDistributionWithOptions(name string, opt *Options, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
+	opt = applyDefaultOptions(opt)
 	m := &cumulativeDistributionMetric{
 		nonCumulativeDistributionMetric{
 			metric: metric{
@@ -293,29 +324,30 @@ func NewCumulativeDistributionWithTargetType(name string, targetType types.Targe
 					Description: description,
 					Fields:      fields,
 					ValueType:   types.CumulativeDistributionType,
-					TargetType:  targetType,
+					TargetType:  opt.TargetType,
 				},
 				MetricMetadata: *metadata,
 			},
 			bucketer: bucketer,
 		},
 	}
-	registry.Global.Add(m)
+	opt.Registry.Add(m)
 	return m
 }
 
 // NewNonCumulativeDistribution returns a new non-cumulative-distribution-valued
 // metric.
 func NewNonCumulativeDistribution(name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
-	return NewNonCumulativeDistributionWithTargetType(name, target.NilType, description, metadata, bucketer, fields...)
+	return NewNonCumulativeDistributionWithOptions(name, nil, description, metadata, bucketer, fields...)
 }
 
-// NewNonCumulativeDistributionWithTargetType returns a new non-cumulative-distribution-valued
-// metric with a given TargetType.
-func NewNonCumulativeDistributionWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
+// NewNonCumulativeDistributionWithOptions creates a new non-cumulative-distribution-valued
+// metric with given Options.
+func NewNonCumulativeDistributionWithOptions(name string, opt *Options, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
 	}
+	opt = applyDefaultOptions(opt)
 	m := &nonCumulativeDistributionMetric{
 		metric: metric{
 			MetricInfo: types.MetricInfo{
@@ -323,13 +355,13 @@ func NewNonCumulativeDistributionWithTargetType(name string, targetType types.Ta
 				Description: description,
 				Fields:      fields,
 				ValueType:   types.NonCumulativeDistributionType,
-				TargetType:  targetType,
+				TargetType:  opt.TargetType,
 			},
 			MetricMetadata: *metadata,
 		},
 		bucketer: bucketer,
 	}
-	registry.Global.Add(m)
+	opt.Registry.Add(m)
 	return m
 }
 

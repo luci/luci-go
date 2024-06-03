@@ -32,9 +32,11 @@ import (
 	"go.chromium.org/luci/common/tsmon/examples/beep/dummy_project"
 )
 
-var presence = metric.NewBoolWithTargetType(
+var presence = metric.NewBoolWithOptions(
 	"test/tsmon/examples/beep",
-	(*dummy_project.DummyProject)(nil).Type(),
+	&metric.Options{
+		TargetType: (*dummy_project.DummyProject)(nil).Type(),
+	},
 	"A always-true heart-beating metric.",
 	nil,
 	field.Int("num"),
