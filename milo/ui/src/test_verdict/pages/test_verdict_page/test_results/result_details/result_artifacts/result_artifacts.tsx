@@ -18,12 +18,12 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ArtifactLink } from '@/test_verdict/components/artifact_link';
 
-import { useCombinedArtifacts } from '../context';
+import { useInvArtifacts, useResultArtifacts } from '../context';
 
 interface ProcessedArtifacts {
   textDiff?: Artifact;
@@ -57,39 +57,77 @@ function processArtifacts(artifacts: readonly Artifact[]): ProcessedArtifacts {
   return result;
 }
 
-export function ResultArtifacts() {
+interface ArtifactAccordionProps {
+  title: string;
+  processedArtifacts: ProcessedArtifacts;
+}
+
+function ArtifactsAccordion({
+  title,
+  processedArtifacts,
+}: ArtifactAccordionProps) {
   const [expanded, setExpanded] = useState(false);
-  const allArtifacts = useCombinedArtifacts();
 
-  if (allArtifacts.length === 0) {
-    return <></>;
-  }
-
-  function handleExpand(isExpanded: boolean) {
+  function handleExpandedClicked(isExpanded: boolean) {
     setExpanded(isExpanded);
   }
-
-  const processedArtifacts = processArtifacts(allArtifacts);
 
   return (
     <Accordion
       variant="outlined"
       disableGutters
       expanded={expanded}
-      onChange={() => handleExpand(!expanded)}
+      onChange={() => handleExpandedClicked(!expanded)}
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography sx={{ mr: 1 }}>Artifacts {allArtifacts.length}</Typography>
+        <Typography sx={{ mr: 1 }}>{title}</Typography>
       </AccordionSummary>
       <AccordionDetails>
-        <Grid container direction="column" rowSpacing="5">
-          {processedArtifacts.links.map((artifact) => (
-            <Grid item key={artifact.artifactId}>
-              <ArtifactLink artifact={artifact} />
-            </Grid>
-          ))}
+        <Grid
+          container
+          direction="row"
+          rowSpacing="5"
+          sx={{
+            maxHeight: '400px',
+            overflowY: 'scroll',
+          }}
+        >
+          <Grid container direction="column" rowSpacing="5">
+            {processedArtifacts.links.map((artifact) => (
+              <Grid item key={artifact.artifactId}>
+                <ArtifactLink artifact={artifact} />
+              </Grid>
+            ))}
+          </Grid>
         </Grid>
       </AccordionDetails>
     </Accordion>
+  );
+}
+
+export function ResultArtifacts() {
+  const resultArtifacts = useResultArtifacts();
+  const invArtifacts = useInvArtifacts();
+  const processedResultArtifacts = useMemo(
+    () => processArtifacts(resultArtifacts),
+    [resultArtifacts],
+  );
+
+  const processedInvArtifacts = useMemo(
+    () => processArtifacts(invArtifacts),
+    [invArtifacts],
+  );
+
+  return (
+    <>
+      <ArtifactsAccordion
+        processedArtifacts={processedResultArtifacts}
+        title={`Result artifacts ${resultArtifacts.length}`}
+      />
+      <ArtifactsAccordion
+        processedArtifacts={processedInvArtifacts}
+        title={`Invocation artifacts ${invArtifacts.length}`}
+      />
+    </>
   );
 }

@@ -23,10 +23,6 @@ import {
   ClustersClientImpl,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import {
-  TestResult,
-  TestStatus,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { mockFetchTextArtifact } from '@/test_verdict/components/artifact_tags/text_artifact/testing_tools/text_artifact_mock';
 import { resetSilence, silence } from '@/testing_tools/console_filter';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -35,6 +31,7 @@ import { NEVER_PROMISE } from '@/testing_tools/utils';
 import { FakeTestVerdictContextProvider } from '../testing_tools/fake_context';
 
 import { TestResults } from './test_results';
+import { createFakeTestResult } from './testing_tools/utils';
 
 const SILENCED_ERROR_MAGIC_STRING = ' <d48dda8>';
 
@@ -99,38 +96,7 @@ describe('<TestResults />', () => {
           <TestResults
             results={[
               {
-                result: TestResult.fromPartial({
-                  testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
-                  name: resultName,
-                  resultId: '87ecc8c3-00063',
-                  status: TestStatus.FAIL,
-                  summaryHtml: '<text-artifact artifact-id="Test Log" />',
-                  startTime: '2023-10-25T09:01:00.167244802Z',
-                  duration: {
-                    seconds: '55',
-                    nanos: 567000000,
-                  },
-                  tags: Object.freeze([
-                    {
-                      key: 'ancestor_buildbucket_ids',
-                      value: '8766287273535464561',
-                    },
-                    {
-                      key: 'board',
-                      value: 'betty-pi-arc',
-                    },
-                    {
-                      key: 'bug_component',
-                      value: 'b:95887',
-                    },
-                  ]),
-                  failureReason: {
-                    primaryErrorMessage:
-                      'Failed to validate VK autocorrect: failed to validate VK autocorrect on step 4: failed' +
-                      ' to validate field text on step 2: failed to validate input value: got: francais ;' +
-                      ' want: français',
-                  },
-                }),
+                result: createFakeTestResult(resultName),
               },
             ]}
           />
@@ -158,38 +124,7 @@ describe('<TestResults />', () => {
             <TestResults
               results={[
                 {
-                  result: TestResult.fromPartial({
-                    testId: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
-                    name: resultName,
-                    resultId: '87ecc8c3-00063',
-                    status: TestStatus.FAIL,
-                    summaryHtml: '<text-artifact artifact-id="Test Log" />',
-                    startTime: '2023-10-25T09:01:00.167244802Z',
-                    duration: {
-                      seconds: '55',
-                      nanos: 567000000,
-                    },
-                    tags: Object.freeze([
-                      {
-                        key: 'ancestor_buildbucket_ids',
-                        value: '8766287273535464561',
-                      },
-                      {
-                        key: 'board',
-                        value: 'betty-pi-arc',
-                      },
-                      {
-                        key: 'bug_component',
-                        value: 'b:95887',
-                      },
-                    ]),
-                    failureReason: {
-                      primaryErrorMessage:
-                        'Failed to validate VK autocorrect: failed to validate VK autocorrect on step 4: failed' +
-                        ' to validate field text on step 2: failed to validate input value: got: francais ;' +
-                        ' want: français',
-                    },
-                  }),
+                  result: createFakeTestResult(resultName),
                 },
               ]}
             />

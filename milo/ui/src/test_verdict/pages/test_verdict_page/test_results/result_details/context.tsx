@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQuery } from '@tanstack/react-query';
-import { ReactNode, createContext, useContext } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+} from 'react';
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
@@ -26,8 +32,8 @@ import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 interface ResultDataContext {
   readonly result: TestResult;
-  readonly resultArtifacts?: readonly Artifact[];
-  readonly invArtifacts?: readonly Artifact[];
+  readonly resultArtifacts: readonly Artifact[];
+  readonly invArtifacts: readonly Artifact[];
   artifactsLoading: boolean;
 }
 
@@ -48,11 +54,13 @@ export function ResultDataProvider({
   });
 
   const {
-    data: resultArtifacts,
+    data: resultArtifactsData,
     error: resultArtifactsError,
     isLoading: resultArtifactsLoading,
-  } = useQuery({
-    ...client.ListArtifacts.query(
+    hasNextPage: resultArtifactsHasNextPage,
+    fetchNextPage: resultArtifactsFetchNextPage,
+  } = useInfiniteQuery({
+    ...client.ListArtifacts.queryPaged(
       ListArtifactsRequest.fromPartial({
         parent: result.name,
       }),
@@ -60,17 +68,35 @@ export function ResultDataProvider({
   });
 
   const {
-    data: invArtifacts,
+    data: invArtifactsData,
     error: invArtifactsError,
     isLoading: invArtifactsLoading,
-  } = useQuery(
-    client.ListArtifacts.query(
+    hasNextPage: invArtifactsHasNextPage,
+    fetchNextPage: invArtifactsFetchNextPage,
+  } = useInfiniteQuery(
+    client.ListArtifacts.queryPaged(
       ListArtifactsRequest.fromPartial({
         parent:
           'invocations/' + parseTestResultName(result.name || '').invocationId,
       }),
     ),
   );
+
+  useEffect(() => {
+    if (!resultArtifactsLoading && resultArtifactsHasNextPage) {
+      resultArtifactsFetchNextPage();
+    }
+  }, [
+    resultArtifactsFetchNextPage,
+    resultArtifactsHasNextPage,
+    resultArtifactsLoading,
+  ]);
+
+  useEffect(() => {
+    if (!invArtifactsLoading && invArtifactsHasNextPage) {
+      invArtifactsFetchNextPage();
+    }
+  }, [invArtifactsFetchNextPage, invArtifactsHasNextPage, invArtifactsLoading]);
 
   if (resultArtifactsError) {
     throw resultArtifactsError;
@@ -79,12 +105,31 @@ export function ResultDataProvider({
   if (invArtifactsError) {
     throw invArtifactsError;
   }
+
+  const resultArtifacts: Artifact[] = useMemo(() => {
+    if (
+      !resultArtifactsData ||
+      resultArtifactsLoading ||
+      resultArtifactsHasNextPage
+    ) {
+      return [];
+    }
+    return resultArtifactsData.pages.flatMap((p) => p.artifacts);
+  }, [resultArtifactsData, resultArtifactsHasNextPage, resultArtifactsLoading]);
+
+  const invArtifacts: Artifact[] = useMemo(() => {
+    if (!invArtifactsData || invArtifactsLoading || invArtifactsHasNextPage) {
+      return [];
+    }
+    return invArtifactsData?.pages.flatMap((p) => p.artifacts);
+  }, [invArtifactsData, invArtifactsHasNextPage, invArtifactsLoading]);
+
   return (
     <ResultDataCtx.Provider
       value={{
         result,
-        resultArtifacts: resultArtifacts?.artifacts,
-        invArtifacts: invArtifacts?.artifacts,
+        resultArtifacts,
+        invArtifacts,
         artifactsLoading: invArtifactsLoading || resultArtifactsLoading,
       }}
     >
@@ -124,7 +169,7 @@ export function useCombinedArtifacts() {
     );
   }
 
-  return ctx.resultArtifacts?.concat(ctx.invArtifacts || []) || [];
+  return ctx.resultArtifacts.concat(ctx.invArtifacts);
 }
 
 export function useArtifactsLoading() {
