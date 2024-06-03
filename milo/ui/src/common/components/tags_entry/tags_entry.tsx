@@ -12,16 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import createCache from '@emotion/cache';
-import { CacheProvider, EmotionCache } from '@emotion/react';
-import { customElement } from 'lit/decorators.js';
-import { makeObservable, observable } from 'mobx';
 import { Fragment, useState } from 'react';
-import { createRoot, Root } from 'react-dom/client';
 
 import { StringPair } from '@/common/services/common';
-import { commonStyles } from '@/common/styles/stylesheets';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
@@ -30,29 +23,31 @@ import {
 
 export interface TagsEntryProps {
   readonly tags: readonly StringPair[];
+  readonly ruler?: 'visible' | 'invisible' | 'none';
 }
 
-export function TagsEntry({ tags }: TagsEntryProps) {
+export function TagsEntry({ tags, ruler }: TagsEntryProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <ExpandableEntry expanded={expanded}>
-      <ExpandableEntryHeader onToggle={setExpanded}>
-        <span css={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          Tags:
-          {!expanded && (
-            <span css={{ color: 'var(--greyed-out-text-color)' }}>
-              {tags.map((tag, i) => (
-                <Fragment key={i}>
-                  <span>{' ' + tag.key}</span>: <span>{tag.value}</span>
-                  {i !== tags.length - 1 && ','}
-                </Fragment>
-              ))}
-            </span>
-          )}
-        </span>
+      <ExpandableEntryHeader
+        onToggle={setExpanded}
+        sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+      >
+        Tags:
+        {!expanded && (
+          <span css={{ color: 'var(--greyed-out-text-color)' }}>
+            {tags.map((tag, i) => (
+              <Fragment key={i}>
+                <span>{' ' + tag.key}</span>: <span>{tag.value}</span>
+                {i !== tags.length - 1 && ','}
+              </Fragment>
+            ))}
+          </span>
+        )}
       </ExpandableEntryHeader>
-      <ExpandableEntryBody ruler="invisible">
+      <ExpandableEntryBody ruler={ruler}>
         <table css={{ width: 'fit-content', overflow: 'hidden' }}>
           <tbody>
             {tags.map((tag, i) => (
@@ -74,37 +69,4 @@ export function TagsEntry({ tags }: TagsEntryProps) {
       </ExpandableEntryBody>
     </ExpandableEntry>
   );
-}
-
-@customElement('milo-tags-entry')
-export class TagsEntryElement extends MobxLitElement {
-  @observable.ref tags!: readonly StringPair[];
-
-  private readonly cache: EmotionCache;
-  private readonly parent: HTMLSpanElement;
-  private readonly root: Root;
-
-  constructor() {
-    super();
-    makeObservable(this);
-    this.parent = document.createElement('span');
-    const child = document.createElement('span');
-    this.root = createRoot(child);
-    this.parent.appendChild(child);
-    this.cache = createCache({
-      key: 'milo-tags-entry',
-      container: this.parent,
-    });
-  }
-
-  protected render() {
-    this.root.render(
-      <CacheProvider value={this.cache}>
-        <TagsEntry tags={this.tags} />
-      </CacheProvider>,
-    );
-    return this.parent;
-  }
-
-  static styles = [commonStyles];
 }

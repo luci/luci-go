@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './tags_entry';
+import './lit_tags_entry';
 export * from './tags_entry';
