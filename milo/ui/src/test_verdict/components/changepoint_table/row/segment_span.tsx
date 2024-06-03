@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Icon } from '@mui/material';
+import { Box } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import {
-  VERDICT_STATUS_COLOR_MAP,
-  VERDICT_STATUS_ICON_FONT_MAP,
-} from '@/test_verdict/constants/verdict';
+import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 import {
   getBackgroundColor,
@@ -76,14 +73,10 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
       >
         {segment.counts.unexpectedVerdicts ? (
           <Box>
-            <Icon
-              sx={{
-                color: VERDICT_STATUS_COLOR_MAP[TestVariantStatus.UNEXPECTED],
-                verticalAlign: 'bottom',
-              }}
-            >
-              {VERDICT_STATUS_ICON_FONT_MAP[TestVariantStatus.UNEXPECTED]}
-            </Icon>{' '}
+            <VerdictStatusIcon
+              status={TestVariantStatus.UNEXPECTED}
+              sx={{ verticalAlign: 'bottom' }}
+            />{' '}
             <span css={{ lineHeight: '24px' }}>
               {Math.round(
                 (segment.counts.unexpectedVerdicts /
@@ -99,14 +92,10 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
         )}
         {segment.counts.flakyVerdicts ? (
           <Box>
-            <Icon
-              sx={{
-                color: VERDICT_STATUS_COLOR_MAP[TestVariantStatus.FLAKY],
-                verticalAlign: 'bottom',
-              }}
-            >
-              {VERDICT_STATUS_ICON_FONT_MAP[TestVariantStatus.FLAKY]}
-            </Icon>{' '}
+            <VerdictStatusIcon
+              status={TestVariantStatus.FLAKY}
+              sx={{ verticalAlign: 'bottom' }}
+            />{' '}
             <span css={{ lineHeight: '24px' }}>
               {Math.round(
                 (segment.counts.flakyVerdicts / segment.counts.totalVerdicts) *

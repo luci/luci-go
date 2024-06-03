@@ -12,14 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Cancel,
-  CheckCircle,
-  RemoveCircle,
-  Report,
-  Warning,
-} from '@mui/icons-material';
-
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
 export const VERDICT_STATUS_COLOR_MAP = Object.freeze({
@@ -28,28 +20,4 @@ export const VERDICT_STATUS_COLOR_MAP = Object.freeze({
   [TestVariantStatus.FLAKY]: 'var(--warning-color)',
   [TestVariantStatus.UNEXPECTED]: 'var(--failure-color)',
   [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'var(--critical-failure-color)',
-});
-
-export const VERDICT_STATUS_ICON_FONT_MAP = Object.freeze({
-  [TestVariantStatus.EXONERATED]: 'remove_circle',
-  [TestVariantStatus.EXPECTED]: 'check_circle',
-  [TestVariantStatus.FLAKY]: 'warning',
-  [TestVariantStatus.UNEXPECTED]: 'cancel',
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'report',
-});
-
-export const VERDICT_STATUS_ICON_MAP = Object.freeze({
-  [TestVariantStatus.EXONERATED]: (
-    <RemoveCircle sx={{ color: 'var(--exonerated-color)' }} />
-  ),
-  [TestVariantStatus.EXPECTED]: (
-    <CheckCircle sx={{ color: 'var(--success-color)' }} />
-  ),
-  [TestVariantStatus.FLAKY]: <Warning sx={{ color: 'var(--warning-color)' }} />,
-  [TestVariantStatus.UNEXPECTED]: (
-    <Cancel sx={{ color: 'var(--failure-color)' }} />
-  ),
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: (
-    <Report sx={{ color: 'var(--critical-failure-color)' }} />
-  ),
 });

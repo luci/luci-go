@@ -14,11 +14,17 @@
 
 import { Icon, SxProps, Theme } from '@mui/material';
 
-import {
-  VERDICT_STATUS_COLOR_MAP,
-  VERDICT_STATUS_ICON_FONT_MAP,
-} from '@/test_verdict/constants/verdict';
+import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
 import { SpecifiedTestVerdictStatus } from '@/test_verdict/types';
+
+const VERDICT_STATUS_ICON_FONT_MAP = Object.freeze({
+  [TestVariantStatus.EXONERATED]: 'remove_circle',
+  [TestVariantStatus.EXPECTED]: 'check_circle',
+  [TestVariantStatus.FLAKY]: 'warning',
+  [TestVariantStatus.UNEXPECTED]: 'cancel',
+  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'report',
+});
 
 export interface VerdictStatusIconProps {
   readonly status: SpecifiedTestVerdictStatus;
