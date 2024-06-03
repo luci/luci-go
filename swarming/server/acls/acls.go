@@ -414,6 +414,16 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 	}
 }
 
+// BatchCheckTaskPerm is a batch variant of CheckTaskPerm.
+func (chk *Checker) BatchCheckTaskPerm(ctx context.Context, tasks []TaskAuthInfo, perm realms.Permission) []CheckResult {
+	// TODO(vadimsh): Remove redundant checks.
+	res := make([]CheckResult, len(tasks))
+	for idx, task := range tasks {
+		res[idx] = chk.CheckTaskPerm(ctx, task, perm)
+	}
+	return res
+}
+
 // CheckBotPerm checks if the caller has a permission in a specific bot.
 //
 // It looks up a realm the bot belong to (based on "pool" dimension) and then

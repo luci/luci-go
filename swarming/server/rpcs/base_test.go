@@ -288,14 +288,14 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 	state.MockPool("hidden-pool1", "project:hidden-realm")
 	state.MockPool("hidden-pool2", "project:hidden-realm")
 
-	state.MockPerm("project:visible-realm", acls.PermPoolsListTasks)
+	state.MockPerm("project:visible-realm", acls.PermPoolsListTasks, acls.PermTasksGet)
 
 	// This is used to make sure all task keys are unique, even if they are
 	// created at the exact same (mocked) timestamp. In the prod implementation
 	// this is a random number.
 	var taskCounter int64
 
-	putTask := func(name string, tags []string, state apipb.TaskState, failure, dedup bool, ts time.Duration) {
+	putTask := func(name string, tags []string, state apipb.TaskState, failure, dedup, visible bool, ts time.Duration) {
 		reqKey, err := model.TimestampToRequestKey(ctx, TestTime.Add(ts), taskCounter)
 		if err != nil {
 			panic(err)
@@ -314,15 +314,22 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 				model.AsRunResult,
 			)
 		}
+		var realm, pool string
+		if visible {
+			realm, pool = "project:visible-realm", "visible-pool1"
+		} else {
+			realm, pool = "project:hidden-realm", "hidden-pool1"
+		}
 		err = datastore.Put(ctx,
 			&model.TaskRequest{
-				Key:  reqKey,
-				Name: name,
+				Key:   reqKey,
+				Name:  name,
+				Realm: realm,
 				TaskSlices: []model.TaskSlice{
 					{
 						Properties: model.TaskProperties{
 							Dimensions: model.TaskDimensions{
-								"pool": {"visible-pool1"},
+								"pool": {pool},
 							},
 						},
 					},
@@ -336,11 +343,12 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 					Completed:     datastore.NewIndexedNullable(TestTime.Add(ts)),
 					Failure:       failure,
 				},
-				Key:         model.TaskResultSummaryKey(ctx, reqKey),
-				RequestName: name,
-				Tags:        tags,
-				TryNumber:   tryNumber,
-				DedupedFrom: dedupedFrom,
+				Key:          model.TaskResultSummaryKey(ctx, reqKey),
+				RequestName:  name,
+				RequestRealm: realm,
+				Tags:         tags,
+				TryNumber:    tryNumber,
+				DedupedFrom:  dedupedFrom,
 			},
 			// Note: this is actually ignored for tasks that didn't run at all.
 			&model.PerformanceStats{
@@ -362,7 +370,7 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 					fmt.Sprintf("idx:%d", i),
 					fmt.Sprintf("dup:%d", i),
 				},
-				state, failure, dedup,
+				state, failure, dedup, i == 0,
 				time.Duration(10*i)*time.Minute,
 			)
 		}
