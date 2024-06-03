@@ -14,7 +14,7 @@
 
 import '@material/mwc-icon';
 import '@/common/components/tags_entry';
-import '@/common/components/associated_bugs_badge';
+import '@/analysis/components/lit_associated_bugs_badge';
 import '@/generic_libs/components/expandable_entry';
 import '@/test_verdict/components/artifact_tags';
 import './image_diff_artifact';

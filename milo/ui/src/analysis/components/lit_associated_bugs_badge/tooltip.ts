@@ -18,7 +18,8 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
-import { Cluster, makeRuleLink } from '@/common/services/luci_analysis';
+import { makeRuleLink } from '@/analysis/tools/utils';
+import { Cluster } from '@/common/services/luci_analysis';
 import { commonStyles } from '@/common/styles/stylesheets';
 
 @customElement('milo-associated-bugs-tooltip')

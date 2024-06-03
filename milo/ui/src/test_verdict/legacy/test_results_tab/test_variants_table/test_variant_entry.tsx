@@ -22,7 +22,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 import { useEffect, useRef } from 'react';
 
-import '@/common/components/associated_bugs_badge';
+import '@/analysis/components/lit_associated_bugs_badge';
 import '@/generic_libs/components/expandable_entry';
 import '@/generic_libs/components/copy_to_clipboard';
 import '@/test_verdict/components/result_entry';

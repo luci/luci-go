@@ -17,15 +17,16 @@ import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
-import '@/common/components/associated_bugs_tooltip';
+import { getUniqueBugs } from '@/analysis/tools/cluster_utils';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
 } from '@/common/components/tooltip';
 import { AssociatedBug, Cluster } from '@/common/services/luci_analysis';
 import { commonStyles } from '@/common/styles/stylesheets';
-import { getUniqueBugs } from '@/common/tools/cluster_utils/cluster_utils';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+
+import './tooltip';
 
 @customElement('milo-associated-bugs-badge')
 export class AssociatedBugsBadgeElement extends MobxExtLitElement {

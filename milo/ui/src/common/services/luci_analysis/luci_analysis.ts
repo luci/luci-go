@@ -330,10 +330,3 @@ export class ClustersService {
     )) as ClusterResponse;
   }
 }
-
-/**
- * Construct a link to a luci-analysis rule page.
- */
-export function makeRuleLink(project: string, ruleId: string) {
-  return `https://${SETTINGS.luciAnalysis.host}/p/${project}/rules/${ruleId}`;
-}

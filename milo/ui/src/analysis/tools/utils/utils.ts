@@ -20,3 +20,10 @@ import { ClusterId } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common
 export function makeClusterLink(project: string, clusterId: ClusterId) {
   return `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters/${clusterId.algorithm}/${clusterId.id}`;
 }
+
+/**
+ * Construct a link to a luci-analysis rule page.
+ */
+export function makeRuleLink(project: string, ruleId: string) {
+  return `https://${SETTINGS.luciAnalysis.host}/p/${project}/rules/${ruleId}`;
+}

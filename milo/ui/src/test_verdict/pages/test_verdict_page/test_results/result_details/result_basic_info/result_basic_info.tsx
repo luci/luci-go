@@ -22,9 +22,9 @@ import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { Fragment, useState } from 'react';
 
+import { getUniqueBugs } from '@/analysis/tools/cluster_utils';
 import { makeClusterLink } from '@/analysis/tools/utils';
 import { DurationBadge } from '@/common/components/duration_badge';
-import { getUniqueBugs } from '@/common/tools/cluster_utils/cluster_utils';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';

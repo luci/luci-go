@@ -15,12 +15,13 @@
 import { fixture, oneEvent } from '@open-wc/testing-helpers';
 import { html } from 'lit';
 
-import './associated_bugs_badge';
-import { AssociatedBugsTooltipElement } from '@/common/components/associated_bugs_tooltip';
 import { ShowTooltipEventDetail } from '@/common/components/tooltip';
 import { Cluster } from '@/common/services/luci_analysis';
 
 import { AssociatedBugsBadgeElement } from './associated_bugs_badge';
+import { AssociatedBugsTooltipElement } from './tooltip';
+
+import './associated_bugs_badge';
 
 const cluster1: Cluster = {
   clusterId: {
