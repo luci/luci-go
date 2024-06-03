@@ -12,18 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { OutputTestVerdict } from '@/analysis/types';
+import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
-import { SpecifiedTestVerdictStatus } from '@/test_verdict/types';
+import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
+import {
+  OutputBatchGetTestVariantResponse,
+  SpecifiedTestVerdictStatus,
+} from '@/test_verdict/types';
 
+import { RESULT_LIMIT } from './constants';
 import { EntryContent } from './entry_content';
+import { VerdictAssociatedBugsBadge } from './verdict_associated_bugs_badge';
 
 export interface TestVerdictEntryProps {
   readonly verdict: OutputTestVerdict;
@@ -31,6 +40,21 @@ export interface TestVerdictEntryProps {
 
 export function TestVerdictEntry({ verdict }: TestVerdictEntryProps) {
   const [expanded, setExpanded] = useState(false);
+
+  const client = useResultDbClient();
+  const { data, isLoading, isError, error } = useQuery({
+    ...client.BatchGetTestVariants.query({
+      invocation: 'invocations/' + verdict.invocationId,
+      testVariants: [
+        { testId: verdict.testId, variantHash: verdict.variantHash },
+      ],
+      resultLimit: RESULT_LIMIT,
+    }),
+    select: (data) => data as OutputBatchGetTestVariantResponse,
+  });
+  if (isError) {
+    throw error;
+  }
 
   return (
     <ExpandableEntry expanded={expanded}>
@@ -41,10 +65,22 @@ export function TestVerdictEntry({ verdict }: TestVerdictEntryProps) {
         <VerdictStatusIcon
           status={SpecifiedTestVerdictStatus.fromAnalysis(verdict.status)}
         />
-        {verdict.invocationId}
+        <Box>
+          {verdict.invocationId}
+          {!isLoading && !expanded && (
+            <>
+              {' '}
+              <VerdictAssociatedBugsBadge verdict={data.testVariants[0]} />
+            </>
+          )}
+        </Box>
       </ExpandableEntryHeader>
       <ExpandableEntryBody>
-        <EntryContent verdict={verdict} />
+        {isLoading ? (
+          <DotSpinner />
+        ) : (
+          <EntryContent verdict={data.testVariants[0]} />
+        )}
       </ExpandableEntryBody>
     </ExpandableEntry>
   );

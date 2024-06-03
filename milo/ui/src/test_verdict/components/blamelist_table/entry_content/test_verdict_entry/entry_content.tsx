@@ -13,46 +13,25 @@
 // limitations under the License.
 
 import { Alert } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 
-import { OutputTestVerdict } from '@/analysis/types';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { TestResultEntry } from '@/test_verdict/components/test_result_entry';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
-import { OutputBatchGetTestVariantResponse } from '@/test_verdict/types';
+import { OutputTestVerdict } from '@/test_verdict/types';
 
-const RESULT_LIMIT = 10;
+import { useProject } from '../../context';
+
+import { RESULT_LIMIT } from './constants';
 
 export interface EntryContentProps {
   readonly verdict: OutputTestVerdict;
 }
 
 export function EntryContent({ verdict }: EntryContentProps) {
-  const client = useResultDbClient();
-  const { data, isLoading, isError, error } = useQuery({
-    ...client.BatchGetTestVariants.query({
-      invocation: 'invocations/' + verdict.invocationId,
-      testVariants: [
-        { testId: verdict.testId, variantHash: verdict.variantHash },
-      ],
-      resultLimit: RESULT_LIMIT,
-    }),
-    select: (data) => data as OutputBatchGetTestVariantResponse,
-  });
-  if (isError) {
-    throw error;
-  }
-
-  if (isLoading) {
-    return <DotSpinner />;
-  }
-
-  const testVerdict = data.testVariants[0];
+  const project = useProject();
 
   return (
     <>
-      {testVerdict.exonerations.map((e) => (
+      {verdict.exonerations.map((e) => (
         <SanitizedHtml
           key={e.name}
           html={
@@ -66,13 +45,19 @@ export function EntryContent({ verdict }: EntryContentProps) {
           }}
         />
       ))}
-      {testVerdict.results.length === RESULT_LIMIT && (
+      {verdict.results.length === RESULT_LIMIT && (
         <Alert severity="warning" sx={{ margin: '10px 5px' }}>
           Only the first {RESULT_LIMIT} results are displayed.
         </Alert>
       )}
-      {testVerdict.results.map((r, i) => (
-        <TestResultEntry key={r.result.name} index={i} testResult={r.result} />
+      {verdict.results.map((r, i) => (
+        <TestResultEntry
+          key={r.result.name}
+          index={i}
+          project={project}
+          testResult={r.result}
+          testId={verdict.testId}
+        />
       ))}
     </>
   );

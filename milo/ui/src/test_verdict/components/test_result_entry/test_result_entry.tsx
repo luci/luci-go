@@ -32,14 +32,30 @@ import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { ArtifactsEntry } from './artifacts_entry';
 import { FailureReasonEntry } from './failure_reason_entry';
+import { ResultAssociatedBugsBadge } from './result_associated_bugs_badge';
 import { SummaryHtmlEntry } from './summary_html_entry';
 
 export interface TestResultEntryProps {
   readonly index: number;
+  readonly project?: string;
   readonly testResult: TestResult;
+  /**
+   * A fallback test ID when `testResult.testId === ''`.
+   *
+   * When a test result is included in a test verdict, some common properties
+   * (e.g. test_id, variant, variant_hash, source_metadata) are striped by the
+   * RPC to reduce the size of the response payload. This property provides an
+   * alternative way to specify the test ID.
+   */
+  readonly testId?: string;
 }
 
-export function TestResultEntry({ index, testResult }: TestResultEntryProps) {
+export function TestResultEntry({
+  index,
+  project,
+  testResult,
+  testId,
+}: TestResultEntryProps) {
   const [expanded, setExpanded] = useState(false);
 
   const parsedName = parseTestResultName(testResult.name);
@@ -88,6 +104,16 @@ export function TestResultEntry({ index, testResult }: TestResultEntryProps) {
             >
               {parsedInvId.buildId}
             </Link>
+          </>
+        )}
+        {project && (
+          <>
+            {' '}
+            <ResultAssociatedBugsBadge
+              project={project}
+              testResult={testResult}
+              testId={testId}
+            />
           </>
         )}
       </ExpandableEntryHeader>

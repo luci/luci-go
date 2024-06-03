@@ -16,6 +16,7 @@ import { Box, CircularProgress } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { memo, useMemo } from 'react';
 
+import { BatchedClustersClientProvider } from '@/analysis/hooks/batched_clusters_client';
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
   OutputQuerySourcePositionsResponse,
@@ -124,43 +125,45 @@ export function BlamelistTable({ testVariantBranch }: BlamelistTable) {
 
   return (
     <BlamelistContextProvider testVariantBranch={testVariantBranch}>
-      {isLoading ? (
-        <Box display="flex" justifyContent="center" alignItems="center">
-          <CircularProgress />
-        </Box>
-      ) : (
-        <CommitTable
-          repoUrl={repoUrl}
-          sx={{ '& td:last-of-type': { flexGrow: 0 } }}
-        >
-          <CommitTableHead>
-            <SegmentHeadCell />
-            <ToggleHeadCell hotkey="x" />
-            <VerdictsStatusHeadCell />
-            <PositionHeadCell />
-            <TimeHeadCell />
-            <AuthorHeadCell />
-            <TitleHeadCell />
-          </CommitTableHead>
-          <CommitTableBody>
-            {data.pages.map((page, i) => (
-              <CommitTablePage
-                key={i}
-                page={page as OutputQuerySourcePositionsResponse}
-              />
-            ))}
-            {hasNextPage ? (
-              <LoadingRow
-                loadedPageCount={data.pages.length}
-                nextCommitPosition={nextCommitPosition}
-                loadNextPage={() => fetchNextPage()}
-              />
-            ) : (
-              <></>
-            )}
-          </CommitTableBody>
-        </CommitTable>
-      )}
+      <BatchedClustersClientProvider>
+        {isLoading ? (
+          <Box display="flex" justifyContent="center" alignItems="center">
+            <CircularProgress />
+          </Box>
+        ) : (
+          <CommitTable
+            repoUrl={repoUrl}
+            sx={{ '& td:last-of-type': { flexGrow: 0 } }}
+          >
+            <CommitTableHead>
+              <SegmentHeadCell />
+              <ToggleHeadCell hotkey="x" />
+              <VerdictsStatusHeadCell />
+              <PositionHeadCell />
+              <TimeHeadCell />
+              <AuthorHeadCell />
+              <TitleHeadCell />
+            </CommitTableHead>
+            <CommitTableBody>
+              {data.pages.map((page, i) => (
+                <CommitTablePage
+                  key={i}
+                  page={page as OutputQuerySourcePositionsResponse}
+                />
+              ))}
+              {hasNextPage ? (
+                <LoadingRow
+                  loadedPageCount={data.pages.length}
+                  nextCommitPosition={nextCommitPosition}
+                  loadNextPage={() => fetchNextPage()}
+                />
+              ) : (
+                <></>
+              )}
+            </CommitTableBody>
+          </CommitTable>
+        )}
+      </BatchedClustersClientProvider>
     </BlamelistContextProvider>
   );
 }

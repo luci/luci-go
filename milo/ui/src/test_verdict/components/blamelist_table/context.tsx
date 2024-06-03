@@ -17,11 +17,12 @@ import { createContext, ReactNode, useContext, useMemo } from 'react';
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 
 interface BlamelistContext {
+  readonly project: string;
   readonly segmentsSortedByEnd: readonly OutputSegment[];
   readonly segmentsSortedByStartUpperBound: readonly OutputSegment[];
 }
 
-const Ctx = createContext<BlamelistContext | undefined>(undefined);
+const BlamelistCtx = createContext<BlamelistContext | undefined>(undefined);
 
 export interface BlamelistContextProviderProps {
   readonly testVariantBranch: OutputTestVariantBranch;
@@ -45,12 +46,24 @@ export function BlamelistContextProvider({
       );
 
     return {
+      project: testVariantBranch.project,
       segmentsSortedByEnd,
       segmentsSortedByStartUpperBound,
     };
   }, [testVariantBranch]);
 
-  return <Ctx.Provider value={ctx}>{children}</Ctx.Provider>;
+  return <BlamelistCtx.Provider value={ctx}>{children}</BlamelistCtx.Provider>;
+}
+
+export function useProject() {
+  const ctx = useContext(BlamelistCtx);
+  if (ctx === undefined) {
+    throw new Error(
+      'useProject can only be used in a BlamelistContextProvider',
+    );
+  }
+
+  return ctx.project;
 }
 
 /**
@@ -58,10 +71,10 @@ export function BlamelistContextProvider({
  * [segment.endPosition, segment.startPosition].
  */
 export function useSegmentWithCommit(commitPosition: string) {
-  const ctx = useContext(Ctx);
+  const ctx = useContext(BlamelistCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useSegmentWithCommit can only be used within BlamelistTable',
+      'useSegmentWithCommit can only be used in a BlamelistContextProvider',
     );
   }
 
@@ -95,10 +108,10 @@ export function useSegmentWithCommit(commitPosition: string) {
 export function useChangepointsWithCommit(
   commitPosition: string,
 ): readonly OutputSegment[] {
-  const ctx = useContext(Ctx);
+  const ctx = useContext(BlamelistCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useChangepointsWithCommit can only be used within BlamelistTable',
+      'useChangepointsWithCommit can only be used in a BlamelistContextProvider',
     );
   }
 
