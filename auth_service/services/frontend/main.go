@@ -297,13 +297,12 @@ func authorizeAPIAccess(ctx *router.Context, next router.Handler) {
 		}
 	}
 
-	ingest := strings.Contains(ctx.Request.URL.RequestURI(), "/auth_service/api/v1/importer/ingest_tarball/")
-
 	if auth.CurrentIdentity(ctx.Request.Context()) == identity.AnonymousIdentity {
 		jsonErr(errors.New("anonymous identity"), http.StatusForbidden)
 		return
 	}
 
+	ingest := strings.HasPrefix(ctx.Request.URL.Path, "/auth_service/api/v1/importer/ingest_tarball/")
 	if !ingest {
 		switch yes, err := auth.IsMember(ctx.Request.Context(), model.TrustedServicesGroup, model.AdminGroup); {
 		case err != nil:

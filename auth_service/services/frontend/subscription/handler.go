@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
@@ -110,6 +111,16 @@ func Authorize(ctx *router.Context) error {
 	email, err := callerEmail(c)
 	if err != nil {
 		return errors.Annotate(err, "error getting caller email").Err()
+	}
+
+	eligible, err := auth.IsMember(c, model.TrustedServicesGroup, model.AdminGroup)
+	if err != nil {
+		err = errors.Annotate(err, "error checking subscribing eligibility for %s", email).Err()
+		logging.Errorf(c, err.Error())
+		return status.Error(codes.Internal, "error checking caller subscribing eligibility")
+	}
+	if !eligible {
+		return status.Errorf(codes.PermissionDenied, "caller is ineligible to subscribe")
 	}
 
 	if err := pubsub.AuthorizeSubscriber(c, email); err != nil {

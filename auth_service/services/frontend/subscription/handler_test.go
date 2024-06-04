@@ -158,6 +158,21 @@ func TestAuthorize(t *testing.T) {
 			So(rw.Body.Bytes(), ShouldBeEmpty)
 		})
 
+		Convey("denies ineligible user", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+			})
+			rw := httptest.NewRecorder()
+			rctx := &router.Context{
+				Request: (&http.Request{}).WithContext(ctx),
+				Writer:  rw,
+			}
+			err := Authorize(rctx)
+			So(err, ShouldErrLike, "ineligible to subscribe")
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(rw.Body.Bytes(), ShouldBeEmpty)
+		})
+
 		Convey("authorizes a new user", func() {
 			// Set expected GS client calls from updating ACLs.
 			gomock.InOrder(
@@ -172,7 +187,8 @@ func TestAuthorize(t *testing.T) {
 				mockPubsubClient.Client.EXPECT().Close().Times(1))
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:someone@example.com",
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{model.TrustedServicesGroup},
 			})
 			rw := httptest.NewRecorder()
 			rctx := &router.Context{
@@ -205,7 +221,8 @@ func TestAuthorize(t *testing.T) {
 			So(model.AuthorizeReader(ctx, "somebody@example.com"), ShouldBeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:somebody@example.com",
+				Identity:       "user:somebody@example.com",
+				IdentityGroups: []string{model.TrustedServicesGroup},
 			})
 			rw := httptest.NewRecorder()
 			rctx := &router.Context{
