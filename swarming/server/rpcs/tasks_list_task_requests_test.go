@@ -45,7 +45,7 @@ func TestListTaskRequests(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
-	state := SetupTestTasks(ctx)
+	state, _ := SetupTestTasks(ctx)
 
 	startTS := timestamppb.New(TestTime)
 	endTS := timestamppb.New(TestTime.Add(time.Hour))

@@ -280,7 +280,9 @@ func SetupTestBots(ctx context.Context) *MockedRequestState {
 }
 
 // SetupTestTasks mocks a bunch of tasks and pools.
-func SetupTestTasks(ctx context.Context) *MockedRequestState {
+//
+// Additionally returns a map from a fake task name to its request ID.
+func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string) {
 	state := NewMockedRequestState()
 
 	state.MockPool("visible-pool1", "project:visible-realm")
@@ -294,6 +296,8 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 	// created at the exact same (mocked) timestamp. In the prod implementation
 	// this is a random number.
 	var taskCounter int64
+
+	tasks := map[string]string{}
 
 	putTask := func(name string, tags []string, state apipb.TaskState, failure, dedup, visible bool, ts time.Duration) {
 		reqKey, err := model.TimestampToRequestKey(ctx, TestTime.Add(ts), taskCounter)
@@ -359,6 +363,7 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 		if err != nil {
 			panic(err)
 		}
+		tasks[name] = model.RequestKeyToTaskID(reqKey, model.AsRequest)
 	}
 
 	putMany := func(pfx string, state apipb.TaskState, failure, dedup bool) {
@@ -390,7 +395,12 @@ func SetupTestTasks(ctx context.Context) *MockedRequestState {
 	putMany("noresource", apipb.TaskState_NO_RESOURCE, false, false)
 	putMany("clienterror", apipb.TaskState_CLIENT_ERROR, false, false)
 
-	return state
+	// Add a few intentionally missing IDs as well.
+	tasks["missing-0"] = "65aba3a3e6b99310"
+	tasks["missing-1"] = "75aba3a3e6b99310"
+	tasks["missing-2"] = "85aba3a3e6b99310"
+
+	return state, tasks
 }
 
 func TestServerInterceptor(t *testing.T) {

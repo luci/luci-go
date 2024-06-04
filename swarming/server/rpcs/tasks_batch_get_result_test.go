@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-	"go.chromium.org/luci/swarming/server/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -38,21 +37,7 @@ func TestBatchGetResult(t *testing.T) {
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	state := SetupTestTasks(ctx)
-
-	// Build helper map "fake task name => its request ID".
-	tasks := map[string]string{}
-	err := datastore.Run(ctx, datastore.NewQuery("TaskRequest"), func(ent *model.TaskRequest) {
-		tasks[ent.Name] = model.RequestKeyToTaskID(ent.Key, model.AsRequest)
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	// Add a few intentionally missing IDs as well.
-	tasks["missing-0"] = "65aba3a3e6b99310"
-	tasks["missing-1"] = "75aba3a3e6b99310"
-	tasks["missing-2"] = "85aba3a3e6b99310"
+	state, tasks := SetupTestTasks(ctx)
 
 	call := func(req *apipb.BatchGetResultRequest) (*apipb.BatchGetResultResponse, error) {
 		return (&TasksServer{}).BatchGetResult(MockRequestState(ctx, state), req)

@@ -39,7 +39,7 @@ func TestCountTasks(t *testing.T) {
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	state := SetupTestTasks(ctx)
+	state, _ := SetupTestTasks(ctx)
 
 	startTS := timestamppb.New(TestTime)
 	endTS := timestamppb.New(TestTime.Add(time.Hour))
