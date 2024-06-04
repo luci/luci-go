@@ -35,7 +35,7 @@ import (
 //
 // Its lifetime is scoped to a single request. It caches checks done within this
 // request to avoid doing redundant work. This cache never expires, thus it is
-// important to **drop** this checker once the request is finishes, to avoid
+// important to **drop** this checker once the request is finished, to avoid
 // using stale cached data.
 //
 // Resources are organized hierarchically: Server => Pool => Task and Bot.
@@ -50,10 +50,23 @@ import (
 // use CheckPoolPerm and CheckServerPerm to do "prefiltering". They should also
 // be used if RPCs results are an aggregation over a pool, and thus explicitly
 // require pool-level permissions.
+//
+// Not safe for concurrent use without external synchronization.
 type Checker struct {
 	cfg    *cfg.Config       // swarming config
 	db     authdb.DB         // auth DB with groups and permissions
 	caller identity.Identity // authenticated identity of the caller
+
+	// Cached results of CheckServerPerm.
+	cachedServerPerms map[realms.Permission]CheckResult
+	// Cached results of individual HasPermission checks.
+	cachedRealmPerms map[realmAndPerm]CheckResult
+}
+
+// realmAndPerm is a key for cachedRealmPerms map.
+type realmAndPerm struct {
+	realm string
+	perm  realms.Permission
 }
 
 // CheckResult is returned by all Checker methods.
@@ -138,53 +151,66 @@ func NewChecker(ctx context.Context, cfg *cfg.Config) *Checker {
 // and bots in this instance of Swarming. Server level permissions are defined
 // via "auth { ... }" stanza with group names in the server's settings.cfg.
 func (chk *Checker) CheckServerPerm(ctx context.Context, perm realms.Permission) CheckResult {
+	if res, ok := chk.cachedServerPerms[perm]; ok {
+		return res
+	}
+
 	serverGroups := chk.cfg.Settings().Auth
 
-	var allowedGroups []string
+	var yes bool
+	var err error
 
 	switch perm {
 	case PermTasksGet, PermPoolsListTasks:
-		allowedGroups = []string{
+		yes, err = chk.db.IsMember(ctx, chk.caller, []string{
 			serverGroups.ViewAllTasksGroup,
 			serverGroups.PrivilegedUsersGroup,
 			serverGroups.AdminsGroup,
-		}
+		})
 
 	case PermPoolsListBots:
-		allowedGroups = []string{
+		yes, err = chk.db.IsMember(ctx, chk.caller, []string{
 			serverGroups.ViewAllBotsGroup,
 			serverGroups.PrivilegedUsersGroup,
 			serverGroups.AdminsGroup,
-		}
+		})
 
 	case PermPoolsCreateBot:
-		allowedGroups = []string{
+		yes, err = chk.db.IsMember(ctx, chk.caller, []string{
 			serverGroups.BotBootstrapGroup,
 			serverGroups.AdminsGroup,
-		}
+		})
 
 	case PermTasksCancel, PermPoolsCancelTask, PermPoolsDeleteBot, PermPoolsTerminateBot:
-		allowedGroups = []string{
+		yes, err = chk.db.IsMember(ctx, chk.caller, []string{
 			serverGroups.AdminsGroup,
-		}
+		})
+
+	default:
+		// This permission is not defined on the global level, denied by default.
 	}
 
-	if len(allowedGroups) != 0 {
-		switch yes, err := chk.db.IsMember(ctx, chk.caller, allowedGroups); {
-		case err != nil:
-			logging.Errorf(ctx, "Error when checking groups: %s", err)
-			return CheckResult{InternalError: true}
-		case yes:
-			return CheckResult{Permitted: true}
-		}
-	}
-
-	return CheckResult{
-		err: status.Errorf(
+	var res CheckResult
+	switch {
+	case err != nil:
+		logging.Errorf(ctx, "Error when checking groups: %s", err)
+		res = CheckResult{InternalError: true}
+	case yes:
+		res = CheckResult{Permitted: true}
+	default:
+		res = CheckResult{err: status.Errorf(
 			codes.PermissionDenied,
 			"the caller %q doesn't have server-level permission %q",
 			chk.caller, perm),
+		}
 	}
+
+	if chk.cachedServerPerms == nil {
+		chk.cachedServerPerms = make(map[realms.Permission]CheckResult, 1)
+	}
+	chk.cachedServerPerms[perm] = res
+
+	return res
 }
 
 // CheckPoolPerm checks if the caller has a permission on a pool level.
@@ -199,12 +225,8 @@ func (chk *Checker) CheckPoolPerm(ctx context.Context, pool string, perm realms.
 	}
 
 	if cfg := chk.cfg.Pool(pool); cfg != nil {
-		switch yes, err := chk.db.HasPermission(ctx, chk.caller, perm, cfg.Realm, nil); {
-		case err != nil:
-			logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, cfg.Realm, err)
-			return CheckResult{InternalError: true}
-		case yes:
-			return CheckResult{Permitted: true}
+		if res := chk.hasPermission(ctx, perm, cfg.Realm); res.Permitted || res.InternalError {
+			return res
 		}
 	}
 
@@ -363,12 +385,8 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 	}
 
 	// Check if the caller has the permission in the task's own realm.
-	switch yes, err := chk.db.HasPermission(ctx, chk.caller, perm, task.Realm, nil); {
-	case err != nil:
-		logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, task.Realm, err)
-		return CheckResult{InternalError: true}
-	case yes:
-		return CheckResult{Permitted: true}
+	if res := chk.hasPermission(ctx, perm, task.Realm); res.Permitted || res.InternalError {
+		return res
 	}
 
 	// Check if the caller has the matching permission in the task's assigned
@@ -412,16 +430,6 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 			"the caller %q doesn't have permission %q for the task %q",
 			chk.caller, perm, task.TaskID),
 	}
-}
-
-// BatchCheckTaskPerm is a batch variant of CheckTaskPerm.
-func (chk *Checker) BatchCheckTaskPerm(ctx context.Context, tasks []TaskAuthInfo, perm realms.Permission) []CheckResult {
-	// TODO(vadimsh): Remove redundant checks.
-	res := make([]CheckResult, len(tasks))
-	for idx, task := range tasks {
-		res[idx] = chk.CheckTaskPerm(ctx, task, perm)
-	}
-	return res
 }
 
 // CheckBotPerm checks if the caller has a permission in a specific bot.
@@ -477,27 +485,6 @@ func (chk *Checker) CheckBotPerm(ctx context.Context, botID string, perm realms.
 // true, the iteration continues. Otherwise it stops and visitRealms returns
 // true. Returns false only on internal problems with the check.
 func (chk *Checker) visitRealms(ctx context.Context, pools []string, perm realms.Permission, cb func(pool string, allowed bool) bool) (ok bool) {
-	// A micro optimization for a very common case of one pool. Skips a map.
-	if len(pools) == 1 {
-		pool := pools[0]
-		cfg := chk.cfg.Pool(pool)
-		if cfg == nil {
-			// Missing pools assumed to have no permissions in them.
-			logging.Warningf(ctx, "Unknown pool when checking ACLs: %s", pool)
-			cb(pool, false)
-		} else {
-			outcome, err := chk.db.HasPermission(ctx, chk.caller, perm, cfg.Realm, nil)
-			if err != nil {
-				logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, cfg.Realm, err)
-				return false
-			}
-			cb(pool, outcome)
-		}
-		return true
-	}
-
-	// Generic case that makes more memory allocations.
-	checkedRealms := make(map[string]bool, 2)
 	for _, pool := range pools {
 		cfg := chk.cfg.Pool(pool)
 		if cfg == nil {
@@ -508,17 +495,49 @@ func (chk *Checker) visitRealms(ctx context.Context, pools []string, perm realms
 			}
 			continue
 		}
-		if _, checked := checkedRealms[cfg.Realm]; !checked {
-			outcome, err := chk.db.HasPermission(ctx, chk.caller, perm, cfg.Realm, nil)
-			if err != nil {
-				logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, cfg.Realm, err)
-				return false
-			}
-			checkedRealms[cfg.Realm] = outcome
+		res := chk.hasPermission(ctx, perm, cfg.Realm)
+		if res.InternalError {
+			return false
 		}
-		if !cb(pool, checkedRealms[cfg.Realm]) {
+		if !cb(pool, res.Permitted) {
 			return true
 		}
 	}
 	return true
+}
+
+// Use a constant error to avoid creating errors on a hot path (e.g. when
+// batch checking permissions of hundreds of tasks). This error is always
+// replaced with a more concrete error later.
+var errGenericPerm = status.Errorf(
+	codes.PermissionDenied,
+	"generic permission denied error, should never be seen",
+)
+
+// hasPermission checks if the caller has a permission in a realm.
+//
+// Caches the outcome. Logs internal errors.
+func (chk *Checker) hasPermission(ctx context.Context, perm realms.Permission, realm string) CheckResult {
+	key := realmAndPerm{realm, perm}
+	if res, ok := chk.cachedRealmPerms[key]; ok {
+		return res
+	}
+
+	var res CheckResult
+	switch yes, err := chk.db.HasPermission(ctx, chk.caller, perm, realm, nil); {
+	case err != nil:
+		logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, realm, err)
+		res = CheckResult{InternalError: true}
+	case yes:
+		res = CheckResult{Permitted: true}
+	default:
+		res = CheckResult{err: errGenericPerm}
+	}
+
+	if chk.cachedRealmPerms == nil {
+		chk.cachedRealmPerms = make(map[realmAndPerm]CheckResult, 1)
+	}
+	chk.cachedRealmPerms[key] = res
+
+	return res
 }

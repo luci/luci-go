@@ -101,41 +101,37 @@ func (*TasksServer) BatchGetResult(ctx context.Context, req *apipb.BatchGetResul
 		}
 	}
 
-	// Prepare parameters for a batch ACL check. Filter out missing tasks.
-	infos := make([]acls.TaskAuthInfo, 0, len(results))
-	infoIdxToTaskIdx := make(map[int]int, len(results))
-	for taskIdx, taskRes := range results {
-		var err error
-		if len(merr) != 0 {
-			err = merr[taskIdx]
-		}
-		switch {
-		case err == nil:
-			infos = append(infos, taskRes.TaskAuthInfo())
-			infoIdxToTaskIdx[len(infos)-1] = taskIdx
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			reportErr(taskIdx, codes.NotFound, "no such task")
-		default:
-			logging.Errorf(ctx,
-				"Error fetching TaskResultSummary %s: %s",
-				model.RequestKeyToTaskID(taskRes.Key, model.AsRequest), err,
-			)
-			reportErr(taskIdx, codes.Internal, "datastore error fetching the task")
-		}
-	}
-
 	var stats *model.PerformanceStatsFetcher
+	var fetching []*apipb.TaskResultResponse
 	if req.IncludePerformanceStats {
 		stats = model.NewPerformanceStatsFetcher(ctx)
 		defer stats.Close()
 	}
 
-	// Filter out tasks not passing the ACL check. Start fetching perf stats.
-	var fetching []*apipb.TaskResultResponse
-	for infoIdx, aclRes := range State(ctx).ACL.BatchCheckTaskPerm(ctx, infos, acls.PermTasksGet) {
-		taskIdx := infoIdxToTaskIdx[infoIdx]
+	// Filter out missing and "invisible" tasks. Start fetching perf stats.
+	checker := State(ctx).ACL
+	for taskIdx, taskRes := range results {
+		var err error
+		if len(merr) != 0 {
+			err = merr[taskIdx]
+		}
+
+		if err != nil {
+			if errors.Is(err, datastore.ErrNoSuchEntity) {
+				reportErr(taskIdx, codes.NotFound, "no such task")
+			} else {
+				logging.Errorf(ctx,
+					"Error fetching TaskResultSummary %s: %s",
+					model.RequestKeyToTaskID(taskRes.Key, model.AsRequest), err,
+				)
+				reportErr(taskIdx, codes.Internal, "datastore error fetching the task")
+			}
+			continue
+		}
+
+		aclRes := checker.CheckTaskPerm(ctx, taskRes.TaskAuthInfo(), acls.PermTasksGet)
 		if !aclRes.Permitted {
-			status, _ := status.FromError(aclRes.ToGrpcErr())
+			status := status.Convert(aclRes.ToGrpcErr())
 			reportErr(taskIdx, status.Code(), status.Message())
 		} else {
 			taskRes := results[taskIdx].ToProto()
