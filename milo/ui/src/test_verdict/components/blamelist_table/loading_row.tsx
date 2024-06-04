@@ -70,7 +70,14 @@ export function LoadingRow({
   }, [nextPageIndex, inView]);
 
   return (
-    <TableRow ref={pageTailRef}>
+    <TableRow
+      ref={pageTailRef}
+      sx={{
+        // Add a fixed height to allow children to use `height: 100%`.
+        // The actual height of the row will expand to contain the children.
+        height: '1px',
+      }}
+    >
       {
         // Render the <SegmentContentCell /> for the next commit position so
         // the loading spinner does not overlap the segment column.

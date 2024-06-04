@@ -105,13 +105,13 @@ export function useSegmentWithCommit(commitPosition: string) {
  * Find the segments where the commit position is in range
  * [segment.startPositionUpperBound99th, segment.startPositionLowerBound99th].
  */
-export function useChangepointsWithCommit(
+export function useStartPointsWithCommit(
   commitPosition: string,
 ): readonly OutputSegment[] {
   const ctx = useContext(BlamelistCtx);
   if (ctx === undefined) {
     throw new Error(
-      'useChangepointsWithCommit can only be used in a BlamelistContextProvider',
+      'useStartPointsWithCommit can only be used in a BlamelistContextProvider',
     );
   }
 
