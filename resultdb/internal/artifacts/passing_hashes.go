@@ -17,7 +17,6 @@ package artifacts
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"regexp"
 
 	"cloud.google.com/go/bigquery"
@@ -51,7 +50,7 @@ func FetchPassingHashes(ctx context.Context, client *bigquery.Client, realm stri
 		DATE(partition_time) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
 		AND project = @project
 		AND test_id = @testID
-		AND STARTS_WITH(artifact_shard, @artifactShardPrefix)
+		AND artifact_id = @artifactID
 		AND test_status = 'PASS'
 		LIMIT @numPassesToCompare)
 		SELECT
@@ -66,7 +65,7 @@ func FetchPassingHashes(ctx context.Context, client *bigquery.Client, realm stri
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "project", Value: project},
 		{Name: "testID", Value: testID},
-		{Name: "artifactShardPrefix", Value: fmt.Sprintf("%s:", artifactID)},
+		{Name: "artifactID", Value: artifactID},
 		{Name: "numPassesToCompare", Value: numPassesToCompare},
 	}
 	// Execute the query.

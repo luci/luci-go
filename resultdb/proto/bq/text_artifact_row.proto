@@ -21,7 +21,10 @@ import "google/protobuf/timestamp.proto";
 option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
 
 // TextArtifactRow represents a row in a BigQuery table `luci-resultdb.internal.text_artifacts`.
+// Next ID: 16
 message TextArtifactRow {
+  reserved 14; // artifact_shard
+
   // The LUCI project that the artifact belongs to (e.g. chromium).
   string project = 1;
 
@@ -83,11 +86,6 @@ message TextArtifactRow {
   // It is the time when the exported invocation was created in Spanner.
   // It is NOT the time when the row is inserted into BigQuery table.
   google.protobuf.Timestamp partition_time = 13;
-
-  // String of the format <artifact_id>:<shard_id>.
-  // This is for the purpose of clustering.
-  // TODO (nqmtuan): Remove this one once no longer used.
-  string artifact_shard = 14;
 
   // Status of the test result that contains the artifact.
   // See luci.resultdb.v1.TestStatus for possible values.
