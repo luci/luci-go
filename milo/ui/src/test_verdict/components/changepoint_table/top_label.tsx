@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
-
-import { LINE_HEIGHT, SIDE_PANEL_WIDTH } from './constants';
+import { LabelBox } from './common';
+import { SIDE_PANEL_WIDTH } from './constants';
 import { useConfig } from './context';
 
 export function TopLabel() {
@@ -38,10 +37,9 @@ export function TopLabel() {
         stroke="var(--divider-color)"
       />
       <foreignObject width={SIDE_PANEL_WIDTH} height={rowHeight}>
+        <LabelBox>Test ID</LabelBox>
         {criticalVariantKeys.map((k) => (
-          <Box key={k} height={LINE_HEIGHT}>
-            {k}
-          </Box>
+          <LabelBox key={k}>variant:{k}</LabelBox>
         ))}
       </foreignObject>
     </svg>

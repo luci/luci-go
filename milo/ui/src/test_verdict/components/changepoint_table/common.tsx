@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const LINE_HEIGHT = 22;
-export const LABEL_PADDINGS = 5;
+import { Box, styled } from '@mui/material';
 
-export const CELL_WIDTH = 60;
+import { LINE_HEIGHT } from './constants';
 
-export const SIDE_PANEL_WIDTH = 400;
-export const MIN_ROW_HEIGHT = 100;
-export const SPAN_MARGIN = 2;
-export const ROW_PADDING = 5;
+export const LabelBox = styled(Box)`
+  padding: 2px 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-wrap: nowrap;
+  height: ${LINE_HEIGHT}px;
+`;

@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
 import { axisLeft, select } from 'd3';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import {
   ParsedTestVariantBranchName,
   TestVariantBranchDef,
 } from '@/analysis/types';
+import { getLongestCommonPrefix } from '@/generic_libs/tools/string_utils';
 
+import { LabelBox } from './common';
 import { SIDE_PANEL_WIDTH } from './constants';
 import { useConfig } from './context';
 
@@ -41,6 +42,11 @@ export function SidePanel({ testVariantBranches }: SidePanelProps) {
     gridLines(select(gridLineElement.current!));
   }, [yScale, testVariantBranchCount]);
   const height = yScale.range()[1];
+
+  const commonPrefix = useMemo(
+    () => getLongestCommonPrefix(testVariantBranches.map((tvb) => tvb.testId)),
+    [testVariantBranches],
+  );
 
   return (
     <svg
@@ -70,8 +76,12 @@ export function SidePanel({ testVariantBranches }: SidePanelProps) {
           transform={`translate(0, ${yScale(i)})`}
         >
           <foreignObject height={rowHeight} width={SIDE_PANEL_WIDTH}>
+            <LabelBox title={tvb.testId}>
+              {commonPrefix && '...'}
+              {tvb.testId.slice(commonPrefix.length)}
+            </LabelBox>
             {criticalVariantKeys.map((k) => (
-              <Box key={k}>{tvb.variant?.def[k] || ''}</Box>
+              <LabelBox key={k}>{tvb.variant?.def[k]}</LabelBox>
             ))}
           </foreignObject>
         </g>
