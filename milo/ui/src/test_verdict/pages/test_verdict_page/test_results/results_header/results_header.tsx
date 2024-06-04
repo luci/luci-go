@@ -31,7 +31,7 @@ import {
   TestResult,
   TestStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { getSuggestedResultIndex } from '@/test_verdict/tools/test_result_utils';
 
 import { useResults } from '../context';
 import {
@@ -64,12 +64,6 @@ function getTitle(result: TestResult) {
   }`;
 }
 
-function getDefaultTestResult(results: readonly TestResultBundle[]) {
-  // The default result is either the first failed result or the first result.
-  const firstFailedIndex = results.findIndex((e) => !e.result?.expected);
-  return firstFailedIndex >= 0 ? firstFailedIndex : 0;
-}
-
 export function ResultsHeader() {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const selectedResultIndex = getSelectedResultIndex(searchParams);
@@ -77,7 +71,7 @@ export function ResultsHeader() {
 
   useEffectOnce(() => {
     if (selectedResultIndex === null) {
-      updateSelectedTabIndex(getDefaultTestResult(results));
+      updateSelectedTabIndex(getSuggestedResultIndex(results));
     }
   });
 

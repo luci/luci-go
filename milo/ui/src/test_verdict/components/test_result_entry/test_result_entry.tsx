@@ -48,6 +48,10 @@ export interface TestResultEntryProps {
    * alternative way to specify the test ID.
    */
   readonly testId?: string;
+  /**
+   * Whether the entry should expand when it's first rendered.
+   */
+  readonly initExpanded?: boolean;
 }
 
 export function TestResultEntry({
@@ -55,8 +59,9 @@ export function TestResultEntry({
   project,
   testResult,
   testId,
+  initExpanded = false,
 }: TestResultEntryProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(initExpanded);
 
   const parsedName = parseTestResultName(testResult.name);
   const parsedInvId = parseInvId(parsedName.invocationId);
