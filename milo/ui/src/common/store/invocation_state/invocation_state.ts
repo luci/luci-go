@@ -25,7 +25,8 @@ import {
 import { fromPromise } from 'mobx-utils';
 import { createContext, useContext } from 'react';
 
-import { NEVER_OBSERVABLE, NEVER_PROMISE } from '@/common/constants/legacy';
+import { NEVER_OBSERVABLE } from '@/common/constants/legacy';
+import { NEVER_PROMISE } from '@/common/constants/utils';
 import { TestLoader } from '@/common/models/test_loader';
 import {
   parseTestResultSearchQuery,

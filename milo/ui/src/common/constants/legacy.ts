@@ -29,6 +29,8 @@ import {
   TestVariantStatus,
 } from '@/common/services/resultdb';
 
+import { NEVER_PROMISE } from './utils';
+
 export const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Unspecified]: 'unspecified',
   [InvocationState.Active]: 'active',
@@ -127,7 +129,4 @@ export const BUILD_STATUS_COLOR_THEME_MAP = Object.freeze({
  */
 export const POTENTIALLY_EXPIRED = Symbol('POTENTIALLY_EXPIRED');
 
-export const NEVER_PROMISE = new Promise<never>(() => {
-  /* Never resolves. */
-});
 export const NEVER_OBSERVABLE = fromPromise(NEVER_PROMISE);

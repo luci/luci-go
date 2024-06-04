@@ -18,6 +18,7 @@ import fetchMockJest from 'fetch-mock-jest';
 import { act } from 'react';
 
 import { OutputClusterEntry } from '@/analysis/types';
+import { NEVER_PROMISE } from '@/common/constants/utils';
 import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {
   TestResult,
@@ -25,7 +26,6 @@ import {
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { mockFetchTextArtifact } from '@/test_verdict/components/artifact_tags/text_artifact/testing_tools/text_artifact_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-import { NEVER_PROMISE } from '@/testing_tools/utils';
 
 import { FakeTestVerdictContextProvider } from '../../../testing_tools/fake_context';
 import { TestResultsProvider } from '../../context';

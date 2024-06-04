@@ -15,13 +15,13 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { act } from 'react';
 
+import { NEVER_PROMISE } from '@/common/constants/utils';
 import {
   ChangepointsClientImpl,
   QueryChangepointGroupSummariesResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import { URLObserver } from '@/testing_tools/url_observer';
-import { NEVER_PROMISE } from '@/testing_tools/utils';
 
 import { RecentRegressions } from './recent_regressions';
 

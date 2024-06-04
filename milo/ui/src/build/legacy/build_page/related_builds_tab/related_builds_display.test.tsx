@@ -15,6 +15,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { act } from 'react';
 
+import { NEVER_PROMISE } from '@/common/constants/utils';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import {
   BuildsClientImpl,
@@ -26,7 +27,6 @@ import {
   StringPair,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-import { NEVER_PROMISE } from '@/testing_tools/utils';
 
 import { RelatedBuildTable } from './related_build_table';
 import {

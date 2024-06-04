@@ -17,6 +17,7 @@ import fetchMockJest from 'fetch-mock-jest';
 import { act } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
+import { NEVER_PROMISE } from '@/common/constants/utils';
 import {
   ClusterRequest,
   ClusterResponse,
@@ -26,7 +27,6 @@ import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/
 import { mockFetchTextArtifact } from '@/test_verdict/components/artifact_tags/text_artifact/testing_tools/text_artifact_mock';
 import { resetSilence, silence } from '@/testing_tools/console_filter';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-import { NEVER_PROMISE } from '@/testing_tools/utils';
 
 import { FakeTestVerdictContextProvider } from '../testing_tools/fake_context';
 

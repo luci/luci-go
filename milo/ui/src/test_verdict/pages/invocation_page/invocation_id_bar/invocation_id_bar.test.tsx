@@ -14,9 +14,9 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 
+import { NEVER_PROMISE } from '@/common/constants/utils';
 import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-import { NEVER_PROMISE } from '@/testing_tools/utils';
 
 import { InvocationIdBar } from './invocation_id_bar';
 
