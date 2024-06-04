@@ -96,6 +96,13 @@ var GroupNameRe = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
 // GroupBundle is a map where k: groupName, v: list of identities belonging to group k.
 type GroupBundle = map[string][]identity.Identity
 
+// configRevisionInfo stores the info on a config's revision. Useful for configs
+// fetched from the LUCI Config Service.
+type configRevisionInfo struct {
+	Revision string `json:"rev"`
+	ViewURL  string `json:"url"`
+}
+
 // GetGroupImporterConfig fetches the GroupImporterConfig entity from the datastore.
 //
 //	Returns GroupImporterConfig entity if present.
@@ -126,25 +133,7 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 // Auth Service v2. In v2, the GroupImporterConfig entity will be redundant; the
 // config proto and revision metadata is all handled by the importscfg package.
 func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupImporterConfig, meta *config.Meta) error {
-	configContent, err := prototext.Marshal(importsCfg)
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal imports.cfg").Err()
-	}
-	revision, err := json.Marshal(map[string]string{
-		"rev": meta.Revision,
-		"url": meta.ViewURL,
-	})
-	if err != nil {
-		return errors.Annotate(err, "failed to marshal revision for imports.cfg").Err()
-	}
-	serviceIdentity, err := getServiceIdentity(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Update GroupsImportConfig even if the config hasn't changed, so that the
-	// revision information is up to date.
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		storedCfg, err := GetGroupImporterConfig(ctx)
 		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
 			return err
@@ -156,8 +145,40 @@ func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupI
 			}
 		}
 
+		latestRev := configRevisionInfo{
+			Revision: meta.Revision,
+			ViewURL:  meta.ViewURL,
+		}
+
+		// First, check if an update is necessary.
+		if storedCfg.ConfigRevision != nil {
+			var storedRev configRevisionInfo
+			if err := json.Unmarshal(storedCfg.ConfigRevision, &storedRev); err != nil {
+				return errors.Annotate(err,
+					"failed to unmarshal revision info for GroupImporterConfig").Err()
+			}
+
+			if storedRev == latestRev {
+				// Skip update since GroupImporterConfig is already up to date.
+				return nil
+			}
+		}
+
+		configContent, err := prototext.Marshal(importsCfg)
+		if err != nil {
+			return errors.Annotate(err, "failed to marshal imports.cfg content").Err()
+		}
+		configRev, err := json.Marshal(latestRev)
+		if err != nil {
+			return errors.Annotate(err, "failed to marshal revision info for GroupImporterConfig").Err()
+		}
+		serviceIdentity, err := getServiceIdentity(ctx)
+		if err != nil {
+			return err
+		}
+
 		storedCfg.ConfigProto = string(configContent)
-		storedCfg.ConfigRevision = revision
+		storedCfg.ConfigRevision = configRev
 		storedCfg.ModifiedBy = string(serviceIdentity)
 		storedCfg.ModifiedTS = clock.Now(ctx).UTC()
 		return datastore.Put(ctx, storedCfg)
