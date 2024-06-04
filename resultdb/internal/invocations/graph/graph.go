@@ -58,14 +58,14 @@ var TooManyTag = errors.BoolTag{
 // edges. May return an appstatus-annotated error.
 func Reachable(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
 	// TODO (nqmtuan): useRootCache should be set to true.
-	invs, err := reachable(ctx, roots, false)
+	invs, err := reachable(ctx, roots, true)
 	if err != nil {
 		return ReachableInvocations{}, err
 	}
 	return invs, nil
 }
 
-// ReachableSkipRootCache is similar to BatchedReachable, but it ignores cache
+// ReachableSkipRootCache is similar to Reachable, but it ignores cache
 // for the roots.
 //
 // Useful to keep cache-hit stats high in cases where the roots are known not to
