@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/securitycfg"
@@ -75,6 +76,10 @@ func ServiceConfigCronHandler(dryRun bool) func(context.Context) error {
 	return func(ctx context.Context) error {
 		historicalComment := "Updated from update-config cron"
 
+		////////////////////////////////////////////////////////////////////////
+		// Config files that directly affect the AuthDB (i.e. may trigger
+		// AuthDB replication).
+
 		// ip_allowlist.cfg handling.
 		if err := allowlistcfg.Update(ctx); err != nil {
 			return err
@@ -95,7 +100,7 @@ func ServiceConfigCronHandler(dryRun bool) func(context.Context) error {
 		if err := oauthcfg.Update(ctx); err != nil {
 			return err
 		}
-		oauthcfg, err := oauthcfg.Get(ctx)
+		oauthConfig, err := oauthcfg.Get(ctx)
 		if err != nil {
 			return err
 		}
@@ -104,17 +109,32 @@ func ServiceConfigCronHandler(dryRun bool) func(context.Context) error {
 		if err := securitycfg.Update(ctx); err != nil {
 			return err
 		}
-		securitycfg, err := securitycfg.Get(ctx)
+		securityConfig, err := securitycfg.Get(ctx)
 		if err != nil {
 			return err
 		}
 
-		if err := updateAuthGlobalConfig(ctx, oauthcfg, securitycfg, dryRun, historicalComment); err != nil {
+		if err := updateAuthGlobalConfig(ctx, oauthConfig, securityConfig, dryRun, historicalComment); err != nil {
 			return err
 		}
 
+		////////////////////////////////////////////////////////////////////////
+		// Other config files that don't directly change the AuthDB.
+
 		// settings.cfg handling
 		if err := settingscfg.Update(ctx); err != nil {
+			return err
+		}
+
+		// imports.cfg handling
+		if err := importscfg.Update(ctx); err != nil {
+			return err
+		}
+		importsConfig, importsMeta, err := importscfg.GetWithMetadata(ctx)
+		if err != nil {
+			return err
+		}
+		if err := updateGroupImporterConfig(ctx, importsConfig, importsMeta); err != nil {
 			return err
 		}
 

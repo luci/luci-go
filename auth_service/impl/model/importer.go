@@ -18,6 +18,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 
@@ -83,10 +85,10 @@ type GroupImporterConfig struct {
 	ConfigRevision []byte `gae:"config_revision"`
 
 	// ModifiedBy is the email of the user who modified the cfg.
-	ModifiedBy string `gae:"modified_by"`
+	ModifiedBy string `gae:"modified_by,noindex"`
 
 	// ModifiedTS is the time when this entity was last modified.
-	ModifiedTS time.Time `gae:"modified_ts"`
+	ModifiedTS time.Time `gae:"modified_ts,noindex"`
 }
 
 var GroupNameRe = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
@@ -115,6 +117,58 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 	}
 }
 
+// updateGroupImporterConfig updates the GroupImporterConfig datastore entity.
+// If there is no GroupImporterConfig entity present in the datastore, one will
+// be created.
+//
+// TODO(b/302615672): Remove this once IngestTarball is updated below to use the
+// config from cfgcache, and Auth Service has been fully migrated to
+// Auth Service v2. In v2, the GroupImporterConfig entity will be redundant; the
+// config proto and revision metadata is all handled by the importscfg package.
+func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupImporterConfig, meta *config.Meta) error {
+	configContent, err := prototext.Marshal(importsCfg)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal imports.cfg").Err()
+	}
+	revision, err := json.Marshal(map[string]string{
+		"rev": meta.Revision,
+		"url": meta.ViewURL,
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal revision for imports.cfg").Err()
+	}
+	serviceIdentity, err := getServiceIdentity(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Update GroupsImportConfig even if the config hasn't changed, so that the
+	// revision information is up to date.
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		storedCfg, err := GetGroupImporterConfig(ctx)
+		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
+			return err
+		}
+		if storedCfg == nil {
+			storedCfg = &GroupImporterConfig{
+				Kind: "GroupImporterConfig",
+				ID:   "config",
+			}
+		}
+
+		storedCfg.ConfigProto = string(configContent)
+		storedCfg.ConfigRevision = revision
+		storedCfg.ModifiedBy = string(serviceIdentity)
+		storedCfg.ModifiedTS = clock.Now(ctx).UTC()
+		return datastore.Put(ctx, storedCfg)
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err, "failed to update GroupImporterConfig").Err()
+	}
+
+	return nil
+}
+
 // IngestTarball handles upload of tarball's specified in 'tarball_upload' config entries.
 // expected to be called in an auth context of the upload PUT request.
 //
@@ -129,6 +183,8 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 //		unauthorized uploader
 //		bad tarball structure
 func IngestTarball(ctx context.Context, name string, content io.Reader) ([]string, int64, error) {
+	// TODO(b/321018127): get the configspb.GroupImporterConfig directly from
+	// the cfgcache instead of the GroupImporterConfig datastore entity.
 	g, err := GetGroupImporterConfig(ctx)
 	if err != nil {
 		return nil, 0, err

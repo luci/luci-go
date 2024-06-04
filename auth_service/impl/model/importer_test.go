@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/testsupport"
 
@@ -73,19 +75,56 @@ func testGroupImporterConfig() *GroupImporterConfig {
 }
 func TestGroupImporterConfigModel(t *testing.T) {
 	t.Parallel()
-	ctx := memory.Use(context.Background())
 
-	Convey("testing GetGroupImporterConfig", t, func() {
-		groupCfg := testGroupImporterConfig()
+	Convey("testing GroupImporterConfig entity", t, func() {
+		ctx := memory.Use(context.Background())
 
-		_, err := GetGroupImporterConfig(ctx)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		Convey("testing GetGroupImporterConfig", func() {
+			_, err := GetGroupImporterConfig(ctx)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
-		So(datastore.Put(ctx, groupCfg), ShouldBeNil)
+			groupCfg := testGroupImporterConfig()
+			So(datastore.Put(ctx, groupCfg), ShouldBeNil)
 
-		actual, err := GetGroupImporterConfig(ctx)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, groupCfg)
+			actual, err := GetGroupImporterConfig(ctx)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, groupCfg)
+		})
+
+		Convey("updateGroupImporterConfig works", func() {
+			ctx = testsupport.SetTestContextSigner(ctx, "test-app-id", "test-app-id@example.com")
+
+			Convey("creates if it doesn't exist", func() {
+				ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+
+				_, err := GetGroupImporterConfig(ctx)
+				So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+				testConfig := &configspb.GroupImporterConfig{
+					TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
+						{
+							Name:               "tarball-upload-test",
+							AuthorizedUploader: []string{"test-uploader@example.com"},
+							Systems:            []string{"tarballtest"},
+						},
+					},
+				}
+				testMeta := &config.Meta{
+					ConfigSet:   config.Set("service/chrome-infra-auth-test"),
+					Path:        "imports.cfg",
+					ContentHash: "a1b2c3",
+					Revision:    "10001a",
+					ViewURL:     "config-url.example.com/imports/10001a",
+				}
+				So(updateGroupImporterConfig(ctx, testConfig, testMeta), ShouldBeNil)
+
+				stored, err := GetGroupImporterConfig(ctx)
+				So(err, ShouldBeNil)
+				actual, err := stored.ToProto()
+				So(err, ShouldBeNil)
+				So(actual, ShouldResembleProto, testConfig)
+			})
+		})
 	})
 }
 

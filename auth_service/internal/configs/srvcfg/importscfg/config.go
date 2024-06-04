@@ -34,9 +34,22 @@ func Get(ctx context.Context) (*configspb.GroupImporterConfig, error) {
 	return cfg.(*configspb.GroupImporterConfig), err
 }
 
+// GetWithMetadata returns the config and its metadata stored in context.
+func GetWithMetadata(ctx context.Context) (*configspb.GroupImporterConfig, *config.Meta, error) {
+	meta := &config.Meta{}
+	cfg, err := cachedImportsCfg.Get(ctx, meta)
+	return cfg.(*configspb.GroupImporterConfig), meta, err
+}
+
 // SetConfig installs the cfg into the context ctx.
 func SetConfig(ctx context.Context, cfg *configspb.GroupImporterConfig) error {
-	return cachedImportsCfg.Set(ctx, cfg, &config.Meta{})
+	return SetConfigWithMetadata(ctx, cfg, &config.Meta{})
+}
+
+// SetConfigWithMetadata installs the cfg with the given metadata into the
+// context ctx.
+func SetConfigWithMetadata(ctx context.Context, cfg *configspb.GroupImporterConfig, meta *config.Meta) error {
+	return cachedImportsCfg.Set(ctx, cfg, meta)
 }
 
 // Update fetches the config and puts it into the datastore.
