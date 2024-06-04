@@ -188,7 +188,7 @@ func (ib *Buffer) InsertRun(r Run) {
 	runs := ib.HotBuffer.Runs
 	pos := len(runs)
 	for ; pos > 0; pos-- {
-		if compareRun(r, runs[pos-1]) > 0 {
+		if compareRun(&r, &runs[pos-1]) > 0 {
 			// run is after the run at position-1,
 			// so insert at position.
 			break
@@ -228,28 +228,30 @@ func (ib *Buffer) CompactIfRequired() {
 	}
 	ib.IsColdBufferDirty = true
 
-	var merged []Run
+	var merged []*Run
 	ib.MergeBuffer(&merged)
 	ib.HotBuffer.Runs = ib.HotBuffer.Runs[:0]
 
 	// Copy the merged runs to the ColdBuffer instead of assigning
 	// the merged buffer, so that we keep the same pre-allocated buffer.
 	ib.ColdBuffer.Runs = ib.ColdBuffer.Runs[:0]
-	ib.ColdBuffer.Runs = append(ib.ColdBuffer.Runs, merged...)
+	ib.ColdBuffer.Runs = append(ib.ColdBuffer.Runs, copyAndFlattenRuns(merged)...)
 }
 
 // MergeBuffer merges the runs of the hot buffer and the cold buffer
 // into the provided slice, resizing it if necessary.
 // The returned slice will be sorted by commit position (oldest first), and
 // then by result time (oldest first).
-func (ib *Buffer) MergeBuffer(destination *[]Run) {
+// Any changes to the input buffers will invalidate the slice, as it
+// is built via pointers into the input buffer.
+func (ib *Buffer) MergeBuffer(destination *[]*Run) {
 	// Because the hot buffer and cold buffer are both sorted, we can simply use
 	// a single merge to merge the 2 buffers.
 	hRuns := ib.HotBuffer.Runs
 	cRuns := ib.ColdBuffer.Runs
 
 	if *destination == nil {
-		*destination = make([]Run, 0, ib.ColdBufferCapacity+ib.HotBufferCapacity+RunsInsertedHint)
+		*destination = make([]*Run, 0, ib.ColdBufferCapacity+ib.HotBufferCapacity+RunsInsertedHint)
 	}
 	MergeOrderedRuns(hRuns, cRuns, destination)
 }
@@ -545,17 +547,17 @@ func uInt64ToBool(u uint64) bool {
 // compareRun returns 1 if v1 is later than v2, -1 if v1 is earlier than
 // v2, and 0 if they are at the same time.
 // The comparision is done on commit position, then on hour.
-func compareRun(v1 Run, v2 Run) int {
+func compareRun(v1 *Run, v2 *Run) int {
 	if v1.CommitPosition > v2.CommitPosition {
 		return 1
 	}
 	if v1.CommitPosition < v2.CommitPosition {
 		return -1
 	}
-	if v1.Hour.Unix() > v2.Hour.Unix() {
+	if v1.Hour.After(v2.Hour) {
 		return 1
 	}
-	if v1.Hour.Unix() < v2.Hour.Unix() {
+	if v1.Hour.Before(v2.Hour) {
 		return -1
 	}
 	return 0

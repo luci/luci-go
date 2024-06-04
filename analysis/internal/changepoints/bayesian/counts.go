@@ -50,7 +50,7 @@ type counts struct {
 	UnexpectedAfterRetry int
 }
 
-func (h counts) addRun(run inputbuffer.Run) counts {
+func (h counts) addRun(run *inputbuffer.Run) counts {
 	h.Runs += 1
 	if run.Unexpected.Count() == 0 {
 		return h

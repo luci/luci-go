@@ -32,7 +32,7 @@ type Analyzer struct {
 	// merging hot and cold input buffers. Reusing the same buffer avoids
 	// allocating a new buffer for each test variant branch processed.
 	// Sorted by commit position (oldest first), then result hour (oldest first).
-	mergeBuffer []inputbuffer.Run
+	mergeBuffer []*inputbuffer.Run
 }
 
 // Run runs changepoint analysis, performs any required
@@ -58,10 +58,12 @@ func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []Segment {
 	tvb.InputBuffer.MergeBuffer(&a.mergeBuffer)
 	changePoints := predictor.ChangePoints(a.mergeBuffer, bayesian.ConfidenceIntervalTail)
 	sib := tvb.InputBuffer.Segmentize(a.mergeBuffer, changePoints)
+
+	// Note: the moment any segment is evicted and the input buffer is updated, the mergeBuffer
+	// must be treated as invalidated.
 	evictedSegments := sib.EvictSegments()
 	if len(evictedSegments) > 0 {
 		tvb.UpdateOutputBuffer(evictedSegments)
-		// Update merge buffer to reflect new state of the input buffer.
 		tvb.InputBuffer.MergeBuffer(&a.mergeBuffer)
 	}
 	return toSegments(tvb, sib.Segments, a.mergeBuffer)
@@ -72,7 +74,7 @@ func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []Segment {
 // portion.
 // The segments returned will be sorted, with the most recent segment
 // comes first.
-func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment, mergedRuns []inputbuffer.Run) []Segment {
+func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer.Segment, mergedRuns []*inputbuffer.Run) []Segment {
 	results := []Segment{}
 
 	// The index where the active segments starts.
@@ -111,7 +113,7 @@ func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer
 }
 
 // inputSegmentToSegment constructs a logical segment from an input buffer segment.
-func inputSegmentToSegment(inputSegment *inputbuffer.Segment, runs []inputbuffer.Run) Segment {
+func inputSegmentToSegment(inputSegment *inputbuffer.Segment, runs []*inputbuffer.Run) Segment {
 	return Segment{
 		HasStartChangepoint:            inputSegment.HasStartChangepoint,
 		StartPosition:                  inputSegment.StartPosition,
@@ -127,7 +129,7 @@ func inputSegmentToSegment(inputSegment *inputbuffer.Segment, runs []inputbuffer
 
 // combineSegment constructs a logical segment from its finalizing part in
 // the output buffer and its unfinalized part in the input buffer.
-func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Segment, inputSegmentRuns []inputbuffer.Run) Segment {
+func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Segment, inputSegmentRuns []*inputbuffer.Run) Segment {
 	var mostRecentUnexpectedResultHour time.Time
 	if finalizingSegment.MostRecentUnexpectedResultHour != nil {
 		mostRecentUnexpectedResultHour = finalizingSegment.MostRecentUnexpectedResultHour.AsTime()
@@ -173,7 +175,7 @@ func finalizedSegmentToSegment(finalizedSegment *cpb.Segment) Segment {
 // segmentCounts computes counts for logical segment by combining
 // stored segment counts from the output buffer (if any) with
 // counts for runs still in the input buffer.
-func segmentCounts(counts *cpb.Counts, runs []inputbuffer.Run) Counts {
+func segmentCounts(counts *cpb.Counts, runs []*inputbuffer.Run) Counts {
 	var partialSourceVerdict *cpb.PartialSourceVerdict
 	var result Counts
 	if counts != nil {

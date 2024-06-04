@@ -78,7 +78,7 @@ func NewRunStreamAggregator(partialVerdict *cpb.PartialSourceVerdict) *runStream
 // If an aggregated source verdict is available as a result of the
 // insertion, it is yielded, with OK set to true. Otherwise, ok
 // is set to false and yield should be ignored.
-func (s *runStreamAggregator) Insert(run inputbuffer.Run) (yield sourceVerdict, ok bool) {
+func (s *runStreamAggregator) Insert(run *inputbuffer.Run) (yield sourceVerdict, ok bool) {
 	var toYield sourceVerdict
 	var shouldYield bool
 	if s.hasPartial && s.partial.CommitPosition != run.CommitPosition {

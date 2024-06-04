@@ -189,7 +189,7 @@ func TestAnalyzer(t *testing.T) {
 			var (
 				positions     = []int{30, 31, 32, 33, 34, 35, 36, 37, 38, 39}
 				total         = []int{5, 5, 5, 5, 5, 5, 5, 5, 5, 5}
-				hasUnexpected = []int{5, 5, 5, 5, 5, 0, 0, 0, 0, 0}
+				hasUnexpected = []int{5, 5, 5, 5, 0, 0, 0, 0, 0, 1}
 			)
 
 			row := &testvariantbranch.Entry{
@@ -200,11 +200,14 @@ func TestAnalyzer(t *testing.T) {
 				Variant:     variant,
 				SourceRef:   sourceRef,
 				InputBuffer: &inputbuffer.Buffer{
-					HotBufferCapacity: 10,
+					HotBufferCapacity: 11,
 					HotBuffer: inputbuffer.History{
-						Runs: inputbuffer.Verdicts(positions, total, hasUnexpected),
+						Runs: inputbuffer.Verdicts(positions[:2], total[:2], hasUnexpected[:2]),
 					},
-					ColdBufferCapacity: 10,
+					ColdBufferCapacity: 50,
+					ColdBuffer: inputbuffer.History{
+						Runs: inputbuffer.Verdicts(positions[2:], total[2:], hasUnexpected[2:]),
+					},
 				},
 				FinalizedSegments: &cpb.Segments{
 					Segments: []*cpb.Segment{
@@ -280,18 +283,23 @@ func TestAnalyzer(t *testing.T) {
 
 			expectedSegments := []Segment{
 				{
-					HasStartChangepoint:         true,
-					StartPosition:               35,
-					StartPositionLowerBound99Th: 34,
-					StartPositionUpperBound99Th: 35,
-					StartHour:                   time.Unix(35*3600, 0),
-					EndPosition:                 39,
-					EndHour:                     time.Unix(39*3600, 0),
+					HasStartChangepoint:            true,
+					StartPosition:                  34,
+					StartPositionLowerBound99Th:    33,
+					StartPositionUpperBound99Th:    34,
+					StartHour:                      time.Unix(34*3600, 0),
+					EndPosition:                    39,
+					EndHour:                        time.Unix(39*3600, 0),
+					MostRecentUnexpectedResultHour: time.Unix(39*3600, 0),
 					Counts: Counts{
-						TotalResults:          25,
-						ExpectedPassedResults: 25,
-						TotalRuns:             25,
-						TotalSourceVerdicts:   5,
+						TotalResults:            30,
+						UnexpectedResults:       1,
+						ExpectedPassedResults:   29,
+						UnexpectedFailedResults: 1,
+						TotalRuns:               30,
+						UnexpectedUnretriedRuns: 1,
+						TotalSourceVerdicts:     6,
+						FlakySourceVerdicts:     1,
 					},
 				},
 				{
@@ -300,22 +308,22 @@ func TestAnalyzer(t *testing.T) {
 					StartPositionLowerBound99Th:    19,
 					StartPositionUpperBound99Th:    23,
 					StartHour:                      time.Unix(7000*3600, 0),
-					EndPosition:                    34,
-					EndHour:                        time.Unix(34*3600, 0),
+					EndPosition:                    33,
+					EndHour:                        time.Unix(33*3600, 0),
 					MostRecentUnexpectedResultHour: time.Unix(9000*3600, 0),
 					Counts: Counts{
-						TotalResults:             10 + 25, // 10+25
-						UnexpectedResults:        9 + 25,  // 9+25
+						TotalResults:             10 + 20, // 10+25
+						UnexpectedResults:        9 + 20,  // 9+25
 						UnexpectedCrashedResults: 8,
-						UnexpectedFailedResults:  25, // from input buffer
+						UnexpectedFailedResults:  20, // from input buffer
 
-						TotalRuns:                7 + 25,
+						TotalRuns:                7 + 20,
 						FlakyRuns:                6,
-						UnexpectedUnretriedRuns:  5 + 25,
+						UnexpectedUnretriedRuns:  5 + 20,
 						UnexpectedAfterRetryRuns: 4,
 
-						TotalSourceVerdicts:      3 + 5,
-						UnexpectedSourceVerdicts: 2 + 4,
+						TotalSourceVerdicts:      3 + 4,
+						UnexpectedSourceVerdicts: 2 + 3,
 						FlakySourceVerdicts:      1 + 1, // From merging with expected partial source verdict in finalizing segment.
 					},
 				},
@@ -352,8 +360,55 @@ func TestAnalyzer(t *testing.T) {
 				},
 			}
 
-			segments := a.Run(row)
-			So(segments, ShouldResembleProto, expectedSegments)
+			Convey("without eviction", func() {
+				// By increasing capacity, we avoid eviction due to
+				// the changepoint occuring in the old half of the input
+				// buffer.
+				row.InputBuffer.ColdBufferCapacity = 100
+
+				segments := a.Run(row)
+				So(segments, ShouldResembleProto, expectedSegments)
+				So(row.InputBuffer.IsColdBufferDirty, ShouldBeFalse)
+			})
+			Convey("with eviction forced by space pressure", func() {
+				row.InputBuffer.ColdBufferCapacity = 10
+				row.InputBuffer.HotBufferCapacity = 5
+
+				segments := a.Run(row)
+				So(segments, ShouldResembleProto, expectedSegments)
+				So(row.InputBuffer.IsColdBufferDirty, ShouldBeTrue)
+
+				So(row.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 0)
+				So(row.InputBuffer.ColdBuffer.Runs, ShouldHaveLength, 10)
+				So(row.FinalizedSegments.Segments, ShouldHaveLength, 3)
+				So(row.FinalizedSegments.Segments[2].StartPosition, ShouldEqual, 21)
+				So(row.FinalizedSegments.Segments[2].EndPosition, ShouldEqual, 33)
+				So(row.FinalizingSegment.StartPosition, ShouldEqual, 34)
+				So(row.FinalizingSegment.FinalizedCounts, ShouldResembleProto, &cpb.Counts{
+					TotalResults:          20,
+					ExpectedPassedResults: 20,
+					TotalRuns:             20,
+					TotalSourceVerdicts:   3,
+					PartialSourceVerdict: &cpb.PartialSourceVerdict{
+						CommitPosition:  37,
+						LastHour:        timestamppb.New(time.Unix(37*3600, 0)),
+						ExpectedResults: 5,
+					},
+				})
+			})
+			Convey("with eviction due to changepoint", func() {
+				segments := a.Run(row)
+				So(segments, ShouldResembleProto, expectedSegments)
+				So(row.InputBuffer.IsColdBufferDirty, ShouldBeTrue)
+
+				So(row.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 0)
+				So(row.InputBuffer.ColdBuffer.Runs, ShouldHaveLength, 30)
+				So(row.FinalizedSegments.Segments, ShouldHaveLength, 3)
+				So(row.FinalizedSegments.Segments[2].StartPosition, ShouldEqual, 21)
+				So(row.FinalizedSegments.Segments[2].EndPosition, ShouldEqual, 33)
+				So(row.FinalizingSegment.StartPosition, ShouldEqual, 34)
+				So(row.FinalizingSegment.FinalizedCounts, ShouldResembleProto, &cpb.Counts{})
+			})
 		})
 		Convey("legacy test variant branch which has more runs than capacity", func() {
 			// Legacy data formats may be storing more runs than is now the buffer capacity.
@@ -427,4 +482,174 @@ func TestAnalyzer(t *testing.T) {
 			So(segments, ShouldResembleProto, expectedSegments)
 		})
 	})
+}
+
+// Output as of June 2024 on Intel Skylake CPU @ 2.00GHz:
+// BenchmarkAnalyzer-96    	   10000	    100970 ns/op	    1026 B/op	      12 allocs/op
+func BenchmarkAnalyzer(b *testing.B) {
+	variant := &pb.Variant{
+		Def: map[string]string{
+			"k": "v",
+		},
+	}
+
+	sourceRef := &pb.SourceRef{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
+				Host:    "host",
+				Project: "proj",
+				Ref:     "ref",
+			},
+		},
+	}
+
+	// Tests analysis on a consistently passing test, which is most
+	// test variants.
+	var hotRuns []inputbuffer.Run
+	for i := 0; i < 100; i++ {
+		hotRuns = append(hotRuns, inputbuffer.Run{
+			CommitPosition: int64(i + 1000),
+			Hour:           time.Unix(int64(i)*3600, 0),
+			Expected:       inputbuffer.ResultCounts{PassCount: 1},
+		})
+	}
+	var coldRuns []inputbuffer.Run
+	for i := 0; i < 2000; i++ {
+		coldRuns = append(coldRuns, inputbuffer.Run{
+			CommitPosition: int64(i + 1300),
+			Hour:           time.Unix(int64(i+1300)*3600, 0),
+			Expected:       inputbuffer.ResultCounts{PassCount: 1},
+		})
+	}
+
+	var a Analyzer
+	for i := 0; i < b.N; i++ {
+
+		row := &testvariantbranch.Entry{
+			Project:     "chromium",
+			TestID:      "test_id_2",
+			VariantHash: "variant_hash_2",
+			RefHash:     []byte("refhash2"),
+			Variant:     variant,
+			SourceRef:   sourceRef,
+			InputBuffer: &inputbuffer.Buffer{
+				HotBufferCapacity: 101,
+				HotBuffer: inputbuffer.History{
+					Runs: hotRuns,
+				},
+				ColdBufferCapacity: 2000,
+				ColdBuffer: inputbuffer.History{
+					Runs: coldRuns,
+				},
+			},
+			FinalizingSegment: &cpb.Segment{
+				State:               cpb.SegmentState_FINALIZING,
+				HasStartChangepoint: true,
+				StartPosition:       1,
+				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				EndPosition:         999,
+				FinalizedCounts: &cpb.Counts{
+					TotalResults:          999,
+					ExpectedPassedResults: 999,
+					TotalRuns:             999,
+					TotalSourceVerdicts:   999,
+				},
+			},
+		}
+		segments := a.Run(row)
+		if len(segments) != 1 {
+			panic("wrong number of segments")
+		}
+		if len(row.InputBuffer.HotBuffer.Runs) != 100 {
+			panic("unexpected hot buffer eviction")
+		}
+		if len(row.InputBuffer.ColdBuffer.Runs) != 2000 {
+			panic("unexpected cold buffer eviction")
+		}
+	}
+}
+
+// Output as of June 2024 on Intel Skylake CPU @ 2.00GHz:
+// BenchmarkAnalyzerWithEviction-96    	    1112	   1073511 ns/op	  122364 B/op	      45 allocs/op
+//
+// Analysis indicates that most of the time is spent identifying the changepoint confidence interval.
+func BenchmarkAnalyzerWithChangepoint(b *testing.B) {
+	variant := &pb.Variant{
+		Def: map[string]string{
+			"k": "v",
+		},
+	}
+
+	sourceRef := &pb.SourceRef{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
+				Host:    "host",
+				Project: "proj",
+				Ref:     "ref",
+			},
+		},
+	}
+
+	var a Analyzer
+	var hotRuns []inputbuffer.Run
+	var coldRuns []inputbuffer.Run
+	for i := 0; i < 100; i++ {
+		hotRuns = append(hotRuns, inputbuffer.Run{
+			CommitPosition: int64(i + 3000),
+			Hour:           time.Unix(int64(i)*3600, 0),
+			Unexpected:     inputbuffer.ResultCounts{FailCount: 1},
+		})
+	}
+
+	for i := 0; i < 2000; i++ {
+		coldRuns = append(coldRuns, inputbuffer.Run{
+			CommitPosition: int64(i + 1000),
+			Hour:           time.Unix(int64(i+1300)*3600, 0),
+			Expected:       inputbuffer.ResultCounts{PassCount: 1},
+		})
+	}
+
+	for i := 0; i < b.N; i++ {
+		row := &testvariantbranch.Entry{
+			Project:     "chromium",
+			TestID:      "test_id_2",
+			VariantHash: "variant_hash_2",
+			RefHash:     []byte("refhash2"),
+			Variant:     variant,
+			SourceRef:   sourceRef,
+			InputBuffer: &inputbuffer.Buffer{
+				HotBufferCapacity: 101,
+				HotBuffer: inputbuffer.History{
+					Runs: hotRuns,
+				},
+				ColdBufferCapacity: 2000,
+				ColdBuffer: inputbuffer.History{
+					Runs: coldRuns,
+				},
+			},
+			FinalizingSegment: &cpb.Segment{
+				State:               cpb.SegmentState_FINALIZING,
+				HasStartChangepoint: true,
+				StartPosition:       1,
+				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				EndPosition:         999,
+				FinalizedCounts: &cpb.Counts{
+					TotalResults:          999,
+					ExpectedPassedResults: 999,
+					TotalRuns:             999,
+					TotalSourceVerdicts:   999,
+				},
+			},
+		}
+		segments := a.Run(row)
+		if len(segments) != 2 {
+			panic("wrong number of segments")
+		}
+		if len(row.InputBuffer.HotBuffer.Runs) != 100 {
+			panic("unexpected hot buffer eviction")
+		}
+		if len(row.InputBuffer.ColdBuffer.Runs) != 2000 {
+			panic("unexpected cold buffer eviction")
+		}
+	}
 }

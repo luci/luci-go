@@ -199,7 +199,7 @@ func (tvb *Entry) UpdateOutputBuffer(evictedSegments []inputbuffer.EvictedSegmen
 
 	// evictedRuns is ordered oldest commit position first,
 	// then oldest hour first.
-	var evictedRuns []inputbuffer.Run
+	var evictedRuns []*inputbuffer.Run
 	for _, segments := range evictedSegments {
 		evictedRuns = append(evictedRuns, segments.Runs...)
 	}
@@ -350,7 +350,7 @@ func toTimestampOrNil(t time.Time) *timestamppb.Timestamp {
 }
 
 // AddCounts updates counts with the given new runs.
-func AddCounts(counts *cpb.Counts, runs []inputbuffer.Run) *cpb.Counts {
+func AddCounts(counts *cpb.Counts, runs []*inputbuffer.Run) *cpb.Counts {
 	var result *cpb.Counts
 	if counts == nil {
 		result = &cpb.Counts{}
@@ -440,7 +440,7 @@ func flattenCounts(counts *cpb.Counts) *cpb.Counts {
 // insertVerdictsIntoStatistics updates the given statistics to include
 // the given evicted runs. Retention policies are applied.
 // Runs are sorted oldest commit position first, then oldest hour first.
-func insertVerdictsIntoStatistics(stats *cpb.Statistics, runs []inputbuffer.Run) *cpb.Statistics {
+func insertVerdictsIntoStatistics(stats *cpb.Statistics, runs []*inputbuffer.Run) *cpb.Statistics {
 	bucketByHour := make(map[int64]*cpb.Statistics_HourBucket)
 	for _, bucket := range stats.GetHourlyBuckets() {
 		// Copy hourly bucket to avoid mutating the passed statistics object.
@@ -544,7 +544,7 @@ type HourlyStats struct {
 //
 // The results are in a map keyed by hour (unix seconds / 3600).
 func (tvb *Entry) HourlyStatistics() map[int64]HourlyStats {
-	var runs []inputbuffer.Run
+	var runs []*inputbuffer.Run
 	tvb.InputBuffer.MergeBuffer(&runs)
 	updatedStats := insertVerdictsIntoStatistics(tvb.Statistics, runs)
 

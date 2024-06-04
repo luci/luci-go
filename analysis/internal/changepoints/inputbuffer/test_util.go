@@ -18,10 +18,18 @@ import (
 	"time"
 )
 
+func VerdictRefs(positions, total, hasUnexpected []int) []*Run {
+	return copyAndUnflattenRuns(Verdicts(positions, total, hasUnexpected))
+}
+
 func Verdicts(positions, total, hasUnexpected []int) []Run {
 	retried := make([]int, len(total))
 	unexpectedAfterRetry := make([]int, len(total))
 	return VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAfterRetry)
+}
+
+func VerdictsWithRetriesRefs(positions, total, hasUnexpected, retried, unexpectedAfterRetry []int) []*Run {
+	return copyAndUnflattenRuns(VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAfterRetry))
 }
 
 func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAfterRetry []int) []Run {

@@ -37,7 +37,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			ib := genInputBuffer(10, 200, Verdicts(positions, total, hasUnexpected))
 			cps := []ChangePoint{}
 
-			var merged []Run
+			var merged []*Run
 			ib.MergeBuffer(&merged)
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
@@ -81,7 +81,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 					UpperBound99ThIndex: 16,
 				},
 			}
-			var merged []Run
+			var merged []*Run
 			ib.MergeBuffer(&merged)
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
@@ -200,7 +200,7 @@ func TestEvictSegments(t *testing.T) {
 			StartHour:                      time.Unix(1*3600, 0),
 			StartPosition:                  1,
 			MostRecentUnexpectedResultHour: time.Unix(51*3600, 0),
-			Runs:                           simpleVerdicts(100, 1, []int{50}),
+			Runs:                           copyAndUnflattenRuns(simpleVerdicts(100, 1, []int{50})),
 		})
 
 		So(remaining[0], ShouldResembleProto, &Segment{
@@ -286,7 +286,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPosition:       1,
 			EndHour:             time.Unix(40*3600, 0),
 			EndPosition:         40,
-			Runs:                simpleVerdicts(40, 1, []int{}),
+			Runs:                copyAndUnflattenRuns(simpleVerdicts(40, 1, []int{})),
 		})
 
 		So(evicted[1], ShouldResembleProto, EvictedSegment{
@@ -298,7 +298,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPositionUpperBound99Th: 50,
 			EndHour:                     time.Unix(80*3600, 0),
 			EndPosition:                 80,
-			Runs:                        simpleVerdicts(40, 41, []int{}),
+			Runs:                        copyAndUnflattenRuns(simpleVerdicts(40, 41, []int{})),
 		})
 
 		So(evicted[2], ShouldResembleProto, EvictedSegment{
@@ -308,7 +308,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPosition:               81,
 			StartPositionLowerBound99Th: 70,
 			StartPositionUpperBound99Th: 90,
-			Runs:                        simpleVerdicts(20, 81, []int{}),
+			Runs:                        copyAndUnflattenRuns(simpleVerdicts(20, 81, []int{})),
 		})
 
 		So(remaining[0], ShouldResembleProto, &Segment{
@@ -398,7 +398,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPosition:       1,
 			EndHour:             time.Unix(39*3600, 0),
 			EndPosition:         39,
-			Runs:                expectedRuns,
+			Runs:                copyAndUnflattenRuns(expectedRuns),
 		})
 
 		So(evicted[1], ShouldResembleProto, EvictedSegment{
@@ -408,7 +408,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPosition:               40,
 			StartPositionLowerBound99Th: 30,
 			StartPositionUpperBound99Th: 50,
-			Runs:                        []Run{},
+			Runs:                        []*Run{},
 		})
 
 		So(remaining[0], ShouldResembleProto, segments[1])

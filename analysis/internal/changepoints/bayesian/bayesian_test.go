@@ -40,7 +40,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 1, 1, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(changePoints, ShouldResemble, []int{sum(total[:3])})
 	})
@@ -51,7 +51,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 1, 1, 2, 2}
 			hasUnexpected = []int{0, 0, 1, 1, 2, 2}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(changePoints, ShouldResemble, []int{sum(total[:2])})
 	})
@@ -62,7 +62,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{3, 3, 1, 2, 3, 3}
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(changePoints, ShouldResemble, []int{sum(total[:2])})
 	})
@@ -73,7 +73,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 3, 2, 3, 1, 1, 2, 2, 3, 2, 3, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 2, 3, 0, 0}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(changePoints, ShouldResemble, []int{sum(total[:5]), sum(total[:12])})
 	})
@@ -84,7 +84,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(changePoints, ShouldResemble, []int{sum(total[:6])})
 	})
@@ -95,7 +95,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(changePoints, ShouldResemble, []int{sum(total[:6])})
 	})
@@ -106,7 +106,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 0, 0}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(len(changePoints), ShouldEqual, 0)
 	})
@@ -117,7 +117,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{2, 2, 2, 2, 2, 2, 2, 2}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(len(changePoints), ShouldEqual, 0)
 	})
@@ -128,7 +128,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{1, 0, 1, 0, 0, 1, 0, 2}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
 		So(len(changePoints), ShouldEqual, 0)
 	})
@@ -141,7 +141,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			retries              = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
-		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
 		So(changePoints, ShouldResemble, []int{sum(total[:4])})
 	})
@@ -154,7 +154,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			retries              = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			unexpectedAfterRetry = []int{2, 2, 2, 2, 2, 2, 2, 2}
 		)
-		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
 		So(len(changePoints), ShouldEqual, 0)
 	})
@@ -168,14 +168,14 @@ func TestBayesianAnalysis(t *testing.T) {
 			retries              = []int{3, 3, 3, 1, 3, 3, 3, 3}
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
-		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
 		So(changePoints, ShouldResemble, []int{sum(total[:3])})
 	})
 }
 
 // Output as of May 2024 on Intel Skylake CPU @ 2.00GHz:
-// BenchmarkBayesianAnalysisConsistentPass-96    	   17976	     67026 ns/op	      33 B/op	       0 allocs/op
+// BenchmarkBayesianAnalysisConsistentPass-96    	   36974	     31491 ns/op	       6 B/op	       0 allocs/op
 func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
@@ -189,11 +189,11 @@ func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 		},
 	}
 
-	var vs []inputbuffer.Run
+	var vs []*inputbuffer.Run
 
 	// Consistently passing test. This represents ~99% of tests.
 	for i := 0; i < 2000; i++ {
-		vs = append(vs, inputbuffer.Run{
+		vs = append(vs, &inputbuffer.Run{
 			CommitPosition: int64(i),
 			Expected:       inputbuffer.ResultCounts{PassCount: 1},
 		})
@@ -207,7 +207,7 @@ func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 }
 
 // Output as of May 2024 on Intel Skylake CPU @ 2.00GHz:
-// BenchmarkBayesianAnalysisFlaky-96    	    1426	    839940 ns/op	     424 B/op	       0 allocs/op
+// BenchmarkBayesianAnalysisFlaky-96    	    1676	    727866 ns/op	     143 B/op	       1 allocs/op
 func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
@@ -221,15 +221,15 @@ func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 		},
 	}
 	// Flaky test.
-	var vs []inputbuffer.Run
+	var vs []*inputbuffer.Run
 	for i := 0; i < 2000; i++ {
 		if i%2 == 0 {
-			vs = append(vs, inputbuffer.Run{
+			vs = append(vs, &inputbuffer.Run{
 				CommitPosition: int64(i),
 				Expected:       inputbuffer.ResultCounts{PassCount: 1},
 			})
 		} else {
-			vs = append(vs, inputbuffer.Run{
+			vs = append(vs, &inputbuffer.Run{
 				CommitPosition: int64(i),
 				Expected: inputbuffer.ResultCounts{
 					PassCount: 1,

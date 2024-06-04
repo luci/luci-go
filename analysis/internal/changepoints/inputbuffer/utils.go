@@ -19,9 +19,13 @@ import "go.chromium.org/luci/common/errors"
 // MergeOrderedRuns merges two sets of runs into a destination slice,
 // assuming that both slices are sorted by commit position (oldest first), and
 // then by result time (oldest first).
-func MergeOrderedRuns(aRuns, bRuns []Run, dest *[]Run) {
+//
+// The result will be a slice of runs which is pointers into the original
+// aRuns and bRuns slices. Any modification to aRuns or bRuns will invalidate
+// the result.
+func MergeOrderedRuns(aRuns, bRuns []Run, dest *[]*Run) {
 	if *dest == nil || cap(*dest) < len(aRuns)+len(bRuns) {
-		*dest = make([]Run, 0, len(aRuns)+len(bRuns))
+		*dest = make([]*Run, 0, len(aRuns)+len(bRuns))
 	}
 	// Reset destination slice to zero length.
 	merged := (*dest)[:0]
@@ -29,29 +33,29 @@ func MergeOrderedRuns(aRuns, bRuns []Run, dest *[]Run) {
 	aPos := 0
 	bPos := 0
 	for aPos < len(aRuns) && bPos < len(bRuns) {
-		cmp := compareRun(aRuns[aPos], bRuns[bPos])
+		cmp := compareRun(&aRuns[aPos], &bRuns[bPos])
 		// Item in 'a' buffer is strictly older.
 		if cmp == -1 {
-			merged = append(merged, aRuns[aPos])
+			merged = append(merged, &aRuns[aPos])
 			aPos++
 		} else {
-			merged = append(merged, bRuns[bPos])
+			merged = append(merged, &bRuns[bPos])
 			bPos++
 		}
 	}
 
 	// Add the remaining items.
 	for ; aPos < len(aRuns); aPos++ {
-		merged = append(merged, aRuns[aPos])
+		merged = append(merged, &aRuns[aPos])
 	}
 	for ; bPos < len(bRuns); bPos++ {
-		merged = append(merged, bRuns[bPos])
+		merged = append(merged, &bRuns[bPos])
 	}
 
 	*dest = merged
 }
 
-func VerifyRunsOrdered(runs []Run) error {
+func VerifyRunsOrdered(runs []*Run) error {
 	for i, run := range runs {
 		if i == 0 {
 			continue
@@ -64,4 +68,27 @@ func VerifyRunsOrdered(runs []Run) error {
 		}
 	}
 	return nil
+}
+
+// copyAndFlattenRuns copies the runs into a new []Run slice.
+func copyAndFlattenRuns(rs []*Run) []Run {
+	var result []Run
+	for _, r := range rs {
+		result = append(result, *r)
+	}
+	return result
+}
+
+// copyAndUnflattenRuns copies the runs into a new []*Run slice.
+func copyAndUnflattenRuns(runs []Run) []*Run {
+	result := make([]*Run, len(runs))
+
+	// Instead of many small object allocations for
+	// each individual run, make one large allocation.
+	resultData := make([]Run, len(runs))
+	for i, run := range runs {
+		resultData[i] = run
+		result[i] = &resultData[i]
+	}
+	return result
 }

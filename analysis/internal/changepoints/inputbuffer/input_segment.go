@@ -117,7 +117,7 @@ type EvictedSegment struct {
 	// The runs which are being evicted. These correspond to the
 	// Segment above. Runs are ordered oldest commit position first,
 	// then oldest hour first.
-	Runs []Run
+	Runs []*Run
 }
 
 // SegmentedInputBuffer wraps the input buffer and the segments it contains.
@@ -146,7 +146,7 @@ type ChangePoint struct {
 // mutating the input buffer or the merge buffer.)
 // changePoints is the change points for history. It is
 // sorted in ascending order (smallest index first).
-func (ib *Buffer) Segmentize(history []Run, changePoints []ChangePoint) *SegmentedInputBuffer {
+func (ib *Buffer) Segmentize(history []*Run, changePoints []ChangePoint) *SegmentedInputBuffer {
 	// Exit early if we have empty history.
 	if len(history) == 0 {
 		return &SegmentedInputBuffer{
@@ -182,7 +182,7 @@ func (ib *Buffer) Segmentize(history []Run, changePoints []ChangePoint) *Segment
 
 // inputBufferSegment returns a Segment from startIndex (inclusively) to
 // endIndex (inclusively).
-func inputBufferSegment(startIndex, endIndex int, history []Run) *Segment {
+func inputBufferSegment(startIndex, endIndex int, history []*Run) *Segment {
 	if startIndex > endIndex {
 		panic("invalid segment index: startIndex > endIndex")
 	}
@@ -289,7 +289,7 @@ func (sib *SegmentedInputBuffer) EvictSegments() []EvictedSegment {
 			StartHour:                   firstRemainingSeg.StartHour,
 			StartPositionLowerBound99Th: firstRemainingSeg.StartPositionLowerBound99Th,
 			StartPositionUpperBound99Th: firstRemainingSeg.StartPositionUpperBound99Th,
-			Runs:                        []Run{},
+			Runs:                        []*Run{},
 		})
 	}
 	return evictedSegments
@@ -351,7 +351,7 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) EvictedSegment {
 		ib.ColdBuffer.EvictBefore(evictEndIndex + 1)
 	}
 
-	var evictedRuns []Run
+	var evictedRuns []*Run
 	MergeOrderedRuns(evictedHotRuns, evictedColdRuns, &evictedRuns)
 
 	// Return evicted segment.
@@ -396,7 +396,7 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted Evic
 
 	// EvictBefore(...) will modify the Runs in-place, we should
 	// copy runs to a new slice to avoid them being overwritten.
-	evictedRuns := append([]Run(nil), ib.ColdBuffer.Runs[:endPos+1]...)
+	evictedRuns := copyAndUnflattenRuns(ib.ColdBuffer.Runs[:endPos+1])
 
 	// Note: The retained runs are: ib.ColdBuffer.Runs[endPos+1 : seg.EndIndex+1].
 	// After EvictBefore, they are ib.ColdBuffer.Runs[0 : (seg.EndIndex+1)-(endPos+1)]
@@ -429,7 +429,7 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted Evic
 		EndIndex:                       len(remainingRuns) - 1,
 		EndPosition:                    remainingRuns[len(remainingRuns)-1].CommitPosition,
 		EndHour:                        remainingRuns[len(remainingRuns)-1].Hour,
-		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour(remainingRuns),
+		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour(copyAndUnflattenRuns(remainingRuns)),
 	}
 
 	return evicted, remaining
@@ -438,7 +438,7 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted Evic
 // mostRecentUnexpectedResultHour return the hour for the most recent
 // run that contains unexpected result.
 // If no such run was found, returns the zero time.
-func mostRecentUnexpectedResultHour(history []Run) time.Time {
+func mostRecentUnexpectedResultHour(history []*Run) time.Time {
 	var latest time.Time
 
 	// history is sorted by commit position, not hour, so we need to do a loop.

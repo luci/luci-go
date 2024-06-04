@@ -536,7 +536,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartHour:     time.Unix(1*3600, 0),
 				EndPosition:   10,
 				EndHour:       time.Unix(10*3600, 0),
-				Runs: []inputbuffer.Run{
+				Runs: []*inputbuffer.Run{
 					{
 						CommitPosition: 2,
 						Hour:           time.Unix(10*3600, 0),
@@ -562,7 +562,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                  11,
 				StartHour:                      time.Unix(11*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
-				Runs: []inputbuffer.Run{
+				Runs: []*inputbuffer.Run{
 					{
 						CommitPosition: 11,
 						Hour:           time.Unix(11*3600, 0),
@@ -734,7 +734,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPositionLowerBound99Th:    190,
 				StartPositionUpperBound99Th:    210,
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Runs: []inputbuffer.Run{
+				Runs: []*inputbuffer.Run{
 					{
 						CommitPosition: 200,
 						Hour:           time.Unix(5*3600, 0),
@@ -854,7 +854,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				EndPosition:                    400,
 				EndHour:                        time.Unix(400*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Runs: []inputbuffer.Run{
+				Runs: []*inputbuffer.Run{
 					{
 						CommitPosition: 200,
 						Hour:           time.Unix(5*3600, 0),
@@ -888,7 +888,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPositionLowerBound99Th: 490,
 				StartPositionUpperBound99Th: 510,
 				EndPosition:                 800,
-				Runs: []inputbuffer.Run{
+				Runs: []*inputbuffer.Run{
 					{
 						CommitPosition: 500,
 						Hour:           time.Unix(20*3600, 0),
@@ -1020,7 +1020,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				EndPosition:                    400,
 				EndHour:                        time.Unix(400*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Runs: []inputbuffer.Run{
+				Runs: []*inputbuffer.Run{
 					{
 						CommitPosition: 200,
 						Hour:           time.Unix(100*3600, 0),
@@ -1044,7 +1044,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				HasStartChangepoint:         true,
 				StartPositionLowerBound99Th: 490,
 				StartPositionUpperBound99Th: 510,
-				Runs:                        []inputbuffer.Run{},
+				Runs:                        []*inputbuffer.Run{},
 			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
@@ -1135,7 +1135,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				EndHour:                        time.Unix(400*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
 				// Verdicts are not relevant to this test.
-				Runs: []inputbuffer.Run{},
+				Runs: []*inputbuffer.Run{},
 			},
 		}
 		f := func() { tvb.UpdateOutputBuffer(evictedSegments) }
@@ -1167,7 +1167,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartHour:                      time.Unix(100*3600, 0),
 				HasStartChangepoint:            false,
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
-				Runs: []inputbuffer.Run{
+				Runs: []*inputbuffer.Run{
 					// Expected source verdict.
 					{
 						CommitPosition: 190,

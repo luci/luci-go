@@ -39,7 +39,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{2, 2, 1, 1, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, sum(total[:1]))
 		So(max, ShouldEqual, sum(total[:4]))
@@ -51,7 +51,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 1, 1, 1, 1}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, sum(total[:2]))
 		So(max, ShouldEqual, sum(total[:6]))
@@ -63,7 +63,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{3, 3, 1, 2, 3, 3}
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		// There is only 1 possible position for change point
 		So(min, ShouldEqual, sum(total[:2]))
@@ -76,7 +76,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, sum(total[:1]))
 		So(max, ShouldEqual, sum(total[:13]))
@@ -88,7 +88,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, sum(total[:1]))
 		So(max, ShouldEqual, sum(total[:13]))
@@ -102,7 +102,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			retries              = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
-		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, sum(total[:2]))
 		So(max, ShouldEqual, sum(total[:5]))
@@ -116,7 +116,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			retries              = []int{3, 3, 3, 1, 3, 3, 3, 3}
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
-		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, sum(total[:1]))
 		So(max, ShouldEqual, sum(total[:3]))
@@ -146,16 +146,16 @@ func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 		},
 	}
 
-	var vs []inputbuffer.Run
+	var vs []*inputbuffer.Run
 
 	for i := 0; i <= 1000; i++ {
-		vs = append(vs, inputbuffer.Run{
+		vs = append(vs, &inputbuffer.Run{
 			CommitPosition: int64(i),
 			Expected:       inputbuffer.ResultCounts{PassCount: 1},
 		})
 	}
 	for i := 1001; i < 2000; i++ {
-		vs = append(vs, inputbuffer.Run{
+		vs = append(vs, &inputbuffer.Run{
 			CommitPosition: int64(i),
 			Unexpected:     inputbuffer.ResultCounts{FailCount: 1},
 		})
@@ -193,7 +193,7 @@ func TestChangePoints(t *testing.T) {
 			}
 		}
 
-		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		cps := a.ChangePoints(vs, ConfidenceIntervalTail)
 		So(cps, ShouldResemble, []inputbuffer.ChangePoint{
 			{

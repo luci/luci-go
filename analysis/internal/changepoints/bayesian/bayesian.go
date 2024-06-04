@@ -59,7 +59,7 @@ type ChangepointPredictor struct {
 // identified. If an index i is returned, it means the history is segmented as
 // history[:i] and history[i:].
 // The indices returned are sorted ascendingly (lowest index first).
-func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.Run) []int {
+func (a ChangepointPredictor) identifyChangePoints(history []*inputbuffer.Run) []int {
 	if len(history) == 0 {
 		panic("test history is empty")
 	}
@@ -112,7 +112,7 @@ func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.Run) []
 // If we are to bias towards the no change point case, thresholding
 // should be applied to relativeLikelihood before considering the
 // change point real.
-func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Run) (relativeLikelihood float64, position int) {
+func (a ChangepointPredictor) FindBestChangepoint(history []*inputbuffer.Run) (relativeLikelihood float64, position int) {
 	length := len(history)
 
 	// Stores the total for the entire history.
@@ -200,7 +200,7 @@ func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Run) (re
 // Preconditions:
 // The provided history is in order by commit position (either ascending or
 // descending order is fine).
-func nextPosition(history []inputbuffer.Run, index int) (nextIndex int, pending counts) {
+func nextPosition(history []*inputbuffer.Run, index int) (nextIndex int, pending counts) {
 	// The commit position for which we are accumulating test runs.
 	commitPosition := history[index].CommitPosition
 
