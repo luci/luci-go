@@ -54,6 +54,7 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.PermissionDenied)
 		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
+		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.PermissionDenied)
 		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
 	})
 
@@ -67,6 +68,7 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.PermissionDenied)
 		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
+		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.PermissionDenied)
 		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
 	})
 
@@ -80,6 +82,7 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
+		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.PermissionDenied)
 		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
 	})
 
@@ -93,6 +96,21 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.OK)
+		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.PermissionDenied)
+		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
+	})
+
+	Convey("Authorized as trusted service", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{authdb.AuthServiceAccessGroup, model.TrustedServicesGroup},
+		})
+
+		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
+		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
+		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.OK)
+		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
+		So(check(ctx, "auth.service.AuthDB", "GetSnapshot"), ShouldEqual, codes.OK)
 		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
 	})
 }

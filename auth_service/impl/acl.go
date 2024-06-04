@@ -41,8 +41,8 @@ var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 	// All methods to work with allowlists require authorization.
 	"/auth.service.Allowlists/*": authdb.AuthServiceAccessGroup,
 
-	// All methods to work with AuthDB require authorization.
-	"/auth.service.AuthDB/*": authdb.AuthServiceAccessGroup,
+	// Only members of auth-trusted-services can work with the AuthDB.
+	"/auth.service.AuthDB/*": model.TrustedServicesGroup,
 
 	// All methods to work with ChangeLogs require authorization.
 	"/auth.service.ChangeLogs/*": authdb.AuthServiceAccessGroup,
