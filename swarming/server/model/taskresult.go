@@ -266,13 +266,10 @@ type TaskResultSummary struct {
 	// BotID is ID of a bot that runs this task, if already known.
 	BotID datastore.Optional[string, datastore.Unindexed] `gae:"bot_id"`
 
-	// Created is a timestamp when the task was submitted.
+	// Created is a precise timestamp when the task was submitted.
 	//
-	// The index is used in task listing queries to order by this property.
-	//
-	// TODO(vadimsh): Is the index actually used? Entity keys encode the same
-	// information.
-	Created time.Time `gae:"created_ts"`
+	// Unlike the timestamp in the entity key, this one has microsecond precision.
+	Created time.Time `gae:"created_ts,noindex"`
 
 	// Tags are copied from the corresponding TaskRequest entity.
 	//

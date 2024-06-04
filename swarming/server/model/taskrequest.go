@@ -65,9 +65,14 @@ type TaskRequest struct {
 	// back on more generic bots.
 	TaskSlices []TaskSlice `gae:"task_slices,lsp,noindex"`
 
-	// Created is a timestamp when this request was registered.
+	// Created is a precise timestamp when this request was registered.
+	//
+	// Unlike the timestamp in the entity key, this one has microsecond precision.
 	//
 	// The index is used in BQ exports and when cleaning up old tasks.
+	//
+	// TODO(vadimsh): BQ export can be switched to use __key__ and old tasks
+	// should be cleaned up via a TTL policy. Then we can remove this index.
 	Created time.Time `gae:"created_ts"`
 
 	// Expiration is when to give up trying to run the task.
