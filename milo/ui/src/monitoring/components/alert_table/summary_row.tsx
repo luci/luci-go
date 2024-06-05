@@ -84,7 +84,7 @@ export const AlertSummaryRow = ({
   // TODO: snoozing.
   let silenceUntil = 0;
   try {
-    silenceUntil = parseInt(alert.silenceUntil);
+    silenceUntil = parseInt(alert.silenceUntil || '0');
   } catch {
     // ignore
   }

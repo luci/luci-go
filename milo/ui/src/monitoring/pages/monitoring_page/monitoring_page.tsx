@@ -24,8 +24,8 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { uniq } from 'lodash-es';
+import { useQuery, useQueries } from '@tanstack/react-query';
+import { uniq, chunk, flatten } from 'lodash-es';
 import { forwardRef } from 'react';
 import {
   Link as RouterLink,
@@ -73,22 +73,26 @@ export const MonitoringPage = () => {
   });
   // Eventually all of the deata will come from LUCI Notify, but for now we just extend the
   // SOM alerts with the LUCI Notify alerts.
-  const extendedQuery = useQuery({
-    ...notifyClient.BatchGetAlerts.query(
-      BatchGetAlertsRequest.fromPartial({
-        names: alertsQuery.data?.alerts?.map(
-          (a) => `alerts/${encodeURIComponent(a.key)}`,
-        ),
-      }),
-    ),
-    refetchInterval: 60000,
-    enabled: !!(treeName && tree && alertsQuery.data),
+  const batches = chunk(alertsQuery.data?.alerts || [], 100);
+  const extendedQuery = useQueries({
+    queries: batches.map((batch) => ({
+      ...notifyClient.BatchGetAlerts.query(
+        BatchGetAlertsRequest.fromPartial({
+          names: batch.map(
+            (a) => `alerts/${encodeURIComponent(a.key)}`,
+          ) as readonly string[],
+        }),
+      ),
+      refetchInterval: 60000,
+      enabled: !!(treeName && tree && alertsQuery.data),
+    })),
   });
 
+  const extendedQueryData = flatten(
+    extendedQuery.map((result) => result?.data?.alerts),
+  );
   const linkedBugs = uniq(
-    (extendedQuery.data?.alerts || [])
-      .map((a) => a.bug)
-      .filter((b) => b !== '0'),
+    (extendedQueryData || []).map((a) => a?.bug).filter((b) => b && b !== '0'),
   );
 
   const bugQuery = useIssueListQuery(
@@ -100,7 +104,7 @@ export const MonitoringPage = () => {
     },
     {
       refetchInterval: 60000,
-      enabled: !!tree?.hotlistId && !!extendedQuery.data,
+      enabled: !!tree?.hotlistId && !extendedQuery.some((q) => q.isLoading),
     },
   );
 
@@ -136,20 +140,21 @@ export const MonitoringPage = () => {
   if (alertsQuery.isError) {
     throw alertsQuery.error;
   }
-  if (extendedQuery.isError) {
-    throw extendedQuery.error;
+  if (extendedQuery.some((q) => q.isError)) {
+    throw extendedQuery.find((q) => q.isError && q.error);
   }
-  if (alertsQuery.isLoading || extendedQuery.isLoading) {
+  if (alertsQuery.isLoading || extendedQuery.some((q) => q.isLoading)) {
     return <CircularProgress />;
   }
 
   // Extend the alerts with the LUCI Notify data.
   const alerts = alertsQuery.data.alerts.map((a, i) => {
-    const bug = extendedQuery.data.alerts[i].bug;
+    const extended = extendedQuery[Math.floor(i / 100)].data?.alerts[i % 100];
+    const bug = extended?.bug;
     return {
       ...(JSON.parse(a.alertJson) as AlertJson),
       bug: !bug || bug === '0' ? '' : bug,
-      silenceUntil: extendedQuery.data.alerts[i].silenceUntil,
+      silenceUntil: extended?.silenceUntil,
     };
   });
   return (

@@ -56,7 +56,7 @@ export interface AlertJson {
    * silenceUntil is the sequential build number that this alert should be silenced until completion of.
    * i.e. The alert will be silenced while latestBuild <= silenceUntil.
    */
-  silenceUntil: string;
+  silenceUntil: string | undefined;
 }
 
 // TODO: AlertExtensionJson fields were added based on example data.  There may be missing or incorrect fields.
