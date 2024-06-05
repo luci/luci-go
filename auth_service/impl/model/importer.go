@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 )
 
 // Imports groups from some external tar.gz bundle or plain text list.
@@ -128,9 +129,8 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 // If there is no GroupImporterConfig entity present in the datastore, one will
 // be created.
 //
-// TODO(b/302615672): Remove this once IngestTarball is updated below to use the
-// config from cfgcache, and Auth Service has been fully migrated to
-// Auth Service v2. In v2, the GroupImporterConfig entity will be redundant; the
+// TODO(b/302615672): Remove this once Auth Service has been fully migrated to
+// Auth Service v2. In v2, the GroupImporterConfig entity is redundant; the
 // config proto and revision metadata is all handled by the importscfg package.
 func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupImporterConfig, meta *config.Meta) error {
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -198,40 +198,33 @@ func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupI
 //	[]string - list of modified groups
 //	int64 - authDBRevision
 //	error
-//		proto translation error
-//		entry is nil
+//		tarball name is empty
 //		entry not found in tarball upload config
 //		unauthorized uploader
 //		bad tarball structure
 func IngestTarball(ctx context.Context, name string, content io.Reader) ([]string, int64, error) {
-	// TODO(b/321018127): get the configspb.GroupImporterConfig directly from
-	// the cfgcache instead of the GroupImporterConfig datastore entity.
-	g, err := GetGroupImporterConfig(ctx)
+	if name == "" {
+		return nil, 0, errors.New("invalid - empty tarball name")
+	}
+
+	importsConfig, err := importscfg.Get(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	gConfigProto, err := g.ToProto()
-	if err != nil {
-		return nil, 0, errors.Annotate(err, "issue getting proto from config entity").Err()
-	}
-	caller := auth.CurrentIdentity(ctx)
-	var entry *configspb.GroupImporterConfig_TarballUploadEntry
 
-	// make sure that tarball_upload entry we're looking for is specified in config
-	for _, tbu := range gConfigProto.GetTarballUpload() {
+	// Make sure the tarball_upload entry is specified in the config.
+	var entry *configspb.GroupImporterConfig_TarballUploadEntry
+	for _, tbu := range importsConfig.GetTarballUpload() {
 		if tbu.Name == name {
 			entry = tbu
 			break
 		}
 	}
-
 	if entry == nil {
-		return nil, 0, errors.New("entry is nil")
-	}
-
-	if entry.Name == "" {
 		return nil, 0, errors.New("entry not found in tarball upload names")
 	}
+
+	caller := auth.CurrentIdentity(ctx)
 	if !contains(caller.Email(), entry.AuthorizedUploader) {
 		return nil, 0, errors.New(fmt.Sprintf("%q is not an authorized uploader", caller.Email()))
 	}

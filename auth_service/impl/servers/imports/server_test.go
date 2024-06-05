@@ -34,8 +34,10 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -76,20 +78,16 @@ func TestIngestTarball(t *testing.T) {
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 		// Set up data for test cases.
-		So(datastore.Put(ctx, &model.GroupImporterConfig{
-			Kind: "GroupImporterConfig",
-			ID:   "config",
-			ConfigProto: `
-			tarball_upload {
-				name: "test_groups.tar.gz"
-				authorized_uploader: "test-user@example.com"
-				systems: "test"
-			}
-			`,
-			ConfigRevision: []byte("some-config-revision"),
-			ModifiedBy:     "some-user@example.com",
-			ModifiedTS:     time.Date(2021, time.August, 16, 12, 20, 0, 0, time.UTC),
-		}), ShouldBeNil)
+		testConfig := &configspb.GroupImporterConfig{
+			TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
+				{
+					Name:               "test_groups.tar.gz",
+					AuthorizedUploader: []string{"test-user@example.com"},
+					Systems:            []string{"test"},
+				},
+			},
+		}
+		So(importscfg.SetConfig(ctx, testConfig), ShouldBeNil)
 		So(datastore.Put(ctx, &model.AuthDBSnapshotLatest{
 			Kind:         "AuthDBSnapshotLatest",
 			ID:           "latest",

@@ -37,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -259,56 +260,81 @@ func TestLoadTarball(t *testing.T) {
 
 func TestIngestTarball(t *testing.T) {
 	t.Parallel()
-	ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
-		Identity: "user:test-push-cron@system.example.com",
-	})
-	ctx = clock.Set(ctx, testclock.New(testCreatedTS))
-	ctx = info.SetImageVersion(ctx, "test-version")
-	ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
-
-	cfg := testGroupImporterConfig()
-
-	bundle := testsupport.BuildTargz(map[string][]byte{
-		"at_root":            []byte("a\nb"),
-		"tst/ bad name":      []byte("a\nb"),
-		"tst/group-a":        []byte("a@example.com\nb@example.test.com"),
-		"tst/group-b":        []byte("a@example.com"),
-		"tst/group-c":        []byte("a@example.com\nc@test-example.com"),
-		"tst/deeper/group-a": []byte("a\nb"),
-		"not-tst/group-a":    []byte("a\nb"),
-	})
 
 	Convey("testing IngestTarball", t, func() {
-		Convey("unknown", func() {
-			So(datastore.Put(ctx, cfg), ShouldBeNil)
-			_, _, err := IngestTarball(ctx, "zzz", nil)
-			So(err, ShouldErrLike, "entry is nil")
+		ctx := memory.Use(context.Background())
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		testConfig := &configspb.GroupImporterConfig{
+			TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
+				{
+					Name:               "test_groups.tar.gz",
+					AuthorizedUploader: []string{"test-push-cron@system.example.com"},
+					Systems:            []string{"tst"},
+				},
+				{
+					Name:               "example_groups.tar.gz",
+					AuthorizedUploader: []string{"another-push-cron@system.example.com"},
+					Systems:            []string{"examp"},
+				},
+			},
+		}
+
+		bundle := testsupport.BuildTargz(map[string][]byte{
+			"at_root":            []byte("a\nb"),
+			"tst/ bad name":      []byte("a\nb"),
+			"tst/group-a":        []byte("a@example.com\nb@example.test.com"),
+			"tst/group-b":        []byte("a@example.com"),
+			"tst/group-c":        []byte("a@example.com\nc@test-example.com"),
+			"tst/deeper/group-a": []byte("a\nb"),
+			"not-tst/group-a":    []byte("a\nb"),
 		})
-		Convey("unauthorized", func() {
-			badAuthCtx := auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:someone@example.com",
-			})
-			_, _, err := IngestTarball(badAuthCtx, "test_groups.tar.gz", bytes.NewReader(bundle))
-			So(err, ShouldErrLike, `"someone@example.com" is not an authorized uploader`)
-		})
+
 		Convey("not configured", func() {
-			badCtx := memory.Use(context.Background())
-			_, _, err := IngestTarball(badCtx, "", nil)
+			_, _, err := IngestTarball(ctx, "test_groups.tar.gz", nil)
 			So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
 		})
-		Convey("happy", func() {
-			g := makeAuthGroup(ctx, "administrators")
-			g.AuthVersionedEntityMixin = testAuthVersionedEntityMixin()
-			_, err := CreateAuthGroup(ctx, g, false, "Imported from group bundles", false)
-			So(err, ShouldBeNil)
-			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
-			updatedGroups, revision, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
-			So(err, ShouldBeNil)
-			So(revision, ShouldEqual, 2)
-			So(updatedGroups, ShouldResemble, []string{
-				"tst/group-a",
-				"tst/group-b",
-				"tst/group-c",
+
+		Convey("with importer configuration set", func() {
+			// Set up imports config for the test cases below.
+			So(importscfg.SetConfig(ctx, testConfig), ShouldBeNil)
+
+			Convey("invalid tarball name", func() {
+				_, _, err := IngestTarball(ctx, "", nil)
+				So(err, ShouldErrLike, "empty tarball name")
+			})
+			Convey("unknown tarball", func() {
+				_, _, err := IngestTarball(ctx, "zzz", nil)
+				So(err, ShouldErrLike, "entry not found")
+			})
+			Convey("unauthorized", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+				})
+				_, _, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
+				So(err, ShouldErrLike, `"someone@example.com" is not an authorized uploader`)
+			})
+
+			Convey("actually imports groups", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:test-push-cron@system.example.com",
+				})
+
+				g := makeAuthGroup(ctx, "administrators")
+				g.AuthVersionedEntityMixin = testAuthVersionedEntityMixin()
+				_, err := CreateAuthGroup(ctx, g, false, "Imported from group bundles", false)
+				So(err, ShouldBeNil)
+				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+				updatedGroups, revision, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
+				So(err, ShouldBeNil)
+				So(revision, ShouldEqual, 2)
+				So(updatedGroups, ShouldResemble, []string{
+					"tst/group-a",
+					"tst/group-b",
+					"tst/group-c",
+				})
 			})
 		})
 	})

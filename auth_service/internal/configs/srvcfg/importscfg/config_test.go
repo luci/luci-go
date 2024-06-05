@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 
@@ -73,6 +74,14 @@ func TestConfigContext(t *testing.T) {
 			},
 		},
 	}
+
+	Convey("Getting without setting fails", t, func() {
+		_, err := Get(ctx)
+		So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+
+		_, _, err = GetWithMetadata(ctx)
+		So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+	})
 
 	Convey("Testing basic config operations", t, func() {
 		So(SetConfig(ctx, importsCfg), ShouldBeNil)

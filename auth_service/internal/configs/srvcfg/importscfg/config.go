@@ -31,14 +31,20 @@ var cachedImportsCfg = cfgcache.Register(&cfgcache.Entry{
 // Get returns teh config stored in context.
 func Get(ctx context.Context) (*configspb.GroupImporterConfig, error) {
 	cfg, err := cachedImportsCfg.Get(ctx, nil)
-	return cfg.(*configspb.GroupImporterConfig), err
+	if err != nil {
+		return nil, err
+	}
+	return cfg.(*configspb.GroupImporterConfig), nil
 }
 
 // GetWithMetadata returns the config and its metadata stored in context.
 func GetWithMetadata(ctx context.Context) (*configspb.GroupImporterConfig, *config.Meta, error) {
 	meta := &config.Meta{}
 	cfg, err := cachedImportsCfg.Get(ctx, meta)
-	return cfg.(*configspb.GroupImporterConfig), meta, err
+	if err != nil {
+		return nil, nil, err
+	}
+	return cfg.(*configspb.GroupImporterConfig), meta, nil
 }
 
 // SetConfig installs the cfg into the context ctx.
