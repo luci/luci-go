@@ -30,7 +30,10 @@ var cachedRealmsCfg = cfgcache.Register(&cfgcache.Entry{
 // Get returns the config stored in context.
 func Get(ctx context.Context) (*realms.RealmsCfg, error) {
 	cfg, err := cachedRealmsCfg.Get(ctx, nil)
-	return cfg.(*realms.RealmsCfg), err
+	if err != nil {
+		return nil, err
+	}
+	return cfg.(*realms.RealmsCfg), nil
 }
 
 // SetConfig installs the cfg into the context ctx.

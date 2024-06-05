@@ -294,7 +294,7 @@ func TestIngestTarball(t *testing.T) {
 
 		Convey("not configured", func() {
 			_, _, err := IngestTarball(ctx, "test_groups.tar.gz", nil)
-			So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+			So(err, ShouldErrLike, "not configured")
 		})
 
 		Convey("with importer configuration set", func() {

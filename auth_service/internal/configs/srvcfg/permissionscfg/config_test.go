@@ -69,6 +69,15 @@ func TestConfigContext(t *testing.T) {
 			},
 		},
 	}
+
+	Convey("Getting without setting fails", t, func() {
+		_, err := Get(ctx)
+		So(err, ShouldNotBeNil)
+
+		_, _, err = GetWithMetadata(ctx)
+		So(err, ShouldNotBeNil)
+	})
+
 	Convey("Testing basic config operations", t, func() {
 		So(SetConfig(ctx, permissionsCfg), ShouldBeNil)
 		cfgFromGet, err := Get(ctx)

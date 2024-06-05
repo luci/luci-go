@@ -31,14 +31,20 @@ var cachedAllowlistCfg = cfgcache.Register(&cfgcache.Entry{
 // Get returns the config stored in context.
 func Get(ctx context.Context) (*configspb.IPAllowlistConfig, error) {
 	cfg, err := cachedAllowlistCfg.Get(ctx, nil)
-	return cfg.(*configspb.IPAllowlistConfig), err
+	if err != nil {
+		return nil, err
+	}
+	return cfg.(*configspb.IPAllowlistConfig), nil
 }
 
 // GetMetadata returns the config's metadata stored in context.
 func GetMetadata(ctx context.Context) (*config.Meta, error) {
 	meta := &config.Meta{}
 	_, err := cachedAllowlistCfg.Get(ctx, meta)
-	return meta, err
+	if err != nil {
+		return nil, err
+	}
+	return meta, nil
 }
 
 // SetConfig installs the cfg into the context ctx.

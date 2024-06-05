@@ -35,6 +35,11 @@ func TestConfigContext(t *testing.T) {
 		AuthDbGsPath:       "chrome-infra-auth-test.appspot.com/auth-db",
 	}
 
+	Convey("Getting without setting fails", t, func() {
+		_, err := Get(ctx)
+		So(err, ShouldNotBeNil)
+	})
+
 	Convey("Testing basic config operations", t, func() {
 		So(SetConfig(ctx, settingsCfg), ShouldBeNil)
 		cfgFromGet, err := Get(ctx)

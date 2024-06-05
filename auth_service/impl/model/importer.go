@@ -209,7 +209,7 @@ func IngestTarball(ctx context.Context, name string, content io.Reader) ([]strin
 
 	importsConfig, err := importscfg.Get(ctx)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errors.New("not configured")
 	}
 
 	// Make sure the tarball_upload entry is specified in the config.

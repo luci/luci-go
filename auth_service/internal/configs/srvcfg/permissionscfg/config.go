@@ -31,14 +31,20 @@ var cachedPermissionsCfg = cfgcache.Register(&cfgcache.Entry{
 // Get returns the config stored in context.
 func Get(ctx context.Context) (*configspb.PermissionsConfig, error) {
 	cfg, err := cachedPermissionsCfg.Get(ctx, nil)
-	return cfg.(*configspb.PermissionsConfig), err
+	if err != nil {
+		return nil, err
+	}
+	return cfg.(*configspb.PermissionsConfig), nil
 }
 
 // GetWithMetadata returns the config and its metadata stored in context.
 func GetWithMetadata(ctx context.Context) (*configspb.PermissionsConfig, *config.Meta, error) {
 	meta := &config.Meta{}
 	cfg, err := cachedPermissionsCfg.Get(ctx, meta)
-	return cfg.(*configspb.PermissionsConfig), meta, err
+	if err != nil {
+		return nil, nil, err
+	}
+	return cfg.(*configspb.PermissionsConfig), meta, nil
 }
 
 // SetConfig installs the cfg with empty metadata into the context ctx.

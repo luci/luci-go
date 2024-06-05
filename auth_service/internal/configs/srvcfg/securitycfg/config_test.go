@@ -33,6 +33,12 @@ func TestConfigContext(t *testing.T) {
 			"internal-service-regexp",
 		},
 	}
+
+	Convey("Getting without setting fails", t, func() {
+		_, err := Get(ctx)
+		So(err, ShouldNotBeNil)
+	})
+
 	Convey("Testing basic Config operations", t, func() {
 		So(SetConfig(ctx, secCfg), ShouldBeNil)
 		cfgFromGet, err := Get(ctx)

@@ -38,6 +38,12 @@ func TestConfigContext(t *testing.T) {
 		},
 		TokenServerUrl: "https://test-token-server.example.com",
 	}
+
+	Convey("Getting without setting fails", t, func() {
+		_, err := Get(ctx)
+		So(err, ShouldNotBeNil)
+	})
+
 	Convey("Testing basic Config operations", t, func() {
 		So(SetConfig(ctx, oauthCfg), ShouldBeNil)
 		cfgFromGet, err := Get(ctx)

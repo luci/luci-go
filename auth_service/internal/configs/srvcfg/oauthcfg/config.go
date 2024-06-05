@@ -31,7 +31,10 @@ var cachedOAuthCfg = cfgcache.Register(&cfgcache.Entry{
 // Get returns the config stored in context.
 func Get(ctx context.Context) (*configspb.OAuthConfig, error) {
 	cfg, err := cachedOAuthCfg.Get(ctx, nil)
-	return cfg.(*configspb.OAuthConfig), err
+	if err != nil {
+		return nil, err
+	}
+	return cfg.(*configspb.OAuthConfig), nil
 }
 
 // SetConfig installs the cfg into the context ctx.

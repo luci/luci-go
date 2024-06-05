@@ -30,7 +30,10 @@ var cachedSecurityCfg = cfgcache.Register(&cfgcache.Entry{
 // Get returns the config stored in context.
 func Get(ctx context.Context) (*protocol.SecurityConfig, error) {
 	cfg, err := cachedSecurityCfg.Get(ctx, nil)
-	return cfg.(*protocol.SecurityConfig), err
+	if err != nil {
+		return nil, err
+	}
+	return cfg.(*protocol.SecurityConfig), nil
 }
 
 // SetConfig installs the cfg into the context ctx.

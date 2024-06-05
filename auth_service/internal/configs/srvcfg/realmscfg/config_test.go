@@ -47,6 +47,12 @@ func TestConfigContext(t *testing.T) {
 			},
 		},
 	}
+
+	Convey("Getting without setting fails", t, func() {
+		_, err := Get(ctx)
+		So(err, ShouldNotBeNil)
+	})
+
 	Convey("Testing basic config operations", t, func() {
 		So(SetConfig(ctx, realmsCfg), ShouldBeNil)
 		cfgFromGet, err := Get(ctx)
