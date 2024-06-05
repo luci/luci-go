@@ -211,68 +211,87 @@ func segmentCounts(counts *cpb.Counts, runs []*inputbuffer.Run) Counts {
 		}
 	}
 
-	verdictStream := testvariantbranch.NewRunStreamAggregator(partialSourceVerdict)
-	for _, run := range runs {
+	var verdictCommitPosition int64
+	verdictExpectedResults := 0
+	verdictUnexpectedResults := 0
+	if partialSourceVerdict != nil {
+		verdictCommitPosition = partialSourceVerdict.CommitPosition
+		verdictExpectedResults = int(partialSourceVerdict.ExpectedResults)
+		verdictUnexpectedResults = int(partialSourceVerdict.UnexpectedResults)
+	}
 
+	for _, run := range runs {
 		// Result-level statistics.
-		result.TotalResults += int64(run.Expected.Count() + run.Unexpected.Count())
-		result.UnexpectedResults += int64(run.Unexpected.Count())
+		expectedCount := run.Expected.Count()
+		unexpectedCount := run.Unexpected.Count()
+		result.TotalResults += int64(expectedCount + unexpectedCount)
+
 		result.ExpectedPassedResults += int64(run.Expected.PassCount)
 		result.ExpectedFailedResults += int64(run.Expected.FailCount)
 		result.ExpectedCrashedResults += int64(run.Expected.CrashCount)
 		result.ExpectedAbortedResults += int64(run.Expected.AbortCount)
-		result.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
-		result.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
-		result.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
-		result.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
+
+		if unexpectedCount > 0 {
+			result.UnexpectedResults += int64(unexpectedCount)
+			result.UnexpectedPassedResults += int64(run.Unexpected.PassCount)
+			result.UnexpectedFailedResults += int64(run.Unexpected.FailCount)
+			result.UnexpectedCrashedResults += int64(run.Unexpected.CrashCount)
+			result.UnexpectedAbortedResults += int64(run.Unexpected.AbortCount)
+		}
 
 		// Run-level statistics,
 		result.TotalRuns++
-		// flaky run.
-		isFlakyRun := run.Expected.Count() > 0 && run.Unexpected.Count() > 0
-		if isFlakyRun {
-			result.FlakyRuns++
-		}
-		// unexpected unretried run.
-		isUnexpectedUnretried := run.Unexpected.Count() == 1 && run.Expected.Count() == 0
-		if isUnexpectedUnretried {
-			result.UnexpectedUnretriedRuns++
-		}
-		// unexpected after retries run.
-		isUnexpectedAfterRetries := run.Unexpected.Count() > 1 && run.Expected.Count() == 0
-		if isUnexpectedAfterRetries {
-			result.UnexpectedAfterRetryRuns++
-		}
-
-		v, ok := verdictStream.Insert(run)
-		if !ok {
-			// No verdict yielded.
-			continue
-		}
-		// Add verdict to hourly bucket.
-		result.TotalSourceVerdicts++
-
-		if v.UnexpectedResults > 0 {
-			if v.ExpectedResults > 0 {
-				result.FlakySourceVerdicts++
-			} else {
-				result.UnexpectedSourceVerdicts++
+		if expectedCount > 0 {
+			if unexpectedCount > 0 {
+				result.FlakyRuns++
 			}
+		} else { // expectedCount == 0
+			if unexpectedCount == 1 {
+				result.UnexpectedUnretriedRuns++
+			} else if unexpectedCount > 1 {
+				result.UnexpectedAfterRetryRuns++
+			}
+		}
+
+		// Verdict-level statistics.
+		if run.CommitPosition != verdictCommitPosition {
+			if run.CommitPosition < verdictCommitPosition {
+				panic("run commit position should not advance backwards")
+			}
+
+			if verdictCommitPosition > 0 {
+				// Finished verdict.
+				result.TotalSourceVerdicts++
+				if verdictUnexpectedResults > 0 {
+					if verdictExpectedResults > 0 {
+						result.FlakySourceVerdicts++
+					} else {
+						result.UnexpectedSourceVerdicts++
+					}
+				}
+			}
+			verdictCommitPosition = run.CommitPosition
+			verdictExpectedResults = expectedCount
+			verdictUnexpectedResults = unexpectedCount
+		} else {
+			// Continuation of previous verdict.
+			verdictExpectedResults += expectedCount
+			verdictUnexpectedResults += unexpectedCount
 		}
 	}
 
 	// Merge the pending verdict into the count, so that we
 	// can give the count at this point in time.
-	lastVerdict := verdictStream.SaveState()
-	if lastVerdict != nil {
+	if verdictCommitPosition > 0 {
 		result.TotalSourceVerdicts++
-		if lastVerdict.UnexpectedResults > 0 {
-			if lastVerdict.ExpectedResults > 0 {
+		if verdictUnexpectedResults > 0 {
+			if verdictExpectedResults > 0 {
 				result.FlakySourceVerdicts++
 			} else {
 				result.UnexpectedSourceVerdicts++
 			}
 		}
 	}
+
 	return result
 }

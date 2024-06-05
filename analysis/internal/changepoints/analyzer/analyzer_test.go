@@ -485,7 +485,7 @@ func TestAnalyzer(t *testing.T) {
 }
 
 // Output as of June 2024 on Intel Skylake CPU @ 2.00GHz:
-// BenchmarkAnalyzer-96    	   10000	    100970 ns/op	    1026 B/op	      12 allocs/op
+// BenchmarkAnalyzer-96               20276             58743 ns/op             928 B/op         11 allocs/op
 func BenchmarkAnalyzer(b *testing.B) {
 	variant := &pb.Variant{
 		Def: map[string]string{
@@ -570,7 +570,7 @@ func BenchmarkAnalyzer(b *testing.B) {
 }
 
 // Output as of June 2024 on Intel Skylake CPU @ 2.00GHz:
-// BenchmarkAnalyzerWithEviction-96    	    1112	   1073511 ns/op	  122364 B/op	      45 allocs/op
+// BenchmarkAnalyzerWithChangepoint-96    	    1118	   1019629 ns/op	  122230 B/op	      43 allocs/op
 //
 // Analysis indicates that most of the time is spent identifying the changepoint confidence interval.
 func BenchmarkAnalyzerWithChangepoint(b *testing.B) {
