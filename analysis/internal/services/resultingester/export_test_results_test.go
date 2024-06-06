@@ -218,7 +218,7 @@ func TestExportTestResults(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(exportClient.Insertions, ShouldResembleProto, expectedResults)
-			verifyCheckpoints(ctx, expectedCheckpoint)
+			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
 
 			Convey(`Results are not exported again if the process is re-run`, func() {
 				exportClient.Insertions = nil
@@ -244,7 +244,7 @@ func TestExportTestResults(t *testing.T) {
 				r.SourceRefHash = ""
 			}
 			So(exportClient.Insertions, ShouldResembleProto, expectedResults)
-			verifyCheckpoints(ctx, expectedCheckpoint)
+			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
 		})
 	})
 }

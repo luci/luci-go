@@ -182,7 +182,7 @@ func TestOrchestrator(t *testing.T) {
 
 			// Expect continuation task.
 			verifyContinuationTask(skdr, expectedContinuationTask)
-			verifyCheckpoints(ctx, expectedCheckpoint)
+			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
 		})
 		Convey(`Without sources`, func() {
 			notification.Sources = nil
@@ -198,7 +198,7 @@ func TestOrchestrator(t *testing.T) {
 
 			// Expect continuation task.
 			verifyContinuationTask(skdr, expectedContinuationTask)
-			verifyCheckpoints(ctx, expectedCheckpoint)
+			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
 		})
 		Convey(`Continuation task previously scheduled`, func() {
 			// Create a checkpoint for the previous scheduling
@@ -216,7 +216,7 @@ func TestOrchestrator(t *testing.T) {
 
 			// Expect no further continuation task.
 			verifyContinuationTask(skdr, nil)
-			verifyCheckpoints(ctx, expectedCheckpoint)
+			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
 		})
 		Convey(`Final page of results`, func() {
 			setupGetParentInvocationMock()
@@ -232,7 +232,7 @@ func TestOrchestrator(t *testing.T) {
 			// Expect no continuation task.
 			verifyContinuationTask(skdr, nil)
 			// Expect no checkpoint.
-			verifyCheckpoints(ctx)
+			So(verifyCheckpoints(ctx), ShouldBeNil)
 		})
 		Convey(`Project not allowlisted for ingestion`, func() {
 			cfg.Ingestion = &configpb.Ingestion{
@@ -283,9 +283,11 @@ func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *tas
 	}
 }
 
-func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) {
+func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) error {
 	result, err := checkpoints.ReadAllForTesting(span.Single(ctx))
-	So(err, ShouldBeNil)
+	if err != nil {
+		return err
+	}
 
 	var wantKeys []checkpoints.Key
 	var gotKeys []checkpoints.Key
@@ -295,5 +297,8 @@ func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) 
 	for _, c := range result {
 		gotKeys = append(gotKeys, c.Key)
 	}
-	So(gotKeys, ShouldResemble, wantKeys)
+	if msg := ShouldResemble(gotKeys, wantKeys); msg != "" {
+		return errors.New(msg)
+	}
+	return nil
 }

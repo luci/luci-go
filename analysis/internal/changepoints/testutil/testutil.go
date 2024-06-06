@@ -29,10 +29,6 @@ import (
 func SamplePayload() *taskspb.IngestTestVerdicts {
 	return &taskspb.IngestTestVerdicts{
 		Project: "chromium",
-		Build: &controlpb.BuildResult{
-			Id:      1234,
-			Project: "chromium",
-		},
 		Invocation: &controlpb.InvocationResult{
 			InvocationId: "build-1234",
 			ResultdbHost: "rdbHost",
@@ -49,6 +45,27 @@ func SampleSourcesMap(commitPosition int) map[string]*pb.Sources {
 				Project:  "proj",
 				Ref:      "ref",
 				Position: int64(commitPosition),
+			},
+		},
+	}
+}
+
+func SampleSourcesWithChangelistsMap(commitPosition int) map[string]*pb.Sources {
+	return map[string]*pb.Sources{
+		"sources_id": {
+			GitilesCommit: &pb.GitilesCommit{
+				Host:     "host",
+				Project:  "proj",
+				Ref:      "ref",
+				Position: int64(commitPosition),
+			},
+			Changelists: []*pb.GerritChange{
+				{
+					Host:     "gerrit-host",
+					Project:  "gerrit-proj",
+					Change:   15,
+					Patchset: 16,
+				},
 			},
 		},
 	}

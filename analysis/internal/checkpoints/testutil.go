@@ -16,6 +16,7 @@ package checkpoints
 
 import (
 	"context"
+	"sort"
 
 	"cloud.google.com/go/spanner"
 
@@ -84,4 +85,28 @@ func SetForTesting(ctx context.Context, cs ...Checkpoint) error {
 		return nil
 	})
 	return err
+}
+
+// SortKeys sorts keys in place in ascending
+// order by Project, ResourceId, ProcessId, Uniquifier.
+func SortKeys(cs []Key) {
+	sort.Slice(cs, func(i, j int) bool {
+		return isKeyLess(cs[i], cs[j])
+	})
+}
+
+func isKeyLess(a, b Key) bool {
+	if a.Project != b.Project {
+		return a.Project < b.Project
+	}
+	if a.ResourceID != b.ResourceID {
+		return a.ResourceID < b.ResourceID
+	}
+	if a.ProcessID != b.ProcessID {
+		return a.ProcessID < b.ProcessID
+	}
+	if a.Uniquifier != b.Uniquifier {
+		return a.Uniquifier < b.Uniquifier
+	}
+	return false
 }

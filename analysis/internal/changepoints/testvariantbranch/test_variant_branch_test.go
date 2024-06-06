@@ -364,7 +364,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 				ColdBufferCapacity: 100,
 			},
 		}
-		payload := tu.SamplePayload()
+		partitionTime := time.Date(2031, time.January, 1, 15, 4, 0, 12, time.UTC)
 		sourcesMap := tu.SampleSourcesMap(12)
 		tv := &rdbpb.TestVariant{
 			Status: rdbpb.TestVariantStatus_EXPECTED,
@@ -379,7 +379,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			},
 			SourcesId: "sources_id",
 		}
-		runs, err := ToRuns(tv, payload, map[string]bool{}, sourcesMap["sources_id"])
+		runs, err := ToRuns(tv, partitionTime, map[string]bool{"run-1": true}, sourcesMap["sources_id"])
 		So(err, ShouldBeNil)
 		So(runs, ShouldHaveLength, 1)
 		tvb.InsertToInputBuffer(runs[0])
@@ -387,7 +387,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 
 		So(tvb.InputBuffer.HotBuffer.Runs[0], ShouldResemble, inputbuffer.Run{
 			CommitPosition: 12,
-			Hour:           payload.PartitionTime.AsTime(),
+			Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 			Expected: inputbuffer.ResultCounts{
 				PassCount: 1,
 			},
@@ -401,7 +401,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 				ColdBufferCapacity: 100,
 			},
 		}
-		payload := tu.SamplePayload()
+
 		sourcesMap := tu.SampleSourcesMap(12)
 		tv := &rdbpb.TestVariant{
 			Status:    rdbpb.TestVariantStatus_FLAKY,
@@ -472,10 +472,15 @@ func TestInsertToInputBuffer(t *testing.T) {
 				},
 			},
 		}
-		duplicateMap := map[string]bool{
-			"run-5": true,
+		claimedInvs := map[string]bool{
+			"run-1": true,
+			"run-2": true,
+			"run-3": true,
+			"run-4": true,
 		}
-		runs, err := ToRuns(tv, payload, duplicateMap, sourcesMap["sources_id"])
+		partitionTime := time.Date(2031, time.January, 1, 15, 4, 0, 12, time.UTC)
+
+		runs, err := ToRuns(tv, partitionTime, claimedInvs, sourcesMap["sources_id"])
 		So(err, ShouldBeNil)
 		So(runs, ShouldHaveLength, 4)
 		for _, run := range runs {
@@ -489,7 +494,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			{
 				// run-4
 				CommitPosition: 12,
-				Hour:           payload.PartitionTime.AsTime(),
+				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 				Unexpected: inputbuffer.ResultCounts{
 					CrashCount: 1,
 					AbortCount: 1,
@@ -498,7 +503,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			{
 				// run-3
 				CommitPosition: 12,
-				Hour:           payload.PartitionTime.AsTime(),
+				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 				Unexpected: inputbuffer.ResultCounts{
 					PassCount: 1,
 					FailCount: 1,
@@ -507,7 +512,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			{
 				// run-2
 				CommitPosition: 12,
-				Hour:           payload.PartitionTime.AsTime(),
+				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 				Expected: inputbuffer.ResultCounts{
 					AbortCount: 1,
 				},
@@ -515,7 +520,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			{
 				// run-1
 				CommitPosition: 12,
-				Hour:           payload.PartitionTime.AsTime(),
+				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 				Expected: inputbuffer.ResultCounts{
 					PassCount:  1,
 					FailCount:  1,
@@ -1280,6 +1285,82 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		So(tvb.IsStatisticsDirty, ShouldBeFalse)
 		So(tvb.IsFinalizingSegmentDirty, ShouldBeFalse)
 		So(tvb.IsFinalizedSegmentsDirty, ShouldBeFalse)
+	})
+}
+
+func TestOutOfOrderRuns(t *testing.T) {
+	Convey("Test out of order runs", t, func() {
+		tvb := &Entry{
+			IsNew:       true,
+			Project:     "proj_3",
+			TestID:      "test_id_3",
+			VariantHash: "variant_hash_3",
+			RefHash:     []byte("refhash3"),
+			SourceRef: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host_3",
+						Project: "proj_3",
+						Ref:     "ref_3",
+					},
+				},
+			},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBufferCapacity:  100,
+				HotBuffer:          inputbuffer.History{},
+				ColdBufferCapacity: 2000,
+				ColdBuffer:         inputbuffer.History{},
+			},
+		}
+
+		Convey("From empty", func() {
+			tvb.InputBuffer.ColdBuffer.Runs = nil
+			tvb.InputBuffer.HotBuffer.Runs = nil
+			tvb.FinalizingSegment = nil
+
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 100}), ShouldBeTrue)
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 1}), ShouldBeTrue)
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 100}), ShouldBeTrue)
+			So(tvb.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 3)
+		})
+		Convey("With finalizing segment and cold buffer setting bound", func() {
+			tvb.InputBuffer.ColdBuffer.Runs = []inputbuffer.Run{
+				{
+					CommitPosition: 20,
+					Hour:           time.Unix(0, 0),
+					Expected: inputbuffer.ResultCounts{
+						PassCount: 1,
+					},
+				},
+			}
+			tvb.FinalizingSegment = &cpb.Segment{
+				State: cpb.SegmentState_FINALIZING,
+			}
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), ShouldBeTrue)
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 21}), ShouldBeTrue)
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 19}), ShouldBeFalse)
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), ShouldBeTrue)
+			So(tvb.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 3)
+		})
+		Convey("With finalizing segment and hot buffer setting bound", func() {
+			tvb.InputBuffer.HotBuffer.Runs = []inputbuffer.Run{
+				{
+					CommitPosition: 20,
+					Hour:           time.Unix(0, 0),
+					Expected: inputbuffer.ResultCounts{
+						PassCount: 1,
+					},
+				},
+			}
+			tvb.FinalizingSegment = &cpb.Segment{
+				State: cpb.SegmentState_FINALIZING,
+			}
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), ShouldBeTrue)
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 21}), ShouldBeTrue)
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 19}), ShouldBeFalse)
+			So(tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), ShouldBeTrue)
+			So(tvb.InputBuffer.HotBuffer.Runs, ShouldHaveLength, 4)
+		})
 	})
 }
 

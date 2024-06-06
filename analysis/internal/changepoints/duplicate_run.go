@@ -19,50 +19,109 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-// readDuplicateInvocations contructs an duplicate map for test variants.
-// It returns a map of (invocationID, bool). If an invocation ID is found in
-// the map keys, then it is from a duplicate run. If not, then the run is not
-// duplicate.
-// It also returns a slice of invocation IDs that are not in Invocations
-// table in Spanner. This is used to insert new Invocations row to Spanner.
-// Note: This function should be called with a transactional context.
-func readDuplicateInvocations(ctx context.Context, tvs []*rdbpb.TestVariant, project, invocationID string) (map[string]bool, []string, error) {
-	invIDs, err := invocationIDsFromTestVariants(tvs)
-	if err != nil {
-		return nil, nil, errors.Annotate(err, "invocation ids from test variant").Err()
-	}
-	invMap, err := readInvocations(ctx, project, invIDs)
-	if err != nil {
-		return nil, nil, errors.Annotate(err, "read invocations").Err()
-	}
-	dupMap := map[string]bool{}
-	for invID, ingestedInvID := range invMap {
-		// If the ingested invocation ID stored in Spanner is different from the
-		// current invocation ID, it means this is a duplicate run.
-		if ingestedInvID != invocationID {
-			dupMap[invID] = true
+// tryClaimInvocations tries to claim use of the given invocations'
+// data for exclusive ingestion under the given root invocation,
+// in the scope of the given LUCI Project.
+//
+// This method returns a map which will contain 'true' for each
+// invocation it successfully claimed.
+
+// Changepoint analysis only supports ingestion of an invocation's data
+// once, as ingesting it multiple times violates statistical independence
+// assumptions made by the changepoint model. To prevent duplicate
+// ingestion of the same invocation, a system of 'claiming' invocations
+// exists. An invocation can be claimed by only one root invocation.
+//
+// Note: This function must NOT be called with a transactional context.
+func tryClaimInvocations(ctx context.Context, project string, rootInvocationID string, invIDs []string) (map[string]bool, error) {
+	var claimMap map[string]bool
+
+	f := func(ctx context.Context) error {
+		invMap, err := readInvocations(ctx, project, invIDs)
+		if err != nil {
+			return errors.Annotate(err, "read invocations").Err()
 		}
+
+		claimMap = make(map[string]bool)
+		for _, invID := range invIDs {
+			ingestedInvID, ok := invMap[invID]
+			if !ok {
+				// Invocation is currently unclaimed. Claim it.
+				claimMap[invID] = true
+				span.BufferWrite(ctx, ClaimInvocationMutation(project, invID, rootInvocationID))
+			} else if ingestedInvID == rootInvocationID {
+				// Invocation previously claimed by us.
+				claimMap[invID] = true
+			}
+		}
+		return nil
 	}
 
-	newInvIDs := []string{}
-	for _, invID := range invIDs {
-		if _, ok := invMap[invID]; !ok {
-			newInvIDs = append(newInvIDs, invID)
-		}
+	_, err := span.ReadWriteTransaction(ctx, f)
+	if err != nil {
+		return nil, err
 	}
-	return dupMap, newInvIDs, nil
+	return claimMap, nil
 }
 
-// invocationIDsFromTestVariants gets all runs' invocation IDs for given test
-// variants.
+// tryClaimInvocation tries to claim use of the given invocation's
+// data for exclusive ingestion under the given root invocation,
+// in the scope of the given LUCI Project.
+// If claimed, this method returns true. Otherwise it returns false,
+// indicating an attempt to ingest duplicate data.
+//
+// Changepoint analysis only supports ingestion of an invocation's data
+// once, as ingesting it multiple times violates statistical independence
+// assumptions made by the changepoint model. To prevent duplicate
+// ingestion of the same invocation, a system of 'claiming' invocations
+// exists. An invocation can be claimed by only one root invocation.
+//
+// Note: This function must NOT be called with a transactional context.
+func tryClaimInvocation(ctx context.Context, rootProject string, invocationID string, rootInvocationID string) (bool, error) {
+	result, err := tryClaimInvocations(ctx, rootProject, rootInvocationID, []string{invocationID})
+	if err != nil {
+		return false, err
+	}
+	return result[invocationID], nil
+}
+
+// shouldClaimInLowLatencyPipeline returns whether an invocation with given
+// sources should be claimed in the low-latency ingestion pipeline.
+func shouldClaimInLowLatencyPipeline(sources *pb.Sources) bool {
+	return sources != nil && len(sources.Changelists) == 0
+}
+
+// shouldClaimInHighLatencyPipeline returns whether an invocation with given
+// sources should be claimed in the high-latency ingestion pipeline.
+func shouldClaimInHighLatencyPipeline(sources *pb.Sources) bool {
+	// Invocations without changelists are ingestible by low-latency
+	// pipeline as we do not need to know the CV run result to determine
+	// if they can be ingested.
+	// Other invocations with sources should be ingested in the
+	// high-latency pipeline.
+	return sources != nil && len(sources.Changelists) > 0
+}
+
+// invocationIDsToClaimHighLatency gets all runs' invocation IDs for given test
+// variants, where it makes sense to claim the invocation in the high-latency
+// ingestion pipeline.
+//
 // This is used for a batch query to spanner to check for duplicate runs.
-func invocationIDsFromTestVariants(tvs []*rdbpb.TestVariant) ([]string, error) {
+func invocationIDsToClaimHighLatency(tvs []*rdbpb.TestVariant, sourcesMap map[string]*pb.Sources) ([]string, error) {
 	m := map[string]bool{}
 	for _, tv := range tvs {
+		srcs := sourcesMap[tv.SourcesId]
+		if !shouldClaimInHighLatencyPipeline(srcs) {
+			// Do not try to claim here.
+			continue
+		}
+
 		for _, tr := range tv.Results {
 			invocationName, err := resultdb.InvocationFromTestResultName(tr.Result.Name)
 			if err != nil {

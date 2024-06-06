@@ -743,29 +743,6 @@ CREATE TABLE TestVariantBranch (
 ) PRIMARY KEY(Project, TestId, VariantHash, RefHash),
   ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 90 DAY));
 
--- This table is to ensure that the ingestion to the TestVariantBranch table
--- only happens once, even in the case of task retry.
--- This table will store the batches that have been processed by change point
--- analysis.
--- Insertions to this table will happen in the same transaction as
--- insertions to the TestVariantBranch table.
--- Before processing a batch of test variants in change point analysis, we will
--- first check if the batch exists in this table, if yes, then the batch has
--- been processed and we should skip it.
--- The retention is set to 31 days, since it is the maximum time a task can
--- live in task queue is 31 days (https://cloud.google.com/tasks/docs/quotas).
-CREATE TABLE TestVariantBranchCheckpoint (
-  -- The invocation id of the batch.
-  InvocationId STRING(MAX) NOT NULL,
-  -- The test ID of the first test variant in the batch.
-  StartingTestId STRING(MAX) NOT NULL,
-  -- The variant hash of the first test variant in the batch.
-  StartingVariantHash STRING(16) NOT NULL,
-  -- Time that this record was inserted in the table.
-  InsertionTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-) PRIMARY KEY(InvocationId, StartingTestId, StartingVariantHash),
-  ROW DELETION POLICY (OLDER_THAN(InsertionTime, INTERVAL 31 DAY));
-
 -- This table is to determine if a run is a recycled run for test variant
 -- analysis.
 CREATE TABLE Invocations (

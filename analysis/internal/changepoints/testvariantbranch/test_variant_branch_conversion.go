@@ -15,13 +15,14 @@
 package testvariantbranch
 
 import (
+	"time"
+
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -30,9 +31,9 @@ import (
 // The runs in verdict details are ordered by:
 // - UnexpectedCount, descendingly, then
 // - ExpectedCount, descendingly.
-func ToRuns(tv *rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicateMap map[string]bool, src *pb.Sources) ([]inputbuffer.Run, error) {
+func ToRuns(tv *rdbpb.TestVariant, partitionTime time.Time, claimedInvs map[string]bool, src *pb.Sources) ([]inputbuffer.Run, error) {
 	commitPosition := sources.CommitPosition(src)
-	hour := payload.PartitionTime.AsTime()
+	hour := partitionTime.Truncate(time.Hour)
 
 	var result []inputbuffer.Run
 	// runIndicies maps invocation name to result index.
@@ -44,8 +45,8 @@ func ToRuns(tv *rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicat
 		if err != nil {
 			return nil, errors.Annotate(err, "invocation from test result name").Err()
 		}
-		_, isDuplicate := duplicateMap[invocationName]
-		if isDuplicate {
+		_, isClaimed := claimedInvs[invocationName]
+		if !isClaimed {
 			// Do not ingest duplicate runs. They cannot be used for changepoint analysis
 			// as they distort counts of independent events in the segment statistics.
 			continue
@@ -97,4 +98,45 @@ func ToRuns(tv *rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicat
 	}
 
 	return result, nil
+}
+
+func ToRun(v *rdbpb.RunTestVerdict, partitionTime time.Time, src *pb.Sources) inputbuffer.Run {
+	commitPosition := sources.CommitPosition(src)
+	hour := partitionTime.Truncate(time.Hour)
+
+	result := inputbuffer.Run{
+		CommitPosition: commitPosition,
+		Hour:           hour,
+	}
+	for _, r := range v.Results {
+		tr := r.GetResult()
+		if tr.Expected {
+			if tr.Status == rdbpb.TestStatus_PASS {
+				result.Expected.PassCount++
+			}
+			if tr.Status == rdbpb.TestStatus_FAIL {
+				result.Expected.FailCount++
+			}
+			if tr.Status == rdbpb.TestStatus_CRASH {
+				result.Expected.CrashCount++
+			}
+			if tr.Status == rdbpb.TestStatus_ABORT {
+				result.Expected.AbortCount++
+			}
+		} else {
+			if tr.Status == rdbpb.TestStatus_PASS {
+				result.Unexpected.PassCount++
+			}
+			if tr.Status == rdbpb.TestStatus_FAIL {
+				result.Unexpected.FailCount++
+			}
+			if tr.Status == rdbpb.TestStatus_CRASH {
+				result.Unexpected.CrashCount++
+			}
+			if tr.Status == rdbpb.TestStatus_ABORT {
+				result.Unexpected.AbortCount++
+			}
+		}
+	}
+	return result
 }

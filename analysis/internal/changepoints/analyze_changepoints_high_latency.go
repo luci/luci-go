@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package changepoints handles change point detection and analysis.
-// See go/luci-test-variant-analysis-design for details.
 package changepoints
 
 import (
 	"context"
-	"math"
+	"fmt"
 
 	"cloud.google.com/go/spanner"
 
@@ -26,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
@@ -35,6 +32,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
@@ -59,29 +57,20 @@ var (
 		//   out of order.
 		// - "skipped_unsubmitted_code": The verdict was skipped because is was
 		//   from unsubmitted code.
-		// - "skipped_all_skipped_or_duplicate":  The verdict was skipped because
-		//   it contains only skipped or duplicate results.
+		// - "skipped_all_skipped_or_unclaimed":  The verdict was skipped because
+		//   it contains only skipped or unclaimed results.
 		field.String("status"),
 	)
 )
 
-// CheckPoint represents a single row in the TestVariantBranchCheckpoint table.
-type CheckPoint struct {
-	InvocationID        string
-	StartingTestID      string
-	StartingVariantHash string
-}
-
 // Analyze performs change point analyses based on incoming test verdicts.
 // sourcesMap contains the information about the source code being tested.
 func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
-	logging.Debugf(ctx, "Analyzing %d test variants for build %d", len(tvs), payload.Build.Id)
-
 	// Check that sourcesMap is not empty and has commit position data.
 	// This is for fast termination, as there should be only few items in
 	// sourcesMap to check.
 	if !sources.SourcesMapHasCommitData(sourcesMap) {
-		verdictCounter.Add(ctx, int64(len(tvs)), payload.Build.Project, "skipped_no_commit_data")
+		verdictCounter.Add(ctx, int64(len(tvs)), payload.Project, "skipped_no_commit_data")
 		logging.Debugf(ctx, "Sourcemap has no commit data, skipping change point analysis")
 		return nil
 	}
@@ -119,41 +108,47 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		return nil
 	}
 
-	firstTV := tvs[0]
-	checkPoint := CheckPoint{
-		InvocationID:        rdbpbutil.InvocationName(payload.Invocation.InvocationId),
-		StartingTestID:      firstTV.TestId,
-		StartingVariantHash: firstTV.VariantHash,
+	invIDs, err := invocationIDsToClaimHighLatency(tvs, sourcesMap)
+	if err != nil {
+		return errors.Annotate(err, "identify invocation ids to claim").Err()
+	}
+
+	rootInvocationID := payload.Invocation.InvocationId
+	claimedInvs, err := tryClaimInvocations(ctx, payload.Project, rootInvocationID, invIDs)
+	if err != nil {
+		return errors.Annotate(err, "try to claim invocations").Err()
+	}
+
+	// Only keep "relevant" test variants, and test variant with commit information.
+	filteredTVs, err := filterTestVariantsHighLatency(ctx, tvs, payload, claimedInvs, sourcesMap)
+	if err != nil {
+		return errors.Annotate(err, "filter test variants").Err()
 	}
 
 	// Contains the test variant branches to be written to BigQuery.
 	bqExporterInput := make([]bqexporter.PartialBigQueryRow, 0, len(tvs))
 
-	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		// Check the TestVariantBranch table for the existence of the batch.
-		exist, err := hasCheckPoint(ctx, checkPoint)
-		if err != nil {
-			return errors.Annotate(err, "hasCheckPoint (%s, %s, %s)", checkPoint.InvocationID, firstTV.TestId, firstTV.VariantHash).Err()
-		}
+	firstTV := tvs[0]
+	checkpointKey := checkpoints.Key{
+		Project:    payload.Project,
+		ResourceID: fmt.Sprintf("%s/%s", payload.Invocation.ResultdbHost, payload.Invocation.InvocationId),
+		ProcessID:  "verdict-ingestion/analyze-changepoints",
+		Uniquifier: fmt.Sprintf("%s/%s", firstTV.TestId, firstTV.VariantHash),
+	}
 
+	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		// Check checkpoints table to see if we have already processed this batch.
+		exists, err := checkpoints.Exists(ctx, checkpointKey)
+		if err != nil {
+			return errors.Annotate(err, "test existence of checkpoint").Err()
+		}
 		// This batch has been processed, we can skip it.
-		if exist {
+		if exists {
 			return nil
 		}
 
-		duplicateMap, newInvIDs, err := readDuplicateInvocations(ctx, tvs, payload.Project, payload.Invocation.InvocationId)
-		if err != nil {
-			return errors.Annotate(err, "duplicate map").Err()
-		}
-
-		// Only keep "relevant" test variants, and test variant with commit information.
-		filteredTVs, err := filterTestVariants(ctx, tvs, payload, duplicateMap, sourcesMap)
-		if err != nil {
-			return errors.Annotate(err, "filter test variants").Err()
-		}
-
 		// Query TestVariantBranch from spanner.
-		tvbks := testVariantBranchKeys(filteredTVs, payload.Build.Project, sourcesMap)
+		tvbks := testVariantBranchKeys(filteredTVs, payload.Project, sourcesMap)
 
 		// The list of mutations for this transaction.
 		mutations := []*spanner.Mutation{}
@@ -166,16 +161,16 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		// Handle each read test variant branch.
 		f := func(i int, tvb *testvariantbranch.Entry) error {
 			tv := filteredTVs[i]
-			if isOutOfOrderAndShouldBeDiscarded(tvb, sourcesMap[tv.SourcesId]) {
-				verdictCounter.Add(ctx, 1, payload.Build.Project, "skipped_out_of_order")
-				logging.Debugf(ctx, "Out of order verdict in build %d", payload.Build.Id)
-				return nil
-			}
 			// "Insert" the new test variant to input buffer.
-			tvb, err := insertIntoInputBuffer(tvb, tv, payload, duplicateMap, sourcesMap)
+			tvb, inOrder, err := insertVerdictIntoInputBuffer(tvb, tv, payload, claimedInvs, sourcesMap)
 			if err != nil {
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
+			if !inOrder {
+				verdictCounter.Add(ctx, 1, payload.Project, "skipped_out_of_order")
+				return nil
+			}
+
 			segments := analysis.Run(tvb)
 			tvb.ApplyRetentionPolicyForFinalizedSegments(payload.PartitionTime.AsTime())
 			mut, err := tvb.ToMutation(&hs)
@@ -196,15 +191,10 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 		ingestedVerdictCount := len(mutations)
 
-		// Store new Invocations to Invocations table.
-		ingestedInvID := payload.Invocation.InvocationId
-		invMuts := invocationsToMutations(ctx, payload.Build.Project, newInvIDs, ingestedInvID)
-		mutations = append(mutations, invMuts...)
-
-		// Store checkpoint in TestVariantBranchCheckpoint table.
-		mutations = append(mutations, checkPoint.ToMutation())
+		// Store checkpoint.
+		mutations = append(mutations, checkpoints.Insert(ctx, checkpointKey, checkpointTTL))
 		span.BufferWrite(ctx, mutations...)
-		verdictCounter.Add(ctx, int64(ingestedVerdictCount), payload.Build.Project, "ingested")
+		verdictCounter.Add(ctx, int64(ingestedVerdictCount), payload.Project, "ingested")
 		return nil
 	})
 
@@ -250,47 +240,17 @@ func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, rowInp
 	return nil
 }
 
-// isOutOfOrderAndShouldBeDiscarded returns true if the run is out-of-order
-// and should be discarded.
-// This function returns false if the run is out-of-order but can still be
-// processed.
-// We only keep out-of-order run if either condition occurs:
-//   - The run commit position falls within the input buffer
-//     (commit position >= smallest start position), or
-//   - There is no finalizing or finalized segment (i.e. the entire known
-//     test history is inside the input buffer)
-func isOutOfOrderAndShouldBeDiscarded(tvb *testvariantbranch.Entry, src *pb.Sources) bool {
-	// No test variant branch. Should be ok to proceed.
-	if tvb == nil {
-		return false
-	}
-	if len(tvb.FinalizedSegments.GetSegments()) == 0 && tvb.FinalizingSegment == nil {
-		return false
-	}
-	position := sources.CommitPosition(src)
-	hotRuns := tvb.InputBuffer.HotBuffer.Runs
-	coldRuns := tvb.InputBuffer.ColdBuffer.Runs
-	minPos := int64(math.MaxInt64)
-	if len(hotRuns) > 0 && minPos > hotRuns[0].CommitPosition {
-		minPos = hotRuns[0].CommitPosition
-	}
-	if len(coldRuns) > 0 && minPos > coldRuns[0].CommitPosition {
-		minPos = coldRuns[0].CommitPosition
-	}
-	return position < minPos
-}
-
-// insertIntoInputBuffer inserts the new test variant tv into the input buffer
+// insertVerdictIntoInputBuffer inserts the new test variant tv into the input buffer
 // of TestVariantBranch tvb.
 // If tvb is nil, it means it is not in spanner. In this case, return a new
 // TestVariantBranch object with a single element in the input buffer.
-func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicateMap map[string]bool, sourcesMap map[string]*pb.Sources) (*testvariantbranch.Entry, error) {
+func insertVerdictIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, claimedInvs map[string]bool, sourcesMap map[string]*pb.Sources) (updatedTVB *testvariantbranch.Entry, inOrder bool, err error) {
 	src := sourcesMap[tv.SourcesId]
 	if tvb == nil {
 		ref := pbutil.SourceRefFromSources(src)
 		tvb = &testvariantbranch.Entry{
 			IsNew:       true,
-			Project:     payload.GetBuild().GetProject(),
+			Project:     payload.Project,
 			TestID:      tv.TestId,
 			VariantHash: tv.VariantHash,
 			RefHash:     pbutil.SourceRefHash(ref),
@@ -303,26 +263,31 @@ func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, 
 		}
 	}
 
-	runs, err := testvariantbranch.ToRuns(tv, payload, duplicateMap, src)
+	runs, err := testvariantbranch.ToRuns(tv, payload.PartitionTime.AsTime(), claimedInvs, src)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
+
 	for _, run := range runs {
-		tvb.InsertToInputBuffer(run)
+		if !tvb.InsertToInputBuffer(run) {
+			// Out of order run.
+			return nil, false, nil
+		}
 	}
-	return tvb, nil
+	return tvb, true, nil
 }
 
-// filterTestVariants only keeps test variants that satisfy all following
+// filterTestVariantsHighLatency only keeps test variants that satisfy all following
 // conditions:
 //   - Have commit position information.
-//   - Have at least 1 non-duplicate and non-skipped test result (the test
-//     result needs to be both non-duplicate and non-skipped).
+//   - Have at least 1 non-skipped test result from a claimed invocation.
 //   - Not from unsubmitted code (i.e. try run that did not result in submitted code)
-func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, duplicateMap map[string]bool, sourcesMap map[string]*pb.Sources) ([]*rdbpb.TestVariant, error) {
+//   - Are not eligible for ingestion through the low-latency pipeline,
+//     i.e. test runs testing an applied changelist.
+func filterTestVariantsHighLatency(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, claimedInvs map[string]bool, sourcesMap map[string]*pb.Sources) ([]*rdbpb.TestVariant, error) {
 	results := []*rdbpb.TestVariant{}
 	presubmit := payload.PresubmitRun
-	project := payload.Build.Project
+	project := payload.Project
 	for _, tv := range tvs {
 		// Checks source map.
 		src, ok := sourcesMap[tv.SourcesId]
@@ -334,27 +299,30 @@ func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			verdictCounter.Add(ctx, 1, project, "skipped_no_commit_data")
 			continue
 		}
-		// Checks unsubmitted code.
-		if sources.FromUnsubmittedCode(src, presubmit) {
+		wasSubmittedByPresubmit := presubmit != nil &&
+			presubmit.Status == pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED &&
+			presubmit.Mode == pb.PresubmitRunMode_FULL_RUN
+		if len(src.Changelists) > 0 && !wasSubmittedByPresubmit {
 			verdictCounter.Add(ctx, 1, project, "skipped_unsubmitted_code")
 			continue
 		}
+
 		// Checks skips and duplicates.
-		allSkippedAndDuplicate := true
+		allSkippedOrUnclaimed := true
 		for _, r := range tv.Results {
 			invID, err := resultdb.InvocationFromTestResultName(r.Result.Name)
 			if err != nil {
 				return nil, errors.Annotate(err, "invocation from test result name").Err()
 			}
-			_, isDuplicate := duplicateMap[invID]
-			if r.Result.Status != rdbpb.TestStatus_SKIP && !isDuplicate {
+			_, isClaimed := claimedInvs[invID]
+			if r.Result.Status != rdbpb.TestStatus_SKIP && isClaimed {
 				results = append(results, tv)
-				allSkippedAndDuplicate = false
+				allSkippedOrUnclaimed = false
 				break
 			}
 		}
-		if allSkippedAndDuplicate {
-			verdictCounter.Add(ctx, 1, project, "skipped_all_skipped_or_duplicate")
+		if allSkippedOrUnclaimed {
+			verdictCounter.Add(ctx, 1, project, "skipped_all_skipped_or_unclaimed")
 		}
 	}
 	return results, nil

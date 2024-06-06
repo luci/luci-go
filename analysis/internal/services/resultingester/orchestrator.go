@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	tvbexporter "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
@@ -72,10 +73,22 @@ func RegisterTaskHandler(srv *server.Server) error {
 		return errors.Annotate(err, "create test results BigQuery client").Err()
 	}
 
+	tvbBQClient, err := tvbexporter.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return err
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		err := tvbBQClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up result ingestion test variant branch BQExporter client: %s", err)
+		}
+	})
+
 	o := &orchestrator{
 		sinks: []IngestionSink{
 			IngestForExoneration{},
 			NewTestResultsExporter(resultsClient),
+			NewIngestForChangepointAnalysis(tvbexporter.NewExporter(tvbBQClient)),
 		},
 	}
 	resultIngestion.AttachHandler(func(ctx context.Context, payload proto.Message) error {

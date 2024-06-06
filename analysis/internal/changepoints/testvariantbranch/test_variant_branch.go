@@ -16,6 +16,7 @@
 package testvariantbranch
 
 import (
+	"math"
 	"sort"
 	"time"
 
@@ -134,10 +135,36 @@ func (tvb *Entry) Copy() *Entry {
 	}
 }
 
-// InsertToInputBuffer inserts data of a new test variant into the input
-// buffer.
-func (tvb *Entry) InsertToInputBuffer(pv inputbuffer.Run) {
-	tvb.InputBuffer.InsertRun(pv)
+// InsertToInputBuffer attempts to insert data of a new test run into the input
+// buffer. This method returns true if the test run could be inserted,
+// false if it is too far out of order.
+func (tvb *Entry) InsertToInputBuffer(r inputbuffer.Run) bool {
+	if tvb.isTooFarOutOfOrder(r) {
+		return false
+	}
+	tvb.InputBuffer.InsertRun(r)
+	return true
+}
+
+func (tvb *Entry) isTooFarOutOfOrder(r inputbuffer.Run) bool {
+	if len(tvb.FinalizedSegments.GetSegments()) == 0 && tvb.FinalizingSegment == nil {
+		// There are no finalized or finalizing segments yet.
+		// Everything is still in the input buffer, so we can
+		// re-order things arbitrarily.
+		return false
+	}
+	hotRuns := tvb.InputBuffer.HotBuffer.Runs
+	coldRuns := tvb.InputBuffer.ColdBuffer.Runs
+	minPos := int64(math.MaxInt64)
+	if len(hotRuns) > 0 && minPos > hotRuns[0].CommitPosition {
+		minPos = hotRuns[0].CommitPosition
+	}
+	if len(coldRuns) > 0 && minPos > coldRuns[0].CommitPosition {
+		minPos = coldRuns[0].CommitPosition
+	}
+	// Do not accept runs which are earlier than the starting
+	// commit position still in the input buffer.
+	return r.CommitPosition < minPos
 }
 
 // InsertFinalizedSegment inserts a segment to the end of finalized segments.

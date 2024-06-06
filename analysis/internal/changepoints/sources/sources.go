@@ -16,19 +16,8 @@
 package sources
 
 import (
-	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
-
-// FromUnsubmittedCode Return true if sources is from unsubmitted code, i.e.
-// from try run that did not result in submitted code.
-func FromUnsubmittedCode(sources *pb.Sources, presubmit *controlpb.PresubmitResult) bool {
-	hasCL := len(sources.GetChangelists()) > 0
-	submittedPresubmit := presubmit != nil &&
-		presubmit.Status == pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED &&
-		presubmit.Mode == pb.PresubmitRunMode_FULL_RUN
-	return hasCL && !submittedPresubmit
-}
 
 // SourcesMapHasCommitData checks if sourcesMap has commit data.
 // It returns true if at least one sources in the map has commit position data.

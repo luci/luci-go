@@ -200,279 +200,278 @@ func TestIngestTestVerdicts(t *testing.T) {
 			// Populate some existing test variant analysis.
 			branch := setupTestVariantAnalysis(ctx, partitionTime)
 
-			Convey("without build", func() {
-				payload := &taskspb.IngestTestVerdicts{
-					IngestionId: "ingestion-id",
-					Project:     "test-project",
-					Invocation: &ctrlpb.InvocationResult{
-						ResultdbHost: "rdb-host",
-						InvocationId: invocationID,
-					},
-					PartitionTime: timestamppb.New(partitionTime),
-					PageToken:     "expected_token",
-					TaskIndex:     1,
-				}
-				expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
-				expectedContinuation.PageToken = "continuation_token"
-				expectedContinuation.TaskIndex = 2
-
-				expectedCheckpoint := checkpoints.Checkpoint{
+			expectedCheckpoints := []checkpoints.Checkpoint{
+				{
 					Key: checkpoints.Key{
-						Project:    payload.Project,
+						Project:    "project",
 						ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
-						ProcessID:  "verdict-ingestion",
-						Uniquifier: "schedule-continuation/1",
+						ProcessID:  "verdict-ingestion/schedule-continuation",
+						Uniquifier: "1",
 					},
-					// Creation and expiry time not validated.
-				}
+					// Creation and expiry time are not verified.
+				},
+				{
+					Key: checkpoints.Key{
+						Project:    "project",
+						ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
+						ProcessID:  "verdict-ingestion/analyze-changepoints",
+						Uniquifier: "ninja://test_consistent_failure/hash",
+					},
+					// Creation and expiry time are not verified.
+				},
+			}
 
-				Convey(`First task`, func() {
-					setupGetInvocationMock()
-					setupQueryTestVariantsMock()
-					setupConfig(ctx, cfg)
+			payload := &taskspb.IngestTestVerdicts{
+				IngestionId: "ingestion-id",
+				Project:     "project",
+				Invocation: &ctrlpb.InvocationResult{
+					ResultdbHost: "rdb-host",
+					InvocationId: invocationID,
+				},
+				Build: &ctrlpb.BuildResult{
+					Host:         bHost,
+					Id:           testBuildID,
+					CreationTime: timestamppb.New(time.Date(2020, time.April, 1, 2, 3, 4, 5, time.UTC)),
+					Project:      "project",
+					Bucket:       "bucket",
+					Builder:      "builder",
+					Status:       pb.BuildStatus_BUILD_STATUS_FAILURE,
+					Changelists: []*pb.Changelist{
+						{
+							Host:      "anothergerrit.gerrit.instance",
+							Change:    77788,
+							Patchset:  19,
+							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+						},
+						{
+							Host:      "mygerrit-review.googlesource.com",
+							Change:    12345,
+							Patchset:  5,
+							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+						},
+					},
+					Commit: &bbpb.GitilesCommit{
+						Host:     "myproject.googlesource.com",
+						Project:  "someproject/src",
+						Id:       strings.Repeat("0a", 20),
+						Ref:      "refs/heads/mybranch",
+						Position: 111888,
+					},
+					HasInvocation:        true,
+					ResultdbHost:         "test.results.api.cr.dev",
+					IsIncludedByAncestor: false,
+					GardenerRotations:    []string{"rotation1", "rotation2"},
+				},
+				PartitionTime: timestamppb.New(partitionTime),
+				PresubmitRun: &ctrlpb.PresubmitResult{
+					PresubmitRunId: &pb.PresubmitRunId{
+						System: "luci-cv",
+						Id:     "infra/12345",
+					},
+					Status:       pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
+					Mode:         pb.PresubmitRunMode_FULL_RUN,
+					Owner:        "automation",
+					CreationTime: timestamppb.New(time.Date(2021, time.April, 1, 2, 3, 4, 5, time.UTC)),
+				},
+				PageToken: "expected_token",
+				TaskIndex: 1,
+			}
+			expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
+			expectedContinuation.PageToken = "continuation_token"
+			expectedContinuation.TaskIndex = 2
 
-					// Act
-					err := ri.ingestTestVerdicts(ctx, payload)
-					So(err, ShouldBeNil)
+			Convey(`Without build`, func() {
+				payload.Build = nil
+				payload.PresubmitRun = nil
 
-					// Verify
+				expectedContinuation.Build = nil
+				expectedContinuation.PresubmitRun = nil
 
-					// Expect a continuation task to be created.
-					verifyContinuationTask(skdr, expectedContinuation)
-					verifyCheckpoints(ctx, expectedCheckpoint)
-					verifyTestResults(ctx, partitionTime, false)
-					// Clustering no enabled - no chunk has been written to GCS.
-					So(len(chunkStore.Contents), ShouldEqual, 0)
-					verifyTestVerdicts(testVerdicts, partitionTime, false)
-					// Test variant analysis not enabled.
-					tvbs, err := changepoints.FetchTestVariantBranches(ctx)
-					So(err, ShouldBeNil)
-					So(len(tvbs), ShouldEqual, 1)
-					branch.IsNew = false
-					So(tvbs[0], ShouldResembleProto, branch)
+				setupGetInvocationMock()
+				setupQueryTestVariantsMock()
+				setupConfig(ctx, cfg)
+
+				// Act
+				err := ri.ingestTestVerdicts(ctx, payload)
+				So(err, ShouldBeNil)
+
+				// Verify
+
+				// Expect a continuation task to be created.
+				verifyContinuationTask(skdr, expectedContinuation)
+				verifyCheckpoints(ctx, expectedCheckpoints)
+				verifyTestResults(ctx, partitionTime, false)
+				// Clustering no enabled - no chunk has been written to GCS.
+				So(len(chunkStore.Contents), ShouldEqual, 0)
+				verifyTestVerdicts(testVerdicts, partitionTime, false)
+
+				// Changepoint analysis should not be updated.
+				// In this pipeline, invocations with changelists are ingested
+				// only if the presubmit run was full and succeeded (leading
+				// to CL submission). Invocations without builds cannot have
+				// a presubmit run and therefore will not be ingested.
+				tvbs, err := changepoints.FetchTestVariantBranches(ctx)
+				So(err, ShouldBeNil)
+				So(len(tvbs), ShouldEqual, 1)
+				branch.IsNew = false
+				So(tvbs[0], ShouldResembleProto, branch)
+			})
+			Convey(`First task`, func() {
+				setupGetInvocationMock()
+				setupQueryTestVariantsMock()
+				setupConfig(ctx, cfg)
+
+				// Act
+				err := ri.ingestTestVerdicts(ctx, payload)
+				So(err, ShouldBeNil)
+
+				// Verify
+
+				// Expect a continuation task to be created.
+				verifyContinuationTask(skdr, expectedContinuation)
+				verifyCheckpoints(ctx, expectedCheckpoints)
+				verifyTestResults(ctx, partitionTime, true)
+				verifyClustering(chunkStore, clusteredFailures)
+				verifyTestVerdicts(testVerdicts, partitionTime, true)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+			})
+			Convey(`Last task`, func() {
+				payload.TaskIndex = 10
+				expectedCheckpoints = removeCheckpointForProcess(expectedCheckpoints, "verdict-ingestion/schedule-continuation")
+
+				setupGetInvocationMock()
+				setupQueryTestVariantsMock(func(rsp *rdbpb.QueryTestVariantsResponse) {
+					rsp.NextPageToken = ""
 				})
+				setupConfig(ctx, cfg)
+
+				// Act
+				err := ri.ingestTestVerdicts(ctx, payload)
+				So(err, ShouldBeNil)
+
+				// Verify
+
+				// As this is the last task, do not expect a continuation
+				// task to be created.
+				verifyContinuationTask(skdr, nil)
+				verifyCheckpoints(ctx, expectedCheckpoints) // Expect no checkpoints to be created.
+				verifyTestResults(ctx, partitionTime, true)
+				verifyClustering(chunkStore, clusteredFailures)
+				verifyTestVerdicts(testVerdicts, partitionTime, true)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
 			})
 
-			Convey("has build", func() {
-
-				payload := &taskspb.IngestTestVerdicts{
-					IngestionId: "ingestion-id",
-					Project:     "test-project",
-					Invocation: &ctrlpb.InvocationResult{
-						ResultdbHost: "rdb-host",
-						InvocationId: invocationID,
-					},
-					Build: &ctrlpb.BuildResult{
-						Host:         bHost,
-						Id:           testBuildID,
-						CreationTime: timestamppb.New(time.Date(2020, time.April, 1, 2, 3, 4, 5, time.UTC)),
-						Project:      "project",
-						Bucket:       "bucket",
-						Builder:      "builder",
-						Status:       pb.BuildStatus_BUILD_STATUS_FAILURE,
-						Changelists: []*pb.Changelist{
-							{
-								Host:      "anothergerrit.gerrit.instance",
-								Change:    77788,
-								Patchset:  19,
-								OwnerKind: pb.ChangelistOwnerKind_HUMAN,
-							},
-							{
-								Host:      "mygerrit-review.googlesource.com",
-								Change:    12345,
-								Patchset:  5,
-								OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-							},
-						},
-						Commit: &bbpb.GitilesCommit{
-							Host:     "myproject.googlesource.com",
-							Project:  "someproject/src",
-							Id:       strings.Repeat("0a", 20),
-							Ref:      "refs/heads/mybranch",
-							Position: 111888,
-						},
-						HasInvocation:        true,
-						ResultdbHost:         "test.results.api.cr.dev",
-						IsIncludedByAncestor: false,
-						GardenerRotations:    []string{"rotation1", "rotation2"},
-					},
-					PartitionTime: timestamppb.New(partitionTime),
-					PresubmitRun: &ctrlpb.PresubmitResult{
-						PresubmitRunId: &pb.PresubmitRunId{
-							System: "luci-cv",
-							Id:     "infra/12345",
-						},
-						Status:       pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
-						Mode:         pb.PresubmitRunMode_FULL_RUN,
-						Owner:        "automation",
-						CreationTime: timestamppb.New(time.Date(2021, time.April, 1, 2, 3, 4, 5, time.UTC)),
-					},
-					PageToken: "expected_token",
-					TaskIndex: 1,
-				}
-				expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
-				expectedContinuation.PageToken = "continuation_token"
-				expectedContinuation.TaskIndex = 2
-
-				expectedCheckpoint := checkpoints.Checkpoint{
+			Convey(`Retry task after continuation task already created`, func() {
+				// Scenario: First task fails after it has already scheduled
+				// its continuation.
+				existingCheckpoint := checkpoints.Checkpoint{
 					Key: checkpoints.Key{
-						Project:    payload.Project,
+						Project:    "project",
 						ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
-						ProcessID:  "verdict-ingestion",
-						Uniquifier: "schedule-continuation/1",
+						ProcessID:  "verdict-ingestion/schedule-continuation",
+						Uniquifier: "1",
 					},
-					// Creation and expiry time not validated.
 				}
+				err := checkpoints.SetForTesting(ctx, existingCheckpoint)
+				So(err, ShouldBeNil)
 
-				Convey(`First task`, func() {
-					setupGetInvocationMock()
-					setupQueryTestVariantsMock()
-					setupConfig(ctx, cfg)
+				setupGetInvocationMock()
+				setupQueryTestVariantsMock()
+				setupConfig(ctx, cfg)
 
-					// Act
-					err := ri.ingestTestVerdicts(ctx, payload)
-					So(err, ShouldBeNil)
+				// Act
+				err = ri.ingestTestVerdicts(ctx, payload)
+				So(err, ShouldBeNil)
 
-					// Verify
+				// Verify
 
-					// Expect a continuation task to be created.
-					verifyContinuationTask(skdr, expectedContinuation)
-					verifyCheckpoints(ctx, expectedCheckpoint)
-					verifyTestResults(ctx, partitionTime, true)
-					verifyClustering(chunkStore, clusteredFailures)
-					verifyTestVerdicts(testVerdicts, partitionTime, true)
-					verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+				// Do not expect a continuation task to be created,
+				// as it was already scheduled.
+				verifyContinuationTask(skdr, nil)
+				verifyCheckpoints(ctx, expectedCheckpoints)
+				verifyTestResults(ctx, partitionTime, true)
+				verifyClustering(chunkStore, clusteredFailures)
+				verifyTestVerdicts(testVerdicts, partitionTime, true)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+			})
+			Convey(`No project config`, func() {
+				// If no project config exists, results should be ingested into
+				// TestResults and clustered, but not used for the legacy test variant
+				// analysis.
+				config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
+
+				setupGetInvocationMock()
+				setupQueryTestVariantsMock()
+				setupConfig(ctx, cfg)
+
+				// Act
+				err := ri.ingestTestVerdicts(ctx, payload)
+				So(err, ShouldBeNil)
+
+				// Verify
+				// Test results still ingested.
+				verifyTestResults(ctx, partitionTime, true)
+
+				// Cluster has happened.
+				verifyClustering(chunkStore, clusteredFailures)
+
+				// Test verdicts exported.
+				verifyTestVerdicts(testVerdicts, partitionTime, true)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+			})
+			Convey(`Build included by ancestor`, func() {
+				payload.Build.IsIncludedByAncestor = true
+				setupConfig(ctx, cfg)
+
+				// Act
+				err := ri.ingestTestVerdicts(ctx, payload)
+				So(err, ShouldBeNil)
+
+				// Verify no test results ingested into test history.
+				var actualTRs []*testresults.TestResult
+				err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
+					actualTRs = append(actualTRs, tr)
+					return nil
 				})
-				Convey(`Last task`, func() {
-					payload.TaskIndex = 10
-					expectedCheckpoint.Uniquifier = "schedule-continuation/10"
+				So(err, ShouldBeNil)
+				So(actualTRs, ShouldHaveLength, 0)
+			})
+			Convey(`no invocation`, func() {
+				payload.Invocation = nil
+				setupConfig(ctx, cfg)
 
-					setupGetInvocationMock()
-					setupQueryTestVariantsMock(func(rsp *rdbpb.QueryTestVariantsResponse) {
-						rsp.NextPageToken = ""
-					})
-					setupConfig(ctx, cfg)
+				// Act
+				err := ri.ingestTestVerdicts(ctx, payload)
+				So(err, ShouldBeNil)
 
-					// Act
-					err := ri.ingestTestVerdicts(ctx, payload)
-					So(err, ShouldBeNil)
-
-					// Verify
-
-					// As this is the last task, do not expect a continuation
-					// task to be created.
-					verifyContinuationTask(skdr, nil)
-					verifyCheckpoints(ctx) // Expect no checkpoints to be created.
-					verifyTestResults(ctx, partitionTime, true)
-					verifyClustering(chunkStore, clusteredFailures)
-					verifyTestVerdicts(testVerdicts, partitionTime, true)
-					verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+				// Verify no test results ingested into test history.
+				var actualTRs []*testresults.TestResult
+				err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
+					actualTRs = append(actualTRs, tr)
+					return nil
 				})
+				So(err, ShouldBeNil)
+				So(actualTRs, ShouldHaveLength, 0)
+			})
+			Convey(`Project not allowed`, func() {
+				cfg.Ingestion = &configpb.Ingestion{
+					ProjectAllowlistEnabled: true,
+					ProjectAllowlist:        []string{"other"},
+				}
+				setupConfig(ctx, cfg)
 
-				Convey(`Retry task after continuation task already created`, func() {
-					// Scenario: First task fails after it has already scheduled
-					// its continuation.
-					err := checkpoints.SetForTesting(ctx, expectedCheckpoint)
-					So(err, ShouldBeNil)
+				// Act
+				err := ri.ingestTestVerdicts(ctx, payload)
+				So(err, ShouldBeNil)
 
-					setupGetInvocationMock()
-					setupQueryTestVariantsMock()
-					setupConfig(ctx, cfg)
-
-					// Act
-					err = ri.ingestTestVerdicts(ctx, payload)
-					So(err, ShouldBeNil)
-
-					// Verify
-
-					// Do not expect a continuation task to be created,
-					// as it was already scheduled.
-					verifyContinuationTask(skdr, nil)
-					verifyCheckpoints(ctx, expectedCheckpoint)
-					verifyTestResults(ctx, partitionTime, true)
-					verifyClustering(chunkStore, clusteredFailures)
-					verifyTestVerdicts(testVerdicts, partitionTime, true)
-					verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+				// Verify no test results ingested into test history.
+				var actualTRs []*testresults.TestResult
+				err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
+					actualTRs = append(actualTRs, tr)
+					return nil
 				})
-				Convey(`No project config`, func() {
-					// If no project config exists, results should be ingested into
-					// TestResults and clustered, but not used for the legacy test variant
-					// analysis.
-					config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
-
-					setupGetInvocationMock()
-					setupQueryTestVariantsMock()
-					setupConfig(ctx, cfg)
-
-					// Act
-					err := ri.ingestTestVerdicts(ctx, payload)
-					So(err, ShouldBeNil)
-
-					// Verify
-					// Test results still ingested.
-					verifyTestResults(ctx, partitionTime, true)
-
-					// Cluster has happened.
-					verifyClustering(chunkStore, clusteredFailures)
-
-					// Test verdicts exported.
-					verifyTestVerdicts(testVerdicts, partitionTime, true)
-					verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
-				})
-				Convey(`Build included by ancestor`, func() {
-					payload.Build.IsIncludedByAncestor = true
-					setupConfig(ctx, cfg)
-
-					// Act
-					err := ri.ingestTestVerdicts(ctx, payload)
-					So(err, ShouldBeNil)
-
-					// Verify no test results ingested into test history.
-					var actualTRs []*testresults.TestResult
-					err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
-						actualTRs = append(actualTRs, tr)
-						return nil
-					})
-					So(err, ShouldBeNil)
-					So(actualTRs, ShouldHaveLength, 0)
-				})
-				Convey(`no invocation`, func() {
-					payload.Invocation = nil
-					setupConfig(ctx, cfg)
-
-					// Act
-					err := ri.ingestTestVerdicts(ctx, payload)
-					So(err, ShouldBeNil)
-
-					// Verify no test results ingested into test history.
-					var actualTRs []*testresults.TestResult
-					err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
-						actualTRs = append(actualTRs, tr)
-						return nil
-					})
-					So(err, ShouldBeNil)
-					So(actualTRs, ShouldHaveLength, 0)
-				})
-				Convey(`Project not allowed`, func() {
-					cfg.Ingestion = &configpb.Ingestion{
-						ProjectAllowlistEnabled: true,
-						ProjectAllowlist:        []string{"other"},
-					}
-					setupConfig(ctx, cfg)
-
-					// Act
-					err := ri.ingestTestVerdicts(ctx, payload)
-					So(err, ShouldBeNil)
-
-					// Verify no test results ingested into test history.
-					var actualTRs []*testresults.TestResult
-					err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
-						actualTRs = append(actualTRs, tr)
-						return nil
-					})
-					So(err, ShouldBeNil)
-					So(actualTRs, ShouldHaveLength, 0)
-				})
+				So(err, ShouldBeNil)
+				So(actualTRs, ShouldHaveLength, 0)
 			})
 		})
 	})
@@ -1482,7 +1481,7 @@ func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *tas
 	}
 }
 
-func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) {
+func verifyCheckpoints(ctx context.Context, expected []checkpoints.Checkpoint) {
 	result, err := checkpoints.ReadAllForTesting(span.Single(ctx))
 	So(err, ShouldBeNil)
 
@@ -1494,5 +1493,18 @@ func verifyCheckpoints(ctx context.Context, expected ...checkpoints.Checkpoint) 
 	for _, c := range result {
 		gotKeys = append(gotKeys, c.Key)
 	}
+	checkpoints.SortKeys(gotKeys)
+	checkpoints.SortKeys(wantKeys)
+
 	So(gotKeys, ShouldResemble, wantKeys)
+}
+
+func removeCheckpointForProcess(cs []checkpoints.Checkpoint, processID string) []checkpoints.Checkpoint {
+	var result []checkpoints.Checkpoint
+	for _, c := range cs {
+		if c.ProcessID != processID {
+			result = append(result, c)
+		}
+	}
+	return result
 }

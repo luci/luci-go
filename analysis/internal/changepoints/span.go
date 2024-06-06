@@ -18,39 +18,12 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 )
-
-// hasCheckPoint returns true if a checkpoint exists in the
-// TestVariantBranchCheckpoint table.
-// This function need to be call in the context of a transaction.
-func hasCheckPoint(ctx context.Context, cp CheckPoint) (bool, error) {
-	_, err := span.ReadRow(ctx, "TestVariantBranchCheckpoint", spanner.Key{cp.InvocationID, cp.StartingTestID, cp.StartingVariantHash}, []string{"InvocationId"})
-	if err != nil {
-		if spanner.ErrCode(err) == codes.NotFound {
-			return false, nil
-		}
-		return false, errors.Annotate(err, "read TestVariantBranchCheckpoint").Err()
-	}
-	// No error, row exists.
-	return true, nil
-}
-
-// ToMutation return a spanner Mutation to insert a CheckPoint into
-func (cp CheckPoint) ToMutation() *spanner.Mutation {
-	values := map[string]any{
-		"InvocationId":        cp.InvocationID,
-		"StartingTestId":      cp.StartingTestID,
-		"StartingVariantHash": cp.StartingVariantHash,
-		"InsertionTime":       spanner.CommitTimestamp,
-	}
-	return spanutil.InsertMap("TestVariantBranchCheckpoint", values)
-}
 
 // readInvocations reads the Invocations spanner table for invocation IDs.
 // It returns a mapping of (InvocationID, IngestedInvocationID) for the found
@@ -85,17 +58,23 @@ func readInvocations(ctx context.Context, project string, invocationIDs []string
 	return result, nil
 }
 
-// invocationsToMutations returns the Invocations mutations for invocationIDs.
-func invocationsToMutations(ctx context.Context, project string, invocationIDs []string, ingestedInvocationID string) []*spanner.Mutation {
-	mutations := make([]*spanner.Mutation, len(invocationIDs))
-	for i, invocationID := range invocationIDs {
-		values := map[string]any{
-			"Project":              project,
-			"InvocationID":         invocationID,
-			"IngestedInvocationID": ingestedInvocationID,
-			"CreationTime":         spanner.CommitTimestamp,
-		}
-		mutations[i] = spanutil.InsertMap("Invocations", values)
+// ClaimInvocationMutation creates a mutation to claim an invocation for the
+// given root invocation.
+func ClaimInvocationMutation(project string, invocationID string, rootInvocationID string) *spanner.Mutation {
+	if project == "" {
+		panic("project must not be empty")
 	}
-	return mutations
+	if invocationID == "" {
+		panic("invocationID must not be empty")
+	}
+	if rootInvocationID == "" {
+		panic("rootInvocationID must not be empty")
+	}
+	values := map[string]any{
+		"Project":              project,
+		"InvocationID":         invocationID,
+		"IngestedInvocationID": rootInvocationID,
+		"CreationTime":         spanner.CommitTimestamp,
+	}
+	return spanutil.InsertMap("Invocations", values)
 }

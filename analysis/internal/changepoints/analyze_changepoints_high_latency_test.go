@@ -104,8 +104,10 @@ func TestAnalyzeChangePoint(t *testing.T) {
 	Convey(`Filter test variant`, t, func() {
 		ctx := newContext(t)
 		payload := &taskspb.IngestTestVerdicts{
-			Build: &controlpb.BuildResult{
-				Project: "chromium",
+			Project: "chromium",
+			PresubmitRun: &controlpb.PresubmitResult{
+				Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
+				Mode:   pb.PresubmitRunMode_FULL_RUN,
 			},
 		}
 
@@ -117,6 +119,14 @@ func TestAnalyzeChangePoint(t *testing.T) {
 					Ref:      "ref",
 					Position: 10,
 				},
+				Changelists: []*pb.GerritChange{
+					{
+						Host:     "gerrithost",
+						Project:  "gerritproj",
+						Change:   15,
+						Patchset: 16,
+					},
+				},
 			},
 			"sources_id_2": {
 				GitilesCommit: &pb.GitilesCommit{
@@ -124,6 +134,14 @@ func TestAnalyzeChangePoint(t *testing.T) {
 					Project:  "proj_2",
 					Ref:      "ref_2",
 					Position: 10,
+				},
+				Changelists: []*pb.GerritChange{
+					{
+						Host:     "gerrithost",
+						Project:  "gerritproj",
+						Change:   15,
+						Patchset: 16,
+					},
 				},
 				IsDirty: true,
 			},
@@ -185,7 +203,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 						},
 					},
 				},
-				SourcesId: "sources_id_1",
+				SourcesId: "sources_id_not_exists",
 			},
 			{
 				// Source is dirty.
@@ -201,24 +219,25 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				SourcesId: "sources_id_2",
 			},
 		}
-		duplicateMap := map[string]bool{
-			"inv-2": true,
+		claimedInvs := map[string]bool{
+			"inv-1": true,
+			"inv-3": true,
+			"inv-4": true,
+			"inv-5": true,
 		}
-		tvs, err := filterTestVariants(ctx, tvs, payload, duplicateMap, sourcesMap)
+		tvs, err := filterTestVariantsHighLatency(ctx, tvs, payload, claimedInvs, sourcesMap)
 		So(err, ShouldBeNil)
 		So(len(tvs), ShouldEqual, 1)
 		So(tvs[0].TestId, ShouldEqual, "3")
 		So(verdictCounter.Get(ctx, "chromium", "skipped_no_source"), ShouldEqual, 1)
 		So(verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), ShouldEqual, 1)
-		So(verdictCounter.Get(ctx, "chromium", "skipped_all_skipped_or_duplicate"), ShouldEqual, 2)
+		So(verdictCounter.Get(ctx, "chromium", "skipped_all_skipped_or_unclaimed"), ShouldEqual, 2)
 	})
 
 	Convey(`Filter test variant with failed presubmit`, t, func() {
 		ctx := newContext(t)
 		payload := &taskspb.IngestTestVerdicts{
-			Build: &controlpb.BuildResult{
-				Project: "chromium",
-			},
+			Project: "chromium",
 			PresubmitRun: &controlpb.PresubmitResult{
 				Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
 				Mode:   pb.PresubmitRunMode_FULL_RUN,
@@ -248,8 +267,10 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				SourcesId: "sources_id",
 			},
 		}
-		duplicateMap := map[string]bool{}
-		tvs, err := filterTestVariants(ctx, tvs, payload, duplicateMap, sourcesMap)
+		claimedInvs := map[string]bool{
+			"inv-1": true,
+		}
+		tvs, err := filterTestVariantsHighLatency(ctx, tvs, payload, claimedInvs, sourcesMap)
 		So(err, ShouldBeNil)
 		So(len(tvs), ShouldEqual, 0)
 		So(verdictCounter.Get(ctx, "chromium", "skipped_unsubmitted_code"), ShouldEqual, 1)
@@ -261,7 +282,12 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 	Convey(`Analyze batch with empty buffer`, t, func() {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
-		sourcesMap := tu.SampleSourcesMap(10)
+		payload.PresubmitRun = &controlpb.PresubmitResult{
+			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
+			Mode:   pb.PresubmitRunMode_FULL_RUN,
+		}
+
+		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
 		tvs := []*rdbpb.TestVariant{
 			{
 				TestId:      "test_1",
@@ -553,7 +579,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		const ingestedVerdictPosition = 10
 
 		// Store some existing data in spanner first.
-		sourcesMap := tu.SampleSourcesMap(ingestedVerdictPosition)
+		sourcesMap := tu.SampleSourcesWithChangelistsMap(ingestedVerdictPosition)
 		positions := make([]int, 2000)
 		total := make([]int, 2000)
 		hasUnexpected := make([]int, 2000)
@@ -597,6 +623,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		payload := tu.SamplePayload()
 		const ingestedVerdictHour = 55
 		payload.PartitionTime = timestamppb.New(time.Unix(ingestedVerdictHour*3600, 0))
+		payload.PresubmitRun = &controlpb.PresubmitResult{
+			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
+			Mode:   pb.PresubmitRunMode_FULL_RUN,
+		}
 
 		tvs := []*rdbpb.TestVariant{
 			{
@@ -732,7 +762,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		exporter, client := fakeExporter()
 
 		// Store some existing data in spanner first.
-		sourcesMap := tu.SampleSourcesMap(10)
+		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
 
 		// Set up 110 finalized segments.
 		finalizedSegments := []*cpb.Segment{}
@@ -780,6 +810,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		// Insert a new verdict.
 		payload := tu.SamplePayload()
+		payload.PresubmitRun = &controlpb.PresubmitResult{
+			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
+			Mode:   pb.PresubmitRunMode_FULL_RUN,
+		}
 		const ingestedVerdictHour = 5*365*24 + 13
 		payload.PartitionTime = timestamppb.New(time.Unix(ingestedVerdictHour*3600, 0))
 
@@ -874,40 +908,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 	})
 }
 
-func TestOutOfOrderVerdict(t *testing.T) {
-	Convey("Out of order verdict", t, func() {
-		sourcesMap := tu.SampleSourcesMap(10)
-		sources := sourcesMap["sources_id"]
-		Convey("No test variant branch", func() {
-			So(isOutOfOrderAndShouldBeDiscarded(nil, sources), ShouldBeFalse)
-		})
-
-		Convey("No finalizing or finalized segment", func() {
-			tvb := &testvariantbranch.Entry{}
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
-		})
-
-		Convey("Have finalizing segments", func() {
-			tvb := finalizingTvbWithPositions([]int{1}, []int{})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
-			tvb = finalizingTvbWithPositions([]int{}, []int{1})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
-			tvb = finalizingTvbWithPositions([]int{8, 13}, []int{7, 9})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
-			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{6, 8})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
-			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{10, 16})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
-			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{12, 16})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeTrue)
-		})
-	})
-}
-
 func countCheckPoint(ctx context.Context) int {
 	st := spanner.NewStatement(`
 			SELECT *
-			FROM TestVariantBranchCheckPoint
+			FROM Checkpoints
 		`)
 	it := span.Query(span.Single(ctx), st)
 	count := 0
@@ -951,25 +955,6 @@ func testVariants(n int) []*rdbpb.TestVariant {
 		}
 	}
 	return tvs
-}
-
-func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *testvariantbranch.Entry {
-	tvb := &testvariantbranch.Entry{
-		FinalizingSegment: &cpb.Segment{},
-		InputBuffer:       &inputbuffer.Buffer{},
-	}
-	for _, pos := range hotPositions {
-		tvb.InputBuffer.HotBuffer.Runs = append(tvb.InputBuffer.HotBuffer.Runs, inputbuffer.Run{
-			CommitPosition: int64(pos),
-		})
-	}
-
-	for _, pos := range coldPositions {
-		tvb.InputBuffer.ColdBuffer.Runs = append(tvb.InputBuffer.ColdBuffer.Runs, inputbuffer.Run{
-			CommitPosition: int64(pos),
-		})
-	}
-	return tvb
 }
 
 func newContext(t *testing.T) context.Context {

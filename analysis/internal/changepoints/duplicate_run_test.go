@@ -15,13 +15,10 @@
 package changepoints
 
 import (
-	"fmt"
-	"sort"
 	"testing"
 
 	"cloud.google.com/go/spanner"
 
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -29,67 +26,35 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestDuplicateRun(t *testing.T) {
-	Convey(`Can generate duplicate map`, t, func() {
+func TestTryClaimInvocations(t *testing.T) {
+	Convey(`Claims unclaimed invocations and invocations already claimed by this root invocation`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		// Insert some values into spanner.
 		mutations := []*spanner.Mutation{
-			invocationMutation("chromium", "inv-1", 8001),
-			invocationMutation("chromeos", "inv-2", 8002),
-			invocationMutation("chromium", "inv-3", 8003),
-			invocationMutation("chromium", "inv-4", 8000),
+			invocationMutation("chromium", "inv-1", "build-8001"),
+			invocationMutation("chromeos", "inv-2", "build-8002"),
+			invocationMutation("chromium", "inv-3", "build-8003"),
+			invocationMutation("chromium", "inv-4", "build-8000"),
 		}
 		testutil.MustApply(ctx, mutations...)
-		tvs := []*rdbpb.TestVariant{
-			{
-				Results: []*rdbpb.TestResultBundle{
-					{
-						Result: &rdbpb.TestResult{
-							Name: "invocations/inv-1/tests/abc",
-						},
-					},
-					{
-						Result: &rdbpb.TestResult{
-							Name: "invocations/inv-2/tests/abc",
-						},
-					},
-				},
-			},
-			{
-				Results: []*rdbpb.TestResultBundle{
-					{
-						Result: &rdbpb.TestResult{
-							Name: "invocations/inv-3/tests/abc",
-						},
-					},
-					{
-						Result: &rdbpb.TestResult{
-							Name: "invocations/inv-4/tests/abc",
-						},
-					},
-				},
-			},
-		}
 
-		m, nonDups, err := readDuplicateInvocations(span.Single(ctx), tvs, "chromium", "build-8000")
+		claimed, err := tryClaimInvocations(span.Single(ctx), "chromium", "build-8000", []string{"inv-1", "inv-2", "inv-3", "inv-4"})
 		So(err, ShouldBeNil)
-		So(m, ShouldResemble, map[string]bool{
-			"inv-1": true,
-			"inv-3": true,
+		So(claimed, ShouldResemble, map[string]bool{
+			"inv-2": true,
+			"inv-4": true,
 		})
-		sort.Strings(nonDups)
-		So(nonDups, ShouldResemble, []string{"inv-2"})
 	})
 }
 
-func invocationMutation(project string, invID string, bbid int64) *spanner.Mutation {
+func invocationMutation(project string, invID string, rootInvID string) *spanner.Mutation {
 	return spanner.Insert(
 		"Invocations",
 		[]string{"Project", "InvocationID", "IngestedInvocationID", "CreationTime"},
 		[]any{
 			project,
 			invID,
-			fmt.Sprintf("build-%d", bbid),
+			rootInvID,
 			spanner.CommitTimestamp,
 		},
 	)

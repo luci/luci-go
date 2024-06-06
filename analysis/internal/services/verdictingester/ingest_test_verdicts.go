@@ -395,8 +395,8 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 		key := checkpoints.Key{
 			Project:    task.Project,
 			ResourceID: fmt.Sprintf("%s/%s", task.Invocation.ResultdbHost, task.Invocation.InvocationId),
-			ProcessID:  "verdict-ingestion",
-			Uniquifier: fmt.Sprintf("schedule-continuation/%v", task.TaskIndex),
+			ProcessID:  "verdict-ingestion/schedule-continuation",
+			Uniquifier: fmt.Sprintf("%v", task.TaskIndex),
 		}
 		exists, err := checkpoints.Exists(ctx, key)
 		if err != nil {
@@ -535,11 +535,7 @@ func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.Tes
 func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, payload *taskspb.IngestTestVerdicts) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ingestForChangePointAnalysis")
 	defer func() { tracing.End(s, err) }()
-	if payload.Build == nil {
-		// Ingest for changepoint analysis not supported here.
-		// But the result ingestion pipeline will ingest these test results to changepoint analysis.
-		return nil
-	}
+
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return errors.Annotate(err, "read config").Err()
