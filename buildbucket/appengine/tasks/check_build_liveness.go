@@ -81,6 +81,7 @@ func CheckLiveness(ctx context.Context, buildID int64, heartbeatTimeout uint32) 
 		now := clock.Now(ctx)
 		statusUpdater := buildstatus.Updater{
 			Build:       bld,
+			Infra:       nil,
 			BuildStatus: &buildstatus.StatusWithDetails{Status: pb.Status_INFRA_FAILURE},
 			UpdateTime:  now,
 			PostProcess: SendOnBuildStatusChange,

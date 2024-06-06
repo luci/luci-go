@@ -39,6 +39,7 @@ func (sd *StatusWithDetails) isSet() bool {
 
 type Updater struct {
 	Build *model.Build
+	Infra *model.BuildInfra
 
 	BuildStatus  *StatusWithDetails
 	OutputStatus *StatusWithDetails
@@ -48,7 +49,7 @@ type Updater struct {
 
 	UpdateTime time.Time
 
-	PostProcess func(c context.Context, bld *model.Build) error
+	PostProcess func(c context.Context, bld *model.Build, inf *model.BuildInfra) error
 }
 
 // buildEndStatus calculates the final status of a build based on its output
@@ -164,7 +165,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	bs.Status = newBuildStatus.Status
 
 	// post process after build status change.
-	if err := u.PostProcess(ctx, u.Build); err != nil {
+	if err := u.PostProcess(ctx, u.Build, u.Infra); err != nil {
 		return nil, err
 	}
 

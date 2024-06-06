@@ -536,7 +536,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			})
 
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			So(sch.Tasks(), ShouldHaveLength, 3)
 			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(buildModel.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			stp, err := steps.ToProto(ctx)

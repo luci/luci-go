@@ -55,7 +55,7 @@ func TestCancelBuild(t *testing.T) {
 		})
 
 		Convey("found", func() {
-			So(datastore.Put(ctx, &model.Build{
+			bld := &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
@@ -64,11 +64,22 @@ func TestCancelBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.BuildStatus{
+			}
+			inf := &model.BuildInfra{
+				ID:    1,
+				Build: datastore.MakeKey(ctx, "Build", 1),
+				Proto: &pb.BuildInfra{
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Hostname:   "rdbhost",
+						Invocation: "inv",
+					},
+				},
+			}
+			bs := &model.BuildStatus{
 				Build:  datastore.MakeKey(ctx, "Build", 1),
 				Status: pb.Status_SCHEDULED,
-			}), ShouldBeNil)
+			}
+			So(datastore.Put(ctx, bld, inf, bs), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
 			So(bld.Proto, ShouldResembleProto, &pb.Build{
@@ -82,8 +93,12 @@ func TestCancelBuild(t *testing.T) {
 				EndTime:    timestamppb.New(now),
 				Status:     pb.Status_CANCELED,
 			})
-			So(sch.Tasks(), ShouldHaveLength, 3)
-			bs := &model.BuildStatus{
+			// export-bigquery
+			// finalize-resultdb-go
+			// notify-pubsub
+			// notify-pubsub-go-proxy
+			So(sch.Tasks(), ShouldHaveLength, 4)
+			bs = &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}
 			So(datastore.Get(ctx, bs), ShouldBeNil)
@@ -157,6 +172,10 @@ func TestCancelBuild(t *testing.T) {
 				EndTime:    timestamppb.New(now),
 				Status:     pb.Status_CANCELED,
 			})
+			// cancel-swarming-task-go
+			// export-bigquery
+			// notify-pubsub
+			// notify-pubsub-go-proxy
 			So(sch.Tasks(), ShouldHaveLength, 4)
 			bs := &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
@@ -208,6 +227,10 @@ func TestCancelBuild(t *testing.T) {
 				EndTime:    timestamppb.New(now),
 				Status:     pb.Status_CANCELED,
 			})
+			// cancel-backend-task
+			// export-bigquery
+			// notify-pubsub
+			// notify-pubsub-go-proxy
 			So(sch.Tasks(), ShouldHaveLength, 4)
 			bs := &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),

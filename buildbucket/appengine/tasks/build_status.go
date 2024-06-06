@@ -40,7 +40,7 @@ import (
 // sendOnBuildCompletion sends a bunch of related events when build is reaching
 // to an end status, e.g. finalizing the resultdb invocation, exporting to Bq,
 // and notify pubsub topics.
-func sendOnBuildCompletion(ctx context.Context, bld *model.Build) error {
+func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.BuildInfra) error {
 	bld.ClearLease()
 
 	return parallel.FanOutIn(func(tks chan<- func() error) {
@@ -51,7 +51,16 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build) error {
 			return errors.Annotate(ExportBigQuery(ctx, bld.ID, strings.Contains(bld.ExperimentsString(), buildbucket.ExperimentBqExporterGo)), "failed to enqueue bigquery export task: %d", bld.ID).Err()
 		}
 		tks <- func() error {
-			return errors.Annotate(FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{BuildId: bld.ID}), "failed to enqueue resultDB finalization task: %d", bld.ID).Err()
+			if inf == nil {
+				inf = &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
+				if err := datastore.Get(ctx, inf); err != nil {
+					return err
+				}
+			}
+			if rdb := inf.Proto.GetResultdb(); rdb.GetHostname() != "" && rdb.Invocation != "" {
+				return errors.Annotate(FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{BuildId: bld.ID}), "failed to enqueue resultDB finalization task: %d", bld.ID).Err()
+			}
+			return nil // no-op
 		}
 	})
 }
@@ -61,7 +70,7 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build) error {
 // It's the default PostProcess func for buildstatus.Updater.
 //
 // Must run in a datastore transaction.
-func SendOnBuildStatusChange(ctx context.Context, bld *model.Build) error {
+func SendOnBuildStatusChange(ctx context.Context, bld *model.Build, inf *model.BuildInfra) error {
 	if datastore.Raw(ctx) == nil || datastore.CurrentTransaction(ctx) == nil {
 		return errors.Reason("must enqueue cloud tasks that are triggered by build status update in a transaction").Err()
 	}
@@ -71,7 +80,7 @@ func SendOnBuildStatusChange(ctx context.Context, bld *model.Build) error {
 			logging.Debugf(ctx, "failed to notify pubsub about starting %d: %s", bld.ID, err)
 		}
 	case protoutil.IsEnded(bld.Proto.Status):
-		return sendOnBuildCompletion(ctx, bld)
+		return sendOnBuildCompletion(ctx, bld, inf)
 	}
 	return nil
 }
@@ -100,7 +109,7 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 		statusUpdated = true
 		bld.Proto.SummaryMarkdown = msg
 		st := &buildstatus.StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
-		bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, bld, st, st, clock.Now(ctx), false)
+		bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, bld, nil, st, st, clock.Now(ctx), false)
 		if err != nil {
 			return err
 		}
@@ -125,7 +134,7 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 
 // updateBuildStatusOnTaskStatusChange updates build's top level status based on
 // task status change.
-func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, buildStatus, taskStatus *buildstatus.StatusWithDetails, updateTime time.Time, useTaskSuccess bool) (*model.BuildStatus, *model.BuildSteps, error) {
+func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, inf *model.BuildInfra, buildStatus, taskStatus *buildstatus.StatusWithDetails, updateTime time.Time, useTaskSuccess bool) (*model.BuildStatus, *model.BuildSteps, error) {
 	var steps *model.BuildSteps
 	statusUpdater := buildstatus.Updater{
 		Build:                       bld,
@@ -133,7 +142,7 @@ func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, 
 		TaskStatus:                  taskStatus,
 		UpdateTime:                  updateTime,
 		SucceedBuildIfTaskSucceeded: useTaskSuccess,
-		PostProcess: func(c context.Context, bld *model.Build) error {
+		PostProcess: func(c context.Context, bld *model.Build, inf *model.BuildInfra) error {
 			// Besides the post process cloud tasks, we also need to update
 			// steps, in case the build task ends before the build does.
 			if protoutil.IsEnded(bld.Proto.Status) {
@@ -150,7 +159,7 @@ func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, 
 					logging.Errorf(ctx, "failed to mark steps cancelled for build %d: %s", bld.ID, err)
 				}
 			}
-			return SendOnBuildStatusChange(ctx, bld)
+			return SendOnBuildStatusChange(ctx, bld, inf)
 		},
 	}
 	bs, err := statusUpdater.Do(ctx)

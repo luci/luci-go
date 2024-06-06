@@ -424,6 +424,10 @@ func TestSyncBuild(t *testing.T) {
 						},
 					},
 				},
+				Resultdb: &pb.BuildInfra_ResultDB{
+					Hostname:   "rdbhost",
+					Invocation: "inv",
+				},
 			},
 		}
 		bs := &model.BuildStatus{
@@ -1317,8 +1321,8 @@ func TestSubNotify(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cached, ShouldResemble, []byte{1})
 
-			// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy tasks.
-			So(sch.Tasks(), ShouldHaveLength, 4)
+			// ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy tasks.
+			So(sch.Tasks(), ShouldHaveLength, 3)
 
 			// BuildCompleted metric should be set to 1 with SUCCESS.
 			v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}

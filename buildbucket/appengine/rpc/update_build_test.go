@@ -695,6 +695,10 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					},
 				},
+				Resultdb: &pb.BuildInfra_ResultDB{
+					Hostname:   "rdbhost",
+					Invocation: "inv",
+				},
 			},
 		}
 		bs := &model.BuildStatus{
@@ -1269,13 +1273,23 @@ func TestUpdateBuild(t *testing.T) {
 					CreateTime:  t0,
 					UpdateToken: tk,
 				}
+				cinf := &model.BuildInfra{
+					ID:    1,
+					Build: datastore.KeyForObj(ctx, child),
+					Proto: &pb.BuildInfra{
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname:   "rdbhost",
+							Invocation: "inv",
+						},
+					},
+				}
 				tk, ctx = updateContextForNewBuildToken(ctx, 11)
 				child.UpdateToken = tk
 				cs := &model.BuildStatus{
 					Build:  datastore.KeyForObj(ctx, child),
 					Status: pb.Status_STARTED,
 				}
-				So(datastore.Put(ctx, child, cs), ShouldBeNil)
+				So(datastore.Put(ctx, child, cinf, cs), ShouldBeNil)
 
 				Convey("request is to terminate the child", func() {
 					req.UpdateMask.Paths[0] = "build.status"
@@ -1508,11 +1522,21 @@ func TestUpdateBuild(t *testing.T) {
 						},
 						UpdateToken: tk,
 					}
+					pinf := &model.BuildInfra{
+						ID:    1,
+						Build: datastore.KeyForObj(ctx, p),
+						Proto: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:   "rdbhost",
+								Invocation: "inv",
+							},
+						},
+					}
 					ps := &model.BuildStatus{
 						Build:  datastore.KeyForObj(ctx, p),
 						Status: pb.Status_STARTED,
 					}
-					So(datastore.Put(ctx, p, ps), ShouldBeNil)
+					So(datastore.Put(ctx, p, pinf, ps), ShouldBeNil)
 					// Child of the requested build.
 					c := &model.Build{
 						ID: 21,

@@ -68,12 +68,22 @@ func TestCheckLiveness(t *testing.T) {
 				},
 			},
 		}
+		inf := &model.BuildInfra{
+			ID:    1,
+			Build: datastore.MakeKey(ctx, "Build", 1),
+			Proto: &pb.BuildInfra{
+				Resultdb: &pb.BuildInfra_ResultDB{
+					Hostname:   "rdbhost",
+					Invocation: "inv",
+				},
+			},
+		}
 		bs := &model.BuildStatus{
 			Build:  datastore.MakeKey(ctx, "Build", 1),
 			Status: pb.Status_SCHEDULED,
 		}
 
-		So(datastore.Put(ctx, bld, bs), ShouldBeNil)
+		So(datastore.Put(ctx, bld, inf, bs), ShouldBeNil)
 
 		Convey("build not found", func() {
 			err := CheckLiveness(ctx, 999, 10)

@@ -17,7 +17,6 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -32,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -144,10 +144,9 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		canceled = false // reset canceled in case of retries.
 		inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 		stp := &model.BuildSteps{Build: inf.Build}
-		bs := &model.BuildStatus{Build: inf.Build}
 
 		cancelSteps := true
-		if err := datastore.Get(ctx, bld, inf, stp, bs); err != nil {
+		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
 			switch merr, ok := err.(errors.MultiError); {
 			case !ok:
 				return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
@@ -159,9 +158,6 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 				return errors.Annotate(merr[1], "failed to fetch build infra: %d", bld.ID).Err()
 			case merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity:
 				return errors.Annotate(merr[2], "failed to fetch build steps: %d", bld.ID).Err()
-			case merr[3] != nil && merr[3] != datastore.ErrNoSuchEntity:
-				// TODO(crbug.com/1430324): also check ErrNoSuchEntity.
-				return errors.Annotate(merr[3], "failed to fetch build status: %d", bld.ID).Err()
 			case merr[2] == datastore.ErrNoSuchEntity:
 				cancelSteps = false
 			}
@@ -188,19 +184,6 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 				return errors.Annotate(err, "failed to enqueue backend task cancelation task: %d", bld.ID).Err()
 			}
 		}
-		if rdb := inf.Proto.GetResultdb(); rdb.GetHostname() != "" && rdb.Invocation != "" {
-			if err := FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{
-				BuildId: bld.ID,
-			}); err != nil {
-				return errors.Annotate(err, "failed to enqueue resultdb finalization task: %d", bld.ID).Err()
-			}
-		}
-		if err := ExportBigQuery(ctx, bld.ID, strings.Contains(bld.ExperimentsString(), buildbucket.ExperimentBqExporterGo)); err != nil {
-			return errors.Annotate(err, "failed to enqueue bigquery export task: %d", bld.ID).Err()
-		}
-		if err := NotifyPubSub(ctx, bld); err != nil {
-			return errors.Annotate(err, "failed to enqueue pubsub notification task: %d", bld.ID).Err()
-		}
 
 		now := clock.Now(ctx).UTC()
 
@@ -208,13 +191,20 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		bld.LeaseExpirationDate = time.Time{}
 		bld.LeaseKey = 0
 
-		protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED)
-		logging.Debugf(ctx, fmt.Sprintf("Build %d status has now been set as canceled.", bld.ID))
 		canceled = true
 		toPut := []any{bld}
-
-		if bs.Status != pb.Status_STATUS_UNSPECIFIED {
-			bs.Status = pb.Status_CANCELED
+		statusUpdater := buildstatus.Updater{
+			Build:       bld,
+			Infra:       inf,
+			BuildStatus: &buildstatus.StatusWithDetails{Status: pb.Status_CANCELED},
+			UpdateTime:  now,
+			PostProcess: SendOnBuildStatusChange,
+		}
+		bs, err := statusUpdater.Do(ctx)
+		if err != nil {
+			return errors.Annotate(err, "failed to set status for build %d", bld.ID).Err()
+		}
+		if bs != nil {
 			toPut = append(toPut, bs)
 		}
 
@@ -236,6 +226,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		return nil, err
 	}
 	if protoutil.IsEnded(bld.Status) && canceled {
+		logging.Infof(ctx, fmt.Sprintf("Build %d status has now been set as canceled.", bld.ID))
 		metrics.BuildCompleted(ctx, bld)
 	}
 

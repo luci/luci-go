@@ -306,8 +306,10 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 
 			err := sync(bks)
 			So(err, ShouldBeNil)
-			// TQ tasks for pubsub-notification *2, bq-export, and invocation-finalization per build.
-			So(sch.Tasks(), ShouldHaveLength, 8)
+			// TQ tasks for pubsub-notification *2, and bq-export per build.
+			// Resultdb invocation finalization is noop since the builds don't have
+			// resultdb invocations.
+			So(sch.Tasks(), ShouldHaveLength, 6)
 			blds := getEntities(bIDs)
 			for _, b := range blds {
 				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, now)
@@ -426,7 +428,7 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 			bIDs = append(bIDs, 106)
 			err = SyncBuildsWithBackendTasks(ctx, "swarming", "project")
 			So(err, ShouldBeNil)
-			So(sch.Tasks(), ShouldHaveLength, 4) // 106 completed
+			So(sch.Tasks(), ShouldHaveLength, 3) // 106 completed
 			blds := getEntities(bIDs)
 			for _, b := range blds {
 				So(b.Proto.UpdateTime.AsTime(), ShouldEqual, now)

@@ -342,7 +342,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 
 		botDimsChanged := updateBotDimensions(infra, taskResult)
 
-		bs, steps, err := updateBuildStatusFromTaskResult(ctx, bld, taskResult)
+		bs, steps, err := updateBuildStatusFromTaskResult(ctx, bld, infra, taskResult)
 		if err != nil {
 			return tq.Fatal.Apply(err)
 		}
@@ -415,7 +415,7 @@ func updateBotDimensions(infra *model.BuildInfra, taskResult *apipb.TaskResultRe
 // updateBuildStatusFromTaskResult mutates the build entity to update the top
 // level status, and also the update time of the build.
 // Note, it will not write the entities into Datastore.
-func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, taskResult *apipb.TaskResultResponse) (bs *model.BuildStatus, steps *model.BuildSteps, err error) {
+func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, inf *model.BuildInfra, taskResult *apipb.TaskResultResponse) (bs *model.BuildStatus, steps *model.BuildSteps, err error) {
 	now := clock.Now(ctx)
 	oldStatus := bld.Status
 	// A helper function to correctly set Build ended status from taskResult. It
@@ -445,7 +445,7 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 		}
 
 		stWithDetails := &buildstatus.StatusWithDetails{Status: st, Details: details}
-		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, stWithDetails, stWithDetails, endTime, false)
+		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, inf, stWithDetails, stWithDetails, endTime, false)
 	}
 
 	// Update build status
@@ -469,7 +469,7 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, task
 			updateTime = t.AsTime()
 		}
 		stWithDetails := &buildstatus.StatusWithDetails{Status: pb.Status_STARTED}
-		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, stWithDetails, stWithDetails, updateTime, false)
+		bs, steps, err = updateBuildStatusOnTaskStatusChange(ctx, bld, inf, stWithDetails, stWithDetails, updateTime, false)
 	case apipb.TaskState_CANCELED, apipb.TaskState_KILLED:
 		setEndStatus(pb.Status_CANCELED, nil)
 	case apipb.TaskState_NO_RESOURCE:
