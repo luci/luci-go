@@ -72,6 +72,7 @@ type Config struct {
 	Refreshed time.Time
 
 	settings  *configpb.SettingsCfg
+	traffic   map[string]*configpb.TrafficMigration_Route
 	poolMap   map[string]*Pool // pool name => config
 	poolNames []string         // sorted list of pool names
 	botGroups *botGroups       // can map bot ID to a bot group config
@@ -118,6 +119,18 @@ func (cfg *Config) BotGroup(botID string) *BotGroup {
 		return group.(*BotGroup)
 	}
 	return cfg.botGroups.defaultGroup
+}
+
+// RouteToGoPercent returns how much traffic to this route should be handled by
+// the Go server (vs Python server).
+//
+// Returns a number in range [0; 100].
+func (cfg *Config) RouteToGoPercent(route string) int {
+	if r, ok := cfg.traffic[route]; ok {
+		return int(r.RouteToGoPercent)
+	}
+	// Route to Python by default.
+	return 0
 }
 
 // UpdateConfigs fetches the most recent server configs from LUCI Config and
@@ -407,12 +420,21 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 		return nil, errors.Annotate(err, "bad bots.cfg").Err()
 	}
 
+	settings := withDefaultSettings(ent.Bundle.Settings)
+	traffic := make(map[string]*configpb.TrafficMigration_Route)
+	if settings.TrafficMigration != nil {
+		for _, r := range settings.TrafficMigration.Routes {
+			traffic[r.Name] = r
+		}
+	}
+
 	return &Config{
 		Revision:  ent.Revision,
 		Digest:    ent.Digest,
 		Fetched:   ent.Fetched,
 		Refreshed: clock.Now(ctx).UTC(),
-		settings:  withDefaultSettings(ent.Bundle.Settings),
+		settings:  settings,
+		traffic:   traffic,
 		poolMap:   pools,
 		poolNames: poolNames,
 		botGroups: botGroups,

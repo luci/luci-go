@@ -377,7 +377,15 @@ func TestBuildQueriableConfig(t *testing.T) {
 
 	Convey("OK", t, func() {
 		cfg, err := build(&internalcfgpb.ConfigBundle{
-			Settings: defaultConfigs().Settings,
+			Settings: withDefaultSettings(&configpb.SettingsCfg{
+				TrafficMigration: &configpb.TrafficMigration{
+					Routes: []*configpb.TrafficMigration_Route{
+						{Name: "/prpc/service/method1", RouteToGoPercent: 0},
+						{Name: "/prpc/service/method2", RouteToGoPercent: 50},
+						{Name: "/prpc/service/method3", RouteToGoPercent: 100},
+					},
+				},
+			}),
 			Pools: &configpb.PoolsCfg{
 				Pool: []*configpb.Pool{
 					{
@@ -427,6 +435,12 @@ func TestBuildQueriableConfig(t *testing.T) {
 		So(botPool("host-0-1"), ShouldEqual, "b")
 		So(botPool("host-1-0"), ShouldEqual, "c")
 		So(botPool("host-0"), ShouldEqual, "default")
+
+		// Traffic routing rules are processed.
+		So(cfg.RouteToGoPercent("/prpc/unknown"), ShouldEqual, 0)
+		So(cfg.RouteToGoPercent("/prpc/service/method1"), ShouldEqual, 0)
+		So(cfg.RouteToGoPercent("/prpc/service/method2"), ShouldEqual, 50)
+		So(cfg.RouteToGoPercent("/prpc/service/method3"), ShouldEqual, 100)
 	})
 }
 

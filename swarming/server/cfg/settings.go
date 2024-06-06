@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"strings"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
@@ -120,6 +121,12 @@ func validateSettingsCfg(ctx *validation.Context, cfg *configpb.SettingsCfg) {
 		validateHTTPS(ctx, "viewer_server", cfg.Cas.ViewerServer)
 		ctx.Exit()
 	}
+
+	if cfg.TrafficMigration != nil {
+		ctx.Enter("traffic_migration")
+		validateTrafficMigration(ctx, cfg.TrafficMigration)
+		ctx.Exit()
+	}
 }
 
 func validateHTTPS(ctx *validation.Context, key, val string) {
@@ -141,5 +148,23 @@ func validateHTTPS(ctx *validation.Context, key, val string) {
 		ctx.Errorf("%s", err)
 	case parsed.Host == "":
 		ctx.Errorf("URL %q doesn't have a host", val)
+	}
+}
+
+func validateTrafficMigration(ctx *validation.Context, cfg *configpb.TrafficMigration) {
+	seen := stringset.New(len(cfg.Routes))
+	for _, r := range cfg.Routes {
+		ctx.Enter("%q", r.Name)
+		if !seen.Add(r.Name) {
+			ctx.Errorf("duplicate route")
+		} else {
+			if !strings.HasPrefix(r.Name, "/prpc/") {
+				ctx.Errorf("route name should start with /prpc/")
+			}
+			if r.RouteToGoPercent < 0 || r.RouteToGoPercent > 100 {
+				ctx.Errorf("route_to_go_percent should be in range [0, 100]")
+			}
+		}
+		ctx.Exit()
 	}
 }
