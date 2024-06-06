@@ -13,12 +13,14 @@
 // limitations under the License.
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { TextField } from '@mui/material';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useDebounce } from 'react-use';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ArtifactLink } from '@/test_verdict/components/artifact_link';
@@ -57,21 +59,60 @@ function processArtifacts(artifacts: readonly Artifact[]): ProcessedArtifacts {
   return result;
 }
 
+function filterArtifacts(searchTerm: string, artifacts: Artifact[]) {
+  if (!searchTerm) {
+    return artifacts;
+  }
+  return artifacts.filter((artifact) =>
+    artifact.artifactId.includes(searchTerm),
+  );
+}
+
+interface SearchInputProps {
+  label: string;
+  onSearchTermChange: (term: string) => void;
+}
+// This component ensures that when the input changes
+// only this component rerenders.
+function SearchInput({ label, onSearchTermChange }: SearchInputProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  useDebounce(() => onSearchTermChange(searchTerm), 200, [searchTerm]);
+  return (
+    <TextField
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      size="small"
+      label={label}
+      fullWidth
+      data-testid={label}
+    />
+  );
+}
+
 interface ArtifactAccordionProps {
-  title: string;
+  header: string;
+  searchLabel: string;
   processedArtifacts: ProcessedArtifacts;
 }
 
 function ArtifactsAccordion({
-  title,
+  header,
+  searchLabel,
   processedArtifacts,
 }: ArtifactAccordionProps) {
   const [expanded, setExpanded] = useState(false);
+  const [currentTerm, setCurrentTerm] = useState('');
+  const [filteredLinkArtifacts, setFilteredLinkArtifacts] = useState<
+    Artifact[]
+  >([]);
+
+  useEffect(() => {
+    setFilteredLinkArtifacts(filterArtifacts(currentTerm, processedArtifacts.links));
+  }, [processedArtifacts.links, currentTerm]);
 
   function handleExpandedClicked(isExpanded: boolean) {
     setExpanded(isExpanded);
   }
-
   return (
     <Accordion
       variant="outlined"
@@ -79,21 +120,41 @@ function ArtifactsAccordion({
       expanded={expanded}
       onChange={() => handleExpandedClicked(!expanded)}
     >
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography sx={{ mr: 1 }}>{title}</Typography>
+      <AccordionSummary
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+        }}
+        expandIcon={<ExpandMoreIcon />}
+      >
+        <Typography>{header}</Typography>
       </AccordionSummary>
       <AccordionDetails>
         <Grid
+          item
+          container
+          xs={10}
+          sx={{
+            py: 2,
+          }}
+        >
+          <SearchInput
+            label={searchLabel}
+            onSearchTermChange={(term) =>
+              setCurrentTerm(term)
+            }
+          />
+        </Grid>
+        <Grid
           container
           direction="row"
-          rowSpacing="5"
           sx={{
-            maxHeight: '400px',
-            overflowY: 'scroll',
+            maxHeight: '500px',
+            overflowY: 'auto',
           }}
         >
           <Grid container direction="column" rowSpacing="5">
-            {processedArtifacts.links.map((artifact) => (
+            {filteredLinkArtifacts.map((artifact) => (
               <Grid item key={artifact.artifactId}>
                 <ArtifactLink artifact={artifact} />
               </Grid>
@@ -122,11 +183,13 @@ export function ResultArtifacts() {
     <>
       <ArtifactsAccordion
         processedArtifacts={processedResultArtifacts}
-        title={`Result artifacts ${resultArtifacts.length}`}
+        header={`Result artifacts ${resultArtifacts.length}`}
+        searchLabel="Search result artifacts"
       />
       <ArtifactsAccordion
         processedArtifacts={processedInvArtifacts}
-        title={`Invocation artifacts ${invArtifacts.length}`}
+        header={`Invocation artifacts ${invArtifacts.length}`}
+        searchLabel="Search invocation artifacts"
       />
     </>
   );
