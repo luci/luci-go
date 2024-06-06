@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth/rpcacl"
 	"go.chromium.org/luci/server/cron"
@@ -208,6 +209,19 @@ func main() {
 		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{BotQuerySplitMode: model.SplitOptimally})
 		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{})
 		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{})
+
+		// A reverse proxy that sends a portion of requests to the Python server.
+		// Proxied requests have "/python/..." prepended in the URL to make them
+		// correctly pass dispatch.yaml rules and not get routed back to the Go
+		// server.
+		//
+		// To simplify testing code locally without any migration configs, enable
+		// the proxy only when running in prod.
+		if srv.Options.Prod {
+			srv.ConfigurePRPC(func(prpcSrv *prpc.Server) {
+				rpcs.ConfigureMigration(prpcSrv, cfg, fmt.Sprintf("https://%s.appspot.com/python", srv.Options.CloudProject))
+			})
+		}
 
 		return nil
 	})
