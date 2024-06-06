@@ -53,7 +53,14 @@ export function Body({ testVariantBranches }: BodyProps) {
   }, [xScale, criticalCommits.length, height]);
 
   return (
-    <svg css={{ gridArea: 'body' }} width={width} height={height}>
+    <svg
+      css={{
+        gridArea: 'body',
+        border: 'solid 1px var(--divider-color)',
+      }}
+      width={width}
+      height={height}
+    >
       <g
         ref={horizontalGridLineElement}
         css={{ '& line,path': { stroke: 'var(--divider-color)' } }}

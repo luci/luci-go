@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
 import { axisTop, select } from 'd3';
 import { useEffect, useRef } from 'react';
 
+import { LabelBox } from './common';
 import { CELL_WIDTH } from './constants';
 import { useConfig } from './context';
 
@@ -41,6 +41,7 @@ export function TopAxis() {
         top: 'var(--accumulated-top)',
         zIndex: 2,
         backgroundColor: 'white',
+        border: 'solid 1px var(--divider-color)',
       }}
       height={rowHeight}
       width={width}
@@ -48,15 +49,14 @@ export function TopAxis() {
       <g
         ref={gridLineElement}
         css={{ '& line,path': { stroke: 'var(--divider-color)' } }}
-      />
-      <path
-        d={`m0,${rowHeight - 0.5}h${width - 1}`}
-        stroke="var(--divider-color)"
+        transform="translate(0, -1)"
       />
       {criticalCommits.map((c, i) => (
         <g key={c} transform={`translate(${xScale(i)}, 0)`}>
           <foreignObject width={CELL_WIDTH} height={rowHeight}>
-            <Box>{c}</Box>
+            <LabelBox sx={{ textAlign: 'center', fontWeight: 'bold' }}>
+              {c}
+            </LabelBox>
           </foreignObject>
         </g>
       ))}

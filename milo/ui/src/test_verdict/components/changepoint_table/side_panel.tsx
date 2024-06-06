@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box } from '@mui/material';
 import { axisLeft, select } from 'd3';
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -56,6 +57,7 @@ export function SidePanel({ testVariantBranches }: SidePanelProps) {
         left: 'var(--accumulated-left)',
         zIndex: 2,
         background: 'white',
+        border: 'solid 1px var(--divider-color)',
       }}
       height={height}
       width={SIDE_PANEL_WIDTH}
@@ -65,24 +67,33 @@ export function SidePanel({ testVariantBranches }: SidePanelProps) {
         css={{
           '& line,path': { stroke: 'var(--divider-color)' },
         }}
-      />
-      <path
-        d={`m0.5,-1v${height + 2}m${SIDE_PANEL_WIDTH - 1},0v${-height - 2}`}
-        stroke="var(--divider-color)"
+        transform="translate(-1, 0)"
       />
       {testVariantBranches.map((tvb, i) => (
         <g
           key={ParsedTestVariantBranchName.toString(tvb)}
           transform={`translate(0, ${yScale(i)})`}
         >
-          <foreignObject height={rowHeight} width={SIDE_PANEL_WIDTH}>
-            <LabelBox title={tvb.testId}>
-              {commonPrefix && '...'}
-              {tvb.testId.slice(commonPrefix.length)}
-            </LabelBox>
-            {criticalVariantKeys.map((k) => (
-              <LabelBox key={k}>{tvb.variant?.def[k]}</LabelBox>
-            ))}
+          <foreignObject
+            height={rowHeight}
+            width={SIDE_PANEL_WIDTH}
+            css={{ position: 'relative' }}
+          >
+            <Box
+              sx={{
+                top: '50%',
+                transform: 'translateY(-50%)',
+                position: 'relative',
+              }}
+            >
+              <LabelBox title={tvb.testId} sx={{ fontWeight: 'bold' }}>
+                {commonPrefix && '...'}
+                {tvb.testId.slice(commonPrefix.length)}
+              </LabelBox>
+              {criticalVariantKeys.map((k) => (
+                <LabelBox key={k}>{tvb.variant?.def[k]}</LabelBox>
+              ))}
+            </Box>
           </foreignObject>
         </g>
       ))}

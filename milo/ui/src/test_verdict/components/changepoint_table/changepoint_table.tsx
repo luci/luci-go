@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, CircularProgress, styled } from '@mui/material';
+import { Box, CircularProgress, SxProps, Theme, styled } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
@@ -37,14 +37,20 @@ const Container = styled(Box)`
   grid-template-areas:
     'top-label top-axis'
     'side-panel body';
+  // Use a negative margin to make borders collapse between items collapse.
+  & > * {
+    margin: -1px;
+  }
 `;
 
 export interface ChangepointTableProps {
   readonly testVariantBranches: readonly TestVariantBranchDef[];
+  readonly sx?: SxProps<Theme>;
 }
 
 export function ChangepointTable({
   testVariantBranches,
+  sx,
 }: ChangepointTableProps) {
   const client = useTestVariantBranchesClient();
   const { data, isError, error, isLoading } = useQuery({
@@ -104,7 +110,7 @@ export function ChangepointTable({
       criticalVariantKeys={criticalVariantKeys}
       testVariantBranchCount={testVariantBranches.length}
     >
-      <Container>
+      <Container sx={sx}>
         <TopAxis />
         <TopLabel />
         <SidePanel testVariantBranches={testVariantBranches} />

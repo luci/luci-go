@@ -30,6 +30,10 @@ const Container = styled(Box)`
     'side-panel body'
     'bottom-label bottom-axis';
   grid-template-columns: auto 1fr;
+  // Use a negative margin to make borders collapse between items collapse.
+  & > * {
+    margin: -1px;
+  }
 `;
 
 export interface TimelineProps {

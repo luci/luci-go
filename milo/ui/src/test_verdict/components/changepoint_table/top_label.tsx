@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box } from '@mui/material';
+
 import { LabelBox } from './common';
 import { SIDE_PANEL_WIDTH } from './constants';
 import { useConfig } from './context';
@@ -28,20 +30,36 @@ export function TopLabel() {
         top: 'var(--accumulated-top)',
         zIndex: 3,
         background: 'white',
+        border: 'solid 1px var(--divider-color)',
       }}
       width={SIDE_PANEL_WIDTH}
       height={rowHeight}
     >
+      <foreignObject
+        width={SIDE_PANEL_WIDTH}
+        height={rowHeight}
+        css={{ position: 'relative' }}
+      >
+        <Box
+          sx={{
+            top: '50%',
+            transform: 'translateY(-50%)',
+            position: 'relative',
+          }}
+        >
+          <LabelBox sx={{ fontWeight: 'bold' }}>Test ID</LabelBox>
+          {criticalVariantKeys.map((k) => (
+            <LabelBox key={k}>variant:{k}</LabelBox>
+          ))}
+        </Box>
+        <Box sx={{ position: 'absolute', right: '5px', top: 0 }}>
+          <LabelBox sx={{ fontWeight: 'bold' }}>Commits</LabelBox>
+        </Box>
+      </foreignObject>
       <path
-        d={`m-0.5,-0.5m0,${rowHeight}h${SIDE_PANEL_WIDTH}m0,0v${-rowHeight}`}
+        d={`M${SIDE_PANEL_WIDTH * (3 / 5)},0L${SIDE_PANEL_WIDTH * (4 / 5)},${rowHeight}`}
         stroke="var(--divider-color)"
       />
-      <foreignObject width={SIDE_PANEL_WIDTH} height={rowHeight}>
-        <LabelBox>Test ID</LabelBox>
-        {criticalVariantKeys.map((k) => (
-          <LabelBox key={k}>variant:{k}</LabelBox>
-        ))}
-      </foreignObject>
     </svg>
   );
 }
