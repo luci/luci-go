@@ -15,39 +15,50 @@
 import { arc, pie } from 'd3';
 import { useMemo } from 'react';
 
-import {
-  OutputTestVerdict,
-  SpecifiedTestVerdictStatus as AnalysisVerdictStatus,
-} from '@/analysis/types';
-import { TestVerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
-
-import { SpecifiedTestVerdictStatus } from '../types';
 
 import { VerdictStatusIcon } from './verdict_status_icon';
 
+const STATUSES = Object.freeze([
+  TestVariantStatus.UNEXPECTED,
+  TestVariantStatus.UNEXPECTEDLY_SKIPPED,
+  TestVariantStatus.FLAKY,
+  TestVariantStatus.EXONERATED,
+  TestVariantStatus.EXPECTED,
+] as const);
+
+export interface VerdictCounts {
+  readonly [TestVariantStatus.UNEXPECTED]?: number;
+  readonly [TestVariantStatus.UNEXPECTEDLY_SKIPPED]?: number;
+  readonly [TestVariantStatus.FLAKY]?: number;
+  readonly [TestVariantStatus.EXONERATED]?: number;
+  readonly [TestVariantStatus.EXPECTED]?: number;
+}
+
 export interface VerdictSetStatusProps {
-  readonly testVerdicts: readonly OutputTestVerdict[];
+  readonly counts: VerdictCounts;
 }
 
 /**
- * VerdictSetStatus display statuses when there's a list of verdicts.
+ * VerdictSetStatus display statuses for a list of verdicts.
  */
-export function VerdictSetStatus({ testVerdicts }: VerdictSetStatusProps) {
-  if (testVerdicts.length === 0) {
+export function VerdictSetStatus({ counts }: VerdictSetStatusProps) {
+  const total = STATUSES.reduce((prev, s) => prev + (counts[s] || 0), 0);
+  if (total === 0) {
     return <></>;
   }
 
-  const allStatuses = new Set(testVerdicts.map((tv) => tv.status));
-  if (allStatuses.size === 1) {
+  const singleStatus = STATUSES.find((s) => counts[s] === total);
+  if (singleStatus !== undefined) {
     return (
       <VerdictStatusIcon
-        status={SpecifiedTestVerdictStatus.fromAnalysis(testVerdicts[0].status)}
+        status={singleStatus}
         sx={{ verticalAlign: 'middle' }}
       />
     );
   }
-  return <TestVerdictsPieChart testVerdicts={testVerdicts} />;
+  return <TestVerdictsPieChart counts={counts} />;
 }
 
 interface VerdictGroup {
@@ -60,58 +71,48 @@ const pieGenerator = pie<unknown, VerdictGroup>()
   .sort(null);
 const arcPathGenerator = arc();
 
-const status: AnalysisVerdictStatus[] = [
-  TestVerdictStatus.EXPECTED,
-  TestVerdictStatus.UNEXPECTED,
-  TestVerdictStatus.EXONERATED,
-  TestVerdictStatus.FLAKY,
-  TestVerdictStatus.UNEXPECTEDLY_SKIPPED,
-];
-
-export interface TestVerdictsPieChartProps {
-  readonly testVerdicts: readonly OutputTestVerdict[];
+interface TestVerdictsPieChartProps {
+  readonly counts: VerdictCounts;
 }
 
-export function TestVerdictsPieChart({
-  testVerdicts,
-}: TestVerdictsPieChartProps) {
-  const { groups, arcs } = useMemo(() => {
+function TestVerdictsPieChart({ counts }: TestVerdictsPieChartProps) {
+  const slices = useMemo(() => {
     const groups = [];
-    for (const s of status) {
-      const count = testVerdicts.reduce(
-        (c, tv) => (tv.status === s ? c + 1 : c),
-        0,
-      );
+    for (const s of STATUSES) {
+      const count = counts[s];
+      if (!count) {
+        continue;
+      }
       groups.push({
         color: VERDICT_STATUS_COLOR_MAP[s],
         count,
       });
     }
-    const arcs = pieGenerator(groups).map((p) =>
-      arcPathGenerator({
+    return pieGenerator(groups).map((p) => ({
+      arc: arcPathGenerator({
         innerRadius: 4,
         outerRadius: 9,
         startAngle: p.startAngle,
         endAngle: p.endAngle,
-      }),
-    );
-    return { groups, arcs };
-  }, [testVerdicts]);
-  if (!testVerdicts || testVerdicts.length === 0) {
+      })!,
+      color: p.data.color,
+    }));
+  }, [counts]);
+
+  if (slices.length === 0) {
     return <></>;
   }
+
   return (
     <svg
       viewBox="-10 -10 20 20"
       width="24px"
       height="24px"
-      css={{ transform: 'translateY(2px)' }}
+      css={{ verticalAlign: 'middle' }}
     >
-      <g>
-        {arcs.map((arc, i) => (
-          <path key={i} d={arc!} fill={groups[i].color} />
-        ))}
-      </g>
+      {slices.map((slice, i) => (
+        <path key={i} d={slice.arc} fill={slice.color} />
+      ))}
     </svg>
   );
 }

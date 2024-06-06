@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import { Skeleton, TableCell } from '@mui/material';
+import { useMemo } from 'react';
 
 import { OutputTestVerdict } from '@/analysis/types';
+import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { VerdictSetStatus } from '@/test_verdict/components/verdict_set_status';
 
 export function VerdictsStatusHeadCell() {
@@ -35,10 +37,24 @@ export interface VerdictsStatusContentCellProps {
 export function VerdictStatusesContentCell({
   testVerdicts,
 }: VerdictsStatusContentCellProps) {
+  const counts = useMemo(() => {
+    const c = {
+      [TestVariantStatus.UNEXPECTED]: 0,
+      [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 0,
+      [TestVariantStatus.FLAKY]: 0,
+      [TestVariantStatus.EXONERATED]: 0,
+      [TestVariantStatus.EXPECTED]: 0,
+    };
+    for (const tv of testVerdicts || []) {
+      c[tv.status] += 1;
+    }
+    return c;
+  }, [testVerdicts]);
+
   return (
     <TableCell sx={{ minWidth: '30px' }}>
       {testVerdicts ? (
-        <VerdictSetStatus testVerdicts={testVerdicts} />
+        <VerdictSetStatus counts={counts} />
       ) : (
         <Skeleton variant="circular" height={24} width={24} />
       )}
