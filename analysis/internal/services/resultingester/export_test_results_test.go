@@ -20,6 +20,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
+
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/testresults/exporter"
@@ -36,6 +38,7 @@ import (
 func TestExportTestResults(t *testing.T) {
 	Convey("TestExportTestResults", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 
 		inputs := testInputs()
 		exportClient := exporter.NewFakeClient()
@@ -132,6 +135,7 @@ func TestExportTestResults(t *testing.T) {
 				SourceRef:     sourceRef,
 				SourceRefHash: "5d47c679cf080cb5",
 				TestMetadata:  updatedTmd,
+				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 			{
 				Project:       "rootproject",
@@ -154,6 +158,7 @@ func TestExportTestResults(t *testing.T) {
 				Sources:       sources,
 				SourceRef:     sourceRef,
 				SourceRefHash: "5d47c679cf080cb5",
+				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 			{
 				Project:       "rootproject",
@@ -173,6 +178,7 @@ func TestExportTestResults(t *testing.T) {
 				Sources:       sources,
 				SourceRef:     sourceRef,
 				SourceRefHash: "5d47c679cf080cb5",
+				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 			{
 				Project:       "rootproject",
@@ -193,6 +199,7 @@ func TestExportTestResults(t *testing.T) {
 				SourceRef:     sourceRef,
 				SourceRefHash: "5d47c679cf080cb5",
 				TestMetadata:  originalTmd,
+				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 		}
 

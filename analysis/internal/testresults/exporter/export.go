@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -62,7 +63,10 @@ type Options struct {
 
 // Export exports the test results in the given run verdicts to BigQuery.
 func (e *Exporter) Export(ctx context.Context, verdicts []*rdbpb.RunTestVerdict, opts Options) error {
-	rows, err := prepareExportRows(verdicts, opts)
+	// Use the same timestamp for all rows exported in the same batch.
+	insertTime := clock.Now(ctx)
+
+	rows, err := prepareExportRows(verdicts, opts, insertTime)
 	if err != nil {
 		return errors.Annotate(err, "prepare rows").Err()
 	}
@@ -76,7 +80,7 @@ func (e *Exporter) Export(ctx context.Context, verdicts []*rdbpb.RunTestVerdict,
 
 // prepareExportRows prepares BigQuery export rows for a
 // ResultDB run verdicts.
-func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options) ([]*bqpb.TestResultRow, error) {
+func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options, insertTime time.Time) ([]*bqpb.TestResultRow, error) {
 	rootProject, _, err := perms.SplitRealm(opts.RootRealm)
 	if err != nil {
 		return nil, errors.Annotate(err, "invalid root realm").Err()
@@ -148,6 +152,7 @@ func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options) ([]*bqpb.
 				SourceRef:     sourceRef,
 				SourceRefHash: sourceRefHash,
 				TestMetadata:  metadata,
+				InsertTime:    timestamppb.New(insertTime),
 			})
 		}
 	}

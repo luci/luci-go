@@ -30,6 +30,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -101,6 +102,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For failure association rules cache.
 		ctx, skdr := tq.TestingContext(ctx, nil)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 		ctx = memory.Use(ctx)
 
 		chunkStore := chunkstore.NewFakeClient()
@@ -1132,6 +1134,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			SourceRef:     sr,
 			SourceRefHash: hex.EncodeToString(pbutil.SourceRefHash(sr)),
+			InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1160,6 +1163,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1188,6 +1192,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1215,6 +1220,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1253,6 +1259,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1283,6 +1290,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1313,6 +1321,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1365,6 +1374,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1393,6 +1403,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1420,6 +1431,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project:       "project",
@@ -1446,6 +1458,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
+			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 	}
 	So(actualRows, ShouldHaveLength, len(expectedRows))

@@ -38,7 +38,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 //   retain data for 510 days.
 // - Cluster by project, test_id.
 //
-// NextId: 17
+// NextId: 18
 message TestVerdictRow {
   // The LUCI Project. E.g. "chromium".
   string project = 1;
@@ -297,4 +297,21 @@ message TestVerdictRow {
   // Metadata of the test case,
   // e.g. the original test name and test location.
   luci.analysis.v1.TestMetadata test_metadata = 14;
+
+  // The time when the server started inserting the row into the BigQuery
+  // table.
+  //
+  // While this is approximately the same as the time the row became visible in the
+  // BigQuery table, it will not match exactly due factors such as:
+  // - RPC latency,
+  // - server processing delay,
+  // - server clock drift.
+  // For these reasons, a row with a later insert_time may actually have
+  // been visible before a row with an earlier insert_time.
+  //
+  // If you require timestamping that lines up with table visiblity, e.g.
+  // for incremental extracts, you may better off using the APPENDS Table-valued
+  // function that is part of the BigQuery change history feature:
+  // https://cloud.google.com/bigquery/docs/change-history
+  google.protobuf.Timestamp insert_time = 17;
 }
