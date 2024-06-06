@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -151,6 +152,12 @@ func cmdStream(p Params) *subcommands.Command {
 				Similar to -inv-properties but takes a path to the file that contains the JSON object.
 				Cannot be used when -inv-properties is specified.
 			`))
+			r.Flags.StringVar(&r.invExtendedPropertiesDir, "inv-extended-properties-dir", "", text.Doc(`
+				Path to a directory that contains files for the invocation's extended_properties in JSON format.
+				Only files directly under this dir with the extension ".jsonpb" will be
+				read. The filename after removing ".jsonpb" and the file content will be
+				added as a key-value pair to the invocation's extended_properties map.
+			`))
 			r.Flags.BoolVar(&r.inheritSources, "inherit-sources", false, text.Doc(`
 				If true, sets that the invocation inherits the code sources tested from its
 				parent invocation (source_spec.inherit = true).
@@ -253,25 +260,26 @@ type streamRun struct {
 	baseCommandRun
 
 	// flags
-	isNew                   bool
-	isIncluded              bool
-	realm                   string
-	testIDPrefix            string
-	testTestLocationBase    string
-	vars                    map[string]string
-	artChannelMaxLeases     uint
-	trChannelMaxLeases      uint
-	tags                    strpair.Map
-	coerceNegativeDuration  bool
-	locTagsFile             string
-	exonerateUnexpectedPass bool
-	invPropertiesFile       string
-	invProperties           invProperties
-	inheritSources          bool
-	sourcesFile             string
-	sources                 sources
-	baselineID              string
-	instructionFile         string
+	isNew                    bool
+	isIncluded               bool
+	realm                    string
+	testIDPrefix             string
+	testTestLocationBase     string
+	vars                     map[string]string
+	artChannelMaxLeases      uint
+	trChannelMaxLeases       uint
+	tags                     strpair.Map
+	coerceNegativeDuration   bool
+	locTagsFile              string
+	exonerateUnexpectedPass  bool
+	invPropertiesFile        string
+	invProperties            invProperties
+	invExtendedPropertiesDir string
+	inheritSources           bool
+	sourcesFile              string
+	sources                  sources
+	baselineID               string
+	instructionFile          string
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -374,12 +382,16 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if err != nil {
 		return r.done(errors.Annotate(err, "get invocation properties from arguments").Err())
 	}
+	invExtendedProperties, err := r.invExtendedPropertiesFromArgs(ctx)
+	if err != nil {
+		return r.done(errors.Annotate(err, "get invocation extended_properties from arguments").Err())
+	}
 	sourceSpec, err := r.sourceSpecFromArgs(ctx)
 	if err != nil {
 		return r.done(errors.Annotate(err, "get source spec from arguments").Err())
 	}
 
-	if err := r.updateInvocation(ctx, invProperties, sourceSpec, r.baselineID); err != nil {
+	if err := r.updateInvocation(ctx, invProperties, invExtendedProperties, sourceSpec, r.baselineID); err != nil {
 		return r.done(err)
 	}
 
@@ -504,7 +516,7 @@ func (r *streamRun) locationTagsFromArg(ctx context.Context) (*sinkpb.LocationTa
 	return locationTags, nil
 }
 
-// invPropertiesFromArgs gets invocation-level proeprties from arguments.
+// invPropertiesFromArgs gets invocation-level properties from arguments.
 // If r.invProperties is set, return it.
 // If r.invPropertiesFile is set, parse the file and return the value.
 // Return nil if neither are set.
@@ -528,6 +540,37 @@ func (r *streamRun) invPropertiesFromArgs(ctx context.Context) (*structpb.Struct
 	}
 
 	return properties, nil
+}
+
+// invExtendedPropertiesFromArgs gets invocation-level extended properties from
+// arguments.
+func (r *streamRun) invExtendedPropertiesFromArgs(ctx context.Context) (map[string]*structpb.Struct, error) {
+	if r.invExtendedPropertiesDir == "" {
+		return nil, nil
+	}
+
+	files, err := os.ReadDir(r.invExtendedPropertiesDir)
+	if err != nil {
+		return nil, errors.Annotate(err, "read invocation extended properties directory %q", r.invExtendedPropertiesDir).Err()
+	}
+	extendedProperties := make(map[string]*structpb.Struct)
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".jsonpb") {
+			continue
+		}
+		extPropKey := strings.TrimSuffix(file.Name(), ".jsonpb")
+		fileFullPath := filepath.Join(r.invExtendedPropertiesDir, file.Name())
+		f, err := os.ReadFile(fileFullPath)
+		if err != nil {
+			return nil, errors.Annotate(err, "read file %q", fileFullPath).Err()
+		}
+		extPropValue := &structpb.Struct{}
+		if err = protojson.Unmarshal(f, extPropValue); err != nil {
+			return nil, errors.Annotate(err, "unmarshal file %q", fileFullPath).Err()
+		}
+		extendedProperties[extPropKey] = extPropValue
+	}
+	return extendedProperties, nil
 }
 
 // sourceSpecFromArgs gets the invocation source spec from arguments.
@@ -594,7 +637,12 @@ func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucict
 }
 
 // updateInvocation sets the properties and/or source spec on the invocation.
-func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.Struct, sourceSpec *pb.SourceSpec, baselineID string) error {
+func (r *streamRun) updateInvocation(
+	ctx context.Context,
+	properties *structpb.Struct,
+	extendedProperties map[string]*structpb.Struct,
+	sourceSpec *pb.SourceSpec,
+	baselineID string) error {
 	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, r.invocation.UpdateToken)
 	request := &pb.UpdateInvocationRequest{
 		Invocation: &pb.Invocation{
@@ -605,6 +653,10 @@ func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.S
 	if properties != nil {
 		request.Invocation.Properties = properties
 		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "properties")
+	}
+	if extendedProperties != nil {
+		request.Invocation.ExtendedProperties = extendedProperties
+		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "extended_properties")
 	}
 	if sourceSpec != nil {
 		request.Invocation.SourceSpec = sourceSpec
