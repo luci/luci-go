@@ -214,6 +214,7 @@ export interface TestVariant {
   readonly exonerations?: readonly TestExoneration[];
   readonly testMetadata?: TestMetadata;
   readonly sourcesId: string;
+  readonly instruction?: VerdictInstruction;
 }
 
 export interface Sources {
@@ -298,6 +299,10 @@ export interface GitilesRef {
   readonly host: string;
   readonly project: string;
   readonly ref: string;
+}
+
+export interface VerdictInstruction {
+  readonly instruction: string;
 }
 
 // The maximum number of results that can be included in a test variant returned

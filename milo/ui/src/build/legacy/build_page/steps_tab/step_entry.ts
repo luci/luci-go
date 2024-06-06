@@ -21,6 +21,7 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 import '@/generic_libs/components/copy_to_clipboard';
 import '@/generic_libs/components/expandable_entry';
 import '@/common/components/buildbucket_log_link';
+import '@/common/components/instruction_hint';
 import '@/generic_libs/components/pin_toggle';
 import './step_cluster';
 
@@ -254,6 +255,14 @@ export class BuildPageStepEntryElement
           ${this.renderDuration()}
           <div id="header-text">
             <b>${this.step.index + 1}. ${this.step.selfName}</b>
+            ${this.step.instructionName
+              ? html`<milo-instruction-hint
+                  instruction-name=${this.step.instructionName}
+                  title=${'Reproduction instruction for step "' +
+                  this.step.selfName +
+                  '"'}
+                ></milo-instruction-hint>`
+              : html``}
             <milo-pin-toggle
               .pinned=${this.step.isPinned}
               title="Pin/unpin the step. The configuration is shared across all builds."
@@ -334,7 +343,7 @@ export class BuildPageStepEntryElement
         overflow: hidden;
         text-overflow: ellipsis;
         display: grid;
-        grid-template-columns: auto auto auto auto 1fr;
+        grid-template-columns: repeat(6, auto) 1fr;
       }
 
       #header-markdown {

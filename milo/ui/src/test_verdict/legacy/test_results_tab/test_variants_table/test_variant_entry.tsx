@@ -26,6 +26,7 @@ import '@/analysis/components/lit_associated_bugs_badge';
 import '@/generic_libs/components/expandable_entry';
 import '@/generic_libs/components/copy_to_clipboard';
 import '@/test_verdict/components/result_entry';
+import '@/common/components/instruction_hint';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '@/common/common_tags';
 import {
   VARIANT_STATUS_CLASS_MAP,
@@ -368,6 +369,12 @@ export class TestVariantEntryElement
                   @click=${(e: Event) => e.stopPropagation()}
                 ></milo-associated-bugs-badge>`
               : ''}
+            ${this.variant.instruction?.instruction
+              ? html`<milo-instruction-hint
+                  instruction-name=${this.variant.instruction?.instruction}
+                  title="Reproduction instruction for test result"
+                ></milo-instruction-hint>`
+              : html``}
             <milo-copy-to-clipboard
               .textToCopy=${this.longName}
               @click=${(e: Event) => e.stopPropagation()}

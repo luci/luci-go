@@ -22,6 +22,7 @@ import './step_cluster';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
+import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import {
   errorHandler,
   forwardWithoutMsg,
@@ -105,5 +106,9 @@ declare global {
 }
 
 export function StepList() {
-  return <milo-bp-step-list />;
+  return (
+    <ReactLitBridge>
+      <milo-bp-step-list />
+    </ReactLitBridge>
+  );
 }
