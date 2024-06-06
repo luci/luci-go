@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link, TableCell } from '@mui/material';
+import { Link, Skeleton, TableCell } from '@mui/material';
 
 import { useCommit, useRepoUrl } from './context';
 
@@ -25,15 +25,19 @@ export function IdContentCell() {
   const commit = useCommit();
 
   return (
-    <TableCell>
-      <Link
-        href={`${repoUrl}/+/${commit.id}`}
-        target="_blank"
-        rel="noreferrer"
-        sx={{ fontWeight: 'bold' }}
-      >
-        {commit.id.substring(0, 8)}
-      </Link>
+    <TableCell sx={{ minWidth: '65px' }}>
+      {commit ? (
+        <Link
+          href={`${repoUrl}/+/${commit.id}`}
+          target="_blank"
+          rel="noreferrer"
+          sx={{ fontWeight: 'bold' }}
+        >
+          {commit.id.substring(0, 8)}
+        </Link>
+      ) : (
+        <Skeleton />
+      )}
     </TableCell>
   );
 }

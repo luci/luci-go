@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, TableCell } from '@mui/material';
+import { Box, Skeleton, TableCell } from '@mui/material';
 
 import { useCommit } from './context';
 
@@ -22,7 +22,7 @@ export function TitleHeadCell() {
 
 export function TitleContentCell() {
   const commit = useCommit();
-  const title = commit.message.split('\n', 1)[0];
+  const title = commit?.message.split('\n', 1)[0];
 
   return (
     <TableCell>
@@ -33,12 +33,16 @@ export function TitleContentCell() {
        ** container.
        **/}
       <Box sx={{ display: 'grid' }}>
-        <Box
-          sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
-          title={title}
-        >
-          {title}
-        </Box>
+        {title === undefined ? (
+          <Skeleton />
+        ) : (
+          <Box
+            sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+            title={title}
+          >
+            {title}
+          </Box>
+        )}
       </Box>
     </TableCell>
   );

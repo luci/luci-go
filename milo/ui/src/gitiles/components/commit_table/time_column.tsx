@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableCell } from '@mui/material';
+import { Skeleton, TableCell } from '@mui/material';
 import { DateTime } from 'luxon';
 
 import {
@@ -32,28 +32,32 @@ export function TimeHeadCell() {
 
 export function TimeContentCell() {
   const commit = useCommit();
-  const commitTime = DateTime.fromISO(commit.committer.time);
+  const commitTime = commit && DateTime.fromISO(commit.committer.time);
 
   return (
-    <TableCell>
-      <Timestamp
-        datetime={commitTime}
-        // Use a more compact format to display the timestamp.
-        format={SHORT_TIME_FORMAT}
-        extra={{
-          // Use a more detailed format in the tooltip.
-          format: NUMERIC_TIME_FORMAT,
-          zones: [
-            // Add a local timezone to display the timestamp in local timezone
-            // with a more detailed format.
-            {
-              label: 'LOCAL',
-              zone: 'local',
-            },
-            ...DEFAULT_EXTRA_ZONE_CONFIGS,
-          ],
-        }}
-      />
+    <TableCell sx={{ minWidth: '120px' }}>
+      {commitTime ? (
+        <Timestamp
+          datetime={commitTime}
+          // Use a more compact format to display the timestamp.
+          format={SHORT_TIME_FORMAT}
+          extra={{
+            // Use a more detailed format in the tooltip.
+            format: NUMERIC_TIME_FORMAT,
+            zones: [
+              // Add a local timezone to display the timestamp in local timezone
+              // with a more detailed format.
+              {
+                label: 'LOCAL',
+                zone: 'local',
+              },
+              ...DEFAULT_EXTRA_ZONE_CONFIGS,
+            ],
+          }}
+        />
+      ) : (
+        <Skeleton />
+      )}
     </TableCell>
   );
 }

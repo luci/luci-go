@@ -31,7 +31,7 @@ export function useRepoUrl() {
   const ctx = useContext(RepoContext);
 
   if (ctx === undefined) {
-    throw new Error('useRepoUrl must be used within CommitTable');
+    throw new Error('useRepoUrl must be used in a CommitTable');
   }
 
   return ctx;
@@ -85,7 +85,7 @@ export function useDefaultExpanded() {
   const ctx = useContext(DefaultExpandedContext);
 
   if (ctx === undefined) {
-    throw new Error('useDefaultExpanded must be used within CommitTable');
+    throw new Error('useDefaultExpanded must be used in a CommitTable');
   }
 
   return ctx;
@@ -101,7 +101,7 @@ export function useSetDefaultExpanded() {
   const ctx = useContext(SetDefaultExpandedContext);
 
   if (ctx === undefined) {
-    throw new Error('useSetDefaultExpanded must be used within CommitTable');
+    throw new Error('useSetDefaultExpanded must be used in a CommitTable');
   }
 
   return ctx;
@@ -123,7 +123,7 @@ export function useExpanded() {
   const ctx = useContext(ExpandedContext);
 
   if (ctx === undefined) {
-    throw new Error('useExpanded must be used within CommitTableRow');
+    throw new Error('useExpanded must be used in a CommitTableRow');
   }
 
   return ctx;
@@ -139,21 +139,26 @@ export function useSetExpanded() {
   const ctx = useContext(SetExpandedContext);
 
   if (ctx === undefined) {
-    throw new Error('useSetExpanded must be used within CommitTable');
+    throw new Error('useSetExpanded must be used in a CommitTable');
   }
 
   return ctx;
 }
 
-const CommitContext = createContext<OutputCommit | undefined>(undefined);
+const CommitContext = createContext<OutputCommit | undefined | null>(undefined);
 
 export const CommitProvider = CommitContext.Provider;
 
+/**
+ * Get the commit to be rendered in this row.
+ *
+ * `null` is returned when the commit it not loaded yet.
+ */
 export function useCommit() {
   const ctx = useContext(CommitContext);
 
   if (ctx === undefined) {
-    throw new Error('useCommit must be used within CommitTableRow');
+    throw new Error('useCommit must be used in a CommitTableRow');
   }
 
   return ctx;

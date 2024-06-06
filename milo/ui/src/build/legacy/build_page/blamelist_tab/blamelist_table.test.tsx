@@ -16,13 +16,11 @@ import { render, screen } from '@testing-library/react';
 import { act } from 'react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
-import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
-import { QueryBlamelistResponse } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
+import { OutputCommit } from '@/gitiles/types';
 
 import { BlamelistTable } from './blamelist_table';
-import { OutputQueryBlamelistResponse } from './types';
 
-function makeCommit(id: string): Commit {
+function makeCommit(id: string): OutputCommit {
   return {
     id,
     tree: '1234567890abcdef',
@@ -58,23 +56,13 @@ describe('<BlamelistTable />', () => {
       >
         <BlamelistTable
           repoUrl="https://repo.url"
-          pages={[
-            QueryBlamelistResponse.fromPartial({
-              commits: Object.freeze([
-                makeCommit('commit1'),
-                makeCommit('commit2'),
-                makeCommit('commit3'),
-              ]),
-            }) as OutputQueryBlamelistResponse,
-            QueryBlamelistResponse.fromPartial({
-              commits: Object.freeze([
-                makeCommit('commit4'),
-                makeCommit('commit5'),
-              ]),
-            }) as OutputQueryBlamelistResponse,
-            QueryBlamelistResponse.fromPartial({
-              commits: Object.freeze([makeCommit('commit6')]),
-            }) as OutputQueryBlamelistResponse,
+          commits={[
+            makeCommit('commit1'),
+            makeCommit('commit2'),
+            makeCommit('commit3'),
+            makeCommit('commit4'),
+            makeCommit('commit5'),
+            makeCommit('commit6'),
           ]}
         />
       </VirtuosoMockContext.Provider>,

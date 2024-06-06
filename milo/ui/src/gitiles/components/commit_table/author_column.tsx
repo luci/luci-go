@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableCell } from '@mui/material';
+import { Skeleton, TableCell } from '@mui/material';
 
 import { useCommit } from './context';
 
@@ -32,9 +32,9 @@ export function AuthorContentCell() {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
       }}
-      title={commit.author.email}
+      title={commit?.author.email}
     >
-      {commit.author.email}
+      {commit ? commit?.author.email : <Skeleton />}
     </TableCell>
   );
 }

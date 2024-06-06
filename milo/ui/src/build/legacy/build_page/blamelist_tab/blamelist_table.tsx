@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useMemo } from 'react';
 import { useLocalStorage } from 'react-use';
 
 import {
@@ -31,18 +30,16 @@ import {
   ToggleHeadCell,
   VirtualizedCommitTable,
 } from '@/gitiles/components/commit_table';
-
-import { OutputQueryBlamelistResponse } from './types';
+import { OutputCommit } from '@/gitiles/types';
 
 const BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY = 'blamelist-table-default-expanded';
 
 export interface BlamelistTableProps {
   readonly repoUrl: string;
-  readonly pages: readonly OutputQueryBlamelistResponse[];
+  readonly commits: ReadonlyArray<OutputCommit | null>;
 }
 
-export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
-  const commits = useMemo(() => pages.flatMap((p) => p.commits), [pages]);
+export function BlamelistTable({ repoUrl, commits }: BlamelistTableProps) {
   const [defaultExpanded = false, setDefaultExpanded] =
     useLocalStorage<boolean>(BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY);
 
@@ -64,7 +61,7 @@ export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
         </>
       )}
       itemContent={(i) => (
-        <CommitTableRow key={commits[i].id} commit={commits[i]}>
+        <CommitTableRow commit={commits[i]}>
           <ToggleContentCell />
           <NumContentCell num={i + 1} />
           <IdContentCell />

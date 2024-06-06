@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Skeleton } from '@mui/material';
 import { useState } from 'react';
 
 import { OutputTestVerdict } from '@/analysis/types';
@@ -25,7 +26,7 @@ import { CommitContent } from '@/gitiles/components/commit_table';
 import { TestVerdictEntry } from './test_verdict_entry';
 
 export interface EntryContentProps {
-  readonly verdicts: readonly OutputTestVerdict[];
+  readonly verdicts: readonly OutputTestVerdict[] | null;
 }
 
 export function EntryContent({ verdicts }: EntryContentProps) {
@@ -41,9 +42,13 @@ export function EntryContent({ verdicts }: EntryContentProps) {
           <CommitContent sx={{ paddingLeft: 0 }} />
         </ExpandableEntryBody>
       </ExpandableEntry>
-      {verdicts.map((v) => (
-        <TestVerdictEntry key={v.invocationId} verdict={v} />
-      ))}
+      {verdicts ? (
+        verdicts.map((v) => (
+          <TestVerdictEntry key={v.invocationId} verdict={v} />
+        ))
+      ) : (
+        <Skeleton />
+      )}
     </>
   );
 }

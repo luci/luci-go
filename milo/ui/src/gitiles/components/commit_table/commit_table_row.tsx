@@ -29,7 +29,12 @@ import {
 } from './context';
 
 export interface CommitTableRowProps {
-  readonly commit: OutputCommit;
+  /**
+   * The commit to be rendered in this row.
+   *
+   * Use `null` to signal that the commit is still being loaded.
+   */
+  readonly commit: OutputCommit | null;
   /**
    * The content to be rendered when expanded.
    *

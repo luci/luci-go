@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, styled, SxProps, Theme } from '@mui/material';
+import { Box, Skeleton, styled, SxProps, Theme } from '@mui/material';
 import markdownIt from 'markdown-it';
 import { useMemo } from 'react';
 
@@ -51,33 +51,43 @@ export interface CommitContentProps {
 export function CommitContent({ sx }: CommitContentProps) {
   const commit = useCommit();
 
-  const { descriptionHtml, changedFiles } = useMemo(
-    () => ({
-      descriptionHtml: md.render(commit.message),
-      changedFiles: commit.treeDiff.map((diff) =>
-        // If a file was moved, there is both an old and a new path, from which
-        // we take only the new path.
-        // If a file was deleted, its new path is /dev/null. In that case, we're
-        // only interested in the old path.
-        !diff.newPath || diff.newPath === '/dev/null'
-          ? diff.oldPath
-          : diff.newPath,
-      ),
-    }),
+  const displayItems = useMemo(
+    () =>
+      commit && {
+        descriptionHtml: md.render(commit.message),
+        changedFiles: commit.treeDiff.map((diff) =>
+          // If a file was moved, there is both an old and a new path, from which
+          // we take only the new path.
+          // If a file was deleted, its new path is /dev/null. In that case, we're
+          // only interested in the old path.
+          !diff.newPath || diff.newPath === '/dev/null'
+            ? diff.oldPath
+            : diff.newPath,
+        ),
+      },
     [commit],
   );
 
   return (
     <Box sx={{ padding: '10px 20px', ...sx }}>
-      <SummaryContainer html={descriptionHtml} />
-      <h4 css={{ marginBlockEnd: '0px' }}>
-        Changed files: {changedFiles.length}
-      </h4>
-      <ul>
-        {changedFiles.map((filename, i) => (
-          <li key={i}>{filename}</li>
-        ))}
-      </ul>
+      {displayItems ? (
+        <>
+          <SummaryContainer html={displayItems.descriptionHtml} />
+          <h4 css={{ marginBlockEnd: '0px' }}>
+            Changed files: {displayItems.changedFiles.length}
+          </h4>
+          <ul>
+            {displayItems.changedFiles.map((filename, i) => (
+              <li key={i}>{filename}</li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <>
+          <Skeleton variant="rounded" height={200} />
+          <Skeleton height={200} />
+        </>
+      )}
     </Box>
   );
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableCell } from '@mui/material';
+import { Skeleton, TableCell } from '@mui/material';
 
 import { OutputTestVerdict } from '@/analysis/types';
 import { VerdictSetStatus } from '@/test_verdict/components/verdict_set_status';
@@ -29,15 +29,19 @@ export function VerdictsStatusHeadCell() {
 }
 
 export interface VerdictsStatusContentCellProps {
-  readonly testVerdicts: readonly OutputTestVerdict[];
+  readonly testVerdicts: readonly OutputTestVerdict[] | null;
 }
 
 export function VerdictStatusesContentCell({
   testVerdicts,
 }: VerdictsStatusContentCellProps) {
   return (
-    <TableCell>
-      <VerdictSetStatus testVerdicts={testVerdicts} />
+    <TableCell sx={{ minWidth: '30px' }}>
+      {testVerdicts ? (
+        <VerdictSetStatus testVerdicts={testVerdicts} />
+      ) : (
+        <Skeleton variant="circular" height={24} width={24} />
+      )}
     </TableCell>
   );
 }

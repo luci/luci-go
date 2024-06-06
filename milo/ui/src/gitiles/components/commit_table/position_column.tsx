@@ -34,10 +34,14 @@ export function PositionContentCell({ position }: PositionContentCellProps) {
   return (
     <TableCell>
       <Link
-        href={`${repoUrl}/+/${commit.id}`}
+        href={commit ? `${repoUrl}/+/${commit.id}` : undefined}
         target="_blank"
         rel="noreferrer"
-        sx={{ fontWeight: 'bold' }}
+        title={commit ? '' : 'loading the commit...'}
+        sx={{
+          fontWeight: 'bold',
+          color: (theme) => (commit ? undefined : theme.palette.text.disabled),
+        }}
       >
         {position}
       </Link>
