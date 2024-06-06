@@ -107,6 +107,7 @@ export function RegressionDetailsDialog() {
       >
         <BlamelistTable
           testVariantBranch={testVariantBranch}
+          focusCommitPosition={state.focusCommitPosition}
           customScrollParent={scrollRef.current || undefined}
         />
       </QueuedStickyScrollingBase>
