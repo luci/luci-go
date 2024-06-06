@@ -17,8 +17,9 @@ import { Box, styled } from '@mui/material';
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { VerdictSetStatus } from '@/test_verdict/components//verdict_set_status';
 import { SegmentInfo } from '@/test_verdict/components/changepoint_analysis';
-import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
+import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 import {
   getBackgroundColor,
@@ -35,6 +36,10 @@ const Span = styled(Box)`
   width: calc(100% - ${2 * SPAN_MARGIN}px);
   height: calc(100% - ${2 * SPAN_MARGIN}px);
   cursor: pointer;
+
+  & > * {
+    display: inline-block;
+  }
 `;
 
 export interface SegmentSpanProps {
@@ -52,11 +57,14 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
   const start = commitMap[segment.endPosition];
   const end = commitMap[segment.startPosition] + 1;
 
-  const rowUnitHeight = (rowHeight - 2 * ROW_PADDING) / 3;
+  const spanHeight = (rowHeight - 2 * ROW_PADDING) / 2;
   const x = xScale(start);
-  const y = ROW_PADDING + rowUnitHeight;
+  const y = ROW_PADDING + spanHeight;
   const spanWidth = xScale(end) - xScale(start);
-  const spanHeight = 2 * rowUnitHeight;
+  const counts = segment.counts;
+  const unexpectedCount = counts.unexpectedVerdicts;
+  const flakyCount = counts.flakyVerdicts;
+  const expectedCount = counts.totalVerdicts - unexpectedCount - flakyCount;
 
   return (
     <foreignObject
@@ -97,44 +105,58 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
             borderColor: getBorderColor(segment),
           }}
         >
-          {segment.counts.unexpectedVerdicts ? (
-            <Box>
-              <VerdictStatusIcon
-                status={TestVariantStatus.UNEXPECTED}
-                sx={{ verticalAlign: 'bottom' }}
-              />{' '}
-              <span css={{ lineHeight: '24px' }}>
-                {Math.round(
-                  (segment.counts.unexpectedVerdicts /
-                    segment.counts.totalVerdicts) *
-                    100,
-                )}
-                % ({segment.counts.unexpectedVerdicts}/
-                {segment.counts.totalVerdicts})
-              </span>
-            </Box>
-          ) : (
-            <></>
-          )}
-          {segment.counts.flakyVerdicts ? (
-            <Box>
-              <VerdictStatusIcon
-                status={TestVariantStatus.FLAKY}
-                sx={{ verticalAlign: 'bottom' }}
-              />{' '}
-              <span css={{ lineHeight: '24px' }}>
-                {Math.round(
-                  (segment.counts.flakyVerdicts /
-                    segment.counts.totalVerdicts) *
-                    100,
-                )}
-                % ({segment.counts.flakyVerdicts}/{segment.counts.totalVerdicts}
-                )
-              </span>
-            </Box>
-          ) : (
-            <></>
-          )}
+          <VerdictSetStatus
+            counts={{
+              [TestVariantStatus.UNEXPECTED]: unexpectedCount,
+              [TestVariantStatus.FLAKY]: flakyCount,
+              [TestVariantStatus.EXPECTED]: expectedCount,
+            }}
+          />{' '}
+          <span css={{ lineHeight: '24px', fontWeight: 'bold' }}>
+            <span
+              css={
+                unexpectedCount
+                  ? {
+                      color:
+                        VERDICT_STATUS_COLOR_MAP[TestVariantStatus.UNEXPECTED],
+                    }
+                  : {
+                      opacity: 0.2,
+                    }
+              }
+            >
+              {unexpectedCount}
+            </span>
+            <span css={{ opacity: 0.2 }}> / </span>
+            <span
+              css={
+                flakyCount
+                  ? {
+                      color: VERDICT_STATUS_COLOR_MAP[TestVariantStatus.FLAKY],
+                    }
+                  : {
+                      opacity: 0.2,
+                    }
+              }
+            >
+              {flakyCount}
+            </span>
+            <span css={{ opacity: 0.2 }}> / </span>
+            <span
+              css={
+                expectedCount
+                  ? {
+                      color:
+                        VERDICT_STATUS_COLOR_MAP[TestVariantStatus.EXPECTED],
+                    }
+                  : {
+                      opacity: 0.2,
+                    }
+              }
+            >
+              {expectedCount}
+            </span>
+          </span>
         </Span>
       </HtmlTooltip>
     </foreignObject>

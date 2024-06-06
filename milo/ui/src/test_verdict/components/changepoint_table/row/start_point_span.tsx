@@ -55,7 +55,7 @@ export function StartPointSpan({
 
   const start = commitMap[segment.startPositionUpperBound99th];
   const end = commitMap[segment.startPositionLowerBound99th] + 1;
-  const rowUnitHeight = (rowHeight - 2 * ROW_PADDING) / 3;
+  const spanHeight = (rowHeight - 2 * ROW_PADDING) / 2;
   const commitCount =
     parseInt(segment.startPositionUpperBound99th) -
     parseInt(segment.startPositionLowerBound99th) +
@@ -66,7 +66,7 @@ export function StartPointSpan({
       x={xScale(start)}
       y={ROW_PADDING}
       width={xScale(end) - xScale(start)}
-      height={rowUnitHeight}
+      height={spanHeight}
     >
       <HtmlTooltip
         arrow
@@ -87,7 +87,7 @@ export function StartPointSpan({
         }
       >
         <Span
-          sx={{ lineHeight: `${rowUnitHeight - 2 * SPAN_MARGIN}px` }}
+          sx={{ lineHeight: `${spanHeight - 2 * SPAN_MARGIN}px` }}
           onClick={() =>
             dispatch({
               type: 'showBlamelist',
