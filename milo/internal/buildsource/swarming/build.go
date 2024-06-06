@@ -23,32 +23,31 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
-	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe/legacy/annotee"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
+	"go.chromium.org/luci/server/auth"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/internal/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/internal/config"
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
-	"go.chromium.org/luci/server/auth"
 )
 
 // swarmingService is an interface that fetches data from Swarming.
@@ -57,61 +56,29 @@ import (
 // be replaced with a mock.
 type swarmingService interface {
 	GetHost() string
-	GetSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
-	GetSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
+	GetSwarmingResult(c context.Context, taskID string) (*swarmingpb.TaskResultResponse, error)
+	GetSwarmingRequest(c context.Context, taskID string) (*swarmingpb.TaskRequestResponse, error)
 	GetTaskOutput(c context.Context, taskID string) (string, error)
-	Close()
 }
 
 // ErrNotMiloJob is returned if a Swarming task is fetched that does not self-
 // identify as a Milo job.
 var ErrNotMiloJob = errors.New("Not a Milo Job or access denied", grpcutil.PermissionDeniedTag)
 
-// SwarmingTimeLayout is time layout used by swarming.
-const SwarmingTimeLayout = "2006-01-02T15:04:05.999999999"
-
-// Swarming task states..
-const (
-	// TaskRunning means task is running.
-	TaskRunning = "RUNNING"
-	// TaskPending means task didn't start yet.
-	TaskPending = "PENDING"
-	// TaskExpired means task expired and did not start.
-	TaskExpired = "EXPIRED"
-	// TaskTimedOut means task started, but took too long.
-	TaskTimedOut = "TIMED_OUT"
-	// TaskBotDied means task started but bot died.
-	TaskBotDied = "BOT_DIED"
-	// TaskCanceled means the task was canceled. See CompletedTs to determine whether it was started.
-	TaskCanceled = "CANCELED"
-	// TaskKill means the task was canceled. See CompletedTs to determine whether it was started.
-	TaskKilled = "KILLED"
-	// TaskCompleted means task is complete.
-	TaskCompleted = "COMPLETED"
-	// TaskNoResource means there was not enough capacity when scheduled, so the
-	// task failed immediately.
-	TaskNoResource = "NO_RESOURCE"
-	// TaskClientError means that the client has caused a task to error
-	TaskClientError = "CLIENT_ERROR"
-)
-
-func getSwarmingClient(c context.Context, host string) (*swarming.Service, error) {
+func getSwarmingClient(c context.Context, host string) (swarmingpb.TasksClient, error) {
 	t, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
-	sc, err := swarming.New(&http.Client{Transport: t})
-	if err != nil {
-		return nil, err
-	}
-	sc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", host)
-	return sc, nil
+	return swarmingpb.NewTasksClient(&prpc.Client{
+		C:    &http.Client{Transport: t},
+		Host: host,
+	}), nil
 }
 
 type prodSwarmingService struct {
 	host   string
-	client *swarming.Service
-	cancel func()
+	client swarmingpb.TasksClient
 }
 
 func newProdService(c context.Context, host string) (*prodSwarmingService, error) {
@@ -119,58 +86,53 @@ func newProdService(c context.Context, host string) (*prodSwarmingService, error
 	if err != nil {
 		return nil, err
 	}
-
-	c, cancel := context.WithTimeout(c, 60*time.Second)
-
 	client, err := getSwarmingClient(c, host)
 	if err != nil {
-		cancel()
 		return nil, err
 	}
-
 	return &prodSwarmingService{
 		host:   host,
 		client: client,
-		cancel: cancel,
 	}, nil
 }
 
 func (svc *prodSwarmingService) GetHost() string { return svc.host }
 
-func (svc *prodSwarmingService) GetSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
-	return svc.client.Task.Result(taskID).Context(c).Do()
+func (svc *prodSwarmingService) GetSwarmingResult(c context.Context, taskID string) (*swarmingpb.TaskResultResponse, error) {
+	return svc.client.GetResult(c, &swarmingpb.TaskIdWithPerfRequest{
+		TaskId: taskID,
+	})
 }
 
 func (svc *prodSwarmingService) GetTaskOutput(c context.Context, taskID string) (string, error) {
-	stdout, err := svc.client.Task.Stdout(taskID).Context(c).Do()
+	stdout, err := svc.client.GetStdout(c, &swarmingpb.TaskIdWithOffsetRequest{
+		TaskId: taskID,
+	})
 	if err != nil {
 		return "", err
 	}
-	return stdout.Output, nil
+	return string(stdout.Output), nil
 }
 
-func (svc *prodSwarmingService) GetSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
-	return svc.client.Task.Request(taskID).Context(c).Do()
-}
-
-func (svc *prodSwarmingService) Close() {
-	svc.cancel()
+func (svc *prodSwarmingService) GetSwarmingRequest(c context.Context, taskID string) (*swarmingpb.TaskRequestResponse, error) {
+	return svc.client.GetRequest(c, &swarmingpb.TaskIdRequest{
+		TaskId: taskID,
+	})
 }
 
 type swarmingFetchParams struct {
 	fetchLog bool
 
 	// taskResCallback, if not nil, is a callback that will be invoked after
-	// fetching the result. It will be passed a key/value map
-	// of the Swarming result's tags.
+	// fetching the result.
 	//
 	// If taskResCallback returns true, any pending log fetch will be canceled
 	// without error.
-	taskResCallback func(*swarming.SwarmingRpcsTaskResult) bool
+	taskResCallback func(*swarmingpb.TaskResultResponse) bool
 }
 
 type swarmingFetchResult struct {
-	res *swarming.SwarmingRpcsTaskResult
+	res *swarmingpb.TaskResultResponse
 
 	// log is the log data content. If no log data was fetched, this will empty.
 	// If the log fetch was canceled, this is undefined.
@@ -203,13 +165,6 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 					logsCanceled = true
 					cancelLogs()
 				}
-			} else if ierr, ok := err.(*googleapi.Error); ok {
-				switch ierr.Code {
-				case http.StatusNotFound:
-					err = errors.Annotate(ierr, "not found on swarming").Tag(grpcutil.NotFoundTag).Err()
-				case http.StatusBadRequest:
-					err = errors.Annotate(ierr, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
-				}
 			}
 			return
 		}
@@ -237,7 +192,11 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 
 	if logErr != nil {
 		switch fr.res.State {
-		case TaskCompleted, TaskRunning, TaskCanceled, TaskKilled, TaskNoResource:
+		case swarmingpb.TaskState_COMPLETED,
+			swarmingpb.TaskState_RUNNING,
+			swarmingpb.TaskState_CANCELED,
+			swarmingpb.TaskState_KILLED,
+			swarmingpb.TaskState_NO_RESOURCE:
 		default:
 			//  Ignore log errors if the task might be pending, timed out, expired, etc.
 			if err != nil {
@@ -254,7 +213,7 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 	return &fr, logErr
 }
 
-func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *ui.PropertyGroup {
+func taskProperties(sr *swarmingpb.TaskResultResponse) *ui.PropertyGroup {
 	props := &ui.PropertyGroup{GroupName: "Swarming"}
 	if len(sr.CostsUsd) == 1 {
 		props.Property = append(props.Property, &ui.Property{
@@ -262,7 +221,7 @@ func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *ui.PropertyGroup {
 			Value: fmt.Sprintf("$%.2f", sr.CostsUsd[0]),
 		})
 	}
-	if sr.State == TaskCompleted || sr.State == TaskTimedOut {
+	if sr.State == swarmingpb.TaskState_COMPLETED || sr.State == swarmingpb.TaskState_TIMED_OUT {
 		props.Property = append(props.Property, &ui.Property{
 			Key:   "Exit Code",
 			Value: fmt.Sprintf("%d", sr.ExitCode),
@@ -319,7 +278,7 @@ func AddBanner(build *ui.MiloBuildLegacy, tags strpair.Map) {
 
 // addTaskToMiloStep augments a Milo Annotation Protobuf with state from the
 // Swarming task.
-func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, step *annopb.Step) error {
+func addTaskToMiloStep(c context.Context, host string, sr *swarmingpb.TaskResultResponse, step *annopb.Step) error {
 	step.Link = &annopb.AnnotationLink{
 		Label: "Task " + sr.TaskId,
 		Value: &annopb.AnnotationLink_Url{
@@ -328,39 +287,42 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 	}
 
 	switch sr.State {
-	case TaskRunning:
+	case swarmingpb.TaskState_RUNNING:
 		step.Status = annopb.Status_RUNNING
 
-	case TaskPending:
+	case swarmingpb.TaskState_PENDING:
 		step.Status = annopb.Status_PENDING
 
-	case TaskExpired, TaskTimedOut, TaskBotDied, TaskClientError:
+	case swarmingpb.TaskState_EXPIRED,
+		swarmingpb.TaskState_TIMED_OUT,
+		swarmingpb.TaskState_BOT_DIED,
+		swarmingpb.TaskState_CLIENT_ERROR:
 		step.Status = annopb.Status_FAILURE
 
 		switch sr.State {
-		case TaskExpired:
+		case swarmingpb.TaskState_EXPIRED:
 			step.FailureDetails = &annopb.FailureDetails{
 				Type: annopb.FailureDetails_EXPIRED,
 				Text: "Task expired",
 			}
-		case TaskTimedOut:
+		case swarmingpb.TaskState_TIMED_OUT:
 			step.FailureDetails = &annopb.FailureDetails{
 				Type: annopb.FailureDetails_INFRA,
 				Text: "Task timed out",
 			}
-		case TaskBotDied:
+		case swarmingpb.TaskState_BOT_DIED:
 			step.FailureDetails = &annopb.FailureDetails{
 				Type: annopb.FailureDetails_INFRA,
 				Text: "Bot died",
 			}
-		case TaskClientError:
+		case swarmingpb.TaskState_CLIENT_ERROR:
 			step.FailureDetails = &annopb.FailureDetails{
 				Type: annopb.FailureDetails_INFRA,
 				Text: "Client error",
 			}
 		}
 
-	case TaskCanceled, TaskKilled:
+	case swarmingpb.TaskState_CANCELED, swarmingpb.TaskState_KILLED:
 		// Canceled build is user action, so it is not an infra failure.
 		step.Status = annopb.Status_FAILURE
 		step.FailureDetails = &annopb.FailureDetails{
@@ -368,14 +330,14 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 			Text: "Task canceled by user",
 		}
 
-	case TaskNoResource:
+	case swarmingpb.TaskState_NO_RESOURCE:
 		step.Status = annopb.Status_FAILURE
 		step.FailureDetails = &annopb.FailureDetails{
 			Type: annopb.FailureDetails_EXPIRED,
 			Text: "No resource available on Swarming",
 		}
 
-	case TaskCompleted:
+	case swarmingpb.TaskState_COMPLETED:
 
 		switch {
 		case sr.InternalFailure:
@@ -395,22 +357,8 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 		return fmt.Errorf("unknown swarming task state %q", sr.State)
 	}
 
-	// Compute start and finished times.
-	if sr.StartedTs != "" {
-		ts, err := time.Parse(SwarmingTimeLayout, sr.StartedTs)
-		if err != nil {
-			return fmt.Errorf("invalid task StartedTs: %s", err)
-		}
-		step.Started = timestamppb.New(ts)
-	}
-	if sr.CompletedTs != "" {
-		ts, err := time.Parse(SwarmingTimeLayout, sr.CompletedTs)
-		if err != nil {
-			return fmt.Errorf("invalid task CompletedTs: %s", err)
-		}
-		step.Ended = timestamppb.New(ts)
-	}
-
+	step.Started = sr.StartedTs
+	step.Ended = sr.CompletedTs
 	return nil
 }
 
@@ -470,15 +418,13 @@ func AddProjectInfo(build *ui.MiloBuildLegacy, tags strpair.Map) {
 }
 
 // addPendingTiming adds pending timing information to the build.
-func addPendingTiming(c context.Context, build *ui.MiloBuildLegacy, sr *swarming.SwarmingRpcsTaskResult) {
-	created, err := time.Parse(SwarmingTimeLayout, sr.CreatedTs)
-	if err != nil {
-		return
+func addPendingTiming(c context.Context, build *ui.MiloBuildLegacy, sr *swarmingpb.TaskResultResponse) {
+	if sr.CreatedTs != nil {
+		build.Summary.PendingTime = ui.NewInterval(c, sr.CreatedTs.AsTime(), build.Summary.ExecutionTime.Started)
 	}
-	build.Summary.PendingTime = ui.NewInterval(c, created, build.Summary.ExecutionTime.Started)
 }
 
-func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *ui.MiloBuildLegacy) error {
+func addTaskToBuild(c context.Context, host string, sr *swarmingpb.TaskResultResponse, build *ui.MiloBuildLegacy) error {
 	build.Summary.Label = ui.NewEmptyLink(sr.TaskId)
 	build.Summary.Type = ui.Recipe
 	build.Summary.Source = ui.NewLink(
@@ -535,17 +481,15 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 // failedToStart is called in the case where logdog-only mode is on but the
 // stream doesn't exist and the swarming job is complete.  It modifies the build
 // to add information that would've otherwise been in the annotation stream.
-func failedToStart(c context.Context, build *ui.MiloBuildLegacy, res *swarming.SwarmingRpcsTaskResult, host string) error {
+func failedToStart(c context.Context, build *ui.MiloBuildLegacy, res *swarmingpb.TaskResultResponse, host string) error {
 	build.Summary.Status = milostatus.InfraFailure
-	started, err := time.Parse(SwarmingTimeLayout, res.StartedTs)
-	if err != nil {
-		return err
+	if res.StartedTs == nil {
+		return errors.Reason("no started time in the Swarming task").Err()
 	}
-	ended, err := time.Parse(SwarmingTimeLayout, res.CompletedTs)
-	if err != nil {
-		return err
+	if res.CompletedTs == nil {
+		return errors.Reason("no completed time in the Swarming task").Err()
 	}
-	build.Summary.ExecutionTime = ui.NewInterval(c, started, ended)
+	build.Summary.ExecutionTime = ui.NewInterval(c, res.StartedTs.AsTime(), res.CompletedTs.AsTime())
 	infoComp := infoComponent(milostatus.InfraFailure,
 		"LogDog stream not found", "Job likely failed to start.")
 	infoComp.ExecutionTime = build.Summary.ExecutionTime
@@ -564,16 +508,16 @@ func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID strin
 		fetchLog: true,
 
 		// Cancel if LogDog annotation stream parameters are present in the tag set.
-		taskResCallback: func(res *swarming.SwarmingRpcsTaskResult) (cancelLogs bool) {
+		taskResCallback: func(res *swarmingpb.TaskResultResponse) (cancelLogs bool) {
 			// If the build hasn't started yet, then there is no LogDog log stream to
 			// render.
 			switch res.State {
-			case TaskPending, TaskExpired:
+			case swarmingpb.TaskState_PENDING, swarmingpb.TaskState_EXPIRED:
 				return false
 
-			case TaskCanceled, TaskKilled:
+			case swarmingpb.TaskState_CANCELED, swarmingpb.TaskState_KILLED:
 				// If the task wasn't created, then it wasn't started.
-				if res.CreatedTs == "" {
+				if res.CreatedTs == nil {
 					return false
 				}
 			}
@@ -698,7 +642,7 @@ func SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*
 		// to propogage to logdog.
 		// 2. The bootstrap on the client failed, and never sent data to logdog.
 		// This would be evident because the swarming result would be a failure.
-		if swarmingResult.State == TaskCompleted {
+		if swarmingResult.State == swarmingpb.TaskState_COMPLETED {
 			err = failedToStart(c, &build, swarmingResult, svc.GetHost())
 			return &build, err
 		}
@@ -885,7 +829,6 @@ func GetBuild(c context.Context, host, taskID string) (*ui.MiloBuildLegacy, erro
 	if err != nil {
 		return nil, err
 	}
-	defer sf.Close()
 
 	return SwarmingBuildImpl(c, sf, taskID)
 }
@@ -900,18 +843,9 @@ func RedirectsFromTask(c context.Context, host, taskID string) (int64, string, e
 	if err != nil {
 		return 0, "", err
 	}
-	defer sf.Close()
 
-	res, err := sf.client.Task.Request(taskID).Context(c).Do()
-	switch err := err.(type) {
-	case *googleapi.Error:
-		switch err.Code {
-		case http.StatusNotFound:
-			return 0, "", errors.Annotate(err, "task %s/%s not found", host, taskID).Tag(grpcutil.NotFoundTag).Err()
-		case http.StatusBadRequest:
-			return 0, "", errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
-		}
-	case error:
+	res, err := sf.GetSwarmingRequest(c, taskID)
+	if err != nil {
 		return 0, "", err
 	}
 
