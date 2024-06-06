@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -76,70 +77,118 @@ func ServiceConfigCronHandler(dryRun bool) func(context.Context) error {
 	return func(ctx context.Context) error {
 		historicalComment := "Updated from update-config cron"
 
-		////////////////////////////////////////////////////////////////////////
-		// Config files that directly affect the AuthDB (i.e. may trigger
-		// AuthDB replication).
-
-		// ip_allowlist.cfg handling.
-		if err := allowlistcfg.Update(ctx); err != nil {
-			return err
-		}
-		cfg, err := allowlistcfg.Get(ctx)
-		if err != nil {
-			return err
-		}
-		subnets, err := validation.GetSubnets(cfg.IpAllowlists)
-		if err != nil {
-			return err
-		}
-		if err := updateAllAuthIPAllowlists(ctx, subnets, dryRun, historicalComment); err != nil {
+		if err := fetchServiceConfigs(ctx); err != nil {
 			return err
 		}
 
-		// oauth.cfg handling.
-		if err := oauthcfg.Update(ctx); err != nil {
-			return err
-		}
-		oauthConfig, err := oauthcfg.Get(ctx)
-		if err != nil {
+		if err := applyGlobalConfigUpdate(ctx, historicalComment, dryRun); err != nil {
 			return err
 		}
 
-		// security.cfg handling.
-		if err := securitycfg.Update(ctx); err != nil {
-			return err
-		}
-		securityConfig, err := securitycfg.Get(ctx)
-		if err != nil {
+		if err := applyAllowlistUpdate(ctx, historicalComment, dryRun); err != nil {
 			return err
 		}
 
-		if err := updateAuthGlobalConfig(ctx, oauthConfig, securityConfig, dryRun, historicalComment); err != nil {
-			return err
-		}
-
-		////////////////////////////////////////////////////////////////////////
-		// Other config files that don't directly change the AuthDB.
-
-		// settings.cfg handling
-		if err := settingscfg.Update(ctx); err != nil {
-			return err
-		}
-
-		// imports.cfg handling
-		if err := importscfg.Update(ctx); err != nil {
-			return err
-		}
+		// Update GroupImporterConfig entity (which is not part of the AuthDB).
+		//
+		// TODO(b/302615672): Remove this once Auth Service has been fully
+		// migrated to Auth Service v2 because the GroupImporterConfig entity is
+		// redundant.
 		importsConfig, importsMeta, err := importscfg.GetWithMetadata(ctx)
 		if err != nil {
 			return err
 		}
-		if err := updateGroupImporterConfig(ctx, importsConfig, importsMeta); err != nil {
+		if err := updateGroupImporterConfig(ctx, importsConfig, importsMeta, dryRun); err != nil {
 			return err
 		}
 
 		return nil
 	}
+}
+
+// fetchServiceConfigs updates the cached service configs to be the latest from
+// LUCI Config.
+func fetchServiceConfigs(ctx context.Context) error {
+	eg, childCtx := errgroup.WithContext(ctx)
+
+	// Log the error in each, so details aren't lost if there are multiple
+	// errors.
+	eg.Go(func() error {
+		if err := allowlistcfg.Update(childCtx); err != nil {
+			logging.Errorf(childCtx, err.Error())
+			return err
+		}
+		return nil
+	})
+	eg.Go(func() error {
+		if err := importscfg.Update(childCtx); err != nil {
+			logging.Errorf(childCtx, err.Error())
+			return err
+		}
+		return nil
+	})
+	eg.Go(func() error {
+		if err := oauthcfg.Update(childCtx); err != nil {
+			logging.Errorf(childCtx, err.Error())
+			return err
+		}
+		return nil
+	})
+	eg.Go(func() error {
+		if err := securitycfg.Update(childCtx); err != nil {
+			logging.Errorf(childCtx, err.Error())
+			return err
+		}
+		return nil
+	})
+	eg.Go(func() error {
+		if err := settingscfg.Update(childCtx); err != nil {
+			logging.Errorf(childCtx, err.Error())
+			return err
+		}
+		return nil
+	})
+
+	return eg.Wait()
+}
+
+// applyAllowlistUpdate applies the current ip_allowlist.cfg to all
+// AuthIPAllowlist entities.
+func applyAllowlistUpdate(ctx context.Context, historicalComment string, dryRun bool) error {
+	cfg, err := allowlistcfg.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	subnets, err := validation.GetSubnets(cfg.IpAllowlists)
+	if err != nil {
+		return err
+	}
+
+	if err := updateAllAuthIPAllowlists(ctx, subnets, dryRun, historicalComment); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// applyGlobalConfigUpdate applies the current oauth.cfg and security.cfg
+// to the AuthGlobalConfig entity.
+func applyGlobalConfigUpdate(ctx context.Context, historicalComment string, dryRun bool) error {
+	oauthConfig, err := oauthcfg.Get(ctx)
+	if err != nil {
+		return err
+	}
+	securityConfig, err := securitycfg.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := updateAuthGlobalConfig(ctx, oauthConfig, securityConfig, dryRun, historicalComment); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /////////////////////// Handling of realms configs /////////////////////////////

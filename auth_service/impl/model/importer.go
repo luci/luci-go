@@ -132,7 +132,7 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 // TODO(b/302615672): Remove this once Auth Service has been fully migrated to
 // Auth Service v2. In v2, the GroupImporterConfig entity is redundant; the
 // config proto and revision metadata is all handled by the importscfg package.
-func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupImporterConfig, meta *config.Meta) error {
+func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupImporterConfig, meta *config.Meta, dryRun bool) error {
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		storedCfg, err := GetGroupImporterConfig(ctx)
 		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
@@ -175,6 +175,11 @@ func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupI
 		serviceIdentity, err := getServiceIdentity(ctx)
 		if err != nil {
 			return err
+		}
+
+		// Exit early if in dry run mode.
+		if dryRun {
+			return nil
 		}
 
 		storedCfg.ConfigProto = string(configContent)

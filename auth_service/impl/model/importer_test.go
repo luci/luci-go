@@ -117,7 +117,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 					Revision:    "10001a",
 					ViewURL:     "config-url.example.com/imports/10001a",
 				}
-				So(updateGroupImporterConfig(ctx, testConfig, testMeta), ShouldBeNil)
+				So(updateGroupImporterConfig(ctx, testConfig, testMeta, false), ShouldBeNil)
 
 				stored, err := GetGroupImporterConfig(ctx)
 				So(err, ShouldBeNil)
@@ -129,7 +129,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 					ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
 					Convey("no-op for same revision", func() {
-						So(updateGroupImporterConfig(ctx, testConfig, testMeta), ShouldBeNil)
+						So(updateGroupImporterConfig(ctx, testConfig, testMeta, false), ShouldBeNil)
 
 						stored, err := GetGroupImporterConfig(ctx)
 						So(err, ShouldBeNil)
@@ -156,7 +156,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 							Revision:    "10001b",
 							ViewURL:     "config-url.example.com/imports/10001b",
 						}
-						So(updateGroupImporterConfig(ctx, otherConfig, otherMeta), ShouldBeNil)
+						So(updateGroupImporterConfig(ctx, otherConfig, otherMeta, false), ShouldBeNil)
 
 						stored, err := GetGroupImporterConfig(ctx)
 						So(err, ShouldBeNil)
@@ -164,6 +164,33 @@ func TestGroupImporterConfigModel(t *testing.T) {
 						actual, err := stored.ToProto()
 						So(err, ShouldBeNil)
 						So(actual, ShouldResembleProto, otherConfig)
+					})
+
+					Convey("no-op when in dry run", func() {
+						otherConfig := &configspb.GroupImporterConfig{
+							TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
+								{
+									Name:               "other-tarball-upload-test",
+									AuthorizedUploader: []string{"test-uploader@example.com"},
+									Systems:            []string{"tarballtest"},
+								},
+							},
+						}
+						otherMeta := &config.Meta{
+							ConfigSet:   config.Set("service/chrome-infra-auth-test"),
+							Path:        "imports.cfg",
+							ContentHash: "a1b2c3",
+							Revision:    "10001b",
+							ViewURL:     "config-url.example.com/imports/10001b",
+						}
+						So(updateGroupImporterConfig(ctx, otherConfig, otherMeta, true), ShouldBeNil)
+
+						stored, err := GetGroupImporterConfig(ctx)
+						So(err, ShouldBeNil)
+						So(stored.ModifiedTS, ShouldEqual, testCreatedTS)
+						actual, err := stored.ToProto()
+						So(err, ShouldBeNil)
+						So(actual, ShouldResembleProto, testConfig)
 					})
 				})
 			})
