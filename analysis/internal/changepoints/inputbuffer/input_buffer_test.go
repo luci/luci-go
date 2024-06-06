@@ -495,3 +495,57 @@ func createTestRun(pos int, hour int) Run {
 		},
 	}
 }
+
+func BenchmarkEncode(b *testing.B) {
+	// Last known result (Jun-2024):
+	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
+	// BenchmarkEncode-96    	   26706	     46593 ns/op	    2160 B/op	       2 allocs/op
+
+	b.StopTimer()
+	hs := &HistorySerializer{}
+	hs.ensureAndClearBuf()
+	ib := &Buffer{
+		HotBufferCapacity:  100,
+		HotBuffer:          History{Runs: simpleVerdicts(100, 102_000, []int{5})},
+		ColdBufferCapacity: 2000,
+		ColdBuffer:         History{Runs: simpleVerdicts(2000, 100_000, []int{102, 174, 872, 971})},
+	}
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		hs.Encode(ib.ColdBuffer)
+		hs.Encode(ib.HotBuffer)
+	}
+}
+
+func BenchmarkDecode(b *testing.B) {
+	// Last known result (Jun-2024):
+	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
+	// BenchmarkDecode-96    	   22759	     52699 ns/op	      96 B/op	       2 allocs/op
+
+	b.StopTimer()
+	var hs HistorySerializer
+	hs.ensureAndClearBuf()
+	inputBuffer := NewWithCapacity(100, 2000)
+
+	ib := &Buffer{
+		HotBufferCapacity:  100,
+		HotBuffer:          History{Runs: simpleVerdicts(100, 102_000, []int{5})},
+		ColdBufferCapacity: 2000,
+		ColdBuffer:         History{Runs: simpleVerdicts(2000, 100_000, []int{102, 174, 872, 971})},
+	}
+	encodedColdBuffer := hs.Encode(ib.ColdBuffer) // 66 bytes compressed
+	encodedHotBuffer := hs.Encode(ib.HotBuffer)   // 42 bytes compressed
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		err := hs.DecodeInto(&inputBuffer.ColdBuffer, encodedColdBuffer)
+		if err != nil {
+			panic(err)
+		}
+		err = hs.DecodeInto(&inputBuffer.HotBuffer, encodedHotBuffer)
+		if err != nil {
+			panic(err)
+		}
+	}
+}

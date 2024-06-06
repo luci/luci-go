@@ -396,9 +396,17 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 	}
 
 	for i := 0; i < int(nRuns); i++ {
+		// This loop is a 'hot' code path that may execute ~2000 times
+		// for each of the ~10,000 test verdicts ingested per page.
+
+		// Benchmarks indicate it is faster to append a new run first
+		// and modify it in place than it is to modify one in a local
+		// variable and then append it to the list.
+		runs = append(runs, Run{})
+		run := &runs[i]
+
 		// Get the commit position for the runs, and if the run is simple
 		// expected.
-		run := Run{}
 		posSim, err := binary.ReadUvarint(reader)
 		if err != nil {
 			return errors.Annotate(err, "read run position and flags").Err()
@@ -428,8 +436,7 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 		}
 
 		if isSimpleExpectedPass {
-			run.Expected = ResultCounts{PassCount: 1}
-			run.Unexpected = ResultCounts{}
+			run.Expected.PassCount = 1
 		} else {
 			// Read the detailed run counts.
 			var err error
@@ -438,7 +445,6 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 				return errors.Annotate(err, "read run details").Err()
 			}
 		}
-		runs = append(runs, run)
 	}
 	history.Runs = runs
 
