@@ -18,14 +18,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"io"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
-
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -40,12 +38,16 @@ func TestDecoding(t *testing.T) {
 	Convey("readMessage", t, func() {
 		var msg HelloRequest
 		read := func(contentType string, body []byte) *protocolError {
-			req := &http.Request{
-				Body:   io.NopCloser(bytes.NewBuffer(body)),
-				Header: http.Header{},
+			err := readMessage(
+				bytes.NewBuffer(body),
+				http.Header{"Content-Type": {contentType}},
+				&msg,
+				true,
+			)
+			if err != nil {
+				return err.(*protocolError)
 			}
-			req.Header.Set("Content-Type", contentType)
-			return readMessage(req, &msg, true)
+			return nil
 		}
 
 		testLucy := func(contentType string, body []byte) {

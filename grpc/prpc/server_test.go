@@ -17,20 +17,25 @@ package prpc
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/server/router"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type greeterService struct {
@@ -66,6 +71,22 @@ func (s *calcService) Multiply(ctx context.Context, req *MultiplyRequest) (*Mult
 	return &MultiplyResponse{
 		Z: req.X & req.Y,
 	}, nil
+}
+
+func decodeRequest(body []byte) *HelloRequest {
+	msg := &HelloRequest{}
+	if err := prototext.Unmarshal(body, msg); err != nil {
+		panic(err)
+	}
+	return msg
+}
+
+func decodeReply(body []byte) *HelloReply {
+	msg := &HelloReply{}
+	if err := prototext.Unmarshal(body, msg); err != nil {
+		panic(err)
+	}
+	return msg
 }
 
 func TestServer(t *testing.T) {
@@ -109,7 +130,7 @@ func TestServer(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusOK)
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 				So(res.Header().Get("X-Content-Type-Options"), ShouldEqual, "nosniff")
-				So(res.Body.String(), ShouldEqual, "message: \"Hello Lucy\"\n")
+				So(decodeReply(res.Body.Bytes()), ShouldResembleProto, &HelloReply{Message: "Hello Lucy"})
 			})
 
 			Convey("Header Metadata", func() {
@@ -261,6 +282,103 @@ func TestServer(t *testing.T) {
 					So(res.Header().Get("Access-Control-Allow-Methods"), ShouldEqual, "OPTIONS, POST")
 					So(res.Header().Get("Access-Control-Max-Age"), ShouldEqual, "600")
 				})
+			})
+
+			Convey("Override callback: pass through", func() {
+				req.Header.Set("Accept", mtPRPCText)
+
+				called := false
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						called = true
+						return false, nil
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusOK)
+				So(decodeReply(res.Body.Bytes()), ShouldResembleProto, &HelloReply{Message: "Hello Lucy"})
+				So(called, ShouldBeTrue)
+			})
+
+			Convey("Override callback: override", func() {
+				req.Header.Set("Accept", mtPRPCText)
+
+				var rawBody []byte
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						rawBody, _ = io.ReadAll(req.Body)
+						_, _ = fmt.Fprintf(rw, "Override")
+						return true, nil
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Body.String(), ShouldEqual, "Override")
+				So(decodeRequest(rawBody), ShouldResembleProto, &HelloRequest{Name: "Lucy"})
+			})
+
+			Convey("Override callback: error", func() {
+				req.Header.Set("Accept", mtPRPCText)
+
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						_, _ = io.ReadAll(req.Body)
+						return false, errors.New("BOOM")
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Body.String(), ShouldEqual, "failed to perform the override check: BOOM\n")
+			})
+
+			Convey("Override callback: peek, pass through", func() {
+				req.Header.Set("Accept", mtPRPCText)
+
+				var rpcReq *HelloRequest
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						r := &HelloRequest{}
+						if err := body(r); err != nil {
+							return false, err
+						}
+						rpcReq = r
+						return false, nil
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusOK)
+				So(decodeReply(res.Body.Bytes()), ShouldResembleProto, &HelloReply{Message: "Hello Lucy"})
+				So(rpcReq, ShouldResembleProto, &HelloRequest{Name: "Lucy"})
+			})
+
+			Convey("Override callback: peek, override", func() {
+				req.Header.Set("Accept", mtPRPCText)
+
+				var rpcReq *HelloRequest
+				var rawBody []byte
+				server.RegisterOverride("prpc.Greeter", "SayHello",
+					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
+						r := &HelloRequest{}
+						if err := body(r); err != nil {
+							return false, err
+						}
+						rpcReq = r
+
+						rawBody, _ = io.ReadAll(req.Body)
+						_, _ = fmt.Fprintf(rw, "Override")
+						return true, nil
+					},
+				)
+
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusOK)
+				So(rpcReq, ShouldResembleProto, &HelloRequest{Name: "Lucy"})
+				So(res.Body.String(), ShouldEqual, "Override")
+				So(decodeRequest(rawBody), ShouldResembleProto, &HelloRequest{Name: "Lucy"})
 			})
 		})
 	})

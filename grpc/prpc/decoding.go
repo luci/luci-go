@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	luciproto "go.chromium.org/luci/common/proto"
+
 	"go.chromium.org/luci/grpc/grpcutil"
 )
 
@@ -39,13 +40,13 @@ const headerContentType = "Content-Type"
 
 // readMessage decodes a protobuf message from an HTTP request.
 //
-// Does not close the request body.
+// Uses given headers to decide how to uncompress and deserialize the message.
 //
 // fixFieldMasksForJSON indicates whether to attempt a workaround for
 // https://github.com/golang/protobuf/issues/745 for requests with FormatJSONPB.
 // TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) *protocolError {
-	format, err := FormatFromContentType(r.Header.Get(headerContentType))
+func readMessage(body io.Reader, header http.Header, msg proto.Message, fixFieldMasksForJSON bool) error {
+	format, err := FormatFromContentType(header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
 		return protocolErr(
@@ -56,8 +57,8 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 	}
 
 	var buf []byte
-	if r.Header.Get("Content-Encoding") == "gzip" {
-		reader, err := getGZipReader(r.Body)
+	if header.Get("Content-Encoding") == "gzip" {
+		reader, err := getGZipReader(body)
 		if err != nil {
 			return requestReadErr(err, "failed to start decompressing gzip request body")
 		}
@@ -70,7 +71,7 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 			return requestReadErr(err, "could not read or decompress request body")
 		}
 	} else {
-		buf, err = io.ReadAll(r.Body)
+		buf, err = io.ReadAll(body)
 		if err != nil {
 			return requestReadErr(err, "could not read request body")
 		}

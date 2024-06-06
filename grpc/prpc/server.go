@@ -15,8 +15,10 @@
 package prpc
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/netip"
@@ -124,7 +126,16 @@ func AllowOriginAll(ctx context.Context, origin string) AccessControlDecision {
 // the override's responsibility to ensure it hasn't done anything that will
 // be incompatible with pRPC semantics (such as writing garbage to the response
 // writer in the router context).
-type Override func(*router.Context) bool
+//
+// Override receives `body` callback as an argument that can, on demand, read
+// and decode the request body using the decoder constructed based on the
+// request headers. This callback can be used to "peek" inside the deserialized
+// request to decide if the override should be activated. Note that `req.Body`
+// can be read only once, and the callback reads it. To allow reusing `req`
+// after the callback is done, it, as a side effect, replaces `req.Body` with a
+// byte buffer containing the data it just read. The callback can be called at
+// most once.
+type Override func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (stop bool, err error)
 
 // Server is a pRPC server to serve RPC requests.
 // Zero value is valid.
@@ -249,9 +260,46 @@ func (s *Server) handlePOST(c *router.Context) {
 	methodName := c.Params.ByName("method")
 
 	override, service, method, methodFound := s.lookup(serviceName, methodName)
+
 	// Override takes precedence over notImplementedErr.
-	if override != nil && override(c) {
-		return
+	if override != nil {
+		var originalReader io.ReadCloser
+
+		decode := func(msg proto.Message) error {
+			if originalReader != nil {
+				panic("the body callback should not be called more than once")
+			}
+			originalReader = c.Request.Body
+			body, err := io.ReadAll(originalReader)
+			if err != nil {
+				return err
+			}
+			err = readMessage(bytes.NewReader(body), c.Request.Header, msg, s.HackFixFieldMasksForJSON)
+			if err != nil {
+				return err
+			}
+			c.Request.Body = io.NopCloser(bytes.NewReader(body))
+			return nil
+		}
+
+		// This will potentially call `decode` inside.
+		stop, err := override(c.Writer, c.Request, decode)
+
+		// It appears http.Server holds a reference to the original req.Body and
+		// closes it properly when the request ends (even if we replace req.Body).
+		// But this is not documented. To be safe, restore req.Body to the original
+		// value before exiting.
+		if originalReader != nil {
+			defer func() { c.Request.Body = originalReader }()
+		}
+
+		switch {
+		case err != nil:
+			writeError(c.Request.Context(), c.Writer, requestReadErr(err, "failed to perform the override check"), FormatText)
+			return
+		case stop:
+			return
+		}
 	}
 
 	s.setAccessControlHeaders(c, false)
@@ -364,11 +412,7 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 		if in == nil {
 			return status.Errorf(codes.Internal, "input message is nil")
 		}
-		// Do not collapse it to one line. There is implicit err type conversion.
-		if perr := readMessage(c.Request, in.(proto.Message), s.HackFixFieldMasksForJSON); perr != nil {
-			return perr
-		}
-		return nil
+		return readMessage(c.Request.Body, c.Request.Header, in.(proto.Message), s.HackFixFieldMasksForJSON)
 	}, s.UnaryServerInterceptor)
 
 	switch {
@@ -379,7 +423,6 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 	default:
 		r.out = out.(proto.Message)
 	}
-	return
 }
 
 func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
