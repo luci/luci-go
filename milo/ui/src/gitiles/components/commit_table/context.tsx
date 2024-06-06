@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Dispatch, SetStateAction, createContext, useContext } from 'react';
+import { SxProps, Theme } from '@mui/material';
+import {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  createContext,
+  useContext,
+} from 'react';
 
 import { OutputCommit } from '@/gitiles/types';
 
@@ -28,6 +35,46 @@ export function useRepoUrl() {
   }
 
   return ctx;
+}
+
+const TableSxContext = createContext<SxProps<Theme> | undefined>(undefined);
+
+export const TableSxProvider = TableSxContext.Provider;
+
+export function useTableSx() {
+  return useContext(TableSxContext);
+}
+
+const TableRowPropsContext = createContext<
+  { [key: string]: unknown } | undefined
+>(undefined);
+
+const TableRowIndexContext = createContext<number | undefined>(undefined);
+
+interface TableRowPropsProviderProps {
+  readonly 'data-item-index'?: number;
+  readonly children?: ReactNode;
+}
+
+export function TableRowPropsProvider({
+  children,
+  ...props
+}: TableRowPropsProviderProps) {
+  return (
+    <TableRowIndexContext.Provider value={props['data-item-index']}>
+      <TableRowPropsContext.Provider value={props}>
+        {children}
+      </TableRowPropsContext.Provider>
+    </TableRowIndexContext.Provider>
+  );
+}
+
+export function useTableRowProps() {
+  return useContext(TableRowPropsContext);
+}
+
+export function useTableRowIndex() {
+  return useContext(TableRowIndexContext);
 }
 
 const DefaultExpandedContext = createContext<boolean | undefined>(undefined);
@@ -58,6 +105,14 @@ export function useSetDefaultExpanded() {
   }
 
   return ctx;
+}
+
+const ExpandStateStoreContext = createContext<boolean[] | undefined>(undefined);
+
+export const ExpandStateStoreProvider = ExpandStateStoreContext.Provider;
+
+export function useExpandStateStore() {
+  return useContext(ExpandStateStoreContext);
 }
 
 const ExpandedContext = createContext<boolean | undefined>(undefined);

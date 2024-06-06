@@ -14,19 +14,17 @@
 
 import { Box, CircularProgress } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { memo, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { BatchedClustersClientProvider } from '@/analysis/hooks/batched_clusters_client';
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
-  OutputQuerySourcePositionsResponse,
+  OutputSourcePosition,
   OutputTestVariantBranch,
 } from '@/analysis/types';
 import {
   AuthorContentCell,
   AuthorHeadCell,
-  CommitTable,
-  CommitTableHead,
   CommitTableRow,
   PositionContentCell,
   PositionHeadCell,
@@ -36,8 +34,8 @@ import {
   TitleHeadCell,
   ToggleContentCell,
   ToggleHeadCell,
+  VirtualizedCommitTable,
 } from '@/gitiles/components/commit_table';
-import { CommitTableBody } from '@/gitiles/components/commit_table/commit_table_body';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 import { QuerySourcePositionsRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
@@ -50,45 +48,15 @@ import {
   VerdictStatusesContentCell,
 } from './verdicts_status_column';
 
-interface CommitTablePageProps {
-  readonly page: OutputQuerySourcePositionsResponse;
-}
-
-// The table body can be large and expensive to render.
-// Use `memo` to stop it from rerendering when only the default expansion state
-// were changed.
-//
-// Group rows by pages so when new pages are loaded, we don't need to rerender
-// everything.
-const CommitTablePage = memo(function CommitTablePage({
-  page,
-}: CommitTablePageProps) {
-  return (
-    <>
-      {page.sourcePositions.map((sp, i) => (
-        <CommitTableRow
-          key={i}
-          commit={sp.commit}
-          content={<EntryContent verdicts={sp.verdicts} />}
-        >
-          <SegmentContentCell position={sp.position} />
-          <ToggleContentCell />
-          <VerdictStatusesContentCell testVerdicts={sp.verdicts} />
-          <PositionContentCell position={sp.position} />
-          <TimeContentCell />
-          <AuthorContentCell />
-          <TitleContentCell />
-        </CommitTableRow>
-      ))}
-    </>
-  );
-});
-
 export interface BlamelistTable {
   readonly testVariantBranch: OutputTestVariantBranch;
+  readonly customScrollParent?: HTMLElement;
 }
 
-export function BlamelistTable({ testVariantBranch }: BlamelistTable) {
+export function BlamelistTable({
+  testVariantBranch,
+  customScrollParent,
+}: BlamelistTable) {
   const client = useTestVariantBranchesClient();
   const { data, isLoading, isError, error, hasNextPage, fetchNextPage } =
     useInfiniteQuery({
@@ -122,6 +90,12 @@ export function BlamelistTable({ testVariantBranch }: BlamelistTable) {
     return null;
   }, [data, hasNextPage]);
   const repoUrl = getGitilesRepoURL(testVariantBranch.ref.gitiles);
+  const sourcePositions = useMemo(
+    () =>
+      data?.pages.flatMap((p) => p.sourcePositions as OutputSourcePosition[]) ||
+      [],
+    [data?.pages],
+  );
 
   return (
     <BlamelistContextProvider testVariantBranch={testVariantBranch}>
@@ -131,37 +105,51 @@ export function BlamelistTable({ testVariantBranch }: BlamelistTable) {
             <CircularProgress />
           </Box>
         ) : (
-          <CommitTable
+          <VirtualizedCommitTable
+            customScrollParent={customScrollParent}
             repoUrl={repoUrl}
+            totalCount={sourcePositions.length + (hasNextPage ? 1 : 0)}
+            fixedHeaderContent={() => (
+              <>
+                <SegmentHeadCell />
+                <ToggleHeadCell hotkey="x" />
+                <VerdictsStatusHeadCell />
+                <PositionHeadCell />
+                <TimeHeadCell />
+                <AuthorHeadCell />
+                <TitleHeadCell />
+              </>
+            )}
+            itemContent={(i) => {
+              if (i === sourcePositions.length) {
+                return (
+                  <LoadingRow
+                    loadedPageCount={data.pages.length}
+                    nextCommitPosition={nextCommitPosition}
+                    loadNextPage={() => fetchNextPage()}
+                  />
+                );
+              }
+
+              const sp = sourcePositions[i];
+              return (
+                <CommitTableRow
+                  key={sp.position}
+                  commit={sp.commit}
+                  content={<EntryContent verdicts={sp.verdicts} />}
+                >
+                  <SegmentContentCell position={sp.position} />
+                  <ToggleContentCell />
+                  <VerdictStatusesContentCell testVerdicts={sp.verdicts} />
+                  <PositionContentCell position={sp.position} />
+                  <TimeContentCell />
+                  <AuthorContentCell />
+                  <TitleContentCell />
+                </CommitTableRow>
+              );
+            }}
             sx={{ '& td:last-of-type': { flexGrow: 0 } }}
-          >
-            <CommitTableHead>
-              <SegmentHeadCell />
-              <ToggleHeadCell hotkey="x" />
-              <VerdictsStatusHeadCell />
-              <PositionHeadCell />
-              <TimeHeadCell />
-              <AuthorHeadCell />
-              <TitleHeadCell />
-            </CommitTableHead>
-            <CommitTableBody>
-              {data.pages.map((page, i) => (
-                <CommitTablePage
-                  key={i}
-                  page={page as OutputQuerySourcePositionsResponse}
-                />
-              ))}
-              {hasNextPage ? (
-                <LoadingRow
-                  loadedPageCount={data.pages.length}
-                  nextCommitPosition={nextCommitPosition}
-                  loadNextPage={() => fetchNextPage()}
-                />
-              ) : (
-                <></>
-              )}
-            </CommitTableBody>
-          </CommitTable>
+          />
         )}
       </BatchedClustersClientProvider>
     </BlamelistContextProvider>

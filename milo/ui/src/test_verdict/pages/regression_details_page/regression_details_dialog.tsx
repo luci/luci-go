@@ -14,6 +14,7 @@
 
 import { Close } from '@mui/icons-material';
 import { Box, Dialog, DialogContent, DialogTitle, Link } from '@mui/material';
+import { useRef } from 'react';
 
 import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_sticky';
 import { getGitilesCommitURL } from '@/gitiles/tools/utils';
@@ -26,6 +27,8 @@ export function RegressionDetailsDialog() {
   const state = useBlamelistState();
   // TODO: implement scroll to focus commit position.
   const testVariantBranch = state.testVariantBranch;
+
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   if (!testVariantBranch) {
     return <></>;
@@ -97,8 +100,15 @@ export function RegressionDetailsDialog() {
           />
         </Box>
       </DialogTitle>
-      <QueuedStickyScrollingBase sx={{ padding: 0 }} component={DialogContent}>
-        <BlamelistTable testVariantBranch={testVariantBranch} />
+      <QueuedStickyScrollingBase
+        sx={{ padding: 0 }}
+        component={DialogContent}
+        ref={scrollRef}
+      >
+        <BlamelistTable
+          testVariantBranch={testVariantBranch}
+          customScrollParent={scrollRef.current || undefined}
+        />
       </QueuedStickyScrollingBase>
     </Dialog>
   );

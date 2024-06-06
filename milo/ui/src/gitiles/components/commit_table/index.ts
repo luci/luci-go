@@ -13,6 +13,7 @@
 // limitations under the License.
 
 export * from './commit_table';
+export * from './virtualized_commit_table';
 export * from './commit_table_head';
 export * from './commit_table_row';
 export * from './commit_content';

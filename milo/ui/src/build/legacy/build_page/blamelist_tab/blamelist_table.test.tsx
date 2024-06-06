@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
+import { act } from 'react';
+import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
 import { QueryBlamelistResponse } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
@@ -40,31 +42,45 @@ function makeCommit(id: string): Commit {
   };
 }
 
-describe('BlamelistTable', () => {
-  it('can assign the commit numbers correctly', () => {
+describe('<BlamelistTable />', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('can assign the commit numbers correctly', async () => {
     render(
-      <BlamelistTable
-        repoUrl="https://repo.url"
-        pages={[
-          QueryBlamelistResponse.fromPartial({
-            commits: Object.freeze([
-              makeCommit('commit1'),
-              makeCommit('commit2'),
-              makeCommit('commit3'),
-            ]),
-          }) as OutputQueryBlamelistResponse,
-          QueryBlamelistResponse.fromPartial({
-            commits: Object.freeze([
-              makeCommit('commit4'),
-              makeCommit('commit5'),
-            ]),
-          }) as OutputQueryBlamelistResponse,
-          QueryBlamelistResponse.fromPartial({
-            commits: Object.freeze([makeCommit('commit6')]),
-          }) as OutputQueryBlamelistResponse,
-        ]}
-      />,
+      <VirtuosoMockContext.Provider
+        value={{ viewportHeight: 300, itemHeight: 10 }}
+      >
+        <BlamelistTable
+          repoUrl="https://repo.url"
+          pages={[
+            QueryBlamelistResponse.fromPartial({
+              commits: Object.freeze([
+                makeCommit('commit1'),
+                makeCommit('commit2'),
+                makeCommit('commit3'),
+              ]),
+            }) as OutputQueryBlamelistResponse,
+            QueryBlamelistResponse.fromPartial({
+              commits: Object.freeze([
+                makeCommit('commit4'),
+                makeCommit('commit5'),
+              ]),
+            }) as OutputQueryBlamelistResponse,
+            QueryBlamelistResponse.fromPartial({
+              commits: Object.freeze([makeCommit('commit6')]),
+            }) as OutputQueryBlamelistResponse,
+          ]}
+        />
+      </VirtuosoMockContext.Provider>,
     );
+
+    await act(() => jest.runAllTimersAsync());
 
     expect(screen.getByText('commit1').closest('tr')).toHaveTextContent('1.');
     expect(screen.getByText('commit2').closest('tr')).toHaveTextContent('2.');

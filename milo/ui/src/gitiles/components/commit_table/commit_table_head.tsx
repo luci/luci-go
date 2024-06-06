@@ -13,16 +13,25 @@
 // limitations under the License.
 
 import { SxProps, TableHead, TableRow, Theme } from '@mui/material';
-import { ReactNode } from 'react';
+import { CSSProperties, ForwardedRef, ReactNode, forwardRef } from 'react';
 
 export interface CommitTableHeadProps {
   readonly sx?: SxProps<Theme>;
-  readonly children: ReactNode;
+  readonly style?: CSSProperties;
+  readonly children?: ReactNode;
 }
 
-export function CommitTableHead({ sx, children }: CommitTableHeadProps) {
+export const CommitTableHead = forwardRef(function CommitTableHead(
+  { sx, children, style, ...props }: CommitTableHeadProps,
+  ref: ForwardedRef<HTMLTableSectionElement>,
+) {
   return (
     <TableHead
+      {...props}
+      ref={ref}
+      // Prevent `top` from MUI-generated class being overridden by style
+      // assigned by `react-virtuoso`.
+      style={{ ...style, top: undefined }}
       sx={{
         position: 'sticky',
         top: 'var(--accumulated-top)',
@@ -42,4 +51,4 @@ export function CommitTableHead({ sx, children }: CommitTableHeadProps) {
       </TableRow>
     </TableHead>
   );
-}
+});

@@ -24,7 +24,10 @@ export interface NumContentCellProps {
 
 export function NumContentCell({ num }: NumContentCellProps) {
   return (
-    <TableCell data-testid="commit-num" sx={{ fontWeight: 'bold' }}>
+    <TableCell
+      data-testid="commit-num"
+      sx={{ fontWeight: 'bold', minWidth: '30px' }}
+    >
       {num}.
     </TableCell>
   );

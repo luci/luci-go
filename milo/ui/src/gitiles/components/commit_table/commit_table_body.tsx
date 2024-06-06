@@ -13,13 +13,20 @@
 // limitations under the License.
 
 import { SxProps, TableBody, Theme } from '@mui/material';
-import { ReactNode } from 'react';
+import { ForwardedRef, ReactNode, forwardRef } from 'react';
 
 export interface CommitTableBodyProps {
   readonly sx?: SxProps<Theme>;
-  readonly children: ReactNode;
+  readonly children?: ReactNode;
 }
 
-export function CommitTableBody({ sx, children }: CommitTableBodyProps) {
-  return <TableBody sx={sx}>{children}</TableBody>;
-}
+export const CommitTableBody = forwardRef(function CommitTableBody(
+  { sx, children, ...props }: CommitTableBodyProps,
+  ref: ForwardedRef<HTMLTableSectionElement>,
+) {
+  return (
+    <TableBody {...props} ref={ref} sx={sx}>
+      {children}
+    </TableBody>
+  );
+});

@@ -25,7 +25,13 @@ export function AuthorContentCell() {
 
   return (
     <TableCell
-      sx={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}
+      sx={{
+        // Note: `width: '200px'` does not work with `<td />`.
+        minWidth: '200px',
+        maxWidth: '200px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
       title={commit.author.email}
     >
       {commit.author.email}

@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { SxProps, Table, Theme } from '@mui/material';
+import { SxProps, Theme } from '@mui/material';
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { useLatest } from 'react-use';
 
+import { StyledTable } from './common';
 import {
   DefaultExpandedProvider,
   RepoUrlProvider,
   SetDefaultExpandedProvider,
+  TableSxProvider,
 } from './context';
 
 export interface CommitTableProps {
@@ -34,14 +35,15 @@ export function CommitTable({
   repoUrl,
   initDefaultExpanded = false,
   onDefaultExpandedChanged = () => {
-    /* Noop by default. */
+    // Noop by default.
   },
   sx,
   children,
 }: CommitTableProps) {
   const [defaultExpanded, setDefaultExpanded] = useState(initDefaultExpanded);
 
-  const onDefaultExpandedChangedRef = useLatest(onDefaultExpandedChanged);
+  const onDefaultExpandedChangedRef = useRef(onDefaultExpandedChanged);
+  onDefaultExpandedChangedRef.current = onDefaultExpandedChanged;
   const isFirstCall = useRef(true);
   useEffect(() => {
     // Skip the first call because the default state were not changed.
@@ -50,25 +52,17 @@ export function CommitTable({
       return;
     }
     onDefaultExpandedChangedRef.current(defaultExpanded);
-  }, [onDefaultExpandedChangedRef, defaultExpanded]);
+  }, [defaultExpanded]);
 
   return (
-    <Table
-      size="small"
-      sx={{
-        borderCollapse: 'separate',
-        '& td, th': {
-          padding: '0px 8px',
-        },
-        minWidth: '1000px',
-        ...sx,
-      }}
-    >
-      <SetDefaultExpandedProvider value={setDefaultExpanded}>
-        <DefaultExpandedProvider value={defaultExpanded}>
-          <RepoUrlProvider value={repoUrl}>{children}</RepoUrlProvider>
-        </DefaultExpandedProvider>
-      </SetDefaultExpandedProvider>
-    </Table>
+    <SetDefaultExpandedProvider value={setDefaultExpanded}>
+      <DefaultExpandedProvider value={defaultExpanded}>
+        <RepoUrlProvider value={repoUrl}>
+          <TableSxProvider value={sx}>
+            <StyledTable>{children}</StyledTable>
+          </TableSxProvider>
+        </RepoUrlProvider>
+      </DefaultExpandedProvider>
+    </SetDefaultExpandedProvider>
   );
 }

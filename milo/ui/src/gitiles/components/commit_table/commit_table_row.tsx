@@ -18,11 +18,14 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { OutputCommit } from '@/gitiles/types';
 
 import { CommitContent } from './commit_content';
+import { StyledTableRow } from './common';
 import {
   CommitProvider,
   ExpandedProvider,
   SetExpandedProvider,
   useDefaultExpanded,
+  useExpandStateStore,
+  useTableRowIndex,
 } from './context';
 
 export interface CommitTableRowProps {
@@ -41,9 +44,41 @@ export function CommitTableRow({
   content,
   children,
 }: CommitTableRowProps) {
+  const tableRowIndex = useTableRowIndex();
+  const expandStateStore = useExpandStateStore();
+
   const defaultExpanded = useDefaultExpanded();
-  const [expanded, setExpanded] = useState(() => defaultExpanded);
-  useEffect(() => setExpanded(defaultExpanded), [defaultExpanded]);
+  const [expanded, setExpanded] = useState(
+    // Recover expand state from the external store if it's stored there.
+    // This allow the commit row to keep its state when it's unmounted
+    // (e.g. due to virtual windowing).
+    () =>
+      (tableRowIndex === undefined
+        ? undefined
+        : expandStateStore?.[tableRowIndex]) ?? defaultExpanded,
+  );
+
+  // Sync the expand state to the default expand state whenever the default
+  // expand state changes.
+  const isFirstCall = useRef(true);
+  useEffect(() => {
+    // Skip the assignment in the first rendering call so we don't overwrite the
+    // state recovered from the external store immediately.
+    if (isFirstCall.current) {
+      isFirstCall.current = false;
+      return;
+    }
+    setExpanded(defaultExpanded);
+  }, [defaultExpanded]);
+
+  // Store the expand state in the external store so the state can be recovered
+  // when the component is re-mounted.
+  useEffect(() => {
+    if (tableRowIndex === undefined || expandStateStore === undefined) {
+      return;
+    }
+    expandStateStore[tableRowIndex] = expanded;
+  }, [expanded, tableRowIndex, expandStateStore]);
 
   // We do not need `wasExpanded` to be a state because it could only change
   // when another state, `expanded`, is updated. Keeping it in a ref reduces
@@ -57,17 +92,7 @@ export function CommitTableRow({
         {/* Pass commit to cells via context so composing a row require less
          ** boilerplate. */}
         <CommitProvider value={commit}>
-          <TableRow
-            sx={{
-              '& > td': { whiteSpace: 'nowrap' },
-              // Add a fixed height to allow children to use `height: 100%`.
-              // The actual height of the row will expand to contain the
-              // children.
-              height: '1px',
-            }}
-          >
-            {children}
-          </TableRow>
+          <StyledTableRow>{children}</StyledTableRow>
           {/* Always render the content row to DOM to ensure a stable DOM
            ** structure.
            **/}
