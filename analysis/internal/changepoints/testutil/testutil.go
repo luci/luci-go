@@ -33,6 +33,10 @@ func SamplePayload() *taskspb.IngestTestVerdicts {
 			InvocationId: "build-1234",
 			ResultdbHost: "rdbHost",
 		},
+		PresubmitRun: &controlpb.PresubmitResult{
+			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
+			Mode:   pb.PresubmitRunMode_FULL_RUN,
+		},
 		PartitionTime: timestamppb.New(time.Unix(3600*10, 0)),
 	}
 }

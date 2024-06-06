@@ -159,6 +159,10 @@ func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opt
 	}
 
 	filteredTVs := filterRunTestVerdictsLowLatency(ctx, opts.Project, tvs)
+	if len(filteredTVs) == 0 {
+		// Exit early.
+		return nil
+	}
 
 	firstTV := tvs[0]
 	checkpointKey := checkpoints.Key{

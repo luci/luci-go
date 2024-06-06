@@ -299,9 +299,17 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Expect a continuation task to be created.
 				verifyContinuationTask(skdr, expectedContinuation)
-				verifyCheckpoints(ctx, expectedCheckpoints)
+
+				// Expect only the continuation task checkpoint.
+				// The test results should not be ingested into
+				// changepoint analysis here as there is no
+				// presubmit run that we can use to confirm the
+				// changes were submitted.
+				verifyCheckpoints(ctx, expectedCheckpoints[:1])
+
 				verifyTestResults(ctx, partitionTime, false)
-				// Clustering no enabled - no chunk has been written to GCS.
+
+				// Clustering not enabled - no chunk has been written to GCS.
 				So(len(chunkStore.Contents), ShouldEqual, 0)
 				verifyTestVerdicts(testVerdicts, partitionTime, false)
 

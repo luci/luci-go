@@ -21,7 +21,6 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -49,7 +48,7 @@ var (
 		field.String("project"),
 		// Possible values:
 		// - "ingested": The verdict was ingested.
-		// - "skipped_no_source": The verdict was skipped because it has no source
+		// - "skipped_no_sources": The verdict was skipped because it has no source
 		//   data.
 		// - "skipped_no_commit_data": The verdict was skipped because its source
 		//   does not have enough commit data (e.g. commit position).
@@ -66,15 +65,6 @@ var (
 // Analyze performs change point analyses based on incoming test verdicts.
 // sourcesMap contains the information about the source code being tested.
 func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
-	// Check that sourcesMap is not empty and has commit position data.
-	// This is for fast termination, as there should be only few items in
-	// sourcesMap to check.
-	if !sources.SourcesMapHasCommitData(sourcesMap) {
-		verdictCounter.Add(ctx, int64(len(tvs)), payload.Project, "skipped_no_commit_data")
-		logging.Debugf(ctx, "Sourcemap has no commit data, skipping change point analysis")
-		return nil
-	}
-
 	// Instead of processing 10,000 test verdicts at a time, we will process by
 	// smaller batches. This will increase the robustness of the process, and
 	// in case something go wrong, we will not need to reprocess the whole 10,000
@@ -123,6 +113,11 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	filteredTVs, err := filterTestVariantsHighLatency(ctx, tvs, payload, claimedInvs, sourcesMap)
 	if err != nil {
 		return errors.Annotate(err, "filter test variants").Err()
+	}
+
+	if len(filteredTVs) == 0 {
+		// Exit early.
+		return nil
 	}
 
 	// Contains the test variant branches to be written to BigQuery.
@@ -292,7 +287,7 @@ func filterTestVariantsHighLatency(ctx context.Context, tvs []*rdbpb.TestVariant
 		// Checks source map.
 		src, ok := sourcesMap[tv.SourcesId]
 		if !ok {
-			verdictCounter.Add(ctx, 1, project, "skipped_no_source")
+			verdictCounter.Add(ctx, 1, project, "skipped_no_sources")
 			continue
 		}
 		if !sources.HasCommitData(src) {

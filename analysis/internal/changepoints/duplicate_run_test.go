@@ -27,22 +27,29 @@ import (
 )
 
 func TestTryClaimInvocations(t *testing.T) {
-	Convey(`Claims unclaimed invocations and invocations already claimed by this root invocation`, t, func() {
+	Convey(`With Spanner Test Database`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		// Insert some values into spanner.
-		mutations := []*spanner.Mutation{
-			invocationMutation("chromium", "inv-1", "build-8001"),
-			invocationMutation("chromeos", "inv-2", "build-8002"),
-			invocationMutation("chromium", "inv-3", "build-8003"),
-			invocationMutation("chromium", "inv-4", "build-8000"),
-		}
-		testutil.MustApply(ctx, mutations...)
+		Convey(`Claims unclaimed invocations and invocations already claimed by this root invocation`, func() {
+			// Insert some values into spanner.
+			mutations := []*spanner.Mutation{
+				invocationMutation("chromium", "inv-1", "build-8001"),
+				invocationMutation("chromeos", "inv-2", "build-8002"),
+				invocationMutation("chromium", "inv-3", "build-8003"),
+				invocationMutation("chromium", "inv-4", "build-8000"),
+			}
+			testutil.MustApply(ctx, mutations...)
 
-		claimed, err := tryClaimInvocations(span.Single(ctx), "chromium", "build-8000", []string{"inv-1", "inv-2", "inv-3", "inv-4"})
-		So(err, ShouldBeNil)
-		So(claimed, ShouldResemble, map[string]bool{
-			"inv-2": true,
-			"inv-4": true,
+			claimed, err := tryClaimInvocations(span.Single(ctx), "chromium", "build-8000", []string{"inv-1", "inv-2", "inv-3", "inv-4"})
+			So(err, ShouldBeNil)
+			So(claimed, ShouldResemble, map[string]bool{
+				"inv-2": true,
+				"inv-4": true,
+			})
+		})
+		Convey(`Claims an empty list of invocations`, func() {
+			claimed, err := tryClaimInvocations(span.Single(ctx), "chromium", "build-8000", []string{})
+			So(err, ShouldBeNil)
+			So(claimed, ShouldResemble, map[string]bool{})
 		})
 	})
 }

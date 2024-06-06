@@ -57,7 +57,8 @@ func TestAnalyzeChangePoint(t *testing.T) {
 	Convey(`Can batch result`, t, func() {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
-		sourcesMap := tu.SampleSourcesMap(10)
+		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
+
 		// 900 test variants should result in 5 batches (1000 each, last one has 500).
 		tvs := testVariants(4500)
 		err := Analyze(ctx, tvs, payload, sourcesMap, exporter)
@@ -70,7 +71,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 	Convey(`Can skip batch`, t, func() {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
-		sourcesMap := tu.SampleSourcesMap(10)
+		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
 		tvs := testVariants(100)
 		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
 		So(err, ShouldBeNil)
@@ -229,7 +230,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(tvs), ShouldEqual, 1)
 		So(tvs[0].TestId, ShouldEqual, "3")
-		So(verdictCounter.Get(ctx, "chromium", "skipped_no_source"), ShouldEqual, 1)
+		So(verdictCounter.Get(ctx, "chromium", "skipped_no_sources"), ShouldEqual, 1)
 		So(verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), ShouldEqual, 1)
 		So(verdictCounter.Get(ctx, "chromium", "skipped_all_skipped_or_unclaimed"), ShouldEqual, 2)
 	})
@@ -282,11 +283,6 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 	Convey(`Analyze batch with empty buffer`, t, func() {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
-		payload.PresubmitRun = &controlpb.PresubmitResult{
-			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
-			Mode:   pb.PresubmitRunMode_FULL_RUN,
-		}
-
 		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
 		tvs := []*rdbpb.TestVariant{
 			{
@@ -623,10 +619,6 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		payload := tu.SamplePayload()
 		const ingestedVerdictHour = 55
 		payload.PartitionTime = timestamppb.New(time.Unix(ingestedVerdictHour*3600, 0))
-		payload.PresubmitRun = &controlpb.PresubmitResult{
-			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
-			Mode:   pb.PresubmitRunMode_FULL_RUN,
-		}
 
 		tvs := []*rdbpb.TestVariant{
 			{
@@ -810,10 +802,6 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		// Insert a new verdict.
 		payload := tu.SamplePayload()
-		payload.PresubmitRun = &controlpb.PresubmitResult{
-			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED,
-			Mode:   pb.PresubmitRunMode_FULL_RUN,
-		}
 		const ingestedVerdictHour = 5*365*24 + 13
 		payload.PartitionTime = timestamppb.New(time.Unix(ingestedVerdictHour*3600, 0))
 
@@ -948,10 +936,18 @@ func fetchInvocations(ctx context.Context) []Invocation {
 func testVariants(n int) []*rdbpb.TestVariant {
 	tvs := make([]*rdbpb.TestVariant, n)
 	for i := 0; i < n; i++ {
+		testID := fmt.Sprintf("test_%d", i)
 		tvs[i] = &rdbpb.TestVariant{
 			TestId:      fmt.Sprintf("test_%d", i),
 			VariantHash: fmt.Sprintf("hash_%d", i),
 			SourcesId:   "sources_id",
+			Results: []*rdbpb.TestResultBundle{
+				{
+					Result: &rdbpb.TestResult{
+						Name: fmt.Sprintf("invocations/my-inv/tests/%s/results/1", testID),
+					},
+				},
+			},
 		}
 	}
 	return tvs
