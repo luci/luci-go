@@ -37,9 +37,12 @@ export function InvocationDefaultTab() {
   return <></>;
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="default">
-    <InvocationDefaultTab />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="default">
+      <InvocationDefaultTab />
+    </RecoverableErrorBoundary>
+  );
+}

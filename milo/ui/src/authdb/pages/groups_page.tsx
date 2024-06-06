@@ -11,23 +11,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {GroupsList} from '@/authdb/components/groups_list';
+
 import Grid from '@mui/material/Grid';
+
+import { GroupsList } from '@/authdb/components/groups_list';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 
 export function GroupsPage() {
   return (
     <Grid container>
-      <Grid item xs={1}>
-      </Grid>
+      <Grid item xs={1}></Grid>
       <Grid item xs={10}>
         <GroupsList />
       </Grid>
-      <Grid item xs={1}>
-      </Grid>
+      <Grid item xs={1}></Grid>
     </Grid>
   );
 }
 
-export const element = (
-    <GroupsPage />
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="group">
+      <GroupsPage />
+    </RecoverableErrorBoundary>
+  );
+}

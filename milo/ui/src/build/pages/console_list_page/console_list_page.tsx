@@ -81,9 +81,12 @@ export function ConsoleListPage() {
   );
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="console-list">
-    <ConsoleListPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="console-list">
+      <ConsoleListPage />
+    </RecoverableErrorBoundary>
+  );
+}

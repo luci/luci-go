@@ -91,9 +91,12 @@ export function BuilderListPage() {
   );
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="builder-list">
-    <BuilderListPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="builder-list">
+      <BuilderListPage />
+    </RecoverableErrorBoundary>
+  );
+}

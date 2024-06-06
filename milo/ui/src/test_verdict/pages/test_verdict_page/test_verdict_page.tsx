@@ -114,9 +114,12 @@ export function TestVerdictPage() {
   );
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="test-verdict">
-    <TestVerdictPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="test-verdict">
+      <TestVerdictPage />
+    </RecoverableErrorBoundary>
+  );
+}

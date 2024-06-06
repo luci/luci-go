@@ -20,4 +20,6 @@ export function NotFoundPage() {
   );
 }
 
-export const element = <NotFoundPage />;
+export function Component() {
+  return <NotFoundPage />;
+}

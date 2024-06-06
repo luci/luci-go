@@ -86,9 +86,12 @@ export function BuilderGroupPage() {
   );
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="builder-group">
-    <BuilderGroupPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="builder-group">
+      <BuilderGroupPage />
+    </RecoverableErrorBoundary>
+  );
+}

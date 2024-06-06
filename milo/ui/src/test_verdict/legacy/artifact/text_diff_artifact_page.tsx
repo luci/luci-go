@@ -155,9 +155,12 @@ export function TextDiffArtifactPage() {
   return <milo-text-diff-artifact-page></milo-text-diff-artifact-page>;
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="text-diff">
-    <TextDiffArtifactPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="text-diff">
+      <TextDiffArtifactPage />
+    </RecoverableErrorBoundary>
+  );
+}

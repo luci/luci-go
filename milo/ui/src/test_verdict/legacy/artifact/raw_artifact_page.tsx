@@ -46,9 +46,12 @@ export function RawArtifactPage() {
   return <>Redirecting to the new raw artifact URL...</>;
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="raw">
-    <RawArtifactPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="raw">
+      <RawArtifactPage />
+    </RecoverableErrorBoundary>
+  );
+}

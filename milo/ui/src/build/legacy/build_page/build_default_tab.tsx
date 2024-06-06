@@ -48,9 +48,12 @@ export function BuildDefaultTab() {
   return <></>;
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="default">
-    <BuildDefaultTab />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="default">
+      <BuildDefaultTab />
+    </RecoverableErrorBoundary>
+  );
+}

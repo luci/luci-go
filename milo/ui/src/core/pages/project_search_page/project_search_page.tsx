@@ -98,9 +98,12 @@ export function ProjectSearchPage() {
   );
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="project-search">
-    <ProjectSearchPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="project-search">
+      <ProjectSearchPage />
+    </RecoverableErrorBoundary>
+  );
+}

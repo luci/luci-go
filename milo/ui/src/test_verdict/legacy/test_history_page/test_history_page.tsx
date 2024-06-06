@@ -161,9 +161,12 @@ export const TestHistoryPage = observer(() => {
   );
 });
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="test-history">
-    <TestHistoryPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="test-history">
+      <TestHistoryPage />
+    </RecoverableErrorBoundary>
+  );
+}

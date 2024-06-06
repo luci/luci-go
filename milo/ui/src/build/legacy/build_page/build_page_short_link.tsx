@@ -94,9 +94,12 @@ export function BuildPageShortLink() {
   );
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="build-short-link">
-    <BuildPageShortLink />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="build-short-link">
+      <BuildPageShortLink />
+    </RecoverableErrorBoundary>
+  );
+}

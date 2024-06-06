@@ -68,9 +68,12 @@ export function InvocationPage() {
   );
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="invocation">
-    <InvocationPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="invocation">
+      <InvocationPage />
+    </RecoverableErrorBoundary>
+  );
+}

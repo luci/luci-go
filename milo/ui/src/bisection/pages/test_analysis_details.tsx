@@ -176,9 +176,12 @@ export function TestAnalysisDetailsPage() {
   );
 }
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="test-analysis-details">
-    <TestAnalysisDetailsPage />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="test-analysis-details">
+      <TestAnalysisDetailsPage />
+    </RecoverableErrorBoundary>
+  );
+}

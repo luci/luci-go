@@ -66,9 +66,12 @@ export const TestSearch = () => {
   );
 };
 
-export const element = (
-  // See the documentation for `<LoginPage />` for why we handle error this way.
-  <RecoverableErrorBoundary key="test-search">
-    <TestSearch />
-  </RecoverableErrorBoundary>
-);
+export function Component() {
+  return (
+    // See the documentation for `<LoginPage />` for why we handle error this
+    // way.
+    <RecoverableErrorBoundary key="test-search">
+      <TestSearch />
+    </RecoverableErrorBoundary>
+  );
+}

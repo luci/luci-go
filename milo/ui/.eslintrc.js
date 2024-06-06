@@ -18,7 +18,14 @@ module.exports = {
     browser: true,
     es2021: true,
   },
-  plugins: ['react', '@typescript-eslint', 'prettier', 'jsx-a11y', 'import'],
+  plugins: [
+    'react',
+    '@typescript-eslint',
+    'prettier',
+    'jsx-a11y',
+    'import',
+    'react-refresh',
+  ],
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',
@@ -116,6 +123,17 @@ module.exports = {
       },
     ],
 
+    // Generated protobuf types could be very long (e.g.
+    // `ClusterResponse_ClusteredTestResult_ClusterEntry`). Set a high max-len
+    // so we don't need to disable this rule whenever those long types are used.
+    //
+    // Note that the prettier will still try to reformat the code into 80 cols
+    // when appropriate. And we should generally fit our code in 80 cols too.
+    'max-len': [
+      'error',
+      { code: 140, ignoreUrls: true, ignoreRegExpLiterals: true },
+    ],
+
     // This prevents us from calling functions in Pascal case (e.g. generated
     // pRPC bindings). It doesn't add a lot of value since TypeScript already
     // enforces ES6 class constructors to be called with `new`.
@@ -146,17 +164,6 @@ module.exports = {
       },
     ],
 
-    // Generated protobuf types could be very long (e.g.
-    // `ClusterResponse_ClusteredTestResult_ClusterEntry`). Set a high max-len
-    // so we don't need to disable this rule whenever those long types are used.
-    //
-    // Note that the prettier will still try to reformat the code into 80 cols
-    // when appropriate. And we should generally fit our code in 80 cols too.
-    'max-len': [
-      'error',
-      { code: 140, ignoreUrls: true, ignoreRegExpLiterals: true },
-    ],
-
     // Ban `console.log` to encourage displaying message via DOM and prevent
     // debugging statements from being accidentally left in the codebase.
     // `console.error/warn` is still useful for error reporting from our users
@@ -182,6 +189,13 @@ module.exports = {
 
     // See https://emotion.sh/docs/eslint-plugin-react.
     'react/no-unknown-property': ['error', { ignore: ['css'] }],
+
+    // See https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports.
+    // TODO: make this an error once most of the codebase satisfies this rule.
+    'react-refresh/only-export-components': [
+      'warn',
+      { allowConstantExport: true },
+    ],
 
     // JSDoc related rules are deprecated [1].
     // Also with TypeScript, a lot of the JSDoc are unnecessary.

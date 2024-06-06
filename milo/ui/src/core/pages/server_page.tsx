@@ -26,8 +26,12 @@ export function ServerPage() {
   return <></>;
 }
 
-export const element = <ServerPage />;
+export function Component() {
+  return <ServerPage />;
+}
 
 // Cannot use `<RecoverableErrorBoundary />` here because it requires the
 // auth state provider.
-export const errorElement = <RouteErrorDisplay />;
+export function ErrorBoundary() {
+  return <RouteErrorDisplay />;
+}
