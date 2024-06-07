@@ -50,7 +50,11 @@ export function TreeStatusRow({ status }: TreeStatusRowProps) {
         <LinkifiedText text={status.message} />
       </TableCell>
       <TableCell sx={fit}>
-        <Timestamp datetime={createTime} />
+        {createTime ? (
+          <Timestamp datetime={createTime} />
+        ) : (
+          <span>No timestamp available</span>
+        )}
       </TableCell>
       <TableCell sx={fit}>
         {showTeamsLink ? (

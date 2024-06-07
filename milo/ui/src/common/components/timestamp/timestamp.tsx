@@ -21,7 +21,7 @@ import { DEFAULT_EXTRA_ZONE_CONFIGS, TimeZoneConfig } from './constants';
 import { Tooltip } from './tooltip';
 
 export interface TimestampProps {
-  readonly datetime: DateTime | undefined;
+  readonly datetime: DateTime;
   /**
    * Defaults to `LONG_TIME_FORMAT`;
    */
@@ -50,10 +50,6 @@ export function Timestamp({
   format = LONG_TIME_FORMAT,
   extraTimezones,
 }: TimestampProps) {
-  if (datetime === undefined) {
-    return <span>No timestamp available</span>;
-  }
-
   const extraZones = extraTimezones?.zones ?? DEFAULT_EXTRA_ZONE_CONFIGS;
   const extraFormat = extraTimezones?.format ?? format;
 

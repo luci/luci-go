@@ -14,7 +14,7 @@
 
 import { DateTime } from 'luxon';
 
-import { displayDuration } from '@/common/tools/time_utils';
+import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 
 import { TimeZoneConfig } from './constants';
 
@@ -25,18 +25,18 @@ export interface TooltipProps {
 }
 
 export function Tooltip({ datetime, format, zones }: TooltipProps) {
-  const now = DateTime.now();
   return (
     <table>
       <tbody>
         <tr>
-          <td colSpan={2}>{displayDuration(now.diff(datetime))} ago</td>
+          <td colSpan={2}>
+            <RelativeTimestamp timestamp={datetime} />
+          </td>
         </tr>
         {zones.map((tz, i) => (
           <tr key={i}>
             <td>{tz.label}:</td>
             <td>{datetime.setZone(tz.zone).toFormat(format)}</td>
-            <td>{now.setZone(tz.zone).toFormat(format)}</td>
           </tr>
         ))}
       </tbody>
