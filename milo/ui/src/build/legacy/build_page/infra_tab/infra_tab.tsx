@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Icon, styled } from '@mui/material';
+import { Box, styled } from '@mui/material';
 import { startCase } from 'lodash-es';
 
+import { BuildStatusIcon } from '@/build/components/build_status_icon';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import {
-  BUILD_STATUS_CLASS_MAP,
-  BUILD_STATUS_DISPLAY_MAP,
-  BUILD_STATUS_ICON_MAP,
-} from '@/common/constants/build';
+import { BUILD_STATUS_DISPLAY_MAP } from '@/common/constants/build';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useBuild } from '../context';
@@ -67,12 +64,7 @@ export function InfraTab() {
     <ContainerDiv>
       <Box>
         <h3>
-          <Icon
-            className={BUILD_STATUS_CLASS_MAP[build.status]}
-            sx={{ verticalAlign: 'middle' }}
-          >
-            {BUILD_STATUS_ICON_MAP[build.status]}
-          </Icon>{' '}
+          <BuildStatusIcon status={build.status} />{' '}
           {startCase(BUILD_STATUS_DISPLAY_MAP[build.status])}
         </h3>
         <AlertsSection />

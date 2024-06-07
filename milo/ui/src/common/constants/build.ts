@@ -32,15 +32,6 @@ export const BUILD_STATUS_CLASS_MAP = Object.freeze({
   [BuildStatus.CANCELED]: 'canceled',
 });
 
-export const BUILD_STATUS_ICON_MAP = Object.freeze({
-  [BuildStatus.SCHEDULED]: 'schedule',
-  [BuildStatus.STARTED]: 'pending',
-  [BuildStatus.SUCCESS]: 'check_circle',
-  [BuildStatus.FAILURE]: 'error',
-  [BuildStatus.INFRA_FAILURE]: 'report',
-  [BuildStatus.CANCELED]: 'cancel',
-});
-
 export const BUILD_STATUS_COLOR_MAP = Object.freeze({
   [BuildStatus.SCHEDULED]: 'var(--scheduled-color)',
   [BuildStatus.STARTED]: 'var(--started-color)',

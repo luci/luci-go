@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Icon, TableCell } from '@mui/material';
+import { TableCell } from '@mui/material';
 
-import {
-  BUILD_STATUS_CLASS_MAP,
-  BUILD_STATUS_DISPLAY_MAP,
-  BUILD_STATUS_ICON_MAP,
-} from '@/common/constants/build';
+import { BuildStatusIcon } from '@/build/components/build_status_icon';
 
 import { useBuild } from './context';
 
@@ -36,13 +32,7 @@ export function StatusContentCell() {
 
   return (
     <TableCell>
-      <Icon
-        className={BUILD_STATUS_CLASS_MAP[build.status]}
-        title={BUILD_STATUS_DISPLAY_MAP[build.status]}
-        sx={{ transform: 'translateY(5px)' }}
-      >
-        {BUILD_STATUS_ICON_MAP[build.status]}
-      </Icon>
+      <BuildStatusIcon status={build.status} />
     </TableCell>
   );
 }
