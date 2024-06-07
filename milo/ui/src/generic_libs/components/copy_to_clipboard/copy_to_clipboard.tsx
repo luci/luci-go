@@ -30,7 +30,7 @@ const Container = styled(Box)`
   overflow: hidden;
 
   &:hover {
-    background-color: silver;
+    background-color: rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -41,6 +41,7 @@ export interface CopyToClipboardProps {
   readonly textToCopy: string | (() => string);
   readonly title?: string;
   readonly sx?: SxProps<Theme>;
+  readonly className?: string;
 }
 
 /**
@@ -50,6 +51,7 @@ export function CopyToClipboard({
   textToCopy,
   title,
   sx,
+  className,
 }: CopyToClipboardProps) {
   const [justCopied, setJustCopied] = useState(false);
   const [_isReady, _cancel, reset] = useTimeoutFn(() => {
@@ -64,7 +66,7 @@ export function CopyToClipboard({
   }
 
   return (
-    <Container title={title} sx={sx}>
+    <Container title={title} sx={sx} className={className}>
       {justCopied ? (
         <Done fontSize="inherit" />
       ) : (

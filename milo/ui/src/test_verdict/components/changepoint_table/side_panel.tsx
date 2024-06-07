@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
+import { Box, styled } from '@mui/material';
 import { axisLeft, select } from 'd3';
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -20,11 +20,20 @@ import {
   ParsedTestVariantBranchName,
   TestVariantBranchDef,
 } from '@/analysis/types';
+import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { getLongestCommonPrefix } from '@/generic_libs/tools/string_utils';
 
 import { LabelBox } from './common';
 import { SIDE_PANEL_WIDTH } from './constants';
 import { useConfig } from './context';
+
+const CopyableLabelBox = styled(LabelBox)`
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  &:not(:hover) > .show-on-hover {
+    display: none;
+  }
+`;
 
 export interface SidePanelProps {
   readonly testVariantBranches: readonly TestVariantBranchDef[];
@@ -86,12 +95,34 @@ export function SidePanel({ testVariantBranches }: SidePanelProps) {
                 position: 'relative',
               }}
             >
-              <LabelBox title={tvb.testId} sx={{ fontWeight: 'bold' }}>
-                {commonPrefix && '...'}
-                {tvb.testId.slice(commonPrefix.length)}
-              </LabelBox>
+              <CopyableLabelBox title={tvb.testId}>
+                <Box
+                  css={{
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {commonPrefix && '...'}
+                  {tvb.testId.slice(commonPrefix.length)}
+                </Box>
+                <CopyToClipboard
+                  textToCopy={tvb.testId}
+                  sx={{ verticalAlign: 'middle' }}
+                  className="show-on-hover"
+                />
+              </CopyableLabelBox>
               {criticalVariantKeys.map((k) => (
-                <LabelBox key={k}>{tvb.variant?.def[k]}</LabelBox>
+                <CopyableLabelBox key={k}>
+                  <Box css={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                    {tvb.variant?.def[k]}
+                  </Box>
+                  <CopyToClipboard
+                    textToCopy={tvb.variant?.def[k] || ''}
+                    sx={{ verticalAlign: 'middle' }}
+                    className="show-on-hover"
+                  />
+                </CopyableLabelBox>
               ))}
             </Box>
           </foreignObject>
