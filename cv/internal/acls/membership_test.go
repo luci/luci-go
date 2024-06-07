@@ -74,6 +74,23 @@ func TestMembership(t *testing.T) {
 			})
 		})
 
+		Convey("gerrit returns error", func() {
+			const email = "foo@google.com"
+
+			Convey("IsMember returns true when the given identity is authorized", func() {
+				ct.AddMember(email, "googlers")
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(email), groups)
+				So(err, ShouldBeNil)
+				So(ok, ShouldBeTrue)
+			})
+
+			Convey("IsMember returns false when the given identity is unauthorized", func() {
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(email), groups)
+				So(err, ShouldBeNil)
+				So(ok, ShouldBeFalse)
+			})
+		})
+
 		Convey("linked accounts", func() {
 			const linkedEmail1 = "foo@google.com"
 			const linkedEmail2 = "foo@chromium.org"

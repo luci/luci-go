@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
@@ -156,9 +157,9 @@ func IsMember(ctx context.Context, gf gerrit.Factory, gerritHost string, luciPro
 		return emails, cacheTTL, err
 	})
 	if err != nil {
-		return false, err
-	}
-	if cacheMissed {
+		logging.Errorf(ctx, "Unable to get account information, unable to check linked accounts: %v", err)
+		return false, nil
+	} else if cacheMissed {
 		// Index all of the linked email addresses on a cache miss for the given
 		// account.
 		if err := cacheAllEmails(ctx, gerritHost, idEmail, emails); err != nil {
