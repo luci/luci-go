@@ -29,7 +29,7 @@ export function CompactTimestamp({ datetime }: { datetime: DateTime }) {
       datetime={datetime}
       // Use a more compact format to diaply the timestamp.
       format={SHORT_TIME_FORMAT}
-      extra={{
+      extraTimezones={{
         // Use a more detailed format in the tooltip.
         format: NUMERIC_TIME_FORMAT,
         zones: [

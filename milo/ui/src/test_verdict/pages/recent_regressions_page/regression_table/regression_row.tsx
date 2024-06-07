@@ -67,7 +67,7 @@ export function RegressionRow({ regression }: RegressionRowProps) {
         <Timestamp
           datetime={DateTime.fromISO(canonicalChangepoint.startHour)}
           format="MMM dd, HH:mm"
-          extra={{ format: SHORT_TIME_FORMAT }}
+          extraTimezones={{ format: SHORT_TIME_FORMAT }}
         />
       </TextCell>
       <TextCell>

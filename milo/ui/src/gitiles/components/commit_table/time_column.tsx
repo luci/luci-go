@@ -41,7 +41,7 @@ export function TimeContentCell() {
           datetime={commitTime}
           // Use a more compact format to display the timestamp.
           format={SHORT_TIME_FORMAT}
-          extra={{
+          extraTimezones={{
             // Use a more detailed format in the tooltip.
             format: NUMERIC_TIME_FORMAT,
             zones: [
