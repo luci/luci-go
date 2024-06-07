@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import stableStringify from 'fast-json-stable-stringify';
 import { reaction } from 'mobx';
 import {
   addDisposer,
@@ -85,42 +84,24 @@ export const BuildPage = types
     // have references to some other properties in the tree.
     _buildState: types.maybe(BuildState),
   })
-  .volatile(() => {
-    const cachedBuildId = new Map<string, string>();
-    return {
-      setBuildId(builderId: BuilderID, buildNum: number, buildId: string) {
-        cachedBuildId.set(stableStringify([builderId, buildNum]), buildId);
-      },
-      getBuildId(builderId: BuilderID, buildNum: number) {
-        return cachedBuildId.get(stableStringify([builderId, buildNum]));
-      },
-    };
-  })
   .views((self) => ({
     /**
-     * buildNum is defined when this.buildNumOrId is defined and doesn't start
-     * with 'b'.
+     * buildNumFromParam is defined when this.buildNumOrId is defined and
+     * doesn't start with 'b'.
      */
-    get buildNum() {
+    get buildNumFromParam() {
       return self.buildNumOrIdParam?.startsWith('b') === false
         ? Number(self.buildNumOrIdParam)
         : null;
     },
     /**
-     * buildId is defined when this.buildNumOrId is defined and starts with 'b',
-     * or we have a matching cached build ID in appState.
+     * buildIdFromParam is defined when this.buildNumOrId is defined and starts
+     * with 'b'.
      */
-    get buildId() {
-      const cached =
-        self.builderIdParam && this.buildNum !== null
-          ? self.getBuildId(self.builderIdParam, this.buildNum)
-          : null;
-      return (
-        cached ||
-        (self.buildNumOrIdParam?.startsWith('b')
-          ? self.buildNumOrIdParam.slice(1)
-          : null)
-      );
+    get buildIdFromParam() {
+      return self.buildNumOrIdParam?.startsWith('b')
+        ? self.buildNumOrIdParam.slice(1)
+        : null;
     },
     get hasInvocation() {
       return Boolean(self._buildState?.data.infra?.resultdb?.invocation);
@@ -157,13 +138,13 @@ export const BuildPage = types
             'invocations/'.length,
           ) ?? null;
         return fromPromise(Promise.resolve(invIdFromBuild));
-      } else if (self.buildId) {
-        // Favor ID over builder + number to ensure cache hit when the build
-        // page is redirected from a short build link to a long build link.
-        return fromPromise(Promise.resolve(getInvIdFromBuildId(self.buildId)));
-      } else if (self.builderIdParam && self.buildNum) {
+      } else if (self.buildIdFromParam) {
         return fromPromise(
-          getInvIdFromBuildNum(self.builderIdParam, self.buildNum),
+          Promise.resolve(getInvIdFromBuildId(self.buildIdFromParam)),
+        );
+      } else if (self.builderIdParam && self.buildNumFromParam) {
+        return fromPromise(
+          getInvIdFromBuildNum(self.builderIdParam, self.buildNumFromParam),
         );
       } else {
         return null;
