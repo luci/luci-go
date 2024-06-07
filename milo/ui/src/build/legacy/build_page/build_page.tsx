@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css } from '@emotion/react';
-import { Box, LinearProgress, Link } from '@mui/material';
+import { Box, LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import {
   BUILD_FIELD_MASK,
@@ -39,14 +37,11 @@ import { usePageSpecificConfig } from '@/common/components/page_config_state_pro
 import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { usePermCheck } from '@/common/components/perm_check_provider';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
-import { Timestamp } from '@/common/components/timestamp';
 import { BUILD_STATUS_COLOR_THEME_MAP } from '@/common/constants/build';
 import { UiPage } from '@/common/constants/view';
 import { Build as JsonBuild } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
-import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
-import { getBuilderURLPath, getProjectURLPath } from '@/common/tools/url_utils';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
@@ -57,10 +52,10 @@ import {
 
 import { CountIndicator } from '../../../test_verdict/legacy/test_results_tab/count_indicator';
 
+import { BuildIdBar } from './build_id_bar';
 import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';
 import { BuildContextProvider } from './context';
-import { CustomBugLink } from './custom_bug_link';
 import { InfraTabAnnouncementTooltip } from './infra_tab/announcement_tooltip';
 
 const STATUS_FAVICON_MAP = Object.freeze({
@@ -72,16 +67,6 @@ const STATUS_FAVICON_MAP = Object.freeze({
   [Status.CANCELED]: tealFavicon,
 });
 
-const delimiter = css({
-  borderLeft: '1px solid var(--divider-color)',
-  width: '1px',
-  marginLeft: '10px',
-  marginRight: '10px',
-  '& + &': {
-    display: 'none',
-  },
-});
-
 export const BuildPage = observer(() => {
   const { project, bucket, builder, buildNumOrId } = useParams();
   const store = useStore();
@@ -91,6 +76,7 @@ export const BuildPage = observer(() => {
       'invariant violated: project, bucket, builder, buildNumOrId should be set',
     );
   }
+  const builderId = { project, bucket, builder };
 
   const [showConfigDialog, setShowConfigDialog] = usePageSpecificConfig();
   const client = useBuildsClient();
@@ -103,7 +89,7 @@ export const BuildPage = observer(() => {
       })
     : GetBuildRequest.fromPartial({
         buildNumber: Number(buildNumOrId),
-        builder: { project, bucket, builder },
+        builder: builderId,
         mask: {
           fields: BUILD_FIELD_MASK,
         },
@@ -169,49 +155,7 @@ export const BuildPage = observer(() => {
             open={showConfigDialog}
             onClose={() => setShowConfigDialog(false)}
           />
-          <div
-            css={{
-              backgroundColor: 'var(--block-background-color)',
-              padding: '6px 16px',
-              display: 'flex',
-            }}
-          >
-            <div css={{ flex: '0 auto' }}>
-              <span css={{ color: 'var(--light-text-color)' }}>Build </span>
-              <Link component={RouterLink} to={getProjectURLPath(project)}>
-                {project}
-              </Link>
-              <span>&nbsp;/&nbsp;</span>
-              <span>{bucket}</span>
-              <span>&nbsp;/&nbsp;</span>
-              <Link
-                component={RouterLink}
-                to={getBuilderURLPath({ project, bucket, builder })}
-              >
-                {builder}
-              </Link>
-              <span>&nbsp;/&nbsp;</span>
-              <span>{buildNumOrId}</span>
-            </div>
-            <div css={delimiter}></div>
-            <CustomBugLink project={project} build={build} />
-            <div css={delimiter}></div>
-            {/* TODO: info that helps users identify the build (e.g. source)
-             ** should be displayed at the top (above the tabs). At the moment
-             ** the source description is not short enough to be put here.
-             ** Also we may want to redesign this bar to give more emphasize to
-             ** the build identifier (builder, timestamp, and source).
-             */}
-            {build?.createTime ? (
-              <span>
-                created at{' '}
-                <Timestamp
-                  datetime={DateTime.fromISO(build.createTime)}
-                  format={SHORT_TIME_FORMAT}
-                />
-              </span>
-            ) : null}
-          </div>
+          <BuildIdBar builderId={builderId} buildNumOrId={buildNumOrId} />
           <LinearProgress
             value={100}
             variant={isLoading ? 'indeterminate' : 'determinate'}
