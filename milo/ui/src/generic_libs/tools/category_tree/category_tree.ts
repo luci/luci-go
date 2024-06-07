@@ -14,6 +14,10 @@
 
 export interface CategoryTree<T> {
   /**
+   * The direct children of the node.
+   */
+  readonly children: readonly CategoryTree<T>[];
+  /**
    * Performs a depth-first pre-order traversal and yield all values in the
    * nodes.
    *
@@ -61,6 +65,11 @@ export interface CategoryTree<T> {
    *  * index: [1, 0]     value: 3
    */
   entries(): Iterable<[index: readonly number[], value: T]>;
+  /**
+   * Get the descendant node representing the specified category.
+   * If it doesn't exist, return `undefined`.
+   */
+  getDescendant(category: readonly string[]): CategoryTree<T> | undefined;
 }
 
 export interface CategorizedItem<T> {
@@ -112,7 +121,7 @@ export function buildCategoryTree<T>(
 
 class CategoryTreeNode<T> implements CategoryTree<T> {
   private selfValues: T[] = [];
-  private children: Array<CategoryTreeNode<T>> = [];
+  private _children: Array<CategoryTreeNode<T>> = [];
   private childMap: { [key: string]: CategoryTreeNode<T> } = {};
 
   addValue(value: T, category: readonly string[], depth: number) {
@@ -126,15 +135,19 @@ class CategoryTreeNode<T> implements CategoryTree<T> {
     if (!child) {
       child = new CategoryTreeNode();
       this.childMap[key] = child;
-      this.children.push(child);
+      this._children.push(child);
     }
 
     child.addValue(value, category, depth + 1);
   }
 
+  get children(): readonly CategoryTree<T>[] {
+    return this._children;
+  }
+
   *values(): Iterable<T> {
     yield* this.selfValues;
-    for (const child of this.children) {
+    for (const child of this._children) {
       yield* child.values();
     }
   }
@@ -149,11 +162,23 @@ class CategoryTreeNode<T> implements CategoryTree<T> {
     for (const value of this.selfValues) {
       yield [[], value];
     }
-    for (const [i, child] of this.children.entries()) {
+    for (const [i, child] of this._children.entries()) {
       for (const [rIndex, value] of child.entriesImpl()) {
         rIndex.push(i);
         yield [rIndex, value];
       }
     }
+  }
+
+  getDescendant(category: readonly string[]): CategoryTree<T> | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let pivot: CategoryTreeNode<T> | undefined = this;
+    for (const cat of category) {
+      pivot = pivot.childMap[cat];
+      if (!pivot) {
+        return undefined;
+      }
+    }
+    return pivot;
   }
 }

@@ -16,7 +16,6 @@ import { Box, CircularProgress } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
-import { buildCategoryTree } from '@/build/tools/category_tree';
 import { OutputBuild } from '@/build/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -30,6 +29,7 @@ import {
 } from '@/common/components/timeline';
 import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { buildCategoryTree } from '@/generic_libs/tools/category_tree';
 
 import { useBuild } from '../context';
 

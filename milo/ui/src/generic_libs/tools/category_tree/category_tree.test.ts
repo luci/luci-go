@@ -109,4 +109,35 @@ describe('CategoryTree', () => {
       [[2, 1], 7],
     ]);
   });
+
+  describe('getDescendant', () => {
+    it('can get self', () => {
+      const tree = buildCategoryTree(items);
+      expect(tree.getDescendant([])).toStrictEqual(tree);
+    });
+
+    it('can get existing descendant', () => {
+      const tree = buildCategoryTree(items);
+      expect([...tree.getDescendant(['cat1C', 'cat2B'])!.values()]).toEqual([
+        6, 8, 9,
+      ]);
+    });
+
+    it("return undefined when descendant doesn't exist", () => {
+      const tree = buildCategoryTree(items);
+      expect(tree.getDescendant(['cat1C', 'cat2D'])).toBeUndefined();
+    });
+
+    it('can be chained', () => {
+      const tree = buildCategoryTree(items);
+      expect([
+        ...tree
+          .getDescendant([])!
+          .getDescendant(['cat1C'])!
+          .getDescendant([])!
+          .getDescendant(['cat2B'])!
+          .values(),
+      ]).toEqual([6, 8, 9]);
+    });
+  });
 });

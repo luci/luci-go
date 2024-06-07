@@ -18,7 +18,6 @@ import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { formatBuilderId } from '@/build/tools/build_utils';
-import { buildCategoryTree } from '@/build/tools/category_tree';
 import { BUILD_STATUS_CLASS_MAP } from '@/common/constants/legacy';
 import { ConsoleSnapshot } from '@/common/services/milo_internal';
 import {
@@ -27,6 +26,7 @@ import {
   getOldConsoleURLPath,
 } from '@/common/tools/url_utils';
 import { extractProject } from '@/common/tools/utils';
+import { buildCategoryTree } from '@/generic_libs/tools/category_tree';
 
 const Row = styled.tr({
   // Shrink-to-fit on all but the last column.
