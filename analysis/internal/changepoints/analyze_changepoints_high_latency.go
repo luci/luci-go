@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -35,6 +36,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -92,11 +94,18 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 	return nil
 }
 
-func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) error {
-	// Nothing to analyze.
+func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, sourcesMap map[string]*pb.Sources, exporter *bqexporter.Exporter) (err error) {
 	if len(tvs) == 0 {
-		return nil
+		panic("at least one test variant must be provided")
 	}
+
+	firstTV := tvs[0]
+
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.analyzeSingleBatch")
+	s.SetAttributes(attribute.String("project", payload.Project))
+	s.SetAttributes(attribute.String("test_id", firstTV.TestId))
+	s.SetAttributes(attribute.String("variant_hash", firstTV.VariantHash))
+	defer func() { tracing.End(s, err) }()
 
 	invIDs, err := invocationIDsToClaimHighLatency(tvs, sourcesMap)
 	if err != nil {
@@ -123,7 +132,6 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	// Contains the test variant branches to be written to BigQuery.
 	bqExporterInput := make([]bqexporter.PartialBigQueryRow, 0, len(tvs))
 
-	firstTV := tvs[0]
 	checkpointKey := checkpoints.Key{
 		Project:    payload.Project,
 		ResourceID: fmt.Sprintf("%s/%s", payload.Invocation.ResultdbHost, payload.Invocation.InvocationId),

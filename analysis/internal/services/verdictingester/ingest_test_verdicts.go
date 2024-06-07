@@ -382,7 +382,10 @@ func hasUnexpectedFailures(tv *rdbpb.TestVariant) bool {
 // starting at the given page token.
 // If a continuation task for this task has been previously scheduled
 // (e.g. in a previous try of this task), this method does nothing.
-func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nextPageToken string) error {
+func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nextPageToken string) (retErr error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.scheduleNextTask")
+	defer func() { tracing.End(s, retErr) }()
+
 	if nextPageToken == "" {
 		// If the next page token is "", it means ResultDB returned the
 		// last page. We should not schedule a continuation task.

@@ -35,6 +35,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -48,6 +49,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -141,11 +143,17 @@ func AnalyzeRun(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opts AnalysisO
 	return nil
 }
 
-func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opts AnalysisOptions, exporter *bqexporter.Exporter) error {
-	// Nothing to analyze.
+func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opts AnalysisOptions, exporter *bqexporter.Exporter) (err error) {
 	if len(tvs) == 0 {
-		return nil
+		panic("at least one test variant must be provided")
 	}
+	firstTV := tvs[0]
+
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.analyzeSingleRunBatch")
+	s.SetAttributes(attribute.String("project", opts.Project))
+	s.SetAttributes(attribute.String("test_id", firstTV.TestId))
+	s.SetAttributes(attribute.String("variant_hash", firstTV.VariantHash))
+	defer func() { tracing.End(s, err) }()
 
 	// Claim the invocation for the root invocation ID, if it is unclaimed.
 	isClaimed, err := tryClaimInvocation(ctx, opts.Project, opts.InvocationID, opts.RootInvocationID)
@@ -164,7 +172,6 @@ func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opt
 		return nil
 	}
 
-	firstTV := tvs[0]
 	checkpointKey := checkpoints.Key{
 		Project:    opts.Project,
 		ResourceID: fmt.Sprintf("%s/%s/%s", opts.ResultDBHost, opts.RootInvocationID, opts.InvocationID),
