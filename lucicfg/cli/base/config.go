@@ -35,11 +35,11 @@ import (
 const ConfigName = ".lucicfgfmtrc"
 
 // sentinel is used to prevent the walking functions in this package from walking
-// across a source control boundary. As of 2023 Q1 we are only worried about Git
-// repos, but should we ever support more VCS's and this walking code is still
-// required (i.e. this hasn't been replaced with a WORKSPACE style config file),
-// this should be extended.
-var sentinel = []string{".git"}
+// across a source control boundary. As of 2024 Q2 we are only worried about Git
+// repos and cog clients, but should we ever support more VCS's and this walking
+// code is still required (i.e. this hasn't been replaced with a WORKSPACE style
+// config file), this should be extended.
+var sentinel = []string{".git", ".citc"}
 
 // RewriterFactory is used to map from 'file to be formatted' to a Rewriter object,
 // via its GetRewriter method.
