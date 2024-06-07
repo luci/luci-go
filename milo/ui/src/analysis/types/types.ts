@@ -25,6 +25,7 @@ import {
 import { Variant } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { SourceRef } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 import {
+  BatchGetTestVariantBranchResponse,
   QuerySourcePositionsResponse,
   Segment,
   SourcePosition,
@@ -80,6 +81,11 @@ export type OutputSegment = NonNullableProps<
 export interface OutputTestVariantBranch extends TestVariantBranch {
   readonly segments: readonly OutputSegment[];
   readonly ref: NonNullableProps<SourceRef, 'gitiles'>;
+}
+
+export interface OutputBatchGetTestVariantBranchResponse
+  extends BatchGetTestVariantBranchResponse {
+  readonly testVariantBranches: readonly OutputTestVariantBranch[];
 }
 
 export interface OutputSourcePosition extends SourcePosition {

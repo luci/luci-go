@@ -13,16 +13,19 @@
 // limitations under the License.
 
 import { Box, CircularProgress, SxProps, Theme, styled } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { UseQueryOptions, useQueries } from '@tanstack/react-query';
+import { chunk } from 'lodash-es';
 
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
-  OutputTestVariantBranch,
+  OutputBatchGetTestVariantBranchResponse,
   ParsedTestVariantBranchName,
   TestVariantBranchDef,
 } from '@/analysis/types';
-import { BatchGetTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import {
+  BatchGetTestVariantBranchRequest,
+  BatchGetTestVariantBranchResponse,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { getCriticalVariantKeys } from '@/test_verdict/tools/variant_utils';
 
 import { Body } from './body';
@@ -44,59 +47,65 @@ const Container = styled(Box)`
 `;
 
 export interface ChangepointTableProps {
-  readonly testVariantBranches: readonly TestVariantBranchDef[];
+  readonly testVariantBranchDefs: readonly TestVariantBranchDef[];
   readonly sx?: SxProps<Theme>;
 }
 
 export function ChangepointTable({
-  testVariantBranches,
+  testVariantBranchDefs,
   sx,
 }: ChangepointTableProps) {
   const client = useTestVariantBranchesClient();
-  const { data, isError, error, isLoading } = useQuery({
-    ...client.BatchGet.query(
-      BatchGetTestVariantBranchRequest.fromPartial({
-        names: Object.freeze(
-          testVariantBranches.map((tvb) =>
-            ParsedTestVariantBranchName.toString(tvb),
+  type QueryOpts = UseQueryOptions<
+    BatchGetTestVariantBranchResponse,
+    unknown,
+    OutputBatchGetTestVariantBranchResponse
+  >;
+  const queryResults = useQueries({
+    queries: chunk(testVariantBranchDefs, 100).map<QueryOpts>((batch) => ({
+      ...client.BatchGet.query(
+        BatchGetTestVariantBranchRequest.fromPartial({
+          names: Object.freeze(
+            batch.map((tvb) => ParsedTestVariantBranchName.toString(tvb)),
           ),
-        ),
-      }),
-    ),
-    select: (data) =>
-      data.testVariantBranches as readonly OutputTestVariantBranch[],
+        }),
+      ),
+      select: (data) => data as OutputBatchGetTestVariantBranchResponse,
+    })),
   });
-  if (isError) {
-    throw error;
+  for (const { isError, error } of queryResults) {
+    if (isError) {
+      throw error;
+    }
   }
 
-  const criticalCommits = useMemo(() => {
-    const commits = data?.flatMap((tvb) =>
-      tvb.segments.flatMap((seg) => [
-        seg.startPosition,
-        seg.endPosition,
-        ...(seg.hasStartChangepoint
-          ? [seg.startPositionLowerBound99th, seg.startPositionUpperBound99th]
-          : []),
-      ]),
-    );
-    return [...new Set(commits).values()].sort(
-      (c1, c2) => parseInt(c2) - parseInt(c1),
-    );
-  }, [data]);
+  const testVariantBranches = queryResults.some((q) => !q.data)
+    ? []
+    : queryResults.flatMap((q) => q.data!.testVariantBranches);
 
-  const criticalVariantKeys = useMemo(() => {
-    return getCriticalVariantKeys(
-      testVariantBranches
-        .map((tvb) => tvb.variant)
-        .filter((v) => v !== undefined)
-        // Do a `.map()` for type casting. In a future TypeScript version, tsc
-        // will be able to infer this.
-        .map((v) => v!),
-    );
-  }, [testVariantBranches]);
+  const commits = testVariantBranches.flatMap((tvb) =>
+    tvb.segments.flatMap((seg) => [
+      seg.startPosition,
+      seg.endPosition,
+      ...(seg.hasStartChangepoint
+        ? [seg.startPositionLowerBound99th, seg.startPositionUpperBound99th]
+        : []),
+    ]),
+  );
+  const criticalCommits = [...new Set(commits).values()].sort(
+    (c1, c2) => parseInt(c2) - parseInt(c1),
+  );
 
-  if (isLoading) {
+  const criticalVariantKeys = getCriticalVariantKeys(
+    testVariantBranchDefs
+      .map((tvb) => tvb.variant)
+      .filter((v) => v !== undefined)
+      // Do a `.map()` for type casting. In a future TypeScript version, tsc
+      // will be able to infer this.
+      .map((v) => v!),
+  );
+
+  if (queryResults.some((q) => q.isLoading)) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />
@@ -108,13 +117,13 @@ export function ChangepointTable({
     <ChangepointTableContextProvider
       criticalCommits={criticalCommits}
       criticalVariantKeys={criticalVariantKeys}
-      testVariantBranchCount={testVariantBranches.length}
+      testVariantBranchCount={testVariantBranchDefs.length}
     >
       <Container sx={sx}>
         <TopAxis />
         <TopLabel />
-        <SidePanel testVariantBranches={testVariantBranches} />
-        <Body testVariantBranches={data} />
+        <SidePanel testVariantBranches={testVariantBranchDefs} />
+        <Body testVariantBranches={testVariantBranches} />
       </Container>
     </ChangepointTableContextProvider>
   );

@@ -76,7 +76,7 @@ export function RegressionDetails({
   // all the associated changepoints.
   return (
     <BlamelistStateProvider>
-      <ChangepointTable testVariantBranches={data} sx={{ padding: '10px' }} />
+      <ChangepointTable testVariantBranchDefs={data} sx={{ padding: '10px' }} />
       <RegressionDetailsDialog />
     </BlamelistStateProvider>
   );
