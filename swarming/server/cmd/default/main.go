@@ -188,9 +188,10 @@ func main() {
 		// bugs in the WIP code.
 		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
 			// Protect Swarming APIs.
-			fmt.Sprintf("/%s/*", apipb.Bots_ServiceDesc.ServiceName):     devAPIAccessGroup,
-			fmt.Sprintf("/%s/*", apipb.Tasks_ServiceDesc.ServiceName):    devAPIAccessGroup,
-			fmt.Sprintf("/%s/*", apipb.Swarming_ServiceDesc.ServiceName): devAPIAccessGroup,
+			fmt.Sprintf("/%s/*", apipb.Bots_ServiceDesc.ServiceName):  devAPIAccessGroup,
+			fmt.Sprintf("/%s/*", apipb.Tasks_ServiceDesc.ServiceName): devAPIAccessGroup,
+			// APIs allowed to receive external traffic.
+			fmt.Sprintf("/%s/*", apipb.Swarming_ServiceDesc.ServiceName): rpcacl.All,
 			// An API used in local integration tests.
 			fmt.Sprintf("/%s/*", integrationmocks.IntegrationMocks_ServiceDesc.ServiceName): devAPIAccessGroup,
 			// Leave other gRPC services open, they do they own authorization already.
