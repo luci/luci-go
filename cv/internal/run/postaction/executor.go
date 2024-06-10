@@ -149,8 +149,8 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 					}
 					err := util.MutateGerritCL(ctx, exe.GFactory, rcl, req, 2*time.Minute,
 						fmt.Sprintf("post-action-%s", exe.Payload.GetName()))
-					if status.Code(err) == codes.FailedPrecondition && hasCLAbandoned(ctx, rcl) {
-						logging.Infof(ctx, "CL %d is abandoned; skip post action", rcl.ID)
+					if status.Code(err) == codes.FailedPrecondition && isCLClosed(ctx, rcl) {
+						logging.Infof(ctx, "CL %d is closed; skip post action", rcl.ID)
 						return nil
 					}
 					return err
@@ -203,14 +203,17 @@ func (exe *Executor) voteSummary(ctx context.Context, rcls []*run.RunCL, errs er
 	return s.String()
 }
 
-// hasCLAbandoned fetches the latest snapshot of the CL and returns whether
-// the CL is abaondoned.
-func hasCLAbandoned(ctx context.Context, rcl *run.RunCL) bool {
+// isCLClosed returns true if the CL has been closed.
+func isCLClosed(ctx context.Context, rcl *run.RunCL) bool {
 	latest := &changelist.CL{ID: rcl.ID}
 	if err := datastore.Get(ctx, latest); err != nil {
 		// return false so that the callsite can return the original error
 		// from SetReview().
 		return false
 	}
-	return latest.Snapshot.GetGerrit().GetInfo().GetStatus() == gerritpb.ChangeStatus_ABANDONED
+	switch latest.Snapshot.GetGerrit().GetInfo().GetStatus() {
+	case gerritpb.ChangeStatus_ABANDONED, gerritpb.ChangeStatus_MERGED:
+		return true
+	}
+	return false
 }

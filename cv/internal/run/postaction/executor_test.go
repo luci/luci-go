@@ -302,6 +302,21 @@ func TestExecutePostActionOp(t *testing.T) {
 				// No vote should have been performed. (It can't be, anyways)
 				So(listLabels(gChange1), ShouldResemble, map[string]int32{})
 			})
+
+			Convey("skip the post action, if the CL submitted", func() {
+				// mark the CL as abandoned.
+				cl := &changelist.CL{ID: run.CLs[0]}
+				So(datastore.Get(ctx, cl), ShouldBeNil)
+				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
+				cl.EVersion++
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+
+				// give it another try
+				_, err := exe.Do(ctx)
+				So(err, ShouldBeNil)
+				// No vote should have been performed. (It can't be, anyways)
+				So(listLabels(gChange1), ShouldResemble, map[string]int32{})
+			})
 		})
 	})
 }
