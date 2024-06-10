@@ -97,8 +97,18 @@ func ConfigureMigration(srv *prpc.Server, cfg *cfg.Provider, pythonURL string) {
 	simpleRule(m, "swarming.v2.Swarming", "GetToken")
 	simpleRule(m, "swarming.v2.Swarming", "GetPermissions")
 
+	// Buildbucket Task Backend RPCs (implemented in bbtaskbackend package).
+
+	simpleRule(m, "buildbucket.v2.TaskBackend", "RunTask")
+	simpleRule(m, "buildbucket.v2.TaskBackend", "FetchTasks")
+	simpleRule(m, "buildbucket.v2.TaskBackend", "CancelTasks")
+	simpleRule(m, "buildbucket.v2.TaskBackend", "ValidateConfigs")
+
 	// Panic if some RPCs are not covered by the migration rules or there are
 	// unrecognized rules.
+	//
+	// Note that buildbucket.v2.TaskBackend stub is generated using deprecated
+	// gRPC protoc plugin and doesn't expose ServiceDesc, so we skip it here.
 	m.assertVisited([]*grpc.ServiceDesc{
 		&apipb.Bots_ServiceDesc,
 		&apipb.Tasks_ServiceDesc,
@@ -239,8 +249,7 @@ func (m *migration) routeToPython(rw http.ResponseWriter, req *http.Request) {
 	m.prx.ServeHTTP(rw, req)
 }
 
-// assertVisited panics if some of the routes were not registered or there are
-// unrecognized routes.
+// assertVisited panics if some of the routes were not registered.
 func (m *migration) assertVisited(svcs []*grpc.ServiceDesc) {
 	expected := stringset.New(0)
 	for _, svc := range svcs {
@@ -250,8 +259,5 @@ func (m *migration) assertVisited(svcs []*grpc.ServiceDesc) {
 	}
 	expected.Difference(m.registered).Iter(func(route string) bool {
 		panic(fmt.Sprintf("route %q is not registered in the rpcs/migration.go", route))
-	})
-	m.registered.Difference(expected).Iter(func(route string) bool {
-		panic(fmt.Sprintf("route %q in the rpcs/migration.go doesn't match any known RPC", route))
 	})
 }
