@@ -134,7 +134,7 @@ func checkInstance(c context.Context, vm *model.VM) error {
 		return errors.Annotate(err, "failed to fetch instance").Err()
 	}
 	logging.Debugf(c, "created instance: %s", inst.SelfLink)
-	metrics.CreatedInstanceChecked.Add(c, 1, vm.Config, vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
+	metrics.CreatedInstanceChecked.Add(c, 1, vm.Config, vm.Attributes.GetProject(), vm.ScalingType, vm.Attributes.GetZone(), vm.Hostname)
 	return setCreated(c, vm.ID, inst)
 }
 

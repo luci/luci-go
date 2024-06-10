@@ -864,3 +864,46 @@ func TestQueues(t *testing.T) {
 		})
 	})
 }
+
+func TestGetScalingType(t *testing.T) {
+	t.Parallel()
+	changes := []*config.Schedule{
+		&config.Schedule{
+			Min: 2,
+			Max: 2,
+			Length: &config.TimePeriod{
+				Time: &config.TimePeriod_Duration{
+					Duration: "2h",
+				},
+			},
+			Start: &config.TimeOfDay{
+				Day:  dayofweek.DayOfWeek_SUNDAY,
+				Time: "23:00",
+			},
+		},
+	}
+	cases := []struct {
+		name     string
+		input    *config.Config
+		expected string
+	}{
+		{"nil", nil, dynamicScalingType},
+		{"empty", &config.Config{}, dynamicScalingType},
+		{"empty amound", &config.Config{Amount: nil}, dynamicScalingType},
+		{"empty changes", &config.Config{Amount: &config.Amount{Change: nil}}, dynamicScalingType},
+		{"fixed ", &config.Config{Amount: &config.Amount{Min: 1, Max: 1, Change: nil}}, fixedScalingType},
+		{"autoscaled ", &config.Config{Amount: &config.Amount{Min: 1, Max: 10, Change: nil}}, dynamicScalingType},
+		{"time based 1", &config.Config{Amount: &config.Amount{Min: 1, Max: 10, Change: changes}}, dynamicScalingType},
+		{"time based 2", &config.Config{Amount: &config.Amount{Change: changes}}, dynamicScalingType},
+	}
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			actual := getScalingType(tt.input)
+			if diff := cmp.Diff(tt.expected, actual); diff != "" {
+				t.Errorf("TestGetScalingType  %q: unexpected diff (-want +got) %s", tt.name, diff)
+			}
+		})
+	}
+}

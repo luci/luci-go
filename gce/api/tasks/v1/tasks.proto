@@ -65,6 +65,8 @@ message CreateVM {
   string DUT = 11;
   // The timestamp when we expand the config and decide to create the vm.
   google.protobuf.Timestamp config_expand_time = 12;
+  // ScalingType is how the pool size is scaled.
+  string scaling_type = 13;
 }
 
 // A task to expand a config.

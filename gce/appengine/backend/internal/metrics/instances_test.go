@@ -36,7 +36,9 @@ func TestInstances(t *testing.T) {
 		s := tsmon.Store(c)
 
 		Convey("InstanceCount", func() {
-			ic := &InstanceCount{}
+			ic := &InstanceCount{
+				ScalingType: "dynamic",
+			}
 			So(ic.Configured, ShouldBeEmpty)
 			So(ic.Created, ShouldBeEmpty)
 			So(ic.Connected, ShouldBeEmpty)
@@ -96,7 +98,7 @@ func TestInstances(t *testing.T) {
 				ic.AddConfigured(1, "project")
 				ic.AddCreated(1, "project", "zone")
 				ic.AddConnected(1, "project", "server", "zone")
-				So(ic.Update(c, "prefix", "resource_group"), ShouldBeNil)
+				So(ic.Update(c, "prefix", "resource_group", "dynamic"), ShouldBeNil)
 				ic = &InstanceCount{
 					ID: "prefix",
 				}
@@ -106,18 +108,20 @@ func TestInstances(t *testing.T) {
 				So(ic.Connected, ShouldHaveLength, 1)
 				So(ic.Prefix, ShouldEqual, ic.ID)
 				So(ic.ResourceGroup, ShouldEqual, "resource_group")
+				So(ic.ScalingType, ShouldEqual, "dynamic")
 			})
 		})
 
 		Convey("updateInstances", func() {
-			confFields := []any{"prefix", "project", "resource_group"}
-			creaFields1 := []any{"prefix", "project", "zone-1"}
-			creaFields2 := []any{"prefix", "project", "zone-2"}
-			connFields := []any{"prefix", "project", "resource_group", "server", "zone"}
+			confFields := []any{"prefix", "project", "resource_group", "dynamic"}
+			creaFields1 := []any{"prefix", "project", "dynamic", "zone-1"}
+			creaFields2 := []any{"prefix", "project", "dynamic", "zone-2"}
+			connFields := []any{"prefix", "project", "dynamic", "resource_group", "server", "zone"}
 
 			ic := &InstanceCount{
 				ID:            "prefix",
 				ResourceGroup: "resource_group",
+				ScalingType:   "dynamic",
 				Configured: []configuredCount{
 					{
 						Count:   3,

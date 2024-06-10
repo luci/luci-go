@@ -127,6 +127,8 @@ type VM struct {
 	NetworkInterfaces []NetworkInterface `gae:"network_interfaces"`
 	// Prefix is the prefix to use when naming the GCE instance.
 	Prefix string `gae:"prefix"`
+	// ScalingType is how the pool size is scaled.
+	ScalingType string `gae:"scaling_type"`
 	// Revision is the config revision this VM was created from.
 	Revision string `gae:"revision"`
 	// Swarming is hostname of the Swarming server the GCE instance connects to.

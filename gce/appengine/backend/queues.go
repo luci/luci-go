@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -90,7 +91,8 @@ func countVMs(c context.Context, payload proto.Message) error {
 	}); err != nil {
 		return errors.Annotate(err, "failed to fetch VMs").Err()
 	}
-	if err := vms.Update(c, task.Id, cfg.Config.GetAttributes().GetLabel()["resource_group"]); err != nil {
+	resourceGroup := cfg.Config.GetAttributes().GetLabel()["resource_group"]
+	if err := vms.Update(c, task.Id, resourceGroup, getScalingType(cfg.Config)); err != nil {
 		return errors.Annotate(err, "failed to update count").Err()
 	}
 	return nil
@@ -240,6 +242,7 @@ func createVM(c context.Context, payload proto.Message) error {
 		vm.Revision = task.Revision
 		vm.Swarming = task.Swarming
 		vm.Timeout = task.Timeout
+		vm.ScalingType = task.GetScalingType()
 
 		if task.Attributes != nil {
 			vm.Attributes = *task.Attributes
@@ -380,6 +383,7 @@ func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, ex
 				Id:               id,
 				Attributes:       cfg.Config.Attributes,
 				Config:           cfg.ID,
+				ScalingType:      getScalingType(cfg.Config),
 				ConfigExpandTime: expandTime,
 				Created: &timestamppb.Timestamp{
 					Seconds: clock.Now(c).Unix(),
@@ -398,6 +402,33 @@ func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, ex
 		i++
 	}
 	return t, nil
+}
+
+type scalingType = string
+
+const (
+	// The pool size not chnaging over time.
+	fixedScalingType = "fixed"
+	// The pool size changing over time.
+	dynamicScalingType = "dynamic"
+)
+
+// Identify type of scaling for prefix.
+func getScalingType(cfg *config.Config) scalingType {
+	amount := cfg.GetAmount()
+	if amount == nil || amount.Max == 0 {
+		// No amount specified.
+		// Probably expected size change from outside.
+		return dynamicScalingType
+	}
+	if len(amount.GetChange()) != 0 {
+		// Time based schaduling.
+		return dynamicScalingType
+	}
+	if amount.Max > amount.Min {
+		return dynamicScalingType
+	}
+	return fixedScalingType
 }
 
 // createTasksPerAmount returns a slice of CreateVM tasks based on config.CurrentAmount.

@@ -174,7 +174,7 @@ func TestCreate(t *testing.T) {
 			})
 
 			Convey("created", func() {
-				confFields := []any{"", "", "", "name"}
+				confFields := []any{"", "", "", "", "name"}
 				So(s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), ShouldBeNil)
 				Convey("pending", func() {
 					rt.Handler = func(req any) (int, any) {
