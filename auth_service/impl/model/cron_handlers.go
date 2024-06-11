@@ -77,7 +77,7 @@ func ServiceConfigCronHandler(dryRun bool) func(context.Context) error {
 	return func(ctx context.Context) error {
 		historicalComment := "Updated from update-config cron"
 
-		if err := fetchServiceConfigs(ctx); err != nil {
+		if err := refreshServiceConfigs(ctx); err != nil {
 			return err
 		}
 
@@ -106,48 +106,31 @@ func ServiceConfigCronHandler(dryRun bool) func(context.Context) error {
 	}
 }
 
-// fetchServiceConfigs updates the cached service configs to be the latest from
-// LUCI Config.
-func fetchServiceConfigs(ctx context.Context) error {
-	eg, childCtx := errgroup.WithContext(ctx)
+type configRefresher func(ctx context.Context) error
 
-	// Log the error in each, so details aren't lost if there are multiple
-	// errors.
-	eg.Go(func() error {
-		if err := allowlistcfg.Update(childCtx); err != nil {
-			logging.Errorf(childCtx, err.Error())
-			return err
-		}
-		return nil
-	})
-	eg.Go(func() error {
-		if err := importscfg.Update(childCtx); err != nil {
-			logging.Errorf(childCtx, err.Error())
-			return err
-		}
-		return nil
-	})
-	eg.Go(func() error {
-		if err := oauthcfg.Update(childCtx); err != nil {
-			logging.Errorf(childCtx, err.Error())
-			return err
-		}
-		return nil
-	})
-	eg.Go(func() error {
-		if err := securitycfg.Update(childCtx); err != nil {
-			logging.Errorf(childCtx, err.Error())
-			return err
-		}
-		return nil
-	})
-	eg.Go(func() error {
-		if err := settingscfg.Update(childCtx); err != nil {
-			logging.Errorf(childCtx, err.Error())
-			return err
-		}
-		return nil
-	})
+// refreshServiceConfigs updates the cached service configs to be the latest
+// from LUCI Config.
+func refreshServiceConfigs(ctx context.Context) error {
+	configRefreshers := []configRefresher{
+		allowlistcfg.Update,
+		importscfg.Update,
+		oauthcfg.Update,
+		securitycfg.Update,
+		settingscfg.Update,
+	}
+
+	eg, childCtx := errgroup.WithContext(ctx)
+	for _, refresher := range configRefreshers {
+		eg.Go(func() error {
+			if err := refresher(childCtx); err != nil {
+				// Log the error, so details aren't lost if there are multiple
+				// errors.
+				logging.Errorf(childCtx, err.Error())
+				return err
+			}
+			return nil
+		})
+	}
 
 	return eg.Wait()
 }
