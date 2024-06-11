@@ -184,13 +184,35 @@ func main() {
 		// duration of the development. To avoid accidentally leaking stuff due to
 		// bugs in the WIP code.
 		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
-			// Protect WIP Swarming APIs.
-			"/swarming.v2.Bots/*":  devAPIAccessGroup,
-			"/swarming.v2.Tasks/*": devAPIAccessGroup,
+			// Protect WIP or unimplemented Swarming APIs.
+			"/swarming.v2.Bots/DeleteBot":                 devAPIAccessGroup,
+			"/swarming.v2.Bots/TerminateBot":              devAPIAccessGroup,
+			"/swarming.v2.Bots/GetBotDimensions":          devAPIAccessGroup,
+			"/swarming.v2.Tasks/CancelTask":               devAPIAccessGroup,
+			"/swarming.v2.Tasks/NewTask":                  devAPIAccessGroup,
+			"/swarming.v2.Tasks/CancelTasks":              devAPIAccessGroup,
+			"/swarming.v2.Swarming/GetDetails":            devAPIAccessGroup,
+			"/swarming.v2.Swarming/GetToken":              devAPIAccessGroup,
+			"/buildbucket.v2.TaskBackend/RunTask":         devAPIAccessGroup,
+			"/buildbucket.v2.TaskBackend/CancelTasks":     devAPIAccessGroup,
+			"/buildbucket.v2.TaskBackend/ValidateConfigs": devAPIAccessGroup,
 
-			// APIs allowed to receive external traffic.
-			"/swarming.v2.Swarming/*":       rpcacl.All,
-			"/buildbucket.v2.TaskBackend/*": rpcacl.All,
+			// Fully implemented APIs allowed to receive external traffic.
+			"/swarming.v2.Bots/GetBot":               rpcacl.All,
+			"/swarming.v2.Bots/CountBots":            rpcacl.All,
+			"/swarming.v2.Bots/ListBotEvents":        rpcacl.All,
+			"/swarming.v2.Bots/ListBotTasks":         rpcacl.All,
+			"/swarming.v2.Bots/ListBots":             rpcacl.All,
+			"/swarming.v2.Tasks/GetResult":           rpcacl.All,
+			"/swarming.v2.Tasks/BatchGetResult":      rpcacl.All,
+			"/swarming.v2.Tasks/GetRequest":          rpcacl.All,
+			"/swarming.v2.Tasks/GetStdout":           rpcacl.All,
+			"/swarming.v2.Tasks/ListTaskStates":      rpcacl.All,
+			"/swarming.v2.Tasks/CountTasks":          rpcacl.All,
+			"/swarming.v2.Tasks/ListTasks":           rpcacl.All,
+			"/swarming.v2.Tasks/ListTaskRequests":    rpcacl.All,
+			"/swarming.v2.Swarming/GetPermissions":   rpcacl.All,
+			"/buildbucket.v2.TaskBackend/FetchTasks": rpcacl.All,
 
 			// An API used in local integration tests.
 			"/swarming.integrationmocks.IntegrationMocks/*": devAPIAccessGroup,
