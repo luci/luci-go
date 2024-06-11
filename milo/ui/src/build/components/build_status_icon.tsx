@@ -21,7 +21,7 @@ import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb
 
 const BUILD_STATUS_ICON_MAP = Object.freeze({
   [Status.SCHEDULED]: 'schedule',
-  [Status.STARTED]: 'pending',
+  [Status.STARTED]: 'timelapse',
   [Status.SUCCESS]: 'check_circle',
   [Status.FAILURE]: 'error',
   [Status.INFRA_FAILURE]: 'report',
