@@ -62,8 +62,29 @@ message Action {
     message CIPD {
       // Name is the cipd package name for the Action's output.
       string name = 1;
-      // Version is the cipd version tag for action's output.
+      // Version is the cipd version tag for action's output. Version tag
+      // considered to be unique.
       string version = 2;
+
+      // disable_upload, if true, indicates the package shouldn't be uploaded
+      // to CIPD service.
+      bool disable_upload = 3;
+      // tags is the list of extra tags should be attached to the cipd instance.
+      repeated string tags = 4;
+      // refs is the list of extra refs should be attached to the cipd instance.
+      repeated string refs = 5;
+
+      enum InstallMode {
+        copy = 0;
+        symlink = 1;
+      }
+      // install_mode the installation method of the cipd package on client
+      // machines.
+      // If omitted, this defaults to `copy`.
+      InstallMode install_mode = 6;
+      // version_file is the CIPD-installation-relative path to a version file.
+      // If omitted, no version file will be added to the package.
+      string version_file = 7;
     }
 
     LUCIExe luciexe = 3;
