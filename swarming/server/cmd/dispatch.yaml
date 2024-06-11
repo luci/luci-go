@@ -24,5 +24,11 @@ dispatch:
     service: default-go
 
   # APIs served via Go (perhaps proxying to Python).
+  - url: "*/prpc/swarming.v2.Bots/*"
+    service: default-go
+  - url: "*/prpc/swarming.v2.Tasks/*"
+    service: default-go
   - url: "*/prpc/swarming.v2.Swarming/*"
+    service: default-go
+  - url: "*/prpc/buildbucket.v2.TaskBackend/*"
     service: default-go
