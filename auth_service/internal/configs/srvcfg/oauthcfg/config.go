@@ -45,7 +45,11 @@ func SetConfig(ctx context.Context, cfg *configspb.OAuthConfig) error {
 // Update fetches the config and puts it into the datastore.
 //
 // It is then used by all requests that go through Middleware.
-func Update(ctx context.Context) error {
-	_, err := cachedOAuthCfg.Update(ctx, nil)
-	return err
+func Update(ctx context.Context) (*config.Meta, error) {
+	meta := &config.Meta{}
+	_, err := cachedOAuthCfg.Update(ctx, meta)
+	if err != nil {
+		return nil, err
+	}
+	return meta, nil
 }

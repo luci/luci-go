@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -38,6 +39,147 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func testImportedConfigRevisions(ctx context.Context, revs map[string]*configRevisionInfo) *ImportedConfigRevisions {
+	e := &ImportedConfigRevisions{
+		Kind:   "_ImportedConfigRevisions",
+		ID:     "self",
+		Parent: RootKey(ctx),
+	}
+	e.Revisions, _ = json.Marshal(revs)
+	return e
+
+}
+func TestImportedConfigRevisions(t *testing.T) {
+	t.Parallel()
+
+	Convey("testing ImportedConfigRevisions entity", t, func() {
+		ctx := gaemem.Use(context.Background())
+
+		Convey("getImportedConfigRevisions works", func() {
+			_, err := getImportedConfigRevisions(ctx)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+			testRevs := map[string]*configRevisionInfo{
+				"oauth.cfg": {
+					Revision: "10001a",
+					ViewURL:  "https://test.config.example.com/oauth/10001a",
+				},
+				"security.cfg": {
+					Revision: "10001a",
+					ViewURL:  "https://test.config.example.com/security/10001a",
+				},
+			}
+			testEntity := testImportedConfigRevisions(ctx, testRevs)
+			So(datastore.Put(ctx, testEntity), ShouldBeNil)
+
+			actual, err := getImportedConfigRevisions(ctx)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, testEntity)
+		})
+
+		Convey("updateImportedConfigRevisions works", func() {
+			testRevs := map[string]*configRevisionInfo{
+				"settings.cfg": {
+					Revision: "10001a",
+					ViewURL:  "https://test.config.example.com/settings/10001a",
+				},
+				"oauth.cfg": {
+					Revision: "10001a",
+					ViewURL:  "https://test.config.example.com/oauth/10001a",
+				},
+				"security.cfg": {
+					Revision: "10001a",
+					ViewURL:  "https://test.config.example.com/security/10001a",
+				},
+			}
+			affectedRevs := map[string]*configRevisionInfo{
+				"oauth.cfg": {
+					Revision: "10001a",
+					ViewURL:  "https://test.config.example.com/oauth/10001a",
+				},
+				"security.cfg": {
+					Revision: "10001a",
+					ViewURL:  "https://test.config.example.com/security/10001a",
+				},
+			}
+
+			Convey("creates if it doesn't exist", func() {
+				So(updateImportedConfigRevisions(ctx, testRevs), ShouldBeNil)
+
+				actual, err := getImportedConfigRevisions(ctx)
+				So(err, ShouldBeNil)
+				So(actual, ShouldResemble, testImportedConfigRevisions(ctx, affectedRevs))
+
+				Convey("updating existing works", func() {
+					updatedRevs := map[string]*configRevisionInfo{
+						"oauth.cfg": {
+							Revision: "10001b",
+							ViewURL:  "https://test.config.example.com/oauth/10001b",
+						},
+					}
+					So(updateImportedConfigRevisions(ctx, updatedRevs), ShouldBeNil)
+
+					expectedRevs := map[string]*configRevisionInfo{
+						"oauth.cfg": {
+							Revision: "10001b",
+							ViewURL:  "https://test.config.example.com/oauth/10001b",
+						},
+						"security.cfg": {
+							Revision: "10001a",
+							ViewURL:  "https://test.config.example.com/security/10001a",
+						},
+					}
+					actual, err := getImportedConfigRevisions(ctx)
+					So(err, ShouldBeNil)
+					So(actual, ShouldResemble, testImportedConfigRevisions(ctx, expectedRevs))
+				})
+
+				Convey("revision info for excluded paths is maintained", func() {
+					allowlistRev := map[string]*configRevisionInfo{
+						"ip_allowlist.cfg": {
+							Revision: "10001a",
+							ViewURL:  "https://test.config.example.com/allowlist/10001a",
+						},
+					}
+					So(updateImportedConfigRevisions(ctx, allowlistRev), ShouldBeNil)
+
+					expectedRevs := map[string]*configRevisionInfo{
+						"ip_allowlist.cfg": {
+							Revision: "10001a",
+							ViewURL:  "https://test.config.example.com/allowlist/10001a",
+						},
+						"oauth.cfg": {
+							Revision: "10001a",
+							ViewURL:  "https://test.config.example.com/oauth/10001a",
+						},
+						"security.cfg": {
+							Revision: "10001a",
+							ViewURL:  "https://test.config.example.com/security/10001a",
+						},
+					}
+					actual, err := getImportedConfigRevisions(ctx)
+					So(err, ShouldBeNil)
+					So(actual, ShouldResemble, testImportedConfigRevisions(ctx, expectedRevs))
+				})
+
+				Convey("config that doesn't affect the AuthDB is ignored", func() {
+					trivialRev := map[string]*configRevisionInfo{
+						"imports.cfg": {
+							Revision: "10001a",
+							ViewURL:  "https://test.config.example.com/imports/10001a",
+						},
+					}
+					So(updateImportedConfigRevisions(ctx, trivialRev), ShouldBeNil)
+
+					actual, err := getImportedConfigRevisions(ctx)
+					So(err, ShouldBeNil)
+					So(actual, ShouldResemble, testImportedConfigRevisions(ctx, affectedRevs))
+				})
+			})
+		})
+	})
+}
 
 func TestGetStoredRealmsCfgRevs(t *testing.T) {
 	t.Parallel()

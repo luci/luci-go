@@ -97,13 +97,6 @@ var GroupNameRe = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
 // GroupBundle is a map where k: groupName, v: list of identities belonging to group k.
 type GroupBundle = map[string][]identity.Identity
 
-// configRevisionInfo stores the info on a config's revision. Useful for configs
-// fetched from the LUCI Config Service.
-type configRevisionInfo struct {
-	Revision string `json:"rev"`
-	ViewURL  string `json:"url"`
-}
-
 // GetGroupImporterConfig fetches the GroupImporterConfig entity from the datastore.
 //
 //	Returns GroupImporterConfig entity if present.
