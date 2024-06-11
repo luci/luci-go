@@ -84,13 +84,14 @@ func NewWriter(
 }
 
 // AppendRowsWithDefaultStream write to the default stream. This does not provide exactly-once
-// semantics (it provides at leas once). The at least once semantic is similar to the
+// semantics (it provides at least once). The at least once semantic is similar to the
 // legacy streaming API.
 func (s *Writer) AppendRowsWithDefaultStream(ctx context.Context, rows []proto.Message) error {
 	ms, err := s.client.NewManagedStream(ctx,
 		managedwriter.WithType(managedwriter.DefaultStream),
 		managedwriter.WithSchemaDescriptor(s.tableSchemaDescriptor),
-		managedwriter.WithDestinationTable(s.tableName))
+		managedwriter.WithDestinationTable(s.tableName),
+		managedwriter.EnableWriteRetries(true))
 	if err != nil {
 		return err
 	}
