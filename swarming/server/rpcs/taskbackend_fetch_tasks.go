@@ -120,7 +120,7 @@ func (srv *TaskBackend) FetchTasks(ctx context.Context, req *bbpb.FetchTasksRequ
 		}
 
 		// Check permissions.
-		rst := checker.CheckTaskPerm(ctx, resultSummaries[i].TaskAuthInfo(), acls.PermTasksGet)
+		rst := checker.CheckTaskPerm(ctx, resultSummaries[i], acls.PermTasksGet)
 		if !rst.Permitted {
 			s := status.Convert(rst.ToGrpcErr())
 			res.Responses[idxMap[i]] = &bbpb.FetchTasksResponse_Response{

@@ -16,6 +16,7 @@ package acls
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -411,7 +412,7 @@ func TestTaskLevel(t *testing.T) {
 	checkCanCancel := func(caller identity.Identity, info TaskAuthInfo) bool {
 		info.TaskID = "65aba3a3e6b99310"
 		chk := Checker{cfg: cfg, db: db, caller: caller}
-		res := chk.CheckTaskPerm(ctx, info, PermTasksCancel)
+		res := chk.CheckTaskPerm(ctx, &mockedTask{info: info}, PermTasksCancel)
 		So(res.InternalError, ShouldBeFalse)
 		return res.Permitted
 	}
@@ -484,17 +485,25 @@ func TestTaskLevel(t *testing.T) {
 
 	Convey("Error message", t, func() {
 		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
-		res := chk.CheckTaskPerm(ctx, TaskAuthInfo{
-			TaskID:    "65aba3a3e6b99310",
-			Realm:     "project:doesnt-matter",
-			BotID:     "hidden-bot",
-			Submitter: unknownID,
+		res := chk.CheckTaskPerm(ctx, &mockedTask{
+			info: TaskAuthInfo{
+				TaskID:    "65aba3a3e6b99310",
+				Realm:     "project:doesnt-matter",
+				BotID:     "hidden-bot",
+				Submitter: unknownID,
+			},
 		}, PermTasksCancel)
 		So(res.InternalError, ShouldBeFalse)
 		err := res.ToGrpcErr()
 		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
 		So(err, ShouldErrLike, `the caller "user:authorized@example.com" doesn't have `+
 			`permission "swarming.tasks.cancel" for the task "65aba3a3e6b99310"`)
+	})
+
+	Convey("Error from TaskAuthInfo", t, func() {
+		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
+		res := chk.CheckTaskPerm(ctx, &mockedTask{err: errors.New("BOOM")}, PermTasksCancel)
+		So(res.InternalError, ShouldBeTrue)
 	})
 }
 
@@ -595,4 +604,13 @@ func mockedConfig(settings *configpb.AuthSettings, pools map[string]string, bots
 		panic(err)
 	}
 	return p.Config(ctx)
+}
+
+type mockedTask struct {
+	info TaskAuthInfo
+	err  error
+}
+
+func (m *mockedTask) TaskAuthInfo(ctx context.Context) (*TaskAuthInfo, error) {
+	return &m.info, m.err
 }

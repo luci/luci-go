@@ -27,7 +27,7 @@ func (*TasksServer) GetRequest(ctx context.Context, req *apipb.TaskIdRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	res := State(ctx).ACL.CheckTaskPerm(ctx, taskRequest.TaskAuthInfo(), acls.PermTasksGet)
+	res := State(ctx).ACL.CheckTaskPerm(ctx, taskRequest, acls.PermTasksGet)
 	if !res.Permitted {
 		return nil, res.ToGrpcErr()
 	}

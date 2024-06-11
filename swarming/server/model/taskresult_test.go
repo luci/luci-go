@@ -23,7 +23,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/packedintset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -283,7 +282,7 @@ func TestTaskResultSummary(t *testing.T) {
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
 		So(err, ShouldBeNil)
 
-		Convey("ok", func() {
+		Convey("Fresh enough entity", func() {
 			trs := TaskResultSummary{
 				Key:                  TaskResultSummaryKey(ctx, reqKey),
 				RequestAuthenticated: "authenticated-user@example.com",
@@ -292,21 +291,44 @@ func TestTaskResultSummary(t *testing.T) {
 				RequestBotID:         "bot123",
 			}
 
-			So(trs.TaskAuthInfo(), ShouldEqual, acls.TaskAuthInfo{
+			info, err := trs.TaskAuthInfo(ctx)
+			So(err, ShouldBeNil)
+			So(info, ShouldResemble, &acls.TaskAuthInfo{
 				TaskID:    "65aba3a3e6b99310",
 				Realm:     "example-realm",
 				Pool:      "example-pool",
 				BotID:     "bot123",
-				Submitter: identity.Identity("authenticated-user@example.com"),
+				Submitter: "authenticated-user@example.com",
 			})
 		})
 
-		Convey("mostly nil", func() {
+		Convey("Old entity", func() {
 			trs := TaskResultSummary{
 				Key: TaskResultSummaryKey(ctx, reqKey),
 			}
-			So(trs.TaskAuthInfo(), ShouldEqual, acls.TaskAuthInfo{
-				TaskID: "65aba3a3e6b99310",
+
+			So(datastore.Put(ctx, &TaskRequest{
+				Key:           reqKey,
+				Realm:         "request-realm",
+				Authenticated: "request-user@example.com",
+				TaskSlices: []TaskSlice{
+					{
+						Properties: TaskProperties{
+							Dimensions: TaskDimensions{
+								"pool": {"request-pool"},
+							},
+						},
+					},
+				},
+			}), ShouldBeNil)
+
+			info, err := trs.TaskAuthInfo(ctx)
+			So(err, ShouldBeNil)
+			So(info, ShouldResemble, &acls.TaskAuthInfo{
+				TaskID:    "65aba3a3e6b99310",
+				Realm:     "request-realm",
+				Pool:      "request-pool",
+				Submitter: "request-user@example.com",
 			})
 		})
 	})

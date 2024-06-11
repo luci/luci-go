@@ -129,7 +129,7 @@ func (*TasksServer) BatchGetResult(ctx context.Context, req *apipb.BatchGetResul
 			continue
 		}
 
-		aclRes := checker.CheckTaskPerm(ctx, taskRes.TaskAuthInfo(), acls.PermTasksGet)
+		aclRes := checker.CheckTaskPerm(ctx, taskRes, acls.PermTasksGet)
 		if !aclRes.Permitted {
 			status := status.Convert(aclRes.ToGrpcErr())
 			reportErr(taskIdx, status.Code(), status.Message())

@@ -56,7 +56,7 @@ func (*TasksServer) GetStdout(ctx context.Context, req *apipb.TaskIdWithOffsetRe
 		logging.Errorf(ctx, "Error fetching TaskResultSummary %s: %s", req.TaskId, err)
 		return nil, status.Errorf(codes.Internal, "datastore error fetching the task")
 	}
-	res := State(ctx).ACL.CheckTaskPerm(ctx, trs.TaskAuthInfo(), acls.PermTasksGet)
+	res := State(ctx).ACL.CheckTaskPerm(ctx, trs, acls.PermTasksGet)
 	if !res.Permitted {
 		return nil, res.ToGrpcErr()
 	}

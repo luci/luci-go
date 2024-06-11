@@ -62,11 +62,11 @@ func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.Permis
 		return res.Permitted
 	}
 
-	checkTaskPerm := func(taskInfo acls.TaskAuthInfo, perm realms.Permission) bool {
+	checkTaskPerm := func(task acls.Task, perm realms.Permission) bool {
 		if internalErr != nil {
 			return false
 		}
-		res := state.ACL.CheckTaskPerm(ctx, taskInfo, perm)
+		res := state.ACL.CheckTaskPerm(ctx, task, perm)
 		if res.InternalError {
 			internalErr = res.ToGrpcErr()
 		}
@@ -123,7 +123,7 @@ func (srv *SwarmingServer) GetPermissions(ctx context.Context, req *apipb.Permis
 		if err != nil {
 			return nil, err
 		}
-		resp.CancelTask = checkTaskPerm(taskRequest.TaskAuthInfo(), acls.PermTasksCancel)
+		resp.CancelTask = checkTaskPerm(taskRequest, acls.PermTasksCancel)
 	} else {
 		resp.CancelTask = resp.CancelTasks
 	}

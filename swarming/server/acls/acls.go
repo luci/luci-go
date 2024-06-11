@@ -121,7 +121,9 @@ func (res *CheckResult) ToGrpcErr() error {
 
 // TaskAuthInfo are properties of a task that affect who can access it.
 //
-// Extracted either from TaskRequest or from TaskResultSummary.
+// Extracted either from TaskRequest or from TaskResultSummary. All fields
+// except TaskID are optional. Most of them are unset for internal tasks like
+// TerminateBot tasks.
 type TaskAuthInfo struct {
 	// TaskID is ID of the task. Only for error messages and logs!
 	TaskID string
@@ -133,6 +135,14 @@ type TaskAuthInfo struct {
 	BotID string
 	// Submitter is whoever submitted the task.
 	Submitter identity.Identity
+}
+
+// Task can produce TaskAuthInfo on demand.
+type Task interface {
+	// TaskAuthInfo returns properties of a task that affect who can access it.
+	//
+	// Any error here is treated as an internal server error.
+	TaskAuthInfo(ctx context.Context) (*TaskAuthInfo, error)
 }
 
 // NewChecker constructs an ACL checker that uses the given config snapshot.
@@ -359,7 +369,7 @@ func (chk *Checker) CheckAnyPoolsPerm(ctx context.Context, pools []string, perm 
 // pool it was scheduled to run on. E.g. for a task to be visible, the caller
 // either needs PermTasksGet in the task's realm, or PermPoolsListTasks in the
 // bot pool realm. This function checks both.
-func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm realms.Permission) CheckResult {
+func (chk *Checker) CheckTaskPerm(ctx context.Context, task Task, perm realms.Permission) CheckResult {
 	// Look up a matching pool level permission to check it in the task's pool.
 	var poolPerm realms.Permission
 	switch perm {
@@ -371,11 +381,6 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 		panic(fmt.Sprintf("not a task-level permission %q", perm))
 	}
 
-	// Whoever submitted the task has full control over it.
-	if task.Submitter == chk.caller {
-		return CheckResult{Permitted: true}
-	}
-
 	// If have a server-level permission, no need to check anything else. Note
 	// that on the server level task<->pool permission pairs like PermTasksGet and
 	// PermPoolsListTasks are treated identically, so it is sufficient to check
@@ -384,9 +389,23 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 		return res
 	}
 
+	// Get the details about the task.
+	info, err := task.TaskAuthInfo(ctx)
+	if err != nil {
+		logging.Errorf(ctx, "Error getting TaskAuthInfo: %s", err)
+		return CheckResult{InternalError: true}
+	}
+
+	// Whoever submitted the task has full control over it.
+	if info.Submitter != "" && info.Submitter == chk.caller {
+		return CheckResult{Permitted: true}
+	}
+
 	// Check if the caller has the permission in the task's own realm.
-	if res := chk.hasPermission(ctx, perm, task.Realm); res.Permitted || res.InternalError {
-		return res
+	if info.Realm != "" {
+		if res := chk.hasPermission(ctx, perm, info.Realm); res.Permitted || res.InternalError {
+			return res
+		}
 	}
 
 	// Check if the caller has the matching permission in the task's assigned
@@ -404,10 +423,10 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 	// the public API. They can be submitted only by the Swarming server
 	// internally.
 	var poolsToCheck []string
-	if task.Pool != "" {
-		poolsToCheck = []string{task.Pool}
-	} else if task.BotID != "" {
-		poolsToCheck = chk.cfg.BotGroup(task.BotID).Pools()
+	if info.Pool != "" {
+		poolsToCheck = []string{info.Pool}
+	} else if info.BotID != "" {
+		poolsToCheck = chk.cfg.BotGroup(info.BotID).Pools()
 	}
 	if len(poolsToCheck) != 0 {
 		oneAllowed := false
@@ -428,7 +447,7 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task TaskAuthInfo, perm r
 		err: status.Errorf(
 			codes.PermissionDenied,
 			"the caller %q doesn't have permission %q for the task %q",
-			chk.caller, perm, task.TaskID),
+			chk.caller, perm, info.TaskID),
 	}
 }
 

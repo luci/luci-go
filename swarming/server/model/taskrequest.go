@@ -218,15 +218,17 @@ func (p *TaskRequest) BotID() string {
 	return botID[0]
 }
 
-// TaskAuthInfo is information about the task for ACL checks.
-func (p *TaskRequest) TaskAuthInfo() acls.TaskAuthInfo {
-	return acls.TaskAuthInfo{
+// TaskAuthInfo returns information about the task for ACL checks.
+//
+// This implements acls.Task.
+func (p *TaskRequest) TaskAuthInfo(ctx context.Context) (*acls.TaskAuthInfo, error) {
+	return &acls.TaskAuthInfo{
 		TaskID:    RequestKeyToTaskID(p.Key, AsRequest),
 		Realm:     p.Realm,
 		Pool:      p.Pool(),
 		BotID:     p.BotID(),
 		Submitter: p.Authenticated,
-	}
+	}, nil
 }
 
 // ToProto converts a TaskRequest to apipb.TaskRequestResponse.

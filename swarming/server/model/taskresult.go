@@ -475,15 +475,39 @@ func (p *TaskResultSummary) PerformanceStatsKey(ctx context.Context) *datastore.
 	}
 }
 
-// TaskAuthInfo is information about the task for ACL checks.
-func (p *TaskResultSummary) TaskAuthInfo() acls.TaskAuthInfo {
-	return acls.TaskAuthInfo{
-		TaskID:    RequestKeyToTaskID(p.TaskRequestKey(), AsRequest),
-		Realm:     p.RequestRealm,
-		Pool:      p.RequestPool,
-		BotID:     p.RequestBotID,
-		Submitter: p.RequestAuthenticated,
+// TaskAuthInfo returns information about the task for ACL checks.
+//
+// This implements acls.Task.
+//
+// If the entity is very old (older than ~Oct 2023) and doesn't yet have
+// RequestXXX fields populated, values are fetched from the corresponding
+// TaskRequest entity. This should be rare and this code path is intentionally
+// not optimized to avoid adding complexity.
+//
+// The fallback can be removed ~May 2025 (when all "very old" entities will
+// expire and disappear from the datastore).
+//
+// See https://chromium.googlesource.com/infra/luci/luci-py/+/b50d4ba949cb25b7
+func (p *TaskResultSummary) TaskAuthInfo(ctx context.Context) (*acls.TaskAuthInfo, error) {
+	// If at least one RequestXXX is populated, then this is a recent enough
+	// entity. Note that many (but not all) of these fields can legitimately be
+	// missing in termination tasks.
+	if p.RequestRealm != "" || p.RequestPool != "" || p.RequestBotID != "" || p.RequestAuthenticated != "" {
+		return &acls.TaskAuthInfo{
+			TaskID:    RequestKeyToTaskID(p.TaskRequestKey(), AsRequest),
+			Realm:     p.RequestRealm,
+			Pool:      p.RequestPool,
+			BotID:     p.RequestBotID,
+			Submitter: p.RequestAuthenticated,
+		}, nil
 	}
+	// Fallback to fetching necessary data from the TaskRequest.
+	logging.Infof(ctx, "Fetching TaskRequest to get TaskAuthInfo")
+	tr := &TaskRequest{Key: p.TaskRequestKey()}
+	if err := datastore.Get(ctx, tr); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch TaskRequest entity").Err()
+	}
+	return tr.TaskAuthInfo(ctx)
 }
 
 // TaskRequestKey returns the parent task request key or panics if it is unset.
