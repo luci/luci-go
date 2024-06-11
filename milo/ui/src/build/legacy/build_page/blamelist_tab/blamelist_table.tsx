@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { memo } from 'react';
 import { useLocalStorage } from 'react-use';
 
 import {
   AuthorContentCell,
   AuthorHeadCell,
+  CommitTable,
+  CommitTableHead,
   CommitTableRow,
   IdContentCell,
   IdHeadCell,
@@ -28,48 +31,77 @@ import {
   TitleHeadCell,
   ToggleContentCell,
   ToggleHeadCell,
-  VirtualizedCommitTable,
 } from '@/gitiles/components/commit_table';
-import { OutputCommit } from '@/gitiles/types';
+import { CommitTableBody } from '@/gitiles/components/commit_table/commit_table_body';
+
+import { OutputQueryBlamelistResponse } from './types';
 
 const BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY = 'blamelist-table-default-expanded';
 
-export interface BlamelistTableProps {
-  readonly repoUrl: string;
-  readonly commits: ReadonlyArray<OutputCommit | null>;
+interface CommitTablePageProps {
+  readonly prevCommitCount: number;
+  readonly page: OutputQueryBlamelistResponse;
 }
 
-export function BlamelistTable({ repoUrl, commits }: BlamelistTableProps) {
-  const [defaultExpanded = false, setDefaultExpanded] =
-    useLocalStorage<boolean>(BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY);
-
+// The table body can be large and expensive to render.
+// Use `memo` to stop it from rerendering when only the default expansion state
+// were changed.
+//
+// Group rows by pages so when new pages are loaded, we don't need to rerender
+// everything.
+const CommitTablePage = memo(function CommitTablePage({
+  prevCommitCount,
+  page,
+}: CommitTablePageProps) {
   return (
-    <VirtualizedCommitTable
-      repoUrl={repoUrl}
-      initDefaultExpanded={defaultExpanded}
-      onDefaultExpandedChanged={(expand) => setDefaultExpanded(expand)}
-      totalCount={commits.length}
-      useWindowScroll
-      fixedHeaderContent={() => (
-        <>
-          <ToggleHeadCell hotkey="x" />
-          <NumHeadCell />
-          <IdHeadCell />
-          <AuthorHeadCell />
-          <TimeHeadCell />
-          <TitleHeadCell />
-        </>
-      )}
-      itemContent={(i) => (
-        <CommitTableRow commit={commits[i]}>
+    <>
+      {page.commits.map((commit, i) => (
+        <CommitTableRow key={i} commit={commit}>
           <ToggleContentCell />
-          <NumContentCell num={i + 1} />
+          <NumContentCell num={prevCommitCount + i + 1} />
           <IdContentCell />
           <AuthorContentCell />
           <TimeContentCell />
           <TitleContentCell />
         </CommitTableRow>
-      )}
-    />
+      ))}
+    </>
+  );
+});
+
+export interface BlamelistTableProps {
+  readonly repoUrl: string;
+  readonly pages: readonly OutputQueryBlamelistResponse[];
+}
+
+export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
+  const [defaultExpanded = false, setDefaultExpanded] =
+    useLocalStorage<boolean>(BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY);
+
+  let commitCount = 0;
+  return (
+    <CommitTable
+      repoUrl={repoUrl}
+      initDefaultExpanded={defaultExpanded}
+      onDefaultExpandedChanged={(expand) => setDefaultExpanded(expand)}
+    >
+      <CommitTableHead>
+        <ToggleHeadCell hotkey="x" />
+        <NumHeadCell />
+        <IdHeadCell />
+        <AuthorHeadCell />
+        <TimeHeadCell />
+        <TitleHeadCell />
+      </CommitTableHead>
+      <CommitTableBody>
+        {pages.map((page, i) => {
+          const prevCount = commitCount;
+          commitCount += page.commits.length;
+          return (
+            <CommitTablePage key={i} page={page} prevCommitCount={prevCount} />
+          );
+        })}
+      </CommitTableBody>
+    </CommitTable>
   );
 }

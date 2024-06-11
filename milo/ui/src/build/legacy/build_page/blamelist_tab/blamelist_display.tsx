@@ -14,11 +14,9 @@
 
 import { Button, CircularProgress } from '@mui/material';
 import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
-import { OutputCommit } from '@/gitiles/types';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { QueryBlamelistRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
@@ -61,11 +59,11 @@ export function BlamelistDisplay({
     throw error;
   }
 
+  const pages = data?.pages || [];
   const isLoadingPage = isLoading || isFetchingNextPage;
-  const commits = useMemo<ReadonlyArray<OutputCommit | null>>(
-    // When the blamelist is not yet available, shows 3 loading commit entries.
-    () => data?.pages.flatMap((p) => p.commits) || Array(3).fill(null),
-    [data?.pages],
+  const commitCount = pages.reduce(
+    (prev, page) => prev + page.commits.length,
+    0,
   );
 
   return (
@@ -73,18 +71,15 @@ export function BlamelistDisplay({
       <div css={{ padding: '5px 10px' }}>
         <RevisionRange
           blamelistPin={blamelistPin}
-          commitCount={commits.length}
+          commitCount={commitCount}
           precedingCommit={
-            !hasNextPage && data?.pages.length
-              ? data?.pages[data?.pages.length - 1].precedingCommit
+            !hasNextPage && pages.length
+              ? pages[pages.length - 1].precedingCommit
               : undefined
           }
         />
       </div>
-      <BlamelistTable
-        repoUrl={getGitilesRepoURL(blamelistPin)}
-        commits={commits}
-      />
+      <BlamelistTable repoUrl={getGitilesRepoURL(blamelistPin)} pages={pages} />
       <div css={{ padding: '5px 10px' }}>
         <Button
           disabled={isLoadingPage || !hasNextPage}
