@@ -15,6 +15,7 @@ inbound_services:
 luci_gae_vars:
   chromium-swarm-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    BUILDBUCKET_SERVICE_ACCOUNT: cr-buildbucket-dev@appspot.gserviceaccount.com
     CONFIG_SERVICE_HOST: config.luci.app
     OAUTH_CLIENT_ID: 20770472288-t5smpbpjptka4nd888fv0ctd23ftba2o.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
@@ -25,6 +26,7 @@ luci_gae_vars:
 entrypoint: >
   main
   -rbe-conn-pool 4
+  -buildbucket-service-account ${BUILDBUCKET_SERVICE_ACCOUNT}
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
   -primary-tink-aead-key ${TINK_AEAD_KEY}

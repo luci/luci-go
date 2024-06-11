@@ -97,7 +97,7 @@ func ConfigureMigration(srv *prpc.Server, cfg *cfg.Provider, pythonURL string) {
 	simpleRule(m, "swarming.v2.Swarming", "GetToken")
 	simpleRule(m, "swarming.v2.Swarming", "GetPermissions")
 
-	// Buildbucket Task Backend RPCs (implemented in bbtaskbackend package).
+	// Buildbucket Task Backend RPCs.
 
 	simpleRule(m, "buildbucket.v2.TaskBackend", "RunTask")
 	simpleRule(m, "buildbucket.v2.TaskBackend", "FetchTasks")

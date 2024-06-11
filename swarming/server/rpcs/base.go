@@ -21,16 +21,18 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
@@ -80,6 +82,40 @@ type TasksServer struct {
 	TaskQuerySplitMode model.SplitMode
 }
 
+// TaskBackend implements bbpb.TaskBackendServer.
+type TaskBackend struct {
+	bbpb.UnimplementedTaskBackendServer
+
+	// BuildbucketTarget is "swarming://<swarming-cloud-project>".
+	BuildbucketTarget string
+	// BuildbucketAccount is the Buildbucket service account to expect calls from.
+	BuildbucketAccount string
+	// DisableBuildbucketCheck is true when running locally.
+	DisableBuildbucketCheck bool
+}
+
+// CheckBuildbucket returns a gRPC error if the caller is not Buildbucket.
+func (srv *TaskBackend) CheckBuildbucket(ctx context.Context) error {
+	if srv.DisableBuildbucketCheck {
+		return nil
+	}
+
+	state := auth.GetState(ctx)
+	if state == nil {
+		return status.Errorf(codes.Internal, "the auth state is not properly configured")
+	}
+
+	// Buildbucket is expected to use project identities: BB is the RPC peer, but
+	// the request is authenticated as coming from a project.
+	if peer := state.PeerIdentity(); peer.Kind() != identity.User || peer.Email() != srv.BuildbucketAccount {
+		return status.Errorf(codes.PermissionDenied, "peer %q is not allowed to access this task backend", peer)
+	}
+	if user := state.User().Identity; user.Kind() != identity.Project {
+		return status.Errorf(codes.PermissionDenied, "caller %q is not a project identity", user)
+	}
+	return nil
+}
+
 // RequestState carries stated scoped to a single RPC handler.
 //
 // In production produced by ServerInterceptor. In tests can be injected into
@@ -100,12 +136,8 @@ type RequestState struct {
 //
 // The initialized context will have RequestState populated, use State(ctx) to
 // get it.
-func ServerInterceptor(cfg *cfg.Provider, services []*grpc.ServiceDesc) grpcutil.UnifiedServerInterceptor {
-	serviceSet := stringset.New(len(services))
-	for _, svc := range services {
-		serviceSet.Add(svc.ServiceName)
-	}
-
+func ServerInterceptor(cfg *cfg.Provider, services []string) grpcutil.UnifiedServerInterceptor {
+	serviceSet := stringset.NewFromSlice(services...)
 	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
 		// fullMethod looks like "/<service>/<method>". Get "<service>".
 		if fullMethod == "" || fullMethod[0] != '/' {

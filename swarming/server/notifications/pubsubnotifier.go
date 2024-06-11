@@ -44,7 +44,6 @@ import (
 	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications/taskspb"
-	"go.chromium.org/luci/swarming/server/util/taskbackendutil"
 )
 
 type PubSubNotifier struct {
@@ -202,6 +201,9 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 	}
 
 	// construct bbpb.Task
+	//
+	// TODO(vadimsh): See if BuildTask.ToProto can be reused. It uses task state
+	// from the up-to-date resultSummary which is different from `t.State`.
 	botDims := buildTask.BotDimensions
 	if len(botDims) == 0 {
 		botDims = resultSummary.BotDimensions
@@ -222,7 +224,7 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 			},
 		},
 	}
-	taskbackendutil.SetBBStatus(t.State, resultSummary.Failure, bbTask)
+	model.SetBBTaskStatus(t.State, resultSummary.Failure, bbTask)
 
 	// send the update msg via PubSub
 	cloudProj, topicID, err := parsePubSubTopicName(buildTask.PubSubTopic)

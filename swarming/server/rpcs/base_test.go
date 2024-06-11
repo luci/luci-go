@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
@@ -299,7 +298,7 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 
 	tasks := map[string]string{}
 
-	putTask := func(name string, tags []string, state apipb.TaskState, failure, dedup, visible bool, ts time.Duration) {
+	putTask := func(name string, tags []string, state apipb.TaskState, failure, dedup, bbtask, visible bool, ts time.Duration) {
 		reqKey, err := model.TimestampToRequestKey(ctx, TestTime.Add(ts), taskCounter)
 		if err != nil {
 			panic(err)
@@ -363,10 +362,23 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 		if err != nil {
 			panic(err)
 		}
+		if bbtask {
+			err = datastore.Put(ctx, &model.BuildTask{
+				Key:              model.BuildTaskKey(ctx, reqKey),
+				BuildID:          fmt.Sprintf("%d", 1000+taskCounter),
+				BuildbucketHost:  "bb-host",
+				UpdateID:         100,
+				LatestTaskStatus: state,
+			})
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		tasks[name] = model.RequestKeyToTaskID(reqKey, model.AsRequest)
 	}
 
-	putMany := func(pfx string, state apipb.TaskState, failure, dedup bool) {
+	putMany := func(pfx string, state apipb.TaskState, failure, dedup, bbtask bool) {
 		for i := 0; i < 3; i++ {
 			putTask(
 				fmt.Sprintf("%s-%d", pfx, i),
@@ -375,25 +387,27 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 					fmt.Sprintf("idx:%d", i),
 					fmt.Sprintf("dup:%d", i),
 				},
-				state, failure, dedup, i == 0,
+				state, failure, dedup, bbtask, i == 0,
 				time.Duration(10*i)*time.Minute,
 			)
 		}
 	}
 
 	// 12 groups of tasks, 3 tasks in each group => 36 tasks total.
-	putMany("pending", apipb.TaskState_PENDING, false, false)
-	putMany("running", apipb.TaskState_RUNNING, false, false)
-	putMany("success", apipb.TaskState_COMPLETED, false, false)
-	putMany("failure", apipb.TaskState_COMPLETED, true, false)
-	putMany("dedup", apipb.TaskState_COMPLETED, false, true)
-	putMany("expired", apipb.TaskState_EXPIRED, false, false)
-	putMany("timeout", apipb.TaskState_TIMED_OUT, false, false)
-	putMany("botdead", apipb.TaskState_BOT_DIED, false, false)
-	putMany("canceled", apipb.TaskState_CANCELED, false, false)
-	putMany("killed", apipb.TaskState_KILLED, false, false)
-	putMany("noresource", apipb.TaskState_NO_RESOURCE, false, false)
-	putMany("clienterror", apipb.TaskState_CLIENT_ERROR, false, false)
+	//
+	// `dedup` and `clienterror` have no BuildTask associated with them.
+	putMany("pending", apipb.TaskState_PENDING, false, false, true)
+	putMany("running", apipb.TaskState_RUNNING, false, false, true)
+	putMany("success", apipb.TaskState_COMPLETED, false, false, true)
+	putMany("failure", apipb.TaskState_COMPLETED, true, false, true)
+	putMany("dedup", apipb.TaskState_COMPLETED, false, true, false)
+	putMany("expired", apipb.TaskState_EXPIRED, false, false, true)
+	putMany("timeout", apipb.TaskState_TIMED_OUT, false, false, true)
+	putMany("botdead", apipb.TaskState_BOT_DIED, false, false, true)
+	putMany("canceled", apipb.TaskState_CANCELED, false, false, true)
+	putMany("killed", apipb.TaskState_KILLED, false, false, true)
+	putMany("noresource", apipb.TaskState_NO_RESOURCE, false, false, true)
+	putMany("clienterror", apipb.TaskState_CLIENT_ERROR, false, false, false)
 
 	// Add a few intentionally missing IDs as well.
 	tasks["missing-0"] = "65aba3a3e6b99310"
@@ -413,8 +427,8 @@ func TestServerInterceptor(t *testing.T) {
 		})
 		cfg := MockConfigs(ctx, MockedConfigs{})
 
-		interceptor := ServerInterceptor(cfg, []*grpc.ServiceDesc{
-			&apipb.Swarming_ServiceDesc,
+		interceptor := ServerInterceptor(cfg, []string{
+			"swarming.v2.Swarming",
 		})
 
 		Convey("Sets up state", func() {

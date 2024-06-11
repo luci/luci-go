@@ -18,9 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"strings"
-
-	"google.golang.org/grpc"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -38,7 +35,6 @@ import (
 
 	notificationspb "go.chromium.org/luci/swarming/internal/notifications"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-	"go.chromium.org/luci/swarming/server/bbtaskbackend"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
@@ -83,6 +79,11 @@ func main() {
 		"expose-integration-mocks",
 		false,
 		"If set, expose endpoints for running integration tests. Must be used locally only.",
+	)
+	buildbucketServiceAccount := flag.String(
+		"buildbucket-service-account",
+		"",
+		"Service account email of the Buildbucket service. Used to authorize calls to TaskBackend gRPC service.",
 	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -129,7 +130,7 @@ func main() {
 		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.ImageVersion())
 		rbeReservations.RegisterTQTasks(&tq.Default)
 
-		// Hanlders for TQ tasks about sending PubSub messages.
+		// Handlers for TQ tasks for sending PubSub messages.
 		pubSubNotifier, err := notifications.NewPubSubNotifier(srv.Context, srv.Options.CloudProject)
 		if err != nil {
 			return errors.Annotate(err, "failed to initialize the PubSubNotifier").Err()
@@ -179,37 +180,43 @@ func main() {
 			))
 		}
 
-		// Register the TaskBackend pRPC server which will be only called by Buildbucket.
-		srv.RegisterUnaryServerInterceptors(bbtaskbackend.TaskBackendAuthInterceptor(strings.HasSuffix(srv.Options.CloudProject, "-dev")))
-		bbpb.RegisterTaskBackendServer(srv, bbtaskbackend.NewTaskBackend(fmt.Sprintf("swarming://%s", srv.Options.CloudProject), cfg))
-
 		// A temporary interceptor with very crude but solid ACL check for the
 		// duration of the development. To avoid accidentally leaking stuff due to
 		// bugs in the WIP code.
 		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
-			// Protect Swarming APIs.
-			fmt.Sprintf("/%s/*", apipb.Bots_ServiceDesc.ServiceName):  devAPIAccessGroup,
-			fmt.Sprintf("/%s/*", apipb.Tasks_ServiceDesc.ServiceName): devAPIAccessGroup,
+			// Protect WIP Swarming APIs.
+			"/swarming.v2.Bots/*":  devAPIAccessGroup,
+			"/swarming.v2.Tasks/*": devAPIAccessGroup,
+
 			// APIs allowed to receive external traffic.
-			fmt.Sprintf("/%s/*", apipb.Swarming_ServiceDesc.ServiceName): rpcacl.All,
+			"/swarming.v2.Swarming/*":       rpcacl.All,
+			"/buildbucket.v2.TaskBackend/*": rpcacl.All,
+
 			// An API used in local integration tests.
-			fmt.Sprintf("/%s/*", integrationmocks.IntegrationMocks_ServiceDesc.ServiceName): devAPIAccessGroup,
+			"/swarming.integrationmocks.IntegrationMocks/*": devAPIAccessGroup,
+
 			// Leave other gRPC services open, they do they own authorization already.
 			"/discovery.Discovery/*": rpcacl.All,
 			"/config.Consumer/*":     rpcacl.All,
 		}))
 
 		// An interceptor that prepares per-RPC context for public gRPC servers.
-		srv.RegisterUnifiedServerInterceptors(rpcs.ServerInterceptor(cfg, []*grpc.ServiceDesc{
-			&apipb.Bots_ServiceDesc,
-			&apipb.Tasks_ServiceDesc,
-			&apipb.Swarming_ServiceDesc,
+		srv.RegisterUnifiedServerInterceptors(rpcs.ServerInterceptor(cfg, []string{
+			"swarming.v2.Bots",
+			"swarming.v2.Tasks",
+			"swarming.v2.Swarming",
+			"buildbucket.v2.TaskBackend",
 		}))
 
 		// Register gRPC server implementations.
 		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{BotQuerySplitMode: model.SplitOptimally})
-		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{})
+		apipb.RegisterTasksServer(srv, &rpcs.TasksServer{TaskQuerySplitMode: model.SplitOptimally})
 		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{})
+		bbpb.RegisterTaskBackendServer(srv, &rpcs.TaskBackend{
+			BuildbucketTarget:       fmt.Sprintf("swarming://%s", srv.Options.CloudProject),
+			BuildbucketAccount:      *buildbucketServiceAccount,
+			DisableBuildbucketCheck: !srv.Options.Prod,
+		})
 
 		// A reverse proxy that sends a portion of requests to the Python server.
 		// Proxied requests have "/python/..." prepended in the URL to make them
