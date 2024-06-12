@@ -115,7 +115,7 @@ func ServiceConfigCronHandler(dryRun bool) func(context.Context) error {
 		// TODO(b/302615672): Remove this once Auth Service has been fully
 		// migrated to Auth Service v2 because the _ImportedConfigRevisions
 		// entity is redundant.
-		if err := updateImportedConfigRevisions(ctx, latestRevs); err != nil {
+		if err := updateImportedConfigRevisions(ctx, latestRevs, dryRun); err != nil {
 			return err
 		}
 
@@ -234,7 +234,7 @@ func getImportedConfigRevisions(ctx context.Context) (*ImportedConfigRevisions, 
 // migrated to Auth Service v2. In v2, the _ImportedConfigRevisions entity
 // is redundant; revision metadata for service configs is all handled by the
 // srvcfg/* packages.
-func updateImportedConfigRevisions(ctx context.Context, latestRevs map[string]*configRevisionInfo) error {
+func updateImportedConfigRevisions(ctx context.Context, latestRevs map[string]*configRevisionInfo, dryRun bool) error {
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		configRevs := map[string]*configRevisionInfo{}
 
@@ -272,6 +272,11 @@ func updateImportedConfigRevisions(ctx context.Context, latestRevs map[string]*c
 
 		if !shouldUpdate {
 			// Already up to date.
+			return nil
+		}
+
+		if dryRun {
+			logging.Debugf(ctx, "(dry run) updating ImportedConfigRevisions")
 			return nil
 		}
 

@@ -105,7 +105,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 			}
 
 			Convey("creates if it doesn't exist", func() {
-				So(updateImportedConfigRevisions(ctx, testRevs), ShouldBeNil)
+				So(updateImportedConfigRevisions(ctx, testRevs, false), ShouldBeNil)
 
 				actual, err := getImportedConfigRevisions(ctx)
 				So(err, ShouldBeNil)
@@ -118,7 +118,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 							ViewURL:  "https://test.config.example.com/oauth/10001b",
 						},
 					}
-					So(updateImportedConfigRevisions(ctx, updatedRevs), ShouldBeNil)
+					So(updateImportedConfigRevisions(ctx, updatedRevs, false), ShouldBeNil)
 
 					expectedRevs := map[string]*configRevisionInfo{
 						"oauth.cfg": {
@@ -142,7 +142,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 							ViewURL:  "https://test.config.example.com/allowlist/10001a",
 						},
 					}
-					So(updateImportedConfigRevisions(ctx, allowlistRev), ShouldBeNil)
+					So(updateImportedConfigRevisions(ctx, allowlistRev, false), ShouldBeNil)
 
 					expectedRevs := map[string]*configRevisionInfo{
 						"ip_allowlist.cfg": {
@@ -170,7 +170,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 							ViewURL:  "https://test.config.example.com/imports/10001a",
 						},
 					}
-					So(updateImportedConfigRevisions(ctx, trivialRev), ShouldBeNil)
+					So(updateImportedConfigRevisions(ctx, trivialRev, false), ShouldBeNil)
 
 					actual, err := getImportedConfigRevisions(ctx)
 					So(err, ShouldBeNil)
