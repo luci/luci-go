@@ -255,9 +255,12 @@ export class BuildPageStepEntryElement
           ${this.renderDuration()}
           <div id="header-text">
             <b>${this.step.index + 1}. ${this.step.selfName}</b>
-            ${this.step.instructionName
+            ${this.step.instructionID
               ? html`<milo-instruction-hint
-                  instruction-name=${this.step.instructionName}
+                  instruction-name=${'invocations/build-' +
+                  this.store.buildPage.build!.data.id +
+                  '/instructions/' +
+                  this.step.instructionID}
                   title=${'Reproduction instruction for step "' +
                   this.step.selfName +
                   '"'}

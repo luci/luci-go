@@ -13,14 +13,10 @@
 // limitations under the License.
 
 import { InfoOutlined } from '@mui/icons-material';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  styled,
-} from '@mui/material';
+import { IconButton, styled } from '@mui/material';
 import { useState } from 'react';
+
+import { InstructionDialog } from './instruction_dialog';
 
 const StyledIconButton = styled(IconButton)`
   cursor: pointer;
@@ -61,11 +57,15 @@ export function InstructionHint({
         <InfoOutlined />
       </StyledIconButton>
 
-      <Dialog disablePortal open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>{title}</DialogTitle>
-        <DialogContent>{instructionName}</DialogContent>
-      </Dialog>
+      <InstructionDialog
+        open={open}
+        onClose={(e) => {
+          setOpen(false);
+          e.stopPropagation();
+        }}
+        title={title}
+        instructionName={instructionName}
+      />
     </>
   );
 }
-

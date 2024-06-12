@@ -9,6 +9,7 @@ import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Artifact, ArtifactLine } from "./artifact.pb";
+import { Instruction } from "./instruction.pb";
 import { Invocation, Sources } from "./invocation.pb";
 import {
   ArtifactPredicate,
@@ -721,6 +722,14 @@ export interface QueryNewTestVariantsResponse_NewTestVariant {
    * hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
    */
   readonly variantHash: string;
+}
+
+export interface GetInstructionRequest {
+  /**
+   * Name of the instruction. The format is:
+   * invocations/{invocation_id}/instructions/{instruction_id}
+   */
+  readonly name: string;
 }
 
 function createBaseGetInvocationRequest(): GetInvocationRequest {
@@ -3845,6 +3854,63 @@ export const QueryNewTestVariantsResponse_NewTestVariant = {
   },
 };
 
+function createBaseGetInstructionRequest(): GetInstructionRequest {
+  return { name: "" };
+}
+
+export const GetInstructionRequest = {
+  encode(message: GetInstructionRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetInstructionRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetInstructionRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetInstructionRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: GetInstructionRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetInstructionRequest>, I>>(base?: I): GetInstructionRequest {
+    return GetInstructionRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetInstructionRequest>, I>>(object: I): GetInstructionRequest {
+    const message = createBaseGetInstructionRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
 /** Service to read test results. */
 export interface ResultDB {
   /** Retrieves an invocation. */
@@ -3959,6 +4025,12 @@ export interface ResultDB {
   BatchGetTestVariants(request: BatchGetTestVariantsRequest): Promise<BatchGetTestVariantsResponse>;
   /** Retrieves test metadata from a LUCI project, matching the predicate. */
   QueryTestMetadata(request: QueryTestMetadataRequest): Promise<QueryTestMetadataResponse>;
+  /**
+   * Retrieves an instruction for step or test result.
+   * If the instruction contains placeholders, they will not be replaced.
+   * The callers of this RPC are responsible to populate the placeholders with real data.
+   */
+  GetInstruction(request: GetInstructionRequest): Promise<Instruction>;
 }
 
 export const ResultDBServiceName = "luci.resultdb.v1.ResultDB";
@@ -3987,6 +4059,7 @@ export class ResultDBClientImpl implements ResultDB {
     this.QueryTestVariants = this.QueryTestVariants.bind(this);
     this.BatchGetTestVariants = this.BatchGetTestVariants.bind(this);
     this.QueryTestMetadata = this.QueryTestMetadata.bind(this);
+    this.GetInstruction = this.GetInstruction.bind(this);
   }
   GetInvocation(request: GetInvocationRequest): Promise<Invocation> {
     const data = GetInvocationRequest.toJSON(request);
@@ -4096,6 +4169,12 @@ export class ResultDBClientImpl implements ResultDB {
     const data = QueryTestMetadataRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTestMetadata", data);
     return promise.then((data) => QueryTestMetadataResponse.fromJSON(data));
+  }
+
+  GetInstruction(request: GetInstructionRequest): Promise<Instruction> {
+    const data = GetInstructionRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetInstruction", data);
+    return promise.then((data) => Instruction.fromJSON(data));
   }
 }
 

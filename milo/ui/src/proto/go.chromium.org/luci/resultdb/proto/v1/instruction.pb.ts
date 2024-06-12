@@ -113,6 +113,7 @@ export interface Instruction {
    * At this moment, we only has use cases for instruction ID for step instructions,
    * but we also require test instruction to have ID, for possible features
    * or enhancements in the future.
+   * Format [a-z][a-z0-9_\-:.]{0,99}
    * Limit: 100 bytes.
    */
   readonly id: string;

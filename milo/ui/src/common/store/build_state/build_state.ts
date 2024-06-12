@@ -171,7 +171,7 @@ export class StepExt {
    * Returns instruction name for the step.
    * If the step does not have instruction name, return undefined.
    */
-  @computed get instructionName(): string | undefined {
+  @computed get instructionID(): string | undefined {
     const instructionTag = this.tags.find(
       (tag) => tag.key === 'resultdb.instruction.id',
     );

@@ -124,29 +124,25 @@ export interface TestVariantBranchRaw {
  * It is used for both the hot buffer and the cold buffer.
  */
 export interface InputBuffer {
-  /** The number of test verdicts in the input buffer. */
+  /** The number of test runs in the input buffer. */
   readonly length: string;
   /**
-   * Verdicts, sorted by commit position (oldest first), and
+   * Runs, sorted by commit position (oldest first), and
    * then result time (oldest first).
    */
-  readonly verdicts: readonly PositionVerdict[];
+  readonly runs: readonly InputBuffer_Run[];
 }
 
-/** PositionVerdict represents a test verdict at a commit position. */
-export interface PositionVerdict {
-  /** The commit position for the verdict. */
+/** Run represents a test run at a commit position. */
+export interface InputBuffer_Run {
+  /** The commit position of the run. */
   readonly commitPosition: string;
-  /** The time that this verdict is produced, truncated to the nearest hour. */
-  readonly hour:
-    | string
-    | undefined;
-  /** Whether the verdict is exonerated or not. */
-  readonly isExonerated: boolean;
-  readonly runs: readonly PositionVerdict_Run[];
+  /** The time that this run was produced, truncated to the nearest hour. */
+  readonly hour: string | undefined;
+  readonly counts: InputBuffer_Run_Counts | undefined;
 }
 
-export interface PositionVerdict_Run {
+export interface InputBuffer_Run_Counts {
   /** Number of expectedly passed results in the run. */
   readonly expectedPassCount: string;
   /** Number of expectedly failed results in the run. */
@@ -163,8 +159,6 @@ export interface PositionVerdict_Run {
   readonly unexpectedCrashCount: string;
   /** Number of unexpectedly aborted results in the run. */
   readonly unexpectedAbortCount: string;
-  /** Whether this run is a duplicate run. */
-  readonly isDuplicate: boolean;
 }
 
 /** A request message for `TestVariantBranches.BatchGet` RPC. */
@@ -318,7 +312,7 @@ export interface Segment {
    */
   readonly startPositionUpperBound99th: string;
   /**
-   * The earliest hour a test verdict at the indicated start_position
+   * The earliest hour a test run at the indicated start_position
    * was recorded. Gives an approximate upper bound on the timestamp the
    * changepoint occurred, for systems which need to filter by date.
    */
@@ -328,12 +322,12 @@ export interface Segment {
   /**
    * The nominal commit position at which the segment ends (inclusive).
    * This is either the last recorded commit position in the test history
-   * (for this test variant branch), or the position of the last verdict
+   * (for this test variant branch), or the position of the last run
    * seen before the next detected changepoint.
    */
   readonly endPosition: string;
   /**
-   * The earliest hour a test verdict at the indicated end_position
+   * The latest hour a test run at the indicated end_position
    * was recorded. Gives an approximate lower bound on the  timestamp
    * the changepoint occurred, for systems which need to filter by date.
    */
@@ -345,8 +339,8 @@ export interface Segment {
 }
 
 /**
- * Counts of verdicts over a time period. Includes only
- * test verdicts for submitted code changes. This is defined as:
+ * Counts of source verdicts over a time period. Includes only
+ * test results for submitted code changes. This is defined as:
  * (1) where the code under test was already submitted when the test ran
  *       (e.g. postsubmit builders)
  * (2) where the code under test was not submitted at the time the test ran,
@@ -355,14 +349,17 @@ export interface Segment {
  *     and submitted code as a result).
  *     Currently, when test results lead to CL submission via recycled CQ runs,
  *     they are not counted.
+ * Source verdicts represent the aggregation of all test results at a given
+ * source position.
+ *
  * Statistics for test results and test runs can be added here when needed.
  */
 export interface Segment_Counts {
-  /** The number of verdicts with only unexpected test results. */
+  /** The number of source verdicts with only unexpected test results. */
   readonly unexpectedVerdicts: number;
-  /** The number of verdicts with a mix of expected and unexpected test results. */
+  /** The number of source verdicts with a mix of expected and unexpected test results. */
   readonly flakyVerdicts: number;
-  /** The total number of verdicts. */
+  /** The total number of source verdicts. */
   readonly totalVerdicts: number;
 }
 
@@ -779,7 +776,7 @@ export const TestVariantBranchRaw = {
 };
 
 function createBaseInputBuffer(): InputBuffer {
-  return { length: "0", verdicts: [] };
+  return { length: "0", runs: [] };
 }
 
 export const InputBuffer = {
@@ -787,8 +784,8 @@ export const InputBuffer = {
     if (message.length !== "0") {
       writer.uint32(8).int64(message.length);
     }
-    for (const v of message.verdicts) {
-      PositionVerdict.encode(v!, writer.uint32(18).fork()).ldelim();
+    for (const v of message.runs) {
+      InputBuffer_Run.encode(v!, writer.uint32(18).fork()).ldelim();
     }
     return writer;
   },
@@ -812,7 +809,7 @@ export const InputBuffer = {
             break;
           }
 
-          message.verdicts.push(PositionVerdict.decode(reader, reader.uint32()));
+          message.runs.push(InputBuffer_Run.decode(reader, reader.uint32()));
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -826,9 +823,7 @@ export const InputBuffer = {
   fromJSON(object: any): InputBuffer {
     return {
       length: isSet(object.length) ? globalThis.String(object.length) : "0",
-      verdicts: globalThis.Array.isArray(object?.verdicts)
-        ? object.verdicts.map((e: any) => PositionVerdict.fromJSON(e))
-        : [],
+      runs: globalThis.Array.isArray(object?.runs) ? object.runs.map((e: any) => InputBuffer_Run.fromJSON(e)) : [],
     };
   },
 
@@ -837,8 +832,8 @@ export const InputBuffer = {
     if (message.length !== "0") {
       obj.length = message.length;
     }
-    if (message.verdicts?.length) {
-      obj.verdicts = message.verdicts.map((e) => PositionVerdict.toJSON(e));
+    if (message.runs?.length) {
+      obj.runs = message.runs.map((e) => InputBuffer_Run.toJSON(e));
     }
     return obj;
   },
@@ -849,36 +844,33 @@ export const InputBuffer = {
   fromPartial<I extends Exact<DeepPartial<InputBuffer>, I>>(object: I): InputBuffer {
     const message = createBaseInputBuffer() as any;
     message.length = object.length ?? "0";
-    message.verdicts = object.verdicts?.map((e) => PositionVerdict.fromPartial(e)) || [];
+    message.runs = object.runs?.map((e) => InputBuffer_Run.fromPartial(e)) || [];
     return message;
   },
 };
 
-function createBasePositionVerdict(): PositionVerdict {
-  return { commitPosition: "0", hour: undefined, isExonerated: false, runs: [] };
+function createBaseInputBuffer_Run(): InputBuffer_Run {
+  return { commitPosition: "0", hour: undefined, counts: undefined };
 }
 
-export const PositionVerdict = {
-  encode(message: PositionVerdict, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+export const InputBuffer_Run = {
+  encode(message: InputBuffer_Run, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.commitPosition !== "0") {
       writer.uint32(8).int64(message.commitPosition);
     }
     if (message.hour !== undefined) {
       Timestamp.encode(toTimestamp(message.hour), writer.uint32(18).fork()).ldelim();
     }
-    if (message.isExonerated !== false) {
-      writer.uint32(24).bool(message.isExonerated);
-    }
-    for (const v of message.runs) {
-      PositionVerdict_Run.encode(v!, writer.uint32(34).fork()).ldelim();
+    if (message.counts !== undefined) {
+      InputBuffer_Run_Counts.encode(message.counts, writer.uint32(26).fork()).ldelim();
     }
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): PositionVerdict {
+  decode(input: _m0.Reader | Uint8Array, length?: number): InputBuffer_Run {
     const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePositionVerdict() as any;
+    const message = createBaseInputBuffer_Run() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -897,18 +889,11 @@ export const PositionVerdict = {
           message.hour = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         case 3:
-          if (tag !== 24) {
+          if (tag !== 26) {
             break;
           }
 
-          message.isExonerated = reader.bool();
-          continue;
-        case 4:
-          if (tag !== 34) {
-            break;
-          }
-
-          message.runs.push(PositionVerdict_Run.decode(reader, reader.uint32()));
+          message.counts = InputBuffer_Run_Counts.decode(reader, reader.uint32());
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -919,16 +904,15 @@ export const PositionVerdict = {
     return message;
   },
 
-  fromJSON(object: any): PositionVerdict {
+  fromJSON(object: any): InputBuffer_Run {
     return {
       commitPosition: isSet(object.commitPosition) ? globalThis.String(object.commitPosition) : "0",
       hour: isSet(object.hour) ? globalThis.String(object.hour) : undefined,
-      isExonerated: isSet(object.isExonerated) ? globalThis.Boolean(object.isExonerated) : false,
-      runs: globalThis.Array.isArray(object?.runs) ? object.runs.map((e: any) => PositionVerdict_Run.fromJSON(e)) : [],
+      counts: isSet(object.counts) ? InputBuffer_Run_Counts.fromJSON(object.counts) : undefined,
     };
   },
 
-  toJSON(message: PositionVerdict): unknown {
+  toJSON(message: InputBuffer_Run): unknown {
     const obj: any = {};
     if (message.commitPosition !== "0") {
       obj.commitPosition = message.commitPosition;
@@ -936,29 +920,27 @@ export const PositionVerdict = {
     if (message.hour !== undefined) {
       obj.hour = message.hour;
     }
-    if (message.isExonerated !== false) {
-      obj.isExonerated = message.isExonerated;
-    }
-    if (message.runs?.length) {
-      obj.runs = message.runs.map((e) => PositionVerdict_Run.toJSON(e));
+    if (message.counts !== undefined) {
+      obj.counts = InputBuffer_Run_Counts.toJSON(message.counts);
     }
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<PositionVerdict>, I>>(base?: I): PositionVerdict {
-    return PositionVerdict.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<InputBuffer_Run>, I>>(base?: I): InputBuffer_Run {
+    return InputBuffer_Run.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<PositionVerdict>, I>>(object: I): PositionVerdict {
-    const message = createBasePositionVerdict() as any;
+  fromPartial<I extends Exact<DeepPartial<InputBuffer_Run>, I>>(object: I): InputBuffer_Run {
+    const message = createBaseInputBuffer_Run() as any;
     message.commitPosition = object.commitPosition ?? "0";
     message.hour = object.hour ?? undefined;
-    message.isExonerated = object.isExonerated ?? false;
-    message.runs = object.runs?.map((e) => PositionVerdict_Run.fromPartial(e)) || [];
+    message.counts = (object.counts !== undefined && object.counts !== null)
+      ? InputBuffer_Run_Counts.fromPartial(object.counts)
+      : undefined;
     return message;
   },
 };
 
-function createBasePositionVerdict_Run(): PositionVerdict_Run {
+function createBaseInputBuffer_Run_Counts(): InputBuffer_Run_Counts {
   return {
     expectedPassCount: "0",
     expectedFailCount: "0",
@@ -968,12 +950,11 @@ function createBasePositionVerdict_Run(): PositionVerdict_Run {
     unexpectedFailCount: "0",
     unexpectedCrashCount: "0",
     unexpectedAbortCount: "0",
-    isDuplicate: false,
   };
 }
 
-export const PositionVerdict_Run = {
-  encode(message: PositionVerdict_Run, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+export const InputBuffer_Run_Counts = {
+  encode(message: InputBuffer_Run_Counts, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.expectedPassCount !== "0") {
       writer.uint32(8).int64(message.expectedPassCount);
     }
@@ -998,16 +979,13 @@ export const PositionVerdict_Run = {
     if (message.unexpectedAbortCount !== "0") {
       writer.uint32(64).int64(message.unexpectedAbortCount);
     }
-    if (message.isDuplicate !== false) {
-      writer.uint32(72).bool(message.isDuplicate);
-    }
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): PositionVerdict_Run {
+  decode(input: _m0.Reader | Uint8Array, length?: number): InputBuffer_Run_Counts {
     const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePositionVerdict_Run() as any;
+    const message = createBaseInputBuffer_Run_Counts() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1067,13 +1045,6 @@ export const PositionVerdict_Run = {
 
           message.unexpectedAbortCount = longToString(reader.int64() as Long);
           continue;
-        case 9:
-          if (tag !== 72) {
-            break;
-          }
-
-          message.isDuplicate = reader.bool();
-          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1083,7 +1054,7 @@ export const PositionVerdict_Run = {
     return message;
   },
 
-  fromJSON(object: any): PositionVerdict_Run {
+  fromJSON(object: any): InputBuffer_Run_Counts {
     return {
       expectedPassCount: isSet(object.expectedPassCount) ? globalThis.String(object.expectedPassCount) : "0",
       expectedFailCount: isSet(object.expectedFailCount) ? globalThis.String(object.expectedFailCount) : "0",
@@ -1093,11 +1064,10 @@ export const PositionVerdict_Run = {
       unexpectedFailCount: isSet(object.unexpectedFailCount) ? globalThis.String(object.unexpectedFailCount) : "0",
       unexpectedCrashCount: isSet(object.unexpectedCrashCount) ? globalThis.String(object.unexpectedCrashCount) : "0",
       unexpectedAbortCount: isSet(object.unexpectedAbortCount) ? globalThis.String(object.unexpectedAbortCount) : "0",
-      isDuplicate: isSet(object.isDuplicate) ? globalThis.Boolean(object.isDuplicate) : false,
     };
   },
 
-  toJSON(message: PositionVerdict_Run): unknown {
+  toJSON(message: InputBuffer_Run_Counts): unknown {
     const obj: any = {};
     if (message.expectedPassCount !== "0") {
       obj.expectedPassCount = message.expectedPassCount;
@@ -1123,17 +1093,14 @@ export const PositionVerdict_Run = {
     if (message.unexpectedAbortCount !== "0") {
       obj.unexpectedAbortCount = message.unexpectedAbortCount;
     }
-    if (message.isDuplicate !== false) {
-      obj.isDuplicate = message.isDuplicate;
-    }
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<PositionVerdict_Run>, I>>(base?: I): PositionVerdict_Run {
-    return PositionVerdict_Run.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<InputBuffer_Run_Counts>, I>>(base?: I): InputBuffer_Run_Counts {
+    return InputBuffer_Run_Counts.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<PositionVerdict_Run>, I>>(object: I): PositionVerdict_Run {
-    const message = createBasePositionVerdict_Run() as any;
+  fromPartial<I extends Exact<DeepPartial<InputBuffer_Run_Counts>, I>>(object: I): InputBuffer_Run_Counts {
+    const message = createBaseInputBuffer_Run_Counts() as any;
     message.expectedPassCount = object.expectedPassCount ?? "0";
     message.expectedFailCount = object.expectedFailCount ?? "0";
     message.expectedCrashCount = object.expectedCrashCount ?? "0";
@@ -1142,7 +1109,6 @@ export const PositionVerdict_Run = {
     message.unexpectedFailCount = object.unexpectedFailCount ?? "0";
     message.unexpectedCrashCount = object.unexpectedCrashCount ?? "0";
     message.unexpectedAbortCount = object.unexpectedAbortCount ?? "0";
-    message.isDuplicate = object.isDuplicate ?? false;
     return message;
   },
 };

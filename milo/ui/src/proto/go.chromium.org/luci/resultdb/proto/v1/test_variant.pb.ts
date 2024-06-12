@@ -150,6 +150,22 @@ export interface TestVariant {
    * If the code sources tested are not available, this field is blank.
    */
   readonly sourcesId: string;
+  /**
+   * Contain the data for instruction for the test verdict.
+   * To find out the instruction for a test verdict, we select an *arbitrary*
+   * test result in the test verdict and get its instruction.
+   * Note: If in this test verdict, if there are different instructions for
+   * test result, the result may be undeterministic.
+   */
+  readonly instruction: VerdictInstruction | undefined;
+}
+
+export interface VerdictInstruction {
+  /**
+   * Name of the instruction.
+   * Format: invocations/<invocation id>/instructions/<instruction id>
+   */
+  readonly instruction: string;
 }
 
 /** Outcomes of an execution of the test variant. */
@@ -214,6 +230,7 @@ function createBaseTestVariant(): TestVariant {
     testMetadata: undefined,
     isMasked: false,
     sourcesId: "",
+    instruction: undefined,
   };
 }
 
@@ -245,6 +262,9 @@ export const TestVariant = {
     }
     if (message.sourcesId !== "") {
       writer.uint32(74).string(message.sourcesId);
+    }
+    if (message.instruction !== undefined) {
+      VerdictInstruction.encode(message.instruction, writer.uint32(82).fork()).ldelim();
     }
     return writer;
   },
@@ -319,6 +339,13 @@ export const TestVariant = {
 
           message.sourcesId = reader.string();
           continue;
+        case 10:
+          if (tag !== 82) {
+            break;
+          }
+
+          message.instruction = VerdictInstruction.decode(reader, reader.uint32());
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -343,6 +370,7 @@ export const TestVariant = {
       testMetadata: isSet(object.testMetadata) ? TestMetadata.fromJSON(object.testMetadata) : undefined,
       isMasked: isSet(object.isMasked) ? globalThis.Boolean(object.isMasked) : false,
       sourcesId: isSet(object.sourcesId) ? globalThis.String(object.sourcesId) : "",
+      instruction: isSet(object.instruction) ? VerdictInstruction.fromJSON(object.instruction) : undefined,
     };
   },
 
@@ -375,6 +403,9 @@ export const TestVariant = {
     if (message.sourcesId !== "") {
       obj.sourcesId = message.sourcesId;
     }
+    if (message.instruction !== undefined) {
+      obj.instruction = VerdictInstruction.toJSON(message.instruction);
+    }
     return obj;
   },
 
@@ -396,6 +427,66 @@ export const TestVariant = {
       : undefined;
     message.isMasked = object.isMasked ?? false;
     message.sourcesId = object.sourcesId ?? "";
+    message.instruction = (object.instruction !== undefined && object.instruction !== null)
+      ? VerdictInstruction.fromPartial(object.instruction)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseVerdictInstruction(): VerdictInstruction {
+  return { instruction: "" };
+}
+
+export const VerdictInstruction = {
+  encode(message: VerdictInstruction, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.instruction !== "") {
+      writer.uint32(10).string(message.instruction);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): VerdictInstruction {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseVerdictInstruction() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.instruction = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): VerdictInstruction {
+    return { instruction: isSet(object.instruction) ? globalThis.String(object.instruction) : "" };
+  },
+
+  toJSON(message: VerdictInstruction): unknown {
+    const obj: any = {};
+    if (message.instruction !== "") {
+      obj.instruction = message.instruction;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<VerdictInstruction>, I>>(base?: I): VerdictInstruction {
+    return VerdictInstruction.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<VerdictInstruction>, I>>(object: I): VerdictInstruction {
+    const message = createBaseVerdictInstruction() as any;
+    message.instruction = object.instruction ?? "";
     return message;
   },
 };
