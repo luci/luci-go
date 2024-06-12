@@ -17,17 +17,21 @@ import { Workbox } from 'workbox-window';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
 export interface InitUiSwOptions {
-  readonly dev: boolean;
+  readonly isDevEnv: boolean;
 }
 
-export function initUiSW({ dev }: InitUiSwOptions) {
+export function initUiSW({ isDevEnv }: InitUiSwOptions) {
   // vite-plugin-pwa hosts the service worker in a different route in dev
   // mode.
   // See https://vite-pwa-org.netlify.app/guide/development.html#injectmanifest-strategy
-  const uiSwUrl = dev ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js';
+  const uiSwUrl = isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js';
   const workbox = new Workbox(
     createStaticTrustedURL('ui-sw-js-static', uiSwUrl),
-    { type: dev ? 'module' : 'classic' },
+    // During development, the service worker script can only be a JS module,
+    // because it runs through the same pipeline as the rest of the scripts.
+    // In production, the service worker script cannot be a JS module due to
+    // limited browser support.
+    { type: isDevEnv ? 'module' : 'classic' },
   );
 
   workbox.register().then((r) => {

@@ -125,9 +125,9 @@ function getVirtualConfigsJsPlugin(
       // During development, the service worker script can only be a JS module,
       // because it runs through the same pipeline as the rest of the scripts.
       // It cannot use the `importScripts`. So we inject the configs directly.
-      // In production, the service worker script cannot be a JS module. Because
-      // that has limited browser support. So we need to use `importScripts`
-      // instead of `import` to load `/configs.js`.
+      // In production, the service worker script cannot be a JS module due to
+      // limited browser support. So we need to use `importScripts` instead of
+      // `import` to load `/configs.js`.
       return mode === 'development'
         ? configsContent
         : "importScripts('/configs.js');";

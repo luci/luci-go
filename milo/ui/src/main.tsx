@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@/common/api/stackdriver_errors';
+import '@/proto_utils/duration_patch';
+
 import { Settings } from 'luxon';
 import { configure } from 'mobx';
 import { createRoot } from 'react-dom/client';
 
-import '@/common/api/stackdriver_errors';
 import { initDefaultTrustedTypesPolicy } from '@/common/tools/sanitize_html';
+import { IsDevEnvProvider } from '@/generic_libs/hooks/is_dev_env';
 import { assertNonNullable } from '@/generic_libs/tools/utils';
-import '@/proto_utils/duration_patch';
 
 import { App } from './App';
 import { initUiSW } from './sw/init_sw';
@@ -30,7 +32,7 @@ import { initUiSW } from './sw/init_sw';
 declare const ENABLE_UI_SW: boolean;
 
 if (navigator.serviceWorker && ENABLE_UI_SW) {
-  initUiSW({ dev: import.meta.env.DEV });
+  initUiSW({ isDevEnv: import.meta.env.DEV });
 }
 
 initDefaultTrustedTypesPolicy();
@@ -41,7 +43,11 @@ configure({ enforceActions: 'never' });
 
 const container = assertNonNullable(document.getElementById('app-root'));
 const root = createRoot(container);
-root.render(<App initOpts={{ isDevEnv: import.meta.env.DEV }} />);
+root.render(
+  <IsDevEnvProvider value={import.meta.env.DEV}>
+    <App />
+  </IsDevEnvProvider>,
+);
 
 Settings.throwOnInvalid = true;
 declare module 'luxon' {

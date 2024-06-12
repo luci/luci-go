@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@/common/styles/common_style.css';
+import '@/common/styles/color_classes.css';
+import '@/common/components/tooltip';
+
 import { GrpcError } from '@chopsui/prpc-client';
 import { ThemeProvider } from '@emotion/react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -22,7 +26,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { destroy } from 'mobx-state-tree';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import releaseNotes from '@root/RELEASE_NOTES.md?raw';
@@ -45,11 +49,9 @@ import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_p
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 import { routes } from '@/routes';
 
-import '@/common/styles/common_style.css';
-import '@/common/styles/color_classes.css';
-import '@/common/components/tooltip';
 import { PermCheckProvider } from './common/components/perm_check_provider';
 import { parseReleaseNotes } from './core/components/release_notes/common';
+import { useIsDevEnv } from './generic_libs/hooks/is_dev_env';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -87,21 +89,9 @@ const QUERY_CLIENT_CONFIG: QueryClientConfig = {
   },
 };
 
-export interface AppProps {
-  /**
-   * The App's configuration. The value is only used when initializing the App.
-   * Updates are not applied.
-   */
-  readonly initOpts: {
-    readonly isDevEnv: boolean;
-  };
-}
-
-export function App({ initOpts }: AppProps) {
-  const firstInitOpts = useRef(initOpts);
-  const [store] = useState(() =>
-    Store.create({}, { isDevEnv: firstInitOpts.current.isDevEnv }),
-  );
+export function App() {
+  const isDevEnv = useIsDevEnv();
+  const [store] = useState(() => Store.create({}));
   const [queryClient] = useState(() => new QueryClient(QUERY_CLIENT_CONFIG));
 
   useEffect(
@@ -114,8 +104,6 @@ export function App({ initOpts }: AppProps) {
       // less likely to be misused.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__STORE = store;
-
-      const { isDevEnv } = firstInitOpts.current;
       if (
         navigator.serviceWorker &&
         !document.cookie.includes('showNewBuildPage=false')
@@ -128,6 +116,11 @@ export function App({ initOpts }: AppProps) {
               'root-sw-js-static',
               '/root_sw.js',
             ) as string,
+            // During development, the service worker script can only be a JS
+            // module, because it runs through the same pipeline as the rest of
+            // the scripts.
+            // In production, the service worker script cannot be a JS module
+            // due to limited browser support.
             { type: isDevEnv ? 'module' : 'classic' },
           )
           .then((registration) => {
@@ -139,9 +132,9 @@ export function App({ initOpts }: AppProps) {
 
       return () => destroy(store);
     },
-    // `store` will never change. But list it as a dependency to make eslint
-    // happy.
-    [store],
+    // None of them will ever change. But list them as dependencies to make
+    // ESLint happy.
+    [store, isDevEnv],
   );
 
   const router = createBrowserRouter([
