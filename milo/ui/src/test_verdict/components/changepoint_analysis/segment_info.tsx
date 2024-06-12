@@ -45,8 +45,8 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
         <tr>
           <td>Commits:</td>
           <td>
-            {segment.startPosition}..
-            {segment.endPosition} ({commitCount} commits)
+            {segment.endPosition}...
+            {segment.startPosition}~ ({commitCount} commits)
           </td>
         </tr>
         <tr>

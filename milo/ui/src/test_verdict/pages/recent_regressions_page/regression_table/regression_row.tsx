@@ -120,19 +120,19 @@ export function RegressionRow({ regression }: RegressionRowProps) {
 
       <ChartCell>
         <FailureRatePieChart
-          label="The test variants broken down by their unexpected verdict rate before the changepoint"
+          label="The test variants broken down by their unexpected source verdict rate before the changepoint"
           buckets={statistics.unexpectedVerdictRateBefore.buckets}
         />
       </ChartCell>
       <ChartCell>
         <FailureRatePieChart
-          label="The test variants broken down by their unexpected verdict rate after the changepoint"
+          label="The test variants broken down by their unexpected source verdict rate after the changepoint"
           buckets={statistics.unexpectedVerdictRateAfter.buckets}
         />
       </ChartCell>
       <ChartCell>
         <FailureRatePieChart
-          label="The test variants broken down by their recent unexpected verdict rate"
+          label="The test variants broken down by their recent unexpected source verdict rate"
           buckets={statistics.unexpectedVerdictRateCurrent.buckets}
         />
       </ChartCell>

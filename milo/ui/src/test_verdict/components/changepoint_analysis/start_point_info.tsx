@@ -41,8 +41,8 @@ export function StartPointInfo({
         <tr>
           <td>Commits:</td>
           <td>
-            {segment.startPositionLowerBound99th}..
-            {segment.startPositionUpperBound99th} ({commitCount} commits)
+            {segment.startPositionUpperBound99th}...
+            {segment.startPositionLowerBound99th}~ ({commitCount} commits)
           </td>
         </tr>
       </tbody>
