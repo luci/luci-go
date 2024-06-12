@@ -62,7 +62,7 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
               status={TestVariantStatus.UNEXPECTED}
               sx={{ verticalAlign: 'middle' }}
             />{' '}
-            Unexpected Verdicts:
+            Unexpected Source Verdicts:
           </td>
           <td
             css={{
@@ -81,7 +81,7 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
               status={TestVariantStatus.FLAKY}
               sx={{ verticalAlign: 'middle' }}
             />{' '}
-            Flaky Verdicts:
+            Flaky Source Verdicts:
           </td>
           <td
             css={{
@@ -100,7 +100,7 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
               status={TestVariantStatus.EXPECTED}
               sx={{ verticalAlign: 'middle' }}
             />{' '}
-            Expected Verdicts:
+            Expected Source Verdicts:
           </td>
           <td
             css={{
