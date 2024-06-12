@@ -12,11 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export interface CategoryTree<T> {
+export interface ReadonlyCategoryTree<K, V> {
+  /**
+   * Whether the node itself has an assigned value.
+   *
+   * Note that `this.value === undefined` does not mean the node has no value.
+   * Because `V` could be `undefined`.
+   */
+  readonly hasValue: boolean;
+  /**
+   * The value of this node.
+   */
+  readonly value: V | undefined;
   /**
    * The direct children of the node.
    */
-  readonly children: readonly CategoryTree<T>[];
+  readonly children: readonly ReadonlyCategoryTree<K, V>[];
   /**
    * Performs a depth-first pre-order traversal and yield all values in the
    * nodes.
@@ -38,7 +49,7 @@ export interface CategoryTree<T> {
    * ```
    * will yield values: 1, 2, 4, 3.
    */
-  values(): Iterable<T>;
+  values(): IterableIterator<V>;
   /**
    * Performs a depth-first pre-order traversal and yield all values in the
    * nodes along with the index path of their category.
@@ -64,29 +75,37 @@ export interface CategoryTree<T> {
    *  * index: [1]        value: 4
    *  * index: [1, 0]     value: 3
    */
-  entries(): Iterable<[index: readonly number[], value: T]>;
+  enumerate(): IterableIterator<[index: readonly number[], value: V]>;
+  /**
+   * Get the last node when traversing the tree via the specified category.
+   * Also return the remaining category keys that were not traversed due to
+   * missing nodes.
+   */
+  probe(
+    category: readonly K[],
+  ): readonly [ReadonlyCategoryTree<K, V>, readonly K[]];
   /**
    * Get the descendant node representing the specified category.
    * If it doesn't exist, return `undefined`.
    */
-  getDescendant(category: readonly string[]): CategoryTree<T> | undefined;
+  getDescendant(category: readonly K[]): ReadonlyCategoryTree<K, V> | undefined;
 }
 
-export interface CategorizedItem<T> {
+export type CategoryTreeEntry<K, T> = readonly [
   /**
    * A list of keys that represent the category of the item.
    * If a category is a prefix of another category, then it is considered a
    * parent of the other category (e.g. ['A', 'B'] and ['A', 'C'] are two
    * different categories sharing the same parent category ['A']).
    */
-  readonly category: readonly string[];
-  readonly value: T;
-}
+  category: readonly K[],
+  value: T,
+];
 
 /**
- * Build a category tree from the provided categorized items.
+ * A category tree.
  *
- * The children of any node are sorted by the order they are first discovered.
+ * The children of any node are sorted by the order they are inserted.
  * For example, building a tree from the following items:
  *  * item1 with category: d > e
  *  * item2 with category: d > b > c
@@ -109,76 +128,164 @@ export interface CategorizedItem<T> {
  *      2
  * ```
  */
-export function buildCategoryTree<T>(
-  items: ReadonlyArray<CategorizedItem<T>>,
-): CategoryTree<T> {
-  const root = new CategoryTreeNode<T>();
-  for (const item of items) {
-    root.addValue(item.value, item.category, 0);
+export class CategoryTree<K, V> implements ReadonlyCategoryTree<K, V> {
+  private _hasValue = false;
+  private _value: V | undefined = undefined;
+  private childMap = new Map<K, CategoryTree<K, V>>();
+
+  /**
+   * Build a category tree from the provided entries.
+   */
+  constructor(entries?: readonly CategoryTreeEntry<K, V>[] | null) {
+    for (const [category, value] of entries || []) {
+      this.set(category, value);
+    }
   }
-  return root;
-}
 
-class CategoryTreeNode<T> implements CategoryTree<T> {
-  private selfValues: T[] = [];
-  private _children: Array<CategoryTreeNode<T>> = [];
-  private childMap: { [key: string]: CategoryTreeNode<T> } = {};
+  /**
+   * Set the value of the specified category.
+   */
+  set(category: readonly K[], value: V) {
+    this.setImpl(category, value, 0);
+    return this;
+  }
 
-  addValue(value: T, category: readonly string[], depth: number) {
+  private setImpl(category: readonly K[], value: V, depth: number) {
     if (category.length <= depth) {
-      this.selfValues.push(value);
+      this._value = value;
+      this._hasValue = true;
       return;
     }
 
     const key = category[depth];
-    let child = this.childMap[key];
+    let child = this.childMap.get(key);
     if (!child) {
-      child = new CategoryTreeNode();
-      this.childMap[key] = child;
-      this._children.push(child);
+      child = new CategoryTree();
+      this.childMap.set(key, child);
     }
 
-    child.addValue(value, category, depth + 1);
+    child.setImpl(category, value, depth + 1);
   }
 
-  get children(): readonly CategoryTree<T>[] {
-    return this._children;
+  /**
+   * Delete the value of the specified category.
+   *
+   * Also remove the category branch leading to the deleted entry if the branch
+   * has no other attached value.
+   *
+   * Return true if there's a value associated with the specified category.
+   * Return false otherwise.
+   */
+  delete(category: readonly K[]): boolean {
+    let deleteCandidateParent: CategoryTree<K, V> | null = null;
+    let deleteCandidateKey: K | null = null;
+
+    let pivot: CategoryTree<K, V> | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    pivot = this;
+    for (const key of category) {
+      const pivotParent: CategoryTree<K, V> = pivot;
+      pivot = pivotParent.childMap.get(key);
+      if (!pivot) {
+        return false;
+      }
+
+      if (pivot.childMap.size + (pivot._hasValue ? 1 : 0) > 1) {
+        // If the node has more than one value in itself and its descendants,
+        // its ancestors and itself should not be deleted.
+        deleteCandidateParent = null;
+      } else if (!deleteCandidateParent) {
+        // If the node does not have a value and no more than one child, it
+        // might be eligible for deletion. But we want to delete the top most
+        // ancestor that satisfy the same constant.
+        deleteCandidateParent = pivotParent;
+        deleteCandidateKey = key;
+      }
+    }
+
+    if (deleteCandidateParent) {
+      deleteCandidateParent.childMap.delete(deleteCandidateKey!);
+      return true;
+    }
+    if (pivot._hasValue) {
+      pivot._hasValue = false;
+      pivot._value = undefined;
+      return true;
+    }
+
+    return false;
   }
 
-  *values(): Iterable<T> {
-    yield* this.selfValues;
-    for (const child of this._children) {
+  /**
+   * Cast the tree to a `ReadonlyCategoryTree<K, V>`.
+   */
+  asReadonly(): ReadonlyCategoryTree<K, V> {
+    return this;
+  }
+
+  // Implements `ReadonlyCategoryTree<K, V>`.
+  get hasValue(): boolean {
+    return this._hasValue;
+  }
+
+  // Implements `ReadonlyCategoryTree<K, V>`.
+  get value(): V | undefined {
+    return this._value;
+  }
+
+  // Implements `ReadonlyCategoryTree<K, V>`.
+  get children(): readonly CategoryTree<K, V>[] {
+    return [...this.childMap.values()];
+  }
+
+  // Implements `ReadonlyCategoryTree<K, V>`.
+  *values(): IterableIterator<V> {
+    if (this._hasValue) {
+      yield this._value!;
+    }
+    for (const child of this.childMap.values()) {
       yield* child.values();
     }
   }
 
-  *entries(): Iterable<[index: readonly number[], value: T]> {
+  // Implements `ReadonlyCategoryTree<K, V>`.
+  *enumerate(): IterableIterator<[index: readonly number[], value: V]> {
     for (const [rIndex, value] of this.entriesImpl()) {
       yield [rIndex.reverse(), value];
     }
   }
 
-  *entriesImpl(): Iterable<[rIndex: number[], T]> {
-    for (const value of this.selfValues) {
-      yield [[], value];
+  private *entriesImpl(): IterableIterator<[rIndex: number[], V]> {
+    if (this._hasValue) {
+      yield [[], this._value!];
     }
-    for (const [i, child] of this._children.entries()) {
+    let i = 0;
+    for (const child of this.childMap.values()) {
       for (const [rIndex, value] of child.entriesImpl()) {
         rIndex.push(i);
         yield [rIndex, value];
       }
+      i += 1;
     }
   }
 
-  getDescendant(category: readonly string[]): CategoryTree<T> | undefined {
+  // Implements `ReadonlyCategoryTree<K, V>`.
+  probe(category: readonly K[]): readonly [CategoryTree<K, V>, readonly K[]] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let pivot: CategoryTreeNode<T> | undefined = this;
-    for (const cat of category) {
-      pivot = pivot.childMap[cat];
-      if (!pivot) {
-        return undefined;
+    let pivot: CategoryTree<K, V> = this;
+    for (const [i, key] of category.entries()) {
+      const next = pivot.childMap.get(key);
+      if (!next) {
+        return [pivot, category.slice(i)];
       }
+      pivot = next;
     }
-    return pivot;
+    return [pivot, []];
+  }
+
+  // Implements `ReadonlyCategoryTree<K, V>`.
+  getDescendant(category: readonly K[]): CategoryTree<K, V> | undefined {
+    const [node, remainingKeys] = this.probe(category);
+    return remainingKeys.length ? undefined : node;
   }
 }

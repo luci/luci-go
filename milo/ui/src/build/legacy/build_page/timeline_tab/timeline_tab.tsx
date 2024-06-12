@@ -29,7 +29,7 @@ import {
 } from '@/common/components/timeline';
 import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
-import { buildCategoryTree } from '@/generic_libs/tools/category_tree';
+import { CategoryTree } from '@/generic_libs/tools/category_tree';
 
 import { useBuild } from '../context';
 
@@ -68,19 +68,19 @@ interface TimelineTabImplProps {
 
 function TimelineTabImpl({ build }: TimelineTabImplProps) {
   const steps = useMemo(() => {
-    const tree = buildCategoryTree(
+    const tree = new CategoryTree(
       build.steps.map((step) => {
         const splitName = step.name.split('|');
-        return {
-          category: splitName,
-          value: {
+        return [
+          splitName,
+          {
             selfName: splitName[splitName.length - 1],
             step,
           },
-        };
+        ];
       }),
     );
-    return [...tree.entries()].map(([index, step]) => ({
+    return [...tree.enumerate()].map(([index, step]) => ({
       index: index,
       selfName: step.selfName,
       step: step.step,

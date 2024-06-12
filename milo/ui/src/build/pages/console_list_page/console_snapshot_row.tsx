@@ -26,7 +26,7 @@ import {
   getOldConsoleURLPath,
 } from '@/common/tools/url_utils';
 import { extractProject } from '@/common/tools/utils';
-import { buildCategoryTree } from '@/generic_libs/tools/category_tree';
+import { CategoryTree } from '@/generic_libs/tools/category_tree';
 
 const Row = styled.tr({
   // Shrink-to-fit on all but the last column.
@@ -79,13 +79,16 @@ export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
 
   // Sort builder snapshots by builder categories.
   const sortedBuilderSnapshots = useMemo(() => {
-    const items =
-      snapshot.console.builders?.map((b, i) => ({
-        category: (b.category || '').split('|'),
-        // The number of builder snapshots always match the number of builders.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        value: snapshot.builderSnapshots![i],
-      })) || [];
+    const entries =
+      snapshot.console.builders?.map(
+        (b, i) =>
+          [
+            [...(b.category || '').split('|'), formatBuilderId(b.id)],
+            // The number of builder snapshots always match the number of builders.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            snapshot.builderSnapshots![i],
+          ] as const,
+      ) || [];
 
     // Builders are sorted in a weird way. Items (could be builders,
     // subcategories, or a mix of both) under the same category are closely
@@ -93,7 +96,7 @@ export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
     // first discovered (when iterating over Console.builders). We need to keep
     // this behavior because some users rely on this order to quickly tell the
     // builder each cell represents (see crbug.com/1495253).
-    const tree = buildCategoryTree(items);
+    const tree = new CategoryTree(entries);
     return [...tree.values()];
   }, [snapshot]);
 
