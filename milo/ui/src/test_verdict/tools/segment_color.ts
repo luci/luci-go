@@ -14,6 +14,9 @@
 
 import { OutputSegment } from '@/analysis/types';
 
+// TODO(b/321110247): improve the logic so having a single unexpected verdict
+// won't cause a largely passing segment to have the as color as a segment with
+// 100% unexpected verdict.
 export function getBorderColor(segment: OutputSegment) {
   if (segment.counts.unexpectedVerdicts > 0) {
     return 'var(--failure-color)';
@@ -24,6 +27,9 @@ export function getBorderColor(segment: OutputSegment) {
   return 'var(--success-color)';
 }
 
+// TODO(b/321110247): improve the logic so having a single unexpected verdict
+// won't cause a largely passing segment to have the as color as a segment with
+// 100% unexpected verdict.
 export function getBackgroundColor(segment: OutputSegment) {
   if (segment.counts.unexpectedVerdicts > 0) {
     return 'var(--failure-bg-color)';

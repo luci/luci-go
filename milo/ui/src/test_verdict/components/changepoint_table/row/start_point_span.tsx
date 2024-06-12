@@ -43,6 +43,8 @@ export interface StartPointSpanProps {
  * Renders a span that represents the 99th confidence interval of the segment
  * start point.
  */
+// TODO(b/321110247): improve the presentation of overlapping start points.
+// Currently they simply overlaps each other.
 export function StartPointSpan({
   testVariantBranch,
   segment,

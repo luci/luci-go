@@ -25,7 +25,6 @@ import { useBlamelistDispatch, useBlamelistState } from './context';
 export function RegressionDetailsDialog() {
   const dispatch = useBlamelistDispatch();
   const state = useBlamelistState();
-  // TODO: implement scroll to focus commit position.
   const testVariantBranch = state.testVariantBranch;
 
   const scrollRef = useRef<HTMLDivElement>(null);
