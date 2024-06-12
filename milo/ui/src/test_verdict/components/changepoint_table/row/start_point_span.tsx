@@ -25,6 +25,7 @@ import { useConfig } from '../context';
 const Span = styled(Box)`
   background-color: #b3e5ff;
   border: solid 1px #08aaff;
+  border-radius: 16px;
   box-sizing: border-box;
   margin: ${SPAN_MARGIN}px;
   width: calc(100% - ${2 * SPAN_MARGIN}px);

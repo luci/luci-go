@@ -50,14 +50,20 @@ export function StartPointSpan({ position }: StartPointSpanProps) {
           <Span
             sx={{
               border: 'solid 1px',
-              borderTop:
-                firstSP.startPositionUpperBound99th === position
-                  ? undefined
-                  : 'none',
-              borderBottom:
-                firstSP.startPositionLowerBound99th === position
-                  ? undefined
-                  : 'none',
+              ...(firstSP.startPositionUpperBound99th === position
+                ? {}
+                : {
+                    borderTop: 'none',
+                    borderTopLeftRadius: 0,
+                    borderTopRightRadius: 0,
+                  }),
+              ...(firstSP.startPositionLowerBound99th === position
+                ? {}
+                : {
+                    borderBottom: 'none',
+                    borderBottomLeftRadius: 0,
+                    borderBottomRightRadius: 0,
+                  }),
               borderColor: 'var(--canceled-color)',
               backgroundColor: 'var(--canceled-bg-color)',
             }}

@@ -51,9 +51,20 @@ export function SegmentSpan({ position }: SegmentSpanProps) {
           <Span
             sx={{
               border: 'solid 1px',
-              borderBottom:
-                segment.startPosition === position ? undefined : 'none',
-              borderTop: segment.endPosition === position ? undefined : 'none',
+              ...(segment.startPosition === position
+                ? {}
+                : {
+                    borderBottom: 'none',
+                    borderBottomLeftRadius: 0,
+                    borderBottomRightRadius: 0,
+                  }),
+              ...(segment.endPosition === position
+                ? {}
+                : {
+                    borderTop: 'none',
+                    borderTopLeftRadius: 0,
+                    borderTopRightRadius: 0,
+                  }),
               borderColor: getBorderColor(segment),
               backgroundColor: getBackgroundColor(segment),
             }}

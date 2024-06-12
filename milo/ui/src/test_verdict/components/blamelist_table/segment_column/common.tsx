@@ -20,4 +20,5 @@ export const Span = styled(Box)`
   padding-top: 2px;
   padding-bottom: 2px;
   height: 100%;
+  border-radius: 10px;
 `;

@@ -31,6 +31,7 @@ import { useConfig } from '../context';
 
 const Span = styled(Box)`
   border: solid 1px;
+  border-radius: 16px;
   box-sizing: border-box;
   margin: ${SPAN_MARGIN}px;
   width: calc(100% - ${2 * SPAN_MARGIN}px);
@@ -40,6 +41,21 @@ const Span = styled(Box)`
   & > * {
     display: inline-block;
   }
+`;
+
+const SpanLabel = styled(Box)`
+  background-color: white;
+  height: 100%;
+  border-radius: 16px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  padding: 0 40px 0 1px;
+  mask-image: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 80%),
+    rgb(0 0 0 / 80%) calc(100% - 30px),
+    rgb(0 0 0 / 0%)
+  );
 `;
 
 export interface SegmentSpanProps {
@@ -105,58 +121,63 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
             borderColor: getBorderColor(segment),
           }}
         >
-          <VerdictSetStatus
-            counts={{
-              [TestVariantStatus.UNEXPECTED]: unexpectedCount,
-              [TestVariantStatus.FLAKY]: flakyCount,
-              [TestVariantStatus.EXPECTED]: expectedCount,
-            }}
-          />{' '}
-          <span css={{ lineHeight: '24px', fontWeight: 'bold' }}>
-            <span
-              css={
-                unexpectedCount
-                  ? {
-                      color:
-                        VERDICT_STATUS_COLOR_MAP[TestVariantStatus.UNEXPECTED],
-                    }
-                  : {
-                      opacity: 0.2,
-                    }
-              }
-            >
-              {unexpectedCount}
+          <SpanLabel>
+            <VerdictSetStatus
+              counts={{
+                [TestVariantStatus.UNEXPECTED]: unexpectedCount,
+                [TestVariantStatus.FLAKY]: flakyCount,
+                [TestVariantStatus.EXPECTED]: expectedCount,
+              }}
+            />{' '}
+            <span css={{ lineHeight: '24px', fontWeight: 'bold' }}>
+              <span
+                css={
+                  unexpectedCount
+                    ? {
+                        color:
+                          VERDICT_STATUS_COLOR_MAP[
+                            TestVariantStatus.UNEXPECTED
+                          ],
+                      }
+                    : {
+                        opacity: 0.6,
+                      }
+                }
+              >
+                {unexpectedCount}
+              </span>
+              <span css={{ opacity: 0.2 }}> / </span>
+              <span
+                css={
+                  flakyCount
+                    ? {
+                        color:
+                          VERDICT_STATUS_COLOR_MAP[TestVariantStatus.FLAKY],
+                      }
+                    : {
+                        opacity: 0.6,
+                      }
+                }
+              >
+                {flakyCount}
+              </span>
+              <span css={{ opacity: 0.2 }}> / </span>
+              <span
+                css={
+                  expectedCount
+                    ? {
+                        color:
+                          VERDICT_STATUS_COLOR_MAP[TestVariantStatus.EXPECTED],
+                      }
+                    : {
+                        opacity: 0.6,
+                      }
+                }
+              >
+                {expectedCount}
+              </span>
             </span>
-            <span css={{ opacity: 0.2 }}> / </span>
-            <span
-              css={
-                flakyCount
-                  ? {
-                      color: VERDICT_STATUS_COLOR_MAP[TestVariantStatus.FLAKY],
-                    }
-                  : {
-                      opacity: 0.2,
-                    }
-              }
-            >
-              {flakyCount}
-            </span>
-            <span css={{ opacity: 0.2 }}> / </span>
-            <span
-              css={
-                expectedCount
-                  ? {
-                      color:
-                        VERDICT_STATUS_COLOR_MAP[TestVariantStatus.EXPECTED],
-                    }
-                  : {
-                      opacity: 0.2,
-                    }
-              }
-            >
-              {expectedCount}
-            </span>
-          </span>
+          </SpanLabel>
         </Span>
       </HtmlTooltip>
     </foreignObject>

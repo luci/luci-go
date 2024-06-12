@@ -18,6 +18,6 @@ export const LABEL_PADDINGS = 5;
 export const CELL_WIDTH = 80;
 
 export const SIDE_PANEL_WIDTH = 400;
-export const MIN_ROW_HEIGHT = 70;
+export const MIN_ROW_HEIGHT = 72;
 export const SPAN_MARGIN = 2;
 export const ROW_PADDING = 5;
