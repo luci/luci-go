@@ -30,6 +30,8 @@ import { SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
 import { useConfig } from '../context';
 
 const Span = styled(Box)`
+  display: flex;
+  padding-right: 10px;
   border: solid 1px;
   border-radius: 16px;
   box-sizing: border-box;
@@ -37,25 +39,37 @@ const Span = styled(Box)`
   width: calc(100% - ${2 * SPAN_MARGIN}px);
   height: calc(100% - ${2 * SPAN_MARGIN}px);
   cursor: pointer;
-
-  & > * {
-    display: inline-block;
-  }
 `;
 
 const SpanLabel = styled(Box)`
-  background-color: white;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px;
+  background-color: rgb(255 255 255 / 80%);
   height: 100%;
+  overflow: hidden;
   border-radius: 16px;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-  padding: 0 40px 0 1px;
-  mask-image: linear-gradient(
-    90deg,
-    rgb(0 0 0 / 80%),
-    rgb(0 0 0 / 80%) calc(100% - 30px),
-    rgb(0 0 0 / 0%)
-  );
+  padding-left: 1px;
+`;
+
+const Count = styled('span')`
+  padding-right: 5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  line-height: 24px;
+  font-weight: bold;
+`;
+
+const Transition = styled(Box)`
+  overflow: hidden;
+  flex-grow: 1;
+  min-width: 10px;
+  max-width: 40px;
+  background-color: white;
+  mask-image: linear-gradient(90deg, rgb(0 0 0 / 80%), rgb(0 0 0 / 0%));
 `;
 
 export interface SegmentSpanProps {
@@ -127,8 +141,8 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
                 [TestVariantStatus.FLAKY]: flakyCount,
                 [TestVariantStatus.EXPECTED]: expectedCount,
               }}
-            />{' '}
-            <span css={{ lineHeight: '24px', fontWeight: 'bold' }}>
+            />
+            <Count>
               <span
                 css={
                   unexpectedCount
@@ -175,8 +189,9 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
               >
                 {expectedCount}
               </span>
-            </span>
+            </Count>
           </SpanLabel>
+          <Transition />
         </Span>
       </HtmlTooltip>
     </foreignObject>
