@@ -26,7 +26,7 @@ import {
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
 
-import { ROW_PADDING, SPAN_MARGIN } from '../constants';
+import { SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
 import { useConfig } from '../context';
 
 const Span = styled(Box)`
@@ -73,9 +73,8 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
   const start = commitMap[segment.endPosition];
   const end = commitMap[segment.startPosition] + 1;
 
-  const spanHeight = (rowHeight - 2 * ROW_PADDING) / 2;
   const x = xScale(start);
-  const y = ROW_PADDING + spanHeight;
+  const y = (rowHeight - 2 * SPAN_HEIGHT) / 2 + SPAN_HEIGHT;
   const spanWidth = xScale(end) - xScale(start);
   const counts = segment.counts;
   const unexpectedCount = counts.unexpectedVerdicts;
@@ -87,7 +86,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
       x={x}
       y={y}
       width={spanWidth}
-      height={spanHeight}
+      height={SPAN_HEIGHT}
       css={{ cursor: 'pointer' }}
       onClick={() =>
         dispatch({

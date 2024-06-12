@@ -12,22 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ScaleLinear, scaleLinear } from 'd3';
-import { createContext, ReactNode, useContext, useMemo } from 'react';
+import { scaleLinear } from 'd3';
+import { ReactNode, useMemo } from 'react';
 
 import { CELL_WIDTH, LINE_HEIGHT, MIN_ROW_HEIGHT } from './constants';
-
-const Ctx = createContext<ChangepointTableConfig | undefined>(undefined);
-
-interface ChangepointTableConfig {
-  readonly criticalCommits: readonly string[];
-  readonly commitMap: { [key: string]: number };
-  readonly criticalVariantKeys: readonly string[];
-  readonly testVariantBranchCount: number;
-  readonly rowHeight: number;
-  readonly xScale: ScaleLinear<number, number, never>;
-  readonly yScale: ScaleLinear<number, number, never>;
-}
+import { ChangeTableCtx } from './context';
 
 export interface ChangepointTableContextProviderProps {
   readonly criticalCommits: readonly string[];
@@ -46,7 +35,7 @@ export function ChangepointTableContextProvider({
     const commitMap = Object.fromEntries(criticalCommits.map((c, i) => [c, i]));
 
     const rowHeight = Math.max(
-      criticalVariantKeys.length * LINE_HEIGHT,
+      (criticalVariantKeys.length + 1) * LINE_HEIGHT,
       MIN_ROW_HEIGHT,
     );
     const yScale = scaleLinear()
@@ -67,15 +56,7 @@ export function ChangepointTableContextProvider({
     };
   }, [criticalCommits, criticalVariantKeys, testVariantBranchCount]);
 
-  return <Ctx.Provider value={ctx}>{children}</Ctx.Provider>;
-}
-
-export function useConfig() {
-  const ctx = useContext(Ctx);
-  if (ctx === undefined) {
-    throw new Error(
-      'useConfig must be used within ChangepointTableContextProvider',
-    );
-  }
-  return ctx;
+  return (
+    <ChangeTableCtx.Provider value={ctx}>{children}</ChangeTableCtx.Provider>
+  );
 }

@@ -19,7 +19,7 @@ import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { StartPointInfo } from '@/test_verdict/components/changepoint_analysis';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 
-import { ROW_PADDING, SPAN_MARGIN } from '../constants';
+import { SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
 import { useConfig } from '../context';
 
 const Span = styled(Box)`
@@ -56,7 +56,7 @@ export function StartPointSpan({
 
   const start = commitMap[segment.startPositionUpperBound99th];
   const end = commitMap[segment.startPositionLowerBound99th] + 1;
-  const spanHeight = (rowHeight - 2 * ROW_PADDING) / 2;
+  const y = (rowHeight - 2 * SPAN_HEIGHT) / 2;
   const commitCount =
     parseInt(segment.startPositionUpperBound99th) -
     parseInt(segment.startPositionLowerBound99th) +
@@ -65,9 +65,9 @@ export function StartPointSpan({
   return (
     <foreignObject
       x={xScale(start)}
-      y={ROW_PADDING}
+      y={y}
       width={xScale(end) - xScale(start)}
-      height={spanHeight}
+      height={SPAN_HEIGHT}
     >
       <HtmlTooltip
         arrow
@@ -88,7 +88,7 @@ export function StartPointSpan({
         }
       >
         <Span
-          sx={{ lineHeight: `${spanHeight - 2 * SPAN_MARGIN}px` }}
+          sx={{ lineHeight: `${SPAN_HEIGHT - 2 * SPAN_MARGIN}px` }}
           onClick={() =>
             dispatch({
               type: 'showBlamelist',
