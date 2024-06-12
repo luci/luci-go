@@ -17,6 +17,7 @@ import { DateTime } from 'luxon';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { OutputChangepointGroupSummary } from '@/analysis/types';
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { Timestamp } from '@/common/components/timestamp';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
@@ -57,8 +58,8 @@ export function RegressionRow({ regression }: RegressionRowProps) {
   const detailsUrlPath = useDetailsUrlPath(regression);
 
   const blamelistCommitCount =
-    parseInt(canonicalChangepoint.nominalStartPosition) -
-    parseInt(canonicalChangepoint.previousSegmentNominalEndPosition) +
+    parseInt(canonicalChangepoint.startPositionUpperBound99th) -
+    parseInt(canonicalChangepoint.startPositionLowerBound99th) +
     1;
 
   return (
@@ -72,13 +73,25 @@ export function RegressionRow({ regression }: RegressionRowProps) {
       </TextCell>
       <TextCell>
         {/* TODO(b/321110247): link to the blamelist instead of the branch. */}
-        <Link
-          href={getGitilesCommitURL(canonicalChangepoint.ref.gitiles)}
-          target="_blank"
-          rel="noopener"
+        <HtmlTooltip
+          title={
+            <>
+              <h4>UNIMPLEMENTED</h4>
+              <p>
+                For now, this link will only take you to the git logs of the
+                blamelist branch. Use the details link instead.
+              </p>
+            </>
+          }
         >
-          {blamelistCommitCount} commits
-        </Link>
+          <Link
+            href={getGitilesCommitURL(canonicalChangepoint.ref.gitiles)}
+            target="_blank"
+            rel="noopener"
+          >
+            {blamelistCommitCount} commits
+          </Link>
+        </HtmlTooltip>
       </TextCell>
       <NumberCell>{statistics.count}</NumberCell>
 
