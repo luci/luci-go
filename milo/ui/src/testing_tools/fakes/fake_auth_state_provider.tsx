@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLatest } from 'react-use';
 
 import { AuthState } from '@/common/api/auth_state';
-import { AuthStateContext } from '@/common/components/auth_state_provider';
+import { AuthStateContext } from '@/common/components/auth_state_provider/context';
 import { createMockAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 interface props {
@@ -18,10 +18,11 @@ export const FakeAuthStateProvider = ({ value, children }: props) => {
   const ctxValue = useMemo(
     () => ({
       getAuthState: () => valueRef.current,
-      // This doesn't ensure the auth state is valid. But it should be good
+      // This doesn't ensure the tokens are valid. But it should be good
       // enough for most unit tests that is not testing <AuthStateProvider />
       // itself.
-      getValidAuthState: async () => valueRef.current,
+      getAccessToken: async () => valueRef.current.accessToken || '',
+      getIdToken: async () => valueRef.current.idToken || '',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [value.identity],

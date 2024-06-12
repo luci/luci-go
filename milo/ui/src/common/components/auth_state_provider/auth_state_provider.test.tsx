@@ -22,12 +22,8 @@ import * as authStateLib from '@/common/api/auth_state';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { timeout } from '@/generic_libs/tools/utils';
 
-import {
-  AuthStateProvider,
-  useAuthState,
-  useGetAccessToken,
-  useGetIdToken,
-} from './auth_state_provider';
+import { AuthStateProvider } from './auth_state_provider';
+import { useAuthState, useGetAccessToken, useGetIdToken } from './context';
 
 interface TokenConsumerProps {
   readonly renderCallback: (
@@ -61,7 +57,7 @@ jest.mock('@/common/api/auth_state', () => {
   >('@/common/api/auth_state', ['queryAuthState']);
 });
 
-describe('AuthStateProvider', () => {
+describe('<AuthStateProvider />', () => {
   let store: StoreInstance;
   let queryAuthStateSpy: jest.MockedFunction<
     typeof authStateLib.queryAuthState
@@ -428,5 +424,137 @@ describe('AuthStateProvider', () => {
     await act(() => jest.advanceTimersByTimeAsync(3600000));
     await act(() => jest.advanceTimersByTimeAsync(3600000));
     expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('token getters should be referentially stable', async () => {
+    // Set up mocks.
+    let callCount = 0;
+    queryAuthStateSpy.mockImplementation(async () => {
+      callCount += 1;
+      return {
+        identity: 'identity',
+        idToken: `id-token-${callCount}`,
+        accessToken: `access-token-${callCount}`,
+        accessTokenExpiry: DateTime.now().plus({ minute: 60 }).toSeconds(),
+      };
+    });
+    const tokenConsumerCBSpy = jest.fn(
+      (
+        _getIdToken: ReturnType<typeof useGetIdToken>,
+        _getAccessToken: ReturnType<typeof useGetAccessToken>,
+      ) => {},
+    );
+    const initialAuthState = {
+      identity: 'identity',
+      idToken: 'id-token-0',
+      accessToken: 'access-token-0',
+      accessTokenExpiry: DateTime.now().plus({ minute: 60 }).toSeconds(),
+    };
+
+    // First render.
+    const { rerender } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <TokenConsumer renderCallback={tokenConsumerCBSpy} />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>,
+    );
+
+    // Wait until the first token refresh is complete.
+    await act(() => jest.advanceTimersByTimeAsync(1000));
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(1);
+    expect(tokenConsumerCBSpy).toHaveBeenCalledTimes(1);
+
+    // Trigger a rerender.
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <TokenConsumer renderCallback={tokenConsumerCBSpy} />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>,
+    );
+
+    // Verify that the token getters are referentially stable.
+    expect(tokenConsumerCBSpy).toHaveBeenCalledTimes(2);
+    expect(tokenConsumerCBSpy.mock.calls[0][0]).toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[1][0],
+    );
+    expect(tokenConsumerCBSpy.mock.calls[0][1]).toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[1][1],
+    );
+
+    // Wait until the 2nd token refresh is complete.
+    await act(() => jest.advanceTimersByTimeAsync(3600000));
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(2);
+    expect(tokenConsumerCBSpy).toHaveBeenCalledTimes(2);
+
+    // Trigger another rerender.
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <TokenConsumer renderCallback={tokenConsumerCBSpy} />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>,
+    );
+
+    // Verify that the token getters are still referentially stable.
+    expect(tokenConsumerCBSpy).toHaveBeenCalledTimes(3);
+    expect(tokenConsumerCBSpy.mock.calls[1][0]).toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[2][0],
+    );
+    expect(tokenConsumerCBSpy.mock.calls[1][1]).toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[2][1],
+    );
+
+    // Change identity.
+    queryAuthStateSpy.mockImplementation(async () => {
+      callCount += 1;
+      return {
+        identity: 'identity-2',
+        idToken: `id-token-${callCount}`,
+        accessToken: `access-token-${callCount}`,
+        accessTokenExpiry: DateTime.now().plus({ minute: 60 }).toSeconds(),
+      };
+    });
+
+    // Wait until the 3rd token refresh is complete.
+    await act(() => jest.advanceTimersByTimeAsync(3600000));
+    expect(queryAuthStateSpy).toHaveBeenCalledTimes(3);
+
+    // Verify that the token getters are changed after the identity is changed.
+    expect(tokenConsumerCBSpy).toHaveBeenCalledTimes(4);
+    expect(tokenConsumerCBSpy.mock.calls[2][0]).not.toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[3][0],
+    );
+    expect(tokenConsumerCBSpy.mock.calls[2][1]).not.toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[3][1],
+    );
+
+    // Trigger a rerender after the identity change.
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <TokenConsumer renderCallback={tokenConsumerCBSpy} />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>,
+    );
+
+    // Verify that the token getters are referentially stable for the new
+    // identity.
+    expect(tokenConsumerCBSpy).toHaveBeenCalledTimes(5);
+    expect(tokenConsumerCBSpy.mock.calls[3][0]).toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[4][0],
+    );
+    expect(tokenConsumerCBSpy.mock.calls[3][1]).toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[4][1],
+    );
   });
 });
