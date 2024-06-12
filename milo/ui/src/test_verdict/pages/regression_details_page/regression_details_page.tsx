@@ -16,6 +16,7 @@ import { useParams } from 'react-router-dom';
 
 import { ParsedTestVariantBranchName } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -55,6 +56,7 @@ export function RegressionDetailsPage() {
         title="regression details"
         project={project}
       ></PageMeta>
+      <LabsWarningAlert sx={{ margin: '20px 30px' }} />
       <RegressionDetails
         testVariantBranch={testVariantBranch}
         nominalStartPosition={nominalStartPosition}

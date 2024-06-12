@@ -18,6 +18,7 @@ import { useCallback } from 'react';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
 import { OutputChangepointGroupSummary } from '@/analysis/types';
+import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   ChangepointPredicate,
@@ -81,6 +82,7 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
 
   return (
     <>
+      <LabsWarningAlert sx={{ margin: '20px 30px' }} />
       <Box
         display="flex"
         justifyContent="center"
