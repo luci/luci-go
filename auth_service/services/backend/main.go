@@ -35,18 +35,27 @@ func main() {
 	}
 
 	// Parse flags from environment variables.
+	dryRunChangelog := model.ParseDryRunEnvVar(model.DryRunTQChangelogEnvVar)
+	dryRunReplication := model.ParseDryRunEnvVar(model.DryRunTQReplicationEnvVar)
 	dryRunCronConfig := model.ParseDryRunEnvVar(model.DryRunCronConfigEnvVar)
 	dryRunCronRealms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
 	dryRunCronStaleAuth := model.ParseDryRunEnvVar(model.DryRunCronStaleAuthEnvVar)
 
+	// The permissions maintained by the Python version should be used
+	// instead if the update-realms cron is in dry run mode.
+	useV1Perms := dryRunCronRealms
+
 	impl.Main(modules,
 		func(srv *server.Server) error {
+			// Register task queue handlers.
+			model.RegisterChangeHandler(dryRunChangelog)
+			model.RegisterReplicationHandler(dryRunReplication, useV1Perms)
+
+			// Register cron task handlers.
 			cron.RegisterHandler("revoke-stale-authorization",
 				model.StaleAuthorizationCronHandler(dryRunCronStaleAuth))
-
 			cron.RegisterHandler("update-config",
 				model.ServiceConfigCronHandler(dryRunCronConfig))
-
 			cron.RegisterHandler("update-realms",
 				model.RealmsConfigCronHandler(dryRunCronRealms))
 
