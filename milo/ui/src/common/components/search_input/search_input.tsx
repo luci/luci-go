@@ -15,18 +15,21 @@
 import Search from '@mui/icons-material/Search';
 import FormControl from '@mui/material/FormControl';
 import InputAdornment from '@mui/material/InputAdornment';
-import TextField from '@mui/material/TextField';
+import TextField, {
+  TextFieldProps,
+  TextFieldVariants,
+} from '@mui/material/TextField';
 import { useRef, useState } from 'react';
 import { useDebounce, useKey, useLatest } from 'react-use';
 
-export interface SearchInputProps {
-  readonly placeholder?: string;
+export interface SearchInputProps<Variant extends TextFieldVariants>
+  extends Omit<TextFieldProps, 'variant' | 'onChange' | 'inputRef' | 'value'> {
+  readonly variant?: Variant;
   readonly value: string;
   /**
    * Invoked with the new value `initDelayMs`ms after the user stops editing.
    */
   readonly onValueChange: (newValue: string) => void;
-  readonly autoFocus?: boolean;
   /**
    * When defined, focus on the input box when the user presses the key.
    */
@@ -39,14 +42,16 @@ export interface SearchInputProps {
   readonly initDelayMs?: number;
 }
 
-export function SearchInput({
-  placeholder,
+export function SearchInput<Variant extends TextFieldVariants>({
   value,
-  autoFocus,
   focusShortcut,
   initDelayMs = 0,
   onValueChange,
-}: SearchInputProps) {
+  InputProps,
+  inputProps,
+  sx,
+  ...props
+}: SearchInputProps<Variant>) {
   const [pendingValue, setPendingValue] = useState(value);
   const valueRef = useRef(value);
   const previousUpdateValueRef = useRef(value);
@@ -114,27 +119,27 @@ export function SearchInput({
   );
 
   return (
-    <FormControl sx={{ width: '100%' }}>
+    <FormControl sx={{ width: '100%', ...sx }}>
       <TextField
-        placeholder={placeholder}
-        value={pendingValue}
-        onChange={(e) => setPendingValue(e.target.value)}
-        // Let the caller decide whether `autoFocus` should be used or not.
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={autoFocus}
-        variant="outlined"
-        size="small"
-        inputRef={inputRef}
         inputProps={{
           'data-testid': 'search-input',
+          ...inputProps,
         }}
+        size="small"
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
               <Search />
             </InputAdornment>
           ),
+          ...InputProps,
         }}
+        {...props}
+        // Needed to ensure the component functions correctly.
+        // Don't allow them to be overridden.
+        value={pendingValue}
+        onChange={(e) => setPendingValue(e.target.value)}
+        inputRef={inputRef}
       />
     </FormControl>
   );
