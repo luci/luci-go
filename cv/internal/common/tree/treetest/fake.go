@@ -74,7 +74,7 @@ type client struct {
 
 var _ tree.Client = (*client)(nil)
 
-func (c *client) FetchLatest(ctx context.Context, endpoint string) (tree.Status, error) {
+func (c *client) FetchLatest(ctx context.Context, treeName string) (tree.Status, error) {
 	c.fake.mu.RLock()
 	defer c.fake.mu.RUnlock()
 	if c.fake.Error != nil {

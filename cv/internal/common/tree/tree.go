@@ -17,17 +17,16 @@ package tree
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 )
 
 // Client defines the interface that interacts with Tree status App.
@@ -48,8 +47,6 @@ type Status struct {
 }
 
 // State enumerates possible values for tree state.
-//
-// Source of Truth: https://source.chromium.org/chromium/infra/infra/+/52a8cfcb436b0012e668630a2f261237046a033a:appengine/chromium_status/appengine_module/chromium_status/status.py;l=233-248
 type State int8
 
 const (
@@ -60,68 +57,66 @@ const (
 	InMaintenance
 )
 
-func convertToTreeState(s string) State {
+func convertToTreeState(s tspb.GeneralState) State {
 	switch s {
-	case "open":
+	case tspb.GeneralState_OPEN:
 		return Open
-	case "close":
+	case tspb.GeneralState_CLOSED:
 		return Closed
-	case "throttled":
+	case tspb.GeneralState_THROTTLED:
 		return Throttled
-	case "maintenance":
+	case tspb.GeneralState_MAINTENANCE:
 		return InMaintenance
 	default:
 		return StateUnknown
 	}
 }
 
-func NewClient(ctx context.Context) (Client, error) {
-	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
+func NewClient(ctx context.Context, luciTreeStatusHost string) (Client, error) {
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
-	return &httpClientImpl{&http.Client{Transport: t}}, nil
+	rpcOpts := prpc.DefaultOptions()
+	rpcOpts.Insecure = lhttp.IsLocalHost(luciTreeStatusHost)
+	prpcClient := &prpc.Client{
+		C:                     &http.Client{Transport: t},
+		Host:                  luciTreeStatusHost,
+		Options:               rpcOpts,
+		MaxConcurrentRequests: 100,
+	}
+
+	return &treeStatusClientImpl{
+		client: tspb.NewTreeStatusPRPCClient(prpcClient),
+	}, nil
 }
 
-type httpClientImpl struct {
-	*http.Client
+type treeStatusClientImpl struct {
+	client tspb.TreeStatusClient
 }
 
 // FetchLatest fetches the latest tree status.
-func (c httpClientImpl) FetchLatest(ctx context.Context, endpoint string) (Status, error) {
-	url := fmt.Sprintf("%s/current?format=json", strings.TrimSuffix(endpoint, "/"))
+func (c treeStatusClientImpl) FetchLatest(ctx context.Context, treeName string) (Status, error) {
+	response, err := c.client.GetStatus(ctx, &tspb.GetStatusRequest{
+		Name: fmt.Sprintf("trees/%s/status/latest", treeName),
+	})
+	if err != nil {
+		return Status{}, errors.Annotate(err, "failed to fetch tree status for %s", treeName).Err()
+	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return Status{}, errors.Annotate(err, "failed to create new request").Err()
-	}
-	resp, err := c.Do(req)
-	if err != nil {
-		return Status{}, errors.Annotate(err, "failed to get latest tree status from %s", url).Tag(transient.Tag).Err()
-	}
-	defer resp.Body.Close()
-	bs, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return Status{}, errors.Annotate(err, "failed to read response body from %s", url).Tag(transient.Tag).Err()
-	}
-	if resp.StatusCode >= 400 {
-		logging.Errorf(ctx, "received error response when calling %s; response body: %q", url, string(bs))
-		return Status{}, errors.Reason("received error when calling %s", url).Err()
-	}
-	var raw struct {
-		State string `json:"general_state"`
-		Date  string
-	}
-	if err := json.Unmarshal(bs, &raw); err != nil {
-		return Status{}, errors.Annotate(err, "failed to unmarshal JSON %q", string(bs)).Err()
-	}
-	const dateFormat = "2006-01-02 15:04:05.999999"
-	t, err := time.Parse(dateFormat, raw.Date)
-	if err != nil {
-		return Status{}, errors.Annotate(err, "failed to parse date %s", raw.Date).Err()
-	}
 	return Status{
-		State: convertToTreeState(raw.State),
-		Since: t,
+		State: convertToTreeState(response.GeneralState),
+		Since: response.CreateTime.AsTime(),
 	}, nil
+}
+
+// URLToTreeName converts a tree status endpoint URL to a tree name.
+// This follows the convention used to convert the URL in the old tree status apps.
+func URLToTreeName(url string) string {
+	treeName := strings.TrimPrefix(url, "https://")
+	treeName = strings.TrimPrefix(treeName, "http://")
+	treeName = strings.TrimSuffix(treeName, "/")
+	treeName = strings.TrimSuffix(treeName, ".appspot.com")
+	treeName = strings.TrimSuffix(treeName, "-status")
+	return treeName
 }

@@ -531,8 +531,14 @@ message Verifiers {
   }
 
   message TreeStatus {
-    // Required. URL of the project tree status app.
-    string url = 1;
+    // Required unless url is present.  The name of the tree to use for tree
+    // status.
+    string tree_name = 2;
+
+    // Deprecated. Required if tree_name not present. URL of the project tree
+    // status app. Will be converted into a tree_name internally.  Please
+    // migrate to supplying the tree_name directly instead of using this field.
+    string url = 1 [deprecated = true];
   }
 
   // Tryjob configures builders which CQ may trigger and/or use to verify CL(s).

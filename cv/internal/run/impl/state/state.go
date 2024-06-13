@@ -161,8 +161,13 @@ func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error)
 		if err != nil {
 			return false, err
 		}
-		if treeURL := cg.Content.GetVerifiers().GetTreeStatus().GetUrl(); treeURL != "" {
-			status, err := tc.FetchLatest(ctx, treeURL)
+
+		treeName := cg.Content.GetVerifiers().GetTreeStatus().GetTreeName()
+		if treeName == "" {
+			treeName = tree.URLToTreeName(cg.Content.GetVerifiers().GetTreeStatus().GetUrl())
+		}
+		if treeName != "" {
+			status, err := tc.FetchLatest(ctx, treeName)
 			switch {
 			case err != nil && rs.Submission.TreeErrorSince == nil:
 				rs.Submission.TreeErrorSince = timestamppb.New(clock.Now(ctx))

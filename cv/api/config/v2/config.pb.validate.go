@@ -2714,6 +2714,8 @@ func (m *Verifiers_TreeStatus) validate(all bool) error {
 
 	var errors []error
 
+	// no validation rules for TreeName
+
 	// no validation rules for Url
 
 	if len(errors) > 0 {

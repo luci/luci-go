@@ -52,7 +52,7 @@ func TestCheckTree(t *testing.T) {
 					Name: "main",
 					Verifiers: &cfgpb.Verifiers{
 						TreeStatus: &cfgpb.Verifiers_TreeStatus{
-							Url: "tree.example.com",
+							Url: "https://tree-status.appspot.com",
 						},
 					},
 				},

@@ -16,11 +16,15 @@ package tree
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -31,63 +35,35 @@ func TestTreeStatesClient(t *testing.T) {
 
 	Convey("FetchLatest", t, func() {
 		ctx := context.Background()
-		client := &httpClientImpl{
-			&http.Client{Transport: &http.Transport{}},
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := tspb.NewMockTreeStatusClient(ctl)
+		client := &treeStatusClientImpl{
+			client: mc,
 		}
 		Convey("Works", func() {
-			var actualReqURL string
-			mockSrv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-				actualReqURL = req.URL.String()
-				rw.WriteHeader(200)
-				rw.Header().Set("Content-Type", "application/json")
-				fmt.Fprint(rw, `{
-					"username":"abc@example.com",
-					"can_commit_freely":true,
-					"general_state":"open",
-					"key":1234567,
-					"date":"2000-01-02 03:04:05.678910111",
-					"message":"tree is open"
-				}`)
-			}))
-			defer mockSrv.Close()
-			ts, err := client.FetchLatest(ctx, mockSrv.URL)
+			t := time.Date(2000, 01, 02, 03, 04, 05, 678910111, time.UTC)
+			req := &tspb.GetStatusRequest{Name: "trees/mock/status/latest"}
+			res := &tspb.Status{
+				GeneralState: tspb.GeneralState_OPEN,
+				Message:      "tree is open",
+				CreateUser:   "abc@example.com",
+				CreateTime:   timestamppb.New(t),
+			}
+			mc.EXPECT().GetStatus(gomock.Any(), proto.MatcherEqual(req),
+				gomock.Any()).Return(res, nil)
+
+			ts, err := client.FetchLatest(ctx, "mock")
 			So(err, ShouldBeNil)
 			So(ts, ShouldResemble, Status{
 				State: Open,
-				Since: time.Date(2000, 01, 02, 03, 04, 05, 678910111, time.UTC),
+				Since: t,
 			})
-			So(actualReqURL, ShouldEqual, "/current?format=json")
 		})
-		Convey("Error if http call fails", func() {
-			mockSrv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-				rw.WriteHeader(500)
-			}))
-			defer mockSrv.Close()
-			_, err := client.FetchLatest(ctx, mockSrv.URL)
-			So(err, ShouldErrLike, "received error when calling")
-		})
-		Convey("Error if response is not JSON", func() {
-			mockSrv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-				rw.WriteHeader(200)
-				rw.Header().Set("Content-Type", "text/plain")
-				fmt.Fprint(rw, "I'm not JSON")
-			}))
-			defer mockSrv.Close()
-			_, err := client.FetchLatest(ctx, mockSrv.URL)
-			So(err, ShouldErrLike, "failed to unmarshal JSON")
-		})
-		Convey("Error if data format is invalid", func() {
-			mockSrv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-				rw.WriteHeader(200)
-				rw.Header().Set("Content-Type", "text/plain")
-				fmt.Fprint(rw, `{
-					"general_state":"open",
-					"date":"2000-01-02T03:04:05.678910111Z"
-				}`)
-			}))
-			defer mockSrv.Close()
-			_, err := client.FetchLatest(ctx, mockSrv.URL)
-			So(err, ShouldErrLike, "failed to parse date")
+		Convey("Error if rpc call fails", func() {
+			mc.EXPECT().GetStatus(gomock.Any(), gomock.Any()).Return(nil, errors.New("rpc error"))
+			_, err := client.FetchLatest(ctx, "mock")
+			So(err, ShouldErrLike, "rpc error")
 		})
 	})
 }

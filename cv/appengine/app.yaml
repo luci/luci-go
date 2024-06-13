@@ -13,6 +13,7 @@ luci_gae_vars:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     FRONTEND_CLIENT_ID: 880120143479-shb008ruk2kms1178b14nhgjr47o4emm.apps.googleusercontent.com
     CONFIG_SERVICE_HOST: config.luci.app
+    LUCI_TREE_STATUS_HOST: luci-tree-status-dev.appspot.com
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     VPC_CONNECTOR: projects/luci-change-verifier-dev/locations/us-central1/connectors/connector
     REDIS_ADDR: 10.42.70.59:6379
@@ -57,6 +58,7 @@ entrypoint: >
   -gerrit-auth-signer-account gerritcodereview@system.gserviceaccount.com
   -gerrit-auth-signer-account git-gerrit@system.gserviceaccount.com
   -gerrit-auth-audience https://api.cr.dev
+  -luci-tree-status-host ${LUCI_TREE_STATUS_HOST}
   -root-secret ${ROOT_SECRET}
   -primary-tink-aead-key ${TINK_AEAD_KEY}
   -analytics-id ${ANALYTICS_ID}
