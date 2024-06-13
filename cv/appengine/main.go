@@ -89,9 +89,10 @@ func main() {
 		srvquota.NewModuleFromFlags(),
 	}
 
+	luciTreeStatusHost := "luci-tree-status-dev.appspot.com"
+	flag.StringVar(&luciTreeStatusHost, "luci-tree-status-host", luciTreeStatusHost, "Host for luci-tree-status.")
+
 	server.Main(nil, modules, func(srv *server.Server) error {
-		luciTreeStatusHost := "luci-tree-status-dev.appspot.com"
-		flag.StringVar(&luciTreeStatusHost, "luci-tree-status-host", luciTreeStatusHost, "Host for luci-tree-status.")
 		env := common.MakeEnv(srv.Options)
 		gFactory, err := gerrit.NewFactory(
 			srv.Context,
