@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import {
@@ -79,12 +79,9 @@ export function InstructionDialog({
   const [currentTarget, setCurrentTarget] = useState(defaultTarget);
   const isCurrentTargetValid = targetedInstructions.has(currentTarget);
 
-  // Switch to the first target when the instruction is loaded.
-  useEffect(() => {
-    if (!isCurrentTargetValid) {
-      setCurrentTarget(defaultTarget);
-    }
-  }, [defaultTarget, currentTarget, isCurrentTargetValid]);
+  if (!isCurrentTargetValid && targetedInstructions.size > 0) {
+    setCurrentTarget(defaultTarget);
+  }
 
   const handleTabChange = (
     e: React.SyntheticEvent<Element, Event>,
@@ -96,22 +93,26 @@ export function InstructionDialog({
 
   return (
     <>
-      <Dialog disablePortal open={open} onClose={onClose} container={container}>
+      <Dialog
+        disablePortal
+        open={open}
+        onClose={onClose}
+        container={container}
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
           {targetedInstructions.size > 0 && (
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              {currentTarget !== InstructionTarget.UNSPECIFIED && (
-                <Tabs value={currentTarget} onChange={handleTabChange}>
-                  {[...targetedInstructions.keys()].map((target, index) => (
-                    <Tab
-                      key={index}
-                      label={INSTRUCTION_TARGET_DISPLAY_MAP[target]}
-                      value={target}
-                    />
-                  ))}
-                </Tabs>
-              )}
+              <Tabs value={currentTarget} onChange={handleTabChange}>
+                {[...targetedInstructions.keys()].map((target, index) => (
+                  <Tab
+                    key={index}
+                    label={INSTRUCTION_TARGET_DISPLAY_MAP[target]}
+                    value={target}
+                  />
+                ))}
+              </Tabs>
             </Box>
           )}
           <Box sx={{ paddingTop: 2 }}>
