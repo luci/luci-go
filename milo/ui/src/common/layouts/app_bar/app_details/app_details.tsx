@@ -24,6 +24,7 @@ import {
   useSelectedPage,
   useProject,
 } from '@/common/components/page_meta/page_meta_provider';
+import { getProjectURLPath } from '@/common/tools/url_utils';
 
 import { PAGE_LABEL_MAP } from '../../constants';
 
@@ -78,9 +79,15 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
         {project && (
           <>
             <Divider flexItem orientation="vertical" sx={{ mr: 2 }} />
-            <Typography variant="h6" component="div" sx={{ pr: 2 }}>
+            <Link
+              component={RouterLink}
+              to={getProjectURLPath(project)}
+              underline="none"
+              variant="h6"
+              sx={{ pr: 2, color: 'inherit' }}
+            >
               {project}
-            </Typography>
+            </Link>
           </>
         )}
         {selectedPage && (
