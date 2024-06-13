@@ -133,6 +133,15 @@ var ArtifactTasks = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/bqexporter",
 })
 
+// InvocationTasks describes how to route bq invocation export tasks.
+var InvocationTasks = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "bq-invocation-export",
+	Prototype:     &taskspb.ExportInvocationToBQ{},
+	Kind:          tq.Transactional,
+	Queue:         "bqinvocationexports",
+	RoutingPrefix: "/internal/tasks/bqexporter",
+})
+
 // InitServer initializes a bqexporter server.
 func InitServer(srv *server.Server, opts Options) error {
 	if opts.ArtifactRBEInstance == "" {
@@ -157,6 +166,10 @@ func InitServer(srv *server.Server, opts Options) error {
 	ArtifactTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationArtifactsToBQ)
 		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
+	})
+	InvocationTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		task := msg.(*taskspb.ExportInvocationToBQ)
+		return b.exportInvocationToBigQuery(ctx, invocations.ID(task.InvocationId))
 	})
 	return nil
 }
@@ -355,7 +368,13 @@ func Schedule(ctx context.Context, invID invocations.ID) error {
 		default:
 			return errors.Reason("bqexport.ResultType is required").Err()
 		}
-
 	}
+	// TODO(crbug.com/341362001): Enable after implementing the invocation export
+	// tq.MustAddTask(ctx, &tq.Task{
+	// 	Payload: &taskspb.ExportInvocationToBQ{
+	// 		InvocationId: string(invID),
+	// 	},
+	// 	Title: string(invID),
+	// })
 	return nil
 }

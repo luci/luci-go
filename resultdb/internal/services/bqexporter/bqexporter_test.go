@@ -252,10 +252,15 @@ func TestExportToBigQuery(t *testing.T) {
 			So(err, ShouldErrLike, "some error")
 		})
 	})
+
+	Convey(`TestExportInvocationToBigQuery`, t, func() {
+		// TODO(crbug.com/341362001): Add the test after implementing the export
+	})
 }
 
 func TestSchedule(t *testing.T) {
 	Convey(`TestSchedule`, t, func() {
+		// TODO(crbug.com/341362001): Add the test after implementing the export
 		ctx := testutil.SpannerTestContext(t)
 		bqExport1 := &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table", ResultType: &pb.BigQueryExport_TestResults_{}}
 		bqExport2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2", ResultType: &pb.BigQueryExport_TextArtifacts_{}}

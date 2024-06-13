@@ -1,0 +1,86 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
+
+// InvocationRow represents a row in a BigQuery table
+// `luci-resultdb.internal.invocations`
+// Next ID: 13
+message InvocationRow {
+  // The LUCI project that the invocation belongs to (e.g. chromium).
+  string project = 1;
+
+  // The LUCI Realm the invocation is under.
+  // Only contain the sub-realm (e.g. "try", instead of "chromium:try).
+  // The project is stored in the project field.
+  string realm = 2;
+
+  // The ID of the invocation.
+  string id = 3;
+
+  // When the invocation was created.
+  google.protobuf.Timestamp create_time = 4;
+
+  // Invocation-level string key-value pairs.
+  // A key can be repeated.
+  repeated luci.resultdb.v1.StringPair tags = 5;
+
+  // When the invocation was finalized
+  google.protobuf.Timestamp finalize_time = 6;
+
+  // Names of invocations included into this one. Overall results of this
+  // invocation is a UNION of results directly included into this invocation
+  // and results from the included invocations, recursively.
+  // For example, a Buildbucket build invocation may include invocations of its
+  // child swarming tasks and represent overall result of the build,
+  // encapsulating the internal structure of the build.
+  repeated string included_invocations = 7;
+
+  // Whether this invocation is a root of the invocation graph for export purposes.
+  bool is_export_root = 8;
+
+  // Full name of the resource that produced results in this invocation.
+  // See also https://aip.dev/122#full-resource-names
+  // Typical examples:
+  // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
+  // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
+  string producer_resource = 9;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the invocation. Stored here stringified as this is the only protocol
+  // buffer type that maps to the JSON BigQuery type:
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  string properties = 10 [(bqschema.options).bq_type = "JSON"];
+
+  // Additional JSON object(s) that contain additional structured data about the
+  // invocation. Unlike `properties` this field is not included (denormalized)
+  // in the test results export, it is only available in the finalized
+  // invocations BigQuery export. Stored here stringified as this is the only
+  // protocol buffer type that maps to the JSON BigQuery type:
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  string extended_properties = 11 [(bqschema.options).bq_type = "JSON"];
+
+  // Partition_time is used to partition the table.
+  // It is the time when the exported invocation was created in Spanner.
+  // It is NOT the time when the row is inserted into BigQuery table.
+  google.protobuf.Timestamp partition_time = 12;
+}
