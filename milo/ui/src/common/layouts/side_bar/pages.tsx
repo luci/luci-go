@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { UTurnLeft } from '@mui/icons-material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BuildIcon from '@mui/icons-material/Build';
 import EngineeringIcon from '@mui/icons-material/Engineering';
@@ -112,6 +113,11 @@ function generateTestsSection(project: string | undefined): SidebarSection {
         url: `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
         icon: <SpokeIcon />,
         external: true,
+      },
+      {
+        page: UiPage.RecentRegressions,
+        url: `/ui/labs/p/${project}/regressions`,
+        icon: <UTurnLeft />,
       },
     );
   }

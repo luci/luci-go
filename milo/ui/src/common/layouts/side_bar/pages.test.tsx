@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { UTurnLeft } from '@mui/icons-material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BuildIcon from '@mui/icons-material/Build';
 import EngineeringIcon from '@mui/icons-material/Engineering';
@@ -94,6 +95,11 @@ describe('generateSidebarSections', () => {
             icon: <SpokeIcon />,
             external: true,
           },
+          {
+            page: UiPage.RecentRegressions,
+            url: `/ui/labs/p/projecttest/regressions`,
+            icon: <UTurnLeft />,
+          },
         ],
       },
     ]);
@@ -146,6 +152,11 @@ describe('generateSidebarSections', () => {
             url: `https://${SETTINGS.luciAnalysis.host}/p/chromium/clusters`,
             icon: <SpokeIcon />,
             external: true,
+          },
+          {
+            page: UiPage.RecentRegressions,
+            url: `/ui/labs/p/chromium/regressions`,
+            icon: <UTurnLeft />,
           },
         ],
       },
@@ -216,6 +227,11 @@ describe('generateSidebarSections', () => {
             url: `https://${SETTINGS.luciAnalysis.host}/p/chromeos/clusters`,
             icon: <SpokeIcon />,
             external: true,
+          },
+          {
+            page: UiPage.RecentRegressions,
+            url: `/ui/labs/p/chromeos/regressions`,
+            icon: <UTurnLeft />,
           },
           {
             page: UiPage.Testhaus,
