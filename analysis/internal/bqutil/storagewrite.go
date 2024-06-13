@@ -167,7 +167,7 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 		// BigQuery retries and backoffs.
 		_, err := result.GetResult(ctx)
 		if err != nil {
-			return errors.Annotate(err, "appending rows").Err()
+			return errors.Annotate(err, "appending rows (context: %s)", ctx.Err()).Err()
 		}
 	}
 	return nil
