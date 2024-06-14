@@ -519,6 +519,7 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 				EndPosition:   140,
 
 				RunFlakyVerdicts_1Wd: 1,
+				RunFlakyVerdicts_12H: 0,
 				StartPosition_1Wd:    128,
 				EndPosition_1Wd:      130,
 			},
@@ -553,6 +554,7 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 				EndPosition:   130,
 
 				RunFlakyVerdicts_1Wd: 1,
+				RunFlakyVerdicts_12H: 1,
 				StartPosition_1Wd:    130,
 				EndPosition_1Wd:      130,
 			},

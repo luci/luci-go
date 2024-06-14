@@ -585,19 +585,22 @@ func applyFlakeRateCriteria(buckets []*sourcePositionBucket, querySourcePosition
 	partitionTime := ba.earliestPartitionTimeAtSourcePosition(querySourcePosition)
 
 	// Query the soure position +/- 1 week.
-	weekWindow := ba.bucketsForTimeRange(partitionTime.Add(-7*24*time.Hour), partitionTime.Add(7*24*time.Hour))
-	runFlaky, total := countVerdicts(weekWindow)
+	window7d := ba.bucketsForTimeRange(partitionTime.Add(-7*24*time.Hour), partitionTime.Add(7*24*time.Hour))
+	runFlaky, total := countVerdicts(window7d)
 	if total < int64(criteria.MinWindow) {
 		// If the sample size is not large enough, revert to querying the full
 		// 14 days of data. This exists to improve performance on infrequently
 		// run tests at the cost of some recency.
-		weekWindow = buckets
-		runFlaky, total = countVerdicts(weekWindow)
+		window7d = buckets
+		runFlaky, total = countVerdicts(window7d)
 	}
 
 	// Query the source position +/- 1 weekday.
-	dayWindow := ba.bucketsForTimeRange(jumpBack24WeekdayHours(partitionTime), jumpAhead24WeekdayHours(partitionTime))
-	runFlaky1wd, _ := countVerdicts(dayWindow)
+	window1wd := ba.bucketsForTimeRange(jumpBack24WeekdayHours(partitionTime), jumpAhead24WeekdayHours(partitionTime))
+	runFlaky1wd, _ := countVerdicts(window1wd)
+
+	window12h := ba.bucketsForTimeRange(partitionTime.Add(-12*time.Hour), partitionTime.Add(12*time.Hour))
+	runFlaky12h, _ := countVerdicts(window12h)
 
 	// Examples arrive sorted such that those closest to the queried source
 	// position are first.
@@ -609,9 +612,9 @@ func applyFlakeRateCriteria(buckets []*sourcePositionBucket, querySourcePosition
 	var examples []*sourceVerdict
 	var startPosition int64
 	var endPosition int64
-	if len(weekWindow) > 0 {
-		startPosition = weekWindow[0].StartSourcePosition
-		endPosition = weekWindow[len(weekWindow)-1].EndSourcePosition
+	if len(window7d) > 0 {
+		startPosition = window7d[0].StartSourcePosition
+		endPosition = window7d[len(window7d)-1].EndSourcePosition
 
 		for _, e := range allExamples {
 			if startPosition <= e.SourcePosition && e.SourcePosition <= endPosition {
@@ -626,9 +629,9 @@ func applyFlakeRateCriteria(buckets []*sourcePositionBucket, querySourcePosition
 
 	var startPosition1wd int64
 	var endPosition1wd int64
-	if len(dayWindow) > 0 {
-		startPosition1wd = dayWindow[0].StartSourcePosition
-		endPosition1wd = dayWindow[len(dayWindow)-1].EndSourcePosition
+	if len(window1wd) > 0 {
+		startPosition1wd = window1wd[0].StartSourcePosition
+		endPosition1wd = window1wd[len(window1wd)-1].EndSourcePosition
 	}
 
 	flakeRate := 0.0
@@ -646,6 +649,7 @@ func applyFlakeRateCriteria(buckets []*sourcePositionBucket, querySourcePosition
 		StartPosition:        startPosition,
 		EndPosition:          endPosition,
 		RunFlakyVerdicts_1Wd: int32(runFlaky1wd),
+		RunFlakyVerdicts_12H: int32(runFlaky12h),
 		StartPosition_1Wd:    startPosition1wd,
 		EndPosition_1Wd:      endPosition1wd,
 	}

@@ -554,5 +554,9 @@ message TestVariantStabilityAnalysis {
         // The greatest source position included in the +/- 1 weekday analysis window. Inclusive.
         // If the analysis window is empty (e.g. because there is no data), this is zero.
         int64 end_position_1wd = 9;
+
+        // The total number of run-flaky source verdicts observed in a special +/- 12 hour
+        // analysis window around the queried source position.
+        int32 run_flaky_verdicts_12h = 10;
     }
 }
