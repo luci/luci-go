@@ -20,7 +20,20 @@ export const SHORT_TIME_FORMAT = 'y-MM-dd HH:mm';
 export const LONG_TIME_FORMAT = 'HH:mm:ss ccc, MMM dd yyyy ZZZZ';
 export const NUMERIC_TIME_FORMAT = 'y-MM-dd HH:mm:ss ZZ';
 
+/**
+ * Displays a non-negative duration.
+ *
+ * Negative durations are treated as 0.
+ */
+// The long format is incompatible with negative duration.
+// The caller should decide how to handle negative duration (e.g. add a `" ago"`
+// suffix, or add a `"-"` prefix).
 export function displayDuration(duration: Duration) {
+  const durationMs = duration.toMillis();
+  if (durationMs < 0) {
+    duration = Duration.fromMillis(0);
+  }
+
   const shifted = duration.shiftTo(
     'days',
     'hours',
@@ -54,11 +67,24 @@ export function displayDuration(duration: Duration) {
   return parts.join(' ');
 }
 
+/**
+ * Displays a non-negative duration on a compact format.
+ *
+ * Negative durations are treated as 0.
+ */
+// We can add support for negative duration but adding a sign while not
+// increasing the length of the output string can make the implementation
+// complicated and the output precision unpredictable.
 export function displayCompactDuration(
   duration: Duration | null,
 ): [string, string] {
   if (duration === null) {
     return ['N/A', ''];
+  }
+
+  const durationMs = duration.toMillis();
+  if (durationMs < 0) {
+    duration = Duration.fromMillis(0);
   }
 
   const shifted = duration.shiftTo(
