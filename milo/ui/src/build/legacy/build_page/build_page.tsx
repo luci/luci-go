@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, LinearProgress } from '@mui/material';
+import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
@@ -56,7 +56,6 @@ import { BuildIdBar } from './build_id_bar';
 import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';
 import { BuildContextProvider } from './context';
-import { InfraTabAnnouncementTooltip } from './infra_tab/announcement_tooltip';
 
 const STATUS_FAVICON_MAP = Object.freeze({
   [Status.SCHEDULED]: grayFavicon,
@@ -178,11 +177,7 @@ export const BuildPage = observer(() => {
               iconPosition="end"
             />
             <AppRoutedTab
-              label={
-                <InfraTabAnnouncementTooltip>
-                  <Box>Infra</Box>
-                </InfraTabAnnouncementTooltip>
-              }
+              label="Infra"
               value="infra"
               to="infra"
               hideWhenInactive={!canReadFullBuild}
