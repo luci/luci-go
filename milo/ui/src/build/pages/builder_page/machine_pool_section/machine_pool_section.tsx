@@ -27,6 +27,7 @@ import {
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
+import { DeepNonNullable } from '@/generic_libs/types';
 import {
   BotsClientImpl,
   BotsRequest,

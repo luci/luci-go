@@ -30,6 +30,7 @@ import {
 import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { CategoryTree } from '@/generic_libs/tools/category_tree';
+import { NonNullableProps } from '@/generic_libs/types';
 
 import { useBuild } from '../context';
 

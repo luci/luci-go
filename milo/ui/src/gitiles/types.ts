@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { DeepNonNullable } from '@/generic_libs/types';
 import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
 
 export type OutputCommit = DeepNonNullable<Commit>;

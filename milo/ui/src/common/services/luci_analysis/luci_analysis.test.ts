@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
+import { DeepMutable } from '@/generic_libs/types';
 
 import {
   ClusterRequest,

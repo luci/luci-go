@@ -20,6 +20,7 @@ import { Suggestion } from '@/common/components/auto_complete';
 import { VariantPredicate } from '@/common/services/luci_analysis';
 import { Variant } from '@/common/services/resultdb';
 import { highlight } from '@/generic_libs/tools/lit_utils';
+import { Mutable } from '@/generic_libs/types';
 
 import { KV_SYNTAX_EXPLANATION, parseKeyValue } from './utils';
 

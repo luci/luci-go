@@ -17,6 +17,7 @@ import {
   useGetAccessToken,
 } from '@/common/components/auth_state_provider';
 import { PrpcClient } from '@/generic_libs/tools/prpc_client';
+import { Constructor } from '@/generic_libs/types';
 import { Rpc } from '@/proto_utils/types';
 
 export interface PrpcServiceClientOptions<S, Params extends unknown[] = []> {
@@ -52,15 +53,13 @@ type Method<Req, Res, Params extends unknown[] = []> = (
 type MethodReq<T> = T extends Method<infer Req, infer _Res> ? Req : never;
 
 type PagedReq<Req> = Req extends { readonly pageToken: string } ? Req : never;
-type PagedRes<Res> = Awaited<Res> extends { readonly nextPageToken: string }
-  ? Res
-  : never;
+type PagedRes<Res> =
+  Awaited<Res> extends { readonly nextPageToken: string } ? Res : never;
 
 type MethodRes<T> = T extends Method<infer _Req, infer Res> ? Res : never;
 
-type MethodParams<T> = T extends Method<infer _Req, infer _Res, infer Params>
-  ? Params
-  : never;
+type MethodParams<T> =
+  T extends Method<infer _Req, infer _Res, infer Params> ? Params : never;
 
 type MethodKeys<S, Req, Res, Params extends unknown[] = []> = keyof {
   [MK in keyof S as S[MK] extends Method<Req, Res, Params>

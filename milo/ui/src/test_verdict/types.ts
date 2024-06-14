@@ -22,6 +22,7 @@
  */
 
 import { SpecifiedTestVerdictStatus as AnalysisVerdictStatus } from '@/analysis/types';
+import { NonNullableProps } from '@/generic_libs/types';
 import { TestVerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { BatchGetTestVariantsResponse } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {

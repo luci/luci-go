@@ -40,6 +40,7 @@ import {
   Notifier,
   provideNotifier,
 } from '@/generic_libs/tools/observer_element';
+import { DeepMutable } from '@/generic_libs/types';
 
 import { provideInvId, provideProject, provideTestTabUrl } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';

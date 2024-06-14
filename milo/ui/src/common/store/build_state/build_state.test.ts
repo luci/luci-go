@@ -20,6 +20,7 @@ import { destroy } from 'mobx-state-tree';
 
 import { Build, BuildbucketStatus, Step } from '@/common/services/buildbucket';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
+import { Mutable } from '@/generic_libs/types';
 
 import {
   BuildState,

@@ -17,6 +17,7 @@ import stableStringify from 'fast-json-stable-stringify';
 import { batched, BatchOption } from '@/generic_libs/tools/batched_fn';
 import { cached, CacheOption } from '@/generic_libs/tools/cached_fn';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
+import { ResultErr } from '@/generic_libs/types';
 
 export interface Variant {
   readonly def: { [key: string]: string };

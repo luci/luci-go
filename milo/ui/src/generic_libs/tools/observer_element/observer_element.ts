@@ -74,6 +74,7 @@ import merge from 'lodash-es/merge';
 import { action, makeObservable, observable } from 'mobx';
 
 import { consumer, createContextLink } from '@/generic_libs/tools/lit_context';
+import { Constructor } from '@/generic_libs/types';
 
 export interface ObserverElement extends MobxLitElement {
   notify(): void;

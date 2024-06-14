@@ -21,6 +21,7 @@ import {
   getInvURLPath,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
+import { DeepNonNullable } from '@/generic_libs/types';
 import {
   Build,
   BuildInfra_Swarming,

@@ -35,6 +35,7 @@ import { ServicesStore } from '@/common/store/services';
 import { Timestamp } from '@/common/store/timestamp';
 import { logging } from '@/common/tools/logging';
 import { keepAliveComputed } from '@/generic_libs/tools/mobx_utils';
+import { ToString } from '@/generic_libs/types';
 import { getCriticalVariantKeys } from '@/test_verdict/tools/variant_utils/variant_utils';
 
 export const enum GraphType {

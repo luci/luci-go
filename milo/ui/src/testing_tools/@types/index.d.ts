@@ -49,5 +49,7 @@ declare function createSelectiveMockFromModule<T = unknown>(
  */
 declare function createSelectiveSpiesFromModule<T = unknown>(
   moduleName: string,
-  keysToSpy: ReadonlyArray<FunctionKeys<NoInfer<T>>>,
+  keysToSpy: ReadonlyArray<
+    import('@/generic_libs/types').FunctionKeys<NoInfer<T>>
+  >,
 ): T;

@@ -20,6 +20,7 @@ import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { renderBugUrlTemplate } from '@/common/tools/build_utils';
 import { logging } from '@/common/tools/logging';
+import { DeepNonNullable } from '@/generic_libs/types';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetProjectCfgRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 

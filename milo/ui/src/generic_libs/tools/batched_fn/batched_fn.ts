@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { deferred } from '@/generic_libs/tools/utils';
+import { Result } from '@/generic_libs/types';
 
 export interface BatchConfig<T extends unknown[], V> {
   /**

@@ -46,6 +46,7 @@
 import { html, LitElement } from 'lit';
 
 import { toError } from '@/generic_libs/tools/utils';
+import { Constructor } from '@/generic_libs/types';
 
 /**
  * Wraps the specified fn. Whenever fn throws an error, dispatches an error

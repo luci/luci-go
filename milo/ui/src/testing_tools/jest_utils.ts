@@ -16,6 +16,8 @@ import * as path from 'path';
 
 import callsites from 'callsites';
 
+import { FunctionKeys } from '@/generic_libs/types';
+
 /**
  * Resolves a module in the specified file.
  */

@@ -93,6 +93,8 @@ import 'reflect-metadata';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { PropertyValues } from 'lit';
 
+import { Constructor } from '@/generic_libs/types';
+
 interface ContextEventDetail {
   onCtxUpdate(newCtxValue: unknown): void;
   addDisconnectedEventCB(cb: () => void): void;

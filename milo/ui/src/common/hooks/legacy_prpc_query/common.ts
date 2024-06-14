@@ -14,19 +14,18 @@
 
 import { CacheOption } from '@/generic_libs/tools/cached_fn';
 import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
+import { Constructor } from '@/generic_libs/types';
 
 export type PrpcMethod<Req, Ret> = (
   req: Req,
   opt?: CacheOption,
 ) => Promise<Ret>;
 
-export type PrpcMethodRequest<T> = T extends PrpcMethod<infer Req, infer _Res>
-  ? Req
-  : never;
+export type PrpcMethodRequest<T> =
+  T extends PrpcMethod<infer Req, infer _Res> ? Req : never;
 
-export type PrpcMethodResponse<T> = T extends PrpcMethod<infer _Req, infer Res>
-  ? Res
-  : never;
+export type PrpcMethodResponse<T> =
+  T extends PrpcMethod<infer _Req, infer Res> ? Res : never;
 
 export type PrpcServiceMethodKeys<S> = keyof {
   // The request type has to be `any` because the argument type must be contra-
