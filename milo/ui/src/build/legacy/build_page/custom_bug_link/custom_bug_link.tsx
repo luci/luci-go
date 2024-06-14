@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { GrpcError } from '@chopsui/prpc-client';
-import { Link } from '@mui/material';
+import { Link, LinkTypeMap } from '@mui/material';
+import { DefaultComponentProps } from '@mui/material/OverridableComponent';
 import { useQuery } from '@tanstack/react-query';
 
 import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
@@ -24,7 +25,8 @@ import { DeepNonNullable } from '@/generic_libs/types';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetProjectCfgRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
-export interface CustomBugLinkProps {
+export interface CustomBugLinkProps
+  extends Omit<DefaultComponentProps<LinkTypeMap>, 'href'> {
   readonly project: string;
   /**
    * The bug link will not be rendered until the build is populated.
@@ -34,7 +36,11 @@ export interface CustomBugLinkProps {
   readonly build?: DeepNonNullable<Pick<Build, 'id' | 'builder'>>;
 }
 
-export function CustomBugLink({ project, build }: CustomBugLinkProps) {
+export function CustomBugLink({
+  project,
+  build,
+  ...props
+}: CustomBugLinkProps) {
   const client = useMiloInternalClient();
   const { data, error } = useQuery({
     ...client.GetProjectCfg.query(
@@ -65,8 +71,8 @@ export function CustomBugLink({ project, build }: CustomBugLinkProps) {
   }
 
   return (
-    <Link href={data} target="_blank" rel="noreferrer">
-      File a bug
+    <Link target="_blank" rel="noopenner" {...props} href={data}>
+      Report bug in build
     </Link>
   );
 }

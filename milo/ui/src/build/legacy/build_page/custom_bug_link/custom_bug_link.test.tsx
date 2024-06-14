@@ -46,7 +46,7 @@ describe('<CustomBugLink />', () => {
     getProjectCfgMock.mockClear();
   });
 
-  test('e2e', async () => {
+  it('e2e', async () => {
     const { rerender } = render(
       <FakeContextProvider>
         <CustomBugLink project="proj" />
@@ -58,7 +58,7 @@ describe('<CustomBugLink />', () => {
     expect(getProjectCfgMock).toHaveBeenCalledWith(
       GetProjectCfgRequest.fromPartial({ project: 'proj' }),
     );
-    expect(screen.queryByText('File a bug')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
 
     rerender(
       <FakeContextProvider>
@@ -73,6 +73,6 @@ describe('<CustomBugLink />', () => {
     );
 
     // The bug link is only rendered when `build` is populated.
-    expect(screen.getByText('File a bug')).toBeInTheDocument();
+    expect(screen.getByRole('link')).toBeInTheDocument();
   });
 });
