@@ -75,8 +75,7 @@ const parseTarget = (t) => {
   var targetURL = null;
   switch (kind) {
     case 'AuthGroup':
-      // TODO: support this url.
-      targetURL = '/groups/' + name;
+      targetURL = common.getGroupPageURL(name);
       break;
     case 'AuthIPWhitelist':
       targetURL = '/ip_allowlists';
@@ -87,7 +86,6 @@ const parseTarget = (t) => {
       break;
     case 'AuthGlobalConfig':
       title = 'Global config';
-      targetURL = '/oauth_config';
       break;
     case 'AuthRealmsGlobals':
       title = 'Realms config';
