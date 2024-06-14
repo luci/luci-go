@@ -29,16 +29,14 @@ describe('BatchedClustersClientImpl', () => {
       .spyOn(ClustersClientImpl.prototype, 'Cluster')
       .mockImplementation(async (req) => {
         return ClusterResponse.fromPartial({
-          clusteredTestResults: Object.freeze(
-            req.testResults.map((tr) => ({
-              requestTag: tr.requestTag,
-              clusters: Object.freeze([
-                {
-                  clusterId: { algorithm: 'test-algorithm', id: tr.testId },
-                },
-              ]),
-            })),
-          ),
+          clusteredTestResults: req.testResults.map((tr) => ({
+            requestTag: tr.requestTag,
+            clusters: [
+              {
+                clusterId: { algorithm: 'test-algorithm', id: tr.testId },
+              },
+            ],
+          })),
           clusteringVersion: {
             algorithmsVersion: 1,
             rulesVersion: 'rule-ver',
@@ -64,28 +62,28 @@ describe('BatchedClustersClientImpl', () => {
     const call1 = client.Cluster(
       ClusterRequest.fromPartial({
         project: 'project1',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req1', testId: 'test-1' },
           { requestTag: 'req2', testId: 'test-2' },
-        ]),
+        ],
       }),
     );
     const call2 = client.Cluster(
       ClusterRequest.fromPartial({
         project: 'project2',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req3', testId: 'test-3' },
           { requestTag: 'req4', testId: 'test-4' },
-        ]),
+        ],
       }),
     );
     const call3 = client.Cluster(
       ClusterRequest.fromPartial({
         project: 'project1',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req5', testId: 'test-5' },
           { requestTag: 'req6', testId: 'test-6' },
-        ]),
+        ],
       }),
     );
 
@@ -95,40 +93,40 @@ describe('BatchedClustersClientImpl', () => {
     expect(clusterSpy).toHaveBeenCalledWith(
       ClusterRequest.fromPartial({
         project: 'project1',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req1', testId: 'test-1' },
           { requestTag: 'req2', testId: 'test-2' },
           { requestTag: 'req5', testId: 'test-5' },
           { requestTag: 'req6', testId: 'test-6' },
-        ]),
+        ],
       }),
     );
     expect(clusterSpy).toHaveBeenCalledWith(
       ClusterRequest.fromPartial({
         project: 'project2',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req3', testId: 'test-3' },
           { requestTag: 'req4', testId: 'test-4' },
-        ]),
+        ],
       }),
     );
     // The responses should be just like regular calls.
     expect(await call1).toEqual(
       ClusterResponse.fromPartial({
-        clusteredTestResults: Object.freeze([
+        clusteredTestResults: [
           {
             requestTag: 'req1',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-1' } },
-            ]),
+            ],
           },
           {
             requestTag: 'req2',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-2' } },
-            ]),
+            ],
           },
-        ]),
+        ],
         clusteringVersion: {
           algorithmsVersion: 1,
           rulesVersion: 'rule-ver',
@@ -138,20 +136,20 @@ describe('BatchedClustersClientImpl', () => {
     );
     expect(await call2).toEqual(
       ClusterResponse.fromPartial({
-        clusteredTestResults: Object.freeze([
+        clusteredTestResults: [
           {
             requestTag: 'req3',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-3' } },
-            ]),
+            ],
           },
           {
             requestTag: 'req4',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-4' } },
-            ]),
+            ],
           },
-        ]),
+        ],
         clusteringVersion: {
           algorithmsVersion: 1,
           rulesVersion: 'rule-ver',
@@ -161,20 +159,20 @@ describe('BatchedClustersClientImpl', () => {
     );
     expect(await call3).toEqual(
       ClusterResponse.fromPartial({
-        clusteredTestResults: Object.freeze([
+        clusteredTestResults: [
           {
             requestTag: 'req5',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-5' } },
-            ]),
+            ],
           },
           {
             requestTag: 'req6',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-6' } },
-            ]),
+            ],
           },
-        ]),
+        ],
         clusteringVersion: {
           algorithmsVersion: 1,
           rulesVersion: 'rule-ver',
@@ -195,33 +193,33 @@ describe('BatchedClustersClientImpl', () => {
     const call1 = client.Cluster(
       ClusterRequest.fromPartial({
         project: 'project1',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req1', testId: 'test-1' },
           { requestTag: 'req2', testId: 'test-2' },
-        ]),
+        ],
       }),
     );
     const call2 = client.Cluster(
       ClusterRequest.fromPartial({
         project: 'project2',
-        testResults: Object.freeze([{ requestTag: 'req3', testId: 'test-3' }]),
+        testResults: [{ requestTag: 'req3', testId: 'test-3' }],
       }),
     );
     const call3 = client.Cluster(
       ClusterRequest.fromPartial({
         project: 'project1',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req4', testId: 'test-4' },
           { requestTag: 'req5', testId: 'test-5' },
           { requestTag: 'req6', testId: 'test-6' },
           { requestTag: 'req7', testId: 'test-7' },
-        ]),
+        ],
       }),
     );
     const call4 = client.Cluster(
       ClusterRequest.fromPartial({
         project: 'project2',
-        testResults: Object.freeze([{ requestTag: 'req8', testId: 'test-8' }]),
+        testResults: [{ requestTag: 'req8', testId: 'test-8' }],
       }),
     );
 
@@ -232,49 +230,49 @@ describe('BatchedClustersClientImpl', () => {
     expect(clusterSpy).toHaveBeenCalledWith(
       ClusterRequest.fromPartial({
         project: 'project1',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req1', testId: 'test-1' },
           { requestTag: 'req2', testId: 'test-2' },
-        ]),
+        ],
       }),
     );
     expect(clusterSpy).toHaveBeenCalledWith(
       ClusterRequest.fromPartial({
         project: 'project1',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req4', testId: 'test-4' },
           { requestTag: 'req5', testId: 'test-5' },
           { requestTag: 'req6', testId: 'test-6' },
           { requestTag: 'req7', testId: 'test-7' },
-        ]),
+        ],
       }),
     );
     expect(clusterSpy).toHaveBeenCalledWith(
       ClusterRequest.fromPartial({
         project: 'project2',
-        testResults: Object.freeze([
+        testResults: [
           { requestTag: 'req3', testId: 'test-3' },
           { requestTag: 'req8', testId: 'test-8' },
-        ]),
+        ],
       }),
     );
     // The responses should be just like regular calls.
     expect(await call1).toEqual(
       ClusterResponse.fromPartial({
-        clusteredTestResults: Object.freeze([
+        clusteredTestResults: [
           {
             requestTag: 'req1',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-1' } },
-            ]),
+            ],
           },
           {
             requestTag: 'req2',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-2' } },
-            ]),
+            ],
           },
-        ]),
+        ],
         clusteringVersion: {
           algorithmsVersion: 1,
           rulesVersion: 'rule-ver',
@@ -284,14 +282,14 @@ describe('BatchedClustersClientImpl', () => {
     );
     expect(await call2).toEqual(
       ClusterResponse.fromPartial({
-        clusteredTestResults: Object.freeze([
+        clusteredTestResults: [
           {
             requestTag: 'req3',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-3' } },
-            ]),
+            ],
           },
-        ]),
+        ],
         clusteringVersion: {
           algorithmsVersion: 1,
           rulesVersion: 'rule-ver',
@@ -301,32 +299,32 @@ describe('BatchedClustersClientImpl', () => {
     );
     expect(await call3).toEqual(
       ClusterResponse.fromPartial({
-        clusteredTestResults: Object.freeze([
+        clusteredTestResults: [
           {
             requestTag: 'req4',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-4' } },
-            ]),
+            ],
           },
           {
             requestTag: 'req5',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-5' } },
-            ]),
+            ],
           },
           {
             requestTag: 'req6',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-6' } },
-            ]),
+            ],
           },
           {
             requestTag: 'req7',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-7' } },
-            ]),
+            ],
           },
-        ]),
+        ],
         clusteringVersion: {
           algorithmsVersion: 1,
           rulesVersion: 'rule-ver',
@@ -336,14 +334,14 @@ describe('BatchedClustersClientImpl', () => {
     );
     expect(await call4).toEqual(
       ClusterResponse.fromPartial({
-        clusteredTestResults: Object.freeze([
+        clusteredTestResults: [
           {
             requestTag: 'req8',
-            clusters: Object.freeze([
+            clusters: [
               { clusterId: { algorithm: 'test-algorithm', id: 'test-8' } },
-            ]),
+            ],
           },
-        ]),
+        ],
         clusteringVersion: {
           algorithmsVersion: 1,
           rulesVersion: 'rule-ver',

@@ -93,10 +93,10 @@ export const StructMask = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StructMask>, I>>(base?: I): StructMask {
-    return StructMask.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StructMask>): StructMask {
+    return StructMask.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StructMask>, I>>(object: I): StructMask {
+  fromPartial(object: DeepPartial<StructMask>): StructMask {
     const message = createBaseStructMask() as any;
     message.path = object.path?.map((e) => e) || [];
     return message;
@@ -110,7 +110,3 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };

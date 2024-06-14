@@ -78,9 +78,7 @@ export const MonitoringPage = () => {
     queries: batches.map((batch) => ({
       ...notifyClient.BatchGetAlerts.query(
         BatchGetAlertsRequest.fromPartial({
-          names: batch.map(
-            (a) => `alerts/${encodeURIComponent(a.key)}`,
-          ) as readonly string[],
+          names: batch.map((a) => `alerts/${encodeURIComponent(a.key)}`),
         }),
       ),
       refetchInterval: 60000,

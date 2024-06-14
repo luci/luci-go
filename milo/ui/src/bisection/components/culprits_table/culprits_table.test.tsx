@@ -81,7 +81,7 @@ describe('<CulpritsTable />', () => {
         reviewTitle: 'Added new feature to improve testing',
         reviewUrl:
           'https://chromium-review.googlesource.com/placeholder/+/123456',
-        culpritAction: Object.freeze([bugAction, autoRevertAction]),
+        culpritAction: [bugAction, autoRevertAction],
         verificationDetails: {
           status: 'Confirmed Culprit',
         },
@@ -141,7 +141,7 @@ describe('<CulpritsTable />', () => {
         reviewTitle: 'Added new feature to improve testing',
         reviewUrl:
           'https://chromium-review.googlesource.com/placeholder/+/123456',
-        culpritAction: Object.freeze([inaction]),
+        culpritAction: [inaction],
         verificationDetails: {
           status: 'Confirmed Culprit',
         },
@@ -183,7 +183,7 @@ describe('<CulpritsTable />', () => {
         reviewTitle: 'Added new feature to improve testing',
         reviewUrl:
           'https://chromium-review.googlesource.com/placeholder/+/123456',
-        culpritAction: Object.freeze([inaction]),
+        culpritAction: [inaction],
         verificationDetails: {
           status: 'Confirmed Culprit',
         },

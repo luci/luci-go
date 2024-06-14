@@ -49,11 +49,11 @@ describe('<VerdictCountIndicator />', () => {
   it('can show unexpected count', async () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           ...Array(55).fill({ status: TestVariantStatus.UNEXPECTED }),
           ...Array(10).fill({ status: TestVariantStatus.FLAKY }),
           ...Array(5).fill({ status: TestVariantStatus.EXONERATED }),
-        ]),
+        ],
       }),
     );
     render(
@@ -71,10 +71,10 @@ describe('<VerdictCountIndicator />', () => {
   it('can show flaky count', async () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           ...Array(10).fill({ status: TestVariantStatus.FLAKY }),
           ...Array(5).fill({ status: TestVariantStatus.EXONERATED }),
-        ]),
+        ],
       }),
     );
     render(
@@ -92,9 +92,9 @@ describe('<VerdictCountIndicator />', () => {
   it('show status icon when no verdict worse than exonerated', async () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           ...Array(5).fill({ status: TestVariantStatus.EXONERATED }),
-        ]),
+        ],
       }),
     );
     render(
@@ -112,7 +112,7 @@ describe('<VerdictCountIndicator />', () => {
   it("show no count when there's no verdict", async () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([]),
+        testVariants: [],
       }),
     );
     render(
@@ -132,10 +132,10 @@ describe('<VerdictCountIndicator />', () => {
   it('show + sign when there are too many verdicts', async () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           ...Array(200).fill({ status: TestVariantStatus.UNEXPECTED }),
           ...Array(5).fill({ status: TestVariantStatus.EXONERATED }),
-        ]),
+        ],
       }),
     );
     render(
@@ -153,9 +153,9 @@ describe('<VerdictCountIndicator />', () => {
   it('can tell verdicts of the same statuses are all loaded when the first page is not full', async () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           ...Array(10).fill({ status: TestVariantStatus.UNEXPECTED }),
-        ]),
+        ],
         nextPageToken: 'page2',
       }),
     );
@@ -174,11 +174,11 @@ describe('<VerdictCountIndicator />', () => {
   it('can tell there might be more verdicts of the same status when the first page is full', async () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           ...Array(QUERY_TEST_VERDICT_PAGE_SIZE).fill({
             status: TestVariantStatus.UNEXPECTED,
           }),
-        ]),
+        ],
         nextPageToken: 'page2',
       }),
     );

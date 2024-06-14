@@ -167,10 +167,10 @@ export const Struct = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Struct>, I>>(base?: I): Struct {
-    return Struct.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Struct>): Struct {
+    return Struct.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Struct>, I>>(object: I): Struct {
+  fromPartial(object: DeepPartial<Struct>): Struct {
     const message = createBaseStruct() as any;
     message.fields = Object.entries(object.fields ?? {}).reduce<{ [key: string]: any | undefined }>(
       (acc, [key, value]) => {
@@ -269,10 +269,10 @@ export const Struct_FieldsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Struct_FieldsEntry>, I>>(base?: I): Struct_FieldsEntry {
-    return Struct_FieldsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Struct_FieldsEntry>): Struct_FieldsEntry {
+    return Struct_FieldsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Struct_FieldsEntry>, I>>(object: I): Struct_FieldsEntry {
+  fromPartial(object: DeepPartial<Struct_FieldsEntry>): Struct_FieldsEntry {
     const message = createBaseStruct_FieldsEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? undefined;
@@ -406,10 +406,10 @@ export const Value = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Value>, I>>(base?: I): Value {
-    return Value.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Value>): Value {
+    return Value.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Value>, I>>(object: I): Value {
+  fromPartial(object: DeepPartial<Value>): Value {
     const message = createBaseValue() as any;
     message.nullValue = object.nullValue ?? undefined;
     message.numberValue = object.numberValue ?? undefined;
@@ -505,10 +505,10 @@ export const ListValue = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListValue>, I>>(base?: I): ListValue {
-    return ListValue.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListValue>): ListValue {
+    return ListValue.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListValue>, I>>(object: I): ListValue {
+  fromPartial(object: DeepPartial<ListValue>): ListValue {
     const message = createBaseListValue() as any;
     message.values = object.values?.map((e) => e) || [];
     return message;
@@ -536,10 +536,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isObject(value: any): boolean {
   return typeof value === "object" && value !== null;

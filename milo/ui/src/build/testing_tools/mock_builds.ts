@@ -57,7 +57,7 @@ export const canaryFailedBuild = Build.fromPartial({
   },
   createTime: '2020-12-12T01:01:01',
   input: {
-    experiments: Object.freeze(['luci.buildbucket.canary_software']),
+    experiments: ['luci.buildbucket.canary_software'],
   },
 }) as OutputBuild;
 
@@ -71,7 +71,7 @@ export const canarySucceededBuild = Build.fromPartial({
   },
   createTime: '2020-12-12T01:01:01',
   input: {
-    experiments: Object.freeze(['luci.buildbucket.canary_software']),
+    experiments: ['luci.buildbucket.canary_software'],
   },
 }) as OutputBuild;
 

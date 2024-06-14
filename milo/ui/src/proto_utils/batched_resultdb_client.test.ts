@@ -31,23 +31,18 @@ describe('BatchedResultDBClientImpl', () => {
       .spyOn(ResultDBClientImpl.prototype, 'BatchGetTestVariants')
       .mockImplementation(async (batchReq) => {
         return BatchGetTestVariantsResponse.fromPartial({
-          testVariants: Object.freeze(
-            batchReq.testVariants.map((tv) => ({
-              testId: tv.testId,
-              variantHash: tv.variantHash,
-              sourcesId: tv.variantHash.split('-')[0],
-            })),
-          ),
+          testVariants: batchReq.testVariants.map((tv) => ({
+            testId: tv.testId,
+            variantHash: tv.variantHash,
+            sourcesId: tv.variantHash.split('-')[0],
+          })),
           sources: Object.fromEntries(
-            batchReq.testVariants.map(
-              (tv) =>
-                [
-                  tv.variantHash.split('-')[0],
-                  {
-                    gitilesCommit: { commitHash: tv.variantHash.split('-')[0] },
-                  },
-                ] as const,
-            ),
+            batchReq.testVariants.map((tv) => [
+              tv.variantHash.split('-')[0],
+              {
+                gitilesCommit: { commitHash: tv.variantHash.split('-')[0] },
+              },
+            ]),
           ),
         });
       });
@@ -70,49 +65,47 @@ describe('BatchedResultDBClientImpl', () => {
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv1',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test1', variantHash: 'source1-hash1' },
           { testId: 'test2', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     const call2 = client.BatchGetTestVariants(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv2',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test3', variantHash: 'source1-hash1' },
           { testId: 'test4', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     const call3 = client.BatchGetTestVariants(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv1',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test5', variantHash: 'source1-hash1' },
           { testId: 'test6', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     const call4 = client.BatchGetTestVariants(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv2',
         resultLimit: 5,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test7', variantHash: 'source1-hash1' },
           { testId: 'test8', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     const call5 = client.BatchGetTestVariants(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv2',
         resultLimit: 10,
-        testVariants: Object.freeze([
-          { testId: 'test9', variantHash: 'source1-hash1' },
-        ]),
+        testVariants: [{ testId: 'test9', variantHash: 'source1-hash1' }],
       }),
     );
 
@@ -124,40 +117,40 @@ describe('BatchedResultDBClientImpl', () => {
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv1',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test1', variantHash: 'source1-hash1' },
           { testId: 'test2', variantHash: 'source2-hash1' },
           { testId: 'test5', variantHash: 'source1-hash1' },
           { testId: 'test6', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     expect(batchGetTestVariants).toHaveBeenCalledWith(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv2',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test3', variantHash: 'source1-hash1' },
           { testId: 'test4', variantHash: 'source2-hash1' },
           { testId: 'test9', variantHash: 'source1-hash1' },
-        ]),
+        ],
       }),
     );
     expect(batchGetTestVariants).toHaveBeenCalledWith(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv2',
         resultLimit: 5,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test7', variantHash: 'source1-hash1' },
           { testId: 'test8', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
 
     // The responses should be just like regular calls.
     expect(await call1).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test1',
             variantHash: 'source1-hash1',
@@ -168,7 +161,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source2-hash1',
             sourcesId: 'source2',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -185,7 +178,7 @@ describe('BatchedResultDBClientImpl', () => {
     );
     expect(await call2).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test3',
             variantHash: 'source1-hash1',
@@ -196,7 +189,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source2-hash1',
             sourcesId: 'source2',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -213,7 +206,7 @@ describe('BatchedResultDBClientImpl', () => {
     );
     expect(await call3).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test5',
             variantHash: 'source1-hash1',
@@ -224,7 +217,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source2-hash1',
             sourcesId: 'source2',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -241,7 +234,7 @@ describe('BatchedResultDBClientImpl', () => {
     );
     expect(await call4).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test7',
             variantHash: 'source1-hash1',
@@ -252,7 +245,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source2-hash1',
             sourcesId: 'source2',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -269,13 +262,13 @@ describe('BatchedResultDBClientImpl', () => {
     );
     expect(await call5).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test9',
             variantHash: 'source1-hash1',
             sourcesId: 'source1',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -299,50 +292,50 @@ describe('BatchedResultDBClientImpl', () => {
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv1',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test1', variantHash: 'source1-hash1' },
           { testId: 'test2', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     const call2 = client.BatchGetTestVariants(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv2',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test3', variantHash: 'source1-hash1' },
           { testId: 'test4', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     const call3 = client.BatchGetTestVariants(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv1',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test5', variantHash: 'source1-hash1' },
           { testId: 'test6', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     const call4 = client.BatchGetTestVariants(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv2',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test7', variantHash: 'source1-hash1' },
           { testId: 'test8', variantHash: 'source2-hash1' },
-        ]),
+        ],
       }),
     );
     const call5 = client.BatchGetTestVariants(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: 'invocations/inv1',
         resultLimit: 10,
-        testVariants: Object.freeze([
+        testVariants: [
           { testId: 'test9', variantHash: 'source1-hash1' },
           { testId: 'test10', variantHash: 'source1-hash2' },
-        ]),
+        ],
       }),
     );
 
@@ -354,7 +347,7 @@ describe('BatchedResultDBClientImpl', () => {
     // The responses should be just like regular calls.
     expect(await call1).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test1',
             variantHash: 'source1-hash1',
@@ -365,7 +358,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source2-hash1',
             sourcesId: 'source2',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -382,7 +375,7 @@ describe('BatchedResultDBClientImpl', () => {
     );
     expect(await call2).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test3',
             variantHash: 'source1-hash1',
@@ -393,7 +386,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source2-hash1',
             sourcesId: 'source2',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -410,7 +403,7 @@ describe('BatchedResultDBClientImpl', () => {
     );
     expect(await call3).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test5',
             variantHash: 'source1-hash1',
@@ -421,7 +414,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source2-hash1',
             sourcesId: 'source2',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -438,7 +431,7 @@ describe('BatchedResultDBClientImpl', () => {
     );
     expect(await call4).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test7',
             variantHash: 'source1-hash1',
@@ -449,7 +442,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source2-hash1',
             sourcesId: 'source2',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {
@@ -466,7 +459,7 @@ describe('BatchedResultDBClientImpl', () => {
     );
     expect(await call5).toEqual(
       BatchGetTestVariantsResponse.fromPartial({
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: 'test9',
             variantHash: 'source1-hash1',
@@ -477,7 +470,7 @@ describe('BatchedResultDBClientImpl', () => {
             variantHash: 'source1-hash2',
             sourcesId: 'source1',
           },
-        ]),
+        ],
         sources: {
           source1: {
             gitilesCommit: {

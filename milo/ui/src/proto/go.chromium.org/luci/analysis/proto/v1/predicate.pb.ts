@@ -140,10 +140,10 @@ export const VariantPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<VariantPredicate>, I>>(base?: I): VariantPredicate {
-    return VariantPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<VariantPredicate>): VariantPredicate {
+    return VariantPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<VariantPredicate>, I>>(object: I): VariantPredicate {
+  fromPartial(object: DeepPartial<VariantPredicate>): VariantPredicate {
     const message = createBaseVariantPredicate() as any;
     message.equals = (object.equals !== undefined && object.equals !== null)
       ? Variant.fromPartial(object.equals)
@@ -269,10 +269,10 @@ export const TestVerdictPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestVerdictPredicate>, I>>(base?: I): TestVerdictPredicate {
-    return TestVerdictPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestVerdictPredicate>): TestVerdictPredicate {
+    return TestVerdictPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestVerdictPredicate>, I>>(object: I): TestVerdictPredicate {
+  fromPartial(object: DeepPartial<TestVerdictPredicate>): TestVerdictPredicate {
     const message = createBaseTestVerdictPredicate() as any;
     message.subRealm = object.subRealm ?? "";
     message.variantPredicate = (object.variantPredicate !== undefined && object.variantPredicate !== null)
@@ -294,10 +294,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

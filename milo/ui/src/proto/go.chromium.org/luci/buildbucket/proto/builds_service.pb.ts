@@ -917,10 +917,10 @@ export const GetBuildRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetBuildRequest>, I>>(base?: I): GetBuildRequest {
-    return GetBuildRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetBuildRequest>): GetBuildRequest {
+    return GetBuildRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetBuildRequest>, I>>(object: I): GetBuildRequest {
+  fromPartial(object: DeepPartial<GetBuildRequest>): GetBuildRequest {
     const message = createBaseGetBuildRequest() as any;
     message.id = object.id ?? "0";
     message.builder = (object.builder !== undefined && object.builder !== null)
@@ -1038,10 +1038,10 @@ export const SearchBuildsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SearchBuildsRequest>, I>>(base?: I): SearchBuildsRequest {
-    return SearchBuildsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SearchBuildsRequest>): SearchBuildsRequest {
+    return SearchBuildsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SearchBuildsRequest>, I>>(object: I): SearchBuildsRequest {
+  fromPartial(object: DeepPartial<SearchBuildsRequest>): SearchBuildsRequest {
     const message = createBaseSearchBuildsRequest() as any;
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? BuildPredicate.fromPartial(object.predicate)
@@ -1117,10 +1117,10 @@ export const SearchBuildsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SearchBuildsResponse>, I>>(base?: I): SearchBuildsResponse {
-    return SearchBuildsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SearchBuildsResponse>): SearchBuildsResponse {
+    return SearchBuildsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SearchBuildsResponse>, I>>(object: I): SearchBuildsResponse {
+  fromPartial(object: DeepPartial<SearchBuildsResponse>): SearchBuildsResponse {
     const message = createBaseSearchBuildsResponse() as any;
     message.builds = object.builds?.map((e) => Build.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1179,10 +1179,10 @@ export const BatchRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchRequest>, I>>(base?: I): BatchRequest {
-    return BatchRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchRequest>): BatchRequest {
+    return BatchRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchRequest>, I>>(object: I): BatchRequest {
+  fromPartial(object: DeepPartial<BatchRequest>): BatchRequest {
     const message = createBaseBatchRequest() as any;
     message.requests = object.requests?.map((e) => BatchRequest_Request.fromPartial(e)) || [];
     return message;
@@ -1300,10 +1300,10 @@ export const BatchRequest_Request = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchRequest_Request>, I>>(base?: I): BatchRequest_Request {
-    return BatchRequest_Request.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchRequest_Request>): BatchRequest_Request {
+    return BatchRequest_Request.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchRequest_Request>, I>>(object: I): BatchRequest_Request {
+  fromPartial(object: DeepPartial<BatchRequest_Request>): BatchRequest_Request {
     const message = createBaseBatchRequest_Request() as any;
     message.getBuild = (object.getBuild !== undefined && object.getBuild !== null)
       ? GetBuildRequest.fromPartial(object.getBuild)
@@ -1375,10 +1375,10 @@ export const BatchResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchResponse>, I>>(base?: I): BatchResponse {
-    return BatchResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchResponse>): BatchResponse {
+    return BatchResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchResponse>, I>>(object: I): BatchResponse {
+  fromPartial(object: DeepPartial<BatchResponse>): BatchResponse {
     const message = createBaseBatchResponse() as any;
     message.responses = object.responses?.map((e) => BatchResponse_Response.fromPartial(e)) || [];
     return message;
@@ -1511,10 +1511,10 @@ export const BatchResponse_Response = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchResponse_Response>, I>>(base?: I): BatchResponse_Response {
-    return BatchResponse_Response.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchResponse_Response>): BatchResponse_Response {
+    return BatchResponse_Response.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchResponse_Response>, I>>(object: I): BatchResponse_Response {
+  fromPartial(object: DeepPartial<BatchResponse_Response>): BatchResponse_Response {
     const message = createBaseBatchResponse_Response() as any;
     message.getBuild = (object.getBuild !== undefined && object.getBuild !== null)
       ? Build.fromPartial(object.getBuild)
@@ -1629,10 +1629,10 @@ export const UpdateBuildRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<UpdateBuildRequest>, I>>(base?: I): UpdateBuildRequest {
-    return UpdateBuildRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<UpdateBuildRequest>): UpdateBuildRequest {
+    return UpdateBuildRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<UpdateBuildRequest>, I>>(object: I): UpdateBuildRequest {
+  fromPartial(object: DeepPartial<UpdateBuildRequest>): UpdateBuildRequest {
     const message = createBaseUpdateBuildRequest() as any;
     message.build = (object.build !== undefined && object.build !== null) ? Build.fromPartial(object.build) : undefined;
     message.updateMask = object.updateMask ?? undefined;
@@ -2088,10 +2088,10 @@ export const ScheduleBuildRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ScheduleBuildRequest>, I>>(base?: I): ScheduleBuildRequest {
-    return ScheduleBuildRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ScheduleBuildRequest>): ScheduleBuildRequest {
+    return ScheduleBuildRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ScheduleBuildRequest>, I>>(object: I): ScheduleBuildRequest {
+  fromPartial(object: DeepPartial<ScheduleBuildRequest>): ScheduleBuildRequest {
     const message = createBaseScheduleBuildRequest() as any;
     message.requestId = object.requestId ?? "";
     message.templateBuildId = object.templateBuildId ?? "0";
@@ -2212,14 +2212,10 @@ export const ScheduleBuildRequest_ExperimentsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ScheduleBuildRequest_ExperimentsEntry>, I>>(
-    base?: I,
-  ): ScheduleBuildRequest_ExperimentsEntry {
-    return ScheduleBuildRequest_ExperimentsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ScheduleBuildRequest_ExperimentsEntry>): ScheduleBuildRequest_ExperimentsEntry {
+    return ScheduleBuildRequest_ExperimentsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ScheduleBuildRequest_ExperimentsEntry>, I>>(
-    object: I,
-  ): ScheduleBuildRequest_ExperimentsEntry {
+  fromPartial(object: DeepPartial<ScheduleBuildRequest_ExperimentsEntry>): ScheduleBuildRequest_ExperimentsEntry {
     const message = createBaseScheduleBuildRequest_ExperimentsEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? false;
@@ -2274,12 +2270,10 @@ export const ScheduleBuildRequest_Swarming = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ScheduleBuildRequest_Swarming>, I>>(base?: I): ScheduleBuildRequest_Swarming {
-    return ScheduleBuildRequest_Swarming.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ScheduleBuildRequest_Swarming>): ScheduleBuildRequest_Swarming {
+    return ScheduleBuildRequest_Swarming.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ScheduleBuildRequest_Swarming>, I>>(
-    object: I,
-  ): ScheduleBuildRequest_Swarming {
+  fromPartial(object: DeepPartial<ScheduleBuildRequest_Swarming>): ScheduleBuildRequest_Swarming {
     const message = createBaseScheduleBuildRequest_Swarming() as any;
     message.parentRunId = object.parentRunId ?? "";
     return message;
@@ -2335,14 +2329,10 @@ export const ScheduleBuildRequest_ShadowInput = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ScheduleBuildRequest_ShadowInput>, I>>(
-    base?: I,
-  ): ScheduleBuildRequest_ShadowInput {
-    return ScheduleBuildRequest_ShadowInput.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ScheduleBuildRequest_ShadowInput>): ScheduleBuildRequest_ShadowInput {
+    return ScheduleBuildRequest_ShadowInput.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ScheduleBuildRequest_ShadowInput>, I>>(
-    object: I,
-  ): ScheduleBuildRequest_ShadowInput {
+  fromPartial(object: DeepPartial<ScheduleBuildRequest_ShadowInput>): ScheduleBuildRequest_ShadowInput {
     const message = createBaseScheduleBuildRequest_ShadowInput() as any;
     message.inheritFromParent = object.inheritFromParent ?? false;
     return message;
@@ -2400,12 +2390,10 @@ export const ScheduleBuildRequest_ResultDB = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ScheduleBuildRequest_ResultDB>, I>>(base?: I): ScheduleBuildRequest_ResultDB {
-    return ScheduleBuildRequest_ResultDB.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ScheduleBuildRequest_ResultDB>): ScheduleBuildRequest_ResultDB {
+    return ScheduleBuildRequest_ResultDB.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ScheduleBuildRequest_ResultDB>, I>>(
-    object: I,
-  ): ScheduleBuildRequest_ResultDB {
+  fromPartial(object: DeepPartial<ScheduleBuildRequest_ResultDB>): ScheduleBuildRequest_ResultDB {
     const message = createBaseScheduleBuildRequest_ResultDB() as any;
     message.isExportRootOverride = object.isExportRootOverride ?? false;
     return message;
@@ -2503,10 +2491,10 @@ export const CancelBuildRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CancelBuildRequest>, I>>(base?: I): CancelBuildRequest {
-    return CancelBuildRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CancelBuildRequest>): CancelBuildRequest {
+    return CancelBuildRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CancelBuildRequest>, I>>(object: I): CancelBuildRequest {
+  fromPartial(object: DeepPartial<CancelBuildRequest>): CancelBuildRequest {
     const message = createBaseCancelBuildRequest() as any;
     message.id = object.id ?? "0";
     message.summaryMarkdown = object.summaryMarkdown ?? "";
@@ -2593,10 +2581,10 @@ export const CreateBuildRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CreateBuildRequest>, I>>(base?: I): CreateBuildRequest {
-    return CreateBuildRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CreateBuildRequest>): CreateBuildRequest {
+    return CreateBuildRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CreateBuildRequest>, I>>(object: I): CreateBuildRequest {
+  fromPartial(object: DeepPartial<CreateBuildRequest>): CreateBuildRequest {
     const message = createBaseCreateBuildRequest() as any;
     message.build = (object.build !== undefined && object.build !== null) ? Build.fromPartial(object.build) : undefined;
     message.requestId = object.requestId ?? "";
@@ -2696,10 +2684,10 @@ export const SynthesizeBuildRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SynthesizeBuildRequest>, I>>(base?: I): SynthesizeBuildRequest {
-    return SynthesizeBuildRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SynthesizeBuildRequest>): SynthesizeBuildRequest {
+    return SynthesizeBuildRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SynthesizeBuildRequest>, I>>(object: I): SynthesizeBuildRequest {
+  fromPartial(object: DeepPartial<SynthesizeBuildRequest>): SynthesizeBuildRequest {
     const message = createBaseSynthesizeBuildRequest() as any;
     message.templateBuildId = object.templateBuildId ?? "0";
     message.builder = (object.builder !== undefined && object.builder !== null)
@@ -2781,14 +2769,10 @@ export const SynthesizeBuildRequest_ExperimentsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SynthesizeBuildRequest_ExperimentsEntry>, I>>(
-    base?: I,
-  ): SynthesizeBuildRequest_ExperimentsEntry {
-    return SynthesizeBuildRequest_ExperimentsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SynthesizeBuildRequest_ExperimentsEntry>): SynthesizeBuildRequest_ExperimentsEntry {
+    return SynthesizeBuildRequest_ExperimentsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SynthesizeBuildRequest_ExperimentsEntry>, I>>(
-    object: I,
-  ): SynthesizeBuildRequest_ExperimentsEntry {
+  fromPartial(object: DeepPartial<SynthesizeBuildRequest_ExperimentsEntry>): SynthesizeBuildRequest_ExperimentsEntry {
     const message = createBaseSynthesizeBuildRequest_ExperimentsEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? false;
@@ -2873,10 +2857,10 @@ export const StartBuildRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StartBuildRequest>, I>>(base?: I): StartBuildRequest {
-    return StartBuildRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StartBuildRequest>): StartBuildRequest {
+    return StartBuildRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StartBuildRequest>, I>>(object: I): StartBuildRequest {
+  fromPartial(object: DeepPartial<StartBuildRequest>): StartBuildRequest {
     const message = createBaseStartBuildRequest() as any;
     message.requestId = object.requestId ?? "";
     message.buildId = object.buildId ?? "0";
@@ -2948,10 +2932,10 @@ export const StartBuildResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StartBuildResponse>, I>>(base?: I): StartBuildResponse {
-    return StartBuildResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StartBuildResponse>): StartBuildResponse {
+    return StartBuildResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StartBuildResponse>, I>>(object: I): StartBuildResponse {
+  fromPartial(object: DeepPartial<StartBuildResponse>): StartBuildResponse {
     const message = createBaseStartBuildResponse() as any;
     message.build = (object.build !== undefined && object.build !== null) ? Build.fromPartial(object.build) : undefined;
     message.updateBuildToken = object.updateBuildToken ?? "";
@@ -3036,10 +3020,10 @@ export const GetBuildStatusRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetBuildStatusRequest>, I>>(base?: I): GetBuildStatusRequest {
-    return GetBuildStatusRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetBuildStatusRequest>): GetBuildStatusRequest {
+    return GetBuildStatusRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetBuildStatusRequest>, I>>(object: I): GetBuildStatusRequest {
+  fromPartial(object: DeepPartial<GetBuildStatusRequest>): GetBuildStatusRequest {
     const message = createBaseGetBuildStatusRequest() as any;
     message.id = object.id ?? "0";
     message.builder = (object.builder !== undefined && object.builder !== null)
@@ -3196,10 +3180,10 @@ export const BuildMask = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildMask>, I>>(base?: I): BuildMask {
-    return BuildMask.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildMask>): BuildMask {
+    return BuildMask.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildMask>, I>>(object: I): BuildMask {
+  fromPartial(object: DeepPartial<BuildMask>): BuildMask {
     const message = createBaseBuildMask() as any;
     message.fields = object.fields ?? undefined;
     message.inputProperties = object.inputProperties?.map((e) => StructMask.fromPartial(e)) || [];
@@ -3448,10 +3432,10 @@ export const BuildPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildPredicate>, I>>(base?: I): BuildPredicate {
-    return BuildPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildPredicate>): BuildPredicate {
+    return BuildPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildPredicate>, I>>(object: I): BuildPredicate {
+  fromPartial(object: DeepPartial<BuildPredicate>): BuildPredicate {
     const message = createBaseBuildPredicate() as any;
     message.builder = (object.builder !== undefined && object.builder !== null)
       ? BuilderID.fromPartial(object.builder)
@@ -3541,10 +3525,10 @@ export const BuildRange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildRange>, I>>(base?: I): BuildRange {
-    return BuildRange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildRange>): BuildRange {
+    return BuildRange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildRange>, I>>(object: I): BuildRange {
+  fromPartial(object: DeepPartial<BuildRange>): BuildRange {
     const message = createBaseBuildRange() as any;
     message.startBuildId = object.startBuildId ?? "0";
     message.endBuildId = object.endBuildId ?? "0";
@@ -3760,10 +3744,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToString(long: Long) {
   return long.toString();

@@ -147,10 +147,10 @@ export const DoubleValue = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<DoubleValue>, I>>(base?: I): DoubleValue {
-    return DoubleValue.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<DoubleValue>): DoubleValue {
+    return DoubleValue.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<DoubleValue>, I>>(object: I): DoubleValue {
+  fromPartial(object: DeepPartial<DoubleValue>): DoubleValue {
     const message = createBaseDoubleValue() as any;
     message.value = object.value ?? 0;
     return message;
@@ -204,10 +204,10 @@ export const FloatValue = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<FloatValue>, I>>(base?: I): FloatValue {
-    return FloatValue.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<FloatValue>): FloatValue {
+    return FloatValue.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<FloatValue>, I>>(object: I): FloatValue {
+  fromPartial(object: DeepPartial<FloatValue>): FloatValue {
     const message = createBaseFloatValue() as any;
     message.value = object.value ?? 0;
     return message;
@@ -261,10 +261,10 @@ export const Int64Value = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Int64Value>, I>>(base?: I): Int64Value {
-    return Int64Value.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Int64Value>): Int64Value {
+    return Int64Value.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Int64Value>, I>>(object: I): Int64Value {
+  fromPartial(object: DeepPartial<Int64Value>): Int64Value {
     const message = createBaseInt64Value() as any;
     message.value = object.value ?? "0";
     return message;
@@ -318,10 +318,10 @@ export const UInt64Value = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<UInt64Value>, I>>(base?: I): UInt64Value {
-    return UInt64Value.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<UInt64Value>): UInt64Value {
+    return UInt64Value.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<UInt64Value>, I>>(object: I): UInt64Value {
+  fromPartial(object: DeepPartial<UInt64Value>): UInt64Value {
     const message = createBaseUInt64Value() as any;
     message.value = object.value ?? "0";
     return message;
@@ -375,10 +375,10 @@ export const Int32Value = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Int32Value>, I>>(base?: I): Int32Value {
-    return Int32Value.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Int32Value>): Int32Value {
+    return Int32Value.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Int32Value>, I>>(object: I): Int32Value {
+  fromPartial(object: DeepPartial<Int32Value>): Int32Value {
     const message = createBaseInt32Value() as any;
     message.value = object.value ?? 0;
     return message;
@@ -432,10 +432,10 @@ export const UInt32Value = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<UInt32Value>, I>>(base?: I): UInt32Value {
-    return UInt32Value.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<UInt32Value>): UInt32Value {
+    return UInt32Value.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<UInt32Value>, I>>(object: I): UInt32Value {
+  fromPartial(object: DeepPartial<UInt32Value>): UInt32Value {
     const message = createBaseUInt32Value() as any;
     message.value = object.value ?? 0;
     return message;
@@ -489,10 +489,10 @@ export const BoolValue = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BoolValue>, I>>(base?: I): BoolValue {
-    return BoolValue.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BoolValue>): BoolValue {
+    return BoolValue.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BoolValue>, I>>(object: I): BoolValue {
+  fromPartial(object: DeepPartial<BoolValue>): BoolValue {
     const message = createBaseBoolValue() as any;
     message.value = object.value ?? false;
     return message;
@@ -546,10 +546,10 @@ export const StringValue = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StringValue>, I>>(base?: I): StringValue {
-    return StringValue.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StringValue>): StringValue {
+    return StringValue.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StringValue>, I>>(object: I): StringValue {
+  fromPartial(object: DeepPartial<StringValue>): StringValue {
     const message = createBaseStringValue() as any;
     message.value = object.value ?? "";
     return message;
@@ -603,10 +603,10 @@ export const BytesValue = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BytesValue>, I>>(base?: I): BytesValue {
-    return BytesValue.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BytesValue>): BytesValue {
+    return BytesValue.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BytesValue>, I>>(object: I): BytesValue {
+  fromPartial(object: DeepPartial<BytesValue>): BytesValue {
     const message = createBaseBytesValue() as any;
     message.value = object.value ?? new Uint8Array(0);
     return message;
@@ -645,10 +645,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToString(long: Long) {
   return long.toString();

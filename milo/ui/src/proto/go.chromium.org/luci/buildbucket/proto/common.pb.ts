@@ -656,10 +656,10 @@ export const Executable = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Executable>, I>>(base?: I): Executable {
-    return Executable.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Executable>): Executable {
+    return Executable.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Executable>, I>>(object: I): Executable {
+  fromPartial(object: DeepPartial<Executable>): Executable {
     const message = createBaseExecutable() as any;
     message.cipdPackage = object.cipdPackage ?? "";
     message.cipdVersion = object.cipdVersion ?? "";
@@ -734,10 +734,10 @@ export const StatusDetails = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StatusDetails>, I>>(base?: I): StatusDetails {
-    return StatusDetails.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StatusDetails>): StatusDetails {
+    return StatusDetails.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StatusDetails>, I>>(object: I): StatusDetails {
+  fromPartial(object: DeepPartial<StatusDetails>): StatusDetails {
     const message = createBaseStatusDetails() as any;
     message.resourceExhaustion = (object.resourceExhaustion !== undefined && object.resourceExhaustion !== null)
       ? StatusDetails_ResourceExhaustion.fromPartial(object.resourceExhaustion)
@@ -783,14 +783,10 @@ export const StatusDetails_ResourceExhaustion = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StatusDetails_ResourceExhaustion>, I>>(
-    base?: I,
-  ): StatusDetails_ResourceExhaustion {
-    return StatusDetails_ResourceExhaustion.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StatusDetails_ResourceExhaustion>): StatusDetails_ResourceExhaustion {
+    return StatusDetails_ResourceExhaustion.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StatusDetails_ResourceExhaustion>, I>>(
-    _: I,
-  ): StatusDetails_ResourceExhaustion {
+  fromPartial(_: DeepPartial<StatusDetails_ResourceExhaustion>): StatusDetails_ResourceExhaustion {
     const message = createBaseStatusDetails_ResourceExhaustion() as any;
     return message;
   },
@@ -830,10 +826,10 @@ export const StatusDetails_Timeout = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StatusDetails_Timeout>, I>>(base?: I): StatusDetails_Timeout {
-    return StatusDetails_Timeout.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StatusDetails_Timeout>): StatusDetails_Timeout {
+    return StatusDetails_Timeout.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StatusDetails_Timeout>, I>>(_: I): StatusDetails_Timeout {
+  fromPartial(_: DeepPartial<StatusDetails_Timeout>): StatusDetails_Timeout {
     const message = createBaseStatusDetails_Timeout() as any;
     return message;
   },
@@ -916,10 +912,10 @@ export const Log = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Log>, I>>(base?: I): Log {
-    return Log.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Log>): Log {
+    return Log.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Log>, I>>(object: I): Log {
+  fromPartial(object: DeepPartial<Log>): Log {
     const message = createBaseLog() as any;
     message.name = object.name ?? "";
     message.viewUrl = object.viewUrl ?? "";
@@ -1019,10 +1015,10 @@ export const GerritChange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GerritChange>, I>>(base?: I): GerritChange {
-    return GerritChange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GerritChange>): GerritChange {
+    return GerritChange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GerritChange>, I>>(object: I): GerritChange {
+  fromPartial(object: DeepPartial<GerritChange>): GerritChange {
     const message = createBaseGerritChange() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -1137,10 +1133,10 @@ export const GitilesCommit = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GitilesCommit>, I>>(base?: I): GitilesCommit {
-    return GitilesCommit.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GitilesCommit>): GitilesCommit {
+    return GitilesCommit.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GitilesCommit>, I>>(object: I): GitilesCommit {
+  fromPartial(object: DeepPartial<GitilesCommit>): GitilesCommit {
     const message = createBaseGitilesCommit() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -1214,10 +1210,10 @@ export const StringPair = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StringPair>, I>>(base?: I): StringPair {
-    return StringPair.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StringPair>): StringPair {
+    return StringPair.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StringPair>, I>>(object: I): StringPair {
+  fromPartial(object: DeepPartial<StringPair>): StringPair {
     const message = createBaseStringPair() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -1288,10 +1284,10 @@ export const TimeRange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TimeRange>, I>>(base?: I): TimeRange {
-    return TimeRange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TimeRange>): TimeRange {
+    return TimeRange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TimeRange>, I>>(object: I): TimeRange {
+  fromPartial(object: DeepPartial<TimeRange>): TimeRange {
     const message = createBaseTimeRange() as any;
     message.startTime = object.startTime ?? undefined;
     message.endTime = object.endTime ?? undefined;
@@ -1376,10 +1372,10 @@ export const RequestedDimension = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<RequestedDimension>, I>>(base?: I): RequestedDimension {
-    return RequestedDimension.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<RequestedDimension>): RequestedDimension {
+    return RequestedDimension.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<RequestedDimension>, I>>(object: I): RequestedDimension {
+  fromPartial(object: DeepPartial<RequestedDimension>): RequestedDimension {
     const message = createBaseRequestedDimension() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -1481,10 +1477,10 @@ export const CacheEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CacheEntry>, I>>(base?: I): CacheEntry {
-    return CacheEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CacheEntry>): CacheEntry {
+    return CacheEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CacheEntry>, I>>(object: I): CacheEntry {
+  fromPartial(object: DeepPartial<CacheEntry>): CacheEntry {
     const message = createBaseCacheEntry() as any;
     message.name = object.name ?? "";
     message.path = object.path ?? "";
@@ -1694,10 +1690,10 @@ export const HealthStatus = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<HealthStatus>, I>>(base?: I): HealthStatus {
-    return HealthStatus.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<HealthStatus>): HealthStatus {
+    return HealthStatus.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<HealthStatus>, I>>(object: I): HealthStatus {
+  fromPartial(object: DeepPartial<HealthStatus>): HealthStatus {
     const message = createBaseHealthStatus() as any;
     message.healthScore = object.healthScore ?? "0";
     message.healthMetrics = Object.entries(object.healthMetrics ?? {}).reduce<{ [key: string]: number }>(
@@ -1795,12 +1791,10 @@ export const HealthStatus_HealthMetricsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<HealthStatus_HealthMetricsEntry>, I>>(base?: I): HealthStatus_HealthMetricsEntry {
-    return HealthStatus_HealthMetricsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<HealthStatus_HealthMetricsEntry>): HealthStatus_HealthMetricsEntry {
+    return HealthStatus_HealthMetricsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<HealthStatus_HealthMetricsEntry>, I>>(
-    object: I,
-  ): HealthStatus_HealthMetricsEntry {
+  fromPartial(object: DeepPartial<HealthStatus_HealthMetricsEntry>): HealthStatus_HealthMetricsEntry {
     const message = createBaseHealthStatus_HealthMetricsEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? 0;
@@ -1871,10 +1865,10 @@ export const HealthStatus_DocLinksEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<HealthStatus_DocLinksEntry>, I>>(base?: I): HealthStatus_DocLinksEntry {
-    return HealthStatus_DocLinksEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<HealthStatus_DocLinksEntry>): HealthStatus_DocLinksEntry {
+    return HealthStatus_DocLinksEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<HealthStatus_DocLinksEntry>, I>>(object: I): HealthStatus_DocLinksEntry {
+  fromPartial(object: DeepPartial<HealthStatus_DocLinksEntry>): HealthStatus_DocLinksEntry {
     const message = createBaseHealthStatus_DocLinksEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -1945,10 +1939,10 @@ export const HealthStatus_DataLinksEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<HealthStatus_DataLinksEntry>, I>>(base?: I): HealthStatus_DataLinksEntry {
-    return HealthStatus_DataLinksEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<HealthStatus_DataLinksEntry>): HealthStatus_DataLinksEntry {
+    return HealthStatus_DataLinksEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<HealthStatus_DataLinksEntry>, I>>(object: I): HealthStatus_DataLinksEntry {
+  fromPartial(object: DeepPartial<HealthStatus_DataLinksEntry>): HealthStatus_DataLinksEntry {
     const message = createBaseHealthStatus_DataLinksEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -1963,10 +1957,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

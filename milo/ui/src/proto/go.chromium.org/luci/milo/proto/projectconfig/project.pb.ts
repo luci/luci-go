@@ -479,10 +479,10 @@ export const Project = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Project>, I>>(base?: I): Project {
-    return Project.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Project>): Project {
+    return Project.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Project>, I>>(object: I): Project {
+  fromPartial(object: DeepPartial<Project>): Project {
     const message = createBaseProject() as any;
     message.consoles = object.consoles?.map((e) => Console.fromPartial(e)) || [];
     message.headers = object.headers?.map((e) => Header.fromPartial(e)) || [];
@@ -573,10 +573,10 @@ export const Link = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Link>, I>>(base?: I): Link {
-    return Link.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Link>): Link {
+    return Link.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Link>, I>>(object: I): Link {
+  fromPartial(object: DeepPartial<Link>): Link {
     const message = createBaseLink() as any;
     message.text = object.text ?? "";
     message.url = object.url ?? "";
@@ -664,10 +664,10 @@ export const Oncall = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Oncall>, I>>(base?: I): Oncall {
-    return Oncall.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Oncall>): Oncall {
+    return Oncall.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Oncall>, I>>(object: I): Oncall {
+  fromPartial(object: DeepPartial<Oncall>): Oncall {
     const message = createBaseOncall() as any;
     message.name = object.name ?? "";
     message.url = object.url ?? "";
@@ -739,10 +739,10 @@ export const LinkGroup = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<LinkGroup>, I>>(base?: I): LinkGroup {
-    return LinkGroup.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<LinkGroup>): LinkGroup {
+    return LinkGroup.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<LinkGroup>, I>>(object: I): LinkGroup {
+  fromPartial(object: DeepPartial<LinkGroup>): LinkGroup {
     const message = createBaseLinkGroup() as any;
     message.name = object.name ?? "";
     message.links = object.links?.map((e) => Link.fromPartial(e)) || [];
@@ -815,10 +815,10 @@ export const ConsoleSummaryGroup = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ConsoleSummaryGroup>, I>>(base?: I): ConsoleSummaryGroup {
-    return ConsoleSummaryGroup.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ConsoleSummaryGroup>): ConsoleSummaryGroup {
+    return ConsoleSummaryGroup.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ConsoleSummaryGroup>, I>>(object: I): ConsoleSummaryGroup {
+  fromPartial(object: DeepPartial<ConsoleSummaryGroup>): ConsoleSummaryGroup {
     const message = createBaseConsoleSummaryGroup() as any;
     message.title = (object.title !== undefined && object.title !== null) ? Link.fromPartial(object.title) : undefined;
     message.consoleIds = object.consoleIds?.map((e) => e) || [];
@@ -933,10 +933,10 @@ export const Header = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Header>, I>>(base?: I): Header {
-    return Header.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Header>): Header {
+    return Header.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Header>, I>>(object: I): Header {
+  fromPartial(object: DeepPartial<Header>): Header {
     const message = createBaseHeader() as any;
     message.oncalls = object.oncalls?.map((e) => Oncall.fromPartial(e)) || [];
     message.links = object.links?.map((e) => LinkGroup.fromPartial(e)) || [];
@@ -1240,10 +1240,10 @@ export const Console = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Console>, I>>(base?: I): Console {
-    return Console.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Console>): Console {
+    return Console.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Console>, I>>(object: I): Console {
+  fromPartial(object: DeepPartial<Console>): Console {
     const message = createBaseConsole() as any;
     message.id = object.id ?? "";
     message.name = object.name ?? "";
@@ -1359,10 +1359,10 @@ export const Builder = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Builder>, I>>(base?: I): Builder {
-    return Builder.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Builder>): Builder {
+    return Builder.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Builder>, I>>(object: I): Builder {
+  fromPartial(object: DeepPartial<Builder>): Builder {
     const message = createBaseBuilder() as any;
     message.name = object.name ?? "";
     message.id = (object.id !== undefined && object.id !== null) ? BuilderID.fromPartial(object.id) : undefined;
@@ -1423,10 +1423,10 @@ export const MetadataConfig = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<MetadataConfig>, I>>(base?: I): MetadataConfig {
-    return MetadataConfig.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<MetadataConfig>): MetadataConfig {
+    return MetadataConfig.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<MetadataConfig>, I>>(object: I): MetadataConfig {
+  fromPartial(object: DeepPartial<MetadataConfig>): MetadataConfig {
     const message = createBaseMetadataConfig() as any;
     message.testMetadataProperties = object.testMetadataProperties?.map((e) => DisplayRule.fromPartial(e)) || [];
     return message;
@@ -1498,10 +1498,10 @@ export const DisplayRule = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<DisplayRule>, I>>(base?: I): DisplayRule {
-    return DisplayRule.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<DisplayRule>): DisplayRule {
+    return DisplayRule.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<DisplayRule>, I>>(object: I): DisplayRule {
+  fromPartial(object: DeepPartial<DisplayRule>): DisplayRule {
     const message = createBaseDisplayRule() as any;
     message.schema = object.schema ?? "";
     message.displayItems = object.displayItems?.map((e) => DisplayItem.fromPartial(e)) || [];
@@ -1572,10 +1572,10 @@ export const DisplayItem = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<DisplayItem>, I>>(base?: I): DisplayItem {
-    return DisplayItem.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<DisplayItem>): DisplayItem {
+    return DisplayItem.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<DisplayItem>, I>>(object: I): DisplayItem {
+  fromPartial(object: DeepPartial<DisplayItem>): DisplayItem {
     const message = createBaseDisplayItem() as any;
     message.displayName = object.displayName ?? "";
     message.path = object.path ?? "";
@@ -1590,10 +1590,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

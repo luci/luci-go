@@ -134,10 +134,10 @@ export const ListAlertsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListAlertsRequest>, I>>(base?: I): ListAlertsRequest {
-    return ListAlertsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListAlertsRequest>): ListAlertsRequest {
+    return ListAlertsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListAlertsRequest>, I>>(object: I): ListAlertsRequest {
+  fromPartial(object: DeepPartial<ListAlertsRequest>): ListAlertsRequest {
     const message = createBaseListAlertsRequest() as any;
     message.parent = object.parent ?? "";
     message.pageSize = object.pageSize ?? 0;
@@ -209,10 +209,10 @@ export const ListAlertsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListAlertsResponse>, I>>(base?: I): ListAlertsResponse {
-    return ListAlertsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListAlertsResponse>): ListAlertsResponse {
+    return ListAlertsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListAlertsResponse>, I>>(object: I): ListAlertsResponse {
+  fromPartial(object: DeepPartial<ListAlertsResponse>): ListAlertsResponse {
     const message = createBaseListAlertsResponse() as any;
     message.alerts = object.alerts?.map((e) => Alert.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -283,10 +283,10 @@ export const Alert = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Alert>, I>>(base?: I): Alert {
-    return Alert.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Alert>): Alert {
+    return Alert.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Alert>, I>>(object: I): Alert {
+  fromPartial(object: DeepPartial<Alert>): Alert {
     const message = createBaseAlert() as any;
     message.key = object.key ?? "";
     message.alertJson = object.alertJson ?? "";
@@ -332,10 +332,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

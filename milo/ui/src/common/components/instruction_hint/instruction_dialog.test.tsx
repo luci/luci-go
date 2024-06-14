@@ -44,15 +44,12 @@ describe('<InstructionDialog />', () => {
         return Instruction.fromPartial({
           id: 'ins_id',
           type: InstructionType.TEST_RESULT_INSTRUCTION,
-          targetedInstructions: Object.freeze([
+          targetedInstructions: [
             {
               content: 'test instruction content',
-              targets: Object.freeze([
-                InstructionTarget.LOCAL,
-                InstructionTarget.REMOTE,
-              ]),
+              targets: [InstructionTarget.LOCAL, InstructionTarget.REMOTE],
             },
-          ]),
+          ],
         });
       });
 

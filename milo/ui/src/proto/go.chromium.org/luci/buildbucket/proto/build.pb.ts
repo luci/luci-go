@@ -1652,10 +1652,10 @@ export const Build = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Build>, I>>(base?: I): Build {
-    return Build.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Build>): Build {
+    return Build.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Build>, I>>(object: I): Build {
+  fromPartial(object: DeepPartial<Build>): Build {
     const message = createBaseBuild() as any;
     message.id = object.id ?? "0";
     message.builder = (object.builder !== undefined && object.builder !== null)
@@ -1819,10 +1819,10 @@ export const Build_Input = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Build_Input>, I>>(base?: I): Build_Input {
-    return Build_Input.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Build_Input>): Build_Input {
+    return Build_Input.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Build_Input>, I>>(object: I): Build_Input {
+  fromPartial(object: DeepPartial<Build_Input>): Build_Input {
     const message = createBaseBuild_Input() as any;
     message.properties = object.properties ?? undefined;
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
@@ -1976,10 +1976,10 @@ export const Build_Output = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Build_Output>, I>>(base?: I): Build_Output {
-    return Build_Output.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Build_Output>): Build_Output {
+    return Build_Output.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Build_Output>, I>>(object: I): Build_Output {
+  fromPartial(object: DeepPartial<Build_Output>): Build_Output {
     const message = createBaseBuild_Output() as any;
     message.properties = object.properties ?? undefined;
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
@@ -2043,10 +2043,10 @@ export const Build_BuilderInfo = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Build_BuilderInfo>, I>>(base?: I): Build_BuilderInfo {
-    return Build_BuilderInfo.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Build_BuilderInfo>): Build_BuilderInfo {
+    return Build_BuilderInfo.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Build_BuilderInfo>, I>>(object: I): Build_BuilderInfo {
+  fromPartial(object: DeepPartial<Build_BuilderInfo>): Build_BuilderInfo {
     const message = createBaseBuild_BuilderInfo() as any;
     message.description = object.description ?? "";
     return message;
@@ -2130,10 +2130,10 @@ export const InputDataRef = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InputDataRef>, I>>(base?: I): InputDataRef {
-    return InputDataRef.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InputDataRef>): InputDataRef {
+    return InputDataRef.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InputDataRef>, I>>(object: I): InputDataRef {
+  fromPartial(object: DeepPartial<InputDataRef>): InputDataRef {
     const message = createBaseInputDataRef() as any;
     message.cas = (object.cas !== undefined && object.cas !== null)
       ? InputDataRef_CAS.fromPartial(object.cas)
@@ -2209,10 +2209,10 @@ export const InputDataRef_CAS = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InputDataRef_CAS>, I>>(base?: I): InputDataRef_CAS {
-    return InputDataRef_CAS.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InputDataRef_CAS>): InputDataRef_CAS {
+    return InputDataRef_CAS.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InputDataRef_CAS>, I>>(object: I): InputDataRef_CAS {
+  fromPartial(object: DeepPartial<InputDataRef_CAS>): InputDataRef_CAS {
     const message = createBaseInputDataRef_CAS() as any;
     message.casInstance = object.casInstance ?? "";
     message.digest = (object.digest !== undefined && object.digest !== null)
@@ -2285,10 +2285,10 @@ export const InputDataRef_CAS_Digest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InputDataRef_CAS_Digest>, I>>(base?: I): InputDataRef_CAS_Digest {
-    return InputDataRef_CAS_Digest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InputDataRef_CAS_Digest>): InputDataRef_CAS_Digest {
+    return InputDataRef_CAS_Digest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InputDataRef_CAS_Digest>, I>>(object: I): InputDataRef_CAS_Digest {
+  fromPartial(object: DeepPartial<InputDataRef_CAS_Digest>): InputDataRef_CAS_Digest {
     const message = createBaseInputDataRef_CAS_Digest() as any;
     message.hash = object.hash ?? "";
     message.sizeBytes = object.sizeBytes ?? "0";
@@ -2361,10 +2361,10 @@ export const InputDataRef_CIPD = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InputDataRef_CIPD>, I>>(base?: I): InputDataRef_CIPD {
-    return InputDataRef_CIPD.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InputDataRef_CIPD>): InputDataRef_CIPD {
+    return InputDataRef_CIPD.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InputDataRef_CIPD>, I>>(object: I): InputDataRef_CIPD {
+  fromPartial(object: DeepPartial<InputDataRef_CIPD>): InputDataRef_CIPD {
     const message = createBaseInputDataRef_CIPD() as any;
     message.server = object.server ?? "";
     message.specs = object.specs?.map((e) => InputDataRef_CIPD_PkgSpec.fromPartial(e)) || [];
@@ -2435,10 +2435,10 @@ export const InputDataRef_CIPD_PkgSpec = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InputDataRef_CIPD_PkgSpec>, I>>(base?: I): InputDataRef_CIPD_PkgSpec {
-    return InputDataRef_CIPD_PkgSpec.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InputDataRef_CIPD_PkgSpec>): InputDataRef_CIPD_PkgSpec {
+    return InputDataRef_CIPD_PkgSpec.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InputDataRef_CIPD_PkgSpec>, I>>(object: I): InputDataRef_CIPD_PkgSpec {
+  fromPartial(object: DeepPartial<InputDataRef_CIPD_PkgSpec>): InputDataRef_CIPD_PkgSpec {
     const message = createBaseInputDataRef_CIPD_PkgSpec() as any;
     message.package = object.package ?? "";
     message.version = object.version ?? "";
@@ -2509,10 +2509,10 @@ export const ResolvedDataRef = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ResolvedDataRef>, I>>(base?: I): ResolvedDataRef {
-    return ResolvedDataRef.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ResolvedDataRef>): ResolvedDataRef {
+    return ResolvedDataRef.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ResolvedDataRef>, I>>(object: I): ResolvedDataRef {
+  fromPartial(object: DeepPartial<ResolvedDataRef>): ResolvedDataRef {
     const message = createBaseResolvedDataRef() as any;
     message.cas = (object.cas !== undefined && object.cas !== null)
       ? ResolvedDataRef_CAS.fromPartial(object.cas)
@@ -2587,10 +2587,10 @@ export const ResolvedDataRef_Timing = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ResolvedDataRef_Timing>, I>>(base?: I): ResolvedDataRef_Timing {
-    return ResolvedDataRef_Timing.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ResolvedDataRef_Timing>): ResolvedDataRef_Timing {
+    return ResolvedDataRef_Timing.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ResolvedDataRef_Timing>, I>>(object: I): ResolvedDataRef_Timing {
+  fromPartial(object: DeepPartial<ResolvedDataRef_Timing>): ResolvedDataRef_Timing {
     const message = createBaseResolvedDataRef_Timing() as any;
     message.fetchDuration = (object.fetchDuration !== undefined && object.fetchDuration !== null)
       ? Duration.fromPartial(object.fetchDuration)
@@ -2649,10 +2649,10 @@ export const ResolvedDataRef_CAS = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ResolvedDataRef_CAS>, I>>(base?: I): ResolvedDataRef_CAS {
-    return ResolvedDataRef_CAS.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ResolvedDataRef_CAS>): ResolvedDataRef_CAS {
+    return ResolvedDataRef_CAS.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ResolvedDataRef_CAS>, I>>(object: I): ResolvedDataRef_CAS {
+  fromPartial(object: DeepPartial<ResolvedDataRef_CAS>): ResolvedDataRef_CAS {
     const message = createBaseResolvedDataRef_CAS() as any;
     message.timing = (object.timing !== undefined && object.timing !== null)
       ? ResolvedDataRef_Timing.fromPartial(object.timing)
@@ -2712,10 +2712,10 @@ export const ResolvedDataRef_CIPD = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ResolvedDataRef_CIPD>, I>>(base?: I): ResolvedDataRef_CIPD {
-    return ResolvedDataRef_CIPD.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ResolvedDataRef_CIPD>): ResolvedDataRef_CIPD {
+    return ResolvedDataRef_CIPD.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ResolvedDataRef_CIPD>, I>>(object: I): ResolvedDataRef_CIPD {
+  fromPartial(object: DeepPartial<ResolvedDataRef_CIPD>): ResolvedDataRef_CIPD {
     const message = createBaseResolvedDataRef_CIPD() as any;
     message.specs = object.specs?.map((e) => ResolvedDataRef_CIPD_PkgSpec.fromPartial(e)) || [];
     return message;
@@ -2827,10 +2827,10 @@ export const ResolvedDataRef_CIPD_PkgSpec = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ResolvedDataRef_CIPD_PkgSpec>, I>>(base?: I): ResolvedDataRef_CIPD_PkgSpec {
-    return ResolvedDataRef_CIPD_PkgSpec.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ResolvedDataRef_CIPD_PkgSpec>): ResolvedDataRef_CIPD_PkgSpec {
+    return ResolvedDataRef_CIPD_PkgSpec.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ResolvedDataRef_CIPD_PkgSpec>, I>>(object: I): ResolvedDataRef_CIPD_PkgSpec {
+  fromPartial(object: DeepPartial<ResolvedDataRef_CIPD_PkgSpec>): ResolvedDataRef_CIPD_PkgSpec {
     const message = createBaseResolvedDataRef_CIPD_PkgSpec() as any;
     message.skipped = object.skipped ?? false;
     message.package = object.package ?? "";
@@ -2999,10 +2999,10 @@ export const BuildInfra = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra>, I>>(base?: I): BuildInfra {
-    return BuildInfra.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra>): BuildInfra {
+    return BuildInfra.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra>, I>>(object: I): BuildInfra {
+  fromPartial(object: DeepPartial<BuildInfra>): BuildInfra {
     const message = createBaseBuildInfra() as any;
     message.buildbucket = (object.buildbucket !== undefined && object.buildbucket !== null)
       ? BuildInfra_Buildbucket.fromPartial(object.buildbucket)
@@ -3239,10 +3239,10 @@ export const BuildInfra_Buildbucket = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket>, I>>(base?: I): BuildInfra_Buildbucket {
-    return BuildInfra_Buildbucket.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Buildbucket>): BuildInfra_Buildbucket {
+    return BuildInfra_Buildbucket.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket>, I>>(object: I): BuildInfra_Buildbucket {
+  fromPartial(object: DeepPartial<BuildInfra_Buildbucket>): BuildInfra_Buildbucket {
     const message = createBaseBuildInfra_Buildbucket() as any;
     message.serviceConfigRevision = object.serviceConfigRevision ?? "";
     message.requestedProperties = object.requestedProperties ?? undefined;
@@ -3417,10 +3417,10 @@ export const BuildInfra_Buildbucket_Agent = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent>, I>>(base?: I): BuildInfra_Buildbucket_Agent {
-    return BuildInfra_Buildbucket_Agent.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Buildbucket_Agent>): BuildInfra_Buildbucket_Agent {
+    return BuildInfra_Buildbucket_Agent.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent>, I>>(object: I): BuildInfra_Buildbucket_Agent {
+  fromPartial(object: DeepPartial<BuildInfra_Buildbucket_Agent>): BuildInfra_Buildbucket_Agent {
     const message = createBaseBuildInfra_Buildbucket_Agent() as any;
     message.input = (object.input !== undefined && object.input !== null)
       ? BuildInfra_Buildbucket_Agent_Input.fromPartial(object.input)
@@ -3496,14 +3496,10 @@ export const BuildInfra_Buildbucket_Agent_Source = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Source>, I>>(
-    base?: I,
-  ): BuildInfra_Buildbucket_Agent_Source {
-    return BuildInfra_Buildbucket_Agent_Source.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Buildbucket_Agent_Source>): BuildInfra_Buildbucket_Agent_Source {
+    return BuildInfra_Buildbucket_Agent_Source.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Source>, I>>(
-    object: I,
-  ): BuildInfra_Buildbucket_Agent_Source {
+  fromPartial(object: DeepPartial<BuildInfra_Buildbucket_Agent_Source>): BuildInfra_Buildbucket_Agent_Source {
     const message = createBaseBuildInfra_Buildbucket_Agent_Source() as any;
     message.cipd = (object.cipd !== undefined && object.cipd !== null)
       ? BuildInfra_Buildbucket_Agent_Source_CIPD.fromPartial(object.cipd)
@@ -3623,14 +3619,10 @@ export const BuildInfra_Buildbucket_Agent_Source_CIPD = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Source_CIPD>, I>>(
-    base?: I,
-  ): BuildInfra_Buildbucket_Agent_Source_CIPD {
-    return BuildInfra_Buildbucket_Agent_Source_CIPD.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Buildbucket_Agent_Source_CIPD>): BuildInfra_Buildbucket_Agent_Source_CIPD {
+    return BuildInfra_Buildbucket_Agent_Source_CIPD.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Source_CIPD>, I>>(
-    object: I,
-  ): BuildInfra_Buildbucket_Agent_Source_CIPD {
+  fromPartial(object: DeepPartial<BuildInfra_Buildbucket_Agent_Source_CIPD>): BuildInfra_Buildbucket_Agent_Source_CIPD {
     const message = createBaseBuildInfra_Buildbucket_Agent_Source_CIPD() as any;
     message.package = object.package ?? "";
     message.version = object.version ?? "";
@@ -3717,13 +3709,13 @@ export const BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry>,
   ): BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry {
-    return BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry.fromPartial(base ?? ({} as any));
+    return BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry>,
   ): BuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry {
     const message = createBaseBuildInfra_Buildbucket_Agent_Source_CIPD_ResolvedInstancesEntry() as any;
     message.key = object.key ?? "";
@@ -3825,14 +3817,10 @@ export const BuildInfra_Buildbucket_Agent_Input = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Input>, I>>(
-    base?: I,
-  ): BuildInfra_Buildbucket_Agent_Input {
-    return BuildInfra_Buildbucket_Agent_Input.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Buildbucket_Agent_Input>): BuildInfra_Buildbucket_Agent_Input {
+    return BuildInfra_Buildbucket_Agent_Input.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Input>, I>>(
-    object: I,
-  ): BuildInfra_Buildbucket_Agent_Input {
+  fromPartial(object: DeepPartial<BuildInfra_Buildbucket_Agent_Input>): BuildInfra_Buildbucket_Agent_Input {
     const message = createBaseBuildInfra_Buildbucket_Agent_Input() as any;
     message.data = Object.entries(object.data ?? {}).reduce<{ [key: string]: InputDataRef }>((acc, [key, value]) => {
       if (value !== undefined) {
@@ -3916,13 +3904,13 @@ export const BuildInfra_Buildbucket_Agent_Input_DataEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Input_DataEntry>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<BuildInfra_Buildbucket_Agent_Input_DataEntry>,
   ): BuildInfra_Buildbucket_Agent_Input_DataEntry {
-    return BuildInfra_Buildbucket_Agent_Input_DataEntry.fromPartial(base ?? ({} as any));
+    return BuildInfra_Buildbucket_Agent_Input_DataEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Input_DataEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuildInfra_Buildbucket_Agent_Input_DataEntry>,
   ): BuildInfra_Buildbucket_Agent_Input_DataEntry {
     const message = createBaseBuildInfra_Buildbucket_Agent_Input_DataEntry() as any;
     message.key = object.key ?? "";
@@ -3999,13 +3987,13 @@ export const BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry>,
   ): BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry {
-    return BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry.fromPartial(base ?? ({} as any));
+    return BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry>,
   ): BuildInfra_Buildbucket_Agent_Input_CipdSourceEntry {
     const message = createBaseBuildInfra_Buildbucket_Agent_Input_CipdSourceEntry() as any;
     message.key = object.key ?? "";
@@ -4172,14 +4160,10 @@ export const BuildInfra_Buildbucket_Agent_Output = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Output>, I>>(
-    base?: I,
-  ): BuildInfra_Buildbucket_Agent_Output {
-    return BuildInfra_Buildbucket_Agent_Output.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Buildbucket_Agent_Output>): BuildInfra_Buildbucket_Agent_Output {
+    return BuildInfra_Buildbucket_Agent_Output.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Output>, I>>(
-    object: I,
-  ): BuildInfra_Buildbucket_Agent_Output {
+  fromPartial(object: DeepPartial<BuildInfra_Buildbucket_Agent_Output>): BuildInfra_Buildbucket_Agent_Output {
     const message = createBaseBuildInfra_Buildbucket_Agent_Output() as any;
     message.resolvedData = Object.entries(object.resolvedData ?? {}).reduce<{ [key: string]: ResolvedDataRef }>(
       (acc, [key, value]) => {
@@ -4270,13 +4254,13 @@ export const BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry>,
   ): BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry {
-    return BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry.fromPartial(base ?? ({} as any));
+    return BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry>,
   ): BuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry {
     const message = createBaseBuildInfra_Buildbucket_Agent_Output_ResolvedDataEntry() as any;
     message.key = object.key ?? "";
@@ -4350,13 +4334,11 @@ export const BuildInfra_Buildbucket_Agent_PurposesEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_PurposesEntry>, I>>(
-    base?: I,
-  ): BuildInfra_Buildbucket_Agent_PurposesEntry {
-    return BuildInfra_Buildbucket_Agent_PurposesEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Buildbucket_Agent_PurposesEntry>): BuildInfra_Buildbucket_Agent_PurposesEntry {
+    return BuildInfra_Buildbucket_Agent_PurposesEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_Agent_PurposesEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuildInfra_Buildbucket_Agent_PurposesEntry>,
   ): BuildInfra_Buildbucket_Agent_PurposesEntry {
     const message = createBaseBuildInfra_Buildbucket_Agent_PurposesEntry() as any;
     message.key = object.key ?? "";
@@ -4428,13 +4410,13 @@ export const BuildInfra_Buildbucket_ExperimentReasonsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_ExperimentReasonsEntry>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<BuildInfra_Buildbucket_ExperimentReasonsEntry>,
   ): BuildInfra_Buildbucket_ExperimentReasonsEntry {
-    return BuildInfra_Buildbucket_ExperimentReasonsEntry.fromPartial(base ?? ({} as any));
+    return BuildInfra_Buildbucket_ExperimentReasonsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_ExperimentReasonsEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuildInfra_Buildbucket_ExperimentReasonsEntry>,
   ): BuildInfra_Buildbucket_ExperimentReasonsEntry {
     const message = createBaseBuildInfra_Buildbucket_ExperimentReasonsEntry() as any;
     message.key = object.key ?? "";
@@ -4506,13 +4488,11 @@ export const BuildInfra_Buildbucket_AgentExecutableEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Buildbucket_AgentExecutableEntry>, I>>(
-    base?: I,
-  ): BuildInfra_Buildbucket_AgentExecutableEntry {
-    return BuildInfra_Buildbucket_AgentExecutableEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Buildbucket_AgentExecutableEntry>): BuildInfra_Buildbucket_AgentExecutableEntry {
+    return BuildInfra_Buildbucket_AgentExecutableEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Buildbucket_AgentExecutableEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuildInfra_Buildbucket_AgentExecutableEntry>,
   ): BuildInfra_Buildbucket_AgentExecutableEntry {
     const message = createBaseBuildInfra_Buildbucket_AgentExecutableEntry() as any;
     message.key = object.key ?? "";
@@ -4685,10 +4665,10 @@ export const BuildInfra_Swarming = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Swarming>, I>>(base?: I): BuildInfra_Swarming {
-    return BuildInfra_Swarming.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Swarming>): BuildInfra_Swarming {
+    return BuildInfra_Swarming.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Swarming>, I>>(object: I): BuildInfra_Swarming {
+  fromPartial(object: DeepPartial<BuildInfra_Swarming>): BuildInfra_Swarming {
     const message = createBaseBuildInfra_Swarming() as any;
     message.hostname = object.hostname ?? "";
     message.taskId = object.taskId ?? "";
@@ -4793,12 +4773,10 @@ export const BuildInfra_Swarming_CacheEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Swarming_CacheEntry>, I>>(base?: I): BuildInfra_Swarming_CacheEntry {
-    return BuildInfra_Swarming_CacheEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Swarming_CacheEntry>): BuildInfra_Swarming_CacheEntry {
+    return BuildInfra_Swarming_CacheEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Swarming_CacheEntry>, I>>(
-    object: I,
-  ): BuildInfra_Swarming_CacheEntry {
+  fromPartial(object: DeepPartial<BuildInfra_Swarming_CacheEntry>): BuildInfra_Swarming_CacheEntry {
     const message = createBaseBuildInfra_Swarming_CacheEntry() as any;
     message.name = object.name ?? "";
     message.path = object.path ?? "";
@@ -4887,10 +4865,10 @@ export const BuildInfra_LogDog = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_LogDog>, I>>(base?: I): BuildInfra_LogDog {
-    return BuildInfra_LogDog.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_LogDog>): BuildInfra_LogDog {
+    return BuildInfra_LogDog.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_LogDog>, I>>(object: I): BuildInfra_LogDog {
+  fromPartial(object: DeepPartial<BuildInfra_LogDog>): BuildInfra_LogDog {
     const message = createBaseBuildInfra_LogDog() as any;
     message.hostname = object.hostname ?? "";
     message.project = object.project ?? "";
@@ -4962,10 +4940,10 @@ export const BuildInfra_Recipe = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Recipe>, I>>(base?: I): BuildInfra_Recipe {
-    return BuildInfra_Recipe.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Recipe>): BuildInfra_Recipe {
+    return BuildInfra_Recipe.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Recipe>, I>>(object: I): BuildInfra_Recipe {
+  fromPartial(object: DeepPartial<BuildInfra_Recipe>): BuildInfra_Recipe {
     const message = createBaseBuildInfra_Recipe() as any;
     message.cipdPackage = object.cipdPackage ?? "";
     message.name = object.name ?? "";
@@ -5080,10 +5058,10 @@ export const BuildInfra_ResultDB = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_ResultDB>, I>>(base?: I): BuildInfra_ResultDB {
-    return BuildInfra_ResultDB.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_ResultDB>): BuildInfra_ResultDB {
+    return BuildInfra_ResultDB.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_ResultDB>, I>>(object: I): BuildInfra_ResultDB {
+  fromPartial(object: DeepPartial<BuildInfra_ResultDB>): BuildInfra_ResultDB {
     const message = createBaseBuildInfra_ResultDB() as any;
     message.hostname = object.hostname ?? "";
     message.invocation = object.invocation ?? "";
@@ -5143,10 +5121,10 @@ export const BuildInfra_Led = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Led>, I>>(base?: I): BuildInfra_Led {
-    return BuildInfra_Led.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Led>): BuildInfra_Led {
+    return BuildInfra_Led.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Led>, I>>(object: I): BuildInfra_Led {
+  fromPartial(object: DeepPartial<BuildInfra_Led>): BuildInfra_Led {
     const message = createBaseBuildInfra_Led() as any;
     message.shadowedBucket = object.shadowedBucket ?? "";
     return message;
@@ -5246,10 +5224,10 @@ export const BuildInfra_BBAgent = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_BBAgent>, I>>(base?: I): BuildInfra_BBAgent {
-    return BuildInfra_BBAgent.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_BBAgent>): BuildInfra_BBAgent {
+    return BuildInfra_BBAgent.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_BBAgent>, I>>(object: I): BuildInfra_BBAgent {
+  fromPartial(object: DeepPartial<BuildInfra_BBAgent>): BuildInfra_BBAgent {
     const message = createBaseBuildInfra_BBAgent() as any;
     message.payloadPath = object.payloadPath ?? "";
     message.cacheDir = object.cacheDir ?? "";
@@ -5312,10 +5290,10 @@ export const BuildInfra_BBAgent_Input = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_BBAgent_Input>, I>>(base?: I): BuildInfra_BBAgent_Input {
-    return BuildInfra_BBAgent_Input.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_BBAgent_Input>): BuildInfra_BBAgent_Input {
+    return BuildInfra_BBAgent_Input.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_BBAgent_Input>, I>>(object: I): BuildInfra_BBAgent_Input {
+  fromPartial(object: DeepPartial<BuildInfra_BBAgent_Input>): BuildInfra_BBAgent_Input {
     const message = createBaseBuildInfra_BBAgent_Input() as any;
     message.cipdPackages = object.cipdPackages?.map((e) => BuildInfra_BBAgent_Input_CIPDPackage.fromPartial(e)) || [];
     return message;
@@ -5413,14 +5391,10 @@ export const BuildInfra_BBAgent_Input_CIPDPackage = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_BBAgent_Input_CIPDPackage>, I>>(
-    base?: I,
-  ): BuildInfra_BBAgent_Input_CIPDPackage {
-    return BuildInfra_BBAgent_Input_CIPDPackage.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_BBAgent_Input_CIPDPackage>): BuildInfra_BBAgent_Input_CIPDPackage {
+    return BuildInfra_BBAgent_Input_CIPDPackage.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_BBAgent_Input_CIPDPackage>, I>>(
-    object: I,
-  ): BuildInfra_BBAgent_Input_CIPDPackage {
+  fromPartial(object: DeepPartial<BuildInfra_BBAgent_Input_CIPDPackage>): BuildInfra_BBAgent_Input_CIPDPackage {
     const message = createBaseBuildInfra_BBAgent_Input_CIPDPackage() as any;
     message.name = object.name ?? "";
     message.version = object.version ?? "";
@@ -5537,10 +5511,10 @@ export const BuildInfra_Backend = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildInfra_Backend>, I>>(base?: I): BuildInfra_Backend {
-    return BuildInfra_Backend.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildInfra_Backend>): BuildInfra_Backend {
+    return BuildInfra_Backend.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildInfra_Backend>, I>>(object: I): BuildInfra_Backend {
+  fromPartial(object: DeepPartial<BuildInfra_Backend>): BuildInfra_Backend {
     const message = createBaseBuildInfra_Backend() as any;
     message.config = object.config ?? undefined;
     message.task = (object.task !== undefined && object.task !== null) ? Task.fromPartial(object.task) : undefined;
@@ -5558,10 +5532,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

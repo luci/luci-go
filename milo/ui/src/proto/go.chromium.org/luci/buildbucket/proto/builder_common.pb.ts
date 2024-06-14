@@ -141,10 +141,10 @@ export const BuilderID = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderID>, I>>(base?: I): BuilderID {
-    return BuilderID.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderID>): BuilderID {
+    return BuilderID.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderID>, I>>(object: I): BuilderID {
+  fromPartial(object: DeepPartial<BuilderID>): BuilderID {
     const message = createBaseBuilderID() as any;
     message.project = object.project ?? "";
     message.bucket = object.bucket ?? "";
@@ -216,10 +216,10 @@ export const BuilderMetadata = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderMetadata>, I>>(base?: I): BuilderMetadata {
-    return BuilderMetadata.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderMetadata>): BuilderMetadata {
+    return BuilderMetadata.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderMetadata>, I>>(object: I): BuilderMetadata {
+  fromPartial(object: DeepPartial<BuilderMetadata>): BuilderMetadata {
     const message = createBaseBuilderMetadata() as any;
     message.owner = object.owner ?? "";
     message.health = (object.health !== undefined && object.health !== null)
@@ -306,10 +306,10 @@ export const BuilderItem = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderItem>, I>>(base?: I): BuilderItem {
-    return BuilderItem.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderItem>): BuilderItem {
+    return BuilderItem.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderItem>, I>>(object: I): BuilderItem {
+  fromPartial(object: DeepPartial<BuilderItem>): BuilderItem {
     const message = createBaseBuilderItem() as any;
     message.id = (object.id !== undefined && object.id !== null) ? BuilderID.fromPartial(object.id) : undefined;
     message.config = (object.config !== undefined && object.config !== null)
@@ -329,10 +329,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

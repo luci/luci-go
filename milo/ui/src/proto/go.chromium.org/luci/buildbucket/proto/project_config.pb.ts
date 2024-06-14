@@ -936,10 +936,10 @@ export const Acl = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Acl>, I>>(base?: I): Acl {
-    return Acl.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Acl>): Acl {
+    return Acl.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Acl>, I>>(object: I): Acl {
+  fromPartial(object: DeepPartial<Acl>): Acl {
     const message = createBaseAcl() as any;
     message.role = object.role ?? 0;
     message.group = object.group ?? "";
@@ -1495,10 +1495,10 @@ export const BuilderConfig = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig>, I>>(base?: I): BuilderConfig {
-    return BuilderConfig.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig>): BuilderConfig {
+    return BuilderConfig.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig>, I>>(object: I): BuilderConfig {
+  fromPartial(object: DeepPartial<BuilderConfig>): BuilderConfig {
     const message = createBaseBuilderConfig() as any;
     message.name = object.name ?? "";
     message.backend = (object.backend !== undefined && object.backend !== null)
@@ -1652,10 +1652,10 @@ export const BuilderConfig_CacheEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_CacheEntry>, I>>(base?: I): BuilderConfig_CacheEntry {
-    return BuilderConfig_CacheEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_CacheEntry>): BuilderConfig_CacheEntry {
+    return BuilderConfig_CacheEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_CacheEntry>, I>>(object: I): BuilderConfig_CacheEntry {
+  fromPartial(object: DeepPartial<BuilderConfig_CacheEntry>): BuilderConfig_CacheEntry {
     const message = createBaseBuilderConfig_CacheEntry() as any;
     message.name = object.name ?? "";
     message.path = object.path ?? "";
@@ -1774,10 +1774,10 @@ export const BuilderConfig_Recipe = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_Recipe>, I>>(base?: I): BuilderConfig_Recipe {
-    return BuilderConfig_Recipe.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_Recipe>): BuilderConfig_Recipe {
+    return BuilderConfig_Recipe.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_Recipe>, I>>(object: I): BuilderConfig_Recipe {
+  fromPartial(object: DeepPartial<BuilderConfig_Recipe>): BuilderConfig_Recipe {
     const message = createBaseBuilderConfig_Recipe() as any;
     message.name = object.name ?? "";
     message.cipdPackage = object.cipdPackage ?? "";
@@ -1867,10 +1867,10 @@ export const BuilderConfig_ResultDB = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_ResultDB>, I>>(base?: I): BuilderConfig_ResultDB {
-    return BuilderConfig_ResultDB.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_ResultDB>): BuilderConfig_ResultDB {
+    return BuilderConfig_ResultDB.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_ResultDB>, I>>(object: I): BuilderConfig_ResultDB {
+  fromPartial(object: DeepPartial<BuilderConfig_ResultDB>): BuilderConfig_ResultDB {
     const message = createBaseBuilderConfig_ResultDB() as any;
     message.enable = object.enable ?? false;
     message.bqExports = object.bqExports?.map((e) => BigQueryExport.fromPartial(e)) || [];
@@ -1944,10 +1944,10 @@ export const BuilderConfig_Backend = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_Backend>, I>>(base?: I): BuilderConfig_Backend {
-    return BuilderConfig_Backend.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_Backend>): BuilderConfig_Backend {
+    return BuilderConfig_Backend.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_Backend>, I>>(object: I): BuilderConfig_Backend {
+  fromPartial(object: DeepPartial<BuilderConfig_Backend>): BuilderConfig_Backend {
     const message = createBaseBuilderConfig_Backend() as any;
     message.target = object.target ?? "";
     message.configJson = object.configJson ?? "";
@@ -2018,12 +2018,10 @@ export const BuilderConfig_ExperimentsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_ExperimentsEntry>, I>>(base?: I): BuilderConfig_ExperimentsEntry {
-    return BuilderConfig_ExperimentsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_ExperimentsEntry>): BuilderConfig_ExperimentsEntry {
+    return BuilderConfig_ExperimentsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_ExperimentsEntry>, I>>(
-    object: I,
-  ): BuilderConfig_ExperimentsEntry {
+  fromPartial(object: DeepPartial<BuilderConfig_ExperimentsEntry>): BuilderConfig_ExperimentsEntry {
     const message = createBaseBuilderConfig_ExperimentsEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? 0;
@@ -2124,14 +2122,10 @@ export const BuilderConfig_ShadowBuilderAdjustments = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_ShadowBuilderAdjustments>, I>>(
-    base?: I,
-  ): BuilderConfig_ShadowBuilderAdjustments {
-    return BuilderConfig_ShadowBuilderAdjustments.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_ShadowBuilderAdjustments>): BuilderConfig_ShadowBuilderAdjustments {
+    return BuilderConfig_ShadowBuilderAdjustments.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_ShadowBuilderAdjustments>, I>>(
-    object: I,
-  ): BuilderConfig_ShadowBuilderAdjustments {
+  fromPartial(object: DeepPartial<BuilderConfig_ShadowBuilderAdjustments>): BuilderConfig_ShadowBuilderAdjustments {
     const message = createBaseBuilderConfig_ShadowBuilderAdjustments() as any;
     message.serviceAccount = object.serviceAccount ?? "";
     message.pool = object.pool ?? "";
@@ -2234,14 +2228,10 @@ export const BuilderConfig_BuilderHealthLinks = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_BuilderHealthLinks>, I>>(
-    base?: I,
-  ): BuilderConfig_BuilderHealthLinks {
-    return BuilderConfig_BuilderHealthLinks.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_BuilderHealthLinks>): BuilderConfig_BuilderHealthLinks {
+    return BuilderConfig_BuilderHealthLinks.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_BuilderHealthLinks>, I>>(
-    object: I,
-  ): BuilderConfig_BuilderHealthLinks {
+  fromPartial(object: DeepPartial<BuilderConfig_BuilderHealthLinks>): BuilderConfig_BuilderHealthLinks {
     const message = createBaseBuilderConfig_BuilderHealthLinks() as any;
     message.docLinks = Object.entries(object.docLinks ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
       if (value !== undefined) {
@@ -2328,13 +2318,13 @@ export const BuilderConfig_BuilderHealthLinks_DocLinksEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_BuilderHealthLinks_DocLinksEntry>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<BuilderConfig_BuilderHealthLinks_DocLinksEntry>,
   ): BuilderConfig_BuilderHealthLinks_DocLinksEntry {
-    return BuilderConfig_BuilderHealthLinks_DocLinksEntry.fromPartial(base ?? ({} as any));
+    return BuilderConfig_BuilderHealthLinks_DocLinksEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_BuilderHealthLinks_DocLinksEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuilderConfig_BuilderHealthLinks_DocLinksEntry>,
   ): BuilderConfig_BuilderHealthLinks_DocLinksEntry {
     const message = createBaseBuilderConfig_BuilderHealthLinks_DocLinksEntry() as any;
     message.key = object.key ?? "";
@@ -2409,13 +2399,13 @@ export const BuilderConfig_BuilderHealthLinks_DataLinksEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_BuilderHealthLinks_DataLinksEntry>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<BuilderConfig_BuilderHealthLinks_DataLinksEntry>,
   ): BuilderConfig_BuilderHealthLinks_DataLinksEntry {
-    return BuilderConfig_BuilderHealthLinks_DataLinksEntry.fromPartial(base ?? ({} as any));
+    return BuilderConfig_BuilderHealthLinks_DataLinksEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_BuilderHealthLinks_DataLinksEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuilderConfig_BuilderHealthLinks_DataLinksEntry>,
   ): BuilderConfig_BuilderHealthLinks_DataLinksEntry {
     const message = createBaseBuilderConfig_BuilderHealthLinks_DataLinksEntry() as any;
     message.key = object.key ?? "";
@@ -2517,12 +2507,10 @@ export const BuilderConfig_CustomBuildMetric = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_CustomBuildMetric>, I>>(base?: I): BuilderConfig_CustomBuildMetric {
-    return BuilderConfig_CustomBuildMetric.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_CustomBuildMetric>): BuilderConfig_CustomBuildMetric {
+    return BuilderConfig_CustomBuildMetric.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_CustomBuildMetric>, I>>(
-    object: I,
-  ): BuilderConfig_CustomBuildMetric {
+  fromPartial(object: DeepPartial<BuilderConfig_CustomBuildMetric>): BuilderConfig_CustomBuildMetric {
     const message = createBaseBuilderConfig_CustomBuildMetric() as any;
     message.name = object.name ?? "";
     message.predicates = object.predicates?.map((e) => e) || [];
@@ -2599,13 +2587,11 @@ export const BuilderConfig_CustomBuildMetric_FieldsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderConfig_CustomBuildMetric_FieldsEntry>, I>>(
-    base?: I,
-  ): BuilderConfig_CustomBuildMetric_FieldsEntry {
-    return BuilderConfig_CustomBuildMetric_FieldsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderConfig_CustomBuildMetric_FieldsEntry>): BuilderConfig_CustomBuildMetric_FieldsEntry {
+    return BuilderConfig_CustomBuildMetric_FieldsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderConfig_CustomBuildMetric_FieldsEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BuilderConfig_CustomBuildMetric_FieldsEntry>,
   ): BuilderConfig_CustomBuildMetric_FieldsEntry {
     const message = createBaseBuilderConfig_CustomBuildMetric_FieldsEntry() as any;
     message.key = object.key ?? "";
@@ -2681,10 +2667,10 @@ export const Swarming = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Swarming>, I>>(base?: I): Swarming {
-    return Swarming.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Swarming>): Swarming {
+    return Swarming.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Swarming>, I>>(object: I): Swarming {
+  fromPartial(object: DeepPartial<Swarming>): Swarming {
     const message = createBaseSwarming() as any;
     message.builders = object.builders?.map((e) => BuilderConfig.fromPartial(e)) || [];
     message.taskTemplateCanaryPercentage = object.taskTemplateCanaryPercentage ?? undefined;
@@ -2820,10 +2806,10 @@ export const Bucket = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Bucket>, I>>(base?: I): Bucket {
-    return Bucket.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Bucket>): Bucket {
+    return Bucket.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Bucket>, I>>(object: I): Bucket {
+  fromPartial(object: DeepPartial<Bucket>): Bucket {
     const message = createBaseBucket() as any;
     message.name = object.name ?? "";
     message.acls = object.acls?.map((e) => Acl.fromPartial(e)) || [];
@@ -2907,10 +2893,10 @@ export const Bucket_Constraints = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Bucket_Constraints>, I>>(base?: I): Bucket_Constraints {
-    return Bucket_Constraints.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Bucket_Constraints>): Bucket_Constraints {
+    return Bucket_Constraints.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Bucket_Constraints>, I>>(object: I): Bucket_Constraints {
+  fromPartial(object: DeepPartial<Bucket_Constraints>): Bucket_Constraints {
     const message = createBaseBucket_Constraints() as any;
     message.pools = object.pools?.map((e) => e) || [];
     message.serviceAccounts = object.serviceAccounts?.map((e) => e) || [];
@@ -2965,12 +2951,10 @@ export const Bucket_DynamicBuilderTemplate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Bucket_DynamicBuilderTemplate>, I>>(base?: I): Bucket_DynamicBuilderTemplate {
-    return Bucket_DynamicBuilderTemplate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Bucket_DynamicBuilderTemplate>): Bucket_DynamicBuilderTemplate {
+    return Bucket_DynamicBuilderTemplate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Bucket_DynamicBuilderTemplate>, I>>(
-    object: I,
-  ): Bucket_DynamicBuilderTemplate {
+  fromPartial(object: DeepPartial<Bucket_DynamicBuilderTemplate>): Bucket_DynamicBuilderTemplate {
     const message = createBaseBucket_DynamicBuilderTemplate() as any;
     message.template = (object.template !== undefined && object.template !== null)
       ? BuilderConfig.fromPartial(object.template)
@@ -3042,10 +3026,10 @@ export const BuildbucketCfg = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildbucketCfg>, I>>(base?: I): BuildbucketCfg {
-    return BuildbucketCfg.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildbucketCfg>): BuildbucketCfg {
+    return BuildbucketCfg.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildbucketCfg>, I>>(object: I): BuildbucketCfg {
+  fromPartial(object: DeepPartial<BuildbucketCfg>): BuildbucketCfg {
     const message = createBaseBuildbucketCfg() as any;
     message.buckets = object.buckets?.map((e) => Bucket.fromPartial(e)) || [];
     message.commonConfig = (object.commonConfig !== undefined && object.commonConfig !== null)
@@ -3118,10 +3102,10 @@ export const BuildbucketCfg_Topic = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildbucketCfg_Topic>, I>>(base?: I): BuildbucketCfg_Topic {
-    return BuildbucketCfg_Topic.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildbucketCfg_Topic>): BuildbucketCfg_Topic {
+    return BuildbucketCfg_Topic.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildbucketCfg_Topic>, I>>(object: I): BuildbucketCfg_Topic {
+  fromPartial(object: DeepPartial<BuildbucketCfg_Topic>): BuildbucketCfg_Topic {
     const message = createBaseBuildbucketCfg_Topic() as any;
     message.name = object.name ?? "";
     message.compression = object.compression ?? 0;
@@ -3180,10 +3164,10 @@ export const BuildbucketCfg_CommonConfig = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildbucketCfg_CommonConfig>, I>>(base?: I): BuildbucketCfg_CommonConfig {
-    return BuildbucketCfg_CommonConfig.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildbucketCfg_CommonConfig>): BuildbucketCfg_CommonConfig {
+    return BuildbucketCfg_CommonConfig.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildbucketCfg_CommonConfig>, I>>(object: I): BuildbucketCfg_CommonConfig {
+  fromPartial(object: DeepPartial<BuildbucketCfg_CommonConfig>): BuildbucketCfg_CommonConfig {
     const message = createBaseBuildbucketCfg_CommonConfig() as any;
     message.buildsNotificationTopics =
       object.buildsNotificationTopics?.map((e) => BuildbucketCfg_Topic.fromPartial(e)) || [];
@@ -3198,10 +3182,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isObject(value: any): boolean {
   return typeof value === "object" && value !== null;

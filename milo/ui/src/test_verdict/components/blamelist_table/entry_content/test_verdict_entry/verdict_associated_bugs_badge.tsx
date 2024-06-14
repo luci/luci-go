@@ -58,12 +58,12 @@ export const VerdictAssociatedBugsBadge = memo(
         ...client.Cluster.query(
           ClusterRequest.fromPartial({
             project,
-            testResults: Object.freeze([
+            testResults: [
               {
                 testId: verdict.testId,
                 failureReason: r.failureReason,
               },
-            ]),
+            ],
           }),
         ),
         select: (res: ClusterResponse) => res as OutputClusterResponse,

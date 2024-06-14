@@ -78,7 +78,7 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
                 silenceUntil: `${latestBuild(a) || 0}`,
               },
             }),
-          ) as Readonly<UpdateAlertRequest[]>,
+          ),
         }),
       );
     },

@@ -73,41 +73,33 @@ describe('<BuilderTable />', () => {
   it('should batch calls together', async () => {
     batchMock.mockResolvedValue(
       BatchResponse.fromPartial({
-        responses: Object.freeze(
-          Array(10)
-            .fill(0)
-            .flatMap((_, i) => [
-              BatchResponse_Response.fromPartial({
-                searchBuilds: {
-                  builds: Object.freeze(
-                    Array(i)
-                      .fill(0)
-                      .map(() => Build.fromPartial({})),
+        responses: Array(10)
+          .fill(0)
+          .flatMap((_, i) => [
+            BatchResponse_Response.fromPartial({
+              searchBuilds: {
+                builds: Array(i)
+                  .fill(0)
+                  .map(() => Build.fromPartial({})),
+              },
+            }),
+            BatchResponse_Response.fromPartial({
+              searchBuilds: {
+                builds: Array(i + 1)
+                  .fill(0)
+                  .map(() => Build.fromPartial({})),
+              },
+            }),
+            BatchResponse_Response.fromPartial({
+              searchBuilds: {
+                builds: Array(10)
+                  .fill(0)
+                  .map((_, j) =>
+                    Build.fromPartial({ id: (10 * i + 5 + j).toString() }),
                   ),
-                },
-              }),
-              BatchResponse_Response.fromPartial({
-                searchBuilds: {
-                  builds: Object.freeze(
-                    Array(i + 1)
-                      .fill(0)
-                      .map(() => Build.fromPartial({})),
-                  ),
-                },
-              }),
-              BatchResponse_Response.fromPartial({
-                searchBuilds: {
-                  builds: Object.freeze(
-                    Array(10)
-                      .fill(0)
-                      .map((_, j) =>
-                        Build.fromPartial({ id: (10 * i + 5 + j).toString() }),
-                      ),
-                  ),
-                },
-              }),
-            ]),
-        ),
+              },
+            }),
+          ]),
       }),
     );
 
@@ -126,58 +118,56 @@ describe('<BuilderTable />', () => {
     expect(batchMock).toHaveBeenCalledTimes(1);
     expect(batchMock).toHaveBeenCalledWith(
       BatchRequest.fromPartial({
-        requests: Object.freeze(
-          Array(10)
-            .fill(0)
-            .flatMap((_, i) => [
-              BatchRequest_Request.fromPartial({
-                searchBuilds: {
-                  predicate: {
-                    builder: {
-                      project: 'proj',
-                      bucket: 'bucket',
-                      builder: `builder${i}`,
-                    },
-                    status: Status.SCHEDULED,
+        requests: Array(10)
+          .fill(0)
+          .flatMap((_, i) => [
+            BatchRequest_Request.fromPartial({
+              searchBuilds: {
+                predicate: {
+                  builder: {
+                    project: 'proj',
+                    bucket: 'bucket',
+                    builder: `builder${i}`,
                   },
-                  mask: {
-                    fields: Object.freeze(['status']),
-                  },
+                  status: Status.SCHEDULED,
                 },
-              }),
-              BatchRequest_Request.fromPartial({
-                searchBuilds: {
-                  predicate: {
-                    builder: {
-                      project: 'proj',
-                      bucket: 'bucket',
-                      builder: `builder${i}`,
-                    },
-                    status: Status.STARTED,
-                  },
-                  mask: {
-                    fields: Object.freeze(['status']),
-                  },
+                mask: {
+                  fields: ['status'],
                 },
-              }),
-              BatchRequest_Request.fromPartial({
-                searchBuilds: {
-                  predicate: {
-                    builder: {
-                      project: 'proj',
-                      bucket: 'bucket',
-                      builder: `builder${i}`,
-                    },
-                    status: Status.ENDED_MASK,
+              },
+            }),
+            BatchRequest_Request.fromPartial({
+              searchBuilds: {
+                predicate: {
+                  builder: {
+                    project: 'proj',
+                    bucket: 'bucket',
+                    builder: `builder${i}`,
                   },
-                  pageSize: 10,
-                  mask: {
-                    fields: Object.freeze(['status', 'id']),
-                  },
+                  status: Status.STARTED,
                 },
-              }),
-            ]),
-        ),
+                mask: {
+                  fields: ['status'],
+                },
+              },
+            }),
+            BatchRequest_Request.fromPartial({
+              searchBuilds: {
+                predicate: {
+                  builder: {
+                    project: 'proj',
+                    bucket: 'bucket',
+                    builder: `builder${i}`,
+                  },
+                  status: Status.ENDED_MASK,
+                },
+                pageSize: 10,
+                mask: {
+                  fields: ['status', 'id'],
+                },
+              },
+            }),
+          ]),
       }),
     );
 

@@ -98,7 +98,7 @@ describe('BuilderPage', () => {
         config: {
           swarmingHost: 'https://swarming.host',
           descriptionHtml: 'some builder description',
-          dimensions: ['10:key1:val1', '12:key2:val2'] as readonly string[],
+          dimensions: ['10:key1:val1', '12:key2:val2'],
         },
       }),
     );

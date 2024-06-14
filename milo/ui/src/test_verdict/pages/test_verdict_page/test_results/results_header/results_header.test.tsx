@@ -38,7 +38,7 @@ const sampleResults = [
         seconds: '55',
         nanos: 567000000,
       },
-      tags: Object.freeze([
+      tags: [
         {
           key: 'ancestor_buildbucket_ids',
           value: '8766287273535464561',
@@ -51,7 +51,7 @@ const sampleResults = [
           key: 'bug_component',
           value: 'b:95887',
         },
-      ]),
+      ],
       failureReason: {
         primaryErrorMessage:
           'Failed to validate VK autocorrect: failed to validate VK autocorrect on step 4: failed' +
@@ -74,7 +74,7 @@ const sampleResults = [
         seconds: '55',
         nanos: 567000000,
       },
-      tags: Object.freeze([
+      tags: [
         {
           key: 'ancestor_buildbucket_ids',
           value: '8766287273535464561',
@@ -87,7 +87,7 @@ const sampleResults = [
           key: 'bug_component',
           value: 'b:95887',
         },
-      ]),
+      ],
     },
   }),
 ] as readonly OutputTestResultBundle[];

@@ -512,10 +512,10 @@ export const QueryBlamelistRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryBlamelistRequest>, I>>(base?: I): QueryBlamelistRequest {
-    return QueryBlamelistRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryBlamelistRequest>): QueryBlamelistRequest {
+    return QueryBlamelistRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryBlamelistRequest>, I>>(object: I): QueryBlamelistRequest {
+  fromPartial(object: DeepPartial<QueryBlamelistRequest>): QueryBlamelistRequest {
     const message = createBaseQueryBlamelistRequest() as any;
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
       ? GitilesCommit.fromPartial(object.gitilesCommit)
@@ -607,10 +607,10 @@ export const QueryBlamelistResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryBlamelistResponse>, I>>(base?: I): QueryBlamelistResponse {
-    return QueryBlamelistResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryBlamelistResponse>): QueryBlamelistResponse {
+    return QueryBlamelistResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryBlamelistResponse>, I>>(object: I): QueryBlamelistResponse {
+  fromPartial(object: DeepPartial<QueryBlamelistResponse>): QueryBlamelistResponse {
     const message = createBaseQueryBlamelistResponse() as any;
     message.commits = object.commits?.map((e) => Commit.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -668,10 +668,10 @@ export const QueryBlamelistPageToken = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryBlamelistPageToken>, I>>(base?: I): QueryBlamelistPageToken {
-    return QueryBlamelistPageToken.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryBlamelistPageToken>): QueryBlamelistPageToken {
+    return QueryBlamelistPageToken.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryBlamelistPageToken>, I>>(object: I): QueryBlamelistPageToken {
+  fromPartial(object: DeepPartial<QueryBlamelistPageToken>): QueryBlamelistPageToken {
     const message = createBaseQueryBlamelistPageToken() as any;
     message.nextCommitId = object.nextCommitId ?? "";
     return message;
@@ -741,10 +741,10 @@ export const ListProjectsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListProjectsRequest>, I>>(base?: I): ListProjectsRequest {
-    return ListProjectsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListProjectsRequest>): ListProjectsRequest {
+    return ListProjectsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListProjectsRequest>, I>>(object: I): ListProjectsRequest {
+  fromPartial(object: DeepPartial<ListProjectsRequest>): ListProjectsRequest {
     const message = createBaseListProjectsRequest() as any;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
@@ -817,10 +817,10 @@ export const ListProjectsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListProjectsResponse>, I>>(base?: I): ListProjectsResponse {
-    return ListProjectsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListProjectsResponse>): ListProjectsResponse {
+    return ListProjectsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListProjectsResponse>, I>>(object: I): ListProjectsResponse {
+  fromPartial(object: DeepPartial<ListProjectsResponse>): ListProjectsResponse {
     const message = createBaseListProjectsResponse() as any;
     message.projects = object.projects?.map((e) => ProjectListItem.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -891,10 +891,10 @@ export const ProjectListItem = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ProjectListItem>, I>>(base?: I): ProjectListItem {
-    return ProjectListItem.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ProjectListItem>): ProjectListItem {
+    return ProjectListItem.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ProjectListItem>, I>>(object: I): ProjectListItem {
+  fromPartial(object: DeepPartial<ProjectListItem>): ProjectListItem {
     const message = createBaseProjectListItem() as any;
     message.id = object.id ?? "";
     message.logoUrl = object.logoUrl ?? "";
@@ -949,10 +949,10 @@ export const ListProjectsPageToken = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListProjectsPageToken>, I>>(base?: I): ListProjectsPageToken {
-    return ListProjectsPageToken.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListProjectsPageToken>): ListProjectsPageToken {
+    return ListProjectsPageToken.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListProjectsPageToken>, I>>(object: I): ListProjectsPageToken {
+  fromPartial(object: DeepPartial<ListProjectsPageToken>): ListProjectsPageToken {
     const message = createBaseListProjectsPageToken() as any;
     message.nextProjectIndex = object.nextProjectIndex ?? 0;
     return message;
@@ -1006,10 +1006,10 @@ export const GetProjectCfgRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetProjectCfgRequest>, I>>(base?: I): GetProjectCfgRequest {
-    return GetProjectCfgRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetProjectCfgRequest>): GetProjectCfgRequest {
+    return GetProjectCfgRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetProjectCfgRequest>, I>>(object: I): GetProjectCfgRequest {
+  fromPartial(object: DeepPartial<GetProjectCfgRequest>): GetProjectCfgRequest {
     const message = createBaseGetProjectCfgRequest() as any;
     message.project = object.project ?? "";
     return message;
@@ -1093,10 +1093,10 @@ export const QueryRecentBuildsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryRecentBuildsRequest>, I>>(base?: I): QueryRecentBuildsRequest {
-    return QueryRecentBuildsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryRecentBuildsRequest>): QueryRecentBuildsRequest {
+    return QueryRecentBuildsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryRecentBuildsRequest>, I>>(object: I): QueryRecentBuildsRequest {
+  fromPartial(object: DeepPartial<QueryRecentBuildsRequest>): QueryRecentBuildsRequest {
     const message = createBaseQueryRecentBuildsRequest() as any;
     message.builder = (object.builder !== undefined && object.builder !== null)
       ? BuilderID.fromPartial(object.builder)
@@ -1170,10 +1170,10 @@ export const QueryRecentBuildsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryRecentBuildsResponse>, I>>(base?: I): QueryRecentBuildsResponse {
-    return QueryRecentBuildsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryRecentBuildsResponse>): QueryRecentBuildsResponse {
+    return QueryRecentBuildsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryRecentBuildsResponse>, I>>(object: I): QueryRecentBuildsResponse {
+  fromPartial(object: DeepPartial<QueryRecentBuildsResponse>): QueryRecentBuildsResponse {
     const message = createBaseQueryRecentBuildsResponse() as any;
     message.builds = object.builds?.map((e) => Build.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1272,10 +1272,10 @@ export const ListBuildersRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListBuildersRequest>, I>>(base?: I): ListBuildersRequest {
-    return ListBuildersRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListBuildersRequest>): ListBuildersRequest {
+    return ListBuildersRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListBuildersRequest>, I>>(object: I): ListBuildersRequest {
+  fromPartial(object: DeepPartial<ListBuildersRequest>): ListBuildersRequest {
     const message = createBaseListBuildersRequest() as any;
     message.project = object.project ?? "";
     message.group = object.group ?? "";
@@ -1350,10 +1350,10 @@ export const ListBuildersResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListBuildersResponse>, I>>(base?: I): ListBuildersResponse {
-    return ListBuildersResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListBuildersResponse>): ListBuildersResponse {
+    return ListBuildersResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListBuildersResponse>, I>>(object: I): ListBuildersResponse {
+  fromPartial(object: DeepPartial<ListBuildersResponse>): ListBuildersResponse {
     const message = createBaseListBuildersResponse() as any;
     message.builders = object.builders?.map((e) => BuilderItem.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1426,10 +1426,10 @@ export const ListBuildersPageToken = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListBuildersPageToken>, I>>(base?: I): ListBuildersPageToken {
-    return ListBuildersPageToken.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListBuildersPageToken>): ListBuildersPageToken {
+    return ListBuildersPageToken.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListBuildersPageToken>, I>>(object: I): ListBuildersPageToken {
+  fromPartial(object: DeepPartial<ListBuildersPageToken>): ListBuildersPageToken {
     const message = createBaseListBuildersPageToken() as any;
     message.nextBuildbucketBuilderIndex = object.nextBuildbucketBuilderIndex ?? 0;
     message.nextMiloBuilderIndex = object.nextMiloBuilderIndex ?? 0;
@@ -1484,10 +1484,10 @@ export const QueryBuilderStatsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryBuilderStatsRequest>, I>>(base?: I): QueryBuilderStatsRequest {
-    return QueryBuilderStatsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryBuilderStatsRequest>): QueryBuilderStatsRequest {
+    return QueryBuilderStatsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryBuilderStatsRequest>, I>>(object: I): QueryBuilderStatsRequest {
+  fromPartial(object: DeepPartial<QueryBuilderStatsRequest>): QueryBuilderStatsRequest {
     const message = createBaseQueryBuilderStatsRequest() as any;
     message.builder = (object.builder !== undefined && object.builder !== null)
       ? BuilderID.fromPartial(object.builder)
@@ -1573,10 +1573,10 @@ export const BuilderStats = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderStats>, I>>(base?: I): BuilderStats {
-    return BuilderStats.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderStats>): BuilderStats {
+    return BuilderStats.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderStats>, I>>(object: I): BuilderStats {
+  fromPartial(object: DeepPartial<BuilderStats>): BuilderStats {
     const message = createBaseBuilderStats() as any;
     message.builder = (object.builder !== undefined && object.builder !== null)
       ? BuilderID.fromPartial(object.builder)
@@ -1652,10 +1652,10 @@ export const BatchCheckPermissionsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchCheckPermissionsRequest>, I>>(base?: I): BatchCheckPermissionsRequest {
-    return BatchCheckPermissionsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchCheckPermissionsRequest>): BatchCheckPermissionsRequest {
+    return BatchCheckPermissionsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchCheckPermissionsRequest>, I>>(object: I): BatchCheckPermissionsRequest {
+  fromPartial(object: DeepPartial<BatchCheckPermissionsRequest>): BatchCheckPermissionsRequest {
     const message = createBaseBatchCheckPermissionsRequest() as any;
     message.realm = object.realm ?? "";
     message.permissions = object.permissions?.map((e) => e) || [];
@@ -1726,12 +1726,10 @@ export const BatchCheckPermissionsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchCheckPermissionsResponse>, I>>(base?: I): BatchCheckPermissionsResponse {
-    return BatchCheckPermissionsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchCheckPermissionsResponse>): BatchCheckPermissionsResponse {
+    return BatchCheckPermissionsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchCheckPermissionsResponse>, I>>(
-    object: I,
-  ): BatchCheckPermissionsResponse {
+  fromPartial(object: DeepPartial<BatchCheckPermissionsResponse>): BatchCheckPermissionsResponse {
     const message = createBaseBatchCheckPermissionsResponse() as any;
     message.results = Object.entries(object.results ?? {}).reduce<{ [key: string]: boolean }>((acc, [key, value]) => {
       if (value !== undefined) {
@@ -1806,13 +1804,11 @@ export const BatchCheckPermissionsResponse_ResultsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchCheckPermissionsResponse_ResultsEntry>, I>>(
-    base?: I,
-  ): BatchCheckPermissionsResponse_ResultsEntry {
-    return BatchCheckPermissionsResponse_ResultsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchCheckPermissionsResponse_ResultsEntry>): BatchCheckPermissionsResponse_ResultsEntry {
+    return BatchCheckPermissionsResponse_ResultsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchCheckPermissionsResponse_ResultsEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BatchCheckPermissionsResponse_ResultsEntry>,
   ): BatchCheckPermissionsResponse_ResultsEntry {
     const message = createBaseBatchCheckPermissionsResponse_ResultsEntry() as any;
     message.key = object.key ?? "";
@@ -1884,10 +1880,10 @@ export const ConsolePredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ConsolePredicate>, I>>(base?: I): ConsolePredicate {
-    return ConsolePredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ConsolePredicate>): ConsolePredicate {
+    return ConsolePredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ConsolePredicate>, I>>(object: I): ConsolePredicate {
+  fromPartial(object: DeepPartial<ConsolePredicate>): ConsolePredicate {
     const message = createBaseConsolePredicate() as any;
     message.project = object.project ?? "";
     message.builder = (object.builder !== undefined && object.builder !== null)
@@ -1974,10 +1970,10 @@ export const QueryConsolesRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryConsolesRequest>, I>>(base?: I): QueryConsolesRequest {
-    return QueryConsolesRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryConsolesRequest>): QueryConsolesRequest {
+    return QueryConsolesRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryConsolesRequest>, I>>(object: I): QueryConsolesRequest {
+  fromPartial(object: DeepPartial<QueryConsolesRequest>): QueryConsolesRequest {
     const message = createBaseQueryConsolesRequest() as any;
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? ConsolePredicate.fromPartial(object.predicate)
@@ -2051,10 +2047,10 @@ export const QueryConsolesResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryConsolesResponse>, I>>(base?: I): QueryConsolesResponse {
-    return QueryConsolesResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryConsolesResponse>): QueryConsolesResponse {
+    return QueryConsolesResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryConsolesResponse>, I>>(object: I): QueryConsolesResponse {
+  fromPartial(object: DeepPartial<QueryConsolesResponse>): QueryConsolesResponse {
     const message = createBaseQueryConsolesResponse() as any;
     message.consoles = object.consoles?.map((e) => Console.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -2139,10 +2135,10 @@ export const QueryConsoleSnapshotsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryConsoleSnapshotsRequest>, I>>(base?: I): QueryConsoleSnapshotsRequest {
-    return QueryConsoleSnapshotsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryConsoleSnapshotsRequest>): QueryConsoleSnapshotsRequest {
+    return QueryConsoleSnapshotsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryConsoleSnapshotsRequest>, I>>(object: I): QueryConsoleSnapshotsRequest {
+  fromPartial(object: DeepPartial<QueryConsoleSnapshotsRequest>): QueryConsoleSnapshotsRequest {
     const message = createBaseQueryConsoleSnapshotsRequest() as any;
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? ConsolePredicate.fromPartial(object.predicate)
@@ -2216,10 +2212,10 @@ export const BuilderSnapshot = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderSnapshot>, I>>(base?: I): BuilderSnapshot {
-    return BuilderSnapshot.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderSnapshot>): BuilderSnapshot {
+    return BuilderSnapshot.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderSnapshot>, I>>(object: I): BuilderSnapshot {
+  fromPartial(object: DeepPartial<BuilderSnapshot>): BuilderSnapshot {
     const message = createBaseBuilderSnapshot() as any;
     message.builder = (object.builder !== undefined && object.builder !== null)
       ? BuilderID.fromPartial(object.builder)
@@ -2294,10 +2290,10 @@ export const ConsoleSnapshot = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ConsoleSnapshot>, I>>(base?: I): ConsoleSnapshot {
-    return ConsoleSnapshot.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ConsoleSnapshot>): ConsoleSnapshot {
+    return ConsoleSnapshot.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ConsoleSnapshot>, I>>(object: I): ConsoleSnapshot {
+  fromPartial(object: DeepPartial<ConsoleSnapshot>): ConsoleSnapshot {
     const message = createBaseConsoleSnapshot() as any;
     message.console = (object.console !== undefined && object.console !== null)
       ? Console.fromPartial(object.console)
@@ -2372,12 +2368,10 @@ export const QueryConsoleSnapshotsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryConsoleSnapshotsResponse>, I>>(base?: I): QueryConsoleSnapshotsResponse {
-    return QueryConsoleSnapshotsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryConsoleSnapshotsResponse>): QueryConsoleSnapshotsResponse {
+    return QueryConsoleSnapshotsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryConsoleSnapshotsResponse>, I>>(
-    object: I,
-  ): QueryConsoleSnapshotsResponse {
+  fromPartial(object: DeepPartial<QueryConsoleSnapshotsResponse>): QueryConsoleSnapshotsResponse {
     const message = createBaseQueryConsoleSnapshotsResponse() as any;
     message.snapshots = object.snapshots?.map((e) => ConsoleSnapshot.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -2509,10 +2503,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isObject(value: any): boolean {
   return typeof value === "object" && value !== null;

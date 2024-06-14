@@ -91,10 +91,10 @@ export const BugInfo = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BugInfo>, I>>(base?: I): BugInfo {
-    return BugInfo.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BugInfo>): BugInfo {
+    return BugInfo.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BugInfo>, I>>(object: I): BugInfo {
+  fromPartial(object: DeepPartial<BugInfo>): BugInfo {
     const message = createBaseBugInfo() as any;
     message.monorailBugInfo = (object.monorailBugInfo !== undefined && object.monorailBugInfo !== null)
       ? MonorailBugInfo.fromPartial(object.monorailBugInfo)
@@ -169,10 +169,10 @@ export const MonorailBugInfo = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<MonorailBugInfo>, I>>(base?: I): MonorailBugInfo {
-    return MonorailBugInfo.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<MonorailBugInfo>): MonorailBugInfo {
+    return MonorailBugInfo.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<MonorailBugInfo>, I>>(object: I): MonorailBugInfo {
+  fromPartial(object: DeepPartial<MonorailBugInfo>): MonorailBugInfo {
     const message = createBaseMonorailBugInfo() as any;
     message.project = object.project ?? "";
     message.bugId = object.bugId ?? 0;
@@ -227,10 +227,10 @@ export const BuganizerBugInfo = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuganizerBugInfo>, I>>(base?: I): BuganizerBugInfo {
-    return BuganizerBugInfo.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuganizerBugInfo>): BuganizerBugInfo {
+    return BuganizerBugInfo.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuganizerBugInfo>, I>>(object: I): BuganizerBugInfo {
+  fromPartial(object: DeepPartial<BuganizerBugInfo>): BuganizerBugInfo {
     const message = createBaseBuganizerBugInfo() as any;
     message.bugId = object.bugId ?? "0";
     return message;
@@ -244,10 +244,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToString(long: Long) {
   return long.toString();

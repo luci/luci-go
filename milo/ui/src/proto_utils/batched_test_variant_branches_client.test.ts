@@ -34,12 +34,10 @@ describe('BatchedTestVariantBranchesClientImpl', () => {
       .spyOn(TestVariantBranchesClientImpl.prototype, 'BatchGet')
       .mockImplementation(async (batchReq) => {
         return BatchGetTestVariantBranchResponse.fromPartial({
-          testVariantBranches: Object.freeze(
-            batchReq.names.map((name) =>
-              TestVariantBranch.fromPartial({
-                name,
-              }),
-            ),
+          testVariantBranches: batchReq.names.map((name) =>
+            TestVariantBranch.fromPartial({
+              name,
+            }),
           ),
         });
       });
@@ -62,11 +60,9 @@ describe('BatchedTestVariantBranchesClientImpl', () => {
       .map((_, i) =>
         client.BatchGet(
           BatchGetTestVariantBranchRequest.fromPartial({
-            names: Object.freeze(
-              Array(BATCH_SIZE)
-                .fill(0)
-                .map((_, j) => `call${i}-name${j}`),
-            ),
+            names: Array(BATCH_SIZE)
+              .fill(0)
+              .map((_, j) => `call${i}-name${j}`),
           }),
         ),
       );
@@ -76,15 +72,13 @@ describe('BatchedTestVariantBranchesClientImpl', () => {
     expect(batchGetSpy).toHaveBeenCalledTimes(1);
     expect(batchGetSpy).toHaveBeenCalledWith(
       BatchGetTestVariantBranchRequest.fromPartial({
-        names: Object.freeze(
-          Array(CALL_COUNT)
-            .fill(0)
-            .flatMap((_, i) =>
-              Array(BATCH_SIZE)
-                .fill(0)
-                .map((_, j) => `call${i}-name${j}`),
-            ),
-        ),
+        names: Array(CALL_COUNT)
+          .fill(0)
+          .flatMap((_, i) =>
+            Array(BATCH_SIZE)
+              .fill(0)
+              .map((_, j) => `call${i}-name${j}`),
+          ),
       }),
     );
 
@@ -94,11 +88,9 @@ describe('BatchedTestVariantBranchesClientImpl', () => {
         .fill(0)
         .map((_, i) =>
           BatchGetTestVariantBranchResponse.fromPartial({
-            testVariantBranches: Object.freeze(
-              Array(BATCH_SIZE)
-                .fill(0)
-                .map((_, j) => ({ name: `call${i}-name${j}` })),
-            ),
+            testVariantBranches: Array(BATCH_SIZE)
+              .fill(0)
+              .map((_, j) => ({ name: `call${i}-name${j}` })),
           }),
         ),
     );
@@ -116,11 +108,9 @@ describe('BatchedTestVariantBranchesClientImpl', () => {
       .map((_, i) =>
         client.BatchGet(
           BatchGetTestVariantBranchRequest.fromPartial({
-            names: Object.freeze(
-              Array(BATCH_SIZE)
-                .fill(0)
-                .map((_, j) => `call${i}-name${j}`),
-            ),
+            names: Array(BATCH_SIZE)
+              .fill(0)
+              .map((_, j) => `call${i}-name${j}`),
           }),
         ),
       );
@@ -135,11 +125,9 @@ describe('BatchedTestVariantBranchesClientImpl', () => {
         .fill(0)
         .map((_, i) =>
           BatchGetTestVariantBranchResponse.fromPartial({
-            testVariantBranches: Object.freeze(
-              Array(BATCH_SIZE)
-                .fill(0)
-                .map((_, j) => ({ name: `call${i}-name${j}` })),
-            ),
+            testVariantBranches: Array(BATCH_SIZE)
+              .fill(0)
+              .map((_, j) => ({ name: `call${i}-name${j}` })),
           }),
         ),
     );

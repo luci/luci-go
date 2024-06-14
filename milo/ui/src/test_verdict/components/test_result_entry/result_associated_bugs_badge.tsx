@@ -48,12 +48,12 @@ export function ResultAssociatedBugsBadge({
     ...client.Cluster.query(
       ClusterRequest.fromPartial({
         project,
-        testResults: Object.freeze([
+        testResults: [
           {
             testId: testResult.testId || testId,
             failureReason: testResult.failureReason,
           },
-        ]),
+        ],
       }),
     ),
     // The parent test verdict entry might've queried cluster for all test

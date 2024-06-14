@@ -117,7 +117,7 @@ describe('<AnalysisTableRow />', () => {
   test('if culprit information is displayed', async () => {
     const mockAnalysis = Analysis.fromPartial({
       ...createMockAnalysis('125'),
-      culprits: Object.freeze([
+      culprits: [
         {
           commit: {
             host: 'testHost',
@@ -155,7 +155,7 @@ describe('<AnalysisTableRow />', () => {
             status: 'Confirmed Culprit',
           },
         },
-      ]),
+      ],
     });
 
     render(

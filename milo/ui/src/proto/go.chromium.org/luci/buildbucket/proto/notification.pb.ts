@@ -156,10 +156,10 @@ export const NotificationConfig = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<NotificationConfig>, I>>(base?: I): NotificationConfig {
-    return NotificationConfig.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<NotificationConfig>): NotificationConfig {
+    return NotificationConfig.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<NotificationConfig>, I>>(object: I): NotificationConfig {
+  fromPartial(object: DeepPartial<NotificationConfig>): NotificationConfig {
     const message = createBaseNotificationConfig() as any;
     message.pubsubTopic = object.pubsubTopic ?? "";
     message.userData = object.userData ?? new Uint8Array(0);
@@ -244,10 +244,10 @@ export const BuildsV2PubSub = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildsV2PubSub>, I>>(base?: I): BuildsV2PubSub {
-    return BuildsV2PubSub.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildsV2PubSub>): BuildsV2PubSub {
+    return BuildsV2PubSub.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildsV2PubSub>, I>>(object: I): BuildsV2PubSub {
+  fromPartial(object: DeepPartial<BuildsV2PubSub>): BuildsV2PubSub {
     const message = createBaseBuildsV2PubSub() as any;
     message.build = (object.build !== undefined && object.build !== null) ? Build.fromPartial(object.build) : undefined;
     message.buildLargeFields = object.buildLargeFields ?? new Uint8Array(0);
@@ -319,10 +319,10 @@ export const PubSubCallBack = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<PubSubCallBack>, I>>(base?: I): PubSubCallBack {
-    return PubSubCallBack.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<PubSubCallBack>): PubSubCallBack {
+    return PubSubCallBack.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<PubSubCallBack>, I>>(object: I): PubSubCallBack {
+  fromPartial(object: DeepPartial<PubSubCallBack>): PubSubCallBack {
     const message = createBasePubSubCallBack() as any;
     message.buildPubsub = (object.buildPubsub !== undefined && object.buildPubsub !== null)
       ? BuildsV2PubSub.fromPartial(object.buildPubsub)
@@ -364,10 +364,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

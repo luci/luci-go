@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 export function createMockGroup(name: string) {
   return AuthGroup.fromPartial({
-  name: name,
-  description: 'testDescription',
-  owners: 'testOwner',
-  createdTs: "1972-01-01T10:00:20.021Z",
-  createdBy: "user:test@example.com",
-  callerCanModify: true,
-  etag: '123',
+    name: name,
+    description: 'testDescription',
+    owners: 'testOwner',
+    createdTs: '1972-01-01T10:00:20.021Z',
+    createdBy: 'user:test@example.com',
+    callerCanModify: true,
+    etag: '123',
   });
 }

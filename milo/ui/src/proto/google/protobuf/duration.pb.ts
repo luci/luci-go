@@ -151,10 +151,10 @@ export const Duration = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Duration>, I>>(base?: I): Duration {
-    return Duration.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Duration>): Duration {
+    return Duration.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Duration>, I>>(object: I): Duration {
+  fromPartial(object: DeepPartial<Duration>): Duration {
     const message = createBaseDuration() as any;
     message.seconds = object.seconds ?? "0";
     message.nanos = object.nanos ?? 0;
@@ -169,10 +169,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToString(long: Long) {
   return long.toString();

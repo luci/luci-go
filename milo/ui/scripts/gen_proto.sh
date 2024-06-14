@@ -30,6 +30,23 @@ protoc \
   `# Add '.pb' so it can be ignored by presubmit upload checks.` \
   --ts_proto_opt=fileSuffix=.pb \
   \
+  `# Do not use ExactTypes because
+   #  * It hinders productivity (especially ).
+   #    * When used with useReadonlyTypes, it prevents the use of array literal
+   #      unless some form of type casting is usesd. Type casting is verbose and
+   #      breaks the type gurantee that ExactType is trying to enforce.
+   #    * It uses complex recursive types that slow down the compiler.
+   #  * It delivers very little benefit.
+   #    * TypeScript already prevents declaring unknown properties in an object
+   #      literal.
+   #  * Fundamentally, we don't want this behavior.
+   #    * When .fromPartial or .create is fed with a non-literal object, we want
+   #      the extra properties to be silently discarded. Otherwise, adding a new
+   #      field to a proto message will become a breaking change if the proto
+   #      message is used to construct another proto message that is a subtype
+   #      of this message.` \
+  --ts_proto_opt=useExactTypes=false \
+  \
   --ts_proto_opt=forceLong=string,esModuleInterop=true \
   --ts_proto_opt=removeEnumPrefix=true,unrecognizedEnum=false \
   --ts_proto_opt=useDate=string,useReadonlyTypes=true \

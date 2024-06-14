@@ -59,7 +59,7 @@ export function RelatedBuildsDisplay({ buildTags }: RelatedBuildsDisplayProps) {
     queries: buildsets.map((tag) =>
       client.SearchBuilds.query(
         SearchBuildsRequest.fromPartial({
-          predicate: { tags: [tag] as readonly StringPair[] },
+          predicate: { tags: [tag] },
           fields: RELATED_BUILDS_FIELD_MASK,
           pageSize: 1000,
         }),

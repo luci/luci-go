@@ -240,10 +240,10 @@ export const ListGroupsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListGroupsResponse>, I>>(base?: I): ListGroupsResponse {
-    return ListGroupsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListGroupsResponse>): ListGroupsResponse {
+    return ListGroupsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListGroupsResponse>, I>>(object: I): ListGroupsResponse {
+  fromPartial(object: DeepPartial<ListGroupsResponse>): ListGroupsResponse {
     const message = createBaseListGroupsResponse() as any;
     message.groups = object.groups?.map((e) => AuthGroup.fromPartial(e)) || [];
     return message;
@@ -297,10 +297,10 @@ export const GetGroupRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetGroupRequest>, I>>(base?: I): GetGroupRequest {
-    return GetGroupRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetGroupRequest>): GetGroupRequest {
+    return GetGroupRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetGroupRequest>, I>>(object: I): GetGroupRequest {
+  fromPartial(object: DeepPartial<GetGroupRequest>): GetGroupRequest {
     const message = createBaseGetGroupRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -354,10 +354,10 @@ export const CreateGroupRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CreateGroupRequest>, I>>(base?: I): CreateGroupRequest {
-    return CreateGroupRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CreateGroupRequest>): CreateGroupRequest {
+    return CreateGroupRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CreateGroupRequest>, I>>(object: I): CreateGroupRequest {
+  fromPartial(object: DeepPartial<CreateGroupRequest>): CreateGroupRequest {
     const message = createBaseCreateGroupRequest() as any;
     message.group = (object.group !== undefined && object.group !== null)
       ? AuthGroup.fromPartial(object.group)
@@ -429,10 +429,10 @@ export const UpdateGroupRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<UpdateGroupRequest>, I>>(base?: I): UpdateGroupRequest {
-    return UpdateGroupRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<UpdateGroupRequest>): UpdateGroupRequest {
+    return UpdateGroupRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<UpdateGroupRequest>, I>>(object: I): UpdateGroupRequest {
+  fromPartial(object: DeepPartial<UpdateGroupRequest>): UpdateGroupRequest {
     const message = createBaseUpdateGroupRequest() as any;
     message.group = (object.group !== undefined && object.group !== null)
       ? AuthGroup.fromPartial(object.group)
@@ -505,10 +505,10 @@ export const DeleteGroupRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<DeleteGroupRequest>, I>>(base?: I): DeleteGroupRequest {
-    return DeleteGroupRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<DeleteGroupRequest>): DeleteGroupRequest {
+    return DeleteGroupRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<DeleteGroupRequest>, I>>(object: I): DeleteGroupRequest {
+  fromPartial(object: DeepPartial<DeleteGroupRequest>): DeleteGroupRequest {
     const message = createBaseDeleteGroupRequest() as any;
     message.name = object.name ?? "";
     message.etag = object.etag ?? "";
@@ -702,10 +702,10 @@ export const AuthGroup = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<AuthGroup>, I>>(base?: I): AuthGroup {
-    return AuthGroup.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<AuthGroup>): AuthGroup {
+    return AuthGroup.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<AuthGroup>, I>>(object: I): AuthGroup {
+  fromPartial(object: DeepPartial<AuthGroup>): AuthGroup {
     const message = createBaseAuthGroup() as any;
     message.name = object.name ?? "";
     message.members = object.members?.map((e) => e) || [];
@@ -768,10 +768,10 @@ export const GetSubgraphRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetSubgraphRequest>, I>>(base?: I): GetSubgraphRequest {
-    return GetSubgraphRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetSubgraphRequest>): GetSubgraphRequest {
+    return GetSubgraphRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetSubgraphRequest>, I>>(object: I): GetSubgraphRequest {
+  fromPartial(object: DeepPartial<GetSubgraphRequest>): GetSubgraphRequest {
     const message = createBaseGetSubgraphRequest() as any;
     message.principal = (object.principal !== undefined && object.principal !== null)
       ? Principal.fromPartial(object.principal)
@@ -827,10 +827,10 @@ export const Subgraph = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Subgraph>, I>>(base?: I): Subgraph {
-    return Subgraph.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Subgraph>): Subgraph {
+    return Subgraph.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Subgraph>, I>>(object: I): Subgraph {
+  fromPartial(object: DeepPartial<Subgraph>): Subgraph {
     const message = createBaseSubgraph() as any;
     message.nodes = object.nodes?.map((e) => Node.fromPartial(e)) || [];
     return message;
@@ -900,10 +900,10 @@ export const Principal = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Principal>, I>>(base?: I): Principal {
-    return Principal.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Principal>): Principal {
+    return Principal.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Principal>, I>>(object: I): Principal {
+  fromPartial(object: DeepPartial<Principal>): Principal {
     const message = createBasePrincipal() as any;
     message.kind = object.kind ?? 0;
     message.name = object.name ?? "";
@@ -988,10 +988,10 @@ export const Node = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Node>, I>>(base?: I): Node {
-    return Node.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Node>): Node {
+    return Node.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Node>, I>>(object: I): Node {
+  fromPartial(object: DeepPartial<Node>): Node {
     const message = createBaseNode() as any;
     message.principal = (object.principal !== undefined && object.principal !== null)
       ? Principal.fromPartial(object.principal)
@@ -1103,10 +1103,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

@@ -22,10 +22,7 @@ import {
   SearchBuildsRequest,
   SearchBuildsResponse,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
-import {
-  Status,
-  StringPair,
-} from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { RelatedBuildTable } from './related_build_table';
@@ -89,18 +86,12 @@ describe('RelatedBuildsDisplay', () => {
     searchBuildsMock.mockImplementation(async (req) => {
       if (req.predicate?.tags[0].value === 'commit/gitiles/1234') {
         return SearchBuildsResponse.fromPartial({
-          builds: [
-            createMockBuild('00001'),
-            createMockBuild('00002'),
-          ] as ReadonlyArray<Build>,
+          builds: [createMockBuild('00001'), createMockBuild('00002')],
         });
       }
 
       return SearchBuildsResponse.fromPartial({
-        builds: [
-          createMockBuild('00002'),
-          createMockBuild('00003'),
-        ] as ReadonlyArray<Build>,
+        builds: [createMockBuild('00002'), createMockBuild('00003')],
       });
     });
     render(
@@ -127,7 +118,7 @@ describe('RelatedBuildsDisplay', () => {
               key: 'buildset',
               value: 'commit/gitiles/1234',
             },
-          ] as ReadonlyArray<StringPair>,
+          ],
         },
       }),
     );
@@ -141,7 +132,7 @@ describe('RelatedBuildsDisplay', () => {
               key: 'buildset',
               value: 'commit/gitiles/5678',
             },
-          ] as ReadonlyArray<StringPair>,
+          ],
         },
       }),
     );
@@ -166,10 +157,7 @@ describe('RelatedBuildsDisplay', () => {
     searchBuildsMock.mockImplementation(async (req) => {
       if (req.predicate?.tags[0].value === 'commit/git/1234') {
         return SearchBuildsResponse.fromPartial({
-          builds: [
-            createMockBuild('00001'),
-            createMockBuild('00002'),
-          ] as ReadonlyArray<Build>,
+          builds: [createMockBuild('00001'), createMockBuild('00002')],
         });
       }
 

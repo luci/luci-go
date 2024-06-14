@@ -56,19 +56,19 @@ describe('BatchedMiloInternalClientImpl', () => {
     const call1 = client.BatchCheckPermissions(
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm1',
-        permissions: Object.freeze(['allowed-get', 'set']),
+        permissions: ['allowed-get', 'set'],
       }),
     );
     const call2 = client.BatchCheckPermissions(
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm1',
-        permissions: Object.freeze(['allowed-get', 'delete']),
+        permissions: ['allowed-get', 'delete'],
       }),
     );
     const call3 = client.BatchCheckPermissions(
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm2',
-        permissions: Object.freeze(['allowed-get', 'allowed-set']),
+        permissions: ['allowed-get', 'allowed-set'],
       }),
     );
 
@@ -79,13 +79,13 @@ describe('BatchedMiloInternalClientImpl', () => {
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm1',
         // Duplicated permissions are removed.
-        permissions: Object.freeze(['allowed-get', 'set', 'delete']),
+        permissions: ['allowed-get', 'set', 'delete'],
       }),
     );
     expect(batchCheckPermsSpy).toHaveBeenCalledWith(
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm2',
-        permissions: Object.freeze(['allowed-get', 'allowed-set']),
+        permissions: ['allowed-get', 'allowed-set'],
       }),
     );
 
@@ -127,25 +127,25 @@ describe('BatchedMiloInternalClientImpl', () => {
     const call1 = client.BatchCheckPermissions(
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm1',
-        permissions: Object.freeze(['allowed-get', 'set']),
+        permissions: ['allowed-get', 'set'],
       }),
     );
     const call2 = client.BatchCheckPermissions(
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm1',
-        permissions: Object.freeze(['allowed-get', 'delete']),
+        permissions: ['allowed-get', 'delete'],
       }),
     );
     const call3 = client.BatchCheckPermissions(
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm2',
-        permissions: Object.freeze(['allowed-get', 'allowed-set']),
+        permissions: ['allowed-get', 'allowed-set'],
       }),
     );
     const call4 = client.BatchCheckPermissions(
       BatchCheckPermissionsRequest.fromPartial({
         realm: 'proj:realm2',
-        permissions: Object.freeze(['get', 'set']),
+        permissions: ['get', 'set'],
       }),
     );
 

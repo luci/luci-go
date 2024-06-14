@@ -514,12 +514,10 @@ export const GetRawTestVariantBranchRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetRawTestVariantBranchRequest>, I>>(base?: I): GetRawTestVariantBranchRequest {
-    return GetRawTestVariantBranchRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetRawTestVariantBranchRequest>): GetRawTestVariantBranchRequest {
+    return GetRawTestVariantBranchRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetRawTestVariantBranchRequest>, I>>(
-    object: I,
-  ): GetRawTestVariantBranchRequest {
+  fromPartial(object: DeepPartial<GetRawTestVariantBranchRequest>): GetRawTestVariantBranchRequest {
     const message = createBaseGetRawTestVariantBranchRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -742,10 +740,10 @@ export const TestVariantBranchRaw = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestVariantBranchRaw>, I>>(base?: I): TestVariantBranchRaw {
-    return TestVariantBranchRaw.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestVariantBranchRaw>): TestVariantBranchRaw {
+    return TestVariantBranchRaw.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestVariantBranchRaw>, I>>(object: I): TestVariantBranchRaw {
+  fromPartial(object: DeepPartial<TestVariantBranchRaw>): TestVariantBranchRaw {
     const message = createBaseTestVariantBranchRaw() as any;
     message.name = object.name ?? "";
     message.project = object.project ?? "";
@@ -838,10 +836,10 @@ export const InputBuffer = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InputBuffer>, I>>(base?: I): InputBuffer {
-    return InputBuffer.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InputBuffer>): InputBuffer {
+    return InputBuffer.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InputBuffer>, I>>(object: I): InputBuffer {
+  fromPartial(object: DeepPartial<InputBuffer>): InputBuffer {
     const message = createBaseInputBuffer() as any;
     message.length = object.length ?? "0";
     message.runs = object.runs?.map((e) => InputBuffer_Run.fromPartial(e)) || [];
@@ -926,10 +924,10 @@ export const InputBuffer_Run = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InputBuffer_Run>, I>>(base?: I): InputBuffer_Run {
-    return InputBuffer_Run.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InputBuffer_Run>): InputBuffer_Run {
+    return InputBuffer_Run.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InputBuffer_Run>, I>>(object: I): InputBuffer_Run {
+  fromPartial(object: DeepPartial<InputBuffer_Run>): InputBuffer_Run {
     const message = createBaseInputBuffer_Run() as any;
     message.commitPosition = object.commitPosition ?? "0";
     message.hour = object.hour ?? undefined;
@@ -1096,10 +1094,10 @@ export const InputBuffer_Run_Counts = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InputBuffer_Run_Counts>, I>>(base?: I): InputBuffer_Run_Counts {
-    return InputBuffer_Run_Counts.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InputBuffer_Run_Counts>): InputBuffer_Run_Counts {
+    return InputBuffer_Run_Counts.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InputBuffer_Run_Counts>, I>>(object: I): InputBuffer_Run_Counts {
+  fromPartial(object: DeepPartial<InputBuffer_Run_Counts>): InputBuffer_Run_Counts {
     const message = createBaseInputBuffer_Run_Counts() as any;
     message.expectedPassCount = object.expectedPassCount ?? "0";
     message.expectedFailCount = object.expectedFailCount ?? "0";
@@ -1160,14 +1158,10 @@ export const BatchGetTestVariantBranchRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetTestVariantBranchRequest>, I>>(
-    base?: I,
-  ): BatchGetTestVariantBranchRequest {
-    return BatchGetTestVariantBranchRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetTestVariantBranchRequest>): BatchGetTestVariantBranchRequest {
+    return BatchGetTestVariantBranchRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetTestVariantBranchRequest>, I>>(
-    object: I,
-  ): BatchGetTestVariantBranchRequest {
+  fromPartial(object: DeepPartial<BatchGetTestVariantBranchRequest>): BatchGetTestVariantBranchRequest {
     const message = createBaseBatchGetTestVariantBranchRequest() as any;
     message.names = object.names?.map((e) => e) || [];
     return message;
@@ -1225,14 +1219,10 @@ export const BatchGetTestVariantBranchResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetTestVariantBranchResponse>, I>>(
-    base?: I,
-  ): BatchGetTestVariantBranchResponse {
-    return BatchGetTestVariantBranchResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetTestVariantBranchResponse>): BatchGetTestVariantBranchResponse {
+    return BatchGetTestVariantBranchResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetTestVariantBranchResponse>, I>>(
-    object: I,
-  ): BatchGetTestVariantBranchResponse {
+  fromPartial(object: DeepPartial<BatchGetTestVariantBranchResponse>): BatchGetTestVariantBranchResponse {
     const message = createBaseBatchGetTestVariantBranchResponse() as any;
     message.testVariantBranches = object.testVariantBranches?.map((e) => TestVariantBranch.fromPartial(e)) || [];
     return message;
@@ -1344,12 +1334,10 @@ export const QueryTestVariantBranchRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestVariantBranchRequest>, I>>(base?: I): QueryTestVariantBranchRequest {
-    return QueryTestVariantBranchRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestVariantBranchRequest>): QueryTestVariantBranchRequest {
+    return QueryTestVariantBranchRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestVariantBranchRequest>, I>>(
-    object: I,
-  ): QueryTestVariantBranchRequest {
+  fromPartial(object: DeepPartial<QueryTestVariantBranchRequest>): QueryTestVariantBranchRequest {
     const message = createBaseQueryTestVariantBranchRequest() as any;
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
@@ -1425,12 +1413,10 @@ export const QueryTestVariantBranchResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestVariantBranchResponse>, I>>(base?: I): QueryTestVariantBranchResponse {
-    return QueryTestVariantBranchResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestVariantBranchResponse>): QueryTestVariantBranchResponse {
+    return QueryTestVariantBranchResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestVariantBranchResponse>, I>>(
-    object: I,
-  ): QueryTestVariantBranchResponse {
+  fromPartial(object: DeepPartial<QueryTestVariantBranchResponse>): QueryTestVariantBranchResponse {
     const message = createBaseQueryTestVariantBranchResponse() as any;
     message.testVariantBranch = object.testVariantBranch?.map((e) => TestVariantBranch.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1594,10 +1580,10 @@ export const TestVariantBranch = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestVariantBranch>, I>>(base?: I): TestVariantBranch {
-    return TestVariantBranch.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestVariantBranch>): TestVariantBranch {
+    return TestVariantBranch.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestVariantBranch>, I>>(object: I): TestVariantBranch {
+  fromPartial(object: DeepPartial<TestVariantBranch>): TestVariantBranch {
     const message = createBaseTestVariantBranch() as any;
     message.name = object.name ?? "";
     message.project = object.project ?? "";
@@ -1773,10 +1759,10 @@ export const Segment = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Segment>, I>>(base?: I): Segment {
-    return Segment.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Segment>): Segment {
+    return Segment.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Segment>, I>>(object: I): Segment {
+  fromPartial(object: DeepPartial<Segment>): Segment {
     const message = createBaseSegment() as any;
     message.hasStartChangepoint = object.hasStartChangepoint ?? false;
     message.startPosition = object.startPosition ?? "0";
@@ -1869,10 +1855,10 @@ export const Segment_Counts = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Segment_Counts>, I>>(base?: I): Segment_Counts {
-    return Segment_Counts.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Segment_Counts>): Segment_Counts {
+    return Segment_Counts.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Segment_Counts>, I>>(object: I): Segment_Counts {
+  fromPartial(object: DeepPartial<Segment_Counts>): Segment_Counts {
     const message = createBaseSegment_Counts() as any;
     message.unexpectedVerdicts = object.unexpectedVerdicts ?? 0;
     message.flakyVerdicts = object.flakyVerdicts ?? 0;
@@ -2022,10 +2008,10 @@ export const QuerySourcePositionsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QuerySourcePositionsRequest>, I>>(base?: I): QuerySourcePositionsRequest {
-    return QuerySourcePositionsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QuerySourcePositionsRequest>): QuerySourcePositionsRequest {
+    return QuerySourcePositionsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QuerySourcePositionsRequest>, I>>(object: I): QuerySourcePositionsRequest {
+  fromPartial(object: DeepPartial<QuerySourcePositionsRequest>): QuerySourcePositionsRequest {
     const message = createBaseQuerySourcePositionsRequest() as any;
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
@@ -2103,10 +2089,10 @@ export const QuerySourcePositionsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QuerySourcePositionsResponse>, I>>(base?: I): QuerySourcePositionsResponse {
-    return QuerySourcePositionsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QuerySourcePositionsResponse>): QuerySourcePositionsResponse {
+    return QuerySourcePositionsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QuerySourcePositionsResponse>, I>>(object: I): QuerySourcePositionsResponse {
+  fromPartial(object: DeepPartial<QuerySourcePositionsResponse>): QuerySourcePositionsResponse {
     const message = createBaseQuerySourcePositionsResponse() as any;
     message.sourcePositions = object.sourcePositions?.map((e) => SourcePosition.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -2193,10 +2179,10 @@ export const SourcePosition = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SourcePosition>, I>>(base?: I): SourcePosition {
-    return SourcePosition.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SourcePosition>): SourcePosition {
+    return SourcePosition.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SourcePosition>, I>>(object: I): SourcePosition {
+  fromPartial(object: DeepPartial<SourcePosition>): SourcePosition {
     const message = createBaseSourcePosition() as any;
     message.position = object.position ?? "0";
     message.commit = (object.commit !== undefined && object.commit !== null)
@@ -2328,14 +2314,10 @@ export const QueryChangepointAIAnalysisRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryChangepointAIAnalysisRequest>, I>>(
-    base?: I,
-  ): QueryChangepointAIAnalysisRequest {
-    return QueryChangepointAIAnalysisRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryChangepointAIAnalysisRequest>): QueryChangepointAIAnalysisRequest {
+    return QueryChangepointAIAnalysisRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryChangepointAIAnalysisRequest>, I>>(
-    object: I,
-  ): QueryChangepointAIAnalysisRequest {
+  fromPartial(object: DeepPartial<QueryChangepointAIAnalysisRequest>): QueryChangepointAIAnalysisRequest {
     const message = createBaseQueryChangepointAIAnalysisRequest() as any;
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
@@ -2415,13 +2397,13 @@ export const QueryChangepointAIAnalysisRequest_PromptOptions = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryChangepointAIAnalysisRequest_PromptOptions>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<QueryChangepointAIAnalysisRequest_PromptOptions>,
   ): QueryChangepointAIAnalysisRequest_PromptOptions {
-    return QueryChangepointAIAnalysisRequest_PromptOptions.fromPartial(base ?? ({} as any));
+    return QueryChangepointAIAnalysisRequest_PromptOptions.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryChangepointAIAnalysisRequest_PromptOptions>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<QueryChangepointAIAnalysisRequest_PromptOptions>,
   ): QueryChangepointAIAnalysisRequest_PromptOptions {
     const message = createBaseQueryChangepointAIAnalysisRequest_PromptOptions() as any;
     message.prefix = object.prefix ?? "";
@@ -2493,14 +2475,10 @@ export const QueryChangepointAIAnalysisResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryChangepointAIAnalysisResponse>, I>>(
-    base?: I,
-  ): QueryChangepointAIAnalysisResponse {
-    return QueryChangepointAIAnalysisResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryChangepointAIAnalysisResponse>): QueryChangepointAIAnalysisResponse {
+    return QueryChangepointAIAnalysisResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryChangepointAIAnalysisResponse>, I>>(
-    object: I,
-  ): QueryChangepointAIAnalysisResponse {
+  fromPartial(object: DeepPartial<QueryChangepointAIAnalysisResponse>): QueryChangepointAIAnalysisResponse {
     const message = createBaseQueryChangepointAIAnalysisResponse() as any;
     message.analysisMarkdown = object.analysisMarkdown ?? "";
     message.prompt = object.prompt ?? "";
@@ -2591,10 +2569,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

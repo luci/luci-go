@@ -48,15 +48,15 @@ const builderItems = builders.map((id) => BuilderItem.fromPartial({ id }));
 
 const pages: { [key: string]: ListBuildersResponse } = {
   '': ListBuildersResponse.fromPartial({
-    builders: Object.freeze(builderItems.slice(0, 10)),
+    builders: builderItems.slice(0, 10),
     nextPageToken: 'page2',
   }),
   page2: ListBuildersResponse.fromPartial({
-    builders: Object.freeze(builderItems.slice(10, 20)),
+    builders: builderItems.slice(10, 20),
     nextPageToken: 'page3',
   }),
   page3: ListBuildersResponse.fromPartial({
-    builders: Object.freeze(builderItems.slice(20, 25)),
+    builders: builderItems.slice(20, 25),
     nextPageToken: '',
   }),
 };

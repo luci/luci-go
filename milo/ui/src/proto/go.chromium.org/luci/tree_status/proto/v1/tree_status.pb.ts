@@ -212,10 +212,10 @@ export const GetStatusRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetStatusRequest>, I>>(base?: I): GetStatusRequest {
-    return GetStatusRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetStatusRequest>): GetStatusRequest {
+    return GetStatusRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetStatusRequest>, I>>(object: I): GetStatusRequest {
+  fromPartial(object: DeepPartial<GetStatusRequest>): GetStatusRequest {
     const message = createBaseGetStatusRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -327,10 +327,10 @@ export const Status = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Status>, I>>(base?: I): Status {
-    return Status.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Status>): Status {
+    return Status.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Status>, I>>(object: I): Status {
+  fromPartial(object: DeepPartial<Status>): Status {
     const message = createBaseStatus() as any;
     message.name = object.name ?? "";
     message.generalState = object.generalState ?? 0;
@@ -418,10 +418,10 @@ export const ListStatusRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListStatusRequest>, I>>(base?: I): ListStatusRequest {
-    return ListStatusRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListStatusRequest>): ListStatusRequest {
+    return ListStatusRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListStatusRequest>, I>>(object: I): ListStatusRequest {
+  fromPartial(object: DeepPartial<ListStatusRequest>): ListStatusRequest {
     const message = createBaseListStatusRequest() as any;
     message.parent = object.parent ?? "";
     message.pageSize = object.pageSize ?? 0;
@@ -493,10 +493,10 @@ export const ListStatusResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListStatusResponse>, I>>(base?: I): ListStatusResponse {
-    return ListStatusResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListStatusResponse>): ListStatusResponse {
+    return ListStatusResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListStatusResponse>, I>>(object: I): ListStatusResponse {
+  fromPartial(object: DeepPartial<ListStatusResponse>): ListStatusResponse {
     const message = createBaseListStatusResponse() as any;
     message.status = object.status?.map((e) => Status.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -567,10 +567,10 @@ export const CreateStatusRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CreateStatusRequest>, I>>(base?: I): CreateStatusRequest {
-    return CreateStatusRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CreateStatusRequest>): CreateStatusRequest {
+    return CreateStatusRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CreateStatusRequest>, I>>(object: I): CreateStatusRequest {
+  fromPartial(object: DeepPartial<CreateStatusRequest>): CreateStatusRequest {
     const message = createBaseCreateStatusRequest() as any;
     message.parent = object.parent ?? "";
     message.status = (object.status !== undefined && object.status !== null)
@@ -634,10 +634,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

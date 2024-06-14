@@ -353,10 +353,10 @@ export const Artifact = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Artifact>, I>>(base?: I): Artifact {
-    return Artifact.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Artifact>): Artifact {
+    return Artifact.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Artifact>, I>>(object: I): Artifact {
+  fromPartial(object: DeepPartial<Artifact>): Artifact {
     const message = createBaseArtifact() as any;
     message.name = object.name ?? "";
     message.artifactId = object.artifactId ?? "";
@@ -462,10 +462,10 @@ export const ArtifactLine = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ArtifactLine>, I>>(base?: I): ArtifactLine {
-    return ArtifactLine.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ArtifactLine>): ArtifactLine {
+    return ArtifactLine.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ArtifactLine>, I>>(object: I): ArtifactLine {
+  fromPartial(object: DeepPartial<ArtifactLine>): ArtifactLine {
     const message = createBaseArtifactLine() as any;
     message.number = object.number ?? "0";
     message.timestamp = object.timestamp ?? undefined;
@@ -507,10 +507,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

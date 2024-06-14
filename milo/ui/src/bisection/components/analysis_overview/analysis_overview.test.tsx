@@ -93,7 +93,7 @@ describe('<AnalysisOverview />', () => {
   test('if there is a culprit for the analysis, then it should be the suspect range', async () => {
     const mockAnalysis = Analysis.fromPartial({
       ...createMockAnalysis('3'),
-      culprits: Object.freeze([
+      culprits: [
         {
           commit: {
             host: 'testHost',
@@ -105,7 +105,7 @@ describe('<AnalysisOverview />', () => {
           reviewTitle: 'Added new feature to improve testing',
           reviewUrl:
             'https://chromium-review.googlesource.com/placeholder/+/123456',
-          culpritAction: Object.freeze([
+          culpritAction: [
             {
               actionType: CulpritActionType.BUG_COMMENTED,
               bugUrl: 'https://crbug.com/testProject/11223344',
@@ -114,12 +114,12 @@ describe('<AnalysisOverview />', () => {
               actionType: CulpritActionType.BUG_COMMENTED,
               bugUrl: 'https://buganizer.corp.google.com/99887766',
             },
-          ]),
+          ],
           verificationDetails: {
             status: 'Confirmed Culprit',
           },
         },
-      ]),
+      ],
     });
 
     render(<AnalysisOverview analysis={mockAnalysis} />);

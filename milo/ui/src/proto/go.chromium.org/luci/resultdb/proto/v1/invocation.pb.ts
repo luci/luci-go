@@ -817,10 +817,10 @@ export const Invocation = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Invocation>, I>>(base?: I): Invocation {
-    return Invocation.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Invocation>): Invocation {
+    return Invocation.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Invocation>, I>>(object: I): Invocation {
+  fromPartial(object: DeepPartial<Invocation>): Invocation {
     const message = createBaseInvocation() as any;
     message.name = object.name ?? "";
     message.state = object.state ?? 0;
@@ -922,14 +922,10 @@ export const Invocation_ExtendedPropertiesEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Invocation_ExtendedPropertiesEntry>, I>>(
-    base?: I,
-  ): Invocation_ExtendedPropertiesEntry {
-    return Invocation_ExtendedPropertiesEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Invocation_ExtendedPropertiesEntry>): Invocation_ExtendedPropertiesEntry {
+    return Invocation_ExtendedPropertiesEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Invocation_ExtendedPropertiesEntry>, I>>(
-    object: I,
-  ): Invocation_ExtendedPropertiesEntry {
+  fromPartial(object: DeepPartial<Invocation_ExtendedPropertiesEntry>): Invocation_ExtendedPropertiesEntry {
     const message = createBaseInvocation_ExtendedPropertiesEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? undefined;
@@ -1044,10 +1040,10 @@ export const BigQueryExport = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BigQueryExport>, I>>(base?: I): BigQueryExport {
-    return BigQueryExport.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BigQueryExport>): BigQueryExport {
+    return BigQueryExport.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BigQueryExport>, I>>(object: I): BigQueryExport {
+  fromPartial(object: DeepPartial<BigQueryExport>): BigQueryExport {
     const message = createBaseBigQueryExport() as any;
     message.project = object.project ?? "";
     message.dataset = object.dataset ?? "";
@@ -1109,10 +1105,10 @@ export const BigQueryExport_TestResults = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BigQueryExport_TestResults>, I>>(base?: I): BigQueryExport_TestResults {
-    return BigQueryExport_TestResults.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BigQueryExport_TestResults>): BigQueryExport_TestResults {
+    return BigQueryExport_TestResults.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BigQueryExport_TestResults>, I>>(object: I): BigQueryExport_TestResults {
+  fromPartial(object: DeepPartial<BigQueryExport_TestResults>): BigQueryExport_TestResults {
     const message = createBaseBigQueryExport_TestResults() as any;
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? TestResultPredicate.fromPartial(object.predicate)
@@ -1168,10 +1164,10 @@ export const BigQueryExport_TextArtifacts = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BigQueryExport_TextArtifacts>, I>>(base?: I): BigQueryExport_TextArtifacts {
-    return BigQueryExport_TextArtifacts.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BigQueryExport_TextArtifacts>): BigQueryExport_TextArtifacts {
+    return BigQueryExport_TextArtifacts.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BigQueryExport_TextArtifacts>, I>>(object: I): BigQueryExport_TextArtifacts {
+  fromPartial(object: DeepPartial<BigQueryExport_TextArtifacts>): BigQueryExport_TextArtifacts {
     const message = createBaseBigQueryExport_TextArtifacts() as any;
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? ArtifactPredicate.fromPartial(object.predicate)
@@ -1245,10 +1241,10 @@ export const HistoryOptions = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<HistoryOptions>, I>>(base?: I): HistoryOptions {
-    return HistoryOptions.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<HistoryOptions>): HistoryOptions {
+    return HistoryOptions.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<HistoryOptions>, I>>(object: I): HistoryOptions {
+  fromPartial(object: DeepPartial<HistoryOptions>): HistoryOptions {
     const message = createBaseHistoryOptions() as any;
     message.useInvocationTimestamp = object.useInvocationTimestamp ?? false;
     message.commit = (object.commit !== undefined && object.commit !== null)
@@ -1321,10 +1317,10 @@ export const SourceSpec = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SourceSpec>, I>>(base?: I): SourceSpec {
-    return SourceSpec.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SourceSpec>): SourceSpec {
+    return SourceSpec.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SourceSpec>, I>>(object: I): SourceSpec {
+  fromPartial(object: DeepPartial<SourceSpec>): SourceSpec {
     const message = createBaseSourceSpec() as any;
     message.sources = (object.sources !== undefined && object.sources !== null)
       ? Sources.fromPartial(object.sources)
@@ -1413,10 +1409,10 @@ export const Sources = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Sources>, I>>(base?: I): Sources {
-    return Sources.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Sources>): Sources {
+    return Sources.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Sources>, I>>(object: I): Sources {
+  fromPartial(object: DeepPartial<Sources>): Sources {
     const message = createBaseSources() as any;
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
       ? GitilesCommit.fromPartial(object.gitilesCommit)
@@ -1434,10 +1430,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

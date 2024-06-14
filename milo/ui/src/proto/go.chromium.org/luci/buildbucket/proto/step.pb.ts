@@ -300,10 +300,10 @@ export const Step = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Step>, I>>(base?: I): Step {
-    return Step.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Step>): Step {
+    return Step.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Step>, I>>(object: I): Step {
+  fromPartial(object: DeepPartial<Step>): Step {
     const message = createBaseStep() as any;
     message.name = object.name ?? "";
     message.startTime = object.startTime ?? undefined;
@@ -384,10 +384,10 @@ export const Step_MergeBuild = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Step_MergeBuild>, I>>(base?: I): Step_MergeBuild {
-    return Step_MergeBuild.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Step_MergeBuild>): Step_MergeBuild {
+    return Step_MergeBuild.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Step_MergeBuild>, I>>(object: I): Step_MergeBuild {
+  fromPartial(object: DeepPartial<Step_MergeBuild>): Step_MergeBuild {
     const message = createBaseStep_MergeBuild() as any;
     message.fromLogdogStream = object.fromLogdogStream ?? "";
     message.legacyGlobalNamespace = object.legacyGlobalNamespace ?? false;
@@ -402,10 +402,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

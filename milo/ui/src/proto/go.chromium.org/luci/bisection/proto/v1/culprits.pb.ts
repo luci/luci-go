@@ -313,10 +313,10 @@ export const Culprit = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Culprit>, I>>(base?: I): Culprit {
-    return Culprit.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Culprit>): Culprit {
+    return Culprit.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Culprit>, I>>(object: I): Culprit {
+  fromPartial(object: DeepPartial<Culprit>): Culprit {
     const message = createBaseCulprit() as any;
     message.commit = (object.commit !== undefined && object.commit !== null)
       ? GitilesCommit.fromPartial(object.commit)
@@ -436,10 +436,10 @@ export const CulpritAction = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CulpritAction>, I>>(base?: I): CulpritAction {
-    return CulpritAction.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CulpritAction>): CulpritAction {
+    return CulpritAction.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CulpritAction>, I>>(object: I): CulpritAction {
+  fromPartial(object: DeepPartial<CulpritAction>): CulpritAction {
     const message = createBaseCulpritAction() as any;
     message.actionType = object.actionType ?? 0;
     message.revertClUrl = object.revertClUrl ?? "";
@@ -457,10 +457,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

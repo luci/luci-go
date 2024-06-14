@@ -46,11 +46,11 @@ const searchBuildsReq = SearchBuildsRequest.fromPartial({
   },
 });
 const searchBuildsRes = SearchBuildsResponse.fromPartial({
-  builds: Object.freeze([
+  builds: [
     {
       id: '2345',
     },
-  ]),
+  ],
 });
 
 const getBuildStatusReq = GetBuildStatusRequest.fromPartial({
@@ -61,7 +61,7 @@ const getBuildStatusRes = Build.fromPartial({
 });
 
 const batchReq = BatchRequest.fromPartial({
-  requests: Object.freeze([
+  requests: [
     BatchRequest_Request.fromPartial({
       getBuild: getBuildReq,
     }),
@@ -71,14 +71,14 @@ const batchReq = BatchRequest.fromPartial({
     BatchRequest_Request.fromPartial({
       getBuildStatus: getBuildStatusReq,
     }),
-  ]),
+  ],
 });
 const batchRes = BatchResponse.fromPartial({
-  responses: Object.freeze([
+  responses: [
     { getBuild: getBuildRes },
     { searchBuilds: searchBuildsRes },
     { getBuildStatus: getBuildStatusRes },
-  ]),
+  ],
 });
 
 describe('BatchedBuildsClientImpl', () => {
@@ -93,26 +93,24 @@ describe('BatchedBuildsClientImpl', () => {
       .spyOn(BuildsClientImpl.prototype, 'Batch')
       .mockImplementation(async (batchReq) => {
         return BatchResponse.fromPartial({
-          responses: Object.freeze(
-            batchReq.requests.map((req) => {
-              if (req.getBuild) {
-                return BatchResponse_Response.fromPartial({
-                  getBuild: getBuildRes,
-                });
-              }
-              if (req.searchBuilds) {
-                return BatchResponse_Response.fromPartial({
-                  searchBuilds: searchBuildsRes,
-                });
-              }
-              if (req.getBuildStatus) {
-                return BatchResponse_Response.fromPartial({
-                  getBuildStatus: getBuildStatusRes,
-                });
-              }
-              throw Error('unimplemented');
-            }),
-          ),
+          responses: batchReq.requests.map((req) => {
+            if (req.getBuild) {
+              return BatchResponse_Response.fromPartial({
+                getBuild: getBuildRes,
+              });
+            }
+            if (req.searchBuilds) {
+              return BatchResponse_Response.fromPartial({
+                searchBuilds: searchBuildsRes,
+              });
+            }
+            if (req.getBuildStatus) {
+              return BatchResponse_Response.fromPartial({
+                getBuildStatus: getBuildStatusRes,
+              });
+            }
+            throw Error('unimplemented');
+          }),
         });
       });
     getBuildSpy = jest.spyOn(BuildsClientImpl.prototype, 'GetBuild');
@@ -144,7 +142,7 @@ describe('BatchedBuildsClientImpl', () => {
     expect(batchSpy).toHaveBeenCalledTimes(1);
     expect(batchSpy).toHaveBeenCalledWith(
       BatchRequest.fromPartial({
-        requests: Object.freeze([
+        requests: [
           {
             getBuild: getBuildReq,
           },
@@ -164,7 +162,7 @@ describe('BatchedBuildsClientImpl', () => {
           {
             getBuildStatus: getBuildStatusReq,
           },
-        ]),
+        ],
       }),
     );
 

@@ -42,7 +42,7 @@ describe('<ArtifactsEntry />', () => {
       .mockImplementation(async (req) => {
         if (req.parent === 'invocations/inv1') {
           return ListArtifactsResponse.fromPartial({
-            artifacts: Object.freeze([
+            artifacts: [
               {
                 name: 'invocations/inv1/artifacts/inv-artifact1',
                 artifactId: 'inv-artifact1',
@@ -51,12 +51,12 @@ describe('<ArtifactsEntry />', () => {
                 name: 'invocations/inv1/artifacts/inv-artifact2',
                 artifactId: 'inv-artifact2',
               },
-            ]),
+            ],
           });
         }
         if (req.parent === 'invocations/inv1/tests/test1/results/result1') {
           return ListArtifactsResponse.fromPartial({
-            artifacts: Object.freeze([
+            artifacts: [
               {
                 name: 'invocations/inv1/tests/test1/results/result1/artifacts/result-artifact1',
                 artifactId: 'result-artifact1',
@@ -65,7 +65,7 @@ describe('<ArtifactsEntry />', () => {
                 name: 'invocations/inv1/tests/test1/results/result1/artifacts/result-artifact2',
                 artifactId: 'result-artifact2',
               },
-            ]),
+            ],
           });
         }
         throw new Error('unexpected parent');

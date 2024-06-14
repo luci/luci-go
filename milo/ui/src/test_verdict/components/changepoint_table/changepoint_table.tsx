@@ -65,9 +65,7 @@ export function ChangepointTable({
     queries: chunk(testVariantBranchDefs, 100).map<QueryOpts>((batch) => ({
       ...client.BatchGet.query(
         BatchGetTestVariantBranchRequest.fromPartial({
-          names: Object.freeze(
-            batch.map((tvb) => ParsedTestVariantBranchName.toString(tvb)),
-          ),
+          names: batch.map((tvb) => ParsedTestVariantBranchName.toString(tvb)),
         }),
       ),
       select: (data) => data as OutputBatchGetTestVariantBranchResponse,

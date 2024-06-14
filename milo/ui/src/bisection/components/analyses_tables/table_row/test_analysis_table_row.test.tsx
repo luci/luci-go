@@ -96,13 +96,13 @@ describe('<TestAnalysisTableRow />', () => {
         verificationDetails: {
           status: SuspectVerificationStatus.CONFIRMED_CULPRIT,
         },
-        culpritAction: Object.freeze([
+        culpritAction: [
           {
             actionType: CulpritActionType.CULPRIT_AUTO_REVERTED,
             revertClUrl:
               'https://chromium-review.googlesource.com/placeholder/+/123457',
           },
-        ]),
+        ],
       },
     });
 

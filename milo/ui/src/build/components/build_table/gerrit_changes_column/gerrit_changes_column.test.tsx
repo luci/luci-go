@@ -16,6 +16,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { act } from 'react';
 
 import { OutputBuild } from '@/build/types';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuildTable } from '../build_table';
@@ -36,10 +37,10 @@ jest.mock('../context', () =>
   ),
 );
 
-const buildWithMultipleCls = {
+const buildWithMultipleCls = Build.fromPartial({
   id: '1234',
   input: {
-    gerritChanges: Object.freeze([
+    gerritChanges: [
       {
         host: 'gerrit-host',
         project: 'proj',
@@ -58,9 +59,9 @@ const buildWithMultipleCls = {
         change: 'cl3',
         patchset: '1',
       },
-    ]),
+    ],
   },
-} as OutputBuild;
+}) as OutputBuild;
 
 const buildWithNoCls = {
   id: '2345',

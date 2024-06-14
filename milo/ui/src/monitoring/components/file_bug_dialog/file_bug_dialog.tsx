@@ -69,7 +69,7 @@ export const FileBugDialog = ({
                 silenceUntil: a.silenceUntil,
               },
             });
-          }) as Readonly<UpdateAlertRequest[]>,
+          }),
         }),
       );
     },

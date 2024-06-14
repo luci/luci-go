@@ -220,10 +220,10 @@ export const GetBuilderRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetBuilderRequest>, I>>(base?: I): GetBuilderRequest {
-    return GetBuilderRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetBuilderRequest>): GetBuilderRequest {
+    return GetBuilderRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetBuilderRequest>, I>>(object: I): GetBuilderRequest {
+  fromPartial(object: DeepPartial<GetBuilderRequest>): GetBuilderRequest {
     const message = createBaseGetBuilderRequest() as any;
     message.id = (object.id !== undefined && object.id !== null) ? BuilderID.fromPartial(object.id) : undefined;
     message.mask = (object.mask !== undefined && object.mask !== null)
@@ -324,10 +324,10 @@ export const ListBuildersRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListBuildersRequest>, I>>(base?: I): ListBuildersRequest {
-    return ListBuildersRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListBuildersRequest>): ListBuildersRequest {
+    return ListBuildersRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListBuildersRequest>, I>>(object: I): ListBuildersRequest {
+  fromPartial(object: DeepPartial<ListBuildersRequest>): ListBuildersRequest {
     const message = createBaseListBuildersRequest() as any;
     message.project = object.project ?? "";
     message.bucket = object.bucket ?? "";
@@ -402,10 +402,10 @@ export const ListBuildersResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListBuildersResponse>, I>>(base?: I): ListBuildersResponse {
-    return ListBuildersResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListBuildersResponse>): ListBuildersResponse {
+    return ListBuildersResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListBuildersResponse>, I>>(object: I): ListBuildersResponse {
+  fromPartial(object: DeepPartial<ListBuildersResponse>): ListBuildersResponse {
     const message = createBaseListBuildersResponse() as any;
     message.builders = object.builders?.map((e) => BuilderItem.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -464,10 +464,10 @@ export const SetBuilderHealthRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SetBuilderHealthRequest>, I>>(base?: I): SetBuilderHealthRequest {
-    return SetBuilderHealthRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SetBuilderHealthRequest>): SetBuilderHealthRequest {
+    return SetBuilderHealthRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SetBuilderHealthRequest>, I>>(object: I): SetBuilderHealthRequest {
+  fromPartial(object: DeepPartial<SetBuilderHealthRequest>): SetBuilderHealthRequest {
     const message = createBaseSetBuilderHealthRequest() as any;
     message.health = object.health?.map((e) => SetBuilderHealthRequest_BuilderHealth.fromPartial(e)) || [];
     return message;
@@ -537,14 +537,10 @@ export const SetBuilderHealthRequest_BuilderHealth = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SetBuilderHealthRequest_BuilderHealth>, I>>(
-    base?: I,
-  ): SetBuilderHealthRequest_BuilderHealth {
-    return SetBuilderHealthRequest_BuilderHealth.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SetBuilderHealthRequest_BuilderHealth>): SetBuilderHealthRequest_BuilderHealth {
+    return SetBuilderHealthRequest_BuilderHealth.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SetBuilderHealthRequest_BuilderHealth>, I>>(
-    object: I,
-  ): SetBuilderHealthRequest_BuilderHealth {
+  fromPartial(object: DeepPartial<SetBuilderHealthRequest_BuilderHealth>): SetBuilderHealthRequest_BuilderHealth {
     const message = createBaseSetBuilderHealthRequest_BuilderHealth() as any;
     message.id = (object.id !== undefined && object.id !== null) ? BuilderID.fromPartial(object.id) : undefined;
     message.health = (object.health !== undefined && object.health !== null)
@@ -605,10 +601,10 @@ export const SetBuilderHealthResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SetBuilderHealthResponse>, I>>(base?: I): SetBuilderHealthResponse {
-    return SetBuilderHealthResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SetBuilderHealthResponse>): SetBuilderHealthResponse {
+    return SetBuilderHealthResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SetBuilderHealthResponse>, I>>(object: I): SetBuilderHealthResponse {
+  fromPartial(object: DeepPartial<SetBuilderHealthResponse>): SetBuilderHealthResponse {
     const message = createBaseSetBuilderHealthResponse() as any;
     message.responses = object.responses?.map((e) => SetBuilderHealthResponse_Response.fromPartial(e)) || [];
     return message;
@@ -678,14 +674,10 @@ export const SetBuilderHealthResponse_Response = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SetBuilderHealthResponse_Response>, I>>(
-    base?: I,
-  ): SetBuilderHealthResponse_Response {
-    return SetBuilderHealthResponse_Response.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SetBuilderHealthResponse_Response>): SetBuilderHealthResponse_Response {
+    return SetBuilderHealthResponse_Response.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SetBuilderHealthResponse_Response>, I>>(
-    object: I,
-  ): SetBuilderHealthResponse_Response {
+  fromPartial(object: DeepPartial<SetBuilderHealthResponse_Response>): SetBuilderHealthResponse_Response {
     const message = createBaseSetBuilderHealthResponse_Response() as any;
     message.result = (object.result !== undefined && object.result !== null)
       ? Empty.fromPartial(object.result)
@@ -744,10 +736,10 @@ export const BuilderMask = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuilderMask>, I>>(base?: I): BuilderMask {
-    return BuilderMask.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuilderMask>): BuilderMask {
+    return BuilderMask.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuilderMask>, I>>(object: I): BuilderMask {
+  fromPartial(object: DeepPartial<BuilderMask>): BuilderMask {
     const message = createBaseBuilderMask() as any;
     message.type = object.type ?? 0;
     return message;
@@ -806,10 +798,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

@@ -258,10 +258,10 @@ export const TestMetadataDetail = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestMetadataDetail>, I>>(base?: I): TestMetadataDetail {
-    return TestMetadataDetail.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestMetadataDetail>): TestMetadataDetail {
+    return TestMetadataDetail.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestMetadataDetail>, I>>(object: I): TestMetadataDetail {
+  fromPartial(object: DeepPartial<TestMetadataDetail>): TestMetadataDetail {
     const message = createBaseTestMetadataDetail() as any;
     message.name = object.name ?? "";
     message.project = object.project ?? "";
@@ -382,10 +382,10 @@ export const TestMetadata = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestMetadata>, I>>(base?: I): TestMetadata {
-    return TestMetadata.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestMetadata>): TestMetadata {
+    return TestMetadata.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestMetadata>, I>>(object: I): TestMetadata {
+  fromPartial(object: DeepPartial<TestMetadata>): TestMetadata {
     const message = createBaseTestMetadata() as any;
     message.name = object.name ?? "";
     message.location = (object.location !== undefined && object.location !== null)
@@ -477,10 +477,10 @@ export const TestLocation = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestLocation>, I>>(base?: I): TestLocation {
-    return TestLocation.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestLocation>): TestLocation {
+    return TestLocation.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestLocation>, I>>(object: I): TestLocation {
+  fromPartial(object: DeepPartial<TestLocation>): TestLocation {
     const message = createBaseTestLocation() as any;
     message.repo = object.repo ?? "";
     message.fileName = object.fileName ?? "";
@@ -552,10 +552,10 @@ export const BugComponent = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BugComponent>, I>>(base?: I): BugComponent {
-    return BugComponent.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BugComponent>): BugComponent {
+    return BugComponent.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BugComponent>, I>>(object: I): BugComponent {
+  fromPartial(object: DeepPartial<BugComponent>): BugComponent {
     const message = createBaseBugComponent() as any;
     message.issueTracker = (object.issueTracker !== undefined && object.issueTracker !== null)
       ? IssueTrackerComponent.fromPartial(object.issueTracker)
@@ -614,10 +614,10 @@ export const IssueTrackerComponent = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<IssueTrackerComponent>, I>>(base?: I): IssueTrackerComponent {
-    return IssueTrackerComponent.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<IssueTrackerComponent>): IssueTrackerComponent {
+    return IssueTrackerComponent.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<IssueTrackerComponent>, I>>(object: I): IssueTrackerComponent {
+  fromPartial(object: DeepPartial<IssueTrackerComponent>): IssueTrackerComponent {
     const message = createBaseIssueTrackerComponent() as any;
     message.componentId = object.componentId ?? "0";
     return message;
@@ -687,10 +687,10 @@ export const MonorailComponent = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<MonorailComponent>, I>>(base?: I): MonorailComponent {
-    return MonorailComponent.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<MonorailComponent>): MonorailComponent {
+    return MonorailComponent.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<MonorailComponent>, I>>(object: I): MonorailComponent {
+  fromPartial(object: DeepPartial<MonorailComponent>): MonorailComponent {
     const message = createBaseMonorailComponent() as any;
     message.project = object.project ?? "";
     message.value = object.value ?? "";
@@ -705,10 +705,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToString(long: Long) {
   return long.toString();

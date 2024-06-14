@@ -248,10 +248,10 @@ export const Task = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Task>, I>>(base?: I): Task {
-    return Task.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Task>): Task {
+    return Task.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Task>, I>>(object: I): Task {
+  fromPartial(object: DeepPartial<Task>): Task {
     const message = createBaseTask() as any;
     message.id = (object.id !== undefined && object.id !== null) ? TaskID.fromPartial(object.id) : undefined;
     message.link = object.link ?? "";
@@ -330,10 +330,10 @@ export const TaskID = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskID>, I>>(base?: I): TaskID {
-    return TaskID.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskID>): TaskID {
+    return TaskID.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskID>, I>>(object: I): TaskID {
+  fromPartial(object: DeepPartial<TaskID>): TaskID {
     const message = createBaseTaskID() as any;
     message.target = object.target ?? "";
     message.id = object.id ?? "";
@@ -404,10 +404,10 @@ export const BuildTaskUpdate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BuildTaskUpdate>, I>>(base?: I): BuildTaskUpdate {
-    return BuildTaskUpdate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BuildTaskUpdate>): BuildTaskUpdate {
+    return BuildTaskUpdate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BuildTaskUpdate>, I>>(object: I): BuildTaskUpdate {
+  fromPartial(object: DeepPartial<BuildTaskUpdate>): BuildTaskUpdate {
     const message = createBaseBuildTaskUpdate() as any;
     message.buildId = object.buildId ?? "";
     message.task = (object.task !== undefined && object.task !== null) ? Task.fromPartial(object.task) : undefined;
@@ -422,10 +422,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToString(long: Long) {
   return long.toString();

@@ -245,10 +245,10 @@ export const Sources = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Sources>, I>>(base?: I): Sources {
-    return Sources.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Sources>): Sources {
+    return Sources.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Sources>, I>>(object: I): Sources {
+  fromPartial(object: DeepPartial<Sources>): Sources {
     const message = createBaseSources() as any;
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
       ? GitilesCommit.fromPartial(object.gitilesCommit)
@@ -364,10 +364,10 @@ export const GitilesCommit = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GitilesCommit>, I>>(base?: I): GitilesCommit {
-    return GitilesCommit.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GitilesCommit>): GitilesCommit {
+    return GitilesCommit.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GitilesCommit>, I>>(object: I): GitilesCommit {
+  fromPartial(object: DeepPartial<GitilesCommit>): GitilesCommit {
     const message = createBaseGitilesCommit() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -483,10 +483,10 @@ export const GerritChange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GerritChange>, I>>(base?: I): GerritChange {
-    return GerritChange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GerritChange>): GerritChange {
+    return GerritChange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GerritChange>, I>>(object: I): GerritChange {
+  fromPartial(object: DeepPartial<GerritChange>): GerritChange {
     const message = createBaseGerritChange() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -544,10 +544,10 @@ export const SourceRef = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SourceRef>, I>>(base?: I): SourceRef {
-    return SourceRef.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SourceRef>): SourceRef {
+    return SourceRef.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SourceRef>, I>>(object: I): SourceRef {
+  fromPartial(object: DeepPartial<SourceRef>): SourceRef {
     const message = createBaseSourceRef() as any;
     message.gitiles = (object.gitiles !== undefined && object.gitiles !== null)
       ? GitilesRef.fromPartial(object.gitiles)
@@ -633,10 +633,10 @@ export const GitilesRef = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GitilesRef>, I>>(base?: I): GitilesRef {
-    return GitilesRef.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GitilesRef>): GitilesRef {
+    return GitilesRef.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GitilesRef>, I>>(object: I): GitilesRef {
+  fromPartial(object: DeepPartial<GitilesRef>): GitilesRef {
     const message = createBaseGitilesRef() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -736,10 +736,10 @@ export const Changelist = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Changelist>, I>>(base?: I): Changelist {
-    return Changelist.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Changelist>): Changelist {
+    return Changelist.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Changelist>, I>>(object: I): Changelist {
+  fromPartial(object: DeepPartial<Changelist>): Changelist {
     const message = createBaseChangelist() as any;
     message.host = object.host ?? "";
     message.change = object.change ?? "0";
@@ -756,10 +756,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToString(long: Long) {
   return long.toString();

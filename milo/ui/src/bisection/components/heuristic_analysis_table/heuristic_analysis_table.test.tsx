@@ -33,10 +33,10 @@ describe('<HeuristicAnalysisTable />', () => {
   });
 
   test('if heuristic suspects are displayed', async () => {
-    const mockSuspects = Object.freeze([
+    const mockSuspects = [
       createMockHeuristicSuspect('ac52e3'),
       createMockHeuristicSuspect('673e20'),
-    ]);
+    ];
 
     const mockHeuristicAnalysisResult = HeuristicAnalysisResult.fromPartial({
       status: AnalysisStatus.SUSPECTFOUND,

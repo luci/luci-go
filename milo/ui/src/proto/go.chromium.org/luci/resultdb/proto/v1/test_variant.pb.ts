@@ -409,10 +409,10 @@ export const TestVariant = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestVariant>, I>>(base?: I): TestVariant {
-    return TestVariant.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestVariant>): TestVariant {
+    return TestVariant.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestVariant>, I>>(object: I): TestVariant {
+  fromPartial(object: DeepPartial<TestVariant>): TestVariant {
     const message = createBaseTestVariant() as any;
     message.testId = object.testId ?? "";
     message.variant = (object.variant !== undefined && object.variant !== null)
@@ -481,10 +481,10 @@ export const VerdictInstruction = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<VerdictInstruction>, I>>(base?: I): VerdictInstruction {
-    return VerdictInstruction.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<VerdictInstruction>): VerdictInstruction {
+    return VerdictInstruction.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<VerdictInstruction>, I>>(object: I): VerdictInstruction {
+  fromPartial(object: DeepPartial<VerdictInstruction>): VerdictInstruction {
     const message = createBaseVerdictInstruction() as any;
     message.instruction = object.instruction ?? "";
     return message;
@@ -538,10 +538,10 @@ export const TestResultBundle = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestResultBundle>, I>>(base?: I): TestResultBundle {
-    return TestResultBundle.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestResultBundle>): TestResultBundle {
+    return TestResultBundle.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestResultBundle>, I>>(object: I): TestResultBundle {
+  fromPartial(object: DeepPartial<TestResultBundle>): TestResultBundle {
     const message = createBaseTestResultBundle() as any;
     message.result = (object.result !== undefined && object.result !== null)
       ? TestResult.fromPartial(object.result)
@@ -597,10 +597,10 @@ export const TestVariantPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestVariantPredicate>, I>>(base?: I): TestVariantPredicate {
-    return TestVariantPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestVariantPredicate>): TestVariantPredicate {
+    return TestVariantPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestVariantPredicate>, I>>(object: I): TestVariantPredicate {
+  fromPartial(object: DeepPartial<TestVariantPredicate>): TestVariantPredicate {
     const message = createBaseTestVariantPredicate() as any;
     message.status = object.status ?? 0;
     return message;
@@ -714,10 +714,10 @@ export const RunTestVerdict = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<RunTestVerdict>, I>>(base?: I): RunTestVerdict {
-    return RunTestVerdict.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<RunTestVerdict>): RunTestVerdict {
+    return RunTestVerdict.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<RunTestVerdict>, I>>(object: I): RunTestVerdict {
+  fromPartial(object: DeepPartial<RunTestVerdict>): RunTestVerdict {
     const message = createBaseRunTestVerdict() as any;
     message.testId = object.testId ?? "";
     message.variant = (object.variant !== undefined && object.variant !== null)
@@ -739,10 +739,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

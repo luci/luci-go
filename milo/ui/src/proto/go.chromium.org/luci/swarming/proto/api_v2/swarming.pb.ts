@@ -1608,10 +1608,10 @@ export const StringPair = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StringPair>, I>>(base?: I): StringPair {
-    return StringPair.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StringPair>): StringPair {
+    return StringPair.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StringPair>, I>>(object: I): StringPair {
+  fromPartial(object: DeepPartial<StringPair>): StringPair {
     const message = createBaseStringPair() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -1682,10 +1682,10 @@ export const StringListPair = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StringListPair>, I>>(base?: I): StringListPair {
-    return StringListPair.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StringListPair>): StringListPair {
+    return StringListPair.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StringListPair>, I>>(object: I): StringListPair {
+  fromPartial(object: DeepPartial<StringListPair>): StringListPair {
     const message = createBaseStringListPair() as any;
     message.key = object.key ?? "";
     message.value = object.value?.map((e) => e) || [];
@@ -1823,10 +1823,10 @@ export const ServerDetails = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ServerDetails>, I>>(base?: I): ServerDetails {
-    return ServerDetails.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ServerDetails>): ServerDetails {
+    return ServerDetails.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ServerDetails>, I>>(object: I): ServerDetails {
+  fromPartial(object: DeepPartial<ServerDetails>): ServerDetails {
     const message = createBaseServerDetails() as any;
     message.serverVersion = object.serverVersion ?? "";
     message.botVersion = object.botVersion ?? "";
@@ -1885,10 +1885,10 @@ export const BootstrapToken = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BootstrapToken>, I>>(base?: I): BootstrapToken {
-    return BootstrapToken.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BootstrapToken>): BootstrapToken {
+    return BootstrapToken.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BootstrapToken>, I>>(object: I): BootstrapToken {
+  fromPartial(object: DeepPartial<BootstrapToken>): BootstrapToken {
     const message = createBaseBootstrapToken() as any;
     message.bootstrapToken = object.bootstrapToken ?? "";
     return message;
@@ -2083,10 +2083,10 @@ export const ClientPermissions = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClientPermissions>, I>>(base?: I): ClientPermissions {
-    return ClientPermissions.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClientPermissions>): ClientPermissions {
+    return ClientPermissions.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClientPermissions>, I>>(object: I): ClientPermissions {
+  fromPartial(object: DeepPartial<ClientPermissions>): ClientPermissions {
     const message = createBaseClientPermissions() as any;
     message.deleteBot = object.deleteBot ?? false;
     message.deleteBots = object.deleteBots ?? false;
@@ -2165,10 +2165,10 @@ export const Digest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Digest>, I>>(base?: I): Digest {
-    return Digest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Digest>): Digest {
+    return Digest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Digest>, I>>(object: I): Digest {
+  fromPartial(object: DeepPartial<Digest>): Digest {
     const message = createBaseDigest() as any;
     message.hash = object.hash ?? "";
     message.sizeBytes = object.sizeBytes ?? "0";
@@ -2239,10 +2239,10 @@ export const CASReference = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CASReference>, I>>(base?: I): CASReference {
-    return CASReference.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CASReference>): CASReference {
+    return CASReference.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CASReference>, I>>(object: I): CASReference {
+  fromPartial(object: DeepPartial<CASReference>): CASReference {
     const message = createBaseCASReference() as any;
     message.casInstance = object.casInstance ?? "";
     message.digest = (object.digest !== undefined && object.digest !== null)
@@ -2329,10 +2329,10 @@ export const CipdPackage = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CipdPackage>, I>>(base?: I): CipdPackage {
-    return CipdPackage.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CipdPackage>): CipdPackage {
+    return CipdPackage.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CipdPackage>, I>>(object: I): CipdPackage {
+  fromPartial(object: DeepPartial<CipdPackage>): CipdPackage {
     const message = createBaseCipdPackage() as any;
     message.packageName = object.packageName ?? "";
     message.version = object.version ?? "";
@@ -2420,10 +2420,10 @@ export const CipdInput = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CipdInput>, I>>(base?: I): CipdInput {
-    return CipdInput.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CipdInput>): CipdInput {
+    return CipdInput.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CipdInput>, I>>(object: I): CipdInput {
+  fromPartial(object: DeepPartial<CipdInput>): CipdInput {
     const message = createBaseCipdInput() as any;
     message.server = object.server ?? "";
     message.clientPackage = (object.clientPackage !== undefined && object.clientPackage !== null)
@@ -2499,10 +2499,10 @@ export const CipdPins = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CipdPins>, I>>(base?: I): CipdPins {
-    return CipdPins.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CipdPins>): CipdPins {
+    return CipdPins.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CipdPins>, I>>(object: I): CipdPins {
+  fromPartial(object: DeepPartial<CipdPins>): CipdPins {
     const message = createBaseCipdPins() as any;
     message.clientPackage = (object.clientPackage !== undefined && object.clientPackage !== null)
       ? CipdPackage.fromPartial(object.clientPackage)
@@ -2575,10 +2575,10 @@ export const CacheEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CacheEntry>, I>>(base?: I): CacheEntry {
-    return CacheEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CacheEntry>): CacheEntry {
+    return CacheEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CacheEntry>, I>>(object: I): CacheEntry {
+  fromPartial(object: DeepPartial<CacheEntry>): CacheEntry {
     const message = createBaseCacheEntry() as any;
     message.name = object.name ?? "";
     message.path = object.path ?? "";
@@ -2679,10 +2679,10 @@ export const Containment = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Containment>, I>>(base?: I): Containment {
-    return Containment.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Containment>): Containment {
+    return Containment.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Containment>, I>>(object: I): Containment {
+  fromPartial(object: DeepPartial<Containment>): Containment {
     const message = createBaseContainment() as any;
     message.lowerPriority = object.lowerPriority ?? false;
     message.containmentType = object.containmentType ?? 0;
@@ -2957,10 +2957,10 @@ export const TaskProperties = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskProperties>, I>>(base?: I): TaskProperties {
-    return TaskProperties.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskProperties>): TaskProperties {
+    return TaskProperties.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskProperties>, I>>(object: I): TaskProperties {
+  fromPartial(object: DeepPartial<TaskProperties>): TaskProperties {
     const message = createBaseTaskProperties() as any;
     message.caches = object.caches?.map((e) => CacheEntry.fromPartial(e)) || [];
     message.cipdInput = (object.cipdInput !== undefined && object.cipdInput !== null)
@@ -3064,10 +3064,10 @@ export const TaskSlice = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskSlice>, I>>(base?: I): TaskSlice {
-    return TaskSlice.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskSlice>): TaskSlice {
+    return TaskSlice.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskSlice>, I>>(object: I): TaskSlice {
+  fromPartial(object: DeepPartial<TaskSlice>): TaskSlice {
     const message = createBaseTaskSlice() as any;
     message.properties = (object.properties !== undefined && object.properties !== null)
       ? TaskProperties.fromPartial(object.properties)
@@ -3281,10 +3281,10 @@ export const SwarmingTaskBackendConfig = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SwarmingTaskBackendConfig>, I>>(base?: I): SwarmingTaskBackendConfig {
-    return SwarmingTaskBackendConfig.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SwarmingTaskBackendConfig>): SwarmingTaskBackendConfig {
+    return SwarmingTaskBackendConfig.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SwarmingTaskBackendConfig>, I>>(object: I): SwarmingTaskBackendConfig {
+  fromPartial(object: DeepPartial<SwarmingTaskBackendConfig>): SwarmingTaskBackendConfig {
     const message = createBaseSwarmingTaskBackendConfig() as any;
     message.priority = object.priority ?? 0;
     message.botPingTolerance = object.botPingTolerance ?? "0";
@@ -3348,10 +3348,10 @@ export const ResultDBCfg = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ResultDBCfg>, I>>(base?: I): ResultDBCfg {
-    return ResultDBCfg.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ResultDBCfg>): ResultDBCfg {
+    return ResultDBCfg.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ResultDBCfg>, I>>(object: I): ResultDBCfg {
+  fromPartial(object: DeepPartial<ResultDBCfg>): ResultDBCfg {
     const message = createBaseResultDBCfg() as any;
     message.enable = object.enable ?? false;
     return message;
@@ -3668,10 +3668,10 @@ export const NewTaskRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<NewTaskRequest>, I>>(base?: I): NewTaskRequest {
-    return NewTaskRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<NewTaskRequest>): NewTaskRequest {
+    return NewTaskRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<NewTaskRequest>, I>>(object: I): NewTaskRequest {
+  fromPartial(object: DeepPartial<NewTaskRequest>): NewTaskRequest {
     const message = createBaseNewTaskRequest() as any;
     message.expirationSecs = object.expirationSecs ?? 0;
     message.name = object.name ?? "";
@@ -4007,10 +4007,10 @@ export const TaskRequestResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskRequestResponse>, I>>(base?: I): TaskRequestResponse {
-    return TaskRequestResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskRequestResponse>): TaskRequestResponse {
+    return TaskRequestResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskRequestResponse>, I>>(object: I): TaskRequestResponse {
+  fromPartial(object: DeepPartial<TaskRequestResponse>): TaskRequestResponse {
     const message = createBaseTaskRequestResponse() as any;
     message.taskId = object.taskId ?? "";
     message.expirationSecs = object.expirationSecs ?? 0;
@@ -4101,10 +4101,10 @@ export const TaskCancelRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskCancelRequest>, I>>(base?: I): TaskCancelRequest {
-    return TaskCancelRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskCancelRequest>): TaskCancelRequest {
+    return TaskCancelRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskCancelRequest>, I>>(object: I): TaskCancelRequest {
+  fromPartial(object: DeepPartial<TaskCancelRequest>): TaskCancelRequest {
     const message = createBaseTaskCancelRequest() as any;
     message.taskId = object.taskId ?? "";
     message.killRunning = object.killRunning ?? false;
@@ -4231,10 +4231,10 @@ export const TasksCancelRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TasksCancelRequest>, I>>(base?: I): TasksCancelRequest {
-    return TasksCancelRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TasksCancelRequest>): TasksCancelRequest {
+    return TasksCancelRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TasksCancelRequest>, I>>(object: I): TasksCancelRequest {
+  fromPartial(object: DeepPartial<TasksCancelRequest>): TasksCancelRequest {
     const message = createBaseTasksCancelRequest() as any;
     message.limit = object.limit ?? 0;
     message.cursor = object.cursor ?? "";
@@ -4293,10 +4293,10 @@ export const OperationStats = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<OperationStats>, I>>(base?: I): OperationStats {
-    return OperationStats.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<OperationStats>): OperationStats {
+    return OperationStats.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<OperationStats>, I>>(object: I): OperationStats {
+  fromPartial(object: DeepPartial<OperationStats>): OperationStats {
     const message = createBaseOperationStats() as any;
     message.duration = object.duration ?? 0;
     return message;
@@ -4474,10 +4474,10 @@ export const CASOperationStats = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CASOperationStats>, I>>(base?: I): CASOperationStats {
-    return CASOperationStats.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CASOperationStats>): CASOperationStats {
+    return CASOperationStats.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CASOperationStats>, I>>(object: I): CASOperationStats {
+  fromPartial(object: DeepPartial<CASOperationStats>): CASOperationStats {
     const message = createBaseCASOperationStats() as any;
     message.duration = object.duration ?? 0;
     message.initialNumberItems = object.initialNumberItems ?? 0;
@@ -4656,10 +4656,10 @@ export const PerformanceStats = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<PerformanceStats>, I>>(base?: I): PerformanceStats {
-    return PerformanceStats.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<PerformanceStats>): PerformanceStats {
+    return PerformanceStats.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<PerformanceStats>, I>>(object: I): PerformanceStats {
+  fromPartial(object: DeepPartial<PerformanceStats>): PerformanceStats {
     const message = createBasePerformanceStats() as any;
     message.botOverhead = object.botOverhead ?? 0;
     message.isolatedDownload = (object.isolatedDownload !== undefined && object.isolatedDownload !== null)
@@ -4750,10 +4750,10 @@ export const CancelResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CancelResponse>, I>>(base?: I): CancelResponse {
-    return CancelResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CancelResponse>): CancelResponse {
+    return CancelResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CancelResponse>, I>>(object: I): CancelResponse {
+  fromPartial(object: DeepPartial<CancelResponse>): CancelResponse {
     const message = createBaseCancelResponse() as any;
     message.canceled = object.canceled ?? false;
     message.wasRunning = object.wasRunning ?? false;
@@ -4838,10 +4838,10 @@ export const TasksCancelResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TasksCancelResponse>, I>>(base?: I): TasksCancelResponse {
-    return TasksCancelResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TasksCancelResponse>): TasksCancelResponse {
+    return TasksCancelResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TasksCancelResponse>, I>>(object: I): TasksCancelResponse {
+  fromPartial(object: DeepPartial<TasksCancelResponse>): TasksCancelResponse {
     const message = createBaseTasksCancelResponse() as any;
     message.cursor = object.cursor ?? "";
     message.now = object.now ?? undefined;
@@ -4913,10 +4913,10 @@ export const TaskOutputResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskOutputResponse>, I>>(base?: I): TaskOutputResponse {
-    return TaskOutputResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskOutputResponse>): TaskOutputResponse {
+    return TaskOutputResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskOutputResponse>, I>>(object: I): TaskOutputResponse {
+  fromPartial(object: DeepPartial<TaskOutputResponse>): TaskOutputResponse {
     const message = createBaseTaskOutputResponse() as any;
     message.output = object.output ?? new Uint8Array(0);
     message.state = object.state ?? 0;
@@ -4987,10 +4987,10 @@ export const ResultDBInfo = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ResultDBInfo>, I>>(base?: I): ResultDBInfo {
-    return ResultDBInfo.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ResultDBInfo>): ResultDBInfo {
+    return ResultDBInfo.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ResultDBInfo>, I>>(object: I): ResultDBInfo {
+  fromPartial(object: DeepPartial<ResultDBInfo>): ResultDBInfo {
     const message = createBaseResultDBInfo() as any;
     message.hostname = object.hostname ?? "";
     message.invocation = object.invocation ?? "";
@@ -5519,10 +5519,10 @@ export const TaskResultResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskResultResponse>, I>>(base?: I): TaskResultResponse {
-    return TaskResultResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskResultResponse>): TaskResultResponse {
+    return TaskResultResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskResultResponse>, I>>(object: I): TaskResultResponse {
+  fromPartial(object: DeepPartial<TaskResultResponse>): TaskResultResponse {
     const message = createBaseTaskResultResponse() as any;
     message.taskId = object.taskId ?? "";
     message.botDimensions = object.botDimensions?.map((e) => StringListPair.fromPartial(e)) || [];
@@ -5628,10 +5628,10 @@ export const TaskStates = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskStates>, I>>(base?: I): TaskStates {
-    return TaskStates.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskStates>): TaskStates {
+    return TaskStates.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskStates>, I>>(object: I): TaskStates {
+  fromPartial(object: DeepPartial<TaskStates>): TaskStates {
     const message = createBaseTaskStates() as any;
     message.states = object.states?.map((e) => e) || [];
     return message;
@@ -5717,10 +5717,10 @@ export const TaskListResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskListResponse>, I>>(base?: I): TaskListResponse {
-    return TaskListResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskListResponse>): TaskListResponse {
+    return TaskListResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskListResponse>, I>>(object: I): TaskListResponse {
+  fromPartial(object: DeepPartial<TaskListResponse>): TaskListResponse {
     const message = createBaseTaskListResponse() as any;
     message.cursor = object.cursor ?? "";
     message.items = object.items?.map((e) => TaskResultResponse.fromPartial(e)) || [];
@@ -5808,10 +5808,10 @@ export const TaskRequestsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskRequestsResponse>, I>>(base?: I): TaskRequestsResponse {
-    return TaskRequestsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskRequestsResponse>): TaskRequestsResponse {
+    return TaskRequestsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskRequestsResponse>, I>>(object: I): TaskRequestsResponse {
+  fromPartial(object: DeepPartial<TaskRequestsResponse>): TaskRequestsResponse {
     const message = createBaseTaskRequestsResponse() as any;
     message.cursor = object.cursor ?? "";
     message.items = object.items?.map((e) => TaskRequestResponse.fromPartial(e)) || [];
@@ -5883,10 +5883,10 @@ export const TasksCount = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TasksCount>, I>>(base?: I): TasksCount {
-    return TasksCount.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TasksCount>): TasksCount {
+    return TasksCount.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TasksCount>, I>>(object: I): TasksCount {
+  fromPartial(object: DeepPartial<TasksCount>): TasksCount {
     const message = createBaseTasksCount() as any;
     message.count = object.count ?? 0;
     message.now = object.now ?? undefined;
@@ -5971,10 +5971,10 @@ export const TaskRequestMetadataResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskRequestMetadataResponse>, I>>(base?: I): TaskRequestMetadataResponse {
-    return TaskRequestMetadataResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskRequestMetadataResponse>): TaskRequestMetadataResponse {
+    return TaskRequestMetadataResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskRequestMetadataResponse>, I>>(object: I): TaskRequestMetadataResponse {
+  fromPartial(object: DeepPartial<TaskRequestMetadataResponse>): TaskRequestMetadataResponse {
     const message = createBaseTaskRequestMetadataResponse() as any;
     message.taskId = object.taskId ?? "";
     message.request = (object.request !== undefined && object.request !== null)
@@ -6235,10 +6235,10 @@ export const BotInfo = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotInfo>, I>>(base?: I): BotInfo {
-    return BotInfo.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotInfo>): BotInfo {
+    return BotInfo.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotInfo>, I>>(object: I): BotInfo {
+  fromPartial(object: DeepPartial<BotInfo>): BotInfo {
     const message = createBaseBotInfo() as any;
     message.botId = object.botId ?? "";
     message.taskId = object.taskId ?? "";
@@ -6349,10 +6349,10 @@ export const BotInfoListResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotInfoListResponse>, I>>(base?: I): BotInfoListResponse {
-    return BotInfoListResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotInfoListResponse>): BotInfoListResponse {
+    return BotInfoListResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotInfoListResponse>, I>>(object: I): BotInfoListResponse {
+  fromPartial(object: DeepPartial<BotInfoListResponse>): BotInfoListResponse {
     const message = createBaseBotInfoListResponse() as any;
     message.cursor = object.cursor ?? "";
     message.items = object.items?.map((e) => BotInfo.fromPartial(e)) || [];
@@ -6481,10 +6481,10 @@ export const BotsCount = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotsCount>, I>>(base?: I): BotsCount {
-    return BotsCount.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotsCount>): BotsCount {
+    return BotsCount.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotsCount>, I>>(object: I): BotsCount {
+  fromPartial(object: DeepPartial<BotsCount>): BotsCount {
     const message = createBaseBotsCount() as any;
     message.now = object.now ?? undefined;
     message.count = object.count ?? 0;
@@ -6561,10 +6561,10 @@ export const BotsDimensions = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotsDimensions>, I>>(base?: I): BotsDimensions {
-    return BotsDimensions.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotsDimensions>): BotsDimensions {
+    return BotsDimensions.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotsDimensions>, I>>(object: I): BotsDimensions {
+  fromPartial(object: DeepPartial<BotsDimensions>): BotsDimensions {
     const message = createBaseBotsDimensions() as any;
     message.botsDimensions = object.botsDimensions?.map((e) => StringListPair.fromPartial(e)) || [];
     message.ts = object.ts ?? undefined;
@@ -6775,10 +6775,10 @@ export const BotEventResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotEventResponse>, I>>(base?: I): BotEventResponse {
-    return BotEventResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotEventResponse>): BotEventResponse {
+    return BotEventResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotEventResponse>, I>>(object: I): BotEventResponse {
+  fromPartial(object: DeepPartial<BotEventResponse>): BotEventResponse {
     const message = createBaseBotEventResponse() as any;
     message.ts = object.ts ?? undefined;
     message.eventType = object.eventType ?? "";
@@ -6872,10 +6872,10 @@ export const BotEventsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotEventsResponse>, I>>(base?: I): BotEventsResponse {
-    return BotEventsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotEventsResponse>): BotEventsResponse {
+    return BotEventsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotEventsResponse>, I>>(object: I): BotEventsResponse {
+  fromPartial(object: DeepPartial<BotEventsResponse>): BotEventsResponse {
     const message = createBaseBotEventsResponse() as any;
     message.cursor = object.cursor ?? "";
     message.items = object.items?.map((e) => BotEventResponse.fromPartial(e)) || [];
@@ -6931,10 +6931,10 @@ export const DeleteResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<DeleteResponse>, I>>(base?: I): DeleteResponse {
-    return DeleteResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<DeleteResponse>): DeleteResponse {
+    return DeleteResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<DeleteResponse>, I>>(object: I): DeleteResponse {
+  fromPartial(object: DeepPartial<DeleteResponse>): DeleteResponse {
     const message = createBaseDeleteResponse() as any;
     message.deleted = object.deleted ?? false;
     return message;
@@ -6988,10 +6988,10 @@ export const TerminateResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TerminateResponse>, I>>(base?: I): TerminateResponse {
-    return TerminateResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TerminateResponse>): TerminateResponse {
+    return TerminateResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TerminateResponse>, I>>(object: I): TerminateResponse {
+  fromPartial(object: DeepPartial<TerminateResponse>): TerminateResponse {
     const message = createBaseTerminateResponse() as any;
     message.taskId = object.taskId ?? "";
     return message;
@@ -7045,10 +7045,10 @@ export const BotRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotRequest>, I>>(base?: I): BotRequest {
-    return BotRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotRequest>): BotRequest {
+    return BotRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotRequest>, I>>(object: I): BotRequest {
+  fromPartial(object: DeepPartial<BotRequest>): BotRequest {
     const message = createBaseBotRequest() as any;
     message.botId = object.botId ?? "";
     return message;
@@ -7118,10 +7118,10 @@ export const TerminateRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TerminateRequest>, I>>(base?: I): TerminateRequest {
-    return TerminateRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TerminateRequest>): TerminateRequest {
+    return TerminateRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TerminateRequest>, I>>(object: I): TerminateRequest {
+  fromPartial(object: DeepPartial<TerminateRequest>): TerminateRequest {
     const message = createBaseTerminateRequest() as any;
     message.botId = object.botId ?? "";
     message.reason = object.reason ?? "";
@@ -7234,10 +7234,10 @@ export const BotEventsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotEventsRequest>, I>>(base?: I): BotEventsRequest {
-    return BotEventsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotEventsRequest>): BotEventsRequest {
+    return BotEventsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotEventsRequest>, I>>(object: I): BotEventsRequest {
+  fromPartial(object: DeepPartial<BotEventsRequest>): BotEventsRequest {
     const message = createBaseBotEventsRequest() as any;
     message.botId = object.botId ?? "";
     message.limit = object.limit ?? 0;
@@ -7406,10 +7406,10 @@ export const BotTasksRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotTasksRequest>, I>>(base?: I): BotTasksRequest {
-    return BotTasksRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotTasksRequest>): BotTasksRequest {
+    return BotTasksRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotTasksRequest>, I>>(object: I): BotTasksRequest {
+  fromPartial(object: DeepPartial<BotTasksRequest>): BotTasksRequest {
     const message = createBaseBotTasksRequest() as any;
     message.botId = object.botId ?? "";
     message.limit = object.limit ?? 0;
@@ -7558,10 +7558,10 @@ export const BotsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotsRequest>, I>>(base?: I): BotsRequest {
-    return BotsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotsRequest>): BotsRequest {
+    return BotsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotsRequest>, I>>(object: I): BotsRequest {
+  fromPartial(object: DeepPartial<BotsRequest>): BotsRequest {
     const message = createBaseBotsRequest() as any;
     message.limit = object.limit ?? 0;
     message.cursor = object.cursor ?? "";
@@ -7625,10 +7625,10 @@ export const BotsCountRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotsCountRequest>, I>>(base?: I): BotsCountRequest {
-    return BotsCountRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotsCountRequest>): BotsCountRequest {
+    return BotsCountRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotsCountRequest>, I>>(object: I): BotsCountRequest {
+  fromPartial(object: DeepPartial<BotsCountRequest>): BotsCountRequest {
     const message = createBaseBotsCountRequest() as any;
     message.dimensions = object.dimensions?.map((e) => StringPair.fromPartial(e)) || [];
     return message;
@@ -7682,10 +7682,10 @@ export const BotsDimensionsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BotsDimensionsRequest>, I>>(base?: I): BotsDimensionsRequest {
-    return BotsDimensionsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BotsDimensionsRequest>): BotsDimensionsRequest {
+    return BotsDimensionsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BotsDimensionsRequest>, I>>(object: I): BotsDimensionsRequest {
+  fromPartial(object: DeepPartial<BotsDimensionsRequest>): BotsDimensionsRequest {
     const message = createBaseBotsDimensionsRequest() as any;
     message.pool = object.pool ?? "";
     return message;
@@ -7769,10 +7769,10 @@ export const PermissionsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<PermissionsRequest>, I>>(base?: I): PermissionsRequest {
-    return PermissionsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<PermissionsRequest>): PermissionsRequest {
+    return PermissionsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<PermissionsRequest>, I>>(object: I): PermissionsRequest {
+  fromPartial(object: DeepPartial<PermissionsRequest>): PermissionsRequest {
     const message = createBasePermissionsRequest() as any;
     message.botId = object.botId ?? "";
     message.taskId = object.taskId ?? "";
@@ -7830,10 +7830,10 @@ export const TaskStatesRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskStatesRequest>, I>>(base?: I): TaskStatesRequest {
-    return TaskStatesRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskStatesRequest>): TaskStatesRequest {
+    return TaskStatesRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskStatesRequest>, I>>(object: I): TaskStatesRequest {
+  fromPartial(object: DeepPartial<TaskStatesRequest>): TaskStatesRequest {
     const message = createBaseTaskStatesRequest() as any;
     message.taskId = object.taskId?.map((e) => e) || [];
     return message;
@@ -7998,10 +7998,10 @@ export const TasksWithPerfRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TasksWithPerfRequest>, I>>(base?: I): TasksWithPerfRequest {
-    return TasksWithPerfRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TasksWithPerfRequest>): TasksWithPerfRequest {
+    return TasksWithPerfRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TasksWithPerfRequest>, I>>(object: I): TasksWithPerfRequest {
+  fromPartial(object: DeepPartial<TasksWithPerfRequest>): TasksWithPerfRequest {
     const message = createBaseTasksWithPerfRequest() as any;
     message.limit = object.limit ?? 0;
     message.cursor = object.cursor ?? "";
@@ -8148,10 +8148,10 @@ export const TasksRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TasksRequest>, I>>(base?: I): TasksRequest {
-    return TasksRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TasksRequest>): TasksRequest {
+    return TasksRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TasksRequest>, I>>(object: I): TasksRequest {
+  fromPartial(object: DeepPartial<TasksRequest>): TasksRequest {
     const message = createBaseTasksRequest() as any;
     message.limit = object.limit ?? 0;
     message.cursor = object.cursor ?? "";
@@ -8255,10 +8255,10 @@ export const TasksCountRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TasksCountRequest>, I>>(base?: I): TasksCountRequest {
-    return TasksCountRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TasksCountRequest>): TasksCountRequest {
+    return TasksCountRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TasksCountRequest>, I>>(object: I): TasksCountRequest {
+  fromPartial(object: DeepPartial<TasksCountRequest>): TasksCountRequest {
     const message = createBaseTasksCountRequest() as any;
     message.start = object.start ?? undefined;
     message.end = object.end ?? undefined;
@@ -8315,10 +8315,10 @@ export const TaskIdRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskIdRequest>, I>>(base?: I): TaskIdRequest {
-    return TaskIdRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskIdRequest>): TaskIdRequest {
+    return TaskIdRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskIdRequest>, I>>(object: I): TaskIdRequest {
+  fromPartial(object: DeepPartial<TaskIdRequest>): TaskIdRequest {
     const message = createBaseTaskIdRequest() as any;
     message.taskId = object.taskId ?? "";
     return message;
@@ -8402,10 +8402,10 @@ export const TaskIdWithOffsetRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskIdWithOffsetRequest>, I>>(base?: I): TaskIdWithOffsetRequest {
-    return TaskIdWithOffsetRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskIdWithOffsetRequest>): TaskIdWithOffsetRequest {
+    return TaskIdWithOffsetRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskIdWithOffsetRequest>, I>>(object: I): TaskIdWithOffsetRequest {
+  fromPartial(object: DeepPartial<TaskIdWithOffsetRequest>): TaskIdWithOffsetRequest {
     const message = createBaseTaskIdWithOffsetRequest() as any;
     message.taskId = object.taskId ?? "";
     message.offset = object.offset ?? "0";
@@ -8479,10 +8479,10 @@ export const TaskIdWithPerfRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TaskIdWithPerfRequest>, I>>(base?: I): TaskIdWithPerfRequest {
-    return TaskIdWithPerfRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TaskIdWithPerfRequest>): TaskIdWithPerfRequest {
+    return TaskIdWithPerfRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TaskIdWithPerfRequest>, I>>(object: I): TaskIdWithPerfRequest {
+  fromPartial(object: DeepPartial<TaskIdWithPerfRequest>): TaskIdWithPerfRequest {
     const message = createBaseTaskIdWithPerfRequest() as any;
     message.taskId = object.taskId ?? "";
     message.includePerformanceStats = object.includePerformanceStats ?? false;
@@ -8555,10 +8555,10 @@ export const BatchGetResultRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetResultRequest>, I>>(base?: I): BatchGetResultRequest {
-    return BatchGetResultRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetResultRequest>): BatchGetResultRequest {
+    return BatchGetResultRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetResultRequest>, I>>(object: I): BatchGetResultRequest {
+  fromPartial(object: DeepPartial<BatchGetResultRequest>): BatchGetResultRequest {
     const message = createBaseBatchGetResultRequest() as any;
     message.taskIds = object.taskIds?.map((e) => e) || [];
     message.includePerformanceStats = object.includePerformanceStats ?? false;
@@ -8617,10 +8617,10 @@ export const BatchGetResultResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetResultResponse>, I>>(base?: I): BatchGetResultResponse {
-    return BatchGetResultResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetResultResponse>): BatchGetResultResponse {
+    return BatchGetResultResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetResultResponse>, I>>(object: I): BatchGetResultResponse {
+  fromPartial(object: DeepPartial<BatchGetResultResponse>): BatchGetResultResponse {
     const message = createBaseBatchGetResultResponse() as any;
     message.results = object.results?.map((e) => BatchGetResultResponse_ResultOrError.fromPartial(e)) || [];
     return message;
@@ -8704,14 +8704,10 @@ export const BatchGetResultResponse_ResultOrError = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetResultResponse_ResultOrError>, I>>(
-    base?: I,
-  ): BatchGetResultResponse_ResultOrError {
-    return BatchGetResultResponse_ResultOrError.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetResultResponse_ResultOrError>): BatchGetResultResponse_ResultOrError {
+    return BatchGetResultResponse_ResultOrError.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetResultResponse_ResultOrError>, I>>(
-    object: I,
-  ): BatchGetResultResponse_ResultOrError {
+  fromPartial(object: DeepPartial<BatchGetResultResponse_ResultOrError>): BatchGetResultResponse_ResultOrError {
     const message = createBaseBatchGetResultResponse_ResultOrError() as any;
     message.taskId = object.taskId ?? "";
     message.result = (object.result !== undefined && object.result !== null)
@@ -9056,10 +9052,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

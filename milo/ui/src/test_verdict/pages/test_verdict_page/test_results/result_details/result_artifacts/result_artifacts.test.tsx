@@ -40,7 +40,7 @@ describe('<ResultArtifacts />', () => {
         if (!req.parent.includes('results')) {
           return Promise.resolve(
             ListArtifactsResponse.fromPartial({
-              artifacts: Object.freeze([
+              artifacts: [
                 {
                   artifactId: 'inv_log1.txt',
                 },
@@ -50,18 +50,18 @@ describe('<ResultArtifacts />', () => {
                 {
                   artifactId: 'inv_log3.txt',
                 },
-              ]),
+              ],
               nextPageToken: '',
             }),
           );
         } else {
           return Promise.resolve(
             ListArtifactsResponse.fromPartial({
-              artifacts: Object.freeze([
+              artifacts: [
                 {
                   artifactId: 'result_log.txt',
                 },
-              ]),
+              ],
               nextPageToken: '',
             }),
           );

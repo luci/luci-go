@@ -252,14 +252,10 @@ export const QueryChangepointGroupSummariesRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryChangepointGroupSummariesRequest>, I>>(
-    base?: I,
-  ): QueryChangepointGroupSummariesRequest {
-    return QueryChangepointGroupSummariesRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryChangepointGroupSummariesRequest>): QueryChangepointGroupSummariesRequest {
+    return QueryChangepointGroupSummariesRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryChangepointGroupSummariesRequest>, I>>(
-    object: I,
-  ): QueryChangepointGroupSummariesRequest {
+  fromPartial(object: DeepPartial<QueryChangepointGroupSummariesRequest>): QueryChangepointGroupSummariesRequest {
     const message = createBaseQueryChangepointGroupSummariesRequest() as any;
     message.project = object.project ?? "";
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
@@ -334,10 +330,10 @@ export const ChangepointPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ChangepointPredicate>, I>>(base?: I): ChangepointPredicate {
-    return ChangepointPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ChangepointPredicate>): ChangepointPredicate {
+    return ChangepointPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ChangepointPredicate>, I>>(object: I): ChangepointPredicate {
+  fromPartial(object: DeepPartial<ChangepointPredicate>): ChangepointPredicate {
     const message = createBaseChangepointPredicate() as any;
     message.testIdPrefix = object.testIdPrefix ?? "";
     message.unexpectedVerdictRateChangeRange =
@@ -399,14 +395,10 @@ export const QueryChangepointGroupSummariesResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryChangepointGroupSummariesResponse>, I>>(
-    base?: I,
-  ): QueryChangepointGroupSummariesResponse {
-    return QueryChangepointGroupSummariesResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryChangepointGroupSummariesResponse>): QueryChangepointGroupSummariesResponse {
+    return QueryChangepointGroupSummariesResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryChangepointGroupSummariesResponse>, I>>(
-    object: I,
-  ): QueryChangepointGroupSummariesResponse {
+  fromPartial(object: DeepPartial<QueryChangepointGroupSummariesResponse>): QueryChangepointGroupSummariesResponse {
     const message = createBaseQueryChangepointGroupSummariesResponse() as any;
     message.groupSummaries = object.groupSummaries?.map((e) => ChangepointGroupSummary.fromPartial(e)) || [];
     return message;
@@ -478,10 +470,10 @@ export const ChangepointGroupSummary = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ChangepointGroupSummary>, I>>(base?: I): ChangepointGroupSummary {
-    return ChangepointGroupSummary.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ChangepointGroupSummary>): ChangepointGroupSummary {
+    return ChangepointGroupSummary.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ChangepointGroupSummary>, I>>(object: I): ChangepointGroupSummary {
+  fromPartial(object: DeepPartial<ChangepointGroupSummary>): ChangepointGroupSummary {
     const message = createBaseChangepointGroupSummary() as any;
     message.canonicalChangepoint = (object.canonicalChangepoint !== undefined && object.canonicalChangepoint !== null)
       ? Changepoint.fromPartial(object.canonicalChangepoint)
@@ -636,10 +628,10 @@ export const ChangepointGroupStatistics = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ChangepointGroupStatistics>, I>>(base?: I): ChangepointGroupStatistics {
-    return ChangepointGroupStatistics.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ChangepointGroupStatistics>): ChangepointGroupStatistics {
+    return ChangepointGroupStatistics.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ChangepointGroupStatistics>, I>>(object: I): ChangepointGroupStatistics {
+  fromPartial(object: DeepPartial<ChangepointGroupStatistics>): ChangepointGroupStatistics {
     const message = createBaseChangepointGroupStatistics() as any;
     message.count = object.count ?? 0;
     message.unexpectedVerdictRateBefore =
@@ -728,13 +720,11 @@ export const ChangepointGroupStatistics_RateDistribution = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ChangepointGroupStatistics_RateDistribution>, I>>(
-    base?: I,
-  ): ChangepointGroupStatistics_RateDistribution {
-    return ChangepointGroupStatistics_RateDistribution.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ChangepointGroupStatistics_RateDistribution>): ChangepointGroupStatistics_RateDistribution {
+    return ChangepointGroupStatistics_RateDistribution.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ChangepointGroupStatistics_RateDistribution>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<ChangepointGroupStatistics_RateDistribution>,
   ): ChangepointGroupStatistics_RateDistribution {
     const message = createBaseChangepointGroupStatistics_RateDistribution() as any;
     message.average = object.average ?? 0;
@@ -827,13 +817,13 @@ export const ChangepointGroupStatistics_RateDistribution_RateBuckets = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ChangepointGroupStatistics_RateDistribution_RateBuckets>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<ChangepointGroupStatistics_RateDistribution_RateBuckets>,
   ): ChangepointGroupStatistics_RateDistribution_RateBuckets {
-    return ChangepointGroupStatistics_RateDistribution_RateBuckets.fromPartial(base ?? ({} as any));
+    return ChangepointGroupStatistics_RateDistribution_RateBuckets.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ChangepointGroupStatistics_RateDistribution_RateBuckets>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<ChangepointGroupStatistics_RateDistribution_RateBuckets>,
   ): ChangepointGroupStatistics_RateDistribution_RateBuckets {
     const message = createBaseChangepointGroupStatistics_RateDistribution_RateBuckets() as any;
     message.countLess5Percent = object.countLess5Percent ?? 0;
@@ -926,13 +916,13 @@ export const ChangepointGroupStatistics_RateChangeBuckets = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ChangepointGroupStatistics_RateChangeBuckets>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<ChangepointGroupStatistics_RateChangeBuckets>,
   ): ChangepointGroupStatistics_RateChangeBuckets {
-    return ChangepointGroupStatistics_RateChangeBuckets.fromPartial(base ?? ({} as any));
+    return ChangepointGroupStatistics_RateChangeBuckets.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ChangepointGroupStatistics_RateChangeBuckets>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<ChangepointGroupStatistics_RateChangeBuckets>,
   ): ChangepointGroupStatistics_RateChangeBuckets {
     const message = createBaseChangepointGroupStatistics_RateChangeBuckets() as any;
     message.countIncreased0To20Percent = object.countIncreased0To20Percent ?? 0;
@@ -1021,12 +1011,10 @@ export const QueryChangepointsInGroupRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryChangepointsInGroupRequest>, I>>(base?: I): QueryChangepointsInGroupRequest {
-    return QueryChangepointsInGroupRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryChangepointsInGroupRequest>): QueryChangepointsInGroupRequest {
+    return QueryChangepointsInGroupRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryChangepointsInGroupRequest>, I>>(
-    object: I,
-  ): QueryChangepointsInGroupRequest {
+  fromPartial(object: DeepPartial<QueryChangepointsInGroupRequest>): QueryChangepointsInGroupRequest {
     const message = createBaseQueryChangepointsInGroupRequest() as any;
     message.project = object.project ?? "";
     message.groupKey = (object.groupKey !== undefined && object.groupKey !== null)
@@ -1147,13 +1135,13 @@ export const QueryChangepointsInGroupRequest_ChangepointIdentifier = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryChangepointsInGroupRequest_ChangepointIdentifier>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<QueryChangepointsInGroupRequest_ChangepointIdentifier>,
   ): QueryChangepointsInGroupRequest_ChangepointIdentifier {
-    return QueryChangepointsInGroupRequest_ChangepointIdentifier.fromPartial(base ?? ({} as any));
+    return QueryChangepointsInGroupRequest_ChangepointIdentifier.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryChangepointsInGroupRequest_ChangepointIdentifier>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<QueryChangepointsInGroupRequest_ChangepointIdentifier>,
   ): QueryChangepointsInGroupRequest_ChangepointIdentifier {
     const message = createBaseQueryChangepointsInGroupRequest_ChangepointIdentifier() as any;
     message.testId = object.testId ?? "";
@@ -1216,14 +1204,10 @@ export const QueryChangepointsInGroupResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryChangepointsInGroupResponse>, I>>(
-    base?: I,
-  ): QueryChangepointsInGroupResponse {
-    return QueryChangepointsInGroupResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryChangepointsInGroupResponse>): QueryChangepointsInGroupResponse {
+    return QueryChangepointsInGroupResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryChangepointsInGroupResponse>, I>>(
-    object: I,
-  ): QueryChangepointsInGroupResponse {
+  fromPartial(object: DeepPartial<QueryChangepointsInGroupResponse>): QueryChangepointsInGroupResponse {
     const message = createBaseQueryChangepointsInGroupResponse() as any;
     message.changepoints = object.changepoints?.map((e) => Changepoint.fromPartial(e)) || [];
     return message;
@@ -1437,10 +1421,10 @@ export const Changepoint = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Changepoint>, I>>(base?: I): Changepoint {
-    return Changepoint.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Changepoint>): Changepoint {
+    return Changepoint.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Changepoint>, I>>(object: I): Changepoint {
+  fromPartial(object: DeepPartial<Changepoint>): Changepoint {
     const message = createBaseChangepoint() as any;
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
@@ -1516,10 +1500,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

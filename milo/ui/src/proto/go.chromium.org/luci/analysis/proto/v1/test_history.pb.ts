@@ -342,10 +342,10 @@ export const QueryTestHistoryRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestHistoryRequest>, I>>(base?: I): QueryTestHistoryRequest {
-    return QueryTestHistoryRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestHistoryRequest>): QueryTestHistoryRequest {
+    return QueryTestHistoryRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestHistoryRequest>, I>>(object: I): QueryTestHistoryRequest {
+  fromPartial(object: DeepPartial<QueryTestHistoryRequest>): QueryTestHistoryRequest {
     const message = createBaseQueryTestHistoryRequest() as any;
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
@@ -423,10 +423,10 @@ export const QueryTestHistoryResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestHistoryResponse>, I>>(base?: I): QueryTestHistoryResponse {
-    return QueryTestHistoryResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestHistoryResponse>): QueryTestHistoryResponse {
+    return QueryTestHistoryResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestHistoryResponse>, I>>(object: I): QueryTestHistoryResponse {
+  fromPartial(object: DeepPartial<QueryTestHistoryResponse>): QueryTestHistoryResponse {
     const message = createBaseQueryTestHistoryResponse() as any;
     message.verdicts = object.verdicts?.map((e) => TestVerdict.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -539,10 +539,10 @@ export const QueryTestHistoryStatsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestHistoryStatsRequest>, I>>(base?: I): QueryTestHistoryStatsRequest {
-    return QueryTestHistoryStatsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestHistoryStatsRequest>): QueryTestHistoryStatsRequest {
+    return QueryTestHistoryStatsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestHistoryStatsRequest>, I>>(object: I): QueryTestHistoryStatsRequest {
+  fromPartial(object: DeepPartial<QueryTestHistoryStatsRequest>): QueryTestHistoryStatsRequest {
     const message = createBaseQueryTestHistoryStatsRequest() as any;
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
@@ -620,12 +620,10 @@ export const QueryTestHistoryStatsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestHistoryStatsResponse>, I>>(base?: I): QueryTestHistoryStatsResponse {
-    return QueryTestHistoryStatsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestHistoryStatsResponse>): QueryTestHistoryStatsResponse {
+    return QueryTestHistoryStatsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestHistoryStatsResponse>, I>>(
-    object: I,
-  ): QueryTestHistoryStatsResponse {
+  fromPartial(object: DeepPartial<QueryTestHistoryStatsResponse>): QueryTestHistoryStatsResponse {
     const message = createBaseQueryTestHistoryStatsResponse() as any;
     message.groups = object.groups?.map((e) => QueryTestHistoryStatsResponse_Group.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -791,14 +789,10 @@ export const QueryTestHistoryStatsResponse_Group = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestHistoryStatsResponse_Group>, I>>(
-    base?: I,
-  ): QueryTestHistoryStatsResponse_Group {
-    return QueryTestHistoryStatsResponse_Group.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestHistoryStatsResponse_Group>): QueryTestHistoryStatsResponse_Group {
+    return QueryTestHistoryStatsResponse_Group.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestHistoryStatsResponse_Group>, I>>(
-    object: I,
-  ): QueryTestHistoryStatsResponse_Group {
+  fromPartial(object: DeepPartial<QueryTestHistoryStatsResponse_Group>): QueryTestHistoryStatsResponse_Group {
     const message = createBaseQueryTestHistoryStatsResponse_Group() as any;
     message.partitionTime = object.partitionTime ?? undefined;
     message.variantHash = object.variantHash ?? "";
@@ -933,10 +927,10 @@ export const QueryVariantsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryVariantsRequest>, I>>(base?: I): QueryVariantsRequest {
-    return QueryVariantsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryVariantsRequest>): QueryVariantsRequest {
+    return QueryVariantsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryVariantsRequest>, I>>(object: I): QueryVariantsRequest {
+  fromPartial(object: DeepPartial<QueryVariantsRequest>): QueryVariantsRequest {
     const message = createBaseQueryVariantsRequest() as any;
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
@@ -1015,10 +1009,10 @@ export const QueryVariantsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryVariantsResponse>, I>>(base?: I): QueryVariantsResponse {
-    return QueryVariantsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryVariantsResponse>): QueryVariantsResponse {
+    return QueryVariantsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryVariantsResponse>, I>>(object: I): QueryVariantsResponse {
+  fromPartial(object: DeepPartial<QueryVariantsResponse>): QueryVariantsResponse {
     const message = createBaseQueryVariantsResponse() as any;
     message.variants = object.variants?.map((e) => QueryVariantsResponse_VariantInfo.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1089,14 +1083,10 @@ export const QueryVariantsResponse_VariantInfo = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryVariantsResponse_VariantInfo>, I>>(
-    base?: I,
-  ): QueryVariantsResponse_VariantInfo {
-    return QueryVariantsResponse_VariantInfo.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryVariantsResponse_VariantInfo>): QueryVariantsResponse_VariantInfo {
+    return QueryVariantsResponse_VariantInfo.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryVariantsResponse_VariantInfo>, I>>(
-    object: I,
-  ): QueryVariantsResponse_VariantInfo {
+  fromPartial(object: DeepPartial<QueryVariantsResponse_VariantInfo>): QueryVariantsResponse_VariantInfo {
     const message = createBaseQueryVariantsResponse_VariantInfo() as any;
     message.variantHash = object.variantHash ?? "";
     message.variant = (object.variant !== undefined && object.variant !== null)
@@ -1211,10 +1201,10 @@ export const QueryTestsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestsRequest>, I>>(base?: I): QueryTestsRequest {
-    return QueryTestsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestsRequest>): QueryTestsRequest {
+    return QueryTestsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestsRequest>, I>>(object: I): QueryTestsRequest {
+  fromPartial(object: DeepPartial<QueryTestsRequest>): QueryTestsRequest {
     const message = createBaseQueryTestsRequest() as any;
     message.project = object.project ?? "";
     message.testIdSubstring = object.testIdSubstring ?? "";
@@ -1288,10 +1278,10 @@ export const QueryTestsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestsResponse>, I>>(base?: I): QueryTestsResponse {
-    return QueryTestsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestsResponse>): QueryTestsResponse {
+    return QueryTestsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestsResponse>, I>>(object: I): QueryTestsResponse {
+  fromPartial(object: DeepPartial<QueryTestsResponse>): QueryTestsResponse {
     const message = createBaseQueryTestsResponse() as any;
     message.testIds = object.testIds?.map((e) => e) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1374,10 +1364,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

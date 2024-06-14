@@ -41,7 +41,7 @@ describe('<BuilderSearchPage />', () => {
       .spyOn(MiloInternalClientImpl.prototype, 'ListBuilders')
       .mockImplementation(async (_: ListBuildersRequest) =>
         ListBuildersResponse.fromPartial({
-          builders: Object.freeze([
+          builders: [
             {
               id: {
                 bucket: 'test_bucket',
@@ -77,7 +77,7 @@ describe('<BuilderSearchPage />', () => {
                 project: 'chromium',
               },
             },
-          ]),
+          ],
         }),
       );
 

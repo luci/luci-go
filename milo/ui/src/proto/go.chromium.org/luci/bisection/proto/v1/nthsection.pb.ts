@@ -313,10 +313,10 @@ export const NthSectionAnalysisResult = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<NthSectionAnalysisResult>, I>>(base?: I): NthSectionAnalysisResult {
-    return NthSectionAnalysisResult.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<NthSectionAnalysisResult>): NthSectionAnalysisResult {
+    return NthSectionAnalysisResult.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<NthSectionAnalysisResult>, I>>(object: I): NthSectionAnalysisResult {
+  fromPartial(object: DeepPartial<NthSectionAnalysisResult>): NthSectionAnalysisResult {
     const message = createBaseNthSectionAnalysisResult() as any;
     message.status = object.status ?? 0;
     message.startTime = object.startTime ?? undefined;
@@ -404,10 +404,10 @@ export const BlameList = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BlameList>, I>>(base?: I): BlameList {
-    return BlameList.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BlameList>): BlameList {
+    return BlameList.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BlameList>, I>>(object: I): BlameList {
+  fromPartial(object: DeepPartial<BlameList>): BlameList {
     const message = createBaseBlameList() as any;
     message.commits = object.commits?.map((e) => BlameListSingleCommit.fromPartial(e)) || [];
     message.lastPassCommit = (object.lastPassCommit !== undefined && object.lastPassCommit !== null)
@@ -522,10 +522,10 @@ export const BlameListSingleCommit = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BlameListSingleCommit>, I>>(base?: I): BlameListSingleCommit {
-    return BlameListSingleCommit.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BlameListSingleCommit>): BlameListSingleCommit {
+    return BlameListSingleCommit.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BlameListSingleCommit>, I>>(object: I): BlameListSingleCommit {
+  fromPartial(object: DeepPartial<BlameListSingleCommit>): BlameListSingleCommit {
     const message = createBaseBlameListSingleCommit() as any;
     message.commit = object.commit ?? "";
     message.reviewUrl = object.reviewUrl ?? "";
@@ -649,10 +649,10 @@ export const NthSectionSuspect = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<NthSectionSuspect>, I>>(base?: I): NthSectionSuspect {
-    return NthSectionSuspect.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<NthSectionSuspect>): NthSectionSuspect {
+    return NthSectionSuspect.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<NthSectionSuspect>, I>>(object: I): NthSectionSuspect {
+  fromPartial(object: DeepPartial<NthSectionSuspect>): NthSectionSuspect {
     const message = createBaseNthSectionSuspect() as any;
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
       ? GitilesCommit.fromPartial(object.gitilesCommit)
@@ -746,10 +746,10 @@ export const RegressionRange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<RegressionRange>, I>>(base?: I): RegressionRange {
-    return RegressionRange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<RegressionRange>): RegressionRange {
+    return RegressionRange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<RegressionRange>, I>>(object: I): RegressionRange {
+  fromPartial(object: DeepPartial<RegressionRange>): RegressionRange {
     const message = createBaseRegressionRange() as any;
     message.lastPassed = (object.lastPassed !== undefined && object.lastPassed !== null)
       ? GitilesCommit.fromPartial(object.lastPassed)
@@ -769,10 +769,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

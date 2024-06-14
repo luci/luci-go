@@ -76,10 +76,10 @@ export const FailureReason = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<FailureReason>, I>>(base?: I): FailureReason {
-    return FailureReason.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<FailureReason>): FailureReason {
+    return FailureReason.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<FailureReason>, I>>(object: I): FailureReason {
+  fromPartial(object: DeepPartial<FailureReason>): FailureReason {
     const message = createBaseFailureReason() as any;
     message.primaryErrorMessage = object.primaryErrorMessage ?? "";
     return message;
@@ -93,10 +93,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

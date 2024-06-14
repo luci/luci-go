@@ -392,10 +392,10 @@ export const TestVerdict = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestVerdict>, I>>(base?: I): TestVerdict {
-    return TestVerdict.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestVerdict>): TestVerdict {
+    return TestVerdict.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestVerdict>, I>>(object: I): TestVerdict {
+  fromPartial(object: DeepPartial<TestVerdict>): TestVerdict {
     const message = createBaseTestVerdict() as any;
     message.testId = object.testId ?? "";
     message.variantHash = object.variantHash ?? "";
@@ -417,10 +417,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

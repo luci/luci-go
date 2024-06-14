@@ -779,10 +779,10 @@ export const GetInvocationRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetInvocationRequest>, I>>(base?: I): GetInvocationRequest {
-    return GetInvocationRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetInvocationRequest>): GetInvocationRequest {
+    return GetInvocationRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetInvocationRequest>, I>>(object: I): GetInvocationRequest {
+  fromPartial(object: DeepPartial<GetInvocationRequest>): GetInvocationRequest {
     const message = createBaseGetInvocationRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -836,10 +836,10 @@ export const GetTestResultRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetTestResultRequest>, I>>(base?: I): GetTestResultRequest {
-    return GetTestResultRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetTestResultRequest>): GetTestResultRequest {
+    return GetTestResultRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetTestResultRequest>, I>>(object: I): GetTestResultRequest {
+  fromPartial(object: DeepPartial<GetTestResultRequest>): GetTestResultRequest {
     const message = createBaseGetTestResultRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -937,10 +937,10 @@ export const ListTestResultsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListTestResultsRequest>, I>>(base?: I): ListTestResultsRequest {
-    return ListTestResultsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListTestResultsRequest>): ListTestResultsRequest {
+    return ListTestResultsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListTestResultsRequest>, I>>(object: I): ListTestResultsRequest {
+  fromPartial(object: DeepPartial<ListTestResultsRequest>): ListTestResultsRequest {
     const message = createBaseListTestResultsRequest() as any;
     message.invocation = object.invocation ?? "";
     message.pageSize = object.pageSize ?? 0;
@@ -1015,10 +1015,10 @@ export const ListTestResultsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListTestResultsResponse>, I>>(base?: I): ListTestResultsResponse {
-    return ListTestResultsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListTestResultsResponse>): ListTestResultsResponse {
+    return ListTestResultsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListTestResultsResponse>, I>>(object: I): ListTestResultsResponse {
+  fromPartial(object: DeepPartial<ListTestResultsResponse>): ListTestResultsResponse {
     const message = createBaseListTestResultsResponse() as any;
     message.testResults = object.testResults?.map((e) => TestResult.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1073,10 +1073,10 @@ export const GetTestExonerationRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetTestExonerationRequest>, I>>(base?: I): GetTestExonerationRequest {
-    return GetTestExonerationRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetTestExonerationRequest>): GetTestExonerationRequest {
+    return GetTestExonerationRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetTestExonerationRequest>, I>>(object: I): GetTestExonerationRequest {
+  fromPartial(object: DeepPartial<GetTestExonerationRequest>): GetTestExonerationRequest {
     const message = createBaseGetTestExonerationRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -1160,10 +1160,10 @@ export const ListTestExonerationsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListTestExonerationsRequest>, I>>(base?: I): ListTestExonerationsRequest {
-    return ListTestExonerationsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListTestExonerationsRequest>): ListTestExonerationsRequest {
+    return ListTestExonerationsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListTestExonerationsRequest>, I>>(object: I): ListTestExonerationsRequest {
+  fromPartial(object: DeepPartial<ListTestExonerationsRequest>): ListTestExonerationsRequest {
     const message = createBaseListTestExonerationsRequest() as any;
     message.invocation = object.invocation ?? "";
     message.pageSize = object.pageSize ?? 0;
@@ -1237,10 +1237,10 @@ export const ListTestExonerationsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListTestExonerationsResponse>, I>>(base?: I): ListTestExonerationsResponse {
-    return ListTestExonerationsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListTestExonerationsResponse>): ListTestExonerationsResponse {
+    return ListTestExonerationsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListTestExonerationsResponse>, I>>(object: I): ListTestExonerationsResponse {
+  fromPartial(object: DeepPartial<ListTestExonerationsResponse>): ListTestExonerationsResponse {
     const message = createBaseListTestExonerationsResponse() as any;
     message.testExonerations = object.testExonerations?.map((e) => TestExoneration.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1355,10 +1355,10 @@ export const QueryTestResultsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestResultsRequest>, I>>(base?: I): QueryTestResultsRequest {
-    return QueryTestResultsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestResultsRequest>): QueryTestResultsRequest {
+    return QueryTestResultsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestResultsRequest>, I>>(object: I): QueryTestResultsRequest {
+  fromPartial(object: DeepPartial<QueryTestResultsRequest>): QueryTestResultsRequest {
     const message = createBaseQueryTestResultsRequest() as any;
     message.invocations = object.invocations?.map((e) => e) || [];
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
@@ -1436,10 +1436,10 @@ export const QueryTestResultsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestResultsResponse>, I>>(base?: I): QueryTestResultsResponse {
-    return QueryTestResultsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestResultsResponse>): QueryTestResultsResponse {
+    return QueryTestResultsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestResultsResponse>, I>>(object: I): QueryTestResultsResponse {
+  fromPartial(object: DeepPartial<QueryTestResultsResponse>): QueryTestResultsResponse {
     const message = createBaseQueryTestResultsResponse() as any;
     message.testResults = object.testResults?.map((e) => TestResult.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1540,10 +1540,10 @@ export const QueryTestExonerationsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestExonerationsRequest>, I>>(base?: I): QueryTestExonerationsRequest {
-    return QueryTestExonerationsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestExonerationsRequest>): QueryTestExonerationsRequest {
+    return QueryTestExonerationsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestExonerationsRequest>, I>>(object: I): QueryTestExonerationsRequest {
+  fromPartial(object: DeepPartial<QueryTestExonerationsRequest>): QueryTestExonerationsRequest {
     const message = createBaseQueryTestExonerationsRequest() as any;
     message.invocations = object.invocations?.map((e) => e) || [];
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
@@ -1620,12 +1620,10 @@ export const QueryTestExonerationsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestExonerationsResponse>, I>>(base?: I): QueryTestExonerationsResponse {
-    return QueryTestExonerationsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestExonerationsResponse>): QueryTestExonerationsResponse {
+    return QueryTestExonerationsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestExonerationsResponse>, I>>(
-    object: I,
-  ): QueryTestExonerationsResponse {
+  fromPartial(object: DeepPartial<QueryTestExonerationsResponse>): QueryTestExonerationsResponse {
     const message = createBaseQueryTestExonerationsResponse() as any;
     message.testExonerations = object.testExonerations?.map((e) => TestExoneration.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -1684,14 +1682,10 @@ export const QueryTestResultStatisticsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestResultStatisticsRequest>, I>>(
-    base?: I,
-  ): QueryTestResultStatisticsRequest {
-    return QueryTestResultStatisticsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestResultStatisticsRequest>): QueryTestResultStatisticsRequest {
+    return QueryTestResultStatisticsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestResultStatisticsRequest>, I>>(
-    object: I,
-  ): QueryTestResultStatisticsRequest {
+  fromPartial(object: DeepPartial<QueryTestResultStatisticsRequest>): QueryTestResultStatisticsRequest {
     const message = createBaseQueryTestResultStatisticsRequest() as any;
     message.invocations = object.invocations?.map((e) => e) || [];
     return message;
@@ -1745,14 +1739,10 @@ export const QueryTestResultStatisticsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestResultStatisticsResponse>, I>>(
-    base?: I,
-  ): QueryTestResultStatisticsResponse {
-    return QueryTestResultStatisticsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestResultStatisticsResponse>): QueryTestResultStatisticsResponse {
+    return QueryTestResultStatisticsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestResultStatisticsResponse>, I>>(
-    object: I,
-  ): QueryTestResultStatisticsResponse {
+  fromPartial(object: DeepPartial<QueryTestResultStatisticsResponse>): QueryTestResultStatisticsResponse {
     const message = createBaseQueryTestResultStatisticsResponse() as any;
     message.totalTestResults = object.totalTestResults ?? "0";
     return message;
@@ -1806,10 +1796,10 @@ export const GetArtifactRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetArtifactRequest>, I>>(base?: I): GetArtifactRequest {
-    return GetArtifactRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetArtifactRequest>): GetArtifactRequest {
+    return GetArtifactRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetArtifactRequest>, I>>(object: I): GetArtifactRequest {
+  fromPartial(object: DeepPartial<GetArtifactRequest>): GetArtifactRequest {
     const message = createBaseGetArtifactRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -1893,10 +1883,10 @@ export const ListArtifactsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListArtifactsRequest>, I>>(base?: I): ListArtifactsRequest {
-    return ListArtifactsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListArtifactsRequest>): ListArtifactsRequest {
+    return ListArtifactsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListArtifactsRequest>, I>>(object: I): ListArtifactsRequest {
+  fromPartial(object: DeepPartial<ListArtifactsRequest>): ListArtifactsRequest {
     const message = createBaseListArtifactsRequest() as any;
     message.parent = object.parent ?? "";
     message.pageSize = object.pageSize ?? 0;
@@ -1970,10 +1960,10 @@ export const ListArtifactsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListArtifactsResponse>, I>>(base?: I): ListArtifactsResponse {
-    return ListArtifactsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListArtifactsResponse>): ListArtifactsResponse {
+    return ListArtifactsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListArtifactsResponse>, I>>(object: I): ListArtifactsResponse {
+  fromPartial(object: DeepPartial<ListArtifactsResponse>): ListArtifactsResponse {
     const message = createBaseListArtifactsResponse() as any;
     message.artifacts = object.artifacts?.map((e) => Artifact.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -2074,10 +2064,10 @@ export const QueryArtifactsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryArtifactsRequest>, I>>(base?: I): QueryArtifactsRequest {
-    return QueryArtifactsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryArtifactsRequest>): QueryArtifactsRequest {
+    return QueryArtifactsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryArtifactsRequest>, I>>(object: I): QueryArtifactsRequest {
+  fromPartial(object: DeepPartial<QueryArtifactsRequest>): QueryArtifactsRequest {
     const message = createBaseQueryArtifactsRequest() as any;
     message.invocations = object.invocations?.map((e) => e) || [];
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
@@ -2154,10 +2144,10 @@ export const QueryArtifactsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryArtifactsResponse>, I>>(base?: I): QueryArtifactsResponse {
-    return QueryArtifactsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryArtifactsResponse>): QueryArtifactsResponse {
+    return QueryArtifactsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryArtifactsResponse>, I>>(object: I): QueryArtifactsResponse {
+  fromPartial(object: DeepPartial<QueryArtifactsResponse>): QueryArtifactsResponse {
     const message = createBaseQueryArtifactsResponse() as any;
     message.artifacts = object.artifacts?.map((e) => Artifact.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -2228,10 +2218,10 @@ export const ListArtifactLinesRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListArtifactLinesRequest>, I>>(base?: I): ListArtifactLinesRequest {
-    return ListArtifactLinesRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListArtifactLinesRequest>): ListArtifactLinesRequest {
+    return ListArtifactLinesRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListArtifactLinesRequest>, I>>(object: I): ListArtifactLinesRequest {
+  fromPartial(object: DeepPartial<ListArtifactLinesRequest>): ListArtifactLinesRequest {
     const message = createBaseListArtifactLinesRequest() as any;
     message.parent = object.parent ?? "";
     message.pageSize = object.pageSize ?? 0;
@@ -2288,10 +2278,10 @@ export const ListArtifactLinesResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ListArtifactLinesResponse>, I>>(base?: I): ListArtifactLinesResponse {
-    return ListArtifactLinesResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ListArtifactLinesResponse>): ListArtifactLinesResponse {
+    return ListArtifactLinesResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ListArtifactLinesResponse>, I>>(object: I): ListArtifactLinesResponse {
+  fromPartial(object: DeepPartial<ListArtifactLinesResponse>): ListArtifactLinesResponse {
     const message = createBaseListArtifactLinesResponse() as any;
     message.lines = object.lines?.map((e) => ArtifactLine.fromPartial(e)) || [];
     return message;
@@ -2389,14 +2379,10 @@ export const QueryArtifactFailureOnlyLinesRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesRequest>, I>>(
-    base?: I,
-  ): QueryArtifactFailureOnlyLinesRequest {
-    return QueryArtifactFailureOnlyLinesRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryArtifactFailureOnlyLinesRequest>): QueryArtifactFailureOnlyLinesRequest {
+    return QueryArtifactFailureOnlyLinesRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesRequest>, I>>(
-    object: I,
-  ): QueryArtifactFailureOnlyLinesRequest {
+  fromPartial(object: DeepPartial<QueryArtifactFailureOnlyLinesRequest>): QueryArtifactFailureOnlyLinesRequest {
     const message = createBaseQueryArtifactFailureOnlyLinesRequest() as any;
     message.parent = object.parent ?? "";
     message.includeContent = object.includeContent ?? false;
@@ -2475,14 +2461,10 @@ export const QueryArtifactFailureOnlyLinesResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesResponse>, I>>(
-    base?: I,
-  ): QueryArtifactFailureOnlyLinesResponse {
-    return QueryArtifactFailureOnlyLinesResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryArtifactFailureOnlyLinesResponse>): QueryArtifactFailureOnlyLinesResponse {
+    return QueryArtifactFailureOnlyLinesResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesResponse>, I>>(
-    object: I,
-  ): QueryArtifactFailureOnlyLinesResponse {
+  fromPartial(object: DeepPartial<QueryArtifactFailureOnlyLinesResponse>): QueryArtifactFailureOnlyLinesResponse {
     const message = createBaseQueryArtifactFailureOnlyLinesResponse() as any;
     message.failureOnlyLineRanges =
       object.failureOnlyLineRanges?.map((e) => QueryArtifactFailureOnlyLinesResponse_LineRange.fromPartial(e)) || [];
@@ -2571,13 +2553,13 @@ export const QueryArtifactFailureOnlyLinesResponse_LineRange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesResponse_LineRange>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<QueryArtifactFailureOnlyLinesResponse_LineRange>,
   ): QueryArtifactFailureOnlyLinesResponse_LineRange {
-    return QueryArtifactFailureOnlyLinesResponse_LineRange.fromPartial(base ?? ({} as any));
+    return QueryArtifactFailureOnlyLinesResponse_LineRange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryArtifactFailureOnlyLinesResponse_LineRange>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<QueryArtifactFailureOnlyLinesResponse_LineRange>,
   ): QueryArtifactFailureOnlyLinesResponse_LineRange {
     const message = createBaseQueryArtifactFailureOnlyLinesResponse_LineRange() as any;
     message.start = object.start ?? 0;
@@ -2708,10 +2690,10 @@ export const QueryTestVariantsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestVariantsRequest>, I>>(base?: I): QueryTestVariantsRequest {
-    return QueryTestVariantsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestVariantsRequest>): QueryTestVariantsRequest {
+    return QueryTestVariantsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestVariantsRequest>, I>>(object: I): QueryTestVariantsRequest {
+  fromPartial(object: DeepPartial<QueryTestVariantsRequest>): QueryTestVariantsRequest {
     const message = createBaseQueryTestVariantsRequest() as any;
     message.invocations = object.invocations?.map((e) => e) || [];
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
@@ -2818,10 +2800,10 @@ export const QueryTestVariantsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestVariantsResponse>, I>>(base?: I): QueryTestVariantsResponse {
-    return QueryTestVariantsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestVariantsResponse>): QueryTestVariantsResponse {
+    return QueryTestVariantsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestVariantsResponse>, I>>(object: I): QueryTestVariantsResponse {
+  fromPartial(object: DeepPartial<QueryTestVariantsResponse>): QueryTestVariantsResponse {
     const message = createBaseQueryTestVariantsResponse() as any;
     message.testVariants = object.testVariants?.map((e) => TestVariant.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -2898,14 +2880,10 @@ export const QueryTestVariantsResponse_SourcesEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestVariantsResponse_SourcesEntry>, I>>(
-    base?: I,
-  ): QueryTestVariantsResponse_SourcesEntry {
-    return QueryTestVariantsResponse_SourcesEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestVariantsResponse_SourcesEntry>): QueryTestVariantsResponse_SourcesEntry {
+    return QueryTestVariantsResponse_SourcesEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestVariantsResponse_SourcesEntry>, I>>(
-    object: I,
-  ): QueryTestVariantsResponse_SourcesEntry {
+  fromPartial(object: DeepPartial<QueryTestVariantsResponse_SourcesEntry>): QueryTestVariantsResponse_SourcesEntry {
     const message = createBaseQueryTestVariantsResponse_SourcesEntry() as any;
     message.key = object.key ?? "";
     message.value = (object.value !== undefined && object.value !== null)
@@ -3006,10 +2984,10 @@ export const QueryRunTestVerdictsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryRunTestVerdictsRequest>, I>>(base?: I): QueryRunTestVerdictsRequest {
-    return QueryRunTestVerdictsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryRunTestVerdictsRequest>): QueryRunTestVerdictsRequest {
+    return QueryRunTestVerdictsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryRunTestVerdictsRequest>, I>>(object: I): QueryRunTestVerdictsRequest {
+  fromPartial(object: DeepPartial<QueryRunTestVerdictsRequest>): QueryRunTestVerdictsRequest {
     const message = createBaseQueryRunTestVerdictsRequest() as any;
     message.invocation = object.invocation ?? "";
     message.resultLimit = object.resultLimit ?? 0;
@@ -3084,10 +3062,10 @@ export const QueryRunTestVerdictsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryRunTestVerdictsResponse>, I>>(base?: I): QueryRunTestVerdictsResponse {
-    return QueryRunTestVerdictsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryRunTestVerdictsResponse>): QueryRunTestVerdictsResponse {
+    return QueryRunTestVerdictsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryRunTestVerdictsResponse>, I>>(object: I): QueryRunTestVerdictsResponse {
+  fromPartial(object: DeepPartial<QueryRunTestVerdictsResponse>): QueryRunTestVerdictsResponse {
     const message = createBaseQueryRunTestVerdictsResponse() as any;
     message.runTestVerdicts = object.runTestVerdicts?.map((e) => RunTestVerdict.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -3174,10 +3152,10 @@ export const BatchGetTestVariantsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetTestVariantsRequest>, I>>(base?: I): BatchGetTestVariantsRequest {
-    return BatchGetTestVariantsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetTestVariantsRequest>): BatchGetTestVariantsRequest {
+    return BatchGetTestVariantsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetTestVariantsRequest>, I>>(object: I): BatchGetTestVariantsRequest {
+  fromPartial(object: DeepPartial<BatchGetTestVariantsRequest>): BatchGetTestVariantsRequest {
     const message = createBaseBatchGetTestVariantsRequest() as any;
     message.invocation = object.invocation ?? "";
     message.testVariants =
@@ -3253,13 +3231,13 @@ export const BatchGetTestVariantsRequest_TestVariantIdentifier = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetTestVariantsRequest_TestVariantIdentifier>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<BatchGetTestVariantsRequest_TestVariantIdentifier>,
   ): BatchGetTestVariantsRequest_TestVariantIdentifier {
-    return BatchGetTestVariantsRequest_TestVariantIdentifier.fromPartial(base ?? ({} as any));
+    return BatchGetTestVariantsRequest_TestVariantIdentifier.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetTestVariantsRequest_TestVariantIdentifier>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BatchGetTestVariantsRequest_TestVariantIdentifier>,
   ): BatchGetTestVariantsRequest_TestVariantIdentifier {
     const message = createBaseBatchGetTestVariantsRequest_TestVariantIdentifier() as any;
     message.testId = object.testId ?? "";
@@ -3347,10 +3325,10 @@ export const BatchGetTestVariantsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetTestVariantsResponse>, I>>(base?: I): BatchGetTestVariantsResponse {
-    return BatchGetTestVariantsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetTestVariantsResponse>): BatchGetTestVariantsResponse {
+    return BatchGetTestVariantsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetTestVariantsResponse>, I>>(object: I): BatchGetTestVariantsResponse {
+  fromPartial(object: DeepPartial<BatchGetTestVariantsResponse>): BatchGetTestVariantsResponse {
     const message = createBaseBatchGetTestVariantsResponse() as any;
     message.testVariants = object.testVariants?.map((e) => TestVariant.fromPartial(e)) || [];
     message.sources = Object.entries(object.sources ?? {}).reduce<{ [key: string]: Sources }>((acc, [key, value]) => {
@@ -3426,13 +3404,11 @@ export const BatchGetTestVariantsResponse_SourcesEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetTestVariantsResponse_SourcesEntry>, I>>(
-    base?: I,
-  ): BatchGetTestVariantsResponse_SourcesEntry {
-    return BatchGetTestVariantsResponse_SourcesEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetTestVariantsResponse_SourcesEntry>): BatchGetTestVariantsResponse_SourcesEntry {
+    return BatchGetTestVariantsResponse_SourcesEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetTestVariantsResponse_SourcesEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<BatchGetTestVariantsResponse_SourcesEntry>,
   ): BatchGetTestVariantsResponse_SourcesEntry {
     const message = createBaseBatchGetTestVariantsResponse_SourcesEntry() as any;
     message.key = object.key ?? "";
@@ -3534,10 +3510,10 @@ export const QueryTestMetadataRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestMetadataRequest>, I>>(base?: I): QueryTestMetadataRequest {
-    return QueryTestMetadataRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestMetadataRequest>): QueryTestMetadataRequest {
+    return QueryTestMetadataRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestMetadataRequest>, I>>(object: I): QueryTestMetadataRequest {
+  fromPartial(object: DeepPartial<QueryTestMetadataRequest>): QueryTestMetadataRequest {
     const message = createBaseQueryTestMetadataRequest() as any;
     message.project = object.project ?? "";
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
@@ -3614,10 +3590,10 @@ export const QueryTestMetadataResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryTestMetadataResponse>, I>>(base?: I): QueryTestMetadataResponse {
-    return QueryTestMetadataResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryTestMetadataResponse>): QueryTestMetadataResponse {
+    return QueryTestMetadataResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryTestMetadataResponse>, I>>(object: I): QueryTestMetadataResponse {
+  fromPartial(object: DeepPartial<QueryTestMetadataResponse>): QueryTestMetadataResponse {
     const message = createBaseQueryTestMetadataResponse() as any;
     message.testMetadata = object.testMetadata?.map((e) => TestMetadataDetail.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
@@ -3688,10 +3664,10 @@ export const QueryNewTestVariantsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryNewTestVariantsRequest>, I>>(base?: I): QueryNewTestVariantsRequest {
-    return QueryNewTestVariantsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryNewTestVariantsRequest>): QueryNewTestVariantsRequest {
+    return QueryNewTestVariantsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryNewTestVariantsRequest>, I>>(object: I): QueryNewTestVariantsRequest {
+  fromPartial(object: DeepPartial<QueryNewTestVariantsRequest>): QueryNewTestVariantsRequest {
     const message = createBaseQueryNewTestVariantsRequest() as any;
     message.invocation = object.invocation ?? "";
     message.baseline = object.baseline ?? "";
@@ -3764,10 +3740,10 @@ export const QueryNewTestVariantsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryNewTestVariantsResponse>, I>>(base?: I): QueryNewTestVariantsResponse {
-    return QueryNewTestVariantsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryNewTestVariantsResponse>): QueryNewTestVariantsResponse {
+    return QueryNewTestVariantsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryNewTestVariantsResponse>, I>>(object: I): QueryNewTestVariantsResponse {
+  fromPartial(object: DeepPartial<QueryNewTestVariantsResponse>): QueryNewTestVariantsResponse {
     const message = createBaseQueryNewTestVariantsResponse() as any;
     message.isBaselineReady = object.isBaselineReady ?? false;
     message.newTestVariants =
@@ -3839,13 +3815,11 @@ export const QueryNewTestVariantsResponse_NewTestVariant = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryNewTestVariantsResponse_NewTestVariant>, I>>(
-    base?: I,
-  ): QueryNewTestVariantsResponse_NewTestVariant {
-    return QueryNewTestVariantsResponse_NewTestVariant.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryNewTestVariantsResponse_NewTestVariant>): QueryNewTestVariantsResponse_NewTestVariant {
+    return QueryNewTestVariantsResponse_NewTestVariant.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryNewTestVariantsResponse_NewTestVariant>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<QueryNewTestVariantsResponse_NewTestVariant>,
   ): QueryNewTestVariantsResponse_NewTestVariant {
     const message = createBaseQueryNewTestVariantsResponse_NewTestVariant() as any;
     message.testId = object.testId ?? "";
@@ -3901,10 +3875,10 @@ export const GetInstructionRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetInstructionRequest>, I>>(base?: I): GetInstructionRequest {
-    return GetInstructionRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetInstructionRequest>): GetInstructionRequest {
+    return GetInstructionRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetInstructionRequest>, I>>(object: I): GetInstructionRequest {
+  fromPartial(object: DeepPartial<GetInstructionRequest>): GetInstructionRequest {
     const message = createBaseGetInstructionRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -4189,10 +4163,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToString(long: Long) {
   return long.toString();

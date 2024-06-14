@@ -54,7 +54,7 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
   const { data, error, isError, isLoading, hasNextPage } = useInfiniteQuery(
     client.QueryTestVariants.queryPaged(
       QueryTestVariantsRequest.fromPartial({
-        invocations: Object.freeze([invName]),
+        invocations: [invName],
         pageSize: QUERY_TEST_VERDICT_PAGE_SIZE,
       }),
     ),

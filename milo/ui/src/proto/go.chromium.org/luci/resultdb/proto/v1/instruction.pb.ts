@@ -252,10 +252,10 @@ export const Instructions = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Instructions>, I>>(base?: I): Instructions {
-    return Instructions.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Instructions>): Instructions {
+    return Instructions.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Instructions>, I>>(object: I): Instructions {
+  fromPartial(object: DeepPartial<Instructions>): Instructions {
     const message = createBaseInstructions() as any;
     message.instructions = object.instructions?.map((e) => Instruction.fromPartial(e)) || [];
     return message;
@@ -357,10 +357,10 @@ export const Instruction = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Instruction>, I>>(base?: I): Instruction {
-    return Instruction.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Instruction>): Instruction {
+    return Instruction.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Instruction>, I>>(object: I): Instruction {
+  fromPartial(object: DeepPartial<Instruction>): Instruction {
     const message = createBaseInstruction() as any;
     message.id = object.id ?? "";
     message.type = object.type ?? 0;
@@ -423,10 +423,10 @@ export const InstructionFilter = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InstructionFilter>, I>>(base?: I): InstructionFilter {
-    return InstructionFilter.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InstructionFilter>): InstructionFilter {
+    return InstructionFilter.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InstructionFilter>, I>>(object: I): InstructionFilter {
+  fromPartial(object: DeepPartial<InstructionFilter>): InstructionFilter {
     const message = createBaseInstructionFilter() as any;
     message.invocationIds = (object.invocationIds !== undefined && object.invocationIds !== null)
       ? InstructionFilterByInvocationID.fromPartial(object.invocationIds)
@@ -500,12 +500,10 @@ export const InstructionFilterByInvocationID = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InstructionFilterByInvocationID>, I>>(base?: I): InstructionFilterByInvocationID {
-    return InstructionFilterByInvocationID.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InstructionFilterByInvocationID>): InstructionFilterByInvocationID {
+    return InstructionFilterByInvocationID.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InstructionFilterByInvocationID>, I>>(
-    object: I,
-  ): InstructionFilterByInvocationID {
+  fromPartial(object: DeepPartial<InstructionFilterByInvocationID>): InstructionFilterByInvocationID {
     const message = createBaseInstructionFilterByInvocationID() as any;
     message.invocationIds = object.invocationIds?.map((e) => e) || [];
     message.recursive = object.recursive ?? false;
@@ -606,10 +604,10 @@ export const TargetedInstruction = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TargetedInstruction>, I>>(base?: I): TargetedInstruction {
-    return TargetedInstruction.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TargetedInstruction>): TargetedInstruction {
+    return TargetedInstruction.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TargetedInstruction>, I>>(object: I): TargetedInstruction {
+  fromPartial(object: DeepPartial<TargetedInstruction>): TargetedInstruction {
     const message = createBaseTargetedInstruction() as any;
     message.targets = object.targets?.map((e) => e) || [];
     message.dependencies = object.dependencies?.map((e) => InstructionDependency.fromPartial(e)) || [];
@@ -681,10 +679,10 @@ export const InstructionDependency = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<InstructionDependency>, I>>(base?: I): InstructionDependency {
-    return InstructionDependency.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<InstructionDependency>): InstructionDependency {
+    return InstructionDependency.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<InstructionDependency>, I>>(object: I): InstructionDependency {
+  fromPartial(object: DeepPartial<InstructionDependency>): InstructionDependency {
     const message = createBaseInstructionDependency() as any;
     message.invocationId = object.invocationId ?? "";
     message.instructionId = object.instructionId ?? "";
@@ -699,10 +697,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

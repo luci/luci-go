@@ -519,10 +519,10 @@ export const TimeRange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TimeRange>, I>>(base?: I): TimeRange {
-    return TimeRange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TimeRange>): TimeRange {
+    return TimeRange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TimeRange>, I>>(object: I): TimeRange {
+  fromPartial(object: DeepPartial<TimeRange>): TimeRange {
     const message = createBaseTimeRange() as any;
     message.earliest = object.earliest ?? undefined;
     message.latest = object.latest ?? undefined;
@@ -593,10 +593,10 @@ export const TestResultId = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestResultId>, I>>(base?: I): TestResultId {
-    return TestResultId.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestResultId>): TestResultId {
+    return TestResultId.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestResultId>, I>>(object: I): TestResultId {
+  fromPartial(object: DeepPartial<TestResultId>): TestResultId {
     const message = createBaseTestResultId() as any;
     message.system = object.system ?? "";
     message.id = object.id ?? "";
@@ -667,10 +667,10 @@ export const Variant = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Variant>, I>>(base?: I): Variant {
-    return Variant.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Variant>): Variant {
+    return Variant.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Variant>, I>>(object: I): Variant {
+  fromPartial(object: DeepPartial<Variant>): Variant {
     const message = createBaseVariant() as any;
     message.def = Object.entries(object.def ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
       if (value !== undefined) {
@@ -745,10 +745,10 @@ export const Variant_DefEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Variant_DefEntry>, I>>(base?: I): Variant_DefEntry {
-    return Variant_DefEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Variant_DefEntry>): Variant_DefEntry {
+    return Variant_DefEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Variant_DefEntry>, I>>(object: I): Variant_DefEntry {
+  fromPartial(object: DeepPartial<Variant_DefEntry>): Variant_DefEntry {
     const message = createBaseVariant_DefEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -819,10 +819,10 @@ export const StringPair = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StringPair>, I>>(base?: I): StringPair {
-    return StringPair.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StringPair>): StringPair {
+    return StringPair.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StringPair>, I>>(object: I): StringPair {
+  fromPartial(object: DeepPartial<StringPair>): StringPair {
     const message = createBaseStringPair() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -893,10 +893,10 @@ export const BugTrackingComponent = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BugTrackingComponent>, I>>(base?: I): BugTrackingComponent {
-    return BugTrackingComponent.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BugTrackingComponent>): BugTrackingComponent {
+    return BugTrackingComponent.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BugTrackingComponent>, I>>(object: I): BugTrackingComponent {
+  fromPartial(object: DeepPartial<BugTrackingComponent>): BugTrackingComponent {
     const message = createBaseBugTrackingComponent() as any;
     message.system = object.system ?? "";
     message.component = object.component ?? "";
@@ -967,10 +967,10 @@ export const PresubmitRunId = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<PresubmitRunId>, I>>(base?: I): PresubmitRunId {
-    return PresubmitRunId.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<PresubmitRunId>): PresubmitRunId {
+    return PresubmitRunId.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<PresubmitRunId>, I>>(object: I): PresubmitRunId {
+  fromPartial(object: DeepPartial<PresubmitRunId>): PresubmitRunId {
     const message = createBasePresubmitRunId() as any;
     message.system = object.system ?? "";
     message.id = object.id ?? "";
@@ -1069,10 +1069,10 @@ export const AssociatedBug = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<AssociatedBug>, I>>(base?: I): AssociatedBug {
-    return AssociatedBug.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<AssociatedBug>): AssociatedBug {
+    return AssociatedBug.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<AssociatedBug>, I>>(object: I): AssociatedBug {
+  fromPartial(object: DeepPartial<AssociatedBug>): AssociatedBug {
     const message = createBaseAssociatedBug() as any;
     message.system = object.system ?? "";
     message.id = object.id ?? "";
@@ -1145,10 +1145,10 @@ export const ClusterId = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterId>, I>>(base?: I): ClusterId {
-    return ClusterId.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterId>): ClusterId {
+    return ClusterId.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterId>, I>>(object: I): ClusterId {
+  fromPartial(object: DeepPartial<ClusterId>): ClusterId {
     const message = createBaseClusterId() as any;
     message.algorithm = object.algorithm ?? "";
     message.id = object.id ?? "";
@@ -1219,10 +1219,10 @@ export const NumericRange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<NumericRange>, I>>(base?: I): NumericRange {
-    return NumericRange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<NumericRange>): NumericRange {
+    return NumericRange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<NumericRange>, I>>(object: I): NumericRange {
+  fromPartial(object: DeepPartial<NumericRange>): NumericRange {
     const message = createBaseNumericRange() as any;
     message.lowerBound = object.lowerBound ?? 0;
     message.upperBound = object.upperBound ?? 0;
@@ -1237,10 +1237,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

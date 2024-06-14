@@ -12,37 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import fetchMock from 'fetch-mock-jest';
+
+import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 export function createMockGroupIndividual(name: string) {
   return AuthGroup.fromPartial({
     name: name,
     description: 'testDescrition',
-    members: Object.freeze(['member1', 'member2']),
-    nested: Object.freeze(['subgroup1', 'subgroup2']),
-    owners: "testOwners",
-    createdTs: "2014-06-19T03:17:22.823080Z",
-    createdBy: "user:test@example.com",
+    members: ['member1', 'member2'],
+    nested: ['subgroup1', 'subgroup2'],
+    owners: 'testOwners',
+    createdTs: '2014-06-19T03:17:22.823080Z',
+    createdBy: 'user:test@example.com',
     callerCanModify: true,
-    etag: "W/\"MjAyNC0wNC0wMVQyMzoyNjozOS45MDI1MzNa\""
-  })
+    etag: 'W/"MjAyNC0wNC0wMVQyMzoyNjozOS45MDI1MzNa"',
+  });
 }
 
-export function mockFetchGetGroup(mockGroup: AuthGroup)
-  {
-    fetchMock.post(
-      'https://' +
-        SETTINGS.authService.host +
-        '/prpc/auth.service.Groups/GetGroup',
-      {
-        headers: {
-          'X-Prpc-Grpc-Code': '0',
-        },
-        body: ")]}'\n" + JSON.stringify(AuthGroup.toJSON(mockGroup)),
+export function mockFetchGetGroup(mockGroup: AuthGroup) {
+  fetchMock.post(
+    'https://' +
+      SETTINGS.authService.host +
+      '/prpc/auth.service.Groups/GetGroup',
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '0',
       },
-    );
-  }
+      body: ")]}'\n" + JSON.stringify(AuthGroup.toJSON(mockGroup)),
+    },
+  );
+}
 
 export function mockErrorFetchingGetGroup() {
   fetchMock.post(

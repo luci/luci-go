@@ -32,36 +32,36 @@ jest.mock('./builder_list_display', () => {
 
 const builderPages: { [pageToken: string]: ListBuildersResponse } = {
   '': ListBuildersResponse.fromPartial({
-    builders: Object.freeze([
+    builders: [
       {
         id: { project: 'proj1', bucket: 'bucket1', builder: 'builder1' },
       },
       {
         id: { project: 'proj1', bucket: 'bucket1', builder: 'builder2' },
       },
-    ]),
+    ],
     nextPageToken: 'page2',
   }),
   page2: ListBuildersResponse.fromPartial({
-    builders: Object.freeze([
+    builders: [
       {
         id: { project: 'proj1', bucket: 'bucket2', builder: 'builder1' },
       },
       {
         id: { project: 'proj1', bucket: 'bucket2', builder: 'builder2' },
       },
-    ]),
+    ],
     nextPageToken: 'page3',
   }),
   page3: ListBuildersResponse.fromPartial({
-    builders: Object.freeze([
+    builders: [
       {
         id: { project: 'proj2', bucket: 'bucket1', builder: 'builder1' },
       },
       {
         id: { project: 'proj2', bucket: 'bucket1', builder: 'builder2' },
       },
-    ]),
+    ],
   }),
 };
 

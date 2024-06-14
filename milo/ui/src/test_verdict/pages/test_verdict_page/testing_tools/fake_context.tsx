@@ -33,7 +33,7 @@ export const placeholderVerdict = TestVariant.fromPartial({
   },
   variantHash: '6657d9dc1549eacc',
   status: TestVariantStatus.FLAKY,
-  results: Object.freeze([
+  results: [
     {
       result: {
         testId: 'test1234',
@@ -47,7 +47,7 @@ export const placeholderVerdict = TestVariant.fromPartial({
         duration: Duration.fromPartial({
           seconds: '55.567',
         }),
-        tags: Object.freeze([
+        tags: [
           {
             key: 'ancestor_buildbucket_ids',
             value: '8766287273535464561',
@@ -60,7 +60,7 @@ export const placeholderVerdict = TestVariant.fromPartial({
             key: 'bug_component',
             value: 'b:95887',
           },
-        ]),
+        ],
         failureReason: {
           primaryErrorMessage:
             'Failed to validate VK autocorrect: failed to validate VK autocorrect on step 4:' +
@@ -69,7 +69,7 @@ export const placeholderVerdict = TestVariant.fromPartial({
         },
       },
     },
-  ]),
+  ],
   testMetadata: {
     name: 'tast.inputs.VirtualKeyboardAutocorrect.fr_fr_a11y',
     location: {

@@ -101,10 +101,10 @@ export const Metadata = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Metadata>, I>>(base?: I): Metadata {
-    return Metadata.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Metadata>): Metadata {
+    return Metadata.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Metadata>, I>>(object: I): Metadata {
+  fromPartial(object: DeepPartial<Metadata>): Metadata {
     const message = createBaseMetadata() as any;
     message.docUrl = object.docUrl ?? "";
     return message;
@@ -118,10 +118,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

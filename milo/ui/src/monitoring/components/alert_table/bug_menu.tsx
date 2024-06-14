@@ -64,7 +64,7 @@ export const BugMenu = ({
                 silenceUntil: a.silenceUntil,
               },
             });
-          }) as Readonly<UpdateAlertRequest[]>,
+          }),
         }),
       );
     },

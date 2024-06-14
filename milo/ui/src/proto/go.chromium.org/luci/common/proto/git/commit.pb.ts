@@ -300,10 +300,10 @@ export const Commit = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Commit>, I>>(base?: I): Commit {
-    return Commit.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Commit>): Commit {
+    return Commit.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Commit>, I>>(object: I): Commit {
+  fromPartial(object: DeepPartial<Commit>): Commit {
     const message = createBaseCommit() as any;
     message.id = object.id ?? "";
     message.tree = object.tree ?? "";
@@ -397,10 +397,10 @@ export const Commit_User = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Commit_User>, I>>(base?: I): Commit_User {
-    return Commit_User.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Commit_User>): Commit_User {
+    return Commit_User.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Commit_User>, I>>(object: I): Commit_User {
+  fromPartial(object: DeepPartial<Commit_User>): Commit_User {
     const message = createBaseCommit_User() as any;
     message.name = object.name ?? "";
     message.email = object.email ?? "";
@@ -542,10 +542,10 @@ export const Commit_TreeDiff = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Commit_TreeDiff>, I>>(base?: I): Commit_TreeDiff {
-    return Commit_TreeDiff.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Commit_TreeDiff>): Commit_TreeDiff {
+    return Commit_TreeDiff.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Commit_TreeDiff>, I>>(object: I): Commit_TreeDiff {
+  fromPartial(object: DeepPartial<Commit_TreeDiff>): Commit_TreeDiff {
     const message = createBaseCommit_TreeDiff() as any;
     message.type = object.type ?? 0;
     message.oldId = object.oldId ?? "";
@@ -649,10 +649,10 @@ export const File = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<File>, I>>(base?: I): File {
-    return File.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<File>): File {
+    return File.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<File>, I>>(object: I): File {
+  fromPartial(object: DeepPartial<File>): File {
     const message = createBaseFile() as any;
     message.id = object.id ?? "";
     message.path = object.path ?? "";
@@ -669,10 +669,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

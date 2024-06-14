@@ -70,18 +70,18 @@ describe('<TestResults />', () => {
       .mockImplementation((_: ClusterRequest) => {
         return Promise.resolve(
           ClusterResponse.fromPartial({
-            clusteredTestResults: Object.freeze([
+            clusteredTestResults: [
               {
-                clusters: Object.freeze([
+                clusters: [
                   {
                     clusterId: {
                       algorithm: 'reason-failure',
                       id: '12345abcd',
                     },
                   },
-                ]),
+                ],
               },
-            ]),
+            ],
             clusteringVersion: {
               algorithmsVersion: 1,
               configVersion: '1',

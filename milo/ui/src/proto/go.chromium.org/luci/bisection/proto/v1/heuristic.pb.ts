@@ -194,10 +194,10 @@ export const HeuristicAnalysisResult = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<HeuristicAnalysisResult>, I>>(base?: I): HeuristicAnalysisResult {
-    return HeuristicAnalysisResult.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<HeuristicAnalysisResult>): HeuristicAnalysisResult {
+    return HeuristicAnalysisResult.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<HeuristicAnalysisResult>, I>>(object: I): HeuristicAnalysisResult {
+  fromPartial(object: DeepPartial<HeuristicAnalysisResult>): HeuristicAnalysisResult {
     const message = createBaseHeuristicAnalysisResult() as any;
     message.status = object.status ?? 0;
     message.suspects = object.suspects?.map((e) => HeuristicSuspect.fromPartial(e)) || [];
@@ -365,10 +365,10 @@ export const HeuristicSuspect = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<HeuristicSuspect>, I>>(base?: I): HeuristicSuspect {
-    return HeuristicSuspect.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<HeuristicSuspect>): HeuristicSuspect {
+    return HeuristicSuspect.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<HeuristicSuspect>, I>>(object: I): HeuristicSuspect {
+  fromPartial(object: DeepPartial<HeuristicSuspect>): HeuristicSuspect {
     const message = createBaseHeuristicSuspect() as any;
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
       ? GitilesCommit.fromPartial(object.gitilesCommit)
@@ -393,10 +393,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

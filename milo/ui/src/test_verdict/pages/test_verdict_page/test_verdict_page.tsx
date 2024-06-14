@@ -52,12 +52,12 @@ export function TestVerdictPage() {
     client.BatchGetTestVariants.query(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: `invocations/${invID}`,
-        testVariants: Object.freeze([
+        testVariants: [
           {
             testId: testID!,
             variantHash: vHash,
           },
-        ]),
+        ],
       }),
     ),
   );

@@ -61,10 +61,10 @@ export const CreateBuildFieldOption = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CreateBuildFieldOption>, I>>(base?: I): CreateBuildFieldOption {
-    return CreateBuildFieldOption.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CreateBuildFieldOption>): CreateBuildFieldOption {
+    return CreateBuildFieldOption.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CreateBuildFieldOption>, I>>(object: I): CreateBuildFieldOption {
+  fromPartial(object: DeepPartial<CreateBuildFieldOption>): CreateBuildFieldOption {
     const message = createBaseCreateBuildFieldOption() as any;
     message.fieldBehavior = object.fieldBehavior ?? 0;
     return message;
@@ -78,10 +78,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

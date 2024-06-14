@@ -233,10 +233,10 @@ export const Variant = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Variant>, I>>(base?: I): Variant {
-    return Variant.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Variant>): Variant {
+    return Variant.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Variant>, I>>(object: I): Variant {
+  fromPartial(object: DeepPartial<Variant>): Variant {
     const message = createBaseVariant() as any;
     message.def = Object.entries(object.def ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
       if (value !== undefined) {
@@ -311,10 +311,10 @@ export const Variant_DefEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Variant_DefEntry>, I>>(base?: I): Variant_DefEntry {
-    return Variant_DefEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Variant_DefEntry>): Variant_DefEntry {
+    return Variant_DefEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Variant_DefEntry>, I>>(object: I): Variant_DefEntry {
+  fromPartial(object: DeepPartial<Variant_DefEntry>): Variant_DefEntry {
     const message = createBaseVariant_DefEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -385,10 +385,10 @@ export const StringPair = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<StringPair>, I>>(base?: I): StringPair {
-    return StringPair.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<StringPair>): StringPair {
+    return StringPair.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<StringPair>, I>>(object: I): StringPair {
+  fromPartial(object: DeepPartial<StringPair>): StringPair {
     const message = createBaseStringPair() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -501,10 +501,10 @@ export const GitilesCommit = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GitilesCommit>, I>>(base?: I): GitilesCommit {
-    return GitilesCommit.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GitilesCommit>): GitilesCommit {
+    return GitilesCommit.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GitilesCommit>, I>>(object: I): GitilesCommit {
+  fromPartial(object: DeepPartial<GitilesCommit>): GitilesCommit {
     const message = createBaseGitilesCommit() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -606,10 +606,10 @@ export const GerritChange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GerritChange>, I>>(base?: I): GerritChange {
-    return GerritChange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GerritChange>): GerritChange {
+    return GerritChange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GerritChange>, I>>(object: I): GerritChange {
+  fromPartial(object: DeepPartial<GerritChange>): GerritChange {
     const message = createBaseGerritChange() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -710,10 +710,10 @@ export const CommitPosition = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CommitPosition>, I>>(base?: I): CommitPosition {
-    return CommitPosition.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CommitPosition>): CommitPosition {
+    return CommitPosition.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CommitPosition>, I>>(object: I): CommitPosition {
+  fromPartial(object: DeepPartial<CommitPosition>): CommitPosition {
     const message = createBaseCommitPosition() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -786,10 +786,10 @@ export const CommitPositionRange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<CommitPositionRange>, I>>(base?: I): CommitPositionRange {
-    return CommitPositionRange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<CommitPositionRange>): CommitPositionRange {
+    return CommitPositionRange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<CommitPositionRange>, I>>(object: I): CommitPositionRange {
+  fromPartial(object: DeepPartial<CommitPositionRange>): CommitPositionRange {
     const message = createBaseCommitPositionRange() as any;
     message.earliest = (object.earliest !== undefined && object.earliest !== null)
       ? CommitPosition.fromPartial(object.earliest)
@@ -864,10 +864,10 @@ export const TimeRange = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TimeRange>, I>>(base?: I): TimeRange {
-    return TimeRange.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TimeRange>): TimeRange {
+    return TimeRange.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TimeRange>, I>>(object: I): TimeRange {
+  fromPartial(object: DeepPartial<TimeRange>): TimeRange {
     const message = createBaseTimeRange() as any;
     message.earliest = object.earliest ?? undefined;
     message.latest = object.latest ?? undefined;
@@ -922,10 +922,10 @@ export const SourceRef = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SourceRef>, I>>(base?: I): SourceRef {
-    return SourceRef.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SourceRef>): SourceRef {
+    return SourceRef.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SourceRef>, I>>(object: I): SourceRef {
+  fromPartial(object: DeepPartial<SourceRef>): SourceRef {
     const message = createBaseSourceRef() as any;
     message.gitiles = (object.gitiles !== undefined && object.gitiles !== null)
       ? GitilesRef.fromPartial(object.gitiles)
@@ -1011,10 +1011,10 @@ export const GitilesRef = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GitilesRef>, I>>(base?: I): GitilesRef {
-    return GitilesRef.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GitilesRef>): GitilesRef {
+    return GitilesRef.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GitilesRef>, I>>(object: I): GitilesRef {
+  fromPartial(object: DeepPartial<GitilesRef>): GitilesRef {
     const message = createBaseGitilesRef() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -1030,10 +1030,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

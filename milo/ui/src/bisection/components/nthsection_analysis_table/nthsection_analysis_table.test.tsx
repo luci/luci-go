@@ -63,7 +63,7 @@ function createMockAnalysis() {
           status: 'Vindicated',
         },
       },
-      reruns: Object.freeze([
+      reruns: [
         {
           bbid: '5555',
           startTime: '2022-09-06T07:13:16.398865Z',
@@ -96,7 +96,7 @@ function createMockAnalysis() {
           index: '6',
           type: 'NthSection',
         },
-      ]),
+      ],
       blameList: {},
     }),
   );

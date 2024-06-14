@@ -14,19 +14,18 @@
 
 import fetchMock from 'fetch-mock-jest';
 
-import { AuthGroup, ListGroupsResponse } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import {
+  AuthGroup,
+  ListGroupsResponse,
+} from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
-export function createMockListGroupsResponse(
-  groups: readonly AuthGroup[],
-) {
+export function createMockListGroupsResponse(groups: readonly AuthGroup[]) {
   return ListGroupsResponse.fromPartial({
     groups: groups,
   });
 }
 
-export function mockFetchGroups(
-  mockGroups: readonly AuthGroup[],
-) {
+export function mockFetchGroups(mockGroups: readonly AuthGroup[]) {
   fetchMock.post(
     'https://' +
       SETTINGS.authService.host +
@@ -38,9 +37,7 @@ export function mockFetchGroups(
       body:
         ")]}'\n" +
         JSON.stringify(
-          ListGroupsResponse.toJSON(
-            createMockListGroupsResponse(mockGroups),
-          ),
+          ListGroupsResponse.toJSON(createMockListGroupsResponse(mockGroups)),
         ),
     },
     { overwriteRoutes: true },

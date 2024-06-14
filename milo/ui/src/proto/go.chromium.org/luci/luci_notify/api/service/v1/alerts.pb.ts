@@ -144,10 +144,10 @@ export const BatchGetAlertsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetAlertsRequest>, I>>(base?: I): BatchGetAlertsRequest {
-    return BatchGetAlertsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetAlertsRequest>): BatchGetAlertsRequest {
+    return BatchGetAlertsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetAlertsRequest>, I>>(object: I): BatchGetAlertsRequest {
+  fromPartial(object: DeepPartial<BatchGetAlertsRequest>): BatchGetAlertsRequest {
     const message = createBaseBatchGetAlertsRequest() as any;
     message.names = object.names?.map((e) => e) || [];
     return message;
@@ -273,10 +273,10 @@ export const Alert = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Alert>, I>>(base?: I): Alert {
-    return Alert.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Alert>): Alert {
+    return Alert.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Alert>, I>>(object: I): Alert {
+  fromPartial(object: DeepPartial<Alert>): Alert {
     const message = createBaseAlert() as any;
     message.name = object.name ?? "";
     message.bug = object.bug ?? "0";
@@ -335,10 +335,10 @@ export const BatchGetAlertsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchGetAlertsResponse>, I>>(base?: I): BatchGetAlertsResponse {
-    return BatchGetAlertsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchGetAlertsResponse>): BatchGetAlertsResponse {
+    return BatchGetAlertsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchGetAlertsResponse>, I>>(object: I): BatchGetAlertsResponse {
+  fromPartial(object: DeepPartial<BatchGetAlertsResponse>): BatchGetAlertsResponse {
     const message = createBaseBatchGetAlertsResponse() as any;
     message.alerts = object.alerts?.map((e) => Alert.fromPartial(e)) || [];
     return message;
@@ -392,10 +392,10 @@ export const UpdateAlertRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<UpdateAlertRequest>, I>>(base?: I): UpdateAlertRequest {
-    return UpdateAlertRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<UpdateAlertRequest>): UpdateAlertRequest {
+    return UpdateAlertRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<UpdateAlertRequest>, I>>(object: I): UpdateAlertRequest {
+  fromPartial(object: DeepPartial<UpdateAlertRequest>): UpdateAlertRequest {
     const message = createBaseUpdateAlertRequest() as any;
     message.alert = (object.alert !== undefined && object.alert !== null) ? Alert.fromPartial(object.alert) : undefined;
     return message;
@@ -453,10 +453,10 @@ export const BatchUpdateAlertsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchUpdateAlertsRequest>, I>>(base?: I): BatchUpdateAlertsRequest {
-    return BatchUpdateAlertsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchUpdateAlertsRequest>): BatchUpdateAlertsRequest {
+    return BatchUpdateAlertsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchUpdateAlertsRequest>, I>>(object: I): BatchUpdateAlertsRequest {
+  fromPartial(object: DeepPartial<BatchUpdateAlertsRequest>): BatchUpdateAlertsRequest {
     const message = createBaseBatchUpdateAlertsRequest() as any;
     message.requests = object.requests?.map((e) => UpdateAlertRequest.fromPartial(e)) || [];
     return message;
@@ -510,10 +510,10 @@ export const BatchUpdateAlertsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<BatchUpdateAlertsResponse>, I>>(base?: I): BatchUpdateAlertsResponse {
-    return BatchUpdateAlertsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<BatchUpdateAlertsResponse>): BatchUpdateAlertsResponse {
+    return BatchUpdateAlertsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<BatchUpdateAlertsResponse>, I>>(object: I): BatchUpdateAlertsResponse {
+  fromPartial(object: DeepPartial<BatchUpdateAlertsResponse>): BatchUpdateAlertsResponse {
     const message = createBaseBatchUpdateAlertsResponse() as any;
     message.alerts = object.alerts?.map((e) => Alert.fromPartial(e)) || [];
     return message;
@@ -571,10 +571,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

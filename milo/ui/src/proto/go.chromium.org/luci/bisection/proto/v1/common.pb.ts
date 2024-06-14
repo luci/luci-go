@@ -631,10 +631,10 @@ export const RerunResult = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<RerunResult>, I>>(base?: I): RerunResult {
-    return RerunResult.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<RerunResult>): RerunResult {
+    return RerunResult.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<RerunResult>, I>>(object: I): RerunResult {
+  fromPartial(object: DeepPartial<RerunResult>): RerunResult {
     const message = createBaseRerunResult() as any;
     message.rerunStatus = object.rerunStatus ?? 0;
     message.errorMessage = object.errorMessage ?? "";
@@ -828,10 +828,10 @@ export const SingleRerun = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SingleRerun>, I>>(base?: I): SingleRerun {
-    return SingleRerun.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SingleRerun>): SingleRerun {
+    return SingleRerun.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SingleRerun>, I>>(object: I): SingleRerun {
+  fromPartial(object: DeepPartial<SingleRerun>): SingleRerun {
     const message = createBaseSingleRerun() as any;
     message.startTime = object.startTime ?? undefined;
     message.lastUpdatedTime = object.lastUpdatedTime ?? undefined;
@@ -928,10 +928,10 @@ export const SuspectVerificationDetails = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SuspectVerificationDetails>, I>>(base?: I): SuspectVerificationDetails {
-    return SuspectVerificationDetails.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SuspectVerificationDetails>): SuspectVerificationDetails {
+    return SuspectVerificationDetails.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SuspectVerificationDetails>, I>>(object: I): SuspectVerificationDetails {
+  fromPartial(object: DeepPartial<SuspectVerificationDetails>): SuspectVerificationDetails {
     const message = createBaseSuspectVerificationDetails() as any;
     message.status = object.status ?? "";
     message.suspectRerun = (object.suspectRerun !== undefined && object.suspectRerun !== null)
@@ -1007,10 +1007,10 @@ export const Variant = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Variant>, I>>(base?: I): Variant {
-    return Variant.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Variant>): Variant {
+    return Variant.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Variant>, I>>(object: I): Variant {
+  fromPartial(object: DeepPartial<Variant>): Variant {
     const message = createBaseVariant() as any;
     message.def = Object.entries(object.def ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
       if (value !== undefined) {
@@ -1085,10 +1085,10 @@ export const Variant_DefEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Variant_DefEntry>, I>>(base?: I): Variant_DefEntry {
-    return Variant_DefEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Variant_DefEntry>): Variant_DefEntry {
+    return Variant_DefEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Variant_DefEntry>, I>>(object: I): Variant_DefEntry {
+  fromPartial(object: DeepPartial<Variant_DefEntry>): Variant_DefEntry {
     const message = createBaseVariant_DefEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -1143,10 +1143,10 @@ export const SourceRef = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<SourceRef>, I>>(base?: I): SourceRef {
-    return SourceRef.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<SourceRef>): SourceRef {
+    return SourceRef.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<SourceRef>, I>>(object: I): SourceRef {
+  fromPartial(object: DeepPartial<SourceRef>): SourceRef {
     const message = createBaseSourceRef() as any;
     message.gitiles = (object.gitiles !== undefined && object.gitiles !== null)
       ? GitilesRef.fromPartial(object.gitiles)
@@ -1232,10 +1232,10 @@ export const GitilesRef = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GitilesRef>, I>>(base?: I): GitilesRef {
-    return GitilesRef.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GitilesRef>): GitilesRef {
+    return GitilesRef.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GitilesRef>, I>>(object: I): GitilesRef {
+  fromPartial(object: DeepPartial<GitilesRef>): GitilesRef {
     const message = createBaseGitilesRef() as any;
     message.host = object.host ?? "";
     message.project = object.project ?? "";
@@ -1295,10 +1295,10 @@ export const Dimensions = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Dimensions>, I>>(base?: I): Dimensions {
-    return Dimensions.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Dimensions>): Dimensions {
+    return Dimensions.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Dimensions>, I>>(object: I): Dimensions {
+  fromPartial(object: DeepPartial<Dimensions>): Dimensions {
     const message = createBaseDimensions() as any;
     message.dimensions = object.dimensions?.map((e) => Dimension.fromPartial(e)) || [];
     return message;
@@ -1368,10 +1368,10 @@ export const Dimension = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Dimension>, I>>(base?: I): Dimension {
-    return Dimension.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Dimension>): Dimension {
+    return Dimension.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Dimension>, I>>(object: I): Dimension {
+  fromPartial(object: DeepPartial<Dimension>): Dimension {
     const message = createBaseDimension() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
@@ -1386,10 +1386,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

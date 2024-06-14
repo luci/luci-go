@@ -720,10 +720,10 @@ export const TestResult = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestResult>, I>>(base?: I): TestResult {
-    return TestResult.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestResult>): TestResult {
+    return TestResult.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestResult>, I>>(object: I): TestResult {
+  fromPartial(object: DeepPartial<TestResult>): TestResult {
     const message = createBaseTestResult() as any;
     message.name = object.name ?? "";
     message.testId = object.testId ?? "";
@@ -909,10 +909,10 @@ export const TestExoneration = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestExoneration>, I>>(base?: I): TestExoneration {
-    return TestExoneration.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestExoneration>): TestExoneration {
+    return TestExoneration.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestExoneration>, I>>(object: I): TestExoneration {
+  fromPartial(object: DeepPartial<TestExoneration>): TestExoneration {
     const message = createBaseTestExoneration() as any;
     message.name = object.name ?? "";
     message.testId = object.testId ?? "";
@@ -935,10 +935,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

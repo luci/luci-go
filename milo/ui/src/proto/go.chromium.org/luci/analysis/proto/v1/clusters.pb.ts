@@ -804,10 +804,10 @@ export const ClusterRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterRequest>, I>>(base?: I): ClusterRequest {
-    return ClusterRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterRequest>): ClusterRequest {
+    return ClusterRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterRequest>, I>>(object: I): ClusterRequest {
+  fromPartial(object: DeepPartial<ClusterRequest>): ClusterRequest {
     const message = createBaseClusterRequest() as any;
     message.project = object.project ?? "";
     message.testResults = object.testResults?.map((e) => ClusterRequest_TestResult.fromPartial(e)) || [];
@@ -892,10 +892,10 @@ export const ClusterRequest_TestResult = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterRequest_TestResult>, I>>(base?: I): ClusterRequest_TestResult {
-    return ClusterRequest_TestResult.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterRequest_TestResult>): ClusterRequest_TestResult {
+    return ClusterRequest_TestResult.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterRequest_TestResult>, I>>(object: I): ClusterRequest_TestResult {
+  fromPartial(object: DeepPartial<ClusterRequest_TestResult>): ClusterRequest_TestResult {
     const message = createBaseClusterRequest_TestResult() as any;
     message.requestTag = object.requestTag ?? "";
     message.testId = object.testId ?? "";
@@ -973,10 +973,10 @@ export const ClusterResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterResponse>, I>>(base?: I): ClusterResponse {
-    return ClusterResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterResponse>): ClusterResponse {
+    return ClusterResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterResponse>, I>>(object: I): ClusterResponse {
+  fromPartial(object: DeepPartial<ClusterResponse>): ClusterResponse {
     const message = createBaseClusterResponse() as any;
     message.clusteredTestResults =
       object.clusteredTestResults?.map((e) => ClusterResponse_ClusteredTestResult.fromPartial(e)) || [];
@@ -1052,14 +1052,10 @@ export const ClusterResponse_ClusteredTestResult = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterResponse_ClusteredTestResult>, I>>(
-    base?: I,
-  ): ClusterResponse_ClusteredTestResult {
-    return ClusterResponse_ClusteredTestResult.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterResponse_ClusteredTestResult>): ClusterResponse_ClusteredTestResult {
+    return ClusterResponse_ClusteredTestResult.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterResponse_ClusteredTestResult>, I>>(
-    object: I,
-  ): ClusterResponse_ClusteredTestResult {
+  fromPartial(object: DeepPartial<ClusterResponse_ClusteredTestResult>): ClusterResponse_ClusteredTestResult {
     const message = createBaseClusterResponse_ClusteredTestResult() as any;
     message.requestTag = object.requestTag ?? "";
     message.clusters = object.clusters?.map((e) => ClusterResponse_ClusteredTestResult_ClusterEntry.fromPartial(e)) ||
@@ -1134,13 +1130,13 @@ export const ClusterResponse_ClusteredTestResult_ClusterEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterResponse_ClusteredTestResult_ClusterEntry>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<ClusterResponse_ClusteredTestResult_ClusterEntry>,
   ): ClusterResponse_ClusteredTestResult_ClusterEntry {
-    return ClusterResponse_ClusteredTestResult_ClusterEntry.fromPartial(base ?? ({} as any));
+    return ClusterResponse_ClusteredTestResult_ClusterEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterResponse_ClusteredTestResult_ClusterEntry>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<ClusterResponse_ClusteredTestResult_ClusterEntry>,
   ): ClusterResponse_ClusteredTestResult_ClusterEntry {
     const message = createBaseClusterResponse_ClusteredTestResult_ClusterEntry() as any;
     message.clusterId = (object.clusterId !== undefined && object.clusterId !== null)
@@ -1228,10 +1224,10 @@ export const ClusteringVersion = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusteringVersion>, I>>(base?: I): ClusteringVersion {
-    return ClusteringVersion.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusteringVersion>): ClusteringVersion {
+    return ClusteringVersion.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusteringVersion>, I>>(object: I): ClusteringVersion {
+  fromPartial(object: DeepPartial<ClusteringVersion>): ClusteringVersion {
     const message = createBaseClusteringVersion() as any;
     message.algorithmsVersion = object.algorithmsVersion ?? 0;
     message.rulesVersion = object.rulesVersion ?? undefined;
@@ -1287,10 +1283,10 @@ export const GetClusterRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetClusterRequest>, I>>(base?: I): GetClusterRequest {
-    return GetClusterRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetClusterRequest>): GetClusterRequest {
+    return GetClusterRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetClusterRequest>, I>>(object: I): GetClusterRequest {
+  fromPartial(object: DeepPartial<GetClusterRequest>): GetClusterRequest {
     const message = createBaseGetClusterRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -1418,10 +1414,10 @@ export const Cluster = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Cluster>, I>>(base?: I): Cluster {
-    return Cluster.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Cluster>): Cluster {
+    return Cluster.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Cluster>, I>>(object: I): Cluster {
+  fromPartial(object: DeepPartial<Cluster>): Cluster {
     const message = createBaseCluster() as any;
     message.name = object.name ?? "";
     message.hasExample = object.hasExample ?? false;
@@ -1487,10 +1483,10 @@ export const Cluster_Counts = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Cluster_Counts>, I>>(base?: I): Cluster_Counts {
-    return Cluster_Counts.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Cluster_Counts>): Cluster_Counts {
+    return Cluster_Counts.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Cluster_Counts>, I>>(object: I): Cluster_Counts {
+  fromPartial(object: DeepPartial<Cluster_Counts>): Cluster_Counts {
     const message = createBaseCluster_Counts() as any;
     message.nominal = object.nominal ?? "0";
     return message;
@@ -1574,10 +1570,10 @@ export const Cluster_TimewiseCounts = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Cluster_TimewiseCounts>, I>>(base?: I): Cluster_TimewiseCounts {
-    return Cluster_TimewiseCounts.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Cluster_TimewiseCounts>): Cluster_TimewiseCounts {
+    return Cluster_TimewiseCounts.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Cluster_TimewiseCounts>, I>>(object: I): Cluster_TimewiseCounts {
+  fromPartial(object: DeepPartial<Cluster_TimewiseCounts>): Cluster_TimewiseCounts {
     const message = createBaseCluster_TimewiseCounts() as any;
     message.oneDay = (object.oneDay !== undefined && object.oneDay !== null)
       ? Cluster_Counts.fromPartial(object.oneDay)
@@ -1655,10 +1651,10 @@ export const Cluster_MetricsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<Cluster_MetricsEntry>, I>>(base?: I): Cluster_MetricsEntry {
-    return Cluster_MetricsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<Cluster_MetricsEntry>): Cluster_MetricsEntry {
+    return Cluster_MetricsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<Cluster_MetricsEntry>, I>>(object: I): Cluster_MetricsEntry {
+  fromPartial(object: DeepPartial<Cluster_MetricsEntry>): Cluster_MetricsEntry {
     const message = createBaseCluster_MetricsEntry() as any;
     message.key = object.key ?? "";
     message.value = (object.value !== undefined && object.value !== null)
@@ -1715,12 +1711,10 @@ export const GetReclusteringProgressRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetReclusteringProgressRequest>, I>>(base?: I): GetReclusteringProgressRequest {
-    return GetReclusteringProgressRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<GetReclusteringProgressRequest>): GetReclusteringProgressRequest {
+    return GetReclusteringProgressRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<GetReclusteringProgressRequest>, I>>(
-    object: I,
-  ): GetReclusteringProgressRequest {
+  fromPartial(object: DeepPartial<GetReclusteringProgressRequest>): GetReclusteringProgressRequest {
     const message = createBaseGetReclusteringProgressRequest() as any;
     message.name = object.name ?? "";
     return message;
@@ -1818,10 +1812,10 @@ export const ReclusteringProgress = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ReclusteringProgress>, I>>(base?: I): ReclusteringProgress {
-    return ReclusteringProgress.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ReclusteringProgress>): ReclusteringProgress {
+    return ReclusteringProgress.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ReclusteringProgress>, I>>(object: I): ReclusteringProgress {
+  fromPartial(object: DeepPartial<ReclusteringProgress>): ReclusteringProgress {
     const message = createBaseReclusteringProgress() as any;
     message.name = object.name ?? "";
     message.progressPerMille = object.progressPerMille ?? 0;
@@ -1954,10 +1948,10 @@ export const QueryClusterSummariesRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterSummariesRequest>, I>>(base?: I): QueryClusterSummariesRequest {
-    return QueryClusterSummariesRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryClusterSummariesRequest>): QueryClusterSummariesRequest {
+    return QueryClusterSummariesRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterSummariesRequest>, I>>(object: I): QueryClusterSummariesRequest {
+  fromPartial(object: DeepPartial<QueryClusterSummariesRequest>): QueryClusterSummariesRequest {
     const message = createBaseQueryClusterSummariesRequest() as any;
     message.project = object.project ?? "";
     message.failureFilter = object.failureFilter ?? "";
@@ -2022,12 +2016,10 @@ export const QueryClusterSummariesResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterSummariesResponse>, I>>(base?: I): QueryClusterSummariesResponse {
-    return QueryClusterSummariesResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryClusterSummariesResponse>): QueryClusterSummariesResponse {
+    return QueryClusterSummariesResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterSummariesResponse>, I>>(
-    object: I,
-  ): QueryClusterSummariesResponse {
+  fromPartial(object: DeepPartial<QueryClusterSummariesResponse>): QueryClusterSummariesResponse {
     const message = createBaseQueryClusterSummariesResponse() as any;
     message.clusterSummaries = object.clusterSummaries?.map((e) => ClusterSummary.fromPartial(e)) || [];
     return message;
@@ -2139,10 +2131,10 @@ export const ClusterSummary = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterSummary>, I>>(base?: I): ClusterSummary {
-    return ClusterSummary.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterSummary>): ClusterSummary {
+    return ClusterSummary.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterSummary>, I>>(object: I): ClusterSummary {
+  fromPartial(object: DeepPartial<ClusterSummary>): ClusterSummary {
     const message = createBaseClusterSummary() as any;
     message.clusterId = (object.clusterId !== undefined && object.clusterId !== null)
       ? ClusterId.fromPartial(object.clusterId)
@@ -2239,10 +2231,10 @@ export const ClusterSummary_MetricValue = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterSummary_MetricValue>, I>>(base?: I): ClusterSummary_MetricValue {
-    return ClusterSummary_MetricValue.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterSummary_MetricValue>): ClusterSummary_MetricValue {
+    return ClusterSummary_MetricValue.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterSummary_MetricValue>, I>>(object: I): ClusterSummary_MetricValue {
+  fromPartial(object: DeepPartial<ClusterSummary_MetricValue>): ClusterSummary_MetricValue {
     const message = createBaseClusterSummary_MetricValue() as any;
     message.value = object.value ?? "0";
     message.dailyBreakdown = object.dailyBreakdown?.map((e) => e) || [];
@@ -2313,10 +2305,10 @@ export const ClusterSummary_MetricsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterSummary_MetricsEntry>, I>>(base?: I): ClusterSummary_MetricsEntry {
-    return ClusterSummary_MetricsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterSummary_MetricsEntry>): ClusterSummary_MetricsEntry {
+    return ClusterSummary_MetricsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterSummary_MetricsEntry>, I>>(object: I): ClusterSummary_MetricsEntry {
+  fromPartial(object: DeepPartial<ClusterSummary_MetricsEntry>): ClusterSummary_MetricsEntry {
     const message = createBaseClusterSummary_MetricsEntry() as any;
     message.key = object.key ?? "";
     message.value = (object.value !== undefined && object.value !== null)
@@ -2389,10 +2381,10 @@ export const QueryClusterFailuresRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterFailuresRequest>, I>>(base?: I): QueryClusterFailuresRequest {
-    return QueryClusterFailuresRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryClusterFailuresRequest>): QueryClusterFailuresRequest {
+    return QueryClusterFailuresRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterFailuresRequest>, I>>(object: I): QueryClusterFailuresRequest {
+  fromPartial(object: DeepPartial<QueryClusterFailuresRequest>): QueryClusterFailuresRequest {
     const message = createBaseQueryClusterFailuresRequest() as any;
     message.parent = object.parent ?? "";
     message.metricFilter = object.metricFilter ?? "";
@@ -2451,10 +2443,10 @@ export const QueryClusterFailuresResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterFailuresResponse>, I>>(base?: I): QueryClusterFailuresResponse {
-    return QueryClusterFailuresResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryClusterFailuresResponse>): QueryClusterFailuresResponse {
+    return QueryClusterFailuresResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterFailuresResponse>, I>>(object: I): QueryClusterFailuresResponse {
+  fromPartial(object: DeepPartial<QueryClusterFailuresResponse>): QueryClusterFailuresResponse {
     const message = createBaseQueryClusterFailuresResponse() as any;
     message.failures = object.failures?.map((e) => DistinctClusterFailure.fromPartial(e)) || [];
     return message;
@@ -2670,10 +2662,10 @@ export const DistinctClusterFailure = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<DistinctClusterFailure>, I>>(base?: I): DistinctClusterFailure {
-    return DistinctClusterFailure.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<DistinctClusterFailure>): DistinctClusterFailure {
+    return DistinctClusterFailure.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<DistinctClusterFailure>, I>>(object: I): DistinctClusterFailure {
+  fromPartial(object: DeepPartial<DistinctClusterFailure>): DistinctClusterFailure {
     const message = createBaseDistinctClusterFailure() as any;
     message.testId = object.testId ?? "";
     message.variant = (object.variant !== undefined && object.variant !== null)
@@ -2741,14 +2733,10 @@ export const DistinctClusterFailure_Exoneration = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<DistinctClusterFailure_Exoneration>, I>>(
-    base?: I,
-  ): DistinctClusterFailure_Exoneration {
-    return DistinctClusterFailure_Exoneration.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<DistinctClusterFailure_Exoneration>): DistinctClusterFailure_Exoneration {
+    return DistinctClusterFailure_Exoneration.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<DistinctClusterFailure_Exoneration>, I>>(
-    object: I,
-  ): DistinctClusterFailure_Exoneration {
+  fromPartial(object: DeepPartial<DistinctClusterFailure_Exoneration>): DistinctClusterFailure_Exoneration {
     const message = createBaseDistinctClusterFailure_Exoneration() as any;
     message.reason = object.reason ?? 0;
     return message;
@@ -2846,14 +2834,10 @@ export const DistinctClusterFailure_PresubmitRun = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<DistinctClusterFailure_PresubmitRun>, I>>(
-    base?: I,
-  ): DistinctClusterFailure_PresubmitRun {
-    return DistinctClusterFailure_PresubmitRun.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<DistinctClusterFailure_PresubmitRun>): DistinctClusterFailure_PresubmitRun {
+    return DistinctClusterFailure_PresubmitRun.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<DistinctClusterFailure_PresubmitRun>, I>>(
-    object: I,
-  ): DistinctClusterFailure_PresubmitRun {
+  fromPartial(object: DeepPartial<DistinctClusterFailure_PresubmitRun>): DistinctClusterFailure_PresubmitRun {
     const message = createBaseDistinctClusterFailure_PresubmitRun() as any;
     message.presubmitRunId = (object.presubmitRunId !== undefined && object.presubmitRunId !== null)
       ? PresubmitRunId.fromPartial(object.presubmitRunId)
@@ -2912,13 +2896,11 @@ export const QueryClusterExoneratedTestVariantsRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantsRequest>, I>>(
-    base?: I,
-  ): QueryClusterExoneratedTestVariantsRequest {
-    return QueryClusterExoneratedTestVariantsRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryClusterExoneratedTestVariantsRequest>): QueryClusterExoneratedTestVariantsRequest {
+    return QueryClusterExoneratedTestVariantsRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantsRequest>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<QueryClusterExoneratedTestVariantsRequest>,
   ): QueryClusterExoneratedTestVariantsRequest {
     const message = createBaseQueryClusterExoneratedTestVariantsRequest() as any;
     message.parent = object.parent ?? "";
@@ -2977,13 +2959,11 @@ export const QueryClusterExoneratedTestVariantsResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantsResponse>, I>>(
-    base?: I,
-  ): QueryClusterExoneratedTestVariantsResponse {
-    return QueryClusterExoneratedTestVariantsResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryClusterExoneratedTestVariantsResponse>): QueryClusterExoneratedTestVariantsResponse {
+    return QueryClusterExoneratedTestVariantsResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantsResponse>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<QueryClusterExoneratedTestVariantsResponse>,
   ): QueryClusterExoneratedTestVariantsResponse {
     const message = createBaseQueryClusterExoneratedTestVariantsResponse() as any;
     message.testVariants = object.testVariants?.map((e) => ClusterExoneratedTestVariant.fromPartial(e)) || [];
@@ -3084,10 +3064,10 @@ export const ClusterExoneratedTestVariant = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterExoneratedTestVariant>, I>>(base?: I): ClusterExoneratedTestVariant {
-    return ClusterExoneratedTestVariant.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterExoneratedTestVariant>): ClusterExoneratedTestVariant {
+    return ClusterExoneratedTestVariant.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterExoneratedTestVariant>, I>>(object: I): ClusterExoneratedTestVariant {
+  fromPartial(object: DeepPartial<ClusterExoneratedTestVariant>): ClusterExoneratedTestVariant {
     const message = createBaseClusterExoneratedTestVariant() as any;
     message.testId = object.testId ?? "";
     message.variant = (object.variant !== undefined && object.variant !== null)
@@ -3149,13 +3129,13 @@ export const QueryClusterExoneratedTestVariantBranchesRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantBranchesRequest>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<QueryClusterExoneratedTestVariantBranchesRequest>,
   ): QueryClusterExoneratedTestVariantBranchesRequest {
-    return QueryClusterExoneratedTestVariantBranchesRequest.fromPartial(base ?? ({} as any));
+    return QueryClusterExoneratedTestVariantBranchesRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantBranchesRequest>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<QueryClusterExoneratedTestVariantBranchesRequest>,
   ): QueryClusterExoneratedTestVariantBranchesRequest {
     const message = createBaseQueryClusterExoneratedTestVariantBranchesRequest() as any;
     message.parent = object.parent ?? "";
@@ -3217,13 +3197,13 @@ export const QueryClusterExoneratedTestVariantBranchesResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantBranchesResponse>, I>>(
-    base?: I,
+  create(
+    base?: DeepPartial<QueryClusterExoneratedTestVariantBranchesResponse>,
   ): QueryClusterExoneratedTestVariantBranchesResponse {
-    return QueryClusterExoneratedTestVariantBranchesResponse.fromPartial(base ?? ({} as any));
+    return QueryClusterExoneratedTestVariantBranchesResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterExoneratedTestVariantBranchesResponse>, I>>(
-    object: I,
+  fromPartial(
+    object: DeepPartial<QueryClusterExoneratedTestVariantBranchesResponse>,
   ): QueryClusterExoneratedTestVariantBranchesResponse {
     const message = createBaseQueryClusterExoneratedTestVariantBranchesResponse() as any;
     message.testVariantBranches =
@@ -3360,14 +3340,10 @@ export const ClusterExoneratedTestVariantBranch = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterExoneratedTestVariantBranch>, I>>(
-    base?: I,
-  ): ClusterExoneratedTestVariantBranch {
-    return ClusterExoneratedTestVariantBranch.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterExoneratedTestVariantBranch>): ClusterExoneratedTestVariantBranch {
+    return ClusterExoneratedTestVariantBranch.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterExoneratedTestVariantBranch>, I>>(
-    object: I,
-  ): ClusterExoneratedTestVariantBranch {
+  fromPartial(object: DeepPartial<ClusterExoneratedTestVariantBranch>): ClusterExoneratedTestVariantBranch {
     const message = createBaseClusterExoneratedTestVariantBranch() as any;
     message.project = object.project ?? "";
     message.testId = object.testId ?? "";
@@ -3474,10 +3450,10 @@ export const QueryClusterHistoryRequest = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterHistoryRequest>, I>>(base?: I): QueryClusterHistoryRequest {
-    return QueryClusterHistoryRequest.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryClusterHistoryRequest>): QueryClusterHistoryRequest {
+    return QueryClusterHistoryRequest.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterHistoryRequest>, I>>(object: I): QueryClusterHistoryRequest {
+  fromPartial(object: DeepPartial<QueryClusterHistoryRequest>): QueryClusterHistoryRequest {
     const message = createBaseQueryClusterHistoryRequest() as any;
     message.project = object.project ?? "";
     message.failureFilter = object.failureFilter ?? "";
@@ -3536,10 +3512,10 @@ export const QueryClusterHistoryResponse = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<QueryClusterHistoryResponse>, I>>(base?: I): QueryClusterHistoryResponse {
-    return QueryClusterHistoryResponse.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<QueryClusterHistoryResponse>): QueryClusterHistoryResponse {
+    return QueryClusterHistoryResponse.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<QueryClusterHistoryResponse>, I>>(object: I): QueryClusterHistoryResponse {
+  fromPartial(object: DeepPartial<QueryClusterHistoryResponse>): QueryClusterHistoryResponse {
     const message = createBaseQueryClusterHistoryResponse() as any;
     message.days = object.days?.map((e) => ClusterHistoryDay.fromPartial(e)) || [];
     return message;
@@ -3623,10 +3599,10 @@ export const ClusterHistoryDay = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterHistoryDay>, I>>(base?: I): ClusterHistoryDay {
-    return ClusterHistoryDay.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterHistoryDay>): ClusterHistoryDay {
+    return ClusterHistoryDay.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterHistoryDay>, I>>(object: I): ClusterHistoryDay {
+  fromPartial(object: DeepPartial<ClusterHistoryDay>): ClusterHistoryDay {
     const message = createBaseClusterHistoryDay() as any;
     message.metrics = Object.entries(object.metrics ?? {}).reduce<{ [key: string]: number }>((acc, [key, value]) => {
       if (value !== undefined) {
@@ -3702,12 +3678,10 @@ export const ClusterHistoryDay_MetricsEntry = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ClusterHistoryDay_MetricsEntry>, I>>(base?: I): ClusterHistoryDay_MetricsEntry {
-    return ClusterHistoryDay_MetricsEntry.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ClusterHistoryDay_MetricsEntry>): ClusterHistoryDay_MetricsEntry {
+    return ClusterHistoryDay_MetricsEntry.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ClusterHistoryDay_MetricsEntry>, I>>(
-    object: I,
-  ): ClusterHistoryDay_MetricsEntry {
+  fromPartial(object: DeepPartial<ClusterHistoryDay_MetricsEntry>): ClusterHistoryDay_MetricsEntry {
     const message = createBaseClusterHistoryDay_MetricsEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? 0;
@@ -3941,10 +3915,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(dateStr: string): Timestamp {
   const date = new globalThis.Date(dateStr);

@@ -74,7 +74,7 @@ export const AlertSummaryRow = ({
                 silenceUntil: build,
               },
             }),
-          ] as Readonly<UpdateAlertRequest[]>,
+          ],
         }),
       );
     },

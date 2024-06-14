@@ -266,10 +266,10 @@ export const TestResultPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestResultPredicate>, I>>(base?: I): TestResultPredicate {
-    return TestResultPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestResultPredicate>): TestResultPredicate {
+    return TestResultPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestResultPredicate>, I>>(object: I): TestResultPredicate {
+  fromPartial(object: DeepPartial<TestResultPredicate>): TestResultPredicate {
     const message = createBaseTestResultPredicate() as any;
     message.testIdRegexp = object.testIdRegexp ?? "";
     message.variant = (object.variant !== undefined && object.variant !== null)
@@ -344,10 +344,10 @@ export const TestExonerationPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestExonerationPredicate>, I>>(base?: I): TestExonerationPredicate {
-    return TestExonerationPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestExonerationPredicate>): TestExonerationPredicate {
+    return TestExonerationPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestExonerationPredicate>, I>>(object: I): TestExonerationPredicate {
+  fromPartial(object: DeepPartial<TestExonerationPredicate>): TestExonerationPredicate {
     const message = createBaseTestExonerationPredicate() as any;
     message.testIdRegexp = object.testIdRegexp ?? "";
     message.variant = (object.variant !== undefined && object.variant !== null)
@@ -420,10 +420,10 @@ export const VariantPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<VariantPredicate>, I>>(base?: I): VariantPredicate {
-    return VariantPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<VariantPredicate>): VariantPredicate {
+    return VariantPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<VariantPredicate>, I>>(object: I): VariantPredicate {
+  fromPartial(object: DeepPartial<VariantPredicate>): VariantPredicate {
     const message = createBaseVariantPredicate() as any;
     message.equals = (object.equals !== undefined && object.equals !== null)
       ? Variant.fromPartial(object.equals)
@@ -528,10 +528,10 @@ export const ArtifactPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ArtifactPredicate>, I>>(base?: I): ArtifactPredicate {
-    return ArtifactPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ArtifactPredicate>): ArtifactPredicate {
+    return ArtifactPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ArtifactPredicate>, I>>(object: I): ArtifactPredicate {
+  fromPartial(object: DeepPartial<ArtifactPredicate>): ArtifactPredicate {
     const message = createBaseArtifactPredicate() as any;
     message.followEdges = (object.followEdges !== undefined && object.followEdges !== null)
       ? ArtifactPredicate_EdgeTypeSet.fromPartial(object.followEdges)
@@ -608,12 +608,10 @@ export const ArtifactPredicate_EdgeTypeSet = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<ArtifactPredicate_EdgeTypeSet>, I>>(base?: I): ArtifactPredicate_EdgeTypeSet {
-    return ArtifactPredicate_EdgeTypeSet.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<ArtifactPredicate_EdgeTypeSet>): ArtifactPredicate_EdgeTypeSet {
+    return ArtifactPredicate_EdgeTypeSet.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<ArtifactPredicate_EdgeTypeSet>, I>>(
-    object: I,
-  ): ArtifactPredicate_EdgeTypeSet {
+  fromPartial(object: DeepPartial<ArtifactPredicate_EdgeTypeSet>): ArtifactPredicate_EdgeTypeSet {
     const message = createBaseArtifactPredicate_EdgeTypeSet() as any;
     message.includedInvocations = object.includedInvocations ?? false;
     message.testResults = object.testResults ?? false;
@@ -670,10 +668,10 @@ export const TestMetadataPredicate = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<TestMetadataPredicate>, I>>(base?: I): TestMetadataPredicate {
-    return TestMetadataPredicate.fromPartial(base ?? ({} as any));
+  create(base?: DeepPartial<TestMetadataPredicate>): TestMetadataPredicate {
+    return TestMetadataPredicate.fromPartial(base ?? {});
   },
-  fromPartial<I extends Exact<DeepPartial<TestMetadataPredicate>, I>>(object: I): TestMetadataPredicate {
+  fromPartial(object: DeepPartial<TestMetadataPredicate>): TestMetadataPredicate {
     const message = createBaseTestMetadataPredicate() as any;
     message.testIds = object.testIds?.map((e) => e) || [];
     return message;
@@ -687,10 +685,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

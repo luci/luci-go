@@ -33,7 +33,7 @@ export function createMockTestAnalysis(id: string) {
       bucket: 'ci',
       builder: 'mock-builder-cc64',
     },
-    testFailures: Object.freeze([
+    testFailures: [
       {
         testId: 'test1',
         variant: {
@@ -44,7 +44,7 @@ export function createMockTestAnalysis(id: string) {
         isPrimary: true,
         startHour: '2022-09-06T03:00:00Z',
       },
-    ]),
+    ],
     sampleBbid: '1234',
     nthSectionResult: {
       status: AnalysisStatus.RUNNING,

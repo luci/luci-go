@@ -60,20 +60,17 @@ describe('<BlamelistTable />', () => {
           repoUrl="https://repo.url"
           pages={[
             QueryBlamelistResponse.fromPartial({
-              commits: Object.freeze([
+              commits: [
                 makeCommit('commit1'),
                 makeCommit('commit2'),
                 makeCommit('commit3'),
-              ]),
+              ],
             }) as OutputQueryBlamelistResponse,
             QueryBlamelistResponse.fromPartial({
-              commits: Object.freeze([
-                makeCommit('commit4'),
-                makeCommit('commit5'),
-              ]),
+              commits: [makeCommit('commit4'), makeCommit('commit5')],
             }) as OutputQueryBlamelistResponse,
             QueryBlamelistResponse.fromPartial({
-              commits: Object.freeze([makeCommit('commit6')]),
+              commits: [makeCommit('commit6')],
             }) as OutputQueryBlamelistResponse,
           ]}
         />
