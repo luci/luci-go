@@ -266,7 +266,7 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		return b.batchExportRows(ctx, ins, batchC, func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row) {
+		err := b.batchExportRows(ctx, ins, batchC, func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row) {
 			// Print up to 10 errors.
 			for i := 0; i < 10 && i < len(err); i++ {
 				a := rows[err[i].RowIndex].Message.(*bqpb.TextArtifactRowLegacy)
@@ -282,6 +282,7 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 				logging.Errorf(ctx, "%d more row insertions failed", len(err)-10)
 			}
 		})
+		return errors.Annotate(err, "batch export rows").Err()
 	})
 
 	eg.Go(func() error {
@@ -303,12 +304,12 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 				return nil
 			})
 		}
-		return subEg.Wait()
+		return errors.Annotate(subEg.Wait(), "download artifact contents").Err()
 	})
 
 	eg.Go(func() error {
 		defer close(artifactC)
-		return b.queryTextArtifacts(ctx, invID, bqExport, artifactC)
+		return errors.Annotate(b.queryTextArtifacts(ctx, invID, bqExport, artifactC), "query text artifacts").Err()
 	})
 
 	return eg.Wait()
