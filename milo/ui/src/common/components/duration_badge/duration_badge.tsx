@@ -15,6 +15,8 @@
 import { styled, SxProps, Theme } from '@mui/material';
 import { scaleThreshold } from 'd3';
 import { DateTime, Duration } from 'luxon';
+import { useState } from 'react';
+import { useInterval } from 'react-use';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { displayCompactDuration } from '@/common/tools/time_utils';
@@ -61,33 +63,71 @@ const Badge = styled('span')`
   line-height: 13px;
   text-align: center;
   white-space: nowrap;
-  vertical-align: bottom;
+  vertical-align: middle;
   border-radius: 0.25rem;
-  margin-bottom: 3px;
   width: 35px;
 `;
 
 export interface DurationBadgeProps {
   /**
-   * When unspecified, renders N/A.
+   * The label for `duration`. Defaults to `"Duration"`.
+   */
+  readonly durationLabel?: string;
+  /**
+   * The duration to be rendered. Can be one of the following:
+   *  * a `Duration`. Must be non-negative. Renders a short duration string in a
+   *    color-scaled badge.
+   *  * a `null`. Renders `"N/A"`.
+   *
+   * Defaults to:
+   *  * `from - to` when both `from` and `to` are `DateTime`s, or
+   *  * `from - now` when both `from` is a `DateTime`, or
+   *  * `now - to` when `to` is a `DateTime`, or
+   *  * `null`.
    */
   readonly duration?: Duration | null;
   /**
-   * When specified, renders start time in the tooltip.
+   * The label for `from`. Defaults to `"From"`.
+   */
+  readonly fromLabel?: string;
+  /**
+   * The start time of the duration. Can be one of the following:
+   *  * a `DateTime`. Must be less than or equals to `to`. Renders the start
+   *    time in the tooltip.
+   *  * a `null`, renders `"N/A"`.
+   *
+   * Defaults to `null`.
    */
   readonly from?: DateTime | null;
   /**
-   * When specified, renders end time in the tooltip.
+   * The label for `to`. Defaults to `"To"`.
+   */
+  readonly toLabel?: string;
+  /**
+   * The end time of the duration. Can be one of the following:
+   *  * a `DateTime`. Must be greater than or equals to `from`. Renders the end
+   *    time in the tooltip.
+   *  * a `null`, renders `"N/A"`.
+   *
+   * Defaults to `null`.
    */
   readonly to?: DateTime | null;
   /**
+   * Update interval in milliseconds. Only used when the duration is calculated
+   * from the current timestamp.
+   *
+   * Defaults to 1 min.
+   */
+  readonly intervalMs?: number;
+  /**
    * Controls the text and background color base on the duration.
+   *
+   * When not specified, a default color scale is used.
    */
   readonly colorScale?: (duration: Duration) => {
     backgroundColor: string;
     color: string;
   };
-
   readonly sx?: SxProps<Theme>;
   readonly className?: string;
 }
@@ -96,20 +136,42 @@ export interface DurationBadgeProps {
  * Renders a duration badge.
  */
 export function DurationBadge({
+  durationLabel = 'Duration',
   duration,
-  from,
-  to,
+  fromLabel = 'From',
+  from = null,
+  toLabel = 'To',
+  to = null,
+  intervalMs = 60_000,
   colorScale = defaultColorScale,
   sx,
   className,
 }: DurationBadgeProps) {
-  const [compactDuration] = duration
-    ? displayCompactDuration(duration)
+  const [now, setNow] = useState(() => DateTime.now());
+  const shouldUpdate = !duration && Boolean(from) !== Boolean(to);
+  useInterval(() => setNow(DateTime.now()), shouldUpdate ? intervalMs : null);
+
+  const calcDuration =
+    duration === undefined && (to || from)
+      ? (to || now).diff(from || now)
+      : duration;
+
+  const [compactDuration] = calcDuration
+    ? displayCompactDuration(calcDuration)
     : ['N/A'];
 
   return (
     <HtmlTooltip
-      title={<DurationTooltip duration={duration} from={from} to={to} />}
+      title={
+        <DurationTooltip
+          durationLabel={durationLabel}
+          duration={calcDuration}
+          fromLabel={fromLabel}
+          from={from}
+          toLabel={toLabel}
+          to={to}
+        />
+      }
       arrow
     >
       <Badge

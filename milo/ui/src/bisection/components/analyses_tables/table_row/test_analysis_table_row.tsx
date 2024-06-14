@@ -41,9 +41,6 @@ export function TestAnalysisTableRow({ analysis }: TestAnalysisTableRowProps) {
     ? DateTime.fromISO(analysis.createdTime)
     : null;
   const endTime = analysis.endTime ? DateTime.fromISO(analysis.endTime) : null;
-  const totalDuration =
-    endTime && failureStartHour ? endTime.diff(failureStartHour) : null;
-  const runDuration = createTime && endTime ? endTime.diff(createTime) : null;
 
   return (
     <TableRow hover data-testid="analysis_table_row">
@@ -58,22 +55,14 @@ export function TestAnalysisTableRow({ analysis }: TestAnalysisTableRowProps) {
       </TableCell>
       <TableCell>{createTime && <Timestamp datetime={createTime} />}</TableCell>
       <TableCell>
-        {runDuration && (
-          <DurationBadge
-            duration={runDuration}
-            from={createTime}
-            to={endTime}
-          />
+        {createTime && endTime && (
+          <DurationBadge from={createTime} to={endTime} />
         )}
       </TableCell>
       <TableCell>{ANALYSIS_STATUS_DISPLAY_MAP[analysis.status]}</TableCell>
       <TableCell>
-        {totalDuration && (
-          <DurationBadge
-            duration={totalDuration}
-            from={failureStartHour}
-            to={endTime}
-          />
+        {endTime && failureStartHour && (
+          <DurationBadge from={failureStartHour} to={endTime} />
         )}
       </TableCell>
       <TableCell>

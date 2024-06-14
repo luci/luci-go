@@ -17,25 +17,35 @@ import { DateTime, Duration } from 'luxon';
 import { displayDuration, LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 
 export interface DurationTooltipProps {
+  readonly durationLabel: string;
   readonly duration?: Duration | null;
+  readonly fromLabel: string;
   readonly from?: DateTime | null;
+  readonly toLabel: string;
   readonly to?: DateTime | null;
 }
 
-export function DurationTooltip({ duration, from, to }: DurationTooltipProps) {
+export function DurationTooltip({
+  durationLabel,
+  duration,
+  fromLabel,
+  from,
+  toLabel,
+  to,
+}: DurationTooltipProps) {
   return (
     <table>
       <tbody>
         <tr>
-          <td>Duration:</td>
+          <td>{durationLabel}:</td>
           <td>{duration ? displayDuration(duration) : 'N/A'}</td>
         </tr>
         <tr>
-          <td>From:</td>
+          <td>{fromLabel}:</td>
           <td>{from ? from.toFormat(LONG_TIME_FORMAT) : 'N/A'}</td>
         </tr>
         <tr>
-          <td>To:</td>
+          <td>{toLabel}:</td>
           <td>{to ? to.toFormat(LONG_TIME_FORMAT) : 'N/A'}</td>
         </tr>
       </tbody>

@@ -16,7 +16,7 @@ import { CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
-import { RelativeDurationBadge } from '@/common/components/relative_duration_badge';
+import { DurationBadge } from '@/common/components/duration_badge';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
@@ -85,11 +85,12 @@ export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
                 <Link href={getBuildURLPathFromBuildId(b.id)}>
                   {b.number || `b${b.id}`}
                 </Link>{' '}
-                <RelativeDurationBadge
-                  sx={{ verticalAlign: 'text-top' }}
-                  // Started builds always have a start time.
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                <DurationBadge
+                  durationLabel="Execution Duration"
+                  fromLabel="Start Time"
                   from={DateTime.fromISO(b.startTime!)}
+                  toLabel="End Time"
+                  intervalMs={10_000}
                 />{' '}
                 ago
               </li>

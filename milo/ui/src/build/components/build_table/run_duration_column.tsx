@@ -32,20 +32,16 @@ export function RunDurationContentCell() {
   const build = useBuild();
   const startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
   const endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
-  const runDuration = startTime && endTime ? endTime.diff(startTime) : null;
 
   return (
     <TableCell>
-      {runDuration ? (
-        <DurationBadge
-          sx={{ verticalAlign: 'text-top' }}
-          duration={runDuration}
-          from={startTime}
-          to={endTime}
-        />
-      ) : (
-        'N/A'
-      )}
+      <DurationBadge
+        durationLabel="Execution Duration"
+        fromLabel="Start Time"
+        from={startTime}
+        toLabel="End Time"
+        to={endTime}
+      />
     </TableCell>
   );
 }

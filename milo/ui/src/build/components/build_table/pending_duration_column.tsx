@@ -32,20 +32,16 @@ export function PendingDurationContentCell() {
   const build = useBuild();
   const createTime = DateTime.fromISO(build.createTime);
   const startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
-  const pendingDuration = startTime ? startTime.diff(createTime) : null;
 
   return (
     <TableCell>
-      {pendingDuration ? (
-        <DurationBadge
-          sx={{ verticalAlign: 'text-top' }}
-          duration={pendingDuration}
-          from={createTime}
-          to={startTime}
-        />
-      ) : (
-        'N/A'
-      )}
+      <DurationBadge
+        durationLabel="Pending Duration"
+        fromLabel="Schedule Time"
+        from={createTime}
+        toLabel="Start Time"
+        to={startTime}
+      />
     </TableCell>
   );
 }

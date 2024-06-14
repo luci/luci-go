@@ -58,8 +58,6 @@ export function TestAnalysisOverview({ analysis }: TestAnalysisOverviewProps) {
     ? DateTime.fromISO(analysis.createdTime)
     : null;
   const endTime = analysis.endTime ? DateTime.fromISO(analysis.endTime) : null;
-  const totalDuration =
-    endTime && failureStartHour ? endTime.diff(failureStartHour) : null;
   return (
     <TableContainer>
       <PlainTable>
@@ -104,12 +102,8 @@ export function TestAnalysisOverview({ analysis }: TestAnalysisOverviewProps) {
             </TableCell>
             <TableCell variant="head">Duration since failure start</TableCell>
             <TableCell>
-              {totalDuration && (
-                <DurationBadge
-                  duration={totalDuration}
-                  from={failureStartHour}
-                  to={endTime}
-                />
+              {endTime && failureStartHour && (
+                <DurationBadge from={failureStartHour} to={endTime} />
               )}
             </TableCell>
           </TableRow>

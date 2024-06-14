@@ -45,13 +45,7 @@ export function StatusDescription({ build }: StatusDescriptionProps) {
     startTime && endTime ? (
       <>
         {' '}
-        <DurationBadge
-          duration={endTime.diff(startTime)}
-          from={startTime}
-          to={endTime}
-          sx={{ verticalAlign: 'middle' }}
-        />{' '}
-        after it started
+        <DurationBadge from={startTime} to={endTime} /> after it started
       </>
     ) : (
       <></>
