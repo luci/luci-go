@@ -356,21 +356,21 @@ message TestStabilityCriteria {
   // If there are more flaky source verdicts found than a threshold,
   // the test is considered flaky.
   //
-  // The analysis window is all source verdicts for 7 days' worth
-  // of commit positions either side of the queried position.
-  // The conversion between time and commit position is discussed
-  // in go/luci-exoneration-v2.
-  //
-  // In the event that an unsatisfactory number of source positions
-  // are found using this method, the window is enlarged to possibly
-  // include any verdict in the last 14 days. This is to improve
-  // detection performance on tests with a low volume of results.
+  // To be satisfied, ALL of the criteria must be met:
+  // - flake_threshold
+  // - flake_rate_threshold
+  // - flake_threshold_1wd
+  // To ignore criteria, set the threshold to zero.
   message FlakeRateCriteria {
+    // Standard analysis window.
+
     // The minimum number of source verdicts desired
     // for the analysis window.
     //
     // As standard, all source verdicts for sources
     // +/- 7 days from the queried position are used.
+    // The conversion between time and commit position is discussed
+    // in go/luci-exoneration-v2.
     //
     // However, if the number of verdicts is not equal
     // to or greater than min_window, all source verdicts
@@ -381,7 +381,8 @@ message TestStabilityCriteria {
     //
     // If the number of source verdicts in the last 14 days
     // is less than min_window, then whatever source verdicts
-    // are available are still used.
+    // are available are still used. This is to improve
+    // detection performance on tests with a low volume of results.
     //
     // 100 is a good starting value.
     int32 min_window = 1;
@@ -395,9 +396,6 @@ message TestStabilityCriteria {
     // value between 0.0 and 1.0.
     // 0.01 (1%) is a good starting value.
     //
-    // Both flake_threshold AND the flake_rate_threshold must be met
-    // for a test to be considered unstable.
-    //
     // Note that not even the most flaky (50% flaky) test would
     // be expected to produce more than a 25% flake rate if
     // failures are retried once. This is because its expected
@@ -406,6 +404,33 @@ message TestStabilityCriteria {
     // - Fail on first try, pass on second try = 25% (flaky)
     // - Fail on both tries = 25%
     double flake_rate_threshold = 3;
+
+    // Additional +/- 1 weekday analysis window.
+
+    // The minimum number of flaky source verdicts required to
+    // occur on sources within one weekday either side of the
+    // queried source position.
+    //
+    // The conversion between time and commit position is discussed
+    // in go/luci-exoneration-v2.
+    //
+    // One weekday means 24 hours on a weekday as observed in
+    // UTC, and includes any intervening weekend. For example:
+    // - if the queried source position corresponds to 8:00 UTC
+    //   on Monday, the queried interval will be from 8:00 UTC
+    //   the previous Friday to 8:00 UTC on the following Tuesday.
+    // - if the queried source position corresponds to 15:00 UTC
+    //   on Wednesday, the queried interval will be from 15:00 UTC
+    //   on Tuesday to 15:00 UTC on Thursday.
+    // - if the queried source position corresponds to 12:00 UTC
+    //   on Saturday, the queried interval will be from 0:00 UTC
+    //   on Friday to 0:00 UTC on Tuesday.
+    //
+    // Setting this thresold to a non-zero value may substantially
+    // desensitise flaky test detection, but offers more guarantees
+    // that exoneration will stop within a given period of time
+    // if a test is fixed.
+    int32 flake_threshold_1wd = 4;
   }
 }
 
@@ -517,5 +542,17 @@ message TestVariantStabilityAnalysis {
         // The greatest source position included in the analysis window. Inclusive.
         // If the analysis window is empty (e.g. because there is no data), this is zero.
         int64 end_position = 6;
+
+        // The total number of run-flaky source verdicts observed in a special +/- 1 weekday
+        // analysis window around the queried source position.
+        int32 run_flaky_verdicts_1wd = 7;
+
+        // The least source position included in the +/- 1 weekday analysis window. Inclusive.
+        // If the analysis window is empty (e.g. because there is no data), this is zero.
+        int64 start_position_1wd = 8;
+
+        // The greatest source position included in the +/- 1 weekday analysis window. Inclusive.
+        // If the analysis window is empty (e.g. because there is no data), this is zero.
+        int64 end_position_1wd = 9;
     }
 }

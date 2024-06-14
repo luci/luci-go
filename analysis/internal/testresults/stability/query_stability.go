@@ -581,17 +581,23 @@ func consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns []run) int {
 //
 // buckets should be in ascending order by source position.
 func applyFlakeRateCriteria(buckets []*sourcePositionBucket, querySourcePosition int64, beforeExamples, onOrAfterExamples []*sourceVerdict, criteria *pb.TestStabilityCriteria_FlakeRateCriteria) *pb.TestVariantStabilityAnalysis_FlakeRate {
-	// Query the soure position +/- 1 week.
-	window := queryBuckets(buckets, querySourcePosition, 7*24*time.Hour)
+	ba := newBucketAnalyzer(buckets)
+	partitionTime := ba.earliestPartitionTimeAtSourcePosition(querySourcePosition)
 
-	runFlaky, total := countVerdicts(window)
+	// Query the soure position +/- 1 week.
+	weekWindow := ba.bucketsForTimeRange(partitionTime.Add(-7*24*time.Hour), partitionTime.Add(7*24*time.Hour))
+	runFlaky, total := countVerdicts(weekWindow)
 	if total < int64(criteria.MinWindow) {
 		// If the sample size is not large enough, revert to querying the full
 		// 14 days of data. This exists to improve performance on infrequently
 		// run tests at the cost of some recency.
-		window = buckets
-		runFlaky, total = countVerdicts(window)
+		weekWindow = buckets
+		runFlaky, total = countVerdicts(weekWindow)
 	}
+
+	// Query the source position +/- 1 weekday.
+	dayWindow := ba.bucketsForTimeRange(jumpBack24WeekdayHours(partitionTime), jumpAhead24WeekdayHours(partitionTime))
+	runFlaky1wd, _ := countVerdicts(dayWindow)
 
 	// Examples arrive sorted such that those closest to the queried source
 	// position are first.
@@ -603,9 +609,9 @@ func applyFlakeRateCriteria(buckets []*sourcePositionBucket, querySourcePosition
 	var examples []*sourceVerdict
 	var startPosition int64
 	var endPosition int64
-	if len(window) > 0 {
-		startPosition = window[0].StartSourcePosition
-		endPosition = window[len(window)-1].EndSourcePosition
+	if len(weekWindow) > 0 {
+		startPosition = weekWindow[0].StartSourcePosition
+		endPosition = weekWindow[len(weekWindow)-1].EndSourcePosition
 
 		for _, e := range allExamples {
 			if startPosition <= e.SourcePosition && e.SourcePosition <= endPosition {
@@ -618,46 +624,61 @@ func applyFlakeRateCriteria(buckets []*sourcePositionBucket, querySourcePosition
 		}
 	}
 
+	var startPosition1wd int64
+	var endPosition1wd int64
+	if len(dayWindow) > 0 {
+		startPosition1wd = dayWindow[0].StartSourcePosition
+		endPosition1wd = dayWindow[len(dayWindow)-1].EndSourcePosition
+	}
+
 	flakeRate := 0.0
 	if total > 0 {
 		flakeRate = float64(runFlaky) / float64(total)
 	}
 
 	return &pb.TestVariantStabilityAnalysis_FlakeRate{
-		IsMet:            runFlaky >= int64(criteria.FlakeThreshold) && flakeRate >= criteria.FlakeRateThreshold,
-		RunFlakyVerdicts: int32(runFlaky),
-		TotalVerdicts:    int32(total),
-		FlakeExamples:    toPBFlakeRateVerdictExample(examples),
-		StartPosition:    startPosition,
-		EndPosition:      endPosition,
+		IsMet: runFlaky >= int64(criteria.FlakeThreshold) &&
+			flakeRate >= criteria.FlakeRateThreshold &&
+			runFlaky1wd >= int64(criteria.FlakeThreshold_1Wd),
+		RunFlakyVerdicts:     int32(runFlaky),
+		TotalVerdicts:        int32(total),
+		FlakeExamples:        toPBFlakeRateVerdictExample(examples),
+		StartPosition:        startPosition,
+		EndPosition:          endPosition,
+		RunFlakyVerdicts_1Wd: int32(runFlaky1wd),
+		StartPosition_1Wd:    startPosition1wd,
+		EndPosition_1Wd:      endPosition1wd,
 	}
 }
 
-func countVerdicts(buckets []*sourcePositionBucket) (runFlaky, total int64) {
-	for _, b := range buckets {
-		runFlaky += b.RunFlakyVerdicts
-		total += b.TotalVerdicts
-	}
-	return runFlaky, total
+// sourcePositionBucket represents a range of source positions for
+// a given test variant.
+type sourcePositionBucket struct {
+	BucketKey int64
+	// Starting source position. Inclusive.
+	StartSourcePosition int64
+	// Ending source position. Inclusive.
+	EndSourcePosition int64
+	// The earliest partition time of a test result in the bucket.
+	EarliestPartitionTime time.Time
+	// The total number of source verdicts in the bucket.
+	TotalVerdicts int64
+	// The total number of run-flaky source verdicts in the bucket.
+	RunFlakyVerdicts int64
 }
 
-// queryBuckets returns the slice of buckets that corresponds to
-// querying a time interval `interval` before and after a specified
-// source position, `querySourcePosition`.
+// bucketAnalyzer conducts analysis about the number of flaky source verdicts
+// and total source verdicts observed within a time window around a source
+// position.
 //
-// For example, query position 123456 +/- 1 week.
-//
-// To convert a time interval to a range of source positions,
-// this method computes an approximate time corresponding to each
-// source position. The time assigned to a source position
-// is the earliest partition time that source position (or a
-// later position) has been observed.
-//
-// buckets should be in ascending order by source position.
-func queryBuckets(buckets []*sourcePositionBucket, querySourcePosition int64, interval time.Duration) []*sourcePositionBucket {
-	if len(buckets) == 0 {
-		return buckets
-	}
+// It relies upon creating a conversion between source position and time
+// to identify the time corresponding to a source position and the
+// the source position range that corresponds to a time range.
+type bucketAnalyzer struct {
+	// buckets has statistics about source verdicts in ranges.
+	// buckets must be in ascending order by source position,
+	// i.e. oldest/smallest source position first.
+	buckets []*sourcePositionBucket
 
 	// earliestSourcePositionAvailability[i] represents the earliest partition time
 	// observed for a test result with a source position at or after buckets[i].StartSourcePosition.
@@ -666,6 +687,13 @@ func queryBuckets(buckets []*sourcePositionBucket, querySourcePosition int64, in
 	// was first available in the repository. It is also consistent in the sense that
 	// an earlier source position will never have a later time associated with it than
 	// a later source position.
+	earliestSourcePositionAvailability []time.Time
+}
+
+// newBucketAnalyzer initialises a new bucket analyzer.
+// buckets must be in ascending order by source position,
+// i.e. oldest/smallest source position first.
+func newBucketAnalyzer(buckets []*sourcePositionBucket) bucketAnalyzer {
 	earliestSourcePositionAvailability := make([]time.Time, len(buckets))
 	earliestTime := time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC)
 
@@ -689,9 +717,23 @@ func queryBuckets(buckets []*sourcePositionBucket, querySourcePosition int64, in
 		earliestSourcePositionAvailability[i] = earliestTime
 	}
 
+	return bucketAnalyzer{
+		buckets:                            buckets,
+		earliestSourcePositionAvailability: earliestSourcePositionAvailability,
+	}
+}
+
+// earliestPartitionTimeAtSourcePosition converts a source position
+// to a time, corresponding to the earliest partition time for a
+// test result at or after that source position.
+func (b *bucketAnalyzer) earliestPartitionTimeAtSourcePosition(querySourcePosition int64) time.Time {
+	if len(b.buckets) == 0 {
+		return time.Time{}
+	}
+
 	// Find the nearest bucket that includes, or is prior to, the queried source position.
 	queryIndex := 0
-	for i, b := range buckets {
+	for i, b := range b.buckets {
 		if b.StartSourcePosition > querySourcePosition {
 			break
 		}
@@ -699,28 +741,45 @@ func queryBuckets(buckets []*sourcePositionBucket, querySourcePosition int64, in
 	}
 
 	// The time approximately corresponding to the queried source position.
-	queryTime := earliestSourcePositionAvailability[queryIndex]
-	queryStartTime := queryTime.Add(-interval)
-	queryEndTime := queryTime.Add(interval)
+	return b.earliestSourcePositionAvailability[queryIndex]
+}
 
-	startIndex := len(buckets)
-	for i, time := range earliestSourcePositionAvailability {
-		if !time.Before(queryStartTime) { // time >= queryStartTime
+// bucketsForTimeRange converts a partition time range to a slice
+// of source position buckets. The time <--> source position conversion
+// used is consistent with earliestPartitionTimeAtSourcePosition.
+func (b *bucketAnalyzer) bucketsForTimeRange(start, end time.Time) []*sourcePositionBucket {
+	if len(b.buckets) == 0 {
+		return nil
+	}
+
+	startIndex := len(b.buckets)
+	// Iterate from the oldest bucket to the newest.
+	for i, time := range b.earliestSourcePositionAvailability {
+		if !time.Before(start) { // time >= start
 			startIndex = i
 			break
 		}
 	}
 
 	endIndex := 0
-	for i := len(earliestSourcePositionAvailability) - 1; i >= 0; i-- {
-		time := earliestSourcePositionAvailability[i]
-		if !time.After(queryEndTime) { // time <= queryEndTime
+	// Iterate from the newest bucket to the oldest.
+	for i := len(b.earliestSourcePositionAvailability) - 1; i >= 0; i-- {
+		time := b.earliestSourcePositionAvailability[i]
+		if !time.After(end) { // time <= end
 			endIndex = i
 			break
 		}
 	}
 
-	return buckets[startIndex : endIndex+1]
+	return b.buckets[startIndex : endIndex+1]
+}
+
+func countVerdicts(buckets []*sourcePositionBucket) (runFlaky, total int64) {
+	for _, b := range buckets {
+		runFlaky += b.RunFlakyVerdicts
+		total += b.TotalVerdicts
+	}
+	return runFlaky, total
 }
 
 // sourceVerdict is used to store an example source verdict returned by
@@ -791,20 +850,97 @@ func toPBFlakeRateVerdictExample(verdicts []*sourceVerdict) []*pb.TestVariantSta
 	return results
 }
 
-// sourcePositionBucket represents a range of source positions for
-// a given test variant.
-type sourcePositionBucket struct {
-	BucketKey int64
-	// Starting source position. Inclusive.
-	StartSourcePosition int64
-	// Ending source position. Inclusive.
-	EndSourcePosition int64
-	// The earliest partition time of a test result in the bucket.
-	EarliestPartitionTime time.Time
-	// The total number of source verdicts in the bucket.
-	TotalVerdicts int64
-	// The total number of run-flaky source verdicts in the bucket.
-	RunFlakyVerdicts int64
+// jumpBack24WeekdayHours calculates the start time of an interval
+// ending at the given endTime, such that the interval includes exactly
+// 24 hours of weekday data (in UTC). Where there are multiple interval
+// start times satisfying this criteria, the latest time is selected.
+//
+// For example, if the endTime is 08:21 on Tuesday, we would pick 08:21
+// on Monday as the start time, as the period from start time to end time
+// includes 24 hours of weekday (split over Monday and Tuesday).
+//
+// If the endTime is 08:21 on Monday, we would pick 08:21 on the previous
+// Friday as the start time, as the period from start time to end time
+// includes 24 hours of weekday (split over the Friday and Monday).
+//
+// If the endTime is midnight on the morning of Tuesday, any start time from
+// midnight on Saturday morning to midnight on Monday morning would produce
+// an interval that includes 24 hours of weekday data (i.e. the 24 hours of
+// Monday). In this case, we pick midnight on Monday. This is the only case
+// that is ambiguous.
+//
+// Rationale:
+// Many projects see reduced testing activity on weekends, as fewer CLs are
+// submitted. To avoid a dip in the sample size of statistics returned
+// on these days (which stops exoneration), we effectively bunch weekend
+// data together with Friday data in one period.
+func jumpBack24WeekdayHours(endTime time.Time) time.Time {
+	endTime = endTime.In(time.UTC)
+	var startTime time.Time
+	switch endTime.Weekday() {
+	case time.Saturday:
+		// Take us back to Saturday at 0:00.
+		startTime = endTime.Truncate(24 * time.Hour)
+		// Now take us back to Friday at 0:00.
+		startTime = startTime.Add(-24 * time.Hour)
+	case time.Sunday:
+		// Take us back to Sunday at 0:00.
+		startTime = endTime.Truncate(24 * time.Hour)
+		// Now take us back to Friday at 0:00.
+		startTime = startTime.Add(-2 * 24 * time.Hour)
+	case time.Monday:
+		// Take take us back to the same time
+		// on the Friday.
+		startTime = endTime.Add(-3 * 24 * time.Hour)
+	default:
+		// Take take us back to the same time
+		// on the previous day (which will be a weekday).
+		startTime = endTime.Add(-24 * time.Hour)
+	}
+	return startTime
+}
+
+// jumpAhead24WeekdayHours calculates the end time of an interval
+// ending at the given startTime, such that the interval includes exactly
+// 24 hours of weekday data (in UTC). Where there are multiple interval
+// end times satisfying this criteria, the later time is selected.
+//
+// For example, if the startTime is 08:21 on Monday, we would pick 08:21
+// on Tuesday as the end time, as the period from start time to end time
+// includes 24 hours of weekday (split over Monday and Tuesday).
+//
+// If the startTime is 08:21 on Friday, we would pick 08:21 on the next
+// Monday as the end time, as the period from start time to end time
+// includes 24 hours of weekday (split over the Friday and Monday).
+//
+// If the endTime is midnight on the morning of Friday, any end time from
+// midnight on Saturday morning to midnight on Monday morning would produce
+// an interval that includes 24 hours of weekday data (i.e. the 24 hours of
+// Monday). In this case, we pick midnight on Monday. This is the only case
+// that is ambiguous.
+func jumpAhead24WeekdayHours(startTime time.Time) time.Time {
+	startTime = startTime.In(time.UTC)
+	var endTime time.Time
+	switch startTime.Weekday() {
+	case time.Friday:
+		// Take us forward to Monday at the same time.
+		endTime = startTime.Add(3 * 24 * time.Hour)
+	case time.Saturday:
+		// Take us back to Saturday at 0:00.
+		endTime = startTime.Truncate(24 * time.Hour)
+		// Now take us forward to Tuesday at 0:00.
+		endTime = endTime.Add(3 * 24 * time.Hour)
+	case time.Sunday:
+		// Take us back to Sunday at 0:00.
+		endTime = startTime.Truncate(24 * time.Hour)
+		// Now take us forward to Tuesday at 0:00.
+		endTime = endTime.Add(2 * 24 * time.Hour)
+	default:
+		// Take us forward to the same time
+		// on the next day (which will be a weekday).
+		endTime = startTime.Add(24 * time.Hour)
+	}
+	return endTime
 }
 
 var testStabilityQuery = `

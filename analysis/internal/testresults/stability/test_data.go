@@ -208,7 +208,7 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-7 * day),
+				partitionTime: referenceTime.Add(-7*day - 1*time.Hour),
 				variant:       var1,
 				invocationID:  "sourceverdict9-part1",
 				runStatuses:   failFail,
@@ -218,7 +218,7 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-7 * day),
+				partitionTime: referenceTime.Add(-7*day - 1*time.Hour),
 				variant:       var1,
 				// Should merge with sourceverdict8-part1 due to sharing
 				// same sources.
@@ -407,6 +407,7 @@ func CreateSampleStabilityCriteria() *pb.TestStabilityCriteria {
 			MinWindow:          5,
 			FlakeThreshold:     2,
 			FlakeRateThreshold: 0.01,
+			FlakeThreshold_1Wd: 1,
 		},
 	}
 }
@@ -516,6 +517,10 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 				},
 				StartPosition: 100,
 				EndPosition:   140,
+
+				RunFlakyVerdicts_1Wd: 1,
+				StartPosition_1Wd:    128,
+				EndPosition_1Wd:      130,
 			},
 		},
 		{
@@ -546,6 +551,10 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 				},
 				StartPosition: 130,
 				EndPosition:   130,
+
+				RunFlakyVerdicts_1Wd: 1,
+				StartPosition_1Wd:    130,
+				EndPosition_1Wd:      130,
 			},
 		},
 	}

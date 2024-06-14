@@ -430,7 +430,7 @@ func TestQueryStabilityHelpers(t *testing.T) {
 			So(unexpectedRunsInWindow(runs, 10), ShouldEqual, 7)
 		})
 	})
-	Convey("queryBuckets", t, func() {
+	Convey("Bucket Analzyer", t, func() {
 		buckets := []*sourcePositionBucket{
 			{
 				StartSourcePosition:   2,
@@ -464,29 +464,165 @@ func TestQueryStabilityHelpers(t *testing.T) {
 				EarliestPartitionTime: time.Date(2100, time.July, 12, 0, 0, 0, 0, time.UTC),
 			},
 		}
-		Convey("query at end", func() {
-			result := queryBuckets(buckets, 40, time.Hour*24*7)
-			So(result, ShouldResemble, buckets[2:])
+		Convey("With buckets", func() {
+			ba := newBucketAnalyzer(buckets)
+			Convey("query at end", func() {
+				t := ba.earliestPartitionTimeAtSourcePosition(40)
+				So(t, ShouldEqual, time.Date(2100, time.July, 12, 0, 0, 0, 0, time.UTC))
+
+				result := ba.bucketsForTimeRange(t.Add(-7*24*time.Hour), t.Add(7*24*time.Hour))
+				So(result, ShouldResemble, buckets[2:])
+			})
+			Convey("query beyond end", func() {
+				t := ba.earliestPartitionTimeAtSourcePosition(50)
+				So(t, ShouldEqual, time.Date(2100, time.July, 12, 0, 0, 0, 0, time.UTC))
+			})
+			Convey("query in middle", func() {
+				t := ba.earliestPartitionTimeAtSourcePosition(8)
+				So(t, ShouldEqual, time.Date(2100, time.July, 6, 0, 0, 0, 0, time.UTC))
+
+				result := ba.bucketsForTimeRange(t.Add(-7*24*time.Hour), t.Add(7*24*time.Hour))
+				So(result, ShouldResemble, buckets)
+			})
+			Convey("query at start", func() {
+				t := ba.earliestPartitionTimeAtSourcePosition(2)
+				So(t, ShouldEqual, time.Date(2100, time.July, 1, 0, 0, 0, 0, time.UTC))
+
+				result := ba.bucketsForTimeRange(t.Add(-7*24*time.Hour), t.Add(7*24*time.Hour))
+				So(result, ShouldResemble, buckets[:4])
+			})
+			Convey("query before start", func() {
+				t := ba.earliestPartitionTimeAtSourcePosition(1)
+				So(t, ShouldEqual, time.Date(2100, time.July, 1, 0, 0, 0, 0, time.UTC))
+			})
 		})
-		Convey("query beyond end", func() {
-			result := queryBuckets(buckets, 50, time.Hour*24*7)
-			So(result, ShouldResemble, buckets[2:])
-		})
-		Convey("query in middle", func() {
-			result := queryBuckets(buckets, 8, time.Hour*24*7)
-			So(result, ShouldResemble, buckets)
-		})
-		Convey("query at start", func() {
-			result := queryBuckets(buckets, 2, time.Hour*24*7)
-			So(result, ShouldResemble, buckets[:4])
-		})
-		Convey("query before start", func() {
-			result := queryBuckets(buckets, 1, time.Hour*24*7)
-			So(result, ShouldResemble, buckets[:4])
-		})
-		Convey("query empty buckets", func() {
-			result := queryBuckets(nil, 50, time.Hour*24*7)
+		Convey("Without no buckets", func() {
+			ba := newBucketAnalyzer(nil)
+			t := ba.earliestPartitionTimeAtSourcePosition(2)
+			So(t, ShouldEqual, time.Time{})
+
+			result := ba.bucketsForTimeRange(t.Add(-7*24*time.Hour), t.Add(7*24*time.Hour))
 			So(result, ShouldHaveLength, 0)
+		})
+	})
+	Convey("jumpBack24WeekdayHours", t, func() {
+		// Expect jumpBack24WeekdayHours to go back in time just far enough
+		// that 24 workday hours are between the returned time and now.
+		Convey("Monday", func() {
+			// Given an input on a Monday (e.g. 14th of March 2022), expect
+			// jumpBack24WeekdayHours to return the corresponding time
+			// on the previous Friday.
+
+			now := time.Date(2022, time.March, 14, 23, 59, 59, 999999999, time.UTC)
+			afterTime := jumpBack24WeekdayHours(now)
+			So(afterTime, ShouldEqual, time.Date(2022, time.March, 11, 23, 59, 59, 999999999, time.UTC))
+
+			now = time.Date(2022, time.March, 14, 0, 0, 0, 0, time.UTC)
+			afterTime = jumpBack24WeekdayHours(now)
+			So(afterTime, ShouldEqual, time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC))
+		})
+		Convey("Sunday", func() {
+			// Given a time on a Sunday (e.g. 13th of March 2022), expect
+			// jumpBack24WeekdayHours to return the start of the previous
+			// Friday.
+			startOfFriday := time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC)
+
+			now := time.Date(2022, time.March, 13, 23, 59, 59, 999999999, time.UTC)
+			afterTime := jumpBack24WeekdayHours(now)
+			So(afterTime, ShouldEqual, startOfFriday)
+
+			now = time.Date(2022, time.March, 13, 0, 0, 0, 0, time.UTC)
+			afterTime = jumpBack24WeekdayHours(now)
+			So(afterTime, ShouldEqual, startOfFriday)
+		})
+		Convey("Saturday", func() {
+			// Given a time on a Saturday (e.g. 12th of March 2022), expect
+			// jumpBack24WeekdayHours to return the start of the previous
+			// Friday.
+			startOfFriday := time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC)
+
+			now := time.Date(2022, time.March, 12, 23, 59, 59, 999999999, time.UTC)
+			afterTime := jumpBack24WeekdayHours(now)
+			So(afterTime, ShouldEqual, startOfFriday)
+
+			now = time.Date(2022, time.March, 12, 0, 0, 0, 0, time.UTC)
+			afterTime = jumpBack24WeekdayHours(now)
+			So(afterTime, ShouldEqual, startOfFriday)
+		})
+		Convey("Tuesday to Friday", func() {
+			// Given an input on a Tuesday (e.g. 15th of March 2022), expect
+			// jumpBack24WeekdayHours to return the corresponding time
+			// the previous day.
+			now := time.Date(2022, time.March, 15, 1, 2, 3, 4, time.UTC)
+			afterTime := jumpBack24WeekdayHours(now)
+			So(afterTime, ShouldEqual, time.Date(2022, time.March, 14, 1, 2, 3, 4, time.UTC))
+
+			// Given an input on a Friday (e.g. 18th of March 2022), expect
+			// jumpBack24WeekdayHours to return the corresponding time
+			// the previous day.
+			now = time.Date(2022, time.March, 18, 1, 2, 3, 4, time.UTC)
+			afterTime = jumpBack24WeekdayHours(now)
+			So(afterTime, ShouldEqual, time.Date(2022, time.March, 17, 1, 2, 3, 4, time.UTC))
+		})
+	})
+	Convey("jumpAhead24WeekdayHours", t, func() {
+		// Expect jumpAhead24WeekdayHours to go forward in time far enough
+		// that 24 workday hours are between the returned time and now.
+		Convey("Friday", func() {
+			// Given an input on a Friday (e.g. 11th of March 2022), expect
+			// jumpForward24WeekdayHours to return the corresponding time
+			// on the next Monday.
+
+			now := time.Date(2022, time.March, 11, 23, 59, 59, 999999999, time.UTC)
+			afterTime := jumpAhead24WeekdayHours(now)
+			So(afterTime, ShouldEqual, time.Date(2022, time.March, 14, 23, 59, 59, 999999999, time.UTC))
+
+			now = time.Date(2022, time.March, 11, 0, 0, 0, 0, time.UTC)
+			afterTime = jumpAhead24WeekdayHours(now)
+			So(afterTime, ShouldEqual, time.Date(2022, time.March, 14, 0, 0, 0, 0, time.UTC))
+		})
+		Convey("Sunday", func() {
+			// Given a time on a Sunday (e.g. 13th of March 2022), expect
+			// jumpAhead24WeekdayHours to return the start of the next
+			// Tuesday.
+			startOfTuesday := time.Date(2022, time.March, 15, 0, 0, 0, 0, time.UTC)
+
+			now := time.Date(2022, time.March, 13, 23, 59, 59, 999999999, time.UTC)
+			afterTime := jumpAhead24WeekdayHours(now)
+			So(afterTime, ShouldEqual, startOfTuesday)
+
+			now = time.Date(2022, time.March, 13, 0, 0, 0, 0, time.UTC)
+			afterTime = jumpAhead24WeekdayHours(now)
+			So(afterTime, ShouldEqual, startOfTuesday)
+		})
+		Convey("Saturday", func() {
+			// Given a time on a Saturday (e.g. 12th of March 2022), expect
+			// jumpAhead24WeekdayHours to return the start of the next
+			// Tuesday.
+			startOfTuesday := time.Date(2022, time.March, 15, 0, 0, 0, 0, time.UTC)
+
+			now := time.Date(2022, time.March, 12, 23, 59, 59, 999999999, time.UTC)
+			afterTime := jumpAhead24WeekdayHours(now)
+			So(afterTime, ShouldEqual, startOfTuesday)
+
+			now = time.Date(2022, time.March, 12, 0, 0, 0, 0, time.UTC)
+			afterTime = jumpAhead24WeekdayHours(now)
+			So(afterTime, ShouldEqual, startOfTuesday)
+		})
+		Convey("Monday to Thursday", func() {
+			// Given an input on a Monday (e.g. 14th of March 2022), expect
+			// jumpAhead24WeekdayHours to return the corresponding time
+			// the next day.
+			now := time.Date(2022, time.March, 14, 1, 2, 3, 4, time.UTC)
+			afterTime := jumpAhead24WeekdayHours(now)
+			So(afterTime, ShouldEqual, time.Date(2022, time.March, 15, 1, 2, 3, 4, time.UTC))
+
+			// Given an input on a Thursday (e.g. 17th of March 2022), expect
+			// jumpAhead24WeekdayHours to return the corresponding time
+			// the next day.
+			now = time.Date(2022, time.March, 17, 1, 2, 3, 4, time.UTC)
+			afterTime = jumpAhead24WeekdayHours(now)
+			So(afterTime, ShouldEqual, time.Date(2022, time.March, 18, 1, 2, 3, 4, time.UTC))
 		})
 	})
 }

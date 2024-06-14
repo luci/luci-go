@@ -487,6 +487,7 @@ func toTestStabilityCriteriaConfig(criteria *pb.TestStabilityCriteria) *configpb
 			MinWindow:          criteria.FlakeRate.MinWindow,
 			FlakeThreshold:     criteria.FlakeRate.FlakeThreshold,
 			FlakeRateThreshold: criteria.FlakeRate.FlakeRateThreshold,
+			FlakeThreshold_1Wd: criteria.FlakeRate.FlakeThreshold_1Wd,
 		},
 	}
 }
