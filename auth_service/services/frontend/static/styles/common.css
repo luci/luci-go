@@ -34,3 +34,7 @@ a:not(.nav-link,.navbar-brand) {
 a:not(.nav-link,.navbar-brand):hover {
   text-decoration: underline;
 }
+
+.tooltip-inner {
+  max-width: 400px;
+}

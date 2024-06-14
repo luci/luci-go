@@ -15,6 +15,55 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
+const TOOLTIP_FORMATTERS = new Map([
+  ['GROUP_MEMBERS_ADDED', (change) => formatPrincipalsForTooltip(change.members)],
+  ['GROUP_MEMBERS_REMOVED', (change) => formatPrincipalsForTooltip(change.members)],
+  ['GROUP_GLOBS_ADDED', (change) => formatPrincipalsForTooltip(change.globs)],
+  ['GROUP_GLOBS_REMOVED', (change) => formatPrincipalsForTooltip(change.globs)],
+
+  ['GROUP_NESTED_ADDED', (change) => formatListForTooltip(change.nested)],
+  ['GROUP_NESTED_REMOVED', (change) => formatListForTooltip(change.nested)],
+
+  ['GROUP_DESCRIPTION_CHANGED', (change) => formatValueForTooltip(change.description)],
+  ['GROUP_CREATED', (change) => formatValueForTooltip(change.description)],
+
+  ['GROUP_OWNERS_CHANGED', (change) => formatValueForTooltip(`${change.oldOwners} \u2192 ${change.owners}`)]
+]);
+
+function formatValueForTooltip(value) {
+  if (!value) {
+    // No tooltip needed for an undefined/empty value.
+    return null;
+  }
+  const content = document.createElement('div');
+  content.classList.add('text-start');
+  content.append(document.createTextNode(value));
+  return content;
+}
+
+function formatListForTooltip(items) {
+  const content = document.createElement('div');
+  content.classList.add('text-start');
+
+  items.forEach((item) => {
+    const value = (item || '').trim();
+    if (!value) {
+      // No entry needed for an undefined/empty value.
+      return;
+    }
+    const node = document.createElement('div');
+    node.appendChild(document.createTextNode(value));
+    content.appendChild(node);
+  });
+
+  return content;
+}
+
+function formatPrincipalsForTooltip(principals) {
+  const names = common.stripPrefixFromItems('user', principals);
+  return formatListForTooltip(names);
+}
+
 // Parse target string (e.g. 'AuthGroup$name') into components, adds a readable
 // title and URL to a change log for the target.
 const parseTarget = (t) => {
@@ -77,6 +126,8 @@ class ChangeLogTable {
     this.prevPageTokens = [];
     // True is UI is locked (when doing AJAX).
     this.locked = false;
+    // Tooltips with change details shown on hover.
+    this.tooltips = [];
 
     // Attach events to pager buttons.
     var pager = document.getElementById('change-log-pager');
@@ -212,10 +263,24 @@ class ChangeLogTable {
         // Clone and grab elements to modify.
         var clone = template.content.cloneNode(true);
         var rev = clone.querySelector('td.change-log-rev a');
-        var type = clone.querySelector('td.change-log-type span');
+        const changeTypeCell = clone.querySelector('td.change-log-type');
+        var type = changeTypeCell.querySelector('span');
         var when = clone.querySelector('td.change-log-when');
         var who = clone.querySelector('td.change-log-who');
         var target = clone.querySelector('td.change-log-target a');
+
+        // Add a tooltip if there's a formatter for this change type.
+        if (TOOLTIP_FORMATTERS.has(log.changeType)) {
+          const formatter = TOOLTIP_FORMATTERS.get(log.changeType)
+          const tooltip = new bootstrap.Tooltip(changeTypeCell, {
+            container: 'body',
+            title: () => this.locked ? null : formatter(log),
+            html: true,
+            placement: 'right',
+            trigger: 'hover',
+          });
+          this.tooltips.push(tooltip);
+        }
 
         // Modify contents and append to parent.
         var t = parseTarget(log.target);
@@ -240,6 +305,8 @@ class ChangeLogTable {
     }
 
     this.contentElement.replaceChildren();
+    this.tooltips.forEach(t => t.dispose());
+    this.tooltips = [];
     logs.map((log) => {
       addElement(log);
     });
