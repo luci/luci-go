@@ -22,8 +22,6 @@ import {
 } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { BuildContextProvider } from '../../context';
-
 import { BuildActionButton } from './build_action_button';
 
 describe('<BuildActionButton />', () => {
@@ -46,9 +44,7 @@ describe('<BuildActionButton />', () => {
   it('should show retry button when the build ended', async () => {
     render(
       <FakeContextProvider>
-        <BuildContextProvider build={failedBuild}>
-          <BuildActionButton />
-        </BuildContextProvider>
+        <BuildActionButton build={failedBuild} />
       </FakeContextProvider>,
     );
 
@@ -61,9 +57,7 @@ describe('<BuildActionButton />', () => {
   it('should show cancel button when the build has not ended', async () => {
     render(
       <FakeContextProvider>
-        <BuildContextProvider build={runningBuild}>
-          <BuildActionButton />
-        </BuildContextProvider>
+        <BuildActionButton build={runningBuild} />
       </FakeContextProvider>,
     );
 

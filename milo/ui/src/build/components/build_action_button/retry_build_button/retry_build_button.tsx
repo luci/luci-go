@@ -12,51 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Button } from '@mui/material';
+import { Button, ButtonTypeMap } from '@mui/material';
+import { DefaultComponentProps } from '@mui/material/OverridableComponent';
 import { useState } from 'react';
 
-import { PERM_BUILDS_CANCEL } from '@/build/constants';
+import { PERM_BUILDS_ADD } from '@/build/constants';
 import { OutputBuild } from '@/build/types';
 import { usePermCheck } from '@/common/components/perm_check_provider';
+import { Trinary } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
-import { CancelBuildDialog } from './cancel_build_dialog';
+import { RetryBuildDialog } from './retry_build_dialog';
 
-export const enum Dialog {
-  None,
-  CancelBuild,
-  RetryBuild,
-}
-
-export interface CancelBuildButtonProps {
+export interface RetryBuildButtonProps
+  extends Omit<DefaultComponentProps<ButtonTypeMap>, 'onClick' | 'disabled'> {
   readonly build: OutputBuild;
 }
 
-export function CancelBuildButton({ build }: CancelBuildButtonProps) {
+export function RetryBuildButton({ build, ...props }: RetryBuildButtonProps) {
   const [openDialog, setOpenDialog] = useState(false);
   const realm = `${build.builder.project}:${build.builder.bucket}`;
-  const [canCancel] = usePermCheck(realm, PERM_BUILDS_CANCEL);
+  const [canRetry] = usePermCheck(realm, PERM_BUILDS_ADD);
 
   let tooltip = '';
-  if (build.cancelTime) {
-    tooltip = 'The build is already scheduled to be canceled.';
-  } else if (!canCancel) {
-    tooltip = "You don't have the permission to cancel this build.";
+  if (build.retriable === Trinary.NO) {
+    tooltip = 'This build is not retriable.';
+  } else if (!canRetry) {
+    tooltip = "You don't have the permission to retry this build.";
   }
 
   return (
     <>
-      <CancelBuildDialog
+      <RetryBuildDialog
         buildId={build.id}
         open={openDialog}
         onClose={() => setOpenDialog(false)}
       />
-      {/* Use a span to display tooltip with button is disabled. */}
+      {/* Use a span so the tooltip works even when the button is disabled. */}
       <span title={tooltip}>
         <Button
+          {...props}
           onClick={() => setOpenDialog(true)}
-          disabled={!canCancel || Boolean(build.cancelTime)}
+          disabled={!canRetry || build.retriable === Trinary.NO}
         >
-          Cancel Build
+          Retry Build
         </Button>
       </span>
     </>

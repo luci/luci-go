@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useBuild } from '../context';
+import { BuildActionButton } from '@/build/components/build_action_button';
 
-import { BuildActionButton } from './build_action_button';
+import { useBuild } from '../context';
 
 export function ActionsSection() {
   const build = useBuild();
@@ -26,7 +26,7 @@ export function ActionsSection() {
     <>
       <h3>Actions</h3>
       <div>
-        <BuildActionButton />
+        <BuildActionButton build={build} />
       </div>
     </>
   );

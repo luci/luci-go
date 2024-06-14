@@ -14,11 +14,12 @@
 
 import { Box, styled } from '@mui/material';
 
+import { BuildActionButton } from '@/build/components/build_action_button';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
+import { useBuild } from '../context';
 import { AlertsSection } from '../infra_tab/alerts_section';
-import { BuildActionButton } from '../infra_tab/build_action_button';
 import { FailedTestSection } from '../infra_tab/failed_tests_section';
 import { StepsSection } from '../infra_tab/steps_section';
 import { SummarySection } from '../infra_tab/summary_section';
@@ -36,10 +37,12 @@ const ContainerDiv = styled(Box)({
 });
 
 export function OverviewTab() {
+  const build = useBuild();
+
   return (
     <ContainerDiv>
       <BuildDescription />
-      <BuildActionButton />
+      {build && <BuildActionButton build={build} />}
       <AlertsSection />
       <SummarySection />
       <FailedTestSection />

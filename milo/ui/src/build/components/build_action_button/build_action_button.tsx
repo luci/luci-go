@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useBuild } from '../../context';
+import { ButtonTypeMap } from '@mui/material';
+import { DefaultComponentProps } from '@mui/material/OverridableComponent';
+
+import { OutputBuild } from '@/build/types';
 
 import { CancelBuildButton } from './cancel_build_button';
 import { RetryBuildButton } from './retry_build_button';
 
-export function BuildActionButton() {
-  const build = useBuild();
+export interface BuildActionButtonProps
+  extends Omit<DefaultComponentProps<ButtonTypeMap>, 'onClick' | 'disabled'> {
+  readonly build: OutputBuild;
+}
 
-  if (!build) {
-    return <></>;
-  }
-
+export function BuildActionButton({ build, ...props }: BuildActionButtonProps) {
   return build.endTime ? (
-    <RetryBuildButton build={build} />
+    <RetryBuildButton {...props} build={build} />
   ) : (
-    <CancelBuildButton build={build} />
+    <CancelBuildButton {...props} build={build} />
   );
 }
