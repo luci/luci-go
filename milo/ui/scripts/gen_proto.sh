@@ -31,10 +31,10 @@ protoc \
   --ts_proto_opt=fileSuffix=.pb \
   \
   `# Do not use ExactTypes because
-   #  * It hinders productivity (especially ).
+   #  * It hinders productivity.
    #    * When used with useReadonlyTypes, it prevents the use of array literal
    #      unless some form of type casting is usesd. Type casting is verbose and
-   #      breaks the type gurantee that ExactType is trying to enforce.
+   #      breaks the type guarantee that ExactType is trying to enforce.
    #    * It uses complex recursive types that slow down the compiler.
    #  * It delivers very little benefit.
    #    * TypeScript already prevents declaring unknown properties in an object
