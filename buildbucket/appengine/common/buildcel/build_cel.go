@@ -191,6 +191,20 @@ func (bbc *Bool) Eval(b *pb.Build) (bool, error) {
 	return out.Value().(bool), nil
 }
 
+// BoolEval is a helper function to generate a Bool cel program then
+// evaluate b with it.
+func BoolEval(b *pb.Build, predicates []string) (bool, error) {
+	bbc, err := NewBool(predicates)
+	if err != nil {
+		return false, nil
+	}
+	matched, err := bbc.Eval(b)
+	if err != nil {
+		return false, nil
+	}
+	return matched, nil
+}
+
 // StringMap is a CEL program to return the requested information of
 // a Build message in a string map.
 //
@@ -282,4 +296,18 @@ func stringPairsGetValue(strPairsVal ref.Val, keyVal ref.Val) ref.Val {
 		}
 	}
 	return types.String("")
+}
+
+// StringMapEval is a helper function to generate a StringMap cel program then
+// evaluate b with it.
+func StringMapEval(b *pb.Build, fields map[string]string) (map[string]string, error) {
+	smbc, err := NewStringMap(fields)
+	if err != nil {
+		return nil, nil
+	}
+	res, err := smbc.Eval(b)
+	if err != nil {
+		return nil, nil
+	}
+	return res, nil
 }

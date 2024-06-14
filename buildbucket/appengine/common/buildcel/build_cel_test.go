@@ -30,21 +30,26 @@ func TestBuildCEL(t *testing.T) {
 
 	Convey("Bool", t, func() {
 		Convey("fail", func() {
-			_, err := NewBool([]string{`has(build.tags)`, `has(build.random)`})
-			So(err, ShouldNotBeNil)
+			Convey("empty predicates", func() {
+				_, err := NewBool([]string{})
+				So(err, ShouldErrLike, "predicates are required")
+			})
+			Convey("wrong build field", func() {
+				_, err := NewBool([]string{`has(build.tags)`, `has(build.random)`})
+				So(err, ShouldNotBeNil)
+			})
 		})
 
 		Convey("work", func() {
-			bbc, err := NewBool([]string{
+			predicates := []string{
 				`(has(build.tags)||(has(build.input)))`,
 				`has(build.input.properties.pro_key)`,
 				`build.input.experiments.exists(e, e=="luci.buildbucket.exp")`,
 				`string(build.output.properties.out_key) == "out_val"`,
-			})
-			So(err, ShouldBeNil)
+			}
 
 			Convey("not match", func() {
-				pass, err := bbc.Eval(&pb.Build{})
+				pass, err := BoolEval(&pb.Build{}, predicates)
 				So(err, ShouldBeNil)
 				So(pass, ShouldBeFalse)
 			})
@@ -69,7 +74,7 @@ func TestBuildCEL(t *testing.T) {
 						},
 					},
 				}
-				pass, err := bbc.Eval(b)
+				pass, err := BoolEval(b, predicates)
 				So(err, ShouldBeNil)
 				So(pass, ShouldBeFalse)
 			})
@@ -102,7 +107,7 @@ func TestBuildCEL(t *testing.T) {
 						},
 					},
 				}
-				pass, err := bbc.Eval(b)
+				pass, err := BoolEval(b, predicates)
 				So(err, ShouldBeNil)
 				So(pass, ShouldBeTrue)
 			})
@@ -149,13 +154,12 @@ func TestBuildCEL(t *testing.T) {
 			So(err, ShouldErrLike, "no such key: key")
 		})
 		Convey("work", func() {
-			smbc, err := NewStringMap(map[string]string{
+			fields := map[string]string{
 				"a": `build.summary_markdown`,
 				"b": `"random_string_literal"`,
 				"c": `build.cancellation_markdown`,
 				"d": `string(build.input.properties.key)`,
-			})
-			So(err, ShouldBeNil)
+			}
 			b := &pb.Build{
 				SummaryMarkdown:      "summary",
 				CancellationMarkdown: "cancel",
@@ -183,7 +187,7 @@ func TestBuildCEL(t *testing.T) {
 				"c": "cancel",
 				"d": "value",
 			}
-			out, err := smbc.Eval(b)
+			out, err := StringMapEval(b, fields)
 			So(err, ShouldBeNil)
 			So(out, ShouldResemble, expected)
 		})
