@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/impl/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -27,12 +28,13 @@ func TestValidationRules(t *testing.T) {
 	t.Parallel()
 
 	Convey("Validation Rules", t, func() {
+		ctx := memory.UseWithAppID(context.Background(), "luci-change-verifier")
 		r := validation.NewRuleSet()
 		r.Vars.Register("appid", func(context.Context) (string, error) { return "luci-change-verifier", nil })
 
 		addRules(r)
 
-		patterns, err := r.ConfigPatterns(context.Background())
+		patterns, err := r.ConfigPatterns(ctx)
 		So(err, ShouldBeNil)
 		So(len(patterns), ShouldEqual, 2)
 		Convey("project-scope cq.cfg", func() {
@@ -44,6 +46,12 @@ func TestValidationRules(t *testing.T) {
 			So(patterns[1].ConfigSet.Match("services/luci-change-verifier"), ShouldBeTrue)
 			So(patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
 			So(patterns[1].Path.Match("listener-settings.cfg"), ShouldBeTrue)
+		})
+		Convey("Dev", func() {
+			ctx = memory.UseWithAppID(context.Background(), "luci-change-verifier-dev")
+			patterns, err := r.ConfigPatterns(ctx)
+			So(err, ShouldBeNil)
+			So(patterns[0].Path.Match("commit-queue-dev.cfg"), ShouldBeTrue)
 		})
 	})
 }

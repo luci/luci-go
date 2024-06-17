@@ -17,10 +17,12 @@ package validation
 import (
 	"context"
 	"regexp"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 // Config validation rules go here.
@@ -32,7 +34,13 @@ func init() {
 // TODO(crbug.com/1252545): Use a dev-specific configuration for a dev instance
 // of the service after CQD is deleted.
 func addRules(r *validation.RuleSet) {
-	r.Add("regex:projects/[^/]+", "commit-queue.cfg", validateProject)
+	r.Vars.Register("cqCfgName", func(ctx context.Context) (string, error) {
+		if appID := info.AppID(ctx); strings.Contains(appID, "dev") {
+			return "commit-queue-dev.cfg", nil
+		}
+		return "commit-queue.cfg", nil
+	})
+	r.Add("regex:projects/[^/]+", "${cqCfgName}", validateProject)
 	r.Add("services/${appid}", "listener-settings.cfg", validateListenerSettings)
 }
 
