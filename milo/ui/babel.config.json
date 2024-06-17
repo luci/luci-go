@@ -34,12 +34,15 @@
     "@babel/plugin-proposal-class-properties"
   ],
   "env": {
+    // Code doesn't go through the Vite's building pipeline when testing.
+    // We need some additional setup for TS/JS transpilation.
     "test": {
-      // Code doesn't go through the Vite's building pipeline when testing.
-      // We need some additional plugins for JS transpilation.
+      "presets": [
+        ["@babel/preset-env", {"targets": {"node": "current"}}],
+        "@babel/preset-typescript"
+      ],
       "plugins": [
-        "@babel/plugin-proposal-private-methods",
-        "transform-es2015-modules-commonjs"
+        "@babel/plugin-proposal-private-methods"
       ]
     }
   }
