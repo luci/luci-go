@@ -28,23 +28,11 @@ function isExternalGroupName(name: string) {
     return name.indexOf('/') > 0;
 }
 
-// Trims group description to fit single line.
-const trimGroupDescription = (desc: string) => {
-  if (desc == null) {
-    return '';
-  }
-  let firstLine = desc.split('\n')[0];
-  if (firstLine.length > 55) {
-    firstLine = firstLine.slice(0, 55) + '...';
-  }
-  return firstLine;
-}
-
 export function GroupsListItem({ group, setSelected, selected } :GroupsItemProps) {
-  let description = isExternalGroupName(group.name) ? 'External' : trimGroupDescription(group.description);
+  let description = isExternalGroupName(group.name) ? 'External' : group.description;
 
   return (
-    <ListItem disablePadding>
+    <ListItem disablePadding sx={{maxWidth:'95vw'}}>
       <ListItemButton
        onClick={setSelected}
        selected={selected}
@@ -53,8 +41,15 @@ export function GroupsListItem({ group, setSelected, selected } :GroupsItemProps
             primary={group.name}
             secondary={description}
             data-testid="groups_item_list_item_text"
-            />
+            secondaryTypographyProps={{
+              style: {
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+            }
+        }}
+        />
       </ListItemButton>
     </ListItem>
-);
+  );
 }

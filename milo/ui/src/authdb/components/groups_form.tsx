@@ -25,7 +25,7 @@ import Table from '@mui/material/Table';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
-import TextField from '@mui/material/TextField';
+import { TextareaAutosize } from '@mui/base/TextareaAutosize';
 import Typography from '@mui/material/Typography';
 import { FormControl } from '@mui/material';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
@@ -68,8 +68,6 @@ function stripPrefix (prefix: string, str: string) {
 export function GroupsForm({ name } : GroupsFormProps) {
   const [descriptionMode, setDescriptionMode] = useState<boolean>();
   const [ownersMode, setOwnersMode] = useState<boolean>();
-  const [membersMode, setMembersMode] = useState<boolean>();
-  const [subgroupsMode, setSubgroupsMode] = useState<boolean>();
   const [description, setDescription] = useState<string>();
   const [owners, setOwners] = useState<string>();
 
@@ -96,8 +94,6 @@ export function GroupsForm({ name } : GroupsFormProps) {
     const setReadonlyMode = () => {
       setDescriptionMode(false);
       setOwnersMode(false);
-      setMembersMode(false);
-      setSubgroupsMode(false);
     }
     const changeDescriptionMode = () => {
       setDescriptionMode(!descriptionMode);
@@ -168,10 +164,10 @@ export function GroupsForm({ name } : GroupsFormProps) {
                 <TableCell>
                   <Typography variant="h6"> Description</Typography>
                 </TableCell>
-                <TableCell>
+                <TableCell align='left' style={{width: '80%'}}>
                   {descriptionMode
-                  ? <TextField value={description} style={{width: '100%', whiteSpace:'pre-wrap'}} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield'></TextField>
-                  : <Typography variant="body1"> {description} </Typography>
+                  ? <TextareaAutosize value={description} style={{width: '100%', whiteSpace:'pre-wrap'}} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield'></TextareaAutosize>
+                  : <Typography variant="body1" style={{width: '100%'}}> {description} </Typography>
                   }
                 </TableCell>
                 <TableCell align='right'>
@@ -189,10 +185,10 @@ export function GroupsForm({ name } : GroupsFormProps) {
                 <TableCell>
                   <Typography variant="h6"> Owners</Typography>
                 </TableCell>
-                <TableCell>
+                <TableCell align='left' style={{width: '80%'}}>
                   {ownersMode
-                  ? <TextField value={owners} style={{width: '100%'}} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextField>
-                  : <Typography variant="body1"> {owners} </Typography>
+                  ? <TextareaAutosize value={owners} style={{width: '100%'}} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextareaAutosize>
+                  : <Typography variant="body1" style={{width: '100%'}}> {owners} </Typography>
                   }
                 </TableCell>
                 <TableCell align='right'>
@@ -206,14 +202,12 @@ export function GroupsForm({ name } : GroupsFormProps) {
               </TableRow>
           </Table>
         </TableContainer>
-          <GroupsFormList name='Members' initialItems={members} />
-          <GroupsFormList name='Subgroups' initialItems={subgroups} />
-          <GroupsFormList name='Globs' initialItems={globs} />
-        {(descriptionMode || ownersMode || membersMode || subgroupsMode) &&
+          <GroupsFormList name='Members' initialItems={members}/>
+          <GroupsFormList name='Globs' initialItems={globs}/>
+          <GroupsFormList name='Subgroups' initialItems={subgroups}/>
           <Button variant="contained" disableElevation style={{width: '15%', marginTop: '15px'}}>
             Submit
           </Button>
-        }
       </FormControl>
       </ThemeProvider>
     </Paper>

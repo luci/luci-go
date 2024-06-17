@@ -74,12 +74,14 @@ export function GroupsList() {
     <Paper>
       <Grid container className="groups-container">
         <Grid item xs={5}>
-        <TextField
-            id="outlined-basic"
-            label="Search for an existing group"
-            variant="outlined"
-            sx={{m: 2}}
-            onChange={e => changeSearchQuery(e.target.value)}/>
+          <Box sx={{p: 2}}>
+            <TextField
+              id="outlined-basic"
+              label="Search for an existing group"
+              variant="outlined"
+              style={{width: '100%'}}
+              onChange={e => changeSearchQuery(e.target.value)}/>
+          </Box>
           <Box className="groups-list-container">
             <List data-testid="groups-list" disablePadding>
               {groups && groups.map((group) => (
