@@ -69,6 +69,18 @@ func newBuildCELEnv() (*buildCELEnv, error) {
 				cel.BinaryBinding(stringPairsGetValue),
 			),
 		),
+		// `build.status.to_string()`
+		cel.Function(
+			"to_string",
+			cel.MemberOverload(
+				"string_status",
+				[]*cel.Type{
+					cel.IntType,
+				},
+				cel.StringType,
+				cel.UnaryBinding(stringStatus),
+			),
+		),
 	)
 	if err != nil {
 		return nil, err
@@ -296,6 +308,14 @@ func stringPairsGetValue(strPairsVal ref.Val, keyVal ref.Val) ref.Val {
 		}
 	}
 	return types.String("")
+}
+
+// stringStatus implements the custom function
+// `build.status.to_string() string`.
+func stringStatus(intVal ref.Val) ref.Val {
+	statusInt32 := int32(intVal.(types.Int))
+	statusStr := pb.Status_name[statusInt32]
+	return types.String(statusStr)
 }
 
 // StringMapEval is a helper function to generate a StringMap cel program then

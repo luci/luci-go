@@ -258,4 +258,28 @@ func TestBuildCEL(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("status", t, func() {
+		Convey("status match", func() {
+			b := &pb.Build{
+				Status: pb.Status_SUCCESS,
+			}
+			matched, err := BoolEval(b, []string{`build.status.to_string()=="SUCCESS"`})
+			So(err, ShouldBeNil)
+			So(matched, ShouldBeTrue)
+
+			matched, err = BoolEval(b, []string{`build.status.to_string()=="INFRA_FAILURE"`})
+			So(err, ShouldBeNil)
+			So(matched, ShouldBeFalse)
+		})
+
+		Convey("get status", func() {
+			b := &pb.Build{
+				Status: pb.Status_SUCCESS,
+			}
+			res, err := StringMapEval(b, map[string]string{"status": `build.status.to_string()`})
+			So(err, ShouldBeNil)
+			So(res, ShouldResemble, map[string]string{"status": "SUCCESS"})
+		})
+	})
 }
