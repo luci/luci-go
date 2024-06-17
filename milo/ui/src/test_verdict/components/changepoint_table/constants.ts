@@ -17,7 +17,9 @@ export const LABEL_PADDINGS = 5;
 
 export const CELL_WIDTH = 80;
 
-export const SPAN_HEIGHT = 30;
-export const SIDE_PANEL_WIDTH = 400;
+export const START_POINT_SPAN_HEIGHT = 18;
+export const SEGMENT_SPAN_HEIGHT = 26;
+export const MIN_ROW_HEIGHT = SEGMENT_SPAN_HEIGHT + 2 * START_POINT_SPAN_HEIGHT;
 export const SPAN_MARGIN = 2;
-export const MIN_ROW_HEIGHT = 2 * SPAN_HEIGHT + 5;
+
+export const SIDE_PANEL_WIDTH = 400;

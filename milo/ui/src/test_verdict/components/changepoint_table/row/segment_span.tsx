@@ -26,7 +26,7 @@ import {
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
 
-import { SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
+import { SEGMENT_SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
 import { useConfig } from '../context';
 
 const Span = styled(Box)`
@@ -35,9 +35,9 @@ const Span = styled(Box)`
   border: solid 1px;
   border-radius: 16px;
   box-sizing: border-box;
-  margin: ${SPAN_MARGIN}px;
+  margin: 0 ${SPAN_MARGIN}px;
   width: calc(100% - ${2 * SPAN_MARGIN}px);
-  height: calc(100% - ${2 * SPAN_MARGIN}px);
+  height: 100%;
   cursor: pointer;
 `;
 
@@ -88,8 +88,8 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
   const end = commitMap[segment.startPosition] + 1;
 
   const x = xScale(start);
-  const y = (rowHeight - 2 * SPAN_HEIGHT) / 2 + SPAN_HEIGHT;
-  const spanWidth = xScale(end) - xScale(start);
+  const y = (rowHeight - SEGMENT_SPAN_HEIGHT) / 2;
+  const spanWidth = xScale(end) - xScale(start) + 1;
   const counts = segment.counts;
   const unexpectedCount = counts.unexpectedVerdicts;
   const flakyCount = counts.flakyVerdicts;
@@ -100,7 +100,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
       x={x}
       y={y}
       width={spanWidth}
-      height={SPAN_HEIGHT}
+      height={SEGMENT_SPAN_HEIGHT}
       css={{ cursor: 'pointer' }}
       onClick={() =>
         dispatch({
