@@ -63,7 +63,8 @@ func TestHandleCVRun(t *testing.T) {
 		So(ingestBuild(ctx, buildTwo), ShouldBeNil)
 
 		// Ingest the invocation finalization.
-		So(ingestFinalization(ctx, fmt.Sprintf("build-%d", buildOne.buildID), false), ShouldBeNil)
+		invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
+		So(ingestFinalization(ctx, fmt.Sprintf("build-%d", buildOne.buildID), false, invocationCreateTime), ShouldBeNil)
 
 		So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
@@ -271,6 +272,7 @@ func expectedTasks(taskTemplate *taskspb.IngestTestVerdicts, builds []*buildBuil
 			t.Invocation = &controlpb.InvocationResult{
 				ResultdbHost: rdbHost,
 				InvocationId: fmt.Sprintf("build-%d", build.buildID),
+				CreationTime: timestamppb.New(time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)),
 			}
 		}
 		res = append(res, t)

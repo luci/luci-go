@@ -197,8 +197,12 @@ func TestIngestTestVerdicts(t *testing.T) {
 				So(err, ShouldBeNil)
 			}
 
+			invocationCreationTime := partitionTime.Add(-3 * time.Hour)
+
 			// Populate some existing test variant analysis.
-			branch := setupTestVariantAnalysis(ctx, partitionTime)
+			// Test variant changepoint analysis uses invocation creation time
+			// as partition time.
+			branch := setupTestVariantAnalysis(ctx, invocationCreationTime)
 
 			expectedCheckpoints := []checkpoints.Checkpoint{
 				{
@@ -227,6 +231,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				Invocation: &ctrlpb.InvocationResult{
 					ResultdbHost: "rdb-host",
 					InvocationId: invocationID,
+					CreationTime: timestamppb.New(invocationCreationTime),
 				},
 				Build: &ctrlpb.BuildResult{
 					Host:         bHost,
@@ -341,7 +346,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyTestResults(ctx, partitionTime, true)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyTestVerdicts(testVerdicts, partitionTime, true)
-				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
 			})
 			Convey(`Last task`, func() {
 				payload.TaskIndex = 10
@@ -366,7 +371,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyTestResults(ctx, partitionTime, true)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyTestVerdicts(testVerdicts, partitionTime, true)
-				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
 			})
 
 			Convey(`Retry task after continuation task already created`, func() {
@@ -400,7 +405,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyTestResults(ctx, partitionTime, true)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyTestVerdicts(testVerdicts, partitionTime, true)
-				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
 			})
 			Convey(`No project config`, func() {
 				// If no project config exists, results should be ingested into
@@ -425,7 +430,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 				// Test verdicts exported.
 				verifyTestVerdicts(testVerdicts, partitionTime, true)
-				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
+				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
 			})
 			Convey(`Build included by ancestor`, func() {
 				payload.Build.IsIncludedByAncestor = true

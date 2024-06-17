@@ -477,7 +477,19 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	}
 
 	failingRDBVerdicts := filterToTestVariantsWithUnexpectedFailures(testVariants)
-	testVariantBranchStats, err := queryTestVariantAnalysisForClustering(ctx, failingRDBVerdicts, ing.Project, ing.PartitionTime, sources)
+
+	changepointPartitionTime := ing.PartitionTime
+	// TODO: remove if statement and always use Invocation.CreationTime
+	// once protos without this field set have been flushed out.
+	// If you are reading this in August 2024, this can be safely actioned
+	// now.
+	if payload.Invocation.CreationTime != nil {
+		// Changepoint analysis uses the invocation creation time as the
+		// partition time.
+		changepointPartitionTime = payload.Invocation.CreationTime.AsTime()
+	}
+
+	testVariantBranchStats, err := queryTestVariantAnalysisForClustering(ctx, failingRDBVerdicts, ing.Project, changepointPartitionTime, sources)
 	if err != nil {
 		return errors.Annotate(err, "query test variant analysis for clustering").Err()
 	}

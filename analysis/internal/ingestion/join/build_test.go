@@ -54,11 +54,11 @@ func TestHandleBuild(t *testing.T) {
 			Project:       "buildproject",
 		}
 
-		assertTasksExpected := func() {
+		assertTasksExpected := func() string {
 			// assert ingestion task has been scheduled.
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
 			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestVerdicts)
-			So(resultsTask, ShouldResembleProto, expectedTask)
+			return ShouldResembleProto(resultsTask, expectedTask)
 		}
 
 		Convey(`With vanilla build`, func() {
@@ -68,13 +68,13 @@ func TestHandleBuild(t *testing.T) {
 				// Process build.
 				So(ingestBuild(ctx, build), ShouldBeNil)
 
-				assertTasksExpected()
+				So(assertTasksExpected(), ShouldBeEmpty)
 
 				// Test repeated processing does not lead to further
 				// ingestion tasks.
 				So(ingestBuild(ctx, build), ShouldBeNil)
 
-				assertTasksExpected()
+				So(assertTasksExpected(), ShouldBeEmpty)
 			})
 			Convey(`Unusual CI Build`, func() {
 				// v8 project had some buildbucket-triggered builds
@@ -85,7 +85,7 @@ func TestHandleBuild(t *testing.T) {
 
 				// Process build.
 				So(ingestBuild(ctx, build), ShouldBeNil)
-				assertTasksExpected()
+				So(assertTasksExpected(), ShouldBeEmpty)
 			})
 		})
 		Convey(`With ancestor build`, func() {
@@ -104,14 +104,18 @@ func TestHandleBuild(t *testing.T) {
 
 				// Process build.
 				So(ingestBuild(ctx, build), ShouldBeNil)
-				assertTasksExpected()
+				So(assertTasksExpected(), ShouldBeEmpty)
 			})
 			Convey(`With invocation`, func() {
+				invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
 				expectedTask.Invocation = &controlpb.InvocationResult{
 					ResultdbHost: rdbHost,
 					InvocationId: fmt.Sprintf("build-%d", build.buildID),
+					CreationTime: timestamppb.New(invocationCreateTime),
 				}
-				So(ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false), ShouldBeNil)
+				expectedTask.PartitionTime = timestamppb.New(invocationCreateTime)
+
+				So(ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false, invocationCreateTime), ShouldBeNil)
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
 				Convey(`Not contained by ancestor`, func() {
@@ -129,7 +133,7 @@ func TestHandleBuild(t *testing.T) {
 
 					// Process build.
 					So(ingestBuild(ctx, build), ShouldBeNil)
-					assertTasksExpected()
+					So(assertTasksExpected(), ShouldBeEmpty)
 				})
 				Convey(`Contained by ancestor`, func() {
 					build = build.WithInvocation().WithContainedByAncestor(true)
@@ -149,7 +153,7 @@ func TestHandleBuild(t *testing.T) {
 
 					// Process build.
 					So(ingestBuild(ctx, build), ShouldBeNil)
-					assertTasksExpected()
+					So(assertTasksExpected(), ShouldBeEmpty)
 				})
 			})
 		})
@@ -181,7 +185,7 @@ func TestHandleBuild(t *testing.T) {
 					CreationTime: timestamppb.New(cvCreateTime),
 					Critical:     true,
 				}
-				assertTasksExpected()
+				So(assertTasksExpected(), ShouldBeEmpty)
 
 				// Check metrics were reported correctly for this sequence.
 				isPresubmit := true
@@ -205,7 +209,8 @@ func TestHandleBuild(t *testing.T) {
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 			})
 			Convey(`With invocation finalization acknowledged previously`, func() {
-				So(ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false), ShouldBeNil)
+				invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
+				So(ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false, invocationCreateTime), ShouldBeNil)
 
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
@@ -214,8 +219,10 @@ func TestHandleBuild(t *testing.T) {
 				expectedTask.Invocation = &controlpb.InvocationResult{
 					ResultdbHost: rdbHost,
 					InvocationId: fmt.Sprintf("build-%d", build.buildID),
+					CreationTime: timestamppb.New(invocationCreateTime),
 				}
-				assertTasksExpected()
+				expectedTask.PartitionTime = timestamppb.New(invocationCreateTime)
+				So(assertTasksExpected(), ShouldBeEmpty)
 
 				// Check metrics were reported correctly for this sequence.
 				isPresubmit := false

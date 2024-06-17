@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/status"
@@ -467,23 +468,36 @@ func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
 			Build:         e.BuildResult,
 			PresubmitRun:  e.PresubmitResult,
 		}
+	} else if e.HasInvocation {
+		var partitionTime time.Time
+		// TODO: remove if statement and always use InvocationResult.CreationTime
+		// once protos without this field set have been flushed out.
+		// If you are reading this in August 2024, this can be safely actioned
+		// now.
+		if e.InvocationResult.CreationTime != nil {
+			partitionTime = e.InvocationResult.CreationTime.AsTime()
+		} else if e.BuildResult != nil && e.BuildResult.CreationTime != nil {
+			partitionTime = e.BuildResult.CreationTime.AsTime()
+		} else {
+			partitionTime = clock.Now(ctx)
+		}
+
+		itvTask = &taskspb.IngestTestVerdicts{
+			IngestionId:   string(e.IngestionID),
+			PartitionTime: timestamppb.New(partitionTime),
+			Project:       e.InvocationProject,
+			Invocation:    e.InvocationResult,
+			Build:         e.BuildResult, // if any
+		}
 	} else if e.HasBuildBucketBuild {
 		itvTask = &taskspb.IngestTestVerdicts{
 			IngestionId:   string(e.IngestionID),
 			PartitionTime: e.BuildResult.CreationTime,
 			Project:       e.BuildProject,
-			Invocation:    e.InvocationResult,
 			Build:         e.BuildResult,
 		}
-	} else {
-		itvTask = &taskspb.IngestTestVerdicts{
-			IngestionId: string(e.IngestionID),
-			// TODO: return the invocation creation time from pubsub and use it here.
-			PartitionTime: timestamppb.New(clock.Now(ctx)),
-			Project:       e.InvocationProject,
-			Invocation:    e.InvocationResult,
-		}
 	}
+
 	// Copy the task to avoid aliasing issues if the caller ever
 	// decides the modify e.PresubmitResult or e.BuildResult
 	// after we return.

@@ -58,9 +58,9 @@ func ingestBuild(ctx context.Context, build *buildBuilder) error {
 	return nil
 }
 
-func ingestFinalization(ctx context.Context, invocationID string, isExportRoot bool) error {
+func ingestFinalization(ctx context.Context, invocationID string, isExportRoot bool, createTime time.Time) error {
 	// Process invocation finalization.
-	notification := makeInvocationFinalizedNotification(invocationID, "buildproject:realm", isExportRoot)
+	notification := makeInvocationFinalizedNotification(invocationID, "buildproject:realm", isExportRoot, createTime)
 	processed, err := JoinInvocation(ctx, notification)
 	if err != nil {
 		return err
@@ -269,10 +269,11 @@ func makeCVRunPubSub(runID string) *cvv1.PubSubRun {
 	}
 }
 
-func makeInvocationFinalizedNotification(invocationID string, realm string, isExportRoot bool) *rdbpb.InvocationFinalizedNotification {
+func makeInvocationFinalizedNotification(invocationID string, realm string, isExportRoot bool, createTime time.Time) *rdbpb.InvocationFinalizedNotification {
 	return &rdbpb.InvocationFinalizedNotification{
 		Invocation:   fmt.Sprintf("invocations/%s", invocationID),
 		Realm:        realm,
 		IsExportRoot: isExportRoot,
+		CreateTime:   timestamppb.New(createTime),
 	}
 }

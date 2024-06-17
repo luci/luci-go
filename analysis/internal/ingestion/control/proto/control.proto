@@ -117,4 +117,6 @@ message InvocationResult {
   string resultdb_host = 1;
   // The id of this invocation.
   string invocation_id = 2;
+  // The time the invocation was created.
+  google.protobuf.Timestamp creation_time = 3;
 }

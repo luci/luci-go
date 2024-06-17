@@ -266,7 +266,16 @@ func insertVerdictIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVa
 		}
 	}
 
-	runs, err := testvariantbranch.ToRuns(tv, payload.PartitionTime.AsTime(), claimedInvs, src)
+	partitionTime := payload.PartitionTime.AsTime()
+	// TODO: remove if statement and always use Invocation.CreationTime
+	// once protos without this field set have been flushed out.
+	// If you are reading this in August 2024, this can be safely actioned
+	// now.
+	if payload.Invocation.CreationTime != nil {
+		partitionTime = payload.Invocation.CreationTime.AsTime()
+	}
+
+	runs, err := testvariantbranch.ToRuns(tv, partitionTime, claimedInvs, src)
 	if err != nil {
 		return nil, false, err
 	}

@@ -21,7 +21,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/tq"
 
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
@@ -39,8 +38,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 	Convey(`Test InvocationFinalizedPubSubHandler`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
-		now := time.Date(2024, time.April, 4, 4, 4, 4, 4, time.UTC)
-		ctx, _ = testclock.UseTime(ctx, now)
+
 		assertTasksExpected := func(expectedTask *taskspb.IngestTestVerdicts) {
 			// assert ingestion task has been scheduled.
 			// Verify exactly one ingestion has been created.
@@ -49,7 +47,8 @@ func TestHandleInvocationFinalization(t *testing.T) {
 			So(resultsTask, ShouldResembleProto, expectedTask)
 		}
 		Convey(`does not have buildbucket build`, func() {
-			So(ingestFinalization(ctx, "inv-123", true), ShouldBeNil)
+			invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
+			So(ingestFinalization(ctx, "inv-123", true, invocationCreateTime), ShouldBeNil)
 
 			// Check metrics were reported correctly for this sequence.
 			isPresubmit := false
@@ -63,17 +62,20 @@ func TestHandleInvocationFinalization(t *testing.T) {
 			So(rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 1)
 			// Task has been scheduled.
 			expectedTask := &taskspb.IngestTestVerdicts{
-				PartitionTime: timestamppb.New(now),
+				PartitionTime: timestamppb.New(invocationCreateTime),
 				IngestionId:   fmt.Sprintf("%s/inv-123", rdbHost),
 				Project:       "buildproject",
 				Invocation: &controlpb.InvocationResult{
 					ResultdbHost: rdbHost,
 					InvocationId: "inv-123",
+					CreationTime: timestamppb.New(invocationCreateTime),
 				},
 			}
 			assertTasksExpected(expectedTask)
 		})
 		Convey(`has buildbucket build`, func() {
+			invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
+
 			// Buildbucket timestamps are only in microsecond precision.
 			t := time.Now().Truncate(time.Nanosecond * 1000)
 			build := newBuildBuilder(6363636363).
@@ -81,17 +83,18 @@ func TestHandleInvocationFinalization(t *testing.T) {
 				WithInvocation()
 			invocationID := fmt.Sprintf("build-%d", build.buildID)
 			expectedTask := &taskspb.IngestTestVerdicts{
-				PartitionTime: timestamppb.New(t),
+				PartitionTime: timestamppb.New(invocationCreateTime),
 				Build:         build.ExpectedResult(),
 				IngestionId:   fmt.Sprintf("%s/%s", rdbHost, invocationID),
 				Project:       "buildproject",
 				Invocation: &controlpb.InvocationResult{
 					ResultdbHost: rdbHost,
 					InvocationId: invocationID,
+					CreationTime: timestamppb.New(invocationCreateTime),
 				},
 			}
 			Convey(`Without build ingested previously`, func() {
-				So(ingestFinalization(ctx, invocationID, false), ShouldBeNil)
+				So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
 
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 			})
@@ -100,12 +103,12 @@ func TestHandleInvocationFinalization(t *testing.T) {
 
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
-				So(ingestFinalization(ctx, invocationID, false), ShouldBeNil)
+				So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
 
 				assertTasksExpected(expectedTask)
 
 				// Repeated messages should not trigger new ingestions.
-				So(ingestFinalization(ctx, invocationID, false), ShouldBeNil)
+				So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
 
 				assertTasksExpected(expectedTask)
 			})
@@ -133,7 +136,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 
 					So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
-					So(ingestFinalization(ctx, invocationID, false), ShouldBeNil)
+					So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
 
 					assertTasksExpected(expectedTask)
 
@@ -149,7 +152,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 					So(rdbInvocationsOutputCounter.Get(ctx, "buildproject", hasBuildBucketBuild), ShouldEqual, 1)
 				})
 				Convey(`Without LUCI CV run ingested previously`, func() {
-					So(ingestFinalization(ctx, invocationID, false), ShouldBeNil)
+					So(ingestFinalization(ctx, invocationID, false, invocationCreateTime), ShouldBeNil)
 
 					So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 				})

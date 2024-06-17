@@ -17,6 +17,8 @@ package join
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -43,6 +45,7 @@ func JoinInvocation(ctx context.Context, notification *rdbpb.InvocationFinalized
 	result := &controlpb.InvocationResult{
 		ResultdbHost: rdbHost,
 		InvocationId: id,
+		CreationTime: timestamppb.New(notification.CreateTime.AsTime()),
 	}
 	if err := JoinInvocationResult(ctx, id, project, result); err != nil {
 		return true, errors.Annotate(err, "joining invocation result").Err()
