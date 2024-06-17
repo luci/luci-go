@@ -62,10 +62,11 @@ func TestEquivalentPatchsetRange(t *testing.T) {
 				gerritpb.RevisionInfo_NO_CODE_CHANGE,
 				gerritpb.RevisionInfo_MERGE_FIRST_PARENT_UPDATE,
 				gerritpb.RevisionInfo_TRIVIAL_REBASE,
+				gerritpb.RevisionInfo_TRIVIAL_REBASE_WITH_MESSAGE_UPDATE,
 			))
 			So(err, ShouldBeNil)
 			So(m, ShouldEqual, 3)
-			So(p, ShouldEqual, 7)
+			So(p, ShouldEqual, 8)
 		})
 	})
 }

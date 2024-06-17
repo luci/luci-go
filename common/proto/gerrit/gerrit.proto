@@ -570,6 +570,7 @@ message RevisionInfo {
     MERGE_FIRST_PARENT_UPDATE = 3;
     NO_CODE_CHANGE = 4;
     NO_CHANGE = 5;
+    TRIVIAL_REBASE_WITH_MESSAGE_UPDATE = 6;
   }
 
   // The kind of this patch set.
