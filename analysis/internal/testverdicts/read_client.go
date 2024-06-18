@@ -66,6 +66,8 @@ type CommitWithVerdicts struct {
 	CommitHash string
 	// Represent a branch in the source control.
 	Ref *Ref
+	// Realm of test verdicts at this commit.
+	Realm string
 	// Returns at most 20 test verdicts at this commit.
 	TestVerdicts []*TestVerdict
 }
@@ -107,6 +109,7 @@ func (c *ReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, opti
 		sources.gitiles_commit.position as Position,
 		ANY_VALUE(sources.gitiles_commit.commit_hash) as CommitHash,
 		ANY_VALUE(source_ref) as Ref,
+		ANY_VALUE(invocation.realm) as Realm,
 		ARRAY_AGG(STRUCT(test_id as TestID ,
 									variant_hash as VariantHash,
 									source_ref_hash as RefHash,

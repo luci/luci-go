@@ -340,6 +340,12 @@ func (s *testVariantBranchesServer) QuerySourcePositions(ctx context.Context, re
 	if err != nil {
 		return nil, errors.Annotate(err, "read test verdicts from BigQuery").Err()
 	}
+
+	// Android test results are not supported.
+	if len(commitsWithVerdicts) > 0 && commitsWithVerdicts[0].Realm == "infra-internal:ants-experiment" {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "QuerySourcePositions doesn't support Android test results")
+	}
+
 	// Gitiles log requires us to supply a commit hash to fetch a commit log.
 	// Ideally, if we know the commit hash of the requested startPosition, we can just
 	// call gitiles with that, and page (backwards) through the commit history.
