@@ -12,48 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, ReactNode, useContext, useMemo } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 
-import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
+import { OutputSegment } from '@/analysis/types';
 
 interface BlamelistContext {
   readonly project: string;
+  /**
+   * Segments sorted by their end commit position in descending order.
+   */
   readonly segmentsSortedByEnd: readonly OutputSegment[];
-  readonly segmentsSortedByStartUpperBound: readonly OutputSegment[];
+  /**
+   * Segments sorted by their start upper bound commit position in descending
+   * order.
+   */
+  readonly segmentsSortedByStartUpperBound: ReadonlyArray<
+    readonly [segIndex: number, OutputSegment]
+  >;
 }
 
-const BlamelistCtx = createContext<BlamelistContext | undefined>(undefined);
-
-export interface BlamelistContextProviderProps {
-  readonly testVariantBranch: OutputTestVariantBranch;
-  readonly children: ReactNode;
-}
-
-export function BlamelistContextProvider({
-  testVariantBranch,
-  children,
-}: BlamelistContextProviderProps) {
-  const ctx = useMemo(() => {
-    const segmentsSortedByEnd = [...testVariantBranch.segments].sort(
-      (seg1, seg2) => parseInt(seg1.endPosition) - parseInt(seg2.endPosition),
-    );
-    const segmentsSortedByStartUpperBound = testVariantBranch.segments
-      .filter((seg) => seg.hasStartChangepoint)
-      .sort(
-        (seg1, seg2) =>
-          parseInt(seg1.startPositionUpperBound99th) -
-          parseInt(seg2.startPositionUpperBound99th),
-      );
-
-    return {
-      project: testVariantBranch.project,
-      segmentsSortedByEnd,
-      segmentsSortedByStartUpperBound,
-    };
-  }, [testVariantBranch]);
-
-  return <BlamelistCtx.Provider value={ctx}>{children}</BlamelistCtx.Provider>;
-}
+export const BlamelistCtx = createContext<BlamelistContext | undefined>(
+  undefined,
+);
 
 export function useProject() {
   const ctx = useContext(BlamelistCtx);
@@ -84,13 +64,12 @@ export function useSegmentWithCommit(commitPosition: string) {
     // Find a segment containing the commit position.
     // Linear search should be good enough since the array should be very small.
     for (const seg of ctx.segmentsSortedByEnd) {
-      const end = parseInt(seg.endPosition);
-
-      if (end < cp) {
-        continue;
-      }
       const start = parseInt(seg.startPosition);
       if (start > cp) {
+        continue;
+      }
+      const end = parseInt(seg.endPosition);
+      if (end < cp) {
         return null;
       }
       return seg;
@@ -107,7 +86,7 @@ export function useSegmentWithCommit(commitPosition: string) {
  */
 export function useStartPointsWithCommit(
   commitPosition: string,
-): readonly OutputSegment[] {
+): ReadonlyArray<readonly [segIndex: number, OutputSegment]> {
   const ctx = useContext(BlamelistCtx);
   if (ctx === undefined) {
     throw new Error(
@@ -117,21 +96,21 @@ export function useStartPointsWithCommit(
 
   const matchedSegments = useMemo(() => {
     const cp = parseInt(commitPosition);
-    const segments: OutputSegment[] = [];
+    const segments: Array<readonly [number, OutputSegment]> = [];
 
     // Find a segment containing the commit position.
     // Linear search should be good enough since the array should be very small.
-    for (const seg of ctx.segmentsSortedByStartUpperBound) {
-      const upper = parseInt(seg.startPositionUpperBound99th);
-
-      if (upper < cp) {
-        continue;
-      }
+    for (const entry of ctx.segmentsSortedByStartUpperBound) {
+      const seg = entry[1];
       const lower = parseInt(seg.startPositionLowerBound99th);
       if (lower > cp) {
+        continue;
+      }
+      const upper = parseInt(seg.startPositionUpperBound99th);
+      if (upper < cp) {
         break;
       }
-      segments.push(seg);
+      segments.push(entry);
     }
     return segments;
   }, [ctx, commitPosition]);

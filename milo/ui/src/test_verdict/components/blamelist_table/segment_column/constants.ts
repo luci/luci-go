@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, styled } from '@mui/material';
-
-export const Span = styled(Box)`
-  width: 20px;
-  box-sizing: border-box;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  height: 100%;
-  border-radius: 10px;
-`;
+export const SEGMENT_SPAN_WIDTH = 20;
+export const START_POINT_SPAN_WIDTH = 16;
