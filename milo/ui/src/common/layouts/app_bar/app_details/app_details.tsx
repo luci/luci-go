@@ -82,9 +82,12 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
             <Link
               component={RouterLink}
               to={getProjectURLPath(project)}
-              underline="none"
+              // Make it obvious that this link is clickable during the
+              // transition phase of redesigned build page top bar.
+              // We can decide whether we want to keep this style later.
+              underline="always"
               variant="h6"
-              sx={{ pr: 2, color: 'inherit' }}
+              sx={{ pr: 2, color: 'inherit', textDecorationColor: 'inherit' }}
             >
               {project}
             </Link>
