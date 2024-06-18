@@ -175,7 +175,9 @@ func IsMember(ctx context.Context, gf gerrit.Factory, gerritHost string, luciPro
 		}
 		emailIdentity, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
 		if err != nil {
-			return false, err
+			// Skip malformed identities, e.g. "*@foo.com".
+			logging.Warningf(ctx, "Malformed user identity %s: %v", email, err)
+			continue
 		}
 
 		switch yes, err := auth.GetState(ctx).DB().IsMember(ctx, emailIdentity, groups); {
