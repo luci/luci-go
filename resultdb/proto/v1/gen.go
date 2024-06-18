@@ -15,6 +15,7 @@
 package resultpb
 
 //go:generate cproto
+//go:generate svcdec -type ExperimentsServer
 //go:generate svcdec -type RecorderServer
 //go:generate svcdec -type ResultDBServer
 //go:generate mockgen -source resultdb.pb.go -destination resultdb.mock.pb.go -package resultpb -write_package_comment=false
