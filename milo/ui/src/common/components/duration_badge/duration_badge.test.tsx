@@ -13,10 +13,41 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
+import { scaleThreshold } from 'd3';
 import { DateTime, Duration } from 'luxon';
 import { act } from 'react';
 
 import { DurationBadge } from './duration_badge';
+
+const testColorScaleMs = scaleThreshold(
+  [
+    Duration.fromObject({ seconds: 20 }).toMillis(),
+    Duration.fromObject({ minutes: 1 }).toMillis(),
+    Duration.fromObject({ minutes: 5 }).toMillis(),
+    Duration.fromObject({ minutes: 15 }).toMillis(),
+    Duration.fromObject({ hours: 1 }).toMillis(),
+    Duration.fromObject({ hours: 3 }).toMillis(),
+    Duration.fromObject({ hours: 12 }).toMillis(),
+  ],
+  [
+    {
+      backgroundColor: 'hsl(206, 85%, 95%)',
+      color: 'var(--light-text-color)',
+    },
+    {
+      backgroundColor: 'hsl(206, 85%, 85%)',
+      color: 'var(--light-text-color)',
+    },
+    { backgroundColor: 'hsl(206, 85%, 75%)', color: 'white' },
+    { backgroundColor: 'hsl(206, 85%, 65%)', color: 'white' },
+    { backgroundColor: 'hsl(206, 85%, 55%)', color: 'white' },
+    { backgroundColor: 'hsl(206, 85%, 45%)', color: 'white' },
+    { backgroundColor: 'hsl(206, 85%, 35%)', color: 'white' },
+    { backgroundColor: 'hsl(206, 85%, 25%)', color: 'white' },
+  ],
+);
+
+const testColorScale = (d: Duration) => testColorScaleMs(d.toMillis());
 
 describe('<DurationBadge />', () => {
   beforeEach(() => {
@@ -95,5 +126,48 @@ describe('<DurationBadge />', () => {
 
     await act(() => jest.advanceTimersByTimeAsync(300000));
     expect(screen.getByTestId('duration')).toHaveTextContent('N/A');
+  });
+
+  it('color should scale with duration', async () => {
+    const { rerender } = render(
+      <DurationBadge
+        duration={Duration.fromObject({ minutes: 5 })}
+        colorScale={testColorScale}
+      />,
+    );
+    expect(screen.getByTestId('duration')).toHaveStyleRule(
+      'background-color',
+      'hsl(206, 85%, 65%)',
+    );
+
+    rerender(
+      <DurationBadge
+        duration={Duration.fromObject({ hours: 2 })}
+        colorScale={testColorScale}
+      />,
+    );
+    expect(screen.getByTestId('duration')).toHaveStyleRule(
+      'background-color',
+      'hsl(206, 85%, 45%)',
+    );
+  });
+
+  it('color should scale with duration when duration is not explicitly specified', async () => {
+    render(
+      <DurationBadge
+        from={DateTime.now().minus({ hours: 2 })}
+        colorScale={testColorScale}
+      />,
+    );
+    expect(screen.getByTestId('duration')).toHaveStyleRule(
+      'background-color',
+      'hsl(206, 85%, 45%)',
+    );
+
+    await act(() => jest.advanceTimersByTimeAsync(3_600_000 * 1.5));
+    expect(screen.getByTestId('duration')).toHaveStyleRule(
+      'background-color',
+      'hsl(206, 85%, 35%)',
+    );
   });
 });

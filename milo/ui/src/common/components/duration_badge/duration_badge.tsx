@@ -176,7 +176,7 @@ export function DurationBadge({
     >
       <Badge
         sx={{
-          ...(duration ? colorScale(duration) : {}),
+          ...(calcDuration ? colorScale(calcDuration) : {}),
           ...sx,
         }}
         className={className}
