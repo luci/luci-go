@@ -93,6 +93,19 @@ that can be found in the LICENSE file. -->
       </div>
     </template>
 
+    <!-- Error box template, for displaying an error message. -->
+    <template id="error-box-template">
+      <div class="card border-danger">
+        <div class="card-header text-white bg-danger">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          Error - <span id="error-title"></span>
+        </div>
+        <div class="card-body">
+          <span id="error-message" class="card-text"></span>
+        </div>
+      </div>
+    </template>
+
   </body>
 
   {{template "script" .}}

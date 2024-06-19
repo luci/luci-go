@@ -215,23 +215,6 @@ class SearchBar {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Component to display a lookup error.
-class LookupErrorAlert extends common.HidableElement {
-  constructor(element) {
-    super(element, false);
-
-    this.heading = this.element.querySelector('#lookup-heading');
-    this.errorBody = this.element.querySelector('#lookup-error-message');
-  }
-
-  setError(principal, error) {
-    this.heading.textContent = `Looking up "${principal}" failed`;
-    this.errorBody.textContent = error.error;
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 // Component to display all search results.
 class SearchResults extends common.HidableElement {
   constructor(element) {
@@ -397,7 +380,7 @@ window.onload = () => {
   const searchBar = new SearchBar('#search-bar');
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const searchResults = new SearchResults('#all-results');
-  const lookupErrorAlert = new LookupErrorAlert('#lookup-error');
+  const errorBox = new common.ErrorBox('#lookup-error');
 
   const doSearch = (principal) => {
     if (!principal) {
@@ -415,7 +398,7 @@ window.onload = () => {
     }
 
     searchResults.hide();
-    lookupErrorAlert.hide();
+    errorBox.clearError();
     loadingBox.setLoadStatus(true);
 
     doLookup(principal)
@@ -424,8 +407,7 @@ window.onload = () => {
         searchResults.show();
       })
       .catch((err) => {
-        lookupErrorAlert.setError(principal, err);
-        lookupErrorAlert.show();
+        errorBox.showError(`Looking up "${principal}" failed`, err.error);
       })
       .finally(() => {
         loadingBox.setLoadStatus(false);

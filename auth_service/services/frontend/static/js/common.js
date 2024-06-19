@@ -52,6 +52,39 @@ class HidableElement {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Component to present an error which can be shown/hidden.
+class ErrorBox extends HidableElement {
+  constructor(container) {
+    super(container, false);
+
+    const template = document.querySelector('#error-box-template')
+    const errorBox = template.content.cloneNode(true);
+
+    this.title = errorBox.querySelector('#error-title');
+    this.message = errorBox.querySelector('#error-message');
+
+    this.element.append(errorBox);
+  }
+
+  #setError(title, message) {
+    // Set the component's text to the given error title and message.
+    this.title.replaceChildren(title);
+    this.message.replaceChildren(message);
+  }
+
+  showError(title, message) {
+    this.#setError(title, message);
+    this.show();
+  }
+
+  clearError() {
+    this.#setError('', '');
+    this.hide();
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 // Component with centered spinner to represent loading.
 class LoadingBox {
   constructor(parent) {
@@ -193,6 +226,7 @@ var common = (function () {
   };
 
   exports.HidableElement = HidableElement;
+  exports.ErrorBox = ErrorBox;
   exports.LoadingBox = LoadingBox;
 
   return exports;
