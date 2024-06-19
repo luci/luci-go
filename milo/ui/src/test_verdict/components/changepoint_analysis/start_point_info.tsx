@@ -34,7 +34,9 @@ export function StartPointInfo({
       <thead>
         {instructionRow}
         <tr>
-          <td colSpan={100}>Change point has 99% chance of occurring in:</td>
+          <td colSpan={100}>
+            The fix/culprit CL has 99% chance of occurring in:
+          </td>
         </tr>
       </thead>
       <tbody>

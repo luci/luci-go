@@ -26,11 +26,12 @@ export interface RowProps {
 export function Row({ testVariantBranch }: RowProps) {
   return (
     <>
-      {testVariantBranch.segments.map((seg, i) => (
+      {testVariantBranch.segments.map((seg, i, segs) => (
         <Fragment key={seg.endPosition}>
           <StartPointSpan
             testVariantBranch={testVariantBranch}
             segment={seg}
+            prevSegment={segs[i + 1] || null}
             // Alternate between top and bottom to avoid start point spans
             // overlapping each other.
             position={i % 2 === 0 ? 'top' : 'bottom'}

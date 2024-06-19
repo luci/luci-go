@@ -16,6 +16,7 @@ import { Box, styled } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { Segment_Counts } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { StartPointInfo } from '@/test_verdict/components/changepoint_analysis';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 
@@ -72,9 +73,15 @@ const SpanText = styled(Box)`
   white-space: nowrap;
   line-height: ${START_POINT_SPAN_HEIGHT}px;
 
-  @container (min-width: 200px) {
-    &::before {
-      content: 'changed in ';
+  // Elide the label first when there's not enough room to display everything
+  // so we don't need to elide the commit count. Long term people will know what
+  // the lines mean. The actual commit count is what matters.
+  @container (min-width: 300px) {
+    .start-point-fix > &::before {
+      content: 'fix candidates: ';
+    }
+    .start-point-regression > &::before {
+      content: 'culprit candidates: ';
     }
   }
 
@@ -85,9 +92,23 @@ const SpanText = styled(Box)`
   }
 `;
 
+/**
+ * Calculate a weighted failure ratio of a segment. This is used to determine
+ * whether a changepoint is a fix or a regression **for UI purpose**.
+ *
+ * The weights are chosen quite arbitrarily and might be changed in the future.
+ */
+function weightedFailureRatio(counts: Segment_Counts) {
+  return (
+    (counts.unexpectedVerdicts + counts.flakyVerdicts / 2) /
+    counts.totalVerdicts
+  );
+}
+
 export interface StartPointSpanProps {
   readonly testVariantBranch: OutputTestVariantBranch;
   readonly segment: OutputSegment;
+  readonly prevSegment: OutputSegment | null;
   readonly position: 'top' | 'bottom';
 }
 
@@ -98,14 +119,27 @@ export interface StartPointSpanProps {
 export function StartPointSpan({
   testVariantBranch,
   segment,
+  prevSegment,
   position,
 }: StartPointSpanProps) {
   const dispatch = useBlamelistDispatch();
   const { commitMap, xScale, rowHeight } = useConfig();
 
-  if (!segment.hasStartChangepoint) {
+  // `segment.hasStartChangepoint === true` should imply `prevSegment !== null`.
+  // Check both for type narrowing.
+  if (!segment.hasStartChangepoint || !prevSegment) {
     return <></>;
   }
+
+  const failureRatio = weightedFailureRatio(segment.counts);
+  const prevFailureRatio = weightedFailureRatio(prevSegment.counts);
+
+  const classNames = [
+    'start-point-' + position,
+    failureRatio < prevFailureRatio
+      ? 'start-point-fix'
+      : 'start-point-regression',
+  ];
 
   const start = commitMap[segment.startPositionUpperBound99th];
   const end = commitMap[segment.startPositionLowerBound99th] + 1;
@@ -141,7 +175,7 @@ export function StartPointSpan({
         }
       >
         <Span
-          className={'start-point-' + position}
+          className={classNames.join(' ')}
           onClick={() =>
             dispatch({
               type: 'showBlamelist',
