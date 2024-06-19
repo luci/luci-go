@@ -54,6 +54,70 @@ func makeTestConditions(names ...string) []*protocol.Condition {
 	return conds
 }
 
+func TestGetGlobalPermissions(t *testing.T) {
+	t.Parallel()
+
+	Convey("Global permissions extracted correctly", t, func() {
+		// Approximate of how Python stores permissions.
+		testV1Perms := makeTestPermissions("perms.v1.a", "perms.v1.b", "perms.v1.c")
+		testV1StoredPerms := make([]string, len(testV1Perms))
+		for i, perm := range testV1Perms {
+			storedPerm, err := proto.Marshal(perm)
+			So(err, ShouldBeNil)
+			testV1StoredPerms[i] = string(storedPerm)
+		}
+
+		testV2Perms := makeTestPermissions("perms.v2.x", "perms.v2.y", "perms.v2.z")
+		realmsGlobals := &AuthRealmsGlobals{
+			Permissions: testV1StoredPerms,
+			PermissionsList: &permissions.PermissionsList{
+				Permissions: testV2Perms,
+			},
+		}
+
+		Convey("gets v1 permissions", func() {
+			actual, err := getGlobalPermissions(realmsGlobals, true)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, testV1Perms)
+		})
+
+		Convey("gets v2 permissions", func() {
+			actual, err := getGlobalPermissions(realmsGlobals, false)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, testV2Perms)
+		})
+
+		Convey("falls back to v1 permissions when getting v2", func() {
+			bareRealmsGlobals := &AuthRealmsGlobals{
+				Permissions: testV1StoredPerms,
+			}
+			actual, err := getGlobalPermissions(bareRealmsGlobals, false)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, testV1Perms)
+
+			emptyRealmsGlobals := &AuthRealmsGlobals{
+				Permissions: testV1StoredPerms,
+				PermissionsList: &permissions.PermissionsList{
+					Permissions: []*protocol.Permission{},
+				},
+			}
+			actual, err = getGlobalPermissions(emptyRealmsGlobals, false)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, testV1Perms)
+		})
+
+		Convey("returns empty slice", func() {
+			actual, err := getGlobalPermissions(&AuthRealmsGlobals{}, false)
+			So(err, ShouldBeNil)
+			So(actual, ShouldBeEmpty)
+
+			actual, err = getGlobalPermissions(&AuthRealmsGlobals{}, true)
+			So(err, ShouldBeNil)
+			So(actual, ShouldBeEmpty)
+		})
+	})
+}
+
 func TestMergeRealms(t *testing.T) {
 	t.Parallel()
 

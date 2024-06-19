@@ -107,6 +107,32 @@ func conditionKey(cond *protocol.Condition) (string, error) {
 	return string(key), nil
 }
 
+func getGlobalPermissions(realmsGlobals *AuthRealmsGlobals, useV1Perms bool) ([]*protocol.Permission, error) {
+	var permissions []*protocol.Permission
+	if !useV1Perms && realmsGlobals.PermissionsList != nil {
+		permissions = realmsGlobals.PermissionsList.GetPermissions()
+		if len(permissions) > 0 {
+			return permissions, nil
+		}
+	}
+
+	// If here, then either
+	// - useV1Perms is set to true; or
+	// - V2 permissions are empty due to the update-realm cron still being in
+	//   dry run mode, or not yet having been run since being enabled;
+	//   in this case, default to V1 permissions.
+	permissions = make([]*protocol.Permission, len(realmsGlobals.Permissions))
+	for i, rawPerm := range realmsGlobals.Permissions {
+		perm := &protocol.Permission{}
+		err := proto.Unmarshal([]byte(rawPerm), perm)
+		if err != nil {
+			return nil, errors.Annotate(err, "error while unmarshalling stored v1 permission proto").Err()
+		}
+		permissions[i] = perm
+	}
+	return permissions, nil
+}
+
 // MergeRealms merges all the project realms into one realms definition, using
 // the permissions in the given AuthRealmsGlobals as an authoritative source of
 // valid permissions.
@@ -135,19 +161,10 @@ func MergeRealms(
 
 	var permissions []*protocol.Permission
 	if realmsGlobals != nil {
-		if useV1Perms {
-			// Use the permissions stored by the Python version of Auth Service.
-			permissions = make([]*protocol.Permission, len(realmsGlobals.Permissions))
-			for i, s := range realmsGlobals.Permissions {
-				tempProto := &protocol.Permission{}
-				err := proto.Unmarshal([]byte(s), tempProto)
-				if err != nil {
-					return nil, errors.Annotate(err, "error while unmarshalling stored permission proto").Err()
-				}
-				permissions[i] = tempProto
-			}
-		} else if realmsGlobals.PermissionsList != nil {
-			permissions = realmsGlobals.PermissionsList.GetPermissions()
+		var err error
+		permissions, err = getGlobalPermissions(realmsGlobals, useV1Perms)
+		if err != nil {
+			return nil, err
 		}
 	}
 	result.Permissions = permissions
