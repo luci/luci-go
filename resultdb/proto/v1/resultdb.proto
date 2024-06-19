@@ -147,6 +147,12 @@ service ResultDB {
   // If the instruction contains placeholders, they will not be replaced.
   // The callers of this RPC are responsible to populate the placeholders with real data.
   rpc GetInstruction(GetInstructionRequest) returns (Instruction) {};
+
+  // Retrieves the instruction and the dependency chain for all targets.
+  // A maximum depth can be specified for the maximum number of dependency nodes to be returned.
+  // If an error occurs while traversing a chain (e.g. circular dependency, permission, not found...),
+  // the chain will stop and the rpc will return whatever it has found so far.
+  rpc QueryInstruction(QueryInstructionRequest) returns (QueryInstructionResponse) {};
 }
 
 // A request message for GetInvocation RPC.
@@ -748,4 +754,55 @@ message GetInstructionRequest {
   // Name of the instruction. The format is:
   // invocations/{invocation_id}/instructions/{instruction_id}
   string name = 1;
+}
+
+// Request for QueryInstructionDependencies RPC.
+message QueryInstructionRequest {
+  // Name of the instruction to query for. The format is:
+  // invocations/{invocation_id}/instructions/{instruction_id}
+  string name = 1;
+
+  // The maximum depth to traverse the dependency chain. Default is 5.
+  // The maximum value we support is 10, value bigger than 10 will be adjusted to 10.
+  // Non-positive value will be adjusted to the default.
+  int32 dependency_max_depth = 2;
+}
+
+// Response for QueryInstructionDependencies RPC.
+message QueryInstructionResponse {
+  // The instruction.
+  Instruction instruction = 1;
+
+  // Dependency chain, one for each target.
+  repeated InstructionDependencyChain dependency_chains = 2;
+}
+
+// The dependency chain for one target.
+message InstructionDependencyChain {
+  // Target of the dependency chain.
+  InstructionTarget target = 1;
+
+  // Captures information about a dependency.
+  message Node {
+    // The instruction name that the dependency belongs to.
+    // The format is invocations/{invocation_id}/instructions/{instruction_id}.
+    // We need this for the UI to resolve the placeholders of the content.
+    string instruction_name = 1;
+
+    // Content of the dependency.
+    // Placeholders (if existed) will be returned as-is.
+    // The caller of this RPC is responsible for resolving the placeholders.
+    string content = 2;
+
+    // In case the traversal encounters an error, the error will be returned in this field.
+    // If an error is returned, it will only be returned in the last dependency node,
+    // after that, the chain will stop.
+    string error = 3;
+  }
+
+  // List of dependencies.
+  // The list will be sorted by the position in the dependency chain.
+  // The direct dependency will be at position 0.
+  // If the dependency traversing encounters an error, the last node will contain the error.
+  repeated Node nodes = 2;
 }

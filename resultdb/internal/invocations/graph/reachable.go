@@ -16,12 +16,11 @@
 package graph
 
 import (
-	"fmt"
-
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -168,7 +167,7 @@ func (r ReachableInvocations) InstructionMap() (map[invocations.ID]*pb.VerdictIn
 				if instruction.Type != pb.InstructionType_TEST_RESULT_INSTRUCTION {
 					continue
 				}
-				instructionName := fmt.Sprintf("invocations/%s/instructions/%s", invID, instruction.Id)
+				instructionName := instructionutil.InstructionName(invID, instruction.Id)
 				filter := instruction.InstructionFilter
 				// If there is no filter, the instruction is for this invocation and
 				// all included invocations (recursively).

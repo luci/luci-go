@@ -345,3 +345,20 @@ func (s *DecoratedResultDB) GetInstruction(ctx context.Context, req *GetInstruct
 	}
 	return
 }
+
+func (s *DecoratedResultDB) QueryInstruction(ctx context.Context, req *QueryInstructionRequest) (rsp *QueryInstructionResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryInstruction", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryInstruction(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryInstruction", rsp, err)
+	}
+	return
+}

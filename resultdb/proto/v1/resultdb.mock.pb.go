@@ -274,6 +274,26 @@ func (mr *MockResultDBClientMockRecorder) QueryArtifacts(ctx, in interface{}, op
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryArtifacts", reflect.TypeOf((*MockResultDBClient)(nil).QueryArtifacts), varargs...)
 }
 
+// QueryInstruction mocks base method.
+func (m *MockResultDBClient) QueryInstruction(ctx context.Context, in *QueryInstructionRequest, opts ...grpc.CallOption) (*QueryInstructionResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryInstruction", varargs...)
+	ret0, _ := ret[0].(*QueryInstructionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryInstruction indicates an expected call of QueryInstruction.
+func (mr *MockResultDBClientMockRecorder) QueryInstruction(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryInstruction", reflect.TypeOf((*MockResultDBClient)(nil).QueryInstruction), varargs...)
+}
+
 // QueryNewTestVariants mocks base method.
 func (m *MockResultDBClient) QueryNewTestVariants(ctx context.Context, in *QueryNewTestVariantsRequest, opts ...grpc.CallOption) (*QueryNewTestVariantsResponse, error) {
 	m.ctrl.T.Helper()
@@ -615,6 +635,21 @@ func (m *MockResultDBServer) QueryArtifacts(arg0 context.Context, arg1 *QueryArt
 func (mr *MockResultDBServerMockRecorder) QueryArtifacts(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryArtifacts", reflect.TypeOf((*MockResultDBServer)(nil).QueryArtifacts), arg0, arg1)
+}
+
+// QueryInstruction mocks base method.
+func (m *MockResultDBServer) QueryInstruction(arg0 context.Context, arg1 *QueryInstructionRequest) (*QueryInstructionResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryInstruction", arg0, arg1)
+	ret0, _ := ret[0].(*QueryInstructionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryInstruction indicates an expected call of QueryInstruction.
+func (mr *MockResultDBServerMockRecorder) QueryInstruction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryInstruction", reflect.TypeOf((*MockResultDBServer)(nil).QueryInstruction), arg0, arg1)
 }
 
 // QueryNewTestVariants mocks base method.

@@ -16,8 +16,11 @@
 package instructionutil
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -55,4 +58,8 @@ func RemoveInstructionsContent(instructions *pb.Instructions) *pb.Instructions {
 		}
 	}
 	return result
+}
+
+func InstructionName(invocationID invocations.ID, instructionID string) string {
+	return fmt.Sprintf("invocations/%s/instructions/%s", invocationID, instructionID)
 }
