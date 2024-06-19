@@ -39,7 +39,10 @@ export function GroupsList() {
     data: response,
     error,
   } = useQuery({
-    ...client.ListGroups.query({})
+    ...client.ListGroups.query({}),
+    onSuccess: (response) => {
+      setSelectedGroup(response?.groups[0].name)
+    }
   })
   const allGroups: readonly AuthGroup[] = response?.groups || [];
   if (isLoading) {
