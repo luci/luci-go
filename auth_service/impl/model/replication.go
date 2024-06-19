@@ -167,7 +167,7 @@ func packAuthDB(ctx context.Context, useV1Perms bool) (*AuthReplicationState, *p
 		return nil, nil, nil, err
 	}
 
-	authDBProto, err := snapshot.ToAuthDBProto(useV1Perms)
+	authDBProto, err := snapshot.ToAuthDBProto(ctx, useV1Perms)
 	if err != nil {
 		return nil, nil, nil, err
 	}

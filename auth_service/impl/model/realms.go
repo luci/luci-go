@@ -15,6 +15,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -23,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
@@ -107,15 +109,18 @@ func conditionKey(cond *protocol.Condition) (string, error) {
 	return string(key), nil
 }
 
-func getGlobalPermissions(realmsGlobals *AuthRealmsGlobals, useV1Perms bool) ([]*protocol.Permission, error) {
+func getGlobalPermissions(ctx context.Context, realmsGlobals *AuthRealmsGlobals, useV1Perms bool) ([]*protocol.Permission, error) {
+	logging.Debugf(ctx, "getting global permissions (useV1Perms = %v)...", useV1Perms)
 	var permissions []*protocol.Permission
 	if !useV1Perms && realmsGlobals.PermissionsList != nil {
 		permissions = realmsGlobals.PermissionsList.GetPermissions()
 		if len(permissions) > 0 {
+			logging.Debugf(ctx, "using v2 permissions")
 			return permissions, nil
 		}
 	}
 
+	logging.Debugf(ctx, "using v1 permissions")
 	// If here, then either
 	// - useV1Perms is set to true; or
 	// - V2 permissions are empty due to the update-realm cron still being in
@@ -152,6 +157,7 @@ func getGlobalPermissions(realmsGlobals *AuthRealmsGlobals, useV1Perms bool) ([]
 // * processing a single realm that doesn't have the project ID as a prefix;
 // * relabelling condition indices relative to the new set of all conditions.
 func MergeRealms(
+	ctx context.Context,
 	realmsGlobals *AuthRealmsGlobals,
 	allAuthProjectRealms []*AuthProjectRealms,
 	useV1Perms bool) (*protocol.Realms, error) {
@@ -162,7 +168,7 @@ func MergeRealms(
 	var permissions []*protocol.Permission
 	if realmsGlobals != nil {
 		var err error
-		permissions, err = getGlobalPermissions(realmsGlobals, useV1Perms)
+		permissions, err = getGlobalPermissions(ctx, realmsGlobals, useV1Perms)
 		if err != nil {
 			return nil, err
 		}

@@ -15,6 +15,7 @@
 package model
 
 import (
+	"context"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -58,6 +59,7 @@ func TestGetGlobalPermissions(t *testing.T) {
 	t.Parallel()
 
 	Convey("Global permissions extracted correctly", t, func() {
+		ctx := context.Background()
 		// Approximate of how Python stores permissions.
 		testV1Perms := makeTestPermissions("perms.v1.a", "perms.v1.b", "perms.v1.c")
 		testV1StoredPerms := make([]string, len(testV1Perms))
@@ -76,13 +78,13 @@ func TestGetGlobalPermissions(t *testing.T) {
 		}
 
 		Convey("gets v1 permissions", func() {
-			actual, err := getGlobalPermissions(realmsGlobals, true)
+			actual, err := getGlobalPermissions(ctx, realmsGlobals, true)
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, testV1Perms)
 		})
 
 		Convey("gets v2 permissions", func() {
-			actual, err := getGlobalPermissions(realmsGlobals, false)
+			actual, err := getGlobalPermissions(ctx, realmsGlobals, false)
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, testV2Perms)
 		})
@@ -91,7 +93,7 @@ func TestGetGlobalPermissions(t *testing.T) {
 			bareRealmsGlobals := &AuthRealmsGlobals{
 				Permissions: testV1StoredPerms,
 			}
-			actual, err := getGlobalPermissions(bareRealmsGlobals, false)
+			actual, err := getGlobalPermissions(ctx, bareRealmsGlobals, false)
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, testV1Perms)
 
@@ -101,17 +103,17 @@ func TestGetGlobalPermissions(t *testing.T) {
 					Permissions: []*protocol.Permission{},
 				},
 			}
-			actual, err = getGlobalPermissions(emptyRealmsGlobals, false)
+			actual, err = getGlobalPermissions(ctx, emptyRealmsGlobals, false)
 			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, testV1Perms)
 		})
 
 		Convey("returns empty slice", func() {
-			actual, err := getGlobalPermissions(&AuthRealmsGlobals{}, false)
+			actual, err := getGlobalPermissions(ctx, &AuthRealmsGlobals{}, false)
 			So(err, ShouldBeNil)
 			So(actual, ShouldBeEmpty)
 
-			actual, err = getGlobalPermissions(&AuthRealmsGlobals{}, true)
+			actual, err = getGlobalPermissions(ctx, &AuthRealmsGlobals{}, true)
 			So(err, ShouldBeNil)
 			So(actual, ShouldBeEmpty)
 		})
@@ -122,6 +124,8 @@ func TestMergeRealms(t *testing.T) {
 	t.Parallel()
 
 	Convey("Merging realms", t, func() {
+		ctx := context.Background()
+
 		Convey("empty permissions and project realms", func() {
 			realmsGlobals := &AuthRealmsGlobals{
 				PermissionsList: &permissions.PermissionsList{
@@ -129,7 +133,7 @@ func TestMergeRealms(t *testing.T) {
 				},
 			}
 			projectRealms := []*AuthProjectRealms{}
-			merged, err := MergeRealms(realmsGlobals, projectRealms, false)
+			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
 			So(err, ShouldBeNil)
 			So(merged, ShouldResembleProto, &protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
@@ -199,7 +203,7 @@ func TestMergeRealms(t *testing.T) {
 					},
 				}
 
-				merged, err := MergeRealms(realmsGlobals, projectRealms, false)
+				merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
 				So(err, ShouldBeNil)
 				So(merged, ShouldResembleProto, expectedRealms)
 			})
@@ -217,7 +221,7 @@ func TestMergeRealms(t *testing.T) {
 					Permissions: []string{string(luciDevP1), string(luciDevP2)},
 				}
 
-				merged, err := MergeRealms(realmsGlobals, projectRealms, true)
+				merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, true)
 				So(err, ShouldBeNil)
 				So(merged, ShouldResembleProto, expectedRealms)
 			})
@@ -285,7 +289,7 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj2", Realms: marshalledProj2},
 			}
 
-			merged, err := MergeRealms(realmsGlobals, projectRealms, false)
+			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
 			So(err, ShouldBeNil)
 			So(merged, ShouldResembleProto, &protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
@@ -379,7 +383,7 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj2", Realms: marshalledProj2},
 			}
 
-			merged, err := MergeRealms(realmsGlobals, projectRealms, false)
+			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
 			So(err, ShouldBeNil)
 			So(merged, ShouldResembleProto, &protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
@@ -432,7 +436,7 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj1", Realms: marshalled},
 			}
 
-			merged, err := MergeRealms(realmsGlobals, projectRealms, false)
+			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
 			So(err, ShouldNotBeNil)
 			So(merged, ShouldBeNil)
 		})
