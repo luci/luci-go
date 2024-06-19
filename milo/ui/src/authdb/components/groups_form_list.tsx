@@ -37,6 +37,8 @@ export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
     const [items, setItems] = useState<string[]>(initialItems);
     const [addingItem, setAddingItem] = useState<boolean>();
     const [currentItem, setCurrentItem] = useState<string>();
+    const [showEdit, setShowEdit] = useState<boolean>();
+
     const changeEditMode = () => {
         setEditMode(!editMode);
       }
@@ -68,24 +70,26 @@ export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
 
   return (
     <TableContainer data-testid='groups-form-list'>
-    <Table sx={{ p: 0, pt: '15px', width: '100%' }}>
+    <Table sx={{ p: 0, pt: '15px', width: '100%' }} onMouseEnter={() => setShowEdit(true)} onMouseLeave={() => setShowEdit(false)} data-testid='mouse-enter-table'>
         <TableBody>
       <TableRow>
-        <TableCell colSpan={2}>
+        <TableCell colSpan={2} sx={{pb :0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
           <Typography variant="h6"> {name}</Typography>
-        </TableCell>
-        <TableCell align='right'>
-            <IconButton color='primary' onClick={changeEditMode} sx={{p: 0}} data-testid='edit-button'>
+          {(showEdit || editMode) &&
+            <IconButton color='primary' onClick={changeEditMode} sx={{p: 0, ml: 1.5}} data-testid='edit-button'>
               {editMode
               ? <ClearIcon />
               : <EditIcon />
               }
             </IconButton>
-          </TableCell>
+          }
+        </TableCell>
       </TableRow>
       {items && items.map((item, index) =>
         <TableRow key={index} style={{height: '34px'}} sx={{pb: 0, pt: 0, borderBottom: '1px solid grey'}}>
-          <TableCell sx={{pb: 0, pt: 0}} colSpan={2}>{item}</TableCell>
+          <TableCell sx={{pb: 0, pt: 0}} colSpan={2}>
+            <Typography variant="body2" style={{width: '100%'}}>{item}</Typography>
+          </TableCell>
           {editMode && <TableCell align='right' sx={{pb: 0, pt: 0}}>
             <IconButton color='error' sx={{p: 0}} onClick={() => removeFromItems(index as number)} data-testid={`remove-button-${item}`}><CancelIcon />
             </IconButton>

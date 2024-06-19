@@ -20,7 +20,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
 import DoneIcon from '@mui/icons-material/Done';
-import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
@@ -70,6 +69,8 @@ export function GroupsForm({ name } : GroupsFormProps) {
   const [ownersMode, setOwnersMode] = useState<boolean>();
   const [description, setDescription] = useState<string>();
   const [owners, setOwners] = useState<string>();
+  const [showOwnersEdit, setShowOwnersEdit] = useState<boolean>();
+  const [showDescriptionEdit, setShowDescriptionEdit] = useState<boolean>();
 
   const client = useAuthServiceClient();
     const {
@@ -152,64 +153,66 @@ export function GroupsForm({ name } : GroupsFormProps) {
       }
 
   return (
-    <Paper elevation={3} sx={{minHeight:'500px', p:'20px', ml:'5px'}}>
+    <Box sx={{minHeight:'500px', p:'20px', ml:'5px'}}>
       <ThemeProvider theme={theme}>
       <FormControl data-testid="groups-form" style={{width:'100%'}}>
-        <div>
-        <Typography variant="h4"> {name} </Typography>
-        </div>
-        <TableContainer>
-          <Table sx={{ p: 0, width: '100%' }}>
-              <TableRow>
-                <TableCell>
-                  <Typography variant="h6"> Description</Typography>
-                </TableCell>
-                <TableCell align='left' style={{width: '80%'}}>
+        <Typography variant="h5" sx={{pl: 1.5}}> {name} </Typography>
+        <TableContainer sx={{ p: 0, width: '100%' }} >
+          <Table onMouseEnter={() => setShowDescriptionEdit(true)} onMouseLeave={() => setShowDescriptionEdit(false)}>
+            <TableRow>
+              <TableCell sx={{pb:0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
+                <Typography variant="h6"> Description</Typography>
+                {(showDescriptionEdit || descriptionMode) &&
+                <IconButton color='primary' onClick={changeDescriptionMode} sx={{p: 0, ml: 1.5}}>
                   {descriptionMode
-                  ? <TextareaAutosize value={description} style={{width: '100%', whiteSpace:'pre-wrap'}} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield'></TextareaAutosize>
-                  : <Typography variant="body1" style={{width: '100%'}}> {description} </Typography>
-                  }
-                </TableCell>
-                <TableCell align='right'>
-                {descriptionMode
-                    ? <IconButton color='success' onClick={changeDescriptionMode} sx={{p: 0}}>
-                        <DoneIcon />
-                      </IconButton>
-                    : <IconButton color='primary' onClick={changeDescriptionMode} sx={{p: 0}}>
-                        <EditIcon />
-                      </IconButton>
-                    }
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>
-                  <Typography variant="h6"> Owners</Typography>
-                </TableCell>
-                <TableCell align='left' style={{width: '80%'}}>
-                  {ownersMode
-                  ? <TextareaAutosize value={owners} style={{width: '100%'}} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextareaAutosize>
-                  : <Typography variant="body1" style={{width: '100%'}}> {owners} </Typography>
-                  }
-                </TableCell>
-                <TableCell align='right'>
-                  <IconButton color='primary' onClick={changeOwnersMode} sx={{p: 0}}>
-                    {ownersMode
                     ? <DoneIcon />
                     : <EditIcon />
-                    }
+                  }
+                </IconButton>
+                }
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell align='left' style={{width: '95%'}} sx={{pt: 0}}>
+                {descriptionMode
+                  ? <TextareaAutosize value={description} style={{width: '100%', whiteSpace:'pre-wrap'}} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield'></TextareaAutosize>
+                  : <Typography variant="body2" style={{width: '100%'}}> {description} </Typography>
+                  }
+              </TableCell>
+            </TableRow>
+          </Table>
+          <Table onMouseEnter={() => setShowOwnersEdit(true)} onMouseLeave={() => setShowOwnersEdit(false)}>
+            <TableRow >
+              <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
+                <Typography variant="h6"> Owners</Typography>
+                {(showOwnersEdit || ownersMode) &&
+                <IconButton color='primary' onClick={changeOwnersMode} sx={{p: 0, ml: 1.5}}>
+                  {ownersMode
+                    ? <DoneIcon />
+                    : <EditIcon />
+                  }
                   </IconButton>
-                </TableCell>
-              </TableRow>
+                }
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell align='left' style={{width: '95%'}} sx={{pt: 0}}>
+              {ownersMode
+                ? <TextareaAutosize value={owners} style={{width: '100%'}} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield'></TextareaAutosize>
+                : <Typography variant="body2" style={{width: '100%'}}> {owners} </Typography>
+              }
+              </TableCell>
+            </TableRow>
           </Table>
         </TableContainer>
           <GroupsFormList name='Members' initialItems={members}/>
           <GroupsFormList name='Globs' initialItems={globs}/>
           <GroupsFormList name='Subgroups' initialItems={subgroups}/>
-          <Button variant="contained" disableElevation style={{width: '15%', marginTop: '15px'}}>
+          <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}}>
             Submit
           </Button>
       </FormControl>
       </ThemeProvider>
-    </Paper>
+    </Box>
   );
 }
