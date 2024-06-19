@@ -14,12 +14,13 @@
 */
 
 .groups-list-container {
-    height: 657px;
+    height: 100vh;
     overflow:hidden;
     overflow-y:auto;
 }
 
 .groups-container {
+    height: 100%;
     display: flex;
     flex-direction: row;
 }
