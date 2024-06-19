@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/bqutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 )
 
 type makeTableMetadata func(luciProject string) *bigquery.TableMetadata
@@ -35,6 +36,16 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 	"text_artifacts": func(luciProject string) *bigquery.TableMetadata {
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.text_artifacts WHERE project = "` + luciProject + `"`,
+			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
+		}
+	},
+	"invocations": func(luciProject string) *bigquery.TableMetadata {
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
+		}
+		return &bigquery.TableMetadata{
+			ViewQuery: `SELECT * FROM internal.invocations WHERE project = "` + luciProject + `"`,
 			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
