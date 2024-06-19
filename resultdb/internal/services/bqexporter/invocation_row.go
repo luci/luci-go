@@ -17,13 +17,9 @@ package bqexporter
 import (
 	"context"
 
-	"cloud.google.com/go/bigquery"
-	"github.com/golang/protobuf/descriptor"
-	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -31,39 +27,20 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-var invocationRowSchema bigquery.Schema
-
-const invocationRowMessage = "luci.resultdb.bq.InvocationRow"
-
-func init() {
-	var err error
-	if invocationRowSchema, err = generateInvocationRowSchema(); err != nil {
-		panic(err)
-	}
+// InvExportClient is the interface for exporting invocations.
+type InvExportClient interface {
+	InsertInvocationRow(ctx context.Context, row *bqpb.InvocationRow) error
 }
 
-func generateInvocationRowSchema() (schema bigquery.Schema, err error) {
-	fd, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRow{})
-	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
-	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp}}
-	return bqutil.GenerateSchema(fdset, invocationRowMessage)
-}
-
-// invocationRowInput is information required to generate an invocation BigQuery row.
-type invocationRowInput struct {
-	inv *pb.Invocation
-}
-
-func (i *invocationRowInput) row() proto.Message {
-	inv := i.inv
+func prepareInvocationRow(inv *pb.Invocation) (*bqpb.InvocationRow, error) {
 	project, realm := realms.Split(inv.Realm)
 	propertiesJSON, err := bqutil.MarshalStructPB(inv.Properties)
 	if err != nil {
-		panic(errors.Annotate(err, "marshal properties").Err())
+		return nil, errors.Annotate(err, "marshal properties").Err()
 	}
 	extendedPropertiesJSON, err := bqutil.MarshalStringStructPBMap(inv.ExtendedProperties)
 	if err != nil {
-		panic(errors.Annotate(err, "marshal extended_properties").Err())
+		return nil, errors.Annotate(err, "marshal extended_properties").Err()
 	}
 
 	return &bqpb.InvocationRow{
@@ -79,16 +56,25 @@ func (i *invocationRowInput) row() proto.Message {
 		Properties:          propertiesJSON,
 		ExtendedProperties:  extendedPropertiesJSON,
 		PartitionTime:       inv.CreateTime,
+	}, nil
+}
+
+// exportInvocationToBigQuery read the given invocation in Spanner then export
+// it to BigQuery.
+func (b *bqExporter) exportInvocationToBigQuery(ctx context.Context, invID invocations.ID, invClient InvExportClient) error {
+	// Get the invocation to be exported
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	inv, err := invocations.Read(ctx, invID)
+	if err != nil {
+		return errors.Annotate(err, "error reading invocation").Err()
 	}
-}
-
-func (i *invocationRowInput) id() []byte {
-	return []byte(i.inv.Name)
-}
-
-// exportInvocationToBigQuery queries all reachable invocations from an
-// invocation ID in Spanner then exports them to BigQuery.
-func (b *bqExporter) exportInvocationToBigQuery(ctx context.Context, invID invocations.ID) error {
-	// TODO(crbug.com/341362001): Add the implementation
-	return nil
+	if inv.State != pb.Invocation_FINALIZED {
+		return errors.Reason("%s not finalized", invID.Name()).Err()
+	}
+	row, err := prepareInvocationRow(inv)
+	if err != nil {
+		return errors.Annotate(err, "prepare invocation row").Err()
+	}
+	return invClient.InsertInvocationRow(ctx, row)
 }

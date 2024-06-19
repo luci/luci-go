@@ -166,15 +166,18 @@ func TestFinalizeInvocation(t *testing.T) {
 			err := finalizeInvocation(ctx, "x", opts)
 			So(err, ShouldBeNil)
 
-			So(sched.Tasks().Payloads(), ShouldHaveLength, 3)
-			So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.ExportArtifacts{
+			So(sched.Tasks().Payloads(), ShouldHaveLength, 4)
+			So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.ExportInvocationToBQ{
 				InvocationId: "x",
 			})
-			So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.UpdateTestMetadata{
+			So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.ExportArtifacts{
+				InvocationId: "x",
+			})
+			So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.UpdateTestMetadata{
 				InvocationId: "x",
 			})
 			// Enqueued pub/sub notification.
-			So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
+			So(sched.Tasks().Payloads()[3], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
 				Message: &pb.InvocationFinalizedNotification{
 					Invocation:   "invocations/x",
 					Realm:        "myproject:myrealm",
@@ -208,6 +211,10 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			// Enqueued TQ tasks.
 			So(sched.Tasks().Payloads()[0], ShouldResembleProto,
+				&taskspb.ExportInvocationToBQ{
+					InvocationId: "x",
+				})
+			So(sched.Tasks().Payloads()[1], ShouldResembleProto,
 				&taskspb.ExportInvocationArtifactsToBQ{
 					InvocationId: "x",
 					BqExport: &pb.BigQueryExport{
@@ -217,7 +224,7 @@ func TestFinalizeInvocation(t *testing.T) {
 						ResultType: &pb.BigQueryExport_TextArtifacts_{},
 					},
 				})
-			So(sched.Tasks().Payloads()[1], ShouldResembleProto,
+			So(sched.Tasks().Payloads()[2], ShouldResembleProto,
 				&taskspb.ExportInvocationTestResultsToBQ{
 					InvocationId: "x",
 					BqExport: &pb.BigQueryExport{

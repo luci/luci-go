@@ -17,7 +17,9 @@ package bqexporter
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -62,6 +65,19 @@ type mockFailInserter struct {
 
 func (i *mockFailInserter) Put(ctx context.Context, src any) error {
 	return fmt.Errorf("some error")
+}
+
+type fakeInvClient struct {
+	Rows  []*bqpb.InvocationRow
+	Error error
+}
+
+func (c *fakeInvClient) InsertInvocationRow(ctx context.Context, row *bqpb.InvocationRow) error {
+	if c.Error != nil {
+		return c.Error
+	}
+	c.Rows = append(c.Rows, row)
+	return nil
 }
 
 func TestExportToBigQuery(t *testing.T) {
@@ -254,13 +270,74 @@ func TestExportToBigQuery(t *testing.T) {
 	})
 
 	Convey(`TestExportInvocationToBigQuery`, t, func() {
-		// TODO(crbug.com/341362001): Add the test after implementing the export
+		properties, err := structpb.NewStruct(map[string]interface{}{
+			"num_prop":    123,
+			"string_prop": "ABC",
+		})
+		So(err, ShouldBeNil)
+		extendedProperties := map[string]*structpb.Struct{
+			"a_key": properties,
+		}
+		internalExtendedProperties := &invocationspb.ExtendedProperties{
+			ExtendedProperties: extendedProperties,
+		}
+		ctx := testutil.SpannerTestContext(t)
+		commitTime := testutil.MustApply(ctx,
+			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{
+				"Realm":              "testproject:testrealm",
+				"Properties":         spanutil.Compressed(pbutil.MustMarshal(properties)),
+				"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
+			}),
+			insert.Invocation("b", pb.Invocation_ACTIVE, map[string]any{
+				"Realm": "testproject:testrealm",
+			}))
+
+		opts := DefaultOptions()
+		b := &bqExporter{
+			Options:    &opts,
+			putLimiter: rate.NewLimiter(100, 1),
+			batchSem:   semaphore.NewWeighted(100),
+		}
+
+		Convey("Invocation not finalized", func() {
+			invClient := &fakeInvClient{}
+			err = b.exportInvocationToBigQuery(ctx, "b", invClient)
+			So(err, ShouldErrLike, "invocations/b not finalized")
+		})
+
+		Convey("Export failed", func() {
+			invClient := &fakeInvClient{
+				Error: errors.New("bq error"),
+			}
+			err = b.exportInvocationToBigQuery(ctx, "a", invClient)
+			So(err, ShouldErrLike, "bq error")
+		})
+
+		Convey("Succeed", func() {
+			invClient := &fakeInvClient{}
+			err = b.exportInvocationToBigQuery(ctx, "a", invClient)
+			So(err, ShouldBeNil)
+			So(len(invClient.Rows), ShouldEqual, 1)
+			row := invClient.Rows[0]
+			So(row.Project, ShouldEqual, "testproject")
+			So(row.Realm, ShouldEqual, "testrealm")
+			So(row.Id, ShouldEqual, "a")
+			So(row.CreateTime, ShouldResembleProto, timestamppb.New(commitTime))
+			So(row.FinalizeTime, ShouldResembleProto, timestamppb.New(commitTime))
+			So(row.PartitionTime, ShouldResembleProto, timestamppb.New(commitTime))
+
+			// Different implementations may use different spacing between
+			// json elements. Ignore this.
+			rowProp := strings.ReplaceAll(row.Properties, " ", "")
+			So(rowProp, ShouldResemble, `{"num_prop":123,"string_prop":"ABC"}`)
+			rowExtProp := strings.ReplaceAll(row.ExtendedProperties, " ", "")
+			So(rowExtProp, ShouldResemble, `{"a_key":{"num_prop":123,"string_prop":"ABC"}}`)
+		})
 	})
 }
 
 func TestSchedule(t *testing.T) {
 	Convey(`TestSchedule`, t, func() {
-		// TODO(crbug.com/341362001): Add the test after implementing the export
 		ctx := testutil.SpannerTestContext(t)
 		bqExport1 := &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table", ResultType: &pb.BigQueryExport_TestResults_{}}
 		bqExport2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2", ResultType: &pb.BigQueryExport_TextArtifacts_{}}
@@ -278,8 +355,11 @@ func TestSchedule(t *testing.T) {
 			return nil
 		})
 		So(err, ShouldBeNil)
-		So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.ExportInvocationTestResultsToBQ{InvocationId: "one-bqx", BqExport: bqExport1})
-		So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.ExportInvocationArtifactsToBQ{InvocationId: "two-bqx", BqExport: bqExport2})
-		So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.ExportInvocationTestResultsToBQ{InvocationId: "two-bqx", BqExport: bqExport1})
+		So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.ExportInvocationToBQ{InvocationId: "zero-bqx"})
+		So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.ExportInvocationToBQ{InvocationId: "one-bqx"})
+		So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.ExportInvocationTestResultsToBQ{InvocationId: "one-bqx", BqExport: bqExport1})
+		So(sched.Tasks().Payloads()[3], ShouldResembleProto, &taskspb.ExportInvocationToBQ{InvocationId: "two-bqx"})
+		So(sched.Tasks().Payloads()[4], ShouldResembleProto, &taskspb.ExportInvocationArtifactsToBQ{InvocationId: "two-bqx", BqExport: bqExport2})
+		So(sched.Tasks().Payloads()[5], ShouldResembleProto, &taskspb.ExportInvocationTestResultsToBQ{InvocationId: "two-bqx", BqExport: bqExport1})
 	})
 }

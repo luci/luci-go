@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server"
@@ -152,6 +153,23 @@ func InitServer(srv *server.Server, opts Options) error {
 	if err != nil {
 		return err
 	}
+
+	invClient, err := NewInvClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "create invocation export client").Err()
+	}
+
+	srv.RegisterCleanup(func(ctx context.Context) {
+		err := conn.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up artifact RBE connection: %s", err)
+		}
+		err = invClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up invocation export client: %s", err)
+		}
+	})
+
 	b := &bqExporter{
 		Options:      &opts,
 		putLimiter:   rate.NewLimiter(opts.RateLimit, 1),
@@ -169,7 +187,7 @@ func InitServer(srv *server.Server, opts Options) error {
 	})
 	InvocationTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationToBQ)
-		return b.exportInvocationToBigQuery(ctx, invocations.ID(task.InvocationId))
+		return b.exportInvocationToBigQuery(ctx, invocations.ID(task.InvocationId), invClient)
 	})
 	return nil
 }
@@ -369,12 +387,11 @@ func Schedule(ctx context.Context, invID invocations.ID) error {
 			return errors.Reason("bqexport.ResultType is required").Err()
 		}
 	}
-	// TODO(crbug.com/341362001): Enable after implementing the invocation export
-	// tq.MustAddTask(ctx, &tq.Task{
-	// 	Payload: &taskspb.ExportInvocationToBQ{
-	// 		InvocationId: string(invID),
-	// 	},
-	// 	Title: string(invID),
-	// })
+	tq.MustAddTask(ctx, &tq.Task{
+		Payload: &taskspb.ExportInvocationToBQ{
+			InvocationId: string(invID),
+		},
+		Title: string(invID),
+	})
 	return nil
 }
