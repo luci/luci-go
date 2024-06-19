@@ -24,6 +24,9 @@ import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { InvocationIdBar } from './invocation_id_bar';
 import { VerdictCountIndicator } from './verdict_count_indicator';
 
+// TODO(b/40253769): replace the `@/test_verdict/legacy/invocation_page` with
+// this implementation once we migrated the test results tab to React
+// (therefore no longer depends on the MobB store).
 export function InvocationPage() {
   const { invId } = useParams();
   if (!invId) {
