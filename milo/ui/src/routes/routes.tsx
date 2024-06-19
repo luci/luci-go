@@ -213,6 +213,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'labs',
+    lazy: () => import('@/core/pages/labs_page'),
     children: [
       {
         // TODO(b/308856913): Fix all outstanding todo's before promoting the page to production.

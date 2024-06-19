@@ -20,7 +20,6 @@ import { upperFirst } from 'lodash-es';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 import { PageMeta } from '@/common/components/page_meta';
 import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { UiPage } from '@/common/constants/view';
@@ -91,7 +90,6 @@ export function TestVerdictPage() {
       rowGap={1}
       flexDirection="column"
     >
-      <LabsWarningAlert />
       <PageMeta
         title={`${upperFirst(VERDICT_STATUS_DISPLAY_MAP[verdict.status])} | ${
           verdict.testId
