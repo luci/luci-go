@@ -76,7 +76,7 @@ export function GroupsList() {
   return (
     <Paper>
       <Grid container className="groups-container">
-        <Grid item xs={5}>
+        <Grid item xs={4}>
           <Box sx={{p: 2}}>
             <TextField
               id="outlined-basic"
@@ -98,7 +98,7 @@ export function GroupsList() {
             </List>
           </Box>
         </Grid>
-        <Grid item xs={7}>
+        <Grid item xs={8}>
           {selectedGroup && <GroupsForm name={selectedGroup}/>}
         </Grid>
       </Grid>
