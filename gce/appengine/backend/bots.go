@@ -350,8 +350,9 @@ func deleteBotAsync(c context.Context, id, hostname string) error {
 		},
 	}
 	if err := getDispatcher(c).AddTask(c, t); err != nil {
-		return errors.Annotate(err, "failed to schedule delete task").Err()
+		return errors.Annotate(err, "Destroy instance %q: failed to schedule delete bot task.", hostname).Err()
 	}
+	logging.Debugf(c, "Destroy instance %q: scheduled task to delete bot.", hostname)
 	return nil
 }
 
@@ -363,11 +364,11 @@ func deleteBot(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.DeleteBot)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload %q", payload).Err()
+		return errors.Reason("delete bot: unexpected payload %q", payload).Err()
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.Reason("delete bot:ID is required").Err()
 	case task.GetHostname() == "":
-		return errors.Reason("hostname is required").Err()
+		return errors.Reason("delete bot: hostname is required").Err()
 	}
 	vm := &model.VM{
 		ID: task.Id,
@@ -376,24 +377,25 @@ func deleteBot(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
+		return errors.Annotate(err, "delete bot: failed to fetch VM with id: %q", task.GetId()).Err()
 	case vm.Hostname != task.Hostname:
 		// Instance is already destroyed and replaced. Don't delete the new bot.
-		return errors.Reason("bot %q does not exist", task.Hostname).Err()
+		return errors.Reason("delete bot %q: does not exist", task.Hostname).Err()
 	}
-	logging.Debugf(c, "deleting bot %q: %s", vm.Hostname, vm.Swarming)
+	logging.Debugf(c, "Delete bot %q: on swarming %s.", vm.Hostname, vm.Swarming)
 	_, err := getSwarming(c, vm.Swarming).DeleteBot(c, &swarmingpb.BotRequest{
 		BotId: vm.Hostname,
 	})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			// Bot is already deleted.
-			logging.Debugf(c, "bot not found (%s)", vm.Hostname)
+			logging.Debugf(c, "Delete bot %q: not found in swarming %s.", vm.Hostname, vm.Swarming)
 			return deleteVM(c, task.Id, vm.Hostname)
 		}
 		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "failed to delete bot").Err()
 	}
+	logging.Debugf(c, "Delete bot %q: done!", vm.Hostname)
 	return deleteVM(c, task.Id, vm.Hostname)
 }
 
@@ -402,20 +404,22 @@ func deleteVM(c context.Context, id, hostname string) error {
 	vm := &model.VM{
 		ID: id,
 	}
+	logging.Debugf(c, "Delete VM record %q: starting...", hostname)
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
+			return errors.Annotate(err, "delete VM %q: failed to fetch VM with id: %q", hostname, id).Err()
 		case vm.Hostname != hostname:
-			logging.Debugf(c, "VM %q does not exist", hostname)
+			logging.Debugf(c, "Delete VM %q: not found.", hostname)
 			return nil
 		}
+		logging.Debugf(c, "Delete VM %q: VM found and ready to delete.", hostname)
 		if err := datastore.Delete(c, vm); err != nil {
 			return errors.Annotate(err, "failed to delete VM").Err()
 		}
-		logging.Debugf(c, "deleted VM %s from db", hostname)
+		logging.Debugf(c, "Deleted VM %q: done!", hostname)
 		return nil
 	}, nil)
 }

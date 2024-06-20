@@ -353,12 +353,13 @@ func TestDestroyInstance(t *testing.T) {
 					datastore.Put(c, &model.VM{
 						ID:  "id",
 						URL: "url",
+						Hostname: "name",
 					})
 					err := destroyInstance(c, &tasks.DestroyInstance{
 						Id:  "id",
 						Url: "url",
 					})
-					So(err, ShouldErrLike, "failed to destroy instance")
+					So(err, ShouldErrLike, "destroy instance \"name\": googleapi: got HTTP response code 500 with body: null")
 					v := &model.VM{
 						ID: "id",
 					}
@@ -380,12 +381,13 @@ func TestDestroyInstance(t *testing.T) {
 					datastore.Put(c, &model.VM{
 						ID:  "id",
 						URL: "url",
+						Hostname: "name",
 					})
 					err := destroyInstance(c, &tasks.DestroyInstance{
 						Id:  "id",
 						Url: "url",
 					})
-					So(err, ShouldErrLike, "failed to destroy instance")
+					So(err, ShouldErrLike, "Destroy instance \"name\": failed to destroy")
 					v := &model.VM{
 						ID: "id",
 					}

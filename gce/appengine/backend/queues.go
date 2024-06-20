@@ -501,7 +501,7 @@ func reportQuota(c context.Context, payload proto.Message) error {
 	rsp, err := getCompute(c).Stable.Regions.List(p.Config.Project).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, task.Id, gerr)
+			logErrors(c, "Report quota", task.Id, gerr)
 		}
 		return errors.Annotate(err, "failed to fetch quota").Err()
 	}

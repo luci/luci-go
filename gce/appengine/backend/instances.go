@@ -88,12 +88,12 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 }
 
 // logErrors logs the errors in the given *googleapi.Error.
-func logErrors(c context.Context, name string, err *googleapi.Error) {
+func logErrors(c context.Context, actionSource, hostname string, err *googleapi.Error) {
 	var errMsgs []string
 	for _, err := range err.Errors {
 		errMsgs = append(errMsgs, err.Message)
 	}
-	logging.Errorf(c, "failure for %s, HTTP: %d, errors: %s", name, err.Code, strings.Join(errMsgs, ","))
+	logging.Errorf(c, "%s %q: failed with HTTP: %d, errors: %s", actionSource, hostname, err.Code, strings.Join(errMsgs, ","))
 }
 
 // rateLimitExceeded returns whether the given *googleapi.Error contains a rate
@@ -117,23 +117,26 @@ func rateLimitExceeded(err *googleapi.Error) bool {
 // checkInstance fetches the GCE instance and either sets its creation details
 // or deletes the VM if the instance doesn't exist.
 func checkInstance(c context.Context, vm *model.VM) error {
+	logging.Debugf(c, "Check created instance %q: checking instance creation", vm.Hostname)
 	srv := getCompute(c).Stable.Instances
 	call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
 	inst, err := call.Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
+				logging.Debugf(c, "Check created instance %q: instance not found in %q  project", vm.Hostname, vm.Attributes.GetProject())
 				metrics.UpdateFailures(c, gerr.Code, vm)
 				if err := deleteVM(c, vm.ID, vm.Hostname); err != nil {
-					return errors.Annotate(err, "instance not found").Err()
+					return errors.Annotate(err, "check created instance %q: not found", vm.Hostname).Err()
 				}
-				return errors.Annotate(err, "instance not found").Err()
+				return errors.Annotate(err, "create instance %q: not found", vm.Hostname).Err()
 			}
-			logErrors(c, vm.Hostname, gerr)
+			logErrors(c, "Check created instance", vm.Hostname, gerr)
 		}
+		logging.Debugf(c, "Check created instance %q: fail to find in %q  project", vm.Hostname, vm.Attributes.GetProject())
 		return errors.Annotate(err, "failed to fetch instance").Err()
 	}
-	logging.Debugf(c, "created instance: %s", inst.SelfLink)
+	logging.Debugf(c, "Check created instance %q: seccesful created %s", vm.Hostname, inst.SelfLink)
 	metrics.CreatedInstanceChecked.Add(c, 1, vm.Config, vm.Attributes.GetProject(), vm.ScalingType, vm.Attributes.GetZone(), vm.Hostname)
 	return setCreated(c, vm.ID, inst)
 }
@@ -146,22 +149,21 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.CreateInstance)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload %q", payload).Err()
+		return errors.Reason("create instance: unexpected payload %q", payload).Err()
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.Reason("create instance: instance ID is required").Err()
 	}
 	vm := &model.VM{
 		ID: task.Id,
 	}
 	switch err := datastore.Get(ctx, vm); {
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
+		return errors.Annotate(err, "Create instance: failed to fetch VM with id: %q", task.GetId()).Err()
 	case vm.URL != "":
-		logging.Debugf(ctx, "instance exists: %s", vm.URL)
+		logging.Debugf(ctx, "Create instance: instance already %s", vm.URL)
 		return nil
 	}
-	logging.Debugf(ctx, "creating instance %q", vm.Hostname)
-
+	logging.Debugf(ctx, "Create instance %q: with ID %q", vm.Hostname, vm.ID)
 	instance := vm.GetInstance()
 
 	// Generate a request ID based on the hostname.
@@ -171,8 +173,9 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 	srv := getCompute(ctx)
 	op, err := srv.InsertInstance(ctx, vm.Attributes.GetProject(), vm.Attributes.GetZone(), instance, rID.String())
 	if err != nil {
+		logging.Debugf(ctx, "Create instance %q: got error from attempt to create instance %s", vm.Hostname, err)
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(ctx, vm.Hostname, gerr)
+			logErrors(ctx, "Create instance", vm.Hostname, gerr)
 			metrics.UpdateFailures(ctx, gerr.Code, vm)
 			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
 			if rateLimitExceeded(gerr) {
@@ -181,17 +184,18 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 			if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
 				return errors.Annotate(err, "transiently failed to create instance %s", vm.Hostname).Err()
 			}
+			logging.Debugf(ctx, "Create instance %q: try to delete instance as got error during creation.", vm.Hostname)
 			if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
-				return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
+				logging.Errorf(ctx, "Create instance %q: failed to delete instance %s", vm.Hostname, err)
 			}
 		}
 		return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
 	}
-	// TODO(gregorynisbet): I don't like this variable name.
-	errs := op.GetErrors()
-	if len(errs) > 0 {
-		for _, err := range errs {
-			logging.Errorf(ctx, "for vm %s, %s: %s", vm.Hostname, err.Code, err.Message)
+	logging.Debugf(ctx, "Create instance %q: received response from GCP, waiting execution", vm.Hostname)
+	if operationsErrors := op.GetErrors(); len(operationsErrors) > 0 {
+		logging.Debugf(ctx, "Create instance %q: failed to create instance total %d error received", vm.Hostname, len(operationsErrors))
+		for _, err := range operationsErrors {
+			logging.Errorf(ctx, "create instance %q: failed with code %s: Message %s", vm.Hostname, err.Code, err.Message)
 		}
 		metrics.UpdateFailures(ctx, 200, vm)
 		if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
@@ -200,9 +204,11 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 		return errors.Reason("failed to create instance %s", vm.Hostname).Err()
 	}
 	if op.GetStatus() == "DONE" {
+		logging.Debugf(ctx, "Create instance %q: reported as created, next step is to check it.", vm.Hostname)
 		return checkInstance(ctx, vm)
 	}
 	// Instance creation is pending.
+	logging.Debugf(ctx, "Create instance %q: instance not created yet, waiting, will check with next attempt", vm.Hostname)
 	return nil
 }
 
@@ -241,13 +247,13 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM %s", vm.ID).Err()
+		return errors.Annotate(err, "destroy instance: failed to fetch VM %s", vm.ID).Err()
 	case vm.URL != task.Url:
 		// Instance is already destroyed and replaced. Don't destroy the new one.
-		logging.Debugf(c, "instance %s does not exist: %s", vm.Hostname, task.Url)
+		logging.Debugf(c, "Destroy instance %q: does not exist %s", vm.Hostname, task.Url)
 		return nil
 	}
-	logging.Debugf(c, "destroying instance %q", vm.Hostname)
+	logging.Debugf(c, "Destroy instance %q: starting...", vm.Hostname)
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("destroy-%s", vm.Hostname)))
 	srv := getCompute(c).Stable.Instances
 	call := srv.Delete(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
@@ -257,23 +263,26 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
 				// Instance is already destroyed.
-				logging.Debugf(c, "instance does not exist: %s", vm.URL)
+				logging.Debugf(c, "Distroy instance %q: does not exist: %s", vm.Hostname, vm.URL)
 				return deleteBotAsync(c, task.Id, vm.Hostname)
 			}
-			logErrors(c, vm.Hostname, gerr)
+			logErrors(c, "Destroy instance", vm.Hostname, gerr)
 		}
-		return errors.Annotate(err, "failed to destroy instance %s", vm.Hostname).Err()
+		logging.Debugf(c, "Destroy instance %q: failed to destroy %s", vm.Hostname, err)
+		return errors.Annotate(err, "destroy instance %q", vm.Hostname).Err()
 	}
 	if op.Error != nil && len(op.Error.Errors) > 0 {
+		logging.Debugf(c, "Destroy instance %q: failed to destroy with %d erroros: %s", vm.Hostname, len(op.Error.Errors))
 		for _, err := range op.Error.Errors {
-			logging.Errorf(c, "%s: %s", err.Code, err.Message)
+			logging.Errorf(c, "Destroy instance %q: failed with code %s: %s", vm.Hostname, err.Code, err.Message)
 		}
-		return errors.Reason("failed to destroy instance %s", vm.Hostname).Err()
+		return errors.Reason("Destroy instance %q: failed to destroy", vm.Hostname).Err()
 	}
 	if op.Status == "DONE" {
-		logging.Debugf(c, "destroyed instance: %s", op.TargetLink)
+		logging.Debugf(c, "Destroy instance %q: done", op.TargetLink)
 		return deleteBotAsync(c, task.Id, vm.Hostname)
 	}
+	logging.Debugf(c, "Destroy instance %q: instance not destroyed yet, waiting, will check with next attempt.", vm.Hostname)
 	// Instance destruction is pending.
 	return nil
 }
@@ -298,7 +307,7 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	}
 	proj := task.GetProject()
 	zone := task.GetZone()
-	logging.Debugf(c, "Auditing %s in %s", proj, zone)
+	logging.Debugf(c, "Audit instances in project %s, zone %s", proj, zone)
 	// List a bunch on instances and validate with the DB
 	srv := getCompute(c).Stable.Instances
 	call := srv.List(proj, zone).MaxResults(auditBatchSize)
@@ -309,13 +318,13 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	op, err := call.Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, fmt.Sprintf("%s-%s", proj, zone), gerr)
+			logErrors(c, "Audit instance", fmt.Sprintf("%s-%s", proj, zone), gerr)
 		}
 		return errors.Annotate(err, "failed to list  %s-%s", proj, zone).Err()
 	}
 
 	if op.Warning != nil {
-		logging.Warningf(c, "%s: %s", op.Warning.Code, op.Warning.Message)
+		logging.Warningf(c, "Audit instance %q: %s: %s", proj, op.Warning.Code, op.Warning.Message)
 	}
 
 	// Assign job to handle the next set of instances
@@ -325,7 +334,7 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 			if err := getDispatcher(c).AddTask(c, &tq.Task{
 				Payload: task,
 			}); err != nil {
-				logging.Errorf(c, "Failed to add audit task for %s-%s", task.GetProject(), task.GetZone())
+				logging.Errorf(c, "Audit instance %s: failed to add audit task for %s-%s", proj, proj, zone)
 			}
 		}
 	}(c, task, op.NextPageToken)
@@ -356,7 +365,7 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	// Get all the VM records corresponding to the listed instances
 	err = datastore.RunMulti(c, queries, mapVMs)
 	if err != nil {
-		logging.Errorf(c, "Failed to query for the VMS. %v", err)
+		logging.Errorf(c, "Audit instance: failed to query for the VMS. %v", err)
 		return err
 	}
 	var countLeaks int64
@@ -364,7 +373,7 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	for hostname, vm := range hostToVM {
 		if vm == nil && isLeakHuerestic(c, hostname, proj, zone) {
 			countLeaks += 1
-			logging.Debugf(c, "plugging the instance leak in %s-%s: %s", proj, zone, hostname)
+			logging.Debugf(c, "Audit instance: plugging the instance leak in %s-%s: %s", proj, zone, hostname)
 			// Send a delete request for the instance
 			reqID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("plug-%s", hostname)))
 			del := srv.Delete(proj, zone, hostname)
@@ -375,23 +384,24 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 						// Instance is already destroyed.
 						logging.Debugf(c, "instance does not exist: %s", hostname)
 					}
-					logErrors(c, hostname, gerr)
+					logErrors(c, "Audit instance", hostname, gerr)
 				}
-				logging.Errorf(c, "failed to plug the leak %s. %v", hostname, err)
+				logging.Errorf(c, "Audit instance: failed to plug the leak %s. %v", hostname, err)
 				continue
 			}
 			if op.Error != nil && len(op.Error.Errors) > 0 {
 				for _, e := range op.Error.Errors {
 					logging.Errorf(c, "%s: %s", e.Code, e.Message)
 				}
-				logging.Errorf(c, "failed to plug the leak %s. %v", hostname, err)
+				logging.Errorf(c, "Audit instance: failed to plug the leak %s. %v", hostname, err)
 				continue
 			}
 			if op.Status == "DONE" {
-				logging.Debugf(c, "plugged the leak of instance: %s", op.TargetLink)
+				logging.Debugf(c, "Audit instance: plugged the leak of instance: %s", op.TargetLink)
 			}
 		}
 	}
+	logging.Debugf(c, "Audit instance %s: finished!", proj)
 	metrics.UpdateLeaks(c, countLeaks, proj, zone)
 	return nil
 }
