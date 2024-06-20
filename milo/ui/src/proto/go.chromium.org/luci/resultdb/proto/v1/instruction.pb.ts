@@ -104,6 +104,7 @@ export interface Instructions {
  * Instruction is one failure reproduction instruction for a step or test result.
  * Instruction can have different targets, like "local" or "remote".
  * Instructions are stored in invocation level.
+ * TODO (nqmtuan): Add name for the instruction field (per https://google.aip.dev/122).
  */
 export interface Instruction {
   /**

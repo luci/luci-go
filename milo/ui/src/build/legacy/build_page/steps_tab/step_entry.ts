@@ -261,9 +261,7 @@ export class BuildPageStepEntryElement
                   this.store.buildPage.build!.data.id +
                   '/instructions/' +
                   this.step.instructionID}
-                  title=${'Reproduction instruction for step "' +
-                  this.step.selfName +
-                  '"'}
+                  title="How to reproduce this step"
                 ></milo-instruction-hint>`
               : html``}
             <milo-pin-toggle

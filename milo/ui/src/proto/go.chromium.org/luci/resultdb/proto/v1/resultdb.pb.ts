@@ -9,7 +9,7 @@ import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Artifact, ArtifactLine } from "./artifact.pb";
-import { Instruction } from "./instruction.pb";
+import { Instruction, InstructionTarget, instructionTargetFromJSON, instructionTargetToJSON } from "./instruction.pb";
 import { Invocation, Sources } from "./invocation.pb";
 import {
   ArtifactPredicate,
@@ -730,6 +730,66 @@ export interface GetInstructionRequest {
    * invocations/{invocation_id}/instructions/{instruction_id}
    */
   readonly name: string;
+}
+
+/** Request for QueryInstructionDependencies RPC. */
+export interface QueryInstructionRequest {
+  /**
+   * Name of the instruction to query for. The format is:
+   * invocations/{invocation_id}/instructions/{instruction_id}
+   */
+  readonly name: string;
+  /**
+   * The maximum depth to traverse the dependency chain. Default is 5.
+   * The maximum value we support is 10, value bigger than 10 will be adjusted to 10.
+   * Non-positive value will be adjusted to the default.
+   */
+  readonly dependencyMaxDepth: number;
+}
+
+/** Response for QueryInstructionDependencies RPC. */
+export interface QueryInstructionResponse {
+  /** The instruction. */
+  readonly instruction:
+    | Instruction
+    | undefined;
+  /** Dependency chain, one for each target. */
+  readonly dependencyChains: readonly InstructionDependencyChain[];
+}
+
+/** The dependency chain for one target. */
+export interface InstructionDependencyChain {
+  /** Target of the dependency chain. */
+  readonly target: InstructionTarget;
+  /**
+   * List of dependencies.
+   * The list will be sorted by the position in the dependency chain.
+   * The direct dependency will be at position 0.
+   * If the dependency traversing encounters an error, the last node will contain the error.
+   */
+  readonly nodes: readonly InstructionDependencyChain_Node[];
+}
+
+/** Captures information about a dependency. */
+export interface InstructionDependencyChain_Node {
+  /**
+   * The instruction name that the dependency belongs to.
+   * The format is invocations/{invocation_id}/instructions/{instruction_id}.
+   * We need this for the UI to resolve the placeholders of the content.
+   */
+  readonly instructionName: string;
+  /**
+   * Content of the dependency.
+   * Placeholders (if existed) will be returned as-is.
+   * The caller of this RPC is responsible for resolving the placeholders.
+   */
+  readonly content: string;
+  /**
+   * In case the traversal encounters an error, the error will be returned in this field.
+   * If an error is returned, it will only be returned in the last dependency node,
+   * after that, the chain will stop.
+   */
+  readonly error: string;
 }
 
 function createBaseGetInvocationRequest(): GetInvocationRequest {
@@ -3885,6 +3945,323 @@ export const GetInstructionRequest = {
   },
 };
 
+function createBaseQueryInstructionRequest(): QueryInstructionRequest {
+  return { name: "", dependencyMaxDepth: 0 };
+}
+
+export const QueryInstructionRequest = {
+  encode(message: QueryInstructionRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.dependencyMaxDepth !== 0) {
+      writer.uint32(16).int32(message.dependencyMaxDepth);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryInstructionRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryInstructionRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.dependencyMaxDepth = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryInstructionRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      dependencyMaxDepth: isSet(object.dependencyMaxDepth) ? globalThis.Number(object.dependencyMaxDepth) : 0,
+    };
+  },
+
+  toJSON(message: QueryInstructionRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.dependencyMaxDepth !== 0) {
+      obj.dependencyMaxDepth = Math.round(message.dependencyMaxDepth);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryInstructionRequest>): QueryInstructionRequest {
+    return QueryInstructionRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryInstructionRequest>): QueryInstructionRequest {
+    const message = createBaseQueryInstructionRequest() as any;
+    message.name = object.name ?? "";
+    message.dependencyMaxDepth = object.dependencyMaxDepth ?? 0;
+    return message;
+  },
+};
+
+function createBaseQueryInstructionResponse(): QueryInstructionResponse {
+  return { instruction: undefined, dependencyChains: [] };
+}
+
+export const QueryInstructionResponse = {
+  encode(message: QueryInstructionResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.instruction !== undefined) {
+      Instruction.encode(message.instruction, writer.uint32(10).fork()).ldelim();
+    }
+    for (const v of message.dependencyChains) {
+      InstructionDependencyChain.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryInstructionResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryInstructionResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.instruction = Instruction.decode(reader, reader.uint32());
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dependencyChains.push(InstructionDependencyChain.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryInstructionResponse {
+    return {
+      instruction: isSet(object.instruction) ? Instruction.fromJSON(object.instruction) : undefined,
+      dependencyChains: globalThis.Array.isArray(object?.dependencyChains)
+        ? object.dependencyChains.map((e: any) => InstructionDependencyChain.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QueryInstructionResponse): unknown {
+    const obj: any = {};
+    if (message.instruction !== undefined) {
+      obj.instruction = Instruction.toJSON(message.instruction);
+    }
+    if (message.dependencyChains?.length) {
+      obj.dependencyChains = message.dependencyChains.map((e) => InstructionDependencyChain.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryInstructionResponse>): QueryInstructionResponse {
+    return QueryInstructionResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryInstructionResponse>): QueryInstructionResponse {
+    const message = createBaseQueryInstructionResponse() as any;
+    message.instruction = (object.instruction !== undefined && object.instruction !== null)
+      ? Instruction.fromPartial(object.instruction)
+      : undefined;
+    message.dependencyChains = object.dependencyChains?.map((e) => InstructionDependencyChain.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseInstructionDependencyChain(): InstructionDependencyChain {
+  return { target: 0, nodes: [] };
+}
+
+export const InstructionDependencyChain = {
+  encode(message: InstructionDependencyChain, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.target !== 0) {
+      writer.uint32(8).int32(message.target);
+    }
+    for (const v of message.nodes) {
+      InstructionDependencyChain_Node.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): InstructionDependencyChain {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInstructionDependencyChain() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.target = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nodes.push(InstructionDependencyChain_Node.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): InstructionDependencyChain {
+    return {
+      target: isSet(object.target) ? instructionTargetFromJSON(object.target) : 0,
+      nodes: globalThis.Array.isArray(object?.nodes)
+        ? object.nodes.map((e: any) => InstructionDependencyChain_Node.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: InstructionDependencyChain): unknown {
+    const obj: any = {};
+    if (message.target !== 0) {
+      obj.target = instructionTargetToJSON(message.target);
+    }
+    if (message.nodes?.length) {
+      obj.nodes = message.nodes.map((e) => InstructionDependencyChain_Node.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<InstructionDependencyChain>): InstructionDependencyChain {
+    return InstructionDependencyChain.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<InstructionDependencyChain>): InstructionDependencyChain {
+    const message = createBaseInstructionDependencyChain() as any;
+    message.target = object.target ?? 0;
+    message.nodes = object.nodes?.map((e) => InstructionDependencyChain_Node.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseInstructionDependencyChain_Node(): InstructionDependencyChain_Node {
+  return { instructionName: "", content: "", error: "" };
+}
+
+export const InstructionDependencyChain_Node = {
+  encode(message: InstructionDependencyChain_Node, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.instructionName !== "") {
+      writer.uint32(10).string(message.instructionName);
+    }
+    if (message.content !== "") {
+      writer.uint32(18).string(message.content);
+    }
+    if (message.error !== "") {
+      writer.uint32(26).string(message.error);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): InstructionDependencyChain_Node {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInstructionDependencyChain_Node() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.instructionName = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.content = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.error = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): InstructionDependencyChain_Node {
+    return {
+      instructionName: isSet(object.instructionName) ? globalThis.String(object.instructionName) : "",
+      content: isSet(object.content) ? globalThis.String(object.content) : "",
+      error: isSet(object.error) ? globalThis.String(object.error) : "",
+    };
+  },
+
+  toJSON(message: InstructionDependencyChain_Node): unknown {
+    const obj: any = {};
+    if (message.instructionName !== "") {
+      obj.instructionName = message.instructionName;
+    }
+    if (message.content !== "") {
+      obj.content = message.content;
+    }
+    if (message.error !== "") {
+      obj.error = message.error;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<InstructionDependencyChain_Node>): InstructionDependencyChain_Node {
+    return InstructionDependencyChain_Node.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<InstructionDependencyChain_Node>): InstructionDependencyChain_Node {
+    const message = createBaseInstructionDependencyChain_Node() as any;
+    message.instructionName = object.instructionName ?? "";
+    message.content = object.content ?? "";
+    message.error = object.error ?? "";
+    return message;
+  },
+};
+
 /** Service to read test results. */
 export interface ResultDB {
   /** Retrieves an invocation. */
@@ -4005,6 +4382,13 @@ export interface ResultDB {
    * The callers of this RPC are responsible to populate the placeholders with real data.
    */
   GetInstruction(request: GetInstructionRequest): Promise<Instruction>;
+  /**
+   * Retrieves the instruction and the dependency chain for all targets.
+   * A maximum depth can be specified for the maximum number of dependency nodes to be returned.
+   * If an error occurs while traversing a chain (e.g. circular dependency, permission, not found...),
+   * the chain will stop and the rpc will return whatever it has found so far.
+   */
+  QueryInstruction(request: QueryInstructionRequest): Promise<QueryInstructionResponse>;
 }
 
 export const ResultDBServiceName = "luci.resultdb.v1.ResultDB";
@@ -4034,6 +4418,7 @@ export class ResultDBClientImpl implements ResultDB {
     this.BatchGetTestVariants = this.BatchGetTestVariants.bind(this);
     this.QueryTestMetadata = this.QueryTestMetadata.bind(this);
     this.GetInstruction = this.GetInstruction.bind(this);
+    this.QueryInstruction = this.QueryInstruction.bind(this);
   }
   GetInvocation(request: GetInvocationRequest): Promise<Invocation> {
     const data = GetInvocationRequest.toJSON(request);
@@ -4149,6 +4534,12 @@ export class ResultDBClientImpl implements ResultDB {
     const data = GetInstructionRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetInstruction", data);
     return promise.then((data) => Instruction.fromJSON(data));
+  }
+
+  QueryInstruction(request: QueryInstructionRequest): Promise<QueryInstructionResponse> {
+    const data = QueryInstructionRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryInstruction", data);
+    return promise.then((data) => QueryInstructionResponse.fromJSON(data));
   }
 }
 

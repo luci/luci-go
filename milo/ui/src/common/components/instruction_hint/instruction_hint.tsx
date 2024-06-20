@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { InfoOutlined } from '@mui/icons-material';
+import { Description } from '@mui/icons-material';
 import { IconButton, styled } from '@mui/material';
 import { useState } from 'react';
 
@@ -20,8 +20,8 @@ import { InstructionDialog } from './instruction_dialog';
 
 const StyledIconButton = styled(IconButton)`
   cursor: pointer;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 2px;
   padding: 2px;
   &:hover {
@@ -45,16 +45,16 @@ export function InstructionHint({
   return (
     <>
       <StyledIconButton
-        sx={{ '& svg': { fontSize: 18 } }}
+        sx={{ '& svg': { fontSize: 20 } }}
         onClick={(e) => {
           e.stopPropagation();
           setOpen(true);
         }}
         role="button"
-        aria-label="Instruction"
-        title="Instruction"
+        aria-label="Show reproduction instruction"
+        title="Show reproduction instruction"
       >
-        <InfoOutlined />
+        <Description />
       </StyledIconButton>
 
       <InstructionDialog

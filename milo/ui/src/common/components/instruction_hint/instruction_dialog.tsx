@@ -27,13 +27,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
-import {
-  Instruction,
-  InstructionTarget,
-  TargetedInstruction,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/instruction.pb';
-import { GetInstructionRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { InstructionTarget } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/instruction.pb';
+import { QueryInstructionRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
+
+import { InstructionDependency } from './instruction_dependency';
+import { targetedInstructionMap } from './utils';
 
 const INSTRUCTION_TARGET_DISPLAY_MAP = {
   // The unspecifed target should not happen.
@@ -61,14 +60,16 @@ export function InstructionDialog({
   // Load instruction.
   const client = useResultDbClient();
   const { isLoading, isError, data } = useQuery({
-    ...client.GetInstruction.query(
-      GetInstructionRequest.fromPartial({ name: instructionName }),
+    ...client.QueryInstruction.query(
+      QueryInstructionRequest.fromPartial({ name: instructionName }),
     ),
     // We only fetch when the dialog is open.
     enabled: open,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
-  const targetedInstructions = targetedInstructionMap(data);
+  const targetedInstructions = targetedInstructionMap(data?.instruction);
 
   const defaultTarget =
     targetedInstructions.size > 0
@@ -91,6 +92,11 @@ export function InstructionDialog({
     setCurrentTarget(newValue);
   };
 
+  const targetedInstruction = targetedInstructions.get(currentTarget);
+  const chain = data?.dependencyChains.find(
+    (chain) => chain.target === currentTarget,
+  );
+
   return (
     <>
       <Dialog
@@ -99,6 +105,8 @@ export function InstructionDialog({
         onClose={onClose}
         container={container}
         onClick={(e) => e.stopPropagation()}
+        fullWidth
+        maxWidth="sm"
       >
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
@@ -123,41 +131,27 @@ export function InstructionDialog({
                 An error occurred while loading the instruction.
               </Alert>
             )}
+            {chain && (
+              <>
+                {chain.nodes
+                  .slice()
+                  .reverse()
+                  .map((node, index) => (
+                    <InstructionDependency key={index} dependencyNode={node} />
+                  ))}
+              </>
+            )}
             {targetedInstructions.size > 0 && (
               <Typography
                 component="span"
                 sx={{ color: 'var(--default-text-color)' }}
               >
-                {targetedInstructions.get(currentTarget)?.content}
+                {targetedInstruction?.content}
               </Typography>
-            )}{' '}
+            )}
           </Box>
         </DialogContent>
       </Dialog>
     </>
   );
-}
-
-/**
- * targetedInstructionMap returns a mapping between target and targeted instruction.
- * The map returned will be in ordered: LOCAL, REMOTE, PREBUILT.
- */
-function targetedInstructionMap(
-  instruction: Instruction | undefined,
-): Map<InstructionTarget, TargetedInstruction> {
-  const map = new Map<InstructionTarget, TargetedInstruction>();
-  if (instruction === undefined) {
-    return map;
-  }
-
-  // The uniqueness of the target is guaranteed.
-  for (const targetedInstruction of instruction.targetedInstructions) {
-    for (const target of targetedInstruction.targets) {
-      map.set(target, targetedInstruction);
-    }
-  }
-  const sortedMap = new Map(
-    [...map.entries()].sort(([target1], [target2]) => target1 - target2),
-  );
-  return sortedMap;
 }

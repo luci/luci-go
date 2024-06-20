@@ -372,7 +372,7 @@ export class TestVariantEntryElement
             ${this.variant.instruction?.instruction
               ? html`<milo-instruction-hint
                   instruction-name=${this.variant.instruction?.instruction}
-                  title="Reproduction instruction for test result"
+                  title="How to reproduce this test result"
                 ></milo-instruction-hint>`
               : html``}
             <milo-copy-to-clipboard
