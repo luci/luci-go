@@ -17,6 +17,7 @@ package buildcel
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/google/cel-go/cel"
@@ -67,6 +68,18 @@ func newBuildCELEnv() (*buildCELEnv, error) {
 				},
 				cel.StringType,
 				cel.BinaryBinding(stringPairsGetValue),
+			),
+		),
+		// `build.input.experiments.to_string()`
+		cel.Function(
+			"to_string",
+			cel.MemberOverload(
+				"to_experiment_string",
+				[]*cel.Type{
+					cel.ListType(cel.StringType),
+				},
+				cel.StringType,
+				cel.UnaryBinding(toExpString),
 			),
 		),
 		// `build.status.to_string()`
@@ -308,6 +321,22 @@ func stringPairsGetValue(strPairsVal ref.Val, keyVal ref.Val) ref.Val {
 		}
 	}
 	return types.String("")
+}
+
+// toExpString implements the custom function
+// `build.input.experiments.to_string() string`.
+func toExpString(expsVal ref.Val) ref.Val {
+	var exps []string
+	for it := expsVal.(traits.Lister).Iterator(); it.HasNext() == types.True; {
+		exp := it.Next().Value().(string)
+		exps = append(exps, exp)
+	}
+	if len(exps) == 0 {
+		return types.String("None")
+	}
+	sort.Strings(exps)
+	res := strings.Join(exps, "|")
+	return types.String(res)
 }
 
 // stringStatus implements the custom function

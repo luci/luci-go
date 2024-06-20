@@ -259,6 +259,30 @@ func TestBuildCEL(t *testing.T) {
 		})
 	})
 
+	Convey("experments", t, func() {
+		bbc, err := NewStringMap(map[string]string{"experiments": `build.input.experiments.to_string()`})
+		So(err, ShouldBeNil)
+		Convey("not found", func() {
+			b := &pb.Build{}
+			res, err := bbc.Eval(b)
+			So(err, ShouldBeNil)
+			So(res, ShouldResemble, map[string]string{"experiments": "None"})
+		})
+		Convey("found", func() {
+			b := &pb.Build{
+				Input: &pb.Build_Input{
+					Experiments: []string{
+						"luci.buildbucket.exp2",
+						"luci.buildbucket.exp1",
+					},
+				},
+			}
+			res, err := bbc.Eval(b)
+			So(err, ShouldBeNil)
+			So(res, ShouldResemble, map[string]string{"experiments": "luci.buildbucket.exp1|luci.buildbucket.exp2"})
+		})
+	})
+
 	Convey("status", t, func() {
 		Convey("status match", func() {
 			b := &pb.Build{
