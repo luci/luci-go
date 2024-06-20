@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { GrpcError } from '@chopsui/prpc-client';
-import { Link, LinkTypeMap } from '@mui/material';
+import { Button, ButtonTypeMap, Link } from '@mui/material';
 import { DefaultComponentProps } from '@mui/material/OverridableComponent';
 import { useQuery } from '@tanstack/react-query';
 
@@ -25,22 +25,22 @@ import { DeepNonNullable } from '@/generic_libs/types';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetProjectCfgRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
-export interface CustomBugLinkProps
-  extends Omit<DefaultComponentProps<LinkTypeMap>, 'href'> {
+export interface BuildBugButtonProps
+  extends DefaultComponentProps<ButtonTypeMap> {
   readonly project: string;
   /**
-   * The bug link will not be rendered until the build is populated.
+   * The bug button will not be rendered until the build is populated.
    */
   // Making this optional allows the `GetProjectCfg` request to be sent without
   // waiting for the build query to resolve.
   readonly build?: DeepNonNullable<Pick<Build, 'id' | 'builder'>>;
 }
 
-export function CustomBugLink({
+export function BuildBugButton({
   project,
   build,
   ...props
-}: CustomBugLinkProps) {
+}: BuildBugButtonProps) {
   const client = useMiloInternalClient();
   const { data, error } = useQuery({
     ...client.GetProjectCfg.query(
@@ -71,8 +71,15 @@ export function CustomBugLink({
   }
 
   return (
-    <Link target="_blank" rel="noopenner" {...props} href={data}>
-      Report bug in build
-    </Link>
+    <Button {...props}>
+      <Link
+        target="_blank"
+        rel="noopenner"
+        href={data}
+        sx={{ color: 'inherit' }}
+      >
+        Report bug in build
+      </Link>
+    </Button>
   );
 }

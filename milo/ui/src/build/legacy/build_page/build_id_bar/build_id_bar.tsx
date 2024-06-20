@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, Skeleton, styled } from '@mui/material';
+import { Box, Skeleton, styled } from '@mui/material';
 import { DateTime } from 'luxon';
 
+import { BuildActionButton } from '@/build/components/build_action_button';
+import { BuildBugButton } from '@/build/components/build_bug_button';
 import { BuildStatusIcon } from '@/build/components/build_status_icon';
 import { DurationBadge } from '@/common/components/duration_badge';
 import { Timestamp } from '@/common/components/timestamp';
@@ -22,9 +24,7 @@ import { CommitLink } from '@/gitiles/components/commit_link';
 import { CompactClList } from '@/gitiles/components/compact_cl_list';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
-import { BuildActionButton } from '../../../components/build_action_button';
 import { useBuild } from '../context';
-import { CustomBugLink } from '../custom_bug_link';
 
 import { BuildIdDisplay } from './build_id_display';
 
@@ -153,14 +153,13 @@ export function BuildIdBar({ builderId, buildNumOrId }: BuildIdBarProps) {
               sx={{ margin: '5px' }}
             />
           )}
-          <Button variant="contained" size="small" sx={{ margin: '5px' }}>
-            <CustomBugLink
-              project={builderId.project}
-              build={build}
-              underline="none"
-              color="white"
-            />
-          </Button>
+          <BuildBugButton
+            project={builderId.project}
+            build={build}
+            variant="contained"
+            size="small"
+            sx={{ margin: '5px' }}
+          />
         </Box>
       </RightGroupContainer>
     </Container>

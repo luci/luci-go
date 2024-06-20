@@ -22,9 +22,9 @@ import {
 } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { CustomBugLink } from './custom_bug_link';
+import { BuildBugButton } from './build_bug_button';
 
-describe('<CustomBugLink />', () => {
+describe('<BuildBugButton />', () => {
   let getProjectCfgMock: jest.SpiedFunction<
     MiloInternalClientImpl['GetProjectCfg']
   >;
@@ -49,7 +49,7 @@ describe('<CustomBugLink />', () => {
   it('e2e', async () => {
     const { rerender } = render(
       <FakeContextProvider>
-        <CustomBugLink project="proj" />
+        <BuildBugButton project="proj" />
       </FakeContextProvider>,
     );
     await act(() => jest.runAllTimersAsync());
@@ -58,11 +58,11 @@ describe('<CustomBugLink />', () => {
     expect(getProjectCfgMock).toHaveBeenCalledWith(
       GetProjectCfgRequest.fromPartial({ project: 'proj' }),
     );
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
 
     rerender(
       <FakeContextProvider>
-        <CustomBugLink
+        <BuildBugButton
           project="proj"
           build={{
             id: '1234',
@@ -72,7 +72,7 @@ describe('<CustomBugLink />', () => {
       </FakeContextProvider>,
     );
 
-    // The bug link is only rendered when `build` is populated.
-    expect(screen.getByRole('link')).toBeInTheDocument();
+    // The bug button is only rendered when `build` is populated.
+    expect(screen.getByRole('button')).toBeInTheDocument();
   });
 });
