@@ -41,7 +41,17 @@ export const BUILD_FIELD_MASK = Object.freeze([
   'gracePeriod',
   'ancestorIds',
   'retriable',
-]);
+] as const);
+
+export const PARTIAL_BUILD_FIELD_MASK = Object.freeze([
+  'id',
+  'builder',
+  'number',
+  'createTime',
+  'startTime',
+  'endTime',
+  'status',
+] as const);
 
 export const BUILD_STATUS_CLASS_MAP = Object.freeze({
   [BuildStatus.SCHEDULED]: 'scheduled',
@@ -65,3 +75,15 @@ export const PERM_BUILDS_CANCEL = 'buildbucket.builds.cancel';
 export const PERM_BUILDS_ADD = 'buildbucket.builds.add';
 export const PERM_BUILDS_GET = 'buildbucket.builds.get';
 export const PERM_BUILDS_GET_LIMITED = 'buildbucket.builds.getLimited';
+
+export const TERMINATED_STATUSES = Object.freeze([
+  BuildStatus.SUCCESS,
+  BuildStatus.CANCELED,
+  BuildStatus.FAILURE,
+  BuildStatus.INFRA_FAILURE,
+]);
+
+export const FAILED_STATUSES = Object.freeze([
+  BuildStatus.FAILURE,
+  BuildStatus.INFRA_FAILURE,
+]);

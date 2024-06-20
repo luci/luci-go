@@ -26,6 +26,7 @@ import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builde
 
 import { useBuild } from '../context';
 
+import { AncestorBuildPath } from './ancestor_build_path';
 import { BuildIdDisplay } from './build_id_display';
 
 const Container = styled(Box)`
@@ -38,9 +39,10 @@ const LeftGroupContainer = styled(Box)`
   // Stick to left in case the page grows wider than 100vw.
   left: calc(var(--accumulated-left) + 16px);
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   grid-template-columns: auto auto;
   grid-template-areas:
+    'none ancestors'
     'icon id'
     'icon info';
   gap: 4px;
@@ -83,6 +85,11 @@ export function BuildIdBar({ builderId, buildNumOrId }: BuildIdBarProps) {
   return (
     <Container>
       <LeftGroupContainer>
+        {build?.ancestorIds.length ? (
+          <AncestorBuildPath build={build} sx={{ gridArea: 'ancestors' }} />
+        ) : (
+          <></>
+        )}
         <Box sx={{ gridArea: 'icon', position: 'relative' }}>
           <Box
             sx={{

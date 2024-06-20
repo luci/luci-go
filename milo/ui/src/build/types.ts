@@ -21,10 +21,12 @@
  * coercion (i.e. `object.nullable!`) everywhere.
  */
 
-import { DeepNonNullableProps } from '@/generic_libs/types';
+import { ArrayElement, DeepNonNullableProps } from '@/generic_libs/types';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { Step } from '@/proto/go.chromium.org/luci/buildbucket/proto/step.pb';
+
+import { PARTIAL_BUILD_FIELD_MASK } from './constants';
 
 export type SpecifiedBuildStatus = Exclude<
   BuildStatus,
@@ -39,4 +41,12 @@ export interface OutputBuild
   extends DeepNonNullableProps<Build, 'builder' | 'createTime'> {
   readonly status: SpecifiedBuildStatus;
   readonly steps: readonly OutputStep[];
+}
+
+export interface PartialBuild
+  extends Pick<
+    DeepNonNullableProps<Build, 'builder' | 'createTime'>,
+    ArrayElement<typeof PARTIAL_BUILD_FIELD_MASK>
+  > {
+  readonly status: SpecifiedBuildStatus;
 }

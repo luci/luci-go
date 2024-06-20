@@ -26,6 +26,8 @@ export type FunctionKeys<S> = keyof {
     : never]: S[K];
 };
 
+export type ArrayElement<Arr> = Arr extends ReadonlyArray<infer T> ? T : never;
+
 export type Mutable<T> = {
   -readonly [key in keyof T]: T[key];
 };
