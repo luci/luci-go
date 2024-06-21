@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/app"
+	"go.chromium.org/luci/analysis/internal/admin"
+	adminpb "go.chromium.org/luci/analysis/internal/admin/proto"
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	bugscron "go.chromium.org/luci/analysis/internal/bugs/cron"
@@ -48,6 +50,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/failureattributes"
 	"go.chromium.org/luci/analysis/internal/metrics"
 	"go.chromium.org/luci/analysis/internal/scopedauth"
+	"go.chromium.org/luci/analysis/internal/services/backfill"
 	"go.chromium.org/luci/analysis/internal/services/bugupdater"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
@@ -130,6 +133,7 @@ func Main(init func(srv *luciserver.Server) error) {
 
 		uiBaseURL := fmt.Sprintf("https://%s.appspot.com", srv.Options.CloudProject)
 
+		adminpb.RegisterAdminServer(srv, admin.NewAdminServer())
 		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
 		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
 		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
@@ -170,6 +174,9 @@ func Main(init func(srv *luciserver.Server) error) {
 		srv.Routes.POST("/_ah/push-handlers/invocation-ready-for-export", nil, app.NewInvocationReadyForExportHandler().Handle)
 
 		// Register task queue tasks.
+		if err := backfill.RegisterTaskHandler(srv); err != nil {
+			return errors.Annotate(err, "register backfill").Err()
+		}
 		if err := reclustering.RegisterTaskHandler(srv); err != nil {
 			return errors.Annotate(err, "register reclustering").Err()
 		}

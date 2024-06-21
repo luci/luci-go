@@ -581,6 +581,56 @@ func (x *UpdateBugs) GetDeadline() *timestamppb.Timestamp {
 	return nil
 }
 
+// Payload of the Backfill task.
+type Backfill struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The day to backfill data for. E.g. 2024-03-01 00:00:00 UTC
+	// to denote the day of March 1st, 2024.
+	Day *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=day,proto3" json:"day,omitempty"`
+}
+
+func (x *Backfill) Reset() {
+	*x = Backfill{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Backfill) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Backfill) ProtoMessage() {}
+
+func (x *Backfill) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Backfill.ProtoReflect.Descriptor instead.
+func (*Backfill) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Backfill) GetDay() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Day
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc = []byte{
@@ -695,11 +745,15 @@ var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDes
 	0x74, 0x65, 0x12, 0x36, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18, 0x03,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
-	0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65,
-	0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73,
-	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x22, 0x38, 0x0a, 0x08, 0x42, 0x61,
+	0x63, 0x6b, 0x66, 0x69, 0x6c, 0x6c, 0x12, 0x2c, 0x0a, 0x03, 0x64, 0x61, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52,
+	0x03, 0x64, 0x61, 0x79, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
+	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74,
+	0x61, 0x73, 0x6b, 0x73, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -714,7 +768,7 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDe
 	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_goTypes = []interface{}{
 	(*IngestTestVerdicts)(nil),                      // 0: luci.analysis.internal.tasks.IngestTestVerdicts
 	(*IngestTestResults)(nil),                       // 1: luci.analysis.internal.tasks.IngestTestResults
@@ -722,30 +776,32 @@ var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_goType
 	(*ReclusterChunkState)(nil),                     // 3: luci.analysis.internal.tasks.ReclusterChunkState
 	(*JoinBuild)(nil),                               // 4: luci.analysis.internal.tasks.JoinBuild
 	(*UpdateBugs)(nil),                              // 5: luci.analysis.internal.tasks.UpdateBugs
-	(*timestamppb.Timestamp)(nil),                   // 6: google.protobuf.Timestamp
-	(*proto.InvocationResult)(nil),                  // 7: luci.analysis.internal.ingestion.control.InvocationResult
-	(*proto.BuildResult)(nil),                       // 8: luci.analysis.internal.ingestion.control.BuildResult
-	(*proto.PresubmitResult)(nil),                   // 9: luci.analysis.internal.ingestion.control.PresubmitResult
-	(*v1.InvocationReadyForExportNotification)(nil), // 10: luci.resultdb.v1.InvocationReadyForExportNotification
+	(*Backfill)(nil),                                // 6: luci.analysis.internal.tasks.Backfill
+	(*timestamppb.Timestamp)(nil),                   // 7: google.protobuf.Timestamp
+	(*proto.InvocationResult)(nil),                  // 8: luci.analysis.internal.ingestion.control.InvocationResult
+	(*proto.BuildResult)(nil),                       // 9: luci.analysis.internal.ingestion.control.BuildResult
+	(*proto.PresubmitResult)(nil),                   // 10: luci.analysis.internal.ingestion.control.PresubmitResult
+	(*v1.InvocationReadyForExportNotification)(nil), // 11: luci.resultdb.v1.InvocationReadyForExportNotification
 }
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_depIdxs = []int32{
-	6,  // 0: luci.analysis.internal.tasks.IngestTestVerdicts.partition_time:type_name -> google.protobuf.Timestamp
-	7,  // 1: luci.analysis.internal.tasks.IngestTestVerdicts.invocation:type_name -> luci.analysis.internal.ingestion.control.InvocationResult
-	8,  // 2: luci.analysis.internal.tasks.IngestTestVerdicts.build:type_name -> luci.analysis.internal.ingestion.control.BuildResult
-	9,  // 3: luci.analysis.internal.tasks.IngestTestVerdicts.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
-	10, // 4: luci.analysis.internal.tasks.IngestTestResults.notification:type_name -> luci.resultdb.v1.InvocationReadyForExportNotification
-	6,  // 5: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
-	6,  // 6: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
-	6,  // 7: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
+	7,  // 0: luci.analysis.internal.tasks.IngestTestVerdicts.partition_time:type_name -> google.protobuf.Timestamp
+	8,  // 1: luci.analysis.internal.tasks.IngestTestVerdicts.invocation:type_name -> luci.analysis.internal.ingestion.control.InvocationResult
+	9,  // 2: luci.analysis.internal.tasks.IngestTestVerdicts.build:type_name -> luci.analysis.internal.ingestion.control.BuildResult
+	10, // 3: luci.analysis.internal.tasks.IngestTestVerdicts.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
+	11, // 4: luci.analysis.internal.tasks.IngestTestResults.notification:type_name -> luci.resultdb.v1.InvocationReadyForExportNotification
+	7,  // 5: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
+	7,  // 6: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
+	7,  // 7: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
 	3,  // 8: luci.analysis.internal.tasks.ReclusterChunks.state:type_name -> luci.analysis.internal.tasks.ReclusterChunkState
-	6,  // 9: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
-	6,  // 10: luci.analysis.internal.tasks.UpdateBugs.reclustering_attempt_minute:type_name -> google.protobuf.Timestamp
-	6,  // 11: luci.analysis.internal.tasks.UpdateBugs.deadline:type_name -> google.protobuf.Timestamp
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	7,  // 9: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
+	7,  // 10: luci.analysis.internal.tasks.UpdateBugs.reclustering_attempt_minute:type_name -> google.protobuf.Timestamp
+	7,  // 11: luci.analysis.internal.tasks.UpdateBugs.deadline:type_name -> google.protobuf.Timestamp
+	7,  // 12: luci.analysis.internal.tasks.Backfill.day:type_name -> google.protobuf.Timestamp
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init() }
@@ -826,6 +882,18 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init(
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Backfill); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -833,7 +901,7 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init(
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

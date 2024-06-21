@@ -175,3 +175,10 @@ message UpdateBugs {
   // the next bug update task.
   google.protobuf.Timestamp deadline = 3;
 }
+
+// Payload of the Backfill task.
+message Backfill {
+  // The day to backfill data for. E.g. 2024-03-01 00:00:00 UTC
+  // to denote the day of March 1st, 2024.
+  google.protobuf.Timestamp day = 1;
+}
