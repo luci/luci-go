@@ -22,7 +22,28 @@ import (
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/analysis/internal/bqutil"
 )
+
+// NewReadClient creates a new client for reading from test verdicts BigQuery table.
+func NewReadClient(ctx context.Context, gcpProject string) (*ReadClient, error) {
+	client, err := bqutil.Client(ctx, gcpProject)
+	if err != nil {
+		return nil, err
+	}
+	return &ReadClient{client: client}, nil
+}
+
+// ReadClient represents a client to read test verdicts from BigQuery.
+type ReadClient struct {
+	client *bigquery.Client
+}
+
+// Close releases any resources held by the client.
+func (c *ReadClient) Close() error {
+	return c.client.Close()
+}
 
 type ReadVerdictAtOrAfterPositionOptions struct {
 	// The LUCI Project.
@@ -54,10 +75,26 @@ type SourceVerdict struct {
 	// The location of the test, if available.
 	TestLocation *TestLocation
 	// Represent a branch in the source control.
-	Ref *Ref
+	Ref *BQRef
 	// A selection of test results at the position.
 	// May contain 0 or 1 items.
 	Results []TestResult
+}
+
+type BQRef struct {
+	Gitiles *BQGitiles
+}
+type BQGitiles struct {
+	Host    bigquery.NullString
+	Project bigquery.NullString
+	Ref     bigquery.NullString
+}
+
+type BQChangelist struct {
+	Host      bigquery.NullString
+	Change    bigquery.NullInt64
+	Patchset  bigquery.NullInt64
+	OwnerKind bigquery.NullString
 }
 
 type TestLocation struct {

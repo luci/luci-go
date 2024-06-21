@@ -40,29 +40,36 @@ import (
 	"go.chromium.org/luci/analysis/internal/gitiles"
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/perms"
+	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 type TestVerdictClient interface {
-	ReadTestVerdictsPerSourcePosition(ctx context.Context, options testverdicts.ReadTestVerdictsPerSourcePositionOptions) ([]*testverdicts.CommitWithVerdicts, error)
 	ReadTestVerdictAfterPosition(ctx context.Context, options testverdicts.ReadVerdictAtOrAfterPositionOptions) (*testverdicts.SourceVerdict, error)
 }
 
+type TestResultClient interface {
+	ReadTestVerdictsPerSourcePosition(ctx context.Context, options testresults.ReadTestVerdictsPerSourcePositionOptions) ([]*testresults.CommitWithVerdicts, error)
+}
+
 // NewTestVariantBranchesServer returns a new pb.TestVariantBranchesServer.
-func NewTestVariantBranchesServer(tvc TestVerdictClient, sc sorbet.GenerateClient) pb.TestVariantBranchesServer {
+func NewTestVariantBranchesServer(tvc TestVerdictClient, trc TestResultClient, sc sorbet.GenerateClient) pb.TestVariantBranchesServer {
 	return &pb.DecoratedTestVariantBranches{
-		Prelude:  checkAllowedPrelude,
-		Service:  &testVariantBranchesServer{testVerdictClient: tvc, sorbetAnalyzer: sorbet.NewAnalyzer(sc, tvc)},
+		Prelude: checkAllowedPrelude,
+		Service: &testVariantBranchesServer{
+			testResultClient: trc,
+			sorbetAnalyzer:   sorbet.NewAnalyzer(sc, tvc),
+		},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
 
 // testVariantBranchesServer implements pb.TestVariantAnalysesServer.
 type testVariantBranchesServer struct {
-	testVerdictClient TestVerdictClient
-	sorbetAnalyzer    *sorbet.Analyzer
+	testResultClient TestResultClient
+	sorbetAnalyzer   *sorbet.Analyzer
 }
 
 // Get fetches Spanner for test variant analysis.
@@ -324,7 +331,7 @@ func (s *testVariantBranchesServer) QuerySourcePositions(ctx context.Context, re
 			return nil, err
 		}
 	}
-	options := testverdicts.ReadTestVerdictsPerSourcePositionOptions{
+	options := testresults.ReadTestVerdictsPerSourcePositionOptions{
 		Project:       req.Project,
 		TestID:        req.TestId,
 		VariantHash:   req.VariantHash,
@@ -336,7 +343,7 @@ func (s *testVariantBranchesServer) QuerySourcePositions(ctx context.Context, re
 		PositionMustGreater: startPosition - pageSize,
 		NumCommits:          pageSize,
 	}
-	commitsWithVerdicts, err := s.testVerdictClient.ReadTestVerdictsPerSourcePosition(ctx, options)
+	commitsWithVerdicts, err := s.testResultClient.ReadTestVerdictsPerSourcePosition(ctx, options)
 	if err != nil {
 		return nil, errors.Annotate(err, "read test verdicts from BigQuery").Err()
 	}
@@ -406,7 +413,7 @@ func (s *testVariantBranchesServer) QuerySourcePositions(ctx context.Context, re
 	}, nil
 }
 
-func toVerdictsProto(bqVerdicts []*testverdicts.TestVerdict) []*pb.TestVerdict {
+func toVerdictsProto(bqVerdicts []*testresults.BQTestVerdict) []*pb.TestVerdict {
 	res := make([]*pb.TestVerdict, 0, len(bqVerdicts))
 	for _, tv := range bqVerdicts {
 		if !tv.HasAccess {
@@ -437,9 +444,9 @@ func toVerdictsProto(bqVerdicts []*testverdicts.TestVerdict) []*pb.TestVerdict {
 	return res
 }
 
-// commitWithVerdictsAtSourcePosition find the testverdicts.CommitWithVerdicts at a certain source position.
+// commitWithVerdictsAtSourcePosition find the testresults.CommitWithVerdicts at a certain source position.
 // It returns nil if not found.
-func commitWithVerdictsAtSourcePosition(commits []*testverdicts.CommitWithVerdicts, sourcePosition int64) *testverdicts.CommitWithVerdicts {
+func commitWithVerdictsAtSourcePosition(commits []*testresults.CommitWithVerdicts, sourcePosition int64) *testresults.CommitWithVerdicts {
 	for _, commit := range commits {
 		if sourcePosition == commit.Position {
 			return commit
@@ -450,7 +457,7 @@ func commitWithVerdictsAtSourcePosition(commits []*testverdicts.CommitWithVerdic
 
 // closestAfterCommit returns the commit hash belongs to the commit in rows which is closest (or equal) to commit at pos and after pos.
 // This function assumes rows are sorted by source position ASC.
-func closestAfterCommit(pos int64, rows []*testverdicts.CommitWithVerdicts) (commitHash string, offset int64, exist bool) {
+func closestAfterCommit(pos int64, rows []*testresults.CommitWithVerdicts) (commitHash string, offset int64, exist bool) {
 	for _, r := range rows {
 		if r.Position >= pos {
 			return r.CommitHash, r.Position - pos, true

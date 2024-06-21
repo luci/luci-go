@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testverdicts
+package testresults
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/bqutil"
 )
 
-// NewReadClient creates a new client for reading test verdicts.
+// NewReadClient creates a new client for reading test results BigQuery table.
 func NewReadClient(ctx context.Context, gcpProject string) (*ReadClient, error) {
 	client, err := bqutil.Client(ctx, gcpProject)
 	if err != nil {
@@ -35,7 +35,7 @@ func NewReadClient(ctx context.Context, gcpProject string) (*ReadClient, error) 
 	return &ReadClient{client: client}, nil
 }
 
-// ReadClient represents a client to read test verdicts from BigQuery.
+// ReadClient represents a client to read test results table from BigQuery.
 type ReadClient struct {
 	client *bigquery.Client
 }
@@ -65,14 +65,14 @@ type CommitWithVerdicts struct {
 	// Commit hash of this commit.
 	CommitHash string
 	// Represent a branch in the source control.
-	Ref *Ref
+	Ref *BQRef
 	// Realm of test verdicts at this commit.
 	Realm string
 	// Returns at most 20 test verdicts at this commit.
-	TestVerdicts []*TestVerdict
+	TestVerdicts []*BQTestVerdict
 }
 
-type TestVerdict struct {
+type BQTestVerdict struct {
 	TestID                string
 	VariantHash           string
 	RefHash               string
@@ -80,21 +80,21 @@ type TestVerdict struct {
 	Status                string
 	PartitionTime         time.Time
 	PassedAvgDurationUsec bigquery.NullFloat64
-	Changelists           []*Changelist
+	Changelists           []*BQChangelist
 	// Whether the caller has access to this test verdict.
 	HasAccess bool
 }
 
-type Ref struct {
-	Gitiles *Gitiles
+type BQRef struct {
+	Gitiles *BQGitiles
 }
-type Gitiles struct {
+type BQGitiles struct {
 	Host    bigquery.NullString
 	Project bigquery.NullString
 	Ref     bigquery.NullString
 }
 
-type Changelist struct {
+type BQChangelist struct {
 	Host      bigquery.NullString
 	Change    bigquery.NullInt64
 	Patchset  bigquery.NullInt64
@@ -105,27 +105,64 @@ type Changelist struct {
 // Only return commits within the last 90 days.
 func (c *ReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, options ReadTestVerdictsPerSourcePositionOptions) ([]*CommitWithVerdicts, error) {
 	query := `
+	WITH
+		test_verdicts_precompute AS (
+			SELECT
+				invocation.id AS invocation_id,
+				-- All of these should be the same for all test results in a verdict.
+				ANY_VALUE(invocation.realm) AS realm,
+				ANY_VALUE(sources) AS sources,
+				ANY_VALUE(source_ref) AS source_ref,
+				ANY_VALUE(partition_time) as partition_time,
+				-- For computing the test verdict.
+				COUNTIF(expected) AS expected_count,
+				COUNTIF(NOT COALESCE(expected, FALSE)) AS unexpected_count,
+				COUNTIF(status = "SKIP") AS skipped_count,
+				COUNT(*) AS total_count,
+				AVG(IF(status = "PASS",duration_secs, NULL)) AS avg_passed_duration_sec,
+			FROM test_results
+			WHERE
+				project = @project
+				AND test_id = @testID
+				AND variant_hash = @variantHash
+				AND source_ref_hash = @refHash
+				AND sources.gitiles_commit.position > @positionMustGreater
+				-- Filter out dirty sources, these results are always ignored by changepoint analysis.
+				AND not sources.is_dirty
+				-- Limit to 90 days of test results to improve query performance, given that the users are most likely not interested in old data.
+				AND partition_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 day)
+			GROUP BY invocation.id
+		),
+		-- Compute test verdicts from test_results table.
+		test_verdicts_with_status AS (
+			SELECT
+				*,
+				-- We don't have the exoneration information in the test_results table.
+				-- Possible verdicts are EXPECTED, UNEXPECTEDLY_SKIPPED, UNEXPECTED and FLAKY.
+				CASE
+					WHEN expected_count = total_count THEN 'EXPECTED'
+					WHEN unexpected_count = skipped_count AND skipped_count = total_count THEN 'UNEXPECTEDLY_SKIPPED'
+					WHEN unexpected_count = total_count THEN 'UNEXPECTED'
+					ELSE 'FLAKY'
+				END AS status,
+			FROM test_verdicts_precompute
+		)
 	SELECT
-		sources.gitiles_commit.position as Position,
-		ANY_VALUE(sources.gitiles_commit.commit_hash) as CommitHash,
-		ANY_VALUE(source_ref) as Ref,
-		ANY_VALUE(invocation.realm) as Realm,
-		ARRAY_AGG(STRUCT(test_id as TestID ,
-									variant_hash as VariantHash,
-									source_ref_hash as RefHash,
-									invocation.id as InvocationID,
-									status as Status,
-									(SELECT AVG(IF(r.status = "PASS",r.duration , NULL)) FROM UNNEST(results) as r) as PassedAvgDurationUsec,
-									(SELECT ARRAY_AGG(STRUCT(host as Host, change as Change, patchset as Patchset, owner_kind as OwnerKind)) FROM UNNEST(sources.changelists)) as Changelists,
-									invocation.realm IN UNNEST(@allowedRealms) as HasAccess,
-									partition_time as PartitionTime) ORDER BY partition_time DESC LIMIT 20) as TestVerdicts
-	FROM internal.test_verdicts
-	WHERE project = @project
-		AND test_id = @testID
-		AND variant_hash = @variantHash
-		AND source_ref_hash = @refHash
-		AND sources.gitiles_commit.position > @positionMustGreater
-		AND partition_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 day)
+		sources.gitiles_commit.position AS Position,
+		ANY_VALUE(sources.gitiles_commit.commit_hash) AS CommitHash,
+		ANY_VALUE(source_ref) AS Ref,
+		ANY_VALUE(realm) AS Realm,
+		ARRAY_AGG(STRUCT(
+									@testID as TestID,
+									@variantHash as VariantHash,
+									@refHash as RefHash,
+									invocation_id AS InvocationID,
+									status AS Status,
+									avg_passed_duration_sec AS PassedAvgDurationUsec,
+									(SELECT ARRAY_AGG(STRUCT(host AS Host, change AS Change, patchset AS Patchset, owner_kind as OwnerKind)) FROM UNNEST(sources.changelists)) AS Changelists,
+									realm IN UNNEST(@allowedRealms) as HasAccess)
+							ORDER BY partition_time DESC LIMIT 20) AS TestVerdicts
+	FROM test_verdicts_with_status
 	GROUP BY sources.gitiles_commit.position
 	ORDER BY sources.gitiles_commit.position
 	LIMIT @limit

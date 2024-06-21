@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/gitiles"
 	"go.chromium.org/luci/analysis/internal/pagination"
+	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -52,9 +53,10 @@ func TestTestVariantBranchesServer(t *testing.T) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		tvc := testverdicts.FakeReadClient{}
+		trc := testresults.FakeReadClient{}
 		sorbetClient := sorbet.NewFakeClient()
 
-		server := NewTestVariantBranchesServer(&tvc, sorbetClient)
+		server := NewTestVariantBranchesServer(&tvc, &trc, sorbetClient)
 		Convey("GetRaw", func() {
 			Convey("permission denied", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -679,29 +681,29 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				So(res, ShouldBeNil)
 			})
 
-			bqRef := &testverdicts.Ref{
-				Gitiles: &testverdicts.Gitiles{
+			bqRef := &testresults.BQRef{
+				Gitiles: &testresults.BQGitiles{
 					Host:    bigquery.NullString{StringVal: "chromium.googlesource.com", Valid: true},
 					Project: bigquery.NullString{StringVal: "project", Valid: true},
 					Ref:     bigquery.NullString{StringVal: "ref", Valid: true},
 				},
 			}
 			Convey("no test verdicts that is close enough to start_source_position", func() {
-				tvc.CommitsWithVerdicts = []*testverdicts.CommitWithVerdicts{
+				trc.CommitsWithVerdicts = []*testresults.CommitWithVerdicts{
 					// Verdict at position 10990.
 					// This is the smallest position that is greater than the requested position.
 					{
 						Position:     10990, // we need 10990 - 1100 + 111 (10001) commits from gitiles.
 						CommitHash:   "commithash",
 						Ref:          bqRef,
-						TestVerdicts: []*testverdicts.TestVerdict{},
+						TestVerdicts: []*testresults.BQTestVerdict{},
 					},
 					// Verdict at position 1002.
 					{
 						Position:     1002,
 						CommitHash:   "commithash",
 						Ref:          bqRef,
-						TestVerdicts: []*testverdicts.TestVerdict{},
+						TestVerdicts: []*testresults.BQTestVerdict{},
 					},
 				}
 
@@ -713,13 +715,13 @@ func TestTestVariantBranchesServer(t *testing.T) {
 			})
 
 			Convey("no test verdicts after start_source_position", func() {
-				tvc.CommitsWithVerdicts = []*testverdicts.CommitWithVerdicts{
+				trc.CommitsWithVerdicts = []*testresults.CommitWithVerdicts{
 					// Verdict at position 1002.
 					{
 						Position:     1002,
 						CommitHash:   "commithash",
 						Ref:          bqRef,
-						TestVerdicts: []*testverdicts.TestVerdict{},
+						TestVerdicts: []*testresults.BQTestVerdict{},
 					},
 				}
 
@@ -731,7 +733,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 			})
 
 			Convey("e2e", func() {
-				tvc.CommitsWithVerdicts = []*testverdicts.CommitWithVerdicts{
+				trc.CommitsWithVerdicts = []*testresults.CommitWithVerdicts{
 					// Verdict at position 1200.
 					// This is the smallest position that is greater than the requested position.
 					// We use its commit hash to query gitiles.
@@ -739,7 +741,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						Position:     1200,
 						CommitHash:   "commithash",
 						Ref:          bqRef,
-						TestVerdicts: []*testverdicts.TestVerdict{},
+						TestVerdicts: []*testresults.BQTestVerdict{},
 					},
 					// Verdict at position 1002.
 					// The caller doesn't have access to this verdict, this verdict will be excluded from the response.
@@ -747,7 +749,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						Position:   1002,
 						CommitHash: "commithash",
 						Ref:        bqRef,
-						TestVerdicts: []*testverdicts.TestVerdict{
+						TestVerdicts: []*testresults.BQTestVerdict{
 							{
 								TestID:        "testid",
 								VariantHash:   pbutil.VariantHash(var1),
@@ -759,7 +761,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 									Float64: 0.001,
 									Valid:   true,
 								},
-								Changelists: []*testverdicts.Changelist{},
+								Changelists: []*testresults.BQChangelist{},
 								HasAccess:   false,
 							},
 						},
@@ -770,7 +772,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						Position:   1001,
 						CommitHash: "commithash",
 						Ref:        bqRef,
-						TestVerdicts: []*testverdicts.TestVerdict{
+						TestVerdicts: []*testresults.BQTestVerdict{
 							{
 								TestID:        "testid",
 								VariantHash:   pbutil.VariantHash(var1),
@@ -782,7 +784,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 									Float64: 0.001,
 									Valid:   true,
 								},
-								Changelists: []*testverdicts.Changelist{},
+								Changelists: []*testresults.BQChangelist{},
 								HasAccess:   true,
 							},
 						},
@@ -948,8 +950,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						Repo:     "https://chromium.googlesource.com/chromium/src",
 						FileName: "//path/to/test",
 					},
-					Ref: &testverdicts.Ref{
-						Gitiles: &testverdicts.Gitiles{
+					Ref: &testverdicts.BQRef{
+						Gitiles: &testverdicts.BQGitiles{
 							Host:    bigquery.NullString{StringVal: "myproject.googlesource.com", Valid: true},
 							Project: bigquery.NullString{StringVal: "project", Valid: true},
 							Ref:     bigquery.NullString{StringVal: "refs/heads/main", Valid: true},
