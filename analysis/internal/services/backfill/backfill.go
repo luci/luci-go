@@ -132,7 +132,7 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 	}
 	hasRow := false
 	for {
-		var row []*bigquery.Value
+		var row []bigquery.Value
 		err := it.Next(&row)
 		if errors.Is(err, iterator.Done) {
 			break
@@ -145,6 +145,7 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 		return nil
 	}
 
+	logging.Infof(ctx, "Continuing with backfill of day %v...", task.Day.AsTime())
 	query = client.Query(`
 		INSERT INTO internal.test_results (project, test_id, variant, variant_hash, invocation, partition_time, parent, name, result_id, expected, status, summary_html, start_time, duration_secs, tags, failure_reason, skip_reason, properties, sources, source_ref, source_ref_hash, test_metadata, insert_time)
 		SELECT
