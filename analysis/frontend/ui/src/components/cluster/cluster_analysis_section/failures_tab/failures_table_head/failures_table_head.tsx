@@ -56,8 +56,8 @@ const FailuresTableHead = ({
           </Tooltip>
         </NarrowTableCell>
         <NarrowTableCell>
-          <Tooltip title={<>The key value pairs that define the configuration in which the test was run.  Any variant keys that are used for grouping will be omitted. See <a href="http://go/resultdb-concepts#test-variant" target="_blank" rel="noreferrer">go/resultdb-concepts</a> for more details.</>}>
-            <span>Variant</span>
+          <Tooltip title={<>The failure reason given when the test failed (if any) and the key value pairs that define the configuration in which the test was run.  Any variant keys that are used for grouping will be omitted. See <a href="http://go/resultdb-concepts#test-variant" target="_blank" rel="noreferrer">go/resultdb-concepts</a> for more details.</>}>
+            <span>Failure Reason / Variant</span>
           </Tooltip>
         </NarrowTableCell>
         <NarrowTableCell sx={{ width: '80px' }}>

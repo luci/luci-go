@@ -663,6 +663,7 @@ func createDistinctClusterFailurePB(f *analysis.ClusterFailure) *pb.DistinctClus
 		IsIngestedInvocationBlocked: f.IsIngestedInvocationBlocked.Bool,
 		Changelists:                 changelists,
 		Count:                       f.Count,
+		FailureReasonPrefix:         f.FailureReasonPrefix.StringVal,
 	}
 }
 

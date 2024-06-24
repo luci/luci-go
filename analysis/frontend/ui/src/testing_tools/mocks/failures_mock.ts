@@ -51,6 +51,7 @@ class ClusterFailureBuilder {
       ingestedInvocationId: 'build-buildnumber',
       isIngestedInvocationBlocked: false,
       count: 1,
+      failureReasonPrefix: 'failed due to timeout',
     };
   }
   build(): DistinctClusterFailure {

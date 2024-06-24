@@ -46,6 +46,7 @@ type ClusterFailure struct {
 	IngestedInvocationID        bigquery.NullString
 	IsIngestedInvocationBlocked bigquery.NullBool
 	Count                       int32
+	FailureReasonPrefix         bigquery.NullString
 }
 
 type Exoneration struct {
@@ -152,7 +153,8 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 			ANY_VALUE(f.build_critical) as IsBuildCritical,
 			f.ingested_invocation_id as IngestedInvocationID,
 			ANY_VALUE(f.is_ingested_invocation_blocked) as IsIngestedInvocationBlocked,
-			count(*) as Count
+			count(*) as Count,
+			LEFT(MAX(f.failure_reason.primary_error_message), 256) as FailureReasonPrefix
 		FROM ` + metricBaseView + `
 		WHERE (` + metricFilterSQL + `)
 		GROUP BY

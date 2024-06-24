@@ -184,7 +184,9 @@ const FailuresTableRows = ({
             <NarrowTableCell
               data-testid="failures_table_variant_cell"
             >
-              <small data-testid="ungrouped_variants">
+              <small>{group.failure.failureReasonPrefix}{group.failure.failureReasonPrefix.length >= 120 ? '...' : ''}</small>
+              <br />
+              <small style={{ color: '#888' }}data-testid="ungrouped_variants">
                 {ungroupedVariants(group.failure)
                     .map((v) => v && `${v.key}: ${v.value}`)
                     .filter((v) => v)
