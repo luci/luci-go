@@ -240,18 +240,20 @@ func main() {
 			DisableBuildbucketCheck: !srv.Options.Prod,
 		})
 
-		// A reverse proxy that sends a portion of requests to the Python server.
-		// Proxied requests have "/python/..." prepended in the URL to make them
-		// correctly pass dispatch.yaml rules and not get routed back to the Go
-		// server.
-		//
-		// To simplify testing code locally without any migration configs, enable
-		// the proxy only when running in prod.
-		if srv.Options.Prod {
-			srv.ConfigurePRPC(func(prpcSrv *prpc.Server) {
+		srv.ConfigurePRPC(func(prpcSrv *prpc.Server) {
+			// Allow cross-origin calls (e.g. for Milo to call ListBots).
+			prpcSrv.AccessControl = prpc.AllowOriginAll
+			// A reverse proxy that sends a portion of requests to the Python server.
+			// Proxied requests have "/python/..." prepended in the URL to make them
+			// correctly pass dispatch.yaml rules and not get routed back to the Go
+			// server.
+			//
+			// To simplify testing code locally without any migration configs, enable
+			// the proxy only when running in prod.
+			if srv.Options.Prod {
 				rpcs.ConfigureMigration(prpcSrv, cfg, fmt.Sprintf("https://%s.appspot.com/python", srv.Options.CloudProject))
-			})
-		}
+			}
+		})
 
 		return nil
 	})
