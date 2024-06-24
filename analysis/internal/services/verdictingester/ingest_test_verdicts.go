@@ -87,7 +87,7 @@ var (
 		// The LUCI Project.
 		field.String("project"),
 		// "success", "failed_validation",
-		// "ignored_no_invocation", "ignored_has_ancestor",
+		// "ignored_no_invocation", "ignored_not_export_root",
 		// "ignored_invocation_not_found", "ignored_resultdb_permission_denied",
 		// "ignored_project_not_allowlisted".
 		field.String("outcome"))
@@ -236,17 +236,10 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 			// Ingestion has a build that does not have a ResultDB invocation to ingest.
 			logging.Debugf(ctx, "Skipping ingestion of build %s-%d because it has no ResultDB invocation.",
 				payload.Build.Host, payload.Build.Id)
-			taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_no_invocation")
+			taskCounter.Add(ctx, 1, payload.Project, "ignored_no_invocation")
 			return nil
 		}
 		return errors.Reason("ingestion with no build and no invocation should not be scheduled").Err()
-	}
-
-	if payload.Build != nil && payload.Build.IsIncludedByAncestor {
-		// Yes. Do not ingest this build to avoid ingesting the same test
-		// results multiple times.
-		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_has_ancestor")
-		return nil
 	}
 
 	rdbHost := payload.Invocation.ResultdbHost
@@ -274,6 +267,14 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	if err != nil {
 		logging.Warningf(ctx, "GetInvocation has error code %s.", code)
 		return transient.Tag.Apply(errors.Annotate(err, "get invocation").Err())
+	}
+
+	if !inv.IsExportRoot {
+		// Invocation is not an export root. Do not ingest.
+		logging.Debugf(ctx, "Skipping ingestion of invocation %s for project %s because it is not an export root.",
+			invName, payload.Project)
+		taskCounter.Add(ctx, 1, payload.Project, "ignored_not_export_root")
+		return nil
 	}
 
 	ingestion, err := extractIngestionContext(payload, inv)

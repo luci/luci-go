@@ -153,13 +153,17 @@ func TestIngestTestVerdicts(t *testing.T) {
 			bHost := "host"
 			partitionTime := clock.Now(ctx).Add(-1 * time.Hour)
 
-			setupGetInvocationMock := func() {
+			setupGetInvocationMock := func(modifiers ...func(*rdbpb.Invocation)) {
 				invReq := &rdbpb.GetInvocationRequest{
 					Name: testInvocation,
 				}
 				invRes := &rdbpb.Invocation{
-					Name:  testInvocation,
-					Realm: testRealm,
+					Name:         testInvocation,
+					Realm:        testRealm,
+					IsExportRoot: true,
+				}
+				for _, modifier := range modifiers {
+					modifier(invRes)
 				}
 				mrc.GetInvocation(invReq, invRes)
 			}
@@ -262,10 +266,9 @@ func TestIngestTestVerdicts(t *testing.T) {
 						Ref:      "refs/heads/mybranch",
 						Position: 111888,
 					},
-					HasInvocation:        true,
-					ResultdbHost:         "test.results.api.cr.dev",
-					IsIncludedByAncestor: false,
-					GardenerRotations:    []string{"rotation1", "rotation2"},
+					HasInvocation:     true,
+					ResultdbHost:      "test.results.api.cr.dev",
+					GardenerRotations: []string{"rotation1", "rotation2"},
 				},
 				PartitionTime: timestamppb.New(partitionTime),
 				PresubmitRun: &ctrlpb.PresubmitResult{
@@ -432,8 +435,10 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyTestVerdicts(testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, invocationCreationTime, tvBQExporterClient)
 			})
-			Convey(`Build included by ancestor`, func() {
-				payload.Build.IsIncludedByAncestor = true
+			Convey(`Invocation is not an export root`, func() {
+				setupGetInvocationMock(func(i *rdbpb.Invocation) {
+					i.IsExportRoot = false
+				})
 				setupConfig(ctx, cfg)
 
 				// Act

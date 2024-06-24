@@ -19,14 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/tq"
 
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -86,75 +83,6 @@ func TestHandleBuild(t *testing.T) {
 				// Process build.
 				So(ingestBuild(ctx, build), ShouldBeNil)
 				So(assertTasksExpected(), ShouldBeEmpty)
-			})
-		})
-		Convey(`With ancestor build`, func() {
-			build = build.WithAncestorIDs([]int64{01010101, 57575757})
-			expectedTask.Build = build.ExpectedResult()
-
-			ctl := gomock.NewController(t)
-			defer ctl.Finish()
-
-			mrc := resultdb.NewMockedClient(ctx, ctl)
-			ctx := mrc.Ctx
-
-			Convey(`Without invocation`, func() {
-				build = build.WithContainedByAncestor(false)
-				expectedTask.Build = build.ExpectedResult()
-
-				// Process build.
-				So(ingestBuild(ctx, build), ShouldBeNil)
-				So(assertTasksExpected(), ShouldBeEmpty)
-			})
-			Convey(`With invocation`, func() {
-				invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)
-				expectedTask.Invocation = &controlpb.InvocationResult{
-					ResultdbHost: rdbHost,
-					InvocationId: fmt.Sprintf("build-%d", build.buildID),
-					CreationTime: timestamppb.New(invocationCreateTime),
-				}
-				expectedTask.PartitionTime = timestamppb.New(invocationCreateTime)
-
-				So(ingestFinalization(ctx, fmt.Sprintf("build-%d", build.buildID), false, invocationCreateTime), ShouldBeNil)
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-
-				Convey(`Not contained by ancestor`, func() {
-					build = build.WithInvocation().WithContainedByAncestor(false)
-					expectedTask.Build = build.ExpectedResult()
-
-					req := &resultpb.GetInvocationRequest{
-						Name: "invocations/build-57575757",
-					}
-					res := &resultpb.Invocation{
-						Name:                "invocations/build-57575757",
-						IncludedInvocations: []string{"invocations/build-unrelated"},
-					}
-					mrc.GetInvocation(req, res)
-
-					// Process build.
-					So(ingestBuild(ctx, build), ShouldBeNil)
-					So(assertTasksExpected(), ShouldBeEmpty)
-				})
-				Convey(`Contained by ancestor`, func() {
-					build = build.WithInvocation().WithContainedByAncestor(true)
-					expectedTask.Build = build.ExpectedResult()
-
-					req := &resultpb.GetInvocationRequest{
-						Name: "invocations/build-57575757",
-					}
-					res := &resultpb.Invocation{
-						Name: "invocations/build-57575757",
-						IncludedInvocations: []string{
-							"invocations/build-unrelated",
-							fmt.Sprintf("invocations/build-%v", build.buildID),
-						},
-					}
-					mrc.GetInvocation(req, res)
-
-					// Process build.
-					So(ingestBuild(ctx, build), ShouldBeNil)
-					So(assertTasksExpected(), ShouldBeEmpty)
-				})
 			})
 		})
 		Convey(`With build that is part of a LUCI CV run`, func() {

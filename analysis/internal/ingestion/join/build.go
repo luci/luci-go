@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -62,17 +61,6 @@ var (
 		field.String("project"),
 		// "success", "permission_denied".
 		field.String("status"))
-
-	ancestorCounter = metric.NewCounter(
-		"analysis/ingestion/ancestor_build_status",
-		"The status retrieving ancestor builds in ingestion tasks, by build project.",
-		nil,
-		// The LUCI Project.
-		field.String("project"),
-		// "no_bb_access_to_ancestor",
-		// "no_resultdb_invocation_on_ancestor",
-		// "ok".
-		field.String("ancestor_status"))
 )
 
 // JoinBuild notifies ingestion that the given buildbucket build has finished.
@@ -117,20 +105,6 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 		hasInvocation = true
 	}
 
-	isIncludedByAncestor := false
-	if len(build.AncestorIds) > 0 && hasInvocation {
-		// If the build has an ancestor build, see if its immediate
-		// ancestor is accessible by LUCI Analysis and has a ResultDB
-		// invocation (likely indicating it includes the test results
-		// from this build).
-		ancestorBuildID := build.AncestorIds[len(build.AncestorIds)-1]
-		var err error
-		isIncludedByAncestor, err = includedByAncestorBuild(ctx, buildID, ancestorBuildID, rdbHostName, project)
-		if err != nil {
-			return false, transient.Tag.Apply(err)
-		}
-	}
-
 	var buildStatus pb.BuildStatus
 	switch build.Status {
 	case bbpb.Status_CANCELED:
@@ -171,19 +145,18 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 	}
 
 	result := &ctlpb.BuildResult{
-		CreationTime:         timestamppb.New(build.CreateTime.AsTime()),
-		Id:                   buildID,
-		Host:                 bbHost,
-		Project:              project,
-		Bucket:               build.Builder.Bucket,
-		Builder:              build.Builder.Builder,
-		Status:               buildStatus,
-		Changelists:          changelists,
-		Commit:               commit,
-		HasInvocation:        hasInvocation,
-		ResultdbHost:         build.GetInfra().GetResultdb().Hostname,
-		IsIncludedByAncestor: isIncludedByAncestor,
-		GardenerRotations:    gardenerRotations(build.Input.GetProperties()),
+		CreationTime:      timestamppb.New(build.CreateTime.AsTime()),
+		Id:                buildID,
+		Host:              bbHost,
+		Project:           project,
+		Bucket:            build.Builder.Bucket,
+		Builder:           build.Builder.Builder,
+		Status:            buildStatus,
+		Changelists:       changelists,
+		Commit:            commit,
+		HasInvocation:     hasInvocation,
+		ResultdbHost:      build.GetInfra().GetResultdb().Hostname,
+		GardenerRotations: gardenerRotations(build.Input.GetProperties()),
 	}
 
 	if err := JoinBuildResult(ctx, buildID, project, isPresubmit, hasInvocation, result); err != nil {
@@ -242,60 +215,6 @@ func prepareChangelists(ctx context.Context, project string, gerritChanges []*bb
 		})
 	}
 	return result, nil
-}
-
-func includedByAncestorBuild(ctx context.Context, buildID, ancestorBuildID int64, rdbHost string, project string) (bool, error) {
-	ancestorInvName := control.BuildInvocationName(ancestorBuildID)
-
-	// The ancestor build may not be in the same project as the build we are
-	// considering ingesting. We cannot use project-scoped credentials,
-	// and instead must use privileged access granted to us. We should
-	// be careful not to leak information about this invocation to the
-	// project we are ingesting (except for the inclusion of the child
-	// in it as that is unavoidable for the purposes of implementing
-	// only-once ingestion).
-	rc, err := resultdb.NewPrivilegedClient(ctx, rdbHost)
-	if err != nil {
-		return false, transient.Tag.Apply(err)
-	}
-	ancestorInv, err := rc.GetInvocation(ctx, ancestorInvName)
-	code := status.Code(err)
-	if code == codes.NotFound || code == codes.PermissionDenied {
-		logging.Warningf(ctx, "Ancestor build ResultDB Invocation %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
-			rdbHost, ancestorBuildID, project)
-		// Invocation on the ancestor build not found or permission denied.
-		// Continue ingestion of this build.
-		// report metrics.
-		ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_not_found")
-		return false, nil
-	}
-	if err != nil {
-		return false, transient.Tag.Apply(errors.Annotate(err, "fetch ancestor build ResultDB invocation").Err())
-	}
-
-	containsThisBuild := false
-
-	buildInvocation := control.BuildInvocationName(buildID)
-	for _, inv := range ancestorInv.IncludedInvocations {
-		if inv == buildInvocation {
-			containsThisBuild = true
-		}
-	}
-
-	if !containsThisBuild {
-		// The ancestor build's invocation does not contain the ResultDB
-		// invocation of this build. Continue ingestion of this build.
-		// report metrics.
-		ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_does_not_contain")
-		return false, nil
-	}
-
-	// The ancestor build also has a ResultDB invocation, and it
-	// contains this invocation. We will ingest the ancestor build
-	// only to avoid ingesting the same test results multiple times.
-	// report metrics.
-	ancestorCounter.Add(ctx, 1, project, "ok")
-	return true, nil
 }
 
 func extractTagValues(tags []*bbpb.StringPair, key string) []string {

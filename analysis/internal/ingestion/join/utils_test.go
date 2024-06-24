@@ -112,13 +112,12 @@ func ingestCVRun(ctx context.Context, buildIDs []int64) error {
 }
 
 type buildBuilder struct {
-	buildID             int64
-	hasInvocation       bool
-	tags                []string
-	createTime          time.Time
-	ancestorIDs         []int64
-	containedByAncestor bool
-	gardenerRotations   []string
+	buildID           int64
+	hasInvocation     bool
+	tags              []string
+	createTime        time.Time
+	ancestorIDs       []int64
+	gardenerRotations []string
 }
 
 func newBuildBuilder(buildID int64) *buildBuilder {
@@ -145,11 +144,6 @@ func (b *buildBuilder) WithCreateTime(t time.Time) *buildBuilder {
 
 func (b *buildBuilder) WithAncestorIDs(ancestorIDs []int64) *buildBuilder {
 	b.ancestorIDs = ancestorIDs
-	return b
-}
-
-func (b *buildBuilder) WithContainedByAncestor(contained bool) *buildBuilder {
-	b.containedByAncestor = contained
 	return b
 }
 
@@ -254,10 +248,9 @@ func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 			Ref:      "refs/heads/branch",
 			Position: 555888,
 		},
-		HasInvocation:        b.hasInvocation,
-		ResultdbHost:         resultdbHost,
-		IsIncludedByAncestor: b.containedByAncestor,
-		GardenerRotations:    b.gardenerRotations,
+		HasInvocation:     b.hasInvocation,
+		ResultdbHost:      resultdbHost,
+		GardenerRotations: b.gardenerRotations,
 	}
 }
 

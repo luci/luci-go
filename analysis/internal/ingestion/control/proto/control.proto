@@ -62,12 +62,6 @@ message BuildResult {
   // build. Only populated if has_invocation is set.
   string resultdb_host = 10;
 
-  // Whether the ResultDB invocation of this buildbucket build is included
-  // in the ResultDB invocation of the build ancestor (if any).
-  // Only populated if has_invocation is set. If the build has no ancestor,
-  // this is set to false.
-  bool is_included_by_ancestor = 11;
-
   // The changelists that were tested by the build.
   repeated luci.analysis.v1.Changelist changelists = 12;
 
