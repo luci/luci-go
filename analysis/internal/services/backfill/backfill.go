@@ -42,10 +42,11 @@ const (
 	queue     = "backfill"
 )
 
-// The last test_results partition that may be backfilled by this process.
+// The last test_results partition that may be backfilled by the non-merging
+// backfill process.
 // Data after this day needs to be manually backfilled with a different query
 // that only backfills data not already in the table.
-var lastAllowedDay = time.Date(2024, 5, 8, 0, 0, 0, 0, time.UTC)
+var mergeAfterDay = time.Date(2024, 5, 8, 0, 0, 0, 0, time.UTC)
 
 var tc = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        taskClass,
@@ -63,7 +64,12 @@ func RegisterTaskHandler(srv *server.Server) error {
 
 	handler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskspb.Backfill)
-		return backfill(ctx, client, task)
+
+		if task.Day.AsTime().After(mergeAfterDay) {
+			return mergingBackfill(ctx, client, task)
+		} else {
+			return backfill(ctx, client, task)
+		}
 	}
 	tc.AttachHandler(handler)
 	return nil
@@ -116,8 +122,8 @@ func randomDeduplicationKey() (string, error) {
 }
 
 func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfill) error {
-	if task.Day.AsTime().After(lastAllowedDay) {
-		return tq.Fatal.Apply(errors.Reason("cannot backfill after %v (got %v)", lastAllowedDay, task.Day.AsTime()).Err())
+	if task.Day.AsTime().After(mergeAfterDay) {
+		return tq.Fatal.Apply(errors.Reason("cannot perform non-merging backfill after %v (got %v)", mergeAfterDay, task.Day.AsTime()).Err())
 	}
 
 	// Check if we have previously backfilled this date. This is to make the
@@ -180,14 +186,69 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 	}
 	job, err := query.Run(ctx)
 	if err != nil {
-		return errors.Annotate(err, "start partition backfill").Err()
+		return errors.Annotate(err, "start non-merging backfill").Err()
 	}
 	status, err := bqutil.WaitForJob(ctx, job)
 	if err != nil {
-		return errors.Annotate(err, "wait for partition backfill").Err()
+		return errors.Annotate(err, "wait for non-merging backfill").Err()
 	}
 	if err := status.Err(); err != nil {
-		return errors.Annotate(err, "partition backfill").Err()
+		return errors.Annotate(err, "non-merging backfill").Err()
+	}
+	return nil
+}
+
+func mergingBackfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfill) error {
+	logging.Infof(ctx, "Performing merging backfill of day %v...", task.Day.AsTime())
+	query := client.Query(`
+		INSERT INTO internal.test_results (project, test_id, variant, variant_hash, invocation, partition_time, parent, name, result_id, expected, status, summary_html, start_time, duration_secs, tags, failure_reason, skip_reason, properties, sources, source_ref, source_ref_hash, test_metadata, insert_time)
+		SELECT
+			v.project,
+			v.test_id,
+			v.variant,
+			v.variant_hash,
+			STRUCT(v.invocation.id as id, v.invocation.realm as realm) as invocation,
+			v.partition_time,
+			STRUCT(r.parent.id as id, CAST([] AS ARRAY<STRUCT<key STRING, value STRING>>) as tags, CAST(NULL as STRING) as realm, CAST(NULL AS JSON) as properties) as parent,
+			r.name,
+			r.result_id,
+			r.expected,
+			r.status,
+			r.summary_html,
+			r.start_time,
+			r.duration as duration_secs,
+			r.tags,
+			r.failure_reason,
+			r.skip_reason,
+			r.properties,
+			STRUCT(v.sources.gitiles_commit, ARRAY(SELECT STRUCT(cl.host, cl.project, cl.change, cl.patchset, cl.owner_kind) FROM UNNEST(v.sources.changelists) cl), v.sources.is_dirty) as sources,
+			v.source_ref,
+			v.source_ref_hash,
+			v.test_metadata,
+			v.insert_time
+		FROM internal.test_verdicts v, UNNEST(results) r
+		LEFT JOIN (
+			SELECT *
+			FROM internal.test_results
+			WHERE TIMESTAMP_ADD(@partitionDay, INTERVAL 3 DAY) > partition_time AND partition_time >= @partitionDay
+		) tr ON v.project = tr.project AND v.invocation.id = tr.invocation.id AND r.name = tr.name
+		WHERE TIMESTAMP_TRUNC(v.partition_time, DAY) = @partitionDay
+		  -- A row does not exist in the table for the given (project, invocation, test result name).
+		  AND tr.name IS NULL
+	`)
+	query.Parameters = []bigquery.QueryParameter{
+		{Name: "partitionDay", Value: task.Day.AsTime()},
+	}
+	job, err := query.Run(ctx)
+	if err != nil {
+		return errors.Annotate(err, "start merging backfill").Err()
+	}
+	status, err := bqutil.WaitForJob(ctx, job)
+	if err != nil {
+		return errors.Annotate(err, "wait for merging backfill").Err()
+	}
+	if err := status.Err(); err != nil {
+		return errors.Annotate(err, "merging backfill").Err()
 	}
 	return nil
 }
