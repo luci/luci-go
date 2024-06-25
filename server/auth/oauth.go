@@ -294,7 +294,7 @@ func queryTokenInfoEndpoint(ctx context.Context, params googleoauth.TokenInfoPar
 	}
 
 	err = retry.Retry(ctx, transient.Only(retryParams), func() (err error) {
-		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
 		start := clock.Now(ctx)
@@ -305,7 +305,7 @@ func queryTokenInfoEndpoint(ctx context.Context, params googleoauth.TokenInfoPar
 			outcome = "OK"
 		case err == googleoauth.ErrBadToken:
 			outcome = "BAD_TOKEN"
-		case errors.Unwrap(err) == context.DeadlineExceeded:
+		case ctx.Err() != nil:
 			outcome = "DEADLINE"
 		}
 
