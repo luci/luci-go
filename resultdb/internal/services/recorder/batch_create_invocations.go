@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/exportroots"
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
@@ -163,7 +164,7 @@ func (s *recorderServer) createInvocationsInternal(ctx context.Context, now time
 			SourceSpec:         req.Invocation.GetSourceSpec(),
 			IsSourceSpecFinal:  req.Invocation.GetIsSourceSpecFinal(),
 			BaselineId:         req.Invocation.GetBaselineId(),
-			Instructions:       req.Invocation.GetInstructions(),
+			Instructions:       instructionutil.RemoveInstructionsName(req.Invocation.GetInstructions()),
 			ExtendedProperties: req.Invocation.GetExtendedProperties(),
 		}
 

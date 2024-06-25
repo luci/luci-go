@@ -20,7 +20,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -60,6 +59,46 @@ func RemoveInstructionsContent(instructions *pb.Instructions) *pb.Instructions {
 	return result
 }
 
-func InstructionName(invocationID invocations.ID, instructionID string) string {
+// InstructionsWithNames populates the instructions with names.
+// We used string instead of invocations.ID to avoid circular import with the invocations package.
+func InstructionsWithNames(instructions *pb.Instructions, invocationID string) *pb.Instructions {
+	if instructions == nil {
+		return nil
+	}
+	result := proto.Clone(instructions).(*pb.Instructions)
+	for _, instruction := range result.GetInstructions() {
+		instruction.Name = InstructionName(invocationID, instruction.Id)
+	}
+	return result
+}
+
+// InstructionWithNames populates the instruction with names.
+// We used string instead of invocations.ID to avoid circular import with the invocations package.
+func InstructionWithNames(instruction *pb.Instruction, invocationID string) *pb.Instruction {
+	if instruction == nil {
+		return nil
+	}
+	result := proto.Clone(instruction).(*pb.Instruction)
+	result.Name = InstructionName(invocationID, instruction.Id)
+	return result
+}
+
+// InstructionName returns instruction name given invocationID and instructionID.
+// We used string instead of invocations.ID to avoid circular import with the invocations package.
+func InstructionName(invocationID string, instructionID string) string {
 	return fmt.Sprintf("invocations/%s/instructions/%s", invocationID, instructionID)
+}
+
+// RemoveInstructionsName removes all names from instructions.
+// This is to be used in create/update invocations.
+// Name is an output-only field, we will not store it in Spanner.
+func RemoveInstructionsName(instructions *pb.Instructions) *pb.Instructions {
+	if instructions == nil {
+		return nil
+	}
+	result := proto.Clone(instructions).(*pb.Instructions)
+	for _, instruction := range result.GetInstructions() {
+		instruction.Name = ""
+	}
+	return result
 }

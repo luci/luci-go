@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
@@ -174,6 +175,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			if err := proto.Unmarshal(instructions, inv.Instructions); err != nil {
 				return err
 			}
+			inv.Instructions = instructionutil.InstructionsWithNames(inv.Instructions, string(id))
 		}
 
 		// Deserialize from luci.resultdb.internal.invocations.ExtendedProperties

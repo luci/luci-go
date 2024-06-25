@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -87,8 +88,9 @@ func TestQueryInstruction(t *testing.T) {
 		Convey(`Query instruction`, func() {
 			// Insert invocations.
 			myInstruction := &pb.Instruction{
-				Id:   "my_instruction",
-				Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+				Id:              "my_instruction",
+				Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+				DescriptiveName: "My instruction",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -107,8 +109,9 @@ func TestQueryInstruction(t *testing.T) {
 			}
 
 			instructionDependingOnRestrictedInvocation := &pb.Instruction{
-				Id:   "instruction_that_depends_on_a_restricted_invocation",
-				Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+				Id:              "instruction_that_depends_on_a_restricted_invocation",
+				Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+				DescriptiveName: "Instruction that depends on a restricted invocation",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -124,8 +127,9 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 			instructionCycle1 := &pb.Instruction{
-				Id:   "instruction_cycle_1",
-				Type: pb.InstructionType_STEP_INSTRUCTION,
+				Id:              "instruction_cycle_1",
+				Type:            pb.InstructionType_STEP_INSTRUCTION,
+				DescriptiveName: "Instruction cycle 1",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -142,8 +146,9 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 			instructionCycle2 := &pb.Instruction{
-				Id:   "instruction_cycle_2",
-				Type: pb.InstructionType_STEP_INSTRUCTION,
+				Id:              "instruction_cycle_2",
+				Type:            pb.InstructionType_STEP_INSTRUCTION,
+				DescriptiveName: "Instruction cycle 2",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -160,8 +165,9 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 			instructionDepNotFound := &pb.Instruction{
-				Id:   "instruction_dep_not_found",
-				Type: pb.InstructionType_STEP_INSTRUCTION,
+				Id:              "instruction_dep_not_found",
+				Type:            pb.InstructionType_STEP_INSTRUCTION,
+				DescriptiveName: "Instruction dep not found",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -177,8 +183,9 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 			instructionDependingOnNonStepInstruction := &pb.Instruction{
-				Id:   "instruction_depending_on_non_step_instruction",
-				Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+				Id:              "instruction_depending_on_non_step_instruction",
+				DescriptiveName: "Instruction depending on non step instruction",
+				Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -194,8 +201,9 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 			instruction1 := &pb.Instruction{
-				Id:   "instruction_1",
-				Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+				Id:              "instruction_1",
+				Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+				DescriptiveName: "Instruction 1",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -212,8 +220,9 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 			instruction2 := &pb.Instruction{
-				Id:   "instruction_2",
-				Type: pb.InstructionType_STEP_INSTRUCTION,
+				Id:              "instruction_2",
+				Type:            pb.InstructionType_STEP_INSTRUCTION,
+				DescriptiveName: "Instruction 2",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -236,8 +245,9 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 			instruction3 := &pb.Instruction{
-				Id:   "instruction_3",
-				Type: pb.InstructionType_STEP_INSTRUCTION,
+				Id:              "instruction_3",
+				Type:            pb.InstructionType_STEP_INSTRUCTION,
+				DescriptiveName: "Instruction 3",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -254,8 +264,9 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 			instruction4 := &pb.Instruction{
-				Id:   "instruction_4",
-				Type: pb.InstructionType_STEP_INSTRUCTION,
+				Id:              "instruction_4",
+				Type:            pb.InstructionType_STEP_INSTRUCTION,
+				DescriptiveName: "Instruction 4",
 				TargetedInstructions: []*pb.TargetedInstruction{
 					{
 						Targets: []pb.InstructionTarget{
@@ -324,7 +335,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
-					Instruction: myInstruction,
+					Instruction: instructionutil.InstructionWithNames(myInstruction, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -349,7 +360,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
-					Instruction: instructionDependingOnRestrictedInvocation,
+					Instruction: instructionutil.InstructionWithNames(instructionDependingOnRestrictedInvocation, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -371,7 +382,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
-					Instruction: instructionCycle1,
+					Instruction: instructionutil.InstructionWithNames(instructionCycle1, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -379,10 +390,12 @@ func TestQueryInstruction(t *testing.T) {
 								{
 									InstructionName: "invocations/build-12346/instructions/instruction_cycle_2",
 									Content:         "cycle 2",
+									DescriptiveName: "Instruction cycle 2",
 								},
 								{
 									InstructionName: "invocations/build-12345/instructions/instruction_cycle_1",
 									Error:           "dependency cycle detected",
+									DescriptiveName: "Instruction cycle 1",
 								},
 							},
 						},
@@ -397,7 +410,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
-					Instruction: instructionDepNotFound,
+					Instruction: instructionutil.InstructionWithNames(instructionDepNotFound, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_REMOTE,
@@ -419,7 +432,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
-					Instruction: instructionDependingOnNonStepInstruction,
+					Instruction: instructionutil.InstructionWithNames(instructionDependingOnNonStepInstruction, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -427,6 +440,7 @@ func TestQueryInstruction(t *testing.T) {
 								{
 									InstructionName: "invocations/build-12345/instructions/my_instruction",
 									Error:           "an instruction can only depend on a step instruction",
+									DescriptiveName: "My instruction",
 								},
 							},
 						},
@@ -442,7 +456,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
-					Instruction: instruction1,
+					Instruction: instructionutil.InstructionWithNames(instruction1, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -450,10 +464,12 @@ func TestQueryInstruction(t *testing.T) {
 								{
 									InstructionName: "invocations/build-12346/instructions/instruction_2",
 									Content:         "content of instruction 2",
+									DescriptiveName: "Instruction 2",
 								},
 								{
 									InstructionName: "invocations/build-12346/instructions/instruction_3",
 									Content:         "content of instruction 3",
+									DescriptiveName: "Instruction 3",
 								},
 							},
 						},
@@ -463,6 +479,7 @@ func TestQueryInstruction(t *testing.T) {
 								{
 									InstructionName: "invocations/build-12346/instructions/instruction_2",
 									Content:         "content of remote target of instruction 2",
+									DescriptiveName: "Instruction 2",
 								},
 							},
 						},
@@ -477,7 +494,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
-					Instruction: instruction1,
+					Instruction: instructionutil.InstructionWithNames(instruction1, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -485,14 +502,17 @@ func TestQueryInstruction(t *testing.T) {
 								{
 									InstructionName: "invocations/build-12346/instructions/instruction_2",
 									Content:         "content of instruction 2",
+									DescriptiveName: "Instruction 2",
 								},
 								{
 									InstructionName: "invocations/build-12346/instructions/instruction_3",
 									Content:         "content of instruction 3",
+									DescriptiveName: "Instruction 3",
 								},
 								{
 									InstructionName: "invocations/build-12346/instructions/instruction_4",
 									Content:         "content of instruction 4",
+									DescriptiveName: "Instruction 4",
 								},
 							},
 						},
@@ -502,6 +522,7 @@ func TestQueryInstruction(t *testing.T) {
 								{
 									InstructionName: "invocations/build-12346/instructions/instruction_2",
 									Content:         "content of remote target of instruction 2",
+									DescriptiveName: "Instruction 2",
 								},
 							},
 						},

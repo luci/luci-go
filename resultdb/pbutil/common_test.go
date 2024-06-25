@@ -169,8 +169,9 @@ func TestValidate(t *testing.T) {
 		instructions := &pb.Instructions{
 			Instructions: []*pb.Instruction{
 				{
-					Id:   "step_instruction1",
-					Type: pb.InstructionType_STEP_INSTRUCTION,
+					Id:              "step_instruction1",
+					Type:            pb.InstructionType_STEP_INSTRUCTION,
+					DescriptiveName: "Step instruction 1",
 					TargetedInstructions: []*pb.TargetedInstruction{
 						{
 							Targets: []pb.InstructionTarget{
@@ -181,8 +182,9 @@ func TestValidate(t *testing.T) {
 					},
 				},
 				{
-					Id:   "step_instruction2",
-					Type: pb.InstructionType_STEP_INSTRUCTION,
+					Id:              "step_instruction2",
+					Type:            pb.InstructionType_STEP_INSTRUCTION,
+					DescriptiveName: "Step instruction 2",
 					TargetedInstructions: []*pb.TargetedInstruction{
 						{
 							Targets: []pb.InstructionTarget{
@@ -193,8 +195,9 @@ func TestValidate(t *testing.T) {
 					},
 				},
 				{
-					Id:   "test_instruction1",
-					Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+					Id:              "test_instruction1",
+					Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+					DescriptiveName: "Test instruction 1",
 					TargetedInstructions: []*pb.TargetedInstruction{
 						{
 							Targets: []pb.InstructionTarget{
@@ -233,7 +236,7 @@ func TestValidate(t *testing.T) {
 		})
 		Convey("Instructions too big", func() {
 			instructions.Instructions[0].Id = strings.Repeat("a", 2*1024*1024)
-			So(ValidateInstructions(instructions), ShouldErrLike, "bigger than 1048576 bytes")
+			So(ValidateInstructions(instructions), ShouldErrLike, "exceeds 1048576 bytes")
 		})
 		Convey("No ID", func() {
 			instructions.Instructions[0].Id = ""
@@ -246,6 +249,14 @@ func TestValidate(t *testing.T) {
 		Convey("No Type", func() {
 			instructions.Instructions[0].Type = pb.InstructionType_INSTRUCTION_TYPE_UNSPECIFIED
 			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: type: unspecified")
+		})
+		Convey("No descriptive name", func() {
+			instructions.Instructions[0].DescriptiveName = ""
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: descriptive_name: unspecified")
+		})
+		Convey("Descriptive name too long", func() {
+			instructions.Instructions[0].DescriptiveName = strings.Repeat("a", 101)
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: descriptive_name: exceeds 100 characters")
 		})
 		Convey("Empty target", func() {
 			instructions.Instructions[0].TargetedInstructions[0].Targets = []pb.InstructionTarget{}
@@ -265,7 +276,7 @@ func TestValidate(t *testing.T) {
 		})
 		Convey("Content exceeds size limit", func() {
 			instructions.Instructions[2].TargetedInstructions[0].Content = strings.Repeat("a", 120000)
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[2]: targeted_instructions[0]: content: longer than 10240 bytes")
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[2]: targeted_instructions[0]: content: exceeds 10240 characters")
 		})
 		Convey("More than 1 dependency", func() {
 			instructions.Instructions[2].TargetedInstructions[0].Dependencies = []*pb.InstructionDependency{

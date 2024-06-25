@@ -61,6 +61,8 @@ const MaxDependencyStepTagKeySize = 256
 
 const MaxDependencyStepTagValSize = 1024
 
+const MaxInstructionNameSize = 100
+
 var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
 
 // Allow hostnames permitted by
@@ -268,7 +270,7 @@ func ValidateInstructions(instructions *pb.Instructions) error {
 		return nil
 	}
 	if proto.Size(instructions) > MaxInstructionsSize {
-		return errors.Reason("bigger than %d bytes", MaxInstructionsSize).Err()
+		return errors.Reason("exceeds %d bytes", MaxInstructionsSize).Err()
 	}
 
 	idMap := map[string]int{}
@@ -291,6 +293,12 @@ func ValidateInstructions(instructions *pb.Instructions) error {
 func ValidateInstruction(instruction *pb.Instruction) error {
 	if instruction.Type == pb.InstructionType_INSTRUCTION_TYPE_UNSPECIFIED {
 		return errors.Reason("type: unspecified").Err()
+	}
+	if instruction.DescriptiveName == "" {
+		return errors.Reason("descriptive_name: unspecified").Err()
+	}
+	if len(instruction.DescriptiveName) > MaxInstructionNameSize {
+		return errors.Reason("descriptive_name: exceeds %v characters", MaxInstructionNameSize).Err()
 	}
 	targetMap := map[pb.InstructionTarget]bool{}
 	for i, targetedInstruction := range instruction.TargetedInstructions {
@@ -324,7 +332,7 @@ func ValidateTargetedInstruction(targetedInstruction *pb.TargetedInstruction, ta
 	// Make sure content size <= 10KB.
 	// TODO (nqmtuan): Validate this is a valid mustache template.
 	if len(targetedInstruction.Content) > MaxInstructionSize {
-		return errors.Reason("content: longer than %v bytes", MaxInstructionSize).Err()
+		return errors.Reason("content: exceeds %v characters", MaxInstructionSize).Err()
 	}
 	// Check dependency.
 	if err := ValidateDependencies(targetedInstruction.Dependencies); err != nil {

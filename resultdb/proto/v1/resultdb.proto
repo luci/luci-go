@@ -798,6 +798,12 @@ message InstructionDependencyChain {
     // If an error is returned, it will only be returned in the last dependency node,
     // after that, the chain will stop.
     string error = 3;
+
+    // The descriptive name of the instruction that the dependency belongs to.
+    // In the following cases, the descriptive name will not be set:
+    // - If the user does not have the permission to access the instruction for the node, or
+    // - If the instruction cannot be found.
+    string descriptive_name = 4;
   }
 
   // List of dependencies.

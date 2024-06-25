@@ -91,8 +91,9 @@ func TestGetInstruction(t *testing.T) {
 					"Instructions": spanutil.Compress(pbutil.MustMarshal(&pb.Instructions{
 						Instructions: []*pb.Instruction{
 							{
-								Id:   "my_instruction",
-								Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+								Id:              "my_instruction",
+								DescriptiveName: "My Instruction",
+								Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
 								TargetedInstructions: []*pb.TargetedInstruction{
 									{
 										Targets: []pb.InstructionTarget{
@@ -123,8 +124,10 @@ func TestGetInstruction(t *testing.T) {
 				instruction, err := srv.GetInstruction(ctx, req)
 				So(err, ShouldBeNil)
 				So(instruction, ShouldResembleProto, &pb.Instruction{
-					Id:   "my_instruction",
-					Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+					Id:              "my_instruction",
+					Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+					DescriptiveName: "My Instruction",
+					Name:            "invocations/build-12345/instructions/my_instruction",
 					TargetedInstructions: []*pb.TargetedInstruction{
 						{
 							Targets: []pb.InstructionTarget{

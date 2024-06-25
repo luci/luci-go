@@ -29,7 +29,6 @@ message Instructions {
 // Instruction is one failure reproduction instruction for a step or test result.
 // Instruction can have different targets, like "local" or "remote".
 // Instructions are stored in invocation level.
-// TODO (nqmtuan): Add name for the instruction field (per https://google.aip.dev/122).
 message Instruction {
   // ID of the instruction. Required.
   // It is consumer-defined and is unique within the an invocation.
@@ -57,6 +56,16 @@ message Instruction {
   // in this invocation and included invocations.
   // Only applicable for test instructions. This field will be ignored for step instructions.
   InstructionFilter instruction_filter = 4;
+
+  // This is an output only field, representing the name of the instruction.
+  // Format: invocations/<invocation_id>/instructions/<instruction_id>
+  // If this field is set as input, it will be ignored.
+  string name = 5;
+
+  // The descriptive, human-readable name of the instruction.
+  // It will be showed in the dependency section in MILO.
+  // Limit: 100 bytes.
+  string descriptive_name = 6;
 }
 
 // InstructionFilter specifies the test results that this instruction applies to.

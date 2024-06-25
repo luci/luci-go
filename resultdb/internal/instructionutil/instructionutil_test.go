@@ -169,3 +169,149 @@ func TestFilterInstructionType(t *testing.T) {
 		})
 	})
 }
+
+func TestInstructionsName(t *testing.T) {
+	Convey("Instructions name", t, func() {
+		Convey("Instructions is nil", func() {
+			So(InstructionsWithNames(nil, "inv"), ShouldBeNil)
+		})
+		Convey("Success", func() {
+			instructions := &pb.Instructions{
+				Instructions: []*pb.Instruction{
+					{
+						Id:   "step",
+						Type: pb.InstructionType_STEP_INSTRUCTION,
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "step instruction",
+							},
+						},
+					},
+					{
+						Id:   "test",
+						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "test instruction",
+							},
+						},
+					},
+				},
+			}
+			result := InstructionsWithNames(instructions, "inv")
+			So(result, ShouldResembleProto, &pb.Instructions{
+				Instructions: []*pb.Instruction{
+					{
+						Id:   "step",
+						Type: pb.InstructionType_STEP_INSTRUCTION,
+						Name: "invocations/inv/instructions/step",
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "step instruction",
+							},
+						},
+					},
+					{
+						Id:   "test",
+						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						Name: "invocations/inv/instructions/test",
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "test instruction",
+							},
+						},
+					},
+				},
+			})
+		})
+	})
+}
+
+func TestRemoveInstructionsName(t *testing.T) {
+	Convey("Instructions name", t, func() {
+		Convey("Instructions is nil", func() {
+			So(RemoveInstructionsName(nil), ShouldBeNil)
+		})
+		Convey("Success", func() {
+			instructions := &pb.Instructions{
+				Instructions: []*pb.Instruction{
+					{
+						Id:   "step",
+						Type: pb.InstructionType_STEP_INSTRUCTION,
+						Name: "name",
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "step instruction",
+							},
+						},
+					},
+					{
+						Id:   "test",
+						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						Name: "name",
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "test instruction",
+							},
+						},
+					},
+				},
+			}
+			result := RemoveInstructionsName(instructions)
+			So(result, ShouldResembleProto, &pb.Instructions{
+				Instructions: []*pb.Instruction{
+					{
+						Id:   "step",
+						Type: pb.InstructionType_STEP_INSTRUCTION,
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "step instruction",
+							},
+						},
+					},
+					{
+						Id:   "test",
+						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						TargetedInstructions: []*pb.TargetedInstruction{
+							{
+								Targets: []pb.InstructionTarget{
+									pb.InstructionTarget_LOCAL,
+									pb.InstructionTarget_REMOTE,
+								},
+								Content: "test instruction",
+							},
+						},
+					},
+				},
+			})
+		})
+	})
+}

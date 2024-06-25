@@ -78,7 +78,7 @@ func (s *resultDBServer) QueryInstruction(ctx context.Context, req *pb.QueryInst
 	dependencyChains := []*pb.InstructionDependencyChain{}
 	for _, targetedInstruction := range instruction.TargetedInstructions {
 		for _, target := range targetedInstruction.Targets {
-			dependencyNodes, err := fetchDependencyNodes(ctx, invocationID, instructionID, targetedInstruction, target, maxDepth)
+			dependencyNodes, err := fetchDependencyNodes(ctx, invocationID, instruction, targetedInstruction, target, maxDepth)
 			if err != nil {
 				return nil, err
 			}
@@ -96,12 +96,13 @@ func (s *resultDBServer) QueryInstruction(ctx context.Context, req *pb.QueryInst
 }
 
 // fetchDependencyNodes fetches the dependency chain for an instruction.
-func fetchDependencyNodes(ctx context.Context, invID invocations.ID, instructionID string, ti *pb.TargetedInstruction, target pb.InstructionTarget, maxDepth int) ([]*pb.InstructionDependencyChain_Node, error) {
+func fetchDependencyNodes(ctx context.Context, invID invocations.ID, rootInstruction *pb.Instruction, ti *pb.TargetedInstruction, target pb.InstructionTarget, maxDepth int) ([]*pb.InstructionDependencyChain_Node, error) {
 	targetedInstruction := ti
 	// To store the instruction name that we processed.
+	// Of the form {"instruction_name": "descriptive_name"}
 	// This is to detect dependency cycle.
-	processedInstructionName := map[string]bool{}
-	processedInstructionName[instructionutil.InstructionName(invID, instructionID)] = true
+	processedInstructionName := map[string]string{}
+	processedInstructionName[instructionutil.InstructionName(string(invID), rootInstruction.Id)] = rootInstruction.DescriptiveName
 	depth := 0
 	results := []*pb.InstructionDependencyChain_Node{}
 	for depth < maxDepth {
@@ -112,7 +113,7 @@ func fetchDependencyNodes(ctx context.Context, invID invocations.ID, instruction
 		}
 		// We only support at most 1 dependency.
 		dependency := dependencies[0]
-		instructionName := instructionutil.InstructionName(invocations.ID(dependency.InvocationId), dependency.InstructionId)
+		instructionName := instructionutil.InstructionName(dependency.InvocationId, dependency.InstructionId)
 		// Check for permission.
 		err := permissions.VerifyInvocation(ctx, invocations.ID(dependency.InvocationId), rdbperms.PermGetInstruction)
 		// The user does not have permission to access the instruction for this dependency.
@@ -133,15 +134,15 @@ func fetchDependencyNodes(ctx context.Context, invID invocations.ID, instruction
 		}
 
 		// Check for dependency cycle.
-		if _, ok := processedInstructionName[instructionName]; ok {
+		if descriptiveName, ok := processedInstructionName[instructionName]; ok {
 			node := &pb.InstructionDependencyChain_Node{
 				InstructionName: instructionName,
 				Error:           "dependency cycle detected",
+				DescriptiveName: descriptiveName,
 			}
 			results = append(results, node)
 			break
 		}
-		processedInstructionName[instructionName] = true
 
 		// Query for the next targeted instruction.
 		instruction, dependedInstruction, err := fetchTargetedInstruction(ctx, invocations.ID(dependency.InvocationId), dependency.InstructionId, target)
@@ -163,6 +164,7 @@ func fetchDependencyNodes(ctx context.Context, invID invocations.ID, instruction
 			results = append(results, &pb.InstructionDependencyChain_Node{
 				InstructionName: instructionName,
 				Error:           "an instruction can only depend on a step instruction",
+				DescriptiveName: instruction.GetDescriptiveName(),
 			})
 			break
 		}
@@ -171,7 +173,9 @@ func fetchDependencyNodes(ctx context.Context, invID invocations.ID, instruction
 		node := &pb.InstructionDependencyChain_Node{
 			InstructionName: instructionName,
 			Content:         dependedInstruction.Content,
+			DescriptiveName: instruction.GetDescriptiveName(),
 		}
+		processedInstructionName[instructionName] = instruction.GetDescriptiveName()
 		results = append(results, node)
 		targetedInstruction = dependedInstruction
 		depth++

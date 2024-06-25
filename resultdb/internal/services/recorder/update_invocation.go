@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
@@ -362,8 +363,9 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				}
 
 			case "instructions":
-				values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.GetInstructions()))
-				ret.Instructions = in.Invocation.GetInstructions()
+				ins := instructionutil.RemoveInstructionsName(in.Invocation.GetInstructions())
+				values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
+				ret.Instructions = instructionutil.InstructionsWithNames(in.Invocation.GetInstructions(), string(invID))
 
 			case "extended_properties":
 				extendedProperties := in.Invocation.GetExtendedProperties()

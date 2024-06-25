@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -165,7 +166,7 @@ func TestRead(t *testing.T) {
 			},
 			IsSourceSpecFinal:  true,
 			BaselineId:         "try:linux-rel",
-			Instructions:       instructions,
+			Instructions:       instructionutil.InstructionsWithNames(instructions, "including"),
 			ExtendedProperties: extendedProperties,
 		})
 	})

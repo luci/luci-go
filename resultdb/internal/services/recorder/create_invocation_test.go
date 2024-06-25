@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -550,8 +551,9 @@ func TestCreateInvocation(t *testing.T) {
 			req.Invocation.Instructions = &pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
-						Id:   "instruction1",
-						Type: pb.InstructionType_STEP_INSTRUCTION,
+						Id:              "instruction1",
+						Type:            pb.InstructionType_STEP_INSTRUCTION,
+						DescriptiveName: "instruction 1",
 						TargetedInstructions: []*pb.TargetedInstruction{
 							{
 								Targets: []pb.InstructionTarget{
@@ -675,8 +677,10 @@ func TestCreateInvocation(t *testing.T) {
 					Instructions: &pb.Instructions{
 						Instructions: []*pb.Instruction{
 							{
-								Id:   "step",
-								Type: pb.InstructionType_STEP_INSTRUCTION,
+								Id:              "step",
+								Type:            pb.InstructionType_STEP_INSTRUCTION,
+								DescriptiveName: "Step Instruction",
+								Name:            "random1",
 								TargetedInstructions: []*pb.TargetedInstruction{
 									{
 										Targets: []pb.InstructionTarget{
@@ -694,8 +698,10 @@ func TestCreateInvocation(t *testing.T) {
 								},
 							},
 							{
-								Id:   "test",
-								Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+								Id:              "test",
+								Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+								DescriptiveName: "Test Instruction",
+								Name:            "random2",
 								TargetedInstructions: []*pb.TargetedInstruction{
 									{
 										Targets: []pb.InstructionTarget{
@@ -735,6 +741,7 @@ func TestCreateInvocation(t *testing.T) {
 			})
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
+			expected.Instructions = instructionutil.InstructionsWithNames(expected.Instructions, "u-inv")
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-inv",
 				CreatedBy: "user:someone@example.com",

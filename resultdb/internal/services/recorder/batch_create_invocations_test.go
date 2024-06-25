@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -239,8 +240,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 							Instructions: &pb.Instructions{
 								Instructions: []*pb.Instruction{
 									{
-										Id:   "step",
-										Type: pb.InstructionType_STEP_INSTRUCTION,
+										Id:              "step",
+										Type:            pb.InstructionType_STEP_INSTRUCTION,
+										DescriptiveName: "Step Instruction",
+										Name:            "random1",
 										TargetedInstructions: []*pb.TargetedInstruction{
 											{
 												Targets: []pb.InstructionTarget{
@@ -258,8 +261,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 										},
 									},
 									{
-										Id:   "test",
-										Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+										Id:              "test",
+										Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+										DescriptiveName: "Test Instruction",
+										Name:            "random2",
 										TargetedInstructions: []*pb.TargetedInstruction{
 											{
 												Targets: []pb.InstructionTarget{
@@ -311,6 +316,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			expected := proto.Clone(req.Requests[0].Invocation).(*pb.Invocation)
+			expected.Instructions = instructionutil.InstructionsWithNames(expected.Instructions, "u-batch-inv")
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-batch-inv",
 				State:     pb.Invocation_ACTIVE,
@@ -320,6 +326,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 				CreateTime: resp.Invocations[0].CreateTime,
 			})
 			expected2 := proto.Clone(req.Requests[1].Invocation).(*pb.Invocation)
+			expected2.Instructions = instructionutil.InstructionsWithNames(expected2.Instructions, "u-batch-inv2")
 			proto.Merge(expected2, &pb.Invocation{
 				Name:      "invocations/u-batch-inv2",
 				State:     pb.Invocation_ACTIVE,

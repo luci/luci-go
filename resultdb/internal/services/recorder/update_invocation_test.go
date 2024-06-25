@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -281,8 +282,9 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				request.Invocation.Instructions = &pb.Instructions{
 					Instructions: []*pb.Instruction{
 						{
-							Id:   "step",
-							Type: pb.InstructionType_STEP_INSTRUCTION,
+							Id:              "step",
+							Type:            pb.InstructionType_STEP_INSTRUCTION,
+							DescriptiveName: "Step Instruction",
 							TargetedInstructions: []*pb.TargetedInstruction{
 								{
 									Targets: []pb.InstructionTarget{
@@ -300,8 +302,9 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 							},
 						},
 						{
-							Id:   "test",
-							Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+							Id:              "test",
+							Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+							DescriptiveName: "Test Instruction",
 							TargetedInstructions: []*pb.TargetedInstruction{
 								{
 									Targets: []pb.InstructionTarget{
@@ -333,8 +336,9 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				request.Invocation.Instructions = &pb.Instructions{
 					Instructions: []*pb.Instruction{
 						{
-							Id:   "instruction1",
-							Type: pb.InstructionType_STEP_INSTRUCTION,
+							Id:              "instruction1",
+							Type:            pb.InstructionType_STEP_INSTRUCTION,
+							DescriptiveName: "Step Instruction",
 							TargetedInstructions: []*pb.TargetedInstruction{
 								{
 									Targets: []pb.InstructionTarget{
@@ -937,8 +941,10 @@ func TestUpdateInvocation(t *testing.T) {
 			instructions := &pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
-						Id:   "step",
-						Type: pb.InstructionType_STEP_INSTRUCTION,
+						Id:              "step",
+						Type:            pb.InstructionType_STEP_INSTRUCTION,
+						DescriptiveName: "Step instruction",
+						Name:            "random",
 						TargetedInstructions: []*pb.TargetedInstruction{
 							{
 								Targets: []pb.InstructionTarget{
@@ -956,8 +962,9 @@ func TestUpdateInvocation(t *testing.T) {
 						},
 					},
 					{
-						Id:   "test",
-						Type: pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						Id:              "test",
+						Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
+						DescriptiveName: "Test instruction",
 						TargetedInstructions: []*pb.TargetedInstruction{
 							{
 								Targets: []pb.InstructionTarget{
@@ -1019,7 +1026,7 @@ func TestUpdateInvocation(t *testing.T) {
 				IsSourceSpecFinal: true,
 				BaselineId:        "try:linux-rel",
 				Realm:             "testproject:newrealm",
-				Instructions:      instructions,
+				Instructions:      instructionutil.InstructionsWithNames(instructions, "inv"),
 			}
 			So(inv.Name, ShouldEqual, expected.Name)
 			So(inv.State, ShouldEqual, pb.Invocation_ACTIVE)
@@ -1064,6 +1071,7 @@ func TestUpdateInvocation(t *testing.T) {
 			if isSourceSpecFinal.Valid && isSourceSpecFinal.Bool {
 				actual.IsSourceSpecFinal = true
 			}
+			expected.Instructions = instructionutil.RemoveInstructionsName(instructions)
 			So(actual, ShouldResembleProto, expected)
 		})
 	})
