@@ -650,9 +650,9 @@ func TestValidateProjectDetailed(t *testing.T) {
 			})
 			Convey("tree_status", func() {
 				v.TreeStatus = &cfgpb.Verifiers_TreeStatus{}
-				Convey("needs URL", func() {
+				Convey("require tree name", func() {
 					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, "url is required")
+					So(vctx.Finalize(), ShouldErrLike, "tree name is required")
 				})
 				Convey("needs https URL", func() {
 					v.TreeStatus.Url = "http://example.com/test"

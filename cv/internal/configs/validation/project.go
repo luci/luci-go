@@ -420,9 +420,10 @@ func (vd *projectConfigValidator) validateVerifiers(v *cfgpb.Verifiers, supporte
 	}
 	if v.TreeStatus != nil {
 		vd.ctx.Enter("tree_status")
-		if v.TreeStatus.Url == "" {
-			vd.ctx.Errorf("url is required")
-		} else {
+		switch {
+		case v.TreeStatus.GetTreeName() == "" && v.TreeStatus.GetUrl() == "":
+			vd.ctx.Errorf("tree name is required")
+		case v.TreeStatus.Url != "":
 			switch u, err := url.Parse(v.TreeStatus.Url); {
 			case err != nil:
 				vd.ctx.Errorf("failed to parse url %q: %s", v.TreeStatus.Url, err)
