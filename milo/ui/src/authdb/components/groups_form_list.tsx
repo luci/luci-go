@@ -13,7 +13,6 @@
 // limitations under the License.
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
 import ClearIcon from '@mui/icons-material/Clear';
 import CancelIcon from '@mui/icons-material/Cancel';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -27,21 +26,17 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {useState, useEffect} from 'react';
 
+import './groups_list.css';
+
 interface GroupsFormListProps {
     initialItems: string[];
     name: string;
 }
 
 export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
-    const [editMode, setEditMode] = useState<boolean>();
     const [items, setItems] = useState<string[]>(initialItems);
     const [addingItem, setAddingItem] = useState<boolean>();
     const [currentItem, setCurrentItem] = useState<string>();
-    const [showEdit, setShowEdit] = useState<boolean>();
-
-    const changeEditMode = () => {
-        setEditMode(!editMode);
-      }
 
     const changeAddingItem = () => {
         setAddingItem(!addingItem);
@@ -68,35 +63,26 @@ export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
         setItems(initialItems)
     }, [initialItems])
 
-  return (
+    return (
     <TableContainer data-testid='groups-form-list'>
-    <Table sx={{ p: 0, pt: '15px', width: '100%' }} onMouseEnter={() => setShowEdit(true)} onMouseLeave={() => setShowEdit(false)} data-testid='mouse-enter-table'>
+    <Table sx={{ p: 0, pt: '15px', width: '100%' }} data-testid='mouse-enter-table'>
         <TableBody>
       <TableRow>
         <TableCell colSpan={2} sx={{pb :0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
           <Typography variant="h6"> {name}</Typography>
-          {(showEdit || editMode) &&
-            <IconButton color='primary' onClick={changeEditMode} sx={{p: 0, ml: 1.5}} data-testid='edit-button'>
-              {editMode
-              ? <ClearIcon />
-              : <EditIcon />
-              }
-            </IconButton>
-          }
         </TableCell>
       </TableRow>
       {items && items.map((item, index) =>
-        <TableRow key={index} style={{height: '34px'}} sx={{pb: 0, pt: 0, borderBottom: '1px solid grey'}}>
-          <TableCell sx={{pb: 0, pt: 0}} colSpan={2}>
-            <Typography variant="body2" style={{width: '100%'}}>{item}</Typography>
-          </TableCell>
-          {editMode && <TableCell align='right' sx={{pb: 0, pt: 0}}>
-            <IconButton color='error' sx={{p: 0}} onClick={() => removeFromItems(index as number)} data-testid={`remove-button-${item}`}><CancelIcon />
+        <TableRow key={index} style={{height: '34px'}} sx={{borderBottom: '1px solid grey'}} className='item-row' data-testid={`item-row-${item}`}>
+          <TableCell sx={{p: 0, pt: '1px'}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '30px'}}>
+            <IconButton className='remove-icon' color='error' sx={{p: 0, ml: 0.5, mr: 0.5}} onClick={() => removeFromItems(index as number)} data-testid={`remove-button-${item}`}>
+              <CancelIcon/>
             </IconButton>
-          </TableCell>}
+            <Typography variant="body2">{item}</Typography>
+          </TableCell>
         </TableRow>
       )}
-      {editMode && addingItem && (
+      {addingItem && (
         <TableRow>
           <TableCell sx={{p: 0, pt: '15px', pr: '15px'}} style={{width: '94%'}}>
             <TextField label='Add New' style={{width: '100%'}} onChange={(e) => setCurrentItem(e.target.value)} onKeyDown={submitItem} value={currentItem} data-testid='add-textfield'></TextField>
@@ -113,7 +99,7 @@ export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
           </TableCell>
         </TableRow>)
       }
-      {editMode && !addingItem &&
+      {!addingItem &&
         <TableRow>
             <TableCell>
           <Button sx={{mt: '10px'}} variant="outlined" startIcon={<AddCircleIcon />} onClick={changeAddingItem} data-testid='add-button'>

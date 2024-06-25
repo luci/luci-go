@@ -24,3 +24,11 @@
     display: flex;
     flex-direction: row;
 }
+
+.item-row .remove-icon {
+    visibility: hidden;
+}
+
+.item-row:hover .remove-icon {
+    visibility: visible;
+}

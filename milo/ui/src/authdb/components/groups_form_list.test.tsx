@@ -39,58 +39,34 @@ describe('<GroupsFormList />', () => {
         expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
     });
 
-  test('can be toggled to edit mode on hover', async () => {
-    // Check edit button exists.
-    const button = screen.queryByTestId('edit-button');
-    expect(button).not.toBeInTheDocument();
-
-    // Simulate mouse enter event on table.
-    const table = screen.getByTestId('mouse-enter-table');
-    fireEvent.mouseEnter(table);
-
-    // Check if the button is now visible.
-    const buttonAfterMouseEnter = await screen.findByTestId('edit-button');
-    expect(buttonAfterMouseEnter).toBeInTheDocument();
-
-    act(() => buttonAfterMouseEnter!.click());
-    // Check that remove button exists for each member.
+  test('shows remove button on hover', async () => {
+    // Simulate mouse enter event each row.
     for (let i = 0; i < mockGroup.members.length; i++) {
-        expect(screen.getByTestId(`remove-button-${mockGroup.members[i]}`)).not.toBeNull();
+      const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
+      fireEvent.mouseEnter(row);
+      expect(screen.getByTestId(`remove-button-${mockGroup.members[i]}`)).not.toBeNull();
     }
+  })
+
+  test('can remove members', async () => {
+    // Simulate mouse enter event each row.
+    for (let i = 0; i < mockGroup.members.length; i++) {
+      const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
+      fireEvent.mouseEnter(row);
+      const removeButton = screen.getByTestId(`remove-button-${mockGroup.members[i]}`)
+      act(() => removeButton.click());
+      expect(screen.queryByText(mockGroup.members[i])).toBeNull();
+    }
+  })
+
+  test('shows add button', async () => {
+    // Check that remove button exists for each member.
     const addButton = screen.queryByTestId('add-button');
     // Check add button appears on edit.
     expect(addButton).not.toBeNull();
   })
 
-  test('can remove members', async () => {
-    // Simulate mouse enter event on table.
-    const table = screen.getByTestId('mouse-enter-table');
-    fireEvent.mouseEnter(table);
-
-    // Check if the button is now visible.
-    const button = await screen.findByTestId('edit-button');
-    expect(button).toBeInTheDocument();
-    expect(button).not.toBeNull();
-    act(() => button!.click());
-    // Expect remove button to remove member from list.
-    for (let i = 0; i < mockGroup.members.length; i++) {
-        const removeButton = screen.getByTestId(`remove-button-${mockGroup.members[i]}`)
-        act(() => removeButton.click());
-        expect(screen.queryByText(mockGroup.members[i])).toBeNull();
-    }
-  })
-
   test('can add members', async () => {
-    // Simulate mouse enter event on table.
-    const table = screen.getByTestId('mouse-enter-table');
-    fireEvent.mouseEnter(table);
-
-    // Check if the button is now visible.
-    const button = await screen.findByTestId('edit-button');
-    expect(button).toBeInTheDocument();
-
-    // Click edit button.
-    act(() => button!.click());
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
@@ -109,16 +85,6 @@ describe('<GroupsFormList />', () => {
   })
 
   test('can add members with enter button', async () => {
-    // Simulate mouse enter event on table.
-    const table = screen.getByTestId('mouse-enter-table');
-    fireEvent.mouseEnter(table);
-
-    // Check if the button is now visible.
-    const button = await screen.findByTestId('edit-button');
-    expect(button).toBeInTheDocument();
-
-    // Click edit button.
-    act(() => button!.click());
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
@@ -135,16 +101,6 @@ describe('<GroupsFormList />', () => {
   })
 
   test('clears textfield with clear button', async() => {
-    // Simulate mouse enter event on table.
-    const table = screen.getByTestId('mouse-enter-table');
-    fireEvent.mouseEnter(table);
-
-    // Check if the button is now visible.
-    const button = await screen.findByTestId('edit-button');
-    expect(button).toBeInTheDocument();
-
-    // Click edit button.
-    act(() => button!.click());
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
