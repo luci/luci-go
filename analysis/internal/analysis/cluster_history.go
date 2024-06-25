@@ -162,13 +162,9 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 		bigquery.QueryParameter{Name: "project", Value: options.Project},
 		bigquery.QueryParameter{Name: "realms", Value: options.Realms},
 		bigquery.QueryParameter{Name: "days", Value: options.Days})
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying cluster history").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, handleJobReadError(err)
 	}
 	days := []*ReadClusterHistoryDay{}
 	for {

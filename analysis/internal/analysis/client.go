@@ -76,9 +76,3 @@ func (c *Client) ProjectsWithDataset(ctx context.Context) (map[string]struct{}, 
 	}
 	return result, nil
 }
-
-func handleJobReadError(err error) error {
-	// Insert custom handling of BigQuery errors if needed.
-
-	return errors.Annotate(err, "obtain result iterator").Err()
-}

@@ -241,13 +241,9 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		{Name: "allowedBuilderGroups", Value: filter.GetAllowedBuilderGroups()},
 		{Name: "excludedBuilderGroups", Value: filter.GetExcludedBuilderGroups()},
 	}
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying test failures").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, err
 	}
 	groups := []*BuilderRegressionGroup{}
 	for {
@@ -343,13 +339,9 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 		{Name: "startPosition", Value: tf.RegressionStartPosition},
 		{Name: "endPosition", Value: tf.RegressionEndPosition},
 	}
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return BuildInfo{}, errors.Annotate(err, "querying test_verdicts").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return BuildInfo{}, err
 	}
 	rowVals := map[string]bigquery.Value{}
 	// First row is for regression end position.
@@ -439,13 +431,9 @@ func (c *Client) ReadLatestVerdict(ctx context.Context, project string, keys []T
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "project", Value: project},
 	}
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying test name").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "read").Err()
 	}
 	results := map[TestVerdictKey]TestVerdictResult{}
 	for {
@@ -506,13 +494,9 @@ func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project strin
 		{Name: "sinceCommitPosition", Value: sinceCommitPosition},
 	}
 
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return false, errors.Annotate(err, "running query").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return false, errors.Annotate(err, "read").Err()
 	}
 	row := &CountRow{}
 	err = it.Next(row)
@@ -571,13 +555,9 @@ func (c *Client) ChangepointAnalysisForTestVariant(ctx context.Context, project 
 		{Name: "project", Value: project},
 	}
 
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "running query").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "read").Err()
 	}
 	results := map[TestVerdictKey]*ChangepointResult{}
 	for {

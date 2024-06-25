@@ -178,13 +178,9 @@ func (c *ReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, opti
 		{Name: "limit", Value: options.NumCommits},
 		{Name: "allowedRealms", Value: options.AllowedRealms},
 	}
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "running query").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "read").Err()
+		return nil, errors.Annotate(err, "read query results").Err()
 	}
 	results := []*CommitWithVerdicts{}
 	for {

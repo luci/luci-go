@@ -454,13 +454,9 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 	q.DefaultDatasetID = bqutil.InternalDatasetID
 	q.Parameters = append(params, bigquery.QueryParameter{Name: "project", Value: project})
 
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying clusters").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, handleJobReadError(err)
 	}
 	clusters := []*Cluster{}
 	for {

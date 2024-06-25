@@ -125,13 +125,9 @@ func (c *Client) ReadClusterExoneratedTestVariantBranches(ctx context.Context, o
 		{Name: "realms", Value: opts.Realms},
 		{Name: "project", Value: opts.Project},
 	}
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying cluster exonerated test variants").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, handleJobReadError(err)
 	}
 	tvs := []*ExoneratedTestVariantBranch{}
 	for {

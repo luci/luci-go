@@ -110,14 +110,9 @@ func (c *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 		FROM failure_association_rules_history
 	`)
 	q.DefaultDatasetID = bqutil.InternalDatasetID
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return bigquery.NullTimestamp{}, errors.Annotate(err, "querying max last update").Err()
-	}
-	it, err := job.Read(ctx)
-
-	if err != nil {
-		return bigquery.NullTimestamp{}, err
 	}
 	type result struct {
 		LastUpdateTime bigquery.NullTimestamp

@@ -159,13 +159,9 @@ func (c *ReadClient) ReadTestVerdictAfterPosition(ctx context.Context, options R
 		{Name: "partitionTimeEnd", Value: options.PartitionTimeEnd},
 		{Name: "allowedRealms", Value: options.AllowedRealms},
 	}
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "running query").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "read").Err()
 	}
 	results := []*SourceVerdict{}
 	for {

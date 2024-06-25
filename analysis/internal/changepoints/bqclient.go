@@ -109,13 +109,9 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string, week time
 		{Name: "project", Value: project},
 		{Name: "week", Value: week},
 	}
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "running query").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "read").Err()
+		return nil, errors.Annotate(err, "read query results").Err()
 	}
 	results := []*ChangepointRow{}
 	for {

@@ -213,13 +213,9 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 		bigquery.QueryParameter{Name: "earliest", Value: options.TimeRange.Earliest.AsTime()},
 		bigquery.QueryParameter{Name: "latest", Value: options.TimeRange.Latest.AsTime()})
 
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying cluster summaries").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, handleJobReadError(err)
 	}
 
 	// Calculate the array length for daily breakdowns for metrics.

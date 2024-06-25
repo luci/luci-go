@@ -121,13 +121,9 @@ func (client *Client) ReadTestFailureAnalysisRows(ctx context.Context) ([]*TestF
 	q := client.bqClient.Query(queryStm)
 	q.DefaultDatasetID = bqutil.InternalDatasetID
 	q.DefaultProjectID = info.AppID(ctx)
-	job, err := q.Run(ctx)
+	it, err := q.Read(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "querying test failure analyses").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, err
 	}
 	rows := []*TestFailureAnalysisRow{}
 	for {
