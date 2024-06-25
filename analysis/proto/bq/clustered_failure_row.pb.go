@@ -126,15 +126,8 @@ type ClusteredFailureRow struct {
 	// [1]: https://cloud.google.com/blog/products/bigquery/performing-large-scale-mutations-in-bigquery
 	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	// The test result partition time identifies the beginning of the test
-	// result retention period, and corresponds approximately to the time
-	// the test result was produced.
-	//
-	// It is guaranteed that all test results from one presubmit run
-	// will have the same partition time. It is also guaranteed that all
-	// test results from one build will have the same partition time (in
-	// case of builds associated with presubmit runs this was implied by
-	// previous guarantee, but for testing that occurs outside presubmit
-	// this is an added guarantee).
+	// result retention period, and corresponds to the time the ingested
+	// invocation was created in Spanner.
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// Whether the test result is included in the cluster. Set to false if
 	// the test result has been removed from the cluster.

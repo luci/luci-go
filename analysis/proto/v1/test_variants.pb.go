@@ -807,9 +807,8 @@ type TestVariantFailureRateAnalysis_VerdictExample struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The partition time of the verdict. This the time associated with the
-	// test result for test history purposes, usually the build or presubmit
-	// run start time.
+	// The time the verdict's invocation was created in Spanner. This
+	// is the start of the test verdict's retention period.
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// The identity of the ingested invocation.
 	IngestedInvocationId string `protobuf:"bytes,2,opt,name=ingested_invocation_id,json=ingestedInvocationId,proto3" json:"ingested_invocation_id,omitempty"`
@@ -875,9 +874,8 @@ type TestVariantFailureRateAnalysis_RecentVerdict struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The partition time of the verdict. This the time associated with the
-	// test result for test history purposes, usually the build or presubmit
-	// run start time.
+	// The time the verdict's invocation was created in Spanner. This
+	// is the start of the test verdict's retention period.
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// The identity of the ingested invocation.
 	IngestedInvocationId string `protobuf:"bytes,2,opt,name=ingested_invocation_id,json=ingestedInvocationId,proto3" json:"ingested_invocation_id,omitempty"`

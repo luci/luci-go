@@ -76,15 +76,8 @@ type FailureAttributeRow struct {
 	// record type was used).
 	TestResultId string `protobuf:"bytes,4,opt,name=test_result_id,json=testResultId,proto3" json:"test_result_id,omitempty"`
 	// The test result partition time identifies the beginning of the test
-	// result retention period, and corresponds approximately to the time
-	// the test result was produced.
-	//
-	// It is guaranteed that all test results from one presubmit run
-	// will have the same partition time. It is also guaranteed that all
-	// test results from one build will have the same partition time (in
-	// case of builds associated with presubmit runs this was implied by
-	// previous guarantee, but for testing that occurs outside presubmit
-	// this is an added guarantee).
+	// result retention period, and is equal to the time the ingested invocation
+	// was created in Spanner.
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// The number of test runs that filtered out the test due to this failure.
 	//

@@ -255,8 +255,8 @@ type TestVerdict struct {
 	InvocationId string `protobuf:"bytes,3,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
 	// The status of the test verdict.
 	Status TestVerdictStatus `protobuf:"varint,4,opt,name=status,proto3,enum=luci.analysis.v1.TestVerdictStatus" json:"status,omitempty"`
-	// Start time of the presubmit run (for results that are part of a presubmit
-	// run) or start time of the buildbucket build (otherwise).
+	// The time the verdict's invocation was created in Spanner. This
+	// is the start of the test verdict's retention period.
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// The average duration of the PASSED test results included in the test
 	// verdict.

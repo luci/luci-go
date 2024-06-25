@@ -992,8 +992,8 @@ type DistinctClusterFailure struct {
 	Variant *Variant `protobuf:"bytes,2,opt,name=variant,proto3" json:"variant,omitempty"`
 	// Timestamp representing the start of the data retention period for the
 	// test results in this group.
-	// The partition time is usually the presubmit run start time (if any) or
-	// build start time.
+	// The partition time is the creation time of the ingested invocation in
+	// Spanner.
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// Details if the presubmit run associated with these results (if any).
 	PresubmitRun *DistinctClusterFailure_PresubmitRun `protobuf:"bytes,4,opt,name=presubmit_run,json=presubmitRun,proto3" json:"presubmit_run,omitempty"`
@@ -2171,9 +2171,6 @@ type DistinctClusterFailure_PresubmitRun struct {
 	// One presubmit run MAY have many ingested invocation IDs (e.g. for its
 	// various tryjobs), but every ingested invocation ID only ever has one
 	// presubmit run ID (if any).
-	//
-	// All test results for the same presubmit run will have one
-	// partition_time.
 	//
 	// If the test result was not collected as part of a presubmit run,
 	// this is unset.

@@ -111,7 +111,6 @@ func TestHandleCVRun(t *testing.T) {
 				Status: cvv0.Run_SUCCEEDED,
 			}
 			expectedTaskTemplate := &taskspb.IngestTestVerdicts{
-				PartitionTime: run.CreateTime,
 				PresubmitRun: &controlpb.PresubmitResult{
 					PresubmitRunId: &pb.PresubmitRunId{
 						System: "luci-cv",
@@ -268,12 +267,15 @@ func expectedTasks(taskTemplate *taskspb.IngestTestVerdicts, builds []*buildBuil
 		t.PresubmitRun.Critical = ((build.buildID % 2) == 0)
 		t.Build = build.ExpectedResult()
 		t.IngestionId = fmt.Sprintf("%s/build-%d", rdbHost, build.buildID)
+		t.PartitionTime = timestamppb.New(build.createTime)
+
 		if build.hasInvocation {
 			t.Invocation = &controlpb.InvocationResult{
 				ResultdbHost: rdbHost,
 				InvocationId: fmt.Sprintf("build-%d", build.buildID),
 				CreationTime: timestamppb.New(time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)),
 			}
+			t.PartitionTime = t.Invocation.CreationTime
 		}
 		res = append(res, t)
 	}

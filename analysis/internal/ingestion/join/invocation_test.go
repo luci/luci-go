@@ -122,7 +122,6 @@ func TestHandleInvocationFinalization(t *testing.T) {
 				Convey(`With LUCI CV run ingested previously`, func() {
 					So(ingestCVRun(ctx, []int64{build.buildID}), ShouldBeNil)
 
-					expectedTask.PartitionTime = timestamppb.New(cvCreateTime)
 					expectedTask.PresubmitRun = &controlpb.PresubmitResult{
 						PresubmitRunId: &pb.PresubmitRunId{
 							System: "luci-cv",

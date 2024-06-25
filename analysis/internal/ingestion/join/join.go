@@ -458,17 +458,7 @@ func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
 		return false
 	}
 	var itvTask *taskspb.IngestTestVerdicts
-	if e.IsPresubmit {
-		// IsPresubmit is true implies that HasBuildBucketBuild is also true.
-		itvTask = &taskspb.IngestTestVerdicts{
-			IngestionId:   string(e.IngestionID),
-			PartitionTime: e.PresubmitResult.CreationTime,
-			Project:       e.BuildProject,
-			Invocation:    e.InvocationResult,
-			Build:         e.BuildResult,
-			PresubmitRun:  e.PresubmitResult,
-		}
-	} else if e.HasInvocation {
+	if e.HasInvocation {
 		var partitionTime time.Time
 		// TODO: remove if statement and always use InvocationResult.CreationTime
 		// once protos without this field set have been flushed out.
@@ -487,7 +477,17 @@ func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
 			PartitionTime: timestamppb.New(partitionTime),
 			Project:       e.InvocationProject,
 			Invocation:    e.InvocationResult,
-			Build:         e.BuildResult, // if any
+			Build:         e.BuildResult,     // if any
+			PresubmitRun:  e.PresubmitResult, // if any
+		}
+	} else if e.IsPresubmit {
+		// IsPresubmit is true implies that HasBuildBucketBuild is also true.
+		itvTask = &taskspb.IngestTestVerdicts{
+			IngestionId:   string(e.IngestionID),
+			PartitionTime: e.BuildResult.CreationTime,
+			Project:       e.BuildProject,
+			Build:         e.BuildResult,
+			PresubmitRun:  e.PresubmitResult,
 		}
 	} else if e.HasBuildBucketBuild {
 		itvTask = &taskspb.IngestTestVerdicts{

@@ -166,9 +166,8 @@ message TestVariantFailureRateAnalysis {
 
     // VerdictExample describes a verdict that is part of a statistic.
     message VerdictExample {
-        // The partition time of the verdict. This the time associated with the
-        // test result for test history purposes, usually the build or presubmit
-        // run start time.
+        // The time the verdict's invocation was created in Spanner. This
+        // is the start of the test verdict's retention period.
         google.protobuf.Timestamp partition_time = 1;
 
         // The identity of the ingested invocation.
@@ -188,9 +187,8 @@ message TestVariantFailureRateAnalysis {
     repeated VerdictExample run_flaky_verdict_examples = 5;
 
     message RecentVerdict {
-        // The partition time of the verdict. This the time associated with the
-        // test result for test history purposes, usually the build or presubmit
-        // run start time.
+        // The time the verdict's invocation was created in Spanner. This
+        // is the start of the test verdict's retention period.
         google.protobuf.Timestamp partition_time = 1;
 
         // The identity of the ingested invocation.

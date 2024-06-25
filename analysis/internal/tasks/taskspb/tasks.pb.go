@@ -47,9 +47,8 @@ type IngestTestVerdicts struct {
 	// The LUCI project of the invocation and build (if exists) in this ingestion task.
 	Project string `protobuf:"bytes,6,opt,name=project,proto3" json:"project,omitempty"`
 	// Timestamp representing the start of the data retention period
-	// for the ingested test verdicts. In case of multiple builds
-	// ingested for one CV run, the partition_time used for all
-	// builds must be the same.
+	// for the ingested test verdicts. This is the time the ingested invocation
+	// was created in Spanner.
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// ID of this ingestion.
 	// This matches to the ingestionID in the IngestionJoins spanner table.

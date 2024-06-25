@@ -511,9 +511,6 @@ message DistinctClusterFailure {
         // various tryjobs), but every ingested invocation ID only ever has one
         // presubmit run ID (if any).
         //
-        // All test results for the same presubmit run will have one
-        // partition_time.
-        //
         // If the test result was not collected as part of a presubmit run,
         // this is unset.
         luci.analysis.v1.PresubmitRunId presubmit_run_id = 1;
@@ -542,8 +539,8 @@ message DistinctClusterFailure {
 
     // Timestamp representing the start of the data retention period for the
     // test results in this group.
-    // The partition time is usually the presubmit run start time (if any) or
-    // build start time.
+    // The partition time is the creation time of the ingested invocation in
+    // Spanner.
     google.protobuf.Timestamp partition_time = 3;
 
     // Details if the presubmit run associated with these results (if any).

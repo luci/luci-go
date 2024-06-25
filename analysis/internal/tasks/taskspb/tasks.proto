@@ -29,9 +29,8 @@ message IngestTestVerdicts {
   string project = 6;
 
   // Timestamp representing the start of the data retention period
-  // for the ingested test verdicts. In case of multiple builds
-  // ingested for one CV run, the partition_time used for all
-  // builds must be the same.
+  // for the ingested test verdicts. This is the time the ingested invocation
+  // was created in Spanner.
   google.protobuf.Timestamp partition_time = 1;
 
   // ID of this ingestion.

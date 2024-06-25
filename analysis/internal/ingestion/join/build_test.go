@@ -39,13 +39,13 @@ func TestHandleBuild(t *testing.T) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
-		createTime := time.Now()
+		buildCreateTime := time.Now()
 
 		build := newBuildBuilder(14141414).
-			WithCreateTime(createTime)
+			WithCreateTime(buildCreateTime)
 
 		expectedTask := &taskspb.IngestTestVerdicts{
-			PartitionTime: timestamppb.New(createTime),
+			PartitionTime: timestamppb.New(buildCreateTime),
 			Build:         build.ExpectedResult(),
 			IngestionId:   fmt.Sprintf("%s/build-%d", rdbHost, build.buildID),
 			Project:       "buildproject",
@@ -101,7 +101,6 @@ func TestHandleBuild(t *testing.T) {
 
 				So(ingestBuild(ctx, build), ShouldBeNil)
 
-				expectedTask.PartitionTime = timestamppb.New(cvCreateTime)
 				expectedTask.PresubmitRun = &controlpb.PresubmitResult{
 					PresubmitRunId: &pb.PresubmitRunId{
 						System: "luci-cv",
