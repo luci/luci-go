@@ -50,7 +50,7 @@ describe('<InstructionDialog />', () => {
             type: InstructionType.TEST_RESULT_INSTRUCTION,
             targetedInstructions: [
               {
-                content: 'test instruction content',
+                content: '**test id = {{test.id}}**',
                 targets: [InstructionTarget.LOCAL, InstructionTarget.REMOTE],
               },
             ],
@@ -80,6 +80,7 @@ describe('<InstructionDialog />', () => {
           instructionName="invocations/inv/instructions/ins"
           title="Instruction title"
           open={true}
+          placeholderData={{ test: { id: 'my test' } }}
         />
       </FakeContextProvider>,
     );
@@ -88,7 +89,9 @@ describe('<InstructionDialog />', () => {
     expect(screen.getByText('Instruction title')).toBeInTheDocument();
     expect(screen.getByText('Local')).toBeInTheDocument();
     expect(screen.getByText('Remote')).toBeInTheDocument();
-    expect(screen.getByText('test instruction content')).toBeInTheDocument();
+    expect(screen.getByText('test id = my test')).toHaveStyle(
+      'font-weight: bold',
+    );
     expect(
       screen.getByText('Dependency: dependency_instruction'),
     ).toBeInTheDocument();
@@ -110,6 +113,7 @@ describe('<InstructionDialog />', () => {
           instructionName="invocations/inv/instructions/ins"
           title="Instruction title"
           open={true}
+          placeholderData={{}}
         />
       </FakeContextProvider>,
     );

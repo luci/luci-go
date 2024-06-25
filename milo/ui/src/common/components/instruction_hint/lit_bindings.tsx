@@ -32,6 +32,10 @@ export class InstructionHintElement extends ReactLitElement {
         attribute: 'title',
         type: String,
       },
+      placeholderData: {
+        attribute: 'placeholder-data',
+        type: Object,
+      },
     };
   }
 
@@ -61,6 +65,19 @@ export class InstructionHintElement extends ReactLitElement {
     this.requestUpdate('title', oldVal);
   }
 
+  private _placeholderData = {};
+  get placeholderData() {
+    return this._placeholderData;
+  }
+  set placeholderData(newVal: object) {
+    if (newVal === this._placeholderData) {
+      return;
+    }
+    const oldVal = this._placeholderData;
+    this._placeholderData = newVal;
+    this.requestUpdate('placeholderData', oldVal);
+  }
+
   private cache: EmotionCache | undefined = undefined;
 
   renderReact() {
@@ -79,6 +96,7 @@ export class InstructionHintElement extends ReactLitElement {
         <InstructionHint
           instructionName={this.instructionName}
           title={this.title}
+          placeholderData={this.placeholderData}
         />
       </CacheProvider>
     );

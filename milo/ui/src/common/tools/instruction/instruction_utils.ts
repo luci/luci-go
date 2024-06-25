@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Use StringPair from @/common/services/common because the clients still use it.
+import { StringPair } from '@/common/services/common';
 import {
   Instruction,
   InstructionTarget,
@@ -40,4 +42,18 @@ export function targetedInstructionMap(
     [...map.entries()].sort(([target1], [target2]) => target1 - target2),
   );
   return sortedMap;
+}
+
+export function pairsToPlaceholderDict(
+  data: readonly StringPair[] | undefined,
+): {
+  [key: string]: unknown;
+} {
+  const result: { [key: string]: string } = {};
+  // We do not support repeated keys for now.
+  // So later value of the same will override the previous one.
+  for (const pair of data || []) {
+    result[pair.key] = pair.value || '';
+  }
+  return result;
 }

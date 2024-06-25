@@ -39,6 +39,7 @@ import { consumeStore, StoreInstance } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 import { ExpandStepOption } from '@/common/store/user_config/build_config';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { pairsToPlaceholderDict } from '@/common/tools/instruction/instruction_utils';
 import {
   displayCompactDuration,
   displayDuration,
@@ -199,6 +200,25 @@ export class BuildPageStepEntryElement
     `;
   }
 
+  private instructionPlaceHolderData() {
+    const build = this.store.buildPage.build!;
+    const tagsDict = pairsToPlaceholderDict(build.data.tags);
+
+    return {
+      build: {
+        id: build.data.id,
+        builder: {
+          project: build.data.builder.project,
+          bucket: build.data.builder.bucket,
+          builder: build.data.builder.builder,
+        },
+        tags: tagsDict,
+        inputProperties: build.data.input?.properties || {},
+        outputProperties: build.data.output?.properties || {},
+      },
+    };
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.addDisposer(
@@ -262,6 +282,7 @@ export class BuildPageStepEntryElement
                   '/instructions/' +
                   this.step.instructionID}
                   title="How to reproduce this step"
+                  .placeholderData=${this.instructionPlaceHolderData()}
                 ></milo-instruction-hint>`
               : html``}
             <milo-pin-toggle

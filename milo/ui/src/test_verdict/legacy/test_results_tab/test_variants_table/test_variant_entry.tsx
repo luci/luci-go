@@ -40,6 +40,7 @@ import {
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { pairsToPlaceholderDict } from '@/common/tools/instruction/instruction_utils';
 import { logging } from '@/common/tools/logging';
 import { getCodeSourceUrl } from '@/common/tools/url_utils';
 import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
@@ -263,6 +264,20 @@ export class TestVariantEntryElement
     return this.columnGetters.map((fn) => fn(this.variant));
   }
 
+  @computed
+  private get instructionPlaceHolderData() {
+    const resultBundle = this.variant.results || [];
+    const tagDict = pairsToPlaceholderDict(resultBundle[0].result.tags);
+    return {
+      test: {
+        id: this.variant.testId,
+        metadata: this.variant.testMetadata || {},
+        variant: this.variant.variant?.def || {},
+        tags: tagDict,
+      },
+    };
+  }
+
   constructor() {
     super();
     makeObservable(this);
@@ -373,6 +388,7 @@ export class TestVariantEntryElement
               ? html`<milo-instruction-hint
                   instruction-name=${this.variant.instruction?.instruction}
                   title="How to reproduce this test result"
+                  .placeholderData=${this.instructionPlaceHolderData}
                 ></milo-instruction-hint>`
               : html``}
             <milo-copy-to-clipboard

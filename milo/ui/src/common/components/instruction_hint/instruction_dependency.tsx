@@ -16,6 +16,8 @@ import { AlertTitle, Typography } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import { useState } from 'react';
 
+import { SanitizedHtml } from '@/common/components/sanitized_html';
+import { renderMarkdown } from '@/common/tools/markdown/utils';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
@@ -53,10 +55,20 @@ export function InstructionDependency({
             component="span"
             sx={{ color: 'var(--default-text-color)' }}
           >
-            {dependencyNode.content}
+            <SanitizedHtml
+              html={resolveMustacheMarkdown(dependencyNode.content)}
+            />
           </Typography>
         )}
       </ExpandableEntryBody>
     </ExpandableEntry>
   );
+}
+
+function resolveMustacheMarkdown(content: string | undefined): string {
+  if (content === undefined) {
+    return '';
+  }
+  // TODO: Get query buildbucket data for placeholder data.
+  return renderMarkdown(content || '');
 }

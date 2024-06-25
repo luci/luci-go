@@ -24,15 +24,19 @@ import {
 } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import { useQuery } from '@tanstack/react-query';
+import Mustache from 'mustache';
 import { useState } from 'react';
 
+import { SanitizedHtml } from '@/common/components/sanitized_html';
+import { targetedInstructionMap } from '@/common/tools/instruction/instruction_utils';
+import { renderMarkdown } from '@/common/tools/markdown/utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { InstructionTarget } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/instruction.pb';
 import { QueryInstructionRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { InstructionDependency } from './instruction_dependency';
-import { targetedInstructionMap } from './utils';
+import { logging } from '@/common/tools/logging';
 
 const INSTRUCTION_TARGET_DISPLAY_MAP = {
   // The unspecifed target should not happen.
@@ -48,6 +52,8 @@ export interface InstructionDialogProps {
   readonly container?: HTMLDivElement;
   readonly instructionName: string;
   readonly title: string;
+  // placeholder data is to be passed to Mustache.render to replace the placeholders.
+  readonly placeholderData: object;
 }
 
 export function InstructionDialog({
@@ -56,6 +62,7 @@ export function InstructionDialog({
   container,
   instructionName,
   title,
+  placeholderData,
 }: InstructionDialogProps) {
   // Load instruction.
   const client = useResultDbClient();
@@ -106,7 +113,7 @@ export function InstructionDialog({
         container={container}
         onClick={(e) => e.stopPropagation()}
         fullWidth
-        maxWidth="sm"
+        maxWidth="xl"
       >
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
@@ -146,7 +153,12 @@ export function InstructionDialog({
                 component="span"
                 sx={{ color: 'var(--default-text-color)' }}
               >
-                {targetedInstruction?.content}
+                <SanitizedHtml
+                  html={resolveMustacheMarkdown(
+                    targetedInstruction?.content,
+                    placeholderData,
+                  )}
+                />
               </Typography>
             )}
           </Box>
@@ -154,4 +166,23 @@ export function InstructionDialog({
       </Dialog>
     </>
   );
+}
+
+function resolveMustacheMarkdown(
+  content: string | undefined,
+  placeholderData: object,
+): string {
+  if (content === undefined) {
+    return '';
+  }
+  try {
+    // Mustache.render replaces placeholder with empty string ''
+    // if the value is not found. But we handle the error just in case
+    // so a bad template does not break the whole page.
+    const markDownContent = Mustache.render(content, placeholderData);
+    return renderMarkdown(markDownContent || '');
+  } catch (error) {
+    logging.warn('error rendering markdown', error);
+    return '';
+  }
 }

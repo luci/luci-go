@@ -35,11 +35,13 @@ const StyledIconButton = styled(IconButton)`
 export interface InstructionHintProps {
   readonly instructionName: string;
   readonly title: string;
+  readonly placeholderData: object;
 }
 
 export function InstructionHint({
   instructionName,
   title,
+  placeholderData,
 }: InstructionHintProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -65,6 +67,7 @@ export function InstructionHint({
         }}
         title={title}
         instructionName={instructionName}
+        placeholderData={placeholderData}
       />
     </>
   );
