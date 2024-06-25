@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -501,6 +502,11 @@ func validateQuerySourcePositionsRequest(req *pb.QuerySourcePositionsRequest) er
 		return errors.Reason("start_source_position: must be a positive number").Err()
 	}
 	return nil
+}
+
+// QuerySourceVerdicts lists source verdicts for a test variant branch.
+func (s *testVariantBranchesServer) QuerySourceVerdicts(ctx context.Context, req *pb.QuerySourceVerdictsRequest) (*pb.QuerySourceVerdictsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "QuerySourceVerdicts not implemented")
 }
 
 // Query queries test variant branches with a given test id and ref.

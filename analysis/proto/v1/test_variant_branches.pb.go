@@ -44,6 +44,69 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// VerdictStatus represents the status of a verdict as it is
+// seen by changepoint analysis. Changepoint analysis does not consider skipped
+// test results or exonerations.
+type QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus int32
+
+const (
+	QuerySourceVerdictsResponse_SourceVerdict_VERDICT_EXPECTATION_STATUS_UNSPECIFIED QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus = 0
+	// The verdict (excluding skips) has only unexpected results.
+	QuerySourceVerdictsResponse_SourceVerdict_UNEXPECTED QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus = 1
+	// The verdict (excluding skips) has only expected results.
+	QuerySourceVerdictsResponse_SourceVerdict_EXPECTED QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus = 2
+	// The verdict (excluding skips) has a mix of expected and unexpected results.
+	QuerySourceVerdictsResponse_SourceVerdict_FLAKY QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus = 3
+	// The verdict has only skips, and as such was not used in change
+	// point analysis.
+	QuerySourceVerdictsResponse_SourceVerdict_SKIPPED QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus = 4
+)
+
+// Enum value maps for QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus.
+var (
+	QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus_name = map[int32]string{
+		0: "VERDICT_EXPECTATION_STATUS_UNSPECIFIED",
+		1: "UNEXPECTED",
+		2: "EXPECTED",
+		3: "FLAKY",
+		4: "SKIPPED",
+	}
+	QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus_value = map[string]int32{
+		"VERDICT_EXPECTATION_STATUS_UNSPECIFIED": 0,
+		"UNEXPECTED":                             1,
+		"EXPECTED":                               2,
+		"FLAKY":                                  3,
+		"SKIPPED":                                4,
+	}
+)
+
+func (x QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus) Enum() *QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus {
+	p := new(QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus)
+	*p = x
+	return p
+}
+
+func (x QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_enumTypes[0].Descriptor()
+}
+
+func (QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_enumTypes[0]
+}
+
+func (x QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus.Descriptor instead.
+func (QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{12, 0, 0}
+}
+
 // A request message for `TestVariantBranches.Get` RPC.
 type GetRawTestVariantBranchRequest struct {
 	state         protoimpl.MessageState
@@ -1036,6 +1099,131 @@ func (x *QuerySourcePositionsResponse) GetNextPageToken() string {
 	return ""
 }
 
+type QuerySourceVerdictsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The name of the test variant branch to query.
+	// It MUST be of the form projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}
+	// where:
+	// PROJECT is the LUCI Project of the test variant branch analysis.
+	// URL_ESCAPED_TEST_ID is the test ID, escaped with
+	// https://golang.org/pkg/net/url/#PathEscape. See also https://aip.dev/122.
+	// VARIANT_HASH is the variant hash of the test variant analysis (16 lower-case-character hex string).
+	// REF_HASH is the identity of the branch of the analysis. It is a 16 lower-case-character hex string.
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+	// The source position to start querying from, inclusive. This is the minimum source
+	// position in the response.
+	StartSourcePosition int64 `protobuf:"varint,2,opt,name=start_source_position,json=startSourcePosition,proto3" json:"start_source_position,omitempty"`
+	// The source position to stop querying at, exclusive. This is an exclusive upper
+	// bound on the maximum source position in the response.
+	// It is required that the range to be queried does not exceed 1,000 source positions,
+	// i.e. end_source_position - start_source_position <= 1,000.
+	EndSourcePosition int64 `protobuf:"varint,3,opt,name=end_source_position,json=endSourcePosition,proto3" json:"end_source_position,omitempty"`
+}
+
+func (x *QuerySourceVerdictsRequest) Reset() {
+	*x = QuerySourceVerdictsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QuerySourceVerdictsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuerySourceVerdictsRequest) ProtoMessage() {}
+
+func (x *QuerySourceVerdictsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuerySourceVerdictsRequest.ProtoReflect.Descriptor instead.
+func (*QuerySourceVerdictsRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *QuerySourceVerdictsRequest) GetParent() string {
+	if x != nil {
+		return x.Parent
+	}
+	return ""
+}
+
+func (x *QuerySourceVerdictsRequest) GetStartSourcePosition() int64 {
+	if x != nil {
+		return x.StartSourcePosition
+	}
+	return 0
+}
+
+func (x *QuerySourceVerdictsRequest) GetEndSourcePosition() int64 {
+	if x != nil {
+		return x.EndSourcePosition
+	}
+	return 0
+}
+
+type QuerySourceVerdictsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Source verdicts in ascending order. Only source verdicts with results are returned.
+	SourceVerdicts []*QuerySourceVerdictsResponse_SourceVerdict `protobuf:"bytes,1,rep,name=source_verdicts,json=sourceVerdicts,proto3" json:"source_verdicts,omitempty"`
+}
+
+func (x *QuerySourceVerdictsResponse) Reset() {
+	*x = QuerySourceVerdictsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QuerySourceVerdictsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuerySourceVerdictsResponse) ProtoMessage() {}
+
+func (x *QuerySourceVerdictsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuerySourceVerdictsResponse.ProtoReflect.Descriptor instead.
+func (*QuerySourceVerdictsResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *QuerySourceVerdictsResponse) GetSourceVerdicts() []*QuerySourceVerdictsResponse_SourceVerdict {
+	if x != nil {
+		return x.SourceVerdicts
+	}
+	return nil
+}
+
 // SourcePosition contains the commit and the test verdicts at a source position for a test variant branch.
 type SourcePosition struct {
 	state         protoimpl.MessageState
@@ -1056,7 +1244,7 @@ type SourcePosition struct {
 func (x *SourcePosition) Reset() {
 	*x = SourcePosition{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1069,7 +1257,7 @@ func (x *SourcePosition) String() string {
 func (*SourcePosition) ProtoMessage() {}
 
 func (x *SourcePosition) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1082,7 +1270,7 @@ func (x *SourcePosition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SourcePosition.ProtoReflect.Descriptor instead.
 func (*SourcePosition) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{11}
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SourcePosition) GetPosition() int64 {
@@ -1134,7 +1322,7 @@ type QueryChangepointAIAnalysisRequest struct {
 func (x *QueryChangepointAIAnalysisRequest) Reset() {
 	*x = QueryChangepointAIAnalysisRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1147,7 +1335,7 @@ func (x *QueryChangepointAIAnalysisRequest) String() string {
 func (*QueryChangepointAIAnalysisRequest) ProtoMessage() {}
 
 func (x *QueryChangepointAIAnalysisRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1160,7 +1348,7 @@ func (x *QueryChangepointAIAnalysisRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use QueryChangepointAIAnalysisRequest.ProtoReflect.Descriptor instead.
 func (*QueryChangepointAIAnalysisRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{12}
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *QueryChangepointAIAnalysisRequest) GetProject() string {
@@ -1220,7 +1408,7 @@ type QueryChangepointAIAnalysisResponse struct {
 func (x *QueryChangepointAIAnalysisResponse) Reset() {
 	*x = QueryChangepointAIAnalysisResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1233,7 +1421,7 @@ func (x *QueryChangepointAIAnalysisResponse) String() string {
 func (*QueryChangepointAIAnalysisResponse) ProtoMessage() {}
 
 func (x *QueryChangepointAIAnalysisResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1246,7 +1434,7 @@ func (x *QueryChangepointAIAnalysisResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use QueryChangepointAIAnalysisResponse.ProtoReflect.Descriptor instead.
 func (*QueryChangepointAIAnalysisResponse) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{13}
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *QueryChangepointAIAnalysisResponse) GetAnalysisMarkdown() string {
@@ -1279,7 +1467,7 @@ type InputBuffer_Run struct {
 func (x *InputBuffer_Run) Reset() {
 	*x = InputBuffer_Run{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1292,7 +1480,7 @@ func (x *InputBuffer_Run) String() string {
 func (*InputBuffer_Run) ProtoMessage() {}
 
 func (x *InputBuffer_Run) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1355,7 +1543,7 @@ type InputBuffer_Run_Counts struct {
 func (x *InputBuffer_Run_Counts) Reset() {
 	*x = InputBuffer_Run_Counts{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1368,7 +1556,7 @@ func (x *InputBuffer_Run_Counts) String() string {
 func (*InputBuffer_Run_Counts) ProtoMessage() {}
 
 func (x *InputBuffer_Run_Counts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1474,7 +1662,7 @@ type Segment_Counts struct {
 func (x *Segment_Counts) Reset() {
 	*x = Segment_Counts{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1487,7 +1675,7 @@ func (x *Segment_Counts) String() string {
 func (*Segment_Counts) ProtoMessage() {}
 
 func (x *Segment_Counts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1524,6 +1712,145 @@ func (x *Segment_Counts) GetTotalVerdicts() int32 {
 	return 0
 }
 
+type QuerySourceVerdictsResponse_SourceVerdict struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The source position.
+	Position int64 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
+	// The overall status of the source verdict. Due to limitations in the implementation,
+	// this currently reflects the aggregation of all test verdicts included in the
+	// source verdict, and may include verdicts for unsubmitted code. As such, it may
+	// differ from the actual source verdict status as used in change point analysis.
+	Status QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus `protobuf:"varint,2,opt,name=status,proto3,enum=luci.analysis.v1.QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus" json:"status,omitempty"`
+	// The test verdicts at the source position. Note some of these test verdicts
+	// may have not been used in change point analysis as they pertain to test results
+	// for unsubmitted code.
+	// Limited to at most 20 test verdicts.
+	Verdicts []*TestVerdict `protobuf:"bytes,3,rep,name=verdicts,proto3" json:"verdicts,omitempty"`
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict) Reset() {
+	*x = QuerySourceVerdictsResponse_SourceVerdict{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuerySourceVerdictsResponse_SourceVerdict) ProtoMessage() {}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuerySourceVerdictsResponse_SourceVerdict.ProtoReflect.Descriptor instead.
+func (*QuerySourceVerdictsResponse_SourceVerdict) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{12, 0}
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict) GetPosition() int64 {
+	if x != nil {
+		return x.Position
+	}
+	return 0
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict) GetStatus() QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus {
+	if x != nil {
+		return x.Status
+	}
+	return QuerySourceVerdictsResponse_SourceVerdict_VERDICT_EXPECTATION_STATUS_UNSPECIFIED
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict) GetVerdicts() []*TestVerdict {
+	if x != nil {
+		return x.Verdicts
+	}
+	return nil
+}
+
+type QuerySourceVerdictsResponse_SourceVerdict_TestVerdict struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The ID of the top-level invocation that the test verdict belongs to.
+	InvocationId string `protobuf:"bytes,1,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
+	// The status of the test verdict as it is interpreted by changepoint analysis.
+	Status QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus `protobuf:"varint,2,opt,name=status,proto3,enum=luci.analysis.v1.QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus" json:"status,omitempty"`
+	// The changelist(s) that were tested, if any. If there are more 10, only
+	// the first 10 are returned here.
+	Changelists []*Changelist `protobuf:"bytes,3,rep,name=changelists,proto3" json:"changelists,omitempty"`
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict_TestVerdict) Reset() {
+	*x = QuerySourceVerdictsResponse_SourceVerdict_TestVerdict{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict_TestVerdict) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuerySourceVerdictsResponse_SourceVerdict_TestVerdict) ProtoMessage() {}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict_TestVerdict) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[20]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuerySourceVerdictsResponse_SourceVerdict_TestVerdict.ProtoReflect.Descriptor instead.
+func (*QuerySourceVerdictsResponse_SourceVerdict_TestVerdict) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{12, 0, 0}
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict_TestVerdict) GetInvocationId() string {
+	if x != nil {
+		return x.InvocationId
+	}
+	return ""
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict_TestVerdict) GetStatus() QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus {
+	if x != nil {
+		return x.Status
+	}
+	return QuerySourceVerdictsResponse_SourceVerdict_VERDICT_EXPECTATION_STATUS_UNSPECIFIED
+}
+
+func (x *QuerySourceVerdictsResponse_SourceVerdict_TestVerdict) GetChangelists() []*Changelist {
+	if x != nil {
+		return x.Changelists
+	}
+	return nil
+}
+
 type QueryChangepointAIAnalysisRequest_PromptOptions struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1540,7 +1867,7 @@ type QueryChangepointAIAnalysisRequest_PromptOptions struct {
 func (x *QueryChangepointAIAnalysisRequest_PromptOptions) Reset() {
 	*x = QueryChangepointAIAnalysisRequest_PromptOptions{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[17]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1553,7 +1880,7 @@ func (x *QueryChangepointAIAnalysisRequest_PromptOptions) String() string {
 func (*QueryChangepointAIAnalysisRequest_PromptOptions) ProtoMessage() {}
 
 func (x *QueryChangepointAIAnalysisRequest_PromptOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1566,7 +1893,7 @@ func (x *QueryChangepointAIAnalysisRequest_PromptOptions) ProtoReflect() protore
 
 // Deprecated: Use QueryChangepointAIAnalysisRequest_PromptOptions.ProtoReflect.Descriptor instead.
 func (*QueryChangepointAIAnalysisRequest_PromptOptions) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{12, 0}
+	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{14, 0}
 }
 
 func (x *QueryChangepointAIAnalysisRequest_PromptOptions) GetPrefix() string {
@@ -1808,88 +2135,147 @@ var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawD
 	0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x26, 0x0a, 0x0f, 0x6e, 0x65,
 	0x78, 0x74, 0x5f, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x0d, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b,
-	0x65, 0x6e, 0x22, 0x8c, 0x01, 0x0a, 0x0e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f,
+	0x65, 0x6e, 0x22, 0x98, 0x01, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x06, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x12, 0x32, 0x0a, 0x15, 0x73, 0x74, 0x61,
+	0x72, 0x74, 0x5f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x13, 0x73, 0x74, 0x61, 0x72, 0x74, 0x53,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2e, 0x0a,
+	0x13, 0x65, 0x6e, 0x64, 0x5f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x70, 0x6f, 0x73, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x11, 0x65, 0x6e, 0x64, 0x53,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x9a, 0x05,
+	0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72,
+	0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x64, 0x0a,
+	0x0f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64,
+	0x69, 0x63, 0x74, 0x52, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69,
+	0x63, 0x74, 0x73, 0x1a, 0x94, 0x04, 0x0a, 0x0d, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65,
+	0x72, 0x64, 0x69, 0x63, 0x74, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f,
 	0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x23, 0x0a, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x0b, 0x2e, 0x67, 0x69, 0x74, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x06,
-	0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x12, 0x39, 0x0a, 0x08, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63,
-	0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
-	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74,
-	0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x52, 0x08, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74,
-	0x73, 0x22, 0xf3, 0x02, 0x0a, 0x21, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65,
-	0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63,
-	0x74, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x06, 0x74, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x76, 0x61,
-	0x72, 0x69, 0x61, 0x6e, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0b, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x19, 0x0a,
-	0x08, 0x72, 0x65, 0x66, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x07, 0x72, 0x65, 0x66, 0x48, 0x61, 0x73, 0x68, 0x12, 0x32, 0x0a, 0x15, 0x73, 0x74, 0x61, 0x72,
-	0x74, 0x5f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f,
-	0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x52, 0x13, 0x73, 0x74, 0x61, 0x72, 0x74, 0x53, 0x6f,
-	0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x68, 0x0a, 0x0e,
-	0x70, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x5f, 0x6f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x41, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
-	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61,
-	0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x50, 0x72, 0x6f, 0x6d, 0x70, 0x74,
-	0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x0d, 0x70, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x4f,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x3f, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6d, 0x70, 0x74,
-	0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69,
-	0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12,
-	0x16, 0x0a, 0x06, 0x73, 0x75, 0x66, 0x66, 0x69, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x06, 0x73, 0x75, 0x66, 0x66, 0x69, 0x78, 0x22, 0x69, 0x0a, 0x22, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41, 0x49, 0x41, 0x6e, 0x61,
-	0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2b, 0x0a,
-	0x11, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x64, 0x6f,
-	0x77, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x4d, 0x61, 0x72, 0x6b, 0x64, 0x6f, 0x77, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x72,
-	0x6f, 0x6d, 0x70, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x72, 0x6f, 0x6d,
-	0x70, 0x74, 0x32, 0xe5, 0x04, 0x0a, 0x13, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
-	0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x65, 0x73, 0x12, 0x64, 0x0a, 0x06, 0x47, 0x65,
-	0x74, 0x52, 0x61, 0x77, 0x12, 0x30, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
-	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x61, 0x77, 0x54, 0x65,
-	0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e,
-	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61,
-	0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x52, 0x61, 0x77, 0x22, 0x00,
-	0x12, 0x75, 0x0a, 0x08, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x12, 0x32, 0x2e, 0x6c,
+	0x6e, 0x12, 0x61, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0e, 0x32, 0x49, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x2e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x2e, 0x56,
+	0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74,
+	0x61, 0x74, 0x75, 0x73, 0x12, 0x39, 0x0a, 0x08, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73,
+	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x65,
+	0x72, 0x64, 0x69, 0x63, 0x74, 0x52, 0x08, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x1a,
+	0xd5, 0x01, 0x0a, 0x0b, 0x54, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x12,
+	0x23, 0x0a, 0x0d, 0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x69, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x49, 0x64, 0x12, 0x61, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0e, 0x32, 0x49, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x2e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63,
+	0x74, 0x2e, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52,
+	0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x3e, 0x0a, 0x0b, 0x63, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x6c, 0x69, 0x73, 0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6c,
 	0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e,
-	0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69,
-	0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x33, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
-	0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74,
-	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6c, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x12, 0x2f, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
-	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72,
-	0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x30, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
-	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61,
-	0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f,
-	0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x2d, 0x2e,
-	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69,
-	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6c,
+	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52, 0x0b, 0x63, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x73, 0x22, 0x71, 0x0a, 0x0d, 0x56, 0x65, 0x72, 0x64, 0x69,
+	0x63, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x2a, 0x0a, 0x26, 0x56, 0x45, 0x52, 0x44,
+	0x49, 0x43, 0x54, 0x5f, 0x45, 0x58, 0x50, 0x45, 0x43, 0x54, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f,
+	0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49,
+	0x45, 0x44, 0x10, 0x00, 0x12, 0x0e, 0x0a, 0x0a, 0x55, 0x4e, 0x45, 0x58, 0x50, 0x45, 0x43, 0x54,
+	0x45, 0x44, 0x10, 0x01, 0x12, 0x0c, 0x0a, 0x08, 0x45, 0x58, 0x50, 0x45, 0x43, 0x54, 0x45, 0x44,
+	0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x46, 0x4c, 0x41, 0x4b, 0x59, 0x10, 0x03, 0x12, 0x0b, 0x0a,
+	0x07, 0x53, 0x4b, 0x49, 0x50, 0x50, 0x45, 0x44, 0x10, 0x04, 0x22, 0x8c, 0x01, 0x0a, 0x0e, 0x53,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x0a,
+	0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52,
+	0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x23, 0x0a, 0x06, 0x63, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x67, 0x69, 0x74, 0x2e,
+	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x12, 0x39,
+	0x0a, 0x08, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x52,
+	0x08, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x22, 0xf3, 0x02, 0x0a, 0x21, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41, 0x49,
+	0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73,
+	0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x65, 0x73, 0x74,
+	0x49, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x5f, 0x68, 0x61,
+	0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e,
+	0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x19, 0x0a, 0x08, 0x72, 0x65, 0x66, 0x5f, 0x68, 0x61, 0x73,
+	0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x72, 0x65, 0x66, 0x48, 0x61, 0x73, 0x68,
+	0x12, 0x32, 0x0a, 0x15, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x5f, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x52,
+	0x13, 0x73, 0x74, 0x61, 0x72, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x68, 0x0a, 0x0e, 0x70, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x5f, 0x6f,
+	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x41, 0x2e, 0x6c,
 	0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74,
-	0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x89,
-	0x01, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f,
-	0x69, 0x6e, 0x74, 0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x33, 0x2e,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74,
+	0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x2e, 0x50, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52,
+	0x0d, 0x70, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x3f,
+	0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
+	0x16, 0x0a, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x75, 0x66, 0x66, 0x69,
+	0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x75, 0x66, 0x66, 0x69, 0x78, 0x22,
+	0x69, 0x0a, 0x22, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f,
+	0x69, 0x6e, 0x74, 0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2b, 0x0a, 0x11, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x64, 0x6f, 0x77, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x10, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x4d, 0x61, 0x72, 0x6b, 0x64, 0x6f,
+	0x77, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x06, 0x70, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x32, 0xdb, 0x05, 0x0a, 0x13, 0x54,
+	0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68,
+	0x65, 0x73, 0x12, 0x64, 0x0a, 0x06, 0x47, 0x65, 0x74, 0x52, 0x61, 0x77, 0x12, 0x30, 0x2e, 0x6c,
+	0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e,
+	0x47, 0x65, 0x74, 0x52, 0x61, 0x77, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e,
+	0x74, 0x42, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76,
+	0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61,
+	0x6e, 0x63, 0x68, 0x52, 0x61, 0x77, 0x22, 0x00, 0x12, 0x75, 0x0a, 0x08, 0x42, 0x61, 0x74, 0x63,
+	0x68, 0x47, 0x65, 0x74, 0x12, 0x32, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74,
+	0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e, 0x63,
+	0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63,
+	0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42,
+	0x72, 0x61, 0x6e, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
+	0x6c, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x2f, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61, 0x6e,
+	0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x30, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x42, 0x72, 0x61,
+	0x6e, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a,
+	0x14, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x2d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x74, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x12, 0x2c, 0x2e,
 	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e,
-	0x74, 0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x34, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x70, 0x62, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64,
+	0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x6c, 0x75,
+	0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63,
+	0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x89, 0x01, 0x0a,
+	0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e,
+	0x74, 0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x12, 0x33, 0x2e, 0x6c, 0x75,
+	0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41,
+	0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x34, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70,
+	0x6f, 0x69, 0x6e, 0x74, 0x41, 0x49, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f, 0x2e, 0x63,
+	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
+	0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
+	0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1904,72 +2290,86 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_raw
 	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_goTypes = []interface{}{
-	(*GetRawTestVariantBranchRequest)(nil),                  // 0: luci.analysis.v1.GetRawTestVariantBranchRequest
-	(*TestVariantBranchRaw)(nil),                            // 1: luci.analysis.v1.TestVariantBranchRaw
-	(*InputBuffer)(nil),                                     // 2: luci.analysis.v1.InputBuffer
-	(*BatchGetTestVariantBranchRequest)(nil),                // 3: luci.analysis.v1.BatchGetTestVariantBranchRequest
-	(*BatchGetTestVariantBranchResponse)(nil),               // 4: luci.analysis.v1.BatchGetTestVariantBranchResponse
-	(*QueryTestVariantBranchRequest)(nil),                   // 5: luci.analysis.v1.QueryTestVariantBranchRequest
-	(*QueryTestVariantBranchResponse)(nil),                  // 6: luci.analysis.v1.QueryTestVariantBranchResponse
-	(*TestVariantBranch)(nil),                               // 7: luci.analysis.v1.TestVariantBranch
-	(*Segment)(nil),                                         // 8: luci.analysis.v1.Segment
-	(*QuerySourcePositionsRequest)(nil),                     // 9: luci.analysis.v1.QuerySourcePositionsRequest
-	(*QuerySourcePositionsResponse)(nil),                    // 10: luci.analysis.v1.QuerySourcePositionsResponse
-	(*SourcePosition)(nil),                                  // 11: luci.analysis.v1.SourcePosition
-	(*QueryChangepointAIAnalysisRequest)(nil),               // 12: luci.analysis.v1.QueryChangepointAIAnalysisRequest
-	(*QueryChangepointAIAnalysisResponse)(nil),              // 13: luci.analysis.v1.QueryChangepointAIAnalysisResponse
-	(*InputBuffer_Run)(nil),                                 // 14: luci.analysis.v1.InputBuffer.Run
-	(*InputBuffer_Run_Counts)(nil),                          // 15: luci.analysis.v1.InputBuffer.Run.Counts
-	(*Segment_Counts)(nil),                                  // 16: luci.analysis.v1.Segment.Counts
-	(*QueryChangepointAIAnalysisRequest_PromptOptions)(nil), // 17: luci.analysis.v1.QueryChangepointAIAnalysisRequest.PromptOptions
-	(*Variant)(nil),                                         // 18: luci.analysis.v1.Variant
-	(*SourceRef)(nil),                                       // 19: luci.analysis.v1.SourceRef
-	(*anypb.Any)(nil),                                       // 20: google.protobuf.Any
-	(*timestamppb.Timestamp)(nil),                           // 21: google.protobuf.Timestamp
-	(*git.Commit)(nil),                                      // 22: git.Commit
-	(*TestVerdict)(nil),                                     // 23: luci.analysis.v1.TestVerdict
+	(QuerySourceVerdictsResponse_SourceVerdict_VerdictStatus)(0),  // 0: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.VerdictStatus
+	(*GetRawTestVariantBranchRequest)(nil),                        // 1: luci.analysis.v1.GetRawTestVariantBranchRequest
+	(*TestVariantBranchRaw)(nil),                                  // 2: luci.analysis.v1.TestVariantBranchRaw
+	(*InputBuffer)(nil),                                           // 3: luci.analysis.v1.InputBuffer
+	(*BatchGetTestVariantBranchRequest)(nil),                      // 4: luci.analysis.v1.BatchGetTestVariantBranchRequest
+	(*BatchGetTestVariantBranchResponse)(nil),                     // 5: luci.analysis.v1.BatchGetTestVariantBranchResponse
+	(*QueryTestVariantBranchRequest)(nil),                         // 6: luci.analysis.v1.QueryTestVariantBranchRequest
+	(*QueryTestVariantBranchResponse)(nil),                        // 7: luci.analysis.v1.QueryTestVariantBranchResponse
+	(*TestVariantBranch)(nil),                                     // 8: luci.analysis.v1.TestVariantBranch
+	(*Segment)(nil),                                               // 9: luci.analysis.v1.Segment
+	(*QuerySourcePositionsRequest)(nil),                           // 10: luci.analysis.v1.QuerySourcePositionsRequest
+	(*QuerySourcePositionsResponse)(nil),                          // 11: luci.analysis.v1.QuerySourcePositionsResponse
+	(*QuerySourceVerdictsRequest)(nil),                            // 12: luci.analysis.v1.QuerySourceVerdictsRequest
+	(*QuerySourceVerdictsResponse)(nil),                           // 13: luci.analysis.v1.QuerySourceVerdictsResponse
+	(*SourcePosition)(nil),                                        // 14: luci.analysis.v1.SourcePosition
+	(*QueryChangepointAIAnalysisRequest)(nil),                     // 15: luci.analysis.v1.QueryChangepointAIAnalysisRequest
+	(*QueryChangepointAIAnalysisResponse)(nil),                    // 16: luci.analysis.v1.QueryChangepointAIAnalysisResponse
+	(*InputBuffer_Run)(nil),                                       // 17: luci.analysis.v1.InputBuffer.Run
+	(*InputBuffer_Run_Counts)(nil),                                // 18: luci.analysis.v1.InputBuffer.Run.Counts
+	(*Segment_Counts)(nil),                                        // 19: luci.analysis.v1.Segment.Counts
+	(*QuerySourceVerdictsResponse_SourceVerdict)(nil),             // 20: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict
+	(*QuerySourceVerdictsResponse_SourceVerdict_TestVerdict)(nil), // 21: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.TestVerdict
+	(*QueryChangepointAIAnalysisRequest_PromptOptions)(nil),       // 22: luci.analysis.v1.QueryChangepointAIAnalysisRequest.PromptOptions
+	(*Variant)(nil),                                               // 23: luci.analysis.v1.Variant
+	(*SourceRef)(nil),                                             // 24: luci.analysis.v1.SourceRef
+	(*anypb.Any)(nil),                                             // 25: google.protobuf.Any
+	(*timestamppb.Timestamp)(nil),                                 // 26: google.protobuf.Timestamp
+	(*git.Commit)(nil),                                            // 27: git.Commit
+	(*TestVerdict)(nil),                                           // 28: luci.analysis.v1.TestVerdict
+	(*Changelist)(nil),                                            // 29: luci.analysis.v1.Changelist
 }
 var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_depIdxs = []int32{
-	18, // 0: luci.analysis.v1.TestVariantBranchRaw.variant:type_name -> luci.analysis.v1.Variant
-	19, // 1: luci.analysis.v1.TestVariantBranchRaw.ref:type_name -> luci.analysis.v1.SourceRef
-	20, // 2: luci.analysis.v1.TestVariantBranchRaw.finalized_segments:type_name -> google.protobuf.Any
-	20, // 3: luci.analysis.v1.TestVariantBranchRaw.finalizing_segment:type_name -> google.protobuf.Any
-	20, // 4: luci.analysis.v1.TestVariantBranchRaw.statistics:type_name -> google.protobuf.Any
-	2,  // 5: luci.analysis.v1.TestVariantBranchRaw.hot_buffer:type_name -> luci.analysis.v1.InputBuffer
-	2,  // 6: luci.analysis.v1.TestVariantBranchRaw.cold_buffer:type_name -> luci.analysis.v1.InputBuffer
-	14, // 7: luci.analysis.v1.InputBuffer.runs:type_name -> luci.analysis.v1.InputBuffer.Run
-	7,  // 8: luci.analysis.v1.BatchGetTestVariantBranchResponse.test_variant_branches:type_name -> luci.analysis.v1.TestVariantBranch
-	19, // 9: luci.analysis.v1.QueryTestVariantBranchRequest.ref:type_name -> luci.analysis.v1.SourceRef
-	7,  // 10: luci.analysis.v1.QueryTestVariantBranchResponse.test_variant_branch:type_name -> luci.analysis.v1.TestVariantBranch
-	18, // 11: luci.analysis.v1.TestVariantBranch.variant:type_name -> luci.analysis.v1.Variant
-	19, // 12: luci.analysis.v1.TestVariantBranch.ref:type_name -> luci.analysis.v1.SourceRef
-	8,  // 13: luci.analysis.v1.TestVariantBranch.segments:type_name -> luci.analysis.v1.Segment
-	21, // 14: luci.analysis.v1.Segment.start_hour:type_name -> google.protobuf.Timestamp
-	21, // 15: luci.analysis.v1.Segment.end_hour:type_name -> google.protobuf.Timestamp
-	16, // 16: luci.analysis.v1.Segment.counts:type_name -> luci.analysis.v1.Segment.Counts
-	11, // 17: luci.analysis.v1.QuerySourcePositionsResponse.source_positions:type_name -> luci.analysis.v1.SourcePosition
-	22, // 18: luci.analysis.v1.SourcePosition.commit:type_name -> git.Commit
-	23, // 19: luci.analysis.v1.SourcePosition.verdicts:type_name -> luci.analysis.v1.TestVerdict
-	17, // 20: luci.analysis.v1.QueryChangepointAIAnalysisRequest.prompt_options:type_name -> luci.analysis.v1.QueryChangepointAIAnalysisRequest.PromptOptions
-	21, // 21: luci.analysis.v1.InputBuffer.Run.hour:type_name -> google.protobuf.Timestamp
-	15, // 22: luci.analysis.v1.InputBuffer.Run.counts:type_name -> luci.analysis.v1.InputBuffer.Run.Counts
-	0,  // 23: luci.analysis.v1.TestVariantBranches.GetRaw:input_type -> luci.analysis.v1.GetRawTestVariantBranchRequest
-	3,  // 24: luci.analysis.v1.TestVariantBranches.BatchGet:input_type -> luci.analysis.v1.BatchGetTestVariantBranchRequest
-	5,  // 25: luci.analysis.v1.TestVariantBranches.Query:input_type -> luci.analysis.v1.QueryTestVariantBranchRequest
-	9,  // 26: luci.analysis.v1.TestVariantBranches.QuerySourcePositions:input_type -> luci.analysis.v1.QuerySourcePositionsRequest
-	12, // 27: luci.analysis.v1.TestVariantBranches.QueryChangepointAIAnalysis:input_type -> luci.analysis.v1.QueryChangepointAIAnalysisRequest
-	1,  // 28: luci.analysis.v1.TestVariantBranches.GetRaw:output_type -> luci.analysis.v1.TestVariantBranchRaw
-	4,  // 29: luci.analysis.v1.TestVariantBranches.BatchGet:output_type -> luci.analysis.v1.BatchGetTestVariantBranchResponse
-	6,  // 30: luci.analysis.v1.TestVariantBranches.Query:output_type -> luci.analysis.v1.QueryTestVariantBranchResponse
-	10, // 31: luci.analysis.v1.TestVariantBranches.QuerySourcePositions:output_type -> luci.analysis.v1.QuerySourcePositionsResponse
-	13, // 32: luci.analysis.v1.TestVariantBranches.QueryChangepointAIAnalysis:output_type -> luci.analysis.v1.QueryChangepointAIAnalysisResponse
-	28, // [28:33] is the sub-list for method output_type
-	23, // [23:28] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	23, // 0: luci.analysis.v1.TestVariantBranchRaw.variant:type_name -> luci.analysis.v1.Variant
+	24, // 1: luci.analysis.v1.TestVariantBranchRaw.ref:type_name -> luci.analysis.v1.SourceRef
+	25, // 2: luci.analysis.v1.TestVariantBranchRaw.finalized_segments:type_name -> google.protobuf.Any
+	25, // 3: luci.analysis.v1.TestVariantBranchRaw.finalizing_segment:type_name -> google.protobuf.Any
+	25, // 4: luci.analysis.v1.TestVariantBranchRaw.statistics:type_name -> google.protobuf.Any
+	3,  // 5: luci.analysis.v1.TestVariantBranchRaw.hot_buffer:type_name -> luci.analysis.v1.InputBuffer
+	3,  // 6: luci.analysis.v1.TestVariantBranchRaw.cold_buffer:type_name -> luci.analysis.v1.InputBuffer
+	17, // 7: luci.analysis.v1.InputBuffer.runs:type_name -> luci.analysis.v1.InputBuffer.Run
+	8,  // 8: luci.analysis.v1.BatchGetTestVariantBranchResponse.test_variant_branches:type_name -> luci.analysis.v1.TestVariantBranch
+	24, // 9: luci.analysis.v1.QueryTestVariantBranchRequest.ref:type_name -> luci.analysis.v1.SourceRef
+	8,  // 10: luci.analysis.v1.QueryTestVariantBranchResponse.test_variant_branch:type_name -> luci.analysis.v1.TestVariantBranch
+	23, // 11: luci.analysis.v1.TestVariantBranch.variant:type_name -> luci.analysis.v1.Variant
+	24, // 12: luci.analysis.v1.TestVariantBranch.ref:type_name -> luci.analysis.v1.SourceRef
+	9,  // 13: luci.analysis.v1.TestVariantBranch.segments:type_name -> luci.analysis.v1.Segment
+	26, // 14: luci.analysis.v1.Segment.start_hour:type_name -> google.protobuf.Timestamp
+	26, // 15: luci.analysis.v1.Segment.end_hour:type_name -> google.protobuf.Timestamp
+	19, // 16: luci.analysis.v1.Segment.counts:type_name -> luci.analysis.v1.Segment.Counts
+	14, // 17: luci.analysis.v1.QuerySourcePositionsResponse.source_positions:type_name -> luci.analysis.v1.SourcePosition
+	20, // 18: luci.analysis.v1.QuerySourceVerdictsResponse.source_verdicts:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict
+	27, // 19: luci.analysis.v1.SourcePosition.commit:type_name -> git.Commit
+	28, // 20: luci.analysis.v1.SourcePosition.verdicts:type_name -> luci.analysis.v1.TestVerdict
+	22, // 21: luci.analysis.v1.QueryChangepointAIAnalysisRequest.prompt_options:type_name -> luci.analysis.v1.QueryChangepointAIAnalysisRequest.PromptOptions
+	26, // 22: luci.analysis.v1.InputBuffer.Run.hour:type_name -> google.protobuf.Timestamp
+	18, // 23: luci.analysis.v1.InputBuffer.Run.counts:type_name -> luci.analysis.v1.InputBuffer.Run.Counts
+	0,  // 24: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.status:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.VerdictStatus
+	28, // 25: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.verdicts:type_name -> luci.analysis.v1.TestVerdict
+	0,  // 26: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.TestVerdict.status:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.VerdictStatus
+	29, // 27: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.TestVerdict.changelists:type_name -> luci.analysis.v1.Changelist
+	1,  // 28: luci.analysis.v1.TestVariantBranches.GetRaw:input_type -> luci.analysis.v1.GetRawTestVariantBranchRequest
+	4,  // 29: luci.analysis.v1.TestVariantBranches.BatchGet:input_type -> luci.analysis.v1.BatchGetTestVariantBranchRequest
+	6,  // 30: luci.analysis.v1.TestVariantBranches.Query:input_type -> luci.analysis.v1.QueryTestVariantBranchRequest
+	10, // 31: luci.analysis.v1.TestVariantBranches.QuerySourcePositions:input_type -> luci.analysis.v1.QuerySourcePositionsRequest
+	12, // 32: luci.analysis.v1.TestVariantBranches.QuerySourceVerdicts:input_type -> luci.analysis.v1.QuerySourceVerdictsRequest
+	15, // 33: luci.analysis.v1.TestVariantBranches.QueryChangepointAIAnalysis:input_type -> luci.analysis.v1.QueryChangepointAIAnalysisRequest
+	2,  // 34: luci.analysis.v1.TestVariantBranches.GetRaw:output_type -> luci.analysis.v1.TestVariantBranchRaw
+	5,  // 35: luci.analysis.v1.TestVariantBranches.BatchGet:output_type -> luci.analysis.v1.BatchGetTestVariantBranchResponse
+	7,  // 36: luci.analysis.v1.TestVariantBranches.Query:output_type -> luci.analysis.v1.QueryTestVariantBranchResponse
+	11, // 37: luci.analysis.v1.TestVariantBranches.QuerySourcePositions:output_type -> luci.analysis.v1.QuerySourcePositionsResponse
+	13, // 38: luci.analysis.v1.TestVariantBranches.QuerySourceVerdicts:output_type -> luci.analysis.v1.QuerySourceVerdictsResponse
+	16, // 39: luci.analysis.v1.TestVariantBranches.QueryChangepointAIAnalysis:output_type -> luci.analysis.v1.QueryChangepointAIAnalysisResponse
+	34, // [34:40] is the sub-list for method output_type
+	28, // [28:34] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_init() }
@@ -2114,7 +2514,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SourcePosition); i {
+			switch v := v.(*QuerySourceVerdictsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2126,7 +2526,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryChangepointAIAnalysisRequest); i {
+			switch v := v.(*QuerySourceVerdictsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2138,7 +2538,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryChangepointAIAnalysisResponse); i {
+			switch v := v.(*SourcePosition); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2150,7 +2550,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*InputBuffer_Run); i {
+			switch v := v.(*QueryChangepointAIAnalysisRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2162,7 +2562,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*InputBuffer_Run_Counts); i {
+			switch v := v.(*QueryChangepointAIAnalysisResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2174,7 +2574,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Segment_Counts); i {
+			switch v := v.(*InputBuffer_Run); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2186,6 +2586,54 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*InputBuffer_Run_Counts); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Segment_Counts); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QuerySourceVerdictsResponse_SourceVerdict); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QuerySourceVerdictsResponse_SourceVerdict_TestVerdict); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryChangepointAIAnalysisRequest_PromptOptions); i {
 			case 0:
 				return &v.state
@@ -2203,13 +2651,14 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   18,
+			NumEnums:      1,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_depIdxs,
+		EnumInfos:         file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto = out.File
@@ -2243,6 +2692,8 @@ type TestVariantBranchesClient interface {
 	Query(ctx context.Context, in *QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*QueryTestVariantBranchResponse, error)
 	// Lists commits and the test verdicts at these commits, starting from a source position.
 	QuerySourcePositions(ctx context.Context, in *QuerySourcePositionsRequest, opts ...grpc.CallOption) (*QuerySourcePositionsResponse, error)
+	// Lists source verdicts for a test variant branch.
+	QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsRequest, opts ...grpc.CallOption) (*QuerySourceVerdictsResponse, error)
 	// Query for AI analysis of the possible culprits of a test changepoint.
 	// Note: to use this RPC, you must be a member of the group `googlers`.
 	QueryChangepointAIAnalysis(ctx context.Context, in *QueryChangepointAIAnalysisRequest, opts ...grpc.CallOption) (*QueryChangepointAIAnalysisResponse, error)
@@ -2285,6 +2736,15 @@ func (c *testVariantBranchesPRPCClient) Query(ctx context.Context, in *QueryTest
 func (c *testVariantBranchesPRPCClient) QuerySourcePositions(ctx context.Context, in *QuerySourcePositionsRequest, opts ...grpc.CallOption) (*QuerySourcePositionsResponse, error) {
 	out := new(QuerySourcePositionsResponse)
 	err := c.client.Call(ctx, "luci.analysis.v1.TestVariantBranches", "QuerySourcePositions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *testVariantBranchesPRPCClient) QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsRequest, opts ...grpc.CallOption) (*QuerySourceVerdictsResponse, error) {
+	out := new(QuerySourceVerdictsResponse)
+	err := c.client.Call(ctx, "luci.analysis.v1.TestVariantBranches", "QuerySourceVerdicts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2344,6 +2804,15 @@ func (c *testVariantBranchesClient) QuerySourcePositions(ctx context.Context, in
 	return out, nil
 }
 
+func (c *testVariantBranchesClient) QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsRequest, opts ...grpc.CallOption) (*QuerySourceVerdictsResponse, error) {
+	out := new(QuerySourceVerdictsResponse)
+	err := c.cc.Invoke(ctx, "/luci.analysis.v1.TestVariantBranches/QuerySourceVerdicts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *testVariantBranchesClient) QueryChangepointAIAnalysis(ctx context.Context, in *QueryChangepointAIAnalysisRequest, opts ...grpc.CallOption) (*QueryChangepointAIAnalysisResponse, error) {
 	out := new(QueryChangepointAIAnalysisResponse)
 	err := c.cc.Invoke(ctx, "/luci.analysis.v1.TestVariantBranches/QueryChangepointAIAnalysis", in, out, opts...)
@@ -2368,6 +2837,8 @@ type TestVariantBranchesServer interface {
 	Query(context.Context, *QueryTestVariantBranchRequest) (*QueryTestVariantBranchResponse, error)
 	// Lists commits and the test verdicts at these commits, starting from a source position.
 	QuerySourcePositions(context.Context, *QuerySourcePositionsRequest) (*QuerySourcePositionsResponse, error)
+	// Lists source verdicts for a test variant branch.
+	QuerySourceVerdicts(context.Context, *QuerySourceVerdictsRequest) (*QuerySourceVerdictsResponse, error)
 	// Query for AI analysis of the possible culprits of a test changepoint.
 	// Note: to use this RPC, you must be a member of the group `googlers`.
 	QueryChangepointAIAnalysis(context.Context, *QueryChangepointAIAnalysisRequest) (*QueryChangepointAIAnalysisResponse, error)
@@ -2388,6 +2859,9 @@ func (*UnimplementedTestVariantBranchesServer) Query(context.Context, *QueryTest
 }
 func (*UnimplementedTestVariantBranchesServer) QuerySourcePositions(context.Context, *QuerySourcePositionsRequest) (*QuerySourcePositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QuerySourcePositions not implemented")
+}
+func (*UnimplementedTestVariantBranchesServer) QuerySourceVerdicts(context.Context, *QuerySourceVerdictsRequest) (*QuerySourceVerdictsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QuerySourceVerdicts not implemented")
 }
 func (*UnimplementedTestVariantBranchesServer) QueryChangepointAIAnalysis(context.Context, *QueryChangepointAIAnalysisRequest) (*QueryChangepointAIAnalysisResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryChangepointAIAnalysis not implemented")
@@ -2469,6 +2943,24 @@ func _TestVariantBranches_QuerySourcePositions_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TestVariantBranches_QuerySourceVerdicts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySourceVerdictsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestVariantBranchesServer).QuerySourceVerdicts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.analysis.v1.TestVariantBranches/QuerySourceVerdicts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestVariantBranchesServer).QuerySourceVerdicts(ctx, req.(*QuerySourceVerdictsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TestVariantBranches_QueryChangepointAIAnalysis_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryChangepointAIAnalysisRequest)
 	if err := dec(in); err != nil {
@@ -2506,6 +2998,10 @@ var _TestVariantBranches_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QuerySourcePositions",
 			Handler:    _TestVariantBranches_QuerySourcePositions_Handler,
+		},
+		{
+			MethodName: "QuerySourceVerdicts",
+			Handler:    _TestVariantBranches_QuerySourceVerdicts_Handler,
 		},
 		{
 			MethodName: "QueryChangepointAIAnalysis",

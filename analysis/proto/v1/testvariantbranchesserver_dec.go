@@ -91,6 +91,23 @@ func (s *DecoratedTestVariantBranches) QuerySourcePositions(ctx context.Context,
 	return
 }
 
+func (s *DecoratedTestVariantBranches) QuerySourceVerdicts(ctx context.Context, req *QuerySourceVerdictsRequest) (rsp *QuerySourceVerdictsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QuerySourceVerdicts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QuerySourceVerdicts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QuerySourceVerdicts", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedTestVariantBranches) QueryChangepointAIAnalysis(ctx context.Context, req *QueryChangepointAIAnalysisRequest) (rsp *QueryChangepointAIAnalysisResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
