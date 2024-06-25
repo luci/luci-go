@@ -279,6 +279,11 @@ func zone(name string) *time.Location {
 	return zone
 }
 
+type Severity struct {
+	Name    string
+	Regexes []*regexp.Regexp
+}
+
 // severityRegexes are the recognized log severity patterns found in
 // most of the artifacts that we process, severity extraction is best effort
 // and more severities can be added in the future.
@@ -292,50 +297,92 @@ func zone(name string) *time.Location {
 // * INFO = INFO or I.
 // * DEBUG = DEBUG or D.
 // * VERBOSE = VERBOSE or VERBOSE1 or V.
-var severityRegexes = []regexp.Regexp{
-	*regexp.MustCompile(`\s*\:*\(?(FATAL)\)?\:*[\s\|]+|.+\s(F)\s.+`),
-	*regexp.MustCompile(`\s*\:*\(?(ERROR|ERR)\)?\:*[\s\|]+|.+\s(E)\s.+`),
-	*regexp.MustCompile(`\s*\:*\(?(WARNING|WARNIN|WARNI)\)?\:*[\s\|]+|.+\s(W)\s.+`),
-	*regexp.MustCompile(`\s*\:*\(?(NOTICE|NOTIC)\)?\:*[\s\|]+|.+\s(N)\s.+`),
-	*regexp.MustCompile(`\s*\:*\(?(INFO)\)?\:*[\s\|]+|.+\s(I)\s.+`),
-	*regexp.MustCompile(`\s*\:*\(?(DEBUG)\)?\:*[\s|]+|.+\s(D)\s.+`),
-	*regexp.MustCompile(`\s*\:*\(?(VERBOSE|VERBOSE1)\)?\:*[\s|]+|.+\s(V)\s.+`),
+var severities = []Severity{
+	{
+		Name: "FATAL",
+		Regexes: []*regexp.Regexp{
+			regexp.MustCompile(`\sF\s`),
+			regexp.MustCompile(`:F:`),
+			regexp.MustCompile(`FATAL`),
+		},
+	},
+	{
+		Name: "ERROR",
+		Regexes: []*regexp.Regexp{
+			regexp.MustCompile(`:E:`),
+			regexp.MustCompile(`\sE\s`),
+			regexp.MustCompile(`ERR`),
+			regexp.MustCompile(`ERROR`),
+		},
+	},
+	{
+		Name: "WARNING",
+		Regexes: []*regexp.Regexp{
+			regexp.MustCompile(`\sW\s`),
+			regexp.MustCompile(`:W:`),
+			regexp.MustCompile(`WARNI`),
+			regexp.MustCompile(`WARNIN`),
+			regexp.MustCompile(`WARNING`),
+		},
+	},
+	{
+		Name: "NOTICE",
+		Regexes: []*regexp.Regexp{
+			regexp.MustCompile(`\sN\s`),
+			regexp.MustCompile(`:N:`),
+			regexp.MustCompile(`NOTIC`),
+			regexp.MustCompile(`NOTICE`),
+		},
+	},
+	{
+		Name: "INFO",
+		Regexes: []*regexp.Regexp{
+			regexp.MustCompile(`\sI\s`),
+			regexp.MustCompile(`:I:`),
+			regexp.MustCompile(`INFO`),
+		},
+	},
+	{
+		Name: "DEBUG",
+		Regexes: []*regexp.Regexp{
+			regexp.MustCompile(`\sD\s`),
+			regexp.MustCompile(`:D:`),
+			regexp.MustCompile(`DEBUG`),
+		},
+	},
+	{
+		Name: "VERBOSE",
+		Regexes: []*regexp.Regexp{
+			regexp.MustCompile(`\sV\s`),
+			regexp.MustCompile(`:V:`),
+			regexp.MustCompile(`VERBOSE`),
+			regexp.MustCompile(`VERBOSE1`),
+		},
+	},
 }
 
-// Function to extract the log level
+// Optimized Severity Extraction Function
 func extractSeverity(logLine string) pb.ArtifactLine_Severity {
-	var severity string
-	for _, severityRegex := range severityRegexes {
-		match := severityRegex.FindStringSubmatch(logLine)
-		if len(match) > 1 {
-			// Find the non-empty capturing group
-			for _, group := range match[1:] {
-				if len(group) > 0 {
-					// Break on the first one as the severity
-					// is generally found at the beginning of the line.
-					severity = string(group)
-					break
+	for _, severity := range severities {
+		for _, regex := range severity.Regexes {
+			if regex.MatchString(logLine) {
+				switch severity.Name { // More readable
+				case "FATAL":
+					return pb.ArtifactLine_FATAL
+				case "ERROR":
+					return pb.ArtifactLine_ERROR
+				case "WARNING":
+					return pb.ArtifactLine_WARNING
+				case "NOTICE":
+					return pb.ArtifactLine_NOTICE
+				case "INFO":
+					return pb.ArtifactLine_INFO
+				case "DEBUG":
+					return pb.ArtifactLine_DEBUG
+				case "VERBOSE":
+					return pb.ArtifactLine_VERBOSE
 				}
 			}
-		}
-	}
-
-	if severity != "" {
-		switch {
-		case strings.HasPrefix(severity, "F"):
-			return pb.ArtifactLine_FATAL
-		case strings.HasPrefix(severity, "E"):
-			return pb.ArtifactLine_ERROR
-		case strings.HasPrefix(severity, "W"):
-			return pb.ArtifactLine_WARNING
-		case strings.HasPrefix(severity, "N"):
-			return pb.ArtifactLine_NOTICE
-		case strings.HasPrefix(severity, "I"):
-			return pb.ArtifactLine_INFO
-		case strings.HasPrefix(severity, "D"):
-			return pb.ArtifactLine_DEBUG
-		case strings.HasPrefix(severity, "V"):
-			return pb.ArtifactLine_VERBOSE
 		}
 	}
 	return pb.ArtifactLine_SEVERITY_UNSPECIFIED
