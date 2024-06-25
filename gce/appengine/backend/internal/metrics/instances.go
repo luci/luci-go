@@ -35,7 +35,7 @@ var (
 		field.String("prefix"),
 		field.String("project"),
 		field.String("resource_group"),
-		field.String("scaling_policy"),
+		field.String("scaling_type"),
 	)
 
 	createdInstances = metric.NewInt(
