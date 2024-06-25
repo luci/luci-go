@@ -815,6 +815,15 @@ type CustomMetric struct {
 	//
 	// Must not have duplicates.
 	//
+	// There are some default metric fields in standard metrics, and the
+	// custom metrics based on them would have those fields as defaults.
+	//
+	// Custom builder metric cannot have any custom fields in addition to their
+	// defaults, i.e. if it's one of
+	// * CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED
+	// * CUSTOM_BUILD_METRIC_BASE_COUNT
+	// * CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT
+	//
 	// The value type of all metric fields is always string.
 	// Each Field must conform to ^[A-Za-z_][A-Za-z0-9_]*$ (See
 	// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/common/tsmon/registry/registry.go;l=34;drc=b77d0c2bd4bbb536f8e349e993e3ca18818c51e7).

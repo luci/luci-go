@@ -389,13 +389,31 @@ func TestConfig(t *testing.T) {
 						}
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/started",
-							fields: "status",
-							fields: "status",
+							fields: "os",
+							fields: "os",
 							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
 						}
 					`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `"status" is duplicated`)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `"os" is duplicated`)
+			})
+
+			Convey("additional fields for builder metrics", func() {
+				content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						custom_metrics {
+							name: "/chrome/infra/custom/builds/count",
+							fields: "os",
+							metric_base: CUSTOM_BUILD_METRIC_BASE_COUNT,
+						}
+					`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `custom builder metric cannot have additional fields`)
 			})
 		})
 
@@ -448,13 +466,13 @@ func TestConfig(t *testing.T) {
 				}
 				custom_metrics {
 					name: "/chrome/infra/custom/builds/started",
-					fields: "status",
+					fields: "os",
 					fields: "branch",
 					metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
 				}
 				custom_metrics {
 					name: "/chrome/infra/custom/builds/completed",
-					fields: "status",
+					fields: "os",
 					fields: "final_step",
 					metric_base: CUSTOM_BUILD_METRIC_BASE_COMPLETED,
 				}

@@ -15,6 +15,7 @@
 package metrics
 
 import (
+	"fmt"
 	"math"
 
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -23,9 +24,37 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 
 	bbmetrics "go.chromium.org/luci/buildbucket/metrics"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+func stringsToFields(fieldStrings []string) []field.Field {
+	fields := make([]field.Field, len(fieldStrings))
+	for i, s := range fieldStrings {
+		fields[i] = field.String(s)
+	}
+	return fields
+}
+
+func generateBaseFields(base pb.CustomBuildMetricBase) []field.Field {
+	fieldStrings, ok := BaseFields[base]
+	if !ok {
+		panic(fmt.Sprintf("invalid base %s", base.String()))
+	}
+	return stringsToFields(fieldStrings)
+}
+
 var (
+	BaseFields = map[pb.CustomBuildMetricBase][]string{
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COUNT:                     {"status"},
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED:                   {"experiments"},
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED:                   {"experiments"},
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED:                 {"status", "experiments"},
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS:           {"status", "experiments"},
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS:             {"status", "experiments"},
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS:      {"experiments"},
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT: {"status"},
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED:         nil,
+	}
 	opt = &metric.Options{
 		TargetType: (&bbmetrics.BuilderTarget{}).Type(),
 	}
@@ -49,29 +78,28 @@ var (
 			opt,
 			"Number of pending/running prod builds",
 			nil,
-			field.String("status"),
+			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COUNT)...,
 		),
 		BuildCountCreated: metric.NewCounterWithOptions(
 			"buildbucket/v2/builds/created",
 			opt,
 			"Build creation",
 			nil,
-			field.String("experiments"),
+			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED)...,
 		),
 		BuildCountStarted: metric.NewCounterWithOptions(
 			"buildbucket/v2/builds/started",
 			opt,
 			"Build start",
 			nil,
-			field.String("experiments"),
+			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED)...,
 		),
 		BuildCountCompleted: metric.NewCounterWithOptions(
 			"buildbucket/v2/builds/completed",
 			opt,
 			"Build completion, including success, failure and cancellation",
 			nil,
-			field.String("status"),
-			field.String("experiments"),
+			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED)...,
 		),
 		BuildDurationCycle: metric.NewCumulativeDistributionWithOptions(
 			"buildbucket/v2/builds/cycle_durations",
@@ -83,8 +111,7 @@ var (
 			// python3 -c "print(((10**0.053)**100) / (60*60))"
 			// 55.42395319358006
 			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
-			field.String("status"),
-			field.String("experiments"),
+			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS)...,
 		),
 		BuildDurationRun: metric.NewCumulativeDistributionWithOptions(
 			"buildbucket/v2/builds/run_durations",
@@ -93,8 +120,7 @@ var (
 			&types.MetricMetadata{Units: types.Seconds},
 			// Bucketer for 1s..48h range
 			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
-			field.String("status"),
-			field.String("experiments"),
+			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS)...,
 		),
 		BuildDurationScheduling: metric.NewCumulativeDistributionWithOptions(
 			"buildbucket/v2/builds/scheduling_durations",
@@ -103,7 +129,7 @@ var (
 			&types.MetricMetadata{Units: types.Seconds},
 			// Bucketer for 1s..48h range
 			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
-			field.String("experiments"),
+			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS)...,
 		),
 		BuilderPresence: metric.NewBoolWithOptions(
 			"buildbucket/v2/builder/presence",
@@ -116,7 +142,7 @@ var (
 			opt,
 			"Number of consecutive non-successful build terminations since the last successful build.",
 			nil,
-			field.String("status"),
+			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT)...,
 		),
 		MaxAgeScheduled: metric.NewFloatWithOptions(
 			"buildbucket/v2/builds/max_age_scheduled",

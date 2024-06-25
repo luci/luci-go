@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/config/validation"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -144,6 +145,19 @@ func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
 		}
 		if !seen.Add(field) {
 			ctx.Errorf("%q is duplicated", field)
+		}
+	}
+
+	base := cm.GetMetricBase()
+	if base == pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COUNT ||
+		base == pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT ||
+		base == pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED {
+		baseFields := metrics.BaseFields[base]
+		bfSet := stringset.NewFromSlice(baseFields...)
+		for _, f := range cm.GetFields() {
+			if !bfSet.Has(f) {
+				ctx.Errorf("custom builder metric cannot have additional fields")
+			}
 		}
 	}
 }
