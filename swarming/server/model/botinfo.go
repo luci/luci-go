@@ -185,6 +185,9 @@ type BotCommon struct {
 	// It is unset when running the task or hooks.
 	IdleSince datastore.Optional[time.Time, datastore.Unindexed] `gae:"idle_since_ts"`
 
+	// ExpireAt is when this entity can be deleted via Cloud Datastore TTL policy.
+	ExpireAt time.Time `gae:"expire_at,noindex"`
+
 	// LegacyProperties is no longer used.
 	LegacyLeaseID LegacyProperty `gae:"lease_id"`
 
