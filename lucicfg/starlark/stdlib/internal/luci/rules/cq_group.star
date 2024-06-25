@@ -33,6 +33,7 @@ def _cq_group(
         trust_dry_runner_deps = None,
         allow_non_owner_dry_runner = None,
         tree_status_host = None,
+        tree_status_name = None,
         retry_config = None,
         cancel_stale_tryjobs = None,  # @unused
         verifiers = None,
@@ -93,9 +94,14 @@ def _cq_group(
       allow_non_owner_dry_runner: allow members of the `acl.CQ_DRY_RUNNER` role
         to trigger DRY_RUN CQ on CLs that are owned by someone else, if all the
         CL dependencies are trusted.
-      tree_status_host: a hostname of the project tree status app (if any). It
-        is used by the CQ to check the tree status before committing a CL. If
-        the tree is closed, then the CQ will wait until it is reopened.
+      tree_status_host: **Deprecated**. Please use tree_status_name instead. A
+        hostname of the project tree status app (if any). It is used by the CQ
+        to check the tree status before committing a CL. If the tree is closed,
+        then the CQ will wait until it is reopened.
+      tree_status_name: the name of the tree that gates CL submission. If the
+        tree is closed, CL will NOT be submitted until the tree is reopened.
+        The tree status UI is at
+        https://ci.chromium.org/ui/labs/tree-status/<tree_status_name>.
       retry_config: a new cq.retry_config(...) struct or one of `cq.RETRY_*`
         constants that define how CQ should retry failed builds. See
         [CQ](#cq-doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
@@ -190,6 +196,9 @@ def _cq_group(
             fail("tryjob_experiments[%d]: duplicate experiment name '%s'" % (i, te.name))
         known_exp_names[te.name] = i
 
+    if tree_status_host and tree_status_name:
+        fail("tree_status_host and tree_stats_name are both set. Please unset tree_status_host.")
+
     # TODO(vadimsh): Convert `acls` to luci.binding(...). Need to figure out
     # what realm to use for them. This probably depends on a design of
     # Realms + CQ which doesn't exist yet.
@@ -219,6 +228,7 @@ def _cq_group(
             required = False,
         ),
         "tree_status_host": validate.hostname("tree_status_host", tree_status_host, required = False),
+        "tree_status_name": validate.string("tree_status_name", tree_status_name, required = False),
         "retry_config": cqimpl.validate_retry_config(
             "retry_config",
             retry_config,

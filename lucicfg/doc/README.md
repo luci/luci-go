@@ -2311,6 +2311,7 @@ luci.cq_group(
     trust_dry_runner_deps = None,
     allow_non_owner_dry_runner = None,
     tree_status_host = None,
+    tree_status_name = None,
     retry_config = None,
     cancel_stale_tryjobs = None,
     verifiers = None,
@@ -2346,7 +2347,8 @@ pub/sub integration is enabled for the Gerrit host.
 * **allow_owner_if_submittable**: allow CL owner to trigger CQ after getting `Code-Review` and other approvals regardless of `acl.CQ_COMMITTER` or `acl.CQ_DRY_RUNNER` roles. Only `cq.ACTION_*` are allowed here. Default is `cq.ACTION_NONE` which grants no additional permissions. CL owner is user owning a CL, i.e. its first patchset uploader, not to be confused with OWNERS files. **WARNING**: using this option is not recommended if you have sticky `Code-Review` label because this allows a malicious developer to upload a good looking patchset at first, get code review approval, and then upload a bad patchset and CQ it right away.
 * **trust_dry_runner_deps**: consider CL dependencies that are owned by members of the `acl.CQ_DRY_RUNNER` role as trusted, even if they are not approved. By default, unapproved dependencies are only trusted if they are owned by members of the `acl.CQ_COMMITER` role. This allows CQ dry run on CLs with unapproved dependencies owned by members of `acl.CQ_DRY_RUNNER` role.
 * **allow_non_owner_dry_runner**: allow members of the `acl.CQ_DRY_RUNNER` role to trigger DRY_RUN CQ on CLs that are owned by someone else, if all the CL dependencies are trusted.
-* **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
+* **tree_status_host**: **Deprecated**. Please use tree_status_name instead. A hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
+* **tree_status_name**: the name of the tree that gates CL submission. If the tree is closed, CL will NOT be submitted until the tree is reopened. The tree status UI is at https://ci.chromium.org/ui/labs/tree-status/<tree_status_name>.
 * **retry_config**: a new [cq.retry_config(...)](#cq.retry-config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq-doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
 * **cancel_stale_tryjobs**: unused anymore, but kept for backward compatibility.
 * **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.

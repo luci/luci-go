@@ -484,7 +484,7 @@ luci.cq_group(
     allow_owner_if_submittable = cq.ACTION_COMMIT,
     trust_dry_runner_deps = True,
     allow_non_owner_dry_runner = True,
-    tree_status_host = "tree-status.example.com",
+    tree_status_name = "example-tree",
     verifiers = [
         luci.cq_tryjob_verifier(
             builder = "linux try builder",
@@ -640,7 +640,7 @@ lucicfg.emit(
 #       allow_non_owner_dry_runner: true
 #     }
 #     tree_status {
-#       url: "https://tree-status.example.com"
+#       tree_name: "example-tree"
 #     }
 #     tryjob {
 #       builders {

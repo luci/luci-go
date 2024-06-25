@@ -1140,7 +1140,9 @@ def _cq_config_group(cq_group, project):
         error("at least one CQ_COMMITTER acl.entry must be specified (either here or in luci.project)", trace = cq_group.trace)
 
     tree_status = None
-    if cq_group.props.tree_status_host:
+    if cq_group.props.tree_status_name:
+        tree_status = cq_pb.Verifiers.TreeStatus(tree_name = cq_group.props.tree_status_name)
+    elif cq_group.props.tree_status_host:
         tree_status = cq_pb.Verifiers.TreeStatus(url = "https://" + cq_group.props.tree_status_host)
 
     # Note: CQ_TRYJOB_VERIFIER nodes are by default lexicographically sorted
