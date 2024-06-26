@@ -36,8 +36,8 @@ func (*TasksServer) BatchGetResult(ctx context.Context, req *apipb.BatchGetResul
 	if len(req.TaskIds) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "task_ids is required")
 	}
-	if len(req.TaskIds) > 300 {
-		return nil, status.Errorf(codes.InvalidArgument, "task_ids length should be no more than 300")
+	if len(req.TaskIds) > 1000 {
+		return nil, status.Errorf(codes.InvalidArgument, "task_ids length should be no more than 1000, got %d", len(req.TaskIds))
 	}
 
 	// Prepare TaskResultSummary entities to fetch.

@@ -56,7 +56,7 @@ func TestListTaskStates(t *testing.T) {
 	})
 
 	Convey("Limits task_ids", t, func() {
-		_, err := call(make([]string, 301))
+		_, err := call(make([]string, 1001))
 		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 		So(err, ShouldErrLike, "task_ids length should be no more than")
 	})

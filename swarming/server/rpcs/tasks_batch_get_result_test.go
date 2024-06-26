@@ -62,7 +62,7 @@ func TestBatchGetResult(t *testing.T) {
 
 	Convey("Limits task_ids", t, func() {
 		_, err := call(&apipb.BatchGetResultRequest{
-			TaskIds: make([]string, 301),
+			TaskIds: make([]string, 1001),
 		})
 		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 		So(err, ShouldErrLike, "task_ids length should be no more than")
