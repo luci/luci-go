@@ -20,7 +20,7 @@ import (
 
 func init() {
 	validation.Rules.Add("services/${appid}", "ip_allowlist.cfg", validateAllowlist)
-	validation.Rules.Add("services/%{appid}", "imports.cfg", validateImportsCfg)
+	validation.Rules.Add("services/${appid}", "imports.cfg", validateImportsCfg)
 	validation.Rules.Add("services/${appid}", "oauth.cfg", validateOAuth)
 	validation.Rules.Add("services/${appid}", "security.cfg", validateSecurityCfg)
 	validation.Rules.Add("services/${appid}", "permissions.cfg", validatePermissionsCfg)
