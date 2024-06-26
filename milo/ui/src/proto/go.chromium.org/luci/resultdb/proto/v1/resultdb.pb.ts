@@ -790,6 +790,13 @@ export interface InstructionDependencyChain_Node {
    * after that, the chain will stop.
    */
   readonly error: string;
+  /**
+   * The descriptive name of the instruction that the dependency belongs to.
+   * In the following cases, the descriptive name will not be set:
+   * - If the user does not have the permission to access the instruction for the node, or
+   * - If the instruction cannot be found.
+   */
+  readonly descriptiveName: string;
 }
 
 function createBaseGetInvocationRequest(): GetInvocationRequest {
@@ -4174,7 +4181,7 @@ export const InstructionDependencyChain = {
 };
 
 function createBaseInstructionDependencyChain_Node(): InstructionDependencyChain_Node {
-  return { instructionName: "", content: "", error: "" };
+  return { instructionName: "", content: "", error: "", descriptiveName: "" };
 }
 
 export const InstructionDependencyChain_Node = {
@@ -4187,6 +4194,9 @@ export const InstructionDependencyChain_Node = {
     }
     if (message.error !== "") {
       writer.uint32(26).string(message.error);
+    }
+    if (message.descriptiveName !== "") {
+      writer.uint32(34).string(message.descriptiveName);
     }
     return writer;
   },
@@ -4219,6 +4229,13 @@ export const InstructionDependencyChain_Node = {
 
           message.error = reader.string();
           continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.descriptiveName = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4233,6 +4250,7 @@ export const InstructionDependencyChain_Node = {
       instructionName: isSet(object.instructionName) ? globalThis.String(object.instructionName) : "",
       content: isSet(object.content) ? globalThis.String(object.content) : "",
       error: isSet(object.error) ? globalThis.String(object.error) : "",
+      descriptiveName: isSet(object.descriptiveName) ? globalThis.String(object.descriptiveName) : "",
     };
   },
 
@@ -4247,6 +4265,9 @@ export const InstructionDependencyChain_Node = {
     if (message.error !== "") {
       obj.error = message.error;
     }
+    if (message.descriptiveName !== "") {
+      obj.descriptiveName = message.descriptiveName;
+    }
     return obj;
   },
 
@@ -4258,6 +4279,7 @@ export const InstructionDependencyChain_Node = {
     message.instructionName = object.instructionName ?? "";
     message.content = object.content ?? "";
     message.error = object.error ?? "";
+    message.descriptiveName = object.descriptiveName ?? "";
     return message;
   },
 };

@@ -19,6 +19,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { DurationBadge } from '@/common/components/duration_badge';
 import { TagsEntry } from '@/common/components/tags_entry';
 import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants/test';
+import { parseInvId } from '@/common/tools/invocation_utils';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import {
@@ -27,7 +28,6 @@ import {
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { ArtifactsEntry } from './artifacts_entry';

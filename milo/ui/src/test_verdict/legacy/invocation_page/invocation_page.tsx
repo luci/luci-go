@@ -22,11 +22,11 @@ import { PageMeta } from '@/common/components/page_meta/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants/legacy';
 import { useStore } from '@/common/store';
+import { parseInvId } from '@/common/tools/invocation_utils';
 import {
   getBuildURLPathFromBuildId,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
-import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 
 import { CountIndicator } from '../test_results_tab/count_indicator';
 

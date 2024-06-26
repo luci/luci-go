@@ -39,6 +39,7 @@ import {
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { parseInvId } from '@/common/tools/invocation_utils';
 import { logging } from '@/common/tools/logging';
 import {
   displayCompactDuration,
@@ -54,7 +55,6 @@ import { reportRenderError } from '@/generic_libs/tools/error_handler';
 import { consumer } from '@/generic_libs/tools/lit_context';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
 import { unwrapOrElse } from '@/generic_libs/tools/utils';
-import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 /**

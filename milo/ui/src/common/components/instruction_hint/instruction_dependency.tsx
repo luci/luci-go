@@ -14,16 +14,36 @@
 
 import { AlertTitle, Typography } from '@mui/material';
 import Alert from '@mui/material/Alert';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { renderMarkdown } from '@/common/tools/markdown/utils';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import {
+  pairsToPlaceholderDict,
+  renderMustacheMarkdown,
+  shouldLoadDependencyBuild,
+} from '@/common/tools/instruction/instruction_utils';
+import { parseInvId } from '@/common/tools/invocation_utils';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import {
+  BuildsClientImpl,
+  GetBuildRequest,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { InstructionDependencyChain_Node } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+
+const FIELD_MASK = Object.freeze([
+  'id',
+  'builder',
+  'input',
+  'output',
+  'tags',
+] as const);
 
 export interface InstructionDependencyProps {
   readonly dependencyNode: InstructionDependencyChain_Node;
@@ -33,15 +53,38 @@ export function InstructionDependency({
   dependencyNode,
 }: InstructionDependencyProps) {
   const [expanded, setExpanded] = useState(false);
-  // TODO: Perhaps it's better to introduce "descriptive name" for instruction,
-  // instead of using instruction ID.
-  const instructionId = dependencyNode.instructionName.match(
-    /invocations\/[^/]+\/instructions\/([^/]+)/,
-  )?.[1];
+  const match = dependencyNode.instructionName.match(
+    /invocations\/([^/]+)\/instructions\/([^/]+)/,
+  );
+  const instructionID = match ? match[2] : '';
+  const invocationID = match ? match[1] : '';
+  const buildID = buildIDFromInvocationID(invocationID);
+  const displayName = dependencyNode.descriptiveName || instructionID;
+
+  const client = usePrpcServiceClient({
+    host: SETTINGS.buildbucket.host,
+    ClientImpl: BuildsClientImpl,
+  });
+  const { data } = useQuery({
+    ...client.GetBuild.query(
+      GetBuildRequest.fromPartial({
+        id: buildID,
+        mask: {
+          fields: FIELD_MASK,
+        },
+      }),
+    ),
+    enabled:
+      shouldLoadDependencyBuild(dependencyNode.content) &&
+      buildID !== '' &&
+      expanded,
+  });
+  const placeholderData = instructionPlaceHolderData(data);
+
   return (
     <ExpandableEntry expanded={expanded}>
       <ExpandableEntryHeader onToggle={(expanded) => setExpanded(expanded)}>
-        Dependency: {instructionId}
+        Dependency: {displayName}
       </ExpandableEntryHeader>
       <ExpandableEntryBody>
         {dependencyNode.error && (
@@ -56,7 +99,10 @@ export function InstructionDependency({
             sx={{ color: 'var(--default-text-color)' }}
           >
             <SanitizedHtml
-              html={resolveMustacheMarkdown(dependencyNode.content)}
+              html={renderMustacheMarkdown(
+                dependencyNode.content,
+                placeholderData,
+              )}
             />
           </Typography>
         )}
@@ -65,10 +111,32 @@ export function InstructionDependency({
   );
 }
 
-function resolveMustacheMarkdown(content: string | undefined): string {
-  if (content === undefined) {
+function instructionPlaceHolderData(build: Build | undefined) {
+  if (build === undefined) {
+    return {};
+  }
+  const tagsDict = pairsToPlaceholderDict(build.tags);
+
+  const result = {
+    build: {
+      id: build.id,
+      builder: {
+        project: build.builder?.project,
+        bucket: build.builder?.bucket,
+        builder: build.builder?.builder,
+      },
+      tags: tagsDict,
+      inputProperties: build.input?.properties || {},
+      outputProperties: build.output?.properties || {},
+    },
+  };
+  return result;
+}
+
+function buildIDFromInvocationID(invID: string): string {
+  const parsedInvId = parseInvId(invID);
+  if (parsedInvId.type !== 'build') {
     return '';
   }
-  // TODO: Get query buildbucket data for placeholder data.
-  return renderMarkdown(content || '');
+  return parsedInvId.buildId;
 }

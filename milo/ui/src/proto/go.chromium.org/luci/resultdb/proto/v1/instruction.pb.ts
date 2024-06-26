@@ -104,7 +104,6 @@ export interface Instructions {
  * Instruction is one failure reproduction instruction for a step or test result.
  * Instruction can have different targets, like "local" or "remote".
  * Instructions are stored in invocation level.
- * TODO (nqmtuan): Add name for the instruction field (per https://google.aip.dev/122).
  */
 export interface Instruction {
   /**
@@ -135,7 +134,21 @@ export interface Instruction {
    * in this invocation and included invocations.
    * Only applicable for test instructions. This field will be ignored for step instructions.
    */
-  readonly instructionFilter: InstructionFilter | undefined;
+  readonly instructionFilter:
+    | InstructionFilter
+    | undefined;
+  /**
+   * This is an output only field, representing the name of the instruction.
+   * Format: invocations/<invocation_id>/instructions/<instruction_id>
+   * If this field is set as input, it will be ignored.
+   */
+  readonly name: string;
+  /**
+   * The descriptive, human-readable name of the instruction.
+   * It will be showed in the dependency section in MILO.
+   * Limit: 100 bytes.
+   */
+  readonly descriptiveName: string;
 }
 
 /** InstructionFilter specifies the test results that this instruction applies to. */
@@ -264,7 +277,7 @@ export const Instructions = {
 };
 
 function createBaseInstruction(): Instruction {
-  return { id: "", type: 0, targetedInstructions: [], instructionFilter: undefined };
+  return { id: "", type: 0, targetedInstructions: [], instructionFilter: undefined, name: "", descriptiveName: "" };
 }
 
 export const Instruction = {
@@ -280,6 +293,12 @@ export const Instruction = {
     }
     if (message.instructionFilter !== undefined) {
       InstructionFilter.encode(message.instructionFilter, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.name !== "") {
+      writer.uint32(42).string(message.name);
+    }
+    if (message.descriptiveName !== "") {
+      writer.uint32(50).string(message.descriptiveName);
     }
     return writer;
   },
@@ -319,6 +338,20 @@ export const Instruction = {
 
           message.instructionFilter = InstructionFilter.decode(reader, reader.uint32());
           continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.descriptiveName = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -338,6 +371,8 @@ export const Instruction = {
       instructionFilter: isSet(object.instructionFilter)
         ? InstructionFilter.fromJSON(object.instructionFilter)
         : undefined,
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      descriptiveName: isSet(object.descriptiveName) ? globalThis.String(object.descriptiveName) : "",
     };
   },
 
@@ -355,6 +390,12 @@ export const Instruction = {
     if (message.instructionFilter !== undefined) {
       obj.instructionFilter = InstructionFilter.toJSON(message.instructionFilter);
     }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.descriptiveName !== "") {
+      obj.descriptiveName = message.descriptiveName;
+    }
     return obj;
   },
 
@@ -369,6 +410,8 @@ export const Instruction = {
     message.instructionFilter = (object.instructionFilter !== undefined && object.instructionFilter !== null)
       ? InstructionFilter.fromPartial(object.instructionFilter)
       : undefined;
+    message.name = object.name ?? "";
+    message.descriptiveName = object.descriptiveName ?? "";
     return message;
   },
 };

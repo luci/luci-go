@@ -25,13 +25,13 @@ import { Fragment, useState } from 'react';
 import { getUniqueBugs } from '@/analysis/tools/cluster_utils';
 import { makeClusterLink } from '@/analysis/tools/utils';
 import { DurationBadge } from '@/common/components/duration_badge';
+import { parseInvId } from '@/common/tools/invocation_utils';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ArtifactLink } from '@/test_verdict/components/artifact_link';
 import { TestResultSummary } from '@/test_verdict/components/test_result_summary';
-import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { useProject } from '../../../context';

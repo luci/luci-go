@@ -34,6 +34,7 @@ import { TestVerdictBundle } from '@/common/services/luci_analysis';
 import { RESULT_LIMIT } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+import { parseInvId } from '@/common/tools/invocation_utils';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import {
   getBuildURLPathFromBuildId,
@@ -46,7 +47,6 @@ import {
   RenderPlaceHolder,
 } from '@/generic_libs/tools/observer_element';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
-import { parseInvId } from '@/test_verdict/tools/invocation_utils';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.

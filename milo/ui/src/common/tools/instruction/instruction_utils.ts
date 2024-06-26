@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Use StringPair from @/common/services/common because the clients still use it.
+import Mustache from 'mustache';
+
 import { StringPair } from '@/common/services/common';
+import { logging } from '@/common/tools/logging';
+import { renderMarkdown } from '@/common/tools/markdown/utils';
 import {
   Instruction,
   InstructionTarget,
@@ -56,4 +59,36 @@ export function pairsToPlaceholderDict(
     result[pair.key] = pair.value || '';
   }
   return result;
+}
+
+export function renderMustacheMarkdown(
+  content: string | undefined,
+  placeholderData: object,
+): string {
+  if (content === undefined) {
+    return '';
+  }
+  try {
+    // Mustache.render replaces placeholder with empty string ''
+    // if the value is not found. But we handle the error just in case
+    // so a bad template does not break the whole page.
+    const markDownContent = Mustache.render(content, placeholderData);
+    return renderMarkdown(markDownContent || '');
+  } catch (error) {
+    logging.warn('error rendering markdown', error);
+    return '';
+  }
+}
+
+/**
+ * A quick way to know if we need to load dependency build from buildbucket.
+ * We check for the present of the {{build...}} tag
+ */
+export function shouldLoadDependencyBuild(
+  content: string | undefined,
+): boolean {
+  if (content === undefined) {
+    return false;
+  }
+  return /{{build\..*}}/.test(content);
 }

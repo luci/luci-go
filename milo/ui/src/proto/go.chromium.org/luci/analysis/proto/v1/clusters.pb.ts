@@ -532,6 +532,13 @@ export interface DistinctClusterFailure {
   readonly changelists: readonly Changelist[];
   /** The number of test results which have these properties. */
   readonly count: number;
+  /**
+   * The first 255 characters of the failure_reason.primary_error_message
+   * field of one of the test results.
+   * Note that this is for saving the user a click in the UI, not for
+   * analytical purposes.
+   */
+  readonly failureReasonPrefix: string;
 }
 
 /**
@@ -2466,6 +2473,7 @@ function createBaseDistinctClusterFailure(): DistinctClusterFailure {
     isIngestedInvocationBlocked: false,
     changelists: [],
     count: 0,
+    failureReasonPrefix: "",
   };
 }
 
@@ -2503,6 +2511,9 @@ export const DistinctClusterFailure = {
     }
     if (message.count !== 0) {
       writer.uint32(88).int32(message.count);
+    }
+    if (message.failureReasonPrefix !== "") {
+      writer.uint32(98).string(message.failureReasonPrefix);
     }
     return writer;
   },
@@ -2591,6 +2602,13 @@ export const DistinctClusterFailure = {
 
           message.count = reader.int32();
           continue;
+        case 12:
+          if (tag !== 98) {
+            break;
+          }
+
+          message.failureReasonPrefix = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2621,6 +2639,7 @@ export const DistinctClusterFailure = {
         ? object.changelists.map((e: any) => Changelist.fromJSON(e))
         : [],
       count: isSet(object.count) ? globalThis.Number(object.count) : 0,
+      failureReasonPrefix: isSet(object.failureReasonPrefix) ? globalThis.String(object.failureReasonPrefix) : "",
     };
   },
 
@@ -2659,6 +2678,9 @@ export const DistinctClusterFailure = {
     if (message.count !== 0) {
       obj.count = Math.round(message.count);
     }
+    if (message.failureReasonPrefix !== "") {
+      obj.failureReasonPrefix = message.failureReasonPrefix;
+    }
     return obj;
   },
 
@@ -2682,6 +2704,7 @@ export const DistinctClusterFailure = {
     message.isIngestedInvocationBlocked = object.isIngestedInvocationBlocked ?? false;
     message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
     message.count = object.count ?? 0;
+    message.failureReasonPrefix = object.failureReasonPrefix ?? "";
     return message;
   },
 };
