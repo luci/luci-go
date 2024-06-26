@@ -419,33 +419,33 @@ message QuerySourceVerdictsRequest {
 }
 
 message QuerySourceVerdictsResponse {
+  // VerdictStatus represents the status of a verdict as it is
+  // seen by changepoint analysis. Changepoint analysis does not consider skipped
+  // test results or exonerations.
+  enum VerdictStatus {
+    VERDICT_EXPECTATION_STATUS_UNSPECIFIED = 0;
+    // The verdict (excluding skips) has only unexpected results.
+    UNEXPECTED = 1;
+    // The verdict (excluding skips) has only expected results.
+    EXPECTED = 2;
+    // The verdict (excluding skips) has a mix of expected and unexpected results.
+    FLAKY = 3;
+    // The verdict has only skips, and as such was not used in change
+    // point analysis.
+    SKIPPED = 4;
+  }
+  // Test verdict is the aggregation of test results of a test variant in an invocation.
+  message TestVerdict {
+    // The ID of the top-level invocation that the test verdict belongs to.
+    string invocation_id = 1;
+    // The status of the test verdict as it is interpreted by changepoint analysis.
+    VerdictStatus status = 2;
+    // The changelist(s) that were tested, if any. If there are more 10, only
+    // the first 10 are returned here.
+    repeated Changelist changelists = 3;
+  }
+  // Source verdict is the aggregation of test results of a test variant at a source position.
   message SourceVerdict {
-    // VerdictStatus represents the status of a verdict as it is
-    // seen by changepoint analysis. Changepoint analysis does not consider skipped
-    // test results or exonerations.
-    enum VerdictStatus {
-      VERDICT_EXPECTATION_STATUS_UNSPECIFIED = 0;
-      // The verdict (excluding skips) has only unexpected results.
-      UNEXPECTED = 1;
-      // The verdict (excluding skips) has only expected results.
-      EXPECTED = 2;
-      // The verdict (excluding skips) has a mix of expected and unexpected results.
-      FLAKY = 3;
-      // The verdict has only skips, and as such was not used in change
-      // point analysis.
-      SKIPPED = 4;
-    }
-
-    message TestVerdict {
-      // The ID of the top-level invocation that the test verdict belongs to.
-      string invocation_id = 1;
-      // The status of the test verdict as it is interpreted by changepoint analysis.
-      VerdictStatus status = 2;
-      // The changelist(s) that were tested, if any. If there are more 10, only
-      // the first 10 are returned here.
-      repeated Changelist changelists = 3;
-    }
-
     // The source position.
     int64 position = 1;
     // The overall status of the source verdict. Due to limitations in the implementation,

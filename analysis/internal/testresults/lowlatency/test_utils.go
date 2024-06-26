@@ -15,10 +15,16 @@
 package lowlatency
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/spanner"
+
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -209,4 +215,21 @@ func (b *TestVerdictBuilder) Build() []*TestResult {
 	}
 
 	return trs
+}
+
+// SetForTesting replaces the stored test results with the given list.
+// For use in unit/integration tests only.
+func SetForTesting(ctx context.Context, results []*TestResult) error {
+	testutil.MustApply(ctx,
+		spanner.Delete("TestResultsBySourcePosition", spanner.AllKeys()))
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		for _, tr := range results {
+			span.BufferWrite(ctx, tr.SaveUnverified())
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
