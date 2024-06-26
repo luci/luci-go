@@ -26,6 +26,7 @@ import (
 	rbeclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -62,7 +63,7 @@ const (
 // UserAgent identifies the version of the client.
 //
 // It is sent in all RPCs.
-var UserAgent = "swarming 0.5.0"
+var UserAgent = "swarming 0.5.1"
 
 func init() {
 	ver, err := version.GetStartupVersion()
@@ -376,7 +377,47 @@ func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, fie
 }
 
 func (s *swarmingServiceImpl) TaskResults(ctx context.Context, taskIDs []string, fields *TaskResultFields) ([]ResultOrErr, error) {
-	// TODO(vadimsh): Split large batches into multiple concurrent RPCs.
+	const maxChunkSize = 500
+
+	if len(taskIDs) <= maxChunkSize {
+		return s.oneTaskResultsRPC(ctx, taskIDs, fields)
+	}
+
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(10)
+
+	out := make([]ResultOrErr, len(taskIDs))
+
+	fetchChunk := func(startIndex int, chunk []string) {
+		eg.Go(func() error {
+			res, err := s.oneTaskResultsRPC(ectx, chunk, fields)
+			if err != nil {
+				return err // abort everything and return this error
+			}
+			for idx, outcome := range res {
+				out[startIndex+idx] = outcome
+			}
+			return nil
+		})
+	}
+
+	var startIndex int
+	for len(taskIDs) != 0 {
+		chunkSize := min(len(taskIDs), maxChunkSize)
+		var chunk []string
+		chunk, taskIDs = taskIDs[:chunkSize], taskIDs[chunkSize:]
+		fetchChunk(startIndex, chunk)
+		startIndex += chunkSize
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err // e.g. some RPC failed with a transient error
+	}
+
+	return out, nil
+}
+
+func (s *swarmingServiceImpl) oneTaskResultsRPC(ctx context.Context, taskIDs []string, fields *TaskResultFields) ([]ResultOrErr, error) {
 	perf := false
 	if fields != nil {
 		perf = fields.WithPerf
