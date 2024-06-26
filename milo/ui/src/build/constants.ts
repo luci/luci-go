@@ -43,6 +43,17 @@ export const BUILD_FIELD_MASK = Object.freeze([
   'retriable',
 ] as const);
 
+/**
+ * The field mask used to query a partial build. You can also cast the build
+ * queried with this field mask to
+ * `import { PartialBuild } from '@/builds/types'` for better type checking.
+ *
+ * Prefer using this instead of a field mask with the exact fields you need so
+ * 1. we are more likely to get a cache hit when multiple components query the
+ *    same build, and
+ * 2. builds can be passed between components/functions without accidentally
+ *    missing some fields as the code evolve.
+ */
 export const PARTIAL_BUILD_FIELD_MASK = Object.freeze([
   'id',
   'builder',
