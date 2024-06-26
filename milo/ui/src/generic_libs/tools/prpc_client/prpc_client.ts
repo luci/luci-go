@@ -31,6 +31,10 @@ export interface PrpcClientOptions {
    */
   readonly getAuthToken?: () => string | Promise<string>;
   /**
+   * Token type returned by `getAuthToken`. Defaults to `Bearer`.
+   */
+  readonly tokenType?: string;
+  /**
    * If true, use HTTP instead of HTTPS. Defaults to `false`.
    */
   readonly insecure?: boolean;
@@ -47,12 +51,14 @@ export interface PrpcClientOptions {
 export class PrpcClient {
   readonly host: string;
   readonly getAuthToken: () => string | Promise<string>;
+  readonly tokenType: string;
   readonly insecure: boolean;
   readonly fetchImpl: typeof fetch;
 
   constructor(options?: PrpcClientOptions) {
     this.host = options?.host || self.location.host;
     this.getAuthToken = options?.getAuthToken || (() => '');
+    this.tokenType = options?.tokenType || 'Bearer';
     this.insecure = options?.insecure || false;
     this.fetchImpl = options?.fetchImpl || self.fetch.bind(self);
   }
@@ -82,7 +88,7 @@ export class PrpcClient {
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',
-        ...(token && { authorization: `Bearer ${token}` }),
+        ...(token && { authorization: `${this.tokenType} ${token}` }),
       },
       body: JSON.stringify(data),
     });

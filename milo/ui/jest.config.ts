@@ -43,6 +43,20 @@ const config: Config = {
     '^@/(.*)': '<rootDir>/src/$1',
     '^@root/(.*)': '<rootDir>/$1',
   },
+
+  reporters: [
+    'default',
+    // Enable ResultDB integration. This is experimental. If you want to use
+    // this, please contact chops-luci-test@google.com.
+    [
+      '<rootDir>/generated/resultdb_reporter.js',
+      {
+        repo: 'chromium.googlesource.com/infra/luci/luci-go',
+        directory: 'milo/ui',
+        delimiter: ' > ',
+      },
+    ],
+  ],
 };
 
 export default config;
