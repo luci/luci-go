@@ -55,7 +55,7 @@ export function BuildTableHead({
             value={100}
             variant={showLoadingBar ? 'indeterminate' : 'determinate'}
             color={showLoadingBar ? 'primary' : 'dividerLine'}
-            sx={{ height: '1px' }}
+            sx={{ height: '0.5px' }}
           />
         </TableCell>
       </TableRow>

@@ -20,15 +20,5 @@ export interface BuildTableBodyProps {
 }
 
 export function BuildTableBody({ children }: BuildTableBodyProps) {
-  return (
-    <TableBody
-      sx={{
-        '& > tr:nth-of-type(odd)': {
-          backgroundColor: 'var(--block-background-color)',
-        },
-      }}
-    >
-      {children}
-    </TableBody>
-  );
+  return <TableBody>{children}</TableBody>;
 }
