@@ -28,7 +28,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -187,9 +186,9 @@ var summaryBuildMask = &field_mask.FieldMask{
 	},
 }
 
-// V2PubSubHandler is a webhook that stores the builds coming in from pubsub.
-func V2PubSubHandler(ctx *router.Context) {
-	err := v2PubSubHandlerImpl(ctx.Request.Context(), ctx.Request)
+// PubSubHandler is a webhook that stores the builds coming in from pubsub.
+func PubSubHandler(ctx *router.Context) {
+	err := PubSubHandlerImpl(ctx.Request.Context(), ctx.Request)
 	if err != nil {
 		logging.Errorf(ctx.Request.Context(), "error while handling pubsub event")
 		errors.Log(ctx.Request.Context(), err)
@@ -205,10 +204,10 @@ func V2PubSubHandler(ctx *router.Context) {
 	ctx.Writer.WriteHeader(http.StatusOK)
 }
 
-// v2PubSubHandlerImpl takes the http.Request, expects to find
+// PubSubHandlerImpl takes the http.Request, expects to find
 // a common.PubSubSubscription JSON object in the Body, containing a
 // BuildsV2PubSub, and handles the contents with generateSummary.
-func v2PubSubHandlerImpl(c context.Context, r *http.Request) error {
+func PubSubHandlerImpl(c context.Context, r *http.Request) error {
 	msg := utils.PubSubSubscription{}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		// This might be a transient error, e.g. when the json format changes
@@ -226,66 +225,6 @@ func v2PubSubHandlerImpl(c context.Context, r *http.Request) error {
 	}
 
 	return processBuild(c, buildsV2Msg.Build)
-}
-
-// PubSubHandler is a webhook that stores the builds coming in from pubsub.
-func PubSubHandler(ctx *router.Context) {
-	err := pubSubHandlerImpl(ctx.Request.Context(), ctx.Request)
-	if err != nil {
-		logging.Errorf(ctx.Request.Context(), "error while handling pubsub event")
-		errors.Log(ctx.Request.Context(), err)
-	}
-	if transient.Tag.In(err) {
-		// Transient errors are 4xx so that PubSub retries them.
-		// TODO(crbug.com/1099036): Address High traffic builders causing errors.
-		ctx.Writer.WriteHeader(http.StatusTooEarly)
-		return
-	}
-	// No errors or non-transient errors are 200s so that PubSub does not retry
-	// them.
-	ctx.Writer.WriteHeader(http.StatusOK)
-}
-
-// pubSubHandlerImpl takes the http.Request, expects to find
-// a common.PubSubSubscription JSON object in the Body, containing a bbPSEvent,
-// and handles the contents with generateSummary.
-func pubSubHandlerImpl(c context.Context, r *http.Request) error {
-	msg := utils.PubSubSubscription{}
-	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
-		// This might be a transient error, e.g. when the json format changes
-		// and Milo isn't updated yet.
-		return errors.Annotate(err, "could not decode message").Tag(transient.Tag).Err()
-	}
-	if v, ok := msg.Message.Attributes["version"].(string); ok && v != "v1" {
-		// TODO(nodir): switch to v2, crbug.com/826006
-		logging.Debugf(c, "unsupported pubsub message version %q. Ignoring", v)
-		return nil
-	}
-	bData, err := msg.GetData()
-	if err != nil {
-		return errors.Annotate(err, "could not parse pubsub message string").Err()
-	}
-
-	event := struct {
-		Build    bbv1.LegacyApiCommonBuildMessage `json:"build"`
-		Hostname string                           `json:"hostname"`
-	}{}
-	if err := json.Unmarshal(bData, &event); err != nil {
-		return errors.Annotate(err, "could not parse pubsub message data").Err()
-	}
-
-	client, err := BuildsClient(c, event.Hostname, auth.AsSelf)
-	if err != nil {
-		return err
-	}
-	build, err := client.GetBuild(c, &buildbucketpb.GetBuildRequest{
-		Id:     event.Build.Id,
-		Fields: summaryBuildMask,
-	})
-	if err != nil {
-		return err
-	}
-	return processBuild(c, build)
 }
 
 func processBuild(c context.Context, build *buildbucketpb.Build) error {

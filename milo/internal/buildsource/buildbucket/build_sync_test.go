@@ -82,10 +82,10 @@ func makeReq(build *buildbucketpb.Build) io.ReadCloser {
 	return io.NopCloser(bytes.NewReader(jmsg))
 }
 
-func TestV2PubSub(t *testing.T) {
+func TestPubSub(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestV2PubSub`, t, func() {
+	Convey(`TestPubSub`, t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		datastore.GetTestable(c).Consistent(true)
 		c, _ = testclock.UseTime(c, RefTime)
@@ -153,7 +153,7 @@ func TestV2PubSub(t *testing.T) {
 
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: makeReq(buildExp)}
-			V2PubSubHandler(&router.Context{
+			PubSubHandler(&router.Context{
 				Writer:  h,
 				Request: r.WithContext(c),
 			})
@@ -202,7 +202,7 @@ func TestV2PubSub(t *testing.T) {
 
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: makeReq(buildExp)}
-			V2PubSubHandler(&router.Context{
+			PubSubHandler(&router.Context{
 				Writer:  h,
 				Request: r.WithContext(c),
 			})
@@ -254,7 +254,7 @@ func TestV2PubSub(t *testing.T) {
 
 				h := httptest.NewRecorder()
 				r := &http.Request{Body: makeReq(eBuild)}
-				V2PubSubHandler(&router.Context{
+				PubSubHandler(&router.Context{
 					Writer:  h,
 					Request: r.WithContext(c),
 				})
