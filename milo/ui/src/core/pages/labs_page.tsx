@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -20,12 +21,25 @@ import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 export function Component() {
   return (
     <>
-      {/* Ensures the labs warning is rendered even when there's an error.
-       **
-       ** Some lab pages are discoverable from the production pages. When the
-       ** lab page breaks, we don't want users to think this is a production
-       ** page. */}
-      <LabsWarningAlert sx={{ borderRadius: 0 }} />
+      <Box sx={{ width: '100%', backgroundColor: 'rgb(229, 246, 253)' }}>
+        {/* Ensures the labs warning is rendered even when there's an error.
+         **
+         ** Some lab pages are discoverable from the production pages. When the
+         ** lab page breaks, we don't want users to think this is a production
+         ** page. */}
+        <LabsWarningAlert
+          sx={{
+            backgroundColor: 'rgb(229, 246, 253)',
+            // In case the page grows wider than 100vw, make
+            // <LabsWarningAlert /> sticky so its text content doesn't get
+            // scrolled away.
+            position: 'sticky',
+            boxSizing: 'border-box',
+            maxWidth: 'calc(100vw - var(--accumulated-left) - 25px)',
+            left: 'calc(var(--accumulated-left))',
+          }}
+        />
+      </Box>
       {/* See the documentation for `<LoginPage />` for why we handle error this
        ** way. */}
       <RecoverableErrorBoundary key="labs">
