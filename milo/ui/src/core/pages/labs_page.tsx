@@ -25,7 +25,7 @@ export function Component() {
        ** Some lab pages are discoverable from the production pages. When the
        ** lab page breaks, we don't want users to think this is a production
        ** page. */}
-      <LabsWarningAlert />
+      <LabsWarningAlert sx={{ borderRadius: 0 }} />
       {/* See the documentation for `<LoginPage />` for why we handle error this
        ** way. */}
       <RecoverableErrorBoundary key="labs">
