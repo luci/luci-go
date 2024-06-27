@@ -88,17 +88,12 @@ cron:
   target: backend
 
 
-### gae_ts_mon and BigQuery
+### Monitoring
 
 - description: Send ts_mon metrics
   url: /internal/cron/ts_mon/send
   schedule: every 1 minutes
   target: backend
-
-- description: Trigger task queues to send rows to to BigQuery
-  target: backend
-  url: /internal/cron/monitoring/bq
-  schedule: every 1 minutes
 
 - description: Report bot metrics from go service
   target: monitor
