@@ -20,7 +20,11 @@ import { Segment_Counts } from '@/proto/go.chromium.org/luci/analysis/proto/v1/t
 import { StartPointInfo } from '@/test_verdict/components/changepoint_analysis';
 import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 
-import { START_POINT_SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
+import {
+  START_POINT_SPAN_HEIGHT,
+  SPAN_MARGIN,
+  SEGMENT_SPAN_HEIGHT,
+} from '../constants';
 import { useConfig } from '../context';
 
 const Span = styled(Box)`
@@ -143,7 +147,11 @@ export function StartPointSpan({
 
   const start = commitMap[segment.startPositionUpperBound99th];
   const end = commitMap[segment.startPositionLowerBound99th] + 1;
-  const y = position === 'top' ? 0 : rowHeight - START_POINT_SPAN_HEIGHT;
+  const y =
+    rowHeight / 2 +
+    (position === 'top'
+      ? -SEGMENT_SPAN_HEIGHT / 2 - START_POINT_SPAN_HEIGHT
+      : SEGMENT_SPAN_HEIGHT / 2);
   const commitCount =
     parseInt(segment.startPositionUpperBound99th) -
     parseInt(segment.startPositionLowerBound99th) +
