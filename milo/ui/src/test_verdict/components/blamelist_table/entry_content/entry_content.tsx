@@ -34,6 +34,13 @@ export function EntryContent({ verdicts }: EntryContentProps) {
 
   return (
     <>
+      {verdicts ? (
+        verdicts.map((v) => (
+          <TestVerdictEntry key={v.invocationId} verdict={v} />
+        ))
+      ) : (
+        <Skeleton />
+      )}
       <ExpandableEntry expanded={expanded}>
         <ExpandableEntryHeader onToggle={(expand) => setExpanded(expand)}>
           Commit
@@ -42,13 +49,6 @@ export function EntryContent({ verdicts }: EntryContentProps) {
           <CommitContent sx={{ paddingLeft: 0 }} />
         </ExpandableEntryBody>
       </ExpandableEntry>
-      {verdicts ? (
-        verdicts.map((v) => (
-          <TestVerdictEntry key={v.invocationId} verdict={v} />
-        ))
-      ) : (
-        <Skeleton />
-      )}
     </>
   );
 }
