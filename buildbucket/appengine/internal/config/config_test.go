@@ -350,10 +350,12 @@ func TestConfig(t *testing.T) {
 						}
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/started",
+							fields: "experiments",
 							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
 						}
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/started",
+							fields: "experiments",
 							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
 						}
 					`)
@@ -398,6 +400,24 @@ func TestConfig(t *testing.T) {
 				So(vctx.Finalize().Error(), ShouldContainSubstring, `"os" is duplicated`)
 			})
 
+			Convey("missing base field", func() {
+				content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						custom_metrics {
+							name: "/chrome/infra/custom/builds/started",
+							fields: "os",
+							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+						}
+					`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `missing base fields`)
+			})
+
 			Convey("additional fields for builder metrics", func() {
 				content := []byte(`
 						logdog {
@@ -409,6 +429,7 @@ func TestConfig(t *testing.T) {
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/count",
 							fields: "os",
+							fields: "status",
 							metric_base: CUSTOM_BUILD_METRIC_BASE_COUNT,
 						}
 					`)
@@ -468,13 +489,21 @@ func TestConfig(t *testing.T) {
 					name: "/chrome/infra/custom/builds/started",
 					fields: "os",
 					fields: "branch",
+					fields: "experiments",
 					metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
 				}
 				custom_metrics {
 					name: "/chrome/infra/custom/builds/completed",
 					fields: "os",
 					fields: "final_step",
+					fields: "experiments",
+					fields: "status",
 					metric_base: CUSTOM_BUILD_METRIC_BASE_COMPLETED,
+				}
+				custom_metrics {
+					name: "/chrome/infra/custom/builds/count",
+					fields: "status",
+					metric_base: CUSTOM_BUILD_METRIC_BASE_COUNT,
 				}
 			`
 			So(validateSettingsCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)

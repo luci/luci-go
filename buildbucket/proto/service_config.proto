@@ -397,7 +397,7 @@ message CustomMetric {
   // Must not have duplicates.
   //
   // There are some default metric fields in standard metrics, and the
-  // custom metrics based on them would have those fields as defaults.
+  // custom metrics based on them should have those fields as defaults.
   //
   // Custom builder metric cannot have any custom fields in addition to their
   // defaults, i.e. if it's one of

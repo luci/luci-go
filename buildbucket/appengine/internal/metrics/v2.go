@@ -58,6 +58,13 @@ var (
 	opt = &metric.Options{
 		TargetType: (&bbmetrics.BuilderTarget{}).Type(),
 	}
+
+	// Bucketer for 1s..48h range
+	//
+	// python3 -c "print(((10**0.053)**100) / (60*60))"
+	// 55.42395319358006
+	bucketer = distribution.GeometricBucketer(math.Pow(10, 0.053), 100)
+
 	// V2 is a collection of metric objects for V2 metrics.
 	// Note: when adding new metrics here, please also update bbInternalMetrics
 	// in config/config.go.
@@ -106,11 +113,7 @@ var (
 			opt,
 			"Duration between build creation and completion",
 			&types.MetricMetadata{Units: types.Seconds},
-			// Bucketer for 1s..48h range
-			//
-			// python3 -c "print(((10**0.053)**100) / (60*60))"
-			// 55.42395319358006
-			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
+			bucketer,
 			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS)...,
 		),
 		BuildDurationRun: metric.NewCumulativeDistributionWithOptions(
@@ -118,8 +121,7 @@ var (
 			opt,
 			"Duration between build start and completion",
 			&types.MetricMetadata{Units: types.Seconds},
-			// Bucketer for 1s..48h range
-			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
+			bucketer,
 			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS)...,
 		),
 		BuildDurationScheduling: metric.NewCumulativeDistributionWithOptions(
@@ -127,8 +129,7 @@ var (
 			opt,
 			"Duration between build creation and start",
 			&types.MetricMetadata{Units: types.Seconds},
-			// Bucketer for 1s..48h range
-			distribution.GeometricBucketer(math.Pow(10, 0.053), 100),
+			bucketer,
 			generateBaseFields(pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS)...,
 		),
 		BuilderPresence: metric.NewBoolWithOptions(
