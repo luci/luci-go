@@ -54,7 +54,7 @@ export function SummaryHeadCell() {
 }
 
 const SummaryContainer = styled(SanitizedHtml)({
-  marginBottom: '2px',
+  margin: '1px 0px',
   padding: '0 10px',
   clear: 'both',
   overflowWrap: 'break-word',
