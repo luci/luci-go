@@ -23,6 +23,7 @@ import {
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
+import { InvIdLink } from '@/test_verdict/components/inv_id_link';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import {
@@ -66,7 +67,7 @@ export function TestVerdictEntry({ verdict }: TestVerdictEntryProps) {
           status={SpecifiedTestVerdictStatus.fromAnalysis(verdict.status)}
         />
         <Box>
-          {verdict.invocationId}
+          <InvIdLink invId={verdict.invocationId} />
           {!isLoading && !expanded && (
             <>
               {' '}
