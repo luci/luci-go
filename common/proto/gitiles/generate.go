@@ -16,4 +16,7 @@
 //go:generate mockgen -source gitiles.pb.go -destination mock_gitiles/gitiles.mock.pb.go -package mock_gitiles
 
 // Package gitiles contains Gitiles service definition.
+//
+// NOTE: The Gitiles API is an HTTP REST API.  Gitiles does not have gRPC or
+// pRPC APIs.  The bindings in this file are provided for convenience.
 package gitiles
