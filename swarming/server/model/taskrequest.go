@@ -243,7 +243,7 @@ func (p *TaskRequest) ToProto() *apipb.TaskRequestResponse {
 	}
 	return &apipb.TaskRequestResponse{
 		TaskId:               RequestKeyToTaskID(p.Key, AsRequest),
-		ExpirationSecs:       int32(p.Expiration.Second()),
+		ExpirationSecs:       int32(p.Expiration.Sub(p.Created) / time.Second),
 		Name:                 p.Name,
 		ParentTaskId:         p.ParentTaskID.Get(),
 		Priority:             int32(p.Priority),
