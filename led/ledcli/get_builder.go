@@ -72,7 +72,7 @@ func (c *cmdGetBuilder) initFlags(opts cmdBaseOptions) {
 		"Get a 'canary' build, rather than a 'prod' build.")
 	c.Flags.IntVar(&c.priorityDiff, "adjust-priority", 10,
 		"Increase or decrease the priority of the generated job. Note: priority works like Unix 'niceness'; Higher values indicate lower priority.")
-	c.Flags.BoolVar(&c.realBuild, "real-build", false,
+	c.Flags.BoolVar(&c.realBuild, "real-build", true,
 		"Get a synthesized build for the builder, instead of the swarmbucket template.")
 	c.Flags.Var(&c.experiments, "experiment",
 		"Note: only works in real-build mode.\n"+
@@ -169,8 +169,9 @@ func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string,
 	if c.builder == "" {
 		return errors.New("empty builder")
 	}
-	if !c.realBuild && len(c.experiments) > 0 {
-		return errors.Reason("setting experiments only works in real-build mode.").Err()
+
+	if !c.realBuild {
+		return errors.Reason("legacy led mode has been deprecated, please trigger led real build instead").Err()
 	}
 	if c.processedExperiments, err = processExperiments(c.experiments); err != nil {
 		return err
@@ -190,7 +191,6 @@ func (c *cmdGetBuilder) execute(ctx context.Context, authClient *http.Client, _ 
 		Experiments:     c.processedExperiments,
 
 		KitchenSupport: c.kitchenSupport,
-		RealBuild:      c.realBuild,
 
 		BucketV1: c.bucketV1,
 	})

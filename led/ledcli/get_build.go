@@ -69,7 +69,7 @@ func (c *cmdGetBuild) initFlags(opts cmdBaseOptions) {
 	c.Flags.IntVar(&c.priorityDiff, "adjust-priority", 10,
 		"Increase or decrease the priority of the generated job. Note: priority works like Unix 'niceness'; Higher values indicate lower priority.")
 
-	c.Flags.BoolVar(&c.realBuild, "real-build", false,
+	c.Flags.BoolVar(&c.realBuild, "real-build", true,
 		"Get a synthesized build using the provided build as template, instead the provided build itself.")
 
 	c.Flags.Var(&c.experiments, "experiment",
@@ -97,8 +97,8 @@ func (c *cmdGetBuild) validateFlags(ctx context.Context, positionals []string, e
 	if c.buildID, err = strconv.ParseInt(buildIDStr, 10, 64); err != nil {
 		return errors.Annotate(err, "bad <buildbucket_build_id>").Err()
 	}
-	if !c.realBuild && len(c.experiments) > 0 {
-		return errors.Reason("setting experiments only works in real-build mode.").Err()
+	if !c.realBuild {
+		return errors.Reason("legacy led mode has been deprecated, please trigger led real build instead").Err()
 	}
 	if c.processedExperiments, err = processExperiments(c.experiments); err != nil {
 		return err
