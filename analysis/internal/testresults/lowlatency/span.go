@@ -171,6 +171,8 @@ type SourceVerdict struct {
 type SourceVerdictTestVerdict struct {
 	// The root invocation for the verdict.
 	RootInvocationID string
+	// Partition time of the test verdict.
+	PartitionTime time.Time
 	// Status is one of SKIPPED, EXPECTED, UNEXPECTED, FLAKY.
 	Status pb.QuerySourceVerdictsResponse_VerdictStatus
 	// Changelists tested by the verdict.
@@ -185,9 +187,9 @@ type ReadSourceVerdictsOptions struct {
 	RefHash     []byte
 	// Only test verdicts with allowed invocation realms can be returned.
 	AllowedSubrealms []string
-	// The minimum source position to return, inclusive.
+	// The maximum source position to return, inclusive.
 	StartSourcePosition int64
-	// The maximum source position to return, exclusive.
+	// The minimum source position to return, exclusive.
 	EndSourcePosition int64
 	// The earliest partition time to include in the results, inclusive.
 	StartPartitionTime time.Time
@@ -216,8 +218,8 @@ func ReadSourceVerdicts(ctx context.Context, opts ReadSourceVerdictsOptions) ([]
 				AND TestId = @testID
 				AND VariantHash = @variantHash
 				AND SourceRefHash = @refHash
-				AND SourcePosition < @endSourcePosition
-				AND SourcePosition >= @startSourcePosition
+				AND SourcePosition <= @startSourcePosition
+				AND SourcePosition > @endSourcePosition
 				AND PartitionTime >= @startPartitionTime
 				-- Filter out dirty sources, these results are always ignored by changepoint analysis.
 				AND NOT HasDirtySources
@@ -227,6 +229,7 @@ func ReadSourceVerdicts(ctx context.Context, opts ReadSourceVerdictsOptions) ([]
 		)
 	SELECT
 		Position,
+		PartitionTime,
 		RootInvocationID,
 		-- Compute the status of the test verdict as seen by changepoint analysis.
 		-- Possible verdicts are EXPECTED, UNEXPECTEDLY_SKIPPED, UNEXPECTED and SKIPPED.
@@ -241,8 +244,8 @@ func ReadSourceVerdicts(ctx context.Context, opts ReadSourceVerdictsOptions) ([]
 		ChangelistPatchsets,
 		ChangelistOwnerKinds
 	FROM TestVerdictsPrecompute
-	-- For each position, we want to keep the most recent test verdicts first (preferentially).
-	ORDER BY Position, PartitionTime DESC, RootInvocationID`
+	-- For each position, we want to keep the oldest test verdicts first (preferentially).
+	ORDER BY Position DESC, PartitionTime, RootInvocationID`
 
 	stmt := spanner.NewStatement(sql)
 	stmt.Params = map[string]interface{}{
@@ -267,6 +270,7 @@ func ReadSourceVerdicts(ctx context.Context, opts ReadSourceVerdictsOptions) ([]
 
 	f := func(row *spanner.Row) error {
 		var position int64
+		var partitionTime time.Time
 		var rootInvocationID string
 		var changelistHosts []string
 		var changelistChanges []int64
@@ -277,6 +281,7 @@ func ReadSourceVerdicts(ctx context.Context, opts ReadSourceVerdictsOptions) ([]
 		err := b.FromSpanner(
 			row,
 			&position,
+			&partitionTime,
 			&rootInvocationID,
 			&status,
 			&changelistHosts,
@@ -323,6 +328,7 @@ func ReadSourceVerdicts(ctx context.Context, opts ReadSourceVerdictsOptions) ([]
 		if len(sourceVerdict.Verdicts) < 20 {
 			sourceVerdict.Verdicts = append(sourceVerdict.Verdicts, SourceVerdictTestVerdict{
 				RootInvocationID: rootInvocationID,
+				PartitionTime:    partitionTime,
 				Status:           pb.QuerySourceVerdictsResponse_VerdictStatus(status),
 				Changelists:      changelists,
 			})

@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
@@ -39,6 +40,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/gitiles"
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -51,6 +53,7 @@ import (
 func TestTestVariantBranchesServer(t *testing.T) {
 	Convey("TestVariantBranchesServer", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
+		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 
 		tvc := testverdicts.FakeReadClient{}
 		trc := testresults.FakeReadClient{}
@@ -822,6 +825,238 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				})
 			})
 
+		})
+		Convey("QuerySourceVerdicts", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "project:realm",
+						Permission: rdbperms.PermListTestResults,
+					},
+					{
+						Realm:      "project:realm",
+						Permission: rdbperms.PermListTestExonerations,
+					},
+				},
+				IdentityGroups: []string{"luci-analysis-access"},
+			})
+			var1 := pbutil.Variant("key1", "val1", "key2", "val1")
+			ref := &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host",
+						Project: "project",
+						Ref:     "ref",
+					},
+				},
+			}
+			varHash := pbutil.VariantHash(var1)
+			refHash := pbutil.SourceRefHash(ref)
+			req := &pb.QuerySourceVerdictsRequest{
+				Parent:              fmt.Sprintf("projects/project/tests/testid/variants/%s/refs/%s", varHash, hex.EncodeToString(refHash)),
+				StartSourcePosition: 2000,
+				EndSourcePosition:   1000,
+			}
+
+			Convey("unauthorised requests are rejected", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{"luci-analysis-access"},
+				})
+				res, err := server.QuerySourceVerdicts(ctx, req)
+				So(err, ShouldBeRPCPermissionDenied, `caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project "project"`)
+				So(res, ShouldBeNil)
+			})
+
+			Convey("invalid requests are rejected", func() {
+				Convey("invalid parent", func() {
+					req.Parent = ""
+					res, err := server.QuerySourceVerdicts(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, `parent: name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}`)
+					So(res, ShouldBeNil)
+				})
+				Convey("invalid start position", func() {
+					req.StartSourcePosition = 0
+					res, err := server.QuerySourceVerdicts(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, `start_source_position: must be a positive number`)
+					So(res, ShouldBeNil)
+				})
+				Convey("invalid end position", func() {
+					req.EndSourcePosition = 0
+					res, err := server.QuerySourceVerdicts(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, `end_source_position: must be a positive number`)
+					So(res, ShouldBeNil)
+				})
+				Convey("end position not before start", func() {
+					req.StartSourcePosition = 2000
+					req.EndSourcePosition = 2000
+					res, err := server.QuerySourceVerdicts(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, `end_source_position: must be less than start_source_position`)
+					So(res, ShouldBeNil)
+				})
+				Convey("start to end range too large", func() {
+					// More than 1000 positions.
+					req.StartSourcePosition = 2000
+					req.EndSourcePosition = 999
+					res, err := server.QuerySourceVerdicts(ctx, req)
+					So(err, ShouldBeRPCInvalidArgument, `end_source_position: must not query more than 1000 source positions from start_source_position`)
+					So(res, ShouldBeNil)
+				})
+			})
+			Convey("valid request", func() {
+				Convey("no test verdicts", func() {
+					res, err := server.QuerySourceVerdicts(ctx, req)
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &pb.QuerySourceVerdictsResponse{})
+				})
+				Convey("test verdicts", func() {
+					refTime := testclock.TestRecentTimeLocal
+					tc.Set(refTime)
+
+					err := lowlatency.SetForTesting(ctx, []*lowlatency.TestResult{
+						{
+							Project:     "project",
+							TestID:      "testid",
+							VariantHash: pbutil.VariantHash(var1),
+							Sources: testresults.Sources{
+								RefHash:  pbutil.SourceRefHash(ref),
+								Position: 2000,
+							},
+							RootInvocationID: "inv-1",
+							InvocationID:     "sub-inv",
+							ResultID:         "result-id",
+							PartitionTime:    refTime.Add(-1 * time.Hour),
+							SubRealm:         "realm",
+							IsUnexpected:     true,
+							Status:           pb.TestResultStatus_FAIL,
+						},
+						{
+							// This result should not be queried from Spanner,
+							// it overlaps with the partition time range queried from
+							// BigQuery.
+							Project:     "project",
+							TestID:      "testid",
+							VariantHash: pbutil.VariantHash(var1),
+							Sources: testresults.Sources{
+								Position: 2000,
+								RefHash:  pbutil.SourceRefHash(ref),
+							},
+							RootInvocationID: "inv-2",
+							InvocationID:     "sub-inv",
+							ResultID:         "result-id",
+							PartitionTime:    refTime.Add(-15 * 24 * time.Hour),
+							SubRealm:         "realm",
+							IsUnexpected:     true,
+							Status:           pb.TestResultStatus_FAIL,
+						},
+					})
+					So(err, ShouldBeNil)
+
+					trc.SourceVerdicts = []testresults.SourceVerdict{
+						{
+							Position: 2000,
+							Verdicts: []testresults.SourceVerdictTestVerdict{
+								{
+									InvocationID:  "inv-5",
+									PartitionTime: refTime.Add(-18 * 24 * time.Hour),
+									Status:        "SKIPPED",
+									Changelists: []testresults.BQChangelist{
+										{
+											Host:      bigquery.NullString{StringVal: "host", Valid: true},
+											Change:    bigquery.NullInt64{Int64: 1234567, Valid: true},
+											Patchset:  bigquery.NullInt64{Int64: 890, Valid: true},
+											OwnerKind: bigquery.NullString{StringVal: "AUTOMATION", Valid: true},
+										},
+									},
+								},
+								{
+									InvocationID:  "inv-6",
+									PartitionTime: refTime.Add(-17 * 24 * time.Hour),
+									Status:        "EXPECTED",
+								},
+								{
+									InvocationID:  "inv-7",
+									PartitionTime: refTime.Add(-16 * 24 * time.Hour),
+									Status:        "FLAKY",
+								},
+								{
+									InvocationID:  "inv-8",
+									PartitionTime: refTime.Add(-15 * 24 * time.Hour),
+									Status:        "UNEXPECTED",
+								},
+							},
+						},
+						{
+							Position: 1100,
+							Verdicts: []testresults.SourceVerdictTestVerdict{
+								{
+									InvocationID:  "inv-9",
+									PartitionTime: refTime.Add(-15 * 24 * time.Hour),
+									Status:        "UNEXPECTED",
+								},
+							},
+						},
+					}
+
+					res, err := server.QuerySourceVerdicts(ctx, req)
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &pb.QuerySourceVerdictsResponse{
+						SourceVerdicts: []*pb.QuerySourceVerdictsResponse_SourceVerdict{
+							{
+								Position: 2000,
+								Status:   pb.QuerySourceVerdictsResponse_FLAKY,
+								Verdicts: []*pb.QuerySourceVerdictsResponse_TestVerdict{
+									{
+										InvocationId:  "inv-5",
+										PartitionTime: timestamppb.New(refTime.Add(-18 * 24 * time.Hour)),
+										Status:        pb.QuerySourceVerdictsResponse_SKIPPED,
+										Changelists: []*pb.Changelist{
+											{
+												Host:      "host",
+												Change:    1234567,
+												Patchset:  890,
+												OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+											},
+										},
+									},
+									{
+										InvocationId:  "inv-6",
+										PartitionTime: timestamppb.New(refTime.Add(-17 * 24 * time.Hour)),
+										Status:        pb.QuerySourceVerdictsResponse_EXPECTED,
+									},
+									{
+										InvocationId:  "inv-7",
+										PartitionTime: timestamppb.New(refTime.Add(-16 * 24 * time.Hour)),
+										Status:        pb.QuerySourceVerdictsResponse_FLAKY,
+									},
+									{
+										InvocationId:  "inv-8",
+										PartitionTime: timestamppb.New(refTime.Add(-15 * 24 * time.Hour)),
+										Status:        pb.QuerySourceVerdictsResponse_UNEXPECTED,
+									},
+									{
+										InvocationId:  "inv-1",
+										PartitionTime: timestamppb.New(refTime.Add(-1 * time.Hour)),
+										Status:        pb.QuerySourceVerdictsResponse_UNEXPECTED,
+									},
+								},
+							},
+							{
+								Position: 1100,
+								Status:   pb.QuerySourceVerdictsResponse_UNEXPECTED,
+								Verdicts: []*pb.QuerySourceVerdictsResponse_TestVerdict{
+									{
+										InvocationId:  "inv-9",
+										PartitionTime: timestamppb.New(refTime.Add(-15 * 24 * time.Hour)),
+										Status:        pb.QuerySourceVerdictsResponse_UNEXPECTED,
+									},
+								},
+							},
+						},
+					})
+				})
+			})
 		})
 		Convey("QueryChangepointAIAnalysis", func() {
 			authState := &authtest.FakeState{

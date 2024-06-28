@@ -80,8 +80,8 @@ func TestReadSourceVerdicts(t *testing.T) {
 			VariantHash:         pbutil.VariantHash(variant),
 			RefHash:             sourceRefHash,
 			AllowedSubrealms:    []string{"realm1", "realm2"},
-			StartSourcePosition: 1000,
-			EndSourcePosition:   2000,
+			StartSourcePosition: 2000,
+			EndSourcePosition:   1000,
 			StartPartitionTime:  partitionTime,
 		}
 
@@ -107,12 +107,12 @@ func TestReadSourceVerdicts(t *testing.T) {
 			verdicts := []testVerdicts{
 				{
 					// Should not be returned, source position too early.
-					baseResult: baseTestResult.WithSources(onBranchAt(999)).WithRootInvocationID("unexpected-1"),
+					baseResult: baseTestResult.WithSources(onBranchAt(1000)).WithRootInvocationID("unexpected-1"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should be returned, just within source position range.
-					baseResult: baseTestResult.WithSources(onBranchAt(1000)).WithRootInvocationID("expected-1"),
+					baseResult: baseTestResult.WithSources(onBranchAt(1001)).WithRootInvocationID("expected-1"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
@@ -143,12 +143,12 @@ func TestReadSourceVerdicts(t *testing.T) {
 				},
 				{
 					// Should be returned, just within source position range.
-					baseResult: baseTestResult.WithSources(onBranchAt(1999)).WithRootInvocationID("expected-6"),
+					baseResult: baseTestResult.WithSources(onBranchAt(2000)).WithRootInvocationID("expected-6"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should not be returned, source position too late.
-					baseResult: baseTestResult.WithSources(onBranchAt(2000)).WithRootInvocationID("unexpected-2"),
+					baseResult: baseTestResult.WithSources(onBranchAt(2001)).WithRootInvocationID("unexpected-2"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
@@ -211,19 +211,11 @@ func TestReadSourceVerdicts(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(svs, ShouldResemble, []SourceVerdict{
 				{
-					Position: 1000,
+					Position: 2000,
 					Verdicts: []SourceVerdictTestVerdict{
 						{
-							RootInvocationID: "expected-1",
-							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
-						},
-					},
-				},
-				{
-					Position: 1111,
-					Verdicts: []SourceVerdictTestVerdict{
-						{
-							RootInvocationID: "expected-7",
+							RootInvocationID: "expected-6",
+							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
 						},
 					},
@@ -233,18 +225,22 @@ func TestReadSourceVerdicts(t *testing.T) {
 					Verdicts: []SourceVerdictTestVerdict{
 						{
 							RootInvocationID: "expected-2",
+							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_UNEXPECTED,
 						},
 						{
 							RootInvocationID: "expected-3",
+							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_FLAKY,
 						},
 						{
 							RootInvocationID: "expected-4",
+							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_SKIPPED,
 						},
 						{
 							RootInvocationID: "expected-5",
+							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
 							Changelists: []testresults.Changelist{
 								{
@@ -258,10 +254,21 @@ func TestReadSourceVerdicts(t *testing.T) {
 					},
 				},
 				{
-					Position: 1999,
+					Position: 1111,
 					Verdicts: []SourceVerdictTestVerdict{
 						{
-							RootInvocationID: "expected-6",
+							RootInvocationID: "expected-7",
+							PartitionTime:    partitionTime,
+							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
+						},
+					},
+				},
+				{
+					Position: 1001,
+					Verdicts: []SourceVerdictTestVerdict{
+						{
+							RootInvocationID: "expected-1",
+							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
 						},
 					},

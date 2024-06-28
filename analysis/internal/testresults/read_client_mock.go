@@ -20,9 +20,14 @@ import "context"
 // from BigQuery, for testing.
 type FakeReadClient struct {
 	CommitsWithVerdicts []*CommitWithVerdicts
+	SourceVerdicts      []SourceVerdict
 }
 
 // ReadTestVerdictsPerSourcePosition reads test verdicts per source position.
 func (f *FakeReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, options ReadTestVerdictsPerSourcePositionOptions) ([]*CommitWithVerdicts, error) {
 	return f.CommitsWithVerdicts, nil
+}
+
+func (f *FakeReadClient) ReadSourceVerdicts(ctx context.Context, options ReadSourceVerdictsOptions) ([]SourceVerdict, error) {
+	return f.SourceVerdicts, nil
 }

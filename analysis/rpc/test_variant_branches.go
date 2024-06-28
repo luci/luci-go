@@ -18,17 +18,19 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/auth"
@@ -42,6 +44,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -53,6 +56,7 @@ type TestVerdictClient interface {
 
 type TestResultClient interface {
 	ReadTestVerdictsPerSourcePosition(ctx context.Context, options testresults.ReadTestVerdictsPerSourcePositionOptions) ([]*testresults.CommitWithVerdicts, error)
+	ReadSourceVerdicts(ctx context.Context, options testresults.ReadSourceVerdictsOptions) ([]testresults.SourceVerdict, error)
 }
 
 // NewTestVariantBranchesServer returns a new pb.TestVariantBranchesServer.
@@ -506,7 +510,240 @@ func validateQuerySourcePositionsRequest(req *pb.QuerySourcePositionsRequest) er
 
 // QuerySourceVerdicts lists source verdicts for a test variant branch.
 func (s *testVariantBranchesServer) QuerySourceVerdicts(ctx context.Context, req *pb.QuerySourceVerdictsRequest) (*pb.QuerySourceVerdictsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "QuerySourceVerdicts not implemented")
+	// Only perform request validation necessary to extract the project, which is
+	// necessary to perform the authorisation check.
+	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Parent)
+	if err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+	}
+
+	// Perform authorization check first as per https://google.aip.dev/211.
+	allowedSubRealms, err := perms.QuerySubRealmsNonEmpty(ctx, project, "", nil, perms.ListTestResultsAndExonerations...)
+	if err != nil {
+		// err is already an appstatus-annotated permission error or internal server error.
+		return nil, err
+	}
+
+	if err := validateQuerySourceVerdictsRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+
+	// Check ref hash.
+	refHashBytes, err := hex.DecodeString(refHash)
+	if err != nil {
+		// Should never happen as ref hash already validated.
+		panic(errors.Annotate(err, "decode ref hash").Err())
+	}
+
+	// Fetch test verdicts (grouped into source verdicts) by combining
+	// the last 14 days of data from Spanner with older data from
+	// BigQuery.
+	//
+	// This attempts to deliver the most performant solution that
+	// still has access to 510 days of test history, by:
+	// - Using data from Spanner where it is available (at time of
+	//   writing, Spanner's TestResultsBySourcePosition retains 15
+	//   days' worth of data but we use 14 days to avoid queries
+	//   racing with deletions); observing Spanner is very fast
+	//   for such accesses.
+	// - Using BigQuery for older data, observing that BigQuery has
+	//   510 days of retention. By using Spanner for newer data,
+	//   we avoid reading from the streaming buffer (write-optimised
+	//   data stores), which is slow to access. Whereas older data
+	//   is in read-optimised data stores, which is fast to access.
+
+	// Determine the split.
+	// Partition times >= splitPartitionTime we read from Spanner,
+	// whereas partition times < splitPartitionTime we read from
+	// BigQuery. This ensures we do not read the same data twice.
+	splitPartitionTime := clock.Now(ctx).Add(-14 * 24 * time.Hour)
+
+	var spannerSourceVerdicts []lowlatency.SourceVerdict
+	var bigQuerySourceVerdicts []testresults.SourceVerdict
+	err = parallel.FanOutIn(func(c chan<- func() error) {
+		c <- func() error {
+			// Fetch test verdicts (grouped into source verdicts) from Spanner.
+			opts := lowlatency.ReadSourceVerdictsOptions{
+				Project:             project,
+				TestID:              testID,
+				VariantHash:         variantHash,
+				RefHash:             refHashBytes,
+				StartSourcePosition: req.StartSourcePosition,
+				EndSourcePosition:   req.EndSourcePosition,
+				AllowedSubrealms:    allowedSubRealms,
+				StartPartitionTime:  splitPartitionTime,
+			}
+			var err error
+			spannerSourceVerdicts, err = lowlatency.ReadSourceVerdicts(span.Single(ctx), opts)
+			if err != nil {
+				return errors.Annotate(err, "read source verdicts from Spanner").Err()
+			}
+			return nil
+		}
+		c <- func() error {
+			// Fetch test verdicts (grouped into source verdicts) from BigQuery.
+			opts := testresults.ReadSourceVerdictsOptions{
+				Project:             project,
+				TestID:              testID,
+				VariantHash:         variantHash,
+				RefHash:             refHash,
+				StartSourcePosition: req.StartSourcePosition,
+				EndSourcePosition:   req.EndSourcePosition,
+				AllowedSubrealms:    allowedSubRealms,
+				EndPartitionTime:    splitPartitionTime,
+			}
+			var err error
+			bigQuerySourceVerdicts, err = s.testResultClient.ReadSourceVerdicts(ctx, opts)
+			if err != nil {
+				return errors.Annotate(err, "read source verdicts from BigQuery").Err()
+			}
+			return nil
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.QuerySourceVerdictsResponse{
+		SourceVerdicts: mergeSourceVerdicts(spannerSourceVerdicts, bigQuerySourceVerdicts),
+	}, nil
+}
+
+func validateQuerySourceVerdictsRequest(req *pb.QuerySourceVerdictsRequest) error {
+	// Do not need to validate .Parent field, that is validated in the caller.
+
+	if req.StartSourcePosition <= 0 {
+		return errors.Reason("start_source_position: must be a positive number").Err()
+	}
+	if req.EndSourcePosition <= 0 {
+		return errors.Reason("end_source_position: must be a positive number").Err()
+	}
+	if req.EndSourcePosition >= req.StartSourcePosition {
+		return errors.Reason("end_source_position: must be less than start_source_position").Err()
+	}
+	if req.StartSourcePosition-req.EndSourcePosition > 1000 {
+		return errors.Reason("end_source_position: must not query more than 1000 source positions from start_source_position").Err()
+	}
+	return nil
+}
+
+func mergeSourceVerdicts(spanner []lowlatency.SourceVerdict, bq []testresults.SourceVerdict) []*pb.QuerySourceVerdictsResponse_SourceVerdict {
+	// verdictsBySourcePosition collects all test verdicts at a source position.
+	// At each source position, verdicts are sorted latest partition time first.
+	verdictsBySourcePosition := make(map[int64][]*pb.QuerySourceVerdictsResponse_TestVerdict)
+
+	// Test verdicts retrieved from BigQuery have strictly older partition times
+	// than those from Spanner due to the query split, so are appended before
+	// those from Spanner. Within each source position, verdicts are
+	// sorted oldest partition time first.
+	for _, row := range bq {
+		verdictsBySourcePosition[row.Position] = toTestVerdictsBigQuery(row.Verdicts)
+	}
+	for _, row := range spanner {
+		verdictsBySourcePosition[row.Position] = append(verdictsBySourcePosition[row.Position], toTestVerdictsSpanner(row.Verdicts)...)
+	}
+
+	results := make([]*pb.QuerySourceVerdictsResponse_SourceVerdict, 0, len(verdictsBySourcePosition))
+	for sourcePosition, verdicts := range verdictsBySourcePosition {
+		// Limit to 20 most recent verdicts (by partition time)
+		// per source position.
+		if len(verdicts) > 20 {
+			verdicts = verdicts[:20]
+		}
+
+		results = append(results, &pb.QuerySourceVerdictsResponse_SourceVerdict{
+			Position: sourcePosition,
+			// Compute status only based on the returned verdicts, for consistency.
+			Status:   aggregateStatus(verdicts),
+			Verdicts: verdicts,
+		})
+	}
+
+	// Sort source verdicts in descending position order, i.e. largest
+	// position first.
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Position > results[j].Position
+	})
+	return results
+}
+
+func aggregateStatus(verdicts []*pb.QuerySourceVerdictsResponse_TestVerdict) pb.QuerySourceVerdictsResponse_VerdictStatus {
+	hasExpected := false
+	hasUnexpected := false
+	for _, v := range verdicts {
+		switch v.Status {
+		case pb.QuerySourceVerdictsResponse_EXPECTED:
+			hasExpected = true
+		case pb.QuerySourceVerdictsResponse_UNEXPECTED:
+			hasUnexpected = true
+		case pb.QuerySourceVerdictsResponse_FLAKY:
+			hasExpected = true
+			hasUnexpected = true
+		case pb.QuerySourceVerdictsResponse_SKIPPED:
+		}
+	}
+	if hasExpected && hasUnexpected {
+		return pb.QuerySourceVerdictsResponse_FLAKY
+	} else if hasExpected {
+		return pb.QuerySourceVerdictsResponse_EXPECTED
+	} else if hasUnexpected {
+		return pb.QuerySourceVerdictsResponse_UNEXPECTED
+	}
+	return pb.QuerySourceVerdictsResponse_SKIPPED
+}
+
+func toTestVerdictsSpanner(tvs []lowlatency.SourceVerdictTestVerdict) []*pb.QuerySourceVerdictsResponse_TestVerdict {
+	result := make([]*pb.QuerySourceVerdictsResponse_TestVerdict, 0, len(tvs))
+	for _, tv := range tvs {
+		result = append(result, &pb.QuerySourceVerdictsResponse_TestVerdict{
+			InvocationId:  tv.RootInvocationID,
+			PartitionTime: timestamppb.New(tv.PartitionTime),
+			Status:        tv.Status,
+			Changelists:   toChangelistSpanner(tv.Changelists),
+		})
+
+	}
+	return result
+}
+
+func toChangelistSpanner(changelists []testresults.Changelist) []*pb.Changelist {
+	result := make([]*pb.Changelist, 0, len(changelists))
+	for _, c := range changelists {
+		result = append(result, &pb.Changelist{
+			Host:      c.Host,
+			Change:    c.Change,
+			Patchset:  int32(c.Patchset),
+			OwnerKind: c.OwnerKind,
+		})
+	}
+	return result
+}
+
+func toTestVerdictsBigQuery(tvs []testresults.SourceVerdictTestVerdict) []*pb.QuerySourceVerdictsResponse_TestVerdict {
+	result := make([]*pb.QuerySourceVerdictsResponse_TestVerdict, 0, len(tvs))
+	for _, tv := range tvs {
+		result = append(result, &pb.QuerySourceVerdictsResponse_TestVerdict{
+			InvocationId:  tv.InvocationID,
+			PartitionTime: timestamppb.New(tv.PartitionTime),
+			Status:        pb.QuerySourceVerdictsResponse_VerdictStatus(pb.QuerySourceVerdictsResponse_VerdictStatus_value[tv.Status]),
+			Changelists:   toChangelistBigQuery(tv.Changelists),
+		})
+
+	}
+	return result
+}
+
+func toChangelistBigQuery(cls []testresults.BQChangelist) []*pb.Changelist {
+	result := make([]*pb.Changelist, 0, len(cls))
+	for _, cl := range cls {
+		result = append(result, &pb.Changelist{
+			Host:      cl.Host.String(),
+			Change:    cl.Change.Int64,
+			Patchset:  int32(cl.Patchset.Int64),
+			OwnerKind: pb.ChangelistOwnerKind(pb.ChangelistOwnerKind_value[cl.OwnerKind.String()]),
+		})
+	}
+	return result
 }
 
 // Query queries test variant branches with a given test id and ref.

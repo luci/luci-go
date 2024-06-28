@@ -408,13 +408,18 @@ message QuerySourceVerdictsRequest {
   // VARIANT_HASH is the variant hash of the test variant analysis (16 lower-case-character hex string).
   // REF_HASH is the identity of the branch of the analysis. It is a 16 lower-case-character hex string.
   string parent = 1;
-  // The source position to start querying from, inclusive. This is the minimum source
-  // position in the response.
+  // The source position to start querying from, inclusive. This is the maximum source
+  // position to be returned in the response.
+  //
+  // Note: The start is the maximum source position (not the minimum) as this RPC
+  // is designed for UIs that paginate backwards through source history.
   int64 start_source_position = 2;
-  // The source position to stop querying at, exclusive. This is an exclusive upper
-  // bound on the maximum source position in the response.
-  // It is required that the range to be queried does not exceed 1,000 source positions,
-  // i.e. end_source_position - start_source_position <= 1,000.
+  // The source position to stop querying at, exclusive. This is an exclusive lower
+  // bound on the source positions returned in the response. As this is a lower bound,
+  // it is required that end_source_position < start_source_position.
+  //
+  // In addition, no more than 1,000 source positions may be requested in one call,
+  // i.e. start_source_position - end_source_position <= 1,000.
   int64 end_source_position = 3;
 }
 
@@ -438,11 +443,13 @@ message QuerySourceVerdictsResponse {
   message TestVerdict {
     // The ID of the top-level invocation that the test verdict belongs to.
     string invocation_id = 1;
+    // The partition time of the test verdict.
+    google.protobuf.Timestamp partition_time = 2;
     // The status of the test verdict as it is interpreted by changepoint analysis.
-    VerdictStatus status = 2;
+    VerdictStatus status = 3;
     // The changelist(s) that were tested, if any. If there are more 10, only
     // the first 10 are returned here.
-    repeated Changelist changelists = 3;
+    repeated Changelist changelists = 4;
   }
   // Source verdict is the aggregation of test results of a test variant at a source position.
   message SourceVerdict {
@@ -456,10 +463,13 @@ message QuerySourceVerdictsResponse {
     // The test verdicts at the source position. Note some of these test verdicts
     // may have not been used in change point analysis as they pertain to test results
     // for unsubmitted code.
+    // Test verdicts will be ordered by ascending partition time, i.e. earliest test
+    // verdict first.
     // Limited to at most 20 test verdicts.
-    repeated luci.analysis.v1.TestVerdict verdicts = 3;
+    repeated TestVerdict verdicts = 3;
   }
-  // Source verdicts in ascending order. Only source verdicts with results are returned.
+  // Source verdicts in descending source position order. Only source verdicts
+  // with test results are returned.
   repeated SourceVerdict source_verdicts = 1;
 }
 
