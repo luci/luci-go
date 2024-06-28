@@ -15,6 +15,7 @@
 package changepoints
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ import (
 
 func TestGroupChangepoints(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 	Convey("TestGroupChangepoints", t, func() {
 		// Group 1 - test id num gap less than the TestIDGroupingThreshold in the same group.
 		cp1 := makeChangepointRow(4, 100, 200, "refhash")
@@ -43,7 +45,7 @@ func TestGroupChangepoints(t *testing.T) {
 		// Group 6 - different branch should't be grouped together.
 		cp10 := makeChangepointRow(1002, 120, 230, "otherrefhash")
 
-		groups := GroupChangepoints([]*ChangepointRow{cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10})
+		groups := GroupChangepoints(ctx, []*ChangepointRow{cp1, cp2, cp3, cp4, cp5, cp6, cp7, cp8, cp9, cp10})
 		So(groups, ShouldResemble, [][]*ChangepointRow{
 			{cp1, cp3, cp2, cp4},
 			{cp5, cp6},

@@ -19,11 +19,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
+	"go.chromium.org/luci/analysis/internal/tracing"
 )
 
 // NewClient creates a new client for reading changepints.
@@ -81,7 +83,12 @@ type Gitiles struct {
 
 // ReadChangepoints reads changepoints of a certain week from BigQuery.
 // The week parameter can be at any time of that week. A week is defined by Sunday to Satureday in UTC.
-func (c *Client) ReadChangepoints(ctx context.Context, project string, week time.Time) ([]*ChangepointRow, error) {
+func (c *Client) ReadChangepoints(ctx context.Context, project string, week time.Time) (changepoints []*ChangepointRow, err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.ReadChangepoints",
+		attribute.String("project", project),
+		attribute.String("week", week.String()),
+	)
+	defer func() { tracing.End(s, err) }()
 	query := `
 		SELECT
 			project AS Project,

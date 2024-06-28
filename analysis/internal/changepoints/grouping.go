@@ -15,8 +15,13 @@
 package changepoints
 
 import (
+	"context"
 	"math"
 	"sort"
+
+	"go.opentelemetry.io/otel/attribute"
+
+	"go.chromium.org/luci/analysis/internal/tracing"
 )
 
 // TestIDGroupingThreshold is the threshold to partition changepoints by test ID.
@@ -34,18 +39,26 @@ const RegressionRangeOverlapPrecThreshold = 0.4
 // The groups are generated with the following steps.
 //  1. partition changepoints base on test ID
 //  2. For changepoints in each partition, group base on percentage regression range overlap.
-func GroupChangepoints(rows []*ChangepointRow) [][]*ChangepointRow {
-	testIDGroups := groupByTestID(rows)
+func GroupChangepoints(ctx context.Context, rows []*ChangepointRow) [][]*ChangepointRow {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.GroupByTestID",
+		attribute.Int("n_changepoint_rows", len(rows)),
+	)
+	defer func() { tracing.End(s, nil) }()
+	testIDGroups := groupByTestID(ctx, rows)
 	groups := [][]*ChangepointRow{}
 	for _, testIDGroup := range testIDGroups {
-		groupsForTestID := groupByRegressionRange(testIDGroup)
+		groupsForTestID := groupByRegressionRange(ctx, testIDGroup)
 		groups = append(groups, groupsForTestID...)
 	}
 	return groups
 }
 
 // groupByTestID groups changepoints base on their test ID.
-func groupByTestID(rows []*ChangepointRow) [][]*ChangepointRow {
+func groupByTestID(ctx context.Context, rows []*ChangepointRow) [][]*ChangepointRow {
+	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.GroupByTestID",
+		attribute.Int("n_changepoint_rows", len(rows)),
+	)
+	defer func() { tracing.End(s, nil) }()
 	// Copy the input slice, so that we don't change the input.
 	cps := make([]*ChangepointRow, len(rows))
 	copy(cps, rows)
@@ -80,7 +93,11 @@ func toTestVariantKey(changepoint *ChangepointRow) testVariantKey {
 
 // groupByRegressionRange groups changepoints base on overlap of 99% confidence interval of start position (aka. Regression range).
 // The same test variant branch can only appears once in a group.
-func groupByRegressionRange(rows []*ChangepointRow) [][]*ChangepointRow {
+func groupByRegressionRange(ctx context.Context, rows []*ChangepointRow) [][]*ChangepointRow {
+	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints.GroupByRegressionRange",
+		attribute.Int("n_changepoint_rows", len(rows)),
+	)
+	defer func() { tracing.End(s, nil) }()
 	// Copy the input slice, so that we don't change the input.
 	cps := make([]*ChangepointRow, len(rows))
 	copy(cps, rows)

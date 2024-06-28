@@ -30,6 +30,7 @@ import (
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -69,7 +70,7 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 	if err != nil {
 		return nil, errors.Annotate(err, "read BigQuery changepoints").Err()
 	}
-	groups := changepoints.GroupChangepoints(rows)
+	groups := changepoints.GroupChangepoints(ctx, rows)
 	groupSummaries := make([]*pb.ChangepointGroupSummary, 0, len(groups))
 	for _, g := range groups {
 		filtered := filterAndSortChangepointsWithPredicate(g, request.Predicate)
@@ -120,8 +121,8 @@ func (c *changepointsServer) QueryChangepointsInGroup(ctx context.Context, req *
 	if err != nil {
 		return nil, errors.Annotate(err, "read BigQuery changepoints").Err()
 	}
-	groups := changepoints.GroupChangepoints(rows)
-	group, found := changepointGroupWithGroupKey(groups, req.GroupKey)
+	groups := changepoints.GroupChangepoints(ctx, rows)
+	group, found := changepointGroupWithGroupKey(ctx, groups, req.GroupKey)
 	if !found {
 		return nil, appstatus.Error(codes.NotFound, "changepoint group not found")
 	}
@@ -215,7 +216,9 @@ func filterAndSortChangepointsWithPredicate(cps []*changepoints.ChangepointRow, 
 //   - the changepoint is of the same test variant branch as group_key (same test_id, variant_hash, ref_hash), AND
 //   - the changepoint's 99% confidence interval includes the group_key's nominal_start_position, AND
 //   - out of all changepoints that satisfy the above 2 rules, the changepoints has the shortest nominal start position distance with group_key.
-func changepointGroupWithGroupKey(groups [][]*changepoints.ChangepointRow, groupKey *pb.QueryChangepointsInGroupRequest_ChangepointIdentifier) ([]*changepoints.ChangepointRow, bool) {
+func changepointGroupWithGroupKey(ctx context.Context, groups [][]*changepoints.ChangepointRow, groupKey *pb.QueryChangepointsInGroupRequest_ChangepointIdentifier) ([]*changepoints.ChangepointRow, bool) {
+	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/rpc.ChangepointGroupWithGroupKey")
+	defer func() { tracing.End(s, nil) }()
 	var matchingGroup []*changepoints.ChangepointRow
 	var matchingChangepoint *changepoints.ChangepointRow
 	distanceFromGroupKey := func(cp *changepoints.ChangepointRow) int64 {
@@ -240,7 +243,7 @@ func changepointGroupWithGroupKey(groups [][]*changepoints.ChangepointRow, group
 	return matchingGroup, true
 }
 
-func toChangepointGroupSummary(group []*changepoints.ChangepointRow) (*pb.ChangepointGroupSummary, error) {
+func toChangepointGroupSummary(group []*changepoints.ChangepointRow) (summary *pb.ChangepointGroupSummary, err error) {
 	// Set the mimimum changepoint as the canonical changepoint to represent this group.
 	// Note, this canonical changepoint is different from the canonical changepoint used to create the group.
 	canonical := group[0]
