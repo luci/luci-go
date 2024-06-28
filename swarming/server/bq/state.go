@@ -15,13 +15,8 @@
 package bq
 
 import (
-	"context"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -87,71 +82,4 @@ type ExportState struct {
 	//
 	// Used in the Cloud Datastore TTL policy.
 	ExpireAt time.Time `gae:",noindex"`
-}
-
-// MigrationState is used during Python => Go BQ export migration.
-//
-// It holds a timestamp when the migration must happen. It is respected by both
-// Python and Go code bases: when this timestamp is reached, Python will stop
-// exports (by doing nothing in the export TQ task) and Go will start them
-// (by starting doing something in the export TQ task).
-//
-// The timestamp must be an exact minute e.g. "04:30:00.000 UTC".
-//
-// Python exports data in 1m intervals, aligned to 1m grid:
-//
-//	[04:30:00, 04:31:00)
-//	[04:31:00, 04:32:00)
-//	...
-//
-// Go exports data in 15s intervals, also aligned to 1m grid:
-//
-//	[04:30:00, 04:30:15)
-//	[04:30:15, 04:30:30)
-//	[04:30:30, 04:30:45)
-//	[04:30:45, 04:31:00)
-//	[04:31:00, 04:31:15)
-//	...
-//
-// If we switch at an exact minute, there will be no gaps.
-//
-// If the entity is missing, assume Python is the active exporter.
-type MigrationState struct {
-	_extra datastore.PropertyMap `gae:"-,extra"`
-	_kind  string                `gae:"$kind,BqMigrationState"`
-
-	// ID is a table name being migrated, e.g. "task_requests".
-	ID string `gae:"$id"`
-
-	// PythonToGo is when to switch from Python to Go.
-	PythonToGo time.Time `gae:"python_to_go,noindex"`
-}
-
-// SetMigrationState is manually called to populate MigrationState entity.
-func SetMigrationState(ctx context.Context, table string, fromNow time.Duration) error {
-	when := clock.Now(ctx).Add(fromNow).Truncate(time.Minute).UTC()
-	logging.Infof(ctx, "Table %q will be switched at %s", table, when)
-	return datastore.Put(ctx, &MigrationState{
-		ID:         table,
-		PythonToGo: when,
-	})
-}
-
-// ClearMigrationState deletes MigrationState entity.
-func ClearMigrationState(ctx context.Context, table string) error {
-	return datastore.Delete(ctx, datastore.NewKey(ctx, "BqMigrationState", table, 0, nil))
-}
-
-// ShouldExport is true if Go BQ export tasks should do the export.
-func ShouldExport(ctx context.Context, table string, ts time.Time) (bool, error) {
-	state := &MigrationState{ID: table}
-	switch err := datastore.Get(ctx, state); {
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return false, nil
-	case err == nil:
-		// This checks `ts >= PythonToGo`.
-		return !state.PythonToGo.After(ts), nil
-	default:
-		return false, errors.Annotate(err, "failed to check MigrationState").Tag(transient.Tag).Err()
-	}
 }

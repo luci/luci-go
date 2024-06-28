@@ -155,29 +155,3 @@ func TestScheduleExportTasks(t *testing.T) {
 		})
 	})
 }
-
-func TestMigrationState(t *testing.T) {
-	t.Parallel()
-
-	Convey("Works", t, func() {
-		var testTime = testclock.TestRecentTimeUTC.Truncate(time.Microsecond)
-		var minAligned = testTime.Truncate(time.Minute)
-
-		ctx, _ := testclock.UseTime(context.Background(), testTime)
-		ctx = memory.Use(ctx)
-
-		yes, _ := ShouldExport(ctx, "table_id", minAligned)
-		So(yes, ShouldBeFalse)
-		yes, _ = ShouldExport(ctx, "table_id", minAligned.Add(5*time.Minute))
-		So(yes, ShouldBeFalse)
-
-		So(SetMigrationState(ctx, "table_id", 5*time.Minute), ShouldBeNil)
-
-		yes, _ = ShouldExport(ctx, "table_id", minAligned.Add(4*time.Minute+45*time.Second))
-		So(yes, ShouldBeFalse)
-		yes, _ = ShouldExport(ctx, "table_id", minAligned.Add(5*time.Minute))
-		So(yes, ShouldBeTrue)
-		yes, _ = ShouldExport(ctx, "table_id", minAligned.Add(5*time.Minute+15*time.Second))
-		So(yes, ShouldBeTrue)
-	})
-}

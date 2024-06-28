@@ -287,14 +287,6 @@ func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, keyPrefix str
 
 // exportTask is the handler for "bq-export-interval" TQ tasks.
 func exportTask(ctx context.Context, globals *exportGlobals, t *taskspb.ExportInterval) error {
-	switch yes, err := ShouldExport(ctx, t.TableName, t.Start.AsTime()); {
-	case err != nil:
-		return err
-	case !yes:
-		logging.Infof(ctx, "Skipping, exports are done from Python")
-		return nil
-	}
-
 	var fetcher AbstractFetcher
 	switch t.TableName {
 	case TaskRequests:
