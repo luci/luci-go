@@ -17,18 +17,15 @@ package rpcs
 import (
 	"bytes"
 	"context"
-	"strconv"
-	"strings"
 	"testing"
-	"time"
 
+	"github.com/klauspost/compress/zlib"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 
@@ -39,281 +36,135 @@ import (
 func TestGetStdout(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestGetStdout", t, func() {
-		ctx := memory.Use(context.Background())
-		state := NewMockedRequestState()
-		state.MockPerm("project:visible-realm", acls.PermTasksGet)
-		ctx = MockRequestState(ctx, state)
-		srv := TasksServer{}
-		reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		So(err, ShouldBeNil)
-		var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
-		tr := &model.TaskRequest{
-			Key:     reqKey,
-			TxnUUID: "txn-uuid",
-			TaskSlices: []model.TaskSlice{
-				model.TaskSlice{
-					Properties: model.TaskProperties{
-						Idempotent: true,
-						Dimensions: model.TaskDimensions{
-							"d1":   {"v1", "v2"},
-							"d2":   {"v3"},
-							"pool": {"pool"},
-							"id":   {"bot123"},
-						},
-						ExecutionTimeoutSecs: 123,
-						GracePeriodSecs:      456,
-						IOTimeoutSecs:        789,
-						Command:              []string{"run"},
-						RelativeCwd:          "./rel/cwd",
-						Env: model.Env{
-							"k1": "v1",
-							"k2": "v2",
-						},
-						EnvPrefixes: model.EnvPrefixes{
-							"p1": {"v1", "v2"},
-							"p2": {"v2"},
-						},
-						Caches: []model.CacheEntry{
-							{Name: "n1", Path: "p1"},
-							{Name: "n2", Path: "p2"},
-						},
-						CASInputRoot: model.CASReference{
-							CASInstance: "cas-inst",
-							Digest: model.CASDigest{
-								Hash:      "cas-hash",
-								SizeBytes: 1234,
-							},
-						},
-						CIPDInput: model.CIPDInput{
-							Server: "server",
-							ClientPackage: model.CIPDPackage{
-								PackageName: "client-package",
-								Version:     "client-version",
-							},
-							Packages: []model.CIPDPackage{
-								{
-									PackageName: "pkg1",
-									Version:     "ver1",
-									Path:        "path1",
-								},
-								{
-									PackageName: "pkg2",
-									Version:     "ver2",
-									Path:        "path2",
-								},
-							},
-						},
-						Outputs:        []string{"o1", "o2"},
-						HasSecretBytes: true,
-						Containment: model.Containment{
-							LowerPriority:             true,
-							ContainmentType:           123,
-							LimitProcesses:            456,
-							LimitTotalCommittedMemory: 789,
-						},
-					},
-					ExpirationSecs:  15 * 60,
-					WaitForCapacity: true,
-				},
-			},
-			Created:              testTime,
-			Expiration:           testTime.Add(20 * time.Minute),
-			Name:                 "name",
-			ParentTaskID:         datastore.NewIndexedNullable("parent-task-id"),
-			Authenticated:        "authenticated-user@example.com",
-			User:                 "user@example.com",
-			Tags:                 []string{"tag1", "tag2"},
-			ManualTags:           []string{"tag1"},
-			ServiceAccount:       "service-account",
-			Realm:                "project:visible-realm",
-			RealmsEnabled:        true,
-			SchedulingAlgorithm:  configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
-			Priority:             50,
-			BotPingToleranceSecs: 456,
-			RBEInstance:          "rbe-instance",
-			PubSubTopic:          "pubsub-topic",
-			PubSubAuthToken:      "pubsub-auth-token",
-			PubSubUserData:       "pubsub-user-data",
-			ResultDBUpdateToken:  "resultdb-update-token",
-			ResultDB:             model.ResultDBConfig{Enable: true},
-			HasBuildTask:         true,
+	state := NewMockedRequestState()
+	state.MockPerm("project:visible-realm", acls.PermTasksGet)
+
+	ctx := memory.Use(context.Background())
+
+	putSummary := func(req *datastore.Key, realm string, dedupFrom *datastore.Key, pending bool) {
+		var tryNumber datastore.Nullable[int64, datastore.Indexed]
+		var dedupFromRunID string
+		if dedupFrom != nil {
+			dedupFromRunID = model.RequestKeyToTaskID(dedupFrom, model.AsRunResult)
+		} else if !pending {
+			tryNumber = datastore.NewIndexedNullable(int64(1))
 		}
-		trs := &model.TaskResultSummary{
+		err := datastore.Put(ctx, &model.TaskResultSummary{
 			TaskResultCommon: model.TaskResultCommon{
-				State:               apipb.TaskState_COMPLETED,
-				Modified:            testTime,
-				BotVersion:          "bot_version_123",
-				BotDimensions:       model.BotDimensions{"os": []string{"linux"}, "cpu": []string{"x86_64"}},
-				BotIdleSince:        datastore.NewUnindexedOptional(testTime.Add(-30 * time.Minute)),
-				BotLogsCloudProject: "example-cloud-project",
-				ServerVersions:      []string{"v1.0"},
-				CurrentTaskSlice:    1,
-				Started:             datastore.NewIndexedNullable(testTime.Add(-1 * time.Hour)),
-				Completed:           datastore.NewIndexedNullable(testTime),
-				DurationSecs:        datastore.NewUnindexedOptional(3600.0),
-				ExitCode:            datastore.NewUnindexedOptional(int64(0)),
-				Failure:             false,
-				InternalFailure:     false,
-				StdoutChunks:        1,
-				CASOutputRoot: model.CASReference{
-					CASInstance: "cas-instance",
-					Digest: model.CASDigest{
-						Hash:      "cas-hash",
-						SizeBytes: 1024,
-					},
-				},
-				CIPDPins: model.CIPDInput{
-					Server: "https://example.cipd.server",
-					ClientPackage: model.CIPDPackage{
-						PackageName: "client_pkg",
-						Version:     "1.0.0",
-						Path:        "client",
-					},
-				},
-				ResultDBInfo: model.ResultDBInfo{
-					Hostname:   "results.api.example.dev",
-					Invocation: "inv123",
-				},
+				StdoutChunks: 1,
 			},
-			Key:                  model.TaskResultSummaryKey(ctx, reqKey),
-			BotID:                datastore.NewUnindexedOptional("bot123"),
-			Created:              testTime.Add(-2 * time.Hour),
-			Tags:                 []string{"tag1", "tag2"},
-			RequestName:          "example-request",
-			RequestUser:          "user@example.com",
-			RequestPriority:      50,
-			RequestAuthenticated: "authenticated-user@example.com",
-			RequestRealm:         "project:visible-realm",
-			RequestPool:          "pool",
-			RequestBotID:         "bot123",
-			PropertiesHash:       datastore.NewIndexedOptional([]byte("prop-hash")),
-			TryNumber:            datastore.NewIndexedNullable(int64(1)),
-			CostUSD:              0.05,
-			CostSavedUSD:         0.00,
-			DedupedFrom:          "",
-			ExpirationDelay:      datastore.NewUnindexedOptional(0.0),
+			Key:          model.TaskResultSummaryKey(ctx, req),
+			RequestRealm: realm,
+			TryNumber:    tryNumber,
+			DedupedFrom:  dedupFromRunID,
+		})
+		if err != nil {
+			panic(err)
 		}
+	}
 
-		Convey("ok; many chunks", func() {
-			numChunks := 5
-			trs.TaskResultCommon.StdoutChunks = int64(numChunks)
-			So(datastore.Put(ctx, tr, trs), ShouldBeNil)
-			model.PutMockTaskOutput(ctx, reqKey, numChunks)
-			expectedOutputStr := ""
-			for i := 0; i < numChunks; i++ {
-				expectedOutputStr += strings.Repeat(strconv.Itoa(i), model.ChunkSize)
-			}
-			resp, err := srv.GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{
-				TaskId: "65aba3a3e6b99310",
-			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &apipb.TaskOutputResponse{
-				Output: []byte(expectedOutputStr),
-				State:  apipb.TaskState_COMPLETED,
-			})
+	putLog := func(req *datastore.Key, log string) {
+		var compressed bytes.Buffer
+		w := zlib.NewWriter(&compressed)
+		if _, err := w.Write([]byte(log)); err != nil {
+			panic(err)
+		}
+		if err := w.Close(); err != nil {
+			panic(err)
+		}
+		err := datastore.Put(ctx, &model.TaskOutputChunk{
+			Key:   model.TaskOutputChunkKey(ctx, req, 0),
+			Chunk: compressed.Bytes(),
 		})
+		if err != nil {
+			panic(err)
+		}
+	}
 
-		Convey("ok; one chunks", func() {
-			numChunks := 1
-			trs.TaskResultCommon.StdoutChunks = int64(numChunks)
-			So(datastore.Put(ctx, tr, trs), ShouldBeNil)
-			model.PutMockTaskOutput(ctx, reqKey, numChunks)
-			expectedOutputStr := ""
-			for i := 0; i < numChunks; i++ {
-				expectedOutputStr += strings.Repeat(strconv.Itoa(i), model.ChunkSize)
-			}
-			resp, err := srv.GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{
-				TaskId: "65aba3a3e6b99310",
-			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &apipb.TaskOutputResponse{
-				Output: []byte(expectedOutputStr),
-				State:  apipb.TaskState_COMPLETED,
-			})
-		})
+	visible, _ := model.TimestampToRequestKey(ctx, TestTime, 1)
+	hidden, _ := model.TimestampToRequestKey(ctx, TestTime, 2)
+	missing, _ := model.TimestampToRequestKey(ctx, TestTime, 3)
+	dedupped, _ := model.TimestampToRequestKey(ctx, TestTime, 4)
+	deduppedFrom, _ := model.TimestampToRequestKey(ctx, TestTime, 5)
+	pending, _ := model.TimestampToRequestKey(ctx, TestTime, 6)
 
-		Convey("ok; offset and length", func() {
-			numChunks := 5
-			trs.TaskResultCommon.StdoutChunks = int64(numChunks)
-			So(datastore.Put(ctx, tr, trs), ShouldBeNil)
-			model.PutMockTaskOutput(ctx, reqKey, numChunks)
-			expectedOutputStr := ""
-			for i := 0; i < numChunks; i++ {
-				expectedOutputStr += strings.Repeat(strconv.Itoa(i), model.ChunkSize)
-			}
-			resp, err := srv.GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{
-				TaskId: "65aba3a3e6b99310",
-				Offset: 100,
-				Length: 1000,
-			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &apipb.TaskOutputResponse{
-				Output: []byte(expectedOutputStr[100:1100]),
-				State:  apipb.TaskState_COMPLETED,
-			})
-		})
+	visibleID := model.RequestKeyToTaskID(visible, model.AsRequest)
+	hiddenID := model.RequestKeyToTaskID(hidden, model.AsRequest)
+	missingID := model.RequestKeyToTaskID(missing, model.AsRequest)
+	deduppedID := model.RequestKeyToTaskID(dedupped, model.AsRequest)
+	pendingID := model.RequestKeyToTaskID(pending, model.AsRequest)
 
-		Convey("ok; all missing chunks", func() {
-			numChunks := 2
-			trs.TaskResultCommon.StdoutChunks = int64(numChunks)
-			So(datastore.Put(ctx, tr, trs), ShouldBeNil)
-			resp, err := srv.GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{
-				TaskId: "65aba3a3e6b99310",
-			})
-			So(err, ShouldBeNil)
-			expectedOutput := bytes.Join([][]byte{
-				bytes.Repeat([]byte("\x00"), model.ChunkSize),
-				bytes.Repeat([]byte("\x00"), model.ChunkSize),
-			}, []byte(""))
-			So(resp, ShouldResembleProto, &apipb.TaskOutputResponse{
-				Output: expectedOutput,
-				State:  apipb.TaskState_COMPLETED,
-			})
-		})
+	putSummary(visible, "project:visible-realm", nil, false)
+	putSummary(hidden, "project:hidden", nil, false)
+	putSummary(dedupped, "project:visible-realm", deduppedFrom, false)
+	putSummary(deduppedFrom, "project:doesntmatter", nil, false)
+	putSummary(pending, "project:visible-realm", nil, true)
 
-		Convey("not ok; no task_id", func() {
-			resp, err := srv.GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "task_id is required")
-			So(resp, ShouldBeNil)
-		})
+	putLog(visible, "visible log")
+	putLog(hidden, "hidden log")
+	putLog(deduppedFrom, "dedupped log")
 
-		Convey("not ok; error with task_id", func() {
-			resp, err := srv.GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{
-				TaskId: "!",
-			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "task_id !: bad task ID: too small")
-			So(resp, ShouldBeNil)
+	call := func(taskID string, offset, length int) (*apipb.TaskOutputResponse, error) {
+		ctx := MockRequestState(ctx, state)
+		return (&TasksServer{}).GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{
+			TaskId: taskID,
+			Offset: int64(offset),
+			Length: int64(length),
 		})
+	}
 
-		Convey("not ok; no such task", func() {
-			resp, err := srv.GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{
-				TaskId: "65aba3a3e6b99320",
-			})
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
-			So(err, ShouldErrLike, "no such task")
-			So(resp, ShouldBeNil)
-		})
+	Convey("Missing task ID", t, func() {
+		_, err := call("", 0, 100)
+		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+	})
 
-		Convey("not ok; requestor does not have ACLs", func() {
-			reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99320")
-			So(err, ShouldBeNil)
-			trs := model.TaskResultSummary{
-				Key:                  model.TaskResultSummaryKey(ctx, reqKey),
-				RequestRealm:         "project:no-access-realm",
-				RequestPool:          "no-access-pool",
-				RequestBotID:         "da bot",
-				RequestAuthenticated: "user:someone@notyou.com",
-			}
-			So(datastore.Put(ctx, &trs), ShouldBeNil)
-			resp, err := srv.GetStdout(ctx, &apipb.TaskIdWithOffsetRequest{
-				TaskId: "65aba3a3e6b99320",
-			})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "the caller \"user:test@example.com\" doesn't have permission \"swarming.tasks.get\" for the task \"65aba3a3e6b99320\"")
-			So(resp, ShouldBeNil)
-		})
+	Convey("Bad task ID", t, func() {
+		_, err := call("not-a-task-id", 0, 100)
+		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+	})
+
+	Convey("Missing task", t, func() {
+		// Note: existence of a task is not a secret (task IDs are predictable).
+		_, err := call(missingID, 0, 100)
+		So(err, ShouldHaveGRPCStatus, codes.NotFound)
+	})
+
+	Convey("No permissions", t, func() {
+		_, err := call(hiddenID, 0, 100)
+		So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+	})
+
+	Convey("Negative offset", t, func() {
+		_, err := call(visibleID, -1, 100)
+		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+	})
+
+	Convey("Negative length", t, func() {
+		_, err := call(visibleID, 0, -1)
+		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+	})
+
+	Convey("Read all", t, func() {
+		res, err := call(visibleID, 0, 0)
+		So(err, ShouldBeNil)
+		So(string(res.Output), ShouldEqual, "visible log")
+	})
+
+	Convey("Read all from dedupped", t, func() {
+		res, err := call(deduppedID, 0, 0)
+		So(err, ShouldBeNil)
+		So(string(res.Output), ShouldEqual, "dedupped log")
+	})
+
+	Convey("Read all from pending", t, func() {
+		res, err := call(pendingID, 0, 0)
+		So(err, ShouldBeNil)
+		So(res.Output, ShouldHaveLength, 0)
+	})
+
+	Convey("Respects offset and length", t, func() {
+		res, err := call(visibleID, 1, len("visible log")-2)
+		So(err, ShouldBeNil)
+		So(string(res.Output), ShouldEqual, "isible lo")
 	})
 }

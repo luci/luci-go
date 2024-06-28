@@ -17,10 +17,11 @@ package model
 import (
 	"bytes"
 	"context"
-	"strings"
+	"crypto/rand"
 	"testing"
 	"time"
 
+	"github.com/klauspost/compress/zlib"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/packedintset"
@@ -338,96 +339,138 @@ func TestTaskResultSummary(t *testing.T) {
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
 		So(err, ShouldBeNil)
 
-		Convey("ok; one chunk", func() {
-			numChunks := 1
-			trs := TaskResultSummary{
-				TaskResultCommon: TaskResultCommon{
-					StdoutChunks: int64(numChunks),
-				},
-				Key: TaskResultSummaryKey(ctx, reqKey),
-			}
-			expectedStr := strings.Repeat("0", ChunkSize)
-			PutMockTaskOutput(ctx, reqKey, numChunks)
-			out, err := trs.GetOutput(ctx, 0, 0)
-			So(err, ShouldBeNil)
-			So(out, ShouldEqual, []byte(expectedStr))
-		})
-		Convey("ok; one chunk; requested length exceeds chunk size", func() {
-			numChunks := 1
-			trs := TaskResultSummary{
-				TaskResultCommon: TaskResultCommon{
-					StdoutChunks: int64(numChunks),
-				},
-				Key: TaskResultSummaryKey(ctx, reqKey),
-			}
-			expectedStr := strings.Repeat("0", ChunkSize)
-			PutMockTaskOutput(ctx, reqKey, numChunks)
-			out, err := trs.GetOutput(ctx, ChunkSize*2, 0)
-			So(err, ShouldBeNil)
-			So(out, ShouldEqual, []byte(expectedStr))
-		})
-		Convey("ok; many chunks", func() {
-			numChunks := 3
-			trs := TaskResultSummary{
-				TaskResultCommon: TaskResultCommon{
-					StdoutChunks: int64(numChunks),
-				},
-				Key: TaskResultSummaryKey(ctx, reqKey),
-			}
-			PutMockTaskOutput(ctx, reqKey, numChunks)
-			expectedStr := strings.Repeat("0", ChunkSize) + strings.Repeat("1", ChunkSize) + strings.Repeat("2", ChunkSize)
-			out, err := trs.GetOutput(ctx, 0, 0)
-			So(err, ShouldBeNil)
-			So(out, ShouldEqual, []byte(expectedStr))
-		})
-		Convey("ok; partial output", func() {
-			numChunks := 2
-			trs := TaskResultSummary{
-				TaskResultCommon: TaskResultCommon{
-					StdoutChunks: int64(numChunks),
-				},
-				Key: TaskResultSummaryKey(ctx, reqKey),
-			}
-			PutMockTaskOutput(ctx, reqKey, numChunks)
-			out, err := trs.GetOutput(ctx, 100, 0)
-			So(err, ShouldBeNil)
-			So(len(out), ShouldEqual, 100)
-			So(out, ShouldEqual, []byte(strings.Repeat("0", 100)))
-		})
-		Convey("ok; partial output, with offset", func() {
-			numChunks := 6
-			trs := TaskResultSummary{
-				TaskResultCommon: TaskResultCommon{
-					StdoutChunks: int64(numChunks),
-				},
-				Key: TaskResultSummaryKey(ctx, reqKey),
-			}
-			PutMockTaskOutput(ctx, reqKey, numChunks)
-			expectedStr := strings.Repeat("2", 50) + strings.Repeat("3", 50)
-			out, err := trs.GetOutput(ctx, 100, ChunkSize*3-50)
-			So(err, ShouldBeNil)
-			So(len(out), ShouldEqual, 100)
-			So(out, ShouldEqual, []byte(expectedStr))
-		})
-		Convey("not ok; many chunks, one is missing", func() {
-			numChunks := 3
-			trs := TaskResultSummary{
-				TaskResultCommon: TaskResultCommon{
-					StdoutChunks: int64(numChunks + 1),
-				},
-				Key: TaskResultSummaryKey(ctx, reqKey),
-			}
-			PutMockTaskOutput(ctx, reqKey, numChunks)
+		// Generate non-repeating text, to make sure that offsets are respected
+		// precisely (no off by one errors) when reading chunks.
+		var expectedOutput bytes.Buffer
+		var chunkIndex int64
 
-			expectedOutput := bytes.Join([][]byte{
-				bytes.Repeat([]byte("0"), ChunkSize),
-				bytes.Repeat([]byte("1"), ChunkSize),
-				bytes.Repeat([]byte("2"), ChunkSize),
-				bytes.Repeat([]byte("\x00"), ChunkSize),
-			}, nil)
-			out, err := trs.GetOutput(ctx, 0, 0)
+		writeChunk := func(size int, store bool) {
+			if !store {
+				expectedOutput.Write(emptyChunk)
+				chunkIndex++
+				return
+			}
+
+			buf := make([]byte, size)
+			if _, err := rand.Read(buf); err != nil {
+				panic(err)
+			}
+			expectedOutput.Write(buf)
+
+			var compressed bytes.Buffer
+			w := zlib.NewWriter(&compressed)
+			if _, err := w.Write(buf); err != nil {
+				panic(err)
+			}
+			if err := w.Close(); err != nil {
+				panic(err)
+			}
+
+			err := datastore.Put(ctx, &TaskOutputChunk{
+				Key:   TaskOutputChunkKey(ctx, reqKey, chunkIndex),
+				Chunk: compressed.Bytes(),
+			})
+			if err != nil {
+				panic(err)
+			}
+			chunkIndex++
+		}
+
+		const unfinishedSize = 1000
+
+		// A bunch of complete chunks, one missing chunk and one unfinished chunk.
+		writeChunk(ChunkSize, true)
+		writeChunk(ChunkSize, true)
+		writeChunk(ChunkSize, false) // missing in the datastore
+		writeChunk(ChunkSize, true)
+		writeChunk(unfinishedSize, true) // incomplete, being written now
+
+		const totalSize = ChunkSize*4 + unfinishedSize
+		So(expectedOutput.Len(), ShouldEqual, totalSize)
+
+		trs := TaskResultSummary{
+			TaskResultCommon: TaskResultCommon{StdoutChunks: chunkIndex},
+			Key:              TaskResultSummaryKey(ctx, reqKey),
+			TryNumber:        datastore.NewIndexedNullable(int64(1)),
+		}
+
+		assertExpectedOutput := func(offset, length, expectedLen int) {
+			var expected []byte
+			all := expectedOutput.Bytes()
+			expected = all[offset:min(offset+length, len(all))]
+			So(len(expected), ShouldEqual, expectedLen)
+
+			got, err := trs.GetOutput(ctx, int64(offset), int64(length))
 			So(err, ShouldBeNil)
-			So(out, ShouldEqual, expectedOutput)
+			So(len(got), ShouldEqual, expectedLen)
+			So(got, ShouldResemble, expected)
+		}
+
+		Convey("No offset", func() {
+			// Reading a part of the first chunk.
+			assertExpectedOutput(0, 100, 100)
+			// Reading one chunk precisely.
+			assertExpectedOutput(0, ChunkSize, ChunkSize)
+			// Reading one chunk and a little more.
+			assertExpectedOutput(0, ChunkSize+1, ChunkSize+1)
+			// Reading one chunk and a lot more.
+			assertExpectedOutput(0, 2*ChunkSize-1, 2*ChunkSize-1)
+			// Reading two chunks precisely.
+			assertExpectedOutput(0, ChunkSize*2, ChunkSize*2)
+			// Reading two chunks and a bit of a missing chunk.
+			assertExpectedOutput(0, ChunkSize*2+100, ChunkSize*2+100)
+			// Reading 4 chunks, with the missing one in the middle.
+			assertExpectedOutput(0, ChunkSize*3+100, ChunkSize*3+100)
+			// Reading all available output.
+			assertExpectedOutput(0, ChunkSize*5, totalSize)
+		})
+
+		Convey("With offset within the first chunk", func() {
+			// Reading a part of the first chunk.
+			assertExpectedOutput(200, 100, 100)
+			// Reading one chunk precisely.
+			assertExpectedOutput(200, ChunkSize-200, ChunkSize-200)
+			// Reading two chunks.
+			assertExpectedOutput(200, ChunkSize, ChunkSize)
+			// Reading all available output.
+			assertExpectedOutput(200, ChunkSize*5, totalSize-200)
+		})
+
+		Convey("With offset within non-first chunk", func() {
+			// Reading a part of the chunk.
+			assertExpectedOutput(2*ChunkSize+200, 100, 100)
+			// Reading one chunk precisely.
+			assertExpectedOutput(2*ChunkSize+200, ChunkSize-200, ChunkSize-200)
+			// Reading two chunk.
+			assertExpectedOutput(2*ChunkSize+200, ChunkSize, ChunkSize)
+			// Reading all available output.
+			assertExpectedOutput(2*ChunkSize+200, ChunkSize*5, totalSize-2*ChunkSize-200)
+		})
+
+		Convey("With offset in the last chunk", func() {
+			// Reading a part of the last chunk
+			assertExpectedOutput(4*ChunkSize+100, 100, 100)
+			// Reading all available data in the last chunk.
+			assertExpectedOutput(4*ChunkSize+100, ChunkSize, unfinishedSize-100)
+			// Reading the last available byte.
+			assertExpectedOutput(totalSize-1, ChunkSize, 1)
+		})
+
+		Convey("With offset outside of available range", func() {
+			// Precisely after the last byte.
+			got, err := trs.GetOutput(ctx, 4*ChunkSize+unfinishedSize, 10000)
+			So(err, ShouldBeNil)
+			So(got, ShouldHaveLength, 0)
+
+			// Pointing to an incomplete portion of the last chunk.
+			got, err = trs.GetOutput(ctx, 4*ChunkSize+unfinishedSize+100, 10000)
+			So(err, ShouldBeNil)
+			So(got, ShouldHaveLength, 0)
+
+			// Outside of the last chunk entirely.
+			got, err = trs.GetOutput(ctx, 5*ChunkSize+1, 10000)
+			So(err, ShouldBeNil)
+			So(got, ShouldHaveLength, 0)
 		})
 	})
 }

@@ -16,11 +16,9 @@ package model
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/klauspost/compress/zlib"
@@ -217,31 +215,4 @@ func MapToStringListPair(p map[string][]string, keySorting bool) []*apipb.String
 		}
 	}
 	return slp
-}
-
-// PutMockTaskOutput is a testing util that will create mock TaskOutputChunk datastore entities.
-func PutMockTaskOutput(ctx context.Context, reqKey *datastore.Key, numChunks int) {
-	toPut := make([]*TaskOutputChunk, numChunks)
-	for i := 0; i < numChunks; i++ {
-		expectedStr := strings.Repeat(strconv.Itoa(i), ChunkSize)
-		var b bytes.Buffer
-		w := zlib.NewWriter(&b)
-		_, err := w.Write([]byte(expectedStr))
-		if err != nil {
-			panic(err)
-		}
-		err = w.Close()
-		if err != nil {
-			panic(err)
-		}
-		compressedChunk := b.Bytes()
-		toPut[i] = &TaskOutputChunk{
-			Key:   TaskOutputChunkKey(ctx, reqKey, int64(i)),
-			Chunk: compressedChunk,
-		}
-	}
-	err := datastore.Put(ctx, toPut)
-	if err != nil {
-		panic(err)
-	}
 }

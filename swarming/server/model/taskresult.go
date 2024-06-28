@@ -49,6 +49,9 @@ const (
 	MaxChunks = 1024
 )
 
+// emptyChunk is used as a placeholder for missing TaskOutputChunk entities.
+var emptyChunk = bytes.Repeat([]byte{0}, ChunkSize)
+
 // TaskResultCommon contains properties that are common to both TaskRunResult
 // and TaskResultSummary.
 //
@@ -385,70 +388,117 @@ func (p *TaskResultSummary) CostsUSD() []float32 {
 }
 
 // GetOutput returns the stdout content for the task.
-func (p *TaskResultSummary) GetOutput(ctx context.Context, length, offset int64) ([]byte, error) {
-	if p.StdoutChunks == 0 {
+//
+// Returns at most `length` bytes (perhaps less if reading the end of the
+// output). Returns empty output if the task hasn't run.
+func (p *TaskResultSummary) GetOutput(ctx context.Context, offset, length int64) ([]byte, error) {
+	if offset < 0 {
+		panic("negative offset")
+	}
+	if length < 0 {
+		panic("negative length")
+	}
+
+	if p.StdoutChunks == 0 || length == 0 {
 		return nil, nil
 	}
-	if length == 0 {
-		// Fetch the whole content
-		length = p.StdoutChunks*ChunkSize - offset
+
+	// Get TaskRequest of the task that actually has the logs (handling potential
+	// task deduplication). Note that p.StdoutChunks is copied from the
+	// TaskRunResult when the deduplication is recorded, thus it's still OK to use
+	// it even when the result is deduplicated.
+	runID := p.TaskRunID()
+	if runID == "" {
+		return nil, nil // the task hasn't run
 	}
+	dedupedFromReq, err := TaskIDToRequestKey(ctx, runID)
+	if err != nil {
+		return nil, errors.Annotate(err, "unexpectedly malformed dedupped run ID %q", runID).Err()
+	}
+
+	// A range of chunks covering the requested interval.
 	firstChunk := offset / ChunkSize
-	end := offset + length
-	lastChunk := (end + ChunkSize - 1) / ChunkSize
+	if firstChunk >= p.StdoutChunks {
+		return nil, nil // the offset is totally outside of the recorded range
+	}
+	lastChunk := (offset + length + ChunkSize - 1) / ChunkSize
 	if lastChunk > p.StdoutChunks {
 		lastChunk = p.StdoutChunks
 	}
+
 	toGet := make([]*TaskOutputChunk, lastChunk-firstChunk)
-	for i := firstChunk; i < lastChunk; i++ {
-		toGet[i-firstChunk] = &TaskOutputChunk{Key: TaskOutputChunkKey(ctx, p.TaskRequestKey(), i)}
-	}
-	handleChunk := func(chunk []byte, e error) ([]byte, error) {
-		switch {
-		case errors.Is(e, datastore.ErrNoSuchEntity):
-			return bytes.Repeat([]byte{'\x00'}, ChunkSize), nil
-		case e != nil:
-			return nil, e
+	for i := range toGet {
+		toGet[i] = &TaskOutputChunk{
+			Key: TaskOutputChunkKey(ctx, dedupedFromReq, firstChunk+int64(i)),
 		}
-		r, err := zlib.NewReader(bytes.NewReader(chunk))
+	}
+
+	var zr io.ReadCloser
+
+	decompress := func(chunk []byte, out *bytes.Buffer) (int, error) {
+		in := bytes.NewReader(chunk)
+
+		// Reuse the reader when decoding chunks to avoid generating GC garbage.
+		var err error
+		if zr == nil {
+			zr, err = zlib.NewReader(in)
+		} else {
+			err = zr.(zlib.Resetter).Reset(in, nil)
+		}
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get zlib reader").Err()
+			return 0, errors.Annotate(err, "opening zlib reader").Err()
 		}
-		decompressed, err := io.ReadAll(r)
+		defer func() { _ = zr.Close() }()
+
+		n, err := io.Copy(out, zr)
 		if err != nil {
-			_ = r.Close()
-			return nil, errors.Annotate(err, "failed to read chunk").Err()
+			return 0, errors.Annotate(err, "decompressing").Err()
 		}
-		if err := r.Close(); err != nil {
-			return nil, errors.Annotate(err, "failed to close zlib reader").Err()
+		if err := zr.Close(); err != nil {
+			return 0, errors.Annotate(err, "closing zlib reader").Err()
 		}
-		return decompressed, nil
+		return int(n), nil
 	}
-	var chunks [][]byte
-	err := datastore.Get(ctx, toGet)
-	for i := 0; i < len(toGet); i++ {
-		chunkErr := func(i int) error {
-			if merr, ok := err.(errors.MultiError); ok {
-				return merr[i]
-			}
-			return err
+
+	output := bytes.Buffer{}
+	output.Grow(len(toGet) * ChunkSize)
+
+	err = datastore.Get(ctx, toGet)
+	for i, chunk := range toGet {
+		var chunkErr error
+		if merr, ok := err.(errors.MultiError); ok {
+			chunkErr = merr[i]
+		} else {
+			chunkErr = err
 		}
-		decmpChunk, err := handleChunk(toGet[i].Chunk, chunkErr(i))
+		if errors.Is(chunkErr, datastore.ErrNoSuchEntity) {
+			output.Write(emptyChunk)
+			continue
+		}
+		if chunkErr != nil {
+			return nil, errors.Annotate(chunkErr, "fetching chunk #%d", i).Err()
+		}
+		size, err := decompress(chunk.Chunk, &output)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to handle chunk").Err()
+			return nil, errors.Annotate(err, "decompressing chunk #%d", i).Err()
 		}
-		chunks = append(chunks, decmpChunk)
-	}
-	min := func(x, y int) int {
-		if x < y {
-			return x
+		// All chunks except the last one must have length ChunkSize, otherwise
+		// reading by offset will not always work correctly. Check that.
+		if i != len(toGet)-1 && size != ChunkSize {
+			logging.Warningf(ctx, "Chunk %s has unexpected size %d", chunk.Key, size)
 		}
-		return y
 	}
-	toReturn := bytes.Join(chunks, nil)
-	startOffset := offset % ChunkSize
-	endOffset := min(int(end-(firstChunk*ChunkSize)), len(toReturn))
-	return toReturn[startOffset:endOffset], nil
+
+	raw := output.Bytes()
+
+	// The last chunk may be present, but have very little data, resulting in the
+	// requested offset being outside of the recorded range. Return empty output
+	// in that case.
+	start := int(offset % ChunkSize)
+	if start >= len(raw) {
+		return nil, nil
+	}
+	return raw[start:min(start+int(length), len(raw))], nil
 }
 
 // PerformanceStatsKey returns PerformanceStats entity key or nil.
@@ -519,13 +569,22 @@ func (p *TaskResultSummary) TaskRequestKey() *datastore.Key {
 	return key
 }
 
-// TaskRunID returns the packed RunResult key for a swarming task.
+// TaskRunID returns the packed TaskRunResult key of the actual execution.
+//
+// If the task was dedupped, it will be the key of the run that actually
+// happened.
+//
+// It is empty string if the task hasn't run (e.g. still pending or has
+// expired).
 func (p *TaskResultSummary) TaskRunID() string {
-	// Returning nil if there was no attempt made.
-	if !p.TryNumber.IsSet() {
+	switch {
+	case p.DedupedFrom != "":
+		return p.DedupedFrom
+	case p.TryNumber.IsSet():
+		return RequestKeyToTaskID(p.TaskRequestKey(), AsRunResult)
+	default:
 		return ""
 	}
-	return RequestKeyToTaskID(p.TaskRequestKey(), AsRunResult)
 }
 
 // TaskResultSummaryKey construct a summary key given a task request key.
@@ -588,6 +647,9 @@ type TaskRunResult struct {
 }
 
 // TaskRunResultKey constructs a task run result key given a task request key.
+//
+// This is purely a key constructor. It doesn't fetch anything and doesn't
+// handle deduplicated tasks.
 func TaskRunResultKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
 	return datastore.NewKey(ctx, "TaskRunResult", "", 1, TaskResultSummaryKey(ctx, taskReq))
 }

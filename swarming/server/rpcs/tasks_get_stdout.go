@@ -29,20 +29,22 @@ import (
 	"go.chromium.org/luci/swarming/server/model"
 )
 
-const (
-	// Default byte offset to start fetching.
-	DefaultOffset = 0
+// MaxOutputLength is the maximum (and default) amount of output to fetch,
+// mostly for compatibility with previous behavior. See model.ChunkSize.
+const MaxOutputLength = 160 * model.ChunkSize
 
-	// Maximum content fetched at once, mostly for compatibility with previous
-	// behavior. See TaskResult.ChunkSize.
-	MaxOutputLength = 16 * 1000 * 1024
-)
-
-// GetStdout implements the GetStdout RPC.
+// GetStdout implements the corresponding RPC method.
 func (*TasksServer) GetStdout(ctx context.Context, req *apipb.TaskIdWithOffsetRequest) (*apipb.TaskOutputResponse, error) {
 	if req.TaskId == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "task_id is required")
 	}
+	if req.Offset < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "offset must be non-negative")
+	}
+	if req.Length < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "length must be non-negative")
+	}
+
 	trKey, err := model.TaskIDToRequestKey(ctx, req.TaskId)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "task_id %s: %s", req.TaskId, err)
@@ -56,23 +58,22 @@ func (*TasksServer) GetStdout(ctx context.Context, req *apipb.TaskIdWithOffsetRe
 		logging.Errorf(ctx, "Error fetching TaskResultSummary %s: %s", req.TaskId, err)
 		return nil, status.Errorf(codes.Internal, "datastore error fetching the task")
 	}
+
 	res := State(ctx).ACL.CheckTaskPerm(ctx, trs, acls.PermTasksGet)
 	if !res.Permitted {
 		return nil, res.ToGrpcErr()
 	}
-	length := req.GetLength()
-	if length <= 0 || length > MaxOutputLength {
+
+	length := req.Length
+	if length == 0 || length > MaxOutputLength {
 		length = MaxOutputLength
 	}
-	offset := req.GetOffset()
-	if offset < 0 {
-		offset = DefaultOffset
-	}
-	output, err := trs.GetOutput(ctx, length, offset)
+	output, err := trs.GetOutput(ctx, req.Offset, length)
 	if err != nil {
-		logging.Errorf(ctx, "Error getting task result output: %s", err.Error())
+		logging.Errorf(ctx, "Error getting task result output: %s", err)
 		return nil, status.Errorf(codes.Internal, "error getting task result output")
 	}
+
 	return &apipb.TaskOutputResponse{
 		Output: output,
 		State:  trs.State,
