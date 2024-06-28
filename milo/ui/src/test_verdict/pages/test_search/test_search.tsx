@@ -60,7 +60,7 @@ export const TestSearch = () => {
         />
       </Box>
       <Box sx={{ mt: 5 }}>
-        <TestList searchQuery={searchQuery} project={selectedProject} />
+        <TestList searchQuery={searchQuery.trim()} project={selectedProject} />
       </Box>
     </Box>
   );
