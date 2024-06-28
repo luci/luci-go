@@ -73,14 +73,16 @@ const MaxRBECasBatchSize = 2 * 1024 * 1024 // 2 MB
 const ArtifactRequestOverhead = 100
 
 type Artifact struct {
-	InvocationID string
-	TestID       string
-	ResultID     string
-	ArtifactID   string
-	ContentType  string
-	Size         int64
-	RBECASHash   string
-	TestStatus   pb.TestStatus
+	InvocationID    string
+	TestID          string
+	ResultID        string
+	ArtifactID      string
+	ContentType     string
+	Size            int64
+	RBECASHash      string
+	TestStatus      pb.TestStatus
+	TestVariant     *pb.Variant
+	TestVariantHash string
 }
 
 // ExportArtifactsTask describes how to route export artifact task.
@@ -343,7 +345,9 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 			a.ContentType,
 			a.Size,
 			a.RBECASHash,
-			IFNULL(tr.Status, 0)
+			IFNULL(tr.Status, 0),
+			tr.Variant,
+			tr.VariantHash,
 		FROM Artifacts a
 		LEFT JOIN TestResults tr
 		ON a.InvocationId = tr.InvocationId
@@ -361,7 +365,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 
 	err := it.Do(func(r *spanner.Row) error {
 		a := &Artifact{InvocationID: string(invID)}
-		err := b.FromSpanner(r, &a.TestID, &a.ResultID, &a.ArtifactID, &a.ContentType, &a.Size, &a.RBECASHash, &a.TestStatus)
+		err := b.FromSpanner(r, &a.TestID, &a.ResultID, &a.ArtifactID, &a.ContentType, &a.Size, &a.RBECASHash, &a.TestStatus, &a.TestVariant, &a.TestVariantHash)
 		if err != nil {
 			return errors.Annotate(err, "read row").Err()
 		}
@@ -530,6 +534,12 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 			artifactExportCounter.Add(ctx, 1, project, "failure_input")
 			continue
 		}
+
+		variantJSON, err := pbutil.VariantToJSON(artifact.TestVariant)
+		if err != nil {
+			return errors.Annotate(err, "variant to json").Err()
+		}
+
 		// Everything is ok, send to rowC.
 		// This is guaranteed to be small artifact, so we need only 1 shard.
 		row := &bqpb.TextArtifactRow{
@@ -545,6 +555,8 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 			ShardContentSize:    int32(artifact.Size),
 			TestStatus:          testStatusToString(artifact.TestStatus),
 			PartitionTime:       timestamppb.New(inv.CreateTime.AsTime()),
+			TestVariant:         variantJSON,
+			TestVariantHash:     artifact.TestVariantHash,
 		}
 		rowC <- row
 	}
@@ -563,6 +575,11 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 	var str strings.Builder
 	shardID := 0
 	project, realm := realms.Split(inv.Realm)
+	variantJSON, err := pbutil.VariantToJSON(a.TestVariant)
+	if err != nil {
+		return errors.Annotate(err, "variant to json").Err()
+	}
+
 	input := func() *bqpb.TextArtifactRow {
 		return &bqpb.TextArtifactRow{
 			Project:             project,
@@ -577,6 +594,8 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 			ArtifactContentSize: int32(a.Size),
 			ShardContentSize:    int32(str.Len()),
 			TestStatus:          testStatusToString(a.TestStatus),
+			TestVariant:         variantJSON,
+			TestVariantHash:     a.TestVariantHash,
 			PartitionTime:       timestamppb.New(inv.CreateTime.AsTime()),
 			// We don't populated numshards here because we don't know
 			// exactly how many shards we need until we finish scanning.
@@ -586,7 +605,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 		}
 	}
 
-	err := ac.DownloadRBECASContent(ctx, ae.bytestreamClient, func(ctx context.Context, pr io.Reader) error {
+	err = ac.DownloadRBECASContent(ctx, ae.bytestreamClient, func(ctx context.Context, pr io.Reader) error {
 		sc := bufio.NewScanner(pr)
 
 		// Read by runes, so we will know if the input contains invalid Unicode

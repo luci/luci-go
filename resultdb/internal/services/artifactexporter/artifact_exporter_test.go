@@ -161,7 +161,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 		)
 
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.TestResults("inv1", "testid", nil, pb.TestStatus_PASS),
+			insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 		)...)
 
 		artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject")
@@ -179,14 +179,16 @@ func TestQueryTextArtifacts(t *testing.T) {
 				TestStatus:   pb.TestStatus_STATUS_UNSPECIFIED,
 			},
 			{
-				InvocationID: "inv1",
-				TestID:       "testid",
-				ResultID:     "0",
-				ArtifactID:   "a1",
-				ContentType:  "text/html",
-				Size:         100,
-				RBECASHash:   "deadbeef",
-				TestStatus:   pb.TestStatus_PASS,
+				InvocationID:    "inv1",
+				TestID:          "testid",
+				ResultID:        "0",
+				ArtifactID:      "a1",
+				ContentType:     "text/html",
+				Size:            100,
+				RBECASHash:      "deadbeef",
+				TestStatus:      pb.TestStatus_PASS,
+				TestVariant:     &pb.Variant{Def: map[string]string{"os": "linux"}},
+				TestVariantHash: "f334f047f88eb721",
 			},
 		})
 		So(artifactContentCounter.Get(ctx, "testproject", "text"), ShouldEqual, 2)
@@ -249,14 +251,16 @@ func TestDownloadArtifactContent(t *testing.T) {
 				TestStatus:   pb.TestStatus_PASS,
 			},
 			{
-				InvocationID: "inv1",
-				TestID:       "testid",
-				ResultID:     "0",
-				ArtifactID:   "a2",
-				ContentType:  "text/html",
-				Size:         450,
-				RBECASHash:   "hash3",
-				TestStatus:   pb.TestStatus_FAIL,
+				InvocationID:    "inv1",
+				TestID:          "testid",
+				ResultID:        "0",
+				ArtifactID:      "a2",
+				ContentType:     "text/html",
+				Size:            450,
+				RBECASHash:      "hash3",
+				TestStatus:      pb.TestStatus_FAIL,
+				TestVariant:     &pb.Variant{Def: map[string]string{"os": "linux"}},
+				TestVariantHash: "f334f047f88eb721",
 			},
 			{
 				InvocationID: "inv1",
@@ -362,6 +366,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ShardContentSize:    int32(3),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
 					TestStatus:          "",
+					TestVariant:         "{}",
 				},
 				{
 					Project:             "chromium",
@@ -377,6 +382,8 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ShardContentSize:    int32(300),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
 					TestStatus:          "FAIL",
+					TestVariant:         `{"os":"linux"}`,
+					TestVariantHash:     "f334f047f88eb721",
 				},
 				{
 					Project:             "chromium",
@@ -392,6 +399,8 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ShardContentSize:    int32(150),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
 					TestStatus:          "FAIL",
+					TestVariant:         `{"os":"linux"}`,
+					TestVariantHash:     "f334f047f88eb721",
 				},
 				{
 					Project:             "chromium",
@@ -407,6 +416,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 					ShardContentSize:    int32(97),
 					PartitionTime:       timestamppb.New(time.Unix(10000, 0).UTC()),
 					TestStatus:          "FAIL",
+					TestVariant:         "{}",
 				},
 			})
 			// Make sure we do the chunking properly.
@@ -482,7 +492,7 @@ func TestExportArtifacts(t *testing.T) {
 		)
 
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.TestResults("inv-1", "testid", nil, pb.TestStatus_PASS),
+			insert.TestResults("inv-1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 		)...)
 
 		Convey("Invocation not finalized", func() {
@@ -526,6 +536,7 @@ func TestExportArtifacts(t *testing.T) {
 					ArtifactContentSize: 4,
 					ShardContentSize:    4,
 					PartitionTime:       timestamppb.New(commitTime),
+					TestVariant:         "{}",
 				},
 				{
 					Project:             "testproject",
@@ -541,6 +552,8 @@ func TestExportArtifacts(t *testing.T) {
 					TestStatus:          "PASS",
 					ShardContentSize:    4,
 					PartitionTime:       timestamppb.New(commitTime),
+					TestVariant:         `{"os":"linux"}`,
+					TestVariantHash:     "f334f047f88eb721",
 				},
 			})
 			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 2)

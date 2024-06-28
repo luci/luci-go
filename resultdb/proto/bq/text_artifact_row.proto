@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.resultdb.bq;
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
 
@@ -91,4 +92,22 @@ message TextArtifactRow {
   // See luci.resultdb.v1.TestStatus for possible values.
   // For invocation-level artifact, an this will be an empty string.
   string test_status = 15;
+
+  // The variant of the test result that contains the artifact.
+  // This will be encoded as a JSON object like
+  // {"builder":"linux-rel","os":"Ubuntu-18.04",...}
+  // to take advantage of BigQuery's JSON support, so that
+  // the query will only be billed for the variant
+  // keys it reads.
+  //
+  // In the protocol buffer, it must be a string as per
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  // For invocation level artifact, this value will be set to
+  // empty JSON string "{}".
+  string test_variant = 16 [(bqschema.options).bq_type = "JSON"];
+
+  // A hash of the variant of the test result that contains the artifact.
+  // This is encoded as lowercase hexadecimal characters.
+  // The computation is an implementation detail of ResultDB.
+  string test_variant_hash = 17;
 }

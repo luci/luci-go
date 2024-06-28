@@ -125,3 +125,26 @@ func TestVariantUtils(t *testing.T) {
 		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
 	})
 }
+
+func TestVariantToJSON(t *testing.T) {
+	t.Parallel()
+	Convey(`VariantToJSON`, t, func() {
+		Convey(`empty`, func() {
+			result, err := VariantToJSON(nil)
+			So(err, ShouldBeNil)
+			So(result, ShouldEqual, "{}")
+		})
+		Convey(`non-empty`, func() {
+			variant := &pb.Variant{
+				Def: map[string]string{
+					"builder":           "linux-rel",
+					"os":                "Ubuntu-18.04",
+					"pathological-case": "\000\001\n\r\f",
+				},
+			}
+			result, err := VariantToJSON(variant)
+			So(err, ShouldBeNil)
+			So(result, ShouldEqual, `{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`)
+		})
+	})
+}
