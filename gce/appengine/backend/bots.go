@@ -309,7 +309,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
 	case vm.Hostname != task.Hostname:
 		// Instance is already destroyed and replaced. Don't terminate the new bot.
-		logging.Debugf(c, "bot %q does not exist", task.Hostname)
+		logging.Debugf(c, "Terminate bot %q: vm does not exist. Skipping...", task.Hostname)
 		return nil
 	}
 	// 1 terminate task should normally suffice to terminate a bot, but in case
@@ -318,10 +318,10 @@ func terminateBot(c context.Context, payload proto.Message) error {
 	// handled by the swarming server and after crbug/982840 will be auto-deduped.
 	mi := memcache.NewItem(c, fmt.Sprintf("terminate-%s/%s", vm.Swarming, vm.Hostname))
 	if err := memcache.Get(c, mi); err == nil {
-		logging.Debugf(c, "bot %q already has terminate task from us", task.Hostname)
+		logging.Debugf(c, "Terminate bot %q: already has a terminate task from us", task.Hostname)
 		return nil
 	}
-	logging.Debugf(c, "terminating bot %q: %s", vm.Hostname, vm.Swarming)
+	logging.Debugf(c, "Terminate bot %q: target swarming %q", vm.Hostname, vm.Swarming)
 	_, err := getSwarming(c, vm.Swarming).TerminateBot(c, &swarmingpb.TerminateRequest{
 		BotId:  vm.Hostname,
 		Reason: "GCE Provider",
@@ -329,14 +329,14 @@ func terminateBot(c context.Context, payload proto.Message) error {
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			// Bot is already deleted.
-			logging.Debugf(c, "bot not found (%s)", vm.Hostname)
+			logging.Debugf(c, "Terminate bot %q: bot not found in swarming. We are good to skip...", vm.Hostname)
 			return nil
 		}
 		logGrpcError(c, vm.Hostname, err)
-		return errors.Annotate(err, "failed to terminate bot").Err()
+		return errors.Annotate(err, "terminate bot %q", vm.Hostname).Err()
 	}
 	if err := memcache.Set(c, mi.SetExpiration(time.Hour)); err != nil {
-		logging.Warningf(c, "failed to record terminate task in memcache: %s", err)
+		logging.Warningf(c, "Terminate bot %q: failed to record task in memcache: %s", vm.Hostname, err)
 	}
 	return nil
 }

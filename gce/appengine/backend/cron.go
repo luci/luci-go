@@ -118,14 +118,15 @@ func drainVMsAsync(c context.Context) error {
 	if err := datastore.Run(c, qC, func(cfg *model.Config) {
 		configMap[cfg.ID] = cfg.Config
 	}); err != nil {
-		return errors.Annotate(err, "failed to list Config").Err()
+		return errors.Annotate(err, "drain vms: failed to list Config").Err()
 	}
+	logging.Debugf(c, "Drain vms: staring...")
 	vmMap := make(map[string]*model.VM)
 	qV := datastore.NewQuery("VM")
 	if err := datastore.Run(c, qV, func(vm *model.VM) {
 		vmMap[vm.ID] = vm
 	}); err != nil {
-		return errors.Annotate(err, "failed to list VMs").Err()
+		return errors.Annotate(err, "drain vms: failed to list VMs").Err()
 	}
 	/* Config dictate how many VMs can be online for any given prefix. Check if there are
 	 * more bots assigned than required by the config and drain them.
@@ -143,7 +144,7 @@ func drainVMsAsync(c context.Context) error {
 		} else if configMap[vm.Config].GetCurrentAmount() > vm.Index {
 			continue
 		}
-		logging.Debugf(c, "schedule %s to be drained", id)
+		logging.Debugf(c, "Drain vms: schedule %s to be drained", id)
 		taskList = append(taskList, &tq.Task{
 			Payload: &tasks.DrainVM{
 				Id: id,

@@ -495,7 +495,7 @@ func TestTerminateBot(t *testing.T) {
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldErrLike, "failed to terminate bot")
+				So(err, ShouldErrLike, "terminate bot \"name\"")
 				v := &model.VM{
 					ID: "id",
 				}
