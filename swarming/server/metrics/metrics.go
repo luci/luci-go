@@ -36,4 +36,42 @@ var (
 		field.String("pool"),          // e.g. 'skia'.
 		field.String("status"),        // e.g. 'User canceled'
 		field.Int("http_status_code")) // e.g. 404
+
+	JobsActives = metric.NewInt(
+		"jobs/active",
+		"Number of running, pending or otherwise active jobs.",
+		nil,
+		field.String("spec_name"),     // name of a job specification.
+		field.String("project_id"),    // e.g. "chromium".
+		field.String("subproject_id"), // e.g. "blink". Set to empty string if not used.
+		field.String("pool"),          // e.g. "Chrome".
+		field.String("rbe"),           // RBE instance of the task or literal "none".
+		field.String("status"),        // "pending", or "running".
+	)
+
+	BotsPerState = metric.NewInt(
+		"swarming/rbe_migration/bots",
+		"Number of Swarming bots per RBE migration state.",
+		nil,
+		field.String("pool"),  // e.g "luci.infra.ci"
+		field.String("state"), // e.g. "RBE", "SWARMING", "HYBRID"
+	)
+
+	BotsStatus = metric.NewString(
+		"executors/status",
+		"Status of a job executor.",
+		nil,
+	)
+
+	BotsDimensionsPool = metric.NewString(
+		"executors/pool",
+		"Pool name for a given job executor.",
+		nil,
+	)
+
+	BotsRBEInstance = metric.NewString(
+		"executors/rbe",
+		"RBE instance of a job executor.",
+		nil,
+	)
 )
