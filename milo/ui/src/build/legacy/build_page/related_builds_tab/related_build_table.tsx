@@ -40,18 +40,20 @@ const StyledBuildTableRow = styled(BuildTableRow)`
     position: relative;
   }
   &.selected:after {
+    z-index: -1;
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 100%;
+    height: 34px;
     width: 100%;
     background-color: rgba(25, 118, 210);
     mask-image: linear-gradient(
       90deg,
-      rgb(0 0 0 / 30%),
-      rgb(0 0 0 / 0%) 600px,
+      rgb(0 0 0 / 15%),
+      rgb(0 0 0 / 15%) 300px,
+      rgb(0 0 0 / 0%) 400px,
       rgb(0 0 0 / 0%)
     );
   }
