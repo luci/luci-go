@@ -31,6 +31,7 @@ import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { GroupsFormList } from '@/authdb/components/groups_form_list';
+import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
 
 interface GroupsFormProps {
     name: string;
@@ -64,6 +65,12 @@ function stripPrefix (prefix: string, str: string) {
     }
 };
 
+// True if group name starts with '<something>/' prefix, where
+// <something> is a non-empty string.
+function isExternalGroupName(name: string) {
+  return name.indexOf('/') > 0;
+}
+
 export function GroupsForm({ name } : GroupsFormProps) {
   const [descriptionMode, setDescriptionMode] = useState<boolean>();
   const [ownersMode, setOwnersMode] = useState<boolean>();
@@ -71,6 +78,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
   const [owners, setOwners] = useState<string>();
   const [showOwnersEdit, setShowOwnersEdit] = useState<boolean>();
   const [showDescriptionEdit, setShowDescriptionEdit] = useState<boolean>();
+  const [isExternal, setIsExternal] = useState<boolean>();
 
   const client = useAuthServiceClient();
     const {
@@ -86,6 +94,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
           let initialOwners: string = response?.owners || "";
           setOwners(initialOwners);
           setReadonlyMode();
+          setIsExternal(isExternalGroupName(response?.name!));
       },
     })
     const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
@@ -157,6 +166,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
       <ThemeProvider theme={theme}>
       <FormControl data-testid="groups-form" style={{width:'100%'}}>
         <Typography variant="h5" sx={{pl: 1.5}}> {name} </Typography>
+        {!isExternal &&
         <TableContainer sx={{ p: 0, width: '100%' }} >
           <Table onMouseEnter={() => setShowDescriptionEdit(true)} onMouseLeave={() => setShowDescriptionEdit(false)}>
             <TableRow>
@@ -204,13 +214,20 @@ export function GroupsForm({ name } : GroupsFormProps) {
               </TableCell>
             </TableRow>
           </Table>
-        </TableContainer>
-          <GroupsFormList name='Members' initialItems={members}/>
-          <GroupsFormList name='Globs' initialItems={globs}/>
-          <GroupsFormList name='Subgroups' initialItems={subgroups}/>
-          <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}}>
-            Submit
-          </Button>
+        </TableContainer>}
+          {isExternal 
+            ?
+            <GroupsFormListReadonly name='Members' initialItems={members}/>
+            :
+            <>
+            <GroupsFormList name='Members' initialItems={members}/>   
+            <GroupsFormList name='Globs' initialItems={globs}/>
+            <GroupsFormList name='Subgroups' initialItems={subgroups}/>
+            <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}}>
+              Submit
+            </Button>
+            </>
+          }
       </FormControl>
       </ThemeProvider>
     </Box>

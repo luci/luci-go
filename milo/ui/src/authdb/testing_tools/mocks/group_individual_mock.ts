@@ -41,6 +41,7 @@ export function mockFetchGetGroup(mockGroup: AuthGroup) {
       },
       body: ")]}'\n" + JSON.stringify(AuthGroup.toJSON(mockGroup)),
     },
+    { overwriteRoutes: true },
   );
 }
 

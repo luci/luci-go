@@ -40,7 +40,7 @@ describe('<GroupsListItem />', () => {
     expect(screen.getByText(mockGroup.owners)).toBeInTheDocument();
     expect(screen.getByText(mockGroup.members[0])).toBeInTheDocument();
     expect(screen.getByText(mockGroup.members[1])).toBeInTheDocument();
-    expect(screen.getByText(mockGroup.nested[1])).toBeInTheDocument();
+    expect(screen.getByText(mockGroup.nested[0])).toBeInTheDocument();
     expect(screen.getByText(mockGroup.nested[1])).toBeInTheDocument();
   });
 
@@ -56,5 +56,27 @@ describe('<GroupsListItem />', () => {
 
     expect(screen.getByText('Failed to load groups form')).toBeInTheDocument();
     expect(screen.queryByTestId('groups-form')).toBeNull();
+  });
+
+  test('if external group shows only members', async () => {
+    const mockGroup = createMockGroupIndividual('external/123');
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsForm name='external/123' />
+        </List>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    expect(screen.getByText(mockGroup.name)).toBeInTheDocument();
+    expect(screen.queryByText(mockGroup.description)).toBeNull();
+    expect(screen.queryByText(mockGroup.owners)).toBeNull();
+    expect(screen.getByText(mockGroup.members[0])).toBeInTheDocument();
+    expect(screen.getByText(mockGroup.members[1])).toBeInTheDocument();
+    expect(screen.queryByText(mockGroup.nested[0])).toBeNull();
+    expect(screen.queryByText(mockGroup.nested[1])).toBeNull();
   });
 });

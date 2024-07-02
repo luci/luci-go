@@ -19,24 +19,23 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import { GroupsFormList } from './groups_form_list';
 import { act } from 'react';
 
-describe('<GroupsFormList />', () => {
+describe('<GroupsFormList editable/>', () => {
     const mockGroup = createMockGroupIndividual('123');
     beforeEach(async () => {
-        render(
-          <FakeContextProvider>
-            <GroupsFormList name='Members' initialItems={mockGroup.members as string[]}/>
-          </FakeContextProvider>,
-        );
-        await screen.findByTestId('groups-form-list');
-    });
-
-    test('displays items in readonly mode', async () => {
-        // Check each member is displayed.
-        for (let i = 0; i < mockGroup.members.length; i++) {
-            expect(screen.getByText(mockGroup.members[i])).toBeInTheDocument();
-        }
-        // Check no remove button exists on readonly.
-        expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
+      render(
+        <FakeContextProvider>
+          <GroupsFormList name='Members' initialItems={mockGroup.members as string[]}/>
+        </FakeContextProvider>,
+      );
+      await screen.findByTestId('groups-form-list');
+  });
+    test('displays items', async () => {
+      // Check each member is displayed.
+      for (let i = 0; i < mockGroup.members.length; i++) {
+          expect(screen.getByText(mockGroup.members[i])).toBeInTheDocument();
+      }
+      // Check no remove button exists on readonly.
+      expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
     });
 
   test('shows remove button on hover', async () => {

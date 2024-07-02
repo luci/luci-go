@@ -75,9 +75,9 @@ export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
       {items && items.map((item, index) =>
         <TableRow key={index} style={{height: '34px'}} sx={{borderBottom: '1px solid grey'}} className='item-row' data-testid={`item-row-${item}`}>
           <TableCell sx={{p: 0, pt: '1px'}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '30px'}}>
-            <IconButton className='remove-icon' color='error' sx={{p: 0, ml: 0.5, mr: 0.5}} onClick={() => removeFromItems(index as number)} data-testid={`remove-button-${item}`}>
-              <CancelIcon/>
-            </IconButton>
+              <IconButton className='remove-icon' color='error' sx={{p: 0, ml: 0.5, mr: 0.5}} onClick={() => removeFromItems(index as number)} data-testid={`remove-button-${item}`}>
+                <CancelIcon/>
+              </IconButton>
             <Typography variant="body2">{item}</Typography>
           </TableCell>
         </TableRow>
