@@ -31,9 +31,11 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
@@ -42,11 +44,13 @@ import (
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/internal/buildsource"
+	"go.chromium.org/luci/milo/internal/config"
 	"go.chromium.org/luci/milo/internal/git"
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 )
 
 func logTimer(c context.Context, message string) func() {
@@ -277,9 +281,31 @@ var treeStatusCache = layered.RegisterCache(layered.Parameters[*ui.TreeStatus]{
 	},
 })
 
-// getTreeStatus returns the current tree status from the chromium-status app.
+// getTreeStatus returns the current tree status from either the LUCI Tree Status
+// service or the chromium-status app.
 // This never errors, instead it constructs a fake purple TreeStatus
-func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
+// Host is the url of the soon-to-be-deprecated chromium-status host.
+// Name is the name of the tree in the LUCI Tree Status service.
+// If both name and host are provided, host will be ignored.
+func getTreeStatus(c context.Context, host string, name string) *ui.TreeStatus {
+	if name != "" {
+		url := &url.URL{
+			// TODO (nqmtuan): Change this URL after this has moved out of lab.
+			Path: fmt.Sprintf("/ui/labs/tree-status/%s", name),
+		}
+		status, err := fetchLUCITreeStatus(c, name, url)
+		if err != nil {
+			// Generate a fake tree status.
+			logging.WithError(err).Errorf(c, "loading tree status")
+			status = &ui.TreeStatus{
+				GeneralState: "maintenance",
+				Message:      "could not load tree status",
+				URL:          url,
+			}
+		}
+		return status
+	}
+	// TODO: Delete this after migrating configs.
 	q := url.Values{}
 	q.Add("format", "json")
 	url := (&url.URL{
@@ -306,6 +332,67 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 	}
 
 	return status
+}
+
+func fetchLUCITreeStatus(c context.Context, name string, url *url.URL) (*ui.TreeStatus, error) {
+	luciTreeStatusHost, err := luciTreeStatusHost(c)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting luci tree status host").Err()
+	}
+	client, err := NewTreeStatusClient(c, luciTreeStatusHost)
+	if err != nil {
+		return nil, errors.Annotate(err, "creating tree status client").Err()
+	}
+	response, err := client.GetStatus(c, &tspb.GetStatusRequest{Name: fmt.Sprintf("trees/%s/status/latest", name)})
+	if err != nil {
+		return nil, errors.Annotate(err, "calling GetStatus").Err()
+	}
+	out := &ui.TreeStatus{
+		Username:        response.CreateUser,
+		GeneralState:    treeStatusState(response.GeneralState),
+		Date:            response.CreateTime.AsTime().Format("2006-01-02T15:04:05.999999"),
+		Message:         response.Message,
+		CanCommitFreely: response.GeneralState == tspb.GeneralState_OPEN,
+		URL:             url,
+	}
+	return out, nil
+}
+
+func treeStatusState(state tspb.GeneralState) ui.TreeStatusState {
+	switch state {
+	case tspb.GeneralState_OPEN:
+		return ui.TreeStatusState("open")
+	case tspb.GeneralState_CLOSED:
+		return ui.TreeStatusState("closed")
+	case tspb.GeneralState_THROTTLED:
+		return ui.TreeStatusState("throttled")
+	default:
+		return ui.TreeStatusState("maintenance")
+	}
+}
+
+func luciTreeStatusHost(c context.Context) (string, error) {
+	settings := config.GetSettings(c)
+	if settings.LuciTreeStatus == nil || settings.LuciTreeStatus.Host == "" {
+		return "", errors.New("missing luci tree status host in settings")
+	}
+	return settings.LuciTreeStatus.Host, nil
+}
+
+func NewTreeStatusClient(ctx context.Context, luciTreeStatusHost string) (tspb.TreeStatusClient, error) {
+	t, err := auth.GetRPCTransport(ctx, auth.AsSessionUser)
+	if err != nil {
+		return nil, err
+	}
+	rpcOpts := prpc.DefaultOptions()
+	rpcOpts.Insecure = lhttp.IsLocalHost(luciTreeStatusHost)
+	prpcClient := &prpc.Client{
+		C:       &http.Client{Transport: t},
+		Host:    luciTreeStatusHost,
+		Options: rpcOpts,
+	}
+
+	return tspb.NewTreeStatusPRPCClient(prpcClient), nil
 }
 
 var oncallDataCache = layered.RegisterCache(layered.Parameters[*ui.Oncall]{
@@ -426,10 +513,13 @@ func consoleHeader(c context.Context, project string, header *projectconfigpb.He
 			}
 			return nil
 		}
-		if header.TreeStatusHost != "" {
+		if header.TreeStatusHost != "" || header.TreeName != "" {
 			ch <- func() error {
-				treeStatus = getTreeStatus(c, header.TreeStatusHost)
-				treeStatus.URL = &url.URL{Scheme: "https", Host: header.TreeStatusHost}
+				treeStatus = getTreeStatus(c, header.TreeStatusHost, header.TreeName)
+				// TODO (nqmtuan): Remove this after we move everything to tree name.
+				if header.TreeName == "" {
+					treeStatus.URL = &url.URL{Scheme: "https", Host: header.TreeStatusHost}
+				}
 				return nil
 			}
 		}

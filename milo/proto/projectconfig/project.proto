@@ -138,6 +138,7 @@ message ConsoleSummaryGroup {
 // Links and oncall information is always laid out to the left, while
 // console groups are laid out on the right.  Each oncall and links group
 // take up a row.
+// Next ID: 7
 message Header {
   // Oncalls are a reference to oncall rotations, which is a URL to a json
   // endpoint with the following format:
@@ -156,10 +157,19 @@ message Header {
   // ConsoleGroups are groups of console summaries, each optionally named.
   repeated ConsoleSummaryGroup console_groups = 3;
 
+  // DEPRECATED: Use tree_name instead.
   // TreeStatusHost is the hostname of the chromium-status instance where
   // the tree status of this console is hosted.  If provided, this will appear
   // as the bar at the very top of the page.
+  // If tree_name is also set, tree_name will take precedence and this value will be ignored.
+  // TODO (nqmtuan): Mark this field as reserved after we finish migrating everything
+  // to tree_name field.
   string tree_status_host = 4;
+
+  // TreeName is the name of the tree from LUCI Tree Status.
+  // If provided, this will appear as the bar at the very top of the page.
+  // This value will take precedence over the tree_status_host field if both are presented.
+  string tree_name = 6;
 
   // Id is a reference to the header.
   string id = 5;
