@@ -29,7 +29,7 @@ import {GroupsForm} from '@/authdb/components/groups_form';
 import Grid from '@mui/material/Grid';
 
 export function GroupsList() {
-  const [selectedGroup, setSelectedGroup] = useState<string>();
+  const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
 
   const client = useAuthServiceClient();
@@ -41,7 +41,9 @@ export function GroupsList() {
   } = useQuery({
     ...client.ListGroups.query({}),
     onSuccess: (response) => {
-      setSelectedGroup(response?.groups[0].name)
+      if (selectedGroup == "") {
+        setSelectedGroup(response?.groups[0].name)
+      }
     }
   })
   const allGroups: readonly AuthGroup[] = response?.groups || [];
