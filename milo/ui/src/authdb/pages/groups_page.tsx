@@ -19,7 +19,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 
 export function GroupsPage() {
   return (
-    <Grid container sx={{p: 1}}>
+    <Grid container sx={{p: 0}}>
       <Grid item xs={12}>
         <GroupsList />
       </Grid>

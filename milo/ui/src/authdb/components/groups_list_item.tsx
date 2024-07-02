@@ -15,6 +15,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import LockIcon from '@mui/icons-material/Lock';
+import IconButton from '@mui/material/IconButton';
 
 interface GroupsItemProps {
     readonly group: AuthGroup;
@@ -29,10 +31,11 @@ function isExternalGroupName(name: string) {
 }
 
 export function GroupsListItem({ group, setSelected, selected } :GroupsItemProps) {
-  let description = isExternalGroupName(group.name) ? 'External' : group.description;
+  const isExternal = isExternalGroupName(group.name);
+  let description = isExternal ? 'External' : group.description;
 
   return (
-    <ListItem disablePadding sx={{maxWidth:'95vw'}}>
+      <ListItem disablePadding sx={{maxWidth:'95vw'}} style={{backgroundColor: group.callerCanModify ? 'white': '#ECECEC'}}>
       <ListItemButton
        onClick={setSelected}
        selected={selected}
@@ -49,6 +52,11 @@ export function GroupsListItem({ group, setSelected, selected } :GroupsItemProps
             }
         }}
         />
+      {!group.callerCanModify &&
+      <IconButton>
+          <LockIcon />
+      </IconButton>
+      }
       </ListItemButton>
     </ListItem>
   );
