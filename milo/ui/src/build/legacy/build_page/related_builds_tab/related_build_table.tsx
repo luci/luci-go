@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { styled } from '@mui/material';
+
 import {
   BuildTable,
   BuildTableHead,
@@ -20,31 +22,55 @@ import {
   CreateTimeHeadCell,
   RunDurationContentCell,
   RunDurationHeadCell,
-  StatusContentCell,
   PendingDurationHeadCell,
-  StatusHeadCell,
   SummaryContentCell,
   SummaryHeadCell,
-  BuildIdentifierContentCell,
-  BuildIdentifierHeadCell,
   PendingDurationContentCell,
 } from '@/build/components/build_table';
+import {
+  BuildIdentifierContentCell,
+  BuildIdentifierHeadCell,
+} from '@/build/components/build_table/build_identifier_column';
 import { BuildTableBody } from '@/build/components/build_table/build_table_body';
 import { OutputBuild } from '@/build/types';
+import { ReadonlyCategoryTree } from '@/generic_libs/tools/category_tree';
+
+const StyledBuildTableRow = styled(BuildTableRow)`
+  &.selected {
+    position: relative;
+  }
+  &.selected:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(25, 118, 210);
+    mask-image: linear-gradient(
+      90deg,
+      rgb(0 0 0 / 30%),
+      rgb(0 0 0 / 0%) 600px,
+      rgb(0 0 0 / 0%)
+    );
+  }
+`;
 
 export interface RelatedBuildTableProps {
-  readonly relatedBuilds: readonly OutputBuild[];
+  readonly selfBuild: OutputBuild;
+  readonly buildTree: ReadonlyCategoryTree<string, OutputBuild>;
   readonly showLoadingBar?: boolean;
 }
 
 export function RelatedBuildTable({
-  relatedBuilds,
+  selfBuild,
+  buildTree,
   showLoadingBar,
 }: RelatedBuildTableProps) {
   return (
     <BuildTable initDefaultExpanded>
       <BuildTableHead showLoadingBar={showLoadingBar}>
-        <StatusHeadCell />
         <BuildIdentifierHeadCell />
         <CreateTimeHeadCell />
         <PendingDurationHeadCell />
@@ -52,15 +78,22 @@ export function RelatedBuildTable({
         <SummaryHeadCell />
       </BuildTableHead>
       <BuildTableBody>
-        {relatedBuilds.map((b) => (
-          <BuildTableRow key={b.id} build={b}>
-            <StatusContentCell />
-            <BuildIdentifierContentCell />
+        {[...buildTree.enumerate()].map(([index, b]) => (
+          <StyledBuildTableRow
+            key={b.id}
+            build={b}
+            className={selfBuild.id === b.id ? 'selected' : ''}
+          >
+            <BuildIdentifierContentCell
+              defaultProject={selfBuild.builder.project}
+              indentLevel={index.length - 1}
+              selected={selfBuild.id === b.id}
+            />
             <CreateTimeContentCell />
             <PendingDurationContentCell />
             <RunDurationContentCell />
             <SummaryContentCell />
-          </BuildTableRow>
+          </StyledBuildTableRow>
         ))}
       </BuildTableBody>
     </BuildTable>

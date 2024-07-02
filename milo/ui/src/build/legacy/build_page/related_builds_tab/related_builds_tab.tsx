@@ -13,29 +13,23 @@
 // limitations under the License.
 
 import { CircularProgress } from '@mui/material';
-import { observer } from 'mobx-react-lite';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useStore } from '@/common/store';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
-import { StringPair } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+import { useBuild } from '../context';
 
 import { RelatedBuildsDisplay } from './related_builds_display';
 
-export const RelatedBuildsTab = observer(() => {
-  const store = useStore();
-  const build = store.buildPage.build?.data;
+export function RelatedBuildsTab() {
+  const build = useBuild();
 
   if (!build) {
     return <CircularProgress sx={{ margin: '10px' }} />;
   }
 
-  return (
-    <RelatedBuildsDisplay
-      buildTags={(build.tags || []) as readonly StringPair[]}
-    />
-  );
-});
+  return <RelatedBuildsDisplay build={build} />;
+}
 
 export function Component() {
   useTabId('related-builds');

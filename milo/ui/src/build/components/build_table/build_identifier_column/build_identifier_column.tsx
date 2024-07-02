@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link, TableCell } from '@mui/material';
+import { Box, Chip, Link, TableCell } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { BuildStatusIcon } from '@/build/components/build_status_icon';
 import {
   getBuildURLPathFromBuildData,
   getBuilderURLPath,
@@ -27,25 +28,89 @@ export function BuildIdentifierHeadCell() {
   return <TableCell width="1px">Build</TableCell>;
 }
 
-export function BuildIdentifierContentCell() {
+export interface BuildIdentifierContentCellProps {
+  /**
+   * The default project of the table.
+   *
+   * If the build is in the default project, the project identifier is omitted.
+   */
+  readonly defaultProject?: string;
+  /**
+   * The indentation level of the build identifier.
+   *
+   * Defaults to `0`.
+   */
+  readonly indentLevel?: number;
+  /**
+   * Whether the build is the currently rendered build (e.g. in a build page).
+   *
+   * If true, the build will be marked with a "this build" chip.
+   * Defaults to `false`.
+   */
+  readonly selected?: boolean;
+}
+
+export function BuildIdentifierContentCell({
+  defaultProject,
+  indentLevel = 0,
+  selected = false,
+}: BuildIdentifierContentCellProps) {
   const build = useBuild();
 
   return (
     <TableCell>
-      <Link
-        component={RouterLink}
-        to={getProjectURLPath(build.builder.project)}
+      <Box
+        sx={{
+          display: 'inline-grid',
+          gridTemplateColumns: `repeat(${indentLevel}, 30px)`,
+        }}
       >
-        {build.builder.project}
-      </Link>
-      /{build.builder.bucket}/
-      <Link component={RouterLink} to={getBuilderURLPath(build.builder)}>
-        {build.builder.builder}
-      </Link>
-      /
-      <Link component={RouterLink} to={getBuildURLPathFromBuildData(build)}>
-        {build.number ? build.number : 'b' + build.id}
-      </Link>
+        {Array(indentLevel)
+          .fill(0)
+          .map((_, i) => (
+            <Box key={i} />
+          ))}
+      </Box>
+      <BuildStatusIcon status={build.status} sx={{ marginRight: '5px' }} />
+      <Box
+        sx={{
+          display: 'inline-block',
+          fontWeight: selected ? 'bold' : 'unset',
+        }}
+      >
+        {defaultProject !== build.builder.project && (
+          <>
+            <Link
+              component={RouterLink}
+              to={getProjectURLPath(build.builder.project)}
+            >
+              {build.builder.project}
+            </Link>
+            /
+          </>
+        )}
+        {build.builder.bucket}/
+        <Link component={RouterLink} to={getBuilderURLPath(build.builder)}>
+          {build.builder.builder}
+        </Link>
+        /
+        {selected ? (
+          <>{build.number ? build.number : 'b' + build.id}</>
+        ) : (
+          <Link component={RouterLink} to={getBuildURLPathFromBuildData(build)}>
+            {build.number ? build.number : 'b' + build.id}
+          </Link>
+        )}
+      </Box>
+      {selected && (
+        <Chip
+          label="this build"
+          size="small"
+          color="primary"
+          title="this is the build you are currently viewing"
+          sx={{ marginLeft: '4px' }}
+        />
+      )}
     </TableCell>
   );
 }

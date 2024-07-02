@@ -62,6 +62,8 @@ export const PARTIAL_BUILD_FIELD_MASK = Object.freeze([
   'startTime',
   'endTime',
   'status',
+  'summaryMarkdown',
+  'ancestorIds',
 ] as const);
 
 export const BUILD_STATUS_CLASS_MAP = Object.freeze({

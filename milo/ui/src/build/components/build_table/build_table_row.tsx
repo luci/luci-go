@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TableRow } from '@mui/material';
+import { SxProps, TableRow, Theme } from '@mui/material';
 import { ReactNode, useEffect, useState } from 'react';
 
 import { OutputBuild } from '@/build/types';
@@ -27,9 +27,16 @@ import {
 export interface BuildTableRowProps {
   readonly build: OutputBuild;
   readonly children: ReactNode;
+  readonly sx?: SxProps<Theme>;
+  readonly className?: string;
 }
 
-export function BuildTableRow({ build, children }: BuildTableRowProps) {
+export function BuildTableRow({
+  build,
+  children,
+  sx,
+  className,
+}: BuildTableRowProps) {
   const defaultExpanded = useDefaultExpanded();
   const [expanded, setExpanded] = useState(() => defaultExpanded);
   useEffect(() => {
@@ -39,9 +46,7 @@ export function BuildTableRow({ build, children }: BuildTableRowProps) {
   return (
     <TableRow
       // Set a CSS class to support CSS-only toggle solution.
-      className={
-        expanded ? 'BuildTableRow-expanded' : 'BuildTableRow-collapsed'
-      }
+      className={`${className} ${expanded ? 'BuildTableRow-expanded' : 'BuildTableRow-collapsed'}`}
       sx={{
         '& > td': {
           // Use `vertical-align: baseline` so the cell content (including the
@@ -49,6 +54,7 @@ export function BuildTableRow({ build, children }: BuildTableRowProps) {
           verticalAlign: 'baseline',
           whiteSpace: 'nowrap',
         },
+        ...sx,
       }}
     >
       <SetRowExpandedProvider value={setExpanded}>
