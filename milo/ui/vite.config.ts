@@ -77,6 +77,9 @@ function getLocalDevConfigsJs(env: Record<string, string>) {
     authService: {
       host: env['VITE_AUTH_SERVICE_HOST'],
     },
+    crRev: {
+      host: env['VITE_CR_REV_HOST'],
+    },
   };
 
   const localDevConfigsJs =

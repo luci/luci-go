@@ -126,4 +126,9 @@ message Settings {
   }
   AuthService auth_service = 12;
 
+  message CrRev {
+    // host is the hostname of the Cr-Rev instance we're pointing to (eg. cr-rev.appspot.com).
+    string host = 1;
+  }
+  CrRev cr_rev = 13;
 }

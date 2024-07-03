@@ -51,6 +51,9 @@ declare const SETTINGS: {
   readonly authService: {
     readonly host: string;
   };
+  readonly crRev: {
+    readonly host: string;
+  };
 };
 
 /**

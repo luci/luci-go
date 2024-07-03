@@ -45,6 +45,7 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 		LuciTreeStatus: settings.LuciTreeStatus,
 		LuciNotify:     settings.LuciNotify,
 		AuthService:    settings.AuthService,
+		CrRev:          settings.CrRev,
 	}
 
 	header := c.Writer.Header()
