@@ -32,6 +32,11 @@ handlers:
 - url: /static
   static_dir: static
   secure: always
+  http_headers:
+    Content-Security-Policy: "default-src https: 'self'"
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+    X-Frame-Options: DENY
+
 - url: /.*
   script: auto
   secure: always

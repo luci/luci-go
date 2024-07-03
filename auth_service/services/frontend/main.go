@@ -155,28 +155,14 @@ func main() {
 		srv.Routes.GET("/", mw, func(ctx *router.Context) {
 			http.Redirect(ctx.Writer, ctx.Request, "/groups", http.StatusFound)
 		})
-		srv.Routes.GET("/groups", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/groups.html", nil)
-		})
+		srv.Routes.GET("/groups", mw, servePage("pages/groups.html"))
 		// Note that external groups have "/" in their names.
-		srv.Routes.GET("/groups/*groupName", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/groups.html", nil)
-		})
-		srv.Routes.GET("/listing", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/listing.html", nil)
-		})
-		srv.Routes.GET("/change_log", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/change_log.html", nil)
-		})
-		srv.Routes.GET("/ip_allowlists", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/ip_allowlists.html", nil)
-		})
-		srv.Routes.GET("/lookup", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/lookup.html", nil)
-		})
-		srv.Routes.GET("/services", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/services.html", nil)
-		})
+		srv.Routes.GET("/groups/*groupName", mw, servePage("pages/groups.html"))
+		srv.Routes.GET("/listing", mw, servePage("pages/listing.html"))
+		srv.Routes.GET("/change_log", mw, servePage("pages/change_log.html"))
+		srv.Routes.GET("/ip_allowlists", mw, servePage("pages/ip_allowlists.html"))
+		srv.Routes.GET("/lookup", mw, servePage("pages/lookup.html"))
+		srv.Routes.GET("/services", mw, servePage("pages/services.html"))
 
 		// For PubSub subscriber and AuthDB Google Storage reader authorization.
 		//
@@ -204,6 +190,17 @@ func main() {
 
 		return nil
 	})
+}
+
+func servePage(templatePath string) func(*router.Context) {
+	return func(ctx *router.Context) {
+		// Forbid loading within an iframe (see
+		// https://www.owasp.org/index.php/Clickjacking_Defense_Cheat_Sheet).
+		ctx.Writer.Header().Set("X-Frame-Options", "DENY")
+		ctx.Writer.Header().Set("Content-Security-Policy", "frame-ancestors 'none';")
+
+		templates.MustRender(ctx.Request.Context(), ctx.Writer, templatePath, nil)
+	}
 }
 
 // prpcCookieAuth authenticates pRPC calls using the given method, but only
