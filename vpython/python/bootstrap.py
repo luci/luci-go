@@ -21,7 +21,7 @@ import tempfile
 DISABLE_PERIODIC_UPDATE = False  # This option only exists for newer virtualenv
 if sys.version_info[0] > 2:
   ISOLATION_FLAG = '-I'
-  COMPILE_WORKERS = os.cpu_count() or 1
+  COMPILE_WORKERS = min(os.cpu_count() or 1, 4) # Limit the concurrency to 4
   if sys.version_info[1] >= 11:
     DISABLE_PERIODIC_UPDATE = True
 else:
