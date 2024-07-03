@@ -46,7 +46,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 			Convey(`when there's no page token`, func() {
 				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "host",
+						Host:    "chromium.googlesource.com",
 						Project: "project/src",
 						Id:      "commit-id",
 						Ref:     "commit-ref",
@@ -65,7 +65,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 			Convey(`when there's no page token or commit ID`, func() {
 				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "host",
+						Host:    "chromium.googlesource.com",
 						Project: "project/src",
 						Ref:     "commit-ref",
 					},
@@ -82,7 +82,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 			Convey(`when there's a page token`, func() {
 				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "host",
+						Host:    "chromium.googlesource.com",
 						Project: "project/src",
 						Id:      "commit-id-1",
 					},
@@ -102,7 +102,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 
 				nextCommitRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "host",
+						Host:    "chromium.googlesource.com",
 						Project: "project/src",
 						Id:      "commit-id-1",
 					},
@@ -121,7 +121,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 		Convey(`reject the page token when the page token is invalid`, func() {
 			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
-					Host:    "host",
+					Host:    "chromium.googlesource.com",
 					Project: "project/src",
 					Id:      "commit-id-1",
 				},
@@ -138,7 +138,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 		Convey("no builder", func() {
 			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
-					Host:    "host",
+					Host:    "chromium.googlesource.com",
 					Project: "project/src",
 					Id:      "commit-id",
 					Ref:     "commit-ref",
@@ -150,7 +150,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 		Convey("invalid builder", func() {
 			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
-					Host:    "host",
+					Host:    "chromium.googlesource.com",
 					Project: "project/src",
 					Id:      "commit-id",
 					Ref:     "commit-ref",
@@ -163,6 +163,24 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 			})
 			So(err, ShouldErrLike, "builder: bucket must match")
 		})
+
+		Convey(`invalid gitiles host`, func() {
+			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    "invalid.host",
+					Project: "project/src",
+					Id:      "commit-id",
+					Ref:     "commit-ref",
+				},
+				Builder: &buildbucketpb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			})
+			So(err, ShouldErrLike, "gitiles_commit.host must be a subdomain of .googlesource.com")
+		})
+
 	})
 }
 
@@ -207,7 +225,7 @@ func TestQueryBlamelist(t *testing.T) {
 			builderID := utils.LegacyBuilderIDString(builder)
 			buildID := fmt.Sprintf("%s/%d", builderID, buildNum)
 			buildSet := protoutil.GitilesBuildSet(&buildbucketpb.GitilesCommit{
-				Host:    "fake_gitiles_host",
+				Host:    "fake_host.googlesource.com",
 				Project: "fake_gitiles_project",
 				Id:      commitID,
 			})
@@ -224,13 +242,13 @@ func TestQueryBlamelist(t *testing.T) {
 
 		builds := []*model.BuildSummary{
 			createFakeBuild(builder1, 1, "commit8", protoutil.GitilesBuildSet(&buildbucketpb.GitilesCommit{
-				Host:    "fake_gitiles_host",
+				Host:    "fake_host.googlesource.com",
 				Project: "other_fake_gitiles_project",
 				Id:      "commit3",
 			})),
 			createFakeBuild(builder2, 1, "commit7"),
 			createFakeBuild(builder1, 2, "commit5", protoutil.GitilesBuildSet(&buildbucketpb.GitilesCommit{
-				Host:    "fake_gitiles_host",
+				Host:    "fake_host.googlesource.com",
 				Project: "other_fake_gitiles_project",
 				Id:      "commit1",
 			})),
@@ -250,7 +268,7 @@ func TestQueryBlamelist(t *testing.T) {
 		Convey(`reject users with no access`, func() {
 			req := &milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
-					Host:    "fake_gitiles_host",
+					Host:    "fake_host.googlesource.com",
 					Project: "fake_gitiles_project",
 					Id:      "commit1",
 				},
@@ -269,7 +287,7 @@ func TestQueryBlamelist(t *testing.T) {
 			Convey(`to 1000 if it's greater than 1000`, func() {
 				req := &milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "fake_gitiles_host",
+						Host:    "fake_host.googlesource.com",
 						Project: "fake_gitiles_project",
 						Id:      "commit1",
 					},
@@ -295,7 +313,7 @@ func TestQueryBlamelist(t *testing.T) {
 			Convey(`to 100 if it's not set`, func() {
 				req := &milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
-						Host:    "fake_gitiles_host",
+						Host:    "fake_host.googlesource.com",
 						Project: "fake_gitiles_project",
 						Id:      "commit8",
 					},
@@ -323,7 +341,7 @@ func TestQueryBlamelist(t *testing.T) {
 				Convey(`when we found the previous build`, func() {
 					req := &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
-							Host:    "fake_gitiles_host",
+							Host:    "fake_host.googlesource.com",
 							Project: "fake_gitiles_project",
 							Id:      "commit8",
 						},
@@ -353,7 +371,7 @@ func TestQueryBlamelist(t *testing.T) {
 				Convey(`when there's no previous build`, func() {
 					req := &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
-							Host:    "fake_gitiles_host",
+							Host:    "fake_host.googlesource.com",
 							Project: "fake_gitiles_project",
 							Id:      "commit3",
 						},
@@ -386,7 +404,7 @@ func TestQueryBlamelist(t *testing.T) {
 					// Query the first page.
 					req := &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
-							Host:    "fake_gitiles_host",
+							Host:    "fake_host.googlesource.com",
 							Project: "fake_gitiles_project",
 							Id:      "commit8",
 						},
@@ -417,7 +435,7 @@ func TestQueryBlamelist(t *testing.T) {
 					// Query the second page.
 					req = &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
-							Host:    "fake_gitiles_host",
+							Host:    "fake_host.googlesource.com",
 							Project: "fake_gitiles_project",
 							Id:      "commit8",
 						},
@@ -450,7 +468,7 @@ func TestQueryBlamelist(t *testing.T) {
 					// Query the first page.
 					req := &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
-							Host:    "fake_gitiles_host",
+							Host:    "fake_host.googlesource.com",
 							Project: "fake_gitiles_project",
 							Id:      "commit3",
 						},
@@ -481,7 +499,7 @@ func TestQueryBlamelist(t *testing.T) {
 					// Query the second page.
 					req = &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
-							Host:    "fake_gitiles_host",
+							Host:    "fake_host.googlesource.com",
 							Project: "fake_gitiles_project",
 							Id:      "commit3",
 						},
@@ -515,7 +533,7 @@ func TestQueryBlamelist(t *testing.T) {
 		Convey(`get blamelist of other projects`, func() {
 			req := &milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
-					Host:    "fake_gitiles_host",
+					Host:    "fake_host.googlesource.com",
 					Project: "other_fake_gitiles_project",
 					Id:      "commit3",
 				},

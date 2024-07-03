@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.milo.v1;
 
 import "go.chromium.org/luci/common/proto/git/commit.proto";
+import "go.chromium.org/luci/common/proto/gitiles/gitiles.proto";
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
@@ -30,6 +31,15 @@ option go_package = "go.chromium.org/luci/milo/proto/v1;milopb";
 // changes might be introduced without notice.
 // Please contact chops-luci-test@ if your code needs to depend on this service.
 service MiloInternal {
+  // Query logs from a gitiles host.
+  //
+  // This avoids CORS issue at the cost of small overhead to proxy the requests.
+  // Rationales can be found at b/349503219#comment11.
+  //
+  // The request/response structure is designed in a way that we can easily
+  // switch the clients to query gitiles directly in the future if needed.
+  rpc ProxyGitilesLog(ProxyGitilesLogRequest) returns (gitiles.LogResponse) {};
+
   // Retrieves blamelist of a build.
   //
   // The blamelist of a build is defined as [end_commit, start_commit)
@@ -64,6 +74,15 @@ service MiloInternal {
 
   // Retrieves a list of consoles with latest snapshots.
   rpc QueryConsoleSnapshots(QueryConsoleSnapshotsRequest) returns (QueryConsoleSnapshotsResponse) {};
+}
+
+// A request message for `ProxyGitilesLog` RPC.
+message ProxyGitilesLogRequest {
+  // The host to send the gitiles Log request to.
+  string host = 1;
+
+  // The gitiles Log request.
+  gitiles.LogRequest request = 2;
 }
 
 // A request message for `QueryBlamelist` RPC.

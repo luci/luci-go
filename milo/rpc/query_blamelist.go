@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"encoding/base64"
+	"strings"
 	"sync"
 
 	"go.chromium.org/luci/auth/identity"
@@ -170,6 +171,8 @@ func prepareQueryBlamelistRequest(req *milopb.QueryBlamelistRequest) (startRev s
 		return "", errors.Reason("gitiles_commit is required").Err()
 	case req.GitilesCommit.Host == "":
 		return "", errors.Reason("gitiles_commit.host is required").Err()
+	case !strings.HasSuffix(req.GitilesCommit.Host, ".googlesource.com"):
+		return "", errors.Reason("gitiles_commit.host must be a subdomain of .googlesource.com").Err()
 	case req.GitilesCommit.Project == "":
 		return "", errors.Reason("gitiles_commit.project is required").Err()
 	case req.GitilesCommit.Id == "" && req.GitilesCommit.Ref == "":

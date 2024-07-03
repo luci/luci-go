@@ -7,6 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
+	gitiles "go.chromium.org/luci/common/proto/gitiles"
 	projectconfig "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
@@ -23,6 +24,23 @@ type DecoratedMiloInternal struct {
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
+}
+
+func (s *DecoratedMiloInternal) ProxyGitilesLog(ctx context.Context, req *ProxyGitilesLogRequest) (rsp *gitiles.LogResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ProxyGitilesLog", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ProxyGitilesLog(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ProxyGitilesLog", rsp, err)
+	}
+	return
 }
 
 func (s *DecoratedMiloInternal) QueryBlamelist(ctx context.Context, req *QueryBlamelistRequest) (rsp *QueryBlamelistResponse, err error) {
