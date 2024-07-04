@@ -31,16 +31,11 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/constants"
 )
 
 // ipAllowlistNameRE is the regular expression for IP Allowlist Names.
 var ipAllowlistNameRE = regexp.MustCompile(`^[0-9A-Za-z_\-\+\.\ ]{2,200}$`)
-
-const (
-	PrefixBuiltinRole  = "role/"
-	PrefixCustomRole   = "customRole/"
-	PrefixRoleInternal = "role/luci.internal."
-)
 
 // validateAllowlist validates an ip_allowlist.cfg file.
 func validateAllowlist(ctx *validation.Context, configSet, path string, content []byte) error {
@@ -268,8 +263,11 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 			ctx.Errorf("name is required")
 		}
 
-		if !testPrefixes(role.GetName(), PrefixBuiltinRole, PrefixCustomRole, PrefixRoleInternal) {
-			ctx.Errorf(`invalid prefix, possible prefixes: ("%s", "%s", "%s")`, PrefixBuiltinRole, PrefixCustomRole, PrefixRoleInternal)
+		if !testPrefixes(role.GetName(), constants.PrefixBuiltinRole, constants.PrefixCustomRole, constants.PrefixInternalRole) {
+			ctx.Errorf(`invalid prefix, possible prefixes: (%q, %q, %q)`,
+				constants.PrefixBuiltinRole,
+				constants.PrefixCustomRole,
+				constants.PrefixInternalRole)
 		}
 
 		if _, ok := roleMap[role.GetName()]; ok {
@@ -286,7 +284,7 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 			if strings.Count(perm.GetName(), ".") != 2 {
 				ctx.Errorf("invalid format: Permissions must have the form <service>.<subject>.<verb>")
 			}
-			if perm.GetInternal() && !strings.HasPrefix(roleObj.GetName(), PrefixRoleInternal) {
+			if perm.GetInternal() && !strings.HasPrefix(roleObj.GetName(), constants.PrefixInternalRole) {
 				ctx.Errorf("invalid format: can only define internal permissions for internal roles")
 			}
 		}

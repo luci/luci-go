@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"go.chromium.org/luci/auth_service/internal/configs/validation"
+	"go.chromium.org/luci/auth_service/constants"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 )
 
@@ -329,13 +329,13 @@ func (re *RolesExpander) role(roleName string) (*indexSet, error) {
 	}
 
 	var perms *indexSet
-	if strings.HasPrefix(roleName, validation.PrefixBuiltinRole) {
+	if strings.HasPrefix(roleName, constants.PrefixBuiltinRole) {
 		role, ok := re.builtinRoles[roleName]
 		if !ok {
 			return nil, lucierr.Annotate(ErrRoleNotFound, "builtinRole: %s", roleName).Err()
 		}
 		perms = IndexSetFromSlice(re.permIndexes(role.Permissions.ToSortedSlice()...))
-	} else if strings.HasPrefix(roleName, validation.PrefixCustomRole) {
+	} else if strings.HasPrefix(roleName, constants.PrefixCustomRole) {
 		customRole, ok := re.customRoles[roleName]
 		if !ok {
 			return nil, lucierr.Annotate(ErrRoleNotFound, "customRole: %s", roleName).Err()
