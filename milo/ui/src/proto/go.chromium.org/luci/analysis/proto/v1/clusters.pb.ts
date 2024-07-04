@@ -479,8 +479,8 @@ export interface DistinctClusterFailure {
   /**
    * Timestamp representing the start of the data retention period for the
    * test results in this group.
-   * The partition time is usually the presubmit run start time (if any) or
-   * build start time.
+   * The partition time is the creation time of the ingested invocation in
+   * Spanner.
    */
   readonly partitionTime:
     | string
@@ -560,9 +560,6 @@ export interface DistinctClusterFailure_PresubmitRun {
    * One presubmit run MAY have many ingested invocation IDs (e.g. for its
    * various tryjobs), but every ingested invocation ID only ever has one
    * presubmit run ID (if any).
-   *
-   * All test results for the same presubmit run will have one
-   * partition_time.
    *
    * If the test result was not collected as part of a presubmit run,
    * this is unset.

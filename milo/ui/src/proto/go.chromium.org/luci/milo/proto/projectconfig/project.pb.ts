@@ -137,6 +137,7 @@ export interface ConsoleSummaryGroup {
  * Links and oncall information is always laid out to the left, while
  * console groups are laid out on the right.  Each oncall and links group
  * take up a row.
+ * Next ID: 7
  */
 export interface Header {
   /**
@@ -156,11 +157,21 @@ export interface Header {
   /** ConsoleGroups are groups of console summaries, each optionally named. */
   readonly consoleGroups: readonly ConsoleSummaryGroup[];
   /**
+   * DEPRECATED: Use tree_name instead.
    * TreeStatusHost is the hostname of the chromium-status instance where
    * the tree status of this console is hosted.  If provided, this will appear
    * as the bar at the very top of the page.
+   * If tree_name is also set, tree_name will take precedence and this value will be ignored.
+   * TODO (nqmtuan): Mark this field as reserved after we finish migrating everything
+   * to tree_name field.
    */
   readonly treeStatusHost: string;
+  /**
+   * TreeName is the name of the tree from LUCI Tree Status.
+   * If provided, this will appear as the bar at the very top of the page.
+   * This value will take precedence over the tree_status_host field if both are presented.
+   */
+  readonly treeName: string;
   /** Id is a reference to the header. */
   readonly id: string;
 }
@@ -827,7 +838,7 @@ export const ConsoleSummaryGroup = {
 };
 
 function createBaseHeader(): Header {
-  return { oncalls: [], links: [], consoleGroups: [], treeStatusHost: "", id: "" };
+  return { oncalls: [], links: [], consoleGroups: [], treeStatusHost: "", treeName: "", id: "" };
 }
 
 export const Header = {
@@ -843,6 +854,9 @@ export const Header = {
     }
     if (message.treeStatusHost !== "") {
       writer.uint32(34).string(message.treeStatusHost);
+    }
+    if (message.treeName !== "") {
+      writer.uint32(50).string(message.treeName);
     }
     if (message.id !== "") {
       writer.uint32(42).string(message.id);
@@ -885,6 +899,13 @@ export const Header = {
 
           message.treeStatusHost = reader.string();
           continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.treeName = reader.string();
+          continue;
         case 5:
           if (tag !== 42) {
             break;
@@ -909,6 +930,7 @@ export const Header = {
         ? object.consoleGroups.map((e: any) => ConsoleSummaryGroup.fromJSON(e))
         : [],
       treeStatusHost: isSet(object.treeStatusHost) ? globalThis.String(object.treeStatusHost) : "",
+      treeName: isSet(object.treeName) ? globalThis.String(object.treeName) : "",
       id: isSet(object.id) ? globalThis.String(object.id) : "",
     };
   },
@@ -927,6 +949,9 @@ export const Header = {
     if (message.treeStatusHost !== "") {
       obj.treeStatusHost = message.treeStatusHost;
     }
+    if (message.treeName !== "") {
+      obj.treeName = message.treeName;
+    }
     if (message.id !== "") {
       obj.id = message.id;
     }
@@ -942,6 +967,7 @@ export const Header = {
     message.links = object.links?.map((e) => LinkGroup.fromPartial(e)) || [];
     message.consoleGroups = object.consoleGroups?.map((e) => ConsoleSummaryGroup.fromPartial(e)) || [];
     message.treeStatusHost = object.treeStatusHost ?? "";
+    message.treeName = object.treeName ?? "";
     message.id = object.id ?? "";
     return message;
   },

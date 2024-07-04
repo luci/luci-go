@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DeepNonNullable } from '@/generic_libs/types';
-import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
-import { LogResponse } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { CrrevClientImpl } from '@/proto/infra/appengine/cr-rev/frontend/api/v1/service.pb';
 
-export type OutputCommit = DeepNonNullable<Commit>;
-
-export interface OutputLogResponse extends LogResponse {
-  readonly log: readonly OutputCommit[];
+export function useCrRevClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.crRev.host,
+    ClientImpl: CrrevClientImpl,
+  });
 }

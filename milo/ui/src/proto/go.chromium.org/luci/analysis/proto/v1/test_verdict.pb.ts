@@ -229,8 +229,8 @@ export interface TestVerdict {
   /** The status of the test verdict. */
   readonly status: TestVerdictStatus;
   /**
-   * Start time of the presubmit run (for results that are part of a presubmit
-   * run) or start time of the buildbucket build (otherwise).
+   * The time the verdict's invocation was created in Spanner. This
+   * is the start of the test verdict's retention period.
    */
   readonly partitionTime:
     | string

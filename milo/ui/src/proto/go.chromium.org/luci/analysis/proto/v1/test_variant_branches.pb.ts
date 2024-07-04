@@ -11,7 +11,7 @@ import { Any } from "../../../../../google/protobuf/any.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { Commit } from "../../../common/proto/git/commit.pb";
 import { Variant } from "./common.pb";
-import { SourceRef } from "./sources.pb";
+import { Changelist, SourceRef } from "./sources.pb";
 import { TestVerdict } from "./test_verdict.pb";
 
 export const protobufPackage = "luci.analysis.v1";
@@ -400,6 +400,151 @@ export interface QuerySourcePositionsResponse {
   readonly sourcePositions: readonly SourcePosition[];
   /** A page token for next QuerySourcePositionsRequest to fetch the next page of commits. */
   readonly nextPageToken: string;
+}
+
+export interface QuerySourceVerdictsRequest {
+  /**
+   * The name of the test variant branch to query.
+   * It MUST be of the form projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}
+   * where:
+   * PROJECT is the LUCI Project of the test variant branch analysis.
+   * URL_ESCAPED_TEST_ID is the test ID, escaped with
+   * https://golang.org/pkg/net/url/#PathEscape. See also https://aip.dev/122.
+   * VARIANT_HASH is the variant hash of the test variant analysis (16 lower-case-character hex string).
+   * REF_HASH is the identity of the branch of the analysis. It is a 16 lower-case-character hex string.
+   */
+  readonly parent: string;
+  /**
+   * The source position to start querying from, inclusive. This is the maximum source
+   * position to be returned in the response.
+   *
+   * Note: The start is the maximum source position (not the minimum) as this RPC
+   * is designed for UIs that paginate backwards through source history.
+   */
+  readonly startSourcePosition: string;
+  /**
+   * The source position to stop querying at, exclusive. This is an exclusive lower
+   * bound on the source positions returned in the response. As this is a lower bound,
+   * it is required that end_source_position < start_source_position.
+   *
+   * In addition, no more than 1,000 source positions may be requested in one call,
+   * i.e. start_source_position - end_source_position <= 1,000.
+   */
+  readonly endSourcePosition: string;
+}
+
+export interface QuerySourceVerdictsResponse {
+  /**
+   * Source verdicts in descending source position order. Only source verdicts
+   * with test results are returned.
+   */
+  readonly sourceVerdicts: readonly QuerySourceVerdictsResponse_SourceVerdict[];
+}
+
+/**
+ * VerdictStatus represents the status of a verdict as it is
+ * seen by changepoint analysis. Changepoint analysis does not consider skipped
+ * test results or exonerations.
+ */
+export enum QuerySourceVerdictsResponse_VerdictStatus {
+  VERDICT_EXPECTATION_STATUS_UNSPECIFIED = 0,
+  /** UNEXPECTED - The verdict (excluding skips) has only unexpected results. */
+  UNEXPECTED = 1,
+  /** EXPECTED - The verdict (excluding skips) has only expected results. */
+  EXPECTED = 2,
+  /** FLAKY - The verdict (excluding skips) has a mix of expected and unexpected results. */
+  FLAKY = 3,
+  /**
+   * SKIPPED - The verdict has only skips, and as such was not used in change
+   * point analysis.
+   */
+  SKIPPED = 4,
+}
+
+export function querySourceVerdictsResponse_VerdictStatusFromJSON(
+  object: any,
+): QuerySourceVerdictsResponse_VerdictStatus {
+  switch (object) {
+    case 0:
+    case "VERDICT_EXPECTATION_STATUS_UNSPECIFIED":
+      return QuerySourceVerdictsResponse_VerdictStatus.VERDICT_EXPECTATION_STATUS_UNSPECIFIED;
+    case 1:
+    case "UNEXPECTED":
+      return QuerySourceVerdictsResponse_VerdictStatus.UNEXPECTED;
+    case 2:
+    case "EXPECTED":
+      return QuerySourceVerdictsResponse_VerdictStatus.EXPECTED;
+    case 3:
+    case "FLAKY":
+      return QuerySourceVerdictsResponse_VerdictStatus.FLAKY;
+    case 4:
+    case "SKIPPED":
+      return QuerySourceVerdictsResponse_VerdictStatus.SKIPPED;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum QuerySourceVerdictsResponse_VerdictStatus",
+      );
+  }
+}
+
+export function querySourceVerdictsResponse_VerdictStatusToJSON(
+  object: QuerySourceVerdictsResponse_VerdictStatus,
+): string {
+  switch (object) {
+    case QuerySourceVerdictsResponse_VerdictStatus.VERDICT_EXPECTATION_STATUS_UNSPECIFIED:
+      return "VERDICT_EXPECTATION_STATUS_UNSPECIFIED";
+    case QuerySourceVerdictsResponse_VerdictStatus.UNEXPECTED:
+      return "UNEXPECTED";
+    case QuerySourceVerdictsResponse_VerdictStatus.EXPECTED:
+      return "EXPECTED";
+    case QuerySourceVerdictsResponse_VerdictStatus.FLAKY:
+      return "FLAKY";
+    case QuerySourceVerdictsResponse_VerdictStatus.SKIPPED:
+      return "SKIPPED";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum QuerySourceVerdictsResponse_VerdictStatus",
+      );
+  }
+}
+
+/** Test verdict is the aggregation of test results of a test variant in an invocation. */
+export interface QuerySourceVerdictsResponse_TestVerdict {
+  /** The ID of the top-level invocation that the test verdict belongs to. */
+  readonly invocationId: string;
+  /** The partition time of the test verdict. */
+  readonly partitionTime:
+    | string
+    | undefined;
+  /** The status of the test verdict as it is interpreted by changepoint analysis. */
+  readonly status: QuerySourceVerdictsResponse_VerdictStatus;
+  /**
+   * The changelist(s) that were tested, if any. If there are more 10, only
+   * the first 10 are returned here.
+   */
+  readonly changelists: readonly Changelist[];
+}
+
+/** Source verdict is the aggregation of test results of a test variant at a source position. */
+export interface QuerySourceVerdictsResponse_SourceVerdict {
+  /** The source position. */
+  readonly position: string;
+  /**
+   * The overall status of the source verdict. Due to limitations in the implementation,
+   * this currently reflects the aggregation of all test verdicts included in the
+   * source verdict, and may include verdicts for unsubmitted code. As such, it may
+   * differ from the actual source verdict status as used in change point analysis.
+   */
+  readonly status: QuerySourceVerdictsResponse_VerdictStatus;
+  /**
+   * The test verdicts at the source position. Note some of these test verdicts
+   * may have not been used in change point analysis as they pertain to test results
+   * for unsubmitted code.
+   * Test verdicts will be ordered by ascending partition time, i.e. earliest test
+   * verdict first.
+   * Limited to at most 20 test verdicts.
+   */
+  readonly verdicts: readonly QuerySourceVerdictsResponse_TestVerdict[];
 }
 
 /** SourcePosition contains the commit and the test verdicts at a source position for a test variant branch. */
@@ -2100,6 +2245,356 @@ export const QuerySourcePositionsResponse = {
   },
 };
 
+function createBaseQuerySourceVerdictsRequest(): QuerySourceVerdictsRequest {
+  return { parent: "", startSourcePosition: "0", endSourcePosition: "0" };
+}
+
+export const QuerySourceVerdictsRequest = {
+  encode(message: QuerySourceVerdictsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
+    }
+    if (message.startSourcePosition !== "0") {
+      writer.uint32(16).int64(message.startSourcePosition);
+    }
+    if (message.endSourcePosition !== "0") {
+      writer.uint32(24).int64(message.endSourcePosition);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QuerySourceVerdictsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuerySourceVerdictsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.startSourcePosition = longToString(reader.int64() as Long);
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.endSourcePosition = longToString(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QuerySourceVerdictsRequest {
+    return {
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
+      startSourcePosition: isSet(object.startSourcePosition) ? globalThis.String(object.startSourcePosition) : "0",
+      endSourcePosition: isSet(object.endSourcePosition) ? globalThis.String(object.endSourcePosition) : "0",
+    };
+  },
+
+  toJSON(message: QuerySourceVerdictsRequest): unknown {
+    const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
+    if (message.startSourcePosition !== "0") {
+      obj.startSourcePosition = message.startSourcePosition;
+    }
+    if (message.endSourcePosition !== "0") {
+      obj.endSourcePosition = message.endSourcePosition;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QuerySourceVerdictsRequest>): QuerySourceVerdictsRequest {
+    return QuerySourceVerdictsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QuerySourceVerdictsRequest>): QuerySourceVerdictsRequest {
+    const message = createBaseQuerySourceVerdictsRequest() as any;
+    message.parent = object.parent ?? "";
+    message.startSourcePosition = object.startSourcePosition ?? "0";
+    message.endSourcePosition = object.endSourcePosition ?? "0";
+    return message;
+  },
+};
+
+function createBaseQuerySourceVerdictsResponse(): QuerySourceVerdictsResponse {
+  return { sourceVerdicts: [] };
+}
+
+export const QuerySourceVerdictsResponse = {
+  encode(message: QuerySourceVerdictsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.sourceVerdicts) {
+      QuerySourceVerdictsResponse_SourceVerdict.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QuerySourceVerdictsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuerySourceVerdictsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.sourceVerdicts.push(QuerySourceVerdictsResponse_SourceVerdict.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QuerySourceVerdictsResponse {
+    return {
+      sourceVerdicts: globalThis.Array.isArray(object?.sourceVerdicts)
+        ? object.sourceVerdicts.map((e: any) => QuerySourceVerdictsResponse_SourceVerdict.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QuerySourceVerdictsResponse): unknown {
+    const obj: any = {};
+    if (message.sourceVerdicts?.length) {
+      obj.sourceVerdicts = message.sourceVerdicts.map((e) => QuerySourceVerdictsResponse_SourceVerdict.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QuerySourceVerdictsResponse>): QuerySourceVerdictsResponse {
+    return QuerySourceVerdictsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QuerySourceVerdictsResponse>): QuerySourceVerdictsResponse {
+    const message = createBaseQuerySourceVerdictsResponse() as any;
+    message.sourceVerdicts =
+      object.sourceVerdicts?.map((e) => QuerySourceVerdictsResponse_SourceVerdict.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQuerySourceVerdictsResponse_TestVerdict(): QuerySourceVerdictsResponse_TestVerdict {
+  return { invocationId: "", partitionTime: undefined, status: 0, changelists: [] };
+}
+
+export const QuerySourceVerdictsResponse_TestVerdict = {
+  encode(message: QuerySourceVerdictsResponse_TestVerdict, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.invocationId !== "") {
+      writer.uint32(10).string(message.invocationId);
+    }
+    if (message.partitionTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.partitionTime), writer.uint32(18).fork()).ldelim();
+    }
+    if (message.status !== 0) {
+      writer.uint32(24).int32(message.status);
+    }
+    for (const v of message.changelists) {
+      Changelist.encode(v!, writer.uint32(34).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QuerySourceVerdictsResponse_TestVerdict {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuerySourceVerdictsResponse_TestVerdict() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.invocationId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.partitionTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.changelists.push(Changelist.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QuerySourceVerdictsResponse_TestVerdict {
+    return {
+      invocationId: isSet(object.invocationId) ? globalThis.String(object.invocationId) : "",
+      partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
+      status: isSet(object.status) ? querySourceVerdictsResponse_VerdictStatusFromJSON(object.status) : 0,
+      changelists: globalThis.Array.isArray(object?.changelists)
+        ? object.changelists.map((e: any) => Changelist.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QuerySourceVerdictsResponse_TestVerdict): unknown {
+    const obj: any = {};
+    if (message.invocationId !== "") {
+      obj.invocationId = message.invocationId;
+    }
+    if (message.partitionTime !== undefined) {
+      obj.partitionTime = message.partitionTime;
+    }
+    if (message.status !== 0) {
+      obj.status = querySourceVerdictsResponse_VerdictStatusToJSON(message.status);
+    }
+    if (message.changelists?.length) {
+      obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QuerySourceVerdictsResponse_TestVerdict>): QuerySourceVerdictsResponse_TestVerdict {
+    return QuerySourceVerdictsResponse_TestVerdict.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QuerySourceVerdictsResponse_TestVerdict>): QuerySourceVerdictsResponse_TestVerdict {
+    const message = createBaseQuerySourceVerdictsResponse_TestVerdict() as any;
+    message.invocationId = object.invocationId ?? "";
+    message.partitionTime = object.partitionTime ?? undefined;
+    message.status = object.status ?? 0;
+    message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQuerySourceVerdictsResponse_SourceVerdict(): QuerySourceVerdictsResponse_SourceVerdict {
+  return { position: "0", status: 0, verdicts: [] };
+}
+
+export const QuerySourceVerdictsResponse_SourceVerdict = {
+  encode(message: QuerySourceVerdictsResponse_SourceVerdict, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.position !== "0") {
+      writer.uint32(8).int64(message.position);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    for (const v of message.verdicts) {
+      QuerySourceVerdictsResponse_TestVerdict.encode(v!, writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QuerySourceVerdictsResponse_SourceVerdict {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuerySourceVerdictsResponse_SourceVerdict() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.position = longToString(reader.int64() as Long);
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.verdicts.push(QuerySourceVerdictsResponse_TestVerdict.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QuerySourceVerdictsResponse_SourceVerdict {
+    return {
+      position: isSet(object.position) ? globalThis.String(object.position) : "0",
+      status: isSet(object.status) ? querySourceVerdictsResponse_VerdictStatusFromJSON(object.status) : 0,
+      verdicts: globalThis.Array.isArray(object?.verdicts)
+        ? object.verdicts.map((e: any) => QuerySourceVerdictsResponse_TestVerdict.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QuerySourceVerdictsResponse_SourceVerdict): unknown {
+    const obj: any = {};
+    if (message.position !== "0") {
+      obj.position = message.position;
+    }
+    if (message.status !== 0) {
+      obj.status = querySourceVerdictsResponse_VerdictStatusToJSON(message.status);
+    }
+    if (message.verdicts?.length) {
+      obj.verdicts = message.verdicts.map((e) => QuerySourceVerdictsResponse_TestVerdict.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QuerySourceVerdictsResponse_SourceVerdict>): QuerySourceVerdictsResponse_SourceVerdict {
+    return QuerySourceVerdictsResponse_SourceVerdict.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<QuerySourceVerdictsResponse_SourceVerdict>,
+  ): QuerySourceVerdictsResponse_SourceVerdict {
+    const message = createBaseQuerySourceVerdictsResponse_SourceVerdict() as any;
+    message.position = object.position ?? "0";
+    message.status = object.status ?? 0;
+    message.verdicts = object.verdicts?.map((e) => QuerySourceVerdictsResponse_TestVerdict.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseSourcePosition(): SourcePosition {
   return { position: "0", commit: undefined, verdicts: [] };
 }
@@ -2506,6 +3001,8 @@ export interface TestVariantBranches {
   Query(request: QueryTestVariantBranchRequest): Promise<QueryTestVariantBranchResponse>;
   /** Lists commits and the test verdicts at these commits, starting from a source position. */
   QuerySourcePositions(request: QuerySourcePositionsRequest): Promise<QuerySourcePositionsResponse>;
+  /** Lists source verdicts for a test variant branch. */
+  QuerySourceVerdicts(request: QuerySourceVerdictsRequest): Promise<QuerySourceVerdictsResponse>;
   /**
    * Query for AI analysis of the possible culprits of a test changepoint.
    * Note: to use this RPC, you must be a member of the group `googlers`.
@@ -2525,6 +3022,7 @@ export class TestVariantBranchesClientImpl implements TestVariantBranches {
     this.BatchGet = this.BatchGet.bind(this);
     this.Query = this.Query.bind(this);
     this.QuerySourcePositions = this.QuerySourcePositions.bind(this);
+    this.QuerySourceVerdicts = this.QuerySourceVerdicts.bind(this);
     this.QueryChangepointAIAnalysis = this.QueryChangepointAIAnalysis.bind(this);
   }
   GetRaw(request: GetRawTestVariantBranchRequest): Promise<TestVariantBranchRaw> {
@@ -2549,6 +3047,12 @@ export class TestVariantBranchesClientImpl implements TestVariantBranches {
     const data = QuerySourcePositionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QuerySourcePositions", data);
     return promise.then((data) => QuerySourcePositionsResponse.fromJSON(data));
+  }
+
+  QuerySourceVerdicts(request: QuerySourceVerdictsRequest): Promise<QuerySourceVerdictsResponse> {
+    const data = QuerySourceVerdictsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QuerySourceVerdicts", data);
+    return promise.then((data) => QuerySourceVerdictsResponse.fromJSON(data));
   }
 
   QueryChangepointAIAnalysis(request: QueryChangepointAIAnalysisRequest): Promise<QueryChangepointAIAnalysisResponse> {

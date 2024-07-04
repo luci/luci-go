@@ -17,6 +17,21 @@ import {
   GitilesCommit,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
+const GITILES_HOST_RE = /^(?<gitilesProject>[^.]+).googlesource[.]com$/;
+
+/**
+ * Extract the host project from a gitiles host.
+ *
+ * For example, the host project of `chromium.googlesource.com` is `chromium`.
+ */
+export function getGitilesHostProject(host: string) {
+  const match = GITILES_HOST_RE.exec(host);
+  if (!match) {
+    throw new Error(`${host} is not a valid Gitiles host`);
+  }
+  return match.groups!['gitilesProject'];
+}
+
 export function getGitilesHostURL(commit: Pick<GitilesCommit, 'host'>) {
   return `https://${commit.host}`;
 }

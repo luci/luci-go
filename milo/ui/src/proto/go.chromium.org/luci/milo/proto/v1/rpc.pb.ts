@@ -10,9 +10,18 @@ import { Build } from "../../../buildbucket/proto/build.pb";
 import { BuilderID, BuilderItem } from "../../../buildbucket/proto/builder_common.pb";
 import { GitilesCommit } from "../../../buildbucket/proto/common.pb";
 import { Commit } from "../../../common/proto/git/commit.pb";
+import { LogRequest, LogResponse } from "../../../common/proto/gitiles/gitiles.pb";
 import { Console, Project } from "../projectconfig/project.pb";
 
 export const protobufPackage = "luci.milo.v1";
+
+/** A request message for `ProxyGitilesLog` RPC. */
+export interface ProxyGitilesLogRequest {
+  /** The host to send the gitiles Log request to. */
+  readonly host: string;
+  /** The gitiles Log request. */
+  readonly request: LogRequest | undefined;
+}
 
 /** A request message for `QueryBlamelist` RPC. */
 export interface QueryBlamelistRequest {
@@ -406,6 +415,82 @@ export interface QueryConsoleSnapshotsResponse {
    */
   readonly nextPageToken: string;
 }
+
+function createBaseProxyGitilesLogRequest(): ProxyGitilesLogRequest {
+  return { host: "", request: undefined };
+}
+
+export const ProxyGitilesLogRequest = {
+  encode(message: ProxyGitilesLogRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.host !== "") {
+      writer.uint32(10).string(message.host);
+    }
+    if (message.request !== undefined) {
+      LogRequest.encode(message.request, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ProxyGitilesLogRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProxyGitilesLogRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.host = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.request = LogRequest.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ProxyGitilesLogRequest {
+    return {
+      host: isSet(object.host) ? globalThis.String(object.host) : "",
+      request: isSet(object.request) ? LogRequest.fromJSON(object.request) : undefined,
+    };
+  },
+
+  toJSON(message: ProxyGitilesLogRequest): unknown {
+    const obj: any = {};
+    if (message.host !== "") {
+      obj.host = message.host;
+    }
+    if (message.request !== undefined) {
+      obj.request = LogRequest.toJSON(message.request);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ProxyGitilesLogRequest>): ProxyGitilesLogRequest {
+    return ProxyGitilesLogRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ProxyGitilesLogRequest>): ProxyGitilesLogRequest {
+    const message = createBaseProxyGitilesLogRequest() as any;
+    message.host = object.host ?? "";
+    message.request = (object.request !== undefined && object.request !== null)
+      ? LogRequest.fromPartial(object.request)
+      : undefined;
+    return message;
+  },
+};
 
 function createBaseQueryBlamelistRequest(): QueryBlamelistRequest {
   return { gitilesCommit: undefined, builder: undefined, pageSize: 0, pageToken: "", multiProjectSupport: false };
@@ -2388,6 +2473,16 @@ export const QueryConsoleSnapshotsResponse = {
  */
 export interface MiloInternal {
   /**
+   * Query logs from a gitiles host.
+   *
+   * This avoids CORS issue at the cost of small overhead to proxy the requests.
+   * Rationales can be found at b/349503219#comment11.
+   *
+   * The request/response structure is designed in a way that we can easily
+   * switch the clients to query gitiles directly in the future if needed.
+   */
+  ProxyGitilesLog(request: ProxyGitilesLogRequest): Promise<LogResponse>;
+  /**
    * Retrieves blamelist of a build.
    *
    * The blamelist of a build is defined as [end_commit, start_commit)
@@ -2427,6 +2522,7 @@ export class MiloInternalClientImpl implements MiloInternal {
   constructor(rpc: Rpc, opts?: { service?: string }) {
     this.service = opts?.service || MiloInternalServiceName;
     this.rpc = rpc;
+    this.ProxyGitilesLog = this.ProxyGitilesLog.bind(this);
     this.QueryBlamelist = this.QueryBlamelist.bind(this);
     this.ListProjects = this.ListProjects.bind(this);
     this.GetProjectCfg = this.GetProjectCfg.bind(this);
@@ -2437,6 +2533,12 @@ export class MiloInternalClientImpl implements MiloInternal {
     this.QueryConsoles = this.QueryConsoles.bind(this);
     this.QueryConsoleSnapshots = this.QueryConsoleSnapshots.bind(this);
   }
+  ProxyGitilesLog(request: ProxyGitilesLogRequest): Promise<LogResponse> {
+    const data = ProxyGitilesLogRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ProxyGitilesLog", data);
+    return promise.then((data) => LogResponse.fromJSON(data));
+  }
+
   QueryBlamelist(request: QueryBlamelistRequest): Promise<QueryBlamelistResponse> {
     const data = QueryBlamelistRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryBlamelist", data);
