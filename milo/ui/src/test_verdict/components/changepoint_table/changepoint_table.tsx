@@ -29,7 +29,7 @@ import {
 import { getCriticalVariantKeys } from '@/test_verdict/tools/variant_utils';
 
 import { Body } from './body';
-import { ChangepointTableContextProvider } from './provider';
+import { ChangepointTableContextProvider } from './providers';
 import { SidePanel } from './side_panel';
 import { TopAxis } from './top_axis';
 import { TopLabel } from './top_label';

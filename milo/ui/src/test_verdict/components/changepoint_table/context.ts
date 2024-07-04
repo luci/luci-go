@@ -13,7 +13,36 @@
 // limitations under the License.
 
 import { ScaleLinear } from 'd3';
-import { createContext, useContext } from 'react';
+import { createContext, Dispatch, useContext } from 'react';
+
+import { Action, BlamelistState } from './reducer';
+
+export const BlamelistDispatcherCtx = createContext<
+  Dispatch<Action> | undefined
+>(undefined);
+export const BlamelistStateCtx = createContext<BlamelistState | undefined>(
+  undefined,
+);
+
+export function useBlamelistDispatch() {
+  const ctx = useContext(BlamelistDispatcherCtx);
+  if (ctx === undefined) {
+    throw new Error(
+      'useBlamelistDispatch can only be used within BlamelistStateProvider',
+    );
+  }
+  return ctx;
+}
+
+export function useBlamelistState() {
+  const ctx = useContext(BlamelistStateCtx);
+  if (ctx === undefined) {
+    throw new Error(
+      'useBlamelistState can only be used within BlamelistStateProvider',
+    );
+  }
+  return ctx;
+}
 
 export const ChangeTableCtx = createContext<ChangepointTableConfig | undefined>(
   undefined,

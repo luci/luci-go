@@ -13,10 +13,36 @@
 // limitations under the License.
 
 import { scaleLinear } from 'd3';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useMemo, useReducer } from 'react';
 
 import { CELL_WIDTH, LINE_HEIGHT, MIN_ROW_HEIGHT } from './constants';
-import { ChangeTableCtx } from './context';
+import {
+  BlamelistDispatcherCtx,
+  BlamelistStateCtx,
+  ChangeTableCtx,
+} from './context';
+import { reducer } from './reducer';
+
+export interface BlamelistStateProviderProps {
+  readonly children: ReactNode;
+}
+
+export function BlamelistStateProvider({
+  children,
+}: BlamelistStateProviderProps) {
+  const [state, dispatch] = useReducer(reducer, {
+    testVariantBranch: null,
+    focusCommitPosition: null,
+  });
+
+  return (
+    <BlamelistDispatcherCtx.Provider value={dispatch}>
+      <BlamelistStateCtx.Provider value={state}>
+        {children}
+      </BlamelistStateCtx.Provider>
+    </BlamelistDispatcherCtx.Provider>
+  );
+}
 
 export interface ChangepointTableContextProviderProps {
   readonly criticalCommits: readonly string[];

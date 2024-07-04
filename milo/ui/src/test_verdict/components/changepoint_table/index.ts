@@ -13,3 +13,6 @@
 // limitations under the License.
 
 export * from './changepoint_table';
+export { useBlamelistDispatch, useBlamelistState } from './context';
+export type { BlamelistStateProviderProps } from './providers';
+export { BlamelistStateProvider } from './providers';

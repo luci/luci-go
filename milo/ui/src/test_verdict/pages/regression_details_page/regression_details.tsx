@@ -24,9 +24,11 @@ import {
   ChangepointPredicate,
   QueryChangepointsInGroupRequest,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
-import { ChangepointTable } from '@/test_verdict/components/changepoint_table';
+import {
+  BlamelistStateProvider,
+  ChangepointTable,
+} from '@/test_verdict/components/changepoint_table';
 
-import { BlamelistStateProvider } from './context';
 import { RegressionDetailsDialog } from './regression_details_dialog';
 
 export interface RegressionDetailsProps {

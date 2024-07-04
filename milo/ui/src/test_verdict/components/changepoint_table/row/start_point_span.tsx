@@ -18,14 +18,13 @@ import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { Segment_Counts } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { StartPointInfo } from '@/test_verdict/components/changepoint_analysis';
-import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 
 import {
   START_POINT_SPAN_HEIGHT,
   SPAN_MARGIN,
   SEGMENT_SPAN_HEIGHT,
 } from '../constants';
-import { useConfig } from '../context';
+import { useBlamelistDispatch, useConfig } from '../context';
 
 const Span = styled(Box)`
   container-type: inline-size;

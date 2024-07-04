@@ -19,8 +19,10 @@ import { useRef } from 'react';
 import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_sticky';
 import { getGitilesCommitURL } from '@/gitiles/tools/utils';
 import { BlamelistTable } from '@/test_verdict/components/blamelist_table';
-
-import { useBlamelistDispatch, useBlamelistState } from './context';
+import {
+  useBlamelistDispatch,
+  useBlamelistState,
+} from '@/test_verdict/components/changepoint_table';
 
 export function RegressionDetailsDialog() {
   const dispatch = useBlamelistDispatch();

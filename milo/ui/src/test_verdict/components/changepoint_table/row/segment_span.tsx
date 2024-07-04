@@ -20,14 +20,13 @@ import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v
 import { VerdictSetStatus } from '@/test_verdict/components//verdict_set_status';
 import { SegmentInfo } from '@/test_verdict/components/changepoint_analysis';
 import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
-import { useBlamelistDispatch } from '@/test_verdict/pages/regression_details_page/context';
 import {
   getBackgroundColor,
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
 
 import { SEGMENT_SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
-import { useConfig } from '../context';
+import { useBlamelistDispatch, useConfig } from '../context';
 
 const Span = styled(Box)`
   display: flex;
