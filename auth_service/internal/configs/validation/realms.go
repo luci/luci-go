@@ -16,17 +16,28 @@ package validation
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"golang.org/x/exp/slices"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/auth_service/constants"
 	"go.chromium.org/luci/auth_service/internal/permissions"
+)
+
+const rootRealm = "@root"
+
+var (
+	knownSpecialRealms = stringset.NewFromSlice(rootRealm, "@legacy", "@project")
+	realmNameRE        = regexp.MustCompile(`^[a-z0-9_\.\-/]{1,400}$`)
 )
 
 type realmsValidator struct {
@@ -37,12 +48,18 @@ type realmsValidator struct {
 // Validate checks the realms config is correctly formatted and does not
 // reference undefined roles or permissions.
 func (rv *realmsValidator) Validate(ctx *validation.Context, cfg *realmsconf.RealmsCfg) {
-	rv.validateCustomRoles(ctx, cfg.GetCustomRoles())
+	validCustomRoles := rv.validateCustomRoles(ctx, cfg.GetCustomRoles())
+	rv.validateRealms(ctx, cfg.GetRealms(), validCustomRoles)
 }
 
 func (rv *realmsValidator) validateCustomRoles(ctx *validation.Context, customRoles []*realmsconf.CustomRole) stringset.Set {
 	ctx.Enter("validating custom roles")
 	defer ctx.Exit()
+
+	if len(customRoles) == 0 {
+		// Custom roles are optional.
+		return stringset.Set{}
+	}
 
 	customRoleNames := stringset.New(len(customRoles))
 	for _, role := range customRoles {
@@ -123,6 +140,102 @@ func (rv *realmsValidator) validateCustomRoles(ctx *validation.Context, customRo
 	return validRoles
 }
 
+func (rv *realmsValidator) validateRealms(ctx *validation.Context, realms []*realmsconf.Realm, customRoles stringset.Set) {
+	ctx.Enter("validating realms")
+	defer ctx.Exit()
+
+	if len(realms) == 0 {
+		// While an empty realms config is technically valid, it is unexpected.
+		logging.Warningf(ctx.Context, "realms config is empty")
+		return
+	}
+
+	allRealmNames := stringset.New(len(realms))
+	for _, realm := range realms {
+		allRealmNames.Add(realm.GetName())
+	}
+
+	graph := map[string][]string{}
+	for i, realm := range realms {
+		realmName := realm.GetName()
+		ctx.Enter("realm #%d (%q)", i+1, realmName)
+
+		if !validateRealmName(ctx, realmName) {
+			ctx.Exit()
+			continue
+		}
+
+		if _, ok := graph[realmName]; ok {
+			ctx.Errorf("realm already defined")
+			ctx.Exit()
+			continue
+		}
+
+		// Check bindings refer to known roles only.
+		for j, binding := range realm.GetBindings() {
+			ctx.Enter("binding #%d (role %q)", j+1, binding)
+			rv.validateBinding(ctx, binding, customRoles)
+			ctx.Exit()
+		}
+
+		// The root realm cannot have any parents.
+		if realmName == rootRealm {
+			if len(realm.GetExtends()) > 0 {
+				ctx.Errorf("the root realm must not use `extends`")
+			}
+			graph[realmName] = []string{}
+			ctx.Exit()
+			continue
+		}
+
+		// Validate `extends` relations.
+		extended := realm.GetExtends()
+		parentRealms := stringset.New(len(extended))
+		for _, parent := range extended {
+			if !allRealmNames.Has(parent) {
+				ctx.Errorf("referencing an undefined realm %q", parent)
+			} else if parentRealms.Has(parent) {
+				ctx.Errorf(
+					"the realm %q is specified in `extends` more than once",
+					parent)
+			} else {
+				parentRealms.Add(parent)
+			}
+		}
+		// Make traversal order deterministic by storing the sorted result.
+		graph[realmName] = parentRealms.ToSortedSlice()
+		ctx.Exit()
+	}
+
+	// Create an ordered slice of the processed realms to make the cycle-finding
+	// deterministic.
+	processedRealmNames := []string{}
+	for realm := range graph {
+		processedRealmNames = append(processedRealmNames, realm)
+	}
+	slices.Sort(processedRealmNames)
+
+	cyclicRealms := stringset.Set{}
+	for _, realm := range processedRealmNames {
+		if cyclicRealms.Has(realm) {
+			// Already found; no need to report it again.
+			continue
+		}
+
+		cycle, err := findCycle(realm, graph)
+		if err != nil {
+			ctx.Error(err)
+			continue
+		}
+		if len(cycle) > 0 {
+			ctx.Errorf("realm %q cyclically extends itself: %s",
+				realm, strings.Join(cycle, " -> "))
+			cyclicRealms.AddAll(cycle)
+			continue
+		}
+	}
+}
+
 // validatePermission returns whether the permission name is valid.
 // It registers an error in the validation context if the permission is not
 // defined or has the incorrect visibility.
@@ -141,6 +254,61 @@ func (rv *realmsValidator) validatePermission(ctx *validation.Context, name stri
 	}
 
 	return true
+}
+
+// validateRealmName returns whether the realm name is valid.
+// It registers an error in the validation context if it is invalid.
+func validateRealmName(ctx *validation.Context, name string) bool {
+	if strings.HasPrefix(name, "@") {
+		if knownSpecialRealms.Has(name) {
+			return true
+		}
+		ctx.Errorf("unknown special realm name")
+		return false
+	}
+
+	if !realmNameRE.MatchString(name) {
+		ctx.Errorf("invalid realm name; it must match %s", realmNameRE.String())
+		return false
+	}
+
+	return true
+}
+
+func (rv *realmsValidator) validateBinding(ctx *validation.Context, binding *realmsconf.Binding, customRoles stringset.Set) {
+	// Check the role name is valid.
+	rv.validateRoleRef(ctx, binding.GetRole(), customRoles)
+
+	// Check the principals are valid.
+	for _, principal := range binding.GetPrincipals() {
+		if strings.HasPrefix(principal, "group:") {
+			groupName := strings.TrimPrefix(principal, "group:")
+			if !auth.IsValidGroupName(groupName) {
+				ctx.Errorf("invalid group name %q", groupName)
+			}
+			continue
+		}
+
+		if _, err := identity.MakeIdentity(principal); err != nil {
+			ctx.Errorf("invalid principal format %q", principal)
+		}
+	}
+
+	// Check the conditions are valid.
+	for i, condition := range binding.GetConditions() {
+		ctx.Enter("condition #%d", i+1)
+
+		restrict := condition.GetRestrict()
+		if restrict == nil {
+			ctx.Errorf("invalid empty condition")
+		} else {
+			if !rv.db.HasAttribute(restrict.Attribute) {
+				ctx.Errorf("unknown attribute %q", restrict.Attribute)
+			}
+		}
+
+		ctx.Exit()
+	}
 }
 
 // validateRoleRef returns whether the role name is valid.

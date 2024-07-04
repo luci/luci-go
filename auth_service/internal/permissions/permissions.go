@@ -113,3 +113,7 @@ func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta *config.
 	}
 	return permissionsDB
 }
+
+func (db *PermissionsDB) HasAttribute(attr string) bool {
+	return db.attributes.Has(attr)
+}

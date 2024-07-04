@@ -80,9 +80,8 @@ func SetTestContextSigner(ctx context.Context, appID, serviceAccount string) con
 	})
 }
 
-// PermissionsDB creates a PermissionsDB for tests.
-func PermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
-	db := permissions.NewPermissionsDB(&configspb.PermissionsConfig{
+func PermissionsCfg() *configspb.PermissionsConfig {
+	return &configspb.PermissionsConfig{
 		Role: []*configspb.PermissionsConfig_Role{
 			{
 				Name: "role/dev.a",
@@ -137,16 +136,34 @@ func PermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
 				Name: "role/implicitRoot",
 				Permissions: []*protocol.Permission{
 					{
-						Name: "luci.dev.implicitRoot",
+						Name:     "luci.dev.implicitRoot",
+						Internal: true,
+					},
+				},
+			},
+			{
+				Name: "role/luci.internal.tester",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.p1",
 					},
 				},
 			},
 		},
 		Attribute: []string{"a1", "a2", "root"},
-	}, &config.Meta{
+	}
+}
+
+func PermissionsCfgMeta() *config.Meta {
+	return &config.Meta{
 		Path:     "permissions.cfg",
 		Revision: "123",
-	})
+	}
+}
+
+// PermissionsDB creates a PermissionsDB for tests.
+func PermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
+	db := permissions.NewPermissionsDB(PermissionsCfg(), PermissionsCfgMeta())
 	db.ImplicitRootBindings = func(s string) []*realmsconf.Binding { return nil }
 	if implicitRootBindings {
 		db.ImplicitRootBindings = func(projectID string) []*realmsconf.Binding {
