@@ -248,8 +248,8 @@ func updateReplicas(ctx context.Context, authDBRev int64, authDBBlob, sig []byte
 		// At least one replica push update returned an error. Check if at
 		// least one replica returned a non-fatal (so retriable) error.
 		shouldRetry := false
-		if merr, ok := err.(errors.MultiError); ok {
-
+		var merr errors.MultiError
+		if errors.As(err, &merr) {
 			for _, e := range merr {
 				if e != nil && !errors.Is(e, FatalReplicaUpdateError) {
 					shouldRetry = true
