@@ -72,6 +72,12 @@ const MaxRBECasBatchSize = 2 * 1024 * 1024 // 2 MB
 // when calculating the size.
 const ArtifactRequestOverhead = 100
 
+// ChromeOSMaxArtifactSize is the temporary fix for b/351046122.
+// We do not export ChromeOS artifacts exceeding this size.
+// This is just a temporary solution, when we decide a reasonable limit
+// for the artifact exporter.
+const ChromeOSMaxArtifactSize = 5 * 1024 * 1024
+
 type Artifact struct {
 	InvocationID    string
 	TestID          string
@@ -337,7 +343,11 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqp
 // The content of the artifact is not populated in this function,
 // this will keep the size of the slice small enough to fit in memory.
 func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invocations.ID, project string) ([]*Artifact, error) {
-	st := spanner.NewStatement(`
+	chromeOSMaxSizeCondition := ""
+	if project == "chromeos" {
+		chromeOSMaxSizeCondition = "AND a.Size <= @chromeOSMaxSize"
+	}
+	statementStr := fmt.Sprintf(`
 		SELECT
 			tr.TestId,
 			tr.ResultId,
@@ -353,10 +363,13 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 		ON a.InvocationId = tr.InvocationId
 		AND a.ParentId = CONCAT("tr/", tr.TestId , "/" , tr.ResultId)
 		WHERE a.InvocationId=@invID
+		%s
 		ORDER BY tr.TestId, tr.ResultId, a.ArtifactId
-		`)
+	`, chromeOSMaxSizeCondition)
+	st := spanner.NewStatement(statementStr)
 	st.Params = spanutil.ToSpannerMap(map[string]any{
-		"invID": invID,
+		"invID":           invID,
+		"chromeOSMaxSize": ChromeOSMaxArtifactSize,
 	})
 
 	results := []*Artifact{}
