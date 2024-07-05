@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/changepoints/bayesian"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 )
@@ -114,11 +115,17 @@ func toSegments(tvb *testvariantbranch.Entry, inputBufferSegments []*inputbuffer
 
 // inputSegmentToSegment constructs a logical segment from an input buffer segment.
 func inputSegmentToSegment(inputSegment *inputbuffer.Segment, runs []*inputbuffer.Run) Segment {
+	var startLowerBound99th, startUpperBound99th int64
+	if inputSegment.HasStartChangepoint {
+		startLowerBound99th, startUpperBound99th = inputSegment.StartPositionDistribution.ConfidenceInterval(0.99)
+	}
+
 	return Segment{
 		HasStartChangepoint:            inputSegment.HasStartChangepoint,
 		StartPosition:                  inputSegment.StartPosition,
-		StartPositionLowerBound99Th:    inputSegment.StartPositionLowerBound99Th,
-		StartPositionUpperBound99Th:    inputSegment.StartPositionUpperBound99Th,
+		StartPositionLowerBound99Th:    startLowerBound99th,
+		StartPositionUpperBound99Th:    startUpperBound99th,
+		StartPositionDistribution:      inputSegment.StartPositionDistribution,
 		StartHour:                      inputSegment.StartHour,
 		EndPosition:                    inputSegment.EndPosition,
 		EndHour:                        inputSegment.EndHour,
@@ -144,6 +151,7 @@ func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Se
 		StartHour:                      finalizingSegment.StartHour.AsTime(),
 		StartPositionLowerBound99Th:    finalizingSegment.StartPositionLowerBound_99Th,
 		StartPositionUpperBound99Th:    finalizingSegment.StartPositionUpperBound_99Th,
+		StartPositionDistribution:      model.PositionDistributionFromProto(finalizingSegment.StartPositionDistribution),
 		EndPosition:                    inputSegment.EndPosition,
 		EndHour:                        inputSegment.EndHour,
 		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour,
@@ -164,6 +172,7 @@ func finalizedSegmentToSegment(finalizedSegment *cpb.Segment) Segment {
 		StartPosition:                  finalizedSegment.StartPosition,
 		StartPositionLowerBound99Th:    finalizedSegment.StartPositionLowerBound_99Th,
 		StartPositionUpperBound99Th:    finalizedSegment.StartPositionUpperBound_99Th,
+		StartPositionDistribution:      model.PositionDistributionFromProto(finalizedSegment.StartPositionDistribution),
 		StartHour:                      finalizedSegment.StartHour.AsTime(),
 		EndPosition:                    finalizedSegment.EndPosition,
 		EndHour:                        finalizedSegment.EndHour.AsTime(),

@@ -323,6 +323,7 @@ func combineSegment(finalizingSegment *cpb.Segment, evictedSegment inputbuffer.E
 		StartHour:                    finalizingSegment.StartHour,
 		StartPositionLowerBound_99Th: finalizingSegment.StartPositionLowerBound_99Th,
 		StartPositionUpperBound_99Th: finalizingSegment.StartPositionUpperBound_99Th,
+		StartPositionDistribution:    finalizingSegment.StartPositionDistribution,
 		// Update counts.
 		FinalizedCounts: AddCounts(finalizingSegment.FinalizedCounts, evictedSegment.Runs),
 	}
@@ -349,13 +350,19 @@ func combineSegment(finalizingSegment *cpb.Segment, evictedSegment inputbuffer.E
 // should only be used when there is no need to merge with a previous
 // finalizing segment.
 func toSegment(evictedSegment inputbuffer.EvictedSegment) *cpb.Segment {
+	var startLowerBound99th, startUpperBound99th int64
+	if evictedSegment.HasStartChangepoint {
+		startLowerBound99th, startUpperBound99th = evictedSegment.StartPositionDistribution.ConfidenceInterval(0.99)
+	}
+
 	result := &cpb.Segment{
 		State:                          evictedSegment.State,
 		HasStartChangepoint:            evictedSegment.HasStartChangepoint,
 		StartPosition:                  evictedSegment.StartPosition,
 		StartHour:                      timestamppb.New(evictedSegment.StartHour),
-		StartPositionLowerBound_99Th:   evictedSegment.StartPositionLowerBound99Th,
-		StartPositionUpperBound_99Th:   evictedSegment.StartPositionUpperBound99Th,
+		StartPositionLowerBound_99Th:   startLowerBound99th,
+		StartPositionUpperBound_99Th:   startUpperBound99th,
+		StartPositionDistribution:      evictedSegment.StartPositionDistribution.Serialize(),
 		MostRecentUnexpectedResultHour: toTimestampOrNil(evictedSegment.MostRecentUnexpectedResultHour),
 		FinalizedCounts:                AddCounts(nil, evictedSegment.Runs),
 	}

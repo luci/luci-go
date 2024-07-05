@@ -189,7 +189,7 @@ func (s SequenceLikelihood) LogLikelihoodPartial(x, n int, maxProportion float64
 	return s.logK + logBeta + logRegIncBeta
 }
 
-func AddLogLikelihoods(x []float64) float64 {
+func addLogLikelihoods(x []float64) float64 {
 	if len(x) == 1 {
 		return x[0]
 	}

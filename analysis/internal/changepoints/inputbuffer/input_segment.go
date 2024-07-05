@@ -17,6 +17,7 @@ package inputbuffer
 import (
 	"time"
 
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 )
 
@@ -46,17 +47,8 @@ type Segment struct {
 	// The latest hour a run with the last commit position in the segment
 	// was recorded.
 	EndHour time.Time
-	// The lower bound of the change point position at the start of the segment
-	// in a 99% two-tailed confidence interval. Inclusive.
-	// Only set if HasStartChangepoint is set. If set, the invariant
-	// previous_segment.StartPosition <= StartPositionLowerBound99Th <= StartPosition.
-	StartPositionLowerBound99Th int64
-	// The upper bound of the change point position at the start of the segment
-	// in a 99% two-tailed confidence interval. Inclusive.
-	// Only set if HasStartChangepoint is set. If set, the invariant
-	// StartPosition <= StartPositionUpperBound99Th <= EndPosition
-	// holds.
-	StartPositionUpperBound99Th int64
+	// The distribution of possible starting changepoint positions.
+	StartPositionDistribution *model.PositionDistribution
 
 	// The hour the most recent run with an unexpected test result
 	// was produced.
@@ -100,17 +92,9 @@ type EvictedSegment struct {
 	// was recorded.
 	// Only set if EndPosition is set.
 	EndHour time.Time
-	// The lower bound of the change point position at the start of the segment
-	// in a 99% two-tailed confidence interval. Inclusive.
-	// Only set if HasStartChangepoint is set. If set, the invariant
-	// previous_segment.StartPosition <= StartPositionLowerBound99Th <= StartPosition.
-	StartPositionLowerBound99Th int64
-	// The upper bound of the change point position at the start of the segment
-	// in a 99% two-tailed confidence interval. Inclusive.
-	// Only set if HasStartChangepoint is set. If set, the invariant
-	// StartPosition <= StartPositionUpperBound99Th <= EndPosition
-	// holds.
-	StartPositionUpperBound99Th int64
+	// The distribution of possible starting changepoint positions.
+	// Only set if HasStartChangepoint is set.
+	StartPositionDistribution *model.PositionDistribution
 	// The hour the most recent run with an unexpected test result
 	// was produced.
 	MostRecentUnexpectedResultHour time.Time
@@ -128,14 +112,13 @@ type SegmentedInputBuffer struct {
 }
 
 // ChangePoint records the index position of a change point, together with its
-// confidence interval.
+// position distribution.
 type ChangePoint struct {
 	// NominalIndex is nominal index of the change point in history.
 	NominalIndex int
-	// LowerBound99ThIndex and UpperBound99ThIndex are indices (in history) of
-	// the 99% confidence interval of the change point.
-	LowerBound99ThIndex int
-	UpperBound99ThIndex int
+	// PositionDistribution captures the distribution of possible change point
+	// positions, in terms of source positions.
+	PositionDistribution *model.PositionDistribution
 }
 
 // Segmentize generates segments based on the input buffer and
@@ -164,8 +147,7 @@ func (ib *Buffer) Segmentize(history []*Run, changePoints []ChangePoint) *Segmen
 		segmentStartIndex := changePoint.NominalIndex
 		sw := inputBufferSegment(segmentStartIndex, segmentEndIndex, history)
 		sw.HasStartChangepoint = true
-		sw.StartPositionLowerBound99Th = history[changePoint.LowerBound99ThIndex].CommitPosition
-		sw.StartPositionUpperBound99Th = history[changePoint.UpperBound99ThIndex].CommitPosition
+		sw.StartPositionDistribution = changePoint.PositionDistribution
 		segments[i+1] = sw
 		segmentEndIndex = segmentStartIndex - 1
 	}
@@ -283,13 +265,12 @@ func (sib *SegmentedInputBuffer) EvictSegments() []EvictedSegment {
 	if l > 0 && evictedSegments[l-1].State == cpb.SegmentState_FINALIZED {
 		firstRemainingSeg := remainingSegments[0]
 		evictedSegments = append(evictedSegments, EvictedSegment{
-			State:                       cpb.SegmentState_FINALIZING,
-			HasStartChangepoint:         true,
-			StartPosition:               firstRemainingSeg.StartPosition,
-			StartHour:                   firstRemainingSeg.StartHour,
-			StartPositionLowerBound99Th: firstRemainingSeg.StartPositionLowerBound99Th,
-			StartPositionUpperBound99Th: firstRemainingSeg.StartPositionUpperBound99Th,
-			Runs:                        []*Run{},
+			State:                     cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:       true,
+			StartPosition:             firstRemainingSeg.StartPosition,
+			StartHour:                 firstRemainingSeg.StartHour,
+			StartPositionDistribution: firstRemainingSeg.StartPositionDistribution,
+			Runs:                      []*Run{},
 		})
 	}
 	return evictedSegments
@@ -362,8 +343,7 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) EvictedSegment {
 		StartHour:                      seg.StartHour,
 		EndPosition:                    seg.EndPosition,
 		EndHour:                        seg.EndHour,
-		StartPositionLowerBound99Th:    seg.StartPositionLowerBound99Th,
-		StartPositionUpperBound99Th:    seg.StartPositionUpperBound99Th,
+		StartPositionDistribution:      seg.StartPositionDistribution,
 		MostRecentUnexpectedResultHour: seg.MostRecentUnexpectedResultHour,
 		Runs:                           evictedRuns,
 	}
@@ -411,8 +391,7 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted Evic
 		HasStartChangepoint:            seg.HasStartChangepoint,
 		StartPosition:                  seg.StartPosition,
 		StartHour:                      seg.StartHour,
-		StartPositionLowerBound99Th:    seg.StartPositionLowerBound99Th,
-		StartPositionUpperBound99Th:    seg.StartPositionUpperBound99Th,
+		StartPositionDistribution:      seg.StartPositionDistribution,
 		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour(evictedRuns),
 		Runs:                           evictedRuns,
 	}

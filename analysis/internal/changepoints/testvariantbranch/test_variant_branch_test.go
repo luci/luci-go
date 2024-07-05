@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -277,6 +278,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				StartPositionLowerBound_99Th: 45,
 				StartPositionUpperBound_99Th: 55,
+				StartPositionDistribution:    model.SimpleDistribution(50, 5).Serialize(),
 				FinalizedCounts: &cpb.Counts{
 					TotalResults: 10,
 					TotalRuns:    10,
@@ -293,6 +295,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 						StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 						StartPositionLowerBound_99Th: 10,
 						StartPositionUpperBound_99Th: 30,
+						StartPositionDistribution:    model.SimpleDistribution(20, 10).Serialize(),
 						EndPosition:                  40,
 						EndHour:                      timestamppb.New(time.Unix(3600, 0)),
 						FinalizedCounts: &cpb.Counts{
@@ -566,6 +569,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				HasStartChangepoint:            true,
 				StartPosition:                  11,
 				StartHour:                      time.Unix(11*3600, 0),
+				StartPositionDistribution:      model.SimpleDistribution(11, 2),
 				MostRecentUnexpectedResultHour: time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
 				Runs: []*inputbuffer.Run{
 					{
@@ -606,10 +610,13 @@ func TestUpdateOutputBuffer(t *testing.T) {
 
 		So(tvb.FinalizingSegment, ShouldNotBeNil)
 		So(tvb.FinalizingSegment, ShouldResembleProto, &cpb.Segment{
-			State:               cpb.SegmentState_FINALIZING,
-			HasStartChangepoint: true,
-			StartPosition:       11,
-			StartHour:           timestamppb.New(time.Unix(11*3600, 0)),
+			State:                        cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:          true,
+			StartPosition:                11,
+			StartHour:                    timestamppb.New(time.Unix(11*3600, 0)),
+			StartPositionLowerBound_99Th: 9,
+			StartPositionUpperBound_99Th: 13,
+			StartPositionDistribution:    model.SimpleDistribution(11, 2).Serialize(),
 			FinalizedCounts: &cpb.Counts{
 				UnexpectedResults:        2,
 				TotalResults:             5,
@@ -700,6 +707,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
+				StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 				FinalizedCounts: &cpb.Counts{
 					TotalResults:             30,
 					UnexpectedResults:        5,
@@ -736,8 +744,6 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                  200,
 				StartHour:                      time.Unix(100*3600, 0),
 				HasStartChangepoint:            false,
-				StartPositionLowerBound99Th:    190,
-				StartPositionUpperBound99Th:    210,
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
 				Runs: []*inputbuffer.Run{
 					{
@@ -777,6 +783,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			HasStartChangepoint:          true,
 			StartPositionLowerBound_99Th: 90,
 			StartPositionUpperBound_99Th: 110,
+			StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 			FinalizedCounts: &cpb.Counts{
 				TotalResults:             3631, // 30+(100+200+300+400+500+600+700+800)+1
 				UnexpectedResults:        2605, // 5+500+600+700+800
@@ -818,6 +825,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
+				StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 				FinalizedCounts: &cpb.Counts{
 					TotalResults:             30,
 					UnexpectedResults:        5,
@@ -854,8 +862,6 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                  200,
 				StartHour:                      time.Unix(100*3600, 0),
 				HasStartChangepoint:            false,
-				StartPositionLowerBound99Th:    190,
-				StartPositionUpperBound99Th:    210,
 				EndPosition:                    400,
 				EndHour:                        time.Unix(400*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
@@ -886,13 +892,12 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				},
 			},
 			{
-				State:                       cpb.SegmentState_FINALIZING,
-				HasStartChangepoint:         true,
-				StartPosition:               500,
-				StartHour:                   time.Unix(20*3600, 0),
-				StartPositionLowerBound99Th: 490,
-				StartPositionUpperBound99Th: 510,
-				EndPosition:                 800,
+				State:                     cpb.SegmentState_FINALIZING,
+				HasStartChangepoint:       true,
+				StartPosition:             500,
+				StartHour:                 time.Unix(20*3600, 0),
+				StartPositionDistribution: model.SimpleDistribution(500, 10),
+				EndPosition:               800,
 				Runs: []*inputbuffer.Run{
 					{
 						CommitPosition: 500,
@@ -921,6 +926,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			HasStartChangepoint:          true,
 			StartPositionLowerBound_99Th: 90,
 			StartPositionUpperBound_99Th: 110,
+			StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 			EndPosition:                  400,
 			EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
 			FinalizedCounts: &cpb.Counts{
@@ -956,6 +962,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			StartHour:                    timestamppb.New(time.Unix(20*3600, 0)),
 			StartPositionLowerBound_99Th: 490,
 			StartPositionUpperBound_99Th: 510,
+			StartPositionDistribution:    model.SimpleDistribution(500, 10).Serialize(),
 			FinalizedCounts: &cpb.Counts{
 				TotalResults:             6,
 				UnexpectedResults:        6,
@@ -986,6 +993,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
+				StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 				FinalizedCounts: &cpb.Counts{
 					TotalResults:             30,
 					UnexpectedResults:        5,
@@ -1043,13 +1051,12 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				},
 			},
 			{
-				State:                       cpb.SegmentState_FINALIZING,
-				StartPosition:               500,
-				StartHour:                   time.Unix(500*3600, 0),
-				HasStartChangepoint:         true,
-				StartPositionLowerBound99Th: 490,
-				StartPositionUpperBound99Th: 510,
-				Runs:                        []*inputbuffer.Run{},
+				State:                     cpb.SegmentState_FINALIZING,
+				StartPosition:             500,
+				StartHour:                 time.Unix(500*3600, 0),
+				HasStartChangepoint:       true,
+				StartPositionDistribution: model.SimpleDistribution(500, 10),
+				Runs:                      []*inputbuffer.Run{},
 			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
@@ -1061,6 +1068,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			HasStartChangepoint:          true,
 			StartPositionLowerBound_99Th: 90,
 			StartPositionUpperBound_99Th: 110,
+			StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 			EndPosition:                  400,
 			EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
 			FinalizedCounts: &cpb.Counts{
@@ -1096,6 +1104,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			HasStartChangepoint:          true,
 			StartPositionLowerBound_99Th: 490,
 			StartPositionUpperBound_99Th: 510,
+			StartPositionDistribution:    model.SimpleDistribution(500, 10).Serialize(),
 			FinalizedCounts:              &cpb.Counts{},
 		}
 
@@ -1112,6 +1121,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
+				StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 				FinalizedCounts: &cpb.Counts{
 					TotalResults:      30,
 					UnexpectedResults: 5,
@@ -1134,8 +1144,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                  200,
 				StartHour:                      time.Unix(100*3600, 0),
 				HasStartChangepoint:            false,
-				StartPositionLowerBound99Th:    190,
-				StartPositionUpperBound99Th:    210,
+				StartPositionDistribution:      model.SimpleDistribution(200, 10),
 				EndPosition:                    400,
 				EndHour:                        time.Unix(400*3600, 0),
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
@@ -1374,9 +1383,9 @@ func makeKey(proj string, testID string, variantHash string, refHash RefHash) Ke
 }
 
 func BenchmarkEncodeSegments(b *testing.B) {
-	// Result when test added:
+	// Result July 2024:
 	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-	// BenchmarkEncodeSegments-96    	    3343	    328663 ns/op	   14598 B/op	       3 allocs/op
+	// BenchmarkEncodeSegments-96    	    3024	    485035 ns/op	   18441 B/op	       2 allocs/op
 	b.StopTimer()
 	segs := testSegments()
 	b.StartTimer()
@@ -1389,9 +1398,9 @@ func BenchmarkEncodeSegments(b *testing.B) {
 }
 
 func BenchmarkDecodeSegments(b *testing.B) {
-	// Result when test added:
+	// Result July 2024:
 	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-	// BenchmarkDecodeSegments-96    	   10663	    111653 ns/op	   53190 B/op	     510 allocs/op
+	// BenchmarkDecodeSegments-96    	    6175	    166155 ns/op	  118429 B/op	     611 allocs/op
 	b.StopTimer()
 	segs := testSegments()
 	encodedSegs, err := EncodeSegments(segs)
@@ -1480,6 +1489,7 @@ func testSegments() *cpb.Segments {
 				FlakySourceVerdicts:      int64(i + 7),
 				TotalSourceVerdicts:      int64(2*i + 8),
 			},
+			StartPositionDistribution: model.SimpleDistribution(int64(162*i), 5).Serialize(),
 		})
 	}
 	return &cpb.Segments{

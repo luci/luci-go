@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -240,6 +241,7 @@ func TestAnalyzer(t *testing.T) {
 							StartHour:                      timestamppb.New(time.Unix(7000*3600, 0)),
 							StartPositionLowerBound_99Th:   9,
 							StartPositionUpperBound_99Th:   13,
+							StartPositionDistribution:      model.SimpleDistribution(11, 2).Serialize(),
 							EndPosition:                    20,
 							EndHour:                        timestamppb.New(time.Unix(8000*3600, 0)),
 							MostRecentUnexpectedResultHour: timestamppb.New(time.Time{}),
@@ -257,6 +259,7 @@ func TestAnalyzer(t *testing.T) {
 					StartHour:                      timestamppb.New(time.Unix(7000*3600, 0)),
 					StartPositionLowerBound_99Th:   19,
 					StartPositionUpperBound_99Th:   23,
+					StartPositionDistribution:      model.SimpleDistribution(21, 2).Serialize(),
 					EndHour:                        timestamppb.New(time.Unix(8000*3600, 0)),
 					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(9000*3600, 0)),
 					FinalizedCounts: &cpb.Counts{
@@ -285,8 +288,9 @@ func TestAnalyzer(t *testing.T) {
 				{
 					HasStartChangepoint:            true,
 					StartPosition:                  34,
-					StartPositionLowerBound99Th:    33,
+					StartPositionLowerBound99Th:    34,
 					StartPositionUpperBound99Th:    34,
+					StartPositionDistribution:      model.SimpleDistribution(34, 0),
 					StartHour:                      time.Unix(34*3600, 0),
 					EndPosition:                    39,
 					EndHour:                        time.Unix(39*3600, 0),
@@ -307,6 +311,7 @@ func TestAnalyzer(t *testing.T) {
 					StartPosition:                  21,
 					StartPositionLowerBound99Th:    19,
 					StartPositionUpperBound99Th:    23,
+					StartPositionDistribution:      model.SimpleDistribution(21, 2),
 					StartHour:                      time.Unix(7000*3600, 0),
 					EndPosition:                    33,
 					EndHour:                        time.Unix(33*3600, 0),
@@ -332,6 +337,7 @@ func TestAnalyzer(t *testing.T) {
 					StartPosition:                  11,
 					StartPositionLowerBound99Th:    9,
 					StartPositionUpperBound99Th:    13,
+					StartPositionDistribution:      model.SimpleDistribution(11, 2),
 					StartHour:                      time.Unix(7000*3600, 0),
 					EndPosition:                    20,
 					EndHour:                        time.Unix(8000*3600, 0),

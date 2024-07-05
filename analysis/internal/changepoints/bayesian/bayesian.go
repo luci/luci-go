@@ -160,9 +160,9 @@ func (a ChangepointPredictor) FindBestChangepoint(history []*inputbuffer.Run) (r
 		nextIndex, pending := nextPosition(history, i)
 
 		// Only consider change points at positions that
-		// are heuristically likely, to save on compute cycles.
+		// are heuristically likely, to save on CPU cycles.
 		// The heuristic is designed to be consistent with
-		// the sequence likelihood model, so will not eliminate
+		// the sequence likelihood model, so will only eliminate
 		// evaluation of positions that have no chance of
 		// maximising bestLikelihood.
 		if heuristic.isChangepointPossibleWithNext(pending) {

@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -66,19 +67,16 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			ib := genInputbufferWithRetries(10, 200, positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 			cps := []ChangePoint{
 				{
-					NominalIndex:        3,
-					LowerBound99ThIndex: 2,
-					UpperBound99ThIndex: 5,
+					NominalIndex:         3,
+					PositionDistribution: model.SimpleDistribution(3, 2),
 				},
 				{
-					NominalIndex:        9,
-					LowerBound99ThIndex: 7,
-					UpperBound99ThIndex: 11,
+					NominalIndex:         9,
+					PositionDistribution: model.SimpleDistribution(9, 2),
 				},
 				{
-					NominalIndex:        15,
-					LowerBound99ThIndex: 13,
-					UpperBound99ThIndex: 16,
+					NominalIndex:         15,
+					PositionDistribution: model.SimpleDistribution(15, 2),
 				},
 			}
 			var merged []*Run
@@ -101,8 +99,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndIndex:                       8,
 				HasStartChangepoint:            true,
 				StartPosition:                  4,
-				StartPositionLowerBound99Th:    3,
-				StartPositionUpperBound99Th:    5,
+				StartPositionDistribution:      model.SimpleDistribution(3, 2),
 				EndPosition:                    6,
 				StartHour:                      time.Unix(4*3600, 0),
 				EndHour:                        time.Unix(6*3600, 0),
@@ -114,8 +111,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndIndex:                       14,
 				HasStartChangepoint:            true,
 				StartPosition:                  7,
-				StartPositionLowerBound99Th:    6,
-				StartPositionUpperBound99Th:    8,
+				StartPositionDistribution:      model.SimpleDistribution(9, 2),
 				EndPosition:                    9,
 				StartHour:                      time.Unix(7*3600, 0),
 				EndHour:                        time.Unix(9*3600, 0),
@@ -127,8 +123,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndIndex:                       17,
 				HasStartChangepoint:            true,
 				StartPosition:                  10,
-				StartPositionLowerBound99Th:    9,
-				StartPositionUpperBound99Th:    11,
+				StartPositionDistribution:      model.SimpleDistribution(15, 2),
 				EndPosition:                    12,
 				StartHour:                      time.Unix(10*3600, 0),
 				EndHour:                        time.Unix(12*3600, 0),
@@ -237,26 +232,24 @@ func TestEvictSegments(t *testing.T) {
 				EndPosition:         40,
 			},
 			{
-				StartIndex:                  40, // Finalized segment.
-				EndIndex:                    79,
-				HasStartChangepoint:         true,
-				StartHour:                   time.Unix(41*3600, 0),
-				StartPositionLowerBound99Th: 30,
-				StartPositionUpperBound99Th: 50,
-				StartPosition:               41,
-				EndHour:                     time.Unix(80*3600, 0),
-				EndPosition:                 80,
+				StartIndex:                40, // Finalized segment.
+				EndIndex:                  79,
+				HasStartChangepoint:       true,
+				StartHour:                 time.Unix(41*3600, 0),
+				StartPositionDistribution: model.SimpleDistribution(40, 10),
+				StartPosition:             41,
+				EndHour:                   time.Unix(80*3600, 0),
+				EndPosition:               80,
 			},
 			{
-				StartIndex:                  80, // A finalizing segment.
-				EndIndex:                    2049,
-				HasStartChangepoint:         true,
-				StartHour:                   time.Unix(81*3600, 0),
-				StartPosition:               81,
-				StartPositionLowerBound99Th: 70,
-				StartPositionUpperBound99Th: 90,
-				EndHour:                     time.Unix(2050*3600, 0),
-				EndPosition:                 2050,
+				StartIndex:                80, // A finalizing segment.
+				EndIndex:                  2049,
+				HasStartChangepoint:       true,
+				StartHour:                 time.Unix(81*3600, 0),
+				StartPosition:             81,
+				StartPositionDistribution: model.SimpleDistribution(80, 10),
+				EndHour:                   time.Unix(2050*3600, 0),
+				EndPosition:               2050,
 			},
 			{
 				StartIndex:          2050, // An active segment.
@@ -290,25 +283,23 @@ func TestEvictSegments(t *testing.T) {
 		})
 
 		So(evicted[1], ShouldResembleProto, EvictedSegment{
-			State:                       cpb.SegmentState_FINALIZED,
-			HasStartChangepoint:         true,
-			StartHour:                   time.Unix(41*3600, 0),
-			StartPosition:               41,
-			StartPositionLowerBound99Th: 30,
-			StartPositionUpperBound99Th: 50,
-			EndHour:                     time.Unix(80*3600, 0),
-			EndPosition:                 80,
-			Runs:                        copyAndUnflattenRuns(simpleVerdicts(40, 41, []int{})),
+			State:                     cpb.SegmentState_FINALIZED,
+			HasStartChangepoint:       true,
+			StartHour:                 time.Unix(41*3600, 0),
+			StartPosition:             41,
+			StartPositionDistribution: model.SimpleDistribution(40, 10),
+			EndHour:                   time.Unix(80*3600, 0),
+			EndPosition:               80,
+			Runs:                      copyAndUnflattenRuns(simpleVerdicts(40, 41, []int{})),
 		})
 
 		So(evicted[2], ShouldResembleProto, EvictedSegment{
-			State:                       cpb.SegmentState_FINALIZING,
-			HasStartChangepoint:         true,
-			StartHour:                   time.Unix(81*3600, 0),
-			StartPosition:               81,
-			StartPositionLowerBound99Th: 70,
-			StartPositionUpperBound99Th: 90,
-			Runs:                        copyAndUnflattenRuns(simpleVerdicts(20, 81, []int{})),
+			State:                     cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:       true,
+			StartHour:                 time.Unix(81*3600, 0),
+			StartPosition:             81,
+			StartPositionDistribution: model.SimpleDistribution(80, 10),
+			Runs:                      copyAndUnflattenRuns(simpleVerdicts(20, 81, []int{})),
 		})
 
 		So(remaining[0], ShouldResembleProto, &Segment{
@@ -351,15 +342,14 @@ func TestEvictSegments(t *testing.T) {
 				EndPosition:         39,
 			},
 			{
-				StartIndex:                  40, // A finalizing segment.
-				EndIndex:                    2000,
-				HasStartChangepoint:         true,
-				StartHour:                   time.Unix(40*3600, 0),
-				StartPosition:               40,
-				StartPositionLowerBound99Th: 30,
-				StartPositionUpperBound99Th: 50,
-				EndHour:                     time.Unix(2000*3600, 0),
-				EndPosition:                 2000,
+				StartIndex:                40, // A finalizing segment.
+				EndIndex:                  2000,
+				HasStartChangepoint:       true,
+				StartHour:                 time.Unix(40*3600, 0),
+				StartPosition:             40,
+				StartPositionDistribution: model.SimpleDistribution(40, 10),
+				EndHour:                   time.Unix(2000*3600, 0),
+				EndPosition:               2000,
 			},
 		}
 
@@ -402,13 +392,12 @@ func TestEvictSegments(t *testing.T) {
 		})
 
 		So(evicted[1], ShouldResembleProto, EvictedSegment{
-			State:                       cpb.SegmentState_FINALIZING,
-			HasStartChangepoint:         true,
-			StartHour:                   time.Unix(40*3600, 0),
-			StartPosition:               40,
-			StartPositionLowerBound99Th: 30,
-			StartPositionUpperBound99Th: 50,
-			Runs:                        []*Run{},
+			State:                     cpb.SegmentState_FINALIZING,
+			HasStartChangepoint:       true,
+			StartHour:                 time.Unix(40*3600, 0),
+			StartPosition:             40,
+			StartPositionDistribution: model.SimpleDistribution(40, 10),
+			Runs:                      []*Run{},
 		})
 
 		So(remaining[0], ShouldResembleProto, segments[1])

@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
@@ -680,6 +681,15 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			}
 		}
 
+		var expectedDistribution model.PositionDistribution
+		for i, pr := range model.TailLikelihoods {
+			if pr <= 0.995 {
+				expectedDistribution[i] = 101
+			} else {
+				expectedDistribution[i] = 102
+			}
+		}
+
 		So(tvb, ShouldResembleProto, &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
@@ -715,7 +725,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				StartPosition:                101,
 				StartHour:                    timestamppb.New(time.Unix(101*3600, 0)),
 				FinalizedCounts:              &cpb.Counts{},
-				StartPositionLowerBound_99Th: 100,
+				StartPositionDistribution:    expectedDistribution.Serialize(),
+				StartPositionLowerBound_99Th: 101,
 				StartPositionUpperBound_99Th: 101,
 			},
 			FinalizedSegments: &cpb.Segments{

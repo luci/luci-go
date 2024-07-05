@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -40,9 +41,10 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
-		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, sum(total[:1]))
-		So(max, ShouldEqual, sum(total[:4]))
+		d := a.ChangePointPositionDistribution(vs)
+		min, max := d.ConfidenceInterval(0.99)
+		So(min, ShouldEqual, 2)
+		So(max, ShouldEqual, 5)
 	})
 
 	Convey("4 commit positions, 2 verdict each", t, func() {
@@ -52,9 +54,10 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 1, 1, 1, 1}
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
-		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, sum(total[:2]))
-		So(max, ShouldEqual, sum(total[:6]))
+		d := a.ChangePointPositionDistribution(vs)
+		min, max := d.ConfidenceInterval(0.99)
+		So(min, ShouldEqual, 2)
+		So(max, ShouldEqual, 4)
 	})
 
 	Convey("2 commit position with multiple verdicts each", t, func() {
@@ -64,10 +67,11 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
-		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
+		d := a.ChangePointPositionDistribution(vs)
+		min, max := d.ConfidenceInterval(0.99)
 		// There is only 1 possible position for change point
-		So(min, ShouldEqual, sum(total[:2]))
-		So(max, ShouldEqual, sum(total[:2]))
+		So(min, ShouldEqual, 2)
+		So(max, ShouldEqual, 2)
 	})
 
 	Convey("Pass to flake transition", t, func() {
@@ -77,9 +81,10 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
-		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, sum(total[:1]))
-		So(max, ShouldEqual, sum(total[:13]))
+		d := a.ChangePointPositionDistribution(vs)
+		min, max := d.ConfidenceInterval(0.99)
+		So(min, ShouldEqual, 3)
+		So(max, ShouldEqual, 14)
 	})
 
 	Convey("Flake to fail transition", t, func() {
@@ -89,9 +94,10 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
-		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, sum(total[:1]))
-		So(max, ShouldEqual, sum(total[:13]))
+		d := a.ChangePointPositionDistribution(vs)
+		min, max := d.ConfidenceInterval(0.99)
+		So(min, ShouldEqual, 3)
+		So(max, ShouldEqual, 14)
 	})
 
 	Convey("(Fail, Pass after retry) to (Fail, Fail after retry)", t, func() {
@@ -103,9 +109,10 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, sum(total[:2]))
-		So(max, ShouldEqual, sum(total[:5]))
+		d := a.ChangePointPositionDistribution(vs)
+		min, max := d.ConfidenceInterval(0.99)
+		So(min, ShouldEqual, 4)
+		So(max, ShouldEqual, 6)
 	})
 
 	Convey("(Fail, Fail after retry) to (Fail, Flaky on retry)", t, func() {
@@ -117,9 +124,25 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
-		So(min, ShouldEqual, sum(total[:1]))
-		So(max, ShouldEqual, sum(total[:3]))
+		d := a.ChangePointPositionDistribution(vs)
+		min, max := d.ConfidenceInterval(0.99)
+		So(min, ShouldEqual, 3)
+		So(max, ShouldEqual, 5)
+	})
+
+	Convey("Pass to fail transition, sparse", t, func() {
+		var (
+			positions     = []int{90, 100, 200, 210}
+			total         = []int{5, 5, 5, 5}
+			hasUnexpected = []int{0, 0, 5, 5}
+		)
+		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
+		d := a.ChangePointPositionDistribution(vs)
+
+		// The distribution reflects that we do not know where
+		// in the range 101...200 the changepoint is.
+		expectedDistribution := &model.PositionDistribution{101, 101, 101, 101, 101, 101, 101, 101, 150, 200, 200, 200, 200, 200, 200, 200, 200}
+		So(d, ShouldResemble, expectedDistribution)
 	})
 }
 
@@ -131,8 +154,8 @@ func sum(totals []int) int {
 	return total
 }
 
-// Output as of May 2024 on Intel Skylake CPU @ 2.00GHz:
-// BenchmarkChangePointPositionConfidenceInterval-96    	    1406	    814377 ns/op	  120478 B/op	      28 allocs/op
+// Output as of July 2024 on Intel Skylake CPU @ 2.00GHz:
+// BenchmarkChangePointPositionConfidenceInterval-96    	    1270	    945067 ns/op	   66143 B/op	       6 allocs/op
 func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
@@ -162,50 +185,10 @@ func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
+		d := a.ChangePointPositionDistribution(vs)
+		min, max := d.ConfidenceInterval(0.99)
 		if min > 1001 || max < 1001 {
 			panic("Invalid result")
 		}
 	}
-}
-
-func TestChangePoints(t *testing.T) {
-	Convey("Confidence Interval For ChangePoints", t, func() {
-		a := ChangepointPredictor{
-			ChangepointLikelihood: 0.0001,
-			HasUnexpectedPrior: BetaDistribution{
-				Alpha: 0.3,
-				Beta:  0.5,
-			},
-			UnexpectedAfterRetryPrior: BetaDistribution{
-				Alpha: 0.5,
-				Beta:  0.5,
-			},
-		}
-		positions := make([]int, 300)
-		total := make([]int, 300)
-		hasUnexpected := make([]int, 300)
-		for i := 0; i < 300; i++ {
-			positions[i] = i + 1
-			total[i] = 1
-			if i >= 100 && i <= 199 {
-				hasUnexpected[i] = 1
-			}
-		}
-
-		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
-		cps := a.ChangePoints(vs, ConfidenceIntervalTail)
-		So(cps, ShouldResemble, []inputbuffer.ChangePoint{
-			{
-				NominalIndex:        100,
-				LowerBound99ThIndex: 98,
-				UpperBound99ThIndex: 100,
-			},
-			{
-				NominalIndex:        200,
-				LowerBound99ThIndex: 199,
-				UpperBound99ThIndex: 201,
-			},
-		})
-	})
 }

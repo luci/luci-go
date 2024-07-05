@@ -53,12 +53,13 @@ message Segment {
   // The lower bound of the change point position at the start of the segment
   // in a 99% two-tailed confidence interval. Inclusive.
   // Only set if has_start_changepoint is set. If set, the invariant
-  // previous_segment.start_position <= start_position_lower_bound_99th <= start_position.
+  // previous_segment.start_position <= start_position_lower_bound_99th <= start_position_upper_bound_99th
+  // holds.
   int64 start_position_lower_bound_99th = 7;
   // The upper bound of the change point position at the start of the segment
   // in a 99% two-tailed confidence interval. Inclusive.
   // Only set if has_start_changepoint is set. If set, the invariant
-  // start_position <= start_position_upper_bound_99th <= end_position
+  // start_position_lower_bound_99th <= start_position_upper_bound_99th <= end_position
   // holds.
   int64 start_position_upper_bound_99th = 8;
   // The hour the most recent run with an unexpected test result
@@ -72,6 +73,23 @@ message Segment {
   // Counts for runs in the input buffer can be obtained from the input
   // buffer.
   Counts finalized_counts = 10;
+
+  // Serialized representation of model.PositionDistribution,
+  // the distribution of possible changepoint start positions.
+  //
+  // Only in the serialized representation, after the first
+  // position only position deltas are stored, i.e.
+  // start_position_distribution[0] = StartPositionDistribution[0],
+  // start_position_distribution[1] =
+  //    StartPositionDistribution[1] - StartPositionDistribution[0],
+  // start_position_distribution[2] =
+  //    StartPositionDistribution[2] - StartPositionDistribution[1], etc.
+  //
+  // Proto varint encodings are shorter for small integers, and more
+  // importantly, ZStd compresses small integers very well.
+  //
+  // Only set if has_start_changepoint is set.
+  repeated int64 start_position_distribution = 11;
 }
 
 enum SegmentState {

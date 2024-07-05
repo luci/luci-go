@@ -14,7 +14,11 @@
 
 package analyzer
 
-import "time"
+import (
+	"time"
+
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
+)
 
 // Segment is a logical segment of a test variant branch.
 // It represents the synthesis of segments identified in the input buffer
@@ -34,6 +38,11 @@ type Segment struct {
 	// confidence interval. Inclusive.
 	// Only set if HasStartChangepoint is set.
 	StartPositionUpperBound99Th int64
+	// The distribution of possible starting changepoint positions.
+	// Only set if HasStartChangepoint is set. May not be set even if
+	// HasStartChangepoint has been set, for segments which started
+	// in or prior to July 2024.
+	StartPositionDistribution *model.PositionDistribution
 	// The earliest hour a test run at the indicated nominal StartPosition
 	// was recorded. Gives an approximate upper bound on the timestamp the
 	// changepoint occurred, for systems which need to filter by date.
