@@ -380,7 +380,7 @@ window.onload = () => {
   const searchBar = new SearchBar('#search-bar');
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const searchResults = new SearchResults('#all-results');
-  const errorBox = new common.ErrorBox('#lookup-error');
+  const errorBox = new common.ErrorBox('#api-error-placeholder');
 
   const doSearch = (principal) => {
     if (!principal) {
