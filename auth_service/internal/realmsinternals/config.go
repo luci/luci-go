@@ -354,7 +354,7 @@ func sliceCompare[T string | uint32](sli []T, slj []T) bool {
 //   - ErrNoConfig if config is not found
 //   - annotated error for all other errors
 func FetchLatestRealmsConfigs(ctx context.Context) (map[string]*config.Config, error) {
-	targetCfgPath := cfgPath(ctx)
+	targetCfgPath := CfgPath(ctx)
 	projects, err := cfgclient.ProjectsWithConfig(ctx, targetCfgPath)
 	if err != nil {
 		return nil, err
@@ -370,7 +370,7 @@ func FetchLatestRealmsConfigs(ctx context.Context) (map[string]*config.Config, e
 	}
 
 	self := func(ctx context.Context) string {
-		if cfgPath(ctx) == RealmsDevCfgPath {
+		if CfgPath(ctx) == RealmsDevCfgPath {
 			return CriaDev
 		}
 		return Cria
@@ -408,7 +408,7 @@ func (r *realmsMap) getLatestConfig(ctx context.Context, client config.Interface
 		return err
 	}
 
-	targetCfgPath := cfgPath(ctx)
+	targetCfgPath := CfgPath(ctx)
 	cfg, err := client.GetConfig(ctx, cfgSet, targetCfgPath, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch %s for %s", targetCfgPath, project).Err()
@@ -421,8 +421,8 @@ func (r *realmsMap) getLatestConfig(ctx context.Context, client config.Interface
 	return nil
 }
 
-// cfgPath is a helper function to know which cfg, depending on dev or prod env.
-func cfgPath(ctx context.Context) string {
+// CfgPath is a helper function to know which cfg, depending on dev or prod env.
+func CfgPath(ctx context.Context) string {
 	if info.IsDevAppServer(ctx) || info.AppID(ctx) == DevAppID {
 		return RealmsDevCfgPath
 	}

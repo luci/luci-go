@@ -15,7 +15,12 @@
 package validation
 
 import (
+	"context"
+
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
+
+	"go.chromium.org/luci/auth_service/internal/realmsinternals"
 )
 
 func init() {
@@ -24,4 +29,14 @@ func init() {
 	validation.Rules.Add("services/${appid}", "oauth.cfg", validateOAuth)
 	validation.Rules.Add("services/${appid}", "security.cfg", validateSecurityCfg)
 	validation.Rules.Add("services/${appid}", "permissions.cfg", validatePermissionsCfg)
+}
+
+// RegisterRealmsCfgValidation adds realms config file validation based on the
+// environment. The config file path is either `realms-dev.cfg` or `realms.cfg`.
+func RegisterRealmsCfgValidation(ctx context.Context) {
+	path := realmsinternals.CfgPath(ctx)
+	logging.Infof(ctx, "registering %q validation...", path)
+
+	validation.Rules.Add("services/${appid}", path, validateServiceRealmsCfg)
+	validation.Rules.Add("regex:projects/.*", path, validateProjectRealmsCfg)
 }

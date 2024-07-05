@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"golang.org/x/exp/slices"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/auth_service/constants"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 )
 
@@ -39,6 +41,40 @@ var (
 	knownSpecialRealms = stringset.NewFromSlice(rootRealm, "@legacy", "@project")
 	realmNameRE        = regexp.MustCompile(`^[a-z0-9_\.\-/]{1,400}$`)
 )
+
+func validateServiceRealmsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	return validateRealmsCfg(ctx, path, content, true)
+}
+
+func validateProjectRealmsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	return validateRealmsCfg(ctx, path, content, false)
+}
+
+func validateRealmsCfg(ctx *validation.Context, path string, content []byte, allowInternal bool) error {
+	ctx.SetFile(path)
+	ctx.Enter(fmt.Sprintf("validating %s", path))
+	defer ctx.Exit()
+
+	cfg := &realmsconf.RealmsCfg{}
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		ctx.Error(err)
+		return nil
+	}
+
+	permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx.Context)
+	if err != nil {
+		ctx.Error(errors.Annotate(err, "error getting permissions.cfg").Err())
+		return nil
+	}
+
+	rv := &realmsValidator{
+		db:            permissions.NewPermissionsDB(permsCfg, permsMeta),
+		allowInternal: allowInternal,
+	}
+	rv.Validate(ctx, cfg)
+
+	return nil
+}
 
 type realmsValidator struct {
 	db            *permissions.PermissionsDB

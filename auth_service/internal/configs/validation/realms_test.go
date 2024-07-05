@@ -21,13 +21,175 @@ import (
 
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/auth_service/constants"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+const (
+	serviceRealmsCfgContent = `
+	custom_roles {
+		name: "customRole/with-int-perm"
+		permissions: "luci.dev.p1"
+		permissions: "luci.dev.implicitRoot"
+	}
+	realms {
+		name: "realm"
+		bindings {
+			role: "role/dev.a"
+			principals: "group:aaa"
+		}
+		bindings {
+			role: "role/luci.internal.tester"
+			principals: "group:aaa"
+		}
+		bindings {
+			role: "customRole/with-int-perm"
+			principals: "group:aaa"
+		}
+	}
+	`
+
+	projectRealmsCfgContent = `
+	custom_roles {
+		name: "customRole/empty-is-ok"
+	}
+	custom_roles {
+		name: "customRole/extends-builtin"
+		extends: "role/dev.a"
+		extends: "role/dev.b"
+	}
+	custom_roles {
+		name: "customRole/permissions-and-extension"
+		extends: "role/dev.a"
+		extends: "customRole/extends-builtin"
+		extends: "customRole/empty-is-ok"
+		permissions: "luci.dev.p1"
+		permissions: "luci.dev.p2"
+	}
+	realms {
+		name: "@root"
+		bindings {
+			role: "customRole/permissions-and-extension"
+			principals: "group:aaa"
+			principals: "user:a@example.com"
+			principals: "project:zzz"
+		}
+		bindings {
+			role: "role/dev.a"
+			principals: "group:bbb"
+		}
+	}
+	realms {
+		name: "@legacy"
+		extends: "@root"
+		extends: "some-realm/a"
+		extends: "some-realm/b"
+	}
+	realms {
+		name: "@project"
+		extends: "some-realm/b"
+	}
+	realms {
+		name: "some-realm/a"
+		extends: "some-realm/b"
+		bindings {
+			role: "role/dev.a"
+			principals: "group:aaa"
+		}
+		bindings {
+			role: "role/dev.a"
+			principals: "group:bbb"
+			conditions {
+				restrict {
+					attribute: "a1"
+					values: "x"
+					values: "y"
+					values: "z"
+				}
+			}
+		}
+	}
+	realms {
+		name: "some-realm/b"
+		bindings {
+			role: "role/dev.b"
+			principals: "group:bbb"
+		}
+	}
+	`
+)
+
+func TestProjectRealmsCfgValidation(t *testing.T) {
+	t.Parallel()
+
+	Convey("Project realms config validation", t, func() {
+		ctx := memory.Use(context.Background())
+		So(permissionscfg.SetConfigWithMetadata(
+			ctx, testsupport.PermissionsCfg(), testsupport.PermissionsCfgMeta(),
+		), ShouldBeNil)
+
+		vCtx := &validation.Context{Context: ctx}
+		configSet := "projects/test-project"
+		path := "realms.cfg"
+
+		Convey("loading bad proto", func() {
+			content := []byte(`bad: "config"`)
+			So(validateProjectRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
+			So(vCtx.Finalize(), ShouldNotBeNil)
+		})
+
+		Convey("returns error for invalid config", func() {
+			content := []byte(serviceRealmsCfgContent)
+			So(validateProjectRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
+			So(vCtx.Finalize(), ShouldNotBeNil)
+		})
+
+		Convey("succeeds for valid config", func() {
+			content := []byte(projectRealmsCfgContent)
+			So(validateProjectRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
+			So(vCtx.Finalize(), ShouldBeNil)
+		})
+	})
+}
+
+func TestServiceRealmsCfgValidation(t *testing.T) {
+	t.Parallel()
+
+	Convey("Service realms config validation", t, func() {
+		ctx := memory.Use(context.Background())
+		So(permissionscfg.SetConfigWithMetadata(
+			ctx, testsupport.PermissionsCfg(), testsupport.PermissionsCfgMeta(),
+		), ShouldBeNil)
+
+		vCtx := &validation.Context{Context: ctx}
+		configSet := "services/test-app-id"
+		path := "realms.cfg"
+
+		Convey("loading bad proto", func() {
+			content := []byte(`bad: "config"`)
+			So(validateServiceRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
+			So(vCtx.Finalize(), ShouldNotBeNil)
+		})
+
+		Convey("returns error for invalid config", func() {
+			content := []byte(`custom_roles {name: "role/missing-custom-prefix"}`)
+			So(validateServiceRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
+			So(vCtx.Finalize(), ShouldNotBeNil)
+		})
+
+		Convey("succeeds for valid config", func() {
+			content := []byte(serviceRealmsCfgContent)
+			So(validateServiceRealmsCfg(vCtx, configSet, path, content), ShouldBeNil)
+			So(vCtx.Finalize(), ShouldBeNil)
+		})
+	})
+}
 
 func TestRealmsValidator(t *testing.T) {
 	t.Parallel()

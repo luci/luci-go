@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/internal/configs/validation"
 )
 
 // Main launches a server with some default modules and configuration installed.
@@ -45,6 +46,9 @@ func Main(modules []module.Module, cb func(srv *server.Server) error) {
 	server.Main(opts, modules, func(srv *server.Server) error {
 		// Inject app version into the root context so request handlers can use it.
 		srv.Context = info.SetImageVersion(srv.Context, srv.Options.ImageVersion())
+
+		// Add validation for realms[-dev].cfg files.
+		validation.RegisterRealmsCfgValidation(srv.Context)
 
 		srv.RunInBackground("authdb", authDBProvider.RefreshPeriodically)
 		return cb(srv)
