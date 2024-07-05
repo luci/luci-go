@@ -19,8 +19,10 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import List from '@mui/material/List';
 
 import { GroupsForm } from './groups_form';
+import { mockResponseUpdateGroup, createMockUpdatedGroup, mockErrorUpdateGroup } from '../testing_tools/mocks/update_group_mock';
+import { act } from 'react';
 
-describe('<GroupsListItem />', () => {
+describe('<GroupsForm />', () => {
   test('if group name, desciption, owners, members, subgroups are displayed', async () => {
     const mockGroup = createMockGroupIndividual('123');
     mockFetchGetGroup(mockGroup);
@@ -79,4 +81,46 @@ describe('<GroupsListItem />', () => {
     expect(screen.queryByText(mockGroup.nested[0])).toBeNull();
     expect(screen.queryByText(mockGroup.nested[1])).toBeNull();
   });
+
+  test('if group is updated with success message', async () => {
+    const mockGroup = createMockGroupIndividual('123');
+    mockFetchGetGroup(mockGroup);
+
+    const mockUpdatedGroup = createMockUpdatedGroup('123');
+    mockResponseUpdateGroup(mockUpdatedGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsForm name='123' />
+        </List>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    const submitButton = screen.getByTestId('submit-button')
+    act(() => submitButton.click());
+    await screen.findByRole('alert');
+    expect(screen.getByText('Group updated')).toBeInTheDocument();
+  });
+
+  test('if appropriate message is displayed for an error updating group', async () => {
+    const mockGroup = createMockGroupIndividual('123');
+    mockFetchGetGroup(mockGroup);
+
+    mockErrorUpdateGroup();
+
+    render(
+        <FakeContextProvider>
+            <GroupsForm name='123'/>
+        </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    const submitButton = screen.getByTestId('submit-button')
+    act(() => submitButton.click());
+    await screen.findByRole('alert');
+    expect(screen.getByText('Error editing group')).toBeInTheDocument();
+  });
+
 });

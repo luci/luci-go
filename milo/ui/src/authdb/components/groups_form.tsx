@@ -28,10 +28,11 @@ import { TextareaAutosize } from '@mui/base/TextareaAutosize';
 import Typography from '@mui/material/Typography';
 import { FormControl } from '@mui/material';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
-import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import { GroupsFormList } from '@/authdb/components/groups_form_list';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useState, useEffect, createRef } from 'react';
+import { GroupsFormList, FormListElement } from '@/authdb/components/groups_form_list';
 import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
+import { AuthGroup, UpdateGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 interface GroupsFormProps {
     name: string;
@@ -65,6 +66,15 @@ function stripPrefix (prefix: string, str: string) {
     }
 };
 
+// Appends '<prefix>:' to a string if it doesn't have a prefix.
+const addPrefix = (prefix: string, str: string) => {
+  return str.indexOf(':') == -1 ? prefix + ':' + str : str;
+};
+
+const addPrefixToItems = (prefix: string, items: string[]) => {
+  return items.map((item) => addPrefix(prefix, item));
+};
+
 // True if group name starts with '<something>/' prefix, where
 // <something> is a non-empty string.
 function isExternalGroupName(name: string) {
@@ -79,6 +89,27 @@ export function GroupsForm({ name } : GroupsFormProps) {
   const [showOwnersEdit, setShowOwnersEdit] = useState<boolean>();
   const [showDescriptionEdit, setShowDescriptionEdit] = useState<boolean>();
   const [isExternal, setIsExternal] = useState<boolean>();
+  const [successEditedGroup, setSuccessEditedGroup] = useState<boolean>();
+  const [errorEditedGroup, setErrorEditedGroup] = useState<boolean>();
+  const membersRef = createRef<FormListElement>();
+  const subgroupsRef = createRef<FormListElement>();
+  const globsRef = createRef<FormListElement>();
+
+  const updateMutation = useMutation({
+    mutationFn: (request: UpdateGroupRequest) => {
+      return client.UpdateGroup(request);
+    },
+    onSuccess: (response) => {
+      setSuccessEditedGroup(true);
+      const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
+      membersRef.current?.changeItems(members);
+      globsRef.current?.changeItems(response?.globs as string[]);
+      subgroupsRef.current?.changeItems(response?.nested as string[]);
+    },
+    onError: () => {
+      setErrorEditedGroup(true);
+    }
+  })
 
   const client = useAuthServiceClient();
     const {
@@ -95,15 +126,22 @@ export function GroupsForm({ name } : GroupsFormProps) {
           setOwners(initialOwners);
           setReadonlyMode();
           setIsExternal(isExternalGroupName(response?.name!));
+          const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
+          membersRef.current?.changeItems(members);
+          globsRef.current?.changeItems(response?.globs as string[]);
+          subgroupsRef.current?.changeItems(response?.nested as string[]);
       },
     })
     const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
     const subgroups: string[] = (response?.nested || []) as string[];
     const globs: string[] = (response?.globs || []) as string[];
+    const etag = response?.etag;
 
     const setReadonlyMode = () => {
       setDescriptionMode(false);
       setOwnersMode(false);
+      setErrorEditedGroup(false);
+      setSuccessEditedGroup(false);
     }
     const changeDescriptionMode = () => {
       setDescriptionMode(!descriptionMode);
@@ -140,6 +178,32 @@ export function GroupsForm({ name } : GroupsFormProps) {
           }
         });
       }
+    }
+
+    const resetForm = () => {
+      setDescriptionMode(false);
+      setOwnersMode(false);
+      membersRef.current?.setReadonly();
+      globsRef.current?.setReadonly();
+      subgroupsRef.current?.setReadonly();
+    }
+
+    const submitForm = () => {
+      resetForm();
+      setReadonlyMode();
+      const editedMembers = addPrefixToItems('user', membersRef.current?.getItems()!);
+      const editedSubgroups = subgroupsRef.current?.getItems();
+      const editedGlobs = addPrefixToItems('user', globsRef.current?.getItems()!);
+      const editedGroup = AuthGroup.fromPartial({
+        "name": name,
+        "description": description || "",
+        "owners": owners || "",
+        "etag": etag || "",
+        "nested": editedSubgroups || [],
+        "members": editedMembers,
+        "globs": editedGlobs,
+      });
+      updateMutation.mutate({'group': editedGroup, updateMask: undefined});
     }
 
     if (isLoading) {
@@ -215,17 +279,25 @@ export function GroupsForm({ name } : GroupsFormProps) {
             </TableRow>
           </Table>
         </TableContainer>}
-          {isExternal 
+          {isExternal
             ?
             <GroupsFormListReadonly name='Members' initialItems={members}/>
             :
             <>
-            <GroupsFormList name='Members' initialItems={members}/>   
-            <GroupsFormList name='Globs' initialItems={globs}/>
-            <GroupsFormList name='Subgroups' initialItems={subgroups}/>
-            <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}}>
+            <GroupsFormList name='Members' initialItems={members} ref={membersRef}/>
+            <GroupsFormList name='Globs' initialItems={globs} ref={globsRef}/>
+            <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef}/>
+            <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={submitForm} data-testid='submit-button'>
               Submit
             </Button>
+            <div style={{padding: '5px'}}>
+              {successEditedGroup &&
+              <Alert severity="success">Group updated</Alert>
+              }
+              {errorEditedGroup &&
+              <Alert severity="error">Error editing group</Alert>
+              }
+            </div>
             </>
           }
       </FormControl>

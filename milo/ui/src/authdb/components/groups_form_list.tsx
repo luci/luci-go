@@ -24,7 +24,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import {useState, useEffect} from 'react';
+import {useState, forwardRef, useImperativeHandle} from 'react';
 
 import './groups_list.css';
 
@@ -33,10 +33,30 @@ interface GroupsFormListProps {
     name: string;
 }
 
-export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
+export interface FormListElement {
+  getItems: () => string[];
+  setReadonly: () => void;
+  changeItems: (items: string[]) => void;
+}
+
+export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
+  (
+  {initialItems, name}, ref
+  ) => {
     const [items, setItems] = useState<string[]>(initialItems);
     const [addingItem, setAddingItem] = useState<boolean>();
     const [currentItem, setCurrentItem] = useState<string>();
+
+    useImperativeHandle(ref, () => ({
+      getItems: () => items,
+      setReadonly: () => {
+        setAddingItem(false);
+        setCurrentItem("");
+      },
+      changeItems: (items: string[]) => {
+        setItems(items);
+      }
+    }));
 
     const changeAddingItem = () => {
         setAddingItem(!addingItem);
@@ -58,10 +78,6 @@ export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
           addToItems();
         }
       }
-
-    useEffect(() => {
-        setItems(initialItems)
-    }, [initialItems])
 
     return (
     <TableContainer data-testid='groups-form-list'>
@@ -112,3 +128,4 @@ export function GroupsFormList({ initialItems, name } :GroupsFormListProps) {
     </Table>
   </TableContainer>);
 }
+);
