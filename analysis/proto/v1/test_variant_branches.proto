@@ -290,6 +290,8 @@ message TestVariantBranch {
 // information about the changepoint which started it.
 // Same structure with bigquery proto here, but make a separate copy to allow it to evolve over time.
 // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/bq/test_variant_branch_row.proto;l=80
+//
+// Next ID: 10.
 message Segment {
   // If set, means the segment commenced with a changepoint.
   // If unset, means the segment began with the beginning of recorded
@@ -316,9 +318,42 @@ message Segment {
   // confidence interval. Inclusive.
   // Only set if has_start_changepoint is set.
   // When has_start_changepoint is set, the following invariant holds:
-  // previous_segment.start_position <= start_position_lower_bound_99th <= start_position <= start_position_upper_bound_99th
+  // previous_segment.start_position <= start_position_lower_bound_99th <= start_position_upper_bound_99th <= end_position
   // where previous_segment refers to the chronologically previous segment.
   int64 start_position_upper_bound_99th = 4;
+
+  message PositionDistribution {
+    // Changepoint position cumulative distribution function (CDF) probability
+    // values at which the distribution is characterised. These are values
+    // between 0.0 and 1.0.
+    //
+    // This distribution is guaranteed to have points sufficient to allow
+    // exact extraction of 99.9%, 99%, 95%, 90%, 80%, 70%, 60%, 50% two-tailed
+    // confidence intervals, and the distribution median (CDF = 0.5).
+    //
+    // Usage: to estimate the 99% confidence interval (two-tail), find the
+    // index of the cdf equal to 0.005 (i.e. (1-CI)/2) and the index of the
+    // cdf equal to or greater than 0.995 (i.e. 1-((1-CI)/2)).
+    // Then lookup the corresponding source positions in source_positions.
+    //
+    // This array is sorted in ascending order.
+    repeated double cdfs = 1;
+    // The source positions corresponding to each of the above cdf values.
+    // I.E. source_positions[i] corresponds to cfs[i].
+    //
+    // The probability of a changepoint occuring at or before source_positions[i]
+    // is at least cdfs[i].
+    //
+    // Invariant: length(source_positions) == len(cdfs).
+    //
+    // Because cdfs is in ascending order, this array is also in ascending
+    // order.
+    repeated int64 source_positions = 2;
+  }
+
+  // The starting changepoint position distribution. Only available for new
+  // changepoints detected from ~July 2024 onwards.
+  PositionDistribution start_position_distribution = 9;
 
   // The earliest hour a test run at the indicated start_position
   // was recorded. Gives an approximate upper bound on the timestamp the

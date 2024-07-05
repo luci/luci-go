@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
@@ -424,6 +425,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 						StartPositionLowerBound_99Th: 95,
 						StartPositionUpperBound_99Th: 105,
+						StartPositionDistribution:    model.SimpleDistribution(100, 5).Serialize(),
 						FinalizedCounts: &cpb.Counts{
 							UnexpectedSourceVerdicts: 1,
 							TotalSourceVerdicts:      1,
@@ -437,11 +439,9 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					FinalizedSegments: &cpb.Segments{
 						Segments: []*cpb.Segment{
 							{
-								State:                        cpb.SegmentState_FINALIZED,
-								StartPosition:                50,
-								StartHour:                    timestamppb.New(time.Unix(3600, 0)),
-								StartPositionLowerBound_99Th: 45,
-								StartPositionUpperBound_99Th: 55,
+								State:         cpb.SegmentState_FINALIZED,
+								StartPosition: 50,
+								StartHour:     timestamppb.New(time.Unix(3600, 0)),
 								FinalizedCounts: &cpb.Counts{
 									UnexpectedSourceVerdicts: 2,
 									TotalSourceVerdicts:      2,
@@ -491,9 +491,19 @@ func TestTestVariantBranchesServer(t *testing.T) {
 							StartPosition:                100,
 							StartPositionLowerBound_99Th: 95,
 							StartPositionUpperBound_99Th: 105,
-							StartHour:                    timestamppb.New(time.Unix(3600, 0)),
-							EndPosition:                  200,
-							EndHour:                      timestamppb.New(time.Unix(2*3600, 0)),
+							StartPositionDistribution: &pb.Segment_PositionDistribution{
+								Cdfs: []float64{
+									0.0005, 0.005, 0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5,
+									0.75, 0.8, 0.85, 0.9, 0.95, 0.975, 0.995, 0.9995,
+								},
+								SourcePositions: []int64{
+									90, 95, 100, 100, 100, 100, 100, 100, 100,
+									100, 100, 100, 100, 100, 100, 105, 110,
+								},
+							},
+							StartHour:   timestamppb.New(time.Unix(3600, 0)),
+							EndPosition: 200,
+							EndHour:     timestamppb.New(time.Unix(2*3600, 0)),
 							Counts: &pb.Segment_Counts{
 								UnexpectedVerdicts: 1,
 								FlakyVerdicts:      0,
@@ -501,11 +511,9 @@ func TestTestVariantBranchesServer(t *testing.T) {
 							},
 						},
 						{
-							StartPositionLowerBound_99Th: 45,
-							StartPositionUpperBound_99Th: 55,
-							StartPosition:                50,
-							StartHour:                    timestamppb.New(time.Unix(3600, 0)),
-							EndHour:                      timestamppb.New(time.Unix(0, 0)),
+							StartPosition: 50,
+							StartHour:     timestamppb.New(time.Unix(3600, 0)),
+							EndHour:       timestamppb.New(time.Unix(0, 0)),
 							Counts: &pb.Segment_Counts{
 								UnexpectedVerdicts: 2,
 								FlakyVerdicts:      0,

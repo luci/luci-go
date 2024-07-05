@@ -38,6 +38,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/gitiles"
@@ -286,10 +287,27 @@ func toSegmentProto(segment analyzer.Segment) *pb.Segment {
 		StartPosition:                segment.StartPosition,
 		StartPositionLowerBound_99Th: segment.StartPositionLowerBound99Th,
 		StartPositionUpperBound_99Th: segment.StartPositionUpperBound99Th,
+		StartPositionDistribution:    toPositionDistribution(segment.StartPositionDistribution),
 		StartHour:                    timestamppb.New(segment.StartHour),
 		EndPosition:                  segment.EndPosition,
 		EndHour:                      timestamppb.New(segment.EndHour),
 		Counts:                       toCountsProto(segment.Counts),
+	}
+}
+
+func toPositionDistribution(d *model.PositionDistribution) *pb.Segment_PositionDistribution {
+	if d == nil {
+		// Not all segments have start position distributions, either because
+		// they have no starting changepoint or because they were detected
+		// prior to the start position distributions being captured.
+		return nil
+	}
+	// Copy to avoid aliasing the original constants/distributions.
+	cdfs := model.TailLikelihoods
+	positions := *d
+	return &pb.Segment_PositionDistribution{
+		Cdfs:            cdfs[:],
+		SourcePositions: positions[:],
 	}
 }
 
