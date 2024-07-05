@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { FusedGitilesClientImpl } from '@/gitiles/api/fused_gitiles_client';
 import { CrrevClientImpl } from '@/proto/infra/appengine/cr-rev/frontend/api/v1/service.pb';
 
 export function useCrRevClient() {
@@ -20,4 +21,14 @@ export function useCrRevClient() {
     host: SETTINGS.crRev.host,
     ClientImpl: CrrevClientImpl,
   });
+}
+
+export function useGitilesClient(host: string) {
+  return usePrpcServiceClient(
+    {
+      host,
+      ClientImpl: FusedGitilesClientImpl,
+    },
+    { crRevHost: SETTINGS.crRev.host },
+  );
 }

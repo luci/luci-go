@@ -20,7 +20,6 @@ import {
 } from '@/common/components/auth_state_provider';
 import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 import { Constructor } from '@/generic_libs/types';
-import { Rpc } from '@/proto_utils/types';
 
 export interface PrpcServiceClientOptions<S, Params extends unknown[] = []> {
   /**
@@ -44,7 +43,7 @@ export interface PrpcServiceClientOptions<S, Params extends unknown[] = []> {
    * e.g. `UserClientImpl`. If the constructor requires additional params, they
    * can be provided via `usePrpcServiceClient(opts, ...params)`.
    */
-  readonly ClientImpl: Constructor<S, [Rpc, ...Params]> & {
+  readonly ClientImpl: Constructor<S, [PrpcClient, ...Params]> & {
     readonly DEFAULT_SERVICE: string;
   };
 }
