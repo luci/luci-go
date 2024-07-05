@@ -112,8 +112,11 @@ window.onload = () => {
     const loadingBox = new common.LoadingBox('#loading-box-placeholder');
     const servicesContent = new common.HidableElement('#services-content', false);
     const servicesTableContainer = document.querySelector('#services-table-container');
+    const errorBox = new common.ErrorBox('#api-error-placeholder');
 
     const updateServiceListing = () => {
+        errorBox.clearError();
+
         return api.listReplicas()
         .then((response) => {
             const servicesTable = new ServicesTable(response);
@@ -121,8 +124,7 @@ window.onload = () => {
             servicesTableContainer.appendChild(servicesTable.element);
         })
         .catch((err) => {
-            // TODO: support showing an error on this page.
-            console.error('Error listing replicas:', err);
+            errorBox.showError("Fetching info for replicas failed", err.error);
         });
     };
 
