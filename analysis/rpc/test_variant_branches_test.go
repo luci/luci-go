@@ -505,6 +505,11 @@ func TestTestVariantBranchesServer(t *testing.T) {
 							EndPosition: 200,
 							EndHour:     timestamppb.New(time.Unix(2*3600, 0)),
 							Counts: &pb.Segment_Counts{
+								ExpectedPassedResults: 1,
+								TotalResults:          1,
+
+								TotalRuns: 1,
+
 								UnexpectedVerdicts: 1,
 								FlakyVerdicts:      0,
 								TotalVerdicts:      3,
@@ -1385,6 +1390,11 @@ func (b *testVariantBranchBuilder) buildProto() *pb.TestVariantBranch {
 				EndPosition:                  200,
 				EndHour:                      timestamppb.New(time.Unix(3*3600, 0)),
 				Counts: &pb.Segment_Counts{
+					ExpectedPassedResults: 1,
+					TotalResults:          1,
+
+					TotalRuns: 1,
+
 					UnexpectedVerdicts: 1,
 					FlakyVerdicts:      1,
 					TotalVerdicts:      2,
@@ -1397,6 +1407,22 @@ func (b *testVariantBranchBuilder) buildProto() *pb.TestVariantBranch {
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				EndHour:                      timestamppb.New(time.Unix(0, 0)),
 				Counts: &pb.Segment_Counts{
+					UnexpectedResults:        10,
+					TotalResults:             20,
+					ExpectedPassedResults:    1,
+					ExpectedFailedResults:    2,
+					ExpectedCrashedResults:   3,
+					ExpectedAbortedResults:   4,
+					UnexpectedPassedResults:  5,
+					UnexpectedFailedResults:  6,
+					UnexpectedCrashedResults: 7,
+					UnexpectedAbortedResults: 8,
+
+					UnexpectedUnretriedRuns:  1,
+					UnexpectedAfterRetryRuns: 2,
+					FlakyRuns:                3,
+					TotalRuns:                4,
+
 					UnexpectedVerdicts: 2,
 					FlakyVerdicts:      0,
 					TotalVerdicts:      2,
@@ -1511,6 +1537,22 @@ func (b *testVariantBranchBuilder) buildEntry() *testvariantbranch.Entry {
 					StartPositionLowerBound_99Th: 45,
 					StartPositionUpperBound_99Th: 55,
 					FinalizedCounts: &cpb.Counts{
+						UnexpectedResults:        10,
+						TotalResults:             20,
+						ExpectedPassedResults:    1,
+						ExpectedFailedResults:    2,
+						ExpectedCrashedResults:   3,
+						ExpectedAbortedResults:   4,
+						UnexpectedPassedResults:  5,
+						UnexpectedFailedResults:  6,
+						UnexpectedCrashedResults: 7,
+						UnexpectedAbortedResults: 8,
+
+						UnexpectedUnretriedRuns:  1,
+						UnexpectedAfterRetryRuns: 2,
+						FlakyRuns:                3,
+						TotalRuns:                4,
+
 						UnexpectedSourceVerdicts: 2,
 						TotalSourceVerdicts:      2,
 					},

@@ -313,6 +313,22 @@ func toPositionDistribution(d *model.PositionDistribution) *pb.Segment_PositionD
 
 func toCountsProto(counts analyzer.Counts) *pb.Segment_Counts {
 	return &pb.Segment_Counts{
+		UnexpectedResults:        int32(counts.UnexpectedResults),
+		TotalResults:             int32(counts.TotalResults),
+		ExpectedPassedResults:    int32(counts.ExpectedPassedResults),
+		ExpectedFailedResults:    int32(counts.ExpectedFailedResults),
+		ExpectedCrashedResults:   int32(counts.ExpectedCrashedResults),
+		ExpectedAbortedResults:   int32(counts.ExpectedAbortedResults),
+		UnexpectedPassedResults:  int32(counts.UnexpectedPassedResults),
+		UnexpectedFailedResults:  int32(counts.UnexpectedFailedResults),
+		UnexpectedCrashedResults: int32(counts.UnexpectedCrashedResults),
+		UnexpectedAbortedResults: int32(counts.UnexpectedAbortedResults),
+
+		UnexpectedUnretriedRuns:  int32(counts.UnexpectedUnretriedRuns),
+		UnexpectedAfterRetryRuns: int32(counts.UnexpectedAfterRetryRuns),
+		FlakyRuns:                int32(counts.FlakyRuns),
+		TotalRuns:                int32(counts.TotalRuns),
+
 		TotalVerdicts:      int32(counts.TotalSourceVerdicts),
 		UnexpectedVerdicts: int32(counts.UnexpectedSourceVerdicts),
 		FlakyVerdicts:      int32(counts.FlakySourceVerdicts),
