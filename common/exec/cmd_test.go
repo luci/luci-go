@@ -48,7 +48,8 @@ func TestCmd(t *testing.T) {
 	Convey(`Cmd`, t, func() {
 		ctx := execmock.Init(context.Background())
 
-		Convey(`works with pasthrough`, func() {
+		// b/351223612: Broken on Windows.
+		SkipConvey(`works with pasthrough`, func() {
 			execmock.Passthrough.Mock(ctx)
 
 			cmd := exec.Command(ctx, prog, args...)
@@ -61,7 +62,6 @@ func TestCmd(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(bytes.TrimSpace(data), ShouldResemble, []byte("hello there"))
 		})
-
 		Convey(`works with mocking`, func() {
 			execmock.Simple.
 				WithArgs("echo").
