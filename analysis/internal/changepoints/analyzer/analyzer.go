@@ -44,26 +44,10 @@ type Analyzer struct {
 // Segments are sorted by commit position (most recent first).
 func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []Segment {
 	predictor := bayesian.ChangepointPredictor{
-		// Apriori likelihood of a changepoint.
 		ChangepointLikelihood: 0.0001,
+		// We are leaning toward consistently passing test results.
 		HasUnexpectedPrior: bayesian.BetaDistribution{
-			// As at July 2024:
-			// - For ChromeOS, 78% of test segments have a failure rate <1%,
-			//   and ~1% have a failure rate >99%.
-			// - For all projects in total, 98.6% have a failure rate < 1%
-			//   and 0.4% have a failure rate >99%.
-			//
-			// To keep confidence intervals conservative, we will encode a
-			// Beta distribution approximating ChromeOS rather than encode
-			// the super opinionated prior we see system-wide.
-			//
-			// In future, this could be made a project or test-suite
-			// specific parameter.
-
-			// Test points:
-			// BetaRegularized[0.01,0.05,0.50] = 0.744
-			// BetaRegularized[0.99,0.05,0.50] = 0.9906
-			Alpha: 0.05,
+			Alpha: 0.3,
 			Beta:  0.5,
 		},
 		UnexpectedAfterRetryPrior: bayesian.BetaDistribution{
