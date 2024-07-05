@@ -6,34 +6,48 @@
 
 <!-- Fix margins on this container -->
 <div class="container px-0 py-2" id="content-box">
+  <!-- Component to nest a loading spinner while fetching the allowlists. -->
   <div id="loading-box-placeholder"></div>
 
+  <!-- Section to display the allowlist config upon successful response from
+   the server. -->
   <div id="allowlists-content" style="display: none;">
     <div class="card">
       <div class="card-header">IP Allowlists</div>
       <div class="card-body" style="padding: 2rem">
-        <div class="row mb-4">
-          <select class="form-select" id="allowlist-selector">
-          </select>
-        </div>
-        <div class="row">
-          <hr/>
-        </div>
-        <div id="allowlist-pane">
+        <!-- Section with a selector and details to peruse the allowlists, if
+         there are any configured. -->
+        <div id="allowlists-config">
           <div class="row mb-4">
-            <label class="form-label h5 px-0">
-              Description
-            </label>
-            <input id="description-box" type="text" class="form-control" readonly name="description">
-            </input>
+            <select class="form-select" id="allowlist-selector">
+            </select>
           </div>
-          <div class="row mb-4">
-            <label class="form-label h5 px-0">
-              IP subnets
-            </label>
-            <textarea id="subnet-box" class="form-control font-monospace" rows="5" name="subnets" readonly wrap="off"></textarea>
+          <div class="row">
+            <hr/>
+          </div>
+          <div id="allowlist-pane">
+            <div class="row mb-4">
+              <label class="form-label h5 px-0">
+                Description
+              </label>
+              <input id="description-box" type="text" class="form-control" readonly name="description">
+              </input>
+            </div>
+            <div class="row mb-4">
+              <label class="form-label h5 px-0">
+                IP subnets
+              </label>
+              <textarea id="subnet-box" class="form-control font-monospace" rows="5" name="subnets" readonly wrap="off"></textarea>
+            </div>
           </div>
         </div>
+
+        <!-- Alert to show instead if the allowlists config is empty. -->
+        <div id="empty-config-fallback" style="display: none;" class="alert alert-primary mb-4" role="alert">
+          <i class="bi bi-info-circle-fill me-1"></i>
+          No allowlists have been configured.
+        </div>
+
         <div class="row">
           <hr/>
         </div>
