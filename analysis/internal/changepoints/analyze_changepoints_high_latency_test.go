@@ -682,12 +682,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 
 		var expectedDistribution model.PositionDistribution
-		for i, pr := range model.TailLikelihoods {
-			if pr <= 0.995 {
-				expectedDistribution[i] = 101
-			} else {
-				expectedDistribution[i] = 102
-			}
+		for i := range expectedDistribution {
+			expectedDistribution[i] = 101
 		}
 
 		So(tvb, ShouldResembleProto, &testvariantbranch.Entry{

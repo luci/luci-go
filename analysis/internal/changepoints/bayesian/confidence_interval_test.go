@@ -26,7 +26,7 @@ import (
 func TestChangePointPositionConfidenceInterval(t *testing.T) {
 	a := ChangepointPredictor{
 		HasUnexpectedPrior: BetaDistribution{
-			Alpha: 0.3,
+			Alpha: 0.05,
 			Beta:  0.5,
 		},
 		UnexpectedAfterRetryPrior: BetaDistribution{
@@ -84,7 +84,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
 		So(min, ShouldEqual, 3)
-		So(max, ShouldEqual, 14)
+		So(max, ShouldEqual, 9)
 	})
 
 	Convey("Flake to fail transition", t, func() {
@@ -97,7 +97,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		d := a.ChangePointPositionDistribution(vs)
 		min, max := d.ConfidenceInterval(0.99)
 		So(min, ShouldEqual, 3)
-		So(max, ShouldEqual, 14)
+		So(max, ShouldEqual, 13)
 	})
 
 	Convey("(Fail, Pass after retry) to (Fail, Fail after retry)", t, func() {
@@ -155,12 +155,12 @@ func sum(totals []int) int {
 }
 
 // Output as of July 2024 on Intel Skylake CPU @ 2.00GHz:
-// BenchmarkChangePointPositionConfidenceInterval-96    	    1270	    945067 ns/op	   66143 B/op	       6 allocs/op
+// BenchmarkChangePointPositionConfidenceInterval-96    	    1290	    938223 ns/op	   66140 B/op	       6 allocs/op
 func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
 		HasUnexpectedPrior: BetaDistribution{
-			Alpha: 0.3,
+			Alpha: 0.05,
 			Beta:  0.5,
 		},
 		UnexpectedAfterRetryPrior: BetaDistribution{

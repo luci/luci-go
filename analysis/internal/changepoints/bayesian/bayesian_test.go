@@ -26,7 +26,7 @@ func TestBayesianAnalysis(t *testing.T) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
 		HasUnexpectedPrior: BetaDistribution{
-			Alpha: 0.3,
+			Alpha: 0.05,
 			Beta:  0.5,
 		},
 		UnexpectedAfterRetryPrior: BetaDistribution{
@@ -91,13 +91,13 @@ func TestBayesianAnalysis(t *testing.T) {
 
 	Convey("Flake to fail transition", t, func() {
 		var (
-			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
-			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
-			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
+			positions     = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
+			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
+			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		So(changePoints, ShouldResemble, []int{sum(total[:6])})
+		So(changePoints, ShouldResemble, []int{sum(total[:8])})
 	})
 
 	Convey("Pass consistently", t, func() {
@@ -166,7 +166,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total                = []int{3, 3, 3, 1, 3, 3, 3, 3}
 			hasUnexpected        = []int{3, 3, 3, 1, 3, 3, 3, 3}
 			retries              = []int{3, 3, 3, 1, 3, 3, 3, 3}
-			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
+			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 0, 1}
 		)
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
@@ -180,7 +180,7 @@ func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
 		HasUnexpectedPrior: BetaDistribution{
-			Alpha: 0.3,
+			Alpha: 0.05,
 			Beta:  0.5,
 		},
 		UnexpectedAfterRetryPrior: BetaDistribution{
@@ -212,7 +212,7 @@ func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 	a := ChangepointPredictor{
 		ChangepointLikelihood: 0.01,
 		HasUnexpectedPrior: BetaDistribution{
-			Alpha: 0.3,
+			Alpha: 0.05,
 			Beta:  0.5,
 		},
 		UnexpectedAfterRetryPrior: BetaDistribution{
