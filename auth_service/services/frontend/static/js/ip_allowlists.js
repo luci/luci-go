@@ -112,6 +112,7 @@ class RevisionDetails {
 window.onload = () => {
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const allowlistsContent = new common.HidableElement('#allowlists-content', false);
+  const errorBox = new common.ErrorBox('#api-error-placeholder');
 
   const selector = new Selector('allowlist-selector');
   const allowlistPane = new AllowlistPane();
@@ -119,29 +120,29 @@ window.onload = () => {
 
   selector.element.addEventListener('allowlistSelected', (event) => {
     if (event.detail.ip_allowlist === null) {
-      console.log('allowlist is empty');
-    } else {
-      allowlistPane.populate(selector.allowlistMap[event.detail.ip_allowlist]);
+      return;
     }
+
+    allowlistPane.populate(selector.allowlistMap[event.detail.ip_allowlist]);
   });
 
   const reloadAllowlists = () => {
+    errorBox.clearError();
     loadingBox.setLoadStatus(true);
     allowlistsContent.hide();
-    let defer = api.ipAllowlists();
-    defer
-      .then((response) => {
-        selector.populate(response.allowlists);
-        revisionDetails.setLink(response.configViewUrl, response.configRevision);
-        allowlistsContent.show();
-      })
-      .catch((err) => {
-        console.log(err);
-      })
-      .finally(() => {
-        loadingBox.setLoadStatus(false);
-      });
-    return defer;
+
+    return api.ipAllowlists()
+    .then((response) => {
+      selector.populate(response.allowlists);
+      revisionDetails.setLink(response.configViewUrl, response.configRevision);
+      allowlistsContent.show();
+    })
+    .catch((err) => {
+      errorBox.showError("Fetching  IP allowlists failed", err.error);
+    })
+    .finally(() => {
+      loadingBox.setLoadStatus(false);
+    });
   };
 
   reloadAllowlists();
