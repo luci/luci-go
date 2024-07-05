@@ -88,7 +88,15 @@ class AllowlistPane {
     this.descriptionBox.innerHTML = '';
     this.subnetBox.innerHTML = '';
     this.descriptionBox.value = ipAllowlist.description;
-    this.subnetBox.textContent = (ipAllowlist.subnets || []).join('\n');
+
+    const subnets = ipAllowlist.subnets || [];
+    this.subnetBox.textContent = subnets.join('\n');
+
+    // Set the textarea's rows to be the number of subnets rounded up to the
+    // nearest multiple of 5, up to a max of 25 rows. This reduces the need for
+    // scrolling while still allowing for a lot of subnets.
+    const rows = Math.min((Math.floor(subnets.length / 5) + 1)*5, 25);
+    this.subnetBox.setAttribute('rows', rows);
   }
 }
 
