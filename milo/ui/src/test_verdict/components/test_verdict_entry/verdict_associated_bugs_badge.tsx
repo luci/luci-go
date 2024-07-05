@@ -26,18 +26,16 @@ import {
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { OutputTestVerdict } from '@/test_verdict/types';
 
-import { useProject } from '../../context';
-
 export interface VerdictAssociatedBugsBadgeProps {
+  readonly project: string;
   readonly verdict: OutputTestVerdict;
 }
 
 export const VerdictAssociatedBugsBadge = memo(
   function VerdictAssociatedBugsBadge({
+    project,
     verdict,
   }: VerdictAssociatedBugsBadgeProps) {
-    const project = useProject();
-
     const client = useBatchedClustersClient();
     const resultsToCluster = verdict.results
       .map((r) => r.result)

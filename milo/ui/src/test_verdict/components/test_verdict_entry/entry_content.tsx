@@ -19,17 +19,14 @@ import { TestResultEntry } from '@/test_verdict/components/test_result_entry';
 import { getSuggestedResultIndex } from '@/test_verdict/tools/test_result_utils';
 import { OutputTestVerdict } from '@/test_verdict/types';
 
-import { useProject } from '../../context';
-
 import { RESULT_LIMIT } from './constants';
 
 export interface EntryContentProps {
+  readonly project: string;
   readonly verdict: OutputTestVerdict;
 }
 
-export function EntryContent({ verdict }: EntryContentProps) {
-  const project = useProject();
-
+export function EntryContent({ project, verdict }: EntryContentProps) {
   const expandResultIndex = getSuggestedResultIndex(verdict.results);
 
   return (

@@ -22,21 +22,29 @@ import {
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
 import { CommitContent } from '@/gitiles/components/commit_table';
+import { TestVerdictEntry } from '@/test_verdict/components/test_verdict_entry';
 
-import { TestVerdictEntry } from './test_verdict_entry';
+import { useProject } from '../context';
 
 export interface EntryContentProps {
   readonly verdicts: readonly OutputTestVerdict[] | null;
 }
 
 export function EntryContent({ verdicts }: EntryContentProps) {
+  const project = useProject();
   const [expanded, setExpanded] = useState(true);
 
   return (
     <>
       {verdicts ? (
         verdicts.map((v) => (
-          <TestVerdictEntry key={v.invocationId} verdict={v} />
+          <TestVerdictEntry
+            key={v.invocationId}
+            project={project}
+            testId={v.testId}
+            variantHash={v.variantHash}
+            invocationId={v.invocationId}
+          />
         ))
       ) : (
         <Skeleton />

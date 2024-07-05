@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
+import { Box, Skeleton } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { OutputTestVerdict } from '@/analysis/types';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import {
   ExpandableEntry,
@@ -26,29 +25,32 @@ import {
 import { InvIdLink } from '@/test_verdict/components/inv_id_link';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
-import {
-  OutputBatchGetTestVariantResponse,
-  SpecifiedTestVerdictStatus,
-} from '@/test_verdict/types';
+import { OutputBatchGetTestVariantResponse } from '@/test_verdict/types';
 
 import { RESULT_LIMIT } from './constants';
 import { EntryContent } from './entry_content';
 import { VerdictAssociatedBugsBadge } from './verdict_associated_bugs_badge';
 
 export interface TestVerdictEntryProps {
-  readonly verdict: OutputTestVerdict;
+  readonly project: string;
+  readonly testId: string;
+  readonly variantHash: string;
+  readonly invocationId: string;
 }
 
-export function TestVerdictEntry({ verdict }: TestVerdictEntryProps) {
+export function TestVerdictEntry({
+  project,
+  testId,
+  variantHash,
+  invocationId,
+}: TestVerdictEntryProps) {
   const [expanded, setExpanded] = useState(false);
 
   const client = useResultDbClient();
   const { data, isLoading, isError, error } = useQuery({
     ...client.BatchGetTestVariants.query({
-      invocation: 'invocations/' + verdict.invocationId,
-      testVariants: [
-        { testId: verdict.testId, variantHash: verdict.variantHash },
-      ],
+      invocation: 'invocations/' + invocationId,
+      testVariants: [{ testId, variantHash }],
       resultLimit: RESULT_LIMIT,
     }),
     select: (data) => data as OutputBatchGetTestVariantResponse,
@@ -57,21 +59,28 @@ export function TestVerdictEntry({ verdict }: TestVerdictEntryProps) {
     throw error;
   }
 
+  const testVerdict = data?.testVariants[0];
+
   return (
     <ExpandableEntry expanded={expanded}>
       <ExpandableEntryHeader
         onToggle={() => setExpanded(!expanded)}
         sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '5px' }}
       >
-        <VerdictStatusIcon
-          status={SpecifiedTestVerdictStatus.fromAnalysis(verdict.status)}
-        />
+        {testVerdict ? (
+          <VerdictStatusIcon status={testVerdict.status} />
+        ) : (
+          <Skeleton variant="circular" height={24} width={24} />
+        )}
         <Box>
-          <InvIdLink invId={verdict.invocationId} />
-          {!isLoading && !expanded && (
+          <InvIdLink invId={invocationId} />
+          {!isLoading && !expanded && testVerdict && (
             <>
               {' '}
-              <VerdictAssociatedBugsBadge verdict={data.testVariants[0]} />
+              <VerdictAssociatedBugsBadge
+                project={project}
+                verdict={testVerdict}
+              />
             </>
           )}
         </Box>
@@ -80,7 +89,7 @@ export function TestVerdictEntry({ verdict }: TestVerdictEntryProps) {
         {isLoading ? (
           <DotSpinner />
         ) : (
-          <EntryContent verdict={data.testVariants[0]} />
+          <EntryContent project={project} verdict={data.testVariants[0]} />
         )}
       </ExpandableEntryBody>
     </ExpandableEntry>
