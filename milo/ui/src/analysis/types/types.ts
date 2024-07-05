@@ -28,6 +28,7 @@ import { SourceRef } from '@/proto/go.chromium.org/luci/analysis/proto/v1/source
 import {
   BatchGetTestVariantBranchResponse,
   QuerySourcePositionsResponse,
+  QuerySourceVerdictsResponse_VerdictStatus,
   Segment,
   SourcePosition,
   TestVariantBranch,
@@ -49,6 +50,11 @@ import {
 export type SpecifiedTestVerdictStatus = Exclude<
   TestVerdictStatus,
   TestVerdictStatus.UNSPECIFIED
+>;
+
+export type SpecifiedSourceVerdictStatus = Exclude<
+  QuerySourceVerdictsResponse_VerdictStatus,
+  QuerySourceVerdictsResponse_VerdictStatus.VERDICT_EXPECTATION_STATUS_UNSPECIFIED
 >;
 
 export interface OutputTestVerdict extends TestVerdict {
