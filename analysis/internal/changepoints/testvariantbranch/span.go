@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/pagination"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/internal/tracing"
 )
 
 // RefHash is used for RefHash field in TestVariantBranchKey.
@@ -119,7 +120,10 @@ func ReadF(ctx context.Context, ks []Key, f func(i int, e *Entry) error) error {
 // TestVariantBranchKey slices. If a record is not found, the corresponding
 // element will be set to nil.
 // This function assumes that it is running inside a transaction.
-func Read(ctx context.Context, ks []Key) ([]*Entry, error) {
+func Read(ctx context.Context, ks []Key) (rs []*Entry, retErr error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch.Read")
+	defer func() { tracing.End(s, retErr) }()
+
 	result := make([]*Entry, len(ks))
 	err := ReadF(ctx, ks, func(i int, e *Entry) error {
 		// ReadF re-uses buffers between entries, so if we want to

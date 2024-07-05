@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -47,6 +48,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -148,20 +150,9 @@ func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGet
 	if err != nil {
 		return nil, errors.Annotate(err, "read test variant branch").Err()
 	}
-	tvbpbs := make([]*pb.TestVariantBranch, 0, len(req.Names))
-	var analysis analyzer.Analyzer
-	for _, tvb := range tvbs {
-		if tvb == nil {
-			tvbpbs = append(tvbpbs, nil)
-			continue
-		}
-		// Run analysis to get logical segments for the test variant branch.
-		segments := analysis.Run(tvb)
 
-		tvbpbs = append(tvbpbs, toTestVariantBranchProto(tvb, segments))
-	}
 	return &pb.BatchGetTestVariantBranchResponse{
-		TestVariantBranches: tvbpbs,
+		TestVariantBranches: toTestVariantBranches(ctx, tvbs),
 	}, nil
 }
 
@@ -182,6 +173,33 @@ func validateGetRawTestVariantBranchRequest(req *pb.GetRawTestVariantBranchReque
 		VariantHash: variantHash,
 		RefHash:     testvariantbranch.RefHash(refHashBytes),
 	}, nil
+}
+
+func toTestVariantBranches(ctx context.Context, tvbs []*testvariantbranch.Entry) []*pb.TestVariantBranch {
+	// Stores the total time performing analysis (across all test variant branches).
+	var analysisTime time.Duration
+
+	_, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/rpc.toTestVariantBranches")
+	defer func() {
+		tracing.End(s, nil, attribute.Int64("analysis_nanos", analysisTime.Nanoseconds()))
+	}()
+
+	results := make([]*pb.TestVariantBranch, 0, len(tvbs))
+	var analysis analyzer.Analyzer
+	for _, tvb := range tvbs {
+		if tvb == nil {
+			results = append(results, nil)
+			continue
+		}
+
+		startTime := time.Now()
+		// Run analysis to get logical segments for the test variant branch.
+		segments := analysis.Run(tvb)
+		analysisTime += time.Since(startTime)
+
+		results = append(results, toTestVariantBranchProto(tvb, segments))
+	}
+	return results
 }
 
 func toTestVariantBranchProto(tvb *testvariantbranch.Entry, segments []analyzer.Segment) *pb.TestVariantBranch {
