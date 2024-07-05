@@ -49,14 +49,12 @@ const ClusterAnalysisSection = () => {
     }, { replace: true });
   };
 
-  const exonerationsV1Available = project == 'chromium' || project == 'chrome' || project == 'chromeos';
-  const exonerationsV2Available = project == 'chromeos';
+  const supportedProjects = ['chromium', 'chrome', 'chromeos'];
+  const exonerationsAvailable = supportedProjects.includes(project);
 
   const validValues = ['overview', 'recent-failures'];
-  if (exonerationsV1Available) {
+  if (exonerationsAvailable) {
     validValues.push('exonerations');
-  }
-  if (exonerationsV2Available) {
     validValues.push('exonerationsv2');
   }
 
@@ -88,7 +86,7 @@ const ClusterAnalysisSection = () => {
               <Tab label='Overview' value='overview' />
               <Tab label='Recent Failures' value='recent-failures' />
               {
-                (exonerationsV1Available) && (
+                (exonerationsAvailable) && (
                   <Tab label='Exonerations' value='exonerations' />
                 )
               }
@@ -97,14 +95,14 @@ const ClusterAnalysisSection = () => {
           <OverviewTab value='overview'/>
           <FailuresTab value='recent-failures'/>
           {
-            exonerationsV1Available && (
+            exonerationsAvailable && (
               <ExonerationsTab value='exonerations'/>
             )
           }
           {
             // Make tab available but have no label, so tab is only accessible if the user
             // hacks the URL. This will remain the case until the feature is fully launched.
-            exonerationsV2Available && (
+            exonerationsAvailable && (
               <ExonerationsV2Tab value='exonerationsv2'/>
             )
           }
