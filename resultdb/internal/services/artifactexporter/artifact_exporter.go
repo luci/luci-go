@@ -78,6 +78,12 @@ const ArtifactRequestOverhead = 100
 // for the artifact exporter.
 const ChromeOSMaxArtifactSize = 5 * 1024 * 1024
 
+// MaxTotalArtifactSizeForInvocation is the max total size of artifacts in an invocation.
+// If an invocation has total artifact size exceeding this value, we will not export it.
+// The reason is that the cloud task cannot finish the export within 10 minutes,
+// leading to a timeout.
+const MaxTotalArtifactSizeForInvocation = 5 * 1024 * 1024 * 1024 // 5GB
+
 type Artifact struct {
 	InvocationID    string
 	TestID          string
@@ -233,7 +239,7 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 
 	// Query for artifacts.
 	project, _ := realms.Split(inv.Realm)
-	artifacts, err := ae.queryTextArtifacts(ctx, invID, project)
+	artifacts, err := ae.queryTextArtifacts(ctx, invID, project, MaxTotalArtifactSizeForInvocation)
 	if err != nil {
 		return errors.Annotate(err, "query text artifacts").Err()
 	}
@@ -342,7 +348,7 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqp
 // The query also join with TestResult table for test status.
 // The content of the artifact is not populated in this function,
 // this will keep the size of the slice small enough to fit in memory.
-func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invocations.ID, project string) ([]*Artifact, error) {
+func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invocations.ID, project string, maxTotalArtifactSizeForInvocation int) ([]*Artifact, error) {
 	chromeOSMaxSizeCondition := ""
 	if project == "chromeos" {
 		chromeOSMaxSizeCondition = "AND a.Size <= @chromeOSMaxSize"
@@ -375,7 +381,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 	results := []*Artifact{}
 	it := span.Query(ctx, st)
 	var b spanutil.Buffer
-
+	totalSize := 0
 	err := it.Do(func(r *spanner.Row) error {
 		a := &Artifact{InvocationID: string(invID)}
 		err := b.FromSpanner(r, &a.TestID, &a.ResultID, &a.ArtifactID, &a.ContentType, &a.Size, &a.RBECASHash, &a.TestStatus, &a.TestVariant, &a.TestVariantHash)
@@ -388,15 +394,19 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 			if pbutil.IsTextArtifact(a.ContentType) {
 				artifactContentCounter.Add(ctx, 1, project, "text")
 				results = append(results, a)
+				totalSize += int(a.Size)
 			} else {
 				artifactContentCounter.Add(ctx, 1, project, "nontext")
 			}
 		}
-
 		return nil
 	})
 	if err != nil {
 		return nil, errors.Annotate(err, "query artifact").Err()
+	}
+	if totalSize > maxTotalArtifactSizeForInvocation {
+		logging.Warningf(ctx, "Total artifact size %d exceeds limit: %d", totalSize, MaxTotalArtifactSizeForInvocation)
+		return []*Artifact{}, nil
 	}
 	return results, nil
 }

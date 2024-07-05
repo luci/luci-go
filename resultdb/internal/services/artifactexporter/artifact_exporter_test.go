@@ -165,7 +165,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 				insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 			)...)
 
-			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject")
+			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject", 5*1024*1024*1024)
 			So(err, ShouldBeNil)
 			So(len(artifacts), ShouldEqual, 2)
 			So(artifacts, ShouldResemble, []*Artifact{
@@ -212,7 +212,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 				insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 			)...)
 
-			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "chromeos")
+			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "chromeos", 5*1024*1024*1024)
 			So(err, ShouldBeNil)
 			So(len(artifacts), ShouldEqual, 2)
 			So(artifacts, ShouldResemble, []*Artifact{
@@ -242,6 +242,25 @@ func TestQueryTextArtifacts(t *testing.T) {
 			So(artifactContentCounter.Get(ctx, "chromeos", "text"), ShouldEqual, 2)
 			So(artifactContentCounter.Get(ctx, "chromeos", "nontext"), ShouldEqual, 1)
 			So(artifactContentCounter.Get(ctx, "chromeos", "empty"), ShouldEqual, 1)
+		})
+
+		Convey("total invocation size exceeds limit", func() {
+			testutil.MustApply(ctx,
+				insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
+				insert.Artifact("inv1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "5000000", "RBECASHash": "deadbeef"}),
+				insert.Artifact("inv1", "tr/testid/0", "a2", map[string]any{"ContentType": "image/png", "Size": "100", "RBECASHash": "deadbeef"}),
+				insert.Artifact("inv1", "", "a3", map[string]any{"Size": "100"}),
+				insert.Artifact("inv1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "6000000", "RBECASHash": "deadbeef"}),
+			)
+
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
+			)...)
+
+			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "test project", 10000000)
+			So(err, ShouldBeNil)
+			So(len(artifacts), ShouldEqual, 0)
 		})
 	})
 }
