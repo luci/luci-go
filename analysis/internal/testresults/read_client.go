@@ -287,7 +287,7 @@ func (c *ReadClient) ReadSourceVerdicts(ctx context.Context, options ReadSourceV
 										ARRAY_AGG(STRUCT(host AS Host, change AS Change, patchset AS Patchset, owner_kind as OwnerKind))
 									FROM UNNEST(sources.changelists)
 								) AS Changelists
-							)	ORDER BY partition_time LIMIT 20) AS TestVerdicts
+							)	ORDER BY partition_time LIMIT 20) AS Verdicts
 	FROM test_verdicts_with_status
 	GROUP BY sources.gitiles_commit.position
 	ORDER BY sources.gitiles_commit.position DESC
