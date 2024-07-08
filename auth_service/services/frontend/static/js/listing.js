@@ -141,21 +141,6 @@ class NestedGroupTableRow extends DescendantTableRow {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Component to display a listing error.
-class ListingErrorAlert extends common.HidableElement {
-  constructor(element) {
-    super(element, false);
-
-    this.errorBody = this.element.querySelector('#listing-error-message');
-  }
-
-  setError(message) {
-    this.errorBody.textContent = message;
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 // Address bar manipulation.
 
 const getCurrentGroupInURL = () => {
@@ -168,15 +153,16 @@ const getCurrentGroupInURL = () => {
 window.onload = () => {
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const groupListingSection = new common.HidableElement('#group-listing', false);
-  const listingErrorAlert = new ListingErrorAlert('#listing-error');
+  const errorBox = new common.ErrorBox('#api-error-placeholder');
 
   const expandGroup = (group) => {
     groupListingSection.hide();
-    listingErrorAlert.hide();
+    errorBox.clearError();
 
     if (!group) {
-      listingErrorAlert.setError("Invalid URL \u2014 no group specified.");
-      listingErrorAlert.show();
+      errorBox.showError(
+        'Listing group memberships failed',
+        'Invalid URL \u2014 no group specified.');
       return;
     }
 
@@ -189,8 +175,7 @@ window.onload = () => {
         groupListingSection.show();
       })
       .catch((err) => {
-        listingErrorAlert.setError(err.error);
-        listingErrorAlert.show();
+        errorBox.showError('Listing group memberships failed', err.error);
       })
       .finally(() => {
         loadingBox.setLoadStatus(false);
