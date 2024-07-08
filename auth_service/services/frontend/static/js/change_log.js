@@ -101,9 +101,60 @@ const parseTarget = (t) => {
   };
 }
 
+// Given an AuthDBChange object, returns text blob to show in "Change details"
+// modal.
+const authDBChangeToTextBlob = (change) => {
+  const KNOWN_CHANGE_KEYS = [
+    'changeType',
+    'target',
+    'authDbRev',
+    'who',
+    'when',
+    'comment',
+    'appVersion'
+  ];
+
+  var text = '';
+
+  // First visit known keys present in all changes. That way they are always
+  // on top in the text representation (and in predefined order).
+  KNOWN_CHANGE_KEYS.forEach((key) => {
+    var val = change[key];
+    if (val) {
+      text += key + ': ' + val + '\n';
+    }
+  });
+
+  // Then visit the rest (in stable order).
+  var keys = Object.keys(change);
+  keys.sort();
+  keys.forEach((key) => {
+    if (KNOWN_CHANGE_KEYS.includes(key)) {
+      return;
+    }
+    var val = change[key];
+    if (val instanceof Array) {
+      if (val.length) {
+        text += key + ':\n';
+        val.forEach((item) => {
+          text += '  ' + item + '\n';
+        })
+      }
+    } else if (val) {
+      text += key + ': ' + val + '\n';
+    }
+  });
+
+  return text;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 class ChangeLogTable {
   constructor(headerElement, contentElement, modalElement, target, revision) {
+    // Templates to clone when constructing elements.
+    this.headerTemplate = document.querySelector('#change-log-header-template');
+    this.rowTemplate = document.querySelector('#change-log-row-template');
+
     // Element for change log header.
     this.headerElement = document.getElementById(headerElement);
     // Element for change log table content.
@@ -192,44 +243,36 @@ class ChangeLogTable {
 
   // Update change log page header.
   updateHeader() {
-    if ('content' in document.createElement('template')) {
-      var template = document.querySelector('#change-log-header-template')
+    // Clone and grab elements to modify.
+    var clone = this.headerTemplate.content.cloneNode(true);
+    var title = clone.querySelector('h3');
+    var targetURL = clone.querySelector('a');
+    var kind = clone.querySelector('small');
 
-      // Clone and grab elements to modify.
-      var clone = template.content.cloneNode(true);
-      var title = clone.querySelector('h3');
-      var targetURL = clone.querySelector('a');
-      var kind = clone.querySelector('small');
-
-      // Modify contents and append to parent.
-      var t;
-      if (this.target) {
-        t = parseTarget(this.target);
-      } else {
-        t = { title: 'Global Log' };
-      }
-
-      if (t.targetURL) {
-        targetURL.href = t.targetURL;
-        targetURL.textContent = t.title;
-      } else {
-        title.textContent = t.title;
-      }
-
-      if (this.revision) {
-        title.textContent += ' for revision ' + this.revision;
-      }
-
-      if (t.kind) {
-        kind.textContent = t.kind;
-      }
-
-      this.headerElement.appendChild(clone);
+    // Modify contents and append to parent.
+    var t;
+    if (this.target) {
+      t = parseTarget(this.target);
     } else {
-      // TODO: Find another way to add changeLogContent because the
-      // HTML template element is not supported.
-      console.error('Unable to load HTML template element, not supported.');
+      t = { title: 'Global Log' };
     }
+
+    if (t.targetURL) {
+      targetURL.href = t.targetURL;
+      targetURL.textContent = t.title;
+    } else {
+      title.textContent = t.title;
+    }
+
+    if (this.revision) {
+      title.textContent += ' for revision ' + this.revision;
+    }
+
+    if (t.kind) {
+      kind.textContent = t.kind;
+    }
+
+    this.headerElement.appendChild(clone);
   }
 
   // Loads list of change logs from a server.
@@ -255,51 +298,43 @@ class ChangeLogTable {
   // Update change log table content.
   setChangeLogList(logs) {
     const addElement = (log) => {
-      if ('content' in document.createElement('template')) {
-        var template = document.querySelector('#change-log-row-template')
+      // Clone and grab elements to modify.
+      var clone = this.rowTemplate.content.cloneNode(true);
+      var rev = clone.querySelector('td.change-log-rev a');
+      const changeTypeCell = clone.querySelector('td.change-log-type');
+      var type = changeTypeCell.querySelector('span');
+      var when = clone.querySelector('td.change-log-when');
+      var who = clone.querySelector('td.change-log-who');
+      var target = clone.querySelector('td.change-log-target a');
 
-        // Clone and grab elements to modify.
-        var clone = template.content.cloneNode(true);
-        var rev = clone.querySelector('td.change-log-rev a');
-        const changeTypeCell = clone.querySelector('td.change-log-type');
-        var type = changeTypeCell.querySelector('span');
-        var when = clone.querySelector('td.change-log-when');
-        var who = clone.querySelector('td.change-log-who');
-        var target = clone.querySelector('td.change-log-target a');
-
-        // Add a tooltip if there's a formatter for this change type.
-        if (TOOLTIP_FORMATTERS.has(log.changeType)) {
-          const formatter = TOOLTIP_FORMATTERS.get(log.changeType)
-          const tooltip = new bootstrap.Tooltip(changeTypeCell, {
-            container: 'body',
-            title: () => this.locked ? null : formatter(log),
-            html: true,
-            placement: 'right',
-            trigger: 'hover',
-          });
-          this.tooltips.push(tooltip);
-        }
-
-        // Modify contents and append to parent.
-        var t = parseTarget(log.target);
-        rev.href = common.getChangeLogRevisionURL(log.authDbRev);
-        rev.textContent = 'r' + log.authDbRev;
-        type.textContent = log.changeType;
-        when.textContent = common.utcTimestampToString(log.when);
-        who.textContent = common.stripPrefix('user', log.who);
-        target.href = t.changeLogTargetURL;
-        target.textContent = t.title;
-
-        type.addEventListener('click', () => {
-          this.presentChange(log);
+      // Add a tooltip if there's a formatter for this change type.
+      if (TOOLTIP_FORMATTERS.has(log.changeType)) {
+        const formatter = TOOLTIP_FORMATTERS.get(log.changeType)
+        const tooltip = new bootstrap.Tooltip(changeTypeCell, {
+          container: 'body',
+          title: () => this.locked ? null : formatter(log),
+          html: true,
+          placement: 'right',
+          trigger: 'hover',
         });
-
-        this.contentElement.appendChild(clone);
-      } else {
-        // TODO: Find another way to add changeLogContent because the
-        // HTML template element is not supported.
-        console.error('Unable to load HTML template element, not supported.');
+        this.tooltips.push(tooltip);
       }
+
+      // Modify contents and append to parent.
+      var t = parseTarget(log.target);
+      rev.href = common.getChangeLogRevisionURL(log.authDbRev);
+      rev.textContent = 'r' + log.authDbRev;
+      type.textContent = log.changeType;
+      when.textContent = common.utcTimestampToString(log.when);
+      who.textContent = common.stripPrefix('user', log.who);
+      target.href = t.changeLogTargetURL;
+      target.textContent = t.title;
+
+      type.addEventListener('click', () => {
+        this.presentChange(log);
+      });
+
+      this.contentElement.appendChild(clone);
     }
 
     this.contentElement.replaceChildren();
@@ -312,58 +347,12 @@ class ChangeLogTable {
 
   // Shows a popup with details of a single change.
   presentChange(change) {
-    // Given a change dict, returns text blob to show in "Change details" box.
-    const changeToTextBlob = (change) => {
-      const KNOWN_CHANGE_KEYS = [
-        'changeType',
-        'target',
-        'authDbRev',
-        'who',
-        'when',
-        'comment',
-        'appVersion'
-      ];
-
-      var text = '';
-
-      // First visit known keys present in all changes. That way they are always
-      // in top in the text representation (and in predefined order).
-      KNOWN_CHANGE_KEYS.forEach((key) => {
-        var val = change[key];
-        if (val) {
-          text += key + ': ' + val + '\n';
-        }
-      });
-
-      // Then visit the rest (in stable order).
-      var keys = Object.keys(change);
-      keys.sort();
-      keys.forEach((key) => {
-        if (KNOWN_CHANGE_KEYS.includes(key)) {
-          return;
-        }
-        var val = change[key];
-        if (val instanceof Array) {
-          if (val.length) {
-            text += key + ':\n';
-            val.forEach((item) => {
-              text += '  ' + item + '\n';
-            })
-          }
-        } else if (val) {
-          text += key + ': ' + val + '\n';
-        }
-      });
-
-      return text;
-    }
-
     if (this.locked) {
       return;
     }
 
     var details = this.modalElement.querySelector('#details-text');
-    details.textContent = changeToTextBlob(change);
+    details.textContent = authDBChangeToTextBlob(change);
 
     var myModal = new bootstrap.Modal(this.modalElement);
     myModal.show();
