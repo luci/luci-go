@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -46,6 +47,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     const [items, setItems] = useState<string[]>(initialItems);
     const [addingItem, setAddingItem] = useState<boolean>();
     const [currentItem, setCurrentItem] = useState<string>();
+    const [errorMessage, setErrorMessage] = useState<string>('');
 
     useImperativeHandle(ref, () => ({
       getItems: () => items,
@@ -63,10 +65,26 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       }
 
     const addToItems = () => {
-        if (currentItem) {
-          setItems([...items, currentItem]);
-          setCurrentItem('');
+      // If this is members or globs, verify accordingly before adding.
+      // If it doesn't meet the requirements, show error message.
+      if (name == 'Members') {
+        let isEmail = currentItem!.indexOf('@') != -1 && currentItem!.indexOf('/') == -1;
+        if (!isEmail) {
+          setErrorMessage('Each member should be an email address.');
+          return;
         }
+      } else if (name == 'Globs') {
+        let isGlob = currentItem!.indexOf('*') != -1;
+        if (!isGlob) {
+          setErrorMessage('Each glob should use at least one wildcard (i.e. *).');
+          return;
+        }
+      }
+      if (currentItem) {
+        setItems([...items, currentItem]);
+        setCurrentItem('');
+        setErrorMessage('');
+      }
     }
 
     const removeFromItems = (index: number) => {
@@ -114,6 +132,11 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
             </IconButton>
           </TableCell>
         </TableRow>)
+      }
+      {(errorMessage != '') &&
+        <div style={{padding: '5px 16px 5px 0px'}}>
+          <Alert sx={{p: 1.5}} severity="error">{errorMessage}</Alert>
+        </div>
       }
       {!addingItem &&
         <TableRow>

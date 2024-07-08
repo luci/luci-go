@@ -73,14 +73,14 @@ describe('<GroupsFormList editable/>', () => {
     // Type in textfield.
     const textfield = screen.getByTestId('add-textfield').querySelector('input');
     expect(textfield).toBeInTheDocument();
-    await userEvent.type(textfield!, 'newMember');
-    expect(textfield!.value).toBe('newMember');
+    await userEvent.type(textfield!, 'newMember@email.com');
+    expect(textfield!.value).toBe('newMember@email.com');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).not.toBeNull();
     act(() => confirmButton!.click());
     // Check new member shown in list?
-    expect(screen.getByText('newMember')).toBeInTheDocument();
+    expect(screen.getByText('newMember@email.com')).toBeInTheDocument();
   })
 
   test('can add members with enter button', async () => {
@@ -91,15 +91,15 @@ describe('<GroupsFormList editable/>', () => {
     // Type in textfield.
     const textfield = screen.getByTestId('add-textfield').querySelector('input');
     expect(textfield).toBeInTheDocument();
-    await userEvent.type(textfield!, 'newMember');
-    expect(textfield!.value).toBe('newMember');
+    await userEvent.type(textfield!, 'newMember@email.com');
+    expect(textfield!.value).toBe('newMember@email.com');
     // Press enter on textfield.
     fireEvent.keyDown(textfield!, {key: 'Enter', code: 'Enter', charCode: 13})
     // Check new member shown in list.
-    expect(screen.getByText('newMember')).toBeInTheDocument();
+    expect(screen.getByText('newMember@email.com')).toBeInTheDocument();
   })
 
-  test('clears textfield with clear button', async() => {
+  test('shows error message on adding email with no @ symbol', async () => {
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
@@ -109,11 +109,61 @@ describe('<GroupsFormList editable/>', () => {
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'newMember');
     expect(textfield!.value).toBe('newMember');
-    // Click clear button.
+    // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).not.toBeNull();
     act(() => confirmButton!.click());
-    // CHeck textfield is empty.
-    expect(textfield!.value).toBe('');
+    // Check correct error message is shown.
+    await screen.findByRole('alert');
+    expect(screen.getByText('Each member should be an email address.')).toBeInTheDocument();
+  })
+
+  test('shows error message on adding email with a / symbol', async () => {
+    // Click add button.
+    const addButton = screen.queryByTestId('add-button');
+    expect(addButton).not.toBeNull();
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen.getByTestId('add-textfield').querySelector('input');
+    expect(textfield).toBeInTheDocument();
+    await userEvent.type(textfield!, 'newMember@email/com');
+    expect(textfield!.value).toBe('newMember@email/com');
+    // Click confirm button.
+    const confirmButton = screen.queryByTestId('confirm-button');
+    expect(confirmButton).not.toBeNull();
+    act(() => confirmButton!.click());
+    // Check correct error message is shown.
+    await screen.findByRole('alert');
+    expect(screen.getByText('Each member should be an email address.')).toBeInTheDocument();
+  })
+});
+
+describe('<GroupsFormList editable globs/>', () => {
+  const mockGroup = createMockGroupIndividual('123');
+  beforeEach(async () => {
+    render(
+      <FakeContextProvider>
+        <GroupsFormList name='Globs' initialItems={mockGroup.members as string[]}/>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form-list');
+  });
+  test('shows error message on adding glob without a * symbol', async () => {
+    // Click add button.
+    const addButton = screen.queryByTestId('add-button');
+    expect(addButton).not.toBeNull();
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen.getByTestId('add-textfield').querySelector('input');
+    expect(textfield).toBeInTheDocument();
+    await userEvent.type(textfield!, '.glob');
+    expect(textfield!.value).toBe('.glob');
+    // Click confirm button.
+    const confirmButton = screen.queryByTestId('confirm-button');
+    expect(confirmButton).not.toBeNull();
+    act(() => confirmButton!.click());
+    // Check correct error message is shown.
+    await screen.findByRole('alert');
+    expect(screen.getByText('Each glob should use at least one wildcard (i.e. *).')).toBeInTheDocument();
   })
 });
