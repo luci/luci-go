@@ -83,7 +83,7 @@ const longestMatch = (items, text) => {
 const getCurrentGroupInURL = () => {
   let p = window.location.pathname;
   if (p.startsWith(GROUP_ROOT_URL)) {
-    return p.slice(GROUP_ROOT_URL.length);
+    return decodeURIComponent(p.slice(GROUP_ROOT_URL.length));
   }
   return '';
 }
@@ -777,6 +777,7 @@ window.onload = () => {
   // Check the "Show external groups" checkbox if the group in the URL
   // is an external group.
   groupChooser.showExternalCheckBox.checked = isExternalGroupName(getCurrentGroupInURL());
+  groupChooser.setExternalVisibility();
 
   const jumpToCurrentGroup = (selectDefault) => {
     let current = getCurrentGroupInURL();
@@ -815,6 +816,7 @@ window.onload = () => {
         jumpToCurrentGroup(false);
       });
       mainContent.show();
+      groupChooser.ensureGroupVisible(groupChooser.selectedGroupName);
     })
     .catch((err) => {
     // TODO: replace this with an error modal.
