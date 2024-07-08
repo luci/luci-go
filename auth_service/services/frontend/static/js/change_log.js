@@ -192,10 +192,9 @@ class ChangeLogTable {
 
   // Refetches the current page.
   refresh() {
-    var that = this;
     return this.refetchChangeLogs(this.pageToken, (response) => {
-      that.setChangeLogList(response.changes);
-      that.nextPageToken = response.nextPageToken;
+      this.setChangeLogList(response.changes);
+      this.nextPageToken = response.nextPageToken;
     })
   }
 
@@ -205,12 +204,11 @@ class ChangeLogTable {
       return;
     }
     var prev = this.prevPageTokens[this.prevPageTokens.length - 1];
-    var that = this;
     return this.refetchChangeLogs(prev, (response) => {
-      that.setChangeLogList(response.changes);
-      that.prevPageTokens.pop();
-      that.pageToken = prev;
-      that.nextPageToken = response.nextPageToken;
+      this.setChangeLogList(response.changes);
+      this.prevPageTokens.pop();
+      this.pageToken = prev;
+      this.nextPageToken = response.nextPageToken;
     })
   }
 
@@ -220,12 +218,11 @@ class ChangeLogTable {
       return;
     }
     var next = this.nextPageToken;
-    var that = this;
     return this.refetchChangeLogs(next, (response) => {
-      that.setChangeLogList(response.changes);
-      that.prevPageTokens.push(that.pageToken);
-      that.pageToken = next;
-      that.nextPageToken = response.nextPageToken;
+      this.setChangeLogList(response.changes);
+      this.prevPageTokens.push(this.pageToken);
+      this.pageToken = next;
+      this.nextPageToken = response.nextPageToken;
     })
   }
 
@@ -278,18 +275,17 @@ class ChangeLogTable {
   // Loads list of change logs from a server.
   // Updates change log list UI. Returns deferred.
   refetchChangeLogs(pageToken, callback) {
-    var that = this;
     var defer = api.changeLogs(this.target, this.revision, this.pageSize, pageToken);
     this.lockUI();
     defer
       .then((response) => {
         callback(response);
-        that.unlockUI();
-        this.updatePagerButtons();
       })
       .catch((err) => {
         console.log(err);
-        that.unlockUI();
+      })
+      .finally(() => {
+        this.unlockUI();
         this.updatePagerButtons();
       });
     return defer;
