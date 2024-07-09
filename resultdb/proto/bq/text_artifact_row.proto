@@ -22,7 +22,7 @@ import "go.chromium.org/luci/common/bq/pb/options.proto";
 option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
 
 // TextArtifactRow represents a row in a BigQuery table `luci-resultdb.internal.text_artifacts`.
-// Next ID: 16
+// Next ID: 20
 message TextArtifactRow {
   reserved 14; // artifact_shard
 
@@ -110,4 +110,15 @@ message TextArtifactRow {
   // This is encoded as lowercase hexadecimal characters.
   // The computation is an implementation detail of ResultDB.
   string test_variant_hash = 17;
+
+  // Union of all variants of test results directly included by the invocation.
+  // It will be an empty JSON string "{}", if the artifact is an test-result-level artifact.
+  //
+  // In the protocol buffer, it must be a string as per
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  string invocation_variant_union = 18 [(bqschema.options).bq_type = "JSON"];
+
+  // A hash of the invocation_variant_union.
+  // It will be empty if the artifact is an test-result-level artifact.
+  string invocation_variant_union_hash = 19;
 }

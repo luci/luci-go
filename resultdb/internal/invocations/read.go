@@ -83,6 +83,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.IsSourceSpecFinal,
 		 i.BaselineId,
 		 i.Instructions,
+		 i.TestResultVariantUnion,
 		 i.ExtendedProperties,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
@@ -128,6 +129,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&isSourceSpecFinal,
 			&baselineID,
 			&instructions,
+			&inv.TestResultVariantUnion,
 			&extendedProperties,
 		)
 		if err != nil {

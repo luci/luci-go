@@ -562,24 +562,37 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 		if err != nil {
 			return errors.Annotate(err, "variant to json").Err()
 		}
-
+		invocationVariantHash := ""
+		invocationVariantJSON := pbutil.EmptyJSON
+		// Invocation variant should only be set for invocation level artifacts.
+		if artifact.TestID == "" {
+			invocationVariantJSON, err = pbutil.VariantToJSON(inv.TestResultVariantUnion)
+			if err != nil {
+				return errors.Annotate(err, "invocation variant union to json").Err()
+			}
+			if inv.TestResultVariantUnion != nil {
+				invocationVariantHash = pbutil.VariantHash(inv.TestResultVariantUnion)
+			}
+		}
 		// Everything is ok, send to rowC.
 		// This is guaranteed to be small artifact, so we need only 1 shard.
 		row := &bqpb.TextArtifactRow{
-			Project:             project,
-			Realm:               realm,
-			InvocationId:        string(artifact.InvocationID),
-			TestId:              artifact.TestID,
-			ResultId:            artifact.ResultID,
-			ArtifactId:          artifact.ArtifactID,
-			ContentType:         artifact.ContentType,
-			Content:             string(r.Data),
-			ArtifactContentSize: int32(artifact.Size),
-			ShardContentSize:    int32(artifact.Size),
-			TestStatus:          testStatusToString(artifact.TestStatus),
-			PartitionTime:       timestamppb.New(inv.CreateTime.AsTime()),
-			TestVariant:         variantJSON,
-			TestVariantHash:     artifact.TestVariantHash,
+			Project:                    project,
+			Realm:                      realm,
+			InvocationId:               string(artifact.InvocationID),
+			TestId:                     artifact.TestID,
+			ResultId:                   artifact.ResultID,
+			ArtifactId:                 artifact.ArtifactID,
+			ContentType:                artifact.ContentType,
+			Content:                    string(r.Data),
+			ArtifactContentSize:        int32(artifact.Size),
+			ShardContentSize:           int32(artifact.Size),
+			TestStatus:                 testStatusToString(artifact.TestStatus),
+			PartitionTime:              timestamppb.New(inv.CreateTime.AsTime()),
+			TestVariant:                variantJSON,
+			TestVariantHash:            artifact.TestVariantHash,
+			InvocationVariantUnion:     invocationVariantJSON,
+			InvocationVariantUnionHash: invocationVariantHash,
 		}
 		rowC <- row
 	}
@@ -602,24 +615,37 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 	if err != nil {
 		return errors.Annotate(err, "variant to json").Err()
 	}
-
+	invocationVariantHash := ""
+	invocationVariantJSON := pbutil.EmptyJSON
+	// Invocation variant should only be set for invocation level artifacts.
+	if a.TestID == "" {
+		invocationVariantJSON, err = pbutil.VariantToJSON(inv.TestResultVariantUnion)
+		if err != nil {
+			return errors.Annotate(err, "invocation variant union to json").Err()
+		}
+		if inv.TestResultVariantUnion != nil {
+			invocationVariantHash = pbutil.VariantHash(inv.TestResultVariantUnion)
+		}
+	}
 	input := func() *bqpb.TextArtifactRow {
 		return &bqpb.TextArtifactRow{
-			Project:             project,
-			Realm:               realm,
-			InvocationId:        string(a.InvocationID),
-			TestId:              a.TestID,
-			ResultId:            a.ResultID,
-			ArtifactId:          a.ArtifactID,
-			ShardId:             int32(shardID),
-			ContentType:         a.ContentType,
-			Content:             str.String(),
-			ArtifactContentSize: int32(a.Size),
-			ShardContentSize:    int32(str.Len()),
-			TestStatus:          testStatusToString(a.TestStatus),
-			TestVariant:         variantJSON,
-			TestVariantHash:     a.TestVariantHash,
-			PartitionTime:       timestamppb.New(inv.CreateTime.AsTime()),
+			Project:                    project,
+			Realm:                      realm,
+			InvocationId:               string(a.InvocationID),
+			TestId:                     a.TestID,
+			ResultId:                   a.ResultID,
+			ArtifactId:                 a.ArtifactID,
+			ShardId:                    int32(shardID),
+			ContentType:                a.ContentType,
+			Content:                    str.String(),
+			ArtifactContentSize:        int32(a.Size),
+			ShardContentSize:           int32(str.Len()),
+			TestStatus:                 testStatusToString(a.TestStatus),
+			TestVariant:                variantJSON,
+			TestVariantHash:            a.TestVariantHash,
+			InvocationVariantUnion:     invocationVariantJSON,
+			InvocationVariantUnionHash: invocationVariantHash,
+			PartitionTime:              timestamppb.New(inv.CreateTime.AsTime()),
 			// We don't populated numshards here because we don't know
 			// exactly how many shards we need until we finish scanning.
 			// Still we are not sure if this field is useful (e.g. from bigquery, we can
