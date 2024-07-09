@@ -113,6 +113,14 @@ func TestAlgorithm(t *testing.T) {
 			}
 			test(failure, `reason LIKE "\\_\\%\"'+[]|\x00\r\n\v\u202e\u2066 %"`)
 		})
+		Convey(`Escaping of unicode replacement character / error rune (U+FFFD)`, func() {
+			reason := "a\ufffdb\ufffd"
+
+			failure := &clustering.Failure{
+				Reason: &pb.FailureReason{PrimaryErrorMessage: string(reason)},
+			}
+			test(failure, `reason LIKE "a\ufffdb\ufffd"`)
+		})
 		Convey(`Multiline`, func() {
 			failure := &clustering.Failure{
 				Reason: &pb.FailureReason{

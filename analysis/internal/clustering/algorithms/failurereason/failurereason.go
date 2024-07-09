@@ -213,8 +213,9 @@ func (a *Algorithm) FailureAssociationRule(config *compiledcfg.ProjectConfig, ex
 	}
 	likePattern := clusterLike(config, example)
 
-	// Escape the pattern as a string literal. Double-quoted go
-	// string literals are also valid GoogleSQL string literals.
-	stringLiteral := strconv.QuoteToGraphic(likePattern)
+	// Escape the pattern as a double-quoted string literal suitable
+	// for failure association rules.
+	stringLiteral := clustering.QuoteForRule(likePattern)
+
 	return fmt.Sprintf("reason LIKE %s", stringLiteral)
 }

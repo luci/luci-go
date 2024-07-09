@@ -19,7 +19,6 @@ package testname
 import (
 	"crypto/sha256"
 	"fmt"
-	"strconv"
 
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
@@ -129,8 +128,8 @@ func (a *Algorithm) ClusterTitle(config *compiledcfg.ProjectConfig, example *clu
 func (a *Algorithm) FailureAssociationRule(config *compiledcfg.ProjectConfig, example *clustering.Failure) string {
 	like, ok := clusterLike(config, example)
 	if ok {
-		return fmt.Sprintf("test LIKE %s", strconv.QuoteToGraphic(like))
+		return fmt.Sprintf("test LIKE %s", clustering.QuoteForRule(like))
 	} else {
-		return fmt.Sprintf("test = %s", strconv.QuoteToGraphic(example.TestID))
+		return fmt.Sprintf("test = %s", clustering.QuoteForRule(example.TestID))
 	}
 }

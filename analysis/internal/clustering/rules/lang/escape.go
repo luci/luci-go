@@ -96,6 +96,16 @@ const stringLiteralPattern = `"([^\\"]|\\[abfnrtv\\"]|\\[0-7]{3}|\\x[0-9a-fA-F]{
 // unescapeStringLiteral derives the unescaped string value from an escaped
 // SQL string literal.
 func unescapeStringLiteral(s string) (string, error) {
+	// Don't allow the string literal to contain unescaped unicode replacement
+	// characters (\ufffd, aka '�').
+	// We don't like to see them in failure association rules as they suggest
+	// the presence of Unicode bugs, even though the characters themselves
+	// are valid unicode characters and may be needed in the rule to match
+	// failure reasons which have the same characters in them.
+	if strings.ContainsRune(s, utf8.RuneError) {
+		return "", errors.New("string literal may not contain error rune directly (U+FFFD), use escape sequence '\\ufffd' instead")
+	}
+
 	// Interpret the string as a double-quoted go string
 	// literal, decoding any escape sequences. Except for '\?' and
 	// '\`', which are not supported in golang (but are not needed for
@@ -103,19 +113,11 @@ func unescapeStringLiteral(s string) (string, error) {
 	// Refer to:
 	// https://golang.org/ref/spec#Rune_literals
 	// https://cloud.google.com/bigquery/docs/reference/standard-sql/lexical
-	// In case of an attempt to encode Unicode surrogate values D800-DFFF,
-	// which are illegal in UTF-8 and Standard SQL, strconv inserts
-	// utf8.RuneError (aka "Unicode replacement character").
 	value, err := strconv.Unquote(s)
 	if err != nil {
 		// In most cases invalid strings should have already been
 		// rejected by the lexer.
 		return "", fmt.Errorf("invalid string literal: %s", s)
-	}
-	for _, r := range value {
-		if r == utf8.RuneError {
-			return "", fmt.Errorf("string literal contains invalid unicode code point: %s", s)
-		}
 	}
 	if !utf8.ValidString(value) {
 		// Check string is UTF-8.

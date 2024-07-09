@@ -44,7 +44,7 @@ func TestRules(t *testing.T) {
 				`(((true)))`,
 				`"" = "foo"`,
 				`"" = "'"`,
-				`"" = "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042"`,
+				`"" = "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042\ufffd"`,
 				`"" = test`,
 				`"" = TesT`,
 				`test = "foo"`,
@@ -67,7 +67,10 @@ func TestRules(t *testing.T) {
 		Convey(`Invalid inputs`, func() {
 			invalidInputs := []string{
 				`'' = 'foo'`,                  // Uses single quotes.
+				`"" = "\xff"`,                 // Illegal Unicode string.
+				`"" = "\xff\xfb"`,             // Illegal Unicode string.
 				`"" = "\ud800"`,               // Illegal Unicode surrogate code point (D800-DFFF).
+				`"" = "\udfff"`,               // Illegal Unicode surrogate code point (D800-DFFF).
 				`"" = "\U00110000"`,           // Above maximum Unicode code point (10FFFF).
 				`"" = "\c"`,                   // Illegal escape sequence.
 				`"" = foo`,                    // Bad identifier.
