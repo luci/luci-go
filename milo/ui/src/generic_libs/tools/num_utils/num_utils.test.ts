@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { splitRange, roundDown, roundUp } from './num_utils';
+import { splitRange, roundDown, roundUp, intersect } from './num_utils';
 
 describe('roundUp/Down', () => {
   const list = [1, 3, 5, 7];
@@ -83,5 +83,31 @@ describe('splitRange', () => {
     expect(splitRange([-80, 60], 20)).toEqual([
       -80, -60, -40, -20, 0, 20, 40, 60,
     ]);
+  });
+});
+
+describe('intersect', () => {
+  it('subset', () => {
+    expect(intersect([10, 20], [5, 25])).toEqual([10, 20]);
+  });
+
+  it('superset', () => {
+    expect(intersect([5, 25], [10, 20])).toEqual([10, 20]);
+  });
+
+  it('overlap', () => {
+    expect(intersect([10, 20], [15, 25])).toEqual([15, 20]);
+  });
+
+  it('no overlap', () => {
+    expect(intersect([10, 20], [25, 25])).toEqual(null);
+  });
+
+  it('invalid range', () => {
+    expect(intersect([20, 10], [5, 25])).toEqual(null);
+  });
+
+  it('empty range', () => {
+    expect(intersect([10, 10], [5, 25])).toEqual(null);
   });
 });

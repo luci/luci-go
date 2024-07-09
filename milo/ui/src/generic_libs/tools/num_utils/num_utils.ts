@@ -90,3 +90,19 @@ export function splitRange(range: Range, interval: number): readonly number[] {
 
   return alignedSteps;
 }
+
+/**
+ * Computes `range1` intersects `range2`.
+ *
+ * If the resulting range is empty, returns `null`.
+ */
+export function intersect(range1: Range, range2: Range): Range | null {
+  const [start1, end1] = range1;
+  const [start2, end2] = range2;
+  const start = Math.max(start1, start2);
+  const end = Math.min(end1, end2);
+  if (start >= end) {
+    return null;
+  }
+  return [start, end];
+}
