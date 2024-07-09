@@ -112,47 +112,6 @@ export function toError(from: unknown): Error {
 }
 
 /**
- * Round the number up to a number in the sorted round numbers using linear
- * search.
- *
- * @param num
- * @param sortedRoundNumbers must be sorted in ascending order.
- * @return the rounded down number, or `num` if all numbers in
- *  `sortedRoundNumbers` are less than `num`.
- */
-export function roundUp(num: number, sortedRoundNumbers: readonly number[]) {
-  for (const predefined of sortedRoundNumbers) {
-    if (num <= predefined) {
-      return predefined;
-    }
-  }
-
-  return num;
-}
-
-/**
- * Round the number down to a number in the sorted round numbers linear
- * search.
- *
- * @param num
- * @param sortedRoundNumbers must be sorted in ascending order.
- * @return the rounded up number, or `num` if all numbers in
- *  `sortedRoundNumbers` are greater than `num`.
- */
-export function roundDown(num: number, sortedRoundNumbers: readonly number[]) {
-  let lastNum = num;
-
-  for (const predefined of sortedRoundNumbers) {
-    if (num < predefined) {
-      return lastNum;
-    }
-    lastNum = predefined;
-  }
-
-  return lastNum;
-}
-
-/**
  * Returns a promise, a resolve function to resolve the promise, and a reject
  * function to reject the promise.
  *

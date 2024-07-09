@@ -36,7 +36,7 @@ import {
 import { consumeStore, StoreInstance } from '@/common/store';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { consumer } from '@/generic_libs/tools/lit_context';
-import { roundUp } from '@/generic_libs/tools/utils';
+import { roundUp } from '@/generic_libs/tools/num_utils';
 
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 

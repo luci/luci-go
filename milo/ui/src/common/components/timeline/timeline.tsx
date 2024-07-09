@@ -18,7 +18,7 @@ import { DateTime } from 'luxon';
 import { ReactNode, useMemo } from 'react';
 
 import { PREDEFINED_TIME_INTERVALS } from '@/common/constants/time';
-import { roundDown } from '@/generic_libs/tools/utils';
+import { roundDown } from '@/generic_libs/tools/num_utils';
 
 import { V_GRID_LINE_MAX_GAP } from './constants';
 import { TimelineConfig, TimelineContextProvider } from './context';

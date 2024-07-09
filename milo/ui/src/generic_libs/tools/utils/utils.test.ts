@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { roundDown, roundUp, URLExt } from './utils';
+import { URLExt } from './utils';
 
 describe('URLExt', () => {
   let url: URLExt;
@@ -43,37 +43,5 @@ describe('URLExt', () => {
     expect(newUrlStr).toStrictEqual(
       'https://example.com/path?key1=val1&key1=val2',
     );
-  });
-});
-
-describe('roundUp/Down', () => {
-  const list = [1, 3, 5, 7];
-
-  describe('roundUp', () => {
-    test('should return the next number in the list', () => {
-      expect(roundUp(4, list)).toStrictEqual(5);
-    });
-
-    test("should return the number itself if it's in the list", () => {
-      expect(roundUp(3, list)).toStrictEqual(3);
-    });
-
-    test("should return the number itself if it's larger than any number in the list", () => {
-      expect(roundUp(9, list)).toStrictEqual(9);
-    });
-  });
-
-  describe('roundDown', () => {
-    test('should return the next number in the list', () => {
-      expect(roundDown(4, list)).toStrictEqual(3);
-    });
-
-    test("should return the number itself if it's in the list", () => {
-      expect(roundDown(3, list)).toStrictEqual(3);
-    });
-
-    test("should return the number itself if it's smaller than any number in the list", () => {
-      expect(roundDown(-1, list)).toStrictEqual(-1);
-    });
   });
 });

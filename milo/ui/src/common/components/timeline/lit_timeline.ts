@@ -40,7 +40,7 @@ import {
   NUMERIC_TIME_FORMAT,
 } from '@/common/tools/time_utils';
 import { enumerate } from '@/generic_libs/tools/iter_utils';
-import { roundDown } from '@/generic_libs/tools/utils';
+import { roundDown } from '@/generic_libs/tools/num_utils';
 
 const TOP_AXIS_HEIGHT = 35;
 const BOTTOM_AXIS_HEIGHT = 25;
