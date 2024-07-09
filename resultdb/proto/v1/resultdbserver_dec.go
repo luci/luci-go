@@ -362,3 +362,71 @@ func (s *DecoratedResultDB) QueryInstruction(ctx context.Context, req *QueryInst
 	}
 	return
 }
+
+func (s *DecoratedResultDB) QueryTestVariantArtifactGroups(ctx context.Context, req *QueryTestVariantArtifactGroupsRequest) (rsp *QueryTestVariantArtifactGroupsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryTestVariantArtifactGroups", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryTestVariantArtifactGroups(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryTestVariantArtifactGroups", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryTestVariantArtifacts(ctx context.Context, req *QueryTestVariantArtifactsRequest) (rsp *QueryTestVariantArtifactsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryTestVariantArtifacts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryTestVariantArtifacts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryTestVariantArtifacts", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryInvocationVariantArtifactGroups(ctx context.Context, req *QueryInvocationVariantArtifactGroupsRequest) (rsp *QueryInvocationVariantArtifactGroupsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryInvocationVariantArtifactGroups", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryInvocationVariantArtifactGroups(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryInvocationVariantArtifactGroups", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryInvocationVariantArtifacts(ctx context.Context, req *QueryInvocationVariantArtifactsRequest) (rsp *QueryInvocationVariantArtifactsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryInvocationVariantArtifacts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryInvocationVariantArtifacts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryInvocationVariantArtifacts", rsp, err)
+	}
+	return
+}

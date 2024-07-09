@@ -16,9 +16,11 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/protobuf/timestamp.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/artifact.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
@@ -153,6 +155,28 @@ service ResultDB {
   // If an error occurs while traversing a chain (e.g. circular dependency, permission, not found...),
   // the chain will stop and the rpc will return whatever it has found so far.
   rpc QueryInstruction(QueryInstructionRequest) returns (QueryInstructionResponse) {};
+
+  // Queries result level artifacts that matches a search_string. Support regex or exact match.
+  // Results are grouped by test_id, variant_hash, artifact_id.
+  // Within each group, artifacts are sorted by recency and at most 3 are returned.
+  // To obtain more matching artifacts of a particular group, uses QueryTestVariantArtifacts.
+  rpc QueryTestVariantArtifactGroups(QueryTestVariantArtifactGroupsRequest) returns (
+    QueryTestVariantArtifactGroupsResponse) {}
+
+  // Queries test result artifacts that match a search_string for given test_id, variant_hash and artifact_id.
+  rpc QueryTestVariantArtifacts(QueryTestVariantArtifactsRequest) returns (
+    QueryTestVariantArtifactsResponse) {}
+
+  // Queries invocation level artifacts that matches a search_string. Support regex or exact match.
+  // Results are grouped by variant_union_hash, artifact_id.
+  // Within each group, artifacts are sorted by recency and at most 3 are returned.
+  // To obtain more matching artifacts of a particular group, uses QueryInvocationVariantArtifacts.
+  rpc QueryInvocationVariantArtifactGroups(QueryInvocationVariantArtifactGroupsRequest) returns (
+    QueryInvocationVariantArtifactGroupsResponse) {}
+
+  // Queries invocation artifacts that match a search_string for given variant_union_hash and artifact_id.
+  rpc QueryInvocationVariantArtifacts(QueryInvocationVariantArtifactsRequest) returns (
+    QueryInvocationVariantArtifactsResponse) {}
 }
 
 // A request message for GetInvocation RPC.
@@ -811,4 +835,267 @@ message InstructionDependencyChain {
   // The direct dependency will be at position 0.
   // If the dependency traversing encounters an error, the last node will contain the error.
   repeated Node nodes = 2;
+}
+
+message QueryTestVariantArtifactGroupsRequest {
+  // The LUCI project (required).
+  string project =1;
+
+  // The search string to search in text artifact content (required).
+  // Support regex or exact match.
+  ArtifactContentMatcher search_string = 2;
+
+  // The test id prefix to restrict the scope of the search (optional).
+  string test_id_prefix = 3;
+
+  // The artifact id prefix to restrict the scope of the search (optional).
+  string artifact_id_prefix = 4;
+
+  // The lower bound of the time range to search (exclusive) (required).
+  // start_time must be less than the end time.
+  // The duration between start_time and end_time must not be greater than 7 days.
+  google.protobuf.Timestamp start_time = 5;
+
+  // The upper bound of the time range to search (inclusive) (required).
+  google.protobuf.Timestamp end_time = 6;
+
+  // The maximum number of match groups to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 100; values above 100 will be coerced to 100.
+  int32 page_size = 7;
+
+  // A page token, received from a previous `QueryTestVariantArtifactGroups` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryTestVariantArtifactGroups` must
+  // match the call that provided the page token.
+  string page_token = 8;
+}
+
+message QueryTestVariantArtifactGroupsResponse {
+  // Represents one group of matched artifacts.
+  // test_id, variant_hash and artifact_id form the group key.
+  message MatchGroup {
+    // The LUCI test id.
+    string test_id = 1;
+
+    // The hash of the variant.
+    string variant_hash = 2;
+
+    // The definition of the variant.
+    // Description of one specific way of running the test,
+    // e.g. a specific bucket, builder and a test suite.
+    Variant variant = 3;
+
+    // ID of the artifact.
+    string artifact_id = 4;
+
+    // Artifacts that matches the search for this (test id, variant_hash, artifact id) combination.
+    // Return at most 3 items, ordered by partition time DESC, artifact name ASC.
+    repeated ArtifactMatchingContent artifacts = 5;
+
+    // The total number of matching artifacts for this (test id, variant_hash, artifact id) combination.
+    int32 matching_count = 6;
+  }
+
+  // Test variant artifacts are grouped by test_id, variant_hash and artifact_id.
+  // Groups are ordered by partition_time of the most recent artifact DESC in the group, test id, variant hash, artifact id.
+  repeated MatchGroup groups  = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message QueryTestVariantArtifactsRequest {
+  // The LUCI project (required).
+  string project =1;
+
+  // The search string to search in text artifact content (required).
+  // Support regex or exact match.
+  ArtifactContentMatcher search_string = 2;
+
+  // The test id. (required).
+  string test_id = 3;
+
+  // The variant hash (required).
+  string variant_hash = 4;
+
+  // The artifact id (required).
+  string artifact_id = 5;
+
+  // The lower bound of the time range to search (exclusive) (required).
+  // start_time must be less than the end time.
+  // The duration between start_time and end_time must not be greater than 7 days.
+  google.protobuf.Timestamp start_time = 6;
+
+  // The upper bound of the time range to search (inclusive) (required).
+  google.protobuf.Timestamp end_time = 7;
+
+  // The maximum number of items to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 100; values above 100 will be coerced to 100.
+  int32 page_size = 8;
+
+  // A page token, received from a previous `QueryTestVariantArtifacts` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryTestVariantArtifacts` must
+  // match the call that provided the page token.
+  string page_token = 9;
+}
+
+message QueryTestVariantArtifactsResponse {
+  // Artifacts that matches the search.
+  // Ordered by partition_time DESC, artifact name.
+  repeated ArtifactMatchingContent artifacts = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message QueryInvocationVariantArtifactGroupsRequest {
+  // The LUCI project (required).
+  string project = 1;
+
+  // The search string to search in text artifact content (required).
+  // Support regex or exact match.
+  ArtifactContentMatcher search_string = 2;
+
+  // The artifact id prefix to restrict the scope of the search (optional).
+  string artifact_id_prefix = 3;
+
+  // The lower bound of the time range to search (exclusive) (required).
+  // start_time must be less than the end time.
+  // The duration between start_time and end_time must not be greater than 7 days.
+  google.protobuf.Timestamp start_time = 4;
+
+  // The upper bound of the time range to search (inclusive) (required).
+  google.protobuf.Timestamp end_time = 5;
+
+  // The maximum number of match groups to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 100; values above 100 will be coerced to 100.
+  int32 page_size = 6;
+
+  // A page token, received from a previous `QueryInvocationVariantArtifactGroups` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryInvocationVariantArtifactGroups` must
+  // match the call that provided the page token.
+  string page_token = 7;
+}
+
+message QueryInvocationVariantArtifactGroupsResponse {
+  // Represents one group of matched artifacts.
+  // variant_union_hash and artifact_id form the group key.
+  message MatchGroup {
+    // Hash of the union of all variants of test results directly included by the invocation.
+    string variant_union_hash = 1;
+
+    // Union of all variants of test results directly included by the invocation.
+    // Roughly defines a specific way to run an invocation.
+    Variant variant_union = 2;
+
+    // ID of the artifact.
+    string artifactID = 3;
+
+    // Artifacts that matches the search for this (variant_union_hash, artifact id) combination.
+    // Return at most 3 items, ordered by partition time DESC, artifact name ASC.
+    repeated ArtifactMatchingContent artifacts = 4;
+
+    // The total number of matching artifacts for this (variant_union_hash, artifact id) combination.
+    int32 matching_count = 5;
+  }
+
+  // Invocation variant artifacts  are grouped by variant_union_hash and artifact_id.
+  // Ordered by partition_time of the most recent artifact DESC in the group, variant_union_hash, artifact id.
+  repeated MatchGroup groups  = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message QueryInvocationVariantArtifactsRequest {
+  // The LUCI project (required).
+  string project = 1;
+
+  // The search string to search in text artifact content (required).
+  // Support regex or exact match.
+  ArtifactContentMatcher search_string = 2;
+
+  // Hash of the union of all variants of test results directly included by the invocation (required).
+  string variant_union_hash = 3;
+
+  // The artifact id (required).
+  string artifact_id = 4;
+
+  // The lower bound of the time range to search (exclusive) (required).
+  // start_time must be less than the end time.
+  // The duration between start_time and end_time must not be greater than 7 days.
+  google.protobuf.Timestamp start_time = 5;
+
+  // The upper bound of the time range to search (inclusive) (required).
+  google.protobuf.Timestamp end_time = 6;
+
+  // The maximum number of items to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 100 items will be returned.
+  // The maximum value is 100; values above 100 will be coerced to 100.
+  int32 page_size = 7;
+
+  // A page token, received from a previous `QueryInvocationVariantArtifacts` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryInvocationVariantArtifacts` must
+  // match the call that provided the page token.
+  string page_token = 8;
+}
+
+message QueryInvocationVariantArtifactsResponse {
+  // Artifacts that matches the search.
+  // Ordered by partition_time DESC, artifact name.
+  repeated ArtifactMatchingContent artifacts = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Represent a artifact that contains a match.
+message ArtifactMatchingContent {
+  // Name of the artifact.
+  // - For invocation-level artifacts:
+  //   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
+  // - For test-result-level artifacts:
+  //   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+  string name = 1;
+
+  // Partition time of the artifact.
+  // This is the creation time of the direct parent invocation.
+  google.protobuf.Timestamp partition_time = 2;
+
+  // The test result status, only populated if it is a result level artifact .
+  TestStatus test_status = 3;
+
+  // Part of the artifact that contains a match.
+  // Limit to 10KB to prevent exploding the response size. Prioritize fit in the matching part,
+  // and use the remaining bytes to display the before and after bits of the matched part (at most one more line above and below).
+  string content = 4;
+}
+
+// Used to match a artifact content.
+message ArtifactContentMatcher {
+  oneof matcher {
+    // The string is a regex expression. Use regex match to find matching artifact content.
+    string regex_contain = 1;
+
+    // Use equality match with this string to find matching artifact content.
+    string exact_contain = 2;
+  }
 }
