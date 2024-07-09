@@ -37,7 +37,7 @@ import (
 // InsertClient defines an interface for inserting rows into BigQuery.
 type InsertClient interface {
 	// Insert inserts the given rows into BigQuery.
-	Insert(ctx context.Context, rows []*bqpb.TestResultRow) error
+	Insert(ctx context.Context, rows []*bqpb.TestResultRow, dest ExportDestination) error
 }
 
 // Exporter provides methods to stream test results to BigQuery.
@@ -62,7 +62,7 @@ type Options struct {
 }
 
 // Export exports the test results in the given run verdicts to BigQuery.
-func (e *Exporter) Export(ctx context.Context, verdicts []*rdbpb.RunTestVerdict, opts Options) error {
+func (e *Exporter) Export(ctx context.Context, verdicts []*rdbpb.RunTestVerdict, dest ExportDestination, opts Options) error {
 	// Use the same timestamp for all rows exported in the same batch.
 	insertTime := clock.Now(ctx)
 
@@ -71,7 +71,7 @@ func (e *Exporter) Export(ctx context.Context, verdicts []*rdbpb.RunTestVerdict,
 		return errors.Annotate(err, "prepare rows").Err()
 	}
 
-	err = e.client.Insert(ctx, rows)
+	err = e.client.Insert(ctx, rows, dest)
 	if err != nil {
 		return errors.Annotate(err, "insert rows").Err()
 	}

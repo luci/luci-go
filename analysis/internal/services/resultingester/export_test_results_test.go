@@ -203,31 +203,44 @@ func TestExportTestResults(t *testing.T) {
 			},
 		}
 
-		expectedCheckpoint := checkpoints.Checkpoint{
-			Key: checkpoints.Key{
-				Project:    "rootproject",
-				ResourceID: "fake.rdb.host/test-root-invocation-name/test-invocation-name",
-				ProcessID:  "result-ingestion/export-test-results",
-				Uniquifier: "1",
+		expectedCheckpoints := []checkpoints.Checkpoint{
+			{
+				Key: checkpoints.Key{
+					Project:    "rootproject",
+					ResourceID: "fake.rdb.host/test-root-invocation-name/test-invocation-name",
+					ProcessID:  "result-ingestion/export-test-results/partitioned-by-day",
+					Uniquifier: "1",
+				},
+				// Creation and expiry time not validated.
 			},
-			// Creation and expiry time not validated.
+			{
+				Key: checkpoints.Key{
+					Project:    "rootproject",
+					ResourceID: "fake.rdb.host/test-root-invocation-name/test-invocation-name",
+					ProcessID:  "result-ingestion/export-test-results/partitioned-by-month",
+					Uniquifier: "1",
+				},
+				// Creation and expiry time not validated.
+			},
 		}
 
 		Convey(`Baseline`, func() {
 			err := ingester.Ingest(ctx, inputs)
 			So(err, ShouldBeNil)
 
-			So(exportClient.Insertions, ShouldResembleProto, expectedResults)
-			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+			So(exportClient.InsertionsByDestinationKey, ShouldHaveLength, 2)
+			So(exportClient.InsertionsByDestinationKey["partitioned-by-day"], ShouldResembleProto, expectedResults)
+			So(exportClient.InsertionsByDestinationKey["partitioned-by-month"], ShouldResembleProto, expectedResults)
+			So(verifyCheckpoints(ctx, expectedCheckpoints...), ShouldBeNil)
 
 			Convey(`Results are not exported again if the process is re-run`, func() {
-				exportClient.Insertions = nil
+				exportClient.InsertionsByDestinationKey = map[string][]*bqpb.TestResultRow{}
 
 				err = ingester.Ingest(ctx, inputs)
 				So(err, ShouldBeNil)
 
 				// Nothing should be exported because the checkpoint already exists.
-				So(exportClient.Insertions, ShouldBeEmpty)
+				So(exportClient.InsertionsByDestinationKey, ShouldBeEmpty)
 			})
 		})
 		Convey(`Without sources`, func() {
@@ -243,8 +256,10 @@ func TestExportTestResults(t *testing.T) {
 				r.SourceRef = nil
 				r.SourceRefHash = ""
 			}
-			So(exportClient.Insertions, ShouldResembleProto, expectedResults)
-			So(verifyCheckpoints(ctx, expectedCheckpoint), ShouldBeNil)
+			So(exportClient.InsertionsByDestinationKey, ShouldHaveLength, 2)
+			So(exportClient.InsertionsByDestinationKey["partitioned-by-day"], ShouldResembleProto, expectedResults)
+			So(exportClient.InsertionsByDestinationKey["partitioned-by-month"], ShouldResembleProto, expectedResults)
+			So(verifyCheckpoints(ctx, expectedCheckpoints...), ShouldBeNil)
 		})
 	})
 }

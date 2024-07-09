@@ -25,18 +25,18 @@ import (
 type FakeClient struct {
 	// Insertions is the set of test results which were attempted
 	// to be exported using the client.
-	Insertions []*bqpb.TestResultRow
+	InsertionsByDestinationKey map[string][]*bqpb.TestResultRow
 }
 
 // NewFakeClient initialises a new client for exporting test results.
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
-		Insertions: []*bqpb.TestResultRow{},
+		InsertionsByDestinationKey: make(map[string][]*bqpb.TestResultRow),
 	}
 }
 
 // Insert inserts the given rows.
-func (fc *FakeClient) Insert(ctx context.Context, rows []*bqpb.TestResultRow) error {
-	fc.Insertions = append(fc.Insertions, rows...)
+func (fc *FakeClient) Insert(ctx context.Context, rows []*bqpb.TestResultRow, dest ExportDestination) error {
+	fc.InsertionsByDestinationKey[dest.Key] = append(fc.InsertionsByDestinationKey[dest.Key], rows...)
 	return nil
 }

@@ -46,7 +46,7 @@ const (
 // backfill process.
 // Data after this day needs to be manually backfilled with a different query
 // that only backfills data not already in the table.
-var mergeAfterDay = time.Date(2024, 5, 8, 0, 0, 0, 0, time.UTC)
+var mergeAfterDay = time.Date(2024, 7, 7, 0, 0, 0, 0, time.UTC)
 
 var tc = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        taskClass,
@@ -128,7 +128,7 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 
 	// Check if we have previously backfilled this date. This is to make the
 	// task resilient to retries and avoid backfill mistakes.
-	query := client.Query(`SELECT TRUE FROM internal.test_results WHERE TIMESTAMP_TRUNC(partition_time, DAY) = @partitionDay LIMIT 1`)
+	query := client.Query(`SELECT TRUE FROM internal.test_results_by_month WHERE TIMESTAMP_TRUNC(partition_time, DAY) = @partitionDay LIMIT 1`)
 	query.Parameters = []bigquery.QueryParameter{
 		{Name: "partitionDay", Value: task.Day.AsTime()},
 	}
@@ -153,33 +153,33 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 
 	logging.Infof(ctx, "Continuing with backfill of day %v...", task.Day.AsTime())
 	query = client.Query(`
-		INSERT INTO internal.test_results (project, test_id, variant, variant_hash, invocation, partition_time, parent, name, result_id, expected, status, summary_html, start_time, duration_secs, tags, failure_reason, skip_reason, properties, sources, source_ref, source_ref_hash, test_metadata, insert_time)
+		INSERT INTO internal.test_results_by_month (project, test_id, variant, variant_hash, invocation, partition_time, parent, name, result_id, expected, status, summary_html, start_time, duration_secs, tags, failure_reason, skip_reason, properties, sources, source_ref, source_ref_hash, test_metadata, insert_time)
 		SELECT
-			v.project,
-			v.test_id,
-			v.variant,
-			v.variant_hash,
-			STRUCT(v.invocation.id as id, v.invocation.realm as realm) as invocation,
-			v.partition_time,
-			STRUCT(r.parent.id as id, CAST([] AS ARRAY<STRUCT<key STRING, value STRING>>) as tags, CAST(NULL as STRING) as realm, CAST(NULL AS JSON) as properties) as parent,
+			r.project,
+			r.test_id,
+			r.variant,
+			r.variant_hash,
+			r.invocation,
+			r.partition_time,
+			r.parent,
 			r.name,
 			r.result_id,
 			r.expected,
 			r.status,
 			r.summary_html,
 			r.start_time,
-			r.duration as duration_secs,
+			r.duration_secs,
 			r.tags,
 			r.failure_reason,
 			r.skip_reason,
 			r.properties,
-			STRUCT(v.sources.gitiles_commit, ARRAY(SELECT STRUCT(cl.host, cl.project, cl.change, cl.patchset, cl.owner_kind) FROM UNNEST(v.sources.changelists) cl), v.sources.is_dirty) as sources,
-			v.source_ref,
-			v.source_ref_hash,
-			v.test_metadata,
-			v.insert_time
-		FROM internal.test_verdicts v, UNNEST(results) r
-		WHERE TIMESTAMP_TRUNC(v.partition_time, DAY) = @partitionDay
+			r.sources,
+			r.source_ref,
+			r.source_ref_hash,
+			r.test_metadata,
+			r.insert_time
+		FROM internal.test_results r
+		WHERE TIMESTAMP_TRUNC(r.partition_time, DAY) = @partitionDay
 	`)
 	query.Parameters = []bigquery.QueryParameter{
 		{Name: "partitionDay", Value: task.Day.AsTime()},
@@ -201,38 +201,38 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 func mergingBackfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfill) error {
 	logging.Infof(ctx, "Performing merging backfill of day %v...", task.Day.AsTime())
 	query := client.Query(`
-		INSERT INTO internal.test_results (project, test_id, variant, variant_hash, invocation, partition_time, parent, name, result_id, expected, status, summary_html, start_time, duration_secs, tags, failure_reason, skip_reason, properties, sources, source_ref, source_ref_hash, test_metadata, insert_time)
+		INSERT INTO internal.test_results_by_month (project, test_id, variant, variant_hash, invocation, partition_time, parent, name, result_id, expected, status, summary_html, start_time, duration_secs, tags, failure_reason, skip_reason, properties, sources, source_ref, source_ref_hash, test_metadata, insert_time)
 		SELECT
-			v.project,
-			v.test_id,
-			v.variant,
-			v.variant_hash,
-			STRUCT(v.invocation.id as id, v.invocation.realm as realm) as invocation,
-			v.partition_time,
-			STRUCT(r.parent.id as id, CAST([] AS ARRAY<STRUCT<key STRING, value STRING>>) as tags, CAST(NULL as STRING) as realm, CAST(NULL AS JSON) as properties) as parent,
+			r.project,
+			r.test_id,
+			r.variant,
+			r.variant_hash,
+			r.invocation,
+			r.partition_time,
+			r.parent,
 			r.name,
 			r.result_id,
 			r.expected,
 			r.status,
 			r.summary_html,
 			r.start_time,
-			r.duration as duration_secs,
+			r.duration_secs,
 			r.tags,
 			r.failure_reason,
 			r.skip_reason,
 			r.properties,
-			STRUCT(v.sources.gitiles_commit, ARRAY(SELECT STRUCT(cl.host, cl.project, cl.change, cl.patchset, cl.owner_kind) FROM UNNEST(v.sources.changelists) cl), v.sources.is_dirty) as sources,
-			v.source_ref,
-			v.source_ref_hash,
-			v.test_metadata,
-			v.insert_time
-		FROM internal.test_verdicts v, UNNEST(results) r
+			r.sources,
+			r.source_ref,
+			r.source_ref_hash,
+			r.test_metadata,
+			r.insert_time
+		FROM internal.test_results r
 		LEFT JOIN (
 			SELECT *
-			FROM internal.test_results
-			WHERE TIMESTAMP_ADD(@partitionDay, INTERVAL 3 DAY) > partition_time AND partition_time >= @partitionDay
+			FROM internal.test_results_by_month
+			WHERE TIMESTAMP_TRUNC(partition_time, DAY) = @partitionDay
 		) tr ON v.project = tr.project AND v.invocation.id = tr.invocation.id AND r.name = tr.name
-		WHERE TIMESTAMP_TRUNC(v.partition_time, DAY) = @partitionDay
+		WHERE TIMESTAMP_TRUNC(r.partition_time, DAY) = @partitionDay
 		  -- A row does not exist in the table for the given (project, invocation, test result name).
 		  AND tr.name IS NULL
 	`)

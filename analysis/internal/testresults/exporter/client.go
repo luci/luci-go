@@ -84,24 +84,25 @@ type Client struct {
 }
 
 // schemaApplier ensures BQ schema matches the row proto definitions.
-var schemaApplier = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(1))
+var schemaApplier = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(2))
 
-func (c *Client) ensureSchema(ctx context.Context) error {
+func (c *Client) ensureSchema(ctx context.Context, dst ExportDestination) error {
 	// On new deployments, the internal dataset may have to be manually
 	// created.
-	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
-	if err := schemaApplier.EnsureTable(ctx, table, tableMetadata, bq.UpdateMetadata()); err != nil {
-		return errors.Annotate(err, "ensuring test results table").Err()
+	tableName := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(dst.tableName)
+	if err := schemaApplier.EnsureTable(ctx, tableName, dst.tableMetadata, bq.UpdateMetadata()); err != nil {
+		return errors.Annotate(err, "ensuring test results (by partition time) table").Err()
 	}
+
 	return nil
 }
 
 // Insert inserts the given rows in BigQuery.
-func (c *Client) Insert(ctx context.Context, rows []*bqpb.TestResultRow) error {
-	if err := c.ensureSchema(ctx); err != nil {
+func (c *Client) Insert(ctx context.Context, rows []*bqpb.TestResultRow, dest ExportDestination) error {
+	if err := c.ensureSchema(ctx, dest); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
-	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, tableName)
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, dest.tableName)
 	writer := bqutil.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {

@@ -30,14 +30,24 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-// tableName is the name of the exported BigQuery table.
-const tableName = "test_results"
-
 const partitionExpirationTime = 510 * 24 * time.Hour // 510 days, or 540 days minus 30 days deletion time.
 
 const rowMessage = "luci.analysis.bq.TestResultRow"
 
-var tableMetadata *bigquery.TableMetadata
+type ExportDestination struct {
+	// A unique key for the export destination, using only characters [a-z\-].
+	Key string
+	// The name of the table in the internal dataset.
+	tableName string
+	// The desired schema of the table.
+	tableMetadata *bigquery.TableMetadata
+}
+
+// ByDayTable is a BigQuery table optimised for access by single partition day(s) at a time.
+var ByDayTable ExportDestination
+
+// ByMonthTable is a BigQuery table optimised for accessing many months of data for each test_id.
+var ByMonthTable ExportDestination
 
 // tableSchemaDescriptor is a self-contained DescriptorProto for describing
 // row protocol buffers sent to the BigQuery Write API.
@@ -53,19 +63,45 @@ func init() {
 		panic(err)
 	}
 
-	tableMetadata = &bigquery.TableMetadata{
-		TimePartitioning: &bigquery.TimePartitioning{
-			Type:       bigquery.DayPartitioningType,
-			Expiration: partitionExpirationTime,
-			Field:      "partition_time",
+	ByDayTable = ExportDestination{
+		Key:       "partitioned-by-day",
+		tableName: "test_results",
+		tableMetadata: &bigquery.TableMetadata{
+			TimePartitioning: &bigquery.TimePartitioning{
+				Type:       bigquery.DayPartitioningType,
+				Expiration: partitionExpirationTime,
+				Field:      "partition_time",
+			},
+			Clustering: &bigquery.Clustering{
+				Fields: []string{"project", "test_id"},
+			},
+			Description: "Contains test results produced by all LUCI Projects. Optimised for access over a narrow range of partition dates.",
+			// Relax ensures no fields are marked "required".
+			Schema: schema.Relax(),
+			Labels: map[string]string{bq.MetadataVersionKey: "1"},
 		},
-		Clustering: &bigquery.Clustering{
-			Fields: []string{"project", "test_id"},
+	}
+
+	// Table optimised for access by test_id, (variant_hash) over long time ranges.
+	ByMonthTable = ExportDestination{
+		Key:       "partitioned-by-month",
+		tableName: "test_results_by_month",
+		tableMetadata: &bigquery.TableMetadata{
+			TimePartitioning: &bigquery.TimePartitioning{
+				Type: bigquery.MonthPartitioningType,
+				// A month is up to 30 days longer than a day, adjust
+				// expiration time accordingly.
+				Expiration: partitionExpirationTime - 30*24*time.Hour,
+				Field:      "partition_time",
+			},
+			Clustering: &bigquery.Clustering{
+				Fields: []string{"project", "test_id", "variant_hash"},
+			},
+			Description: "Contains test results produced by all LUCI Projects, optimised for access by test ID over long time ranges.",
+			// Relax ensures no fields are marked "required".
+			Schema: schema.Relax(),
+			Labels: map[string]string{bq.MetadataVersionKey: "1"},
 		},
-		Description: "Contains test results produced by all LUCI Projects.",
-		// Relax ensures no fields are marked "required".
-		Schema: schema.Relax(),
-		Labels: map[string]string{bq.MetadataVersionKey: "1"},
 	}
 }
 

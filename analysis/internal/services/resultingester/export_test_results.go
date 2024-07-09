@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth/realms"
@@ -53,10 +54,29 @@ func (e *TestResultsExporter) Ingest(ctx context.Context, input Inputs) (err err
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.TestResultsExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
+	destinations := []exporter.ExportDestination{
+		exporter.ByDayTable,
+		exporter.ByMonthTable,
+	}
+	for _, dest := range destinations {
+		err := e.exportTo(ctx, input, dest)
+		if err != nil {
+			return errors.Annotate(err, "export to %q", dest.Key).Err()
+		}
+	}
+	return nil
+}
+
+// Ingest exports the provided test results to BigQuery.
+func (e *TestResultsExporter) exportTo(ctx context.Context, input Inputs, dest exporter.ExportDestination) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.TestResultsExporter.exportTo",
+		attribute.String("destination", dest.Key))
+	defer func() { tracing.End(s, err) }()
+
 	key := checkpoints.Key{
 		Project:    input.Project,
 		ResourceID: fmt.Sprintf("%s/%s/%s", input.ResultDBHost, input.RootInvocationID, input.InvocationID),
-		ProcessID:  "result-ingestion/export-test-results",
+		ProcessID:  fmt.Sprintf("result-ingestion/export-test-results/%s", dest.Key),
 		Uniquifier: fmt.Sprintf("%v", input.PageNumber),
 	}
 	exists, err := checkpoints.Exists(span.Single(ctx), key)
@@ -77,7 +97,7 @@ func (e *TestResultsExporter) Ingest(ctx context.Context, input Inputs) (err err
 		Parent:           input.Parent,
 		Sources:          input.Sources,
 	}
-	err = e.exporter.Export(ctx, input.Verdicts, exportOptions)
+	err = e.exporter.Export(ctx, input.Verdicts, dest, exportOptions)
 	if err != nil {
 		return errors.Annotate(err, "export").Err()
 	}

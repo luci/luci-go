@@ -23,18 +23,24 @@ import (
 func TestSchema(t *testing.T) {
 	t.Parallel()
 	Convey(`With Schema`, t, func() {
-		var fieldNames []string
-		for _, field := range tableMetadata.Schema {
-			fieldNames = append(fieldNames, field.Name)
-		}
-		Convey(`Time partitioning field is defined`, func() {
-			partitioningField := tableMetadata.TimePartitioning.Field
+		destinations := []ExportDestination{ByDayTable, ByMonthTable}
+		for _, destination := range destinations {
+			So(destination.Key, ShouldNotBeEmpty)
+			So(destination.tableName, ShouldNotBeEmpty)
+
+			var fieldNames []string
+			for _, field := range destination.tableMetadata.Schema {
+				fieldNames = append(fieldNames, field.Name)
+			}
+
+			// Time partitioning field is defined
+			partitioningField := destination.tableMetadata.TimePartitioning.Field
 			So(partitioningField, ShouldBeIn, fieldNames)
-		})
-		Convey(`Clustering fields are defined`, func() {
-			for _, clusteringField := range tableMetadata.Clustering.Fields {
+
+			// Clustering fields are defined.
+			for _, clusteringField := range destination.tableMetadata.Clustering.Fields {
 				So(clusteringField, ShouldBeIn, fieldNames)
 			}
-		})
+		}
 	})
 }
