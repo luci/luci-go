@@ -37,7 +37,13 @@
       <!-- Load change-log-header-template -->
     </div>
 
-    <table class="table table-hover">
+    <!-- Alert to show if there are no change logs. -->
+    <div id="change-log-empty-alert" style="display: none;" class="alert alert-primary my-4" role="alert">
+      <i class="bi bi-info-circle-fill me-1"></i>
+      No change logs found.
+    </div>
+
+    <table id="change-log-table" class="table table-hover">
       <thead>
         <tr>
           <th scope="col" style="width: 80px">Rev</th>

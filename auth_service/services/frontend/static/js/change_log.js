@@ -176,6 +176,10 @@ class ChangeLogContent extends common.HidableElement {
 
     // Element for change log header.
     this.header = this.element.querySelector('#change-log-header');
+    // Element for alert of no change logs found.
+    this.emptyAlert = this.element.querySelector('#change-log-empty-alert');
+    // Element for the table of change logs.
+    this.table = this.element.querySelector('#change-log-table');
     // Element for change log table body.
     this.tableBody = this.element.querySelector('#change-log-body');
     // Element for change log details pop-up.
@@ -212,6 +216,16 @@ class ChangeLogContent extends common.HidableElement {
     next.addEventListener('click', () => {
       this.nextClicked();
     });
+  }
+
+  #setAlertVisibility(show) {
+    console.log('alert visibility called with', show);
+    this.emptyAlert.style.display = show ? 'block' : 'none';
+  }
+
+  #setTableVisibility(show) {
+    console.log('table visibility called with', show);
+    this.table.style.display = show ? 'table' : 'none';
   }
 
   // initialize sets the header and fetches the first page of change logs.
@@ -320,7 +334,12 @@ class ChangeLogContent extends common.HidableElement {
     this.lockUI();
     return api.changeLogs(this.target, this.revision, this.pageSize, pageToken)
       .then((response) => {
-        onSuccess(response);
+        // Normalize the response as empty values may not be set.
+        const normalized = {
+          changes: response.changes || [],
+          nextPageToken: response.nextPageToken || null,
+        };
+        onSuccess(normalized);
       })
       .catch((err) => {
         this.hide();
@@ -378,9 +397,19 @@ class ChangeLogContent extends common.HidableElement {
     this.tableBody.replaceChildren();
     this.tooltips.forEach(t => t.dispose());
     this.tooltips = [];
-    logs.map((log) => {
-      addElement(log);
-    });
+
+    if (logs.length > 0) {
+      this.#setAlertVisibility(false);
+      logs.map((log) => {
+        addElement(log);
+      });
+      this.#setTableVisibility(true);
+      return;
+    }
+
+    // Show the alert for empty results instead.
+    this.#setTableVisibility(false);
+    this.#setAlertVisibility(true);
   }
 
   // Shows a popup with details of a single change.
