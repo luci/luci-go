@@ -421,15 +421,9 @@ message CustomMetric {
   // * etc
   repeated string fields = 3;
 
-  // True if the metric is disabled.
-  //
-  // This is useful for pausing a metric report pipeline temporary
-  // in an emergency situation.
-  bool disabled = 4;
-
   // Metric class determines which data to be collected and reported
   // to the metric.
   oneof class {
-      CustomBuildMetricBase metric_base = 5;
+      CustomBuildMetricBase metric_base = 4;
   }
 }
