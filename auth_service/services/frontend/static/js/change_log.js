@@ -149,8 +149,25 @@ const authDBChangeToTextBlob = (change) => {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Element for change log popup.
+class ChangeLogModal {
+  constructor(element) {
+    // Root DOM element.
+    this.element = document.querySelector(element);
+    this.modal = new bootstrap.Modal(this.element);
+
+    this.detailsSection = this.element.querySelector('#details-text');
+  }
+
+  showDetails(change) {
+    this.detailsSection.textContent = authDBChangeToTextBlob(change);
+    this.modal.show();
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 class ChangeLogTable {
-  constructor(headerElement, contentElement, modalElement, target, revision) {
+  constructor(headerElement, contentElement, target, revision, changeLogModal) {
     // Templates to clone when constructing elements.
     this.headerTemplate = document.querySelector('#change-log-header-template');
     this.rowTemplate = document.querySelector('#change-log-row-template');
@@ -159,8 +176,8 @@ class ChangeLogTable {
     this.headerElement = document.getElementById(headerElement);
     // Element for change log table content.
     this.contentElement = document.getElementById(contentElement);
-    // Element for change log popup.
-    this.modalElement = document.getElementById(modalElement);
+    // Modal for change log details.
+    this.changeLogModal = changeLogModal;
     // If set, limits change log queries to given target.
     this.target = target;
     // If set, limits change log queries to specific revision only.
@@ -347,11 +364,7 @@ class ChangeLogTable {
       return;
     }
 
-    var details = this.modalElement.querySelector('#details-text');
-    details.textContent = authDBChangeToTextBlob(change);
-
-    var myModal = new bootstrap.Modal(this.modalElement);
-    myModal.show();
+    this.changeLogModal.showDetails(change);
   }
 
   // Locks UI actions before AJAX.
@@ -368,6 +381,7 @@ class ChangeLogTable {
 window.onload = () => {
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const changeLogContent = new common.HidableElement('#change-log-content', false);
+  const changeLogModal = new ChangeLogModal('#change-log-modal');
 
   const target = common.getQueryParameter('target');
   let authDbRev = common.getQueryParameter('auth_db_rev');
@@ -375,7 +389,8 @@ window.onload = () => {
     authDbRev = parseInt(authDbRev);
   }
 
-  const changeLogTable = new ChangeLogTable('change-log-header', 'change-log-body', 'change-log-details', target, authDbRev)
+  const changeLogTable = new ChangeLogTable(
+    'change-log-header', 'change-log-body', target, authDbRev, changeLogModal);
   changeLogTable.updateHeader();
 
   loadingBox.setLoadStatus(true);
