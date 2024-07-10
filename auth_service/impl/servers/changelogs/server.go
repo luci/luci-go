@@ -21,6 +21,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/pagination"
+
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 )
@@ -34,7 +37,14 @@ type Server struct {
 func (*Server) ListChangeLogs(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (*rpcpb.ListChangeLogsResponse, error) {
 	changes, nextPageToken, err := model.GetAllAuthDBChange(ctx, req.GetTarget(), req.GetAuthDbRev(), req.GetPageSize(), req.GetPageToken())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to fetch change logs: %s", err)
+		switch {
+		case errors.Is(err, model.ErrInvalidTarget):
+			return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		case errors.Is(err, pagination.ErrInvalidPageToken):
+			return nil, status.Errorf(codes.InvalidArgument, "Invalid page token")
+		default:
+			return nil, status.Errorf(codes.Internal, "Failed to fetch change logs: %s", err)
+		}
 	}
 
 	changeList := make([]*rpcpb.AuthDBChange, len(changes))

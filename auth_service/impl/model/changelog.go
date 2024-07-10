@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/pagination"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -84,6 +85,10 @@ const (
 )
 
 var (
+	// ErrInvalidTarget is returned if the target for a change log listing
+	// query is invalid.
+	ErrInvalidTarget = errors.New("invalid target")
+
 	targetRegexp = regexp.MustCompile(`^[0-9a-zA-Z_]{1,40}\$` + // entity kind
 		`[0-9a-zA-Z_\-\./ @]{1,300}` + // entity ID (group, IP allowlist)
 		`(\$[0-9a-zA-Z_@\-\./\:\* ]{1,200})?$`) // optional subentity ID
@@ -263,6 +268,19 @@ func ChangeID(ctx context.Context, change *AuthDBChange) (string, error) {
 	return fmt.Sprintf("%s!%d", change.Target, change.ChangeType), nil
 }
 
+// targetError is a wrapped ErrInvalidTarget with the target value recorded.
+type targetError struct {
+	target string
+}
+
+func (t *targetError) Error() string {
+	return fmt.Sprintf("Invalid change log target %q", t.target)
+}
+
+func (*targetError) Unwrap() error {
+	return ErrInvalidTarget
+}
+
 // GetAllAuthDBChange returns all the AuthDBChange entities with given target
 // and authDBRev. If target is an empty string/authDBRev equals to 0, no
 // target/authDBRev is specified.
@@ -275,7 +293,7 @@ func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pag
 	query := datastore.NewQuery("AuthDBChange").Ancestor(ancestor).Order("-__key__")
 	if target != "" {
 		if !targetRegexp.MatchString(target) {
-			return nil, "", errors.Reason("Invalid target %s", target).Err()
+			return nil, "", &targetError{target: target}
 		}
 		query = query.Eq("target", target)
 	}
@@ -284,7 +302,7 @@ func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pag
 	if pageToken != "" {
 		cursor, err = datastore.DecodeCursor(ctx, pageToken)
 		if err != nil {
-			return nil, "", errors.Annotate(err, "error decoding cursor from pageToken").Err()
+			return nil, "", pagination.ErrInvalidPageToken
 		}
 	}
 	if cursor != nil {

@@ -230,7 +230,7 @@ func TestGetAllAuthDBChange(t *testing.T) {
 		})
 		Convey("Return error when target is invalid", func() {
 			_, _, err := GetAllAuthDBChange(ctx, "groupname", 0, 10, "")
-			So(err, ShouldErrLike, "Invalid target groupname")
+			So(err, ShouldErrLike, "Invalid change log target \"groupname\"")
 		})
 	})
 }
