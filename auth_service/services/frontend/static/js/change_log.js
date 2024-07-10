@@ -166,18 +166,25 @@ class ChangeLogModal {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-class ChangeLogTable {
-  constructor(headerElement, contentElement, target, revision, changeLogModal) {
+class ChangeLogContent extends common.HidableElement {
+  constructor(element, target, revision, changeLogModal, loadingBox, errorBox) {
+    super(element, false);
+
     // Templates to clone when constructing elements.
     this.headerTemplate = document.querySelector('#change-log-header-template');
     this.rowTemplate = document.querySelector('#change-log-row-template');
 
     // Element for change log header.
-    this.headerElement = document.getElementById(headerElement);
-    // Element for change log table content.
-    this.contentElement = document.getElementById(contentElement);
-    // Modal for change log details.
+    this.header = this.element.querySelector('#change-log-header');
+    // Element for change log table body.
+    this.tableBody = this.element.querySelector('#change-log-body');
+    // Element for change log details pop-up.
     this.changeLogModal = changeLogModal;
+    // Element for loading spinner.
+    this.loadingBox = loadingBox;
+    // Element for API error.
+    this.errorBox = errorBox;
+
     // If set, limits change log queries to given target.
     this.target = target;
     // If set, limits change log queries to specific revision only.
@@ -201,18 +208,28 @@ class ChangeLogTable {
     var next = pager.querySelector('#next');
     prev.addEventListener('click', () => {
       this.prevClicked();
-    })
+    });
     next.addEventListener('click', () => {
       this.nextClicked();
-    })
+    });
   }
 
-  // Refetches the current page.
-  refresh() {
-    return this.refetchChangeLogs(this.pageToken, (response) => {
-      this.setChangeLogList(response.changes);
-      this.nextPageToken = response.nextPageToken;
-    })
+  // initialize sets the header and fetches the first page of change logs.
+  initialize() {
+    this.updateHeader();
+
+    this.loadingBox.setLoadStatus(true);
+    this.refetchChangeLogs({
+      pageToken: this.pageToken,
+      onSuccess: (response) => {
+        this.setChangeLogList(response.changes);
+        this.nextPageToken = response.nextPageToken;
+        this.show();
+      },
+      onSettled: () => {
+        this.loadingBox.setLoadStatus(false);
+      },
+    });
   }
 
   // Called when '<- Newer' button is clicked.
@@ -221,12 +238,15 @@ class ChangeLogTable {
       return;
     }
     var prev = this.prevPageTokens[this.prevPageTokens.length - 1];
-    return this.refetchChangeLogs(prev, (response) => {
-      this.setChangeLogList(response.changes);
-      this.prevPageTokens.pop();
-      this.pageToken = prev;
-      this.nextPageToken = response.nextPageToken;
-    })
+    this.refetchChangeLogs({
+      pageToken: prev,
+      onSuccess: (response) => {
+        this.setChangeLogList(response.changes);
+        this.prevPageTokens.pop();
+        this.pageToken = prev;
+        this.nextPageToken = response.nextPageToken;
+      },
+    });
   }
 
   // Called when 'Older ->' button is clicked.
@@ -235,12 +255,15 @@ class ChangeLogTable {
       return;
     }
     var next = this.nextPageToken;
-    return this.refetchChangeLogs(next, (response) => {
-      this.setChangeLogList(response.changes);
-      this.prevPageTokens.push(this.pageToken);
-      this.pageToken = next;
-      this.nextPageToken = response.nextPageToken;
-    })
+    this.refetchChangeLogs({
+      pageToken: next,
+      onSuccess: (response) => {
+        this.setChangeLogList(response.changes);
+        this.prevPageTokens.push(this.pageToken);
+        this.pageToken = next;
+        this.nextPageToken = response.nextPageToken;
+      },
+    });
   }
 
   // Disables or enables pager buttons based on 'prevCursor' and 'nextCursor'.
@@ -286,26 +309,28 @@ class ChangeLogTable {
       kind.textContent = t.kind;
     }
 
-    this.headerElement.appendChild(clone);
+    this.header.appendChild(clone);
   }
 
-  // Loads list of change logs from a server.
-  // Updates change log list UI. Returns deferred.
-  refetchChangeLogs(pageToken, callback) {
-    var defer = api.changeLogs(this.target, this.revision, this.pageSize, pageToken);
+  // Fetches a page of change logs, using the given page token.
+  // If successful, onSuccess is called with the response.
+  // Handles an API error if one occurs.
+  // Once the fetch promise is settled, onSettled is called.
+  refetchChangeLogs({ pageToken, onSuccess = (response) => { }, onSettled = () => { } }) {
     this.lockUI();
-    defer
+    return api.changeLogs(this.target, this.revision, this.pageSize, pageToken)
       .then((response) => {
-        callback(response);
+        onSuccess(response);
       })
       .catch((err) => {
-        console.log(err);
+        this.hide();
+        this.errorBox.showError('Listing change logs failed', err.error);
       })
       .finally(() => {
+        onSettled();
         this.unlockUI();
         this.updatePagerButtons();
       });
-    return defer;
   }
 
   // Update change log table content.
@@ -347,10 +372,10 @@ class ChangeLogTable {
         this.presentChange(log);
       });
 
-      this.contentElement.appendChild(clone);
+      this.tableBody.appendChild(clone);
     }
 
-    this.contentElement.replaceChildren();
+    this.tableBody.replaceChildren();
     this.tooltips.forEach(t => t.dispose());
     this.tooltips = [];
     logs.map((log) => {
@@ -379,27 +404,18 @@ class ChangeLogTable {
 }
 
 window.onload = () => {
-  const loadingBox = new common.LoadingBox('#loading-box-placeholder');
-  const changeLogContent = new common.HidableElement('#change-log-content', false);
   const changeLogModal = new ChangeLogModal('#change-log-modal');
+  const loadingBox = new common.LoadingBox('#loading-box-placeholder');
+  const errorBox = new common.ErrorBox('#api-error-placeholder');
 
+  // Parse the URL for the target and AuthDB revision parameters.
   const target = common.getQueryParameter('target');
   let authDbRev = common.getQueryParameter('auth_db_rev');
   if (authDbRev) {
     authDbRev = parseInt(authDbRev);
   }
 
-  const changeLogTable = new ChangeLogTable(
-    'change-log-header', 'change-log-body', target, authDbRev, changeLogModal);
-  changeLogTable.updateHeader();
-
-  loadingBox.setLoadStatus(true);
-  changeLogContent.hide();
-  changeLogTable.refresh()
-    .then(() => {
-      changeLogContent.show();
-    })
-    .finally(() => {
-      loadingBox.setLoadStatus(false);
-    });
+  const changeLogContent = new ChangeLogContent(
+    '#change-log-content', target, authDbRev, changeLogModal, loadingBox, errorBox);
+  changeLogContent.initialize();
 }
