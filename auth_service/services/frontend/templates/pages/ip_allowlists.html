@@ -4,8 +4,7 @@
 
 <script type="text/javascript" src="/static/js/ip_allowlists.js"></script>
 
-<!-- Fix margins on this container -->
-<div class="container px-0 py-2" id="content-box">
+<div class="container px-0" id="content-box">
   <!-- Component to nest a loading spinner while fetching the allowlists. -->
   <div id="loading-box-placeholder"></div>
 
@@ -14,26 +13,25 @@
   <div id="allowlists-content" style="display: none;">
     <div class="card">
       <div class="card-header">IP Allowlists</div>
-      <div class="card-body" style="padding: 2rem">
+
+      <div class="card-body px-4 py-0">
         <!-- Section with a selector and details to peruse the allowlists, if
          there are any configured. -->
-        <div id="allowlists-config">
-          <div class="row mb-4">
-            <select class="form-select" id="allowlist-selector">
-            </select>
-          </div>
+        <div class="container-fluid" id="allowlists-config">
           <div class="row">
-            <hr/>
+            <select class="form-select my-4" id="allowlist-selector">
+            </select>
+            <hr class="my-0" />
           </div>
           <div id="allowlist-pane">
-            <div class="row mb-4">
+            <div class="row my-4">
               <label class="form-label h5 px-0">
                 Description
               </label>
               <input id="description-box" type="text" class="form-control" readonly name="description">
               </input>
             </div>
-            <div class="row mb-4">
+            <div class="row my-4">
               <label class="form-label h5 px-0">
                 IP subnets
               </label>
@@ -43,22 +41,23 @@
         </div>
 
         <!-- Alert to show instead if the allowlists config is empty. -->
-        <div id="empty-config-fallback" style="display: none;" class="alert alert-primary mb-4" role="alert">
+        <div id="empty-config-fallback" style="display: none;" class="alert alert-primary my-4" role="alert">
           <i class="bi bi-info-circle-fill me-1"></i>
           No allowlists have been configured.
         </div>
 
-        <div class="row">
-          <hr/>
-        </div>
-        <div class="d-flex flew-row my-2">
-          <div class="me-1">
-            The configuration is distributed by
-            <a target="_blank" href="https://luci-config.appspot.com">luci-config</a>.
-          </div>
-          <div id="revision-details">
-            Using revision
-            <a class="font-monospace" target="_blank"></a>.
+        <div class="container-fluid">
+          <div class="row my-4">
+            <hr />
+            <div class="col px-0">
+              <span>The configuration is distributed by
+                <a target="_blank" href="https://luci-config.appspot.com">luci-config</a>.
+              </span>
+              <span id="revision-details">
+                Using revision
+                <a class="font-monospace" target="_blank"></a>.
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -67,7 +66,6 @@
 
   <!-- Placeholder for IP allowlists error. -->
   <div id="api-error-placeholder" class="my-4"></div>
-
 </div>
 
 {{end}}
