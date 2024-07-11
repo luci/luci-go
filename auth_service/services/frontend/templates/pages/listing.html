@@ -13,23 +13,23 @@
 </template>
 
 <template id="group-listing-template">
-  <div class="row my-3 text-center">
-    <div class="h4">
+  <div class="row text-center">
+    <div class="h4 my-0">
       <a id="title"></a>
     </div>
     <div id="summary-totals" class="small text-muted">
     </div>
   </div>
 
-  <hr>
+  <hr />
 
-  <div class="row my-3">
+  <div class="row">
     <div class="col-8 border-end">
       <div class="h4">
         Members
       </div>
       <div>
-        <table id="members-table" class="table table-sm table-borderless">
+        <table id="members-table" class="table table-sm table-borderless my-0">
           <tbody>
             <tr>
               <td>
@@ -45,7 +45,7 @@
         Nested groups
       </div>
       <div>
-        <table id="nested-groups-table" class="table table-sm table-borderless">
+        <table id="nested-groups-table" class="table table-sm table-borderless my-0">
           <tbody>
             <tr>
               <td>
@@ -59,9 +59,7 @@
   </div>
 </template>
 
-
-<div class="container px-0 py-2" id="content-box">
-
+<div class="container px-0" id="content-box">
   <!-- Placeholder for loading box. -->
   <div id="loading-box-placeholder"></div>
 
@@ -69,9 +67,7 @@
   <div id="group-listing" class="col px-0"></div>
 
   <!-- Placeholder for listing error. -->
-  <div id="api-error-placeholder" class="my-4"></div>
-
+  <div id="api-error-placeholder"></div>
 </div>
-
 
 {{end}}
