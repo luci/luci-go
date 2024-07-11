@@ -31,118 +31,124 @@
 </template>
 
 <template id="new-group-form-template">
-  <div class="row mx-0 my-2">
-    <div class="col m-0 pt-1 border rounded" style="background-color: #f5f5f5;">
-      <h5 class="d-flex">
-        <a class="p-1 text-decoration-none flex-grow-1 bd-highlight" id="group-heading" style="color: #333">Create new
-          group</a>
+  <div class="card h-100">
+    <div class="card-header">
+      <h5 class="card-title d-flex my-0">
+        <span class="flex-grow-1" id="group-heading">
+          Create new group
+        </span>
       </h5>
     </div>
+    <div class="card-body">
+      <form id="group-form" class="m-2">
+        <div class="row mb-3">
+          <label for="group-name-box" class="col-2 col-form-label">Group Name</label>
+          <div class="col">
+            <input class="form-control groupName required" rows="1" id="group-name-box" placeholder="required"></input>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <label for="description-box" class="col-2 col-form-label">Description</label>
+          <div class="col">
+            <textarea class="form-control required" rows="3" id="description-box" placeholder="required"></textarea>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="row">
+          <label for="owners-box" class="col-2 col-form-label">Owners</label>
+          <div class="col">
+            <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <hr />
+        <div class="row mb-3">
+          <label for="membersAndGlobs" class="col-2 col-form-label">Members</label>
+          <div class="col">
+            <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="row">
+          <label for="nested" class="col-2 col-form-label">Subgroups</label>
+          <div class="col">
+            <textarea class="form-control groupList" rows="5" id="nested"></textarea>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <hr />
+        <button type="submit" class="btn btn-primary">Create group</button>
+      </form>
+    </div>
   </div>
-  <form id="group-form" class="m-2">
-    <div class="row mb-3">
-      <label for="group-name-box" class="col-2 col-form-label">Group Name</label>
-      <div class="col">
-        <input class="form-control groupName required" rows="1" id="group-name-box" placeholder="required"></input>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <div class="row mb-3">
-      <label for="description-box" class="col-2 col-form-label">Description</label>
-      <div class="col">
-        <textarea class="form-control required" rows="3" id="description-box" placeholder="required"></textarea>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <div class="row">
-      <label for="owners-box" class="col-2 col-form-label">Owners</label>
-      <div class="col">
-        <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <hr>
-    <div class="row mb-3">
-      <label for="membersAndGlobs" class="col-2 col-form-label">Members</label>
-      <div class="col">
-        <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <div class="row">
-      <label for="nested" class="col-2 col-form-label">Subgroups</label>
-      <div class="col">
-        <textarea class="form-control groupList" rows="5" id="nested"></textarea>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <hr>
-    <button type="submit" class="btn btn-primary">Create group</button>
-  </form>
 </template>
 
 <template id="edit-group-form-template">
-  <div class="row mx-0 my-2">
-    <div class="col m-0 pt-1 border rounded" style="background-color: #f5f5f5;">
-      <h5 class="d-flex">
-        <a id="group-heading" class="p-1 text-decoration-none flex-grow-1 bd-highlight" style="color: #333"></a>
-        <a id="group-change-log-link" class="p-1" data-bs-toggle="tooltip" data-bs-container="body"
+  <div class="card h-100">
+    <div class="card-header">
+      <h5 class="card-title d-flex my-0">
+        <span id="group-heading" class="flex-grow-1"></span>
+        <a id="group-change-log-link" class="mx-1" data-bs-toggle="tooltip" data-bs-container="body"
           data-bs-placement="top" title="Changes">
           <i class="bi bi-calendar3" style="font-size: 16px; color: #333"></i>
         </a>
-        <a id="group-lookup-link" class="p-1" data-bs-toggle="tooltip" data-bs-container="body" data-bs-placement="top"
+        <a id="group-lookup-link" class="mx-1" data-bs-toggle="tooltip" data-bs-container="body" data-bs-placement="top"
           title="View in Lookup">
           <i class="bi bi-search" style="font-size: 16px; color: #333"></i>
         </a>
-        <a id="group-listing-link" class="p-1" data-bs-toggle="tooltip" data-bs-container="body" data-bs-placement="top" title="Full listing">
+        <a id="group-listing-link" class="mx-1" data-bs-toggle="tooltip" data-bs-container="body"
+          data-bs-placement="top" title="Full listing">
           <i class="bi bi-list-ul" style="font-size: 16px; color: #333"></i>
         </a>
       </h5>
     </div>
+    <div class="card-body">
+      <form id="group-form" class="m-2">
+        <div class="row mb-3">
+          <label for="description-box" class="col-2 col-form-label">Description</label>
+          <div class="col">
+            <textarea class="form-control required" rows="3" id="description-box"></textarea>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="row">
+          <label for="owners-box" class="col-2 col-form-label">Owners</label>
+          <div class="col">
+            <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <hr />
+        <div class="row mb-3 external-group-info">
+          <label for="membersAndGlobs" class="col-2 col-form-label">Members</label>
+          <div class="col">
+            <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="row">
+          <label for="nested" class="col-2 col-form-label">Subgroups</label>
+          <div class="col">
+            <textarea class="form-control groupList" rows="5" id="nested"></textarea>
+            <span class="error" aria-live="polite"></span>
+          </div>
+        </div>
+        <hr />
+        <button id="edit-btn" type="submit" class="btn btn-primary">Update group</button>
+        <button id="delete-btn" type="button" class="btn btn-danger">Delete group</button>
+      </form>
+    </div>
   </div>
-  <form id="group-form" class="m-2">
-    <div class="row mb-3">
-      <label for="description-box" class="col-2 col-form-label">Description</label>
-      <div class="col">
-        <textarea class="form-control required" rows="3" id="description-box"></textarea>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <div class="row">
-      <label for="owners-box" class="col-2 col-form-label">Owners</label>
-      <div class="col">
-        <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <hr>
-    <div class="row mb-3 external-group-info">
-      <label for="membersAndGlobs" class="col-2 col-form-label">Members</label>
-      <div class="col">
-        <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <div class="row">
-      <label for="nested" class="col-2 col-form-label">Subgroups</label>
-      <div class="col">
-        <textarea class="form-control groupList" rows="5" id="nested"></textarea>
-        <span class="error" aria-live="polite"></span>
-      </div>
-    </div>
-    <hr>
-    <button id="edit-btn" type="submit" class="btn btn-primary">Update group</button>
-    <button id="delete-btn" type="button" class="btn btn-danger">Delete group</button>
-  </form>
 </template>
 
-<div class="mb-2 px-0">
-  <div id="loading-box-placeholder"></div>
+<div class="container px-0">
+  <div id="loading-box-placeholder" class="row"></div>
 
-  <div id="main-content" style="display: none;">
+  <div id="main-content" class="container-fluid" style="display: none;">
     <div class="row">
-      <div class="col-4 my-2 border rounded">
-        <div class="row mt-2">
+      <div class="col-4 px-0 d-flex flex-column">
+        <div class="row">
           <div class="input-group">
             <input id="search-box" class="form-control" type="search" aria-label="Search"
               placeholder="Search for an existing group">
@@ -163,13 +169,17 @@
           </div>
           {{end}}
         </div>
-        <div class="row">
-          <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">
-            <!-- Load group-scroller-row template. -->
-          </ul>
+        <div class="row flex-grow-1">
+          <div class="col">
+            <ul
+              id="group-chooser"
+              class="list-group list-group-flush navbar-nav-scroll px-0 my-0 border border-1 rounded-start">
+              <!-- Load group-scroller-row template. -->
+            </ul>
+          </div>
         </div>
       </div>
-      <div class="col my-2 ms-2 border rounded" id="group-content">
+      <div class="col ms-3 px-0" id="group-content">
         <!-- Load group-form template here -->
       </div>
     </div>
