@@ -96,100 +96,24 @@ func TestTasks(t *testing.T) {
 			})
 		})
 
-		Convey("CreateSwarmingTask", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
-					So(CreateSwarmingTask(ctx, nil), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
-				})
-
-				Convey("empty", func() {
-					task := &taskdef.CreateSwarmingTask{}
-					So(CreateSwarmingTask(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
-				})
-
-				Convey("zero", func() {
-					task := &taskdef.CreateSwarmingTask{
-						BuildId: 0,
-					}
-					So(CreateSwarmingTask(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
-				})
-			})
-
-			Convey("valid", func() {
-				task := &taskdef.CreateSwarmingTask{
-					BuildId: 1,
-				}
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return CreateSwarmingTask(ctx, task)
-				}, nil), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
-			})
-		})
-
 		Convey("ExportBigQuery", func() {
 			Convey("invalid", func() {
 
 				Convey("zero", func() {
 
-					So(ExportBigQuery(ctx, 0, false), ShouldErrLike, "build_id is invalid")
+					So(ExportBigQuery(ctx, 0), ShouldErrLike, "build_id is invalid")
 					So(sch.Tasks(), ShouldBeEmpty)
-				})
-			})
-
-			Convey("valid - to python", func() {
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return ExportBigQuery(ctx, 1, false)
-				}, nil), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
-				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdef.ExportBigQuery{
-					BuildId: 1,
 				})
 			})
 
 			Convey("valid - to Go", func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return ExportBigQuery(ctx, 1, true)
+					return ExportBigQuery(ctx, 1)
 				}, nil), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
 				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdef.ExportBigQueryGo{
 					BuildId: 1,
 				})
-			})
-		})
-
-		Convey("FinalizeResultDB", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
-					So(FinalizeResultDB(ctx, nil), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
-				})
-
-				Convey("empty", func() {
-					task := &taskdef.FinalizeResultDBGo{}
-					So(FinalizeResultDB(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
-				})
-
-				Convey("zero", func() {
-					task := &taskdef.FinalizeResultDBGo{
-						BuildId: 0,
-					}
-					So(FinalizeResultDB(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
-				})
-			})
-
-			Convey("valid", func() {
-				task := &taskdef.FinalizeResultDBGo{
-					BuildId: 1,
-				}
-				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return FinalizeResultDB(ctx, task)
-				}, nil), ShouldBeNil)
-				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 		})
 

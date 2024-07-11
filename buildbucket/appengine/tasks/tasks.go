@@ -59,30 +59,6 @@ func init() {
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID: "cancel-swarming-task",
-		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
-			task := m.(*taskdefs.CancelSwarmingTask)
-			body, err := json.Marshal(map[string]any{
-				"hostname": task.Hostname,
-				"task_id":  task.TaskId,
-				"realm":    task.Realm,
-			})
-			if err != nil {
-				return nil, errors.Annotate(err, "error marshaling payload").Err()
-			}
-			return &tq.CustomPayload{
-				Body:        body,
-				Method:      "POST",
-				RelativeURI: fmt.Sprintf("/internal/task/buildbucket/cancel_swarming_task/%s/%s", task.Hostname, task.TaskId),
-			}, nil
-		},
-		Handler:   rejectionHandler("cancel-swarming-task"),
-		Kind:      tq.FollowsContext,
-		Prototype: (*taskdefs.CancelSwarmingTask)(nil),
-		Queue:     "backend-default",
-	})
-
-	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "cancel-swarming-task-go",
 		Kind:      tq.FollowsContext,
 		Prototype: (*taskdefs.CancelSwarmingTaskGo)(nil),
@@ -91,75 +67,6 @@ func init() {
 			t := payload.(*taskdefs.CancelSwarmingTaskGo)
 			return HandleCancelSwarmingTask(ctx, t.Hostname, t.TaskId, t.Realm)
 		},
-	})
-
-	// TODO(crbug.com/1328646): Delete it after swarming-build-create migration is done.
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID: "create-swarming-task",
-		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
-			task := m.(*taskdefs.CreateSwarmingTask)
-			body, err := json.Marshal(map[string]any{
-				"generation": 0,
-				"id":         task.BuildId,
-			})
-			if err != nil {
-				return nil, errors.Annotate(err, "error marshaling payload").Err()
-			}
-			return &tq.CustomPayload{
-				Body:        body,
-				Method:      "POST",
-				RelativeURI: fmt.Sprintf("/internal/task/swarming/sync-build/%d", task.BuildId),
-			}, nil
-		},
-		Handler:   rejectionHandler("create-swarming-task"),
-		Kind:      tq.Transactional,
-		Prototype: (*taskdefs.CreateSwarmingTask)(nil),
-		Queue:     "swarming-build-create",
-	})
-
-	// TODO(crbug.com/1356766): remove it after bq-exporter runs in Go.
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID: "export-bigquery",
-		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
-			task := m.(*taskdefs.ExportBigQuery)
-			body, err := json.Marshal(map[string]any{
-				"id": task.BuildId,
-			})
-			if err != nil {
-				return nil, errors.Annotate(err, "error marshaling payload").Err()
-			}
-			return &tq.CustomPayload{
-				Body:        body,
-				Method:      "POST",
-				RelativeURI: fmt.Sprintf("/internal/task/bq/export/%d", task.BuildId),
-			}, nil
-		},
-		Handler:   rejectionHandler("export-bigquery"),
-		Kind:      tq.Transactional,
-		Prototype: (*taskdefs.ExportBigQuery)(nil),
-		Queue:     "backend-default",
-	})
-
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID: "finalize-resultdb",
-		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
-			task := m.(*taskdefs.FinalizeResultDB)
-			body, err := json.Marshal(map[string]any{
-				"id": task.BuildId,
-			})
-			if err != nil {
-				return nil, errors.Annotate(err, "error marshaling payload").Err()
-			}
-			return &tq.CustomPayload{
-				Body:        body,
-				Method:      "POST",
-				RelativeURI: fmt.Sprintf("/internal/task/resultdb/finalize/%d", task.BuildId),
-			}, nil
-		},
-		Handler:   rejectionHandler("finalize-resultdb"),
-		Kind:      tq.Transactional,
-		Prototype: (*taskdefs.FinalizeResultDB)(nil),
-		Queue:     "backend-default",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
@@ -350,17 +257,6 @@ func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTaskGo
 	})
 }
 
-// CreateSwarmingTask enqueues a task queue task to create a Swarming task from
-// the given build.
-func CreateSwarmingTask(ctx context.Context, task *taskdefs.CreateSwarmingTask) error {
-	if task.GetBuildId() == 0 {
-		return errors.Reason("build_id is required").Err()
-	}
-	return tq.AddTask(ctx, &tq.Task{
-		Payload: task,
-	})
-}
-
 // CreateSwarmingBuildTask enqueues a Cloud Tasks task to create a Swarming task
 // from the given build.
 func CreateSwarmingBuildTask(ctx context.Context, task *taskdefs.CreateSwarmingBuildTask) error {
@@ -403,18 +299,12 @@ func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuild
 }
 
 // ExportBigQuery enqueues a task queue task to export the given build to Bq.
-// TODO(crbug.com/1356766): routeToGo will be removed once migration is done.
-func ExportBigQuery(ctx context.Context, buildID int64, routeToGo bool) error {
+func ExportBigQuery(ctx context.Context, buildID int64) error {
 	if buildID <= 0 {
 		return errors.Reason("build_id is invalid").Err()
 	}
-	if routeToGo {
-		return tq.AddTask(ctx, &tq.Task{
-			Payload: &taskdefs.ExportBigQueryGo{BuildId: buildID},
-		})
-	}
 	return tq.AddTask(ctx, &tq.Task{
-		Payload: &taskdefs.ExportBigQuery{BuildId: buildID},
+		Payload: &taskdefs.ExportBigQueryGo{BuildId: buildID},
 	})
 }
 

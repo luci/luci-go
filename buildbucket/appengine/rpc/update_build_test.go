@@ -1118,7 +1118,7 @@ func TestUpdateBuild(t *testing.T) {
 					case *taskdefs.NotifyPubSub:
 						sum++
 						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
-					case *taskdefs.ExportBigQuery:
+					case *taskdefs.ExportBigQueryGo:
 						sum += 2
 						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
 					case *taskdefs.FinalizeResultDBGo:
@@ -1316,7 +1316,7 @@ func TestUpdateBuild(t *testing.T) {
 						case *taskdefs.NotifyPubSub:
 							sum++
 							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
-						case *taskdefs.ExportBigQuery:
+						case *taskdefs.ExportBigQueryGo:
 							sum += 2
 							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
 						case *taskdefs.FinalizeResultDBGo:

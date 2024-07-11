@@ -10,16 +10,6 @@ option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs;taskd
 
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
-// A task to cancel a Swarming task in Python.
-message CancelSwarmingTask {
-  // Hostname (e.g. "chromium-swarm.appspot.com") where the task should be
-  // cancelled.
-  string hostname = 1;
-  // Swarming task ID to cancel.
-  string task_id = 2;
-  // LUCI realm the task belongs to.
-  string realm = 3;
-}
 
 // A task to cancel a Swarming task in Go.
 message CancelSwarmingTaskGo {
@@ -30,13 +20,6 @@ message CancelSwarmingTaskGo {
   string task_id = 2;
   // LUCI realm the task belongs to.
   string realm = 3;
-}
-
-// A task to create a Swarming task.
-// TODO(crbug.com/1328646): Delete it after swarming-build-create migration is done.
-message CreateSwarmingTask {
-  // ID of a build in the datastore. See model.Build.
-  int64 build_id = 1;
 }
 
 // A task to create a Swarming task.
@@ -63,20 +46,7 @@ message SyncSwarmingBuildTask {
 }
 
 // A task to export a build to BigQuery.
-// TODO(crbug.com/1356766): remove it after bq-exporter runs in Go.
-message ExportBigQuery {
-  // ID of a build in the datastore. See model.Build.
-  int64 build_id = 1;
-}
-
-// A task to export a build to BigQuery.
 message ExportBigQueryGo {
-  // ID of a build in the datastore. See model.Build.
-  int64 build_id = 1;
-}
-
-// A task to finalize an invocation in ResultDB.
-message FinalizeResultDB {
   // ID of a build in the datastore. See model.Build.
   int64 build_id = 1;
 }

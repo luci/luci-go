@@ -4,19 +4,9 @@ queue:
   # TODO(crbug/1042991): Target backend-go once it exists.
   target: default-go
   rate: 500/s
-- name: swarming-build-sync
-  target: backend
-  rate: 500/s
-- name: swarming-build-create
-  target: backend
-  rate: 500/s
 - name: backend-default
   target: backend
   rate: 500/s
-- name: bulkproc
-  target: backend
-  rate: 100/s
-  max_concurrent_requests: 128
 - name: bq-export
   mode: pull
 - name: backend-go-default

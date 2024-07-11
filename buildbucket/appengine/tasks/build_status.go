@@ -16,7 +16,6 @@ package tasks
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -28,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -48,7 +46,7 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 			return errors.Annotate(NotifyPubSub(ctx, bld), "failed to enqueue pubsub notification task: %d", bld.ID).Err()
 		}
 		tks <- func() error {
-			return errors.Annotate(ExportBigQuery(ctx, bld.ID, strings.Contains(bld.ExperimentsString(), buildbucket.ExperimentBqExporterGo)), "failed to enqueue bigquery export task: %d", bld.ID).Err()
+			return errors.Annotate(ExportBigQuery(ctx, bld.ID), "failed to enqueue bigquery export task: %d", bld.ID).Err()
 		}
 		tks <- func() error {
 			if inf == nil {

@@ -43,7 +43,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
-	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -688,18 +687,10 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					case infra.GetSwarming().GetHostname() == "":
 						return errors.Reason("failed to create build with missing backend info and swarming host").Err()
 					default:
-						if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
-							if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
-								BuildId: b.ID,
-							}); err != nil {
-								return errors.Annotate(err, "failed to enqueue CreateSwarmingBuildTask: %d", b.ID).Err()
-							}
-						} else {
-							if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
-								BuildId: b.ID,
-							}); err != nil {
-								return errors.Annotate(err, "failed to enqueue CreateSwarmingTask: %d", b.ID).Err()
-							}
+						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
+							BuildId: b.ID,
+						}); err != nil {
+							return errors.Annotate(err, "failed to enqueue CreateSwarmingBuildTask: %d", b.ID).Err()
 						}
 					}
 

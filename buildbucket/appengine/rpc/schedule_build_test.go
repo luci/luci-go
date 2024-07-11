@@ -780,7 +780,7 @@ func TestScheduleBuild(t *testing.T) {
 			tasks := sch.Tasks()
 			So(tasks, ShouldHaveLength, 4)
 			sortTasksByClassName(tasks)
-			So(tasks.Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingTask{
+			So(tasks.Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingBuildTask{
 				BuildId: 9021868963221667745,
 			})
 			// for `builds` topic.
@@ -6017,47 +6017,6 @@ func TestScheduleBuild(t *testing.T) {
 					So(err, ShouldErrLike, "build already exists")
 					So(rsp, ShouldBeNil)
 					So(sch.Tasks(), ShouldBeEmpty)
-				})
-
-				Convey("ok without backend_go exp", func() {
-					So(datastore.Put(ctx, &model.Builder{
-						Parent: model.BucketKey(ctx, "project", "bucket"),
-						ID:     "builder",
-						Config: &pb.BuilderConfig{
-							BuildNumbers: pb.Toggle_YES,
-							Name:         "builder",
-							SwarmingHost: "host",
-						},
-					}), ShouldBeNil)
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-						CreatedBy:  string(userID),
-						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-						Id:         9021868963221667745,
-						Input:      &pb.Build_Input{},
-						Number:     1,
-						Status:     pb.Status_SCHEDULED,
-					})
-					tasks := sch.Tasks()
-					So(tasks, ShouldHaveLength, 3)
-					sortTasksByClassName(tasks)
-					So(tasks.Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingTask{
-						BuildId: 9021868963221667745,
-					})
-					So(tasks.Payloads()[1], ShouldResembleProto, &taskdefs.NotifyPubSub{
-						BuildId: 9021868963221667745,
-					})
-					So(tasks.Payloads()[2], ShouldResembleProto, &taskdefs.NotifyPubSubGoProxy{
-						BuildId: 9021868963221667745,
-						Project: "project",
-					})
 				})
 
 				Convey("ok with backend_go exp", func() {
