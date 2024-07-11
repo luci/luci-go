@@ -50,26 +50,26 @@
   </table>
 </template>
 
-<div class="container px-0 py-2">
+<div class="container px-0">
   <!-- Placeholder for loading box to be displayed while the page is loading for
     the first time. -->
   <div id="loading-box-placeholder"></div>
 
   <!-- The main page contents. -->
   <div id="services-content" style="display: none;">
-    <h3 style="margin-top: 10px; text-align: center;">
+    <h3 class="text-center">
       Services
     </h3>
     <div class="text-muted text-center">
       Services that receive the AuthDB via the legacy direct push method.
     </div>
 
-    <div id="services-table-container" class="mt-4"></div>
+    <div id="services-table-container"></div>
 
     <!-- Placeholder for services error. -->
     <div id="api-error-placeholder" class="my-4"></div>
 
-    <div class="d-flex mb-2 justify-content-end">
+    <div class="d-flex justify-content-end">
       <button id="refresh-btn" type="button" class="btn btn-primary">
         <i class="bi bi-arrow-clockwise me-2"></i>
         <span>Refresh</span>
