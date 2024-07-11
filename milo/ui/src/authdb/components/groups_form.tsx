@@ -91,6 +91,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
   const [isExternal, setIsExternal] = useState<boolean>();
   const [successEditedGroup, setSuccessEditedGroup] = useState<boolean>();
   const [errorEditedGroup, setErrorEditedGroup] = useState<boolean>();
+  const [disableSubmit, setDisableSubmit] = useState<boolean>();
   const membersRef = createRef<FormListElement>();
   const subgroupsRef = createRef<FormListElement>();
   const globsRef = createRef<FormListElement>();
@@ -108,6 +109,9 @@ export function GroupsForm({ name } : GroupsFormProps) {
     },
     onError: () => {
       setErrorEditedGroup(true);
+    },
+    onSettled: () => {
+      setDisableSubmit(false);
     }
   })
 
@@ -189,6 +193,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
     }
 
     const submitForm = () => {
+      setDisableSubmit(true);
       resetForm();
       setReadonlyMode();
       const editedMembers = addPrefixToItems('user', membersRef.current?.getItems()!);
@@ -287,7 +292,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
             <GroupsFormList name='Members' initialItems={members} ref={membersRef}/>
             <GroupsFormList name='Globs' initialItems={globs} ref={globsRef}/>
             <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef}/>
-            <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={submitForm} data-testid='submit-button'>
+            <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit}>
               Submit
             </Button>
             <div style={{padding: '5px'}}>

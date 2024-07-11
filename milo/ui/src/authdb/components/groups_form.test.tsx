@@ -123,4 +123,24 @@ describe('<GroupsForm />', () => {
     expect(screen.getByText('Error editing group')).toBeInTheDocument();
   });
 
+  test('submit button is disabled on group update', async () => {
+    const mockGroup = createMockGroupIndividual('123');
+    mockFetchGetGroup(mockGroup);
+
+    const mockUpdatedGroup = createMockUpdatedGroup('123');
+    mockResponseUpdateGroup(mockUpdatedGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsForm name='123' />
+        </List>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    const submitButton = screen.getByTestId('submit-button')
+    act(() => submitButton.click());
+    expect(submitButton).toBeDisabled();
+  });
 });
