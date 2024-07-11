@@ -60,8 +60,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       }
     }));
 
-    const changeAddingItem = () => {
+    const resetTextfield = () => {
         setAddingItem(!addingItem);
+        setCurrentItem('');
+        setErrorMessage('');
       }
 
     const addToItems = () => {
@@ -82,8 +84,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       }
       if (currentItem) {
         setItems([...items, currentItem]);
-        setCurrentItem('');
-        setErrorMessage('');
+        resetTextfield()
       }
     }
 
@@ -127,7 +128,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
             </IconButton>
           </TableCell>
           <TableCell align='center' style={{width: '3%'}} sx={{p: 0, pt: '15px'}}>
-            <IconButton color='error' sx={{p: 0}} onClick={changeAddingItem}>
+            <IconButton color='error' sx={{p: 0}} onClick={resetTextfield} data-testid='clear-button'>
               <ClearIcon />
             </IconButton>
           </TableCell>
@@ -141,7 +142,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       {!addingItem &&
         <TableRow>
             <TableCell>
-          <Button sx={{mt: '10px'}} variant="outlined" startIcon={<AddCircleIcon />} onClick={changeAddingItem} data-testid='add-button'>
+          <Button sx={{mt: '10px'}} variant="outlined" startIcon={<AddCircleIcon />} onClick={resetTextfield} data-testid='add-button'>
             Add
           </Button>
           </TableCell>

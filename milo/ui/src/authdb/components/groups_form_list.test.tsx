@@ -136,6 +136,25 @@ describe('<GroupsFormList editable/>', () => {
     await screen.findByRole('alert');
     expect(screen.getByText('Each member should be an email address.')).toBeInTheDocument();
   })
+
+  test('hides textfield with clear button', async() => {
+    // Click add button.
+    const addButton = screen.queryByTestId('add-button');
+    expect(addButton).not.toBeNull();
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen.getByTestId('add-textfield').querySelector('input');
+    expect(textfield).toBeInTheDocument();
+    await userEvent.type(textfield!, 'newMember');
+    expect(textfield!.value).toBe('newMember');
+    // Click clear button.
+    const clearButton = screen.queryByTestId('clear-button');
+    expect(clearButton).not.toBeNull();
+    act(() => clearButton!.click());
+    // Check textfield is no longer shown.
+    await screen.findByTestId('add-button');
+    expect(textfield).not.toBeInTheDocument();
+  })
 });
 
 describe('<GroupsFormList editable globs/>', () => {
