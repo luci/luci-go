@@ -133,7 +133,7 @@ func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revi
 
 // UpdateReaders updates which users have read access to the latest
 // signed AuthDB and AuthDBRevision in Google Storage.
-func UpdateReaders(ctx context.Context, readers stringset.Set, dryRun bool) (retErr error) {
+func UpdateReaders(ctx context.Context, readers stringset.Set) (retErr error) {
 	// Skip if the GS path is invalid.
 	gsPath, err := GetPath(ctx)
 	if err != nil {
@@ -145,11 +145,6 @@ func UpdateReaders(ctx context.Context, readers stringset.Set, dryRun bool) (ret
 			return nil
 		}
 		return fmt.Errorf("invalid GS path: %s", gsPath)
-	}
-
-	fileBaseName := "latest"
-	if dryRun {
-		fileBaseName = "V2latest"
 	}
 
 	client, err := newClient(ctx)
@@ -166,7 +161,7 @@ func UpdateReaders(ctx context.Context, readers stringset.Set, dryRun bool) (ret
 	exts := []string{"db", "json"}
 	errs := errors.MultiError{}
 	for _, ext := range exts {
-		objectPath := fmt.Sprintf("%s/%s.%s", gsPath, fileBaseName, ext)
+		objectPath := fmt.Sprintf("%s/%s.%s", gsPath, "latest", ext)
 		err := client.UpdateReadACL(ctx, objectPath, readers)
 		if err != nil {
 			logging.Errorf(ctx, "error updating ACLs for %s: %s", objectPath, err)

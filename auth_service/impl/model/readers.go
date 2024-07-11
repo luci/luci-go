@@ -230,11 +230,5 @@ func updateGSReaders(ctx context.Context) error {
 		return err
 	}
 
-	// TODO (b/321137485): Set dry run to false when rolling out AuthDB
-	// replication.
-	//
-	// For now, only set the read ACLs for V2-prefixed objects while
-	// still in development & testing.
-	dryRun := true
-	return gs.UpdateReaders(ctx, readers, dryRun)
+	return gs.UpdateReaders(ctx, readers)
 }

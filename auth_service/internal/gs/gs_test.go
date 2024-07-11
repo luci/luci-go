@@ -147,7 +147,7 @@ func TestUpdateReaders(t *testing.T) {
 			// Set up settings config with no GS path.
 			So(settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), ShouldBeNil)
 			// There should be no client calls.
-			So(UpdateReaders(ctx, readers, false), ShouldBeNil)
+			So(UpdateReaders(ctx, readers), ShouldBeNil)
 		})
 
 		Convey("updates both AuthDB and rev ACLs", func() {
@@ -166,7 +166,7 @@ func TestUpdateReaders(t *testing.T) {
 				readers).Times(1)
 			mockClient.Client.EXPECT().Close().Times(1).After(dbUpdate).After(revUpdate)
 
-			So(UpdateReaders(ctx, readers, false), ShouldBeNil)
+			So(UpdateReaders(ctx, readers), ShouldBeNil)
 		})
 	})
 }
