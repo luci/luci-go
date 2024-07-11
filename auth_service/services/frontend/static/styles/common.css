@@ -27,11 +27,11 @@ body {
   color: #cccccc;
 }
 
-a:not(.nav-link,.navbar-brand) {
+a:not(.nav-link,.navbar-brand,.page-link) {
   text-decoration: none;
 }
 
-a:not(.nav-link,.navbar-brand):hover {
+a:not(.nav-link,.navbar-brand,.page-link):hover {
   text-decoration: underline;
 }
 

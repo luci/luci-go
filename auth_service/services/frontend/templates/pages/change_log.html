@@ -22,14 +22,13 @@
 </template>
 
 <template id="change-log-header-template">
-  <h3 style="margin-top: 10px; text-align: center;">
+  <h3 class="text-center mb-4">
     <a href="#"></a>
     <small class="text-muted"></small>
   </h3>
-  <hr style="margin-top: 10px; margin-bottom: 10px;">
 </template>
 
-<div class="container">
+<div class="container px-0">
   <div id="loading-box-placeholder"></div>
 
   <div id="change-log-content" style="display: none;">
@@ -38,13 +37,13 @@
     </div>
 
     <!-- Alert to show if there are no change logs. -->
-    <div id="change-log-empty-alert" style="display: none;" class="alert alert-primary my-4" role="alert">
+    <div id="change-log-empty-alert" style="display: none;" class="alert alert-primary mt-4 mb-0" role="alert">
       <i class="bi bi-info-circle-fill me-1"></i>
       No change logs found.
     </div>
 
-    <table id="change-log-table" class="table table-hover">
-      <thead>
+    <table id="change-log-table" class="table table-hover my-0">
+      <thead class="border-top">
         <tr>
           <th scope="col" style="width: 80px">Rev</th>
           <th scope="col" style="width: 250px">Change</th>
@@ -56,23 +55,27 @@
       <tbody id="change-log-body">
         <!-- Load change-log-row-template -->
       </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" class="border-bottom-0 pt-4 pb-0">
+            <nav id="change-log-pager">
+              <ul class="pagination justify-content-between my-0">
+                <li id="prev" class="page-item">
+                  <a class="page-link" href="#"><span aria-hidden="true">&laquo;</span> Newer</a>
+                </li>
+                <li id="next" class="page-item">
+                  <a class="page-link" href="#">Older <span aria-hidden="true">&raquo;</span></a>
+                </li>
+              </ul>
+            </nav>
+          </td>
+        </tr>
+      </tfoot>
     </table>
-
-    <hr>
-    <nav id="change-log-pager">
-      <ul class="pagination justify-content-between">
-        <li id="prev" class="page-item">
-          <a class="page-link" href="#"><span aria-hidden="true">&laquo;</span> Newer</a>
-        </li>
-        <li id="next" class="page-item">
-          <a class="page-link" href="#">Older <span aria-hidden="true">&raquo;</span></a>
-        </li>
-      </ul>
-    </nav>
   </div>
 
   <!-- Placeholder for change log listing error. -->
-  <div id="api-error-placeholder" class="my-4"></div>
+  <div id="api-error-placeholder"></div>
 
 </div>
 
