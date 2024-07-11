@@ -178,22 +178,23 @@ class ListGroupItem {
 
     // Clone and grab elements to modify.
     const clone = template.content.cloneNode(true);
-    const listEl = clone.querySelector('li');
-    const nameEl = clone.querySelector('p');
-    const descEl = clone.querySelector('small');
+    const rootEl = clone.querySelector('a');
+    const nameEl = rootEl.querySelector('p');
+    const descEl = rootEl.querySelector('small');
 
     // Modify contents for the actual group name and description.
-    listEl.setAttribute('data-group-name', group.name);
+    rootEl.setAttribute('data-group-name', group.name);
+    rootEl.setAttribute('href', common.getGroupPageURL(group.name));
     nameEl.textContent = group.name;
     descEl.textContent = this.isExternal ? 'External' : trimGroupDescription(group.description);
     if (this.readOnly) {
-      listEl.classList.add('read-only-group');
+      rootEl.classList.add('read-only-group');
       const lockIcon = document.createElement('i');
       lockIcon.classList.add('bi', 'bi-lock-fill', 'list-item-icon');
-      listEl.appendChild(lockIcon);
+      rootEl.appendChild(lockIcon);
     }
 
-    this.element = listEl;
+    this.element = rootEl;
   }
 
   setExternalVisibility(showExternal) {
@@ -276,9 +277,10 @@ class GroupChooser {
       this.element.appendChild(listItem.element);
 
       // Add a listener for when a user chooses the group.
-      listItem.element.addEventListener('click', () => {
+      listItem.element.onclick = () => {
         this.setSelection(group.name);
-      });
+        return false;
+      };
 
       // Keep a reference to the ListGroupItem, so we can scroll to it
       // later.
