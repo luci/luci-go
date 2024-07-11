@@ -15,10 +15,9 @@
 
 <script type="text/javascript" src="/static/js/lookup.js"></script>
 
-<div class="container px-0 py-2" id="content-box">
-
+<div class="container px-0" id="content-box">
   <!-- Search bar. -->
-  <div id="search-bar" class="row my-2">
+  <div id="search-bar" class="row">
     <div class="input-group">
       <input class="form-control" type="search" aria-label="Search" placeholder="An email or group name" disabled>
       <button type="button" class="btn btn-outline-secondary" disabled>
@@ -31,37 +30,25 @@
   <div id="loading-box-placeholder"></div>
 
   <!-- Placeholder for lookup results. -->
-  <div id="all-results"></div>
+  <div id="all-results" class="mt-4"></div>
 
   <!-- Placeholder for lookup error. -->
-  <div id="api-error-placeholder" class="my-4"></div>
-
+  <div id="api-error-placeholder" class="mt-4"></div>
 </div>
 
-
 <template id="all-results-template">
-  <div class="row my-2">
-    <div class="col-md-12">
-      <hr>
-    </div>
-  </div>
-
   <!-- The principal being searched. -->
   <div class="row">
-    <div class="col-md-12">
-      <h3 class="text-center">
+    <div class="col">
+      <hr class="my-0" />
+      <h3 class="text-center my-3">
         <a id="principal-header"></a>
       </h3>
+      <hr class="my-0" />
     </div>
   </div>
 
-  <div class="row my-2">
-    <div class="col-md-12">
-      <hr>
-    </div>
-  </div>
-
-  <div class="row">
+  <div class="row mt-3">
     <!-- Groups the principal is directly in. -->
     <div class="col-md-6">
       <h4>Directly included by</h4>
@@ -84,12 +71,10 @@
   </div>
 </template>
 
-
 <template id="result-template">
   <div>
     <a></a>
   </div>
 </template>
-
 
 {{end}}
