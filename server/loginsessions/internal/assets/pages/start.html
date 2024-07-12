@@ -30,17 +30,17 @@ redirected back to this site to finish the login process.
 
 <div class="row">
   <div class="col">
+    <form action="/cli/cancel" method="POST">
+      <input type="hidden" name="state" value="{{.OAuthState}}">
+      <button class="btn btn-secondary w-100" type="submit">Cancel</button>
+    </form>
+  </div>
+  <div class="col">
     <form action="{{.OAuthClient.AuthorizationEndpoint}}" method="GET">
       {{- range $key, $value := .OAuthRedirectParams }}
       <input type="hidden" name="{{$key}}" value="{{$value}}">
       {{- end}}
       <button class="btn btn-primary w-100" type="submit">Proceed</button>
-    </form>
-  </div>
-  <div class="col">
-    <form action="/cli/cancel" method="POST">
-      <input type="hidden" name="state" value="{{.OAuthState}}">
-      <button class="btn btn-secondary w-100" type="submit">Cancel</button>
     </form>
   </div>
 </div>
