@@ -29,6 +29,34 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestNewRESTClient(t *testing.T) {
+	t.Parallel()
+
+	Convey("accept valid gitiles host", t, func() {
+		c, err := NewRESTClient(&http.Client{}, "chromium.googlesource.com", false)
+		So(c, ShouldNotBeNil)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("accept valid gitiles host with dash", t, func() {
+		c, err := NewRESTClient(&http.Client{}, "chromium-foo.googlesource.com", false)
+		So(c, ShouldNotBeNil)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Reject invalid gitiles host", t, func() {
+		c, err := NewRESTClient(&http.Client{}, "chromium.hijacked.com", false)
+		So(c, ShouldBeNil)
+		So(err, ShouldErrLike, "is not a valid Gitiles host")
+	})
+
+	Convey("Reject invalid gitiles host with matching suffix", t, func() {
+		c, err := NewRESTClient(&http.Client{}, "chromium.hijacked.com/chromium.googlesource.com", false)
+		So(c, ShouldBeNil)
+		So(err, ShouldErrLike, "is not a valid Gitiles host")
+	})
+}
+
 func TestLog(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

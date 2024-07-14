@@ -17,6 +17,7 @@ package gitiles
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -25,6 +26,16 @@ import (
 // OAuthScope is the OAuth 2.0 scope that must be included when acquiring an
 // access token for Gitiles RPCs.
 const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
+
+var hostnameRe = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])*.googlesource.com$`)
+
+// ValidateRepoHost validates gitiles host.
+func ValidateRepoHost(host string) error {
+	if !hostnameRe.MatchString(host) {
+		return errors.Reason("hostname %s is not a valid Gitiles host", host).Err()
+	}
+	return nil
+}
 
 // ValidateRepoURL validates gitiles repository URL.
 func ValidateRepoURL(repoURL string) error {

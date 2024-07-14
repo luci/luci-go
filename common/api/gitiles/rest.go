@@ -52,9 +52,10 @@ import (
 // RPC methods of the returned client return an error if a grpc.CallOption is
 // passed.
 func NewRESTClient(httpClient *http.Client, host string, auth bool) (gitiles.GitilesClient, error) {
-	if strings.Contains(host, "/") {
-		return nil, errors.Reason("invalid host %q", host).Err()
+	if err := ValidateRepoHost(host); err != nil {
+		return nil, err
 	}
+
 	baseURL := "https://" + host
 	if auth {
 		baseURL += "/a"
