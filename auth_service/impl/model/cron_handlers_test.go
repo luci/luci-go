@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -282,7 +281,7 @@ func TestUpdateRealms(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 
-				expectedRealmsBody, _ := proto.Marshal(&protocol.Realms{
+				expectedRealmsBody, err := ToStorableRealms(&protocol.Realms{
 					Realms: []*protocol.Realm{
 						{
 							Name: "test-project-a:@root",
@@ -292,6 +291,7 @@ func TestUpdateRealms(t *testing.T) {
 						},
 					},
 				})
+				So(err, ShouldBeNil)
 
 				fetchedPRealms, err := GetAuthProjectRealms(ctx, "test-project-a")
 				So(err, ShouldBeNil)
@@ -322,7 +322,7 @@ func TestUpdateRealms(t *testing.T) {
 				So(updateRealms(ctx, testsupport.PermissionsDB(false), revs, false, "latest config"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 
-				expectedRealmsBody, _ := proto.Marshal(&protocol.Realms{
+				expectedRealmsBody, err := ToStorableRealms(&protocol.Realms{
 					Realms: []*protocol.Realm{
 						{
 							Name: "test-project-a:@root",
@@ -332,6 +332,7 @@ func TestUpdateRealms(t *testing.T) {
 						},
 					},
 				})
+				So(err, ShouldBeNil)
 
 				fetchedPRealms, err := GetAuthProjectRealms(ctx, "test-project-a")
 				So(err, ShouldBeNil)
@@ -363,7 +364,7 @@ func TestUpdateRealms(t *testing.T) {
 				So(updateRealms(ctx, testsupport.PermissionsDB(false), revs, false, "latest config"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 4)
 
-				expectedRealmsBody, _ = proto.Marshal(&protocol.Realms{
+				expectedRealmsBody, err = ToStorableRealms(&protocol.Realms{
 					Realms: []*protocol.Realm{
 						{
 							Name: "test-project-a:@root",
@@ -376,6 +377,7 @@ func TestUpdateRealms(t *testing.T) {
 						},
 					},
 				})
+				So(err, ShouldBeNil)
 
 				fetchedPRealms, err = GetAuthProjectRealms(ctx, "test-project-a")
 				So(err, ShouldBeNil)
@@ -426,7 +428,7 @@ func TestUpdateRealms(t *testing.T) {
 				So(updateRealms(ctx, testsupport.PermissionsDB(false), revs, false, "latest config"), ShouldBeNil)
 				So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 
-				expectedRealmsBodyA, _ := proto.Marshal(&protocol.Realms{
+				expectedRealmsBodyA, err := ToStorableRealms(&protocol.Realms{
 					Realms: []*protocol.Realm{
 						{
 							Name: "test-project-a:@root",
@@ -439,8 +441,9 @@ func TestUpdateRealms(t *testing.T) {
 						},
 					},
 				})
+				So(err, ShouldBeNil)
 
-				expectedRealmsBodyB, _ := proto.Marshal(&protocol.Realms{
+				expectedRealmsBodyB, err := ToStorableRealms(&protocol.Realms{
 					Realms: []*protocol.Realm{
 						{
 							Name: "test-project-b:@root",
@@ -453,6 +456,7 @@ func TestUpdateRealms(t *testing.T) {
 						},
 					},
 				})
+				So(err, ShouldBeNil)
 
 				fetchedPRealmsA, err := GetAuthProjectRealms(ctx, "test-project-a")
 				So(err, ShouldBeNil)

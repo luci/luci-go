@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -48,7 +46,7 @@ func TestTakeSnapshot(t *testing.T) {
 			Permissions: perms,
 		}
 		projectRealms1 := testAuthProjectRealms(ctx, "project-1")
-		projectRealms1.Realms, err = proto.Marshal(&protocol.Realms{
+		projectRealms1.Realms, err = ToStorableRealms(&protocol.Realms{
 			Permissions: makeTestPermissions("luci.dev.p2"),
 			Conditions:  makeTestConditions("a", "c"),
 			Realms: []*protocol.Realm{
@@ -66,7 +64,7 @@ func TestTakeSnapshot(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		projectRealms2 := testAuthProjectRealms(ctx, "project-2")
-		projectRealms2.Realms, err = proto.Marshal(&protocol.Realms{
+		projectRealms2.Realms, err = ToStorableRealms(&protocol.Realms{
 			Permissions: makeTestPermissions("luci.dev.p1"),
 			Conditions:  makeTestConditions("b"),
 			Realms: []*protocol.Realm{

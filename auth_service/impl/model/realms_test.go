@@ -168,10 +168,10 @@ func TestMergeRealms(t *testing.T) {
 					},
 				},
 			}
-			marshalled, err := proto.Marshal(proj1Realms)
+			blob, err := ToStorableRealms(proj1Realms)
 			So(err, ShouldBeNil)
 			projectRealms := []*AuthProjectRealms{
-				{ID: "proj1", Realms: marshalled},
+				{ID: "proj1", Realms: blob},
 			}
 
 			expectedRealms := &protocol.Realms{
@@ -251,7 +251,7 @@ func TestMergeRealms(t *testing.T) {
 					},
 				},
 			}
-			marshalledProj1, err := proto.Marshal(proj1Realms)
+			blob1, err := ToStorableRealms(proj1Realms)
 			So(err, ShouldBeNil)
 			proj2Realms := &protocol.Realms{
 				Permissions: makeTestPermissions("luci.dev.p1"),
@@ -282,11 +282,11 @@ func TestMergeRealms(t *testing.T) {
 					},
 				},
 			}
-			marshalledProj2, err := proto.Marshal(proj2Realms)
+			blob2, err := ToStorableRealms(proj2Realms)
 			So(err, ShouldBeNil)
 			projectRealms := []*AuthProjectRealms{
-				{ID: "proj1", Realms: marshalledProj1},
-				{ID: "proj2", Realms: marshalledProj2},
+				{ID: "proj1", Realms: blob1},
+				{ID: "proj2", Realms: blob2},
 			}
 
 			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
@@ -359,7 +359,7 @@ func TestMergeRealms(t *testing.T) {
 					},
 				},
 			}
-			marshalledProj1, err := proto.Marshal(proj1Realms)
+			blob1, err := ToStorableRealms(proj1Realms)
 			So(err, ShouldBeNil)
 			proj2Realms := &protocol.Realms{
 				Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.p3"),
@@ -376,11 +376,11 @@ func TestMergeRealms(t *testing.T) {
 					},
 				},
 			}
-			marshalledProj2, err := proto.Marshal(proj2Realms)
+			blob2, err := ToStorableRealms(proj2Realms)
 			So(err, ShouldBeNil)
 			projectRealms := []*AuthProjectRealms{
-				{ID: "proj1", Realms: marshalledProj1},
-				{ID: "proj2", Realms: marshalledProj2},
+				{ID: "proj1", Realms: blob1},
+				{ID: "proj2", Realms: blob2},
 			}
 
 			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
@@ -430,10 +430,10 @@ func TestMergeRealms(t *testing.T) {
 					},
 				},
 			}
-			marshalled, err := proto.Marshal(proj1Realms)
+			blob, err := ToStorableRealms(proj1Realms)
 			So(err, ShouldBeNil)
 			projectRealms := []*AuthProjectRealms{
-				{ID: "proj1", Realms: marshalled},
+				{ID: "proj1", Realms: blob},
 			}
 
 			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
