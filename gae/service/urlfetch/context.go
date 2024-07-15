@@ -19,7 +19,6 @@ package urlfetch
 
 import (
 	"context"
-	"errors"
 	"net/http"
 )
 
@@ -31,14 +30,14 @@ var serviceKey key
 // SetFactory.
 type Factory func(context.Context) http.RoundTripper
 
-// Get pulls http.RoundTripper implementation from context or panics if it
-// wasn't set. Use SetFactory(...) or Set(...) in unit tests to mock
+// Get pulls http.RoundTripper implementation from context or returns nil if
+// it isn't set. Use SetFactory(...) or Set(...) in unit tests to mock
 // the round tripper.
 func Get(c context.Context) http.RoundTripper {
 	if f, ok := c.Value(serviceKey).(Factory); ok && f != nil {
 		return f(c)
 	}
-	panic(errors.New("no http.RoundTripper is set in context"))
+	return nil
 }
 
 // SetFactory sets the function to produce http.RoundTripper instances,

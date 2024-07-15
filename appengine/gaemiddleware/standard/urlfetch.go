@@ -21,8 +21,6 @@ import (
 	"go.chromium.org/luci/gae/service/urlfetch"
 )
 
-var background = context.Background()
-
 // contextAwareURLFetch implements http.RoundTripper by instantiating GAE's
 // urlfetch.Transport for each request.
 //
@@ -32,7 +30,7 @@ var background = context.Background()
 //
 // contextAwareURLFetch works around this problem by instantiating a new
 // urlfetch.Transport for each request, using request's context as a basis
-// (if available), and falling back to the context provided during the creation
+// (if possible), and falling back to the context provided during the creation
 // otherwise.
 type contextAwareURLFetch struct {
 	ctx context.Context
@@ -40,10 +38,12 @@ type contextAwareURLFetch struct {
 
 // RoundTrip is part of http.RoundTripper interface.
 func (c *contextAwareURLFetch) RoundTrip(r *http.Request) (*http.Response, error) {
-	ctx := r.Context()
-	// We assume context.Background() always returns exact same object.
-	if ctx == background {
-		ctx = c.ctx
+	rt := urlfetch.Get(r.Context())
+	if rt == nil {
+		rt = urlfetch.Get(c.ctx)
+		if rt == nil {
+			panic("no http.RoundTripper is set in context")
+		}
 	}
-	return urlfetch.Get(ctx).RoundTrip(r)
+	return rt.RoundTrip(r)
 }
