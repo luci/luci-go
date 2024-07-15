@@ -15,6 +15,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/auth_service/constants"
@@ -35,12 +37,33 @@ import (
 	"go.chromium.org/luci/auth_service/internal/permissions"
 )
 
-const rootRealm = "@root"
+const (
+	// The AppID of the deployed development environment, so the correct realms
+	// config path will be used.
+	DevAppID = "chrome-infra-auth-dev"
+
+	// Paths to use within a project or service's folder when looking
+	// for realms configs.
+	RealmsProdCfgPath = "realms.cfg"
+	RealmsDevCfgPath  = "realms-dev.cfg"
+
+	// The name of the root realm.
+	rootRealm = "@root"
+)
 
 var (
 	knownSpecialRealms = stringset.NewFromSlice(rootRealm, "@legacy", "@project")
 	realmNameRE        = regexp.MustCompile(`^[a-z0-9_\.\-/]{1,400}$`)
 )
+
+// GetRealmsCfgPath returns the appropriate realms config path,
+// depending on whether the environment is for development or production.
+func GetRealmsCfgPath(ctx context.Context) string {
+	if info.IsDevAppServer(ctx) || info.AppID(ctx) == DevAppID {
+		return RealmsDevCfgPath
+	}
+	return RealmsProdCfgPath
+}
 
 func validateServiceRealmsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
 	return validateRealmsCfg(ctx, path, content, true)

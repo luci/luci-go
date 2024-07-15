@@ -33,10 +33,10 @@ import (
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
+	"go.chromium.org/luci/auth_service/internal/configs/validation"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 )
 
@@ -45,15 +45,6 @@ const (
 	// to get its own configs.
 	Cria    = "services/chrome-infra-auth"
 	CriaDev = "services/chrome-infra-auth-dev"
-
-	// The AppID of the deployed development environment, so the correct
-	// config path will be used.
-	DevAppID = "chrome-infra-auth-dev"
-
-	// Paths to use within a project or service's folder when looking
-	// for realms configs.
-	RealmsCfgPath    = "realms.cfg"
-	RealmsDevCfgPath = "realms-dev.cfg"
 )
 
 type realmsMap struct {
@@ -354,7 +345,7 @@ func sliceCompare[T string | uint32](sli []T, slj []T) bool {
 //   - ErrNoConfig if config is not found
 //   - annotated error for all other errors
 func FetchLatestRealmsConfigs(ctx context.Context) (map[string]*config.Config, error) {
-	targetCfgPath := CfgPath(ctx)
+	targetCfgPath := validation.GetRealmsCfgPath(ctx)
 	projects, err := cfgclient.ProjectsWithConfig(ctx, targetCfgPath)
 	if err != nil {
 		return nil, err
@@ -369,18 +360,16 @@ func FetchLatestRealmsConfigs(ctx context.Context) (map[string]*config.Config, e
 		cfgMap: make(map[string]*config.Config, len(projects)+1),
 	}
 
-	self := func(ctx context.Context) string {
-		if CfgPath(ctx) == RealmsDevCfgPath {
-			return CriaDev
-		}
-		return Cria
+	selfProject := Cria
+	if targetCfgPath == validation.RealmsDevCfgPath {
+		selfProject = CriaDev
 	}
 
 	// Get self config i.e. services/chrome-infra-auth-dev/realms-dev.cfg
 	// or services/chrome-infra-auth/realms.cfg.
 	eg, childCtx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		return latestMap.getLatestConfig(childCtx, client, self(ctx))
+		return latestMap.getLatestConfig(childCtx, client, selfProject)
 	})
 
 	// Get other projects' realms configs.
@@ -408,7 +397,7 @@ func (r *realmsMap) getLatestConfig(ctx context.Context, client config.Interface
 		return err
 	}
 
-	targetCfgPath := CfgPath(ctx)
+	targetCfgPath := validation.GetRealmsCfgPath(ctx)
 	cfg, err := client.GetConfig(ctx, cfgSet, targetCfgPath, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch %s for %s", targetCfgPath, project).Err()
@@ -419,14 +408,6 @@ func (r *realmsMap) getLatestConfig(ctx context.Context, client config.Interface
 	r.mu.Unlock()
 
 	return nil
-}
-
-// CfgPath is a helper function to know which cfg, depending on dev or prod env.
-func CfgPath(ctx context.Context) string {
-	if info.IsDevAppServer(ctx) || info.AppID(ctx) == DevAppID {
-		return RealmsDevCfgPath
-	}
-	return RealmsCfgPath
 }
 
 // cfgSet is a helper function to know which configSet to use, this is necessary for
