@@ -26,11 +26,11 @@ import {
 
 import {
   FusedGitilesClientImpl,
-  PositionLogRequest,
+  ExtendedLogRequest,
 } from './fused_gitiles_client';
 
 describe('FusedGitilesClientImpl', () => {
-  describe('Log', () => {
+  describe('ExtendedLog', () => {
     let numberingSpy: jest.SpyInstance<
       Promise<NumberingResponse>,
       [request: NumberingRequest]
@@ -63,8 +63,8 @@ describe('FusedGitilesClientImpl', () => {
         new PrpcClient({ host: 'gitiles_host.googlesource.com' }),
         { crRevHost: 'cr-rev.host' },
       );
-      const res = await client.Log(
-        PositionLogRequest.fromPartial({
+      const res = await client.ExtendedLog(
+        ExtendedLogRequest.fromPartial({
           project: 'the_project',
           committish: 'hash_for_1234',
           pageSize: 10,
@@ -98,8 +98,8 @@ describe('FusedGitilesClientImpl', () => {
         new PrpcClient({ host: 'gitiles_host.googlesource.com' }),
         { crRevHost: 'cr-rev.host' },
       );
-      const res = await client.Log(
-        PositionLogRequest.fromPartial({
+      const res = await client.ExtendedLog(
+        ExtendedLogRequest.fromPartial({
           project: 'the_project',
           ref: 'a_branch',
           position: '1234',

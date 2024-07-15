@@ -16,10 +16,15 @@ import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { FusedGitilesClientImpl } from '@/gitiles/api/fused_gitiles_client';
 import { CrrevClientImpl } from '@/proto/infra/appengine/cr-rev/frontend/api/v1/service.pb';
 
+const GET_NO_AUTH_TOKEN = () => '';
+const USE_GET_NO_AUTH_TOKEN = () => GET_NO_AUTH_TOKEN;
+
 export function useCrRevClient() {
   return usePrpcServiceClient({
     host: SETTINGS.crRev.host,
     ClientImpl: CrrevClientImpl,
+    // Cr-rev does not need an auth token.
+    initUseGetAuthToken: USE_GET_NO_AUTH_TOKEN,
   });
 }
 
