@@ -15,15 +15,30 @@
 import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 import { getGitilesHostProject } from '@/gitiles/tools/utils';
 import {
+  ArchiveRequest,
+  ArchiveResponse,
   DeepPartial,
+  DownloadDiffRequest,
+  DownloadDiffResponse,
+  DownloadFileRequest,
+  DownloadFileResponse,
+  Gitiles,
+  ListFilesRequest,
+  ListFilesResponse,
   LogRequest,
   LogResponse,
+  ProjectsRequest,
+  ProjectsResponse,
+  RefsRequest,
+  RefsResponse,
 } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import {
   CrrevClientImpl,
   NumberingRequest,
 } from '@/proto/infra/appengine/cr-rev/frontend/api/v1/service.pb';
+
+import { RestGitilesClientImpl } from './rest_gitiles_client';
 
 /**
  * The same as `gitiles.LogRequest` but also support querying by commit
@@ -80,6 +95,20 @@ export const ExtendedLogRequest = {
   },
 };
 
+/**
+ * A list of gitiles host that are known to allow cross-origin requests from
+ * LUCI UI.
+ *
+ * `FusedGitilesClientImpl` sends requests to the gitiles host directly if
+ * LUCI UI is allowed to send cross-origin requests to them. Otherwise, the
+ * requests are sent through `MiloInternal`.
+ */
+export const CORS_ENABLED_GITILES_HOSTS = Object.freeze([
+  'chromium.googlesource.com',
+  'chrome-internal.googlesource.com',
+  'webrtc.googlesource.com',
+]);
+
 export const ExtendedGitilesServiceName = 'extended.gitiles.Gitiles';
 
 export interface FusedGitilesClientOpts {
@@ -97,11 +126,12 @@ export interface FusedGitilesClientOpts {
  * Similar to `GitilesClientImpl` but fuses multiple services together to
  * address the limitations of an ordinary `GitilesClientImpl`.
  */
-export class FusedGitilesClientImpl {
+export class FusedGitilesClientImpl implements Gitiles {
   static readonly DEFAULT_SERVICE = ExtendedGitilesServiceName;
   readonly service: string;
 
-  private readonly miloClient: MiloInternalClientImpl;
+  private readonly gitilesClient: RestGitilesClientImpl | undefined;
+  private readonly miloClient: MiloInternalClientImpl | undefined;
   private readonly crRevClient: CrrevClientImpl;
 
   constructor(
@@ -109,13 +139,22 @@ export class FusedGitilesClientImpl {
     opts: FusedGitilesClientOpts,
   ) {
     this.service = opts.service || ExtendedGitilesServiceName;
-    this.miloClient = new MiloInternalClientImpl(
-      new PrpcClient({
-        host: '',
-        insecure: location.protocol === 'http:',
-        getAuthToken: rpc.getAuthToken,
-      }),
-    );
+    if (CORS_ENABLED_GITILES_HOSTS.includes(rpc.host)) {
+      this.gitilesClient = new RestGitilesClientImpl(
+        new PrpcClient({
+          host: rpc.host,
+          getAuthToken: rpc.getAuthToken,
+        }),
+      );
+    } else {
+      this.miloClient = new MiloInternalClientImpl(
+        new PrpcClient({
+          host: '',
+          insecure: location.protocol === 'http:',
+          getAuthToken: rpc.getAuthToken,
+        }),
+      );
+    }
     this.crRevClient = new CrrevClientImpl(
       new PrpcClient({
         host: opts.crRevHost,
@@ -125,13 +164,23 @@ export class FusedGitilesClientImpl {
 
     this.Log = this.Log.bind(this);
     this.ExtendedLog = this.ExtendedLog.bind(this);
+    this.Refs = this.Refs.bind(this);
+    this.Archive = this.Archive.bind(this);
+    this.DownloadFile = this.DownloadFile.bind(this);
+    this.DownloadDiff = this.DownloadDiff.bind(this);
+    this.Projects = this.Projects.bind(this);
+    this.ListFiles = this.ListFiles.bind(this);
   }
 
   /**
    * Similar to `GitilesClientImpl.prototype.Log` but it proxy the request
-   * through `MiloInternal.ProxyGitilesLog`.
+   * through `MiloInternal.ProxyGitilesLog` if the gitiles host does not allow
+   * CORS requests from LUCI UI.
    */
   async Log(request: LogRequest): Promise<LogResponse> {
+    if (this.gitilesClient) {
+      return this.gitilesClient.Log(request);
+    }
     return this.miloClient!.ProxyGitilesLog({
       host: this.rpc.host,
       request,
@@ -165,5 +214,24 @@ export class FusedGitilesClientImpl {
         committish: numbering.gitHash,
       }),
     );
+  }
+
+  Refs(_request: RefsRequest): Promise<RefsResponse> {
+    throw new Error('Method not implemented.');
+  }
+  Archive(_request: ArchiveRequest): Promise<ArchiveResponse> {
+    throw new Error('Method not implemented.');
+  }
+  DownloadFile(_request: DownloadFileRequest): Promise<DownloadFileResponse> {
+    throw new Error('Method not implemented.');
+  }
+  DownloadDiff(_request: DownloadDiffRequest): Promise<DownloadDiffResponse> {
+    throw new Error('Method not implemented.');
+  }
+  Projects(_request: ProjectsRequest): Promise<ProjectsResponse> {
+    throw new Error('Method not implemented.');
+  }
+  ListFiles(_request: ListFilesRequest): Promise<ListFilesResponse> {
+    throw new Error('Method not implemented.');
   }
 }

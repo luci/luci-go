@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import { PrpcClient } from '@/generic_libs/tools/prpc_client';
-import { LogResponse } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
+import {
+  LogRequest,
+  LogResponse,
+} from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 import {
   MiloInternalClientImpl,
   ProxyGitilesLogRequest,
@@ -28,8 +31,95 @@ import {
   FusedGitilesClientImpl,
   ExtendedLogRequest,
 } from './fused_gitiles_client';
+import { RestGitilesClientImpl } from './rest_gitiles_client';
 
 describe('FusedGitilesClientImpl', () => {
+  describe('Log', () => {
+    let gitilesLogSpy: jest.SpyInstance<
+      Promise<LogResponse>,
+      [request: LogRequest]
+    >;
+    let proxyGitilesLogSpy: jest.SpyInstance<
+      Promise<LogResponse>,
+      [request: ProxyGitilesLogRequest]
+    >;
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      gitilesLogSpy = jest.spyOn(RestGitilesClientImpl.prototype, 'Log');
+      proxyGitilesLogSpy = jest.spyOn(
+        MiloInternalClientImpl.prototype,
+        'ProxyGitilesLog',
+      );
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+      jest.resetAllMocks();
+    });
+
+    it('should work with CORS-enabled host', async () => {
+      const logRes = LogResponse.fromPartial({
+        log: [{ author: { email: 'email@email.com', name: 'name' } }],
+      });
+      gitilesLogSpy.mockResolvedValueOnce(logRes);
+      const client = new FusedGitilesClientImpl(
+        new PrpcClient({ host: 'chromium.googlesource.com' }),
+        { crRevHost: 'cr-rev.host' },
+      );
+      const res = await client.Log(
+        LogRequest.fromPartial({
+          project: 'the_project',
+          committish: 'hash_for_1234',
+          pageSize: 10,
+        }),
+      );
+      expect(res).toEqual(logRes);
+      expect(proxyGitilesLogSpy).not.toHaveBeenCalled();
+      expect(gitilesLogSpy).toHaveBeenCalledTimes(1);
+      expect(gitilesLogSpy).toHaveBeenNthCalledWith(
+        1,
+        LogRequest.fromPartial({
+          committish: 'hash_for_1234',
+          pageSize: 10,
+          project: 'the_project',
+        }),
+      );
+    });
+
+    it('should work with non-CORS-enabled host', async () => {
+      const logRes = LogResponse.fromPartial({
+        log: [{ author: { email: 'email@email.com', name: 'name' } }],
+      });
+      proxyGitilesLogSpy.mockResolvedValueOnce(logRes);
+      const client = new FusedGitilesClientImpl(
+        new PrpcClient({ host: 'other.googlesource.com' }),
+        { crRevHost: 'cr-rev.host' },
+      );
+      const res = await client.Log(
+        LogRequest.fromPartial({
+          project: 'the_project',
+          committish: 'hash_for_1234',
+          pageSize: 10,
+        }),
+      );
+      expect(res).toEqual(logRes);
+      expect(gitilesLogSpy).not.toHaveBeenCalled();
+      expect(proxyGitilesLogSpy).toHaveBeenCalledTimes(1);
+      expect(proxyGitilesLogSpy).toHaveBeenNthCalledWith(
+        1,
+        ProxyGitilesLogRequest.fromPartial({
+          host: 'other.googlesource.com',
+          request: {
+            committish: 'hash_for_1234',
+            pageSize: 10,
+            project: 'the_project',
+          },
+        }),
+      );
+    });
+  });
+
   describe('ExtendedLog', () => {
     let numberingSpy: jest.SpyInstance<
       Promise<NumberingResponse>,
