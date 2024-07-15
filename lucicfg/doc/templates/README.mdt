@@ -423,8 +423,8 @@ strings. Supported kinds of schedules (illustrated via examples):
      an invocation before starting a new one. Moments when the job starts aren't
      synchronized with the wall clock at all.
 
-  - `with 1m interval`, `with 1h interval`: same format, just using minutes and
-    hours instead of seconds.
+  - `with 1m interval`, `with 1h interval`, `with 1h10m interval`: same format,
+    just using minutes and hours instead of seconds.
 
   - `continuously` is alias for `with 0s interval`, meaning to run the job in
     a loop without any pauses at all.
