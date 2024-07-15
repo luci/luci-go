@@ -90,10 +90,7 @@ func validateRealmsCfg(ctx *validation.Context, path string, content []byte, all
 		return nil
 	}
 
-	rv := &realmsValidator{
-		db:            permissions.NewPermissionsDB(permsCfg, permsMeta),
-		allowInternal: allowInternal,
-	}
+	rv := NewRealmsValidator(permissions.NewPermissionsDB(permsCfg, permsMeta), allowInternal)
 	rv.Validate(ctx, cfg)
 
 	return nil
@@ -102,6 +99,15 @@ func validateRealmsCfg(ctx *validation.Context, path string, content []byte, all
 type realmsValidator struct {
 	db            *permissions.PermissionsDB
 	allowInternal bool
+}
+
+// NewRealmsValidator returns a realms validator using the given permissions DB
+// and flag for whether  internal permissions and roles references are allowed.
+func NewRealmsValidator(db *permissions.PermissionsDB, allowInternal bool) *realmsValidator {
+	return &realmsValidator{
+		db:            db,
+		allowInternal: allowInternal,
+	}
 }
 
 // Validate checks the realms config is correctly formatted and does not

@@ -553,7 +553,7 @@ func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*Re
 		if err := prototext.Unmarshal(r.ConfigBody, parsed); err != nil {
 			return errors.Annotate(err, "couldn't unmarshal config body").Err()
 		}
-		expandedRev, err := realmsinternals.ExpandRealms(db, r.ProjectID, parsed)
+		expandedRev, err := realmsinternals.ExpandRealms(ctx, db, r.ProjectID, parsed)
 		if err != nil {
 			return errors.Annotate(err, "failed to process realms of \"%s\"", r.ProjectID).Err()
 		}
