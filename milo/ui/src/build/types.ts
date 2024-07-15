@@ -30,7 +30,7 @@ import { PARTIAL_BUILD_FIELD_MASK } from './constants';
 
 export type SpecifiedBuildStatus = Exclude<
   BuildStatus,
-  BuildStatus.UNSPECIFIED | BuildStatus.ENDED_MASK
+  BuildStatus.STATUS_UNSPECIFIED | BuildStatus.ENDED_MASK
 >;
 
 export interface OutputStep extends Step {

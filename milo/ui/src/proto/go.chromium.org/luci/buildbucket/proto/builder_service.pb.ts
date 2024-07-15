@@ -114,7 +114,7 @@ export interface BuilderMask {
 }
 
 export enum BuilderMask_BuilderMaskType {
-  UNSPECIFIED = 0,
+  BUILDER_MASK_TYPE_UNSPECIFIED = 0,
   /** CONFIG_ONLY - Default. Returns ID + Config fields in BuilderItem. */
   CONFIG_ONLY = 1,
   /** ALL - Returns all fields in BuilderItem. */
@@ -127,7 +127,7 @@ export function builderMask_BuilderMaskTypeFromJSON(object: any): BuilderMask_Bu
   switch (object) {
     case 0:
     case "BUILDER_MASK_TYPE_UNSPECIFIED":
-      return BuilderMask_BuilderMaskType.UNSPECIFIED;
+      return BuilderMask_BuilderMaskType.BUILDER_MASK_TYPE_UNSPECIFIED;
     case 1:
     case "CONFIG_ONLY":
       return BuilderMask_BuilderMaskType.CONFIG_ONLY;
@@ -144,7 +144,7 @@ export function builderMask_BuilderMaskTypeFromJSON(object: any): BuilderMask_Bu
 
 export function builderMask_BuilderMaskTypeToJSON(object: BuilderMask_BuilderMaskType): string {
   switch (object) {
-    case BuilderMask_BuilderMaskType.UNSPECIFIED:
+    case BuilderMask_BuilderMaskType.BUILDER_MASK_TYPE_UNSPECIFIED:
       return "BUILDER_MASK_TYPE_UNSPECIFIED";
     case BuilderMask_BuilderMaskType.CONFIG_ONLY:
       return "CONFIG_ONLY";

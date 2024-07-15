@@ -10,7 +10,7 @@ import _m0 from "protobufjs/minimal";
 export const protobufPackage = "luci.resultdb.v1";
 
 export enum InstructionTarget {
-  UNSPECIFIED = 0,
+  INSTRUCTION_TARGET_UNSPECIFIED = 0,
   /** LOCAL - For running in a local machine. */
   LOCAL = 1,
   /** REMOTE - For running remotely. */
@@ -23,7 +23,7 @@ export function instructionTargetFromJSON(object: any): InstructionTarget {
   switch (object) {
     case 0:
     case "INSTRUCTION_TARGET_UNSPECIFIED":
-      return InstructionTarget.UNSPECIFIED;
+      return InstructionTarget.INSTRUCTION_TARGET_UNSPECIFIED;
     case 1:
     case "LOCAL":
       return InstructionTarget.LOCAL;
@@ -40,7 +40,7 @@ export function instructionTargetFromJSON(object: any): InstructionTarget {
 
 export function instructionTargetToJSON(object: InstructionTarget): string {
   switch (object) {
-    case InstructionTarget.UNSPECIFIED:
+    case InstructionTarget.INSTRUCTION_TARGET_UNSPECIFIED:
       return "INSTRUCTION_TARGET_UNSPECIFIED";
     case InstructionTarget.LOCAL:
       return "LOCAL";
@@ -54,7 +54,7 @@ export function instructionTargetToJSON(object: InstructionTarget): string {
 }
 
 export enum InstructionType {
-  UNSPECIFIED = 0,
+  INSTRUCTION_TYPE_UNSPECIFIED = 0,
   /** STEP_INSTRUCTION - Instruction for step. */
   STEP_INSTRUCTION = 1,
   /** TEST_RESULT_INSTRUCTION - Instruction for test result. */
@@ -65,7 +65,7 @@ export function instructionTypeFromJSON(object: any): InstructionType {
   switch (object) {
     case 0:
     case "INSTRUCTION_TYPE_UNSPECIFIED":
-      return InstructionType.UNSPECIFIED;
+      return InstructionType.INSTRUCTION_TYPE_UNSPECIFIED;
     case 1:
     case "STEP_INSTRUCTION":
       return InstructionType.STEP_INSTRUCTION;
@@ -79,7 +79,7 @@ export function instructionTypeFromJSON(object: any): InstructionType {
 
 export function instructionTypeToJSON(object: InstructionType): string {
   switch (object) {
-    case InstructionType.UNSPECIFIED:
+    case InstructionType.INSTRUCTION_TYPE_UNSPECIFIED:
       return "INSTRUCTION_TYPE_UNSPECIFIED";
     case InstructionType.STEP_INSTRUCTION:
       return "STEP_INSTRUCTION";

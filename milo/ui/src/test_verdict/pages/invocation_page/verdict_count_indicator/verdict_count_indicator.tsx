@@ -67,15 +67,15 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
   const firstPage = data?.pages[0];
   const hasVerdicts = (firstPage?.testVariants.length || 0) !== 0;
   const worstStatus = (firstPage?.testVariants[0]?.status ||
-    TestVariantStatus.UNSPECIFIED) as
+    TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED) as
     | SpecifiedTestVerdictStatus
-    | TestVariantStatus.UNSPECIFIED;
+    | TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED;
   const { worstStatusCount, countedAll } = useMemo(
     () => {
       // Not interested in the count when there are no test verdict worse than
       // being exonerated.
       if (
-        worstStatus === TestVariantStatus.UNSPECIFIED ||
+        worstStatus === TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED ||
         worstStatus >= TestVariantStatus.EXONERATED
       ) {
         return { worstStatusCount: 0, countedAll: true };
@@ -112,7 +112,10 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
     );
   }
 
-  if (!hasVerdicts || worstStatus === TestVariantStatus.UNSPECIFIED) {
+  if (
+    !hasVerdicts ||
+    worstStatus === TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED
+  ) {
     return <Container />;
   }
 

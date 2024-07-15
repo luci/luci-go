@@ -19,15 +19,15 @@ import {
 
 export function displayRerunStatus(rerunStatus: RerunStatus): string {
   switch (rerunStatus) {
-    case RerunStatus.PASSED:
+    case RerunStatus.RERUN_STATUS_PASSED:
       return 'Passed';
-    case RerunStatus.FAILED:
+    case RerunStatus.RERUN_STATUS_FAILED:
       return 'Failed';
-    case RerunStatus.IN_PROGRESS:
+    case RerunStatus.RERUN_STATUS_IN_PROGRESS:
       return 'In Progress';
-    case RerunStatus.INFRA_FAILED:
+    case RerunStatus.RERUN_STATUS_INFRA_FAILED:
       return 'Infra failed';
-    case RerunStatus.CANCELED:
+    case RerunStatus.RERUN_STATUS_CANCELED:
       return 'Canceled';
   }
   return 'Unknown';

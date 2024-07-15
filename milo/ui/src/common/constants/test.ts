@@ -21,7 +21,7 @@ export const VERDICT_STATUS_DISPLAY_MAP = Object.freeze({
   [TestVariantStatus.FLAKY]: 'flaky',
   [TestVariantStatus.UNEXPECTED]: 'unexpectedly failed',
   [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'unexpectedly skipped',
-  [TestVariantStatus.UNSPECIFIED]: 'unspecified',
+  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
 });
 
 export const TEST_STATUS_DISPLAY_MAP = Object.freeze({

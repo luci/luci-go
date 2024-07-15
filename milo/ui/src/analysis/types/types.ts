@@ -49,7 +49,7 @@ import {
 
 export type SpecifiedTestVerdictStatus = Exclude<
   TestVerdictStatus,
-  TestVerdictStatus.UNSPECIFIED
+  TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED
 >;
 
 export type SpecifiedSourceVerdictStatus = Exclude<

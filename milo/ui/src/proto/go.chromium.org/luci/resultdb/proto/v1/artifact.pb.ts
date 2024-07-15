@@ -106,7 +106,7 @@ export interface ArtifactLine {
 }
 
 export enum ArtifactLine_Severity {
-  UNSPECIFIED = 0,
+  SEVERITY_UNSPECIFIED = 0,
   VERBOSE = 10,
   TRACE = 20,
   DEBUG = 30,
@@ -122,7 +122,7 @@ export function artifactLine_SeverityFromJSON(object: any): ArtifactLine_Severit
   switch (object) {
     case 0:
     case "SEVERITY_UNSPECIFIED":
-      return ArtifactLine_Severity.UNSPECIFIED;
+      return ArtifactLine_Severity.SEVERITY_UNSPECIFIED;
     case 10:
     case "VERBOSE":
       return ArtifactLine_Severity.VERBOSE;
@@ -157,7 +157,7 @@ export function artifactLine_SeverityFromJSON(object: any): ArtifactLine_Severit
 
 export function artifactLine_SeverityToJSON(object: ArtifactLine_Severity): string {
   switch (object) {
-    case ArtifactLine_Severity.UNSPECIFIED:
+    case ArtifactLine_Severity.SEVERITY_UNSPECIFIED:
       return "SEVERITY_UNSPECIFIED";
     case ArtifactLine_Severity.VERBOSE:
       return "VERBOSE";

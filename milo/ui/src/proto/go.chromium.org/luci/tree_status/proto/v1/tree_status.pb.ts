@@ -13,10 +13,10 @@ export const protobufPackage = "luci.tree_status.v1";
 /** GeneralState are the possible states for a tree to be in. */
 export enum GeneralState {
   /**
-   * UNSPECIFIED - GeneralState was not specified.
+   * GENERAL_STATE_UNSPECIFIED - GeneralState was not specified.
    * This should not be used, it is the default value for an unset field.
    */
-  UNSPECIFIED = 0,
+  GENERAL_STATE_UNSPECIFIED = 0,
   /** OPEN - The tree is open and accepting new commits. */
   OPEN = 1,
   /** CLOSED - The tree is closed, no new commits are currently being accepted. */
@@ -37,7 +37,7 @@ export function generalStateFromJSON(object: any): GeneralState {
   switch (object) {
     case 0:
     case "GENERAL_STATE_UNSPECIFIED":
-      return GeneralState.UNSPECIFIED;
+      return GeneralState.GENERAL_STATE_UNSPECIFIED;
     case 1:
     case "OPEN":
       return GeneralState.OPEN;
@@ -57,7 +57,7 @@ export function generalStateFromJSON(object: any): GeneralState {
 
 export function generalStateToJSON(object: GeneralState): string {
   switch (object) {
-    case GeneralState.UNSPECIFIED:
+    case GeneralState.GENERAL_STATE_UNSPECIFIED:
       return "GENERAL_STATE_UNSPECIFIED";
     case GeneralState.OPEN:
       return "OPEN";

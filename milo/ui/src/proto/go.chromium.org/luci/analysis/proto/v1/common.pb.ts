@@ -21,35 +21,35 @@ export const protobufPackage = "luci.analysis.v1";
  * See https://google.aip.dev/126.
  */
 export enum BuildStatus {
-  /** UNSPECIFIED - A build must not have this status. */
-  UNSPECIFIED = 0,
-  /** SUCCESS - The build succeeded. */
-  SUCCESS = 1,
-  /** FAILURE - The build failed. */
-  FAILURE = 2,
-  /** INFRA_FAILURE - The build encountered an infrastructure failure. */
-  INFRA_FAILURE = 3,
-  /** CANCELED - The build was canceled. */
-  CANCELED = 4,
+  /** BUILD_STATUS_UNSPECIFIED - A build must not have this status. */
+  BUILD_STATUS_UNSPECIFIED = 0,
+  /** BUILD_STATUS_SUCCESS - The build succeeded. */
+  BUILD_STATUS_SUCCESS = 1,
+  /** BUILD_STATUS_FAILURE - The build failed. */
+  BUILD_STATUS_FAILURE = 2,
+  /** BUILD_STATUS_INFRA_FAILURE - The build encountered an infrastructure failure. */
+  BUILD_STATUS_INFRA_FAILURE = 3,
+  /** BUILD_STATUS_CANCELED - The build was canceled. */
+  BUILD_STATUS_CANCELED = 4,
 }
 
 export function buildStatusFromJSON(object: any): BuildStatus {
   switch (object) {
     case 0:
     case "BUILD_STATUS_UNSPECIFIED":
-      return BuildStatus.UNSPECIFIED;
+      return BuildStatus.BUILD_STATUS_UNSPECIFIED;
     case 1:
     case "BUILD_STATUS_SUCCESS":
-      return BuildStatus.SUCCESS;
+      return BuildStatus.BUILD_STATUS_SUCCESS;
     case 2:
     case "BUILD_STATUS_FAILURE":
-      return BuildStatus.FAILURE;
+      return BuildStatus.BUILD_STATUS_FAILURE;
     case 3:
     case "BUILD_STATUS_INFRA_FAILURE":
-      return BuildStatus.INFRA_FAILURE;
+      return BuildStatus.BUILD_STATUS_INFRA_FAILURE;
     case 4:
     case "BUILD_STATUS_CANCELED":
-      return BuildStatus.CANCELED;
+      return BuildStatus.BUILD_STATUS_CANCELED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum BuildStatus");
   }
@@ -57,15 +57,15 @@ export function buildStatusFromJSON(object: any): BuildStatus {
 
 export function buildStatusToJSON(object: BuildStatus): string {
   switch (object) {
-    case BuildStatus.UNSPECIFIED:
+    case BuildStatus.BUILD_STATUS_UNSPECIFIED:
       return "BUILD_STATUS_UNSPECIFIED";
-    case BuildStatus.SUCCESS:
+    case BuildStatus.BUILD_STATUS_SUCCESS:
       return "BUILD_STATUS_SUCCESS";
-    case BuildStatus.FAILURE:
+    case BuildStatus.BUILD_STATUS_FAILURE:
       return "BUILD_STATUS_FAILURE";
-    case BuildStatus.INFRA_FAILURE:
+    case BuildStatus.BUILD_STATUS_INFRA_FAILURE:
       return "BUILD_STATUS_INFRA_FAILURE";
-    case BuildStatus.CANCELED:
+    case BuildStatus.BUILD_STATUS_CANCELED:
       return "BUILD_STATUS_CANCELED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum BuildStatus");
@@ -81,8 +81,8 @@ export function buildStatusToJSON(object: BuildStatus): string {
  * Based on https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/resultdb/proto/v1/test_result.proto?q=ExonerationReason&type=cs.
  */
 export enum ExonerationReason {
-  /** UNSPECIFIED - A test failure must not have this status. */
-  UNSPECIFIED = 0,
+  /** EXONERATION_REASON_UNSPECIFIED - A test failure must not have this status. */
+  EXONERATION_REASON_UNSPECIFIED = 0,
   /**
    * OCCURS_ON_MAINLINE - Similar unexpected results were observed on a mainline branch
    * (i.e. against a build without unsubmitted changes applied).
@@ -119,7 +119,7 @@ export function exonerationReasonFromJSON(object: any): ExonerationReason {
   switch (object) {
     case 0:
     case "EXONERATION_REASON_UNSPECIFIED":
-      return ExonerationReason.UNSPECIFIED;
+      return ExonerationReason.EXONERATION_REASON_UNSPECIFIED;
     case 1:
     case "OCCURS_ON_MAINLINE":
       return ExonerationReason.OCCURS_ON_MAINLINE;
@@ -139,7 +139,7 @@ export function exonerationReasonFromJSON(object: any): ExonerationReason {
 
 export function exonerationReasonToJSON(object: ExonerationReason): string {
   switch (object) {
-    case ExonerationReason.UNSPECIFIED:
+    case ExonerationReason.EXONERATION_REASON_UNSPECIFIED:
       return "EXONERATION_REASON_UNSPECIFIED";
     case ExonerationReason.OCCURS_ON_MAINLINE:
       return "OCCURS_ON_MAINLINE";
@@ -159,8 +159,8 @@ export function exonerationReasonToJSON(object: ExonerationReason): string {
  * changes.
  */
 export enum SubmittedFilter {
-  /** UNSPECIFIED - Default value. Include all test verdicts. */
-  UNSPECIFIED = 0,
+  /** SUBMITTED_FILTER_UNSPECIFIED - Default value. Include all test verdicts. */
+  SUBMITTED_FILTER_UNSPECIFIED = 0,
   /** ONLY_SUBMITTED - Only include test verdicts that don't have unsubmitted changes. */
   ONLY_SUBMITTED = 1,
   /** ONLY_UNSUBMITTED - Only include test verdicts that have unsubmitted changes. */
@@ -171,7 +171,7 @@ export function submittedFilterFromJSON(object: any): SubmittedFilter {
   switch (object) {
     case 0:
     case "SUBMITTED_FILTER_UNSPECIFIED":
-      return SubmittedFilter.UNSPECIFIED;
+      return SubmittedFilter.SUBMITTED_FILTER_UNSPECIFIED;
     case 1:
     case "ONLY_SUBMITTED":
       return SubmittedFilter.ONLY_SUBMITTED;
@@ -185,7 +185,7 @@ export function submittedFilterFromJSON(object: any): SubmittedFilter {
 
 export function submittedFilterToJSON(object: SubmittedFilter): string {
   switch (object) {
-    case SubmittedFilter.UNSPECIFIED:
+    case SubmittedFilter.SUBMITTED_FILTER_UNSPECIFIED:
       return "SUBMITTED_FILTER_UNSPECIFIED";
     case SubmittedFilter.ONLY_SUBMITTED:
       return "ONLY_SUBMITTED";
@@ -202,8 +202,8 @@ export function submittedFilterToJSON(object: SubmittedFilter): string {
  * https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto?q=QUICK_DRY_RUN&type=cs.
  */
 export enum PresubmitRunMode {
-  /** UNSPECIFIED - A presubmit run must not have this status. */
-  UNSPECIFIED = 0,
+  /** PRESUBMIT_RUN_MODE_UNSPECIFIED - A presubmit run must not have this status. */
+  PRESUBMIT_RUN_MODE_UNSPECIFIED = 0,
   /** DRY_RUN - Run all tests but do not submit. */
   DRY_RUN = 1,
   /** FULL_RUN - Run all tests and potentially submit. */
@@ -218,7 +218,7 @@ export function presubmitRunModeFromJSON(object: any): PresubmitRunMode {
   switch (object) {
     case 0:
     case "PRESUBMIT_RUN_MODE_UNSPECIFIED":
-      return PresubmitRunMode.UNSPECIFIED;
+      return PresubmitRunMode.PRESUBMIT_RUN_MODE_UNSPECIFIED;
     case 1:
     case "DRY_RUN":
       return PresubmitRunMode.DRY_RUN;
@@ -238,7 +238,7 @@ export function presubmitRunModeFromJSON(object: any): PresubmitRunMode {
 
 export function presubmitRunModeToJSON(object: PresubmitRunMode): string {
   switch (object) {
-    case PresubmitRunMode.UNSPECIFIED:
+    case PresubmitRunMode.PRESUBMIT_RUN_MODE_UNSPECIFIED:
       return "PRESUBMIT_RUN_MODE_UNSPECIFIED";
     case PresubmitRunMode.DRY_RUN:
       return "DRY_RUN";
@@ -263,30 +263,30 @@ export function presubmitRunModeToJSON(object: PresubmitRunMode): string {
  * Based on https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/run/storage.proto;l=28?q=LUCI%20CV%20status%20lang:proto.
  */
 export enum PresubmitRunStatus {
-  /** UNSPECIFIED - A build must not have this status. */
-  UNSPECIFIED = 0,
-  /** SUCCEEDED - The run succeeded. */
-  SUCCEEDED = 1,
-  /** FAILED - The run failed. */
-  FAILED = 2,
-  /** CANCELED - The run was canceled. */
-  CANCELED = 3,
+  /** PRESUBMIT_RUN_STATUS_UNSPECIFIED - A build must not have this status. */
+  PRESUBMIT_RUN_STATUS_UNSPECIFIED = 0,
+  /** PRESUBMIT_RUN_STATUS_SUCCEEDED - The run succeeded. */
+  PRESUBMIT_RUN_STATUS_SUCCEEDED = 1,
+  /** PRESUBMIT_RUN_STATUS_FAILED - The run failed. */
+  PRESUBMIT_RUN_STATUS_FAILED = 2,
+  /** PRESUBMIT_RUN_STATUS_CANCELED - The run was canceled. */
+  PRESUBMIT_RUN_STATUS_CANCELED = 3,
 }
 
 export function presubmitRunStatusFromJSON(object: any): PresubmitRunStatus {
   switch (object) {
     case 0:
     case "PRESUBMIT_RUN_STATUS_UNSPECIFIED":
-      return PresubmitRunStatus.UNSPECIFIED;
+      return PresubmitRunStatus.PRESUBMIT_RUN_STATUS_UNSPECIFIED;
     case 1:
     case "PRESUBMIT_RUN_STATUS_SUCCEEDED":
-      return PresubmitRunStatus.SUCCEEDED;
+      return PresubmitRunStatus.PRESUBMIT_RUN_STATUS_SUCCEEDED;
     case 2:
     case "PRESUBMIT_RUN_STATUS_FAILED":
-      return PresubmitRunStatus.FAILED;
+      return PresubmitRunStatus.PRESUBMIT_RUN_STATUS_FAILED;
     case 3:
     case "PRESUBMIT_RUN_STATUS_CANCELED":
-      return PresubmitRunStatus.CANCELED;
+      return PresubmitRunStatus.PRESUBMIT_RUN_STATUS_CANCELED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum PresubmitRunStatus");
   }
@@ -294,13 +294,13 @@ export function presubmitRunStatusFromJSON(object: any): PresubmitRunStatus {
 
 export function presubmitRunStatusToJSON(object: PresubmitRunStatus): string {
   switch (object) {
-    case PresubmitRunStatus.UNSPECIFIED:
+    case PresubmitRunStatus.PRESUBMIT_RUN_STATUS_UNSPECIFIED:
       return "PRESUBMIT_RUN_STATUS_UNSPECIFIED";
-    case PresubmitRunStatus.SUCCEEDED:
+    case PresubmitRunStatus.PRESUBMIT_RUN_STATUS_SUCCEEDED:
       return "PRESUBMIT_RUN_STATUS_SUCCEEDED";
-    case PresubmitRunStatus.FAILED:
+    case PresubmitRunStatus.PRESUBMIT_RUN_STATUS_FAILED:
       return "PRESUBMIT_RUN_STATUS_FAILED";
-    case PresubmitRunStatus.CANCELED:
+    case PresubmitRunStatus.PRESUBMIT_RUN_STATUS_CANCELED:
       return "PRESUBMIT_RUN_STATUS_CANCELED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum PresubmitRunStatus");

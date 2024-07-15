@@ -47,8 +47,13 @@ protoc \
    #      of this message.` \
   --ts_proto_opt=useExactTypes=false \
   \
+  `# Do not use remove enum prefix because it will generate invalid enum variant
+   # identifiers when the identifier begins with a digit after the prefix is
+   # removed.` \
+  --ts_proto_opt=removeEnumPrefix=false \
+  \
   --ts_proto_opt=forceLong=string,esModuleInterop=true \
-  --ts_proto_opt=removeEnumPrefix=true,unrecognizedEnum=false \
+  --ts_proto_opt=unrecognizedEnum=false \
   --ts_proto_opt=useDate=string,useReadonlyTypes=true \
   \
   ./go.chromium.org/luci/analysis/proto/v1/changepoints.proto \

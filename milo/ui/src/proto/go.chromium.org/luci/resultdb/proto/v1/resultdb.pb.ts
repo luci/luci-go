@@ -8,7 +8,9 @@
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
+import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { Artifact, ArtifactLine } from "./artifact.pb";
+import { Variant } from "./common.pb";
 import { Instruction, InstructionTarget, instructionTargetFromJSON, instructionTargetToJSON } from "./instruction.pb";
 import { Invocation, Sources } from "./invocation.pb";
 import {
@@ -18,7 +20,7 @@ import {
   TestResultPredicate,
 } from "./predicate.pb";
 import { TestMetadataDetail } from "./test_metadata.pb";
-import { TestExoneration, TestResult } from "./test_result.pb";
+import { TestExoneration, TestResult, TestStatus, testStatusFromJSON, testStatusToJSON } from "./test_result.pb";
 import { RunTestVerdict, TestVariant, TestVariantPredicate } from "./test_variant.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
@@ -797,6 +799,320 @@ export interface InstructionDependencyChain_Node {
    * - If the instruction cannot be found.
    */
   readonly descriptiveName: string;
+}
+
+export interface QueryTestVariantArtifactGroupsRequest {
+  /** The LUCI project (required). */
+  readonly project: string;
+  /**
+   * The search string to search in text artifact content (required).
+   * Support regex or exact match.
+   */
+  readonly searchString:
+    | ArtifactContentMatcher
+    | undefined;
+  /** The test id prefix to restrict the scope of the search (optional). */
+  readonly testIdPrefix: string;
+  /** The artifact id prefix to restrict the scope of the search (optional). */
+  readonly artifactIdPrefix: string;
+  /**
+   * The lower bound of the time range to search (exclusive) (required).
+   * start_time must be less than the end time.
+   * The duration between start_time and end_time must not be greater than 7 days.
+   */
+  readonly startTime:
+    | string
+    | undefined;
+  /** The upper bound of the time range to search (inclusive) (required). */
+  readonly endTime:
+    | string
+    | undefined;
+  /**
+   * The maximum number of match groups to return. The service may return fewer than
+   * this value.
+   * If unspecified, at most 100 items will be returned.
+   * The maximum value is 100; values above 100 will be coerced to 100.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `QueryTestVariantArtifactGroups` call.
+   * Provide this to retrieve the subsequent page.
+   *
+   * When paginating, all other parameters provided to `QueryTestVariantArtifactGroups` must
+   * match the call that provided the page token.
+   */
+  readonly pageToken: string;
+}
+
+export interface QueryTestVariantArtifactGroupsResponse {
+  /**
+   * Test variant artifacts are grouped by test_id, variant_hash and artifact_id.
+   * Groups are ordered by partition_time of the most recent artifact DESC in the group, test id, variant hash, artifact id.
+   */
+  readonly groups: readonly QueryTestVariantArtifactGroupsResponse_MatchGroup[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+/**
+ * Represents one group of matched artifacts.
+ * test_id, variant_hash and artifact_id form the group key.
+ */
+export interface QueryTestVariantArtifactGroupsResponse_MatchGroup {
+  /** The LUCI test id. */
+  readonly testId: string;
+  /** The hash of the variant. */
+  readonly variantHash: string;
+  /**
+   * The definition of the variant.
+   * Description of one specific way of running the test,
+   * e.g. a specific bucket, builder and a test suite.
+   */
+  readonly variant:
+    | Variant
+    | undefined;
+  /** ID of the artifact. */
+  readonly artifactId: string;
+  /**
+   * Artifacts that matches the search for this (test id, variant_hash, artifact id) combination.
+   * Return at most 3 items, ordered by partition time DESC, artifact name ASC.
+   */
+  readonly artifacts: readonly ArtifactMatchingContent[];
+  /** The total number of matching artifacts for this (test id, variant_hash, artifact id) combination. */
+  readonly matchingCount: number;
+}
+
+export interface QueryTestVariantArtifactsRequest {
+  /** The LUCI project (required). */
+  readonly project: string;
+  /**
+   * The search string to search in text artifact content (required).
+   * Support regex or exact match.
+   */
+  readonly searchString:
+    | ArtifactContentMatcher
+    | undefined;
+  /** The test id. (required). */
+  readonly testId: string;
+  /** The variant hash (required). */
+  readonly variantHash: string;
+  /** The artifact id (required). */
+  readonly artifactId: string;
+  /**
+   * The lower bound of the time range to search (exclusive) (required).
+   * start_time must be less than the end time.
+   * The duration between start_time and end_time must not be greater than 7 days.
+   */
+  readonly startTime:
+    | string
+    | undefined;
+  /** The upper bound of the time range to search (inclusive) (required). */
+  readonly endTime:
+    | string
+    | undefined;
+  /**
+   * The maximum number of items to return. The service may return fewer than
+   * this value.
+   * If unspecified, at most 100 items will be returned.
+   * The maximum value is 100; values above 100 will be coerced to 100.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `QueryTestVariantArtifacts` call.
+   * Provide this to retrieve the subsequent page.
+   *
+   * When paginating, all other parameters provided to `QueryTestVariantArtifacts` must
+   * match the call that provided the page token.
+   */
+  readonly pageToken: string;
+}
+
+export interface QueryTestVariantArtifactsResponse {
+  /**
+   * Artifacts that matches the search.
+   * Ordered by partition_time DESC, artifact name.
+   */
+  readonly artifacts: readonly ArtifactMatchingContent[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+export interface QueryInvocationVariantArtifactGroupsRequest {
+  /** The LUCI project (required). */
+  readonly project: string;
+  /**
+   * The search string to search in text artifact content (required).
+   * Support regex or exact match.
+   */
+  readonly searchString:
+    | ArtifactContentMatcher
+    | undefined;
+  /** The artifact id prefix to restrict the scope of the search (optional). */
+  readonly artifactIdPrefix: string;
+  /**
+   * The lower bound of the time range to search (exclusive) (required).
+   * start_time must be less than the end time.
+   * The duration between start_time and end_time must not be greater than 7 days.
+   */
+  readonly startTime:
+    | string
+    | undefined;
+  /** The upper bound of the time range to search (inclusive) (required). */
+  readonly endTime:
+    | string
+    | undefined;
+  /**
+   * The maximum number of match groups to return. The service may return fewer than
+   * this value.
+   * If unspecified, at most 100 items will be returned.
+   * The maximum value is 100; values above 100 will be coerced to 100.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `QueryInvocationVariantArtifactGroups` call.
+   * Provide this to retrieve the subsequent page.
+   *
+   * When paginating, all other parameters provided to `QueryInvocationVariantArtifactGroups` must
+   * match the call that provided the page token.
+   */
+  readonly pageToken: string;
+}
+
+export interface QueryInvocationVariantArtifactGroupsResponse {
+  /**
+   * Invocation variant artifacts  are grouped by variant_union_hash and artifact_id.
+   * Ordered by partition_time of the most recent artifact DESC in the group, variant_union_hash, artifact id.
+   */
+  readonly groups: readonly QueryInvocationVariantArtifactGroupsResponse_MatchGroup[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+/**
+ * Represents one group of matched artifacts.
+ * variant_union_hash and artifact_id form the group key.
+ */
+export interface QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
+  /** Hash of the union of all variants of test results directly included by the invocation. */
+  readonly variantUnionHash: string;
+  /**
+   * Union of all variants of test results directly included by the invocation.
+   * Roughly defines a specific way to run an invocation.
+   */
+  readonly variantUnion:
+    | Variant
+    | undefined;
+  /** ID of the artifact. */
+  readonly artifactID: string;
+  /**
+   * Artifacts that matches the search for this (variant_union_hash, artifact id) combination.
+   * Return at most 3 items, ordered by partition time DESC, artifact name ASC.
+   */
+  readonly artifacts: readonly ArtifactMatchingContent[];
+  /** The total number of matching artifacts for this (variant_union_hash, artifact id) combination. */
+  readonly matchingCount: number;
+}
+
+export interface QueryInvocationVariantArtifactsRequest {
+  /** The LUCI project (required). */
+  readonly project: string;
+  /**
+   * The search string to search in text artifact content (required).
+   * Support regex or exact match.
+   */
+  readonly searchString:
+    | ArtifactContentMatcher
+    | undefined;
+  /** Hash of the union of all variants of test results directly included by the invocation (required). */
+  readonly variantUnionHash: string;
+  /** The artifact id (required). */
+  readonly artifactId: string;
+  /**
+   * The lower bound of the time range to search (exclusive) (required).
+   * start_time must be less than the end time.
+   * The duration between start_time and end_time must not be greater than 7 days.
+   */
+  readonly startTime:
+    | string
+    | undefined;
+  /** The upper bound of the time range to search (inclusive) (required). */
+  readonly endTime:
+    | string
+    | undefined;
+  /**
+   * The maximum number of items to return. The service may return fewer than
+   * this value.
+   * If unspecified, at most 100 items will be returned.
+   * The maximum value is 100; values above 100 will be coerced to 100.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `QueryInvocationVariantArtifacts` call.
+   * Provide this to retrieve the subsequent page.
+   *
+   * When paginating, all other parameters provided to `QueryInvocationVariantArtifacts` must
+   * match the call that provided the page token.
+   */
+  readonly pageToken: string;
+}
+
+export interface QueryInvocationVariantArtifactsResponse {
+  /**
+   * Artifacts that matches the search.
+   * Ordered by partition_time DESC, artifact name.
+   */
+  readonly artifacts: readonly ArtifactMatchingContent[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+/** Represent a artifact that contains a match. */
+export interface ArtifactMatchingContent {
+  /**
+   * Name of the artifact.
+   * - For invocation-level artifacts:
+   *   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
+   * - For test-result-level artifacts:
+   *   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+   */
+  readonly name: string;
+  /**
+   * Partition time of the artifact.
+   * This is the creation time of the direct parent invocation.
+   */
+  readonly partitionTime:
+    | string
+    | undefined;
+  /** The test result status, only populated if it is a result level artifact . */
+  readonly testStatus: TestStatus;
+  /**
+   * Part of the artifact that contains a match.
+   * Limit to 10KB to prevent exploding the response size. Prioritize fit in the matching part,
+   * and use the remaining bytes to display the before and after bits of the matched part (at most one more line above and below).
+   */
+  readonly content: string;
+}
+
+/** Used to match a artifact content. */
+export interface ArtifactContentMatcher {
+  /** The string is a regex expression. Use regex match to find matching artifact content. */
+  readonly regexContain?:
+    | string
+    | undefined;
+  /** Use equality match with this string to find matching artifact content. */
+  readonly exactContain?: string | undefined;
 }
 
 function createBaseGetInvocationRequest(): GetInvocationRequest {
@@ -4284,6 +4600,1470 @@ export const InstructionDependencyChain_Node = {
   },
 };
 
+function createBaseQueryTestVariantArtifactGroupsRequest(): QueryTestVariantArtifactGroupsRequest {
+  return {
+    project: "",
+    searchString: undefined,
+    testIdPrefix: "",
+    artifactIdPrefix: "",
+    startTime: undefined,
+    endTime: undefined,
+    pageSize: 0,
+    pageToken: "",
+  };
+}
+
+export const QueryTestVariantArtifactGroupsRequest = {
+  encode(message: QueryTestVariantArtifactGroupsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    if (message.searchString !== undefined) {
+      ArtifactContentMatcher.encode(message.searchString, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.testIdPrefix !== "") {
+      writer.uint32(26).string(message.testIdPrefix);
+    }
+    if (message.artifactIdPrefix !== "") {
+      writer.uint32(34).string(message.artifactIdPrefix);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(42).fork()).ldelim();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(50).fork()).ldelim();
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(56).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(66).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantArtifactGroupsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantArtifactGroupsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.searchString = ArtifactContentMatcher.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.testIdPrefix = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.artifactIdPrefix = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 7:
+          if (tag !== 56) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        case 8:
+          if (tag !== 66) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantArtifactGroupsRequest {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      searchString: isSet(object.searchString) ? ArtifactContentMatcher.fromJSON(object.searchString) : undefined,
+      testIdPrefix: isSet(object.testIdPrefix) ? globalThis.String(object.testIdPrefix) : "",
+      artifactIdPrefix: isSet(object.artifactIdPrefix) ? globalThis.String(object.artifactIdPrefix) : "",
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryTestVariantArtifactGroupsRequest): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.searchString !== undefined) {
+      obj.searchString = ArtifactContentMatcher.toJSON(message.searchString);
+    }
+    if (message.testIdPrefix !== "") {
+      obj.testIdPrefix = message.testIdPrefix;
+    }
+    if (message.artifactIdPrefix !== "") {
+      obj.artifactIdPrefix = message.artifactIdPrefix;
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryTestVariantArtifactGroupsRequest>): QueryTestVariantArtifactGroupsRequest {
+    return QueryTestVariantArtifactGroupsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryTestVariantArtifactGroupsRequest>): QueryTestVariantArtifactGroupsRequest {
+    const message = createBaseQueryTestVariantArtifactGroupsRequest() as any;
+    message.project = object.project ?? "";
+    message.searchString = (object.searchString !== undefined && object.searchString !== null)
+      ? ArtifactContentMatcher.fromPartial(object.searchString)
+      : undefined;
+    message.testIdPrefix = object.testIdPrefix ?? "";
+    message.artifactIdPrefix = object.artifactIdPrefix ?? "";
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantArtifactGroupsResponse(): QueryTestVariantArtifactGroupsResponse {
+  return { groups: [], nextPageToken: "" };
+}
+
+export const QueryTestVariantArtifactGroupsResponse = {
+  encode(message: QueryTestVariantArtifactGroupsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.groups) {
+      QueryTestVariantArtifactGroupsResponse_MatchGroup.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantArtifactGroupsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantArtifactGroupsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.groups.push(QueryTestVariantArtifactGroupsResponse_MatchGroup.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantArtifactGroupsResponse {
+    return {
+      groups: globalThis.Array.isArray(object?.groups)
+        ? object.groups.map((e: any) => QueryTestVariantArtifactGroupsResponse_MatchGroup.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryTestVariantArtifactGroupsResponse): unknown {
+    const obj: any = {};
+    if (message.groups?.length) {
+      obj.groups = message.groups.map((e) => QueryTestVariantArtifactGroupsResponse_MatchGroup.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryTestVariantArtifactGroupsResponse>): QueryTestVariantArtifactGroupsResponse {
+    return QueryTestVariantArtifactGroupsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryTestVariantArtifactGroupsResponse>): QueryTestVariantArtifactGroupsResponse {
+    const message = createBaseQueryTestVariantArtifactGroupsResponse() as any;
+    message.groups = object.groups?.map((e) => QueryTestVariantArtifactGroupsResponse_MatchGroup.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantArtifactGroupsResponse_MatchGroup(): QueryTestVariantArtifactGroupsResponse_MatchGroup {
+  return { testId: "", variantHash: "", variant: undefined, artifactId: "", artifacts: [], matchingCount: 0 };
+}
+
+export const QueryTestVariantArtifactGroupsResponse_MatchGroup = {
+  encode(
+    message: QueryTestVariantArtifactGroupsResponse_MatchGroup,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.testId !== "") {
+      writer.uint32(10).string(message.testId);
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(18).string(message.variantHash);
+    }
+    if (message.variant !== undefined) {
+      Variant.encode(message.variant, writer.uint32(26).fork()).ldelim();
+    }
+    if (message.artifactId !== "") {
+      writer.uint32(34).string(message.artifactId);
+    }
+    for (const v of message.artifacts) {
+      ArtifactMatchingContent.encode(v!, writer.uint32(42).fork()).ldelim();
+    }
+    if (message.matchingCount !== 0) {
+      writer.uint32(48).int32(message.matchingCount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantArtifactGroupsResponse_MatchGroup {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantArtifactGroupsResponse_MatchGroup() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variant = Variant.decode(reader, reader.uint32());
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.artifactId = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.artifacts.push(ArtifactMatchingContent.decode(reader, reader.uint32()));
+          continue;
+        case 6:
+          if (tag !== 48) {
+            break;
+          }
+
+          message.matchingCount = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantArtifactGroupsResponse_MatchGroup {
+    return {
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
+      artifactId: isSet(object.artifactId) ? globalThis.String(object.artifactId) : "",
+      artifacts: globalThis.Array.isArray(object?.artifacts)
+        ? object.artifacts.map((e: any) => ArtifactMatchingContent.fromJSON(e))
+        : [],
+      matchingCount: isSet(object.matchingCount) ? globalThis.Number(object.matchingCount) : 0,
+    };
+  },
+
+  toJSON(message: QueryTestVariantArtifactGroupsResponse_MatchGroup): unknown {
+    const obj: any = {};
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    if (message.variant !== undefined) {
+      obj.variant = Variant.toJSON(message.variant);
+    }
+    if (message.artifactId !== "") {
+      obj.artifactId = message.artifactId;
+    }
+    if (message.artifacts?.length) {
+      obj.artifacts = message.artifacts.map((e) => ArtifactMatchingContent.toJSON(e));
+    }
+    if (message.matchingCount !== 0) {
+      obj.matchingCount = Math.round(message.matchingCount);
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<QueryTestVariantArtifactGroupsResponse_MatchGroup>,
+  ): QueryTestVariantArtifactGroupsResponse_MatchGroup {
+    return QueryTestVariantArtifactGroupsResponse_MatchGroup.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<QueryTestVariantArtifactGroupsResponse_MatchGroup>,
+  ): QueryTestVariantArtifactGroupsResponse_MatchGroup {
+    const message = createBaseQueryTestVariantArtifactGroupsResponse_MatchGroup() as any;
+    message.testId = object.testId ?? "";
+    message.variantHash = object.variantHash ?? "";
+    message.variant = (object.variant !== undefined && object.variant !== null)
+      ? Variant.fromPartial(object.variant)
+      : undefined;
+    message.artifactId = object.artifactId ?? "";
+    message.artifacts = object.artifacts?.map((e) => ArtifactMatchingContent.fromPartial(e)) || [];
+    message.matchingCount = object.matchingCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantArtifactsRequest(): QueryTestVariantArtifactsRequest {
+  return {
+    project: "",
+    searchString: undefined,
+    testId: "",
+    variantHash: "",
+    artifactId: "",
+    startTime: undefined,
+    endTime: undefined,
+    pageSize: 0,
+    pageToken: "",
+  };
+}
+
+export const QueryTestVariantArtifactsRequest = {
+  encode(message: QueryTestVariantArtifactsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    if (message.searchString !== undefined) {
+      ArtifactContentMatcher.encode(message.searchString, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.testId !== "") {
+      writer.uint32(26).string(message.testId);
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(34).string(message.variantHash);
+    }
+    if (message.artifactId !== "") {
+      writer.uint32(42).string(message.artifactId);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(50).fork()).ldelim();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(58).fork()).ldelim();
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(64).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(74).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantArtifactsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantArtifactsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.searchString = ArtifactContentMatcher.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.artifactId = reader.string();
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 8:
+          if (tag !== 64) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        case 9:
+          if (tag !== 74) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantArtifactsRequest {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      searchString: isSet(object.searchString) ? ArtifactContentMatcher.fromJSON(object.searchString) : undefined,
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      artifactId: isSet(object.artifactId) ? globalThis.String(object.artifactId) : "",
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryTestVariantArtifactsRequest): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.searchString !== undefined) {
+      obj.searchString = ArtifactContentMatcher.toJSON(message.searchString);
+    }
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    if (message.artifactId !== "") {
+      obj.artifactId = message.artifactId;
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryTestVariantArtifactsRequest>): QueryTestVariantArtifactsRequest {
+    return QueryTestVariantArtifactsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryTestVariantArtifactsRequest>): QueryTestVariantArtifactsRequest {
+    const message = createBaseQueryTestVariantArtifactsRequest() as any;
+    message.project = object.project ?? "";
+    message.searchString = (object.searchString !== undefined && object.searchString !== null)
+      ? ArtifactContentMatcher.fromPartial(object.searchString)
+      : undefined;
+    message.testId = object.testId ?? "";
+    message.variantHash = object.variantHash ?? "";
+    message.artifactId = object.artifactId ?? "";
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryTestVariantArtifactsResponse(): QueryTestVariantArtifactsResponse {
+  return { artifacts: [], nextPageToken: "" };
+}
+
+export const QueryTestVariantArtifactsResponse = {
+  encode(message: QueryTestVariantArtifactsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.artifacts) {
+      ArtifactMatchingContent.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryTestVariantArtifactsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestVariantArtifactsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.artifacts.push(ArtifactMatchingContent.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestVariantArtifactsResponse {
+    return {
+      artifacts: globalThis.Array.isArray(object?.artifacts)
+        ? object.artifacts.map((e: any) => ArtifactMatchingContent.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryTestVariantArtifactsResponse): unknown {
+    const obj: any = {};
+    if (message.artifacts?.length) {
+      obj.artifacts = message.artifacts.map((e) => ArtifactMatchingContent.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryTestVariantArtifactsResponse>): QueryTestVariantArtifactsResponse {
+    return QueryTestVariantArtifactsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryTestVariantArtifactsResponse>): QueryTestVariantArtifactsResponse {
+    const message = createBaseQueryTestVariantArtifactsResponse() as any;
+    message.artifacts = object.artifacts?.map((e) => ArtifactMatchingContent.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryInvocationVariantArtifactGroupsRequest(): QueryInvocationVariantArtifactGroupsRequest {
+  return {
+    project: "",
+    searchString: undefined,
+    artifactIdPrefix: "",
+    startTime: undefined,
+    endTime: undefined,
+    pageSize: 0,
+    pageToken: "",
+  };
+}
+
+export const QueryInvocationVariantArtifactGroupsRequest = {
+  encode(message: QueryInvocationVariantArtifactGroupsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    if (message.searchString !== undefined) {
+      ArtifactContentMatcher.encode(message.searchString, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.artifactIdPrefix !== "") {
+      writer.uint32(26).string(message.artifactIdPrefix);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(34).fork()).ldelim();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(42).fork()).ldelim();
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(48).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(58).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryInvocationVariantArtifactGroupsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryInvocationVariantArtifactGroupsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.searchString = ArtifactContentMatcher.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.artifactIdPrefix = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 6:
+          if (tag !== 48) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryInvocationVariantArtifactGroupsRequest {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      searchString: isSet(object.searchString) ? ArtifactContentMatcher.fromJSON(object.searchString) : undefined,
+      artifactIdPrefix: isSet(object.artifactIdPrefix) ? globalThis.String(object.artifactIdPrefix) : "",
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryInvocationVariantArtifactGroupsRequest): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.searchString !== undefined) {
+      obj.searchString = ArtifactContentMatcher.toJSON(message.searchString);
+    }
+    if (message.artifactIdPrefix !== "") {
+      obj.artifactIdPrefix = message.artifactIdPrefix;
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryInvocationVariantArtifactGroupsRequest>): QueryInvocationVariantArtifactGroupsRequest {
+    return QueryInvocationVariantArtifactGroupsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<QueryInvocationVariantArtifactGroupsRequest>,
+  ): QueryInvocationVariantArtifactGroupsRequest {
+    const message = createBaseQueryInvocationVariantArtifactGroupsRequest() as any;
+    message.project = object.project ?? "";
+    message.searchString = (object.searchString !== undefined && object.searchString !== null)
+      ? ArtifactContentMatcher.fromPartial(object.searchString)
+      : undefined;
+    message.artifactIdPrefix = object.artifactIdPrefix ?? "";
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryInvocationVariantArtifactGroupsResponse(): QueryInvocationVariantArtifactGroupsResponse {
+  return { groups: [], nextPageToken: "" };
+}
+
+export const QueryInvocationVariantArtifactGroupsResponse = {
+  encode(message: QueryInvocationVariantArtifactGroupsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.groups) {
+      QueryInvocationVariantArtifactGroupsResponse_MatchGroup.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryInvocationVariantArtifactGroupsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryInvocationVariantArtifactGroupsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.groups.push(QueryInvocationVariantArtifactGroupsResponse_MatchGroup.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryInvocationVariantArtifactGroupsResponse {
+    return {
+      groups: globalThis.Array.isArray(object?.groups)
+        ? object.groups.map((e: any) => QueryInvocationVariantArtifactGroupsResponse_MatchGroup.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryInvocationVariantArtifactGroupsResponse): unknown {
+    const obj: any = {};
+    if (message.groups?.length) {
+      obj.groups = message.groups.map((e) => QueryInvocationVariantArtifactGroupsResponse_MatchGroup.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<QueryInvocationVariantArtifactGroupsResponse>,
+  ): QueryInvocationVariantArtifactGroupsResponse {
+    return QueryInvocationVariantArtifactGroupsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<QueryInvocationVariantArtifactGroupsResponse>,
+  ): QueryInvocationVariantArtifactGroupsResponse {
+    const message = createBaseQueryInvocationVariantArtifactGroupsResponse() as any;
+    message.groups =
+      object.groups?.map((e) => QueryInvocationVariantArtifactGroupsResponse_MatchGroup.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryInvocationVariantArtifactGroupsResponse_MatchGroup(): QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
+  return { variantUnionHash: "", variantUnion: undefined, artifactID: "", artifacts: [], matchingCount: 0 };
+}
+
+export const QueryInvocationVariantArtifactGroupsResponse_MatchGroup = {
+  encode(
+    message: QueryInvocationVariantArtifactGroupsResponse_MatchGroup,
+    writer: _m0.Writer = _m0.Writer.create(),
+  ): _m0.Writer {
+    if (message.variantUnionHash !== "") {
+      writer.uint32(10).string(message.variantUnionHash);
+    }
+    if (message.variantUnion !== undefined) {
+      Variant.encode(message.variantUnion, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.artifactID !== "") {
+      writer.uint32(26).string(message.artifactID);
+    }
+    for (const v of message.artifacts) {
+      ArtifactMatchingContent.encode(v!, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.matchingCount !== 0) {
+      writer.uint32(40).int32(message.matchingCount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryInvocationVariantArtifactGroupsResponse_MatchGroup() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.variantUnionHash = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.variantUnion = Variant.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.artifactID = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.artifacts.push(ArtifactMatchingContent.decode(reader, reader.uint32()));
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.matchingCount = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
+    return {
+      variantUnionHash: isSet(object.variantUnionHash) ? globalThis.String(object.variantUnionHash) : "",
+      variantUnion: isSet(object.variantUnion) ? Variant.fromJSON(object.variantUnion) : undefined,
+      artifactID: isSet(object.artifactID) ? globalThis.String(object.artifactID) : "",
+      artifacts: globalThis.Array.isArray(object?.artifacts)
+        ? object.artifacts.map((e: any) => ArtifactMatchingContent.fromJSON(e))
+        : [],
+      matchingCount: isSet(object.matchingCount) ? globalThis.Number(object.matchingCount) : 0,
+    };
+  },
+
+  toJSON(message: QueryInvocationVariantArtifactGroupsResponse_MatchGroup): unknown {
+    const obj: any = {};
+    if (message.variantUnionHash !== "") {
+      obj.variantUnionHash = message.variantUnionHash;
+    }
+    if (message.variantUnion !== undefined) {
+      obj.variantUnion = Variant.toJSON(message.variantUnion);
+    }
+    if (message.artifactID !== "") {
+      obj.artifactID = message.artifactID;
+    }
+    if (message.artifacts?.length) {
+      obj.artifacts = message.artifacts.map((e) => ArtifactMatchingContent.toJSON(e));
+    }
+    if (message.matchingCount !== 0) {
+      obj.matchingCount = Math.round(message.matchingCount);
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<QueryInvocationVariantArtifactGroupsResponse_MatchGroup>,
+  ): QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
+    return QueryInvocationVariantArtifactGroupsResponse_MatchGroup.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<QueryInvocationVariantArtifactGroupsResponse_MatchGroup>,
+  ): QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
+    const message = createBaseQueryInvocationVariantArtifactGroupsResponse_MatchGroup() as any;
+    message.variantUnionHash = object.variantUnionHash ?? "";
+    message.variantUnion = (object.variantUnion !== undefined && object.variantUnion !== null)
+      ? Variant.fromPartial(object.variantUnion)
+      : undefined;
+    message.artifactID = object.artifactID ?? "";
+    message.artifacts = object.artifacts?.map((e) => ArtifactMatchingContent.fromPartial(e)) || [];
+    message.matchingCount = object.matchingCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseQueryInvocationVariantArtifactsRequest(): QueryInvocationVariantArtifactsRequest {
+  return {
+    project: "",
+    searchString: undefined,
+    variantUnionHash: "",
+    artifactId: "",
+    startTime: undefined,
+    endTime: undefined,
+    pageSize: 0,
+    pageToken: "",
+  };
+}
+
+export const QueryInvocationVariantArtifactsRequest = {
+  encode(message: QueryInvocationVariantArtifactsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    if (message.searchString !== undefined) {
+      ArtifactContentMatcher.encode(message.searchString, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.variantUnionHash !== "") {
+      writer.uint32(26).string(message.variantUnionHash);
+    }
+    if (message.artifactId !== "") {
+      writer.uint32(34).string(message.artifactId);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(42).fork()).ldelim();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(50).fork()).ldelim();
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(56).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(66).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryInvocationVariantArtifactsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryInvocationVariantArtifactsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.searchString = ArtifactContentMatcher.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variantUnionHash = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.artifactId = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 7:
+          if (tag !== 56) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        case 8:
+          if (tag !== 66) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryInvocationVariantArtifactsRequest {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      searchString: isSet(object.searchString) ? ArtifactContentMatcher.fromJSON(object.searchString) : undefined,
+      variantUnionHash: isSet(object.variantUnionHash) ? globalThis.String(object.variantUnionHash) : "",
+      artifactId: isSet(object.artifactId) ? globalThis.String(object.artifactId) : "",
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryInvocationVariantArtifactsRequest): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.searchString !== undefined) {
+      obj.searchString = ArtifactContentMatcher.toJSON(message.searchString);
+    }
+    if (message.variantUnionHash !== "") {
+      obj.variantUnionHash = message.variantUnionHash;
+    }
+    if (message.artifactId !== "") {
+      obj.artifactId = message.artifactId;
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryInvocationVariantArtifactsRequest>): QueryInvocationVariantArtifactsRequest {
+    return QueryInvocationVariantArtifactsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryInvocationVariantArtifactsRequest>): QueryInvocationVariantArtifactsRequest {
+    const message = createBaseQueryInvocationVariantArtifactsRequest() as any;
+    message.project = object.project ?? "";
+    message.searchString = (object.searchString !== undefined && object.searchString !== null)
+      ? ArtifactContentMatcher.fromPartial(object.searchString)
+      : undefined;
+    message.variantUnionHash = object.variantUnionHash ?? "";
+    message.artifactId = object.artifactId ?? "";
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryInvocationVariantArtifactsResponse(): QueryInvocationVariantArtifactsResponse {
+  return { artifacts: [], nextPageToken: "" };
+}
+
+export const QueryInvocationVariantArtifactsResponse = {
+  encode(message: QueryInvocationVariantArtifactsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.artifacts) {
+      ArtifactMatchingContent.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryInvocationVariantArtifactsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryInvocationVariantArtifactsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.artifacts.push(ArtifactMatchingContent.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryInvocationVariantArtifactsResponse {
+    return {
+      artifacts: globalThis.Array.isArray(object?.artifacts)
+        ? object.artifacts.map((e: any) => ArtifactMatchingContent.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: QueryInvocationVariantArtifactsResponse): unknown {
+    const obj: any = {};
+    if (message.artifacts?.length) {
+      obj.artifacts = message.artifacts.map((e) => ArtifactMatchingContent.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryInvocationVariantArtifactsResponse>): QueryInvocationVariantArtifactsResponse {
+    return QueryInvocationVariantArtifactsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryInvocationVariantArtifactsResponse>): QueryInvocationVariantArtifactsResponse {
+    const message = createBaseQueryInvocationVariantArtifactsResponse() as any;
+    message.artifacts = object.artifacts?.map((e) => ArtifactMatchingContent.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseArtifactMatchingContent(): ArtifactMatchingContent {
+  return { name: "", partitionTime: undefined, testStatus: 0, content: "" };
+}
+
+export const ArtifactMatchingContent = {
+  encode(message: ArtifactMatchingContent, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.partitionTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.partitionTime), writer.uint32(18).fork()).ldelim();
+    }
+    if (message.testStatus !== 0) {
+      writer.uint32(24).int32(message.testStatus);
+    }
+    if (message.content !== "") {
+      writer.uint32(34).string(message.content);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ArtifactMatchingContent {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseArtifactMatchingContent() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.partitionTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.testStatus = reader.int32() as any;
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.content = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ArtifactMatchingContent {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
+      testStatus: isSet(object.testStatus) ? testStatusFromJSON(object.testStatus) : 0,
+      content: isSet(object.content) ? globalThis.String(object.content) : "",
+    };
+  },
+
+  toJSON(message: ArtifactMatchingContent): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.partitionTime !== undefined) {
+      obj.partitionTime = message.partitionTime;
+    }
+    if (message.testStatus !== 0) {
+      obj.testStatus = testStatusToJSON(message.testStatus);
+    }
+    if (message.content !== "") {
+      obj.content = message.content;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ArtifactMatchingContent>): ArtifactMatchingContent {
+    return ArtifactMatchingContent.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ArtifactMatchingContent>): ArtifactMatchingContent {
+    const message = createBaseArtifactMatchingContent() as any;
+    message.name = object.name ?? "";
+    message.partitionTime = object.partitionTime ?? undefined;
+    message.testStatus = object.testStatus ?? 0;
+    message.content = object.content ?? "";
+    return message;
+  },
+};
+
+function createBaseArtifactContentMatcher(): ArtifactContentMatcher {
+  return { regexContain: undefined, exactContain: undefined };
+}
+
+export const ArtifactContentMatcher = {
+  encode(message: ArtifactContentMatcher, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.regexContain !== undefined) {
+      writer.uint32(10).string(message.regexContain);
+    }
+    if (message.exactContain !== undefined) {
+      writer.uint32(18).string(message.exactContain);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ArtifactContentMatcher {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseArtifactContentMatcher() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.regexContain = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.exactContain = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ArtifactContentMatcher {
+    return {
+      regexContain: isSet(object.regexContain) ? globalThis.String(object.regexContain) : undefined,
+      exactContain: isSet(object.exactContain) ? globalThis.String(object.exactContain) : undefined,
+    };
+  },
+
+  toJSON(message: ArtifactContentMatcher): unknown {
+    const obj: any = {};
+    if (message.regexContain !== undefined) {
+      obj.regexContain = message.regexContain;
+    }
+    if (message.exactContain !== undefined) {
+      obj.exactContain = message.exactContain;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ArtifactContentMatcher>): ArtifactContentMatcher {
+    return ArtifactContentMatcher.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ArtifactContentMatcher>): ArtifactContentMatcher {
+    const message = createBaseArtifactContentMatcher() as any;
+    message.regexContain = object.regexContain ?? undefined;
+    message.exactContain = object.exactContain ?? undefined;
+    return message;
+  },
+};
+
 /** Service to read test results. */
 export interface ResultDB {
   /** Retrieves an invocation. */
@@ -4411,6 +6191,30 @@ export interface ResultDB {
    * the chain will stop and the rpc will return whatever it has found so far.
    */
   QueryInstruction(request: QueryInstructionRequest): Promise<QueryInstructionResponse>;
+  /**
+   * Queries result level artifacts that matches a search_string. Support regex or exact match.
+   * Results are grouped by test_id, variant_hash, artifact_id.
+   * Within each group, artifacts are sorted by recency and at most 3 are returned.
+   * To obtain more matching artifacts of a particular group, uses QueryTestVariantArtifacts.
+   */
+  QueryTestVariantArtifactGroups(
+    request: QueryTestVariantArtifactGroupsRequest,
+  ): Promise<QueryTestVariantArtifactGroupsResponse>;
+  /** Queries test result artifacts that match a search_string for given test_id, variant_hash and artifact_id. */
+  QueryTestVariantArtifacts(request: QueryTestVariantArtifactsRequest): Promise<QueryTestVariantArtifactsResponse>;
+  /**
+   * Queries invocation level artifacts that matches a search_string. Support regex or exact match.
+   * Results are grouped by variant_union_hash, artifact_id.
+   * Within each group, artifacts are sorted by recency and at most 3 are returned.
+   * To obtain more matching artifacts of a particular group, uses QueryInvocationVariantArtifacts.
+   */
+  QueryInvocationVariantArtifactGroups(
+    request: QueryInvocationVariantArtifactGroupsRequest,
+  ): Promise<QueryInvocationVariantArtifactGroupsResponse>;
+  /** Queries invocation artifacts that match a search_string for given variant_union_hash and artifact_id. */
+  QueryInvocationVariantArtifacts(
+    request: QueryInvocationVariantArtifactsRequest,
+  ): Promise<QueryInvocationVariantArtifactsResponse>;
 }
 
 export const ResultDBServiceName = "luci.resultdb.v1.ResultDB";
@@ -4441,6 +6245,10 @@ export class ResultDBClientImpl implements ResultDB {
     this.QueryTestMetadata = this.QueryTestMetadata.bind(this);
     this.GetInstruction = this.GetInstruction.bind(this);
     this.QueryInstruction = this.QueryInstruction.bind(this);
+    this.QueryTestVariantArtifactGroups = this.QueryTestVariantArtifactGroups.bind(this);
+    this.QueryTestVariantArtifacts = this.QueryTestVariantArtifacts.bind(this);
+    this.QueryInvocationVariantArtifactGroups = this.QueryInvocationVariantArtifactGroups.bind(this);
+    this.QueryInvocationVariantArtifacts = this.QueryInvocationVariantArtifacts.bind(this);
   }
   GetInvocation(request: GetInvocationRequest): Promise<Invocation> {
     const data = GetInvocationRequest.toJSON(request);
@@ -4563,6 +6371,36 @@ export class ResultDBClientImpl implements ResultDB {
     const promise = this.rpc.request(this.service, "QueryInstruction", data);
     return promise.then((data) => QueryInstructionResponse.fromJSON(data));
   }
+
+  QueryTestVariantArtifactGroups(
+    request: QueryTestVariantArtifactGroupsRequest,
+  ): Promise<QueryTestVariantArtifactGroupsResponse> {
+    const data = QueryTestVariantArtifactGroupsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryTestVariantArtifactGroups", data);
+    return promise.then((data) => QueryTestVariantArtifactGroupsResponse.fromJSON(data));
+  }
+
+  QueryTestVariantArtifacts(request: QueryTestVariantArtifactsRequest): Promise<QueryTestVariantArtifactsResponse> {
+    const data = QueryTestVariantArtifactsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryTestVariantArtifacts", data);
+    return promise.then((data) => QueryTestVariantArtifactsResponse.fromJSON(data));
+  }
+
+  QueryInvocationVariantArtifactGroups(
+    request: QueryInvocationVariantArtifactGroupsRequest,
+  ): Promise<QueryInvocationVariantArtifactGroupsResponse> {
+    const data = QueryInvocationVariantArtifactGroupsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryInvocationVariantArtifactGroups", data);
+    return promise.then((data) => QueryInvocationVariantArtifactGroupsResponse.fromJSON(data));
+  }
+
+  QueryInvocationVariantArtifacts(
+    request: QueryInvocationVariantArtifactsRequest,
+  ): Promise<QueryInvocationVariantArtifactsResponse> {
+    const data = QueryInvocationVariantArtifactsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryInvocationVariantArtifacts", data);
+    return promise.then((data) => QueryInvocationVariantArtifactsResponse.fromJSON(data));
+  }
 }
 
 interface Rpc {
@@ -4576,6 +6414,19 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function toTimestamp(dateStr: string): Timestamp {
+  const date = new globalThis.Date(dateStr);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): string {
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis).toISOString();
+}
 
 function longToString(long: Long) {
   return long.toString();

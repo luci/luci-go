@@ -24,7 +24,7 @@ export const COMPLETE_STATUSES = Object.freeze([
 ]);
 
 export const ANALYSIS_STATUS_DISPLAY_MAP = Object.freeze({
-  [AnalysisStatus.UNSPECIFIED]: 'UNSPECIFIED',
+  [AnalysisStatus.ANALYSIS_STATUS_UNSPECIFIED]: 'UNSPECIFIED',
   [AnalysisStatus.CREATED]: 'CREATED',
   [AnalysisStatus.RUNNING]: 'RUNNING',
   [AnalysisStatus.FOUND]: 'FOUND',
@@ -37,7 +37,7 @@ export const ANALYSIS_STATUS_DISPLAY_MAP = Object.freeze({
 });
 
 export const BUILD_FAILURE_TYPE_DISPLAY_MAP = Object.freeze({
-  [BuildFailureType.UNSPECIFIED]: 'UNSPECIFIED',
+  [BuildFailureType.BUILD_FAILURE_TYPE_UNSPECIFIED]: 'UNSPECIFIED',
   [BuildFailureType.COMPILE]: 'COMPILE',
   [BuildFailureType.TEST]: 'TEST',
   [BuildFailureType.INFRA]: 'INFRA',
@@ -45,7 +45,7 @@ export const BUILD_FAILURE_TYPE_DISPLAY_MAP = Object.freeze({
 });
 
 export const SUSPECT_CONFIDENCE_LEVEL_DISPLAY_MAP = Object.freeze({
-  [SuspectConfidenceLevel.UNSPECIFIED]: 'UNSPECIFIED',
+  [SuspectConfidenceLevel.SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED]: 'UNSPECIFIED',
   [SuspectConfidenceLevel.LOW]: 'LOW',
   [SuspectConfidenceLevel.MEDIUM]: 'MEDIUM',
   [SuspectConfidenceLevel.HIGH]: 'HIGH',

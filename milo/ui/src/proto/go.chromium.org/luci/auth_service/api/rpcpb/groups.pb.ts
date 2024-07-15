@@ -14,7 +14,7 @@ export const protobufPackage = "auth.service";
 
 /** PrincipalKind denotes the type of principal of a specific entity. */
 export enum PrincipalKind {
-  UNSPECIFIED = 0,
+  PRINCIPAL_KIND_UNSPECIFIED = 0,
   /** IDENTITY - A single individual identity, e.g. "user:someone@example.com". */
   IDENTITY = 1,
   /** GROUP - A group name, e.g. "some-group". */
@@ -27,7 +27,7 @@ export function principalKindFromJSON(object: any): PrincipalKind {
   switch (object) {
     case 0:
     case "PRINCIPAL_KIND_UNSPECIFIED":
-      return PrincipalKind.UNSPECIFIED;
+      return PrincipalKind.PRINCIPAL_KIND_UNSPECIFIED;
     case 1:
     case "IDENTITY":
       return PrincipalKind.IDENTITY;
@@ -44,7 +44,7 @@ export function principalKindFromJSON(object: any): PrincipalKind {
 
 export function principalKindToJSON(object: PrincipalKind): string {
   switch (object) {
-    case PrincipalKind.UNSPECIFIED:
+    case PrincipalKind.PRINCIPAL_KIND_UNSPECIFIED:
       return "PRINCIPAL_KIND_UNSPECIFIED";
     case PrincipalKind.IDENTITY:
       return "IDENTITY";

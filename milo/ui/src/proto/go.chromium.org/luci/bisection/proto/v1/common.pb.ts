@@ -14,7 +14,7 @@ export const protobufPackage = "luci.bisection.v1";
 
 /** AnalysisStatus represents the result status of an analysis. */
 export enum AnalysisStatus {
-  UNSPECIFIED = 0,
+  ANALYSIS_STATUS_UNSPECIFIED = 0,
   /**
    * CREATED - The analysis has been created, but not yet started.
    * We don't have this status in code. It's here for backward-compatability.
@@ -48,7 +48,7 @@ export function analysisStatusFromJSON(object: any): AnalysisStatus {
   switch (object) {
     case 0:
     case "ANALYSIS_STATUS_UNSPECIFIED":
-      return AnalysisStatus.UNSPECIFIED;
+      return AnalysisStatus.ANALYSIS_STATUS_UNSPECIFIED;
     case 1:
     case "CREATED":
       return AnalysisStatus.CREATED;
@@ -83,7 +83,7 @@ export function analysisStatusFromJSON(object: any): AnalysisStatus {
 
 export function analysisStatusToJSON(object: AnalysisStatus): string {
   switch (object) {
-    case AnalysisStatus.UNSPECIFIED:
+    case AnalysisStatus.ANALYSIS_STATUS_UNSPECIFIED:
       return "ANALYSIS_STATUS_UNSPECIFIED";
     case AnalysisStatus.CREATED:
       return "CREATED";
@@ -109,64 +109,64 @@ export function analysisStatusToJSON(object: AnalysisStatus): string {
 }
 
 export enum RerunStatus {
-  UNSPECIFIED = 0,
+  RERUN_STATUS_UNSPECIFIED = 0,
   /**
-   * IN_PROGRESS - The rerun is in progress.
+   * RERUN_STATUS_IN_PROGRESS - The rerun is in progress.
    * It may be scheduled or started, but not finished yet.
    */
-  IN_PROGRESS = 1,
+  RERUN_STATUS_IN_PROGRESS = 1,
   /**
-   * PASSED - For compile failure, it means the rerun succeeded.
+   * RERUN_STATUS_PASSED - For compile failure, it means the rerun succeeded.
    * For deterministic test failure, it means that the primary test failure
    * got expected result.
    */
-  PASSED = 2,
+  RERUN_STATUS_PASSED = 2,
   /**
-   * FAILED - For compile failure, it means the compile was unsuccessful.
+   * RERUN_STATUS_FAILED - For compile failure, it means the compile was unsuccessful.
    * For deterministic test failure, it means that the primary test failure
    * got unexpected result.
    */
-  FAILED = 3,
+  RERUN_STATUS_FAILED = 3,
   /**
-   * INFRA_FAILED - The rerun ended with infra failure.
+   * RERUN_STATUS_INFRA_FAILED - The rerun ended with infra failure.
    * It means we will not know which direction to continue the bisection.
    * This case usually mean that the bisection will not be able to
    * find culprit.
    */
-  INFRA_FAILED = 4,
-  /** CANCELED - The rerun was canceled. */
-  CANCELED = 5,
+  RERUN_STATUS_INFRA_FAILED = 4,
+  /** RERUN_STATUS_CANCELED - The rerun was canceled. */
+  RERUN_STATUS_CANCELED = 5,
   /**
-   * TEST_SKIPPED - Only used for test failure rerun.
+   * RERUN_STATUS_TEST_SKIPPED - Only used for test failure rerun.
    * The rerun ended, but the primary test failure was not run.
    * It usually means that we won't be able to continue the bisection.
    */
-  TEST_SKIPPED = 6,
+  RERUN_STATUS_TEST_SKIPPED = 6,
 }
 
 export function rerunStatusFromJSON(object: any): RerunStatus {
   switch (object) {
     case 0:
     case "RERUN_STATUS_UNSPECIFIED":
-      return RerunStatus.UNSPECIFIED;
+      return RerunStatus.RERUN_STATUS_UNSPECIFIED;
     case 1:
     case "RERUN_STATUS_IN_PROGRESS":
-      return RerunStatus.IN_PROGRESS;
+      return RerunStatus.RERUN_STATUS_IN_PROGRESS;
     case 2:
     case "RERUN_STATUS_PASSED":
-      return RerunStatus.PASSED;
+      return RerunStatus.RERUN_STATUS_PASSED;
     case 3:
     case "RERUN_STATUS_FAILED":
-      return RerunStatus.FAILED;
+      return RerunStatus.RERUN_STATUS_FAILED;
     case 4:
     case "RERUN_STATUS_INFRA_FAILED":
-      return RerunStatus.INFRA_FAILED;
+      return RerunStatus.RERUN_STATUS_INFRA_FAILED;
     case 5:
     case "RERUN_STATUS_CANCELED":
-      return RerunStatus.CANCELED;
+      return RerunStatus.RERUN_STATUS_CANCELED;
     case 6:
     case "RERUN_STATUS_TEST_SKIPPED":
-      return RerunStatus.TEST_SKIPPED;
+      return RerunStatus.RERUN_STATUS_TEST_SKIPPED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum RerunStatus");
   }
@@ -174,19 +174,19 @@ export function rerunStatusFromJSON(object: any): RerunStatus {
 
 export function rerunStatusToJSON(object: RerunStatus): string {
   switch (object) {
-    case RerunStatus.UNSPECIFIED:
+    case RerunStatus.RERUN_STATUS_UNSPECIFIED:
       return "RERUN_STATUS_UNSPECIFIED";
-    case RerunStatus.IN_PROGRESS:
+    case RerunStatus.RERUN_STATUS_IN_PROGRESS:
       return "RERUN_STATUS_IN_PROGRESS";
-    case RerunStatus.PASSED:
+    case RerunStatus.RERUN_STATUS_PASSED:
       return "RERUN_STATUS_PASSED";
-    case RerunStatus.FAILED:
+    case RerunStatus.RERUN_STATUS_FAILED:
       return "RERUN_STATUS_FAILED";
-    case RerunStatus.INFRA_FAILED:
+    case RerunStatus.RERUN_STATUS_INFRA_FAILED:
       return "RERUN_STATUS_INFRA_FAILED";
-    case RerunStatus.CANCELED:
+    case RerunStatus.RERUN_STATUS_CANCELED:
       return "RERUN_STATUS_CANCELED";
-    case RerunStatus.TEST_SKIPPED:
+    case RerunStatus.RERUN_STATUS_TEST_SKIPPED:
       return "RERUN_STATUS_TEST_SKIPPED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum RerunStatus");
@@ -200,11 +200,11 @@ export function rerunStatusToJSON(object: RerunStatus): string {
  */
 export enum TestResultStatus {
   /**
-   * UNSPECIFIED - Status was not specified.
+   * TEST_RESULT_STATUS_UNSPECIFIED - Status was not specified.
    * Not to be used in actual test results; serves as a default value for an
    * unset field.
    */
-  UNSPECIFIED = 0,
+  TEST_RESULT_STATUS_UNSPECIFIED = 0,
   /** PASS - The test case has passed. */
   PASS = 1,
   /**
@@ -240,7 +240,7 @@ export function testResultStatusFromJSON(object: any): TestResultStatus {
   switch (object) {
     case 0:
     case "TEST_RESULT_STATUS_UNSPECIFIED":
-      return TestResultStatus.UNSPECIFIED;
+      return TestResultStatus.TEST_RESULT_STATUS_UNSPECIFIED;
     case 1:
     case "PASS":
       return TestResultStatus.PASS;
@@ -263,7 +263,7 @@ export function testResultStatusFromJSON(object: any): TestResultStatus {
 
 export function testResultStatusToJSON(object: TestResultStatus): string {
   switch (object) {
-    case TestResultStatus.UNSPECIFIED:
+    case TestResultStatus.TEST_RESULT_STATUS_UNSPECIFIED:
       return "TEST_RESULT_STATUS_UNSPECIFIED";
     case TestResultStatus.PASS:
       return "PASS";
@@ -282,7 +282,7 @@ export function testResultStatusToJSON(object: TestResultStatus): string {
 
 /** AnalysisType specifies type of the analysis. */
 export enum AnalysisType {
-  UNSPECIFIED = 0,
+  ANALYSIS_TYPE_UNSPECIFIED = 0,
   /** COMPILE_FAILURE_ANALYSIS - Compile analysis type. */
   COMPILE_FAILURE_ANALYSIS = 1,
   /** TEST_FAILURE_ANALYSIS - Test analysis type. */
@@ -293,7 +293,7 @@ export function analysisTypeFromJSON(object: any): AnalysisType {
   switch (object) {
     case 0:
     case "ANALYSIS_TYPE_UNSPECIFIED":
-      return AnalysisType.UNSPECIFIED;
+      return AnalysisType.ANALYSIS_TYPE_UNSPECIFIED;
     case 1:
     case "COMPILE_FAILURE_ANALYSIS":
       return AnalysisType.COMPILE_FAILURE_ANALYSIS;
@@ -307,7 +307,7 @@ export function analysisTypeFromJSON(object: any): AnalysisType {
 
 export function analysisTypeToJSON(object: AnalysisType): string {
   switch (object) {
-    case AnalysisType.UNSPECIFIED:
+    case AnalysisType.ANALYSIS_TYPE_UNSPECIFIED:
       return "ANALYSIS_TYPE_UNSPECIFIED";
     case AnalysisType.COMPILE_FAILURE_ANALYSIS:
       return "COMPILE_FAILURE_ANALYSIS";
@@ -319,7 +319,7 @@ export function analysisTypeToJSON(object: AnalysisType): string {
 }
 
 export enum SuspectVerificationStatus {
-  UNSPECIFIED = 0,
+  SUSPECT_VERIFICATION_STATUS_UNSPECIFIED = 0,
   UNVERIFIED = 1,
   VERIFICATION_SCHEDULED = 2,
   UNDER_VERIFICATION = 3,
@@ -333,7 +333,7 @@ export function suspectVerificationStatusFromJSON(object: any): SuspectVerificat
   switch (object) {
     case 0:
     case "SUSPECT_VERIFICATION_STATUS_UNSPECIFIED":
-      return SuspectVerificationStatus.UNSPECIFIED;
+      return SuspectVerificationStatus.SUSPECT_VERIFICATION_STATUS_UNSPECIFIED;
     case 1:
     case "UNVERIFIED":
       return SuspectVerificationStatus.UNVERIFIED;
@@ -362,7 +362,7 @@ export function suspectVerificationStatusFromJSON(object: any): SuspectVerificat
 
 export function suspectVerificationStatusToJSON(object: SuspectVerificationStatus): string {
   switch (object) {
-    case SuspectVerificationStatus.UNSPECIFIED:
+    case SuspectVerificationStatus.SUSPECT_VERIFICATION_STATUS_UNSPECIFIED:
       return "SUSPECT_VERIFICATION_STATUS_UNSPECIFIED";
     case SuspectVerificationStatus.UNVERIFIED:
       return "UNVERIFIED";
@@ -389,10 +389,10 @@ export function suspectVerificationStatusToJSON(object: SuspectVerificationStatu
  */
 export enum TestVerdictStatus {
   /**
-   * UNSPECIFIED - a test verdict must not have this status.
+   * TEST_VERDICT_STATUS_UNSPECIFIED - a test verdict must not have this status.
    * This is only used when filtering verdicts.
    */
-  UNSPECIFIED = 0,
+  TEST_VERDICT_STATUS_UNSPECIFIED = 0,
   /** UNEXPECTED - The test verdict has no exonerations, and all results are unexpected. */
   UNEXPECTED = 10,
   /** UNEXPECTEDLY_SKIPPED - The test verdict has no exonerations, and all results are unexpectedly skipped. */
@@ -412,7 +412,7 @@ export function testVerdictStatusFromJSON(object: any): TestVerdictStatus {
   switch (object) {
     case 0:
     case "TEST_VERDICT_STATUS_UNSPECIFIED":
-      return TestVerdictStatus.UNSPECIFIED;
+      return TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED;
     case 10:
     case "UNEXPECTED":
       return TestVerdictStatus.UNEXPECTED;
@@ -435,7 +435,7 @@ export function testVerdictStatusFromJSON(object: any): TestVerdictStatus {
 
 export function testVerdictStatusToJSON(object: TestVerdictStatus): string {
   switch (object) {
-    case TestVerdictStatus.UNSPECIFIED:
+    case TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED:
       return "TEST_VERDICT_STATUS_UNSPECIFIED";
     case TestVerdictStatus.UNEXPECTED:
       return "UNEXPECTED";

@@ -75,7 +75,7 @@ function createMockAnalysis() {
             id: 'commit5',
           },
           rerunResult: {
-            rerunStatus: RerunStatus.FAILED,
+            rerunStatus: RerunStatus.RERUN_STATUS_FAILED,
           },
           index: '5',
           type: 'NthSection',
@@ -91,7 +91,7 @@ function createMockAnalysis() {
             id: 'commit6',
           },
           rerunResult: {
-            rerunStatus: RerunStatus.PASSED,
+            rerunStatus: RerunStatus.RERUN_STATUS_PASSED,
           },
           index: '6',
           type: 'NthSection',

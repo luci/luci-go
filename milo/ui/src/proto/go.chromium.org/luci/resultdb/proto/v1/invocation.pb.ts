@@ -8,7 +8,7 @@
 import _m0 from "protobufjs/minimal";
 import { Struct } from "../../../../../google/protobuf/struct.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
-import { CommitPosition, GerritChange, GitilesCommit, StringPair } from "./common.pb";
+import { CommitPosition, GerritChange, GitilesCommit, StringPair, Variant } from "./common.pb";
 import { Instructions } from "./instruction.pb";
 import { ArtifactPredicate, TestResultPredicate } from "./predicate.pb";
 
@@ -20,7 +20,7 @@ export const protobufPackage = "luci.resultdb.v1";
  * buildbucket build, CQ attempt.
  * Composable: can include other invocations, see inclusion.proto.
  *
- * Next id: 24.
+ * Next id: 25.
  */
 export interface Invocation {
   /**
@@ -232,6 +232,13 @@ export interface Invocation {
     | Instructions
     | undefined;
   /**
+   * Union of all variants of test results directly included by the invocation.
+   * This field will be populated by ResultDB during test result creation time.
+   */
+  readonly TestResultVariantUnion:
+    | Variant
+    | undefined;
+  /**
    * Additional JSON object(s) that contain additional structured data about the
    * invocation. Unlike `properties` this field is not included (denormalized)
    * in the test results export, it is only available in the finalized
@@ -261,8 +268,8 @@ export interface Invocation {
 }
 
 export enum Invocation_State {
-  /** UNSPECIFIED - The default value. This value is used if the state is omitted. */
-  UNSPECIFIED = 0,
+  /** STATE_UNSPECIFIED - The default value. This value is used if the state is omitted. */
+  STATE_UNSPECIFIED = 0,
   /** ACTIVE - The invocation was created and accepts new results. */
   ACTIVE = 1,
   /**
@@ -282,7 +289,7 @@ export function invocation_StateFromJSON(object: any): Invocation_State {
   switch (object) {
     case 0:
     case "STATE_UNSPECIFIED":
-      return Invocation_State.UNSPECIFIED;
+      return Invocation_State.STATE_UNSPECIFIED;
     case 1:
     case "ACTIVE":
       return Invocation_State.ACTIVE;
@@ -299,7 +306,7 @@ export function invocation_StateFromJSON(object: any): Invocation_State {
 
 export function invocation_StateToJSON(object: Invocation_State): string {
   switch (object) {
-    case Invocation_State.UNSPECIFIED:
+    case Invocation_State.STATE_UNSPECIFIED:
       return "STATE_UNSPECIFIED";
     case Invocation_State.ACTIVE:
       return "ACTIVE";
@@ -480,6 +487,7 @@ function createBaseInvocation(): Invocation {
     isSourceSpecFinal: false,
     baselineId: "",
     instructions: undefined,
+    TestResultVariantUnion: undefined,
     extendedProperties: {},
   };
 }
@@ -542,6 +550,9 @@ export const Invocation = {
     }
     if (message.instructions !== undefined) {
       Instructions.encode(message.instructions, writer.uint32(186).fork()).ldelim();
+    }
+    if (message.TestResultVariantUnion !== undefined) {
+      Variant.encode(message.TestResultVariantUnion, writer.uint32(194).fork()).ldelim();
     }
     Object.entries(message.extendedProperties).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -691,6 +702,13 @@ export const Invocation = {
 
           message.instructions = Instructions.decode(reader, reader.uint32());
           continue;
+        case 24:
+          if (tag !== 194) {
+            break;
+          }
+
+          message.TestResultVariantUnion = Variant.decode(reader, reader.uint32());
+          continue;
         case 22:
           if (tag !== 178) {
             break;
@@ -735,6 +753,9 @@ export const Invocation = {
       isSourceSpecFinal: isSet(object.isSourceSpecFinal) ? globalThis.Boolean(object.isSourceSpecFinal) : false,
       baselineId: isSet(object.baselineId) ? globalThis.String(object.baselineId) : "",
       instructions: isSet(object.instructions) ? Instructions.fromJSON(object.instructions) : undefined,
+      TestResultVariantUnion: isSet(object.TestResultVariantUnion)
+        ? Variant.fromJSON(object.TestResultVariantUnion)
+        : undefined,
       extendedProperties: isObject(object.extendedProperties)
         ? Object.entries(object.extendedProperties).reduce<
           { [key: string]: { readonly [key: string]: any } | undefined }
@@ -805,6 +826,9 @@ export const Invocation = {
     if (message.instructions !== undefined) {
       obj.instructions = Instructions.toJSON(message.instructions);
     }
+    if (message.TestResultVariantUnion !== undefined) {
+      obj.TestResultVariantUnion = Variant.toJSON(message.TestResultVariantUnion);
+    }
     if (message.extendedProperties) {
       const entries = Object.entries(message.extendedProperties);
       if (entries.length > 0) {
@@ -847,6 +871,10 @@ export const Invocation = {
     message.instructions = (object.instructions !== undefined && object.instructions !== null)
       ? Instructions.fromPartial(object.instructions)
       : undefined;
+    message.TestResultVariantUnion =
+      (object.TestResultVariantUnion !== undefined && object.TestResultVariantUnion !== null)
+        ? Variant.fromPartial(object.TestResultVariantUnion)
+        : undefined;
     message.extendedProperties = Object.entries(object.extendedProperties ?? {}).reduce<
       { [key: string]: { readonly [key: string]: any } | undefined }
     >((acc, [key, value]) => {

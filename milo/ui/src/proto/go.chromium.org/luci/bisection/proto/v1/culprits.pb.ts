@@ -13,7 +13,7 @@ import { SuspectVerificationDetails } from "./common.pb";
 export const protobufPackage = "luci.bisection.v1";
 
 export enum CulpritActionType {
-  UNSPECIFIED = 0,
+  CULPRIT_ACTION_TYPE_UNSPECIFIED = 0,
   /** NO_ACTION - No action has been taken with the culprit. */
   NO_ACTION = 1,
   /** CULPRIT_AUTO_REVERTED - The culprit was auto-reverted by LUCI Bisection. */
@@ -36,7 +36,7 @@ export function culpritActionTypeFromJSON(object: any): CulpritActionType {
   switch (object) {
     case 0:
     case "CULPRIT_ACTION_TYPE_UNSPECIFIED":
-      return CulpritActionType.UNSPECIFIED;
+      return CulpritActionType.CULPRIT_ACTION_TYPE_UNSPECIFIED;
     case 1:
     case "NO_ACTION":
       return CulpritActionType.NO_ACTION;
@@ -62,7 +62,7 @@ export function culpritActionTypeFromJSON(object: any): CulpritActionType {
 
 export function culpritActionTypeToJSON(object: CulpritActionType): string {
   switch (object) {
-    case CulpritActionType.UNSPECIFIED:
+    case CulpritActionType.CULPRIT_ACTION_TYPE_UNSPECIFIED:
       return "CULPRIT_ACTION_TYPE_UNSPECIFIED";
     case CulpritActionType.NO_ACTION:
       return "NO_ACTION";
@@ -86,7 +86,7 @@ export function culpritActionTypeToJSON(object: CulpritActionType): string {
  * LUCI Bisection may not have resulted in any perceivable actions.
  */
 export enum CulpritInactionReason {
-  UNSPECIFIED = 0,
+  CULPRIT_INACTION_REASON_UNSPECIFIED = 0,
   /** REVERTED_BY_BISECTION - The culprit has been reverted by LUCI Bisection. */
   REVERTED_BY_BISECTION = 1,
   /** REVERTED_MANUALLY - The culprit has been reverted, but not by LUCI Bisection. */
@@ -112,7 +112,7 @@ export function culpritInactionReasonFromJSON(object: any): CulpritInactionReaso
   switch (object) {
     case 0:
     case "CULPRIT_INACTION_REASON_UNSPECIFIED":
-      return CulpritInactionReason.UNSPECIFIED;
+      return CulpritInactionReason.CULPRIT_INACTION_REASON_UNSPECIFIED;
     case 1:
     case "REVERTED_BY_BISECTION":
       return CulpritInactionReason.REVERTED_BY_BISECTION;
@@ -144,7 +144,7 @@ export function culpritInactionReasonFromJSON(object: any): CulpritInactionReaso
 
 export function culpritInactionReasonToJSON(object: CulpritInactionReason): string {
   switch (object) {
-    case CulpritInactionReason.UNSPECIFIED:
+    case CulpritInactionReason.CULPRIT_INACTION_REASON_UNSPECIFIED:
       return "CULPRIT_INACTION_REASON_UNSPECIFIED";
     case CulpritInactionReason.REVERTED_BY_BISECTION:
       return "REVERTED_BY_BISECTION";

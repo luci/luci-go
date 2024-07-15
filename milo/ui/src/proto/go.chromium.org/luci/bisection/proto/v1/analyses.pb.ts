@@ -35,7 +35,7 @@ export const protobufPackage = "luci.bisection.v1";
  * the actual result of the analysis.
  */
 export enum AnalysisRunStatus {
-  UNSPECIFIED = 0,
+  ANALYSIS_RUN_STATUS_UNSPECIFIED = 0,
   /** STARTED - The analysis started and is still running. */
   STARTED = 2,
   /** ENDED - The analysis has ended (either it stopped naturally or ran into an error). */
@@ -48,7 +48,7 @@ export function analysisRunStatusFromJSON(object: any): AnalysisRunStatus {
   switch (object) {
     case 0:
     case "ANALYSIS_RUN_STATUS_UNSPECIFIED":
-      return AnalysisRunStatus.UNSPECIFIED;
+      return AnalysisRunStatus.ANALYSIS_RUN_STATUS_UNSPECIFIED;
     case 2:
     case "STARTED":
       return AnalysisRunStatus.STARTED;
@@ -65,7 +65,7 @@ export function analysisRunStatusFromJSON(object: any): AnalysisRunStatus {
 
 export function analysisRunStatusToJSON(object: AnalysisRunStatus): string {
   switch (object) {
-    case AnalysisRunStatus.UNSPECIFIED:
+    case AnalysisRunStatus.ANALYSIS_RUN_STATUS_UNSPECIFIED:
       return "ANALYSIS_RUN_STATUS_UNSPECIFIED";
     case AnalysisRunStatus.STARTED:
       return "STARTED";
@@ -79,7 +79,7 @@ export function analysisRunStatusToJSON(object: AnalysisRunStatus): string {
 }
 
 export enum BuildFailureType {
-  UNSPECIFIED = 0,
+  BUILD_FAILURE_TYPE_UNSPECIFIED = 0,
   COMPILE = 1,
   TEST = 2,
   INFRA = 3,
@@ -90,7 +90,7 @@ export function buildFailureTypeFromJSON(object: any): BuildFailureType {
   switch (object) {
     case 0:
     case "BUILD_FAILURE_TYPE_UNSPECIFIED":
-      return BuildFailureType.UNSPECIFIED;
+      return BuildFailureType.BUILD_FAILURE_TYPE_UNSPECIFIED;
     case 1:
     case "COMPILE":
       return BuildFailureType.COMPILE;
@@ -110,7 +110,7 @@ export function buildFailureTypeFromJSON(object: any): BuildFailureType {
 
 export function buildFailureTypeToJSON(object: BuildFailureType): string {
   switch (object) {
-    case BuildFailureType.UNSPECIFIED:
+    case BuildFailureType.BUILD_FAILURE_TYPE_UNSPECIFIED:
       return "BUILD_FAILURE_TYPE_UNSPECIFIED";
     case BuildFailureType.COMPILE:
       return "COMPILE";

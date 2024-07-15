@@ -17,8 +17,8 @@ export const protobufPackage = "google.api";
  * Note: This enum **may** receive new values in the future.
  */
 export enum FieldBehavior {
-  /** UNSPECIFIED - Conventional default for enums. Do not use this. */
-  UNSPECIFIED = 0,
+  /** FIELD_BEHAVIOR_UNSPECIFIED - Conventional default for enums. Do not use this. */
+  FIELD_BEHAVIOR_UNSPECIFIED = 0,
   /**
    * OPTIONAL - Specifically denotes a field as optional.
    * While all fields in protocol buffers are optional, this may be specified
@@ -85,7 +85,7 @@ export function fieldBehaviorFromJSON(object: any): FieldBehavior {
   switch (object) {
     case 0:
     case "FIELD_BEHAVIOR_UNSPECIFIED":
-      return FieldBehavior.UNSPECIFIED;
+      return FieldBehavior.FIELD_BEHAVIOR_UNSPECIFIED;
     case 1:
     case "OPTIONAL":
       return FieldBehavior.OPTIONAL;
@@ -117,7 +117,7 @@ export function fieldBehaviorFromJSON(object: any): FieldBehavior {
 
 export function fieldBehaviorToJSON(object: FieldBehavior): string {
   switch (object) {
-    case FieldBehavior.UNSPECIFIED:
+    case FieldBehavior.FIELD_BEHAVIOR_UNSPECIFIED:
       return "FIELD_BEHAVIOR_UNSPECIFIED";
     case FieldBehavior.OPTIONAL:
       return "OPTIONAL";

@@ -39,7 +39,7 @@ import {
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
 
 const CULPRIT_ACTION_DESCRIPTIONS = Object.freeze({
-  [CulpritActionType.UNSPECIFIED]: '',
+  [CulpritActionType.CULPRIT_ACTION_TYPE_UNSPECIFIED]: '',
   [CulpritActionType.NO_ACTION]:
     'No actions have been performed by LUCI Bisection for this culprit',
   [CulpritActionType.CULPRIT_AUTO_REVERTED]:
@@ -54,7 +54,7 @@ const CULPRIT_ACTION_DESCRIPTIONS = Object.freeze({
 });
 
 const CULPRIT_INACTION_EXPLANATIONS = Object.freeze({
-  [CulpritInactionReason.UNSPECIFIED]: '',
+  [CulpritInactionReason.CULPRIT_INACTION_REASON_UNSPECIFIED]: '',
   [CulpritInactionReason.REVERTED_BY_BISECTION]:
     'it has been reverted as the culprit of another LUCI Bisection analysis',
   [CulpritInactionReason.REVERTED_MANUALLY]: 'it has already been reverted',
@@ -101,7 +101,8 @@ function CulpritActionTableCell({ action }: CulpritActionTableCellProps) {
       break;
     case CulpritActionType.NO_ACTION: {
       const reason: CulpritInactionReason =
-        action.inactionReason || CulpritInactionReason.UNSPECIFIED;
+        action.inactionReason ||
+        CulpritInactionReason.CULPRIT_INACTION_REASON_UNSPECIFIED;
       if (INACTION_REASONS_WITH_REVERT_LINK.includes(reason)) {
         linkText = 'revert CL';
         url = action.revertClUrl || '';

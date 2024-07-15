@@ -52,5 +52,12 @@
       "@root/*": ["./*"],
     }
   },
-  "exclude": ["node_modules", "out", "src/proto"]
+  "exclude": [
+    // No need to validate the dependencies.
+    "node_modules",
+    // No need to validate the output.
+    "out",
+    // Exclude the generated proto bindings to make type check faster.
+    "src/proto",
+  ]
 }

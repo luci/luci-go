@@ -34,10 +34,10 @@ export const protobufPackage = "luci.analysis.v1";
 
 export enum ClusterSummaryView {
   /**
-   * UNSPECIFIED - The default / unset value.
+   * CLUSTER_SUMMARY_VIEW_UNSPECIFIED - The default / unset value.
    * The API will default to the BASIC view.
    */
-  UNSPECIFIED = 0,
+  CLUSTER_SUMMARY_VIEW_UNSPECIFIED = 0,
   /**
    * BASIC - Include most fields in the cluster summary, EXCLUDING
    * daily breakdowns of the cluster's impact metrics.
@@ -51,7 +51,7 @@ export function clusterSummaryViewFromJSON(object: any): ClusterSummaryView {
   switch (object) {
     case 0:
     case "CLUSTER_SUMMARY_VIEW_UNSPECIFIED":
-      return ClusterSummaryView.UNSPECIFIED;
+      return ClusterSummaryView.CLUSTER_SUMMARY_VIEW_UNSPECIFIED;
     case 1:
     case "BASIC":
       return ClusterSummaryView.BASIC;
@@ -65,7 +65,7 @@ export function clusterSummaryViewFromJSON(object: any): ClusterSummaryView {
 
 export function clusterSummaryViewToJSON(object: ClusterSummaryView): string {
   switch (object) {
-    case ClusterSummaryView.UNSPECIFIED:
+    case ClusterSummaryView.CLUSTER_SUMMARY_VIEW_UNSPECIFIED:
       return "CLUSTER_SUMMARY_VIEW_UNSPECIFIED";
     case ClusterSummaryView.BASIC:
       return "BASIC";

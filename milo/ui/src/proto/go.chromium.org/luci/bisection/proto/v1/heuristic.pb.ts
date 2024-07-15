@@ -13,7 +13,7 @@ import { AnalysisStatus, analysisStatusFromJSON, analysisStatusToJSON, SuspectVe
 export const protobufPackage = "luci.bisection.v1";
 
 export enum SuspectConfidenceLevel {
-  UNSPECIFIED = 0,
+  SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED = 0,
   LOW = 1,
   MEDIUM = 2,
   HIGH = 3,
@@ -23,7 +23,7 @@ export function suspectConfidenceLevelFromJSON(object: any): SuspectConfidenceLe
   switch (object) {
     case 0:
     case "SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED":
-      return SuspectConfidenceLevel.UNSPECIFIED;
+      return SuspectConfidenceLevel.SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED;
     case 1:
     case "LOW":
       return SuspectConfidenceLevel.LOW;
@@ -40,7 +40,7 @@ export function suspectConfidenceLevelFromJSON(object: any): SuspectConfidenceLe
 
 export function suspectConfidenceLevelToJSON(object: SuspectConfidenceLevel): string {
   switch (object) {
-    case SuspectConfidenceLevel.UNSPECIFIED:
+    case SuspectConfidenceLevel.SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED:
       return "SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED";
     case SuspectConfidenceLevel.LOW:
       return "LOW";

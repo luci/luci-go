@@ -19,11 +19,11 @@ export const protobufPackage = "luci.analysis.v1";
  */
 export enum TestResultStatus {
   /**
-   * UNSPECIFIED - Status was not specified.
+   * TEST_RESULT_STATUS_UNSPECIFIED - Status was not specified.
    * Not to be used in actual test results; serves as a default value for an
    * unset field.
    */
-  UNSPECIFIED = 0,
+  TEST_RESULT_STATUS_UNSPECIFIED = 0,
   /** PASS - The test case has passed. */
   PASS = 1,
   /**
@@ -59,7 +59,7 @@ export function testResultStatusFromJSON(object: any): TestResultStatus {
   switch (object) {
     case 0:
     case "TEST_RESULT_STATUS_UNSPECIFIED":
-      return TestResultStatus.UNSPECIFIED;
+      return TestResultStatus.TEST_RESULT_STATUS_UNSPECIFIED;
     case 1:
     case "PASS":
       return TestResultStatus.PASS;
@@ -82,7 +82,7 @@ export function testResultStatusFromJSON(object: any): TestResultStatus {
 
 export function testResultStatusToJSON(object: TestResultStatus): string {
   switch (object) {
-    case TestResultStatus.UNSPECIFIED:
+    case TestResultStatus.TEST_RESULT_STATUS_UNSPECIFIED:
       return "TEST_RESULT_STATUS_UNSPECIFIED";
     case TestResultStatus.PASS:
       return "PASS";
@@ -105,10 +105,10 @@ export function testResultStatusToJSON(object: TestResultStatus): string {
  */
 export enum TestVerdictStatus {
   /**
-   * UNSPECIFIED - a test verdict must not have this status.
+   * TEST_VERDICT_STATUS_UNSPECIFIED - a test verdict must not have this status.
    * This is only used when filtering verdicts.
    */
-  UNSPECIFIED = 0,
+  TEST_VERDICT_STATUS_UNSPECIFIED = 0,
   /** UNEXPECTED - The test verdict has no exonerations, and all results are unexpected. */
   UNEXPECTED = 10,
   /** UNEXPECTEDLY_SKIPPED - The test verdict has no exonerations, and all results are unexpectedly skipped. */
@@ -128,7 +128,7 @@ export function testVerdictStatusFromJSON(object: any): TestVerdictStatus {
   switch (object) {
     case 0:
     case "TEST_VERDICT_STATUS_UNSPECIFIED":
-      return TestVerdictStatus.UNSPECIFIED;
+      return TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED;
     case 10:
     case "UNEXPECTED":
       return TestVerdictStatus.UNEXPECTED;
@@ -151,7 +151,7 @@ export function testVerdictStatusFromJSON(object: any): TestVerdictStatus {
 
 export function testVerdictStatusToJSON(object: TestVerdictStatus): string {
   switch (object) {
-    case TestVerdictStatus.UNSPECIFIED:
+    case TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED:
       return "TEST_VERDICT_STATUS_UNSPECIFIED";
     case TestVerdictStatus.UNEXPECTED:
       return "UNEXPECTED";
@@ -175,12 +175,12 @@ export function testVerdictStatusToJSON(object: TestVerdictStatus): string {
  */
 export enum SkipReason {
   /**
-   * UNSPECIFIED - Skip reason was not specified.
+   * SKIP_REASON_UNSPECIFIED - Skip reason was not specified.
    * This represents an unset field which should be used for non-skip test
    * result statuses.  It can also be used if none of the other statuses
    * apply.
    */
-  UNSPECIFIED = 0,
+  SKIP_REASON_UNSPECIFIED = 0,
   /**
    * AUTOMATICALLY_DISABLED_FOR_FLAKINESS - Disabled automatically in response to a test skipping policy that skips
    * flaky tests.
@@ -193,7 +193,7 @@ export function skipReasonFromJSON(object: any): SkipReason {
   switch (object) {
     case 0:
     case "SKIP_REASON_UNSPECIFIED":
-      return SkipReason.UNSPECIFIED;
+      return SkipReason.SKIP_REASON_UNSPECIFIED;
     case 1:
     case "AUTOMATICALLY_DISABLED_FOR_FLAKINESS":
       return SkipReason.AUTOMATICALLY_DISABLED_FOR_FLAKINESS;
@@ -204,7 +204,7 @@ export function skipReasonFromJSON(object: any): SkipReason {
 
 export function skipReasonToJSON(object: SkipReason): string {
   switch (object) {
-    case SkipReason.UNSPECIFIED:
+    case SkipReason.SKIP_REASON_UNSPECIFIED:
       return "SKIP_REASON_UNSPECIFIED";
     case SkipReason.AUTOMATICALLY_DISABLED_FOR_FLAKINESS:
       return "AUTOMATICALLY_DISABLED_FOR_FLAKINESS";

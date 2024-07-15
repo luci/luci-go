@@ -15,10 +15,10 @@ export const protobufPackage = "luci.resultdb.v1";
 /** Status of a test variant. */
 export enum TestVariantStatus {
   /**
-   * UNSPECIFIED - a test variant must not have this status.
+   * TEST_VARIANT_STATUS_UNSPECIFIED - a test variant must not have this status.
    * This is only used when filtering variants.
    */
-  UNSPECIFIED = 0,
+  TEST_VARIANT_STATUS_UNSPECIFIED = 0,
   /** UNEXPECTED - The test variant has no exonerations, and all results are unexpected. */
   UNEXPECTED = 10,
   /** UNEXPECTEDLY_SKIPPED - The test variant has no exonerations, and all results are unexpectedly skipped. */
@@ -44,7 +44,7 @@ export function testVariantStatusFromJSON(object: any): TestVariantStatus {
   switch (object) {
     case 0:
     case "TEST_VARIANT_STATUS_UNSPECIFIED":
-      return TestVariantStatus.UNSPECIFIED;
+      return TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED;
     case 10:
     case "UNEXPECTED":
       return TestVariantStatus.UNEXPECTED;
@@ -70,7 +70,7 @@ export function testVariantStatusFromJSON(object: any): TestVariantStatus {
 
 export function testVariantStatusToJSON(object: TestVariantStatus): string {
   switch (object) {
-    case TestVariantStatus.UNSPECIFIED:
+    case TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED:
       return "TEST_VARIANT_STATUS_UNSPECIFIED";
     case TestVariantStatus.UNEXPECTED:
       return "UNEXPECTED";

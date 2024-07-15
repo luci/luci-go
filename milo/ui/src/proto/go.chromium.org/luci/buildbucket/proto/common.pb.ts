@@ -14,8 +14,8 @@ export const protobufPackage = "buildbucket.v2";
 
 /** Status of a build or a step. */
 export enum Status {
-  /** UNSPECIFIED - Unspecified state. Meaning depends on the context. */
-  UNSPECIFIED = 0,
+  /** STATUS_UNSPECIFIED - Unspecified state. Meaning depends on the context. */
+  STATUS_UNSPECIFIED = 0,
   /** SCHEDULED - Build was scheduled, but did not start or end yet. */
   SCHEDULED = 1,
   /** STARTED - Build/step has started. */
@@ -57,7 +57,7 @@ export function statusFromJSON(object: any): Status {
   switch (object) {
     case 0:
     case "STATUS_UNSPECIFIED":
-      return Status.UNSPECIFIED;
+      return Status.STATUS_UNSPECIFIED;
     case 1:
     case "SCHEDULED":
       return Status.SCHEDULED;
@@ -86,7 +86,7 @@ export function statusFromJSON(object: any): Status {
 
 export function statusToJSON(object: Status): string {
   switch (object) {
-    case Status.UNSPECIFIED:
+    case Status.STATUS_UNSPECIFIED:
       return "STATUS_UNSPECIFIED";
     case Status.SCHEDULED:
       return "SCHEDULED";

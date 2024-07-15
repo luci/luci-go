@@ -105,12 +105,12 @@ export function testStatusToJSON(object: TestStatus): string {
  */
 export enum SkipReason {
   /**
-   * UNSPECIFIED - Skip reason was not specified.
+   * SKIP_REASON_UNSPECIFIED - Skip reason was not specified.
    * This represents an unset field which should be used for non-skip test
    * result statuses.  It can also be used if none of the other statuses
    * apply.
    */
-  UNSPECIFIED = 0,
+  SKIP_REASON_UNSPECIFIED = 0,
   /**
    * AUTOMATICALLY_DISABLED_FOR_FLAKINESS - Disabled automatically in response to a test skipping policy that skips
    * flaky tests.
@@ -123,7 +123,7 @@ export function skipReasonFromJSON(object: any): SkipReason {
   switch (object) {
     case 0:
     case "SKIP_REASON_UNSPECIFIED":
-      return SkipReason.UNSPECIFIED;
+      return SkipReason.SKIP_REASON_UNSPECIFIED;
     case 1:
     case "AUTOMATICALLY_DISABLED_FOR_FLAKINESS":
       return SkipReason.AUTOMATICALLY_DISABLED_FOR_FLAKINESS;
@@ -134,7 +134,7 @@ export function skipReasonFromJSON(object: any): SkipReason {
 
 export function skipReasonToJSON(object: SkipReason): string {
   switch (object) {
-    case SkipReason.UNSPECIFIED:
+    case SkipReason.SKIP_REASON_UNSPECIFIED:
       return "SKIP_REASON_UNSPECIFIED";
     case SkipReason.AUTOMATICALLY_DISABLED_FOR_FLAKINESS:
       return "AUTOMATICALLY_DISABLED_FOR_FLAKINESS";
@@ -146,11 +146,11 @@ export function skipReasonToJSON(object: SkipReason): string {
 /** Reason why a test variant was exonerated. */
 export enum ExonerationReason {
   /**
-   * UNSPECIFIED - Reason was not specified.
+   * EXONERATION_REASON_UNSPECIFIED - Reason was not specified.
    * Not to be used in actual test exonerations; serves as a default value for
    * an unset field.
    */
-  UNSPECIFIED = 0,
+  EXONERATION_REASON_UNSPECIFIED = 0,
   /**
    * OCCURS_ON_MAINLINE - Similar unexpected results were observed on a mainline branch
    * (i.e. against a build without unsubmitted changes applied).
@@ -190,7 +190,7 @@ export function exonerationReasonFromJSON(object: any): ExonerationReason {
   switch (object) {
     case 0:
     case "EXONERATION_REASON_UNSPECIFIED":
-      return ExonerationReason.UNSPECIFIED;
+      return ExonerationReason.EXONERATION_REASON_UNSPECIFIED;
     case 1:
     case "OCCURS_ON_MAINLINE":
       return ExonerationReason.OCCURS_ON_MAINLINE;
@@ -210,7 +210,7 @@ export function exonerationReasonFromJSON(object: any): ExonerationReason {
 
 export function exonerationReasonToJSON(object: ExonerationReason): string {
   switch (object) {
-    case ExonerationReason.UNSPECIFIED:
+    case ExonerationReason.EXONERATION_REASON_UNSPECIFIED:
       return "EXONERATION_REASON_UNSPECIFIED";
     case ExonerationReason.OCCURS_ON_MAINLINE:
       return "OCCURS_ON_MAINLINE";

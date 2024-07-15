@@ -15,7 +15,7 @@
 import { Invocation_State } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 
 export const INVOCATION_STATE_DISPLAY_MAP = Object.freeze({
-  [Invocation_State.UNSPECIFIED]: 'unspecified',
+  [Invocation_State.STATE_UNSPECIFIED]: 'unspecified',
   [Invocation_State.ACTIVE]: 'active',
   [Invocation_State.FINALIZING]: 'finalizing',
   [Invocation_State.FINALIZED]: 'finalized',

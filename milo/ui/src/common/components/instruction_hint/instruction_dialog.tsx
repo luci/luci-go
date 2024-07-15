@@ -40,7 +40,7 @@ import { InstructionDependency } from './instruction_dependency';
 
 const INSTRUCTION_TARGET_DISPLAY_MAP = {
   // The unspecifed target should not happen.
-  [InstructionTarget.UNSPECIFIED]: '',
+  [InstructionTarget.INSTRUCTION_TARGET_UNSPECIFIED]: '',
   [InstructionTarget.LOCAL]: 'Local',
   [InstructionTarget.REMOTE]: 'Remote',
   [InstructionTarget.PREBUILT]: 'Prebuilt',
@@ -81,7 +81,7 @@ export function InstructionDialog({
   const defaultTarget =
     targetedInstructions.size > 0
       ? [...targetedInstructions.keys()][0]
-      : InstructionTarget.UNSPECIFIED;
+      : InstructionTarget.INSTRUCTION_TARGET_UNSPECIFIED;
 
   // State for active target.
   const [currentTarget, setCurrentTarget] = useState(defaultTarget);

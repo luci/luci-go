@@ -276,6 +276,8 @@ export interface TestVariantBranch {
  * information about the changepoint which started it.
  * Same structure with bigquery proto here, but make a separate copy to allow it to evolve over time.
  * https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/proto/bq/test_variant_branch_row.proto;l=80
+ *
+ * Next ID: 10.
  */
 export interface Segment {
   /**
@@ -307,10 +309,17 @@ export interface Segment {
    * confidence interval. Inclusive.
    * Only set if has_start_changepoint is set.
    * When has_start_changepoint is set, the following invariant holds:
-   * previous_segment.start_position <= start_position_lower_bound_99th <= start_position <= start_position_upper_bound_99th
+   * previous_segment.start_position <= start_position_lower_bound_99th <= start_position_upper_bound_99th <= end_position
    * where previous_segment refers to the chronologically previous segment.
    */
   readonly startPositionUpperBound99th: string;
+  /**
+   * The starting changepoint position distribution. Only available for new
+   * changepoints detected from ~July 2024 onwards.
+   */
+  readonly startPositionDistribution:
+    | Segment_PositionDistribution
+    | undefined;
   /**
    * The earliest hour a test run at the indicated start_position
    * was recorded. Gives an approximate upper bound on the timestamp the
@@ -338,6 +347,39 @@ export interface Segment {
   readonly counts: Segment_Counts | undefined;
 }
 
+export interface Segment_PositionDistribution {
+  /**
+   * Changepoint position cumulative distribution function (CDF) probability
+   * values at which the distribution is characterised. These are values
+   * between 0.0 and 1.0.
+   *
+   * This distribution is guaranteed to have points sufficient to allow
+   * exact extraction of 99.9%, 99%, 95%, 90%, 80%, 70%, 60%, 50% two-tailed
+   * confidence intervals, and the distribution median (CDF = 0.5).
+   *
+   * Usage: to estimate the 99% confidence interval (two-tail), find the
+   * index of the cdf equal to 0.005 (i.e. (1-CI)/2) and the index of the
+   * cdf equal to or greater than 0.995 (i.e. 1-((1-CI)/2)).
+   * Then lookup the corresponding source positions in source_positions.
+   *
+   * This array is sorted in ascending order.
+   */
+  readonly cdfs: readonly number[];
+  /**
+   * The source positions corresponding to each of the above cdf values.
+   * I.E. source_positions[i] corresponds to cfs[i].
+   *
+   * The probability of a changepoint occuring at or before source_positions[i]
+   * is at least cdfs[i].
+   *
+   * Invariant: length(source_positions) == len(cdfs).
+   *
+   * Because cdfs is in ascending order, this array is also in ascending
+   * order.
+   */
+  readonly sourcePositions: readonly string[];
+}
+
 /**
  * Counts of source verdicts over a time period. Includes only
  * test results for submitted code changes. This is defined as:
@@ -355,11 +397,60 @@ export interface Segment {
  * Statistics for test results and test runs can be added here when needed.
  */
 export interface Segment_Counts {
-  /** The number of source verdicts with only unexpected test results. */
+  /** The number of unexpected non-skipped test results. */
+  readonly unexpectedResults: number;
+  /** The total number of non-skipped test results. */
+  readonly totalResults: number;
+  /** The number of expected passed test results. */
+  readonly expectedPassedResults: number;
+  /** The number of expected failed test results. */
+  readonly expectedFailedResults: number;
+  /** The number of expected crashed test results. */
+  readonly expectedCrashedResults: number;
+  /** The number of expected aborted test results. */
+  readonly expectedAbortedResults: number;
+  /** The number of unexpected passed test results. */
+  readonly unexpectedPassedResults: number;
+  /** The number of unexpected failed test results. */
+  readonly unexpectedFailedResults: number;
+  /** The number of unexpected crashed test results. */
+  readonly unexpectedCrashedResults: number;
+  /** The number of unexpected aborted test results. */
+  readonly unexpectedAbortedResults: number;
+  /**
+   * The number of test runs which had an unexpected test result but were
+   * not retried.
+   */
+  readonly unexpectedUnretriedRuns: number;
+  /**
+   * The number of test run which had an unexpected test result, were
+   * retried, and still contained only unexpected test results.
+   */
+  readonly unexpectedAfterRetryRuns: number;
+  /**
+   * The number of test runs which had an unexpected test result, were
+   * retried, and eventually recorded an expected test result.
+   */
+  readonly flakyRuns: number;
+  /** The total number of test runs. */
+  readonly totalRuns: number;
+  /**
+   * The number of source verdicts with only unexpected test results.
+   * A source verdict refers to all test results at a commit position.
+   */
   readonly unexpectedVerdicts: number;
-  /** The number of source verdicts with a mix of expected and unexpected test results. */
+  /**
+   * The number of source verdicts with a mix of expected and unexpected test results.
+   * A source verdict refers to all test results at a commit position.
+   * As such, is a signal of either in- or cross- build flakiness.
+   */
   readonly flakyVerdicts: number;
-  /** The total number of source verdicts. */
+  /**
+   * The total number of source verdicts.
+   * A source verdict refers to all test results at a commit position.
+   * As such, this is also the total number of source positions with
+   * test results in the segment.
+   */
   readonly totalVerdicts: number;
 }
 
@@ -1750,6 +1841,7 @@ function createBaseSegment(): Segment {
     startPosition: "0",
     startPositionLowerBound99th: "0",
     startPositionUpperBound99th: "0",
+    startPositionDistribution: undefined,
     startHour: undefined,
     endPosition: "0",
     endHour: undefined,
@@ -1770,6 +1862,9 @@ export const Segment = {
     }
     if (message.startPositionUpperBound99th !== "0") {
       writer.uint32(32).int64(message.startPositionUpperBound99th);
+    }
+    if (message.startPositionDistribution !== undefined) {
+      Segment_PositionDistribution.encode(message.startPositionDistribution, writer.uint32(74).fork()).ldelim();
     }
     if (message.startHour !== undefined) {
       Timestamp.encode(toTimestamp(message.startHour), writer.uint32(42).fork()).ldelim();
@@ -1821,6 +1916,13 @@ export const Segment = {
 
           message.startPositionUpperBound99th = longToString(reader.int64() as Long);
           continue;
+        case 9:
+          if (tag !== 74) {
+            break;
+          }
+
+          message.startPositionDistribution = Segment_PositionDistribution.decode(reader, reader.uint32());
+          continue;
         case 5:
           if (tag !== 42) {
             break;
@@ -1868,6 +1970,9 @@ export const Segment = {
       startPositionUpperBound99th: isSet(object.startPositionUpperBound99th)
         ? globalThis.String(object.startPositionUpperBound99th)
         : "0",
+      startPositionDistribution: isSet(object.startPositionDistribution)
+        ? Segment_PositionDistribution.fromJSON(object.startPositionDistribution)
+        : undefined,
       startHour: isSet(object.startHour) ? globalThis.String(object.startHour) : undefined,
       endPosition: isSet(object.endPosition) ? globalThis.String(object.endPosition) : "0",
       endHour: isSet(object.endHour) ? globalThis.String(object.endHour) : undefined,
@@ -1888,6 +1993,9 @@ export const Segment = {
     }
     if (message.startPositionUpperBound99th !== "0") {
       obj.startPositionUpperBound99th = message.startPositionUpperBound99th;
+    }
+    if (message.startPositionDistribution !== undefined) {
+      obj.startPositionDistribution = Segment_PositionDistribution.toJSON(message.startPositionDistribution);
     }
     if (message.startHour !== undefined) {
       obj.startHour = message.startHour;
@@ -1913,6 +2021,10 @@ export const Segment = {
     message.startPosition = object.startPosition ?? "0";
     message.startPositionLowerBound99th = object.startPositionLowerBound99th ?? "0";
     message.startPositionUpperBound99th = object.startPositionUpperBound99th ?? "0";
+    message.startPositionDistribution =
+      (object.startPositionDistribution !== undefined && object.startPositionDistribution !== null)
+        ? Segment_PositionDistribution.fromPartial(object.startPositionDistribution)
+        : undefined;
     message.startHour = object.startHour ?? undefined;
     message.endPosition = object.endPosition ?? "0";
     message.endHour = object.endHour ?? undefined;
@@ -1923,20 +2035,180 @@ export const Segment = {
   },
 };
 
+function createBaseSegment_PositionDistribution(): Segment_PositionDistribution {
+  return { cdfs: [], sourcePositions: [] };
+}
+
+export const Segment_PositionDistribution = {
+  encode(message: Segment_PositionDistribution, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    writer.uint32(10).fork();
+    for (const v of message.cdfs) {
+      writer.double(v);
+    }
+    writer.ldelim();
+    writer.uint32(18).fork();
+    for (const v of message.sourcePositions) {
+      writer.int64(v);
+    }
+    writer.ldelim();
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Segment_PositionDistribution {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSegment_PositionDistribution() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag === 9) {
+            message.cdfs.push(reader.double());
+
+            continue;
+          }
+
+          if (tag === 10) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.cdfs.push(reader.double());
+            }
+
+            continue;
+          }
+
+          break;
+        case 2:
+          if (tag === 16) {
+            message.sourcePositions.push(longToString(reader.int64() as Long));
+
+            continue;
+          }
+
+          if (tag === 18) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.sourcePositions.push(longToString(reader.int64() as Long));
+            }
+
+            continue;
+          }
+
+          break;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Segment_PositionDistribution {
+    return {
+      cdfs: globalThis.Array.isArray(object?.cdfs) ? object.cdfs.map((e: any) => globalThis.Number(e)) : [],
+      sourcePositions: globalThis.Array.isArray(object?.sourcePositions)
+        ? object.sourcePositions.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: Segment_PositionDistribution): unknown {
+    const obj: any = {};
+    if (message.cdfs?.length) {
+      obj.cdfs = message.cdfs;
+    }
+    if (message.sourcePositions?.length) {
+      obj.sourcePositions = message.sourcePositions;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Segment_PositionDistribution>): Segment_PositionDistribution {
+    return Segment_PositionDistribution.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Segment_PositionDistribution>): Segment_PositionDistribution {
+    const message = createBaseSegment_PositionDistribution() as any;
+    message.cdfs = object.cdfs?.map((e) => e) || [];
+    message.sourcePositions = object.sourcePositions?.map((e) => e) || [];
+    return message;
+  },
+};
+
 function createBaseSegment_Counts(): Segment_Counts {
-  return { unexpectedVerdicts: 0, flakyVerdicts: 0, totalVerdicts: 0 };
+  return {
+    unexpectedResults: 0,
+    totalResults: 0,
+    expectedPassedResults: 0,
+    expectedFailedResults: 0,
+    expectedCrashedResults: 0,
+    expectedAbortedResults: 0,
+    unexpectedPassedResults: 0,
+    unexpectedFailedResults: 0,
+    unexpectedCrashedResults: 0,
+    unexpectedAbortedResults: 0,
+    unexpectedUnretriedRuns: 0,
+    unexpectedAfterRetryRuns: 0,
+    flakyRuns: 0,
+    totalRuns: 0,
+    unexpectedVerdicts: 0,
+    flakyVerdicts: 0,
+    totalVerdicts: 0,
+  };
 }
 
 export const Segment_Counts = {
   encode(message: Segment_Counts, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.unexpectedResults !== 0) {
+      writer.uint32(8).int32(message.unexpectedResults);
+    }
+    if (message.totalResults !== 0) {
+      writer.uint32(16).int32(message.totalResults);
+    }
+    if (message.expectedPassedResults !== 0) {
+      writer.uint32(24).int32(message.expectedPassedResults);
+    }
+    if (message.expectedFailedResults !== 0) {
+      writer.uint32(32).int32(message.expectedFailedResults);
+    }
+    if (message.expectedCrashedResults !== 0) {
+      writer.uint32(40).int32(message.expectedCrashedResults);
+    }
+    if (message.expectedAbortedResults !== 0) {
+      writer.uint32(48).int32(message.expectedAbortedResults);
+    }
+    if (message.unexpectedPassedResults !== 0) {
+      writer.uint32(56).int32(message.unexpectedPassedResults);
+    }
+    if (message.unexpectedFailedResults !== 0) {
+      writer.uint32(64).int32(message.unexpectedFailedResults);
+    }
+    if (message.unexpectedCrashedResults !== 0) {
+      writer.uint32(72).int32(message.unexpectedCrashedResults);
+    }
+    if (message.unexpectedAbortedResults !== 0) {
+      writer.uint32(80).int32(message.unexpectedAbortedResults);
+    }
+    if (message.unexpectedUnretriedRuns !== 0) {
+      writer.uint32(88).int32(message.unexpectedUnretriedRuns);
+    }
+    if (message.unexpectedAfterRetryRuns !== 0) {
+      writer.uint32(96).int32(message.unexpectedAfterRetryRuns);
+    }
+    if (message.flakyRuns !== 0) {
+      writer.uint32(104).int32(message.flakyRuns);
+    }
+    if (message.totalRuns !== 0) {
+      writer.uint32(112).int32(message.totalRuns);
+    }
     if (message.unexpectedVerdicts !== 0) {
-      writer.uint32(8).int32(message.unexpectedVerdicts);
+      writer.uint32(120).int32(message.unexpectedVerdicts);
     }
     if (message.flakyVerdicts !== 0) {
-      writer.uint32(16).int32(message.flakyVerdicts);
+      writer.uint32(128).int32(message.flakyVerdicts);
     }
     if (message.totalVerdicts !== 0) {
-      writer.uint32(24).int32(message.totalVerdicts);
+      writer.uint32(136).int32(message.totalVerdicts);
     }
     return writer;
   },
@@ -1953,17 +2225,115 @@ export const Segment_Counts = {
             break;
           }
 
-          message.unexpectedVerdicts = reader.int32();
+          message.unexpectedResults = reader.int32();
           continue;
         case 2:
           if (tag !== 16) {
             break;
           }
 
-          message.flakyVerdicts = reader.int32();
+          message.totalResults = reader.int32();
           continue;
         case 3:
           if (tag !== 24) {
+            break;
+          }
+
+          message.expectedPassedResults = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.expectedFailedResults = reader.int32();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.expectedCrashedResults = reader.int32();
+          continue;
+        case 6:
+          if (tag !== 48) {
+            break;
+          }
+
+          message.expectedAbortedResults = reader.int32();
+          continue;
+        case 7:
+          if (tag !== 56) {
+            break;
+          }
+
+          message.unexpectedPassedResults = reader.int32();
+          continue;
+        case 8:
+          if (tag !== 64) {
+            break;
+          }
+
+          message.unexpectedFailedResults = reader.int32();
+          continue;
+        case 9:
+          if (tag !== 72) {
+            break;
+          }
+
+          message.unexpectedCrashedResults = reader.int32();
+          continue;
+        case 10:
+          if (tag !== 80) {
+            break;
+          }
+
+          message.unexpectedAbortedResults = reader.int32();
+          continue;
+        case 11:
+          if (tag !== 88) {
+            break;
+          }
+
+          message.unexpectedUnretriedRuns = reader.int32();
+          continue;
+        case 12:
+          if (tag !== 96) {
+            break;
+          }
+
+          message.unexpectedAfterRetryRuns = reader.int32();
+          continue;
+        case 13:
+          if (tag !== 104) {
+            break;
+          }
+
+          message.flakyRuns = reader.int32();
+          continue;
+        case 14:
+          if (tag !== 112) {
+            break;
+          }
+
+          message.totalRuns = reader.int32();
+          continue;
+        case 15:
+          if (tag !== 120) {
+            break;
+          }
+
+          message.unexpectedVerdicts = reader.int32();
+          continue;
+        case 16:
+          if (tag !== 128) {
+            break;
+          }
+
+          message.flakyVerdicts = reader.int32();
+          continue;
+        case 17:
+          if (tag !== 136) {
             break;
           }
 
@@ -1980,6 +2350,36 @@ export const Segment_Counts = {
 
   fromJSON(object: any): Segment_Counts {
     return {
+      unexpectedResults: isSet(object.unexpectedResults) ? globalThis.Number(object.unexpectedResults) : 0,
+      totalResults: isSet(object.totalResults) ? globalThis.Number(object.totalResults) : 0,
+      expectedPassedResults: isSet(object.expectedPassedResults) ? globalThis.Number(object.expectedPassedResults) : 0,
+      expectedFailedResults: isSet(object.expectedFailedResults) ? globalThis.Number(object.expectedFailedResults) : 0,
+      expectedCrashedResults: isSet(object.expectedCrashedResults)
+        ? globalThis.Number(object.expectedCrashedResults)
+        : 0,
+      expectedAbortedResults: isSet(object.expectedAbortedResults)
+        ? globalThis.Number(object.expectedAbortedResults)
+        : 0,
+      unexpectedPassedResults: isSet(object.unexpectedPassedResults)
+        ? globalThis.Number(object.unexpectedPassedResults)
+        : 0,
+      unexpectedFailedResults: isSet(object.unexpectedFailedResults)
+        ? globalThis.Number(object.unexpectedFailedResults)
+        : 0,
+      unexpectedCrashedResults: isSet(object.unexpectedCrashedResults)
+        ? globalThis.Number(object.unexpectedCrashedResults)
+        : 0,
+      unexpectedAbortedResults: isSet(object.unexpectedAbortedResults)
+        ? globalThis.Number(object.unexpectedAbortedResults)
+        : 0,
+      unexpectedUnretriedRuns: isSet(object.unexpectedUnretriedRuns)
+        ? globalThis.Number(object.unexpectedUnretriedRuns)
+        : 0,
+      unexpectedAfterRetryRuns: isSet(object.unexpectedAfterRetryRuns)
+        ? globalThis.Number(object.unexpectedAfterRetryRuns)
+        : 0,
+      flakyRuns: isSet(object.flakyRuns) ? globalThis.Number(object.flakyRuns) : 0,
+      totalRuns: isSet(object.totalRuns) ? globalThis.Number(object.totalRuns) : 0,
       unexpectedVerdicts: isSet(object.unexpectedVerdicts) ? globalThis.Number(object.unexpectedVerdicts) : 0,
       flakyVerdicts: isSet(object.flakyVerdicts) ? globalThis.Number(object.flakyVerdicts) : 0,
       totalVerdicts: isSet(object.totalVerdicts) ? globalThis.Number(object.totalVerdicts) : 0,
@@ -1988,6 +2388,48 @@ export const Segment_Counts = {
 
   toJSON(message: Segment_Counts): unknown {
     const obj: any = {};
+    if (message.unexpectedResults !== 0) {
+      obj.unexpectedResults = Math.round(message.unexpectedResults);
+    }
+    if (message.totalResults !== 0) {
+      obj.totalResults = Math.round(message.totalResults);
+    }
+    if (message.expectedPassedResults !== 0) {
+      obj.expectedPassedResults = Math.round(message.expectedPassedResults);
+    }
+    if (message.expectedFailedResults !== 0) {
+      obj.expectedFailedResults = Math.round(message.expectedFailedResults);
+    }
+    if (message.expectedCrashedResults !== 0) {
+      obj.expectedCrashedResults = Math.round(message.expectedCrashedResults);
+    }
+    if (message.expectedAbortedResults !== 0) {
+      obj.expectedAbortedResults = Math.round(message.expectedAbortedResults);
+    }
+    if (message.unexpectedPassedResults !== 0) {
+      obj.unexpectedPassedResults = Math.round(message.unexpectedPassedResults);
+    }
+    if (message.unexpectedFailedResults !== 0) {
+      obj.unexpectedFailedResults = Math.round(message.unexpectedFailedResults);
+    }
+    if (message.unexpectedCrashedResults !== 0) {
+      obj.unexpectedCrashedResults = Math.round(message.unexpectedCrashedResults);
+    }
+    if (message.unexpectedAbortedResults !== 0) {
+      obj.unexpectedAbortedResults = Math.round(message.unexpectedAbortedResults);
+    }
+    if (message.unexpectedUnretriedRuns !== 0) {
+      obj.unexpectedUnretriedRuns = Math.round(message.unexpectedUnretriedRuns);
+    }
+    if (message.unexpectedAfterRetryRuns !== 0) {
+      obj.unexpectedAfterRetryRuns = Math.round(message.unexpectedAfterRetryRuns);
+    }
+    if (message.flakyRuns !== 0) {
+      obj.flakyRuns = Math.round(message.flakyRuns);
+    }
+    if (message.totalRuns !== 0) {
+      obj.totalRuns = Math.round(message.totalRuns);
+    }
     if (message.unexpectedVerdicts !== 0) {
       obj.unexpectedVerdicts = Math.round(message.unexpectedVerdicts);
     }
@@ -2005,6 +2447,20 @@ export const Segment_Counts = {
   },
   fromPartial(object: DeepPartial<Segment_Counts>): Segment_Counts {
     const message = createBaseSegment_Counts() as any;
+    message.unexpectedResults = object.unexpectedResults ?? 0;
+    message.totalResults = object.totalResults ?? 0;
+    message.expectedPassedResults = object.expectedPassedResults ?? 0;
+    message.expectedFailedResults = object.expectedFailedResults ?? 0;
+    message.expectedCrashedResults = object.expectedCrashedResults ?? 0;
+    message.expectedAbortedResults = object.expectedAbortedResults ?? 0;
+    message.unexpectedPassedResults = object.unexpectedPassedResults ?? 0;
+    message.unexpectedFailedResults = object.unexpectedFailedResults ?? 0;
+    message.unexpectedCrashedResults = object.unexpectedCrashedResults ?? 0;
+    message.unexpectedAbortedResults = object.unexpectedAbortedResults ?? 0;
+    message.unexpectedUnretriedRuns = object.unexpectedUnretriedRuns ?? 0;
+    message.unexpectedAfterRetryRuns = object.unexpectedAfterRetryRuns ?? 0;
+    message.flakyRuns = object.flakyRuns ?? 0;
+    message.totalRuns = object.totalRuns ?? 0;
     message.unexpectedVerdicts = object.unexpectedVerdicts ?? 0;
     message.flakyVerdicts = object.flakyVerdicts ?? 0;
     message.totalVerdicts = object.totalVerdicts ?? 0;

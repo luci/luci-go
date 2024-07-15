@@ -222,7 +222,7 @@ describe('<CulpritsTable />', () => {
             endTime: '2022-09-06T07:13:18.398865Z',
             bbid: '8877665544332211',
             rerunResult: {
-              rerunStatus: RerunStatus.FAILED,
+              rerunStatus: RerunStatus.RERUN_STATUS_FAILED,
             },
             commit: {
               host: 'testHost',
@@ -237,7 +237,7 @@ describe('<CulpritsTable />', () => {
             endTime: '2022-09-06T07:16:31.398865Z',
             bbid: '8765432187654321',
             rerunResult: {
-              rerunStatus: RerunStatus.PASSED,
+              rerunStatus: RerunStatus.RERUN_STATUS_PASSED,
             },
             commit: {
               host: 'testHost',

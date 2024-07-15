@@ -33,7 +33,8 @@ import {
 
 export type SpecifiedTestVerdictStatus = Exclude<
   TestVariantStatus,
-  TestVariantStatus.UNSPECIFIED | TestVariantStatus.UNEXPECTED_MASK
+  | TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED
+  | TestVariantStatus.UNEXPECTED_MASK
 >;
 
 const VERDICT_STATUS_MAP_FROM_ANALYSIS = Object.freeze({

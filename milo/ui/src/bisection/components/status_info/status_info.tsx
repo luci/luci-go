@@ -25,38 +25,38 @@ interface LabelProps {
 }
 
 const RERUN_STATUS_LABELS: Record<RerunStatus, LabelProps> = {
-  [RerunStatus.UNSPECIFIED]: {
+  [RerunStatus.RERUN_STATUS_UNSPECIFIED]: {
     text: 'Unknown',
     color: 'var(--default-text-color)',
   },
-  [RerunStatus.PASSED]: {
+  [RerunStatus.RERUN_STATUS_PASSED]: {
     text: 'Passed',
     color: 'var(--success-color)',
   },
-  [RerunStatus.FAILED]: {
+  [RerunStatus.RERUN_STATUS_FAILED]: {
     text: 'Failed',
     color: 'var(--failure-color)',
   },
-  [RerunStatus.IN_PROGRESS]: {
+  [RerunStatus.RERUN_STATUS_IN_PROGRESS]: {
     text: 'In progress',
     color: 'var(--started-color)',
   },
-  [RerunStatus.INFRA_FAILED]: {
+  [RerunStatus.RERUN_STATUS_INFRA_FAILED]: {
     text: 'Infra failed',
     color: 'var(--critical-failure-color)',
   },
-  [RerunStatus.CANCELED]: {
+  [RerunStatus.RERUN_STATUS_CANCELED]: {
     text: 'Canceled',
     color: 'var(--canceled-color)',
   },
-  [RerunStatus.TEST_SKIPPED]: {
+  [RerunStatus.RERUN_STATUS_TEST_SKIPPED]: {
     text: 'Test skipped',
     color: 'var(--critical-failure-color)',
   },
 };
 
 const ANALYSIS_STATUS_LABELS: Record<AnalysisStatus, LabelProps> = {
-  [AnalysisStatus.UNSPECIFIED]: {
+  [AnalysisStatus.ANALYSIS_STATUS_UNSPECIFIED]: {
     text: 'Unknown',
     color: 'var(--default-text-color)',
   },

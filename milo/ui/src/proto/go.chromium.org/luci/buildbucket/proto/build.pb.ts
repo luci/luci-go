@@ -593,54 +593,54 @@ export interface BuildInfra_Buildbucket {
 }
 
 export enum BuildInfra_Buildbucket_ExperimentReason {
-  /** UNSET - This value is unused (i.e. if you see this, it's a bug). */
-  UNSET = 0,
+  /** EXPERIMENT_REASON_UNSET - This value is unused (i.e. if you see this, it's a bug). */
+  EXPERIMENT_REASON_UNSET = 0,
   /**
-   * GLOBAL_DEFAULT - This experiment was configured from the 'default_value' of a global
+   * EXPERIMENT_REASON_GLOBAL_DEFAULT - This experiment was configured from the 'default_value' of a global
    * experiment.
    *
    * See go/buildbucket-settings.cfg for the list of global experiments.
    */
-  GLOBAL_DEFAULT = 1,
-  /** BUILDER_CONFIG - This experiment was configured from the Builder configuration. */
-  BUILDER_CONFIG = 2,
+  EXPERIMENT_REASON_GLOBAL_DEFAULT = 1,
+  /** EXPERIMENT_REASON_BUILDER_CONFIG - This experiment was configured from the Builder configuration. */
+  EXPERIMENT_REASON_BUILDER_CONFIG = 2,
   /**
-   * GLOBAL_MINIMUM - This experiment was configured from the 'minimum_value' of a global
+   * EXPERIMENT_REASON_GLOBAL_MINIMUM - This experiment was configured from the 'minimum_value' of a global
    * experiment.
    *
    * See go/buildbucket-settings.cfg for the list of global experiments.
    */
-  GLOBAL_MINIMUM = 3,
-  /** REQUESTED - This experiment was explicitly set from the ScheduleBuildRequest. */
-  REQUESTED = 4,
+  EXPERIMENT_REASON_GLOBAL_MINIMUM = 3,
+  /** EXPERIMENT_REASON_REQUESTED - This experiment was explicitly set from the ScheduleBuildRequest. */
+  EXPERIMENT_REASON_REQUESTED = 4,
   /**
-   * GLOBAL_INACTIVE - This experiment is inactive and so was removed from the Build.
+   * EXPERIMENT_REASON_GLOBAL_INACTIVE - This experiment is inactive and so was removed from the Build.
    *
    * See go/buildbucket-settings.cfg for the list of global experiments.
    */
-  GLOBAL_INACTIVE = 5,
+  EXPERIMENT_REASON_GLOBAL_INACTIVE = 5,
 }
 
 export function buildInfra_Buildbucket_ExperimentReasonFromJSON(object: any): BuildInfra_Buildbucket_ExperimentReason {
   switch (object) {
     case 0:
     case "EXPERIMENT_REASON_UNSET":
-      return BuildInfra_Buildbucket_ExperimentReason.UNSET;
+      return BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_UNSET;
     case 1:
     case "EXPERIMENT_REASON_GLOBAL_DEFAULT":
-      return BuildInfra_Buildbucket_ExperimentReason.GLOBAL_DEFAULT;
+      return BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_GLOBAL_DEFAULT;
     case 2:
     case "EXPERIMENT_REASON_BUILDER_CONFIG":
-      return BuildInfra_Buildbucket_ExperimentReason.BUILDER_CONFIG;
+      return BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_BUILDER_CONFIG;
     case 3:
     case "EXPERIMENT_REASON_GLOBAL_MINIMUM":
-      return BuildInfra_Buildbucket_ExperimentReason.GLOBAL_MINIMUM;
+      return BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_GLOBAL_MINIMUM;
     case 4:
     case "EXPERIMENT_REASON_REQUESTED":
-      return BuildInfra_Buildbucket_ExperimentReason.REQUESTED;
+      return BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_REQUESTED;
     case 5:
     case "EXPERIMENT_REASON_GLOBAL_INACTIVE":
-      return BuildInfra_Buildbucket_ExperimentReason.GLOBAL_INACTIVE;
+      return BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_GLOBAL_INACTIVE;
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum BuildInfra_Buildbucket_ExperimentReason",
@@ -650,17 +650,17 @@ export function buildInfra_Buildbucket_ExperimentReasonFromJSON(object: any): Bu
 
 export function buildInfra_Buildbucket_ExperimentReasonToJSON(object: BuildInfra_Buildbucket_ExperimentReason): string {
   switch (object) {
-    case BuildInfra_Buildbucket_ExperimentReason.UNSET:
+    case BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_UNSET:
       return "EXPERIMENT_REASON_UNSET";
-    case BuildInfra_Buildbucket_ExperimentReason.GLOBAL_DEFAULT:
+    case BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_GLOBAL_DEFAULT:
       return "EXPERIMENT_REASON_GLOBAL_DEFAULT";
-    case BuildInfra_Buildbucket_ExperimentReason.BUILDER_CONFIG:
+    case BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_BUILDER_CONFIG:
       return "EXPERIMENT_REASON_BUILDER_CONFIG";
-    case BuildInfra_Buildbucket_ExperimentReason.GLOBAL_MINIMUM:
+    case BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_GLOBAL_MINIMUM:
       return "EXPERIMENT_REASON_GLOBAL_MINIMUM";
-    case BuildInfra_Buildbucket_ExperimentReason.REQUESTED:
+    case BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_REQUESTED:
       return "EXPERIMENT_REASON_REQUESTED";
-    case BuildInfra_Buildbucket_ExperimentReason.GLOBAL_INACTIVE:
+    case BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_GLOBAL_INACTIVE:
       return "EXPERIMENT_REASON_GLOBAL_INACTIVE";
     default:
       throw new globalThis.Error(
@@ -708,31 +708,31 @@ export interface BuildInfra_Buildbucket_Agent {
 }
 
 export enum BuildInfra_Buildbucket_Agent_Purpose {
-  /** UNSPECIFIED - No categorized/known purpose. */
-  UNSPECIFIED = 0,
-  /** EXE_PAYLOAD - This path contains the contents of the build's `exe.cipd_package`. */
-  EXE_PAYLOAD = 1,
+  /** PURPOSE_UNSPECIFIED - No categorized/known purpose. */
+  PURPOSE_UNSPECIFIED = 0,
+  /** PURPOSE_EXE_PAYLOAD - This path contains the contents of the build's `exe.cipd_package`. */
+  PURPOSE_EXE_PAYLOAD = 1,
   /**
-   * BBAGENT_UTILITY - This path contains data specifically for bbagent's own use.
+   * PURPOSE_BBAGENT_UTILITY - This path contains data specifically for bbagent's own use.
    *
    * There's a proposal currently to add `nsjail` support to bbagent, and it
    * would need to bring a copy of `nsjail` in order to run the user binary
    * but we wouldn't necessarily want to expose it to the user binary.
    */
-  BBAGENT_UTILITY = 2,
+  PURPOSE_BBAGENT_UTILITY = 2,
 }
 
 export function buildInfra_Buildbucket_Agent_PurposeFromJSON(object: any): BuildInfra_Buildbucket_Agent_Purpose {
   switch (object) {
     case 0:
     case "PURPOSE_UNSPECIFIED":
-      return BuildInfra_Buildbucket_Agent_Purpose.UNSPECIFIED;
+      return BuildInfra_Buildbucket_Agent_Purpose.PURPOSE_UNSPECIFIED;
     case 1:
     case "PURPOSE_EXE_PAYLOAD":
-      return BuildInfra_Buildbucket_Agent_Purpose.EXE_PAYLOAD;
+      return BuildInfra_Buildbucket_Agent_Purpose.PURPOSE_EXE_PAYLOAD;
     case 2:
     case "PURPOSE_BBAGENT_UTILITY":
-      return BuildInfra_Buildbucket_Agent_Purpose.BBAGENT_UTILITY;
+      return BuildInfra_Buildbucket_Agent_Purpose.PURPOSE_BBAGENT_UTILITY;
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum BuildInfra_Buildbucket_Agent_Purpose",
@@ -742,11 +742,11 @@ export function buildInfra_Buildbucket_Agent_PurposeFromJSON(object: any): Build
 
 export function buildInfra_Buildbucket_Agent_PurposeToJSON(object: BuildInfra_Buildbucket_Agent_Purpose): string {
   switch (object) {
-    case BuildInfra_Buildbucket_Agent_Purpose.UNSPECIFIED:
+    case BuildInfra_Buildbucket_Agent_Purpose.PURPOSE_UNSPECIFIED:
       return "PURPOSE_UNSPECIFIED";
-    case BuildInfra_Buildbucket_Agent_Purpose.EXE_PAYLOAD:
+    case BuildInfra_Buildbucket_Agent_Purpose.PURPOSE_EXE_PAYLOAD:
       return "PURPOSE_EXE_PAYLOAD";
-    case BuildInfra_Buildbucket_Agent_Purpose.BBAGENT_UTILITY:
+    case BuildInfra_Buildbucket_Agent_Purpose.PURPOSE_BBAGENT_UTILITY:
       return "PURPOSE_BBAGENT_UTILITY";
     default:
       throw new globalThis.Error(
