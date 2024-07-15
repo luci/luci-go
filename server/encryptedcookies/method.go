@@ -675,7 +675,11 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		} else {
 			curPath = internal.UnlimitedCookiePath
 			prevPath = internal.LimitedCookiePath
-			sameSite = 0 // use browser's default
+			// The cookie is used for authentication. Set this to `Lax` to protect
+			// against attacks like clickjacking. Modern browsers usually set this to
+			// `Lax` by default. But set it explicitly so we don't have to rely on
+			// the browser to set a sensible default.
+			sameSite = http.SameSiteLaxMode
 		}
 		httpCookie.Path = curPath
 		httpCookie.SameSite = sameSite
