@@ -358,44 +358,8 @@ func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOpti
 		return baseTransport, nil
 	}
 
-	rootState := GetState(ctx)
-	isRootStateBackground := isBackgroundState(rootState)
-
 	return auth.NewModifyingTransport(baseTransport, func(req *http.Request) error {
-		// Use the request context as the base to inherit its fields and deadlines,
-		// but substitute the auth state there with the state from the root context,
-		// if necessary. This allows to create an AsSelf RPC transport during
-		// the server startup and then share it from RPCs that have some non-trivial
-		// auth state.
-		reqCtx := req.Context()
-		if reqCtx == context.Background() {
-			reqCtx = ctx
-		} else {
-			reqState := GetState(reqCtx)
-			isReqStateBackground := isBackgroundState(reqState)
-			switch {
-			case reqState == rootState:
-				// Good, the exact same state (background or not), no need to create
-				// a new context.
-			case isRootStateBackground && isReqStateBackground:
-				// Good, both are background states and therefore equivalent, no need
-				// to create a new context.
-			case isRootStateBackground && !isReqStateBackground:
-				// Transports created from the background state can be used from any
-				// other state. Inherit `reqCtx` deadlines, but inject the background
-				// state there.
-				reqCtx = WithState(reqCtx, rootState)
-			case !isRootStateBackground && isReqStateBackground:
-				// A transport created from a user-authenticated state is attempted to
-				// be used from a background state, this smells like a bug.
-				panic("an RPC transport created from a user context is used from a background server context, this is not allowed")
-			case !isRootStateBackground && !isReqStateBackground:
-				// A transport created from inside one request handler is attempted to
-				// be used from another request handler, this also smells like a bug.
-				panic("a non-background RPC transport is shared between different request contexts, this is not allowed")
-			}
-		}
-		tok, extra, err := options.getRPCHeaders(reqCtx, options, req)
+		tok, extra, err := getRPCHeaders(req.Context(), ctx, options, req)
 		if err != nil {
 			return err
 		}
@@ -446,17 +410,7 @@ func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) 
 		return nil, errors.Annotate(err, "malformed URI %q", uri[0]).Err()
 	}
 
-	// Some libraries (in particular Spanner), pass very bare bones `ctx` here
-	// (essentially context.Background() with gRPC metadata on top). Such contexts
-	// are not sufficient to call getRPCHeaders, so we merge it with creds.ctx
-	// to get a full-featured LUCI context that at the same time has the same
-	// deadline and cancellation as `ctx`.
-	ctx = &internal.MergedContext{
-		Root:     ctx,
-		Fallback: creds.ctx,
-	}
-
-	tok, extra, err := creds.options.getRPCHeaders(ctx, creds.options, &http.Request{URL: u})
+	tok, extra, err := getRPCHeaders(ctx, creds.ctx, creds.options, &http.Request{URL: u})
 	switch {
 	case err != nil:
 		return nil, err
@@ -1043,4 +997,32 @@ func parseAudPattern(pat string) (audGenerator, error) {
 	}
 
 	return renderPat, nil
+}
+
+// getRPCHeaders calls opts.getRPCHeaders callback, passing it correct context.
+//
+// Some libraries (in particular Spanner), use very bare bones `ctx` as a
+// request context (essentially context.Background() with gRPC metadata on top).
+// Such contexts are not sufficient to call getRPCHeaders, so we merge it with
+// the context used to create the RPC transport or credentials provider to get
+// a full-featured LUCI context that at the same time has the same deadline and
+// cancellation as `ctx`.
+func getRPCHeaders(ctx, transportCtx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error) {
+	merged := &internal.MergedContext{
+		Root:     ctx,
+		Fallback: transportCtx,
+	}
+
+	// Forbid a case when a transport is created with one user context, but then
+	// reused with another. This is likely a bug and can lead to leakage of
+	// user credentials (when such transport is e.g. AsCredentialsForwarder).
+	if tstate := GetState(transportCtx); !isBackgroundState(tstate) {
+		if rstate := GetState(merged); !isBackgroundState(rstate) {
+			if tstate != rstate {
+				return nil, nil, errors.Reason("a transport or credentials provider created within a context of one user request is used within another user request, this is dangerous").Err()
+			}
+		}
+	}
+
+	return opts.getRPCHeaders(merged, opts, req)
 }

@@ -404,17 +404,26 @@ func TestGetRPCTransport(t *testing.T) {
 		})
 
 		Convey("when headers are needed, Request context is used", func() {
-			root := ctx
-
 			// Contexts with different auth state.
-			ctx1 := WithState(root, &state{user: &User{Identity: "user:abc@example.com"}})
-			ctx2 := WithState(root, &state{user: &User{Identity: "user:abc@example.com"}})
+			const (
+				anon  = "anonymous:anonymous"
+				user1 = "user:1@example.com"
+				user2 = "user:2@example.com"
+				fail  = "fail"
+			)
+			bg := ctx
+			ctx1 := WithState(ctx, &state{user: &User{Identity: user1}})
+			ctx2 := WithState(ctx, &state{user: &User{Identity: user2}})
 
 			// Use a mode which actually uses transport context to compute headers.
-			run := func(c C, reqCtx, transCtx context.Context) (usedCtx context.Context) {
+			run := func(c C, reqCtx, transCtx context.Context) (usedUser string) {
 				mocks := &rpcMocks{
 					MintAccessTokenForServiceAccount: func(ic context.Context, _ MintAccessTokenParams) (*Token, error) {
-						usedCtx = ic
+						if st := GetState(ic); st != nil {
+							usedUser = string(st.User().Identity)
+						} else {
+							usedUser = "???"
+						}
 						return &Token{
 							Token:  "blah",
 							Expiry: clock.Now(ic).Add(time.Hour),
@@ -428,65 +437,39 @@ func TestGetRPCTransport(t *testing.T) {
 					req = req.WithContext(reqCtx)
 				}
 				_, err = t.RoundTrip(req)
-				c.So(err, ShouldBeNil)
+				if err != nil {
+					usedUser = fail
+				}
 				return
 			}
 
-			Convey("no request context", func(c C) {
-				So(run(c, nil, ctx1), ShouldEqual, ctx1)
+			Convey("Transport is using background context", func() {
+				Convey("no request context", func(c C) {
+					So(run(c, nil, bg), ShouldEqual, anon)
+				})
+				Convey("background request context", func(c C) {
+					So(run(c, bg, bg), ShouldEqual, anon)
+				})
+				Convey("user request context: overrides background", func(c C) {
+					So(run(c, ctx1, bg), ShouldEqual, user1)
+				})
 			})
 
-			Convey("same context", func(c C) {
-				So(run(c, ctx1, ctx1), ShouldEqual, ctx1)
-			})
-
-			Convey("uses request context", func(c C) {
-				reqCtx, cancel := context.WithTimeout(ctx1, time.Minute)
-				defer cancel()
-				transCtx, cancel := context.WithTimeout(ctx1, time.Hour)
-				defer cancel()
-				So(run(c, reqCtx, transCtx), ShouldEqual, reqCtx)
-			})
-
-			Convey("OK on two background contexts", func(c C) {
-				reqCtx, cancel := context.WithTimeout(root, time.Minute)
-				defer cancel()
-				transCtx, cancel := context.WithTimeout(root, time.Hour)
-				defer cancel()
-				So(run(c, reqCtx, transCtx), ShouldEqual, reqCtx)
-			})
-
-			Convey("request ctx is user, transport is background", func(c C) {
-				reqCtx, cancel := context.WithTimeout(ctx1, time.Minute)
-				reqCtxDeadline, _ := reqCtx.Deadline()
-				defer cancel()
-				transCtx, cancel := context.WithTimeout(root, time.Hour)
-				defer cancel()
-				// Used `reqCtx` for the deadline, but have background auth state.
-				usedCtx := run(c, reqCtx, transCtx)
-				usedDeadline, _ := usedCtx.Deadline()
-				So(usedDeadline.Equal(reqCtxDeadline), ShouldBeTrue)
-				So(GetState(usedCtx), ShouldResemble, GetState(transCtx))
-			})
-
-			Convey("request ctx is background, transport is user", func(c C) {
-				So(func() {
-					reqCtx, cancel := context.WithTimeout(root, time.Minute)
-					defer cancel()
-					transCtx, cancel := context.WithTimeout(ctx1, time.Hour)
-					defer cancel()
-					run(c, reqCtx, transCtx)
-				}, ShouldPanic)
-			})
-
-			Convey("panics on contexts with different auth state", func(c C) {
-				So(func() {
-					reqCtx, cancel := context.WithTimeout(ctx1, time.Minute)
-					defer cancel()
-					transCtx, cancel := context.WithTimeout(ctx2, time.Hour)
-					defer cancel()
-					run(c, reqCtx, transCtx)
-				}, ShouldPanic)
+			Convey("Transport is using a user context", func() {
+				Convey("no request context", func(c C) {
+					So(run(c, nil, ctx1), ShouldEqual, user1)
+				})
+				Convey("background request context", func(c C) {
+					// Note: this is potentially bad behavior but it is not trivial to
+					// prevent it. This test exist to document it happens.
+					So(run(c, bg, ctx1), ShouldEqual, user1)
+				})
+				Convey("same user request context", func(c C) {
+					So(run(c, ctx1, ctx1), ShouldEqual, user1)
+				})
+				Convey("different user request context: forbidden", func(c C) {
+					So(run(c, ctx2, ctx1), ShouldEqual, fail)
+				})
 			})
 		})
 	})
