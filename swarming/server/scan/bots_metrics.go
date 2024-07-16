@@ -41,7 +41,7 @@ type BotsMetricsReporter struct {
 	Monitor monitor.Monitor
 
 	state  *tsmon.State
-	shards []*shardState
+	shards []*metricsReporterShardState
 }
 
 var _ BotVisitor = (*BotsMetricsReporter)(nil)
@@ -51,9 +51,9 @@ var _ BotVisitor = (*BotsMetricsReporter)(nil)
 // Part of BotVisitor interface.
 func (r *BotsMetricsReporter) Prepare(ctx context.Context, shards int) {
 	r.state = newTSMonState(r.ServiceName, r.JobName, r.Monitor)
-	r.shards = make([]*shardState, shards)
+	r.shards = make([]*metricsReporterShardState, shards)
 	for i := range r.shards {
-		r.shards[i] = newShardState()
+		r.shards[i] = newMetricsReporterShardState()
 	}
 }
 
@@ -74,7 +74,7 @@ func (r *BotsMetricsReporter) Finalize(ctx context.Context, scanErr error) error
 	// setExecutorMetrics(...) even if the scan failed midway: these values are
 	// valid (they are per-bot, doesn't matter if not all bots were visited).
 	if scanErr == nil {
-		total := newShardState()
+		total := newMetricsReporterShardState()
 		for _, shard := range r.shards {
 			total.mergeFrom(shard)
 		}
@@ -109,7 +109,7 @@ var ignoredDimensions = stringset.NewFromSlice(
 	"temp_band",
 )
 
-type shardState struct {
+type metricsReporterShardState struct {
 	counts map[counterKey]int64
 	total  int64
 }
@@ -119,13 +119,13 @@ type counterKey struct {
 	state string // e.g. "SWARMING"
 }
 
-func newShardState() *shardState {
-	return &shardState{
+func newMetricsReporterShardState() *metricsReporterShardState {
+	return &metricsReporterShardState{
 		counts: map[counterKey]int64{},
 	}
 }
 
-func (s *shardState) collect(ctx context.Context, bot *model.BotInfo) {
+func (s *metricsReporterShardState) collect(ctx context.Context, bot *model.BotInfo) {
 	migrationState := "UNKNOWN"
 
 	if bot.Quarantined {
@@ -169,7 +169,7 @@ func (s *shardState) collect(ctx context.Context, bot *model.BotInfo) {
 	s.total += 1
 }
 
-func (s *shardState) mergeFrom(another *shardState) {
+func (s *metricsReporterShardState) mergeFrom(another *metricsReporterShardState) {
 	for key, count := range another.counts {
 		s.counts[key] += count
 	}
