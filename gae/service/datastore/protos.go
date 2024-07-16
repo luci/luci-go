@@ -101,7 +101,7 @@ func protoToProperty(pb proto.Message, opt protoOption) (prop Property, err erro
 		return
 	case "zstd":
 		// allocate new buffer for compressed data, hoping for ~2x compression.
-		blob = make([]byte, 1, len(pbblob)/2)
+		blob = make([]byte, 1, max(1, len(pbblob)/2))
 		write1ByteProtoOpt(blob, protoBinOptZSTD)
 		blob = zstd.EncodeAll(pbblob, blob)
 		prop = MkPropertyNI(blob)

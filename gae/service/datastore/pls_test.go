@@ -2216,6 +2216,11 @@ var testCases = []testCase{
 		want: &WithProtoCompress{Msg: &testprotos.Msg{Str: strings.Repeat("a", 20)}},
 	},
 	{
+		desc: "protos encoding: compression: save/load of empty proto",
+		src:  &WithProtoCompress{Msg: &testprotos.Msg{}},
+		want: &WithProtoCompress{Msg: &testprotos.Msg{}},
+	},
+	{
 		desc: "protos encoding: interop save/load zstd -> plain ",
 		src: &WithProtoCompress{
 			Msg: &testprotos.Msg{Str: "abcdef", Dur: &durationpb.Duration{Seconds: 251, Nanos: 252}},
