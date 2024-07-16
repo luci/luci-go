@@ -100,11 +100,13 @@ func (cs *ConditionsSet) addCond(cond *realmsconf.Condition) error {
 		}
 	}
 
+	// Get the key for this condition and add it to the set of conditions.
+	ck := conditionKey(norm)
 	idx := uint32(len(cs.normalized))
-	if condTup, ok := cs.normalized[conditionKey(norm)]; ok {
+	if condTup, ok := cs.normalized[ck]; ok {
 		idx = condTup.idx
 	}
-	cs.normalized[conditionKey(norm)] = &conditionMapTuple{norm, idx}
+	cs.normalized[ck] = &conditionMapTuple{norm, idx}
 	cs.indexMapping[cond] = idx
 	return nil
 }
@@ -118,16 +120,16 @@ func conditionKey(cond *protocol.Condition) string {
 	return string(key)
 }
 
-// sortConditions sorts a given conditions slice by attribute first
+// sortConditionEntries sorts a given conditionMapTuple slice by attribute first
 // then by values.
-func sortConditions(conds []*protocol.Condition) {
-	sort.Slice(conds, sortby.Chain{
+func sortConditionEntries(entries []*conditionMapTuple) {
+	sort.Slice(entries, sortby.Chain{
 		func(i, j int) bool {
-			return conds[i].GetRestrict().GetAttribute() < conds[j].GetRestrict().GetAttribute()
+			return entries[i].cond.GetRestrict().GetAttribute() < entries[j].cond.GetRestrict().GetAttribute()
 		},
 		func(i, j int) bool {
-			iValsLen, jValsLen := len(conds[i].GetRestrict().GetValues()), len(conds[j].GetRestrict().GetValues())
-			iVals, jVals := conds[i].GetRestrict().GetValues(), conds[j].GetRestrict().GetValues()
+			iVals, jVals := entries[i].cond.GetRestrict().GetValues(), entries[j].cond.GetRestrict().GetValues()
+			iValsLen, jValsLen := len(iVals), len(jVals)
 			if iValsLen == jValsLen {
 				for idx, iVal := range iVals {
 					if iVal == jVals[idx] {
@@ -156,28 +158,38 @@ func (cs *ConditionsSet) finalize() []*protocol.Condition {
 	}
 	cs.finalized = true
 
-	conds := []*protocol.Condition{}
-	for _, curr := range cs.normalized {
-		conds = append(conds, curr.cond)
+	count := len(cs.normalized)
+	if count == 0 {
+		return nil
 	}
 
-	sortConditions(conds)
+	// Make a slice of the entries in cs.normalized to sort.
+	normalized := make([]*conditionMapTuple, 0, count)
+	for _, entry := range cs.normalized {
+		normalized = append(normalized, entry)
+	}
+	sortConditionEntries(normalized)
 
+	// Not needed any more.
+	cs.normalized = nil
+
+	// Build the map of {old index -> new index} now that the final set of
+	// conditions has been ordered.
 	oldToNew := map[uint32]uint32{}
-
-	for idx, cond := range conds {
-		old := cs.normalized[conditionKey(cond)]
-		oldToNew[old.idx] = uint32(idx)
+	for idx, entry := range normalized {
+		oldToNew[entry.idx] = uint32(idx)
 	}
 
+	// Update the index mapping to use the new order.
 	for key, old := range cs.indexMapping {
 		cs.indexMapping[key] = oldToNew[old]
 	}
 
-	if len(conds) == 0 {
-		return nil
+	// Return the list of conditions in the final order.
+	conds := make([]*protocol.Condition, count)
+	for i, entry := range normalized {
+		conds[i] = entry.cond
 	}
-
 	return conds
 }
 
