@@ -74,6 +74,11 @@ export function GroupsList() {
     setFilteredGroups(allGroups.filter(group => group.name.includes(query.toLowerCase())));
   }
 
+  const onDeletedGroup = () => {
+    console.log('group deleted');
+    setSelected(allGroups[0].name)
+  }
+
   const groups = (filteredGroups) ? filteredGroups : allGroups;
   return (
     <Paper>
@@ -101,7 +106,7 @@ export function GroupsList() {
           </Box>
         </Grid>
         <Grid item xs={8}>
-          {selectedGroup && <GroupsForm name={selectedGroup}/>}
+          {selectedGroup && <GroupsForm name={selectedGroup} onDelete={onDeletedGroup}/>}
         </Grid>
       </Grid>
     </Paper>

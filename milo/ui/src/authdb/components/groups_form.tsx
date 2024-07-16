@@ -35,10 +35,11 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState, useEffect, createRef } from 'react';
 import { GroupsFormList, FormListElement } from '@/authdb/components/groups_form_list';
 import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
-import { AuthGroup, UpdateGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import { AuthGroup, UpdateGroupRequest, DeleteGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 interface GroupsFormProps {
     name: string;
+    onDelete?: () => void;
 }
 const theme = createTheme({
   typography: {
@@ -84,7 +85,7 @@ function isExternalGroupName(name: string) {
   return name.indexOf('/') > 0;
 }
 
-export function GroupsForm({ name } : GroupsFormProps) {
+export function GroupsForm({ name, onDelete = () => {} } : GroupsFormProps) {
   const [descriptionMode, setDescriptionMode] = useState<boolean>();
   const [ownersMode, setOwnersMode] = useState<boolean>();
   const [description, setDescription] = useState<string>();
@@ -93,7 +94,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
   const [showDescriptionEdit, setShowDescriptionEdit] = useState<boolean>();
   const [isExternal, setIsExternal] = useState<boolean>();
   const [successEditedGroup, setSuccessEditedGroup] = useState<boolean>();
-  const [errorEditedGroup, setErrorEditedGroup] = useState<boolean>();
+  const [errorMessage, setErrorMessage] = useState<string>();
   const [disableSubmit, setDisableSubmit] = useState<boolean>();
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>();
   const membersRef = createRef<FormListElement>();
@@ -112,10 +113,22 @@ export function GroupsForm({ name } : GroupsFormProps) {
       subgroupsRef.current?.changeItems(response?.nested as string[]);
     },
     onError: () => {
-      setErrorEditedGroup(true);
+      setErrorMessage('Error editing group');
     },
     onSettled: () => {
       setDisableSubmit(false);
+    }
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (request: DeleteGroupRequest) => {
+      return client.DeleteGroup(request);
+    },
+    onSuccess: () => {
+      onDelete();
+    },
+    onError: () => {
+      setErrorMessage('Error deleting group');
     }
   })
 
@@ -148,7 +161,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
     const setReadonlyMode = () => {
       setDescriptionMode(false);
       setOwnersMode(false);
-      setErrorEditedGroup(false);
+      setErrorMessage("");
       setSuccessEditedGroup(false);
     }
     const changeDescriptionMode = () => {
@@ -216,10 +229,10 @@ export function GroupsForm({ name } : GroupsFormProps) {
     }
 
     const deleteGroup = () => {
-      //TODO: do api call.
       setOpenDeleteDialog(false);
+      deleteMutation.mutate({'name': name, 'etag': etag || ''});
     }
-    
+
     const handleDeleteDialogClose = () => {
       setOpenDeleteDialog(false);
     }
@@ -317,8 +330,8 @@ export function GroupsForm({ name } : GroupsFormProps) {
               {successEditedGroup &&
               <Alert severity="success">Group updated</Alert>
               }
-              {errorEditedGroup &&
-              <Alert severity="error">Error editing group</Alert>
+              {errorMessage &&
+              <Alert severity="error">{errorMessage}</Alert>
               }
             </div>
             </>
@@ -334,7 +347,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
         </DialogTitle>
         <DialogActions>
           <Button onClick={handleDeleteDialogClose} disableElevation variant="outlined">Cancel</Button>
-          <Button onClick={deleteGroup} disableElevation variant="contained" color="error">Delete</Button>
+          <Button onClick={deleteGroup} disableElevation variant="contained" color="error" data-testid='delete-confirm-button'>Delete</Button>
         </DialogActions>
       </Dialog>
       </ThemeProvider>

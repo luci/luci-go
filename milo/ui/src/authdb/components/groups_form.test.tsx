@@ -20,6 +20,7 @@ import List from '@mui/material/List';
 
 import { GroupsForm } from './groups_form';
 import { mockResponseUpdateGroup, createMockUpdatedGroup, mockErrorUpdateGroup } from '../testing_tools/mocks/update_group_mock';
+import { mockErrorDeleteGroup } from '../testing_tools/mocks/delete_group_mock';
 import { act } from 'react';
 
 describe('<GroupsForm />', () => {
@@ -30,7 +31,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' />
+            <GroupsForm name='123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -67,7 +68,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='external/123' />
+            <GroupsForm name='external/123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -92,7 +93,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' />
+            <GroupsForm name='123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -133,7 +134,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' />
+            <GroupsForm name='123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -154,7 +155,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' />
+            <GroupsForm name='123'/>
         </List>
       </FakeContextProvider>,
     );
@@ -163,6 +164,28 @@ describe('<GroupsForm />', () => {
     const deleteButton = screen.getByTestId('delete-button')
     act(() => deleteButton.click());
     expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument();
+  });
+
+  test('if appropriate message is displayed for an error deleting group', async () => {
+    const mockGroup = createMockGroupIndividual('123');
+    mockFetchGetGroup(mockGroup);
+
+    mockErrorDeleteGroup();
+
+    render(
+        <FakeContextProvider>
+            <GroupsForm name='123'/>
+        </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    const deleteButton = screen.getByTestId('delete-button')
+    act(() => deleteButton.click());
+    expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument();
+    const deleteConfirmButton = screen.getByTestId('delete-confirm-button');
+    act(() => deleteConfirmButton.click());
+    await screen.findByRole('alert');
+    expect(screen.getByText('Error deleting group')).toBeInTheDocument();
   });
 
 });
