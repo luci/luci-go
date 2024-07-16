@@ -1583,7 +1583,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				Realms: proj1Realms,
 			},
 		}
-		expectedRealms, err := proto.Marshal(proj1Realms)
+		expectedRealms, err := ToStorableRealms(proj1Realms)
 		So(err, ShouldBeNil)
 
 		Convey("created for a new project", func() {
@@ -2175,10 +2175,11 @@ func TestRealmsToProto(t *testing.T) {
 				},
 			},
 		}
-		modernFormat, err := proto.Marshal(projRealms)
-		So(err, ShouldBeNil)
 
 		Convey("modern format", func() {
+			modernFormat, err := ToStorableRealms(projRealms)
+			So(err, ShouldBeNil)
+
 			apr := &AuthProjectRealms{
 				ID:     "testProj",
 				Realms: modernFormat,
@@ -2188,10 +2189,25 @@ func TestRealmsToProto(t *testing.T) {
 			So(parsed, ShouldResembleProto, projRealms)
 		})
 
+		Convey("uncompressed format", func() {
+			marshalled, err := proto.Marshal(projRealms)
+			So(err, ShouldBeNil)
+
+			apr := &AuthProjectRealms{
+				ID:     "testProj",
+				Realms: marshalled,
+			}
+			parsed, err := apr.RealmsToProto()
+			So(err, ShouldBeNil)
+			So(parsed, ShouldResembleProto, projRealms)
+		})
+
 		Convey("legacy format", func() {
 			// This is an approximation of what the Python version of
 			// Auth Service would have put in Datastore.
-			legacyFormat, err := zlib.Compress(modernFormat)
+			marshalled, err := proto.Marshal(projRealms)
+			So(err, ShouldBeNil)
+			legacyFormat, err := zlib.Compress(marshalled)
 			So(err, ShouldBeNil)
 
 			apr := &AuthProjectRealms{
@@ -2202,5 +2218,33 @@ func TestRealmsToProto(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(parsed, ShouldResembleProto, projRealms)
 		})
+	})
+}
+
+func TestStorableRealms(t *testing.T) {
+	t.Parallel()
+
+	Convey("FromStorableRealms is inverse of ToStorableRealms", t, func() {
+		projRealms := &protocol.Realms{
+			Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
+			Realms: []*protocol.Realm{
+				{
+					Name: "testProj:@root",
+					Bindings: []*protocol.Binding{
+						{
+							// Permissions p2, z, p1.
+							Permissions: []uint32{0, 1, 2},
+							Principals:  []string{"group:gr1"},
+						},
+					},
+				},
+			},
+		}
+		blob, err := ToStorableRealms(projRealms)
+		So(err, ShouldBeNil)
+
+		actual, err := FromStorableRealms(blob)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResembleProto, projRealms)
 	})
 }

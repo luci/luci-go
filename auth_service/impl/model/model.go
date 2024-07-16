@@ -17,6 +17,7 @@ package model
 
 import (
 	"bytes"
+	stdzlib "compress/zlib"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -275,6 +276,8 @@ type AuthProjectRealms struct {
 	Parent *datastore.Key `gae:"$parent"`
 
 	// Realms is all the realms of a project, see comment for AuthProjectRealms.
+	// Note: to avoid hitting the Datastore limit of the maximimum size of an
+	// unindexed property, the realms are compressed before being stored.
 	Realms []byte `gae:"realms,noindex"`
 
 	// ConfigRev is the git revision the config was picked up from.
@@ -541,24 +544,7 @@ func makeAuthProjectRealmsMeta(ctx context.Context, project string) *AuthProject
 //
 // Returns an annotated error if one occurs.
 func (apr *AuthProjectRealms) RealmsToProto() (projectRealms *protocol.Realms, err error) {
-	blob := apr.Realms
-	// Project realms may have been stored by either the Python or Go
-	// version of Auth Service. If written by the Python version, then
-	// legacy decoding is necessary prior to unmarshalling the realms.
-	if isLegacyEncoded(blob) {
-		// Legacy encoding is actually zlib compression, so decompress.
-		blob, err = zlib.Decompress(blob)
-		if err != nil {
-			return nil, errors.Annotate(err, "error decoding project realms").Err()
-		}
-	}
-
-	projectRealms = &protocol.Realms{}
-	if err = proto.Unmarshal(blob, projectRealms); err != nil {
-		return nil, errors.Annotate(err, "error unmarshalling project realms").Err()
-	}
-
-	return projectRealms, nil
+	return FromStorableRealms(apr.Realms)
 }
 
 // ProjectID returns the project that an AuthProjectRealmsMeta is connected to.
@@ -1757,7 +1743,7 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 		now := clock.Now(ctx).UTC()
 
 		for idx, r := range eRealms {
-			realms, err := proto.Marshal(r.Realms)
+			realms, err := ToStorableRealms(r.Realms)
 			if err != nil {
 				return err
 			}
@@ -1985,18 +1971,39 @@ func entityKind(kind string, dryRun bool) string {
 }
 
 // /////////////////////////////////////////////////////////////////////
-// ////////////////// Realms legacy helper function ////////////////////
+// ///////////////////// Realms helper functions ///////////////////////
 // /////////////////////////////////////////////////////////////////////
 
-// isLegacyEncoded returns whether the given blob has zlib headers.
-func isLegacyEncoded(blob []byte) bool {
-	// Based on https://github.com/googleapis/python-ndb/blob/b0f431048b7b/google/cloud/ndb/model.py#L338
-	// Check for the two prefixes:
-	// "x\x9c" -> {0x78, 0x9c}
-	// "x^" -> {0x78, 0x5e}
-	if len(blob) < 2 {
-		return false
+func ToStorableRealms(realms *protocol.Realms) ([]byte, error) {
+	marshalled, err := proto.Marshal(realms)
+	if err != nil {
+		return nil, errors.Annotate(err, "error marshalling realms").Err()
 	}
-	header := ([2]byte)(blob[:2])
-	return header == [2]byte{0x78, 0x9c} || header == [2]byte{0x78, 0x5e}
+	compressed, err := zlib.Compress(marshalled)
+	if err != nil {
+		return nil, errors.Annotate(err, "error compressing realms").Err()
+	}
+
+	return compressed, nil
+}
+
+func FromStorableRealms(blob []byte) (*protocol.Realms, error) {
+	marshalled, err := zlib.Decompress(blob)
+	switch {
+	case err == nil:
+		// Do nothing; data was successfully decompressed.
+	case errors.Is(err, stdzlib.ErrHeader):
+		// The data didn't have a valid ZLIB header. Assume it was not
+		// ZLIB-compressed when last stored.
+		marshalled = blob
+	default:
+		return nil, errors.Annotate(err, "error decompressing realms").Err()
+	}
+
+	realms := &protocol.Realms{}
+	if err := proto.Unmarshal(marshalled, realms); err != nil {
+		return nil, errors.Annotate(err, "error unmarshalling realms").Err()
+	}
+
+	return realms, nil
 }
