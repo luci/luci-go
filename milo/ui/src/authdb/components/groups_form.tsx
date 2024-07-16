@@ -17,6 +17,9 @@ import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
 import DoneIcon from '@mui/icons-material/Done';
@@ -92,6 +95,7 @@ export function GroupsForm({ name } : GroupsFormProps) {
   const [successEditedGroup, setSuccessEditedGroup] = useState<boolean>();
   const [errorEditedGroup, setErrorEditedGroup] = useState<boolean>();
   const [disableSubmit, setDisableSubmit] = useState<boolean>();
+  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>();
   const membersRef = createRef<FormListElement>();
   const subgroupsRef = createRef<FormListElement>();
   const globsRef = createRef<FormListElement>();
@@ -211,6 +215,15 @@ export function GroupsForm({ name } : GroupsFormProps) {
       updateMutation.mutate({'group': editedGroup, updateMask: undefined});
     }
 
+    const deleteGroup = () => {
+      //TODO: do api call.
+      setOpenDeleteDialog(false);
+    }
+    
+    const handleDeleteDialogClose = () => {
+      setOpenDeleteDialog(false);
+    }
+
     if (isLoading) {
       return (
         <Box display="flex" justifyContent="center" alignItems="center">
@@ -292,9 +305,14 @@ export function GroupsForm({ name } : GroupsFormProps) {
             <GroupsFormList name='Members' initialItems={members} ref={membersRef}/>
             <GroupsFormList name='Globs' initialItems={globs} ref={globsRef}/>
             <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef}/>
-            <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit}>
-              Submit
-            </Button>
+            <div style={{display: 'flex', flexDirection: 'row'}}>
+              <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit}>
+                Update Group
+              </Button>
+              <Button variant="contained" color="error" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
+                Delete Group
+              </Button>
+            </div>
             <div style={{padding: '5px'}}>
               {successEditedGroup &&
               <Alert severity="success">Group updated</Alert>
@@ -306,6 +324,19 @@ export function GroupsForm({ name } : GroupsFormProps) {
             </>
           }
       </FormControl>
+      <Dialog
+        open={openDeleteDialog || false}
+        onClose={handleDeleteDialogClose}
+        data-testid="delete-confirm-dialog"
+      >
+        <DialogTitle>
+          {`Are you sure you want to delete this group: ${name}?`}
+        </DialogTitle>
+        <DialogActions>
+          <Button onClick={handleDeleteDialogClose} disableElevation variant="outlined">Cancel</Button>
+          <Button onClick={deleteGroup} disableElevation variant="contained" color="error">Delete</Button>
+        </DialogActions>
+      </Dialog>
       </ThemeProvider>
     </Box>
   );

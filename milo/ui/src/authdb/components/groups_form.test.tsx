@@ -143,4 +143,26 @@ describe('<GroupsForm />', () => {
     act(() => submitButton.click());
     expect(submitButton).toBeDisabled();
   });
+
+  test('delete button opens confirm dialog', async () => {
+    const mockGroup = createMockGroupIndividual('123');
+    mockFetchGetGroup(mockGroup);
+
+    const mockUpdatedGroup = createMockUpdatedGroup('123');
+    mockResponseUpdateGroup(mockUpdatedGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsForm name='123' />
+        </List>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    const deleteButton = screen.getByTestId('delete-button')
+    act(() => deleteButton.click());
+    expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument();
+  });
+
 });
