@@ -1,0 +1,29 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.internals.model;
+
+option go_package = "go.chromium.org/luci/swarming/server/model/internalmodelpb";
+
+// AggregatedDimensions is stored in the datastore in a compressed form.
+//
+// See BotsDimensionsAggregation entity.
+//
+// It is a map (pool, dimension key) => [set of dimension values]. It is used
+// to serve GetBotDimensions RPC. Updated by scan.BotsDimensionsAggregator.
+//
+// All entries are sorted.
+message AggregatedDimensions {
+  message Pool {
+    message Dimension {
+      string name = 1;
+      repeated string values = 2;
+    }
+    string pool = 1;
+    repeated Dimension dimensions = 2;
+  }
+  repeated Pool pools = 1;
+}
