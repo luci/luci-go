@@ -77,21 +77,17 @@ export class RestGitilesClientImpl implements Gitiles {
     params.set('format', 'JSON');
 
     const authToken = await this.rpc.getAuthToken();
-    let url = `https://${this.rpc.host}`;
     if (authToken) {
-      // Send the access token via URL instead of via the `Authorization`
-      // header. Because
-      //  * Preflight request adds another roundtrip to the query. Passing
-      //    access token via URL keeps the request [simple][1] therefore not
-      //    requiring a preflight request.
-      //  * Preflight requests cannot be carry credentials. Yet GoB rejects all
-      //    unauthorized requests with `/a/` prefix (see b/353102324).
+      // OAuth token needs to be passed via URL instead of via the
+      // `Authorization` header, because
+      //  * gitiles does not allow Authorization header in CORS request, and
+      //  * see also http://go/gob/users/rest-api#access-and-authentication.
       //
-      // [1]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests
+      // `/a` can be added to the path prefix when sending an authorized
+      // request. But it's not required when OAuth authentication is used.
       params.set('access_token', authToken);
-      url += '/a';
     }
-    url += `/${encodeURIComponent(project)}/${path}?${params}`;
+    const url = `https://${this.rpc.host}/${encodeURIComponent(project)}/${path}?${params}`;
     const req = await this.rpc.fetchImpl(url);
     const res = await req.text();
     switch (req.status) {

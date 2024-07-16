@@ -249,7 +249,7 @@ describe('RestGitilesClientImpl', () => {
       expect(fetchSpy).toHaveBeenCalledTimes(1);
       expect(fetchSpy).toHaveBeenNthCalledWith(
         1,
-        'https://chromium.googlesource.com/a/chromium-src/+log/myothercommithash..mycommithash?n=2&format=JSON&access_token=myaccesstoken',
+        'https://chromium.googlesource.com/chromium-src/+log/myothercommithash..mycommithash?n=2&format=JSON&access_token=myaccesstoken',
       );
       expect(res).toEqual(expectedLogResponse);
     });
