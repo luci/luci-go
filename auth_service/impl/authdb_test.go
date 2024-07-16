@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -72,7 +74,7 @@ func TestAuthDBProvider(t *testing.T) {
 				}
 				// Grant all members of test-group testPerm2 permission
 				// in project "test-project" root realm.
-				realmsBlob, err := model.ToStorableRealms(&protocol.Realms{
+				marshalled, marshalErr := proto.Marshal(&protocol.Realms{
 					Permissions: makeTestPermissions(testPerm2.String()),
 					Realms: []*protocol.Realm{
 						{
@@ -86,12 +88,12 @@ func TestAuthDBProvider(t *testing.T) {
 						},
 					},
 				})
-				So(err, ShouldBeNil)
+				So(marshalErr, ShouldBeNil)
 				projectRealms := &model.AuthProjectRealms{
 					Kind:   "AuthProjectRealms",
 					ID:     "test-project",
 					Parent: model.RootKey(ctx),
-					Realms: realmsBlob,
+					Realms: marshalled,
 				}
 				return datastore.Put(ctx, globals, state, group, realmsGlobals, projectRealms)
 			}, nil)
