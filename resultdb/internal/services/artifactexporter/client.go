@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
@@ -99,10 +100,12 @@ func (c *Client) InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifa
 	if err := c.EnsureSchema(ctx); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
+	now := timestamppb.Now()
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, tableName)
 	writer := bqutil.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {
+		r.InsertTime = now
 		payload[i] = r
 	}
 	return writer.AppendRowsWithDefaultStream(ctx, payload)

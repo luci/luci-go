@@ -22,7 +22,7 @@ import "go.chromium.org/luci/common/bq/pb/options.proto";
 option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
 
 // TextArtifactRow represents a row in a BigQuery table `luci-resultdb.internal.text_artifacts`.
-// Next ID: 20
+// Next ID: 21
 message TextArtifactRow {
   reserved 14; // artifact_shard
 
@@ -121,4 +121,11 @@ message TextArtifactRow {
   // A hash of the invocation_variant_union.
   // It will be empty if the artifact is an test-result-level artifact.
   string invocation_variant_union_hash = 19;
+
+  // Insert_time is a rough estimation of when is row has been inserted to BigQuery using the server time.
+  // This time does NOT provide ordering guarantee as spanner commit timestamp. This means
+  // row with insert_time t0 might be visible after row with insert_time t1, given t0 < t1.
+  // However it is relatively safe to assume that row with insert_time (t - 10 seconds) is visible
+  // before row with insert_time t.
+  google.protobuf.Timestamp insert_time = 20;
 }
