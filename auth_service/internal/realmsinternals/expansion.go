@@ -85,16 +85,11 @@ func (cs *ConditionsSet) addCond(cond *realmsconf.Condition) error {
 	}
 
 	norm := &protocol.Condition{}
-	var attr string
-
-	if cond.GetRestrict() != nil {
-		condValues := make([]string, len(cond.GetRestrict().GetValues()))
-		copy(condValues, cond.GetRestrict().GetValues())
-		condSet := stringset.NewFromSlice(condValues...)
-		attr = cond.GetRestrict().GetAttribute()
+	if r := cond.GetRestrict(); r != nil {
+		condSet := stringset.NewFromSlice(r.GetValues()...)
 		norm.Op = &protocol.Condition_Restrict{
 			Restrict: &protocol.Condition_AttributeRestriction{
-				Attribute: attr,
+				Attribute: r.GetAttribute(),
 				Values:    condSet.ToSortedSlice(),
 			},
 		}
