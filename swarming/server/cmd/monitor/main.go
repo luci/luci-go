@@ -55,7 +55,7 @@ func main() {
 					JobName:     srv.Options.TsMonJobName,
 					Monitor:     mon,
 				},
-				// TODO: Add more.
+				&scan.BotsDimensionsAggregator{},
 			})
 		})
 

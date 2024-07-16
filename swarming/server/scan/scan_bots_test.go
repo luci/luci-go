@@ -112,7 +112,7 @@ func RunBotVisitor(ctx context.Context, v BotVisitor, b []FakeBot) error {
 		shards = append(shards, b[i:i+min(shardSize, len(b)-i)])
 	}
 
-	v.Prepare(ctx, len(shards))
+	v.Prepare(ctx, max(len(shards), 1))
 
 	var wg sync.WaitGroup
 	wg.Add(len(shards))
@@ -140,6 +140,7 @@ type FakeBot struct {
 
 	Pool []string
 	OS   []string
+	Dims []string
 
 	Maintenance bool
 	Dead        bool
@@ -180,6 +181,7 @@ func (f *FakeBot) BotInfo(ctx context.Context) *model.BotInfo {
 	for _, os := range f.OS {
 		dims = append(dims, "os:"+os)
 	}
+	dims = append(dims, f.Dims...)
 	sort.Strings(dims)
 	b.Dimensions = dims
 
