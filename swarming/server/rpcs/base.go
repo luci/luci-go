@@ -69,6 +69,8 @@ type BotsServer struct {
 
 	// BotQuerySplitMode controls how "finely" to split BotInfo queries.
 	BotQuerySplitMode model.SplitMode
+	// BotsDimensionsCache caches aggregated bot dimensions sets.
+	BotsDimensionsCache model.BotsDimensionsCache
 }
 
 // TasksServer implements Tasks gRPC service.

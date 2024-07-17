@@ -187,7 +187,6 @@ func main() {
 			// Protect WIP or unimplemented Swarming APIs.
 			"/swarming.v2.Bots/DeleteBot":             devAPIAccessGroup,
 			"/swarming.v2.Bots/TerminateBot":          devAPIAccessGroup,
-			"/swarming.v2.Bots/GetBotDimensions":      devAPIAccessGroup,
 			"/swarming.v2.Tasks/CancelTask":           devAPIAccessGroup,
 			"/swarming.v2.Tasks/NewTask":              devAPIAccessGroup,
 			"/swarming.v2.Tasks/CancelTasks":          devAPIAccessGroup,
@@ -197,11 +196,12 @@ func main() {
 			"/buildbucket.v2.TaskBackend/CancelTasks": devAPIAccessGroup,
 
 			// Fully implemented APIs allowed to receive external traffic.
-			"/swarming.v2.Bots/GetBot":                    rpcacl.All,
 			"/swarming.v2.Bots/CountBots":                 rpcacl.All,
+			"/swarming.v2.Bots/GetBot":                    rpcacl.All,
+			"/swarming.v2.Bots/GetBotDimensions":          rpcacl.All,
 			"/swarming.v2.Bots/ListBotEvents":             rpcacl.All,
-			"/swarming.v2.Bots/ListBotTasks":              rpcacl.All,
 			"/swarming.v2.Bots/ListBots":                  rpcacl.All,
+			"/swarming.v2.Bots/ListBotTasks":              rpcacl.All,
 			"/swarming.v2.Tasks/GetResult":                rpcacl.All,
 			"/swarming.v2.Tasks/BatchGetResult":           rpcacl.All,
 			"/swarming.v2.Tasks/GetRequest":               rpcacl.All,
