@@ -91,3 +91,21 @@ func ValidatePageSize(pageSize int32) error {
 func InvalidToken(err error) error {
 	return appstatus.Attachf(err, codes.InvalidArgument, "invalid page_token")
 }
+
+type PageSizeLimiter struct {
+	Max     int32
+	Default int32
+}
+
+// Adjust the requested pageSize according to PageSizeLimiter.Max and
+// PageSizeLimiter.Default as necessary.
+func (psl *PageSizeLimiter) Adjust(pageSize int32) int32 {
+	switch {
+	case pageSize >= psl.Max:
+		return psl.Max
+	case pageSize > 0:
+		return pageSize
+	default:
+		return psl.Default
+	}
+}

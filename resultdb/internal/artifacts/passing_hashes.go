@@ -24,8 +24,9 @@ import (
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/common/errors"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // normalizeRegex is a regex to normalize a log line by removing things that are likely to change between test runs, like timestamps, numbers, ip addresses, tmp file names, etc

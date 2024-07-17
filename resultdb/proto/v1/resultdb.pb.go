@@ -2504,11 +2504,11 @@ type QueryTestVariantArtifactGroupsRequest struct {
 	TestIdPrefix string `protobuf:"bytes,3,opt,name=test_id_prefix,json=testIdPrefix,proto3" json:"test_id_prefix,omitempty"`
 	// The artifact id prefix to restrict the scope of the search (optional).
 	ArtifactIdPrefix string `protobuf:"bytes,4,opt,name=artifact_id_prefix,json=artifactIdPrefix,proto3" json:"artifact_id_prefix,omitempty"`
-	// The lower bound of the time range to search (exclusive) (required).
+	// The lower bound of the time range to search in UTC time (exclusive) (required).
 	// start_time must be less than the end time.
 	// The duration between start_time and end_time must not be greater than 7 days.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// The upper bound of the time range to search (inclusive) (required).
+	// The upper bound of the time range to search in UTC time (inclusive) (required).
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// The maximum number of match groups to return. The service may return fewer than
 	// this value.
@@ -2686,11 +2686,11 @@ type QueryTestVariantArtifactsRequest struct {
 	VariantHash string `protobuf:"bytes,4,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
 	// The artifact id (required).
 	ArtifactId string `protobuf:"bytes,5,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
-	// The lower bound of the time range to search (exclusive) (required).
+	// The lower bound of the time range to search in UTC time (exclusive) (required).
 	// start_time must be less than the end time.
 	// The duration between start_time and end_time must not be greater than 7 days.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// The upper bound of the time range to search (inclusive) (required).
+	// The upper bound of the time range to search in UTC time (inclusive) (required).
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// The maximum number of items to return. The service may return fewer than
 	// this value.
@@ -2871,11 +2871,11 @@ type QueryInvocationVariantArtifactGroupsRequest struct {
 	SearchString *ArtifactContentMatcher `protobuf:"bytes,2,opt,name=search_string,json=searchString,proto3" json:"search_string,omitempty"`
 	// The artifact id prefix to restrict the scope of the search (optional).
 	ArtifactIdPrefix string `protobuf:"bytes,3,opt,name=artifact_id_prefix,json=artifactIdPrefix,proto3" json:"artifact_id_prefix,omitempty"`
-	// The lower bound of the time range to search (exclusive) (required).
+	// The lower bound of the time range to search in UTC time (exclusive) (required).
 	// start_time must be less than the end time.
 	// The duration between start_time and end_time must not be greater than 7 days.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// The upper bound of the time range to search (inclusive) (required).
+	// The upper bound of the time range to search in UTC time (inclusive) (required).
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// The maximum number of match groups to return. The service may return fewer than
 	// this value.
@@ -3044,11 +3044,11 @@ type QueryInvocationVariantArtifactsRequest struct {
 	VariantUnionHash string `protobuf:"bytes,3,opt,name=variant_union_hash,json=variantUnionHash,proto3" json:"variant_union_hash,omitempty"`
 	// The artifact id (required).
 	ArtifactId string `protobuf:"bytes,4,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
-	// The lower bound of the time range to search (exclusive) (required).
+	// The lower bound of the time range to search in UTC time (exclusive) (required).
 	// start_time must be less than the end time.
 	// The duration between start_time and end_time must not be greater than 7 days.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// The upper bound of the time range to search (inclusive) (required).
+	// The upper bound of the time range to search in UTC time (inclusive) (required).
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// The maximum number of items to return. The service may return fewer than
 	// this value.
@@ -3227,10 +3227,24 @@ type ArtifactMatchingContent struct {
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// The test result status, only populated if it is a result level artifact .
 	TestStatus TestStatus `protobuf:"varint,3,opt,name=test_status,json=testStatus,proto3,enum=luci.resultdb.v1.TestStatus" json:"test_status,omitempty"`
-	// Part of the artifact that contains a match.
-	// Limit to 10KB to prevent exploding the response size. Prioritize fit in the matching part,
-	// and use the remaining bytes to display the before and after bits of the matched part (at most one more line above and below).
-	Content string `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	// Part of the artifact content that matches the search string.
+	// Size(match) + Size(before_match) + Size(after_match) is at most 10KiB.
+	// Prioritize fiting `match` into the 10KiB first, divided the remaining bytes equally
+	// to display content immediately before and after the matched part.
+	// including at most one more line above and below.
+	// Match is truncated only if it is more than 10KiB. Ellipsis ("...") are added, if it is truncated.
+	// `match`, `before_match`, and `after_match` can be concatenated to form part of the full artifact content.
+	Match string `protobuf:"bytes,4,opt,name=match,proto3" json:"match,omitempty"`
+	// Artifact content that immediately before the match. Include at most one additional line.
+	// Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
+	// see how this 10KB is allocated in `match` field comment.
+	// If before_match is truncated from the front, ellipsis ("...") are added to the front.
+	BeforeMatch string `protobuf:"bytes,5,opt,name=before_match,json=beforeMatch,proto3" json:"before_match,omitempty"`
+	// Artifact content that immediately after the match. Include at most one additional line.
+	// Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
+	// see how this 10KB is allocated in `match` field comment.
+	// If after_match is truncated, ellipsis ("...") are added..
+	AfterMatch string `protobuf:"bytes,6,opt,name=after_match,json=afterMatch,proto3" json:"after_match,omitempty"`
 }
 
 func (x *ArtifactMatchingContent) Reset() {
@@ -3286,9 +3300,23 @@ func (x *ArtifactMatchingContent) GetTestStatus() TestStatus {
 	return TestStatus_STATUS_UNSPECIFIED
 }
 
-func (x *ArtifactMatchingContent) GetContent() string {
+func (x *ArtifactMatchingContent) GetMatch() string {
 	if x != nil {
-		return x.Content
+		return x.Match
+	}
+	return ""
+}
+
+func (x *ArtifactMatchingContent) GetBeforeMatch() string {
+	if x != nil {
+		return x.BeforeMatch
+	}
+	return ""
+}
+
+func (x *ArtifactMatchingContent) GetAfterMatch() string {
+	if x != nil {
+		return x.AfterMatch
 	}
 	return ""
 }
@@ -4410,7 +4438,7 @@ var file_go_chromium_org_luci_resultdb_proto_v1_resultdb_proto_rawDesc = []byte{
 	0x69, 0x6e, 0x67, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52, 0x09, 0x61, 0x72, 0x74, 0x69,
 	0x66, 0x61, 0x63, 0x74, 0x73, 0x12, 0x26, 0x0a, 0x0f, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x70, 0x61,
 	0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d,
-	0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0xc9, 0x01,
+	0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x89, 0x02,
 	0x0a, 0x17, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x4d, 0x61, 0x74, 0x63, 0x68, 0x69,
 	0x6e, 0x67, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
 	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x41, 0x0a,
@@ -4422,8 +4450,12 @@ var file_go_chromium_org_luci_resultdb_proto_v1_resultdb_proto_rawDesc = []byte{
 	0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1c, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
 	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61,
 	0x74, 0x75, 0x73, 0x52, 0x0a, 0x74, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12,
-	0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22, 0x71, 0x0a, 0x16, 0x41, 0x72, 0x74,
+	0x14, 0x0a, 0x05, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
+	0x6d, 0x61, 0x74, 0x63, 0x68, 0x12, 0x21, 0x0a, 0x0c, 0x62, 0x65, 0x66, 0x6f, 0x72, 0x65, 0x5f,
+	0x6d, 0x61, 0x74, 0x63, 0x68, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x62, 0x65, 0x66,
+	0x6f, 0x72, 0x65, 0x4d, 0x61, 0x74, 0x63, 0x68, 0x12, 0x1f, 0x0a, 0x0b, 0x61, 0x66, 0x74, 0x65,
+	0x72, 0x5f, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x61,
+	0x66, 0x74, 0x65, 0x72, 0x4d, 0x61, 0x74, 0x63, 0x68, 0x22, 0x71, 0x0a, 0x16, 0x41, 0x72, 0x74,
 	0x69, 0x66, 0x61, 0x63, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x4d, 0x61, 0x74, 0x63,
 	0x68, 0x65, 0x72, 0x12, 0x25, 0x0a, 0x0d, 0x72, 0x65, 0x67, 0x65, 0x78, 0x5f, 0x63, 0x6f, 0x6e,
 	0x74, 0x61, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0c, 0x72, 0x65,

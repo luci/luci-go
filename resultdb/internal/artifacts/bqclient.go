@@ -1,0 +1,318 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package artifacts
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"regexp"
+	"strconv"
+	"text/template"
+	"time"
+
+	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/iterator"
+
+	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/resultdb/bqutil"
+	"go.chromium.org/luci/resultdb/internal/pagination"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+type BQClient interface {
+	ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifactGroupsOpts) (groups []*TestArtifactGroup, nextPageToken string, err error)
+}
+
+// NewClient creates a new client for reading text_artifacts table.
+func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
+	client, err := bqutil.Client(ctx, gcpProject)
+	if err != nil {
+		return nil, err
+	}
+	return &Client{client: client}, nil
+}
+
+// Client to read ResultDB text_artifacts.
+type Client struct {
+	client *bigquery.Client
+}
+
+// Close releases any resources held by the client.
+func (c *Client) Close() error {
+	return c.client.Close()
+}
+
+// TestArtifactGroup represents matching artifacts in each (test id, variant hash, artifact id) group.
+type TestArtifactGroup struct {
+	TestID      string
+	Variant     bigquery.NullJSON
+	VariantHash string
+	ArtifactID  string
+	// At most 3 matching artifacts are included here.
+	// MatchingArtifacts are sorted in partition_time DESC, invocation_id, result_id order.
+	Artifacts []*MatchingArtifact
+	// Total number of matching artifacts.
+	MatchingCount int32
+	// Maximum partition_time of artifacts in this group.
+	MaxPartitionTime time.Time
+}
+
+type MatchingArtifact struct {
+	InvocationID string
+	ResultID     string
+	// The creation time of the parent invocation.
+	PartitionTime time.Time
+	// Test status associated with this artifact.
+	TestStatus bigquery.NullString
+	// Artifact content that matches the search.
+	Match string
+	// Artifact content that is immediately before the match. At most one line above.
+	MatchWithContextBefore string
+	// Artifact content that is immediately after the match. At most one line below.
+	MatchWithContextAfter string
+}
+
+func parseReadTestArtifactGroupsPageToken(pageToken string) (afterMaxPartitionTimeUnix int, afterTestID, afterVariantHash, afterArtifactID string, err error) {
+	tokens, err := pagination.ParseToken(pageToken)
+	if err != nil {
+		return 0, "", "", "", err
+	}
+
+	if len(tokens) != 4 {
+		return 0, "", "", "", pagination.InvalidToken(errors.Reason("expected 4 components, got %d", len(tokens)).Err())
+	}
+
+	afterMaxPartitionTimeUnix, err = strconv.Atoi(tokens[0])
+	if err != nil {
+		return 0, "", "", "", pagination.InvalidToken(errors.Reason("expect the first page_token component to be an integer").Err())
+	}
+	return afterMaxPartitionTimeUnix, tokens[1], tokens[2], tokens[3], nil
+}
+
+var maxMatchSize = 10 * 1024 // 10kib.
+
+// TODO (beining@): This query only searches from the first 10 MB of each artifacts.
+// Big artifacts which have being splitted across multiple rows (as we have a limit of 10MB for a BQ row), only the first row will be included in the search.
+// We need to consider three scenarios if we want search across all shards
+// - The match content may split to multiple shards
+// - The match content is fully in a shard, but a context being split in another shard
+// - Multiple match content in different shards
+var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
+	WITH dedup AS (
+		SELECT
+			invocation_id,
+			test_id,
+			result_id,
+			artifact_id,
+			ANY_VALUE(test_variant) as test_variant,
+			ANY_VALUE(test_variant_hash) as test_variant_hash,
+			ANY_VALUE(content) as content,
+			ANY_VALUE(test_status) as test_status,
+			ANY_VALUE(partition_time) as partition_time,
+  	FROM internal.text_artifacts
+		WHERE project = @project
+			-- Only include the first shard for each artifact.
+			AND shard_id = 0
+			AND REGEXP_CONTAINS(content, @searchRegex)
+			-- STARTS_WITH empty string matches all test_ids.
+			AND STARTS_WITH(test_id, @testIDPrefix)
+			AND STARTS_WITH(artifact_id, @artifactIDPrefix)
+			-- Start time is exclusive.
+			AND partition_time > @startTime
+			-- End time is inclusive.
+			AND partition_time <= @endTime
+			-- Exclude invocation level artifact.
+			AND test_id != ""
+			-- Only return artifacts which caller has permission to access.
+			AND realm in UNNEST(@subRealms)
+		GROUP BY project, test_id, artifact_id, invocation_id, result_id, shard_id
+	)
+	SELECT test_id as TestID,
+			ANY_VALUE(test_variant) as Variant,
+			test_variant_hash as VariantHash,
+			artifact_id as ArtifactID,
+			COUNT(*) as MatchingCount,
+			max(partition_time) as MaxPartitionTime,
+			ARRAY_AGG(STRUCT(
+					invocation_id as InvocationID,
+					result_id as ResultID,
+					partition_time as PartitionTime,
+					test_status as TestStatus,
+					SUBSTR(REGEXP_EXTRACT(content, @searchRegex), 0, @maxMatchSize) AS Match,
+					-- Truncate from the front for context before the match. This is done by reversing the returned string, truncate from the back and reverse the string back.
+					REVERSE(SUBSTR(REVERSE(REGEXP_EXTRACT(content, @searchContextBeforeRegex)), 0, @maxMatchSize)) AS MatchWithContextBefore,
+					SUBSTR(REGEXP_EXTRACT(content, @searchContextAfterRegex), 0, @maxMatchSize) AS MatchWithContextAfter)
+				ORDER BY partition_time DESC, invocation_id, result_id LIMIT 3) as Artifacts,
+		FROM dedup
+		GROUP BY test_id, test_variant_hash, artifact_id
+		{{if .pagination}}
+			HAVING
+				UNIX_SECONDS(MaxPartitionTime) < @afterMaxPartitionTimeUnix
+				OR (UNIX_SECONDS(MaxPartitionTime) = @afterMaxPartitionTimeUnix AND TestID > @afterTestID)
+				OR (UNIX_SECONDS(MaxPartitionTime) = @afterMaxPartitionTimeUnix AND TestID = @afterTestID AND VariantHash > @afterVariantHash)
+				OR (UNIX_SECONDS(MaxPartitionTime) = @afterMaxPartitionTimeUnix AND TestID = @afterTestID AND VariantHash = @afterVariantHash AND  ArtifactID > @afterArtifactID)
+		{{end}}
+		ORDER BY MaxPartitionTime DESC , TestID, VariantHash, ArtifactID
+		LIMIT @limit
+	`))
+
+func generateReadTestArtifactGroupsQuery(opts ReadTestArtifactGroupsOpts) (string, error) {
+	var b bytes.Buffer
+	err := readTestArtifactGroupTmpl.ExecuteTemplate(&b, "", map[string]any{
+		"pagination": opts.PageToken != "",
+	})
+	if err != nil {
+		return "", errors.Annotate(err, "execute template").Err()
+	}
+	return b.String(), nil
+}
+
+type ReadTestArtifactGroupsOpts struct {
+	Project          string
+	SearchString     *pb.ArtifactContentMatcher
+	TestIDPrefix     string
+	ArtifactIDPrefix string
+	StartTime        time.Time
+	EndTime          time.Time
+	SubRealms        []string
+	Limit            int
+	PageToken        string
+}
+
+func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifactGroupsOpts) (groups []*TestArtifactGroup, nextPageToken string, err error) {
+	var afterMaxPartitionTimeUnix int
+	var afterTestID, afterVariantHash, afterArtifactID string
+	if opts.PageToken != "" {
+		afterMaxPartitionTimeUnix, afterTestID, afterVariantHash, afterArtifactID, err = parseReadTestArtifactGroupsPageToken(opts.PageToken)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	query, err := generateReadTestArtifactGroupsQuery(opts)
+	if err != nil {
+		return nil, "", err
+	}
+
+	q := c.client.Query(query)
+	q.DefaultDatasetID = "internal"
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: opts.Project},
+		{Name: "testIDPrefix", Value: opts.TestIDPrefix},
+		{Name: "artifactIDPrefix", Value: opts.ArtifactIDPrefix},
+		{Name: "searchRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureMatch(true).build()},
+		{Name: "searchContextBeforeRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureContextBefore(true).build()},
+		{Name: "searchContextAfterRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureContextAfter(true).build()},
+		{Name: "maxMatchSize", Value: maxMatchSize},
+		{Name: "startTime", Value: opts.StartTime},
+		{Name: "endTime", Value: opts.EndTime},
+		{Name: "subRealms", Value: opts.SubRealms},
+		{Name: "limit", Value: opts.Limit},
+		{Name: "afterMaxPartitionTimeUnix", Value: afterMaxPartitionTimeUnix},
+		{Name: "afterTestID", Value: afterTestID},
+		{Name: "afterVariantHash", Value: afterVariantHash},
+		{Name: "afterArtifactID", Value: afterArtifactID},
+	}
+
+	it, err := q.Read(ctx)
+	if err != nil {
+		return nil, "", errors.Annotate(err, "running query").Err()
+	}
+	results := []*TestArtifactGroup{}
+	for {
+		row := &TestArtifactGroup{}
+		err := it.Next(row)
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return nil, "", errors.Annotate(err, "obtain next test artifact groups row").Err()
+		}
+		results = append(results, row)
+	}
+	if opts.Limit != 0 && len(results) == int(opts.Limit) {
+		lastGroup := results[len(results)-1]
+		nextPageToken = pagination.Token(fmt.Sprint(lastGroup.MaxPartitionTime.Unix()), lastGroup.TestID, lastGroup.VariantHash, lastGroup.ArtifactID)
+	}
+	return results, nextPageToken, nil
+}
+
+type matchWithContextRegexBuilder struct {
+	matcher              *pb.ArtifactContentMatcher
+	captureMatch         bool
+	captureContextbefore bool
+	captureContextAfter  bool
+}
+
+// NewMatchWithContextRegexBuilder creates a new matchWithContextRegexBuilder.
+func newMatchWithContextRegexBuilder(matcher *pb.ArtifactContentMatcher) *matchWithContextRegexBuilder {
+	return &matchWithContextRegexBuilder{
+		matcher: matcher,
+	}
+}
+
+// withCaptureMatch sets the captureMatch flag.
+func (b *matchWithContextRegexBuilder) withCaptureMatch(captureMatch bool) *matchWithContextRegexBuilder {
+	b.captureMatch = captureMatch
+	return b
+}
+
+// withCaptureContextBefore sets the captureContextBefore flag.
+func (b *matchWithContextRegexBuilder) withCaptureContextBefore(captureContextBefore bool) *matchWithContextRegexBuilder {
+	b.captureContextbefore = captureContextBefore
+	return b
+}
+
+// withCaptureContextAfter sets the captureContextAfter flag.
+func (b *matchWithContextRegexBuilder) withCaptureContextAfter(captureContextAfter bool) *matchWithContextRegexBuilder {
+	b.captureContextAfter = captureContextAfter
+	return b
+}
+
+func (b *matchWithContextRegexBuilder) build() string {
+	optionalLineBreakRegex := "(?:\\r\\n|\\r|\\n)?"
+	searchRegex := regexPattern(b.matcher)
+	matchWithOptionalLineBreak := fmt.Sprintf("[^\r\n]*%s[^\r\n]*", optionalLineBreakRegex)
+
+	matchBefore := matchWithOptionalLineBreak
+	matchAfter := matchWithOptionalLineBreak
+	if b.captureContextbefore {
+		matchBefore = fmt.Sprintf("(%s)", matchWithOptionalLineBreak)
+	}
+	if b.captureContextAfter {
+		matchAfter = fmt.Sprintf("(%s)", matchWithOptionalLineBreak)
+	}
+	if b.captureMatch {
+		searchRegex = fmt.Sprintf("(%s)", searchRegex)
+	}
+
+	return optionalLineBreakRegex + matchBefore + searchRegex + matchAfter + optionalLineBreakRegex
+}
+
+func regexPattern(matcher *pb.ArtifactContentMatcher) string {
+	if matcher == nil {
+		// This should never happen.
+		panic("match should not be nil")
+	}
+	switch m := matcher.Matcher.(type) {
+	case *pb.ArtifactContentMatcher_ExactContain:
+		return regexp.QuoteMeta(m.ExactContain)
+	case *pb.ArtifactContentMatcher_RegexContain:
+		return m.RegexContain
+	default:
+		panic("No matching operations")
+	}
+}

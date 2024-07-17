@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"io"
 
+	"google.golang.org/genproto/googleapis/bytestream"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/genproto/googleapis/bytestream"
 
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"

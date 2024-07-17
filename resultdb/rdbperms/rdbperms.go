@@ -38,4 +38,5 @@ var (
 
 func init() {
 	PermListTestMetadata.AddFlags(realms.UsedInQueryRealms)
+	PermListArtifacts.AddFlags(realms.UsedInQueryRealms)
 }

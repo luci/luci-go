@@ -18,8 +18,9 @@ import (
 	"bytes"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestToFailureOnlyLineRanges(t *testing.T) {

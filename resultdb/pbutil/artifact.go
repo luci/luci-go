@@ -26,11 +26,13 @@ const (
 	// Unicode character classes L, M, N, P, S, Zs are the "graphic" type code points,
 	// so a good approximation of all the printable characters.
 	// Also accept '.' as the first character to enable upload of files starting with .
-	artifactIDPattern = `(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,508}[[:word:]])?`
+	artifactIDPattern       = `(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,508}[[:word:]])?`
+	artifactIDPrefixPattern = `(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,509})?`
 )
 
 var (
 	artifactIDRe                  = regexpf("^%s$", artifactIDPattern)
+	artifactIDPrefixRe            = regexpf("^%s$", artifactIDPrefixPattern)
 	invocationArtifactNamePattern = fmt.Sprintf("invocations/(%s)/artifacts/(.+)", invocationIDPattern)
 	testResultArtifactNamePattern = fmt.Sprintf("invocations/(%s)/tests/([^/]+)/results/(%s)/artifacts/(.+)", invocationIDPattern, resultIDPattern)
 	invocationArtifactNameRe      = regexpf("^%s$", invocationArtifactNamePattern)
@@ -42,6 +44,11 @@ var (
 // ValidateArtifactID returns a non-nil error if id is invalid.
 func ValidateArtifactID(id string) error {
 	return validateWithRe(artifactIDRe, id)
+}
+
+// ValidateArtifactIDPrefix returns a non-nil error if prefix is invalid.
+func ValidateArtifactIDPrefix(idPrefix string) error {
+	return validateWithRe(artifactIDPrefixRe, idPrefix)
 }
 
 // ValidateArtifactName returns a non-nil error if name is invalid.

@@ -851,12 +851,12 @@ message QueryTestVariantArtifactGroupsRequest {
   // The artifact id prefix to restrict the scope of the search (optional).
   string artifact_id_prefix = 4;
 
-  // The lower bound of the time range to search (exclusive) (required).
+  // The lower bound of the time range to search in UTC time (exclusive) (required).
   // start_time must be less than the end time.
   // The duration between start_time and end_time must not be greater than 7 days.
   google.protobuf.Timestamp start_time = 5;
 
-  // The upper bound of the time range to search (inclusive) (required).
+  // The upper bound of the time range to search in UTC time (inclusive) (required).
   google.protobuf.Timestamp end_time = 6;
 
   // The maximum number of match groups to return. The service may return fewer than
@@ -925,12 +925,12 @@ message QueryTestVariantArtifactsRequest {
   // The artifact id (required).
   string artifact_id = 5;
 
-  // The lower bound of the time range to search (exclusive) (required).
+  // The lower bound of the time range to search in UTC time (exclusive) (required).
   // start_time must be less than the end time.
   // The duration between start_time and end_time must not be greater than 7 days.
   google.protobuf.Timestamp start_time = 6;
 
-  // The upper bound of the time range to search (inclusive) (required).
+  // The upper bound of the time range to search in UTC time (inclusive) (required).
   google.protobuf.Timestamp end_time = 7;
 
   // The maximum number of items to return. The service may return fewer than
@@ -968,12 +968,12 @@ message QueryInvocationVariantArtifactGroupsRequest {
   // The artifact id prefix to restrict the scope of the search (optional).
   string artifact_id_prefix = 3;
 
-  // The lower bound of the time range to search (exclusive) (required).
+  // The lower bound of the time range to search in UTC time (exclusive) (required).
   // start_time must be less than the end time.
   // The duration between start_time and end_time must not be greater than 7 days.
   google.protobuf.Timestamp start_time = 4;
 
-  // The upper bound of the time range to search (inclusive) (required).
+  // The upper bound of the time range to search in UTC time (inclusive) (required).
   google.protobuf.Timestamp end_time = 5;
 
   // The maximum number of match groups to return. The service may return fewer than
@@ -1035,12 +1035,12 @@ message QueryInvocationVariantArtifactsRequest {
   // The artifact id (required).
   string artifact_id = 4;
 
-  // The lower bound of the time range to search (exclusive) (required).
+  // The lower bound of the time range to search in UTC time (exclusive) (required).
   // start_time must be less than the end time.
   // The duration between start_time and end_time must not be greater than 7 days.
   google.protobuf.Timestamp start_time = 5;
 
-  // The upper bound of the time range to search (inclusive) (required).
+  // The upper bound of the time range to search in UTC time (inclusive) (required).
   google.protobuf.Timestamp end_time = 6;
 
   // The maximum number of items to return. The service may return fewer than
@@ -1083,10 +1083,26 @@ message ArtifactMatchingContent {
   // The test result status, only populated if it is a result level artifact .
   TestStatus test_status = 3;
 
-  // Part of the artifact that contains a match.
-  // Limit to 10KB to prevent exploding the response size. Prioritize fit in the matching part,
-  // and use the remaining bytes to display the before and after bits of the matched part (at most one more line above and below).
-  string content = 4;
+  // Part of the artifact content that matches the search string.
+	// Size(match) + Size(before_match) + Size(after_match) is at most 10KiB.
+  // Prioritize fiting `match` into the 10KiB first, divided the remaining bytes equally
+  // to display content immediately before and after the matched part.
+  // including at most one more line above and below.
+  // Match is truncated only if it is more than 10KiB. Ellipsis ("...") are added, if it is truncated.
+  // `match`, `before_match`, and `after_match` can be concatenated to form part of the full artifact content.
+  string match = 4;
+
+  // Artifact content that immediately before the match. Include at most one additional line.
+  // Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
+  // see how this 10KB is allocated in `match` field comment.
+  // If before_match is truncated from the front, ellipsis ("...") are added to the front.
+  string before_match = 5;
+
+  // Artifact content that immediately after the match. Include at most one additional line.
+  // Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
+  // see how this 10KB is allocated in `match` field comment.
+  // If after_match is truncated, ellipsis ("...") are added..
+  string after_match = 6;
 }
 
 // Used to match a artifact content.

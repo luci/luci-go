@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/resultdb/bqutil"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
+	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/ensureviews"
 	"go.chromium.org/luci/resultdb/internal/rpcutil"
@@ -45,8 +46,9 @@ import (
 // It does not return gRPC-native errors; use DecoratedResultDB with
 // internal.CommonPostlude.
 type resultDBServer struct {
-	contentServer *artifactcontent.Server
-	bqClient      *bigquery.Client
+	contentServer    *artifactcontent.Server
+	bqClient         *bigquery.Client
+	artifactBQClient artifacts.BQClient
 }
 
 // Options is resultdb server configuration.
@@ -87,6 +89,11 @@ func InitServer(srv *server.Server, opts Options) error {
 		return errors.Annotate(err, "creating BQ client").Err()
 	}
 
+	artifactBQClient, err := artifacts.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "creating artifact BQ client").Err()
+	}
+
 	// Serve cron jobs endpoints.
 	cron.RegisterHandler("read-config", config.UpdateConfig)
 	cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
@@ -94,8 +101,9 @@ func InitServer(srv *server.Server, opts Options) error {
 	})
 
 	rdbSvr := &resultDBServer{
-		contentServer: contentServer,
-		bqClient:      bqClient,
+		contentServer:    contentServer,
+		bqClient:         bqClient,
+		artifactBQClient: artifactBQClient,
 	}
 	pb.RegisterResultDBServer(srv, &pb.DecoratedResultDB{
 		Service:  rdbSvr,
