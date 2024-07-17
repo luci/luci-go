@@ -803,7 +803,7 @@ window.onload = () => {
 
   api.groups()
     .then((response) => {
-      groupsChooser.setGroupList(response.groups);
+      groupChooser.setGroupList(response.groups);
       jumpToCurrentGroup(true);
       onCurrentGroupInURLChange(() => {
         jumpToCurrentGroup(false);

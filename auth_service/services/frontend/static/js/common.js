@@ -25,6 +25,25 @@ const toComparableGroupName = (group) => {
   return prefix + 'A' + name;
 }
 
+const setMainNavbarActiveLink = () => {
+  let path = window.location.pathname;
+
+  // If listing a group, make the active link match the link for groups.
+  if (path === '/listing') {
+    path = '/groups';
+  }
+
+  document.querySelectorAll('#main-navbar li>a').forEach((link) => {
+    const target = link.getAttribute('href');
+    if (target && path.startsWith(target)) {
+      link.classList.add('active');
+      link.setAttribute('aria-current', 'page');
+    } else {
+      link.classList.remove('active');
+      link.setAttribute('aria-current', null);
+    }
+  });
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Base class for a hidable component.
@@ -205,24 +224,14 @@ var common = (function () {
     });
   };
 
-  exports.setMainNavbarActiveLink = () => {
-    let path = window.location.pathname;
+  exports.initializePage = () => {
+    setMainNavbarActiveLink();
 
-    // If listing a group, make the active link match the link for groups.
-    if (path === '/listing') {
-      path = '/groups';
+    // Enable the tooltip for the feedback link.
+    const el = document.querySelector("#send-feedback");
+    if (el) {
+      new bootstrap.Tooltip(el);
     }
-
-    document.querySelectorAll('#main-navbar a').forEach((link) => {
-      const target = link.getAttribute('href');
-      if (target && path.startsWith(target)) {
-        link.classList.add('active');
-        link.setAttribute('aria-current', 'page');
-      } else {
-        link.classList.remove('active');
-        link.setAttribute('aria-current', null);
-      }
-    });
   };
 
   exports.HidableElement = HidableElement;

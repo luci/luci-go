@@ -57,7 +57,25 @@ that can be found in the LICENSE file. -->
                 <a class="nav-link" href="/services">Services</a>
               </li>
             </ul>
-            <form class="d-flex" id="account-text-nav">
+            <form class="d-flex align-items-center" id="account-text-nav">
+              <div
+                id="send-feedback"
+                class="rounded-circle position-relative mx-2 p-3"
+                data-bs-toggle="tooltip"
+                data-bs-container="body"
+                data-bs-placement="bottom"
+                title="Send feedback">
+                <a
+                  class="stretched-link icon-stack navbar-text"
+                  target="_blank"
+                  href="https://goto.google.com/luci-auth-service-bug"
+                  aria-label="send feedback">
+                  <i class="icon-stack-item bi bi-chat-left fs-5"></i>
+                  <!-- Override the translation so the exclamation is in the
+                   middle of the chat bubble which has a bottom tail. -->
+                  <i class="icon-stack-item bi bi-exclamation fs-6" style="transform: translate(-50%, -60%);"></i>
+                </a>
+              </div>
               <span class="navbar-text">{{ .User.Email }}</span>
               <a id="logout-btn" class="nav-link" href="{{ .LogoutURL }}">Logout</a>
             </form>
@@ -80,7 +98,7 @@ that can be found in the LICENSE file. -->
     </div>
 
     <script type="text/javascript">
-      common.setMainNavbarActiveLink();
+      common.initializePage();
     </script>
 
     <!-- Template for loading box, to be shown while results are fetched. -->

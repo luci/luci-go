@@ -38,3 +38,14 @@ a:not(.nav-link,.navbar-brand,.list-group-item,.page-link):hover {
 .tooltip-inner {
   max-width: 400px;
 }
+
+.icon-stack {
+  position: relative;
+}
+
+.icon-stack-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
