@@ -20,7 +20,7 @@ import { GroupsFormList } from './groups_form_list';
 import { act } from 'react';
 
 describe('<GroupsFormList editable/>', () => {
-    const mockGroup = createMockGroupIndividual('123');
+    const mockGroup = createMockGroupIndividual('123', true);
     beforeEach(async () => {
       render(
         <FakeContextProvider>
@@ -158,7 +158,7 @@ describe('<GroupsFormList editable/>', () => {
 });
 
 describe('<GroupsFormList editable globs/>', () => {
-  const mockGroup = createMockGroupIndividual('123');
+  const mockGroup = createMockGroupIndividual('123', true);
   beforeEach(async () => {
     render(
       <FakeContextProvider>

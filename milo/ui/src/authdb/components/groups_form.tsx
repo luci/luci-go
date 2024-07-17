@@ -157,6 +157,7 @@ export function GroupsForm({ name, onDelete = () => {} } : GroupsFormProps) {
     const subgroups: string[] = (response?.nested || []) as string[];
     const globs: string[] = (response?.globs || []) as string[];
     const etag = response?.etag;
+    const callerCanModify: boolean = response?.callerCanModify || false;
 
     const setReadonlyMode = () => {
       setDescriptionMode(false);
@@ -267,7 +268,7 @@ export function GroupsForm({ name, onDelete = () => {} } : GroupsFormProps) {
             <TableRow>
               <TableCell sx={{pb:0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
                 <Typography variant="h6"> Description</Typography>
-                {(showDescriptionEdit || descriptionMode) &&
+                {(showDescriptionEdit || descriptionMode) && callerCanModify &&
                 <IconButton color='primary' onClick={changeDescriptionMode} sx={{p: 0, ml: 1.5}}>
                   {descriptionMode
                     ? <DoneIcon />
@@ -290,7 +291,7 @@ export function GroupsForm({ name, onDelete = () => {} } : GroupsFormProps) {
             <TableRow >
               <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
                 <Typography variant="h6"> Owners</Typography>
-                {(showOwnersEdit || ownersMode) &&
+                {(showOwnersEdit || ownersMode) && callerCanModify &&
                 <IconButton color='primary' onClick={changeOwnersMode} sx={{p: 0, ml: 1.5}}>
                   {ownersMode
                     ? <DoneIcon />
@@ -315,25 +316,36 @@ export function GroupsForm({ name, onDelete = () => {} } : GroupsFormProps) {
             <GroupsFormListReadonly name='Members' initialItems={members}/>
             :
             <>
-            <GroupsFormList name='Members' initialItems={members} ref={membersRef}/>
-            <GroupsFormList name='Globs' initialItems={globs} ref={globsRef}/>
-            <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef}/>
-            <div style={{display: 'flex', flexDirection: 'row'}}>
-              <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit}>
-                Update Group
-              </Button>
-              <Button variant="contained" color="error" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
-                Delete Group
-              </Button>
-            </div>
-            <div style={{padding: '5px'}}>
-              {successEditedGroup &&
-              <Alert severity="success">Group updated</Alert>
-              }
-              {errorMessage &&
-              <Alert severity="error">{errorMessage}</Alert>
-              }
-            </div>
+            {callerCanModify ?
+              <>
+              <GroupsFormList name='Members' initialItems={members} ref={membersRef}/>
+              <GroupsFormList name='Globs' initialItems={globs} ref={globsRef}/>
+              <GroupsFormList name='Subgroups' initialItems={subgroups} ref={subgroupsRef}/>
+              <div style={{display: 'flex', flexDirection: 'row'}}>
+                <Button variant="contained" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit}>
+                  Update Group
+                </Button>
+                <Button variant="contained" color="error" disableElevation style={{width: '15%'}} sx={{mt: 1.5, ml: 1.5}} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
+                  Delete Group
+                </Button>
+              </div>
+              <div style={{padding: '5px'}}>
+                {successEditedGroup &&
+                <Alert severity="success">Group updated</Alert>
+                }
+                {errorMessage &&
+                <Alert severity="error">{errorMessage}</Alert>
+                }
+              </div>
+              </>
+            :
+             <>
+              <GroupsFormListReadonly name='Members' initialItems={members}/>
+              <GroupsFormListReadonly name='Globs' initialItems={globs}/>
+              <GroupsFormListReadonly name='Subgroups' initialItems={subgroups}/>
+              <Typography variant="caption" sx={{p: '16px'}} style={{fontStyle: 'italic'}}>You do not have sufficient permissions to modify this group.</Typography>
+             </>
+            }
             </>
           }
       </FormControl>

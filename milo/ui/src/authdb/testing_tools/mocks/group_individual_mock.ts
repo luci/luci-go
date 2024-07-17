@@ -16,7 +16,7 @@ import fetchMock from 'fetch-mock-jest';
 
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
-export function createMockGroupIndividual(name: string) {
+export function createMockGroupIndividual(name: string, callerCanModify: boolean) {
   return AuthGroup.fromPartial({
     name: name,
     description: 'testDescrition',
@@ -25,7 +25,7 @@ export function createMockGroupIndividual(name: string) {
     owners: 'testOwners',
     createdTs: '2014-06-19T03:17:22.823080Z',
     createdBy: 'user:test@example.com',
-    callerCanModify: true,
+    callerCanModify: callerCanModify,
     etag: 'W/"MjAyNC0wNC0wMVQyMzoyNjozOS45MDI1MzNa"',
   });
 }

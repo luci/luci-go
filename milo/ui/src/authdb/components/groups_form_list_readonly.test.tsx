@@ -18,7 +18,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import { GroupsFormListReadonly } from './groups_form_list_readonly';
 
 describe('<GroupsFormList readonly/>', () => {
-    const mockGroup = createMockGroupIndividual('123');
+    const mockGroup = createMockGroupIndividual('123', false);
     beforeEach(async () => {
       render(
         <FakeContextProvider>

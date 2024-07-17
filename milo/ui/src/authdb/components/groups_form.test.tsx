@@ -25,7 +25,7 @@ import { act } from 'react';
 
 describe('<GroupsForm />', () => {
   test('if group name, desciption, owners, members, subgroups are displayed', async () => {
-    const mockGroup = createMockGroupIndividual('123');
+    const mockGroup = createMockGroupIndividual('123', true);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -62,7 +62,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if external group shows only members', async () => {
-    const mockGroup = createMockGroupIndividual('external/123');
+    const mockGroup = createMockGroupIndividual('external/123', false);
     mockFetchGetGroup(mockGroup);
 
     render(
@@ -84,7 +84,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if group is updated with success message', async () => {
-    const mockGroup = createMockGroupIndividual('123');
+    const mockGroup = createMockGroupIndividual('123', true);
     mockFetchGetGroup(mockGroup);
 
     const mockUpdatedGroup = createMockUpdatedGroup('123');
@@ -106,7 +106,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if appropriate message is displayed for an error updating group', async () => {
-    const mockGroup = createMockGroupIndividual('123');
+    const mockGroup = createMockGroupIndividual('123', true);
     mockFetchGetGroup(mockGroup);
 
     mockErrorUpdateGroup();
@@ -125,7 +125,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('submit button is disabled on group update', async () => {
-    const mockGroup = createMockGroupIndividual('123');
+    const mockGroup = createMockGroupIndividual('123', true);
     mockFetchGetGroup(mockGroup);
 
     const mockUpdatedGroup = createMockUpdatedGroup('123');
@@ -146,7 +146,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('delete button opens confirm dialog', async () => {
-    const mockGroup = createMockGroupIndividual('123');
+    const mockGroup = createMockGroupIndividual('123', true);
     mockFetchGetGroup(mockGroup);
 
     const mockUpdatedGroup = createMockUpdatedGroup('123');
@@ -167,7 +167,7 @@ describe('<GroupsForm />', () => {
   });
 
   test('if appropriate message is displayed for an error deleting group', async () => {
-    const mockGroup = createMockGroupIndividual('123');
+    const mockGroup = createMockGroupIndividual('123', true);
     mockFetchGetGroup(mockGroup);
 
     mockErrorDeleteGroup();
@@ -188,4 +188,21 @@ describe('<GroupsForm />', () => {
     expect(screen.getByText('Error deleting group')).toBeInTheDocument();
   });
 
+  test('if edit and delete buttons are hidden if caller does not have edit permissions', async () => {
+    const mockGroup = createMockGroupIndividual('123', false);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+        <FakeContextProvider>
+            <GroupsForm name='123'/>
+        </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    const deleteButton = screen.queryByTestId('delete-button')
+    expect(deleteButton).toBeNull();
+    const submitButton = screen.queryByTestId('submit-button')
+    expect(submitButton).toBeNull();
+    expect(screen.getByText('You do not have sufficient permissions to modify this group.')).toBeInTheDocument();
+  });
 });
