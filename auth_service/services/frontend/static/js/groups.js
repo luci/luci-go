@@ -245,19 +245,6 @@ class GroupChooser {
     return this.internalOnlyGroupSet;
   }
 
-  // Loads list of groups from a server.
-  // Updates group chooser UI. Returns deferred.
-  refetchGroups() {
-    const self = this;
-    return api.groups()
-      .then((response) => {
-        self.setGroupList(response.groups);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }
-
   reselectionRequired() {
     return this.selectedGroupName && !this.isKnownGroup(this.selectedGroupName);
   }
@@ -748,6 +735,7 @@ window.onload = () => {
   const groupChooser = new GroupChooser('#group-chooser');
   const contentFrame = new ContentFrame('#group-content');
   const searchBox = new SearchBox('#search-box');
+  const listErrorBox = new common.ErrorBox('#list-api-error-placeholder');
 
   const startNewGroupFlow = () => {
     let form = new NewGroupForm();
@@ -809,10 +797,13 @@ window.onload = () => {
   });
 
   // Show a loading spinner when first fetching all groups.
+  listErrorBox.clearError();
   loadingBox.setLoadStatus(true);
   mainContent.hide();
-  groupChooser.refetchGroups()
-    .then(() => {
+
+  api.groups()
+    .then((response) => {
+      groupsChooser.setGroupList(response.groups);
       jumpToCurrentGroup(true);
       onCurrentGroupInURLChange(() => {
         jumpToCurrentGroup(false);
@@ -821,8 +812,7 @@ window.onload = () => {
       groupChooser.ensureGroupVisible(groupChooser.selectedGroupName);
     })
     .catch((err) => {
-    // TODO: replace this with an error modal.
-    console.log('error refetching groups:', err.text);
+      listErrorBox.showError('Listing groups failed', err.error);
     })
     .finally(() => {
       loadingBox.setLoadStatus(false);
