@@ -646,6 +646,7 @@ func TestUpdateBuild(t *testing.T) {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		ctx = installTestSecret(ctx)
 
 		tk, ctx := updateContextForNewBuildToken(ctx, 1)
@@ -1105,6 +1106,38 @@ func TestUpdateBuild(t *testing.T) {
 
 		Convey("build-completion event", func() {
 			Convey("Status_SUCCESSS w/ status change", func() {
+				base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
+				name := "chrome/infra/custom/builds/completed"
+				globalCfg := &pb.SettingsCfg{
+					CustomMetrics: []*pb.CustomMetric{
+						{
+							Name:   name,
+							Fields: []string{"status", "experiments"},
+							Class: &pb.CustomMetric_MetricBase{
+								MetricBase: base,
+							},
+						},
+					},
+				}
+				ctx, _ = metrics.WithCustomMetrics(ctx, globalCfg)
+
+				bld := &model.Build{ID: req.Build.Id}
+				So(datastore.Get(ctx, bld), ShouldBeNil)
+				bld.CustomMetrics = []model.CustomMetric{
+					{
+						Base: base,
+						Metric: &pb.BuilderConfig_CustomBuildMetric{
+							Name:       name,
+							Predicates: []string{`build.status.to_string()!=""`},
+							Fields: map[string]string{
+								"status":      "build.status.to_string()",
+								"experiments": "build.input.experiments.to_string()",
+							},
+						},
+					},
+				}
+				So(datastore.Put(ctx, bld), ShouldBeNil)
+
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
 				So(updateBuild(ctx, req), ShouldBeRPCOK)
@@ -1136,6 +1169,13 @@ func TestUpdateBuild(t *testing.T) {
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
 				So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+
+				ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
+				So(store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, []any{"SUCCESS", "None"}), ShouldEqual, 1)
+
+				val, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, []any{"SUCCESS", "None"})
+				So(err, ShouldBeNil)
+				So(val, ShouldEqual, 1)
 			})
 			Convey("output.status Status_SUCCESSS w/ status change", func() {
 				buildStatus := &model.BuildStatus{

@@ -38,8 +38,15 @@ func BuildCreated(ctx context.Context, b *model.Build) {
 	V1.BuildCountCreated.Add(ctx, 1, legacyBucketName(bpb.Project, bpb.Bucket), bpb.Builder, ua)
 
 	// V2
+	exps := b.ExperimentsString()
 	ctx = WithBuilder(ctx, bpb.Project, bpb.Bucket, bpb.Builder)
-	V2.BuildCountCreated.Add(ctx, 1, b.ExperimentsString())
+	V2.BuildCountCreated.Add(ctx, 1, exps)
+
+	// Custom Metrics
+	cmValues := map[pb.CustomBuildMetricBase]any{
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED: int64(1),
+	}
+	reportToCustomMetrics(ctx, b, cmValues)
 }
 
 // BuildStarted updates metrics for a build start event.
@@ -62,6 +69,15 @@ func BuildStarted(ctx context.Context, b *model.Build) {
 	if bp.StartTime != nil {
 		V2.BuildDurationScheduling.Add(ctx, schD, exps)
 	}
+
+	// Custom Metrics
+	cmValues := map[pb.CustomBuildMetricBase]any{
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED: int64(1),
+	}
+	if bp.StartTime != nil {
+		cmValues[pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS] = schD
+	}
+	reportToCustomMetrics(ctx, b, cmValues)
 }
 
 // BuildCompleted updates metrics for a build completion event.
@@ -95,6 +111,16 @@ func BuildCompleted(ctx context.Context, b *model.Build) {
 	if b.Proto.StartTime != nil {
 		V2.BuildDurationRun.Add(ctx, runD, status, exps)
 	}
+
+	// Custom Metrics
+	cmValues := map[pb.CustomBuildMetricBase]any{
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED:       int64(1),
+		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS: cycleD,
+	}
+	if b.Proto.StartTime != nil {
+		cmValues[pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS] = runD
+	}
+	reportToCustomMetrics(ctx, b, cmValues)
 }
 
 // ExpiredLeaseReset updates metrics for an expired lease reset.

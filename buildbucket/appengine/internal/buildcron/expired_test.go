@@ -51,6 +51,7 @@ func setUp() (context.Context, store.Store, *tqtesting.Scheduler) {
 	ctx, _ = tsmon.WithDummyInMemory(ctx)
 	ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 	ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
+	ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 	store := tsmon.Store(ctx)
 	ctx, sch := tq.TestingContext(ctx, nil)
 
@@ -246,10 +247,42 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 		})
 
 		Convey("marks old, running builds w/ infra_failure", func() {
+			base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
+			name := "/chrome/infra/custom/builds/completed"
+			cm := &pb.BuilderConfig_CustomBuildMetric{
+				Name:       name,
+				Predicates: []string{`build.status.to_string()=="INFRA_FAILURE"`},
+				Fields: map[string]string{
+					"status":      `build.status.to_string()`,
+					"experiments": `build.input.experiments.to_string()`,
+				},
+			}
+			cms := []model.CustomMetric{
+				{
+					Base:   base,
+					Metric: cm,
+				},
+			}
 			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
 			b1.LegacyProperties.LeaseProperties.IsLeased = true
+			b1.CustomMetrics = cms
 			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
+			b2.CustomMetrics = cms
 			So(datastore.Put(ctx, b1, b2, bs1, bs2), ShouldBeNil)
+
+			globalCfg := &pb.SettingsCfg{
+				CustomMetrics: []*pb.CustomMetric{
+					{
+						Name: name,
+						Class: &pb.CustomMetric_MetricBase{
+							MetricBase: base,
+						},
+						Fields: []string{"status", "experiments"},
+					},
+				},
+			}
+			ctx, _ = metrics.WithCustomMetrics(ctx, globalCfg)
+
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 
 			b := &model.Build{ID: b1.ID}
@@ -273,6 +306,11 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 					"None",          /* metric:experiments */
 				}
 				So(store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, fv), ShouldEqual, 2)
+
+				// Custom metrics
+				res, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, fv)
+				So(err, ShouldBeNil)
+				So(res, ShouldEqual, 2)
 			})
 
 			Convey("adds TQ tasks", func() {

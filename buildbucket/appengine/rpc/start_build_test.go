@@ -17,9 +17,11 @@ package rpc
 import (
 	"context"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -117,7 +119,23 @@ func TestStartBuild(t *testing.T) {
 	})
 
 	Convey("StartBuild", t, func() {
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
+		base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED
+		name := "chrome/infra/custom/builds/started"
+		globalCfg := &pb.SettingsCfg{
+			CustomMetrics: []*pb.CustomMetric{
+				{
+					Name:   name,
+					Fields: []string{"experiments", "os"},
+					Class: &pb.CustomMetric_MetricBase{
+						MetricBase: base,
+					},
+				},
+			},
+		}
+		ctx, _ = metrics.WithCustomMetrics(ctx, globalCfg)
 		ctx = txndefer.FilterRDS(ctx)
 		var sch *tqtesting.Scheduler
 		ctx, sch = tq.TestingContext(ctx, nil)
@@ -134,6 +152,20 @@ func TestStartBuild(t *testing.T) {
 				Status: pb.Status_SCHEDULED,
 			},
 			Status: pb.Status_SCHEDULED,
+			Tags:   []string{"os:Linux"},
+			CustomMetrics: []model.CustomMetric{
+				{
+					Base: base,
+					Metric: &pb.BuilderConfig_CustomBuildMetric{
+						Name:       name,
+						Predicates: []string{`build.tags.get_value("os")!=""`},
+						Fields: map[string]string{
+							"experiments": "build.input.experiments.to_string()",
+							"os":          `build.tags.get_value("os")`,
+						},
+					},
+				},
+			},
 		}
 		bk := datastore.KeyForObj(ctx, build)
 		infra := &model.BuildInfra{
@@ -182,6 +214,12 @@ func TestStartBuild(t *testing.T) {
 					// TQ tasks for pubsub-notification.
 					tasks := sch.Tasks()
 					So(tasks, ShouldHaveLength, 2)
+
+					// metrics
+					So(tsmon.Store(ctx).Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), ShouldEqual, 1)
+					val, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, []any{"None", "Linux"})
+					So(err, ShouldBeNil)
+					So(val, ShouldEqual, 1)
 				})
 
 				Convey("same task", func() {

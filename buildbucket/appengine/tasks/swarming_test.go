@@ -356,6 +356,7 @@ func TestSyncBuild(t *testing.T) {
 		ctx = txndefer.FilterRDS(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = metrics.WithBuilder(ctx, "proj", "bucket", "builder")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -1021,6 +1022,7 @@ func TestHandleCancelSwarmingTask(t *testing.T) {
 		ctx = memory.UseWithAppID(ctx, "dev~app-id")
 		ctx = txndefer.FilterRDS(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -1087,6 +1089,7 @@ func TestSubNotify(t *testing.T) {
 		ctx = txndefer.FilterRDS(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = metrics.WithBuilder(ctx, "proj", "bucket", "builder")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)

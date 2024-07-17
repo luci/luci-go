@@ -130,6 +130,7 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("fetchBuilderConfigs", t, func() {
 		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -261,6 +262,7 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("generateBuildNumbers", t, func() {
 		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -374,6 +376,7 @@ func TestScheduleBuild(t *testing.T) {
 	Convey("scheduleBuilds", t, func() {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -5802,6 +5805,7 @@ func TestScheduleBuild(t *testing.T) {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -6418,7 +6422,10 @@ func TestScheduleBuild(t *testing.T) {
 	Convey("scheduleBuilds", t, func() {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
+		store := tsmon.Store(ctx)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -6532,10 +6539,10 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				CustomMetrics: []*pb.CustomMetric{
 					{
-						Name:   "chrome/infra/custom/builds/started",
+						Name:   "chrome/infra/custom/builds/created",
 						Fields: []string{"os"},
 						Class: &pb.CustomMetric_MetricBase{
-							MetricBase: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
+							MetricBase: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
 						},
 					},
 					{
@@ -6547,10 +6554,14 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
+			ctx, _ = metrics.WithCustomMetrics(ctx, globalCfg)
 			cm1 := &pb.BuilderConfig_CustomBuildMetric{
-				Name:       "chrome/infra/custom/builds/started",
+				Name:       "chrome/infra/custom/builds/created",
 				Predicates: []string{`build.tags.get_value("os")!=""`},
-				Fields:     map[string]string{"os": `build.tags.get_value("os")`},
+				Fields: map[string]string{
+					// "experiments": `build.input.experiments.to_string()`,
+					"os": `build.tags.get_value("os")`,
+				},
 			}
 			cm2 := &pb.BuilderConfig_CustomBuildMetric{
 				Name:       "chrome/infra/custom/builds/completed",
@@ -6579,6 +6590,10 @@ func TestScheduleBuild(t *testing.T) {
 						{
 							Key:   "buildset",
 							Value: "buildset",
+						},
+						{
+							Key:   "os",
+							Value: "Linux",
 						},
 					},
 				},
@@ -6614,10 +6629,18 @@ func TestScheduleBuild(t *testing.T) {
 			bld := &model.Build{ID: 9021868963221667745}
 			So(datastore.Get(ctx, bld), ShouldBeNil)
 			So(len(bld.CustomMetrics), ShouldEqual, 2)
-			So(bld.CustomMetrics[0].Base, ShouldEqual, pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED)
+			So(bld.CustomMetrics[0].Base, ShouldEqual, pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED)
 			So(bld.CustomMetrics[0].Metric, ShouldResembleProto, cm1)
 			So(bld.CustomMetrics[1].Base, ShouldEqual, pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED)
 			So(bld.CustomMetrics[1].Metric, ShouldResembleProto, cm2)
+
+			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), ShouldEqual, 1)
+			ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
+			So(store.Get(ctx, metrics.V2.BuildCountCreated, time.Time{}, []any{"None"}), ShouldEqual, 1)
+
+			res, err := metrics.GetCustomMetricsData(ctx, pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED, cm1.Name, time.Time{}, []any{"Linux"})
+			So(err, ShouldBeNil)
+			So(res, ShouldEqual, 1)
 		})
 
 		Convey("many", func() {

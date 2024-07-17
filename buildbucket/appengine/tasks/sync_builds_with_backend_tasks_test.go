@@ -231,6 +231,7 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 	ctx = memory.UseWithAppID(ctx, "dev~app-id")
 	ctx = txndefer.FilterRDS(ctx)
 	ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+	ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 
@@ -380,6 +381,7 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 	ctx = memory.UseWithAppID(ctx, "dev~app-id")
 	ctx = txndefer.FilterRDS(ctx)
 	ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+	ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 

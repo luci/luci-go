@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/types"
 
+	"go.chromium.org/luci/buildbucket/appengine/common/buildcel"
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbmetrics "go.chromium.org/luci/buildbucket/metrics"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -35,6 +37,12 @@ import (
 var cmKey = "custom_metrics"
 
 var currentCustomMetrics stringset.Set
+
+// lock for currentCustomMetrics.
+// This lock is mainly for tests. In production, we expect no concurrent read/write
+// on currentCustomMetrics, since we use it once when server starts up then
+// subsequently during Flushes which are backendground jobs.
+var currentCMsLock sync.RWMutex
 
 // CustomMetric is an interface to report custom metrics.
 type CustomMetric interface {
@@ -136,30 +144,45 @@ type Report struct {
 	Value    any
 }
 
-// Report tries to report a metric. If it couldn't do the report directly (e.g.
-// a metric state recreation is happening), it will save the report to a buffer.
+func (cms *CustomMetrics) getCustomMetricsByBases(bases map[pb.CustomBuildMetricBase]any) map[pb.CustomBuildMetricBase]map[string]CustomMetric {
+	res := make(map[pb.CustomBuildMetricBase]map[string]CustomMetric, len(bases))
+	cms.m.RLock()
+	defer cms.m.RUnlock()
+	for b := range bases {
+		res[b] = cms.metrics[b]
+	}
+	return res
+}
+
+// Report tries to report one or more metric. If it couldn't do the report
+// directly (e.g. a metric state recreation is happening), it will save the
+// reports to a buffer.
 // Returns a bool to indicate if it's a direct report or not (mostly for testing).
-func (cms *CustomMetrics) Report(ctx context.Context, r *Report) bool {
+func (cms *CustomMetrics) Report(ctx context.Context, rs ...*Report) bool {
 	cms.m.RLock()
 	defer cms.m.RUnlock()
 
 	if cms.state != nil {
-		cm := cms.metrics[r.Base][r.Name]
-		if cm == nil {
-			return false
+		for _, r := range rs {
+			cm := cms.metrics[r.Base][r.Name]
+			if cm == nil {
+				return false
+			}
+			fields := convertFields(cm.getFields(), r.FieldMap)
+			ctx = tsmon.WithState(ctx, cms.state)
+			cm.report(ctx, r.Value, fields)
 		}
-		fields := convertFields(cm.getFields(), r.FieldMap)
-		ctx = tsmon.WithState(ctx, cms.state)
-		cm.report(ctx, r.Value, fields)
 		return true
 	}
 
 	// Updating metrics. Save the report in buffer for now.
-	select {
-	case cms.buf <- r:
-	default:
-		// This can happen only if Flush is stuck for too long for some reason.
-		logging.Errorf(ctx, "Custom metric buffer is full, dropping the report")
+	for _, r := range rs {
+		select {
+		case cms.buf <- r:
+		default:
+			// This can happen only if Flush is stuck for too long for some reason.
+			logging.Errorf(ctx, "Custom metric buffer is full, dropping the report")
+		}
 	}
 
 	return false
@@ -252,13 +275,17 @@ func (cms *CustomMetrics) Flush(ctx context.Context, globalCfg *pb.SettingsCfg) 
 	newCms, err := newCustomMetrics(globalCfg)
 	if err == nil {
 		metrics, state = newCms.metrics, newCms.state
+		currentCMsLock.Lock()
 		currentCustomMetrics = newCmsInCfg
+		currentCMsLock.Unlock()
 	}
 	return err
 }
 
 // checkUpdates checks if there's any update for custom metrics in service config.
 func checkUpdates(new stringset.Set) bool {
+	currentCMsLock.RLock()
+	defer currentCMsLock.RUnlock()
 	return currentCustomMetrics.Difference(new).Len() != 0 || new.Difference(currentCustomMetrics).Len() != 0
 }
 
@@ -283,7 +310,9 @@ func WithCustomMetrics(ctx context.Context, globalCfg *pb.SettingsCfg) (context.
 	if err != nil {
 		return ctx, err
 	}
+	currentCMsLock.Lock()
 	currentCustomMetrics = convertCustomMetricConfig(globalCfg)
+	currentCMsLock.Unlock()
 	return withCustomMetrics(ctx, cmsInCtx), nil
 }
 
@@ -371,4 +400,115 @@ func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, 
 	default:
 		return nil, errors.Reason("invalid metric base %s", base).Err()
 	}
+}
+
+func buildCustomMetricsToReport(b *model.Build, bases map[pb.CustomBuildMetricBase]any) map[pb.CustomBuildMetricBase][]*pb.BuilderConfig_CustomBuildMetric {
+	toReport := make(map[pb.CustomBuildMetricBase][]*pb.BuilderConfig_CustomBuildMetric)
+	for _, cm := range b.CustomMetrics {
+		if _, ok := bases[cm.Base]; ok {
+			toReport[cm.Base] = append(toReport[cm.Base], cm.Metric)
+		}
+	}
+	return toReport
+}
+
+// getBuildDetails gets all fields for a build so it could be evaluated by
+// the cel expressions later.
+// TODO(b/338071541): we could also examine cel expressions to generate a
+// read mask for all needed fields, instead of getting everything.
+func getBuildDetails(ctx context.Context, b *model.Build) *pb.Build {
+	m, err := model.NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
+	if err != nil {
+		logging.Errorf(ctx, "failed to create build mask for all fields: %s", err)
+		return nil
+	}
+	build, err := b.ToProto(ctx, m, func(b *pb.Build) error { return nil })
+	if err != nil {
+		logging.Errorf(ctx, "failed to get details for build %d: %s", b.ID, err)
+		return nil
+	}
+	return build
+}
+
+// Report to custom metrics.
+func reportToCustomMetrics(ctx context.Context, build *model.Build, cmValues map[pb.CustomBuildMetricBase]any) {
+	// Get custom metrics saved with the build.
+	toReport := buildCustomMetricsToReport(build, cmValues)
+	if len(toReport) == 0 {
+		return
+	}
+
+	// Get current active custom metrics.
+	cms := getCustomMetrics(ctx)
+	metrics := cms.getCustomMetricsByBases(cmValues)
+
+	// Filter out the inactive custom metrics from the build.
+	hasCMsUpdated := false
+	toReportUpdated := make(map[pb.CustomBuildMetricBase][]*pb.BuilderConfig_CustomBuildMetric, len(toReport))
+	for b, ms := range toReport {
+		acms := metrics[b]
+		if len(acms) == 0 {
+			logging.Infof(ctx, "Skipping reporting custom metrics with base %s for build %d, likely due to changes to registered custom metrics", b, build.ID)
+			continue
+		}
+		hasCMsUpdated = true
+		toReportUpdated[b] = make([]*pb.BuilderConfig_CustomBuildMetric, 0, len(ms))
+		for _, m := range ms {
+			if _, ok := acms[m.Name]; ok {
+				toReportUpdated[b] = append(toReportUpdated[b], m)
+			}
+		}
+	}
+	if !hasCMsUpdated {
+		return
+	}
+
+	// The build has things to report, get its details.
+	bp := getBuildDetails(ctx, build)
+	if bp == nil {
+		return
+	}
+
+	var reports []*Report
+	for b, v := range cmValues {
+		mfs := getBuildCustomMetrics(ctx, bp, b, toReportUpdated[b])
+		for name, fieldMap := range mfs {
+			r := &Report{
+				Base:     b,
+				Name:     name,
+				FieldMap: fieldMap,
+				Value:    v,
+			}
+			reports = append(reports, r)
+		}
+	}
+	cms.Report(ctx, reports...)
+}
+
+// getBuildCustomMetrics returns the custom metrics with base that b should report to.
+//
+// It returns a map of strings with the keys being the custom metric names, and
+// values being each metric's fields.
+func getBuildCustomMetrics(ctx context.Context, build *pb.Build, base pb.CustomBuildMetricBase, toReport []*pb.BuilderConfig_CustomBuildMetric) map[string]map[string]string {
+	res := make(map[string]map[string]string)
+	for _, cmp := range toReport {
+		// Check if b fulfills the predicates.
+		matched, err := buildcel.BoolEval(build, cmp.Predicates)
+		if err != nil {
+			logging.Errorf(ctx, "failed to evaluate build %d with predicates: %s", build.Id, err)
+			continue
+		}
+		if !matched {
+			continue
+		}
+
+		// Get metric fields.
+		fieldMap, err := buildcel.StringMapEval(build, cmp.Fields)
+		if err != nil {
+			logging.Errorf(ctx, "failed to evaluate build %d with fields: %s", build.Id, err)
+			continue
+		}
+		res[cmp.Name] = fieldMap
+	}
+	return res
 }

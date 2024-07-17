@@ -43,6 +43,7 @@ func TestCheckLiveness(t *testing.T) {
 	Convey("CheckLiveness", t, func() {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, sch := tq.TestingContext(ctx, nil)

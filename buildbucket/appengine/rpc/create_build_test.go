@@ -769,6 +769,7 @@ func TestCreateBuild(t *testing.T) {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)

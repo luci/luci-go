@@ -393,6 +393,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 		ctx, sch := tq.TestingContext(memory.Use(context.Background()), nil)
 		ctx = txndefer.FilterRDS(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
 
 		t0 := testclock.TestRecentTimeUTC
 
