@@ -1,0 +1,16 @@
+
+{
+  "ancestorTitles": ["test suite", "child test suite"],
+  "duration": 1095,
+  "failureDetails": [],
+  "failureMessages": [
+    "Error: \\x1B[2mexpect(\\x1B[22m\\x1B[31mreceived\\x1B[39m\\x1B[2m).\\x1B[22mnot\\x1B[2m.\\x1B[22mtoBeTruthy\\x1B[2m()\\x1B[22m\n\nReceived: \\x1B[31mtrue\\x1B[39m\n    at Object.<anonymous> (/path/to/repo/path/to/directory/path/to/test/file.test.ts:30:24)\n    at Promise.then.completed (/path/to/repo/path/to/directory/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/path/to/repo/path/to/directory/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:316:40)\n    at async _runTest (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:252:3)\n    at async _runTestsForDescribeBlock (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:126:9)\n    at async _runTestsForDescribeBlock (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:121:9)\n    at async _runTestsForDescribeBlock (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:121:9)\n    at async run (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:71:3)\n    at async runAndTransformResultsToJestFormat (/path/to/repo/path/to/directory/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at async jestAdapter (/path/to/repo/path/to/directory/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:74:19)\n    at async runTestInternal (/path/to/repo/path/to/directory/node_modules/jest-runner/build/runTest.js:281:16)\n    at async runTest (/path/to/repo/path/to/directory/node_modules/jest-runner/build/runTest.js:341:7)"
+  ],
+  "fullName": "test suite child test suite test title",
+  "invocations": 1,
+  "location": null,
+  "numPassingAsserts": 1,
+  "retryReasons": [],
+  "status": "failed",
+  "title": "test title"
+}

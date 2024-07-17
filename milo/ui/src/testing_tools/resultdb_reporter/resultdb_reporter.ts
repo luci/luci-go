@@ -128,9 +128,8 @@ export class ResultDBReporter implements Reporter {
 
   async onTestCaseResult(test: Test, testCaseResult: TestCaseResult) {
     const req = ReportTestResultsRequest.fromPartial({
-      testResults: [toSinkResult(test, testCaseResult, this.ctx)],
+      testResults: [await toSinkResult(test, testCaseResult, this.ctx)],
     });
-
     await this.resultSink?.ReportTestResults(req);
   }
 }

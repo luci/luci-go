@@ -17,6 +17,7 @@ import * as path from 'node:path';
 import { Test, TestCaseResult } from '@jest/reporters';
 import ANSIConverter from 'ansi-to-html';
 import chalk from 'chalk';
+import { minify, Options } from 'html-minifier-terser';
 import {
   StackTraceOptions,
   formatStackTrace,
@@ -53,6 +54,31 @@ const ansiConverter = new ANSIConverter({
   newline: true,
 });
 
+/**
+ * The maximum message length.
+ *
+ * Pick a number such that the generated HTML after the stack trace is added
+ * will not exceed the `TestResult.summary_html`'s size limit (4096 bytes as of
+ * 2024-07-17).
+ */
+const MAX_MESSAGE_LENGTH = 1024;
+
+const MINIFY_OPTIONS = Object.freeze<Options>({
+  collapseBooleanAttributes: true,
+  collapseWhitespace: true,
+  conservativeCollapse: true,
+  preserveLineBreaks: true,
+  minifyCSS: true,
+  minifyURLs: true,
+  removeComments: true,
+  removeEmptyAttributes: true,
+  removeEmptyElements: true,
+  removeOptionalTags: true,
+  removeRedundantAttributes: true,
+  removeStyleLinkTypeAttributes: true,
+  useShortDoctype: true,
+});
+
 export interface ToSinkResultContext {
   readonly repo: string;
   readonly directory: string;
@@ -65,11 +91,11 @@ export interface ToSinkResultContext {
 /**
  * Converts a Jest test result to a Result Sink test result.
  */
-export function toSinkResult(
+export async function toSinkResult(
   test: Test,
   testCaseResult: TestCaseResult,
   ctx: ToSinkResultContext,
-): TestResult {
+): Promise<TestResult> {
   const testName = [
     ...testCaseResult.ancestorTitles,
     testCaseResult.title,
@@ -79,26 +105,49 @@ export function toSinkResult(
     test.path.slice(test.context.config.rootDir.length + 1),
   );
   const testId = ctx.repo + ctx.delimiter + repoPath + ctx.delimiter + testName;
+  const summaryHtml = testCaseResult.failureMessages
+    .map((msg) => {
+      const msgAndStack = separateMessageFromStack(msg);
+      let message = indentAllLines(msgAndStack.message);
+
+      // Truncate the message if it's too long.
+      if (message.length > MAX_MESSAGE_LENGTH) {
+        message = message.slice(0, MAX_MESSAGE_LENGTH);
+        const lastEscapeIndex = message.lastIndexOf('\u001B');
+        // Truncate to the nearest escape sequence if possible.
+        // This is to prevent partial inclusion of ANSI codes.
+        if (lastEscapeIndex > 0) {
+          message = message.slice(0, lastEscapeIndex);
+        }
+        message += '\n    \u001B[39;103m... [message truncated]';
+      }
+
+      const stack = chalk.dim(
+        formatStackTrace(
+          msgAndStack.stack,
+          test.context.config,
+          ctx.stackTraceOpts,
+          test.path,
+        ),
+      );
+
+      // Convert each line individually to prevent `ansi-to-html`'s excessive
+      // `<span>` wrapping.
+      const lines = [...message.split('\n'), ...stack.split('\n')]
+        .map((line) => ansiConverter.toHtml(line))
+        .join('\n');
+      return `<pre>${lines}</pre>`;
+    })
+    .join('\n');
 
   return TestResult.fromPartial({
     testId: testId,
     expected: STATUS_EXPECTANCY_MAP[testCaseResult.status],
     status: STATUS_MAP[testCaseResult.status],
-    summaryHtml: testCaseResult.failureMessages
-      .map((msg) => {
-        const msgAndStack = separateMessageFromStack(msg);
-        const message = indentAllLines(msgAndStack.message);
-        const stack = chalk.dim(
-          formatStackTrace(
-            msgAndStack.stack,
-            test.context.config,
-            ctx.stackTraceOpts,
-            test.path,
-          ),
-        );
-        return `<pre>${ansiConverter.toHtml(`${message}\n${stack}`)}</pre>`;
-      })
-      .join('\n'),
+    // Minify the HTML. This helps but not by a lot. If we want better
+    // minification, we need to make the ANSI to HTML converter generate simpler
+    // HTML.
+    summaryHtml: await minify(summaryHtml, MINIFY_OPTIONS),
     duration:
       typeof testCaseResult.duration === 'number'
         ? {

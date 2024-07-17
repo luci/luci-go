@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TestContext } from '@jest/reporters';
+import { TestCaseResult, TestContext } from '@jest/reporters';
 
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/sink/proto/v1/test_result.pb';
@@ -20,8 +20,8 @@ import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/sink/proto/v1/
 import { toSinkResult } from './convert';
 
 describe('toSinkResult', () => {
-  it('compute basic properties correctly', () => {
-    const result = toSinkResult(
+  it('compute basic properties correctly', async () => {
+    const result = await toSinkResult(
       {
         context: {
           config: {
@@ -31,19 +31,7 @@ describe('toSinkResult', () => {
         } as TestContext,
         path: '/path/to/repo/path/to/directory/path/to/test/file.test.ts',
       },
-      {
-        ancestorTitles: ['test suite', 'child test suite'],
-        duration: 1095,
-        failureDetails: [],
-        failureMessages: [],
-        fullName: 'test suite child test suite test title',
-        invocations: 1,
-        location: null,
-        numPassingAsserts: 1,
-        retryReasons: [],
-        status: 'passed',
-        title: 'test title',
-      },
+      (await import('./test_data/basic_properties.json')) as TestCaseResult,
       {
         repo: 'example.googlesource.com/repo',
         directory: 'path/to/directory',
@@ -70,8 +58,8 @@ describe('toSinkResult', () => {
     );
   });
 
-  it('should clean up stack trace', () => {
-    const result = toSinkResult(
+  it('should clean up stack trace', async () => {
+    const result = await toSinkResult(
       {
         context: {
           config: {
@@ -81,39 +69,7 @@ describe('toSinkResult', () => {
         } as TestContext,
         path: '/path/to/repo/path/to/directory/path/to/test/file.test.ts',
       },
-      {
-        ancestorTitles: ['test suite', 'child test suite'],
-        duration: 1095,
-        failureDetails: [],
-        failureMessages: [
-          'Error: \x1B[2mexpect(\x1B[22m\x1B[31mreceived\x1B[39m\x1B[2m).\x1B[22mnot\x1B[2m.\x1B[22mtoBeTruthy\x1B[2m()\x1B[22m\n' +
-            '\n' +
-            'Received: \x1B[31mtrue\x1B[39m\n' +
-            '    at Object.<anonymous> (/path/to/repo/path/to/directory/path/to/test/file.test.ts:30:24)\n' +
-            '    at Promise.then.completed (/path/to/repo/path/to/directory/node_modules/jest-circus/build/utils.js:298:28)\n' +
-            '    at new Promise (<anonymous>)\n' +
-            '    at callAsyncCircusFn (/path/to/repo/path/to/directory/node_modules/jest-circus/build/utils.js:231:10)\n' +
-            '    at _callCircusTest (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:316:40)\n' +
-            '    at async _runTest (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:252:3)\n' +
-            '    at async _runTestsForDescribeBlock (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:126:9)\n' +
-            '    at async _runTestsForDescribeBlock (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:121:9)\n' +
-            '    at async _runTestsForDescribeBlock (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:121:9)\n' +
-            '    at async run (/path/to/repo/path/to/directory/node_modules/jest-circus/build/run.js:71:3)\n' +
-            // eslint-disable-next-line max-len
-            '    at async runAndTransformResultsToJestFormat (/path/to/repo/path/to/directory/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n' +
-            // eslint-disable-next-line max-len
-            '    at async jestAdapter (/path/to/repo/path/to/directory/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:74:19)\n' +
-            '    at async runTestInternal (/path/to/repo/path/to/directory/node_modules/jest-runner/build/runTest.js:281:16)\n' +
-            '    at async runTest (/path/to/repo/path/to/directory/node_modules/jest-runner/build/runTest.js:341:7)',
-        ],
-        fullName: 'test suite child test suite test title',
-        invocations: 1,
-        location: null,
-        numPassingAsserts: 1,
-        retryReasons: [],
-        status: 'failed',
-        title: 'test title',
-      },
+      (await import('./test_data/stack_trace.json')) as TestCaseResult,
       {
         repo: 'example.googlesource.com/repo',
         directory: 'path/to/directory',
@@ -141,5 +97,51 @@ describe('toSinkResult', () => {
     );
     expect(result.summaryHtml).not.toContain('/path/to/repo');
     expect(result.summaryHtml).not.toContain('/node_modules/');
+  });
+
+  it('should truncate very long message', async () => {
+    const result = await toSinkResult(
+      {
+        context: {
+          config: {
+            rootDir:
+              '/usr/local/company/home/a_user/Workspace/infra_superproject/infra/go/src/go.chromium.org/luci/milo/ui',
+            testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/*.test.[jt]s?(x)'],
+          } as TestContext['config'],
+        } as TestContext,
+        // eslint-disable-next-line max-len
+        path: '/usr/local/company/home/a_user/Workspace/infra_superproject/infra/go/src/go.chromium.org/luci/milo/ui/src/build/components/builder_table/builder_table.test.tsx',
+      },
+      (await import('./test_data/long_message.json')) as TestCaseResult,
+      {
+        repo: 'example.googlesource.com/repo',
+        directory: 'milo/ui',
+        delimiter: ' > ',
+        stackTraceOpts: {
+          noStackTrace: false,
+        },
+      },
+    );
+    expect(result).toEqual(
+      TestResult.fromPartial({
+        testId:
+          // eslint-disable-next-line max-len
+          'example.googlesource.com/repo > milo/ui/src/build/components/builder_table/builder_table.test.tsx > <BuilderTable /> > should batch calls together',
+        expected: false,
+        status: TestStatus.FAIL,
+        summaryHtml: result.summaryHtml,
+        duration: {
+          seconds: '0',
+          nanos: 262000000,
+        },
+        testMetadata: {
+          name: '<BuilderTable /> > should batch calls together',
+        },
+        artifacts: result.artifacts,
+      }),
+    );
+    expect(result.summaryHtml).toContain('... [message truncated]');
+    const summaryBlob = new Blob([result.summaryHtml]);
+    expect(summaryBlob.size).toBeLessThanOrEqual(4096);
   });
 });

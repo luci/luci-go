@@ -1,0 +1,13 @@
+{
+  "ancestorTitles": ["test suite", "child test suite"],
+  "duration": 1095,
+  "failureDetails": [],
+  "failureMessages": [],
+  "fullName": "test suite child test suite test title",
+  "invocations": 1,
+  "location": null,
+  "numPassingAsserts": 1,
+  "retryReasons": [],
+  "status": "passed",
+  "title": "test title"
+}
