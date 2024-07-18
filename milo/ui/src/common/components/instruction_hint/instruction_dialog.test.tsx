@@ -80,7 +80,7 @@ describe('<InstructionDialog />', () => {
           instructionName="invocations/inv/instructions/ins"
           title="Instruction title"
           open={true}
-          placeholderData={{ test: { id: 'my test' } }}
+          placeholderData={{ test: { id: 'my test/123' } }}
         />
       </FakeContextProvider>,
     );
@@ -89,7 +89,7 @@ describe('<InstructionDialog />', () => {
     expect(screen.getByText('Instruction title')).toBeInTheDocument();
     expect(screen.getByText('Local')).toBeInTheDocument();
     expect(screen.getByText('Remote')).toBeInTheDocument();
-    expect(screen.getByText('test id = my test')).toHaveStyle(
+    expect(screen.getByText('test id = my test/123')).toHaveStyle(
       'font-weight: bold',
     );
     expect(

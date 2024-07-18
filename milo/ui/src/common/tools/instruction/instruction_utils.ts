@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import Mustache from 'mustache';
+import { RenderOptions } from 'mustache';
 
 import { StringPair } from '@/common/services/common';
 import { logging } from '@/common/tools/logging';
@@ -68,11 +69,21 @@ export function renderMustacheMarkdown(
   if (content === undefined) {
     return '';
   }
+  // Mustache.render replaces placeholder with empty string '' if
+  // the value is not found. But we handle the error just in case
+  // so a bad template does not break the whole page.
   try {
-    // Mustache.render replaces placeholder with empty string ''
-    // if the value is not found. But we handle the error just in case
-    // so a bad template does not break the whole page.
-    const markDownContent = Mustache.render(content, placeholderData);
+    // This is logic-less markdown. We don't want to escape value
+    // inside placeholders, leave them as-is. The HTML will be
+    // sanitized before rendering.
+    const customEscape = (value: string) => value;
+    const options: RenderOptions = { escape: customEscape };
+    const markDownContent = Mustache.render(
+      content,
+      placeholderData,
+      undefined,
+      options,
+    );
     return renderMarkdown(markDownContent || '');
   } catch (error) {
     logging.warn('error rendering markdown', error);
