@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
-	"go.chromium.org/luci/resultdb/internal/checkpoints"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -166,7 +165,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 				insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 			)...)
 
-			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject", 5*1024*1024*1024, map[string]bool{})
+			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject", 5*1024*1024*1024)
 			So(err, ShouldBeNil)
 			So(len(artifacts), ShouldEqual, 2)
 			So(artifacts, ShouldResemble, []*Artifact{
@@ -206,14 +205,14 @@ func TestQueryTextArtifacts(t *testing.T) {
 				insert.Artifact("inv1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "5000000", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "tr/testid/0", "a2", map[string]any{"ContentType": "image/png", "Size": "100", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "", "a3", map[string]any{"Size": "100"}),
-				insert.Artifact("inv1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "60000000", "RBECASHash": "deadbeef"}),
+				insert.Artifact("inv1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "6000000", "RBECASHash": "deadbeef"}),
 			)
 
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 			)...)
 
-			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "chromeos", 5*1024*1024*1024, map[string]bool{})
+			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "chromeos", 5*1024*1024*1024)
 			So(err, ShouldBeNil)
 			So(len(artifacts), ShouldEqual, 2)
 			So(artifacts, ShouldResemble, []*Artifact{
@@ -259,34 +258,9 @@ func TestQueryTextArtifacts(t *testing.T) {
 				insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 			)...)
 
-			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "test project", 10_000_000, map[string]bool{})
+			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "test project", 10000000)
 			So(err, ShouldBeNil)
 			So(len(artifacts), ShouldEqual, 0)
-		})
-
-		Convey("With checkpoint", func() {
-			testutil.MustApply(ctx,
-				insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
-				insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
-				insert.Artifact("inv1", "", "a1", map[string]any{"ContentType": "text/html", "Size": "100", "RBECASHash": "deadbeef"}),
-			)
-
-			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject", 5*1024*1024*1024, map[string]bool{"//a1": true})
-			So(err, ShouldBeNil)
-			So(len(artifacts), ShouldEqual, 1)
-			So(artifacts, ShouldResemble, []*Artifact{
-				{
-					InvocationID: "inv1",
-					TestID:       "",
-					ResultID:     "",
-					ArtifactID:   "a0",
-					ContentType:  "text/plain; encoding=utf-8",
-					Size:         100,
-					RBECASHash:   "deadbeef",
-					TestStatus:   pb.TestStatus_STATUS_UNSPECIFIED,
-				},
-			})
-			So(artifactContentCounter.Get(ctx, "testproject", "text"), ShouldEqual, 1)
 		})
 	})
 }
@@ -322,7 +296,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 			},
 			casClient: casClient,
 		}
-		rowC := make(chan *Row, 10)
+		rowC := make(chan *bqpb.TextArtifactRow, 10)
 		artifacts := []*Artifact{
 			{
 				InvocationID: "inv1",
@@ -407,7 +381,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 			ae.casClient = &fakeCASClient{
 				Err: errors.New("batch failed"),
 			}
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 1000, map[string]bool{})
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 1000)
 			So(err, ShouldErrLike, "batch failed")
 		})
 
@@ -415,7 +389,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 			ae.casClient = &fakeCASClient{
 				Err: grpcstatus.New(codes.InvalidArgument, "invalid argument").Err(),
 			}
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300, map[string]bool{})
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300)
 			So(err, ShouldBeNil)
 		})
 
@@ -423,7 +397,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 			ae.casClient = &fakeCASClient{
 				Err: grpcstatus.New(codes.ResourceExhausted, "resource exhausted").Err(),
 			}
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300, map[string]bool{})
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300)
 			So(err, ShouldBeNil)
 		})
 
@@ -431,106 +405,93 @@ func TestDownloadArtifactContent(t *testing.T) {
 			ae.bytestreamClient = &fakeByteStreamClient{
 				Err: errors.New("stream failed"),
 			}
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100, map[string]bool{})
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100)
 			So(err, ShouldErrLike, "stream failed")
 		})
 
 		Convey("Succeed", func() {
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 300, 300, map[string]bool{})
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 300, 300)
 			So(err, ShouldBeNil)
 			close(rowC)
-			rows := []*Row{}
+			rows := []*bqpb.TextArtifactRow{}
 			for r := range rowC {
 				rows = append(rows, r)
 			}
 			// Sort the rows for deterministism.
 			sort.Slice(rows, func(i, j int) bool {
-				return (rows[i].content.ArtifactId < rows[j].content.ArtifactId ||
-					(rows[i].content.ArtifactId == rows[j].content.ArtifactId && rows[i].content.ShardId < rows[j].content.ShardId))
+				return (rows[i].ArtifactId < rows[j].ArtifactId)
 			})
-			So(rows, ShouldResembleProto, []*Row{
+			So(rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
 				{
-					content: &bqpb.TextArtifactRow{
-						Project:                    "chromium",
-						Realm:                      "ci",
-						InvocationId:               "inv1",
-						TestId:                     "",
-						ResultId:                   "",
-						ArtifactId:                 "a0",
-						ShardId:                    0,
-						ContentType:                "text/plain; encoding=utf-8",
-						Content:                    "abc",
-						ArtifactContentSize:        int32(3),
-						ShardContentSize:           int32(3),
-						PartitionTime:              timestamppb.New(time.Unix(10000, 0).UTC()),
-						TestStatus:                 "",
-						TestVariant:                "{}",
-						InvocationVariantUnion:     `{"os":"linux","runner":"test"}`,
-						InvocationVariantUnionHash: "a07aa2ca8acbfc88",
-					},
-					isLastShard: true,
+					Project:                    "chromium",
+					Realm:                      "ci",
+					InvocationId:               "inv1",
+					TestId:                     "",
+					ResultId:                   "",
+					ArtifactId:                 "a0",
+					ShardId:                    0,
+					ContentType:                "text/plain; encoding=utf-8",
+					Content:                    "abc",
+					ArtifactContentSize:        int32(3),
+					ShardContentSize:           int32(3),
+					PartitionTime:              timestamppb.New(time.Unix(10000, 0).UTC()),
+					TestStatus:                 "",
+					TestVariant:                "{}",
+					InvocationVariantUnion:     `{"os":"linux","runner":"test"}`,
+					InvocationVariantUnionHash: "a07aa2ca8acbfc88",
 				},
 				{
-					content: &bqpb.TextArtifactRow{
-						Project:                "chromium",
-						Realm:                  "ci",
-						InvocationId:           "inv1",
-						TestId:                 "testid",
-						ResultId:               "0",
-						ArtifactId:             "a2",
-						ShardId:                0,
-						ContentType:            "text/html",
-						Content:                strings.Repeat("€", 100),
-						ArtifactContentSize:    int32(450),
-						ShardContentSize:       int32(300),
-						PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
-						TestStatus:             "FAIL",
-						TestVariant:            `{"os":"linux"}`,
-						TestVariantHash:        "f334f047f88eb721",
-						InvocationVariantUnion: "{}",
-					},
-					isLastShard: false,
+					Project:                "chromium",
+					Realm:                  "ci",
+					InvocationId:           "inv1",
+					TestId:                 "testid",
+					ResultId:               "0",
+					ArtifactId:             "a2",
+					ShardId:                0,
+					ContentType:            "text/html",
+					Content:                strings.Repeat("€", 100),
+					ArtifactContentSize:    int32(450),
+					ShardContentSize:       int32(300),
+					PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
+					TestStatus:             "FAIL",
+					TestVariant:            `{"os":"linux"}`,
+					TestVariantHash:        "f334f047f88eb721",
+					InvocationVariantUnion: "{}",
 				},
 				{
-					content: &bqpb.TextArtifactRow{
-						Project:                "chromium",
-						Realm:                  "ci",
-						InvocationId:           "inv1",
-						TestId:                 "testid",
-						ResultId:               "0",
-						ArtifactId:             "a2",
-						ShardId:                1,
-						ContentType:            "text/html",
-						Content:                strings.Repeat("€", 50),
-						ArtifactContentSize:    int32(450),
-						ShardContentSize:       int32(150),
-						PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
-						TestStatus:             "FAIL",
-						TestVariant:            `{"os":"linux"}`,
-						TestVariantHash:        "f334f047f88eb721",
-						InvocationVariantUnion: "{}",
-					},
-					isLastShard: true,
+					Project:                "chromium",
+					Realm:                  "ci",
+					InvocationId:           "inv1",
+					TestId:                 "testid",
+					ResultId:               "0",
+					ArtifactId:             "a2",
+					ShardId:                1,
+					ContentType:            "text/html",
+					Content:                strings.Repeat("€", 50),
+					ArtifactContentSize:    int32(450),
+					ShardContentSize:       int32(150),
+					PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
+					TestStatus:             "FAIL",
+					TestVariant:            `{"os":"linux"}`,
+					TestVariantHash:        "f334f047f88eb721",
+					InvocationVariantUnion: "{}",
 				},
 				{
-					content: &bqpb.TextArtifactRow{
-						Project:                "chromium",
-						Realm:                  "ci",
-						InvocationId:           "inv1",
-						TestId:                 "testid",
-						ResultId:               "0",
-						ArtifactId:             "a4",
-						ShardId:                0,
-						ContentType:            "text/html",
-						Content:                strings.Repeat("a", 99),
-						ArtifactContentSize:    int32(97),
-						ShardContentSize:       int32(97),
-						PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
-						TestStatus:             "FAIL",
-						TestVariant:            "{}",
-						InvocationVariantUnion: "{}",
-					},
-					isLastShard: true,
+					Project:                "chromium",
+					Realm:                  "ci",
+					InvocationId:           "inv1",
+					TestId:                 "testid",
+					ResultId:               "0",
+					ArtifactId:             "a4",
+					ShardId:                0,
+					ContentType:            "text/html",
+					Content:                strings.Repeat("a", 99),
+					ArtifactContentSize:    int32(97),
+					ShardContentSize:       int32(97),
+					PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
+					TestStatus:             "FAIL",
+					TestVariant:            "{}",
+					InvocationVariantUnion: "{}",
 				},
 			})
 			// Make sure we do the chunking properly.
@@ -559,7 +520,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 					TestStatus:   pb.TestStatus_PASS,
 				},
 			}
-			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300, map[string]bool{})
+			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300)
 			So(err, ShouldErrLike, "downloading artifact")
 			close(rowC)
 		})
@@ -572,13 +533,9 @@ func TestExportArtifacts(t *testing.T) {
 		ctx = memory.Use(ctx)
 		bqClient := &fakeBQClient{}
 		ae := artifactExporter{
-			bytestreamClient: &fakeByteStreamClient{
-				ResponseData: map[string][]byte{
-					resourceName("hash4", 15000000): []byte(strings.Repeat("a", 15000000)),
-				},
-			},
-			bqExportClient: bqClient,
-			casClient:      &fakeCASClient{},
+			bytestreamClient: &fakeByteStreamClient{},
+			bqExportClient:   bqClient,
+			casClient:        &fakeCASClient{},
 		}
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
@@ -608,12 +565,6 @@ func TestExportArtifacts(t *testing.T) {
 			insert.Artifact("inv-1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "4", "RBECASHash": "deadbeef"}),
 			insert.Artifact("inv-1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "4", "RBECASHash": "deadbeef"}),
 			insert.Artifact("inv-1", "tr/testid/0", "a2", map[string]any{"ContentType": "image/png", "Size": "100", "RBECASHash": "deadbeef"}),
-			// a3 should not be exported again since it has checkpoint.
-			insert.Artifact("inv-1", "tr/testid/0", "a3", map[string]any{"ContentType": "text/html", "Size": "4", "RBECASHash": "deadbeef"}),
-			insert.Artifact("inv-1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "15000000", "RBECASHash": "hash4"}),
-			insert.Checkpoint(ctx, "testproject", "inv-1", CheckpointProcessID, "testid/0/a3"),
-			// Only part of the a4 should be exported.
-			insert.Checkpoint(ctx, "testproject", "inv-1", CheckpointProcessID, "testid/0/a4/0"),
 		)
 
 		testutil.MustApply(ctx, testutil.CombineMutations(
@@ -631,7 +582,7 @@ func TestExportArtifacts(t *testing.T) {
 			}
 			err = ae.exportArtifacts(ctx, "inv-1")
 			So(err, ShouldErrLike, "bq error")
-			So(artifactExportCounter.Get(ctx, "testproject", "failure_bq"), ShouldEqual, 3)
+			So(artifactExportCounter.Get(ctx, "testproject", "failure_bq"), ShouldEqual, 2)
 		})
 
 		Convey("Succeed", func() {
@@ -684,38 +635,8 @@ func TestExportArtifacts(t *testing.T) {
 					InvocationVariantUnion:     "{}",
 					InvocationVariantUnionHash: "",
 				},
-				{
-					Project:                    "testproject",
-					Realm:                      "testrealm",
-					InvocationId:               "inv-1",
-					TestId:                     "testid",
-					ResultId:                   "0",
-					ArtifactId:                 "a4",
-					ShardId:                    1,
-					ContentType:                "text/html",
-					Content:                    strings.Repeat("a", 5573056),
-					ArtifactContentSize:        15000000,
-					TestStatus:                 "PASS",
-					ShardContentSize:           5573056,
-					PartitionTime:              timestamppb.New(commitTime),
-					TestVariant:                `{"os":"linux"}`,
-					TestVariantHash:            "f334f047f88eb721",
-					InvocationVariantUnion:     "{}",
-					InvocationVariantUnionHash: "",
-				},
 			})
-			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 3)
-
-			// Check that new checkpoints are created.
-			uqs, err := checkpoints.ReadAllUniquifiers(span.Single(ctx), "testproject", "inv-1", CheckpointProcessID)
-			So(err, ShouldBeNil)
-			So(uqs, ShouldResemble, map[string]bool{
-				"//a0":          true,
-				"testid/0/a1":   true,
-				"testid/0/a3":   true,
-				"testid/0/a4/0": true,
-				"testid/0/a4":   true,
-			})
+			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 2)
 		})
 	})
 }
@@ -731,7 +652,7 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 			bqExportClient:   bqClient,
 		}
 
-		rowC := make(chan *Row, 10)
+		rowC := make(chan *bqpb.TextArtifactRow, 10)
 		rows := []*bqpb.TextArtifactRow{}
 		// Insert 3 artifacts, each of size ~4MB to rowC.
 		// With the batch size of ~10MB, we will need 2 batches.
@@ -743,7 +664,7 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 				TestId:              "test",
 				ResultId:            "result",
 				ArtifactId:          fmt.Sprintf("artifact%d", i),
-				ShardId:             0,
+				ShardId:             int32(i),
 				ContentType:         "text/plain",
 				ArtifactContentSize: 4 * 1024 * 1024,
 				Content:             strings.Repeat("a", 4*1024*1024),
@@ -752,10 +673,7 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 				PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
 			}
 			rows = append(rows, row)
-			rowC <- &Row{
-				content:     row,
-				isLastShard: i == 0,
-			}
+			rowC <- row
 		}
 
 		close(rowC)
@@ -774,14 +692,6 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 			})
 		})
 		So(artifactExportCounter.Get(ctx, "project", "success"), ShouldEqual, 3)
-		// Check that new checkpoints are created.
-		uqs, err := checkpoints.ReadAllUniquifiers(span.Single(ctx), "project", "inv", CheckpointProcessID)
-		So(err, ShouldBeNil)
-		So(uqs, ShouldResemble, map[string]bool{
-			"test/result/artifact0":   true,
-			"test/result/artifact1/0": true,
-			"test/result/artifact2/0": true,
-		})
 	})
 }
 
