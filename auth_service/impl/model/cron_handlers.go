@@ -471,8 +471,12 @@ func processRealmsConfigChanges(
 	if batchSize < 1 {
 		batchSize = 1
 	}
-	for i := 0; i < reevaluations; i = i + batchSize {
-		revs := toReevaluate[i : i+batchSize]
+	for i := 0; i < reevaluations; i += batchSize {
+		j := i + batchSize
+		if j > reevaluations {
+			j = reevaluations
+		}
+		revs := toReevaluate[i:j]
 		comment := fmt.Sprintf("%s - generating realms with permissions rev %s",
 			historicalComment, permissionsDB.Rev)
 		jobs = append(jobs, func() error {
