@@ -18,14 +18,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -97,7 +97,7 @@ func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Defini
 		// In property-only mode, we want to leave the original payload as is
 		// and just upload the recipe bundle as a brand new independent CAS
 		// archive for the job's executable to download.
-		bundlePath, err := ioutil.TempDir("", "led-recipe-bundle")
+		bundlePath, err := os.MkdirTemp("", "led-recipe-bundle")
 		if err != nil {
 			return errors.Annotate(err, "creating temporary recipe bundle directory").Err()
 		}
@@ -113,12 +113,14 @@ func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Defini
 		if err != nil {
 			return err
 		}
-		m := &jsonpb.Marshaler{OrigName: true}
-		jsonCASRef, err := m.MarshalToString(casRef)
+		m := &protojson.MarshalOptions{
+			UseProtoNames: true,
+		}
+		jsonCASRef, err := m.Marshal(casRef)
 		if err != nil {
 			return errors.Annotate(err, "encoding CAS user payload").Err()
 		}
-		extraProperties[CASRecipeBundleProperty] = jsonCASRef
+		extraProperties[CASRecipeBundleProperty] = string(jsonCASRef)
 	} else {
 		if err := EditIsolated(ctx, authOpts, jd, func(ctx context.Context, dir string) error {
 			bundlePath := dir
