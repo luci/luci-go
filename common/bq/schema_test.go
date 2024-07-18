@@ -15,9 +15,11 @@
 package bq
 
 import (
+	"fmt"
 	"testing"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -85,5 +87,116 @@ func TestAddMissingFields(t *testing.T) {
 				Type: bigquery.IntegerFieldType,
 			},
 		})
+	})
+}
+
+func TestDescription(t *testing.T) {
+	Convey("Happy path", t, func() {
+		f := &descriptorpb.FileDescriptorProto{}
+		int64t := descriptorpb.FieldDescriptorProto_TYPE_INT64
+		field := &descriptorpb.FieldDescriptorProto{
+			Type: &int64t,
+		}
+		lComment := " foo is the count of possible microstates in a thermodynamic equilibrium"
+		c := &SchemaConverter{
+			SourceCodeInfo: map[*descriptorpb.FileDescriptorProto]SourceCodeInfoMap{
+				f: map[any]*descriptorpb.SourceCodeInfo_Location{
+					field: {
+						LeadingComments: &lComment,
+					},
+				},
+			},
+		}
+		resp := c.description(f, field)
+		So(lComment, ShouldEqualTrimSpace, resp)
+	})
+
+	Convey("Happy path with Enum", t, func() {
+		pkgName := "bar"
+		typeName := "foo"
+		fullName := pkgName + "." + typeName
+		longName := "fooooooooooooooooooooooooooooooo"
+		lComment := " foo is the count of possible microstates in a thermodynamic equilibrium"
+		validStates := "\nValid values: "
+		f := &descriptorpb.FileDescriptorProto{
+			Package: &pkgName,
+			EnumType: []*descriptorpb.EnumDescriptorProto{
+				{
+					Name: &typeName,
+					Value: []*descriptorpb.EnumValueDescriptorProto{
+						{
+							Name: &longName,
+						},
+					},
+				},
+			},
+		}
+		enumt := descriptorpb.FieldDescriptorProto_TYPE_ENUM
+		field := &descriptorpb.FieldDescriptorProto{
+			Type:     &enumt,
+			TypeName: &fullName,
+		}
+		c := &SchemaConverter{
+			Desc: &descriptorpb.FileDescriptorSet{
+				File: []*descriptorpb.FileDescriptorProto{
+					f,
+				},
+			},
+			SourceCodeInfo: map[*descriptorpb.FileDescriptorProto]SourceCodeInfoMap{
+				f: map[any]*descriptorpb.SourceCodeInfo_Location{
+					field: {
+						LeadingComments: &lComment,
+					},
+				},
+			},
+		}
+		resp := c.description(f, field)
+		expect := lComment + validStates + longName + "."
+		So(expect, ShouldEqualTrimSpace, resp)
+	})
+
+	Convey("Happy path with Enum truncated", t, func() {
+		pkgName := "bar"
+		typeName := "foo"
+		fullName := pkgName + "." + typeName
+		longNames := make([]*descriptorpb.EnumValueDescriptorProto, 32)
+		for i := range 32 {
+			name := fmt.Sprintf("fooooooooooooooooooooooooooooooo%d", i)
+			longNames[i] = &descriptorpb.EnumValueDescriptorProto{
+				Name: &name,
+			}
+		}
+		lComment := " foo is the count of possible microstates in a thermodynamic equilibrium"
+		f := &descriptorpb.FileDescriptorProto{
+			Package: &pkgName,
+			EnumType: []*descriptorpb.EnumDescriptorProto{
+				{
+					Name:  &typeName,
+					Value: longNames,
+				},
+			},
+		}
+		enumt := descriptorpb.FieldDescriptorProto_TYPE_ENUM
+		field := &descriptorpb.FieldDescriptorProto{
+			Type:     &enumt,
+			TypeName: &fullName,
+		}
+		c := &SchemaConverter{
+			Desc: &descriptorpb.FileDescriptorSet{
+				File: []*descriptorpb.FileDescriptorProto{
+					f,
+				},
+			},
+			SourceCodeInfo: map[*descriptorpb.FileDescriptorProto]SourceCodeInfoMap{
+				f: map[any]*descriptorpb.SourceCodeInfo_Location{
+					field: {
+						LeadingComments: &lComment,
+					},
+				},
+			},
+		}
+		resp := c.description(f, field)
+		expect := lComment + "...(truncated)"
+		So(expect, ShouldEqualTrimSpace, resp)
 	})
 }

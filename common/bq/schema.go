@@ -155,9 +155,24 @@ func (c *SchemaConverter) field(file *descriptorpb.FileDescriptorProto, field *d
 // description returns a string description of the descriptor proto that
 // ptr points to.
 // If ptr is a field of an enum type, appends
-// "\nValid values: <comma-separated enum member names>".
+// "\nValid values: <comma-separated enum member names>" if it fits within the limit.
 func (c *SchemaConverter) description(file *descriptorpb.FileDescriptorProto, ptr any) string {
 	description := c.SourceCodeInfo[file][ptr].GetLeadingComments()
+
+	// Append valid enum values.
+	if field, ok := ptr.(*descriptorpb.FieldDescriptorProto); ok && field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+		_, obj, _ := descutil.Resolve(c.Desc, strings.TrimPrefix(field.GetTypeName(), "."))
+		if enum, ok := obj.(*descriptorpb.EnumDescriptorProto); ok {
+			names := make([]string, len(enum.Value))
+			for i, v := range enum.Value {
+				names[i] = v.GetName()
+			}
+			if description != "" {
+				description += "\n"
+			}
+			description += fmt.Sprintf("Valid values: %s.", strings.Join(names, ", "))
+		}
+	}
 
 	// Trim leading whitespace.
 	lines := strings.Split(description, "\n")
@@ -200,20 +215,6 @@ func (c *SchemaConverter) description(file *descriptorpb.FileDescriptorProto, pt
 		description += truncMsg
 	}
 
-	// Append valid enum values.
-	if field, ok := ptr.(*descriptorpb.FieldDescriptorProto); ok && field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
-		_, obj, _ := descutil.Resolve(c.Desc, strings.TrimPrefix(field.GetTypeName(), "."))
-		if enum, ok := obj.(*descriptorpb.EnumDescriptorProto); ok {
-			names := make([]string, len(enum.Value))
-			for i, v := range enum.Value {
-				names[i] = v.GetName()
-			}
-			if description != "" {
-				description += "\n"
-			}
-			description += fmt.Sprintf("Valid values: %s.", strings.Join(names, ", "))
-		}
-	}
 	return description
 }
 
