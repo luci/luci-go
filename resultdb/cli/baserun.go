@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
@@ -48,6 +49,7 @@ type baseCommandRun struct {
 	json              bool
 	forceInsecure     bool
 	fallbackHost      string
+	loggingConfig     logging.Config
 	maxConcurrentRPCs int
 
 	http        *http.Client
@@ -71,10 +73,16 @@ func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
 	// Copy the given default to the struct s.t. initClients
 	// can use it if needed.
 	r.fallbackHost = p.DefaultResultDBHost
+	r.loggingConfig.Level = logging.Info
+	r.loggingConfig.AddFlags(&r.Flags)
 }
 
 func (r *baseCommandRun) RegisterJSONFlag(usage string) {
 	r.Flags.BoolVar(&r.json, "json", false, usage)
+}
+
+func (r *baseCommandRun) ModifyContext(ctx context.Context) context.Context {
+	return r.loggingConfig.Set(ctx)
 }
 
 // initClients validates -host flag and initializes r.httpClient, r.resultdb and

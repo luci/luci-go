@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 )
 
-// Params is the parameters for the bb application.
+// Params is the parameters for the ResultDB CLI client.
 type Params struct {
 	DefaultResultDBHost string
 	Auth                auth.Options
