@@ -67,6 +67,7 @@ export function BuilderStats({ builder }: BuilderStatsProps) {
           searchBuilds: SearchBuildsRequest.fromPartial({
             predicate: {
               builder,
+              includeExperimental: true,
               status: Status.SCHEDULED,
             },
             mask: {
@@ -78,6 +79,7 @@ export function BuilderStats({ builder }: BuilderStatsProps) {
           searchBuilds: SearchBuildsRequest.fromPartial({
             predicate: {
               builder,
+              includeExperimental: true,
               status: Status.STARTED,
             },
             mask: {

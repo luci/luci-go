@@ -83,6 +83,7 @@ export function RecentBuilds({ builder }: RecentBuildsProps) {
       SearchBuildsRequest.fromPartial({
         predicate: {
           builder,
+          includeExperimental: true,
           status: Status.ENDED_MASK,
         },
         mask: {

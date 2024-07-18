@@ -129,6 +129,7 @@ describe('<BuilderTable />', () => {
                     bucket: 'bucket',
                     builder: `builder${i}`,
                   },
+                  includeExperimental: true,
                   status: Status.SCHEDULED,
                 },
                 mask: {
@@ -144,6 +145,7 @@ describe('<BuilderTable />', () => {
                     bucket: 'bucket',
                     builder: `builder${i}`,
                   },
+                  includeExperimental: true,
                   status: Status.STARTED,
                 },
                 mask: {
@@ -159,6 +161,7 @@ describe('<BuilderTable />', () => {
                     bucket: 'bucket',
                     builder: `builder${i}`,
                   },
+                  includeExperimental: true,
                   status: Status.ENDED_MASK,
                 },
                 pageSize: 10,
