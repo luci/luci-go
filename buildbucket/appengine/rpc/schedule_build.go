@@ -1510,17 +1510,17 @@ func getShadowBuckets(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map
 }
 
 func builderCustomMetrics(ctx context.Context, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) []model.CustomMetric {
-	if len(cfg.GetCustomBuildMetrics()) == 0 {
+	if len(cfg.GetCustomMetricDefinitions()) == 0 {
 		return nil
 	}
 
-	gms := make(map[string]pb.CustomBuildMetricBase, len(globalCfg.GetCustomMetrics()))
+	gms := make(map[string]pb.CustomMetricDefinitionBase, len(globalCfg.GetCustomMetrics()))
 	for _, gm := range globalCfg.GetCustomMetrics() {
 		gms[gm.Name] = gm.GetMetricBase()
 	}
 
-	cms := make([]model.CustomMetric, 0, len(cfg.CustomBuildMetrics))
-	for _, bcm := range cfg.CustomBuildMetrics {
+	cms := make([]model.CustomMetric, 0, len(cfg.CustomMetricDefinitions))
+	for _, bcm := range cfg.CustomMetricDefinitions {
 		base, ok := gms[bcm.Name]
 		if !ok {
 			// Was the metric removed from our global settings?

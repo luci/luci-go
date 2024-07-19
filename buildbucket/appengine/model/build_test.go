@@ -62,8 +62,8 @@ func TestBuild(t *testing.T) {
 		Convey("read/write", func() {
 			cms := []CustomMetric{
 				{
-					Base: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
-					Metric: &pb.BuilderConfig_CustomBuildMetric{
+					Base: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
+					Metric: &pb.CustomMetricDefinition{
 						Name:       "custom_metric_created",
 						Predicates: []string{`build.tags.get_value("os")!=""`},
 						Fields: map[string]string{
@@ -73,8 +73,8 @@ func TestBuild(t *testing.T) {
 					},
 				},
 				{
-					Base: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED,
-					Metric: &pb.BuilderConfig_CustomBuildMetric{
+					Base: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED,
+					Metric: &pb.CustomMetricDefinition{
 						Name:       "custom_metric_completed",
 						Predicates: []string{`build.tags.get_value("os")!=""`},
 						Fields: map[string]string{
@@ -112,7 +112,7 @@ func TestBuild(t *testing.T) {
 			for i, cm := range b.CustomMetrics {
 				expectedCms[i] = CustomMetric{
 					Base:   cm.Base,
-					Metric: proto.Clone(cm.Metric).(*pb.BuilderConfig_CustomBuildMetric),
+					Metric: proto.Clone(cm.Metric).(*pb.CustomMetricDefinition),
 				}
 			}
 			b.CustomMetrics = nil

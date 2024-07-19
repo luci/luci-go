@@ -43,8 +43,8 @@ func BuildCreated(ctx context.Context, b *model.Build) {
 	V2.BuildCountCreated.Add(ctx, 1, exps)
 
 	// Custom Metrics
-	cmValues := map[pb.CustomBuildMetricBase]any{
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED: int64(1),
+	cmValues := map[pb.CustomMetricDefinitionBase]any{
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED: int64(1),
 	}
 	reportToCustomMetrics(ctx, b, cmValues)
 }
@@ -71,11 +71,11 @@ func BuildStarted(ctx context.Context, b *model.Build) {
 	}
 
 	// Custom Metrics
-	cmValues := map[pb.CustomBuildMetricBase]any{
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED: int64(1),
+	cmValues := map[pb.CustomMetricDefinitionBase]any{
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED: int64(1),
 	}
 	if bp.StartTime != nil {
-		cmValues[pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS] = schD
+		cmValues[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS] = schD
 	}
 	reportToCustomMetrics(ctx, b, cmValues)
 }
@@ -113,12 +113,12 @@ func BuildCompleted(ctx context.Context, b *model.Build) {
 	}
 
 	// Custom Metrics
-	cmValues := map[pb.CustomBuildMetricBase]any{
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED:       int64(1),
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS: cycleD,
+	cmValues := map[pb.CustomMetricDefinitionBase]any{
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED:       int64(1),
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS: cycleD,
 	}
 	if b.Proto.StartTime != nil {
-		cmValues[pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS] = runD
+		cmValues[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS] = runD
 	}
 	reportToCustomMetrics(ctx, b, cmValues)
 }

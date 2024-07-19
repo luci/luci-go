@@ -247,9 +247,9 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 		})
 
 		Convey("marks old, running builds w/ infra_failure", func() {
-			base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
+			base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
 			name := "/chrome/infra/custom/builds/completed"
-			cm := &pb.BuilderConfig_CustomBuildMetric{
+			cm := &pb.CustomMetricDefinition{
 				Name:       name,
 				Predicates: []string{`build.status.to_string()=="INFRA_FAILURE"`},
 				Fields: map[string]string{

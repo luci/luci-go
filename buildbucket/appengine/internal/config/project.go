@@ -887,12 +887,12 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 	}
 
 	// custome_build_metrics
-	if len(b.CustomBuildMetrics) > 0 {
-		validateCustomBuildMetrics(ctx, b.CustomBuildMetrics, globalCfg)
+	if len(b.CustomMetricDefinitions) > 0 {
+		validateCustomMetricDefinitions(ctx, b.CustomMetricDefinitions, globalCfg)
 	}
 }
 
-func validateCustomBuildMetrics(ctx *validation.Context, cms []*pb.BuilderConfig_CustomBuildMetric, globalCfg *pb.SettingsCfg) {
+func validateCustomMetricDefinitions(ctx *validation.Context, cms []*pb.CustomMetricDefinition, globalCfg *pb.SettingsCfg) {
 	ctx.Enter("custome_build_metrics")
 	defer ctx.Exit()
 
@@ -902,11 +902,11 @@ func validateCustomBuildMetrics(ctx *validation.Context, cms []*pb.BuilderConfig
 	}
 
 	for _, cm := range cms {
-		validateCustomBuildMetric(ctx, cm, registeredMetrics)
+		validateCustomMetricDefinition(ctx, cm, registeredMetrics)
 	}
 }
 
-func validateCustomBuildMetric(ctx *validation.Context, cm *pb.BuilderConfig_CustomBuildMetric, registeredMetrics map[string][]string) {
+func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetricDefinition, registeredMetrics map[string][]string) {
 	ctx.Enter("custome_build_metrics %s", cm.Name)
 	defer ctx.Exit()
 	// Name

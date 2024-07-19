@@ -50,11 +50,11 @@ func pbTS(t time.Time) *timestamppb.Timestamp {
 	return pbts
 }
 
-func setBuildCustomMetrics(b *model.Build, base pb.CustomBuildMetricBase, name string) {
+func setBuildCustomMetrics(b *model.Build, base pb.CustomMetricDefinitionBase, name string) {
 	b.CustomMetrics = []model.CustomMetric{
 		{
 			Base: base,
-			Metric: &pb.BuilderConfig_CustomBuildMetric{
+			Metric: &pb.CustomMetricDefinition{
 				Name:       name,
 				Predicates: []string{`build.tags.get_value("os")!=""`},
 				Fields: map[string]string{
@@ -144,7 +144,7 @@ func TestBuildEvents(t *testing.T) {
 			BuildCreated(ctx, b)
 			So(globalStore.Get(ctx, V2.BuildCountCreated, time.Time{}, fv("exp1")), ShouldEqual, 1)
 
-			base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED
+			base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED
 			name := "/chrome/infra/custom/builds/created"
 			Convey("predicate", func() {
 				setBuildCustomMetrics(b, base, name)
@@ -171,7 +171,7 @@ func TestBuildEvents(t *testing.T) {
 				b.CustomMetrics = []model.CustomMetric{
 					{
 						Base: base,
-						Metric: &pb.BuilderConfig_CustomBuildMetric{
+						Metric: &pb.CustomMetricDefinition{
 							Name:       name,
 							Predicates: []string{`has(build.summary_markdown)`},
 							Fields: map[string]string{
@@ -208,7 +208,7 @@ func TestBuildEvents(t *testing.T) {
 				So(globalStore.Get(ctx, V2.BuildCountStarted, time.Time{}, fv("exp1")), ShouldEqual, 1)
 
 				// Custom metrics
-				base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED
+				base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED
 				name := "/chrome/infra/custom/builds/started"
 				setBuildCustomMetrics(b, base, name)
 				b.Tags = []string{"os:linux"}
@@ -235,7 +235,7 @@ func TestBuildEvents(t *testing.T) {
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
 
 				// Custom metrics
-				base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS
+				base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS
 				name := "/chrome/infra/custom/builds/scheduling_duration"
 				setBuildCustomMetrics(b, base, name)
 				b.Tags = []string{"os:linux"}
@@ -287,7 +287,7 @@ func TestBuildEvents(t *testing.T) {
 				So(globalStore.Get(ctx, V2.BuildCountCompleted, time.Time{}, v2fs), ShouldEqual, 1)
 
 				// Custom metrics
-				base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
+				base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
 				name := "/chrome/infra/custom/builds/completed"
 				setBuildCustomMetrics(b, base, name)
 				b.Tags = []string{"os:linux"}
@@ -318,7 +318,7 @@ func TestBuildEvents(t *testing.T) {
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 33)
 
 				// Custom metrics
-				base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS
+				base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS
 				name := "/chrome/infra/custom/builds/cycle_duration"
 				setBuildCustomMetrics(b, base, name)
 				b.Tags = []string{"os:linux"}
@@ -347,7 +347,7 @@ func TestBuildEvents(t *testing.T) {
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 30)
 
 				// Custom metrics
-				base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS
+				base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS
 				name := "/chrome/infra/custom/builds/run_duration"
 				setBuildCustomMetrics(b, base, name)
 				b.Tags = []string{"os:linux"}

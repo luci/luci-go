@@ -131,21 +131,21 @@ func getCustomMetrics(ctx context.Context) *CustomMetrics {
 // CustomMetrics holds the custom metrics and a dedicated tsmon state to report
 // metrics to.
 type CustomMetrics struct {
-	metrics map[pb.CustomBuildMetricBase]map[string]CustomMetric
+	metrics map[pb.CustomMetricDefinitionBase]map[string]CustomMetric
 	state   *tsmon.State
 	buf     chan *Report
 	m       sync.RWMutex
 }
 
 type Report struct {
-	Base     pb.CustomBuildMetricBase
+	Base     pb.CustomMetricDefinitionBase
 	Name     string
 	FieldMap map[string]string
 	Value    any
 }
 
-func (cms *CustomMetrics) getCustomMetricsByBases(bases map[pb.CustomBuildMetricBase]any) map[pb.CustomBuildMetricBase]map[string]CustomMetric {
-	res := make(map[pb.CustomBuildMetricBase]map[string]CustomMetric, len(bases))
+func (cms *CustomMetrics) getCustomMetricsByBases(bases map[pb.CustomMetricDefinitionBase]any) map[pb.CustomMetricDefinitionBase]map[string]CustomMetric {
+	res := make(map[pb.CustomMetricDefinitionBase]map[string]CustomMetric, len(bases))
 	cms.m.RLock()
 	defer cms.m.RUnlock()
 	for b := range bases {
@@ -338,8 +338,8 @@ func newState() *tsmon.State {
 	return state
 }
 
-func createCustomMetricMap(globalCfg *pb.SettingsCfg, registry *registry.Registry) (map[pb.CustomBuildMetricBase]map[string]CustomMetric, error) {
-	v2Custom := make(map[pb.CustomBuildMetricBase]map[string]CustomMetric)
+func createCustomMetricMap(globalCfg *pb.SettingsCfg, registry *registry.Registry) (map[pb.CustomMetricDefinitionBase]map[string]CustomMetric, error) {
+	v2Custom := make(map[pb.CustomMetricDefinitionBase]map[string]CustomMetric)
 	for _, cm := range globalCfg.CustomMetrics {
 		ms, ok := v2Custom[cm.GetMetricBase()]
 		if !ok {
@@ -368,17 +368,17 @@ func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, 
 	}
 
 	switch base := cm.GetMetricBase(); base {
-	case pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED:
+	case pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED:
 		return &counter{
 			metric.NewCounterWithOptions(cm.Name, opt, cm.Description, nil, fields...),
 			info,
 		}, nil
 
-	case pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS:
+	case pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS:
 		return &cumulativeDistribution{
 			metric.NewCumulativeDistributionWithOptions(
 				cm.Name, opt, cm.Description,
@@ -386,14 +386,14 @@ func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, 
 				bucketer,
 				fields...), info}, nil
 
-	case pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED:
+	case pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED:
 		return &float{
 			metric.NewFloatWithOptions(
 				cm.Name, opt, cm.Description,
 				&types.MetricMetadata{Units: types.Seconds}, fields...), info}, nil
 
-	case pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COUNT,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
+	case pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COUNT,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
 		return &int{
 			metric.NewIntWithOptions(cm.Name, opt, cm.Description, nil, fields...), info}, nil
 
@@ -402,8 +402,8 @@ func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, 
 	}
 }
 
-func buildCustomMetricsToReport(b *model.Build, bases map[pb.CustomBuildMetricBase]any) map[pb.CustomBuildMetricBase][]*pb.BuilderConfig_CustomBuildMetric {
-	toReport := make(map[pb.CustomBuildMetricBase][]*pb.BuilderConfig_CustomBuildMetric)
+func buildCustomMetricsToReport(b *model.Build, bases map[pb.CustomMetricDefinitionBase]any) map[pb.CustomMetricDefinitionBase][]*pb.CustomMetricDefinition {
+	toReport := make(map[pb.CustomMetricDefinitionBase][]*pb.CustomMetricDefinition)
 	for _, cm := range b.CustomMetrics {
 		if _, ok := bases[cm.Base]; ok {
 			toReport[cm.Base] = append(toReport[cm.Base], cm.Metric)
@@ -431,7 +431,7 @@ func getBuildDetails(ctx context.Context, b *model.Build) *pb.Build {
 }
 
 // Report to custom metrics.
-func reportToCustomMetrics(ctx context.Context, build *model.Build, cmValues map[pb.CustomBuildMetricBase]any) {
+func reportToCustomMetrics(ctx context.Context, build *model.Build, cmValues map[pb.CustomMetricDefinitionBase]any) {
 	// Get custom metrics saved with the build.
 	toReport := buildCustomMetricsToReport(build, cmValues)
 	if len(toReport) == 0 {
@@ -444,7 +444,7 @@ func reportToCustomMetrics(ctx context.Context, build *model.Build, cmValues map
 
 	// Filter out the inactive custom metrics from the build.
 	hasCMsUpdated := false
-	toReportUpdated := make(map[pb.CustomBuildMetricBase][]*pb.BuilderConfig_CustomBuildMetric, len(toReport))
+	toReportUpdated := make(map[pb.CustomMetricDefinitionBase][]*pb.CustomMetricDefinition, len(toReport))
 	for b, ms := range toReport {
 		acms := metrics[b]
 		if len(acms) == 0 {
@@ -452,7 +452,7 @@ func reportToCustomMetrics(ctx context.Context, build *model.Build, cmValues map
 			continue
 		}
 		hasCMsUpdated = true
-		toReportUpdated[b] = make([]*pb.BuilderConfig_CustomBuildMetric, 0, len(ms))
+		toReportUpdated[b] = make([]*pb.CustomMetricDefinition, 0, len(ms))
 		for _, m := range ms {
 			if _, ok := acms[m.Name]; ok {
 				toReportUpdated[b] = append(toReportUpdated[b], m)
@@ -489,7 +489,7 @@ func reportToCustomMetrics(ctx context.Context, build *model.Build, cmValues map
 //
 // It returns a map of strings with the keys being the custom metric names, and
 // values being each metric's fields.
-func getBuildCustomMetrics(ctx context.Context, build *pb.Build, base pb.CustomBuildMetricBase, toReport []*pb.BuilderConfig_CustomBuildMetric) map[string]map[string]string {
+func getBuildCustomMetrics(ctx context.Context, build *pb.Build, base pb.CustomMetricDefinitionBase, toReport []*pb.CustomMetricDefinition) map[string]map[string]string {
 	res := make(map[string]map[string]string)
 	for _, cmp := range toReport {
 		// Check if b fulfills the predicates.

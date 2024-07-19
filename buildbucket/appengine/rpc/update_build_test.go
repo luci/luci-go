@@ -1106,7 +1106,7 @@ func TestUpdateBuild(t *testing.T) {
 
 		Convey("build-completion event", func() {
 			Convey("Status_SUCCESSS w/ status change", func() {
-				base := pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
+				base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
 				name := "chrome/infra/custom/builds/completed"
 				globalCfg := &pb.SettingsCfg{
 					CustomMetrics: []*pb.CustomMetric{
@@ -1126,7 +1126,7 @@ func TestUpdateBuild(t *testing.T) {
 				bld.CustomMetrics = []model.CustomMetric{
 					{
 						Base: base,
-						Metric: &pb.BuilderConfig_CustomBuildMetric{
+						Metric: &pb.CustomMetricDefinition{
 							Name:       name,
 							Predicates: []string{`build.status.to_string()!=""`},
 							Fields: map[string]string{

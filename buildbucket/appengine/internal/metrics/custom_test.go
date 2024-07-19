@@ -76,7 +76,7 @@ func resetCustomMetrics(ctx context.Context) context.Context {
 	return ctx
 }
 
-func getCurrentMetricsAndState(ctx context.Context) (map[pb.CustomBuildMetricBase]map[string]CustomMetric, *tsmon.State) {
+func getCurrentMetricsAndState(ctx context.Context) (map[pb.CustomMetricDefinitionBase]map[string]CustomMetric, *tsmon.State) {
 	cms := getCustomMetrics(ctx)
 	cms.m.RLock()
 	defer cms.m.RUnlock()
@@ -92,16 +92,16 @@ func TestWithCustomMetrics(t *testing.T) {
 
 		Convey("check metrics from test context", func() {
 			v2Custom, _ := getCurrentMetricsAndState(ctx)
-			startM := v2Custom[pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED]["/chrome/infra/custom/builds/started"]
+			startM := v2Custom[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED]["/chrome/infra/custom/builds/started"]
 			_, ok := startM.(*counter)
 			So(ok, ShouldBeTrue)
-			runDurationM := v2Custom[pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS]["/chrome/infra/custom/builds/run_duration"]
+			runDurationM := v2Custom[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS]["/chrome/infra/custom/builds/run_duration"]
 			_, ok = runDurationM.(*cumulativeDistribution)
 			So(ok, ShouldBeTrue)
-			maxAgeM := v2Custom[pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED]["/chrome/infra/custom/builds/max_age"]
+			maxAgeM := v2Custom[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED]["/chrome/infra/custom/builds/max_age"]
 			_, ok = maxAgeM.(*float)
 			So(ok, ShouldBeTrue)
-			countM := v2Custom[pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COUNT]["/chrome/infra/custom/builds/count"]
+			countM := v2Custom[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COUNT]["/chrome/infra/custom/builds/count"]
 			_, ok = countM.(*int)
 			So(ok, ShouldBeTrue)
 		})
@@ -119,7 +119,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 			cms := getCustomMetrics(ctx)
 			// Normal report.
 			cms.Report(ctx, &Report{
-				Base: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
+				Base: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
 				Name: "/chrome/infra/custom/builds/started",
 				FieldMap: map[string]string{
 					"os": "linux",
@@ -147,7 +147,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 					defer wg.Done()
 					cms := getCustomMetrics(ctx)
 					directUpdated := cms.Report(ctx, &Report{
-						Base: pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
+						Base: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
 						Name: "/chrome/infra/custom/builds/started",
 						FieldMap: map[string]string{
 							"experiments": "None",

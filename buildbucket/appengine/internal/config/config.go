@@ -156,9 +156,9 @@ func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
 		ctx.Errorf("missing base fields %q", baseFields)
 	}
 
-	if (base == pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COUNT ||
-		base == pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT ||
-		base == pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED) &&
+	if (base == pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COUNT ||
+		base == pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT ||
+		base == pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED) &&
 		!bfSet.Contains(fSet) {
 		ctx.Errorf("custom builder metric cannot have additional fields")
 	}

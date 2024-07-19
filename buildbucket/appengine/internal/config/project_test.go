@@ -1116,7 +1116,7 @@ func TestValidateProject(t *testing.T) {
 							properties: "a:b'"
 							properties_j: "x:true"
 						}
-						custom_build_metrics {}
+						custom_metric_definitions {}
 					}
 				`
 				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", settingsCfg)
@@ -1147,7 +1147,7 @@ func TestValidateProject(t *testing.T) {
 							properties: "a:b'"
 							properties_j: "x:true"
 						}
-						custom_build_metrics {
+						custom_metric_definitions {
 							name: "chrome/infra/not/registered"
 						}
 					}
@@ -1180,7 +1180,7 @@ func TestValidateProject(t *testing.T) {
 							properties: "a:b'"
 							properties_j: "x:true"
 						}
-						custom_build_metrics {
+						custom_metric_definitions {
 							name: "chrome/infra/custom/builds/started"
 						}
 					}
@@ -1214,7 +1214,7 @@ func TestValidateProject(t *testing.T) {
 							properties: "a:b'"
 							properties_j: "x:true"
 						}
-						custom_build_metrics {
+						custom_metric_definitions {
 							name: "chrome/infra/custom/builds/started"
 							predicates: "not_a_bool_expression"
 						}
@@ -1249,7 +1249,7 @@ func TestValidateProject(t *testing.T) {
 							properties: "a:b'"
 							properties_j: "x:true"
 						}
-						custom_build_metrics {
+						custom_metric_definitions {
 							name: "chrome/infra/custom/builds/started"
 							predicates: "build.tags.get_value(\"os\")!=\"\""
 						}
@@ -1284,7 +1284,7 @@ func TestValidateProject(t *testing.T) {
 							properties: "a:b'"
 							properties_j: "x:true"
 						}
-						custom_build_metrics {
+						custom_metric_definitions {
 							name: "chrome/infra/custom/builds/started"
 							predicates: "build.tags.get_value(\"os\")!=\"\""
 							fields {
@@ -1323,7 +1323,7 @@ func TestValidateProject(t *testing.T) {
 							properties: "a:b'"
 							properties_j: "x:true"
 						}
-						custom_build_metrics {
+						custom_metric_definitions {
 							name: "chrome/infra/custom/builds/started"
 							predicates: "build.tags.get_value(\"os\")!=\"\""
 							fields {

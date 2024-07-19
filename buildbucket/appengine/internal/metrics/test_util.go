@@ -24,14 +24,14 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-func getCustomMetricsAndState(ctx context.Context) (map[pb.CustomBuildMetricBase]map[string]CustomMetric, *tsmon.State) {
+func getCustomMetricsAndState(ctx context.Context) (map[pb.CustomMetricDefinitionBase]map[string]CustomMetric, *tsmon.State) {
 	cms := getCustomMetrics(ctx)
 	cms.m.RLock()
 	defer cms.m.RUnlock()
 	return cms.metrics, cms.state
 }
 
-func GetCustomMetricsData(ctx context.Context, base pb.CustomBuildMetricBase, name string, resetTime time.Time, fvs []any) (any, error) {
+func GetCustomMetricsData(ctx context.Context, base pb.CustomMetricDefinitionBase, name string, resetTime time.Time, fvs []any) (any, error) {
 	metrics, state := getCustomMetricsAndState(ctx)
 	store := state.Store()
 	cm, ok := metrics[base][name]
@@ -40,21 +40,21 @@ func GetCustomMetricsData(ctx context.Context, base pb.CustomBuildMetricBase, na
 	}
 
 	switch base {
-	case pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED:
+	case pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED:
 		return store.Get(ctx, cm.(*counter), resetTime, fvs), nil
 
-	case pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS:
+	case pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS:
 		return store.Get(ctx, cm.(*cumulativeDistribution), resetTime, fvs), nil
 
-	case pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED:
+	case pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED:
 		return store.Get(ctx, cm.(*float), resetTime, fvs), nil
 
-	case pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_COUNT,
-		pb.CustomBuildMetricBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
+	case pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COUNT,
+		pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
 		return store.Get(ctx, cm.(*int), resetTime, fvs), nil
 
 	default:
