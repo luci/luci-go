@@ -32,7 +32,7 @@ automatic_scaling:
 # contained in the infradata/gae repo. Refer to LUCI GAE Automatic
 # Deployment for more (go/luci/how_to_deploy.md) (Googlers only).
 #
-# IMPORTANT: Keep in sync between app.yaml, service-api.yaml and service-result-ingestion.yaml.
+# IMPORTANT: Keep in sync between app.yaml and service-result-ingestion.yaml.
 # IMPORTANT: Keep in sync with app.star files in
 # https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/main/apps/luci-analysis/
 # and in
@@ -58,7 +58,7 @@ luci_gae_vars:
     SERVICE_ACCOUNT: luci-analysis-dev-service@luci-analysis-dev.iam.gserviceaccount.com
     PROFILING_PROBABILITY: "0.25"
 
-# IMPORTANT: Except for /static, keep in sync between app.yaml, service-api.yaml and service-result-ingestion.yaml.
+# IMPORTANT: Except for /static, keep in sync between app.yaml and service-result-ingestion.yaml.
 handlers:
 - url: /_ah/push-handlers/.*
   script: auto
@@ -69,7 +69,7 @@ handlers:
   script: auto
   secure: always
 
-# IMPORTANT: Keep in sync between app.yaml, service-api.yaml and service-result-ingestion.yaml.
+# IMPORTANT: Keep in sync between app.yaml and service-result-ingestion.yaml.
 entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}

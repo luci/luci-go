@@ -15,7 +15,6 @@
 package main
 
 import (
-	"go.chromium.org/luci/common/errors"
 	luciserver "go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/analysis/server"
@@ -26,9 +25,6 @@ import (
 // Entrypoint for the result-ingestion service.
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
-		if err := server.RegisterTaskQueueHandlers(srv); err != nil {
-			return errors.Annotate(err, "register task queue handlers").Err()
-		}
 		return nil
 	})
 }
