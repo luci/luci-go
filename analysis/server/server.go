@@ -65,17 +65,12 @@ import (
 )
 
 // Main implements the common entrypoint for all LUCI Analysis GAE services.
-// All LUCI Analysis GAE services have the code necessary to serve all pRPCs,
-// crons and task queues. The only thing that is not shared is frontend
-// handling, due to the fact this service requires other assets (javascript,
-// files) to be deployed.
 //
-// Allowing all services to serve everything (except frontend) minimises
-// the need to keep server code in sync with changes with dispatch.yaml.
-// Moreover, dispatch.yaml changes are not deployed atomically
-// with service changes, so this avoids transient traffic rejection during
-// rollout of new LUCI Analysis versions that switch handling of endpoints
-// between services.
+// All services run on 'default' for simplicity debugging.
+//
+// Note, if changing responsibiltiy between services, please be aware
+// that dispatch.yaml changes are not deployed atomically with service
+// changes.
 func Main(init func(srv *luciserver.Server) error) {
 	// Use the same modules for all LUCI Analysis services.
 	modules := []module.Module{
@@ -90,107 +85,133 @@ func Main(init func(srv *luciserver.Server) error) {
 		buganizer.NewModuleFromFlags(),
 	}
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
-		// Register pPRC servers.
-		srv.ConfigurePRPC(func(s *prpc.Server) {
-			s.AccessControl = prpc.AllowOriginAll
-			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-			s.HackFixFieldMasksForJSON = true
-		})
-		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
-
-		ac, err := analysis.NewClient(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return errors.Annotate(err, "creating analysis client").Err()
+		if err := RegisterPRPCHandlers(srv); err != nil {
+			return errors.Annotate(err, "register pRPC handlers").Err()
 		}
-
-		cpc, err := changepoints.NewClient(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return errors.Annotate(err, "creating changepoint client").Err()
+		if err := RegisterCrons(srv); err != nil {
+			return errors.Annotate(err, "register crons").Err()
 		}
-
-		tvc, err := testverdicts.NewReadClient(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return errors.Annotate(err, "creating test verdicts read client").Err()
+		if err := RegisterPubSubHandlers(srv); err != nil {
+			return errors.Annotate(err, "register pub/sub handlers").Err()
 		}
-
-		trc, err := testresults.NewReadClient(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return errors.Annotate(err, "creating test results read client").Err()
+		if err := RegisterTaskQueueHandlers(srv); err != nil {
+			return errors.Annotate(err, "register task queue handlers").Err()
 		}
-
-		sc, err := sorbet.NewClient(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return errors.Annotate(err, "creating sorbet client").Err()
-		}
-
-		// May be nil on deployments where Buganizer is not configured.
-		bc, err := buganizer.CreateBuganizerClient(srv.Context)
-		if err != nil {
-			return errors.Annotate(err, "create buganizer client").Err()
-		}
-		// May be empty on deployments where Buganizer is not configured.
-		selfEmail := srv.Context.Value(&buganizer.BuganizerSelfEmailKey).(string)
-
-		uiBaseURL := fmt.Sprintf("https://%s.appspot.com", srv.Options.CloudProject)
-
-		adminpb.RegisterAdminServer(srv, admin.NewAdminServer())
-		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
-		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
-		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
-		analysispb.RegisterRulesServer(srv, rpc.NewRulesServer(uiBaseURL, bc, selfEmail))
-		analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
-		analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
-		analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
-		analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, trc, sc))
-		migrationpb.RegisterMonorailMigrationServer(srv, migration.NewMonorailMigrationServer())
-		analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
-
-		// GAE crons.
-		updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, uiBaseURL, srv.Options.Prod)
-		cron.RegisterHandler("update-analysis-and-bugs", updateAnalysisAndBugsHandler.CronHandler)
-		attributeFilteredTestRunsHandler := failureattributes.NewFilteredRunsAttributionHandler(srv.Options.CloudProject)
-		cron.RegisterHandler("attribute-filtered-test-runs", attributeFilteredTestRunsHandler.CronHandler)
-		cron.RegisterHandler("read-config", config.Update)
-		cron.RegisterHandler("reclustering", orchestrator.CronHandler)
-		cron.RegisterHandler("global-metrics", metrics.GlobalMetrics)
-		cron.RegisterHandler("clear-rules-users", rules.ClearRulesUsers)
-		cron.RegisterHandler("export-rules", func(ctx context.Context) error {
-			return rules.ExportRulesCron(ctx, srv.Options.CloudProject)
-		})
-		cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
-			return views.CronHandler(ctx, srv.Options.CloudProject)
-		})
-		cron.RegisterHandler("merge-test-variant-branches", func(ctx context.Context) error {
-			return cpbq.MergeTables(ctx, srv.Options.CloudProject)
-		})
-		cron.RegisterHandler("update-changepoint-table", func(ctx context.Context) error {
-			return bqupdator.UpdateChangepointTable(ctx, srv.Options.CloudProject)
-		})
-
-		// Pub/Sub subscription endpoints.
-		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)
-		srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.NewCVRunHandler().Handle)
-		srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.NewInvocationFinalizedHandler().Handle)
-		srv.Routes.POST("/_ah/push-handlers/invocation-ready-for-export", nil, app.NewInvocationReadyForExportHandler().Handle)
-
-		// Register task queue tasks.
-		if err := backfill.RegisterTaskHandler(srv); err != nil {
-			return errors.Annotate(err, "register backfill").Err()
-		}
-		if err := reclustering.RegisterTaskHandler(srv); err != nil {
-			return errors.Annotate(err, "register reclustering").Err()
-		}
-		if err := resultingester.RegisterTaskHandler(srv); err != nil {
-			return errors.Annotate(err, "register result ingester").Err()
-		}
-		if err := verdictingester.RegisterTaskHandler(srv); err != nil {
-			return errors.Annotate(err, "register verdict ingester").Err()
-		}
-		if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL); err != nil {
-			return errors.Annotate(err, "register bug updater").Err()
-		}
-		buildjoiner.RegisterTaskClass()
-
 		return init(srv)
 	})
+}
+
+// RegisterPRPCHandlers registers pPRC handlers.
+func RegisterPRPCHandlers(srv *luciserver.Server) error {
+	srv.ConfigurePRPC(func(s *prpc.Server) {
+		s.AccessControl = prpc.AllowOriginAll
+		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+		s.HackFixFieldMasksForJSON = true
+	})
+	srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
+
+	ac, err := analysis.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "creating analysis client").Err()
+	}
+
+	cpc, err := changepoints.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "creating changepoint client").Err()
+	}
+
+	tvc, err := testverdicts.NewReadClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "creating test verdicts read client").Err()
+	}
+
+	trc, err := testresults.NewReadClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "creating test results read client").Err()
+	}
+
+	sc, err := sorbet.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "creating sorbet client").Err()
+	}
+
+	// May be nil on deployments where Buganizer is not configured.
+	bc, err := buganizer.CreateBuganizerClient(srv.Context)
+	if err != nil {
+		return errors.Annotate(err, "create buganizer client").Err()
+	}
+	// May be empty on deployments where Buganizer is not configured.
+	selfEmail := srv.Context.Value(&buganizer.BuganizerSelfEmailKey).(string)
+
+	adminpb.RegisterAdminServer(srv, admin.NewAdminServer())
+	analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
+	analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
+	analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
+	analysispb.RegisterRulesServer(srv, rpc.NewRulesServer(uiBaseURL(srv), bc, selfEmail))
+	analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
+	analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
+	analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
+	analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, trc, sc))
+	migrationpb.RegisterMonorailMigrationServer(srv, migration.NewMonorailMigrationServer())
+	analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
+	return nil
+}
+
+// RegisterCrons registers cron handlers.
+func RegisterCrons(srv *luciserver.Server) error {
+	updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, uiBaseURL(srv), srv.Options.Prod)
+	cron.RegisterHandler("update-analysis-and-bugs", updateAnalysisAndBugsHandler.CronHandler)
+	attributeFilteredTestRunsHandler := failureattributes.NewFilteredRunsAttributionHandler(srv.Options.CloudProject)
+	cron.RegisterHandler("attribute-filtered-test-runs", attributeFilteredTestRunsHandler.CronHandler)
+	cron.RegisterHandler("read-config", config.Update)
+	cron.RegisterHandler("reclustering", orchestrator.CronHandler)
+	cron.RegisterHandler("global-metrics", metrics.GlobalMetrics)
+	cron.RegisterHandler("clear-rules-users", rules.ClearRulesUsers)
+	cron.RegisterHandler("export-rules", func(ctx context.Context) error {
+		return rules.ExportRulesCron(ctx, srv.Options.CloudProject)
+	})
+	cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
+		return views.CronHandler(ctx, srv.Options.CloudProject)
+	})
+	cron.RegisterHandler("merge-test-variant-branches", func(ctx context.Context) error {
+		return cpbq.MergeTables(ctx, srv.Options.CloudProject)
+	})
+	cron.RegisterHandler("update-changepoint-table", func(ctx context.Context) error {
+		return bqupdator.UpdateChangepointTable(ctx, srv.Options.CloudProject)
+	})
+	return nil
+}
+
+// RegisterPubSubHandlers registers pub/sub handlers.
+func RegisterPubSubHandlers(srv *luciserver.Server) error {
+	srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)
+	srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.NewCVRunHandler().Handle)
+	srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.NewInvocationFinalizedHandler().Handle)
+	srv.Routes.POST("/_ah/push-handlers/invocation-ready-for-export", nil, app.NewInvocationReadyForExportHandler().Handle)
+	return nil
+}
+
+// RegisterTaskQueueHandlers registers task queue handlers.
+func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
+	if err := backfill.RegisterTaskHandler(srv); err != nil {
+		return errors.Annotate(err, "register backfill").Err()
+	}
+	if err := reclustering.RegisterTaskHandler(srv); err != nil {
+		return errors.Annotate(err, "register reclustering").Err()
+	}
+	if err := resultingester.RegisterTaskHandler(srv); err != nil {
+		return errors.Annotate(err, "register result ingester").Err()
+	}
+	if err := verdictingester.RegisterTaskHandler(srv); err != nil {
+		return errors.Annotate(err, "register verdict ingester").Err()
+	}
+	if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL(srv)); err != nil {
+		return errors.Annotate(err, "register bug updater").Err()
+	}
+	buildjoiner.RegisterTaskClass()
+	return nil
+}
+
+func uiBaseURL(srv *luciserver.Server) string {
+	return fmt.Sprintf("https://%s.appspot.com", srv.Options.CloudProject)
 }
