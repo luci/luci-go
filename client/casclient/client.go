@@ -97,6 +97,10 @@ func DefaultConfig() cas.ClientConfig {
 	// Do not read file less than 10MiB twice.
 	cfg.SmallFileThreshold = 10 * 1024 * 1024
 
+	// BUG(crbug.com/349853790) - encountered timeouts when uploading,
+	// so speculatively adjusting this.
+	cfg.BatchUpdateBlobs.Timeout = time.Minute * 2
+
 	return cfg
 }
 
@@ -171,16 +175,20 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 
 // Options returns CAS client options.
 func Options() []client.Opt {
+	rpcTimeouts := make(client.RPCTimeouts)
+	for k, v := range client.DefaultRPCTimeouts {
+		rpcTimeouts[k] = v
+	}
+
 	casConcurrency := runtime.NumCPU() * 2
 	if runtime.GOOS == "windows" {
 		// This is for better file write performance on Windows (http://b/171672371#comment6).
 		casConcurrency = runtime.NumCPU()
 	}
 
-	rpcTimeouts := make(client.RPCTimeouts)
-	for k, v := range client.DefaultRPCTimeouts {
-		rpcTimeouts[k] = v
-	}
+	// BUG(crbug.com/349853790) - encountered timeouts when uploading,
+	// so speculatively adjusting this.
+	rpcTimeouts["BatchUpdateBlobs"] = time.Minute * 2
 
 	// Extend the timeout for write operations beyond the default, as writes can
 	// sometimes be quite slow. This timeout only applies to writing a single

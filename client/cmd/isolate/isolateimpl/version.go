@@ -16,4 +16,4 @@ package isolateimpl
 
 // IsolateVersion must be updated whenever functional change (behavior
 // arguments, supported commands) is done.
-const IsolateVersion = "0.6"
+const IsolateVersion = "0.7"
