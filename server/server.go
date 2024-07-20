@@ -2301,7 +2301,7 @@ func (s *Server) initAuthStart() error {
 		// ErrLoginRequired may happen only when running the server locally using
 		// developer's credentials. Let them know how the problem can be fixed.
 		if !s.Options.Prod && err == clientauth.ErrLoginRequired {
-			scopes := fmt.Sprintf("-scopes %q", strings.Join(auth.CloudOAuthScopes, " "))
+			scopes := fmt.Sprintf("-scopes %q", strings.Join(s.Options.ClientAuth.Scopes, " "))
 			if opts.ActAsServiceAccount != "" && opts.ActViaLUCIRealm == "" {
 				scopes = "-scopes-iam"
 			}
