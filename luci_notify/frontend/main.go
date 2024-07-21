@@ -82,13 +82,6 @@ func main() {
 	notify.InitDispatcher(&tq.Default)
 
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
-		srv.ConfigurePRPC(func(s *prpc.Server) {
-			s.AccessControl = prpc.AllowOriginAll
-			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-			s.HackFixFieldMasksForJSON = true
-		})
-		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
-
 		// Cron endpoints.
 		cron.RegisterHandler("update-config", config.UpdateHandler)
 		cron.RegisterHandler("update-tree-status", notify.UpdateTreeStatus)
@@ -119,13 +112,24 @@ func main() {
 				buildbucketPubSub.Add(ctx, 1, status)
 			})
 
-		// Installs RPC service.
+		// Install pRPC services.
+		srv.ConfigurePRPC(func(s *prpc.Server) {
+			s.AccessControl = prpc.AllowOriginAll
+			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+			s.HackFixFieldMasksForJSON = true
+		})
+		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
+
 		pb.RegisterTreeCloserServer(srv, &pb.DecoratedTreeCloser{
 			Service: &server.TreeCloserServer{},
 			Prelude: checkAPIAccess,
 		})
 		pb.RegisterAlertsServer(srv, rpc.NewAlertsServer())
 
+		// Redirect the frontend to rpcexplorer.
+		srv.Routes.GET("/", nil, func(ctx *router.Context) {
+			http.Redirect(ctx.Writer, ctx.Request, "/rpcexplorer/", http.StatusFound)
+		})
 		return nil
 	})
 }

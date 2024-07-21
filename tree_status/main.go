@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
@@ -24,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -69,8 +71,13 @@ func main() {
 			s.HackFixFieldMasksForJSON = true
 		})
 		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
-
 		pb.RegisterTreeStatusServer(srv, rpc.NewTreeStatusServer())
+
+		// Redirect the frontend to rpcexplorer.
+		srv.Routes.GET("/", nil, func(ctx *router.Context) {
+			http.Redirect(ctx.Writer, ctx.Request, "/rpcexplorer/", http.StatusFound)
+		})
+
 		cron.RegisterHandler("clear-status-users", status.ClearStatusUsers)
 		return nil
 	})

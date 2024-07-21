@@ -15,11 +15,14 @@
 package main
 
 import (
+	"net/http"
+
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -51,6 +54,11 @@ func main() {
 		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
 
 		pb.RegisterTeamsServer(srv, rpc.NewTeamsServer())
+
+		// Redirect the frontend to rpcexplorer.
+		srv.Routes.GET("/", nil, func(ctx *router.Context) {
+			http.Redirect(ctx.Writer, ctx.Request, "/rpcexplorer/", http.StatusFound)
+		})
 
 		// TODO: Register any cron jobs here:
 		// cron.RegisterHandler("update-config", ...)
