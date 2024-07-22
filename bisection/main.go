@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	// Store auth sessions in the datastore.
@@ -102,10 +103,16 @@ func main() {
 	)
 
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
-		// Redirect the frontend to Milo.
+		// Redirect the frontend to rpcexplorer.
+		srv.Routes.GET("/", nil, func(ctx *router.Context) {
+			http.Redirect(ctx.Writer, ctx.Request, "/rpcexplorer/", http.StatusFound)
+		})
 		srv.Routes.NotFound(nil, func(ctx *router.Context) {
-			url := fmt.Sprintf("https://%s%s", uiRedirectURL, ctx.Request.URL.Path)
-			http.Redirect(ctx.Writer, ctx.Request, url, http.StatusFound)
+			if strings.HasSuffix(ctx.Request.Host, ".appspot.com") {
+				// Legacy LUCI Bisection URLs should redirect to MILO.
+				url := fmt.Sprintf("https://%s%s", uiRedirectURL, ctx.Request.URL.Path)
+				http.Redirect(ctx.Writer, ctx.Request, url, http.StatusFound)
+			}
 		})
 
 		// Pubsub handler
