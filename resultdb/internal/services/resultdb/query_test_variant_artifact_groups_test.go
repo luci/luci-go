@@ -69,7 +69,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 					},
 				},
 			}, "next_page_token", nil
-		})
+		}, nil)
 		rdbSvr := pb.DecoratedResultDB{
 			Service: &resultDBServer{
 				artifactBQClient: mockBQClient,
@@ -100,7 +100,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 		Convey("invalid request", func() {
 			req.StartTime = nil
 			res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, `start_time unspecified`)
+			So(err, ShouldBeRPCInvalidArgument, `start_time: unspecified`)
 			So(res, ShouldBeNil)
 		})
 
@@ -167,7 +167,7 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 		Convey(`no search string`, func() {
 			req.SearchString = &pb.ArtifactContentMatcher{}
 			err := validateQueryTestVariantArtifactGroupsRequest(req)
-			So(err, ShouldErrLike, `search_string unspecified`)
+			So(err, ShouldErrLike, `search_string: unspecified`)
 		})
 
 		Convey(`invalid test id prefix`, func() {
@@ -185,13 +185,13 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 		Convey(`no start time`, func() {
 			req.StartTime = nil
 			err := validateQueryTestVariantArtifactGroupsRequest(req)
-			So(err, ShouldErrLike, `start_time unspecified`)
+			So(err, ShouldErrLike, `start_time: unspecified`)
 		})
 
 		Convey(`no end time`, func() {
 			req.EndTime = nil
 			err := validateQueryTestVariantArtifactGroupsRequest(req)
-			So(err, ShouldErrLike, `end_time unspecified`)
+			So(err, ShouldErrLike, `end_time: unspecified`)
 		})
 
 		Convey(`start time after end time`, func() {

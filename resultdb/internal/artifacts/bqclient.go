@@ -35,6 +35,7 @@ import (
 
 type BQClient interface {
 	ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifactGroupsOpts) (groups []*TestArtifactGroup, nextPageToken string, err error)
+	ReadTestArtifacts(ctx context.Context, opts ReadTestArtifactsOpts) (rows []*MatchingArtifact, nextPageToken string, err error)
 }
 
 // NewClient creates a new client for reading text_artifacts table.
@@ -123,7 +124,7 @@ var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
 			ANY_VALUE(content) as content,
 			ANY_VALUE(test_status) as test_status,
 			ANY_VALUE(partition_time) as partition_time,
-  	FROM internal.text_artifacts
+  	FROM text_artifacts
 		WHERE project = @project
 			-- Only include the first shard for each artifact.
 			AND shard_id = 0
@@ -250,6 +251,142 @@ func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifa
 	return results, nextPageToken, nil
 }
 
+// TODO (beining@): This query only search the first 10MB of each artifact.
+// See the comment of readTestArtifactGroupTmpl for more detail.
+var readTestArtifactsTmpl = template.Must(template.New("").Parse(`
+	SELECT
+		invocation_id as InvocationID,
+		result_id as ResultID,
+		ANY_VALUE(partition_time) as PartitionTime,
+		ANY_VALUE(test_status) as TestStatus,
+		SUBSTR(REGEXP_EXTRACT(ANY_VALUE(content), @searchRegex), 0, @maxMatchSize) AS Match,
+		-- Truncate from the front for context before the match. This is done by reversing the returned string, truncate from the back and reverse the string back.
+		REVERSE(SUBSTR(REVERSE(REGEXP_EXTRACT(ANY_VALUE(content), @searchContextBeforeRegex)), 0, @maxMatchSize)) AS MatchWithContextBefore,
+		SUBSTR(REGEXP_EXTRACT(ANY_VALUE(content), @searchContextAfterRegex), 0, @maxMatchSize) AS MatchWithContextAfter
+	FROM text_artifacts
+	WHERE project = @project
+		AND test_id = @testID
+		AND artifact_id = @artifactID
+		AND test_variant_hash = @testVariantHash
+		-- Only include the first shard for each artifact.
+		AND shard_id = 0
+		AND REGEXP_CONTAINS(content, @searchRegex)
+		-- Start time is exclusive.
+		AND partition_time > @startTime
+		-- End time is inclusive.
+		AND partition_time <= @endTime
+		-- Only return artifacts which caller has permission to access.
+		AND realm in UNNEST(@subRealms)
+	{{if .pagination}}
+		AND (
+			UNIX_SECONDS(partition_time) < @afterPartitionTimeUnix
+			OR (UNIX_SECONDS(partition_time) = @afterPartitionTimeUnix AND invocation_id > @afterInvocationID)
+			OR (UNIX_SECONDS(partition_time) = @afterPartitionTimeUnix AND invocation_id = @afterInvocationID AND result_id > @afterResultID)
+		)
+	{{end}}
+	-- deduplicate rows.
+	GROUP BY project, test_id, artifact_id, invocation_id, result_id, shard_id
+	ORDER BY PartitionTime DESC, InvocationID, ResultID
+	LIMIT @limit
+`))
+
+func generateReadTestArtifactsQuery(opts ReadTestArtifactsOpts) (string, error) {
+	var b bytes.Buffer
+	err := readTestArtifactsTmpl.ExecuteTemplate(&b, "", map[string]any{
+		"pagination": opts.PageToken != "",
+	})
+	if err != nil {
+		return "", errors.Annotate(err, "execute template").Err()
+	}
+	return b.String(), nil
+}
+
+func parseReadTestArtifactsPageToken(pageToken string) (afterPartitionTimeUnix int, afterInvocationID, afterResultID string, err error) {
+	tokens, err := pagination.ParseToken(pageToken)
+	if err != nil {
+		return 0, "", "", err
+	}
+
+	if len(tokens) != 3 {
+		return 0, "", "", pagination.InvalidToken(errors.Reason("expected 3 components, got %d", len(tokens)).Err())
+	}
+
+	afterPartitionTimeUnix, err = strconv.Atoi(tokens[0])
+	if err != nil {
+		return 0, "", "", pagination.InvalidToken(errors.Reason("expect the first page_token component to be an integer").Err())
+	}
+	return afterPartitionTimeUnix, tokens[1], tokens[2], nil
+}
+
+type ReadTestArtifactsOpts struct {
+	Project      string
+	SearchString *pb.ArtifactContentMatcher
+	TestID       string
+	VariantHash  string
+	ArtifactID   string
+	StartTime    time.Time
+	EndTime      time.Time
+	SubRealms    []string
+	Limit        int
+	PageToken    string
+}
+
+func (c *Client) ReadTestArtifacts(ctx context.Context, opts ReadTestArtifactsOpts) (rows []*MatchingArtifact, nextPageToken string, err error) {
+	var afterPartitionTimeUnix int
+	var afterInvocationID, afterResultID string
+	if opts.PageToken != "" {
+		afterPartitionTimeUnix, afterInvocationID, afterResultID, err = parseReadTestArtifactsPageToken(opts.PageToken)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	query, err := generateReadTestArtifactsQuery(opts)
+	if err != nil {
+		return nil, "", err
+	}
+	q := c.client.Query(query)
+	q.DefaultDatasetID = "internal"
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: opts.Project},
+		{Name: "testID", Value: opts.TestID},
+		{Name: "artifactID", Value: opts.ArtifactID},
+		{Name: "testVariantHash", Value: opts.VariantHash},
+		{Name: "searchRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureMatch(true).build()},
+		{Name: "searchContextBeforeRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureContextBefore(true).build()},
+		{Name: "searchContextAfterRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureContextAfter(true).build()},
+		{Name: "maxMatchSize", Value: maxMatchSize},
+		{Name: "startTime", Value: opts.StartTime},
+		{Name: "endTime", Value: opts.EndTime},
+		{Name: "subRealms", Value: opts.SubRealms},
+		{Name: "limit", Value: opts.Limit},
+		{Name: "afterPartitionTimeUnix", Value: afterPartitionTimeUnix},
+		{Name: "afterInvocationID", Value: afterInvocationID},
+		{Name: "afterResultID", Value: afterResultID},
+	}
+
+	it, err := q.Read(ctx)
+	if err != nil {
+		return nil, "", errors.Annotate(err, "running query").Err()
+	}
+	results := []*MatchingArtifact{}
+	for {
+		row := &MatchingArtifact{}
+		err := it.Next(row)
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return nil, "", errors.Annotate(err, "obtain next matching artifact row").Err()
+		}
+		results = append(results, row)
+	}
+	if opts.Limit != 0 && len(results) == int(opts.Limit) {
+		last := results[len(results)-1]
+		nextPageToken = pagination.Token(fmt.Sprint(last.PartitionTime.Unix()), last.InvocationID, last.ResultID)
+	}
+	return results, nextPageToken, nil
+}
+
 type matchWithContextRegexBuilder struct {
 	matcher              *pb.ArtifactContentMatcher
 	captureMatch         bool
@@ -285,7 +422,7 @@ func (b *matchWithContextRegexBuilder) withCaptureContextAfter(captureContextAft
 func (b *matchWithContextRegexBuilder) build() string {
 	optionalLineBreakRegex := "(?:\\r\\n|\\r|\\n)?"
 	searchRegex := regexPattern(b.matcher)
-	matchWithOptionalLineBreak := fmt.Sprintf("[^\r\n]*%s[^\r\n]*", optionalLineBreakRegex)
+	matchWithOptionalLineBreak := fmt.Sprintf("[^\\r\\n]*%s[^\\r\\n]*", optionalLineBreakRegex)
 
 	matchBefore := matchWithOptionalLineBreak
 	matchAfter := matchWithOptionalLineBreak

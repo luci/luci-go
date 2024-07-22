@@ -35,8 +35,11 @@ import (
 )
 
 const (
-	resultIDPattern           = `[a-z0-9\-_.]{1,32}`
-	projectPattern            = `[a-z0-9\-]{1,40}`
+	resultIDPattern = `[a-z0-9\-_.]{1,32}`
+	projectPattern  = `[a-z0-9\-]{1,40}`
+	// VariantHashRePattern is the regular expression pattern that matches
+	// validly formed Variant Hash.
+	variantHashRePattern      = `[0-9a-f]{16}`
 	maxLenSummaryHTML         = 4 * 1024
 	maxLenPrimaryErrorMessage = 1024
 	maxSizeErrors             = 3*1024 + 100
@@ -48,6 +51,7 @@ const (
 var (
 	projectRe        = regexpf("^%s$", projectPattern)
 	resultIDRe       = regexpf("^%s$", resultIDPattern)
+	variantHashRe    = regexp.MustCompile(`^` + variantHashRePattern + `$`)
 	testResultNameRe = regexpf(
 		"^invocations/(%s)/tests/([^/]+)/results/(%s)$", invocationIDPattern,
 		resultIDPattern,
@@ -103,7 +107,18 @@ func ValidateTestID(testID string) error {
 	return nil
 }
 
-// ValidateTestResultID returns a non-nil error if resultID is invalid.
+// ValidateVariantHash returns a non-nil error if variantHash is invalid.
+func ValidateVariantHash(variantHash string) error {
+	if variantHash == "" {
+		return unspecified()
+	}
+	if !variantHashRe.MatchString(variantHash) {
+		return errors.Reason("variant hash %s must match %s", variantHash, variantHashRe).Err()
+	}
+	return nil
+}
+
+// ValidateResultID returns a non-nil error if resultID is invalid.
 func ValidateResultID(resultID string) error {
 	return validateWithRe(resultIDRe, resultID)
 }

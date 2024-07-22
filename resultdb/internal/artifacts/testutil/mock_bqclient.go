@@ -21,9 +21,13 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 )
 
+type ReadTestArtifactGroupsFunc func(ctx context.Context, opts artifacts.ReadTestArtifactGroupsOpts) (groups []*artifacts.TestArtifactGroup, nextPageToken string, err error)
+type ReadTestArtifactsFunc func(ctx context.Context, opts artifacts.ReadTestArtifactsOpts) (rows []*artifacts.MatchingArtifact, nextPageToken string, err error)
+
 // MockBQClient is a mock implementation of the BQClient interface.
 type MockBQClient struct {
-	ReadTestArtifactGroupsFunc func(ctx context.Context, opts artifacts.ReadTestArtifactGroupsOpts) (groups []*artifacts.TestArtifactGroup, nextPageToken string, err error)
+	ReadTestArtifactGroupsFunc ReadTestArtifactGroupsFunc
+	ReadTestArtifactsFunc      ReadTestArtifactsFunc
 }
 
 // ReadTestArtifactGroups implements the BQClient interface.
@@ -34,9 +38,18 @@ func (m *MockBQClient) ReadTestArtifactGroups(ctx context.Context, opts artifact
 	return nil, "", nil
 }
 
+// ReadTestArtifacts implements the BQClient interface.
+func (m *MockBQClient) ReadTestArtifacts(ctx context.Context, opts artifacts.ReadTestArtifactsOpts) (groups []*artifacts.MatchingArtifact, nextPageToken string, err error) {
+	if m.ReadTestArtifactsFunc != nil {
+		return m.ReadTestArtifactsFunc(ctx, opts)
+	}
+	return nil, "", nil
+}
+
 // NewMockBQClient creates a new MockBQClient with the given ReadTestArtifactGroupsFunc.
-func NewMockBQClient(readTestArtifactGroupsFunc func(ctx context.Context, opts artifacts.ReadTestArtifactGroupsOpts) (groups []*artifacts.TestArtifactGroup, nextPageToken string, err error)) *MockBQClient {
+func NewMockBQClient(readTestArtifactGroupsFunc ReadTestArtifactGroupsFunc, readTestArtifactsFunc ReadTestArtifactsFunc) *MockBQClient {
 	return &MockBQClient{
 		ReadTestArtifactGroupsFunc: readTestArtifactGroupsFunc,
+		ReadTestArtifactsFunc:      readTestArtifactsFunc,
 	}
 }

@@ -48,7 +48,7 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 
 		Convey(`capture match`, func() {
 			resp := builder.withCaptureMatch(true).build()
-			So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\r\n]*(?:\\r\\n|\\r|\\n)?[^\r\n]*(exact\\.contain\\(\\))[^\r\n]*(?:\\r\\n|\\r|\\n)?[^\r\n]*(?:\\r\\n|\\r|\\n)?")
+			So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(exact\\.contain\\(\\))[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?")
 			verifyRegex(text1, resp, "exact.contain()")
 			verifyRegex(text2, resp, "exact.contain()")
 			verifyRegex(text3, resp, "exact.contain()")
@@ -56,7 +56,7 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 
 		Convey(`capture before`, func() {
 			resp := builder.withCaptureContextBefore(true).build()
-			So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?([^\r\n]*(?:\\r\\n|\\r|\\n)?[^\r\n]*)exact\\.contain\\(\\)[^\r\n]*(?:\\r\\n|\\r|\\n)?[^\r\n]*(?:\\r\\n|\\r|\\n)?")
+			So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?([^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*)exact\\.contain\\(\\)[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?")
 			verifyRegex(text1, resp, "line2\r\nline3")
 			verifyRegex(text2, resp, "line1")
 			verifyRegex(text3, resp, "line3\r\nline4")
@@ -64,7 +64,7 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 
 		Convey(`capture after`, func() {
 			resp := builder.withCaptureContextAfter(true).build()
-			So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\r\n]*(?:\\r\\n|\\r|\\n)?[^\r\n]*exact\\.contain\\(\\)([^\r\n]*(?:\\r\\n|\\r|\\n)?[^\r\n]*)(?:\\r\\n|\\r|\\n)?")
+			So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*exact\\.contain\\(\\)([^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*)(?:\\r\\n|\\r|\\n)?")
 			verifyRegex(text1, resp, "line3after\r\nline4")
 			verifyRegex(text2, resp, "\r\nline2")
 			verifyRegex(text3, resp, "")

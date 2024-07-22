@@ -17,10 +17,74 @@ package resultdb
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
+
+	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func (s *resultDBServer) QueryTestVariantArtifacts(ctx context.Context, req *pb.QueryTestVariantArtifactsRequest) (rsp *pb.QueryTestVariantArtifactsResponse, err error) {
-	// TODO (beining): Implement.
-	return nil, nil
+	// Validate project before using it to check permission.
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return nil, appstatus.BadRequest(errors.Annotate(err, "project").Err())
+	}
+	subRealms, err := permissions.QuerySubRealmsNonEmpty(ctx, req.Project, nil, rdbperms.PermListArtifacts)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateQueryTestVariantArtifactsRequest(req); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+	limit := int(artifactSearchPageSizeLimiter.Adjust(req.PageSize))
+	opts := artifacts.ReadTestArtifactsOpts{
+		Project:      req.Project,
+		SearchString: req.SearchString,
+		TestID:       req.TestId,
+		VariantHash:  req.VariantHash,
+		ArtifactID:   req.ArtifactId,
+		StartTime:    req.StartTime.AsTime(),
+		EndTime:      req.EndTime.AsTime(),
+		SubRealms:    subRealms,
+		Limit:        limit,
+		PageToken:    req.PageToken,
+	}
+	rows, nextPageToken, err := s.artifactBQClient.ReadTestArtifacts(ctx, opts)
+	if err != nil {
+		return nil, errors.Annotate(err, "read test artifacts").Err()
+	}
+	return &pb.QueryTestVariantArtifactsResponse{
+		Artifacts:     toArtifactMatchingContents(rows, req.TestId, req.ArtifactId),
+		NextPageToken: nextPageToken,
+	}, nil
+}
+
+func validateQueryTestVariantArtifactsRequest(req *pb.QueryTestVariantArtifactsRequest) error {
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return errors.Annotate(err, "project").Err()
+	}
+	if req.SearchString.GetExactContain() == "" && req.SearchString.GetRegexContain() == "" {
+		return errors.New("search_string: unspecified")
+	}
+	if err := pbutil.ValidateTestID(req.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
+	}
+	if err := pbutil.ValidateVariantHash(req.VariantHash); err != nil {
+		return errors.Annotate(err, "variant_hash").Err()
+	}
+
+	if err := pbutil.ValidateArtifactID(req.ArtifactId); err != nil {
+		return errors.Annotate(err, "artifact_id").Err()
+	}
+	if err := validateStartEndTime(req.StartTime, req.EndTime); err != nil {
+		return err
+	}
+	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
+		return errors.Annotate(err, "page_size").Err()
+	}
+	return nil
 }
