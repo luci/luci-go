@@ -16,7 +16,6 @@ import { observer } from 'mobx-react-lite';
 
 import { useStore } from '@/common/store';
 
-import { AncestorBuildsRow } from './ancestor_build_row';
 import { BackendRows } from './backend_rows';
 import { BotLinkRow } from './bot_link_row';
 import { BuildbucketRow } from './buildbucket_row';
@@ -56,7 +55,6 @@ export const InfraSection = observer(() => {
               <ServiceAccountRow swarming={build.data.infra.swarming} />
             </>
           )}
-          <AncestorBuildsRow ancestorBuildIds={build.data.ancestorIds} />
           {build.recipeLink && <RecipeRow recipeLink={build.recipeLink} />}
           <InvocationRow resultdb={build.data.infra?.resultdb} />
         </tbody>

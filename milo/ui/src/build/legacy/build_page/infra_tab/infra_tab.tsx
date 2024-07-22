@@ -13,16 +13,12 @@
 // limitations under the License.
 
 import { Box, styled } from '@mui/material';
-import { startCase } from 'lodash-es';
 
-import { BuildStatusIcon } from '@/build/components/build_status_icon';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { BUILD_STATUS_DISPLAY_MAP } from '@/common/constants/build';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useBuild } from '../context';
 
-import { ActionsSection } from './actions_section';
 import { AlertsSection } from './alerts_section';
 import { BuildLogSection } from './build_log_section';
 import { BuildPackagesInfoSection } from './build_packages_info_section';
@@ -63,17 +59,12 @@ export function InfraTab() {
   return (
     <ContainerDiv>
       <Box>
-        <h3>
-          <BuildStatusIcon status={build.status} />{' '}
-          {startCase(BUILD_STATUS_DISPLAY_MAP[build.status])}
-        </h3>
         <AlertsSection />
         <SummarySection />
         <FailedTestSection />
         <StepsSection />
       </Box>
       <Box>
-        <ActionsSection />
         {build.builderInfo?.description && (
           <BuilderInfoSection descriptionHtml={build.builderInfo.description} />
         )}
