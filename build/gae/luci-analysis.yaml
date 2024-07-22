@@ -15,6 +15,9 @@ build:
   - go_gae_bundle: ${inputsdir}/frontend/app.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/frontend
+  - go_gae_bundle: ${inputsdir}/service-api/service-api.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/service-api
   - go_gae_bundle: ${inputsdir}/result-ingestion/service-result-ingestion.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/result-ingestion
