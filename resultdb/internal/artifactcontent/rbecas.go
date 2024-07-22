@@ -51,8 +51,7 @@ func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
 		grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 }
 
