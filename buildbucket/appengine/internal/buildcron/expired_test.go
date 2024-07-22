@@ -253,7 +253,6 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				Name:       name,
 				Predicates: []string{`build.status.to_string()=="INFRA_FAILURE"`},
 				ExtraFields: map[string]string{
-					"status":      `build.status.to_string()`,
 					"experiments": `build.input.experiments.to_string()`,
 				},
 			}
@@ -277,7 +276,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 						Class: &pb.CustomMetric_MetricBase{
 							MetricBase: base,
 						},
-						ExtraFields: []string{"status", "experiments"},
+						ExtraFields: []string{"experiments"},
 					},
 				},
 			}

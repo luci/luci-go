@@ -356,7 +356,16 @@ func createCustomMetricMap(globalCfg *pb.SettingsCfg, registry *registry.Registr
 }
 
 func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, error) {
-	fields := stringsToFields(cm.ExtraFields)
+	// Add the default metric fields.
+	base := cm.GetMetricBase()
+	commonFields, err := GetCommonBaseFields(base)
+	if err != nil {
+		return nil, err
+	}
+	fieldStrs := make([]string, 0, len(commonFields)+len(cm.ExtraFields))
+	fieldStrs = append(fieldStrs, commonFields...)
+	fieldStrs = append(fieldStrs, cm.ExtraFields...)
+	fields := stringsToFields(fieldStrs)
 
 	opt := &metric.Options{
 		TargetType: (&bbmetrics.BuilderTarget{}).Type(),
@@ -364,10 +373,10 @@ func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, 
 	}
 
 	info := &customeMetricInfo{
-		fields: cm.ExtraFields,
+		fields: fieldStrs,
 	}
 
-	switch base := cm.GetMetricBase(); base {
+	switch base {
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED:
@@ -491,6 +500,10 @@ func reportToCustomMetrics(ctx context.Context, build *model.Build, cmValues map
 // values being each metric's fields.
 func getBuildCustomMetrics(ctx context.Context, build *pb.Build, base pb.CustomMetricBase, toReport []*pb.CustomMetricDefinition) map[string]map[string]string {
 	res := make(map[string]map[string]string)
+	defaultFields, err := getDefaultMetricFieldValues(build, base)
+	if err != nil {
+		logging.Errorf(ctx, "failed to get default metric fields for build %d: %s", build.Id, err)
+	}
 	for _, cmp := range toReport {
 		// Check if b fulfills the predicates.
 		matched, err := buildcel.BoolEval(build, cmp.Predicates)
@@ -508,7 +521,30 @@ func getBuildCustomMetrics(ctx context.Context, build *pb.Build, base pb.CustomM
 			logging.Errorf(ctx, "failed to evaluate build %d with fields: %s", build.Id, err)
 			continue
 		}
+
+		// Add default metric fields.
+		for k, v := range defaultFields {
+			fieldMap[k] = v
+		}
 		res[cmp.Name] = fieldMap
 	}
 	return res
+}
+
+func getDefaultMetricFieldValues(b *pb.Build, base pb.CustomMetricBase) (map[string]string, error) {
+	baseFields, err := GetCommonBaseFields(base)
+	if err != nil {
+		return nil, err
+	}
+
+	baseFieldValues := make(map[string]string, len(baseFields))
+	for _, f := range baseFields {
+		switch f {
+		case "status":
+			baseFieldValues[f] = pb.Status_name[int32(b.Status)]
+		default:
+			return nil, errors.Reason("invalid base field %s", f).Err()
+		}
+	}
+	return baseFieldValues, nil
 }

@@ -6559,7 +6559,6 @@ func TestScheduleBuild(t *testing.T) {
 				Name:       "chrome/infra/custom/builds/created",
 				Predicates: []string{`build.tags.get_value("os")!=""`},
 				ExtraFields: map[string]string{
-					// "experiments": `build.input.experiments.to_string()`,
 					"os": `build.tags.get_value("os")`,
 				},
 			}

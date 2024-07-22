@@ -128,7 +128,7 @@ func TestStartBuild(t *testing.T) {
 			CustomMetrics: []*pb.CustomMetric{
 				{
 					Name:        name,
-					ExtraFields: []string{"experiments", "os"},
+					ExtraFields: []string{"os"},
 					Class: &pb.CustomMetric_MetricBase{
 						MetricBase: base,
 					},
@@ -160,7 +160,6 @@ func TestStartBuild(t *testing.T) {
 						Name:       name,
 						Predicates: []string{`build.tags.get_value("os")!=""`},
 						ExtraFields: map[string]string{
-							"experiments": "build.input.experiments.to_string()",
 							"os":          `build.tags.get_value("os")`,
 						},
 					},
@@ -217,7 +216,7 @@ func TestStartBuild(t *testing.T) {
 
 					// metrics
 					So(tsmon.Store(ctx).Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), ShouldEqual, 1)
-					val, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, []any{"None", "Linux"})
+					val, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, []any{"Linux"})
 					So(err, ShouldBeNil)
 					So(val, ShouldEqual, 1)
 				})

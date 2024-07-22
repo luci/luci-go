@@ -1112,7 +1112,7 @@ func TestUpdateBuild(t *testing.T) {
 					CustomMetrics: []*pb.CustomMetric{
 						{
 							Name:        name,
-							ExtraFields: []string{"status", "experiments"},
+							ExtraFields: []string{"experiments"},
 							Class: &pb.CustomMetric_MetricBase{
 								MetricBase: base,
 							},
@@ -1130,7 +1130,6 @@ func TestUpdateBuild(t *testing.T) {
 							Name:       name,
 							Predicates: []string{`build.status.to_string()!=""`},
 							ExtraFields: map[string]string{
-								"status":      "build.status.to_string()",
 								"experiments": "build.input.experiments.to_string()",
 							},
 						},

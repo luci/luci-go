@@ -294,7 +294,7 @@ func TestBuildEvents(t *testing.T) {
 				b.Proto.Status = pb.Status_SUCCESS
 				So(datastore.Put(ctx, b), ShouldBeNil)
 				BuildCompleted(ctx, b)
-				res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, fv("linux"))
+				res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, fv("SUCCESS", "linux"))
 				So(err, ShouldBeNil)
 				So(res, ShouldEqual, 1)
 			})
@@ -325,7 +325,7 @@ func TestBuildEvents(t *testing.T) {
 				b.Proto.Status = pb.Status_SUCCESS
 				So(datastore.Put(ctx, b), ShouldBeNil)
 				BuildCompleted(ctx, b)
-				res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, fv("linux"))
+				res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, fv("SUCCESS", "linux"))
 				So(err, ShouldBeNil)
 				So(res.(*distribution.Distribution).Sum(), ShouldEqual, 33)
 			})
@@ -354,7 +354,7 @@ func TestBuildEvents(t *testing.T) {
 				b.Proto.Status = pb.Status_SUCCESS
 				So(datastore.Put(ctx, b), ShouldBeNil)
 				BuildCompleted(ctx, b)
-				res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, fv("linux"))
+				res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, fv("SUCCESS", "linux"))
 				So(err, ShouldBeNil)
 				So(res.(*distribution.Distribution).Sum(), ShouldEqual, 30)
 			})
