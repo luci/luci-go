@@ -1,4 +1,4 @@
-# Copyright 2022 The LUCI Authors.
+# Copyright 2024 The LUCI Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
 
 runtime: go122
 instance_class: F4
-service: default
+service: api
 service_account: ${SERVICE_ACCOUNT}
 
-# Currently optimised for the backend. If frontend latency becomes
-# an issue, we can split backend into a separate service.
 automatic_scaling:
   target_throughput_utilization: 0.90
   target_cpu_utilization: 0.90
@@ -61,10 +59,6 @@ luci_gae_vars:
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml, service-api.yaml and service-result-ingestion.yaml.
 handlers:
-- url: /static
-  static_dir: ui/dist
-  secure: always
-
 - url: /_ah/push-handlers/.*
   script: auto
   login: admin
