@@ -29,12 +29,18 @@ package facade
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"golang.org/x/exp/constraints"
 )
+
+// ShortDuration is the maximum difference allowed by similar times.
+const ShortDuration = 3 * time.Millisecond
 
 // Convey is a replacement for legacy Convey. Subconveys need a T argument, however.
 func Convey(name string, t testing.TB, cb func(*ftt.Test)) {
@@ -58,13 +64,65 @@ func So[T any](t testing.TB, actual any, compare comparison.Func[T]) {
 	assert.Loosely(t, actual, compare)
 }
 
-var ShouldAlmostEqual = should.AlmostEqual[float64]
-var ShouldBeNil = should.BeNil
-var ShouldNotBeNil = should.NotBeNil
-var ShouldBeTrue = should.BeTrue
-var ShouldBeFalse = should.BeFalse
-var ShouldEqual = should.Equal[any]
-var ShouldBeEmpty = should.BeEmpty
-var ShouldResemble = should.Match[any]
-var ShouldContainKey = should.ContainKey[any]
-var ShouldHaveLength = should.HaveLength
+// ShouldBeLessThan is a generic function that wraps should.BeLessThan.
+//
+// This avoids needless duplication for ints, int64s, strings, and other
+// stuff.
+//
+// Most of the comparisons below could also be made generic, but I'm choosing
+// to genericize things on an as-needed basis to keep the code in this library
+// as simple as possible.
+func ShouldBeLessThan[T constraints.Ordered](upper T) comparison.Func[T] {
+	return should.BeLessThan(upper)
+}
+
+// ShouldAlmostEqualTime compares two times and checks that they are similar.
+//
+// This is a compatibility function that exists only to allow bad tests
+// that don't mock the clock to pass and not block rewrite efforts.
+//
+// Code that uses the clock should touch it through go.chromium.org/luci/common/clock ,
+// and go.chromium.org/luci/common/clock/testclock .
+//
+// The time would then be set in a test like:
+//
+// 	func TestWhatever(t *testing.T) {
+// 		t.Parallel()
+// 		ctx := context.Background()
+// 		tc, ctx := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+// 		// do stuff
+// 	}
+//
+// Do not use this function for any other purpose.
+func ShouldAlmostEqualTime(expected time.Time) comparison.Func[time.Time] {
+	return func(actual time.Time) *failure.Summary {
+		d := actual.Sub(expected)
+		return ShouldBeLessThan(ShortDuration)(d)
+	}
+}
+
+// DangerousShouldResemble uses the legacy behavior, which reaches inside
+// protos (for example, it is not proto-aware) and ignores unexported fields.
+//
+// This function should only be used to port an ornery test to the glorious
+// new FTT world.
+var DangerousShouldResemble = should.Resemble[any]
+
+var (
+	ShouldAlmostEqual      = should.AlmostEqual[float64]
+	ShouldBeEmpty          = should.BeEmpty
+	ShouldBeFalse          = should.BeFalse
+	ShouldBeNil            = should.BeNil
+	ShouldBeTrue           = should.BeTrue
+	ShouldContain          = should.Contain[any]
+	ShouldContainString    = should.Contain[string]
+	ShouldContainKey       = should.ContainKey[any]
+	ShouldNotContainKey    = should.NotContainKey[any]
+	ShouldEqual            = should.Equal[any]
+	ShouldEqualInt64       = should.Equal[int64]
+	ShouldHaveLength       = should.HaveLength
+	ShouldNotBeNil         = should.NotBeNil
+	ShouldResemble         = should.Match[any]
+	ShouldContainSubstring = should.ContainSubstring
+	ShouldBeBlank          = should.BeBlank
+)
