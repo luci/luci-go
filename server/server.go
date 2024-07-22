@@ -2345,8 +2345,7 @@ func (s *Server) initAuthFinish() error {
 		s.Context,
 		option.WithTokenSource(s.cloudTS),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
-		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 	)
 	if err != nil {
 		return errors.Annotate(err, "failed to construct IAM client").Err()

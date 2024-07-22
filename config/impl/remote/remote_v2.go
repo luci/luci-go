@@ -84,8 +84,7 @@ func DefaultDialOptions() []grpc.DialOption {
 	return []grpc.DialOption{
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithDefaultServiceConfig(retryPolicy),
 		// Luci-config V2 can return gzip-compressed msg. But the grpc client
 		// doesn't provide a way to check the pure compressed response size. It also
