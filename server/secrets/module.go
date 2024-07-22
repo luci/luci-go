@@ -136,7 +136,8 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		ctx,
 		option.WithTokenSource(ts),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 	)
 
 	if err != nil {

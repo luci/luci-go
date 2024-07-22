@@ -46,7 +46,8 @@ func NewProdXMonitor(ctx context.Context, chunkSize int, account string) (monito
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(cred),
 		grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
-		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 	)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to dial ProdX service %s", prodXEndpoint).Err()

@@ -199,7 +199,8 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 		clientOpts = []option.ClientOption{
 			option.WithTokenSource(ts),
 			option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-			option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
+			option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+			option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		}
 	}
 

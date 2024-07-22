@@ -60,7 +60,8 @@ func NewClient(ctx context.Context, bucket string) (*Client, error) {
 	options := []option.ClientOption{
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
+		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		option.WithScopes(storage.ScopeReadWrite),
 	}
 	cl, err := storage.NewClient(ctx, options...)

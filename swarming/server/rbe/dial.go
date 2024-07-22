@@ -74,7 +74,8 @@ func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 			grpc.WithPerRPCCredentials(creds),
 			grpc.WithBlock(),
 			grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{}),
-			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+			grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
 			grpc.WithDefaultServiceConfig(retryPolicy),
 		)
 		if err != nil {
