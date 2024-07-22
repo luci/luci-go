@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 
@@ -62,8 +61,6 @@ func main() {
 		psc, err := pubsub.NewClient(
 			srv.Context, srv.Options.CloudProject,
 			option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-			option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
-			option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 		)
 		if err != nil {

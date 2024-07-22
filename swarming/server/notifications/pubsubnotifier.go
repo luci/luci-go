@@ -22,7 +22,6 @@ import (
 	"sync"
 
 	"cloud.google.com/go/pubsub"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
@@ -77,7 +76,6 @@ func NewPubSubNotifier(ctx context.Context, cloudProj string) (*PubSubNotifier, 
 	psClient, err := pubsub.NewClient(
 		ctx, cloudProj,
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 	)
 	if err != nil {

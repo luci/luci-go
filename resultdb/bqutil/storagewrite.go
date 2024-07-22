@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery/storage/managedwriter"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -54,8 +53,6 @@ func NewWriterClient(ctx context.Context, gcpProject string) (*managedwriter.Cli
 	}
 	return managedwriter.NewClient(ctx, gcpProject,
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
-		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 		option.WithGRPCDialOption(grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time: time.Minute,

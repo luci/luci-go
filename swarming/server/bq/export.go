@@ -22,7 +22,6 @@ import (
 
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	pubsub "cloud.google.com/go/pubsub/apiv1"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
@@ -99,7 +98,6 @@ func Register(
 	bqClient, err := managedwriter.NewClient(srv.Context, srv.Options.CloudProject,
 		option.WithTokenSource(ts),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 	)
 	if err != nil {
 		return errors.Annotate(err, "failed to create BQ client").Err()
@@ -114,7 +112,6 @@ func Register(
 	psClient, err := pubsub.NewPublisherClient(srv.Context,
 		option.WithTokenSource(ts),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 	)
 	if err != nil {
 		return errors.Annotate(err, "failed to create PubSub client").Err()

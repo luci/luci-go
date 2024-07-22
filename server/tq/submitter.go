@@ -20,7 +20,6 @@ import (
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	pubsub "cloud.google.com/go/pubsub/apiv1"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -68,8 +67,6 @@ func NewCloudSubmitter(ctx context.Context, creds credentials.PerRPCCredentials)
 			Time: 5 * time.Minute,
 		})),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
-		option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 	}
 
