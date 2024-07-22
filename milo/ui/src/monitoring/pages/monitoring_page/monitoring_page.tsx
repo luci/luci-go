@@ -93,16 +93,18 @@ export const MonitoringPage = () => {
     (extendedQueryData || []).map((a) => a?.bug).filter((b) => b && b !== '0'),
   );
 
+  const hotlistPart = tree.hotlistId
+    ? `(status:open AND hotlistid:${tree?.hotlistId})`
+    : '';
+  const linkedIssuesPart = linkedBugs.map((b) => 'id:' + b).join(' OR ');
   const bugQuery = useIssueListQuery(
     {
-      query: `(status:open AND hotlistid:${tree?.hotlistId})${
-        linkedBugs.length > 0 ? ' OR ' : ''
-      }${linkedBugs.map((b) => 'id:' + b).join(' OR ')}`,
+      query: `${hotlistPart}${hotlistPart !== '' && linkedIssuesPart !== '' ? ' OR ' : ''}${linkedIssuesPart}`,
       orderBy: 'priority',
     },
     {
       refetchInterval: 60000,
-      enabled: !!tree?.hotlistId && !extendedQuery.some((q) => q.isLoading),
+      enabled: !extendedQuery.some((q) => q.isLoading),
     },
   );
 
