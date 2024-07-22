@@ -42,8 +42,23 @@ import (
 // ShortDuration is the maximum difference allowed by similar times.
 const ShortDuration = 3 * time.Millisecond
 
+// MaxTestLength is a sensible maximum number of characters for the name of a test.
+//
+// If the combined length of all tests exceeds 512 bytes, this starts causing problems with
+// downstream services as of 2024-07-22. However, with a budget of 100 characters you get
+// five levels, which should be enough in practice.
+//
+// See b:354772098 for more information.
+const MaxTestLength = 100
+
 // Convey is a replacement for legacy Convey. Subconveys need a T argument, however.
+//
+// If the test name exceeds 100 characters, we will "helpfully" panic.
+// See b:354772098 for details.
 func Convey(name string, t testing.TB, cb func(*ftt.Test)) {
+	if n := len(name); n > MaxTestLength {
+		panic(fmt.Sprintf("test %q has length %d which exceeds %d", name, n, MaxTestLength))
+	}
 	t.Helper()
 	switch v := t.(type) {
 	case *testing.T:
@@ -86,12 +101,12 @@ func ShouldBeLessThan[T constraints.Ordered](upper T) comparison.Func[T] {
 //
 // The time would then be set in a test like:
 //
-// 	func TestWhatever(t *testing.T) {
-// 		t.Parallel()
-// 		ctx := context.Background()
-// 		tc, ctx := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
-// 		// do stuff
-// 	}
+//	func TestWhatever(t *testing.T) {
+//		t.Parallel()
+//		ctx := context.Background()
+//		tc, ctx := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+//		// do stuff
+//	}
 //
 // Do not use this function for any other purpose.
 func ShouldAlmostEqualTime(expected time.Time) comparison.Func[time.Time] {
