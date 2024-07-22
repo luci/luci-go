@@ -1084,12 +1084,12 @@ func TestValidateProject(t *testing.T) {
 			settingsCfg := &pb.SettingsCfg{
 				CustomMetrics: []*pb.CustomMetric{
 					{
-						Name:   "chrome/infra/custom/builds/started",
-						Fields: []string{"os"},
+						Name:        "chrome/infra/custom/builds/started",
+						ExtraFields: []string{"os"},
 					},
 					{
-						Name:   "chrome/infra/custom/builds/completed",
-						Fields: []string{"os"},
+						Name:        "chrome/infra/custom/builds/completed",
+						ExtraFields: []string{"os"},
 					},
 				},
 			}
@@ -1228,7 +1228,7 @@ func TestValidateProject(t *testing.T) {
 				So(ve.Errors[0].Error(), ShouldContainSubstring, "failed to generate CEL expression")
 			})
 
-			Convey("metric fields empty", func() {
+			Convey("metric extra_fields empty", func() {
 				content := `
 					builders {
 						name: "both default"
@@ -1287,7 +1287,7 @@ func TestValidateProject(t *testing.T) {
 						custom_metric_definitions {
 							name: "chrome/infra/custom/builds/started"
 							predicates: "build.tags.get_value(\"os\")!=\"\""
-							fields {
+							extra_fields {
 								key: "os",
 								value: "build.tags.get_value(\"os\")!=\"\"",
 							}
@@ -1326,11 +1326,11 @@ func TestValidateProject(t *testing.T) {
 						custom_metric_definitions {
 							name: "chrome/infra/custom/builds/started"
 							predicates: "build.tags.get_value(\"os\")!=\"\""
-							fields {
+							extra_fields {
 								key: "os",
 								value: "build.tags.get_value(\"os\")",
 							}
-							fields {
+							extra_fields {
 								key: "additional",
 								value: "build.tags.get_value(\"additional\")",
 							}

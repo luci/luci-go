@@ -6539,17 +6539,17 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				CustomMetrics: []*pb.CustomMetric{
 					{
-						Name:   "chrome/infra/custom/builds/created",
-						Fields: []string{"os"},
+						Name:        "chrome/infra/custom/builds/created",
+						ExtraFields: []string{"os"},
 						Class: &pb.CustomMetric_MetricBase{
-							MetricBase: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
+							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED,
 						},
 					},
 					{
-						Name:   "chrome/infra/custom/builds/completed",
-						Fields: []string{"os"},
+						Name:        "chrome/infra/custom/builds/completed",
+						ExtraFields: []string{"os"},
 						Class: &pb.CustomMetric_MetricBase{
-							MetricBase: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED,
+							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED,
 						},
 					},
 				},
@@ -6558,20 +6558,20 @@ func TestScheduleBuild(t *testing.T) {
 			cm1 := &pb.CustomMetricDefinition{
 				Name:       "chrome/infra/custom/builds/created",
 				Predicates: []string{`build.tags.get_value("os")!=""`},
-				Fields: map[string]string{
+				ExtraFields: map[string]string{
 					// "experiments": `build.input.experiments.to_string()`,
 					"os": `build.tags.get_value("os")`,
 				},
 			}
 			cm2 := &pb.CustomMetricDefinition{
-				Name:       "chrome/infra/custom/builds/completed",
-				Predicates: []string{`build.tags.get_value("os")!=""`},
-				Fields:     map[string]string{"os": `build.tags.get_value("os")`},
+				Name:        "chrome/infra/custom/builds/completed",
+				Predicates:  []string{`build.tags.get_value("os")!=""`},
+				ExtraFields: map[string]string{"os": `build.tags.get_value("os")`},
 			}
 			cm3 := &pb.CustomMetricDefinition{
-				Name:       "chrome/infra/custom/builds/missing",
-				Predicates: []string{`build.tags.get_value("os")!=""`},
-				Fields:     map[string]string{"os": `build.tags.get_value("os")`},
+				Name:        "chrome/infra/custom/builds/missing",
+				Predicates:  []string{`build.tags.get_value("os")!=""`},
+				ExtraFields: map[string]string{"os": `build.tags.get_value("os")`},
 			}
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
@@ -6629,16 +6629,16 @@ func TestScheduleBuild(t *testing.T) {
 			bld := &model.Build{ID: 9021868963221667745}
 			So(datastore.Get(ctx, bld), ShouldBeNil)
 			So(len(bld.CustomMetrics), ShouldEqual, 2)
-			So(bld.CustomMetrics[0].Base, ShouldEqual, pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED)
+			So(bld.CustomMetrics[0].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED)
 			So(bld.CustomMetrics[0].Metric, ShouldResembleProto, cm1)
-			So(bld.CustomMetrics[1].Base, ShouldEqual, pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED)
+			So(bld.CustomMetrics[1].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED)
 			So(bld.CustomMetrics[1].Metric, ShouldResembleProto, cm2)
 
 			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), ShouldEqual, 1)
 			ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
 			So(store.Get(ctx, metrics.V2.BuildCountCreated, time.Time{}, []any{"None"}), ShouldEqual, 1)
 
-			res, err := metrics.GetCustomMetricsData(ctx, pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED, cm1.Name, time.Time{}, []any{"Linux"})
+			res, err := metrics.GetCustomMetricsData(ctx, pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED, cm1.Name, time.Time{}, []any{"Linux"})
 			So(err, ShouldBeNil)
 			So(res, ShouldEqual, 1)
 		})

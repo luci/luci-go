@@ -343,41 +343,41 @@ message CipdSettings {
   Source source = 2;
 }
 
-// A CustomMetricDefinitionBase tells the base metric of a given custom metric.
+// A CustomMetricBase tells the base metric of a given custom metric.
 //
 // Buildbucket will determine what to report to and the annotation for
 // a given CustomMetric, based on the specified metric base. Visit
 // http://shortn/_6bc0aXIouD to find all the supported metric bases.
-enum CustomMetricDefinitionBase {
-  CUSTOM_BUILD_METRIC_BASE_UNSET = 0;
+enum CustomMetricBase {
+  CUSTOM_METRIC_BASE_UNSET = 0;
   // A counter metric for Build creation.
   // Default metric field: None.
-  CUSTOM_BUILD_METRIC_BASE_CREATED = 1;
+  CUSTOM_METRIC_BASE_CREATED = 1;
   // 	A counter metric for Build start..
   // Default metric field: None.
-  CUSTOM_BUILD_METRIC_BASE_STARTED = 2;
+  CUSTOM_METRIC_BASE_STARTED = 2;
   // A counter metric for Build completion..
   // Default metric field: status.
-  CUSTOM_BUILD_METRIC_BASE_COMPLETED = 3;
+  CUSTOM_METRIC_BASE_COMPLETED = 3;
   // The time elapsed from the build creation to the completion.
   // Default metric field: status.
-  CUSTOM_BUILD_METRIC_BASE_CYCLE_DURATIONS = 4;
+  CUSTOM_METRIC_BASE_CYCLE_DURATIONS = 4;
   // The time elapsed from the build start to the completion.
   // Default metric field: status.
-  CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS = 5;
+  CUSTOM_METRIC_BASE_RUN_DURATIONS = 5;
   // The time elapsed from the build creation to the start.
   // Default metric field: None.
-  CUSTOM_BUILD_METRIC_BASE_SCHEDULING_DURATIONS = 6;
+  CUSTOM_METRIC_BASE_SCHEDULING_DURATIONS = 6;
   // The age of the oldest build that has been scheduled but not started yet
   // (aka age of the oldest pending build).
   // Default metric field: None.
-  CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED = 7;
+  CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED = 7;
   // Number of Builds for each Build status.
   // Default metric field: status.
-  CUSTOM_BUILD_METRIC_BASE_COUNT = 8;
+  CUSTOM_METRIC_BASE_COUNT = 8;
   // Number of consecutive failures since the last successful build.
   // Default metric field: status.
-  CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT = 9;
+  CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT = 9;
 }
 
 // CustomMetric is a metric object that collects a series of data
@@ -410,7 +410,7 @@ message CustomMetric {
 
   // Metric field names in addtion to the default ones.
   //
-  // Default metric fields can be found in CustomMetricDefinitionBase comments.
+  // Default metric fields can be found in CustomMetricBase comments.
   //
   // Each builder that uses this metric must specify how to populate each
   // field's value in their configurations, see CustomMetricDefinition.Fields.
@@ -419,9 +419,9 @@ message CustomMetric {
   //
   // Custom builder metric cannot have any custom fields in addition to their
   // defaults, i.e. if it's one of
-  // * CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED
-  // * CUSTOM_BUILD_METRIC_BASE_COUNT
-  // * CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT
+  // * CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED
+  // * CUSTOM_METRIC_BASE_COUNT
+  // * CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT
   //
   // The value type of all metric fields is always string.
   // Each Field must conform to ^[A-Za-z_][A-Za-z0-9_]*$ (See
@@ -437,11 +437,11 @@ message CustomMetric {
   // * build's gitiles commit hash
   // * build's gerrit change number
   // * etc
-  repeated string fields = 3;
+  repeated string extra_fields = 3;
 
   // Metric class determines which data to be collected and reported
   // to the metric.
   oneof class {
-      CustomMetricDefinitionBase metric_base = 4;
+      CustomMetricBase metric_base = 4;
   }
 }

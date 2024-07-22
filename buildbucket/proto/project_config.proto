@@ -684,7 +684,8 @@ message CustomMetricDefinition {
   //   - `build.tags.exists(t, t.key=="key")`
   repeated string predicates = 2;
 
-  // Describes how to generate metric field values.
+  // Describes how to generate values for the extra metric fields defined in
+  // CustomMetric.ExtraFields.
   //
   // In the map,
   // - each key is a custom metric field name, configured in the reference metric.
@@ -713,5 +714,5 @@ message CustomMetricDefinition {
   // * build's gitiles commit hash
   // * build's gerrit change number
   // * etc
-  map<string, string> fields = 3;
+  map<string, string> extra_fields = 3;
 }

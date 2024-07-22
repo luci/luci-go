@@ -62,22 +62,22 @@ func TestBuild(t *testing.T) {
 		Convey("read/write", func() {
 			cms := []CustomMetric{
 				{
-					Base: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CREATED,
+					Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED,
 					Metric: &pb.CustomMetricDefinition{
 						Name:       "custom_metric_created",
 						Predicates: []string{`build.tags.get_value("os")!=""`},
-						Fields: map[string]string{
+						ExtraFields: map[string]string{
 							"os":     `build.tags.get_value("os")`,
 							"random": `"random"`,
 						},
 					},
 				},
 				{
-					Base: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED,
+					Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED,
 					Metric: &pb.CustomMetricDefinition{
 						Name:       "custom_metric_completed",
 						Predicates: []string{`build.tags.get_value("os")!=""`},
-						Fields: map[string]string{
+						ExtraFields: map[string]string{
 							"os":     `build.tags.get_value("os")`,
 							"random": `"random"`,
 						},

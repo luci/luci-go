@@ -1514,7 +1514,7 @@ func builderCustomMetrics(ctx context.Context, globalCfg *pb.SettingsCfg, cfg *p
 		return nil
 	}
 
-	gms := make(map[string]pb.CustomMetricDefinitionBase, len(globalCfg.GetCustomMetrics()))
+	gms := make(map[string]pb.CustomMetricBase, len(globalCfg.GetCustomMetrics()))
 	for _, gm := range globalCfg.GetCustomMetrics() {
 		gms[gm.Name] = gm.GetMetricBase()
 	}

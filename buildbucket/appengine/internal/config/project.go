@@ -898,7 +898,7 @@ func validateCustomMetricDefinitions(ctx *validation.Context, cms []*pb.CustomMe
 
 	registeredMetrics := make(map[string][]string, len(globalCfg.GetCustomMetrics()))
 	for _, gm := range globalCfg.GetCustomMetrics() {
-		registeredMetrics[gm.Name] = gm.GetFields()
+		registeredMetrics[gm.Name] = gm.GetExtraFields()
 	}
 
 	for _, cm := range cms {
@@ -929,7 +929,7 @@ func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetric
 	// Fields
 	var missedFs []string
 	for _, f := range gmFields {
-		if _, ok := cm.GetFields()[f]; !ok {
+		if _, ok := cm.GetExtraFields()[f]; !ok {
 			missedFs = append(missedFs, f)
 		}
 	}
@@ -937,9 +937,9 @@ func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetric
 		ctx.Errorf(fmt.Sprintf("field(s) %q must be included", missedFs))
 	}
 
-	if len(cm.GetFields()) > 0 {
-		if _, err := buildcel.NewStringMap(cm.GetFields()); err != nil {
-			ctx.Errorf("fields: %s", err)
+	if len(cm.GetExtraFields()) > 0 {
+		if _, err := buildcel.NewStringMap(cm.GetExtraFields()); err != nil {
+			ctx.Errorf("extra_fields: %s", err)
 		}
 	}
 }

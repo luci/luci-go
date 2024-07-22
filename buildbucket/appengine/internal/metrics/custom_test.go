@@ -33,33 +33,33 @@ var testContext context.Context
 var cfgContent = `
 	custom_metrics {
 		name: "/chrome/infra/custom/builds/created",
-		fields: "os",
-		metric_base: CUSTOM_BUILD_METRIC_BASE_CREATED,
+		extra_fields: "os",
+		metric_base: CUSTOM_METRIC_BASE_CREATED,
 	}
 	custom_metrics {
 		name: "/chrome/infra/custom/builds/started",
-		fields: "os",
-		metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+		extra_fields: "os",
+		metric_base: CUSTOM_METRIC_BASE_STARTED,
 	}
 	custom_metrics {
 		name: "/chrome/infra/custom/builds/completed",
-		fields: "os",
-		metric_base: CUSTOM_BUILD_METRIC_BASE_COMPLETED,
+		extra_fields: "os",
+		metric_base: CUSTOM_METRIC_BASE_COMPLETED,
 	}
 	custom_metrics {
 		name: "/chrome/infra/custom/builds/run_duration",
-		fields: "os",
-		metric_base: CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS,
+		extra_fields: "os",
+		metric_base: CUSTOM_METRIC_BASE_RUN_DURATIONS,
 	}
 	custom_metrics {
 		name: "/chrome/infra/custom/builds/max_age",
-		fields: "os",
-		metric_base: CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED,
+		extra_fields: "os",
+		metric_base: CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED,
 	}
 	custom_metrics {
 		name: "/chrome/infra/custom/builds/count",
-		fields: "os",
-		metric_base: CUSTOM_BUILD_METRIC_BASE_COUNT,
+		extra_fields: "os",
+		metric_base: CUSTOM_METRIC_BASE_COUNT,
 	}
 `
 
@@ -76,7 +76,7 @@ func resetCustomMetrics(ctx context.Context) context.Context {
 	return ctx
 }
 
-func getCurrentMetricsAndState(ctx context.Context) (map[pb.CustomMetricDefinitionBase]map[string]CustomMetric, *tsmon.State) {
+func getCurrentMetricsAndState(ctx context.Context) (map[pb.CustomMetricBase]map[string]CustomMetric, *tsmon.State) {
 	cms := getCustomMetrics(ctx)
 	cms.m.RLock()
 	defer cms.m.RUnlock()
@@ -92,16 +92,16 @@ func TestWithCustomMetrics(t *testing.T) {
 
 		Convey("check metrics from test context", func() {
 			v2Custom, _ := getCurrentMetricsAndState(ctx)
-			startM := v2Custom[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED]["/chrome/infra/custom/builds/started"]
+			startM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED]["/chrome/infra/custom/builds/started"]
 			_, ok := startM.(*counter)
 			So(ok, ShouldBeTrue)
-			runDurationM := v2Custom[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_RUN_DURATIONS]["/chrome/infra/custom/builds/run_duration"]
+			runDurationM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_RUN_DURATIONS]["/chrome/infra/custom/builds/run_duration"]
 			_, ok = runDurationM.(*cumulativeDistribution)
 			So(ok, ShouldBeTrue)
-			maxAgeM := v2Custom[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED]["/chrome/infra/custom/builds/max_age"]
+			maxAgeM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED]["/chrome/infra/custom/builds/max_age"]
 			_, ok = maxAgeM.(*float)
 			So(ok, ShouldBeTrue)
-			countM := v2Custom[pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COUNT]["/chrome/infra/custom/builds/count"]
+			countM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT]["/chrome/infra/custom/builds/count"]
 			_, ok = countM.(*int)
 			So(ok, ShouldBeTrue)
 		})
@@ -119,7 +119,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 			cms := getCustomMetrics(ctx)
 			// Normal report.
 			cms.Report(ctx, &Report{
-				Base: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
+				Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
 				Name: "/chrome/infra/custom/builds/started",
 				FieldMap: map[string]string{
 					"os": "linux",
@@ -147,7 +147,7 @@ func TestUpdateCustomMetrics(t *testing.T) {
 					defer wg.Done()
 					cms := getCustomMetrics(ctx)
 					directUpdated := cms.Report(ctx, &Report{
-						Base: pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED,
+						Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
 						Name: "/chrome/infra/custom/builds/started",
 						FieldMap: map[string]string{
 							"experiments": "None",
@@ -176,12 +176,12 @@ func TestUpdateCustomMetrics(t *testing.T) {
 			So(newCms.state, ShouldEqual, oldState)
 		})
 
-		Convey("with a metric updating fields", func() {
+		Convey("with a metric updating extra_fields", func() {
 			oldCms := getCustomMetrics(ctx)
 			oldState := oldCms.state
 
 			buffered := false
-			globalCfg.CustomMetrics[0].Fields = append(globalCfg.CustomMetrics[0].Fields, "new_field")
+			globalCfg.CustomMetrics[0].ExtraFields = append(globalCfg.CustomMetrics[0].ExtraFields, "new_field")
 			flushAndMultiReports(globalCfg, &buffered)
 			// This line makes the test flaky.
 			//So(buffered, ShouldBeTrue)

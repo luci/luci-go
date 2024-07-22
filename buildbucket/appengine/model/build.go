@@ -80,8 +80,8 @@ type PubSubCallback struct {
 // CustomMetric encapsulates information of one custom metric this build
 // may report to.
 type CustomMetric struct {
-	Base   pb.CustomMetricDefinitionBase `gae:"base,noindex"`
-	Metric *pb.CustomMetricDefinition    `gae:"metric"`
+	Base   pb.CustomMetricBase        `gae:"base,noindex"`
+	Metric *pb.CustomMetricDefinition `gae:"metric"`
 }
 
 // Build is a representation of a build in the datastore.

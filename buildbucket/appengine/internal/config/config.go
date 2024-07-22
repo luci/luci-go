@@ -138,8 +138,8 @@ func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
 		ctx.Errorf("%q is reserved by Buildbucket", cm.Name)
 	}
 
-	seen := stringset.New(len(cm.GetFields()))
-	for _, field := range cm.GetFields() {
+	seen := stringset.New(len(cm.GetExtraFields()))
+	for _, field := range cm.GetExtraFields() {
 		if err := registry.ValidateMetricFieldName(field); err != nil {
 			ctx.Errorf("%s", err)
 		}
@@ -149,18 +149,23 @@ func validateCustomMetric(ctx *validation.Context, cm *pb.CustomMetric) {
 	}
 
 	base := cm.GetMetricBase()
-	baseFields := metrics.BaseFields[base]
-	bfSet := stringset.NewFromSlice(baseFields...)
-	fSet := stringset.NewFromSlice(cm.GetFields()...)
-	if !fSet.Contains(bfSet) {
-		ctx.Errorf("missing base fields %q", baseFields)
+	baseFields, err := metrics.GetCommonBaseFields(base)
+	if err != nil {
+		ctx.Errorf("base %s is invalid", base)
+	}
+	if len(baseFields) > 0 {
+		bfSet := stringset.NewFromSlice(baseFields...)
+		fSet := stringset.NewFromSlice(cm.GetExtraFields()...)
+		if fSet.Contains(bfSet) {
+			ctx.Errorf("cannot contain base fields %q in extra_fields", baseFields)
+		}
 	}
 
-	if (base == pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COUNT ||
-		base == pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT ||
-		base == pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_MAX_AGE_SCHEDULED) &&
-		!bfSet.Contains(fSet) {
-		ctx.Errorf("custom builder metric cannot have additional fields")
+	if (base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT ||
+		base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT ||
+		base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED) &&
+		len(cm.GetExtraFields()) > 0 {
+		ctx.Errorf("custom builder metric cannot have extra_fields")
 	}
 }
 

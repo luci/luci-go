@@ -247,12 +247,12 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 		})
 
 		Convey("marks old, running builds w/ infra_failure", func() {
-			base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_COMPLETED
+			base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED
 			name := "/chrome/infra/custom/builds/completed"
 			cm := &pb.CustomMetricDefinition{
 				Name:       name,
 				Predicates: []string{`build.status.to_string()=="INFRA_FAILURE"`},
-				Fields: map[string]string{
+				ExtraFields: map[string]string{
 					"status":      `build.status.to_string()`,
 					"experiments": `build.input.experiments.to_string()`,
 				},
@@ -277,7 +277,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 						Class: &pb.CustomMetric_MetricBase{
 							MetricBase: base,
 						},
-						Fields: []string{"status", "experiments"},
+						ExtraFields: []string{"status", "experiments"},
 					},
 				},
 			}

@@ -122,13 +122,13 @@ func TestStartBuild(t *testing.T) {
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
-		base := pb.CustomMetricDefinitionBase_CUSTOM_BUILD_METRIC_BASE_STARTED
+		base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED
 		name := "chrome/infra/custom/builds/started"
 		globalCfg := &pb.SettingsCfg{
 			CustomMetrics: []*pb.CustomMetric{
 				{
-					Name:   name,
-					Fields: []string{"experiments", "os"},
+					Name:        name,
+					ExtraFields: []string{"experiments", "os"},
 					Class: &pb.CustomMetric_MetricBase{
 						MetricBase: base,
 					},
@@ -159,7 +159,7 @@ func TestStartBuild(t *testing.T) {
 					Metric: &pb.CustomMetricDefinition{
 						Name:       name,
 						Predicates: []string{`build.tags.get_value("os")!=""`},
-						Fields: map[string]string{
+						ExtraFields: map[string]string{
 							"experiments": "build.input.experiments.to_string()",
 							"os":          `build.tags.get_value("os")`,
 						},

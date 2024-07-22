@@ -299,7 +299,7 @@ func TestConfig(t *testing.T) {
 							}
 							custom_metrics {
 								name: "/chrome/infra/custom/builds/started/",
-								metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+								metric_base: CUSTOM_METRIC_BASE_STARTED,
 							}
 						`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
@@ -316,7 +316,7 @@ func TestConfig(t *testing.T) {
 							}
 							custom_metrics {
 								name: "custom/builds/started/",
-								metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+								metric_base: CUSTOM_METRIC_BASE_STARTED,
 							}
 						`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
@@ -333,7 +333,7 @@ func TestConfig(t *testing.T) {
 							}
 							custom_metrics {
 								name: "/chrome/infra/buildbucket/v2/builds/started",
-								metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+								metric_base: CUSTOM_METRIC_BASE_STARTED,
 							}
 						`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
@@ -350,17 +350,34 @@ func TestConfig(t *testing.T) {
 						}
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/started",
-							fields: "experiments",
-							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+							extra_fields: "experiments",
+							metric_base: CUSTOM_METRIC_BASE_STARTED,
 						}
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/started",
-							fields: "experiments",
-							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+							extra_fields: "experiments",
+							metric_base: CUSTOM_METRIC_BASE_STARTED,
 						}
 					`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, "duplicated name is not allowed: /chrome/infra/custom/builds/started")
+			})
+
+			Convey("invalid base", func() {
+				content := []byte(`
+						logdog {
+							hostname: "logs.chromium.org"
+						}
+						resultdb {
+							hostname: "results.api.cr.dev"
+						}
+						custom_metrics {
+							name: "/chrome/infra/custom/builds/started",
+							metric_base: CUSTOM_METRIC_BASE_UNSET,
+						}
+					`)
+				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `base CUSTOM_METRIC_BASE_UNSET is invalid`)
 			})
 
 			Convey("invalid field", func() {
@@ -373,8 +390,8 @@ func TestConfig(t *testing.T) {
 						}
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/started",
-							fields: "$status",
-							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+							extra_fields: "$status",
+							metric_base: CUSTOM_METRIC_BASE_STARTED,
 						}
 					`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
@@ -391,16 +408,16 @@ func TestConfig(t *testing.T) {
 						}
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/started",
-							fields: "os",
-							fields: "os",
-							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+							extra_fields: "os",
+							extra_fields: "os",
+							metric_base: CUSTOM_METRIC_BASE_STARTED,
 						}
 					`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, `"os" is duplicated`)
 			})
 
-			Convey("missing base field", func() {
+			Convey("extra_fields contain base field", func() {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -409,16 +426,17 @@ func TestConfig(t *testing.T) {
 							hostname: "results.api.cr.dev"
 						}
 						custom_metrics {
-							name: "/chrome/infra/custom/builds/started",
-							fields: "os",
-							metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+							name: "/chrome/infra/custom/builds/completed",
+							extra_fields: "os",
+							extra_fields: "status",
+							metric_base: CUSTOM_METRIC_BASE_COMPLETED,
 						}
 					`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `missing base fields`)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `cannot contain base fields ["status"] in extra_fields`)
 			})
 
-			Convey("additional fields for builder metrics", func() {
+			Convey("extra_fields for builder metrics", func() {
 				content := []byte(`
 						logdog {
 							hostname: "logs.chromium.org"
@@ -428,13 +446,12 @@ func TestConfig(t *testing.T) {
 						}
 						custom_metrics {
 							name: "/chrome/infra/custom/builds/count",
-							fields: "os",
-							fields: "status",
-							metric_base: CUSTOM_BUILD_METRIC_BASE_COUNT,
+							extra_fields: "os",
+							metric_base: CUSTOM_METRIC_BASE_COUNT,
 						}
 					`)
 				So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, `custom builder metric cannot have additional fields`)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `custom builder metric cannot have extra_fields`)
 			})
 		})
 
@@ -487,23 +504,21 @@ func TestConfig(t *testing.T) {
 				}
 				custom_metrics {
 					name: "/chrome/infra/custom/builds/started",
-					fields: "os",
-					fields: "branch",
-					fields: "experiments",
-					metric_base: CUSTOM_BUILD_METRIC_BASE_STARTED,
+					extra_fields: "os",
+					extra_fields: "branch",
+					extra_fields: "experiments",
+					metric_base: CUSTOM_METRIC_BASE_STARTED,
 				}
 				custom_metrics {
 					name: "/chrome/infra/custom/builds/completed",
-					fields: "os",
-					fields: "final_step",
-					fields: "experiments",
-					fields: "status",
-					metric_base: CUSTOM_BUILD_METRIC_BASE_COMPLETED,
+					extra_fields: "os",
+					extra_fields: "final_step",
+					extra_fields: "experiments",
+					metric_base: CUSTOM_METRIC_BASE_COMPLETED,
 				}
 				custom_metrics {
 					name: "/chrome/infra/custom/builds/count",
-					fields: "status",
-					metric_base: CUSTOM_BUILD_METRIC_BASE_COUNT,
+					metric_base: CUSTOM_METRIC_BASE_COUNT,
 				}
 			`
 			So(validateSettingsCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
