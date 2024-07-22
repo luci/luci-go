@@ -38,6 +38,7 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	legacy_config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/clock"
@@ -77,10 +78,26 @@ func (cs ConfigSet) AsOutput(root string) Output {
 
 // ValidationResult is what we get after validating a config set.
 type ValidationResult struct {
-	ConfigSet string                             `json:"config_set"`          // a config set being validated
-	Failed    bool                               `json:"failed"`              // true if the config is bad
-	Messages  []*config.ValidationResult_Message `json:"messages"`            // errors, warnings, infos, etc.
-	RPCError  string                             `json:"rpc_error,omitempty"` // set if the RPC itself failed
+	ConfigSet string              `json:"config_set"`          // a config set being validated
+	Failed    bool                `json:"failed"`              // true if the config is bad
+	Messages  []ValidationMessage `json:"messages"`            // errors, warnings, infos, etc.
+	RPCError  string              `json:"rpc_error,omitempty"` // set if the RPC itself failed
+}
+
+// ValidationMessage is one validation message from the LUCI Config.
+//
+// It just wraps a proto, serializing it into JSON using JSONPB format using
+// proto_names for fields. The result looks almost like the default json.Marshal
+// serialization, except enum-valued fields (like Severity) use string enum
+// names as values, not integers. The reason is that existing callers of lucicfg
+// expect to see e.g. "WARNING" in the JSON, not "30".
+type ValidationMessage struct {
+	*config.ValidationResult_Message
+}
+
+// MarshalJSON implements json.Marshaler.
+func (m ValidationMessage) MarshalJSON() ([]byte, error) {
+	return (&protojson.MarshalOptions{UseProtoNames: true}).Marshal(m.ValidationResult_Message)
 }
 
 // ConfigSetValidator is primarily implemented through config.Service, but can
@@ -444,10 +461,18 @@ func (cs ConfigSet) Validate(ctx context.Context, val ConfigSetValidator) *Valid
 		logging.Infof(ctx, "  %s (%s)", f, humanize.Bytes(uint64(len(cs.Data[f]))))
 	}
 
-	messages, err := val.Validate(ctx, cs)
 	res := &ValidationResult{
 		ConfigSet: cs.Name,
-		Messages:  messages,
+	}
+
+	messages, err := val.Validate(ctx, cs)
+	if len(messages) != 0 {
+		res.Messages = make([]ValidationMessage, len(messages))
+		for i, m := range messages {
+			res.Messages[i] = ValidationMessage{
+				ValidationResult_Message: m,
+			}
+		}
 	}
 	if err != nil {
 		res.RPCError = err.Error()

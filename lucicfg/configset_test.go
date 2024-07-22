@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -86,10 +87,13 @@ func TestConfigSet(t *testing.T) {
 	Convey("Validation", t, func() {
 		const configSetName = "config set name"
 
+		errorMsg := &config.ValidationResult_Message{
+			Severity: config.ValidationResult_ERROR,
+			Text:     "Boo",
+		}
+
 		validator := testValidator{
-			res: []*config.ValidationResult_Message{
-				{Severity: config.ValidationResult_ERROR, Text: "Boo"},
-			},
+			res: []*config.ValidationResult_Message{errorMsg},
 		}
 
 		cfgSet := ConfigSet{
@@ -100,9 +104,9 @@ func TestConfigSet(t *testing.T) {
 			},
 		}
 
-		So(cfgSet.Validate(ctx, &validator), ShouldResemble, &ValidationResult{
+		So(cfgSet.Validate(ctx, &validator), ShouldResembleProto, &ValidationResult{
 			ConfigSet: configSetName,
-			Messages:  validator.res,
+			Messages:  []ValidationMessage{{errorMsg}},
 		})
 
 		So(validator.cs, ShouldResemble, cfgSet)
@@ -135,10 +139,10 @@ func TestConfigSet(t *testing.T) {
 		result := func(level ...config.ValidationResult_Severity) *ValidationResult {
 			res := &ValidationResult{}
 			for _, l := range level {
-				res.Messages = append(res.Messages, &config.ValidationResult_Message{
+				res.Messages = append(res.Messages, ValidationMessage{&config.ValidationResult_Message{
 					Severity: l,
 					Text:     "boo",
-				})
+				}})
 			}
 			return res
 		}
@@ -468,6 +472,55 @@ func TestLegacyRemoteValidator(t *testing.T) {
 			{Path: "b.cfg", Severity: config.ValidationResult_ERROR, Text: "Boom in b.cfg"},
 		})
 	})
+}
+
+func TestValidationResultJSON(t *testing.T) {
+	t.Parallel()
+
+	res := ValidationResult{
+		ConfigSet: "config_set",
+		Failed:    true,
+		Messages: []ValidationMessage{
+			{&config.ValidationResult_Message{
+				Path:     "path1",
+				Severity: config.ValidationResult_ERROR,
+				Text:     "error",
+			}},
+			{&config.ValidationResult_Message{
+				Path:     "path2",
+				Severity: config.ValidationResult_WARNING,
+				Text:     "warn",
+			}},
+		},
+		RPCError: "rcp error",
+	}
+
+	blob, err := json.MarshalIndent(&res, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `{
+  "config_set": "config_set",
+  "failed": true,
+  "messages": [
+    {
+      "path": "path1",
+      "severity": "ERROR",
+      "text": "error"
+    },
+    {
+      "path": "path2",
+      "severity": "WARNING",
+      "text": "warn"
+    }
+  ],
+  "rpc_error": "rcp error"
+}`
+
+	if string(blob) != expected {
+		t.Fatalf("Got:\n%s", string(blob))
+	}
 }
 
 type testValidator struct {
