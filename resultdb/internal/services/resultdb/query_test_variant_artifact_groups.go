@@ -16,6 +16,7 @@ package resultdb
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -54,15 +55,15 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 
 	limit := int(artifactSearchPageSizeLimiter.Adjust(req.PageSize))
 	opts := artifacts.ReadTestArtifactGroupsOpts{
-		Project:          req.Project,
-		SearchString:     req.SearchString,
-		TestIDPrefix:     req.TestIdPrefix,
-		ArtifactIDPrefix: req.ArtifactIdPrefix,
-		StartTime:        req.StartTime.AsTime(),
-		EndTime:          req.EndTime.AsTime(),
-		SubRealms:        subRealms,
-		Limit:            limit,
-		PageToken:        req.PageToken,
+		Project:           req.Project,
+		SearchString:      req.SearchString,
+		TestIDMatcher:     req.TestIdMatcher,
+		ArtifactIDMatcher: req.ArtifactIdMatcher,
+		StartTime:         req.StartTime.AsTime(),
+		EndTime:           req.EndTime.AsTime(),
+		SubRealms:         subRealms,
+		Limit:             limit,
+		PageToken:         req.PageToken,
 	}
 	rows, nextPageToken, err := s.artifactBQClient.ReadTestArtifactGroups(ctx, opts)
 	if err != nil {
@@ -85,14 +86,14 @@ func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtif
 	if req.SearchString.GetExactContain() == "" && req.SearchString.GetRegexContain() == "" {
 		return errors.New("search_string: unspecified")
 	}
-	if req.TestIdPrefix != "" {
-		if err := pbutil.ValidateTestID(req.TestIdPrefix); err != nil {
-			return errors.Annotate(err, "test_id_prefix").Err()
+	if req.TestIdMatcher != nil {
+		if err := validateTestIDMatcher(req.TestIdMatcher); err != nil {
+			return errors.Annotate(err, "test_id_matcher").Err()
 		}
 	}
-	if req.ArtifactIdPrefix != "" {
-		if err := pbutil.ValidateArtifactIDPrefix(req.ArtifactIdPrefix); err != nil {
-			return errors.Annotate(err, "artifact_id_prefix").Err()
+	if req.ArtifactIdMatcher != nil {
+		if err := validateArtifactIDMatcher(req.ArtifactIdMatcher); err != nil {
+			return errors.Annotate(err, "artifact_id_matcher").Err()
 		}
 	}
 	if err := validateStartEndTime(req.StartTime, req.EndTime); err != nil {
@@ -102,6 +103,29 @@ func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtif
 		return errors.Annotate(err, "page_size").Err()
 	}
 	return nil
+}
+
+func validateTestIDMatcher(m *pb.IDMatcher) error {
+	switch x := m.Matcher.(type) {
+	case *pb.IDMatcher_HasPrefix:
+		// ValidateTestID can also be used to validate test id prefix.
+		return pbutil.ValidateTestID(m.GetHasPrefix())
+	case *pb.IDMatcher_ExactEqual:
+		return pbutil.ValidateTestID(m.GetExactEqual())
+	default:
+		return fmt.Errorf("has unexpected type %T", x)
+	}
+}
+
+func validateArtifactIDMatcher(m *pb.IDMatcher) error {
+	switch x := m.Matcher.(type) {
+	case *pb.IDMatcher_HasPrefix:
+		return pbutil.ValidateArtifactIDPrefix(m.GetHasPrefix())
+	case *pb.IDMatcher_ExactEqual:
+		return pbutil.ValidateArtifactID(m.GetExactEqual())
+	default:
+		return fmt.Errorf("has unexpected type %T", x)
+	}
 }
 
 func validateStartEndTime(startTime, endTime *timestamppb.Timestamp) error {

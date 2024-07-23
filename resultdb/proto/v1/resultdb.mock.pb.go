@@ -46,6 +46,41 @@ func (mr *MockisArtifactContentMatcher_MatcherMockRecorder) isArtifactContentMat
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isArtifactContentMatcher_Matcher", reflect.TypeOf((*MockisArtifactContentMatcher_Matcher)(nil).isArtifactContentMatcher_Matcher))
 }
 
+// MockisIDMatcher_Matcher is a mock of isIDMatcher_Matcher interface.
+type MockisIDMatcher_Matcher struct {
+	ctrl     *gomock.Controller
+	recorder *MockisIDMatcher_MatcherMockRecorder
+}
+
+// MockisIDMatcher_MatcherMockRecorder is the mock recorder for MockisIDMatcher_Matcher.
+type MockisIDMatcher_MatcherMockRecorder struct {
+	mock *MockisIDMatcher_Matcher
+}
+
+// NewMockisIDMatcher_Matcher creates a new mock instance.
+func NewMockisIDMatcher_Matcher(ctrl *gomock.Controller) *MockisIDMatcher_Matcher {
+	mock := &MockisIDMatcher_Matcher{ctrl: ctrl}
+	mock.recorder = &MockisIDMatcher_MatcherMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockisIDMatcher_Matcher) EXPECT() *MockisIDMatcher_MatcherMockRecorder {
+	return m.recorder
+}
+
+// isIDMatcher_Matcher mocks base method.
+func (m *MockisIDMatcher_Matcher) isIDMatcher_Matcher() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "isIDMatcher_Matcher")
+}
+
+// isIDMatcher_Matcher indicates an expected call of isIDMatcher_Matcher.
+func (mr *MockisIDMatcher_MatcherMockRecorder) isIDMatcher_Matcher() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isIDMatcher_Matcher", reflect.TypeOf((*MockisIDMatcher_Matcher)(nil).isIDMatcher_Matcher))
+}
+
 // MockResultDBClient is a mock of ResultDBClient interface.
 type MockResultDBClient struct {
 	ctrl     *gomock.Controller

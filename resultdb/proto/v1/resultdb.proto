@@ -839,17 +839,17 @@ message InstructionDependencyChain {
 
 message QueryTestVariantArtifactGroupsRequest {
   // The LUCI project (required).
-  string project =1;
+  string project = 1;
 
   // The search string to search in text artifact content (required).
   // Support regex or exact match.
   ArtifactContentMatcher search_string = 2;
 
-  // The test id prefix to restrict the scope of the search (optional).
-  string test_id_prefix = 3;
+  // The test id matcher to restrict the scope of the search (optional).
+  IDMatcher test_id_matcher = 3;
 
-  // The artifact id prefix to restrict the scope of the search (optional).
-  string artifact_id_prefix = 4;
+  // The artifact id matcher to restrict the scope of the search (optional).
+  IDMatcher artifact_id_matcher = 4;
 
   // The lower bound of the time range to search in UTC time (exclusive) (required).
   // start_time must be less than the end time.
@@ -965,8 +965,8 @@ message QueryInvocationVariantArtifactGroupsRequest {
   // Support regex or exact match.
   ArtifactContentMatcher search_string = 2;
 
-  // The artifact id prefix to restrict the scope of the search (optional).
-  string artifact_id_prefix = 3;
+  // The artifact id matcher to restrict the scope of the search (optional).
+  IDMatcher artifact_id_matcher = 3;
 
   // The lower bound of the time range to search in UTC time (exclusive) (required).
   // start_time must be less than the end time.
@@ -1113,5 +1113,16 @@ message ArtifactContentMatcher {
 
     // Use equality match with this string to find matching artifact content.
     string exact_contain = 2;
+  }
+}
+
+// Used to match IDs (eg. test id, artifact id).
+message IDMatcher {
+  oneof matcher {
+    // The id should has a matching prefix.
+    string has_prefix = 1;
+
+    // The id should exactly equal to this string.
+    string exact_equal = 2;
   }
 }

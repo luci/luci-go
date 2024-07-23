@@ -83,12 +83,20 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 					RegexContain: "foo",
 				},
 			},
-			TestIdPrefix:     "testidprefix",
-			ArtifactIdPrefix: "artifactidprefix",
-			StartTime:        timestamppb.New(time.Unix(10, 0)),
-			EndTime:          timestamppb.New(time.Unix(100, 0)),
-			PageSize:         1,
-			PageToken:        "",
+			TestIdMatcher: &pb.IDMatcher{
+				Matcher: &pb.IDMatcher_HasPrefix{
+					HasPrefix: "testidprefix",
+				},
+			},
+			ArtifactIdMatcher: &pb.IDMatcher{
+				Matcher: &pb.IDMatcher_HasPrefix{
+					HasPrefix: "artifactidprefix",
+				},
+			},
+			StartTime: timestamppb.New(time.Unix(10, 0)),
+			EndTime:   timestamppb.New(time.Unix(100, 0)),
+			PageSize:  1,
+			PageToken: "",
 		}
 		Convey("no permission", func() {
 			req.Project = "nopermissionproject"
@@ -140,12 +148,20 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 					RegexContain: "foo",
 				},
 			},
-			TestIdPrefix:     "testidprefix",
-			ArtifactIdPrefix: "artifactidprefix",
-			StartTime:        timestamppb.New(time.Unix(10, 0)),
-			EndTime:          timestamppb.New(time.Unix(100, 0)),
-			PageSize:         1,
-			PageToken:        "",
+			TestIdMatcher: &pb.IDMatcher{
+				Matcher: &pb.IDMatcher_HasPrefix{
+					HasPrefix: "testidprefix",
+				},
+			},
+			ArtifactIdMatcher: &pb.IDMatcher{
+				Matcher: &pb.IDMatcher_HasPrefix{
+					HasPrefix: "artifactidprefix",
+				},
+			},
+			StartTime: timestamppb.New(time.Unix(10, 0)),
+			EndTime:   timestamppb.New(time.Unix(100, 0)),
+			PageSize:  1,
+			PageToken: "",
 		}
 		Convey(`valid`, func() {
 			err := validateQueryTestVariantArtifactGroupsRequest(req)
@@ -171,15 +187,23 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 		})
 
 		Convey(`invalid test id prefix`, func() {
-			req.TestIdPrefix = "invalid-test-id-\r"
+			req.TestIdMatcher = &pb.IDMatcher{
+				Matcher: &pb.IDMatcher_HasPrefix{
+					HasPrefix: "invalid-test-id-\r",
+				},
+			}
 			err := validateQueryTestVariantArtifactGroupsRequest(req)
-			So(err, ShouldErrLike, `test_id_prefix`)
+			So(err, ShouldErrLike, `test_id_matcher`)
 		})
 
 		Convey(`invalid artifact id prefix`, func() {
-			req.ArtifactIdPrefix = "invalid-artifact-id-\r"
+			req.ArtifactIdMatcher = &pb.IDMatcher{
+				Matcher: &pb.IDMatcher_HasPrefix{
+					HasPrefix: "invalid-artifact-id-\r",
+				},
+			}
 			err := validateQueryTestVariantArtifactGroupsRequest(req)
-			So(err, ShouldErrLike, `artifact_id_prefix`)
+			So(err, ShouldErrLike, `artifact_id_matcher`)
 		})
 
 		Convey(`no start time`, func() {

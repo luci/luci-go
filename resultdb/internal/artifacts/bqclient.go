@@ -129,9 +129,16 @@ var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
 			-- Only include the first shard for each artifact.
 			AND shard_id = 0
 			AND REGEXP_CONTAINS(content, @searchRegex)
-			-- STARTS_WITH empty string matches all test_ids.
-			AND STARTS_WITH(test_id, @testIDPrefix)
-			AND STARTS_WITH(artifact_id, @artifactIDPrefix)
+			{{if .prefixMatchTestID}}
+				AND STARTS_WITH(test_id, @testIDMatcherString)
+			{{else if .exactMatchTestID}}
+				AND test_id = @testIDMatcherString
+			{{end}}
+			{{if .prefixMatchArtifactID}}
+				AND STARTS_WITH(artifact_id, @artifactIDMatcherString)
+			{{else if .exactMatchArtifactID}}
+				AND artifact_id = @artifactIDMatcherString
+			{{end}}
 			-- Start time is exclusive.
 			AND partition_time > @startTime
 			-- End time is inclusive.
@@ -174,7 +181,11 @@ var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
 func generateReadTestArtifactGroupsQuery(opts ReadTestArtifactGroupsOpts) (string, error) {
 	var b bytes.Buffer
 	err := readTestArtifactGroupTmpl.ExecuteTemplate(&b, "", map[string]any{
-		"pagination": opts.PageToken != "",
+		"pagination":            opts.PageToken != "",
+		"prefixMatchTestID":     isPrefixMatch(opts.TestIDMatcher),
+		"prefixMatchArtifactID": isPrefixMatch(opts.ArtifactIDMatcher),
+		"exactMatchTestID":      isExactMatch(opts.TestIDMatcher),
+		"exactMatchArtifactID":  isExactMatch(opts.ArtifactIDMatcher),
 	})
 	if err != nil {
 		return "", errors.Annotate(err, "execute template").Err()
@@ -183,15 +194,15 @@ func generateReadTestArtifactGroupsQuery(opts ReadTestArtifactGroupsOpts) (strin
 }
 
 type ReadTestArtifactGroupsOpts struct {
-	Project          string
-	SearchString     *pb.ArtifactContentMatcher
-	TestIDPrefix     string
-	ArtifactIDPrefix string
-	StartTime        time.Time
-	EndTime          time.Time
-	SubRealms        []string
-	Limit            int
-	PageToken        string
+	Project           string
+	SearchString      *pb.ArtifactContentMatcher
+	TestIDMatcher     *pb.IDMatcher
+	ArtifactIDMatcher *pb.IDMatcher
+	StartTime         time.Time
+	EndTime           time.Time
+	SubRealms         []string
+	Limit             int
+	PageToken         string
 }
 
 func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifactGroupsOpts) (groups []*TestArtifactGroup, nextPageToken string, err error) {
@@ -212,8 +223,8 @@ func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifa
 	q.DefaultDatasetID = "internal"
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "project", Value: opts.Project},
-		{Name: "testIDPrefix", Value: opts.TestIDPrefix},
-		{Name: "artifactIDPrefix", Value: opts.ArtifactIDPrefix},
+		{Name: "testIDMatcherString", Value: idMatchString(opts.TestIDMatcher)},
+		{Name: "artifactIDMatcherString", Value: idMatchString(opts.ArtifactIDMatcher)},
 		{Name: "searchRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureMatch(true).build()},
 		{Name: "searchContextBeforeRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureContextBefore(true).build()},
 		{Name: "searchContextAfterRegex", Value: newMatchWithContextRegexBuilder(opts.SearchString).withCaptureContextAfter(true).build()},
@@ -451,5 +462,43 @@ func regexPattern(matcher *pb.ArtifactContentMatcher) string {
 		return m.RegexContain
 	default:
 		panic("No matching operations")
+	}
+}
+
+func isPrefixMatch(m *pb.IDMatcher) bool {
+	if m == nil {
+		return false
+	}
+	switch m.Matcher.(type) {
+	case *pb.IDMatcher_HasPrefix:
+		return true
+	default:
+		return false
+	}
+}
+
+func isExactMatch(m *pb.IDMatcher) bool {
+	if m == nil {
+		return false
+	}
+	switch m.Matcher.(type) {
+	case *pb.IDMatcher_ExactEqual:
+		return true
+	default:
+		return false
+	}
+}
+
+func idMatchString(m *pb.IDMatcher) string {
+	if m == nil {
+		return ""
+	}
+	switch m.Matcher.(type) {
+	case *pb.IDMatcher_HasPrefix:
+		return m.GetHasPrefix()
+	case *pb.IDMatcher_ExactEqual:
+		return m.GetExactEqual()
+	default:
+		return ""
 	}
 }
