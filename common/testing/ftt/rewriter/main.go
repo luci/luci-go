@@ -82,6 +82,9 @@ func main() {
 		}
 
 		newFile, rewrote, warn, err := rewriteimpl.Rewrite(dec, file, adaptedAssertions)
+		if err != nil {
+			log.Fatal(fmt.Errorf("error encountered while rewriting, doing nothing: %s", err))
+		}
 		if !rewrote {
 			log.Printf("SKIP: %s: no convey import\n", fname)
 			continue
