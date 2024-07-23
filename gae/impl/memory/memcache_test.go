@@ -20,40 +20,40 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/gae/service/info"
 	mc "go.chromium.org/luci/gae/service/memcache"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMemcache(t *testing.T) {
 	t.Parallel()
 
-	Convey("memcache", t, func() {
+	ftt.Run("memcache", t, func(t *ftt.Test) {
 		now := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
 		c, tc := testclock.UseTime(context.Background(), now)
 		c = Use(c)
 
-		Convey("implements MCSingleReadWriter", func() {
-			Convey("Add", func() {
+		t.Run("implements MCSingleReadWriter", func(t *ftt.Test) {
+			t.Run("Add", func(t *ftt.Test) {
 				itm := (mc.NewItem(c, "sup").
 					SetValue([]byte("cool")).
 					SetExpiration(time.Second))
-				So(mc.Add(c, itm), ShouldBeNil)
-				Convey("which rejects objects already there", func() {
-					So(mc.Add(c, itm), ShouldEqual, mc.ErrNotStored)
+				assert.Loosely(t, mc.Add(c, itm), should.BeNil)
+				t.Run("which rejects objects already there", func(t *ftt.Test) {
+					assert.Loosely(t, mc.Add(c, itm), should.Equal(mc.ErrNotStored))
 				})
 			})
 
-			Convey("Get", func() {
+			t.Run("Get", func(t *ftt.Test) {
 				itm := &mcItem{
 					key:        "sup",
 					value:      []byte("cool"),
 					expiration: time.Second,
 				}
-				So(mc.Add(c, itm), ShouldBeNil)
+				assert.Loosely(t, mc.Add(c, itm), should.BeNil)
 
 				testItem := &mcItem{
 					key:   "sup",
@@ -61,47 +61,47 @@ func TestMemcache(t *testing.T) {
 					CasID: 1,
 				}
 				getItm, err := mc.GetKey(c, "sup")
-				So(err, ShouldBeNil)
-				So(getItm, ShouldResemble, testItem)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, getItm, should.Resemble(testItem))
 
-				Convey("which can expire", func() {
+				t.Run("which can expire", func(t *ftt.Test) {
 					tc.Add(time.Second * 4)
 					getItm, err := mc.GetKey(c, "sup")
-					So(err, ShouldEqual, mc.ErrCacheMiss)
-					So(getItm, ShouldResemble, &mcItem{key: "sup"})
+					assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
+					assert.Loosely(t, getItm, should.Resemble(&mcItem{key: "sup"}))
 				})
 			})
 
-			Convey("Delete", func() {
-				Convey("works if it's there", func() {
+			t.Run("Delete", func(t *ftt.Test) {
+				t.Run("works if it's there", func(t *ftt.Test) {
 					itm := &mcItem{
 						key:        "sup",
 						value:      []byte("cool"),
 						expiration: time.Second,
 					}
-					So(mc.Add(c, itm), ShouldBeNil)
+					assert.Loosely(t, mc.Add(c, itm), should.BeNil)
 
-					So(mc.Delete(c, "sup"), ShouldBeNil)
+					assert.Loosely(t, mc.Delete(c, "sup"), should.BeNil)
 
 					_, err := mc.GetKey(c, "sup")
-					So(err, ShouldEqual, mc.ErrCacheMiss)
+					assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
 				})
 
-				Convey("but not if it's not there", func() {
-					So(mc.Delete(c, "sup"), ShouldEqual, mc.ErrCacheMiss)
+				t.Run("but not if it's not there", func(t *ftt.Test) {
+					assert.Loosely(t, mc.Delete(c, "sup"), should.Equal(mc.ErrCacheMiss))
 				})
 			})
 
-			Convey("Set", func() {
+			t.Run("Set", func(t *ftt.Test) {
 				itm := &mcItem{
 					key:        "sup",
 					value:      []byte("cool"),
 					expiration: time.Second,
 				}
-				So(mc.Add(c, itm), ShouldBeNil)
+				assert.Loosely(t, mc.Add(c, itm), should.BeNil)
 
 				itm.SetValue([]byte("newp"))
-				So(mc.Set(c, itm), ShouldBeNil)
+				assert.Loosely(t, mc.Set(c, itm), should.BeNil)
 
 				testItem := &mcItem{
 					key:   "sup",
@@ -109,85 +109,85 @@ func TestMemcache(t *testing.T) {
 					CasID: 2,
 				}
 				getItm, err := mc.GetKey(c, "sup")
-				So(err, ShouldBeNil)
-				So(getItm, ShouldResemble, testItem)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, getItm, should.Resemble(testItem))
 
-				Convey("Flush works too", func() {
-					So(mc.Flush(c), ShouldBeNil)
+				t.Run("Flush works too", func(t *ftt.Test) {
+					assert.Loosely(t, mc.Flush(c), should.BeNil)
 					_, err := mc.GetKey(c, "sup")
-					So(err, ShouldEqual, mc.ErrCacheMiss)
+					assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
 				})
 			})
 
-			Convey("Set (nil) is equivalent to Set([]byte{})", func() {
-				So(mc.Set(c, mc.NewItem(c, "bob")), ShouldBeNil)
+			t.Run("Set (nil) is equivalent to Set([]byte{})", func(t *ftt.Test) {
+				assert.Loosely(t, mc.Set(c, mc.NewItem(c, "bob")), should.BeNil)
 
 				bob, err := mc.GetKey(c, "bob")
-				So(err, ShouldBeNil)
-				So(bob.Value(), ShouldResemble, []byte{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, bob.Value(), should.Resemble([]byte{}))
 			})
 
-			Convey("Increment", func() {
+			t.Run("Increment", func(t *ftt.Test) {
 				val, err := mc.Increment(c, "num", 7, 2)
-				So(err, ShouldBeNil)
-				So(val, ShouldEqual, 9)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, val, should.Equal[uint64](9))
 
-				Convey("Increment again", func() {
+				t.Run("Increment again", func(t *ftt.Test) {
 					val, err = mc.Increment(c, "num", 7, 2)
-					So(err, ShouldBeNil)
-					So(val, ShouldEqual, 16)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, val, should.Equal[uint64](16))
 				})
 
-				Convey("IncrementExisting", func() {
+				t.Run("IncrementExisting", func(t *ftt.Test) {
 					val, err := mc.IncrementExisting(c, "num", -2)
-					So(err, ShouldBeNil)
-					So(val, ShouldEqual, 7)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, val, should.Equal[uint64](7))
 
 					val, err = mc.IncrementExisting(c, "num", -100)
-					So(err, ShouldBeNil)
-					So(val, ShouldEqual, 0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, val, should.BeZero)
 
 					_, err = mc.IncrementExisting(c, "noexist", 2)
-					So(err, ShouldEqual, mc.ErrCacheMiss)
+					assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
 
-					So(mc.Set(c, mc.NewItem(c, "text").SetValue([]byte("hello world, hooman!"))), ShouldBeNil)
+					assert.Loosely(t, mc.Set(c, mc.NewItem(c, "text").SetValue([]byte("hello world, hooman!"))), should.BeNil)
 
 					_, err = mc.IncrementExisting(c, "text", 2)
-					So(err.Error(), ShouldContainSubstring, "got invalid current value")
+					assert.Loosely(t, err.Error(), should.ContainSubstring("got invalid current value"))
 				})
 			})
 
-			Convey("CompareAndSwap", func() {
+			t.Run("CompareAndSwap", func(t *ftt.Test) {
 				itm := mc.Item(&mcItem{
 					key:        "sup",
 					value:      []byte("cool"),
 					expiration: time.Second * 2,
 				})
-				So(mc.Add(c, itm), ShouldBeNil)
+				assert.Loosely(t, mc.Add(c, itm), should.BeNil)
 
-				Convey("works after a Get", func() {
+				t.Run("works after a Get", func(t *ftt.Test) {
 					itm, err := mc.GetKey(c, "sup")
-					So(err, ShouldBeNil)
-					So(itm.(*mcItem).CasID, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, itm.(*mcItem).CasID, should.Equal[uint64](1))
 
 					itm.SetValue([]byte("newp"))
-					So(mc.CompareAndSwap(c, itm), ShouldBeNil)
+					assert.Loosely(t, mc.CompareAndSwap(c, itm), should.BeNil)
 				})
 
-				Convey("but fails if you don't", func() {
+				t.Run("but fails if you don't", func(t *ftt.Test) {
 					itm.SetValue([]byte("newp"))
-					So(mc.CompareAndSwap(c, itm), ShouldEqual, mc.ErrCASConflict)
+					assert.Loosely(t, mc.CompareAndSwap(c, itm), should.Equal(mc.ErrCASConflict))
 				})
 
-				Convey("and fails if the item is expired/gone", func() {
+				t.Run("and fails if the item is expired/gone", func(t *ftt.Test) {
 					tc.Add(3 * time.Second)
 					itm.SetValue([]byte("newp"))
-					So(mc.CompareAndSwap(c, itm), ShouldEqual, mc.ErrNotStored)
+					assert.Loosely(t, mc.CompareAndSwap(c, itm), should.Equal(mc.ErrNotStored))
 				})
 			})
 		})
 
-		Convey("check that the internal implementation is sane", func() {
+		t.Run("check that the internal implementation is sane", func(t *ftt.Test) {
 			curTime := now
 			err := mc.Add(c, &mcItem{
 				key:        "sup",
@@ -197,59 +197,59 @@ func TestMemcache(t *testing.T) {
 
 			for i := 0; i < 4; i++ {
 				_, err := mc.GetKey(c, "sup")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			}
 			_, err = mc.GetKey(c, "wot")
-			So(err, ShouldErrLike, mc.ErrCacheMiss)
+			assert.Loosely(t, err, should.ErrLike(mc.ErrCacheMiss))
 
 			mci := mc.Raw(c).(*memcacheImpl)
 
 			stats, err := mc.Stats(c)
-			So(err, ShouldBeNil)
-			So(stats.Items, ShouldEqual, 1)
-			So(stats.Bytes, ShouldEqual, 4)
-			So(stats.Hits, ShouldEqual, 4)
-			So(stats.Misses, ShouldEqual, 1)
-			So(stats.ByteHits, ShouldEqual, 4*4)
-			So(mci.data.casID, ShouldEqual, 1)
-			So(mci.data.items["sup"], ShouldResemble, &mcDataItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, stats.Items, should.Equal[uint64](1))
+			assert.That(t, stats.Bytes, should.Equal[uint64](4))
+			assert.That(t, stats.Hits, should.Equal[uint64](4))
+			assert.That(t, stats.Misses, should.Equal[uint64](1))
+			assert.That(t, stats.ByteHits, should.Equal[uint64](4*4))
+			assert.That(t, mci.data.casID, should.Equal[uint64](1))
+			assert.Loosely(t, mci.data.items["sup"], should.Resemble(&mcDataItem{
 				value:      []byte("cool"),
 				expiration: curTime.Add(time.Second * 2).Truncate(time.Second),
 				casID:      1,
-			})
+			}))
 
 			getItm, err := mc.GetKey(c, "sup")
-			So(err, ShouldBeNil)
-			So(len(mci.data.items), ShouldEqual, 1)
-			So(mci.data.casID, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, len(mci.data.items), should.Equal(1))
+			assert.That(t, mci.data.casID, should.Equal[uint64](1))
 
 			testItem := &mcItem{
 				key:   "sup",
 				value: []byte("cool"),
 				CasID: 1,
 			}
-			So(getItm, ShouldResemble, testItem)
+			assert.Loosely(t, getItm, should.Resemble(testItem))
 		})
 
-		Convey("When adding an item to an unset namespace", func() {
-			So(info.GetNamespace(c), ShouldEqual, "")
+		t.Run("When adding an item to an unset namespace", func(t *ftt.Test) {
+			assert.Loosely(t, info.GetNamespace(c), should.BeEmpty)
 
 			item := mc.NewItem(c, "foo").SetValue([]byte("heya"))
-			So(mc.Set(c, item), ShouldBeNil)
+			assert.Loosely(t, mc.Set(c, item), should.BeNil)
 
-			Convey("The item can be retrieved from the unset namespace.", func() {
+			t.Run("The item can be retrieved from the unset namespace.", func(t *ftt.Test) {
 				got, err := mc.GetKey(c, "foo")
-				So(err, ShouldBeNil)
-				So(got.Value(), ShouldResemble, []byte("heya"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got.Value(), should.Resemble([]byte("heya")))
 			})
 
-			Convey("The item can be retrieved from a set, empty namespace.", func() {
+			t.Run("The item can be retrieved from a set, empty namespace.", func(t *ftt.Test) {
 				// Now test with empty namespace.
 				c = info.MustNamespace(c, "")
 
 				got, err := mc.GetKey(c, "foo")
-				So(err, ShouldBeNil)
-				So(got.Value(), ShouldResemble, []byte("heya"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got.Value(), should.Resemble([]byte("heya")))
 			})
 		})
 	})
