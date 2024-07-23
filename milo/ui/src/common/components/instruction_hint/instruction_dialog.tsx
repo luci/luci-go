@@ -130,7 +130,14 @@ export function InstructionDialog({
               </Tabs>
             </Box>
           )}
-          <Box sx={{ paddingTop: 2 }}>
+          <Box
+            sx={{
+              paddingTop: 2,
+              overflowWrap: 'break-word',
+              wordBreak: 'break-all',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
             {isLoading && <DotSpinner />}
             {isError && (
               <Alert severity="error">
