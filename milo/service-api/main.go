@@ -20,18 +20,18 @@ import (
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/analysis/server"
+	"go.chromium.org/luci/milo/server"
 
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
 // main implements the entrypoint for the api service.
-// This is the only service accessible from analysis.api.luci.app.
+// This is the only service accessible from milo.api.luci.app.
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
-		if err := server.RegisterPRPCHandlers(srv); err != nil {
-			return err
-		}
+		service := server.CreateInternalService()
+		server.RegisterPRPCHandlers(srv, service)
+
 		// Redirect the frontend to RPC explorer.
 		srv.Routes.GET("/", nil, func(ctx *router.Context) {
 			http.Redirect(ctx.Writer, ctx.Request, "/rpcexplorer/", http.StatusFound)

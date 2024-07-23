@@ -66,8 +66,6 @@ import (
 
 // Main implements the common entrypoint for all LUCI Analysis GAE services.
 //
-// All services run on 'default' for simplicity debugging.
-//
 // Note, if changing responsibiltiy between services, please be aware
 // that dispatch.yaml changes are not deployed atomically with service
 // changes.
@@ -84,9 +82,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		tq.NewModuleFromFlags(),
 		buganizer.NewModuleFromFlags(),
 	}
-	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
-		return init(srv)
-	})
+	luciserver.Main(nil, modules, init)
 }
 
 // RegisterPRPCHandlers registers pPRC handlers.

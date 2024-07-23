@@ -10,6 +10,8 @@ automatic_scaling:
   max_pending_latency: 30ms  # default value
   max_concurrent_requests: 8  # note: the default value is 10
 
+# Keep app.yaml, service-pubsub.yaml and service-api/service-api.yaml in sync.
+
 # luci_gae_vars is interpreted by gae.py, for apps deployed manually.
 # It maps the app ID being deployed to values of vars used below.
 luci_gae_vars:
