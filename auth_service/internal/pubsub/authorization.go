@@ -85,6 +85,7 @@ func AuthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 	}
 
 	// Grant authorization to subscribe.
+	logging.Infof(ctx, "granting PubSub authorization for %s", email)
 	policy.Add(identity, subscriberRole)
 	if err := client.SetIAMPolicy(ctx, policy); err != nil {
 		return errors.Annotate(err, "failed to authorize %s", identity).Err()
@@ -120,6 +121,7 @@ func DeauthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 	}
 
 	// Revoke authorization to subscribe.
+	logging.Infof(ctx, "revoking PubSub authorization for %s", email)
 	policy.Remove(id, subscriberRole)
 	if err := client.SetIAMPolicy(ctx, policy); err != nil {
 		return errors.Annotate(err, "failed to deauthorize %s", id).Err()

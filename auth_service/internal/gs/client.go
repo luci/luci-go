@@ -63,7 +63,6 @@ type gsClient struct {
 // NewGSClient creates a new production Google Storage client; i.e. this
 // client is actually Google Storage, not a mock.
 func NewGSClient(ctx context.Context) (*gsClient, error) {
-	logging.Debugf(ctx, "Creating new Google Storage client")
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, errors.Annotate(err, "aborting - failed setting up authenticated requests to Google Storage").Err()
@@ -157,23 +156,25 @@ func (c *gsClient) UpdateReadACL(ctx context.Context, objectPath string, readers
 	}
 
 	errs := errors.MultiError{}
-	// Only set read access for users that don't have any access to
-	// prevent overwriting existing roles to the reader role.
-	toAdd := readers.Difference(oldAccessors)
-	for reader := range toAdd {
-		user := storage.ACLEntity(fmt.Sprintf("user-%s", reader))
-		if err := acl.Set(ctx, user, storage.RoleReader); err != nil {
-			logging.Errorf(ctx, "error granting read access to %s for user %s", objectPath, user)
-			errs = append(errs, err)
-		}
-	}
 	// Revoke read access for users that currently have read access but
 	// aren't in readers.
 	toDelete := oldReaders.Difference(readers)
 	for reader := range toDelete {
+		logging.Infof(ctx, "revoking GS read access to %s for %s", objectPath, reader)
 		user := storage.ACLEntity(fmt.Sprintf("user-%s", reader))
 		if err := acl.Delete(ctx, user); err != nil {
 			logging.Errorf(ctx, "error revoking read access to %s for user %s", objectPath, user)
+			errs = append(errs, err)
+		}
+	}
+	// Only set read access for users that don't have any access to
+	// prevent overwriting existing roles to the reader role.
+	toAdd := readers.Difference(oldAccessors)
+	for reader := range toAdd {
+		logging.Infof(ctx, "granting GS read access to %s for %s", objectPath, reader)
+		user := storage.ACLEntity(fmt.Sprintf("user-%s", reader))
+		if err := acl.Set(ctx, user, storage.RoleReader); err != nil {
+			logging.Errorf(ctx, "error granting read access to %s for user %s", objectPath, user)
 			errs = append(errs, err)
 		}
 	}
