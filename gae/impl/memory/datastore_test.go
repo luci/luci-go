@@ -24,11 +24,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	infoS "go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type MetaGroup struct {
@@ -64,23 +66,27 @@ type Foo struct {
 	Scatter []byte `gae:"__scatter__"` // this is normally invisible
 }
 
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(ds.Property{}))
+}
+
 func TestDatastoreSingleReadWriter(t *testing.T) {
 	t.Parallel()
 
-	Convey("Datastore single reads and writes", t, func() {
+	ftt.Run("Datastore single reads and writes", t, func(t *ftt.Test) {
 		c := Use(context.Background())
-		So(ds.Raw(c), ShouldNotBeNil)
+		assert.Loosely(t, ds.Raw(c), should.NotBeNil)
 
-		Convey("getting objects that DNE is an error", func() {
-			So(ds.Get(c, &Foo{ID: 1}), ShouldEqual, ds.ErrNoSuchEntity)
+		t.Run("getting objects that DNE is an error", func(t *ftt.Test) {
+			assert.Loosely(t, ds.Get(c, &Foo{ID: 1}), should.Equal(ds.ErrNoSuchEntity))
 		})
 
-		Convey("bad namespaces fail", func() {
+		t.Run("bad namespaces fail", func(t *ftt.Test) {
 			_, err := infoS.Namespace(c, "$$blzyall")
-			So(err.Error(), ShouldContainSubstring, "namespace \"$$blzyall\" does not match")
+			assert.Loosely(t, err.Error(), should.ContainSubstring("namespace \"$$blzyall\" does not match"))
 		})
 
-		Convey("Can Put stuff", func() {
+		t.Run("Can Put stuff", func(t *ftt.Test) {
 			// with an incomplete key!
 			f := &Foo{
 				Val:   10,
@@ -90,34 +96,34 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					Inner: 456,
 				},
 			}
-			So(ds.Put(c, f), ShouldBeNil)
+			assert.Loosely(t, ds.Put(c, f), should.BeNil)
 			k := ds.KeyForObj(c, f)
-			So(k.String(), ShouldEqual, "dev~app::/Foo,1")
+			assert.Loosely(t, k.String(), should.Equal("dev~app::/Foo,1"))
 
-			Convey("and Get it back", func() {
+			t.Run("and Get it back", func(t *ftt.Test) {
 				newFoo := &Foo{ID: 1}
-				So(ds.Get(c, newFoo), ShouldBeNil)
-				So(newFoo, ShouldResemble, f)
+				assert.Loosely(t, ds.Get(c, newFoo), should.BeNil)
+				assert.Loosely(t, newFoo, should.Resemble(f))
 
-				Convey("but it's hidden from a different namespace", func() {
+				t.Run("but it's hidden from a different namespace", func(t *ftt.Test) {
 					c, err := infoS.Namespace(c, "whombat")
-					So(err, ShouldBeNil)
-					So(ds.Get(c, f), ShouldEqual, ds.ErrNoSuchEntity)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ds.Get(c, f), should.Equal(ds.ErrNoSuchEntity))
 				})
 
-				Convey("and we can Delete it", func() {
-					So(ds.Delete(c, k), ShouldBeNil)
-					So(ds.Get(c, newFoo), ShouldEqual, ds.ErrNoSuchEntity)
+				t.Run("and we can Delete it", func(t *ftt.Test) {
+					assert.Loosely(t, ds.Delete(c, k), should.BeNil)
+					assert.Loosely(t, ds.Get(c, newFoo), should.Equal(ds.ErrNoSuchEntity))
 				})
 
 			})
-			Convey("Can Get it back as a PropertyMap", func() {
+			t.Run("Can Get it back as a PropertyMap", func(t *ftt.Test) {
 				pmap := ds.PropertyMap{
 					"$id":   propNI(1),
 					"$kind": propNI("Foo"),
 				}
-				So(ds.Get(c, pmap), ShouldBeNil)
-				So(pmap, ShouldResemble, ds.PropertyMap{
+				assert.Loosely(t, ds.Get(c, pmap), should.BeNil)
+				assert.Loosely(t, pmap, should.Resemble(ds.PropertyMap{
 					"$id":   propNI(1),
 					"$kind": propNI("Foo"),
 					"Name":  prop(""),
@@ -127,75 +133,75 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					"Nested": prop(ds.PropertyMap{
 						"Inner": prop(456),
 					}),
-				})
+				}))
 			})
-			Convey("Deleting with a bogus key is bad", func() {
-				So(ds.IsErrInvalidKey(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 100, nil))), ShouldBeTrue)
+			t.Run("Deleting with a bogus key is bad", func(t *ftt.Test) {
+				assert.Loosely(t, ds.IsErrInvalidKey(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 100, nil))), should.BeTrue)
 			})
-			Convey("Deleting a DNE entity is fine", func() {
-				So(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 0, nil)), ShouldBeNil)
+			t.Run("Deleting a DNE entity is fine", func(t *ftt.Test) {
+				assert.Loosely(t, ds.Delete(c, ds.NewKey(c, "Foo", "wat", 0, nil)), should.BeNil)
 			})
 
-			Convey("Deleting entities from a nonexistant namespace works", func(gctx C) {
+			t.Run("Deleting entities from a nonexistant namespace works", func(t *ftt.Test) {
 				c := infoS.MustNamespace(c, "noexist")
 				keys := make([]*ds.Key, 10)
 				for i := range keys {
 					keys[i] = ds.MakeKey(c, "Kind", i+1)
 				}
-				So(ds.Delete(c, keys), ShouldBeNil)
+				assert.Loosely(t, ds.Delete(c, keys), should.BeNil)
 				count := 0
-				So(ds.Raw(c).DeleteMulti(keys, func(idx int, err error) {
-					gctx.So(idx, ShouldEqual, count)
-					gctx.So(err, ShouldBeNil)
+				assert.Loosely(t, ds.Raw(c).DeleteMulti(keys, func(idx int, err error) {
+					assert.Loosely(t, idx, should.Equal(count))
+					assert.Loosely(t, err, should.BeNil)
 
 					count++
-				}), ShouldBeNil)
-				So(count, ShouldEqual, len(keys))
+				}), should.BeNil)
+				assert.Loosely(t, count, should.Equal(len(keys)))
 			})
 
-			Convey("with multiple puts", func() {
-				So(testGetMeta(c, k), ShouldEqual, 1)
+			t.Run("with multiple puts", func(t *ftt.Test) {
+				assert.Loosely(t, testGetMeta(c, k), should.Equal(1))
 
 				foos := make([]Foo, 10)
 				for i := range foos {
 					foos[i].Val = 10
 					foos[i].Parent = k
 				}
-				So(ds.Put(c, foos), ShouldBeNil)
-				So(testGetMeta(c, k), ShouldEqual, 11)
+				assert.Loosely(t, ds.Put(c, foos), should.BeNil)
+				assert.Loosely(t, testGetMeta(c, k), should.Equal(11))
 
 				keys := make([]*ds.Key, len(foos))
 				for i, f := range foos {
 					keys[i] = ds.KeyForObj(c, &f)
 				}
 
-				Convey("ensure that group versions persist across deletes", func() {
-					So(ds.Delete(c, append(keys, k)), ShouldBeNil)
+				t.Run("ensure that group versions persist across deletes", func(t *ftt.Test) {
+					assert.Loosely(t, ds.Delete(c, append(keys, k)), should.BeNil)
 
 					ds.GetTestable(c).CatchupIndexes()
 
 					count := 0
-					So(ds.Run(c, ds.NewQuery(""), func(_ *ds.Key) {
+					assert.Loosely(t, ds.Run(c, ds.NewQuery(""), func(_ *ds.Key) {
 						count++
-					}), ShouldBeNil)
-					So(count, ShouldEqual, 2)
+					}), should.BeNil)
+					assert.Loosely(t, count, should.Equal(2))
 
-					So(testGetMeta(c, k), ShouldEqual, 22)
+					assert.Loosely(t, testGetMeta(c, k), should.Equal(22))
 
-					So(ds.Put(c, &Foo{ID: 1}), ShouldBeNil)
-					So(testGetMeta(c, k), ShouldEqual, 23)
+					assert.Loosely(t, ds.Put(c, &Foo{ID: 1}), should.BeNil)
+					assert.Loosely(t, testGetMeta(c, k), should.Equal(23))
 				})
 
-				Convey("can Get", func() {
+				t.Run("can Get", func(t *ftt.Test) {
 					vals := make([]ds.PropertyMap, len(keys))
 					for i := range vals {
 						vals[i] = ds.PropertyMap{}
-						So(vals[i].SetMeta("key", keys[i]), ShouldBeTrue)
+						assert.Loosely(t, vals[i].SetMeta("key", keys[i]), should.BeTrue)
 					}
-					So(ds.Get(c, vals), ShouldBeNil)
+					assert.Loosely(t, ds.Get(c, vals), should.BeNil)
 
 					for i, val := range vals {
-						So(val, ShouldResemble, ds.PropertyMap{
+						assert.Loosely(t, val, should.Resemble(ds.PropertyMap{
 							"Val":  ds.MkProperty(10),
 							"Name": ds.MkProperty(""),
 							"$key": ds.MkPropertyNI(keys[i]),
@@ -203,186 +209,186 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 							"Nested": ds.MkProperty(ds.PropertyMap{
 								"Inner": ds.MkProperty(0),
 							}),
-						})
+						}))
 					}
 				})
 
 			})
 
-			Convey("allocating ids prevents their use", func() {
+			t.Run("allocating ids prevents their use", func(t *ftt.Test) {
 				keys := ds.NewIncompleteKeys(c, 100, "Foo", nil)
-				So(ds.AllocateIDs(c, keys), ShouldBeNil)
-				So(len(keys), ShouldEqual, 100)
+				assert.Loosely(t, ds.AllocateIDs(c, keys), should.BeNil)
+				assert.Loosely(t, len(keys), should.Equal(100))
 
 				// Assert that none of our keys share the same ID.
 				ids := make(map[int64]struct{})
 				for _, k := range keys {
 					ids[k.IntID()] = struct{}{}
 				}
-				So(len(ids), ShouldEqual, len(keys))
+				assert.Loosely(t, len(ids), should.Equal(len(keys)))
 
 				// Put a new object and ensure that it is allocated an unused ID.
 				f := &Foo{Val: 10}
-				So(ds.Put(c, f), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, f), should.BeNil)
 				k := ds.KeyForObj(c, f)
-				So(k.String(), ShouldEqual, "dev~app::/Foo,102")
+				assert.Loosely(t, k.String(), should.Equal("dev~app::/Foo,102"))
 
 				_, ok := ids[k.IntID()]
-				So(ok, ShouldBeFalse)
+				assert.Loosely(t, ok, should.BeFalse)
 			})
 		})
 
-		Convey("implements DSTransactioner", func() {
-			Convey("Put", func() {
+		t.Run("implements DSTransactioner", func(t *ftt.Test) {
+			t.Run("Put", func(t *ftt.Test) {
 				f := &Foo{Val: 10}
-				So(ds.Put(c, f), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, f), should.BeNil)
 				k := ds.KeyForObj(c, f)
-				So(k.String(), ShouldEqual, "dev~app::/Foo,1")
+				assert.Loosely(t, k.String(), should.Equal("dev~app::/Foo,1"))
 
-				Convey("can describe its transaction state", func() {
-					So(ds.CurrentTransaction(c), ShouldBeNil)
+				t.Run("can describe its transaction state", func(t *ftt.Test) {
+					assert.Loosely(t, ds.CurrentTransaction(c), should.BeNil)
 
 					err := ds.RunInTransaction(c, func(c context.Context) error {
-						So(ds.CurrentTransaction(c), ShouldNotBeNil)
+						assert.Loosely(t, ds.CurrentTransaction(c), should.NotBeNil)
 
 						// Can reset to nil.
 						nc := ds.WithoutTransaction(c)
-						So(ds.CurrentTransaction(nc), ShouldBeNil)
+						assert.Loosely(t, ds.CurrentTransaction(nc), should.BeNil)
 						return nil
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 
-				Convey("can Put new entity groups", func() {
+				t.Run("can Put new entity groups", func(t *ftt.Test) {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						f := &Foo{Val: 100}
-						So(ds.Put(c, f), ShouldBeNil)
-						So(f.ID, ShouldEqual, 2)
+						assert.Loosely(t, ds.Put(c, f), should.BeNil)
+						assert.Loosely(t, f.ID, should.Equal(2))
 
 						f.ID = 0
 						f.Val = 200
-						So(ds.Put(c, f), ShouldBeNil)
-						So(f.ID, ShouldEqual, 3)
+						assert.Loosely(t, ds.Put(c, f), should.BeNil)
+						assert.Loosely(t, f.ID, should.Equal(3))
 
 						return nil
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					f := &Foo{ID: 2}
-					So(ds.Get(c, f), ShouldBeNil)
-					So(f.Val, ShouldEqual, 100)
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(100))
 
 					f.ID = 3
-					So(ds.Get(c, f), ShouldBeNil)
-					So(f.Val, ShouldEqual, 200)
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(200))
 				})
 
-				Convey("can Put new entities in a current group", func() {
+				t.Run("can Put new entities in a current group", func(t *ftt.Test) {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						f := &Foo{Val: 100, Parent: k}
-						So(ds.Put(c, f), ShouldBeNil)
-						So(ds.KeyForObj(c, f).String(), ShouldEqual, "dev~app::/Foo,1/Foo,1")
+						assert.Loosely(t, ds.Put(c, f), should.BeNil)
+						assert.Loosely(t, ds.KeyForObj(c, f).String(), should.Equal("dev~app::/Foo,1/Foo,1"))
 
 						f.ID = 0
 						f.Val = 200
-						So(ds.Put(c, f), ShouldBeNil)
-						So(ds.KeyForObj(c, f).String(), ShouldEqual, "dev~app::/Foo,1/Foo,2")
+						assert.Loosely(t, ds.Put(c, f), should.BeNil)
+						assert.Loosely(t, ds.KeyForObj(c, f).String(), should.Equal("dev~app::/Foo,1/Foo,2"))
 
 						return nil
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					f := &Foo{ID: 1, Parent: k}
-					So(ds.Get(c, f), ShouldBeNil)
-					So(f.Val, ShouldEqual, 100)
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(100))
 
 					f.ID = 2
-					So(ds.Get(c, f), ShouldBeNil)
-					So(f.Val, ShouldEqual, 200)
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(200))
 				})
 
-				Convey("Deletes work too", func() {
+				t.Run("Deletes work too", func(t *ftt.Test) {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						return ds.Delete(c, k)
 					}, nil)
-					So(err, ShouldBeNil)
-					So(ds.Get(c, &Foo{ID: 1}), ShouldEqual, ds.ErrNoSuchEntity)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ds.Get(c, &Foo{ID: 1}), should.Equal(ds.ErrNoSuchEntity))
 				})
 
-				Convey("Get takes a snapshot", func() {
+				t.Run("Get takes a snapshot", func(t *ftt.Test) {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
-						So(ds.Get(c, f), ShouldBeNil)
-						So(f.Val, ShouldEqual, 10)
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
+						assert.Loosely(t, f.Val, should.Equal(10))
 
 						// Don't ever do this in a real program unless you want to guarantee
 						// a failed transaction :)
 						f.Val = 11
-						So(ds.Put(ds.WithoutTransaction(c), f), ShouldBeNil)
+						assert.Loosely(t, ds.Put(ds.WithoutTransaction(c), f), should.BeNil)
 
-						So(ds.Get(c, f), ShouldBeNil)
-						So(f.Val, ShouldEqual, 10)
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
+						assert.Loosely(t, f.Val, should.Equal(10))
 
 						return nil
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					f := &Foo{ID: 1}
-					So(ds.Get(c, f), ShouldBeNil)
-					So(f.Val, ShouldEqual, 11)
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(11))
 				})
 
-				Convey("and snapshots are consistent even after Puts", func() {
+				t.Run("and snapshots are consistent even after Puts", func(t *ftt.Test) {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						f := &Foo{ID: 1}
-						So(ds.Get(c, f), ShouldBeNil)
-						So(f.Val, ShouldEqual, 10)
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
+						assert.Loosely(t, f.Val, should.Equal(10))
 
 						// Don't ever do this in a real program unless you want to guarantee
 						// a failed transaction :)
 						f.Val = 11
-						So(ds.Put(ds.WithoutTransaction(c), f), ShouldBeNil)
+						assert.Loosely(t, ds.Put(ds.WithoutTransaction(c), f), should.BeNil)
 
-						So(ds.Get(c, f), ShouldBeNil)
-						So(f.Val, ShouldEqual, 10)
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
+						assert.Loosely(t, f.Val, should.Equal(10))
 
 						f.Val = 20
-						So(ds.Put(c, f), ShouldBeNil)
+						assert.Loosely(t, ds.Put(c, f), should.BeNil)
 
-						So(ds.Get(c, f), ShouldBeNil)
-						So(f.Val, ShouldEqual, 10) // still gets 10
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
+						assert.Loosely(t, f.Val, should.Equal(10)) // still gets 10
 
 						return nil
 					}, &ds.TransactionOptions{Attempts: 1})
-					So(err.Error(), ShouldContainSubstring, "concurrent")
+					assert.Loosely(t, err.Error(), should.ContainSubstring("concurrent"))
 
 					f := &Foo{ID: 1}
-					So(ds.Get(c, f), ShouldBeNil)
-					So(f.Val, ShouldEqual, 11)
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(11))
 				})
 
-				Convey("Reusing a transaction context is bad news", func() {
+				t.Run("Reusing a transaction context is bad news", func(t *ftt.Test) {
 					var txnCtx context.Context
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						txnCtx = c
-						So(ds.Get(c, f), ShouldBeNil)
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
 						return nil
 					}, nil)
-					So(err, ShouldBeNil)
-					So(ds.Get(txnCtx, f).Error(), ShouldContainSubstring, "expired")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ds.Get(txnCtx, f).Error(), should.ContainSubstring("expired"))
 				})
 
-				Convey("Nested transactions are rejected", func() {
+				t.Run("Nested transactions are rejected", func(t *ftt.Test) {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						err := ds.RunInTransaction(c, func(c context.Context) error {
 							panic("noooo")
 						}, nil)
-						So(err.Error(), ShouldContainSubstring, "nested transactions")
+						assert.Loosely(t, err.Error(), should.ContainSubstring("nested transactions"))
 						return nil
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 
-				Convey("Transactions can be escaped.", func() {
+				t.Run("Transactions can be escaped.", func(t *ftt.Test) {
 					testError := errors.New("test error")
 					noTxnPM := ds.PropertyMap{
 						"$kind": ds.MkProperty("Test"),
@@ -390,7 +396,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					}
 
 					err := ds.RunInTransaction(c, func(c context.Context) error {
-						So(ds.CurrentTransaction(c), ShouldNotBeNil)
+						assert.Loosely(t, ds.CurrentTransaction(c), should.NotBeNil)
 
 						pmap := ds.PropertyMap{
 							"$kind": ds.MkProperty("Test"),
@@ -407,14 +413,14 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						}
 						return testError
 					}, nil)
-					So(err, ShouldEqual, testError)
+					assert.Loosely(t, err, should.Equal(testError))
 
 					// Confirm that noTxnPM was added.
-					So(ds.CurrentTransaction(c), ShouldBeNil)
-					So(ds.Get(c, noTxnPM), ShouldBeNil)
+					assert.Loosely(t, ds.CurrentTransaction(c), should.BeNil)
+					assert.Loosely(t, ds.Get(c, noTxnPM), should.BeNil)
 				})
 
-				Convey("Concurrent transactions only accept one set of changes", func() {
+				t.Run("Concurrent transactions only accept one set of changes", func(t *ftt.Test) {
 					// Note: I think this implementation is actually /slightly/ wrong.
 					// According to my read of the docs for appengine, when you open a
 					// transaction it actually (essentially) holds a reference to the
@@ -423,196 +429,196 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					//
 					// That said... I'm not sure if there's really a semantic difference.
 					err := ds.RunInTransaction(c, func(c context.Context) error {
-						So(ds.Put(c, &Foo{ID: 1, Val: 21}), ShouldBeNil)
+						assert.Loosely(t, ds.Put(c, &Foo{ID: 1, Val: 21}), should.BeNil)
 
 						err := ds.RunInTransaction(ds.WithoutTransaction(c), func(c context.Context) error {
-							So(ds.Put(c, &Foo{ID: 1, Val: 27}), ShouldBeNil)
+							assert.Loosely(t, ds.Put(c, &Foo{ID: 1, Val: 27}), should.BeNil)
 							return nil
 						}, nil)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						return nil
 					}, nil)
-					So(err.Error(), ShouldContainSubstring, "concurrent")
+					assert.Loosely(t, err.Error(), should.ContainSubstring("concurrent"))
 
 					f := &Foo{ID: 1}
-					So(ds.Get(c, f), ShouldBeNil)
-					So(f.Val, ShouldEqual, 27)
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(27))
 				})
 
-				Convey("Errors and panics", func() {
-					Convey("returning an error aborts", func() {
+				t.Run("Errors and panics", func(t *ftt.Test) {
+					t.Run("returning an error aborts", func(t *ftt.Test) {
 						err := ds.RunInTransaction(c, func(c context.Context) error {
-							So(ds.Put(c, &Foo{ID: 1, Val: 200}), ShouldBeNil)
+							assert.Loosely(t, ds.Put(c, &Foo{ID: 1, Val: 200}), should.BeNil)
 							return fmt.Errorf("thingy")
 						}, nil)
-						So(err.Error(), ShouldEqual, "thingy")
+						assert.Loosely(t, err.Error(), should.Equal("thingy"))
 
 						f := &Foo{ID: 1}
-						So(ds.Get(c, f), ShouldBeNil)
-						So(f.Val, ShouldEqual, 10)
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
+						assert.Loosely(t, f.Val, should.Equal(10))
 					})
 
-					Convey("panicing aborts", func() {
-						So(func() {
-							So(ds.RunInTransaction(c, func(c context.Context) error {
-								So(ds.Put(c, &Foo{Val: 200}), ShouldBeNil)
+					t.Run("panicing aborts", func(t *ftt.Test) {
+						assert.Loosely(t, func() {
+							assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+								assert.Loosely(t, ds.Put(c, &Foo{Val: 200}), should.BeNil)
 								panic("wheeeeee")
-							}, nil), ShouldBeNil)
-						}, ShouldPanic)
+							}, nil), should.BeNil)
+						}, should.Panic)
 
 						f := &Foo{ID: 1}
-						So(ds.Get(c, f), ShouldBeNil)
-						So(f.Val, ShouldEqual, 10)
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
+						assert.Loosely(t, f.Val, should.Equal(10))
 					})
 				})
 
-				Convey("Transaction retries", func() {
+				t.Run("Transaction retries", func(t *ftt.Test) {
 					tst := ds.GetTestable(c)
-					Reset(func() { tst.SetTransactionRetryCount(0) })
+					defer func() { tst.SetTransactionRetryCount(0) }()
 
-					Convey("SetTransactionRetryCount set to zero", func() {
+					t.Run("SetTransactionRetryCount set to zero", func(t *ftt.Test) {
 						tst.SetTransactionRetryCount(0)
 						calls := 0
-						So(ds.RunInTransaction(c, func(c context.Context) error {
+						assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return nil
-						}, nil), ShouldBeNil)
-						So(calls, ShouldEqual, 1)
+						}, nil), should.BeNil)
+						assert.Loosely(t, calls, should.Equal(1))
 					})
 
-					Convey("default TransactionOptions is 3 attempts", func() {
+					t.Run("default TransactionOptions is 3 attempts", func(t *ftt.Test) {
 						tst.SetTransactionRetryCount(100) // more than 3
 						calls := 0
-						So(ds.RunInTransaction(c, func(c context.Context) error {
+						assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return nil
-						}, nil), ShouldEqual, ds.ErrConcurrentTransaction)
-						So(calls, ShouldEqual, 3)
+						}, nil), should.Equal(ds.ErrConcurrentTransaction))
+						assert.Loosely(t, calls, should.Equal(3))
 					})
 
-					Convey("non-default TransactionOptions ", func() {
+					t.Run("non-default TransactionOptions ", func(t *ftt.Test) {
 						tst.SetTransactionRetryCount(100) // more than 20
 						calls := 0
-						So(ds.RunInTransaction(c, func(c context.Context) error {
+						assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return nil
-						}, &ds.TransactionOptions{Attempts: 20}), ShouldEqual, ds.ErrConcurrentTransaction)
-						So(calls, ShouldEqual, 20)
+						}, &ds.TransactionOptions{Attempts: 20}), should.Equal(ds.ErrConcurrentTransaction))
+						assert.Loosely(t, calls, should.Equal(20))
 					})
 
-					Convey("SetTransactionRetryCount is respected", func() {
+					t.Run("SetTransactionRetryCount is respected", func(t *ftt.Test) {
 						tst.SetTransactionRetryCount(1) // less than 3
 						calls := 0
-						So(ds.RunInTransaction(c, func(c context.Context) error {
+						assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return nil
-						}, nil), ShouldBeNil)
-						So(calls, ShouldEqual, 2)
+						}, nil), should.BeNil)
+						assert.Loosely(t, calls, should.Equal(2))
 					})
 
-					Convey("fatal errors are not retried", func() {
+					t.Run("fatal errors are not retried", func(t *ftt.Test) {
 						tst.SetTransactionRetryCount(1)
 						calls := 0
-						So(ds.RunInTransaction(c, func(c context.Context) error {
+						assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return fmt.Errorf("omg")
-						}, nil).Error(), ShouldEqual, "omg")
-						So(calls, ShouldEqual, 1)
+						}, nil).Error(), should.Equal("omg"))
+						assert.Loosely(t, calls, should.Equal(1))
 					})
 				})
 
-				Convey("Read-only transactions reject writes", func() {
-					So(ds.Put(c, &Foo{ID: 1, Val: 100}), ShouldBeNil)
+				t.Run("Read-only transactions reject writes", func(t *ftt.Test) {
+					assert.Loosely(t, ds.Put(c, &Foo{ID: 1, Val: 100}), should.BeNil)
 					var val int
 
-					So(ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 						foo := &Foo{ID: 1}
-						So(ds.Get(c, foo), ShouldBeNil)
+						assert.Loosely(t, ds.Get(c, foo), should.BeNil)
 						val = foo.Val
 
 						foo.Val = 1337
 						return ds.Put(c, foo)
-					}, &ds.TransactionOptions{ReadOnly: true}), ShouldErrLike, "Attempting to write")
-					So(val, ShouldResemble, 100)
+					}, &ds.TransactionOptions{ReadOnly: true}), should.ErrLike("Attempting to write"))
+					assert.Loosely(t, val, should.Match(100))
 					foo := &Foo{ID: 1}
-					So(ds.Get(c, foo), ShouldBeNil)
-					So(foo.Val, ShouldResemble, 100)
+					assert.Loosely(t, ds.Get(c, foo), should.BeNil)
+					assert.Loosely(t, foo.Val, should.Match(100))
 				})
 
-				Convey("Read-only transactions reject deletes", func() {
-					So(ds.Put(c, &Foo{ID: 1, Val: 100}), ShouldBeNil)
+				t.Run("Read-only transactions reject deletes", func(t *ftt.Test) {
+					assert.Loosely(t, ds.Put(c, &Foo{ID: 1, Val: 100}), should.BeNil)
 					var val int
 
-					So(ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 						foo := &Foo{ID: 1}
-						So(ds.Get(c, foo), ShouldBeNil)
+						assert.Loosely(t, ds.Get(c, foo), should.BeNil)
 						val = foo.Val
 
 						return ds.Delete(c, foo)
-					}, &ds.TransactionOptions{ReadOnly: true}), ShouldErrLike, "Attempting to delete")
-					So(val, ShouldResemble, 100)
-					So(ds.Get(c, &Foo{ID: 1}), ShouldBeNil)
+					}, &ds.TransactionOptions{ReadOnly: true}), should.ErrLike("Attempting to delete"))
+					assert.Loosely(t, val, should.Match(100))
+					assert.Loosely(t, ds.Get(c, &Foo{ID: 1}), should.BeNil)
 				})
 			})
 		})
 
-		Convey("Testable.Consistent", func() {
-			Convey("false", func() {
+		t.Run("Testable.Consistent", func(t *ftt.Test) {
+			t.Run("false", func(t *ftt.Test) {
 				ds.GetTestable(c).Consistent(false) // the default
 				for i := 0; i < 10; i++ {
-					So(ds.Put(c, &Foo{ID: int64(i + 1), Val: i + 1}), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, &Foo{ID: int64(i + 1), Val: i + 1}), should.BeNil)
 				}
 				q := ds.NewQuery("Foo").Gt("Val", 3)
 				count, err := ds.Count(c, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.BeZero)
 
-				So(ds.Delete(c, ds.MakeKey(c, "Foo", 4)), ShouldBeNil)
+				assert.Loosely(t, ds.Delete(c, ds.MakeKey(c, "Foo", 4)), should.BeNil)
 
 				count, err = ds.Count(c, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.BeZero)
 
 				ds.GetTestable(c).Consistent(true)
 				count, err = ds.Count(c, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 6)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(6))
 			})
 
-			Convey("true", func() {
+			t.Run("true", func(t *ftt.Test) {
 				ds.GetTestable(c).Consistent(true)
 				for i := 0; i < 10; i++ {
-					So(ds.Put(c, &Foo{ID: int64(i + 1), Val: i + 1}), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, &Foo{ID: int64(i + 1), Val: i + 1}), should.BeNil)
 				}
 				q := ds.NewQuery("Foo").Gt("Val", 3)
 				count, err := ds.Count(c, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 7)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(7))
 
-				So(ds.Delete(c, ds.MakeKey(c, "Foo", 4)), ShouldBeNil)
+				assert.Loosely(t, ds.Delete(c, ds.MakeKey(c, "Foo", 4)), should.BeNil)
 
 				count, err = ds.Count(c, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 6)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(6))
 			})
 		})
 
-		Convey("Testable.DisableSpecialEntities", func() {
+		t.Run("Testable.DisableSpecialEntities", func(t *ftt.Test) {
 			ds.GetTestable(c).DisableSpecialEntities(true)
 
-			So(ds.Put(c, &Foo{}), ShouldErrLike, "allocateIDs is disabled")
+			assert.Loosely(t, ds.Put(c, &Foo{}), should.ErrLike("allocateIDs is disabled"))
 
-			So(ds.Put(c, &Foo{ID: 1}), ShouldBeNil)
+			assert.Loosely(t, ds.Put(c, &Foo{ID: 1}), should.BeNil)
 
 			ds.GetTestable(c).CatchupIndexes()
 
 			count, err := ds.Count(c, ds.NewQuery(""))
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 1) // normally this would include __entity_group__
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Equal(1)) // normally this would include __entity_group__
 		})
 
-		Convey("Datastore namespace interaction", func() {
+		t.Run("Datastore namespace interaction", func(t *ftt.Test) {
 			run := func(rc context.Context, txn bool) (putErr, getErr, queryErr, countErr error) {
 				var foo Foo
 
@@ -653,38 +659,38 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			}
 
 			for _, txn := range []bool{false, true} {
-				Convey(fmt.Sprintf("In transaction? %v", txn), func() {
-					Convey("With no namespace installed, can Put, Get, Query, and Count.", func() {
-						So(infoS.GetNamespace(c), ShouldEqual, "")
+				t.Run(fmt.Sprintf("In transaction? %v", txn), func(t *ftt.Test) {
+					t.Run("With no namespace installed, can Put, Get, Query, and Count.", func(t *ftt.Test) {
+						assert.Loosely(t, infoS.GetNamespace(c), should.BeEmpty)
 
 						putErr, getErr, queryErr, countErr := run(c, txn)
-						So(putErr, ShouldBeNil)
-						So(getErr, ShouldBeNil)
-						So(queryErr, ShouldBeNil)
-						So(countErr, ShouldBeNil)
+						assert.Loosely(t, putErr, should.BeNil)
+						assert.Loosely(t, getErr, should.BeNil)
+						assert.Loosely(t, queryErr, should.BeNil)
+						assert.Loosely(t, countErr, should.BeNil)
 					})
 
-					Convey("With a namespace installed, can Put, Get, Query, and Count.", func() {
+					t.Run("With a namespace installed, can Put, Get, Query, and Count.", func(t *ftt.Test) {
 						putErr, getErr, queryErr, countErr := run(infoS.MustNamespace(c, "foo"), txn)
-						So(putErr, ShouldBeNil)
-						So(getErr, ShouldBeNil)
-						So(queryErr, ShouldBeNil)
-						So(countErr, ShouldBeNil)
+						assert.Loosely(t, putErr, should.BeNil)
+						assert.Loosely(t, getErr, should.BeNil)
+						assert.Loosely(t, queryErr, should.BeNil)
+						assert.Loosely(t, countErr, should.BeNil)
 					})
 				})
 			}
 		})
 
-		Convey("Testable.ShowSpecialProperties", func() {
+		t.Run("Testable.ShowSpecialProperties", func(t *ftt.Test) {
 			ds.GetTestable(c).ShowSpecialProperties(true)
 
 			var ents []Foo
 			for i := 0; i < 10; i++ {
 				ent := &Foo{}
-				So(ds.Put(c, ent), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, ent), should.BeNil)
 				ents = append(ents, *ent)
 			}
-			So(ds.Get(c, ents), ShouldBeNil)
+			assert.Loosely(t, ds.Get(c, ents), should.BeNil)
 
 			// Some of these entities (~50%) should have __scatter__ property
 			// populated. The algorithm is deterministic.
@@ -692,7 +698,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			for i, e := range ents {
 				scatter[i] = hex.EncodeToString(e.Scatter)
 			}
-			So(scatter, ShouldResemble, []string{
+			assert.Loosely(t, scatter, should.Match([]string{
 				"d77e219d0669b1808f236ca5b25127bf8e865e3f0e68b792374526251c873c61",
 				"",
 				"",
@@ -703,23 +709,23 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				"bcefad8a2212ee1cfa3636e94264b8c73c90eaded9f429e27c7384830c1e381c",
 				"d2358c1d9e5951be7117e06eaec96a6a63090f181615e2c51afaf7f214e4d873",
 				"b29a46a6c01adb88d7001fe399d6346d5d2725b190f4fb025c9cb7c73c4ffb15",
-			})
+			}))
 		})
 
-		Convey("Query by __scatter__", func() {
+		t.Run("Query by __scatter__", func(t *ftt.Test) {
 			for i := 0; i < 100; i++ {
-				So(ds.Put(c, &Foo{}), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, &Foo{}), should.BeNil)
 			}
 			ds.GetTestable(c).CatchupIndexes()
 
 			var ids []int64
-			So(ds.Run(c, ds.NewQuery("Foo").Order("__scatter__").Limit(5), func(f *Foo) {
-				So(f.Scatter, ShouldBeNil) // it is "invisible"
+			assert.Loosely(t, ds.Run(c, ds.NewQuery("Foo").Order("__scatter__").Limit(5), func(f *Foo) {
+				assert.Loosely(t, f.Scatter, should.BeNil) // it is "invisible"
 				ids = append(ids, f.ID)
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			// Approximately "even" distribution within [1, 100] range.
-			So(ids, ShouldResemble, []int64{43, 55, 99, 23, 17})
+			assert.Loosely(t, ids, should.Match([]int64{43, 55, 99, 23, 17}))
 		})
 	})
 }
@@ -728,11 +734,11 @@ func TestCompoundIndexes(t *testing.T) {
 	t.Parallel()
 
 	idxKey := func(def ds.IndexDefinition) string {
-		So(def, ShouldNotBeNil)
+		assert.Loosely(t, def, should.NotBeZero)
 		return "idx::" + string(ds.Serialize.ToBytes(*def.PrepForIdxTable()))
 	}
 
-	Convey("Test Compound indexes", t, func() {
+	ftt.Run("Test Compound indexes", t, func(t *ftt.Test) {
 		type Model struct {
 			ID int64 `gae:"$id"`
 
@@ -741,10 +747,10 @@ func TestCompoundIndexes(t *testing.T) {
 		}
 
 		c := Use(context.Background())
-		t := ds.GetTestable(c).(*dsImpl)
-		head := t.data.head
+		testImpl := ds.GetTestable(c).(*dsImpl)
+		head := testImpl.data.head
 
-		So(ds.Put(c, &Model{1, []string{"hello", "world"}, []int64{10, 11}}), ShouldBeNil)
+		assert.Loosely(t, ds.Put(c, &Model{1, []string{"hello", "world"}, []int64{10, 11}}), should.BeNil)
 
 		idx := ds.IndexDefinition{
 			Kind: "Model",
@@ -754,21 +760,21 @@ func TestCompoundIndexes(t *testing.T) {
 		}
 
 		coll := head.Snapshot().GetCollection(idxKey(idx))
-		So(coll, ShouldNotBeNil)
-		So(countItems(coll), ShouldEqual, 2)
+		assert.Loosely(t, coll, should.NotBeNil)
+		assert.Loosely(t, countItems(coll), should.Equal(2))
 
 		idx.SortBy[0].Property = "Field1"
 		coll = head.Snapshot().GetCollection(idxKey(idx))
-		So(coll, ShouldNotBeNil)
-		So(countItems(coll), ShouldEqual, 2)
+		assert.Loosely(t, coll, should.NotBeNil)
+		assert.Loosely(t, countItems(coll), should.Equal(2))
 
 		idx.SortBy = append(idx.SortBy, ds.IndexColumn{Property: "Field1"})
-		So(head.GetCollection(idxKey(idx)), ShouldBeNil)
+		assert.Loosely(t, head.GetCollection(idxKey(idx)), should.BeNil)
 
-		t.AddIndexes(&idx)
+		testImpl.AddIndexes(&idx)
 		coll = head.Snapshot().GetCollection(idxKey(idx))
-		So(coll, ShouldNotBeNil)
-		So(countItems(coll), ShouldEqual, 4)
+		assert.Loosely(t, coll, should.NotBeNil)
+		assert.Loosely(t, countItems(coll), should.Equal(4))
 	})
 }
 
@@ -777,26 +783,26 @@ func TestCompoundIndexes(t *testing.T) {
 func TestDefaultTimeField(t *testing.T) {
 	t.Parallel()
 
-	Convey("Default time.Time{} can be stored", t, func() {
+	ftt.Run("Default time.Time{} can be stored", t, func(t *ftt.Test) {
 		type Model struct {
 			ID   int64 `gae:"$id"`
 			Time time.Time
 		}
 		c := Use(context.Background())
 		m := Model{ID: 1}
-		So(ds.Put(c, &m), ShouldBeNil)
+		assert.Loosely(t, ds.Put(c, &m), should.BeNil)
 
 		// Reset to something non zero to ensure zero is fetched.
 		m.Time = time.Now().UTC()
-		So(ds.Get(c, &m), ShouldBeNil)
-		So(m.Time.IsZero(), ShouldBeTrue)
+		assert.Loosely(t, ds.Get(c, &m), should.BeNil)
+		assert.Loosely(t, m.Time.IsZero(), should.BeTrue)
 	})
 }
 
 func TestNewDatastore(t *testing.T) {
 	t.Parallel()
 
-	Convey("Can get and use a NewDatastore", t, func() {
+	ftt.Run("Can get and use a NewDatastore", t, func(t *ftt.Test) {
 		c := UseWithAppID(context.Background(), "dev~aid")
 		c = infoS.MustNamespace(c, "ns")
 
@@ -804,39 +810,39 @@ func TestNewDatastore(t *testing.T) {
 		c = ds.SetRaw(c, dsInst)
 
 		k := ds.MakeKey(c, "Something", 1)
-		So(k.AppID(), ShouldEqual, "dev~aid")
-		So(k.Namespace(), ShouldEqual, "ns")
+		assert.Loosely(t, k.AppID(), should.Equal("dev~aid"))
+		assert.Loosely(t, k.Namespace(), should.Equal("ns"))
 
 		type Model struct {
 			ID    int64 `gae:"$id"`
 			Value []int64
 		}
-		So(ds.Put(c, &Model{ID: 1, Value: []int64{20, 30}}), ShouldBeNil)
+		assert.Loosely(t, ds.Put(c, &Model{ID: 1, Value: []int64{20, 30}}), should.BeNil)
 
 		vals := []ds.PropertyMap{}
-		So(ds.GetAll(c, ds.NewQuery("Model").Project("Value"), &vals), ShouldBeNil)
-		So(len(vals), ShouldEqual, 2)
+		assert.Loosely(t, ds.GetAll(c, ds.NewQuery("Model").Project("Value"), &vals), should.BeNil)
+		assert.Loosely(t, len(vals), should.Equal(2))
 
-		So(vals[0].Slice("Value")[0].Value(), ShouldEqual, 20)
-		So(vals[1].Slice("Value")[0].Value(), ShouldEqual, 30)
+		assert.Loosely(t, vals[0].Slice("Value")[0].Value(), should.Equal(20))
+		assert.Loosely(t, vals[1].Slice("Value")[0].Value(), should.Equal(30))
 	})
 }
 
 func TestAddIndexes(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Testable.AddIndexes", t, func() {
+	ftt.Run("Test Testable.AddIndexes", t, func(t *ftt.Test) {
 		ctx := UseWithAppID(context.Background(), "aid")
 		namespaces := []string{"", "good", "news", "everyone"}
 
-		Convey("After adding datastore entries, can query against indexes in various namespaces", func() {
+		t.Run("After adding datastore entries, can query against indexes in various namespaces", func(t *ftt.Test) {
 			foos := []*Foo{
 				{ID: 1, Val: 1, Name: "foo"},
 				{ID: 2, Val: 2, Name: "bar"},
 				{ID: 3, Val: 2, Name: "baz"},
 			}
 			for _, ns := range namespaces {
-				So(ds.Put(infoS.MustNamespace(ctx, ns), foos), ShouldBeNil)
+				assert.Loosely(t, ds.Put(infoS.MustNamespace(ctx, ns), foos), should.BeNil)
 			}
 
 			// Initial query, no indexes, will fail.
@@ -844,7 +850,7 @@ func TestAddIndexes(t *testing.T) {
 
 			var results []*Foo
 			q := ds.NewQuery("Foo").Eq("Val", 2).Gte("Name", "bar")
-			So(ds.GetAll(ctx, q, &results), ShouldErrLike, "Insufficient indexes")
+			assert.Loosely(t, ds.GetAll(ctx, q, &results), should.ErrLike("Insufficient indexes"))
 
 			// Add index for default namespace.
 			ds.GetTestable(ctx).AddIndexes(&ds.IndexDefinition{
@@ -863,17 +869,17 @@ func TestAddIndexes(t *testing.T) {
 				}
 
 				results = nil
-				So(ds.GetAll(infoS.MustNamespace(ctx, ns), q, &results), ShouldBeNil)
-				So(len(results), ShouldEqual, 2)
+				assert.Loosely(t, ds.GetAll(infoS.MustNamespace(ctx, ns), q, &results), should.BeNil)
+				assert.Loosely(t, len(results), should.Equal(2))
 			}
 
 			// Add "foos" to a new namespace, then confirm that it gets indexed.
-			So(ds.Put(infoS.MustNamespace(ctx, "qux"), foos), ShouldBeNil)
+			assert.Loosely(t, ds.Put(infoS.MustNamespace(ctx, "qux"), foos), should.BeNil)
 			ds.GetTestable(ctx).CatchupIndexes()
 
 			results = nil
-			So(ds.GetAll(infoS.MustNamespace(ctx, "qux"), q, &results), ShouldBeNil)
-			So(len(results), ShouldEqual, 2)
+			assert.Loosely(t, ds.GetAll(infoS.MustNamespace(ctx, "qux"), q, &results), should.BeNil)
+			assert.Loosely(t, len(results), should.Equal(2))
 		})
 	})
 }
@@ -885,7 +891,7 @@ func TestConcurrentTxn(t *testing.T) {
 	// counter in an entity and counts how many transactions succeeded. The final
 	// counter value and the number of committed transactions should match.
 
-	Convey("Concurrent transactions work", t, func() {
+	ftt.Run("Concurrent transactions work", t, func(t *ftt.Test) {
 		c := Use(context.Background())
 
 		var successes int64
@@ -927,7 +933,7 @@ func TestConcurrentTxn(t *testing.T) {
 			ds.Get(c, &ent)
 			counter := atomic.LoadInt64(&successes)
 			if int64(ent.Val) != counter { // don't spam convey assertions
-				So(ent.Val, ShouldEqual, counter)
+				assert.Loosely(t, ent.Val, should.Equal(counter))
 			}
 		}
 	})
