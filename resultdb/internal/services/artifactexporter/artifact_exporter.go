@@ -214,8 +214,8 @@ func Schedule(ctx context.Context, invID invocations.ID) error {
 
 // exportArtifact reads all text artifacts (including artifact content
 // in RBE-CAS) for an invocation and exports to BigQuery.
-func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocations.ID) error {
-	logging.Infof(ctx, "Exporting artifacts for invocation ID %s", invID)
+func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocations.ID) (err error) {
+	ctx = logging.SetField(ctx, "invocation_id", invID)
 	shouldUpload, err := shouldUploadToBQ(ctx)
 	if err != nil {
 		return errors.Annotate(err, "getting config").Err()
@@ -244,7 +244,7 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 		return errors.Annotate(err, "query text artifacts").Err()
 	}
 
-	logging.Infof(ctx, "Found %d text artifacts for invocation %v", len(artifacts), invID)
+	logging.Infof(ctx, "Found %d text artifacts", len(artifacts))
 
 	percent, err := percentOfArtifactsToBQ(ctx)
 	if err != nil {
@@ -288,6 +288,10 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 		}
 	})
 
+	if err == nil {
+		logging.Infof(ctx, "Finished exporting artifacts task")
+	}
+
 	return err
 }
 
@@ -304,6 +308,8 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 // rows have been exported.
 // [1] https://cloud.google.com/bigquery/docs/write-api#pending_type
 func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqpb.TextArtifactRow) error {
+	logging.Infof(ctx, "Start exporting to BigQuery")
+
 	// rows contains the rows that will be sent to AppendRows.
 	rows := []*bqpb.TextArtifactRow{}
 	currentSize := 0
@@ -317,11 +323,13 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqp
 
 		// Exceed max batch size, send whatever we have.
 		if currentSize+rowSize > bqutil.RowMaxBytes {
+			logging.Infof(ctx, "Start inserting %d rows to BigQuery", len(rows))
 			err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
 			if err != nil {
 				artifactExportCounter.Add(ctx, int64(len(rows)), row.Project, "failure_bq")
 				return errors.Annotate(err, "insert artifact rows").Err()
 			}
+			logging.Infof(ctx, "Finished inserting %d rows to BigQuery", len(rows))
 			artifactExportCounter.Add(ctx, int64(len(rows)), row.Project, "success")
 			// Reset
 			rows = []*bqpb.TextArtifactRow{}
@@ -334,13 +342,17 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *bqp
 
 	// Upload the remaining rows.
 	if currentSize > 0 {
+		logging.Infof(ctx, "Start inserting last batch of %d rows to BigQuery", len(rows))
 		err := ae.bqExportClient.InsertArtifactRows(ctx, rows)
 		if err != nil {
 			artifactExportCounter.Add(ctx, int64(len(rows)), rows[0].Project, "failure_bq")
 			return errors.Annotate(err, "insert artifact rows").Err()
 		}
+		logging.Infof(ctx, "Finished inserting last batch of %d rows to BigQuery", len(rows))
 		artifactExportCounter.Add(ctx, int64(len(rows)), rows[0].Project, "success")
 	}
+
+	logging.Infof(ctx, "Finished exporting to BigQuery")
 	return nil
 }
 
@@ -417,6 +429,8 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 // Artifacts with content size smaller or equal than MaxRBECasBatchSize will be downloaded in batch.
 // Artifacts with content size bigger than MaxRBECasBatchSize will be downloaded in streaming manner.
 func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context, artifacts []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow, maxShardContentSize, maxRBECasBatchSize int) error {
+	logging.Infof(ctx, "Start downloading artifact contents")
+
 	project, _ := realms.Split(inv.Realm)
 
 	// Sort the artifacts by size, make it easier to do batching.
@@ -427,6 +441,7 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 	// Limit to 10 workers to avoid possible OOM.
 	return parallel.WorkPool(10, func(work chan<- func() error) {
 		// Smaller artifacts should be downloaded in batch.
+		logging.Infof(ctx, "Start downloading artifact contents in batch manner")
 		currentBatchSize := 0
 		batch := []*Artifact{}
 		bigArtifactStartIndex := -1
@@ -465,9 +480,12 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 				return nil
 			}
 		}
+		logging.Infof(ctx, "Finished downloading artifact contents in batch manner")
 
 		// Download the big artifacts in streaming manner.
 		if bigArtifactStartIndex > -1 {
+			numBigArtifacts := len(artifacts) - bigArtifactStartIndex
+			logging.Infof(ctx, "Start downloading %d artifact contents in streaming manner", numBigArtifacts)
 			for i := bigArtifactStartIndex; i < len(artifacts); i++ {
 				artifact := artifacts[i]
 				work <- func() error {
@@ -489,7 +507,9 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 					return nil
 				}
 			}
+			logging.Infof(ctx, "Finished downloading %d artifact contents in streaming manner", numBigArtifacts)
 		}
+		logging.Infof(ctx, "Finished downloading artifact contents")
 	})
 }
 
@@ -500,7 +520,8 @@ func artifactSizeWithOverhead(artifactSize int64) int {
 // batchDownloadArtifacts downloads artifact content from RBE-CAS in batch.
 // It generates one or more TextArtifactRows for the content and push in rowC.
 func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []*Artifact, inv *pb.Invocation, rowC chan *bqpb.TextArtifactRow) error {
-	logging.Infof(ctx, "batch download artifacts for %d artifacts", len(batch))
+	logging.Infof(ctx, "Start batch download of %d artifacts", len(batch))
+
 	req := &repb.BatchReadBlobsRequest{InstanceName: ae.rbecasInstance}
 	for _, artifact := range batch {
 		req.Digests = append(req.Digests, &repb.Digest{
@@ -596,6 +617,7 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 		}
 		rowC <- row
 	}
+	logging.Infof(ctx, "Finished batch download of %d artifacts", len(batch))
 	return nil
 }
 
