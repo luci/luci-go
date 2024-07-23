@@ -15,9 +15,10 @@
 package memory
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type keyLeftRight struct{ key, left, right []byte }
@@ -120,20 +121,20 @@ func getFilledColl(fill []kv) memCollection {
 func TestCollision(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test memStoreCollide", t, func() {
+	ftt.Run("Test memStoreCollide", t, func(t *ftt.Test) {
 		for _, tc := range testCollisionCases {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				left := getFilledColl(tc.left)
 				right := getFilledColl(tc.right)
 				i := 0
 				memStoreCollide(left, right, func(key, left, right []byte) {
 					e := tc.expect[i]
-					So(key, ShouldResemble, e.key)
-					So(left, ShouldResemble, e.left)
-					So(right, ShouldResemble, e.right)
+					assert.Loosely(t, key, should.Resemble(e.key))
+					assert.Loosely(t, left, should.Resemble(e.left))
+					assert.Loosely(t, right, should.Resemble(e.right))
 					i++
 				})
-				So(i, ShouldEqual, len(tc.expect))
+				assert.Loosely(t, i, should.Equal(len(tc.expect)))
 			})
 		}
 	})

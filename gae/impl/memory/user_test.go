@@ -18,108 +18,108 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/user"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUser(t *testing.T) {
 	t.Parallel()
 
-	Convey("user", t, func() {
+	ftt.Run("user", t, func(t *ftt.Test) {
 		c := Use(context.Background())
 
-		Convey("default state is anonymous", func() {
-			So(user.Current(c), ShouldBeNil)
+		t.Run("default state is anonymous", func(t *ftt.Test) {
+			assert.Loosely(t, user.Current(c), should.BeNil)
 
 			usr, err := user.CurrentOAuth(c, "something")
-			So(err, ShouldBeNil)
-			So(usr, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, usr, should.BeNil)
 
-			So(user.IsAdmin(c), ShouldBeFalse)
+			assert.Loosely(t, user.IsAdmin(c), should.BeFalse)
 		})
 
-		Convey("can login (normal)", func() {
+		t.Run("can login (normal)", func(t *ftt.Test) {
 			user.GetTestable(c).Login("hello@world.com", "", false)
-			So(user.Current(c), ShouldResemble, &user.User{
+			assert.Loosely(t, user.Current(c), should.Resemble(&user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
-			})
+			}))
 
 			usr, err := user.CurrentOAuth(c, "scope")
-			So(usr, ShouldBeNil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, usr, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("and logout", func() {
+			t.Run("and logout", func(t *ftt.Test) {
 				user.GetTestable(c).Logout()
-				So(user.Current(c), ShouldBeNil)
+				assert.Loosely(t, user.Current(c), should.BeNil)
 
 				usr, err := user.CurrentOAuth(c, "scope")
-				So(usr, ShouldBeNil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, usr, should.BeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("can be admin", func() {
+		t.Run("can be admin", func(t *ftt.Test) {
 			user.GetTestable(c).Login("hello@world.com", "", true)
-			So(user.Current(c), ShouldResemble, &user.User{
+			assert.Loosely(t, user.Current(c), should.Resemble(&user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
 				Admin:      true,
-			})
-			So(user.IsAdmin(c), ShouldBeTrue)
+			}))
+			assert.Loosely(t, user.IsAdmin(c), should.BeTrue)
 		})
 
-		Convey("can login (oauth)", func() {
+		t.Run("can login (oauth)", func(t *ftt.Test) {
 			user.GetTestable(c).Login("hello@world.com", "clientID", false)
 			usr, err := user.CurrentOAuth(c, "scope")
-			So(err, ShouldBeNil)
-			So(usr, ShouldResemble, &user.User{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, usr, should.Resemble(&user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
 				ClientID:   "clientID",
-			})
+			}))
 
-			So(user.Current(c), ShouldBeNil)
+			assert.Loosely(t, user.Current(c), should.BeNil)
 
-			Convey("and logout", func() {
+			t.Run("and logout", func(t *ftt.Test) {
 				user.GetTestable(c).Logout()
-				So(user.Current(c), ShouldBeNil)
+				assert.Loosely(t, user.Current(c), should.BeNil)
 
 				usr, err := user.CurrentOAuth(c, "scope")
-				So(usr, ShouldBeNil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, usr, should.BeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("panics on bad email", func() {
-			So(func() {
+		t.Run("panics on bad email", func(t *ftt.Test) {
+			assert.Loosely(t, func() {
 				user.GetTestable(c).Login("bademail", "", false)
-			}, ShouldPanicLike, `mail:`)
+			}, should.PanicLike(`mail:`))
 		})
 
-		Convey("fake URLs", func() {
+		t.Run("fake URLs", func(t *ftt.Test) {
 			url, err := user.LoginURL(c, "https://funky.example.com")
-			So(err, ShouldBeNil)
-			So(url, ShouldEqual, "https://fakeapp.example.com/_ah/login?redirect=https%3A%2F%2Ffunky.example.com")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url, should.Equal("https://fakeapp.example.com/_ah/login?redirect=https%3A%2F%2Ffunky.example.com"))
 
 			url, err = user.LogoutURL(c, "https://funky.example.com")
-			So(err, ShouldBeNil)
-			So(url, ShouldEqual, "https://fakeapp.example.com/_ah/logout?redirect=https%3A%2F%2Ffunky.example.com")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url, should.Equal("https://fakeapp.example.com/_ah/logout?redirect=https%3A%2F%2Ffunky.example.com"))
 		})
 
-		Convey("Some stuff is deprecated", func() {
+		t.Run("Some stuff is deprecated", func(t *ftt.Test) {
 			url, err := user.LoginURLFederated(c, "https://something", "something")
-			So(err, ShouldErrLike, "LoginURLFederated is deprecated")
-			So(url, ShouldEqual, "")
+			assert.Loosely(t, err, should.ErrLike("LoginURLFederated is deprecated"))
+			assert.Loosely(t, url, should.BeEmpty)
 
 			key, err := user.OAuthConsumerKey(c)
-			So(err, ShouldErrLike, "OAuthConsumerKey is deprecated")
-			So(key, ShouldEqual, "")
+			assert.Loosely(t, err, should.ErrLike("OAuthConsumerKey is deprecated"))
+			assert.Loosely(t, key, should.BeEmpty)
 		})
 
 	})

@@ -18,26 +18,27 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/module"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestModule(t *testing.T) {
-	Convey("NumInstances", t, func() {
+	ftt.Run("NumInstances", t, func(t *ftt.Test) {
 		c := Use(context.Background())
 
 		i, err := module.NumInstances(c, "foo", "bar")
-		So(i, ShouldEqual, 1)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, i, should.Equal(1))
+		assert.Loosely(t, err, should.BeNil)
 
-		So(module.SetNumInstances(c, "foo", "bar", 42), ShouldBeNil)
+		assert.Loosely(t, module.SetNumInstances(c, "foo", "bar", 42), should.BeNil)
 		i, err = module.NumInstances(c, "foo", "bar")
-		So(i, ShouldEqual, 42)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, i, should.Equal(42))
+		assert.Loosely(t, err, should.BeNil)
 
 		i, err = module.NumInstances(c, "foo", "baz")
-		So(i, ShouldEqual, 1)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, i, should.Equal(1))
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

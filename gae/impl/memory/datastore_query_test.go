@@ -20,11 +20,11 @@ import (
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	dstore "go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type sillyCursor string
@@ -148,37 +148,37 @@ var queryTests = []queryTest{
 func TestQueries(t *testing.T) {
 	t.Parallel()
 
-	Convey("queries have tons of condition checking", t, func() {
+	ftt.Run("queries have tons of condition checking", t, func(t *ftt.Test) {
 		kc := dstore.MkKeyContext("dev~app", "ns")
 
-		Convey("non-ancestor queries in a transaction", func() {
+		t.Run("non-ancestor queries in a transaction", func(t *ftt.Test) {
 			fq, err := nq().Finalize()
-			So(err, ShouldErrLike, nil)
+			assert.Loosely(t, err, should.ErrLike(nil))
 			_, err = reduce(fq, kc, true)
-			So(err, ShouldErrLike, "must include an Ancestor filter")
+			assert.Loosely(t, err, should.ErrLike("must include an Ancestor filter"))
 		})
 
-		Convey("non-ancestor queries work in firestore mode in a transaction", func() {
+		t.Run("non-ancestor queries work in firestore mode in a transaction", func(t *ftt.Test) {
 			fq, err := nq().FirestoreMode(true).EventualConsistency(true).Finalize()
-			So(err, ShouldErrLike, nil)
+			assert.Loosely(t, err, should.ErrLike(nil))
 			_, err = reduce(fq, kc, true)
-			So(err, ShouldErrLike, nil)
+			assert.Loosely(t, err, should.ErrLike(nil))
 		})
 
-		Convey("absurd numbers of filters are prohibited", func() {
+		t.Run("absurd numbers of filters are prohibited", func(t *ftt.Test) {
 			q := nq().Ancestor(key("thing", "wat"))
 			for i := 0; i < 100; i++ {
 				q = q.Eq("something", i)
 			}
 			fq, err := q.Finalize()
-			So(err, ShouldErrLike, nil)
+			assert.Loosely(t, err, should.ErrLike(nil))
 			_, err = reduce(fq, kc, false)
-			So(err, ShouldErrLike, "query is too large")
+			assert.Loosely(t, err, should.ErrLike("query is too large"))
 		})
 
-		Convey("bulk check", func() {
+		t.Run("bulk check", func(t *ftt.Test) {
 			for _, tc := range queryTests {
-				Convey(tc.name, func() {
+				t.Run(tc.name, func(t *ftt.Test) {
 					rq := (*reducedQuery)(nil)
 					fq, err := tc.q.Finalize()
 					if err == nil {
@@ -187,10 +187,10 @@ func TestQueries(t *testing.T) {
 							rq, err = reduce(fq, kc, false)
 						}
 					}
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 
 					if tc.equivalentQuery != nil {
-						So(rq, ShouldResemble, tc.equivalentQuery)
+						assert.Loosely(t, rq, should.Resemble(tc.equivalentQuery))
 					}
 				})
 			}
