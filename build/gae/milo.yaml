@@ -16,4 +16,4 @@ build:
     dest: ${contextdir}/milo
   - go_gae_bundle: ${inputsdir}/service-api/service-api.yaml
     go_gae_bundle_as_module: True
-    dest: ${contextdir}/milo/service-api
+    dest: ${contextdir}/service-api
