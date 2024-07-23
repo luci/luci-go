@@ -25,8 +25,10 @@ import (
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func mkKey(appID, namespace string, elems ...any) *ds.Key {
@@ -49,7 +51,7 @@ type qExStage struct {
 
 	expect []qExpect
 
-	extraFns []func(context.Context)
+	extraFns []func(context.Context, *testing.T)
 }
 
 type qExTest struct {
@@ -391,19 +393,19 @@ var queryExecutionTests = []qExTest{
 				}},
 			},
 
-			extraFns: []func(context.Context){
-				func(c context.Context) {
+			extraFns: []func(context.Context, *testing.T){
+				func(c context.Context, t *testing.T) {
 					q := nq("").Gt("__key__", key("Kind", 2))
 					err := ds.Run(c, q, func(pm ds.PropertyMap) error {
-						So(pm, ShouldResemble, stage1Data[2])
+						assert.Loosely(t, pm, should.Resemble(stage1Data[2]))
 						return ds.Stop
 					})
-					So(err, shouldBeSuccessful)
+					assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
 				},
 
-				func(c context.Context) {
+				func(c context.Context, t *testing.T) {
 					q := nq("Something").Eq("Does", 2).Order("Not", "-Work")
-					So(ds.Run(c, q, func(ds.Key) {}), ShouldErrLike, strings.Join([]string{
+					assert.Loosely(t, ds.Run(c, q, func(ds.Key) {}), should.ErrLike(strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
 						"  properties:",
@@ -411,18 +413,18 @@ var queryExecutionTests = []qExTest{
 						"  - name: Not",
 						"  - name: Work",
 						"    direction: desc",
-					}, "\n"))
+					}, "\n")))
 				},
 
-				func(c context.Context) {
+				func(c context.Context, t *testing.T) {
 					q := nq("Something").Ancestor(key("Kind", 3)).Order("Val")
-					So(ds.Run(c, q, func(ds.Key) {}), ShouldErrLike, strings.Join([]string{
+					assert.Loosely(t, ds.Run(c, q, func(ds.Key) {}), should.ErrLike(strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
 						"  ancestor: yes",
 						"  properties:",
 						"  - name: Val",
-					}, "\n"))
+					}, "\n")))
 				},
 			},
 		},
@@ -565,19 +567,19 @@ var queryExecutionTests = []qExTest{
 func TestQueryExecution(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test query execution", t, func() {
+	ftt.Run("Test query execution", t, func(t *ftt.Test) {
 		c, err := info.Namespace(Use(context.Background()), "ns")
 		if err != nil {
 			panic(err)
 		}
 
-		So(info.FullyQualifiedAppID(c), ShouldEqual, "dev~app")
-		So(info.GetNamespace(c), ShouldEqual, "ns")
+		assert.Loosely(t, info.FullyQualifiedAppID(c), should.Equal("dev~app"))
+		assert.Loosely(t, info.GetNamespace(c), should.Equal("ns"))
 
 		testing := ds.GetTestable(c)
 
 		for _, tc := range queryExecutionTests {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				for i, stage := range tc.test {
 					// outside of Convey, since these must always happen
 					testing.CatchupIndexes()
@@ -601,7 +603,7 @@ func TestQueryExecution(t *testing.T) {
 						panic(err)
 					}
 
-					Convey(fmt.Sprintf("stage %d", i), func() {
+					t.Run(fmt.Sprintf("stage %d", i), func(t *ftt.Test) {
 						for j, expect := range stage.expect {
 							runner := func(c context.Context, f func(ic context.Context) error, _ *ds.TransactionOptions) error {
 								return f(c)
@@ -619,47 +621,47 @@ func TestQueryExecution(t *testing.T) {
 							}
 
 							if expect.keys != nil {
-								Convey(fmt.Sprintf("expect %d (keys)", j), func() {
+								t.Run(fmt.Sprintf("expect %d (keys)", j), func(t *ftt.Test) {
 									err := runner(c, func(c context.Context) error {
 										count, err := ds.Count(c, expect.q)
-										So(err, shouldBeSuccessful)
-										So(count, ShouldEqual, expect.count)
+										assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+										assert.Loosely(t, count, should.Equal(expect.count))
 
 										rslt := []*ds.Key(nil)
-										So(ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
-										So(len(rslt), ShouldEqual, len(expect.keys))
+										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), convey.Adapt(shouldBeSuccessful)())
+										assert.Loosely(t, len(rslt), should.Equal(len(expect.keys)))
 										for i, r := range rslt {
-											So(r, ShouldResemble, expect.keys[i])
+											assert.Loosely(t, r, should.Resemble(expect.keys[i]))
 										}
 										return nil
 									}, nil)
-									So(err, shouldBeSuccessful)
+									assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
 								})
 							}
 
 							if expect.get != nil {
-								Convey(fmt.Sprintf("expect %d (data)", j), func() {
+								t.Run(fmt.Sprintf("expect %d (data)", j), func(t *ftt.Test) {
 									err := runner(c, func(c context.Context) error {
 										count, err := ds.Count(c, expect.q)
-										So(err, shouldBeSuccessful)
-										So(count, ShouldEqual, expect.count)
+										assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+										assert.Loosely(t, count, should.Equal(expect.count))
 
 										rslt := []ds.PropertyMap(nil)
-										So(ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
-										So(len(rslt), ShouldEqual, len(expect.get))
+										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), convey.Adapt(shouldBeSuccessful)())
+										assert.Loosely(t, len(rslt), should.Equal(len(expect.get)))
 										for i, r := range rslt {
-											So(r, ShouldResemble, expect.get[i])
+											assert.Loosely(t, r, should.Resemble(expect.get[i]))
 										}
 										return nil
 									}, nil)
-									So(err, shouldBeSuccessful)
+									assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
 								})
 							}
 						}
 
 						for j, fn := range stage.extraFns {
-							Convey(fmt.Sprintf("extraFn %d", j), func() {
-								fn(c)
+							t.Run(fmt.Sprintf("extraFn %d", j), func(t *ftt.Test) {
+								fn(c, t.T)
 							})
 						}
 					})
@@ -668,7 +670,7 @@ func TestQueryExecution(t *testing.T) {
 		}
 	})
 
-	Convey("Test AutoIndex", t, func() {
+	ftt.Run("Test AutoIndex", t, func(t *ftt.Test) {
 		c, err := info.Namespace(Use(context.Background()), "ns")
 		if err != nil {
 			panic(err)
@@ -677,26 +679,26 @@ func TestQueryExecution(t *testing.T) {
 		testing := ds.GetTestable(c)
 		testing.Consistent(true)
 
-		So(ds.Put(c, pmap("$key", key("Kind", 1), Next,
+		assert.Loosely(t, ds.Put(c, pmap("$key", key("Kind", 1), Next,
 			"Val", 1, 2, 3, Next,
 			"Extra", "hello",
-		)), shouldBeSuccessful)
+		)), convey.Adapt(shouldBeSuccessful)())
 
-		So(ds.Put(c, pmap("$key", key("Kind", 2), Next,
+		assert.Loosely(t, ds.Put(c, pmap("$key", key("Kind", 2), Next,
 			"Val", 2, 3, 9, Next,
 			"Extra", "ace", "hello", "there",
-		)), shouldBeSuccessful)
+		)), convey.Adapt(shouldBeSuccessful)())
 
 		q := nq("Kind").Gt("Val", 2).Order("Val", "Extra")
 
 		count, err := ds.Count(c, q)
-		So(err, ShouldErrLike, "Insufficient indexes")
+		assert.Loosely(t, err, should.ErrLike("Insufficient indexes"))
 
 		testing.AutoIndex(true)
 
 		count, err = ds.Count(c, q)
-		So(err, shouldBeSuccessful)
-		So(count, ShouldEqual, 2)
+		assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+		assert.Loosely(t, count, should.Equal(2))
 	})
 }
 
