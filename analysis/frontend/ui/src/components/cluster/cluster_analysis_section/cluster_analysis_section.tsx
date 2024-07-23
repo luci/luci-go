@@ -49,13 +49,14 @@ const ClusterAnalysisSection = () => {
     }, { replace: true });
   };
 
-  const supportedProjects = ['chromium', 'chrome', 'chromeos'];
-  const exonerationsAvailable = supportedProjects.includes(project);
+  const exonerationV1Projects = ['chromeos'];
+  const exonerationV2Projects = ['chromium'];
+  const exonerationV1Available = exonerationV1Projects.includes(project);
+  const exonerationV2Available = exonerationV2Projects.includes(project);
 
   const validValues = ['overview', 'recent-failures'];
-  if (exonerationsAvailable) {
+  if (exonerationV1Available || exonerationV2Available) {
     validValues.push('exonerations');
-    validValues.push('exonerationsv2');
   }
 
   // Handle legacy URLs that used hash instead of search params.
@@ -86,7 +87,7 @@ const ClusterAnalysisSection = () => {
               <Tab label='Overview' value='overview' />
               <Tab label='Recent Failures' value='recent-failures' />
               {
-                (exonerationsAvailable) && (
+                (exonerationV1Available || exonerationV2Available) && (
                   <Tab label='Exonerations' value='exonerations' />
                 )
               }
@@ -95,15 +96,13 @@ const ClusterAnalysisSection = () => {
           <OverviewTab value='overview'/>
           <FailuresTab value='recent-failures'/>
           {
-            exonerationsAvailable && (
+            exonerationV1Available && (
               <ExonerationsTab value='exonerations'/>
             )
           }
           {
-            // Make tab available but have no label, so tab is only accessible if the user
-            // hacks the URL. This will remain the case until the feature is fully launched.
-            exonerationsAvailable && (
-              <ExonerationsV2Tab value='exonerationsv2'/>
+            exonerationV2Available && (
+              <ExonerationsV2Tab value='exonerations'/>
             )
           }
         </TabContext>
