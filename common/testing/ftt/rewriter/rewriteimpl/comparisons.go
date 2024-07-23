@@ -151,18 +151,19 @@ type assertionKey struct {
 }
 
 var assertionMap = map[assertionKey]*mappedComp{
-	{originalConveyPkg, "ShouldAlmostEqual"}:      {name: "AlmostEqual"},
-	{originalConveyPkg, "ShouldBeBetween"}:        {name: "BeBetween"},
-	{originalConveyPkg, "ShouldBeBetweenOrEqual"}: {name: "ShouldBeBetweenOrEqual"},
+	{originalConveyPkg, "ShouldAlmostEqual"}:      {name: "AlmostEqual", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeBetween"}:        {name: "BeBetween", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeBetweenOrEqual"}: {name: "ShouldBeBetweenOrEqual", argState: hasArgs},
 	{originalConveyPkg, "ShouldBeEmpty"}:          {name: "BeEmpty", argState: noArgs},
 	{originalConveyPkg, "ShouldNotBeEmpty"}:       {name: "NotBeEmpty", argState: noArgs},
 	{originalConveyPkg, "ShouldBeFalse"}:          {name: "BeFalse", argState: noArgs},
 	{originalConveyPkg, "ShouldBeNil"}:            {name: "BeNil", argState: noArgs},
 	{originalConveyPkg, "ShouldBeTrue"}:           {name: "BeTrue", argState: noArgs},
-	{originalConveyPkg, "ShouldContain"}:          {name: "Contain"},
-	{originalConveyPkg, "ShouldContainSubstring"}: {name: "ContainSubstring"},
+	{originalConveyPkg, "ShouldContain"}:          {name: "Contain", argState: hasArgs},
+	{originalConveyPkg, "ShouldContainSubstring"}: {name: "ContainSubstring", argState: hasArgs},
 	{originalConveyPkg, "ShouldEqual"}: {
-		name: "Equal",
+		name:     "Equal",
+		argState: hasArgs,
 		special: func(name string, extraArgs []dst.Expr) (newName string, argState argState, newExtraArgs []dst.Expr) {
 			if len(extraArgs) == 1 {
 				arg := extraArgs[0]
@@ -185,9 +186,9 @@ var assertionMap = map[assertionKey]*mappedComp{
 			return name, hasArgs, extraArgs
 		}},
 
-	{originalConveyPkg, "ShouldHaveLength"}: {name: "HaveLength"},
+	{originalConveyPkg, "ShouldHaveLength"}: {name: "HaveLength", argState: hasArgs},
 	{originalConveyPkg, "ShouldNotBeNil"}:   {name: "NotBeNil", argState: noArgs},
-	{originalConveyPkg, "ShouldNotEqual"}:   {name: "NotEqual"},
+	{originalConveyPkg, "ShouldNotEqual"}:   {name: "NotEqual", argState: hasArgs},
 	{originalConveyPkg, "ShouldResemble"}: {
 		name: "Resemble",
 		special: func(name string, extraArgs []dst.Expr) (newName string, argState argState, newExtraArgs []dst.Expr) {
@@ -216,10 +217,10 @@ var assertionMap = map[assertionKey]*mappedComp{
 			return name, hasArgs, extraArgs
 		}},
 
-	{originalConveyPkg, "ShouldBeGreaterOrEqualTo"}: {name: "BeGreaterThanOrEqualTo"},
-	{originalConveyPkg, "ShouldBeGreaterThan"}:      {name: "BeGreaterThan"},
-	{originalConveyPkg, "ShouldBeLessOrEqualTo"}:    {name: "BeLessThanOrEqualTo"},
-	{originalConveyPkg, "ShouldBeLessThan"}:         {name: "BeLessThan"},
+	{originalConveyPkg, "ShouldBeGreaterOrEqualTo"}: {name: "BeGreaterThanOrEqualTo", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeGreaterThan"}:      {name: "BeGreaterThan", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeLessOrEqualTo"}:    {name: "BeLessThanOrEqualTo", argState: hasArgs},
+	{originalConveyPkg, "ShouldBeLessThan"}:         {name: "BeLessThan", argState: hasArgs},
 
 	// These two are a little silly - they either take a collection as a single
 	// expected argument OR they take a series of elements...
@@ -240,16 +241,16 @@ var assertionMap = map[assertionKey]*mappedComp{
 			return name, hasArgs, extraArgs
 		}},
 
-	{originalConveyPkg, "ShouldContain"}:    {name: "Contain"},
-	{originalConveyPkg, "ShouldNotContain"}: {name: "NotContain"},
+	{originalConveyPkg, "ShouldContain"}:    {name: "Contain", argState: hasArgs},
+	{originalConveyPkg, "ShouldNotContain"}: {name: "NotContain", argState: hasArgs},
 
-	{originalConveyPkg, "ShouldStartWith"}: {name: "HavePrefix"},
-	{originalConveyPkg, "ShouldEndWith"}:   {name: "HaveSuffix"},
+	{originalConveyPkg, "ShouldStartWith"}: {name: "HavePrefix", argState: hasArgs},
+	{originalConveyPkg, "ShouldEndWith"}:   {name: "HaveSuffix", argState: hasArgs},
 
-	{originalConveyPkg, "ShouldPanic"}: {name: "Panic"},
+	{originalConveyPkg, "ShouldPanic"}: {name: "Panic", argState: hasArgs},
 
-	{originalAssertionsPkg, "ShouldResembleProto"}: {name: "Resemble"},
-	{originalAssertionsPkg, "ShouldErrLike"}:       {name: "ErrLike"},
-	{originalAssertionsPkg, "ShouldPanicLike"}:     {name: "PanicLike"},
-	{originalAssertionsPkg, "ShouldUnwrapTo"}:      {name: "ErrLike"},
+	{originalAssertionsPkg, "ShouldResembleProto"}: {name: "Resemble", argState: hasArgs},
+	{originalAssertionsPkg, "ShouldErrLike"}:       {name: "ErrLike", argState: hasArgs},
+	{originalAssertionsPkg, "ShouldPanicLike"}:     {name: "PanicLike", argState: hasArgs},
+	{originalAssertionsPkg, "ShouldUnwrapTo"}:      {name: "ErrLike", argState: hasArgs},
 }
