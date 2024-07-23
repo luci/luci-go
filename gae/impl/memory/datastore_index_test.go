@@ -19,9 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var fakeKey = key("parentKind", "sid", "knd", 10)
@@ -163,14 +164,14 @@ var rowGenTestCases = []struct {
 func TestIndexRowGen(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Index Row Generation", t, func() {
+	ftt.Run("Test Index Row Generation", t, func(t *ftt.Test) {
 		for _, tc := range rowGenTestCases {
 			if tc.expected == nil {
-				Convey(tc.name, nil) // shows up as 'skipped'
+				t.Run(tc.name, nil) // shows up as 'skipped'
 				continue
 			}
 
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				mvals := ds.Serialize.IndexedProperties(fakeKey, tc.pmap)
 				idxs := []*ds.IndexDefinition(nil)
 				if tc.withBuiltin {
@@ -181,21 +182,21 @@ func TestIndexRowGen(t *testing.T) {
 
 				m := matcher{}
 				for i, idx := range idxs {
-					Convey(idx.String(), func() {
+					t.Run(idx.String(), func(t *ftt.Test) {
 						iGen, ok := m.match(idx.GetFullSortOrder(), mvals)
 						if len(tc.expected[i]) > 0 {
-							So(ok, ShouldBeTrue)
+							assert.Loosely(t, ok, should.BeTrue)
 							actual := make(ds.IndexedPropertySlice, 0, len(tc.expected[i]))
 							iGen.permute(func(row, _ []byte) {
 								actual = append(actual, row)
 							})
-							So(len(actual), ShouldEqual, len(tc.expected[i]))
+							assert.Loosely(t, len(actual), should.Equal(len(tc.expected[i])))
 							sort.Sort(actual)
 							for j, act := range actual {
-								So(act, ShouldResemble, tc.expected[i][j])
+								assert.Loosely(t, act, should.Resemble(tc.expected[i][j]))
 							}
 						} else {
-							So(ok, ShouldBeFalse)
+							assert.Loosely(t, ok, should.BeFalse)
 						}
 					})
 				}
@@ -203,36 +204,36 @@ func TestIndexRowGen(t *testing.T) {
 		}
 	})
 
-	Convey("default indexes", t, func() {
-		Convey("nil collated", func() {
-			Convey("defaultIndexes (nil)", func() {
+	ftt.Run("default indexes", t, func(t *ftt.Test) {
+		t.Run("nil collated", func(t *ftt.Test) {
+			t.Run("defaultIndexes (nil)", func(t *ftt.Test) {
 				idxs := defaultIndexes("knd", nil)
-				So(len(idxs), ShouldEqual, 1)
-				So(idxs[0].String(), ShouldEqual, "B:knd")
+				assert.Loosely(t, len(idxs), should.Equal(1))
+				assert.Loosely(t, idxs[0].String(), should.Equal("B:knd"))
 			})
 
-			Convey("indexEntries", func() {
+			t.Run("indexEntries", func(t *ftt.Test) {
 				sip := ds.Serialize.IndexedProperties(fakeKey, nil)
 				s := indexEntries(fakeKey, sip, defaultIndexes("knd", nil))
-				So(countItems(s.Snapshot().GetCollection("idx")), ShouldEqual, 1)
+				assert.Loosely(t, countItems(s.Snapshot().GetCollection("idx")), should.Equal(1))
 				itm := s.GetCollection("idx").MinItem()
-				So(itm.key, ShouldResemble, cat(indx("knd").PrepForIdxTable()))
-				So(countItems(s.Snapshot().GetCollection("idx:ns:"+string(itm.key))), ShouldEqual, 1)
+				assert.Loosely(t, itm.key, should.Resemble(cat(indx("knd").PrepForIdxTable())))
+				assert.Loosely(t, countItems(s.Snapshot().GetCollection("idx:ns:"+string(itm.key))), should.Equal(1))
 			})
 
-			Convey("defaultIndexes", func() {
+			t.Run("defaultIndexes", func(t *ftt.Test) {
 				pm := ds.PropertyMap{
 					"wat":  ds.PropertySlice{propNI("thing"), prop("hat"), prop(100)},
 					"nerd": prop(103.7),
 					"spaz": propNI(false),
 				}
 				idxs := defaultIndexes("knd", ds.Serialize.IndexedProperties(fakeKey, pm))
-				So(len(idxs), ShouldEqual, 5)
-				So(idxs[0].String(), ShouldEqual, "B:knd")
-				So(idxs[1].String(), ShouldEqual, "B:knd/nerd")
-				So(idxs[2].String(), ShouldEqual, "B:knd/wat")
-				So(idxs[3].String(), ShouldEqual, "B:knd/-nerd")
-				So(idxs[4].String(), ShouldEqual, "B:knd/-wat")
+				assert.Loosely(t, len(idxs), should.Equal(5))
+				assert.Loosely(t, idxs[0].String(), should.Equal("B:knd"))
+				assert.Loosely(t, idxs[1].String(), should.Equal("B:knd/nerd"))
+				assert.Loosely(t, idxs[2].String(), should.Equal("B:knd/wat"))
+				assert.Loosely(t, idxs[3].String(), should.Equal("B:knd/-nerd"))
+				assert.Loosely(t, idxs[4].String(), should.Equal("B:knd/-wat"))
 			})
 
 		})
@@ -242,14 +243,14 @@ func TestIndexRowGen(t *testing.T) {
 func TestIndexEntries(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test indexEntriesWithBuiltins", t, func() {
+	ftt.Run("Test indexEntriesWithBuiltins", t, func(t *ftt.Test) {
 		for _, tc := range rowGenTestCases {
 			if tc.collections == nil {
-				Convey(tc.name, nil) // shows up as 'skipped'
+				t.Run(tc.name, nil) // shows up as 'skipped'
 				continue
 			}
 
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				store := (memStore)(nil)
 				if tc.withBuiltin {
 					store = indexEntriesWithBuiltins(fakeKey, tc.pmap, tc.idxs)
@@ -260,14 +261,14 @@ func TestIndexEntries(t *testing.T) {
 				for colName, vals := range tc.collections {
 					i := 0
 					coll := store.Snapshot().GetCollection(colName)
-					So(countItems(coll), ShouldEqual, len(tc.collections[colName]))
+					assert.Loosely(t, countItems(coll), should.Equal(len(tc.collections[colName])))
 
 					coll.ForEachItem(func(k, _ []byte) bool {
-						So(k, ShouldResemble, vals[i])
+						assert.Loosely(t, k, should.Resemble(vals[i]))
 						i++
 						return true
 					})
-					So(i, ShouldEqual, len(vals))
+					assert.Loosely(t, i, should.Equal(len(vals)))
 				}
 			})
 		}
@@ -357,9 +358,9 @@ var updateIndexesTests = []struct {
 func TestUpdateIndexes(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test updateIndexes", t, func() {
+	ftt.Run("Test updateIndexes", t, func(t *ftt.Test) {
 		for _, tc := range updateIndexesTests {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				store := newMemStore()
 				idxColl := store.GetOrCreateCollection("idx")
 				for _, i := range tc.idxs {
@@ -377,14 +378,14 @@ func TestUpdateIndexes(t *testing.T) {
 
 				for colName, data := range tc.expected {
 					coll := store.Snapshot().GetCollection(colName)
-					So(coll, ShouldNotBeNil)
+					assert.Loosely(t, coll, should.NotBeNil)
 					i := 0
 					coll.ForEachItem(func(k, _ []byte) bool {
-						So(data[i], ShouldResemble, k)
+						assert.Loosely(t, data[i], should.Resemble(k))
 						i++
 						return true
 					})
-					So(i, ShouldEqual, len(data))
+					assert.Loosely(t, i, should.Equal(len(data)))
 				}
 			})
 		}
