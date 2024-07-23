@@ -87,21 +87,25 @@ type MatchingArtifact struct {
 	MatchWithContextAfter string
 }
 
-func parseReadTestArtifactGroupsPageToken(pageToken string) (afterMaxPartitionTimeUnix int, afterTestID, afterVariantHash, afterArtifactID string, err error) {
+func parseReadTestArtifactGroupsPageToken(pageToken string) (afterMaxPartitionTimeUnix, maxInsertTimeUnix int, afterTestID, afterVariantHash, afterArtifactID string, err error) {
 	tokens, err := pagination.ParseToken(pageToken)
 	if err != nil {
-		return 0, "", "", "", err
+		return 0, 0, "", "", "", err
 	}
 
 	if len(tokens) != 4 {
-		return 0, "", "", "", pagination.InvalidToken(errors.Reason("expected 4 components, got %d", len(tokens)).Err())
+		return 0, 0, "", "", "", pagination.InvalidToken(errors.Reason("expected 5 components, got %d", len(tokens)).Err())
 	}
 
 	afterMaxPartitionTimeUnix, err = strconv.Atoi(tokens[0])
 	if err != nil {
-		return 0, "", "", "", pagination.InvalidToken(errors.Reason("expect the first page_token component to be an integer").Err())
+		return 0, 0, "", "", "", pagination.InvalidToken(errors.Reason("expect the first page_token component to be an integer").Err())
 	}
-	return afterMaxPartitionTimeUnix, tokens[1], tokens[2], tokens[3], nil
+	maxInsertTimeUnix, err = strconv.Atoi(tokens[1])
+	if err != nil {
+		return 0, 0, "", "", "", pagination.InvalidToken(errors.Reason("expect the second page_token component to be an integer").Err())
+	}
+	return afterMaxPartitionTimeUnix, maxInsertTimeUnix, tokens[1], tokens[2], tokens[3], nil
 }
 
 var maxMatchSize = 10 * 1024 // 10kib.
@@ -147,6 +151,8 @@ var readTestArtifactGroupTmpl = template.Must(template.New("").Parse(`
 			AND test_id != ""
 			-- Only return artifacts which caller has permission to access.
 			AND realm in UNNEST(@subRealms)
+			-- Exclude rows that are added after the max insert time.
+			AND UNIX_SECONDS(insert_time) < @maxInsertTimeUnix
 		GROUP BY project, test_id, artifact_id, invocation_id, result_id, shard_id
 	)
 	SELECT test_id as TestID,
@@ -207,9 +213,15 @@ type ReadTestArtifactGroupsOpts struct {
 
 func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifactGroupsOpts) (groups []*TestArtifactGroup, nextPageToken string, err error) {
 	var afterMaxPartitionTimeUnix int
+	// We exclude rows that are added after the max insert time from this query, and queries for subsequent pages.
+	// Because newly added rows might cause some test variant artifact group disappear during pagination (adding a new row with partition_time greater than afterMaxPartitionTimeUnix).
+	// Insert_time column in text_artifacts table is the server time of row insertions.
+	// Because there might be some latency between insert_time and the time when the row becomes visible to queries.
+	// We substract 10 seconds here as it is relatively safe to assume that rows with insert_time t-10s should all be visible at time t.
+	maxInsertTimeUnix := int(time.Now().Add(-10 * time.Second).Unix())
 	var afterTestID, afterVariantHash, afterArtifactID string
 	if opts.PageToken != "" {
-		afterMaxPartitionTimeUnix, afterTestID, afterVariantHash, afterArtifactID, err = parseReadTestArtifactGroupsPageToken(opts.PageToken)
+		afterMaxPartitionTimeUnix, maxInsertTimeUnix, afterTestID, afterVariantHash, afterArtifactID, err = parseReadTestArtifactGroupsPageToken(opts.PageToken)
 		if err != nil {
 			return nil, "", err
 		}
@@ -237,6 +249,7 @@ func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifa
 		{Name: "afterTestID", Value: afterTestID},
 		{Name: "afterVariantHash", Value: afterVariantHash},
 		{Name: "afterArtifactID", Value: afterArtifactID},
+		{Name: "maxInsertTimeUnix", Value: maxInsertTimeUnix},
 	}
 
 	it, err := q.Read(ctx)
@@ -257,7 +270,7 @@ func (c *Client) ReadTestArtifactGroups(ctx context.Context, opts ReadTestArtifa
 	}
 	if opts.Limit != 0 && len(results) == int(opts.Limit) {
 		lastGroup := results[len(results)-1]
-		nextPageToken = pagination.Token(fmt.Sprint(lastGroup.MaxPartitionTime.Unix()), lastGroup.TestID, lastGroup.VariantHash, lastGroup.ArtifactID)
+		nextPageToken = pagination.Token(fmt.Sprint(lastGroup.MaxPartitionTime.Unix()), fmt.Sprint(maxInsertTimeUnix), lastGroup.TestID, lastGroup.VariantHash, lastGroup.ArtifactID)
 	}
 	return results, nextPageToken, nil
 }
