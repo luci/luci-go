@@ -114,11 +114,11 @@ func specName(tagsMap map[string]string) string {
 		return s
 	}
 	b := tagsMap["buildername"]
-	if e := tagsMap["build_is_experimental"]; e == "true" {
+	if tagsMap["build_is_experimental"] == "true" {
 		b += ":experimental"
 	}
 	if b == "" {
-		if t := tagsMap["terminate"]; t == "1" {
+		if tagsMap["terminate"] == "1" || tagsMap["swarming.terminate"] == "1" {
 			return "swarming:terminate"
 		}
 	}

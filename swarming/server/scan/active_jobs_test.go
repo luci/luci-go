@@ -144,7 +144,7 @@ func TestActiveJobsReporter(t *testing.T) {
 			tags = append(tags, "rbe:"+t.RBE)
 		}
 		if t.Terminate {
-			tags = append(tags, "terminate:1")
+			tags = append(tags, "swarming.terminate:1")
 		}
 		sort.Strings(tags)
 		r.Visit(ctx, &model.TaskResultSummary{
