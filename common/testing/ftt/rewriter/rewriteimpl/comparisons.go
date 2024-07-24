@@ -27,8 +27,17 @@ type argState int
 
 const (
 	argStateInvalid argState = iota
+
+	// Has specific positional arguments.
+	// So(actual, ShouldEqual, something)
 	hasArgs
+
+	// Has no additional arguments.
+	// So(actual, ShouldBeTrue)
 	noArgs
+
+	// Has a variadic argument
+	// So(actual, ShouldBeIn, args...)
 	hasVararg
 )
 
@@ -155,11 +164,13 @@ var assertionMap = map[assertionKey]*mappedComp{
 	{originalConveyPkg, "ShouldBeBetween"}:        {name: "BeBetween", argState: hasArgs},
 	{originalConveyPkg, "ShouldBeBetweenOrEqual"}: {name: "ShouldBeBetweenOrEqual", argState: hasArgs},
 	{originalConveyPkg, "ShouldBeEmpty"}:          {name: "BeEmpty", argState: noArgs},
+	{originalConveyPkg, "ShouldBeBlank"}:          {name: "BeZero", argState: noArgs},
 	{originalConveyPkg, "ShouldNotBeEmpty"}:       {name: "NotBeEmpty", argState: noArgs},
 	{originalConveyPkg, "ShouldBeFalse"}:          {name: "BeFalse", argState: noArgs},
 	{originalConveyPkg, "ShouldBeNil"}:            {name: "BeNil", argState: noArgs},
 	{originalConveyPkg, "ShouldBeTrue"}:           {name: "BeTrue", argState: noArgs},
 	{originalConveyPkg, "ShouldContain"}:          {name: "Contain", argState: hasArgs},
+	{originalConveyPkg, "ShouldContainKey"}:       {name: "ContainKey", argState: hasArgs},
 	{originalConveyPkg, "ShouldContainSubstring"}: {name: "ContainSubstring", argState: hasArgs},
 	{originalConveyPkg, "ShouldEqual"}: {
 		name:     "Equal",
@@ -248,6 +259,13 @@ var assertionMap = map[assertionKey]*mappedComp{
 	{originalConveyPkg, "ShouldEndWith"}:   {name: "HaveSuffix", argState: hasArgs},
 
 	{originalConveyPkg, "ShouldPanic"}: {name: "Panic", argState: hasArgs},
+
+	{originalConveyPkg, "ShouldHappenBefore"}:      {name: "HappenBefore", argState: hasArgs},
+	{originalConveyPkg, "ShouldHappenOnOrBefore"}:  {name: "HappenOnOrBefore", argState: hasArgs},
+	{originalConveyPkg, "ShouldHappenAfter"}:       {name: "HappenAfter", argState: hasArgs},
+	{originalConveyPkg, "ShouldHappenOnOrAfter"}:   {name: "HappenOnOrAfter", argState: hasArgs},
+	{originalConveyPkg, "ShouldHappenOnOrBetween"}: {name: "HappenOnOrBetween", argState: hasArgs},
+	{originalConveyPkg, "ShouldHappenWithin"}:      {name: "HappenWithin", argState: hasArgs},
 
 	{originalAssertionsPkg, "ShouldResembleProto"}: {name: "Resemble", argState: hasArgs},
 	{originalAssertionsPkg, "ShouldErrLike"}:       {name: "ErrLike", argState: hasArgs},
