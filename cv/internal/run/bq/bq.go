@@ -131,6 +131,7 @@ func makeAttempt(ctx context.Context, r *run.Run, cls []*run.RunCL) (*cvbqpb.Att
 	a := &cvbqpb.Attempt{
 		Key:                  r.ID.AttemptKey(),
 		LuciProject:          r.ID.LUCIProject(),
+		RunId:                string(r.ID),
 		ConfigGroup:          r.ConfigGroupID.Name(),
 		ClGroupKey:           run.ComputeCLGroupKey(cls, false),
 		EquivalentClGroupKey: run.ComputeCLGroupKey(cls, true),

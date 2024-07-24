@@ -97,8 +97,9 @@ func TestExportRunToBQ(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				rows := ct.BQFake.Rows("", CVDataset, CVTable)
 				So(rows, ShouldResembleProto, []protoreflect.ProtoMessage{&cvbqpb.Attempt{
-					Key:                  "616161",
-					LuciProject:          "lproject",
+					Key:                  runID.AttemptKey(),
+					LuciProject:          runID.LUCIProject(),
+					RunId:                string(runID),
 					ConfigGroup:          "cgroup",
 					ClGroupKey:           "331ea2a6a5d5f3b3",
 					EquivalentClGroupKey: "47337d4707144297",

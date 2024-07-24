@@ -32,6 +32,8 @@ message Attempt {
   string key = 1;
   // The LUCI project that this Attempt belongs to.
   string luci_project = 2;
+  // The ID of the corresponding LUCI CV Run of this attempt.
+  string run_id = 14;
   // The name of the config group that this Attempt belongs to.
   string config_group = 11;
 

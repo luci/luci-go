@@ -223,6 +223,7 @@ func TestMakeAttempt(t *testing.T) {
 			So(a, ShouldResembleProto, &cvbqpb.Attempt{
 				Key:                  runID.AttemptKey(),
 				LuciProject:          lProject,
+				RunId:                string(runID),
 				ConfigGroup:          cfg.GetConfigGroups()[0].GetName(),
 				ClGroupKey:           "2fb6f02ce54ceef7",
 				EquivalentClGroupKey: "b5aefc068a978ddc",
