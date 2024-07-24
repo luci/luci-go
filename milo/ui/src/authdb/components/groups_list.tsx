@@ -16,6 +16,7 @@ import './groups_list.css';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import List from '@mui/material/List';
 import Paper from '@mui/material/Paper';
@@ -26,11 +27,13 @@ import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/g
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
 import { useState } from 'react';
 import {GroupsForm} from '@/authdb/components/groups_form';
+import {GroupsFormNew} from '@/authdb/components/groups_form_new';
 import Grid from '@mui/material/Grid';
 
 export function GroupsList() {
   const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
+  const [showCreateForm, setShowCreateForm] = useState<boolean>();
 
   const client = useAuthServiceClient();
   const {
@@ -68,6 +71,7 @@ export function GroupsList() {
 
   const setSelected = (name: string) => {
     setSelectedGroup(name);
+    setShowCreateForm(false);
   };
 
   const changeSearchQuery = (query: string) => {
@@ -92,6 +96,11 @@ export function GroupsList() {
               style={{width: '100%'}}
               onChange={e => changeSearchQuery(e.target.value)}/>
           </Box>
+          <Box>
+            <Button variant="contained" disableElevation sx={{m: '16px', mt: 0}} data-testid='create-button' onClick={() => setShowCreateForm(true)}>
+            Create Group
+            </Button>
+          </Box>
           <Box className="groups-list-container">
             <List data-testid="groups-list" disablePadding>
               {groups && groups.map((group) => (
@@ -106,7 +115,12 @@ export function GroupsList() {
           </Box>
         </Grid>
         <Grid item xs={8}>
-          {selectedGroup && <GroupsForm name={selectedGroup} onDelete={onDeletedGroup}/>}
+          {showCreateForm
+          ? <GroupsFormNew/>
+          : <>
+            {selectedGroup && <GroupsForm name={selectedGroup} onDelete={onDeletedGroup}/>}
+            </>
+          }
         </Grid>
       </Grid>
     </Paper>
