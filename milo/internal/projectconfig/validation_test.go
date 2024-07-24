@@ -17,96 +17,96 @@ package projectconfig
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config/validation"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Environment", t, func() {
+	ftt.Run("Test Environment", t, func(t *ftt.Test) {
 		c := gaetesting.TestingContext()
 		datastore.GetTestable(c).Consistent(true)
 
-		Convey("Validation tests", func() {
+		t.Run("Validation tests", func(t *ftt.Test) {
 			ctx := &validation.Context{
 				Context: c,
 			}
 			configSet := "projects/foobar"
 			path := "${appid}.cfg"
-			Convey("Load a bad config", func() {
+			t.Run("Load a bad config", func(t *ftt.Test) {
 				content := []byte(badCfg)
 				validateProjectCfg(ctx, configSet, path, content)
-				So(ctx.Finalize().Error(), ShouldResemble, "in <unspecified file>: line 4: unknown field name \"\" in projectconfigpb.Header")
+				assert.Loosely(t, ctx.Finalize().Error(), should.Match("in <unspecified file>: line 4: unknown field name \"\" in projectconfigpb.Header"))
 			})
-			Convey("Load another bad config", func() {
+			t.Run("Load another bad config", func(t *ftt.Test) {
 				content := []byte(badCfg2)
 				validateProjectCfg(ctx, configSet, path, content)
 				err := ctx.Finalize()
 				ve, ok := err.(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 14)
-				So(ve.Errors[0], ShouldErrLike, "duplicate header id")
-				So(ve.Errors[1], ShouldErrLike, "missing id")
-				So(ve.Errors[2], ShouldErrLike, "missing manifest name")
-				So(ve.Errors[3], ShouldErrLike, "missing repo url")
-				So(ve.Errors[4], ShouldErrLike, "missing ref")
-				So(ve.Errors[5], ShouldErrLike, "header non-existent not defined")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(14))
+				assert.Loosely(t, ve.Errors[0], should.ErrLike("duplicate header id"))
+				assert.Loosely(t, ve.Errors[1], should.ErrLike("missing id"))
+				assert.Loosely(t, ve.Errors[2], should.ErrLike("missing manifest name"))
+				assert.Loosely(t, ve.Errors[3], should.ErrLike("missing repo url"))
+				assert.Loosely(t, ve.Errors[4], should.ErrLike("missing ref"))
+				assert.Loosely(t, ve.Errors[5], should.ErrLike("header non-existent not defined"))
 			})
-			Convey("Load yet another bad config", func() {
+			t.Run("Load yet another bad config", func(t *ftt.Test) {
 				content := []byte(badCfg3)
 				validateProjectCfg(ctx, configSet, path, content)
 				err := ctx.Finalize()
 				ve, ok := err.(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 1)
-				So(ve.Errors[0], ShouldErrLike, "id can not contain '/'")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(1))
+				assert.Loosely(t, ve.Errors[0], should.ErrLike("id can not contain '/'"))
 			})
-			Convey("Load a bad config due to malformed external consoles", func() {
+			t.Run("Load a bad config due to malformed external consoles", func(t *ftt.Test) {
 				content := []byte(badCfg4)
 				validateProjectCfg(ctx, configSet, path, content)
 				err := ctx.Finalize()
 				ve, ok := err.(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 7)
-				So(ve.Errors[0], ShouldErrLike, "missing external project")
-				So(ve.Errors[1], ShouldErrLike, "missing external console id")
-				So(ve.Errors[2], ShouldErrLike, "repo url found in external console")
-				So(ve.Errors[3], ShouldErrLike, "refs found in external console")
-				So(ve.Errors[4], ShouldErrLike, "manifest name found in external console")
-				So(ve.Errors[5], ShouldErrLike, "builders found in external console")
-				So(ve.Errors[6], ShouldErrLike, "header found in external console")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(7))
+				assert.Loosely(t, ve.Errors[0], should.ErrLike("missing external project"))
+				assert.Loosely(t, ve.Errors[1], should.ErrLike("missing external console id"))
+				assert.Loosely(t, ve.Errors[2], should.ErrLike("repo url found in external console"))
+				assert.Loosely(t, ve.Errors[3], should.ErrLike("refs found in external console"))
+				assert.Loosely(t, ve.Errors[4], should.ErrLike("manifest name found in external console"))
+				assert.Loosely(t, ve.Errors[5], should.ErrLike("builders found in external console"))
+				assert.Loosely(t, ve.Errors[6], should.ErrLike("header found in external console"))
 			})
-			Convey("Load bad config due to console builder's definitions", func() {
+			t.Run("Load bad config due to console builder's definitions", func(t *ftt.Test) {
 				content := []byte(badConsoleCfg)
 				validateProjectCfg(ctx, configSet, path, content)
 				err := ctx.Finalize()
 				ve, ok := err.(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 3)
-				So(ve.Errors[0], ShouldErrLike, "name must be non-empty or id must be set")
-				So(ve.Errors[1], ShouldErrLike, "the string is not a valid legacy builder ID")
-				So(ve.Errors[2], ShouldErrLike, "id: project must match")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(3))
+				assert.Loosely(t, ve.Errors[0], should.ErrLike("name must be non-empty or id must be set"))
+				assert.Loosely(t, ve.Errors[1], should.ErrLike("the string is not a valid legacy builder ID"))
+				assert.Loosely(t, ve.Errors[2], should.ErrLike("id: project must match"))
 			})
-			Convey("Load bad config due to metadata config", func() {
+			t.Run("Load bad config due to metadata config", func(t *ftt.Test) {
 				content := []byte(badCfg5)
 				validateProjectCfg(ctx, configSet, path, content)
 				err := ctx.Finalize()
 				ve, ok := err.(*validation.Error)
-				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 2)
-				So(ve.Errors[0], ShouldErrLike, "schema): does not match")
-				So(ve.Errors[1], ShouldErrLike, "path): unspecified")
+				assert.Loosely(t, ok, should.Equal(true))
+				assert.Loosely(t, len(ve.Errors), should.Equal(2))
+				assert.Loosely(t, ve.Errors[0], should.ErrLike("schema): does not match"))
+				assert.Loosely(t, ve.Errors[1], should.ErrLike("path): unspecified"))
 			})
-			Convey("Load a good config", func() {
+			t.Run("Load a good config", func(t *ftt.Test) {
 				content := []byte(fooCfg)
 				validateProjectCfg(ctx, configSet, path, content)
-				So(ctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, ctx.Finalize(), should.BeNil)
 			})
 		})
 	})

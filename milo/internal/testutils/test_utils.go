@@ -17,10 +17,9 @@ package testutils
 import (
 	"context"
 
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // shouldResembleMatcher is a gomock.Matcher that performs
@@ -39,8 +38,7 @@ func NewShouldResemberMatcher(expected any) shouldResembleMatcher {
 
 // Matches implements gomock.Matcher
 func (e shouldResembleMatcher) Matches(actual any) bool {
-	ShouldResemble(actual, e.expected)
-	return true
+	return should.Resemble[any](actual)(e.expected) == nil
 }
 
 // String implements gomock.Matcher

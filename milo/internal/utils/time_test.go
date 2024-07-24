@@ -15,60 +15,61 @@
 package utils
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
 	"time"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFuncs(t *testing.T) {
-	Convey("Time Tests", t, func() {
+	ftt.Run("Time Tests", t, func(t *ftt.Test) {
 
-		Convey("Interval", func() {
+		t.Run("Interval", func(t *ftt.Test) {
 			from := time.Date(2019, time.February, 3, 4, 5, 0, 0, time.UTC)
 			to := time.Date(2019, time.February, 3, 4, 6, 0, 0, time.UTC)
 			now := time.Date(2019, time.February, 3, 4, 7, 0, 0, time.UTC)
-			Convey("Not started", func() {
+			t.Run("Not started", func(t *ftt.Test) {
 				i := Interval{time.Time{}, time.Time{}, now}
-				So(i.Started(), ShouldBeFalse)
-				So(i.Ended(), ShouldBeFalse)
-				So(i.Duration(), ShouldEqual, 0)
+				assert.Loosely(t, i.Started(), should.BeFalse)
+				assert.Loosely(t, i.Ended(), should.BeFalse)
+				assert.Loosely(t, i.Duration(), should.BeZero)
 			})
-			Convey("Started, not ended", func() {
+			t.Run("Started, not ended", func(t *ftt.Test) {
 				i := Interval{from, time.Time{}, now}
-				So(i.Started(), ShouldBeTrue)
-				So(i.Ended(), ShouldBeFalse)
-				So(i.Duration(), ShouldEqual, 2*time.Minute)
+				assert.Loosely(t, i.Started(), should.BeTrue)
+				assert.Loosely(t, i.Ended(), should.BeFalse)
+				assert.Loosely(t, i.Duration(), should.Equal(2*time.Minute))
 			})
-			Convey("Started and ended", func() {
+			t.Run("Started and ended", func(t *ftt.Test) {
 				i := Interval{from, to, now}
-				So(i.Started(), ShouldBeTrue)
-				So(i.Ended(), ShouldBeTrue)
-				So(i.Duration(), ShouldEqual, 1*time.Minute)
+				assert.Loosely(t, i.Started(), should.BeTrue)
+				assert.Loosely(t, i.Ended(), should.BeTrue)
+				assert.Loosely(t, i.Duration(), should.Equal(1*time.Minute))
 			})
-			Convey("Ended before started", func() {
+			t.Run("Ended before started", func(t *ftt.Test) {
 				i := Interval{to, from, now}
-				So(i.Started(), ShouldBeTrue)
-				So(i.Ended(), ShouldBeTrue)
-				So(i.Duration(), ShouldEqual, 0)
+				assert.Loosely(t, i.Started(), should.BeTrue)
+				assert.Loosely(t, i.Ended(), should.BeTrue)
+				assert.Loosely(t, i.Duration(), should.BeZero)
 			})
-			Convey("Ended, not started", func() {
+			t.Run("Ended, not started", func(t *ftt.Test) {
 				i := Interval{time.Time{}, to, now}
-				So(i.Started(), ShouldBeFalse)
-				So(i.Ended(), ShouldBeTrue)
-				So(i.Duration(), ShouldEqual, 0)
+				assert.Loosely(t, i.Started(), should.BeFalse)
+				assert.Loosely(t, i.Ended(), should.BeTrue)
+				assert.Loosely(t, i.Duration(), should.BeZero)
 			})
 		})
 
-		Convey("humanDuration", func() {
-			Convey("3 hrs", func() {
+		t.Run("humanDuration", func(t *ftt.Test) {
+			t.Run("3 hrs", func(t *ftt.Test) {
 				h := HumanDuration(3 * time.Hour)
-				So(h, ShouldEqual, "3 hrs")
+				assert.Loosely(t, h, should.Equal("3 hrs"))
 			})
 
-			Convey("2 hrs 59 mins", func() {
+			t.Run("2 hrs 59 mins", func(t *ftt.Test) {
 				h := HumanDuration(2*time.Hour + 59*time.Minute)
-				So(h, ShouldEqual, "2 hrs 59 mins")
+				assert.Loosely(t, h, should.Equal("2 hrs 59 mins"))
 			})
 		})
 	})

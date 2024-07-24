@@ -18,7 +18,9 @@ import (
 	"testing"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 
@@ -29,79 +31,77 @@ import (
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Environment", t, func() {
+	ftt.Run("Test Environment", t, func(t *ftt.Test) {
 		c := gaetesting.TestingContext()
 		datastore.GetTestable(c).Consistent(true)
 
-		Convey("Send update", func() {
+		t.Run("Send update", func(t *ftt.Test) {
 			c := cfgclient.Use(c, memcfg.New(mockedConfigs))
-			So(UpdateProjects(c), ShouldBeNil)
+			assert.Loosely(t, UpdateProjects(c), should.BeNil)
 
-			Convey("Check created Project entities", func() {
+			t.Run("Check created Project entities", func(t *ftt.Test) {
 				foo := &Project{ID: "foo"}
-				So(datastore.Get(c, foo), ShouldBeNil)
-				So(foo.HasConfig, ShouldBeTrue)
-				So(foo.ACL, ShouldResemble, ACL{
+				assert.Loosely(t, datastore.Get(c, foo), should.BeNil)
+				assert.Loosely(t, foo.HasConfig, should.BeTrue)
+				assert.Loosely(t, foo.ACL, should.Resemble(ACL{
 					Groups:     []string{"a", "b"},
 					Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
-				})
+				}))
 
 				bar := &Project{ID: "bar"}
-				So(datastore.Get(c, bar), ShouldBeNil)
-				So(bar.HasConfig, ShouldBeTrue)
-				So(bar.ACL, ShouldResemble, ACL{})
+				assert.Loosely(t, datastore.Get(c, bar), should.BeNil)
+				assert.Loosely(t, bar.HasConfig, should.BeTrue)
+				assert.Loosely(t, bar.ACL, should.Resemble(ACL{}))
 
 				baz := &Project{ID: "baz"}
-				So(datastore.Get(c, baz), ShouldBeNil)
-				So(baz.HasConfig, ShouldBeFalse)
-				So(baz.ACL, ShouldResemble, ACL{
+				assert.Loosely(t, datastore.Get(c, baz), should.BeNil)
+				assert.Loosely(t, baz.HasConfig, should.BeFalse)
+				assert.Loosely(t, baz.ACL, should.Resemble(ACL{
 					Groups: []string{"a"},
-				})
+				}))
 
 				external := &Project{ID: "external"}
-				So(datastore.Get(c, external), ShouldBeNil)
-				So(external.HasConfig, ShouldBeTrue)
-				So(external.ACL, ShouldResemble, ACL{
+				assert.Loosely(t, datastore.Get(c, external), should.BeNil)
+				assert.Loosely(t, external.HasConfig, should.BeTrue)
+				assert.Loosely(t, external.ACL, should.Resemble(ACL{
 					Identities: []identity.Identity{"user:a@example.com", "user:e@example.com"},
-				})
+				}))
 			})
 
-			Convey("Check Console config updated", func() {
+			t.Run("Check Console config updated", func(t *ftt.Test) {
 				cs, err := GetConsole(c, "foo", "default")
-				So(err, ShouldBeNil)
-				So(cs.ID, ShouldEqual, "default")
-				So(cs.Ordinal, ShouldEqual, 0)
-				So(cs.Def.Header, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cs.ID, should.Equal("default"))
+				assert.Loosely(t, cs.Ordinal, should.BeZero)
+				assert.Loosely(t, cs.Def.Header, should.BeNil)
 			})
 
-			Convey("Check Console config updated with header", func() {
+			t.Run("Check Console config updated with header", func(t *ftt.Test) {
 				cs, err := GetConsole(c, "foo", "default_header")
-				So(err, ShouldBeNil)
-				So(cs.ID, ShouldEqual, "default_header")
-				So(cs.Ordinal, ShouldEqual, 1)
-				So(cs.Def.Header.Id, ShouldEqual, "main_header")
-				So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cs.ID, should.Equal("default_header"))
+				assert.Loosely(t, cs.Ordinal, should.Equal(1))
+				assert.Loosely(t, cs.Def.Header.Id, should.Equal("main_header"))
+				assert.Loosely(t, cs.Def.Header.TreeStatusHost, should.Equal("blarg.example.com"))
 			})
 
-			Convey("Check Console config updated with realm", func() {
+			t.Run("Check Console config updated with realm", func(t *ftt.Test) {
 				cs, err := GetConsole(c, "foo", "realm_test_console")
-				So(err, ShouldBeNil)
-				So(cs.ID, ShouldEqual, "realm_test_console")
-				So(cs.Ordinal, ShouldEqual, 2)
-				So(cs.Realm, ShouldEqual, "foo:fake_realm")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cs.ID, should.Equal("realm_test_console"))
+				assert.Loosely(t, cs.Ordinal, should.Equal(2))
+				assert.Loosely(t, cs.Realm, should.Equal("foo:fake_realm"))
 			})
 
-			Convey("Check Console config updated with builder ID", func() {
+			t.Run("Check Console config updated with builder ID", func(t *ftt.Test) {
 				cs, err := GetConsole(c, "foo", "default_header")
-				So(err, ShouldBeNil)
-				So(cs.Def.Builders, ShouldResembleProto, []*projectconfigpb.Builder{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cs.Def.Builders, should.Resemble([]*projectconfigpb.Builder{
 					{
 						Id: &buildbucketpb.BuilderID{
 							Project: "foo",
@@ -122,142 +122,142 @@ func TestConfig(t *testing.T) {
 						Category:  "main|other",
 						ShortName: "o",
 					},
-				})
+				}))
 			})
 
-			Convey("Check external Console is resolved", func() {
+			t.Run("Check external Console is resolved", func(t *ftt.Test) {
 				cs, err := GetConsole(c, "external", "foo-default")
-				So(err, ShouldBeNil)
-				So(cs.Ordinal, ShouldEqual, 0)
-				So(cs.ID, ShouldEqual, "foo-default")
-				So(cs.Def.Id, ShouldEqual, "foo-default")
-				So(cs.Def.Name, ShouldEqual, "foo default")
-				So(cs.Def.ExternalProject, ShouldEqual, "foo")
-				So(cs.Def.ExternalId, ShouldEqual, "default")
-				So(cs.Builders, ShouldResemble, []string{"buildbucket/luci.foo.something/bar", "buildbucket/luci.foo.other/baz"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cs.Ordinal, should.BeZero)
+				assert.Loosely(t, cs.ID, should.Equal("foo-default"))
+				assert.Loosely(t, cs.Def.Id, should.Equal("foo-default"))
+				assert.Loosely(t, cs.Def.Name, should.Equal("foo default"))
+				assert.Loosely(t, cs.Def.ExternalProject, should.Equal("foo"))
+				assert.Loosely(t, cs.Def.ExternalId, should.Equal("default"))
+				assert.Loosely(t, cs.Builders, should.Resemble([]string{"buildbucket/luci.foo.something/bar", "buildbucket/luci.foo.other/baz"}))
 			})
 
-			Convey("Check user can see external consoles they have access to", func() {
+			t.Run("Check user can see external consoles they have access to", func(t *ftt.Test) {
 				cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:a@example.com"})
 				cs, err := GetProjectConsoles(cUser, "external")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				ids := make([]string, 0, len(cs))
 				for _, c := range cs {
 					ids = append(ids, c.ID)
 				}
-				So(ids, ShouldResemble, []string{"foo-default"})
+				assert.Loosely(t, ids, should.Resemble([]string{"foo-default"}))
 			})
 
-			Convey("Check user can't see external consoles they don't have access to", func() {
+			t.Run("Check user can't see external consoles they don't have access to", func(t *ftt.Test) {
 				cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:e@example.com"})
 				cs, err := GetProjectConsoles(cUser, "external")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				ids := make([]string, 0, len(cs))
 				for _, c := range cs {
 					ids = append(ids, c.ID)
 				}
-				So(ids, ShouldHaveLength, 0)
+				assert.Loosely(t, ids, should.HaveLength(0))
 			})
 
-			Convey("Check second update reorders", func() {
+			t.Run("Check second update reorders", func(t *ftt.Test) {
 				c := cfgclient.Use(c, memcfg.New(mockedConfigsUpdate))
-				So(UpdateProjects(c), ShouldBeNil)
+				assert.Loosely(t, UpdateProjects(c), should.BeNil)
 
-				Convey("Check updated Project entities", func() {
+				t.Run("Check updated Project entities", func(t *ftt.Test) {
 					foo := &Project{ID: "foo"}
-					So(datastore.Get(c, foo), ShouldBeNil)
-					So(foo.HasConfig, ShouldBeTrue)
-					So(foo.ACL, ShouldResemble, ACL{
+					assert.Loosely(t, datastore.Get(c, foo), should.BeNil)
+					assert.Loosely(t, foo.HasConfig, should.BeTrue)
+					assert.Loosely(t, foo.ACL, should.Resemble(ACL{
 						Identities: []identity.Identity{"user:a@example.com"},
-					})
+					}))
 
 					bar := &Project{ID: "bar"}
-					So(datastore.Get(c, bar), ShouldBeNil)
-					So(bar.HasConfig, ShouldBeFalse)
-					So(bar.ACL, ShouldResemble, ACL{})
+					assert.Loosely(t, datastore.Get(c, bar), should.BeNil)
+					assert.Loosely(t, bar.HasConfig, should.BeFalse)
+					assert.Loosely(t, bar.ACL, should.Resemble(ACL{}))
 
-					So(datastore.Get(c, &Project{ID: "baz"}), ShouldEqual, datastore.ErrNoSuchEntity)
+					assert.Loosely(t, datastore.Get(c, &Project{ID: "baz"}), should.Equal(datastore.ErrNoSuchEntity))
 				})
 
-				Convey("Check Console config removed", func() {
+				t.Run("Check Console config removed", func(t *ftt.Test) {
 					cs, err := GetConsole(c, "foo", "default")
-					So(err, ShouldNotBeNil)
-					So(cs, ShouldBeNil)
+					assert.Loosely(t, err, should.NotBeNil)
+					assert.Loosely(t, cs, should.BeNil)
 				})
 
-				Convey("Check builder group configs in correct order", func() {
+				t.Run("Check builder group configs in correct order", func(t *ftt.Test) {
 					cs, err := GetConsole(c, "foo", "default_header")
-					So(err, ShouldBeNil)
-					So(cs.ID, ShouldEqual, "default_header")
-					So(cs.Ordinal, ShouldEqual, 0)
-					So(cs.Def.Header.Id, ShouldEqual, "main_header")
-					So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cs.ID, should.Equal("default_header"))
+					assert.Loosely(t, cs.Ordinal, should.BeZero)
+					assert.Loosely(t, cs.Def.Header.Id, should.Equal("main_header"))
+					assert.Loosely(t, cs.Def.Header.TreeStatusHost, should.Equal("blarg.example.com"))
 					cs, err = GetConsole(c, "foo", "console.bar")
-					So(err, ShouldBeNil)
-					So(cs.ID, ShouldEqual, "console.bar")
-					So(cs.Ordinal, ShouldEqual, 1)
-					So(cs.Builders, ShouldResemble, []string{"buildbucket/luci.foo.something/bar"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cs.ID, should.Equal("console.bar"))
+					assert.Loosely(t, cs.Ordinal, should.Equal(1))
+					assert.Loosely(t, cs.Builders, should.Resemble([]string{"buildbucket/luci.foo.something/bar"}))
 
 					cs, err = GetConsole(c, "foo", "console.baz")
-					So(err, ShouldBeNil)
-					So(cs.ID, ShouldEqual, "console.baz")
-					So(cs.Ordinal, ShouldEqual, 2)
-					So(cs.Builders, ShouldResemble, []string{"buildbucket/luci.foo.other/baz"})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cs.ID, should.Equal("console.baz"))
+					assert.Loosely(t, cs.Ordinal, should.Equal(2))
+					assert.Loosely(t, cs.Builders, should.Resemble([]string{"buildbucket/luci.foo.other/baz"}))
 				})
 
-				Convey("Check getting project builder groups in correct order", func() {
+				t.Run("Check getting project builder groups in correct order", func(t *ftt.Test) {
 					cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:a@example.com"})
 					cs, err := GetProjectConsoles(cUser, "foo")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					ids := make([]string, 0, len(cs))
 					for _, c := range cs {
 						ids = append(ids, c.ID)
 					}
-					So(ids, ShouldResemble, []string{"default_header", "console.bar", "console.baz"})
+					assert.Loosely(t, ids, should.Resemble([]string{"default_header", "console.bar", "console.baz"}))
 				})
 			})
 
-			Convey("Check removing Milo config only", func() {
+			t.Run("Check removing Milo config only", func(t *ftt.Test) {
 				c := cfgclient.Use(c, memcfg.New(mockedConfigsNoConsole))
-				So(UpdateProjects(c), ShouldBeNil)
+				assert.Loosely(t, UpdateProjects(c), should.BeNil)
 
-				Convey("Check kept the Project entity", func() {
+				t.Run("Check kept the Project entity", func(t *ftt.Test) {
 					foo := &Project{ID: "foo"}
-					So(datastore.Get(c, foo), ShouldBeNil)
-					So(foo.HasConfig, ShouldBeFalse)
-					So(foo.ACL, ShouldResemble, ACL{
+					assert.Loosely(t, datastore.Get(c, foo), should.BeNil)
+					assert.Loosely(t, foo.HasConfig, should.BeFalse)
+					assert.Loosely(t, foo.ACL, should.Resemble(ACL{
 						Groups:     []string{"a", "b"},
 						Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
-					})
+					}))
 				})
 
-				Convey("Check removed the console", func() {
+				t.Run("Check removed the console", func(t *ftt.Test) {
 					cs, err := GetConsole(c, "foo", "default")
-					So(err, ShouldNotBeNil)
-					So(cs, ShouldBeNil)
+					assert.Loosely(t, err, should.NotBeNil)
+					assert.Loosely(t, cs, should.BeNil)
 				})
 			})
 
-			Convey("Check applying broken config", func() {
+			t.Run("Check applying broken config", func(t *ftt.Test) {
 				c := cfgclient.Use(c, memcfg.New(mockedConfigsBroken))
-				So(UpdateProjects(c), ShouldNotBeNil)
+				assert.Loosely(t, UpdateProjects(c), should.NotBeNil)
 
-				Convey("Check kept the Project entity", func() {
+				t.Run("Check kept the Project entity", func(t *ftt.Test) {
 					foo := &Project{ID: "foo"}
-					So(datastore.Get(c, foo), ShouldBeNil)
-					So(foo.HasConfig, ShouldBeTrue)
-					So(foo.ACL, ShouldResemble, ACL{
+					assert.Loosely(t, datastore.Get(c, foo), should.BeNil)
+					assert.Loosely(t, foo.HasConfig, should.BeTrue)
+					assert.Loosely(t, foo.ACL, should.Resemble(ACL{
 						Groups:     []string{"a", "b"},
 						Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
-					})
+					}))
 				})
 
-				Convey("Check kept the console", func() {
+				t.Run("Check kept the console", func(t *ftt.Test) {
 					_, err := GetConsole(c, "foo", "default")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 		})

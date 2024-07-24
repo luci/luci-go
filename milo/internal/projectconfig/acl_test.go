@@ -20,6 +20,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
@@ -27,88 +30,86 @@ import (
 	"go.chromium.org/luci/milo/internal/testutils"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestACL(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Environment", t, func() {
+	ftt.Run("Test Environment", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c = gologger.StdConfig.Use(c)
 		c = testutils.SetUpTestGlobalCache(c)
 
-		Convey("Set up projects", func() {
+		t.Run("Set up projects", func(t *ftt.Test) {
 			c = cfgclient.Use(c, memcfg.New(aclConfgs))
 			err := UpdateProjects(c)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("Anon wants to...", func() {
+			t.Run("Anon wants to...", func(t *ftt.Test) {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       identity.AnonymousIdentity,
 					IdentityGroups: []string{"all"},
 				})
-				Convey("Read public project", func() {
+				t.Run("Read public project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "opensource")
-					So(ok, ShouldEqual, true)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, ok, should.Equal(true))
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey("Read private project", func() {
+				t.Run("Read private project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "secret")
-					So(ok, ShouldEqual, false)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, ok, should.Equal(false))
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 
-			Convey("admin@google.com wants to...", func() {
+			t.Run("admin@google.com wants to...", func(t *ftt.Test) {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
 					IdentityGroups: []string{"administrators", "googlers", "all"},
 				})
-				Convey("Read private project", func() {
+				t.Run("Read private project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "secret")
-					So(ok, ShouldEqual, true)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, ok, should.Equal(true))
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey("Read un/misconfigured project", func() {
+				t.Run("Read un/misconfigured project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "misconfigured")
-					So(ok, ShouldEqual, false)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, ok, should.Equal(false))
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 
-			Convey("alicebob@google.com wants to...", func() {
+			t.Run("alicebob@google.com wants to...", func(t *ftt.Test) {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
 					IdentityGroups: []string{"googlers", "all"},
 				})
-				Convey("Read private project", func() {
+				t.Run("Read private project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "secret")
-					So(ok, ShouldEqual, true)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, ok, should.Equal(true))
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey("Read un/misconfigured project", func() {
+				t.Run("Read un/misconfigured project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "misconfigured")
-					So(ok, ShouldEqual, false)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, ok, should.Equal(false))
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 
-			Convey("eve@notgoogle.com wants to...", func() {
+			t.Run("eve@notgoogle.com wants to...", func(t *ftt.Test) {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:eve@notgoogle.com",
 					IdentityGroups: []string{"all"},
 				})
-				Convey("Read public project", func() {
+				t.Run("Read public project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "opensource")
-					So(ok, ShouldEqual, true)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, ok, should.Equal(true))
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey("Read private project", func() {
+				t.Run("Read private project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "secret")
-					So(ok, ShouldEqual, false)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, ok, should.Equal(false))
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 		})
