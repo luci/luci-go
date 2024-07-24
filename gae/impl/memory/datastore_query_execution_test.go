@@ -27,7 +27,8 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -400,7 +401,7 @@ var queryExecutionTests = []qExTest{
 						assert.Loosely(t, pm, should.Resemble(stage1Data[2]))
 						return ds.Stop
 					})
-					assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+					assert.Loosely(t, err, shouldBeSuccessful)
 				},
 
 				func(c context.Context, t *testing.T) {
@@ -624,18 +625,18 @@ func TestQueryExecution(t *testing.T) {
 								t.Run(fmt.Sprintf("expect %d (keys)", j), func(t *ftt.Test) {
 									err := runner(c, func(c context.Context) error {
 										count, err := ds.Count(c, expect.q)
-										assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+										assert.Loosely(t, err, shouldBeSuccessful)
 										assert.Loosely(t, count, should.Equal(expect.count))
 
 										rslt := []*ds.Key(nil)
-										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), convey.Adapt(shouldBeSuccessful)())
+										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
 										assert.Loosely(t, len(rslt), should.Equal(len(expect.keys)))
 										for i, r := range rslt {
 											assert.Loosely(t, r, should.Resemble(expect.keys[i]))
 										}
 										return nil
 									}, nil)
-									assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+									assert.Loosely(t, err, shouldBeSuccessful)
 								})
 							}
 
@@ -643,18 +644,18 @@ func TestQueryExecution(t *testing.T) {
 								t.Run(fmt.Sprintf("expect %d (data)", j), func(t *ftt.Test) {
 									err := runner(c, func(c context.Context) error {
 										count, err := ds.Count(c, expect.q)
-										assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+										assert.Loosely(t, err, shouldBeSuccessful)
 										assert.Loosely(t, count, should.Equal(expect.count))
 
 										rslt := []ds.PropertyMap(nil)
-										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), convey.Adapt(shouldBeSuccessful)())
+										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
 										assert.Loosely(t, len(rslt), should.Equal(len(expect.get)))
 										for i, r := range rslt {
 											assert.Loosely(t, r, should.Resemble(expect.get[i]))
 										}
 										return nil
 									}, nil)
-									assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+									assert.Loosely(t, err, shouldBeSuccessful)
 								})
 							}
 						}
@@ -682,12 +683,12 @@ func TestQueryExecution(t *testing.T) {
 		assert.Loosely(t, ds.Put(c, pmap("$key", key("Kind", 1), Next,
 			"Val", 1, 2, 3, Next,
 			"Extra", "hello",
-		)), convey.Adapt(shouldBeSuccessful)())
+		)), shouldBeSuccessful)
 
 		assert.Loosely(t, ds.Put(c, pmap("$key", key("Kind", 2), Next,
 			"Val", 2, 3, 9, Next,
 			"Extra", "ace", "hello", "there",
-		)), convey.Adapt(shouldBeSuccessful)())
+		)), shouldBeSuccessful)
 
 		q := nq("Kind").Gt("Val", 2).Order("Val", "Extra")
 
@@ -697,25 +698,17 @@ func TestQueryExecution(t *testing.T) {
 		testing.AutoIndex(true)
 
 		count, err = ds.Count(c, q)
-		assert.Loosely(t, err, convey.Adapt(shouldBeSuccessful)())
+		assert.Loosely(t, err, shouldBeSuccessful)
 		assert.Loosely(t, count, should.Equal(2))
 	})
 }
 
-func shouldBeSuccessful(actual any, expected ...any) string {
-	if len(expected) != 0 {
-		return "no expected values permitted"
+func shouldBeSuccessful(expected error) *failure.Summary {
+	if expected == nil || expected == ds.Stop {
+		return nil
 	}
-	if actual == nil {
-		return ""
-	}
-
-	v, ok := actual.(error)
-	if !ok {
-		return fmt.Sprintf("type of 'actual' must be error, not %T", actual)
-	}
-	if v == nil || v == ds.Stop {
-		return ""
-	}
-	return fmt.Sprintf("expected success value, not %v", v)
+	return comparison.NewSummaryBuilder("shouldBeSuccessful").
+		Actual(expected).
+		Because("expected nil or ds.Stop").
+		Summary
 }

@@ -19,10 +19,11 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/cmpbin"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func mkNum(n int64) []byte {
@@ -87,68 +88,68 @@ func TestIterator(iter *testing.T) {
 		return
 	}
 
-	Convey("Test iterator", iter, func() {
-		Convey("start at nil", func() {
+	ftt.Run("Test iterator", iter, func(t *ftt.Test) {
+		t.Run("start at nil", func(t *ftt.Test) {
 			iter := (&iterDefinition{c: c}).mkIter()
-			So(get(iter), ShouldEqual, 5)
-			So(get(iter), ShouldEqual, 6)
-			So(get(iter), ShouldEqual, 7)
+			assert.Loosely(t, get(iter), should.Equal(5))
+			assert.Loosely(t, get(iter), should.Equal(6))
+			assert.Loosely(t, get(iter), should.Equal(7))
 
-			Convey("And can skip", func() {
-				So(skipGet(iter, 10), ShouldEqual, 10)
-				So(get(iter), ShouldEqual, 11)
+			t.Run("And can skip", func(t *ftt.Test) {
+				assert.Loosely(t, skipGet(iter, 10), should.Equal(10))
+				assert.Loosely(t, get(iter), should.Equal(11))
 
-				Convey("But not forever", func() {
+				t.Run("But not forever", func(t *ftt.Test) {
 					iter.skip(mkNum(200))
-					So(didIterate(iter), ShouldBeFalse)
-					So(didIterate(iter), ShouldBeFalse)
+					assert.Loosely(t, didIterate(iter), should.BeFalse)
+					assert.Loosely(t, didIterate(iter), should.BeFalse)
 				})
 			})
 
-			Convey("Can iterate explicitly", func() {
-				So(skipGet(iter, 7), ShouldEqual, 8)
-				So(skipGet(iter, 8), ShouldEqual, 9)
+			t.Run("Can iterate explicitly", func(t *ftt.Test) {
+				assert.Loosely(t, skipGet(iter, 7), should.Equal(8))
+				assert.Loosely(t, skipGet(iter, 8), should.Equal(9))
 
 				// Giving the immediately next key doesn't cause an internal reset.
-				So(skipGet(iter, 10), ShouldEqual, 10)
+				assert.Loosely(t, skipGet(iter, 10), should.Equal(10))
 			})
 
-			Convey("Going backwards is ignored", func() {
-				So(skipGet(iter, 3), ShouldEqual, 8)
-				So(get(iter), ShouldEqual, 9)
-				So(skipGet(iter, 20), ShouldEqual, 20)
-				So(get(iter), ShouldEqual, 21)
+			t.Run("Going backwards is ignored", func(t *ftt.Test) {
+				assert.Loosely(t, skipGet(iter, 3), should.Equal(8))
+				assert.Loosely(t, get(iter), should.Equal(9))
+				assert.Loosely(t, skipGet(iter, 20), should.Equal(20))
+				assert.Loosely(t, get(iter), should.Equal(21))
 			})
 
-			Convey("will stop at the end of the list", func() {
-				So(skipGet(iter, 95), ShouldEqual, 95)
-				So(get(iter), ShouldEqual, 96)
-				So(get(iter), ShouldEqual, 97)
-				So(get(iter), ShouldEqual, 98)
-				So(get(iter), ShouldEqual, 99)
-				So(get(iter), ShouldBeNil)
-				So(get(iter), ShouldBeNil)
+			t.Run("will stop at the end of the list", func(t *ftt.Test) {
+				assert.Loosely(t, skipGet(iter, 95), should.Equal(95))
+				assert.Loosely(t, get(iter), should.Equal(96))
+				assert.Loosely(t, get(iter), should.Equal(97))
+				assert.Loosely(t, get(iter), should.Equal(98))
+				assert.Loosely(t, get(iter), should.Equal(99))
+				assert.Loosely(t, get(iter), should.BeNil)
+				assert.Loosely(t, get(iter), should.BeNil)
 			})
 		})
 
-		Convey("can have caps on both sides", func() {
+		t.Run("can have caps on both sides", func(t *ftt.Test) {
 			iter := (&iterDefinition{c: c, start: mkNum(20), end: mkNum(25)}).mkIter()
-			So(get(iter), ShouldEqual, 20)
-			So(get(iter), ShouldEqual, 21)
-			So(get(iter), ShouldEqual, 22)
-			So(get(iter), ShouldEqual, 23)
-			So(get(iter), ShouldEqual, 24)
+			assert.Loosely(t, get(iter), should.Equal(20))
+			assert.Loosely(t, get(iter), should.Equal(21))
+			assert.Loosely(t, get(iter), should.Equal(22))
+			assert.Loosely(t, get(iter), should.Equal(23))
+			assert.Loosely(t, get(iter), should.Equal(24))
 
-			So(didIterate(iter), ShouldBeFalse)
+			assert.Loosely(t, didIterate(iter), should.BeFalse)
 		})
 
-		Convey("can skip over starting cap", func() {
+		t.Run("can skip over starting cap", func(t *ftt.Test) {
 			iter := (&iterDefinition{c: c, start: mkNum(20), end: mkNum(25)}).mkIter()
-			So(skipGet(iter, 22), ShouldEqual, 22)
-			So(get(iter), ShouldEqual, 23)
-			So(get(iter), ShouldEqual, 24)
+			assert.Loosely(t, skipGet(iter, 22), should.Equal(22))
+			assert.Loosely(t, get(iter), should.Equal(23))
+			assert.Loosely(t, get(iter), should.Equal(24))
 
-			So(didIterate(iter), ShouldBeFalse)
+			assert.Loosely(t, didIterate(iter), should.BeFalse)
 		})
 	})
 }
@@ -196,7 +197,7 @@ func TestMultiIteratorSimple(iter *testing.T) {
 		otherValBytes[i] = cmpbin.ConcatBytes(numbs...)
 	}
 
-	Convey("Test MultiIterator", iter, func() {
+	ftt.Run("Test MultiIterator", iter, func(t *ftt.Test) {
 		s := newMemStore()
 		c := s.GetOrCreateCollection("zup1")
 		for _, row := range valBytes {
@@ -209,7 +210,7 @@ func TestMultiIteratorSimple(iter *testing.T) {
 		c = s.Snapshot().GetCollection("zup1")
 		c2 = s.Snapshot().GetCollection("zup2")
 
-		Convey("can join the same collection twice", func() {
+		t.Run("can join the same collection twice", func(t *ftt.Test) {
 			// get just the (1, *)
 			// starting at (1, 2) (i.e. >= 2)
 			// ending at (1, 4) (i.e. < 7)
@@ -219,16 +220,16 @@ func TestMultiIteratorSimple(iter *testing.T) {
 			}
 
 			i := 1
-			So(multiIterate(defs, func(suffix []byte) error {
-				So(readNum(suffix), ShouldEqual, vals[i][1])
+			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+				assert.Loosely(t, readNum(suffix), should.Equal(vals[i][1]))
 				i++
 				return nil
 			}), shouldBeSuccessful)
 
-			So(i, ShouldEqual, 3)
+			assert.Loosely(t, i, should.Equal(3))
 		})
 
-		Convey("can make empty iteration", func() {
+		t.Run("can make empty iteration", func(t *ftt.Test) {
 			// get just the (20, *) (doesn't exist)
 			defs := []*iterDefinition{
 				{c: c, prefix: mkNum(20)},
@@ -236,14 +237,14 @@ func TestMultiIteratorSimple(iter *testing.T) {
 			}
 
 			i := 0
-			So(multiIterate(defs, func(suffix []byte) error {
+			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
 				panic("never")
 			}), shouldBeSuccessful)
 
-			So(i, ShouldEqual, 0)
+			assert.Loosely(t, i, should.BeZero)
 		})
 
-		Convey("can join (other, val, val)", func() {
+		t.Run("can join (other, val, val)", func(t *ftt.Test) {
 			// 'other' must start with 20, 'vals' must start with 1
 			// no range constraints
 			defs := []*iterDefinition{
@@ -254,34 +255,34 @@ func TestMultiIteratorSimple(iter *testing.T) {
 
 			expect := []int64{2, 4}
 			i := 0
-			So(multiIterate(defs, func(suffix []byte) error {
-				So(readNum(suffix), ShouldEqual, expect[i])
+			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+				assert.Loosely(t, readNum(suffix), should.Equal(expect[i]))
 				i++
 				return nil
 			}), shouldBeSuccessful)
 		})
 
-		Convey("Can stop early", func() {
+		t.Run("Can stop early", func(t *ftt.Test) {
 			defs := []*iterDefinition{
 				{c: c, prefix: mkNum(1), prefixLen: len(mkNum(1))},
 				{c: c, prefix: mkNum(1), prefixLen: len(mkNum(1))},
 			}
 
 			i := 0
-			So(multiIterate(defs, func(suffix []byte) error {
-				So(readNum(suffix), ShouldEqual, vals[i][1])
+			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+				assert.Loosely(t, readNum(suffix), should.Equal(vals[i][1]))
 				i++
 				return nil
 			}), shouldBeSuccessful)
-			So(i, ShouldEqual, 5)
+			assert.Loosely(t, i, should.Equal(5))
 
 			i = 0
-			So(multiIterate(defs, func(suffix []byte) error {
-				So(readNum(suffix), ShouldEqual, vals[i][1])
+			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+				assert.Loosely(t, readNum(suffix), should.Equal(vals[i][1]))
 				i++
 				return datastore.Stop
 			}), shouldBeSuccessful)
-			So(i, ShouldEqual, 1)
+			assert.Loosely(t, i, should.Equal(1))
 		})
 
 	})
