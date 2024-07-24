@@ -258,7 +258,7 @@ var assertionMap = map[assertionKey]*mappedComp{
 	{originalConveyPkg, "ShouldStartWith"}: {name: "HavePrefix", argState: hasArgs},
 	{originalConveyPkg, "ShouldEndWith"}:   {name: "HaveSuffix", argState: hasArgs},
 
-	{originalConveyPkg, "ShouldPanic"}: {name: "Panic", argState: hasArgs},
+	{originalConveyPkg, "ShouldPanic"}: {name: "Panic", argState: noArgs},
 
 	{originalConveyPkg, "ShouldHappenBefore"}:      {name: "HappenBefore", argState: hasArgs},
 	{originalConveyPkg, "ShouldHappenOnOrBefore"}:  {name: "HappenOnOrBefore", argState: hasArgs},
