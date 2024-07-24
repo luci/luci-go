@@ -35,6 +35,17 @@ export interface PrpcClientOptions {
    */
   readonly tokenType?: string;
   /**
+   * Additional headers to be passed to the RPC call. This can be used to pass
+   * [gRPC metadata](https://grpc.io/docs/guides/metadata/#headers) to the
+   * server.
+   *
+   * Note that this does not override the headers set by `PrpcClient`, including
+   *  * accept
+   *  * content-type
+   *  * authorization
+   */
+  readonly additionalHeaders?: HeadersInit;
+  /**
    * If true, use HTTP instead of HTTPS. Defaults to `false`.
    */
   readonly insecure?: boolean;
@@ -44,6 +55,12 @@ export interface PrpcClientOptions {
   readonly fetchImpl?: typeof fetch;
 }
 
+const NON_OVERRIDABLE_HEADERS = Object.freeze([
+  'accept',
+  'content-type',
+  'authorization',
+]);
+
 /**
  * Class for interacting with a pRPC API with a binary protocol.
  * Protocol: https://godoc.org/go.chromium.org/luci/grpc/prpc
@@ -52,13 +69,22 @@ export class PrpcClient {
   readonly host: string;
   readonly getAuthToken: () => string | Promise<string>;
   readonly tokenType: string;
+  readonly additionalHeaders: Readonly<Record<string, string>>;
   readonly insecure: boolean;
   readonly fetchImpl: typeof fetch;
 
   constructor(options?: PrpcClientOptions) {
+    const headers = new Headers(options?.additionalHeaders);
+    for (const key of headers.keys()) {
+      if (NON_OVERRIDABLE_HEADERS.includes(key)) {
+        throw new Error(`\`${key}\` cannot be specified as additionalHeaders`);
+      }
+    }
+
     this.host = options?.host || self.location.host;
     this.getAuthToken = options?.getAuthToken || (() => '');
     this.tokenType = options?.tokenType || 'Bearer';
+    this.additionalHeaders = Object.fromEntries(headers.entries());
     this.insecure = options?.insecure || false;
     this.fetchImpl = options?.fetchImpl || self.fetch.bind(self);
   }
@@ -86,6 +112,7 @@ export class PrpcClient {
       method: 'POST',
       credentials: 'omit',
       headers: {
+        ...this.additionalHeaders,
         accept: 'application/json',
         'content-type': 'application/json',
         ...(token && { authorization: `${this.tokenType} ${token}` }),

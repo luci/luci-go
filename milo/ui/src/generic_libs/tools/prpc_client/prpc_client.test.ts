@@ -134,4 +134,55 @@ describe('PrpcClient', () => {
     expect(err.httpStatus).toEqual(400);
     expect(err.message).toContain('Invalid X-Prpc-Grpc-Code response header');
   });
+
+  it('can specify additional headers', async () => {
+    const mockedFetch = jest.fn(fetch).mockResolvedValue(
+      new Response(')]}\'\n{"key":"response"}', {
+        headers: {
+          'X-Prpc-Grpc-Code': RpcCode.OK.toString(),
+        },
+      }),
+    );
+    const client = new PrpcClient({
+      host: 'host.com',
+      fetchImpl: mockedFetch,
+      additionalHeaders: { 'Grpc-Metadata-namespace': 'My_Namespace' },
+    });
+
+    const res = await client.request('service', 'method', { key: 'request' });
+    expect(mockedFetch).toHaveBeenCalledWith(
+      'https://host.com/prpc/service/method',
+      {
+        body: JSON.stringify({ key: 'request' }),
+        credentials: 'omit',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          'grpc-metadata-namespace': 'My_Namespace',
+        },
+        method: 'POST',
+      },
+    );
+    expect(res).toEqual({ key: 'response' });
+  });
+
+  it('rejects invalid additional headers', async () => {
+    const mockedFetch = jest.fn(fetch).mockResolvedValue(
+      new Response(')]}\'\n{"key":"response"}', {
+        headers: {
+          'X-Prpc-Grpc-Code': RpcCode.OK.toString(),
+        },
+      }),
+    );
+    expect(
+      () =>
+        new PrpcClient({
+          host: 'host.com',
+          fetchImpl: mockedFetch,
+          additionalHeaders: { accept: 'text/plain' },
+        }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      '"`accept` cannot be specified as additionalHeaders"',
+    );
+  });
 });

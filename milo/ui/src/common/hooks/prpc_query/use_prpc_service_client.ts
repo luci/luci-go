@@ -27,6 +27,17 @@ export interface PrpcServiceClientOptions<S, Params extends unknown[] = []> {
    */
   readonly host: string;
   /**
+   * Additional headers to be passed to the RPC call. This can be used to pass
+   * [gRPC metadata](https://grpc.io/docs/guides/metadata/#headers) to the
+   * server.
+   *
+   * Note that this does not override the headers set by `PrpcClient`, including
+   *  * accept
+   *  * content-type
+   *  * authorization
+   */
+  readonly additionalHeaders?: HeadersInit;
+  /**
    * If true, use HTTP instead of HTTPS. Defaults to `false`.
    */
   readonly insecure?: boolean;
@@ -81,26 +92,42 @@ export type DecoratedMethod<MK, Req, Res, Params extends unknown[] = []> = {
   /**
    * Builds a ReactQuery option that queries the method. The query key is
    * consisted of
-   * `[userIdentity, 'prpc', serviceHost, serviceName, methodName, request]`.
+   * `[userIdentity, 'prpc', serviceHost, serviceName, additionalHeaders, methodName, request]`.
    */
   query(
     req: Req,
     ...params: Params
   ): {
-    queryKey: [string, 'prpc', string, string, MK, Req];
+    queryKey: [
+      string,
+      'prpc',
+      string,
+      string,
+      Readonly<Record<string, string>>,
+      MK,
+      Req,
+    ];
     queryFn: () => Res;
   };
   /**
    * Builds a ReactQuery option that queries the paginated method. The next page
    * param is automatically extracted from the previous response. The query key
    * is consisted of
-   * `[userIdentity, 'prpc-paged', serviceHost, serviceName, methodName, request]`.
+   * `[userIdentity, 'prpc-paged', serviceHost, serviceName, additionalHeaders, methodName, request]`.
    */
   queryPaged(
     req: PagedRes<Res> extends Res ? PagedReq<Req> : never,
     ...params: Params
   ): {
-    queryKey: [string, 'prpc-paged', string, string, MK, Req];
+    queryKey: [
+      string,
+      'prpc-paged',
+      string,
+      string,
+      Readonly<Record<string, string>>,
+      MK,
+      Req,
+    ];
     queryFn: (ctx: { pageParam?: string }) => Res;
     getNextPageParam: (lastRes: Awaited<Res>) => string | null;
   };
@@ -178,7 +205,8 @@ export function usePrpcServiceClient<
   S extends object,
   Params extends unknown[],
 >(opts: PrpcServiceClientOptions<S, Params>, ...params: Params) {
-  const { host, insecure, ClientImpl, initUseGetAuthToken } = opts;
+  const { host, additionalHeaders, insecure, ClientImpl, initUseGetAuthToken } =
+    opts;
 
   const { current: useGetAuthToken } = useRef(
     initUseGetAuthToken || useGetAccessToken,
@@ -187,8 +215,11 @@ export function usePrpcServiceClient<
   const { identity } = useAuthState();
   const getAuthToken = useGetAuthToken();
   const client = new ClientImpl(
-    new PrpcClient({ host, insecure, getAuthToken }),
+    new PrpcClient({ host, insecure, getAuthToken, additionalHeaders }),
     ...params,
+  );
+  const additionalHeadersObj = Object.fromEntries(
+    new Headers(additionalHeaders).entries(),
   );
 
   return new Proxy(client, {
@@ -200,7 +231,15 @@ export function usePrpcServiceClient<
       }
       const fn = (...args: unknown[]) => value.apply(target, args);
       fn.query = (req: object, ...params: unknown[]) => ({
-        queryKey: [identity, 'prpc', host, ClientImpl.DEFAULT_SERVICE, mk, req],
+        queryKey: [
+          identity,
+          'prpc',
+          host,
+          ClientImpl.DEFAULT_SERVICE,
+          additionalHeadersObj,
+          mk,
+          req,
+        ],
         queryFn: () => fn(req, ...params),
       });
       fn.queryPaged = (req: object, ...params: unknown[]) => ({
@@ -209,6 +248,7 @@ export function usePrpcServiceClient<
           'prpc-paged',
           host,
           ClientImpl.DEFAULT_SERVICE,
+          additionalHeadersObj,
           mk,
           req,
         ],
