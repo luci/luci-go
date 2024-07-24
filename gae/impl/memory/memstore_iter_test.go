@@ -49,8 +49,8 @@ func countItems(mc memCollection) int {
 	return count
 }
 
-func TestIterator(t *testing.T) {
-	t.Parallel()
+func TestIterator(iter *testing.T) {
+	iter.Parallel()
 
 	s := newMemStore()
 	c := s.GetOrCreateCollection("zup")
@@ -68,93 +68,93 @@ func TestIterator(t *testing.T) {
 		}
 	}
 
-	get := func(c C, t *iterator) any {
-		if ent := t.next(); ent != nil {
+	get := func(iter *iterator) any {
+		if ent := iter.next(); ent != nil {
 			return readNum(ent.key)
 		}
 		return nil
 	}
 
-	skipGet := func(c C, t *iterator, skipTo int64) any {
-		t.skip(mkNum(skipTo))
-		return get(c, t)
+	skipGet := func(iter *iterator, skipTo int64) any {
+		iter.skip(mkNum(skipTo))
+		return get(iter)
 	}
 
-	didIterate := func(t *iterator) (did bool) {
-		iterCB(t, func(k, v []byte) {
+	didIterate := func(iter *iterator) (did bool) {
+		iterCB(iter, func(k, v []byte) {
 			did = true
 		})
 		return
 	}
 
-	Convey("Test iterator", t, func() {
-		Convey("start at nil", func(ctx C) {
-			t := (&iterDefinition{c: c}).mkIter()
-			So(get(ctx, t), ShouldEqual, 5)
-			So(get(ctx, t), ShouldEqual, 6)
-			So(get(ctx, t), ShouldEqual, 7)
+	Convey("Test iterator", iter, func() {
+		Convey("start at nil", func() {
+			iter := (&iterDefinition{c: c}).mkIter()
+			So(get(iter), ShouldEqual, 5)
+			So(get(iter), ShouldEqual, 6)
+			So(get(iter), ShouldEqual, 7)
 
-			Convey("And can skip", func(ctx C) {
-				So(skipGet(ctx, t, 10), ShouldEqual, 10)
-				So(get(ctx, t), ShouldEqual, 11)
+			Convey("And can skip", func() {
+				So(skipGet(iter, 10), ShouldEqual, 10)
+				So(get(iter), ShouldEqual, 11)
 
-				Convey("But not forever", func(ctx C) {
-					t.skip(mkNum(200))
-					So(didIterate(t), ShouldBeFalse)
-					So(didIterate(t), ShouldBeFalse)
+				Convey("But not forever", func() {
+					iter.skip(mkNum(200))
+					So(didIterate(iter), ShouldBeFalse)
+					So(didIterate(iter), ShouldBeFalse)
 				})
 			})
 
-			Convey("Can iterate explicitly", func(ctx C) {
-				So(skipGet(ctx, t, 7), ShouldEqual, 8)
-				So(skipGet(ctx, t, 8), ShouldEqual, 9)
+			Convey("Can iterate explicitly", func() {
+				So(skipGet(iter, 7), ShouldEqual, 8)
+				So(skipGet(iter, 8), ShouldEqual, 9)
 
 				// Giving the immediately next key doesn't cause an internal reset.
-				So(skipGet(ctx, t, 10), ShouldEqual, 10)
+				So(skipGet(iter, 10), ShouldEqual, 10)
 			})
 
-			Convey("Going backwards is ignored", func(ctx C) {
-				So(skipGet(ctx, t, 3), ShouldEqual, 8)
-				So(get(ctx, t), ShouldEqual, 9)
-				So(skipGet(ctx, t, 20), ShouldEqual, 20)
-				So(get(ctx, t), ShouldEqual, 21)
+			Convey("Going backwards is ignored", func() {
+				So(skipGet(iter, 3), ShouldEqual, 8)
+				So(get(iter), ShouldEqual, 9)
+				So(skipGet(iter, 20), ShouldEqual, 20)
+				So(get(iter), ShouldEqual, 21)
 			})
 
-			Convey("will stop at the end of the list", func(ctx C) {
-				So(skipGet(ctx, t, 95), ShouldEqual, 95)
-				So(get(ctx, t), ShouldEqual, 96)
-				So(get(ctx, t), ShouldEqual, 97)
-				So(get(ctx, t), ShouldEqual, 98)
-				So(get(ctx, t), ShouldEqual, 99)
-				So(get(ctx, t), ShouldBeNil)
-				So(get(ctx, t), ShouldBeNil)
+			Convey("will stop at the end of the list", func() {
+				So(skipGet(iter, 95), ShouldEqual, 95)
+				So(get(iter), ShouldEqual, 96)
+				So(get(iter), ShouldEqual, 97)
+				So(get(iter), ShouldEqual, 98)
+				So(get(iter), ShouldEqual, 99)
+				So(get(iter), ShouldBeNil)
+				So(get(iter), ShouldBeNil)
 			})
 		})
 
-		Convey("can have caps on both sides", func(ctx C) {
-			t := (&iterDefinition{c: c, start: mkNum(20), end: mkNum(25)}).mkIter()
-			So(get(ctx, t), ShouldEqual, 20)
-			So(get(ctx, t), ShouldEqual, 21)
-			So(get(ctx, t), ShouldEqual, 22)
-			So(get(ctx, t), ShouldEqual, 23)
-			So(get(ctx, t), ShouldEqual, 24)
+		Convey("can have caps on both sides", func() {
+			iter := (&iterDefinition{c: c, start: mkNum(20), end: mkNum(25)}).mkIter()
+			So(get(iter), ShouldEqual, 20)
+			So(get(iter), ShouldEqual, 21)
+			So(get(iter), ShouldEqual, 22)
+			So(get(iter), ShouldEqual, 23)
+			So(get(iter), ShouldEqual, 24)
 
-			So(didIterate(t), ShouldBeFalse)
+			So(didIterate(iter), ShouldBeFalse)
 		})
 
-		Convey("can skip over starting cap", func(ctx C) {
-			t := (&iterDefinition{c: c, start: mkNum(20), end: mkNum(25)}).mkIter()
-			So(skipGet(ctx, t, 22), ShouldEqual, 22)
-			So(get(ctx, t), ShouldEqual, 23)
-			So(get(ctx, t), ShouldEqual, 24)
+		Convey("can skip over starting cap", func() {
+			iter := (&iterDefinition{c: c, start: mkNum(20), end: mkNum(25)}).mkIter()
+			So(skipGet(iter, 22), ShouldEqual, 22)
+			So(get(iter), ShouldEqual, 23)
+			So(get(iter), ShouldEqual, 24)
 
-			So(didIterate(t), ShouldBeFalse)
+			So(didIterate(iter), ShouldBeFalse)
 		})
 	})
 }
 
-func TestMultiIteratorSimple(t *testing.T) {
-	t.Parallel()
+func TestMultiIteratorSimple(iter *testing.T) {
+	iter.Parallel()
 
 	// Simulate an index with 2 columns (int and int).
 	vals := [][]int64{
@@ -196,7 +196,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 		otherValBytes[i] = cmpbin.ConcatBytes(numbs...)
 	}
 
-	Convey("Test MultiIterator", t, func() {
+	Convey("Test MultiIterator", iter, func() {
 		s := newMemStore()
 		c := s.GetOrCreateCollection("zup1")
 		for _, row := range valBytes {
