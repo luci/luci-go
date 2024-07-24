@@ -22,17 +22,18 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestUpdateBuilder(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestUpdateBuilder`, t, func() {
+	ftt.Run(`TestUpdateBuilder`, t, func(t *ftt.Test) {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 
 		builder := &BuilderSummary{BuilderID: "fake"}
@@ -54,45 +55,45 @@ func TestUpdateBuilder(t *testing.T) {
 			err := datastore.RunInTransaction(c, func(c context.Context) error {
 				return UpdateBuilderForBuild(c, build)
 			}, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = datastore.Get(c, builder)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
-		Convey("Updating appropriate builder having existing last finished build", func() {
+		t.Run("Updating appropriate builder having existing last finished build", func(t *ftt.Test) {
 			builder.LastFinishedCreated = builds[5].Created
 			builder.LastFinishedStatus = milostatus.Success
 			builder.LastFinishedBuildID = builds[5].BuildID
 			err := datastore.Put(c, builder)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("with finished build should not update last finished build info", func() {
+			t.Run("with finished build should not update last finished build info", func(t *ftt.Test) {
 				builds[6].Summary.Status = milostatus.Failure
 				updateBuilder(builds[6])
-				So(builder.LastFinishedStatus, ShouldEqual, milostatus.Failure)
-				So(builder.LastFinishedBuildID, ShouldEqual, builds[6].BuildID)
+				assert.Loosely(t, builder.LastFinishedStatus, should.Equal(milostatus.Failure))
+				assert.Loosely(t, builder.LastFinishedBuildID, should.Equal(builds[6].BuildID))
 			})
 
-			Convey("for build created earlier than last finished", func() {
+			t.Run("for build created earlier than last finished", func(t *ftt.Test) {
 				builds[4].Summary.Status = milostatus.Failure
 				updateBuilder(builds[4])
-				So(builder.LastFinishedStatus, ShouldEqual, milostatus.Success)
-				So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
+				assert.Loosely(t, builder.LastFinishedStatus, should.Equal(milostatus.Success))
+				assert.Loosely(t, builder.LastFinishedBuildID, should.Equal(builds[5].BuildID))
 			})
 
-			Convey("for build created later than last finished", func() {
+			t.Run("for build created later than last finished", func(t *ftt.Test) {
 				builds[6].Summary.Status = milostatus.NotRun
 				updateBuilder(builds[6])
-				So(builder.LastFinishedStatus, ShouldEqual, milostatus.Success)
-				So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
+				assert.Loosely(t, builder.LastFinishedStatus, should.Equal(milostatus.Success))
+				assert.Loosely(t, builder.LastFinishedBuildID, should.Equal(builds[5].BuildID))
 			})
 		})
 
-		Convey("Updating appropriate builder with no last finished build should initialize it", func() {
+		t.Run("Updating appropriate builder with no last finished build should initialize it", func(t *ftt.Test) {
 			builds[5].Summary.Status = milostatus.Failure
 			updateBuilder(builds[5])
-			So(builder.LastFinishedStatus, ShouldEqual, milostatus.Failure)
-			So(builder.LastFinishedBuildID, ShouldEqual, builds[5].BuildID)
+			assert.Loosely(t, builder.LastFinishedStatus, should.Equal(milostatus.Failure))
+			assert.Loosely(t, builder.LastFinishedBuildID, should.Equal(builds[5].BuildID))
 		})
 	})
 }
@@ -100,57 +101,57 @@ func TestUpdateBuilder(t *testing.T) {
 func TestBuildIDLink(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestLastFinishedBuildIDLink`, t, func() {
-		Convey("Buildbot build gets expected link", func() {
-			Convey("with valid BuildID", func() {
+	ftt.Run(`TestLastFinishedBuildIDLink`, t, func(t *ftt.Test) {
+		t.Run("Buildbot build gets expected link", func(t *ftt.Test) {
+			t.Run("with valid BuildID", func(t *ftt.Test) {
 				buildID, project := "buildbot/buildergroup/builder/number", "proj"
-				So(buildIDLink(buildID, project), ShouldEqual, "/buildbot/buildergroup/builder/number")
+				assert.Loosely(t, buildIDLink(buildID, project), should.Equal("/buildbot/buildergroup/builder/number"))
 			})
 
-			Convey("with invalid BuildID", func() {
-				Convey("with too few tokens", func() {
+			t.Run("with invalid BuildID", func(t *ftt.Test) {
+				t.Run("with too few tokens", func(t *ftt.Test) {
 					buildID, project := "buildbot/wat", "proj"
-					So(buildIDLink(buildID, project), ShouldEqual, "#invalid-build-id")
+					assert.Loosely(t, buildIDLink(buildID, project), should.Equal("#invalid-build-id"))
 				})
 
-				Convey("with too many tokens", func() {
+				t.Run("with too many tokens", func(t *ftt.Test) {
 					buildID, project := "buildbot/wat/wat/wat/wat", "proj"
-					So(buildIDLink(buildID, project), ShouldEqual, "#invalid-build-id")
+					assert.Loosely(t, buildIDLink(buildID, project), should.Equal("#invalid-build-id"))
 				})
 			})
 		})
 
-		Convey("Buildbucket build gets expected link", func() {
-			Convey("with bucket info", func() {
+		t.Run("Buildbucket build gets expected link", func(t *ftt.Test) {
+			t.Run("with bucket info", func(t *ftt.Test) {
 				buildID, project := "buildbucket/luci.proj.bucket/builder/123", ""
-				So(
+				assert.Loosely(t,
 					buildIDLink(buildID, project),
-					ShouldEqual,
-					"/p/proj/builders/bucket/builder/123")
+					should.Equal(
+						"/p/proj/builders/bucket/builder/123"))
 			})
 
-			Convey("with only ID info", func() {
+			t.Run("with only ID info", func(t *ftt.Test) {
 				buildID, project := "buildbucket/123", "proj"
-				So(buildIDLink(buildID, project), ShouldEqual, "/b/123")
+				assert.Loosely(t, buildIDLink(buildID, project), should.Equal("/b/123"))
 			})
 
-			Convey("with invalid BuildID", func() {
-				Convey("due to missing bucket info", func() {
+			t.Run("with invalid BuildID", func(t *ftt.Test) {
+				t.Run("due to missing bucket info", func(t *ftt.Test) {
 					buildID, project := "buildbucket/", "proj"
-					So(buildIDLink(buildID, project), ShouldEqual, "#invalid-build-id")
+					assert.Loosely(t, buildIDLink(buildID, project), should.Equal("#invalid-build-id"))
 				})
 			})
 		})
 
-		Convey("Invalid BuildID gets expected link", func() {
-			Convey("with unknown source gets expected link", func() {
+		t.Run("Invalid BuildID gets expected link", func(t *ftt.Test) {
+			t.Run("with unknown source gets expected link", func(t *ftt.Test) {
 				buildID, project := "unknown/1", "proj"
-				So(buildIDLink(buildID, project), ShouldEqual, "#invalid-build-id")
+				assert.Loosely(t, buildIDLink(buildID, project), should.Equal("#invalid-build-id"))
 			})
 
-			Convey("with too few tokens", func() {
+			t.Run("with too few tokens", func(t *ftt.Test) {
 				buildID, project := "source", "proj"
-				So(buildIDLink(buildID, project), ShouldEqual, "#invalid-build-id")
+				assert.Loosely(t, buildIDLink(buildID, project), should.Equal("#invalid-build-id"))
 			})
 		})
 	})

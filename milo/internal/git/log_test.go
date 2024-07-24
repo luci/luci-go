@@ -27,26 +27,26 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/milo/internal/git/gitacls"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/redisconn"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLog(t *testing.T) {
 	t.Parallel()
 
-	Convey("Log", t, func() {
+	ftt.Run("Log", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
 		// Set up a test redis server.
 		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer s.Close()
 		c = redisconn.UsePool(c, &redis.Pool{
 			Dial: func() (redis.Conn, error) {
@@ -62,7 +62,7 @@ func TestLog(t *testing.T) {
 		acls, err := gitacls.FromConfig(c, []*configpb.Settings_SourceAcls{
 			{Hosts: []string{host}, Readers: []string{"allowed@example.com"}},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		impl := implementation{mockGitiles: gitilesMock, acls: acls}
 		c = Use(c, &impl)
 		cAllowed := auth.WithState(c, &authtest.FakeState{Identity: "user:allowed@example.com"})
@@ -80,10 +80,10 @@ func TestLog(t *testing.T) {
 			commitID[0]--
 		}
 
-		Convey("cold cache", func() {
-			Convey("ACLs respected", func() {
+		t.Run("cold cache", func(t *ftt.Test) {
+			t.Run("ACLs respected", func(t *ftt.Test) {
 				_, err := impl.Log(cDenied, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
-				So(err.Error(), ShouldContainSubstring, "not logged in")
+				assert.Loosely(t, err.Error(), should.ContainSubstring("not logged in"))
 			})
 
 			req := &gitilespb.LogRequest{
@@ -97,19 +97,19 @@ func TestLog(t *testing.T) {
 			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req)).Return(res, nil)
 
 			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 100})
-			So(err, ShouldBeNil)
-			So(commits, ShouldResemble, res.Log)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble(res.Log))
 
 			// Now that we have something in cache, call Log with cached commits.
 			// gitiles.Log was already called maximum number of times, which is 1,
 			// so another call with cause a test failure.
 
-			Convey("ACLs respected even with cache", func() {
+			t.Run("ACLs respected even with cache", func(t *ftt.Test) {
 				_, err := impl.Log(cDenied, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
-				So(err.Error(), ShouldContainSubstring, "not logged in")
+				assert.Loosely(t, err.Error(), should.ContainSubstring("not logged in"))
 			})
 
-			Convey("with exactly one last commit not in cache", func() {
+			t.Run("with exactly one last commit not in cache", func(t *ftt.Test) {
 				req2 := &gitilespb.LogRequest{
 					Project:    "project",
 					Committish: fakeCommits[100].Id,
@@ -120,11 +120,11 @@ func TestLog(t *testing.T) {
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 101})
-				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, fakeCommits[1:102])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.Resemble(fakeCommits[1:102]))
 			})
 
-			Convey("with exactly the proceeding commit not in cache", func() {
+			t.Run("with exactly the proceeding commit not in cache", func(t *ftt.Test) {
 				req2 := &gitilespb.LogRequest{
 					Project:    "project",
 					Committish: fakeCommits[51].Id,
@@ -135,35 +135,35 @@ func TestLog(t *testing.T) {
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil).Times(0)
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[51].Id, &LogOptions{Limit: 50})
-				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, fakeCommits[51:101])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.Resemble(fakeCommits[51:101]))
 			})
 
-			Convey("with ref in cache", func() {
+			t.Run("with ref in cache", func(t *ftt.Test) {
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
-				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, res.Log[:50])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.Resemble(res.Log[:50]))
 			})
 
-			Convey("with top commit in cache", func() {
+			t.Run("with top commit in cache", func(t *ftt.Test) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[1].Id, &LogOptions{Limit: 50})
-				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, res.Log[:50])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.Resemble(res.Log[:50]))
 			})
 
-			Convey("with ancestor commit in cache", func() {
+			t.Run("with ancestor commit in cache", func(t *ftt.Test) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[2].Id, &LogOptions{Limit: 50})
-				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, res.Log[1:51])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.Resemble(res.Log[1:51]))
 			})
 
-			Convey("with second ancestor commit in cache", func() {
+			t.Run("with second ancestor commit in cache", func(t *ftt.Test) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[3].Id, &LogOptions{Limit: 50})
-				So(err, ShouldBeNil)
-				So(commits, ShouldResembleProto, res.Log[2:52])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.Resemble(res.Log[2:52]))
 			})
 
-			Convey("min is honored", func() {
+			t.Run("min is honored", func(t *ftt.Test) {
 				req2 := &gitilespb.LogRequest{
 					Project:    "project",
 					Committish: fakeCommits[2].Id,
@@ -175,12 +175,12 @@ func TestLog(t *testing.T) {
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[2].Id, &LogOptions{Limit: 100})
-				So(err, ShouldBeNil)
-				So(commits, ShouldHaveLength, 100)
-				So(commits, ShouldResembleProto, res2.Log)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.HaveLength(100))
+				assert.Loosely(t, commits, should.Resemble(res2.Log))
 			})
 
-			Convey("request of item not in cache", func() {
+			t.Run("request of item not in cache", func(t *ftt.Test) {
 				req2 := &gitilespb.LogRequest{
 					Project:    "project",
 					Committish: fakeCommits[101].Id,
@@ -191,22 +191,22 @@ func TestLog(t *testing.T) {
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[101].Id, &LogOptions{Limit: 50})
-				So(err, ShouldBeNil)
-				So(commits, ShouldHaveLength, 50)
-				So(commits, ShouldResemble, res2.Log[:50])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.HaveLength(50))
+				assert.Loosely(t, commits, should.Resemble(res2.Log[:50]))
 			})
 
-			Convey("do not update cache entries that have more info", func() {
+			t.Run("do not update cache entries that have more info", func(t *ftt.Test) {
 				refCacheKey := (&logReq{
 					host:    host,
 					project: "project",
 				}).mkCacheKey(c, "refs/heads/main")
 
 				conn, err := redisconn.Get(c)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer conn.Close()
 				_, err = conn.Do("DEL", refCacheKey)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				req2 := &gitilespb.LogRequest{
 					Project:    "project",
@@ -218,11 +218,11 @@ func TestLog(t *testing.T) {
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
-				So(err, ShouldBeNil)
-				So(commits, ShouldResemble, res2.Log[:50])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, commits, should.Resemble(res2.Log[:50]))
 			})
 		})
-		Convey("paging", func() {
+		t.Run("paging", func(t *ftt.Test) {
 			req1 := &gitilespb.LogRequest{
 				Project:    "project",
 				Committish: "refs/heads/main",
@@ -243,8 +243,8 @@ func TestLog(t *testing.T) {
 			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 
 			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 150})
-			So(err, ShouldBeNil)
-			So(commits, ShouldResemble, fakeCommits[:150])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble(fakeCommits[:150]))
 		})
 	})
 }

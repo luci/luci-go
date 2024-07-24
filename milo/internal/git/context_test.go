@@ -16,26 +16,27 @@ package git
 
 import (
 	"context"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestProjectContext(t *testing.T) {
 	t.Parallel()
 
-	Convey("Context annotation works", t, func() {
+	ftt.Run("Context annotation works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		_, ok := ProjectFromContext(ctx)
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, ok, should.BeFalse)
 
 		WithProject(ctx, "")
 		_, ok = ProjectFromContext(ctx)
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, ok, should.BeFalse)
 
 		ctx = WithProject(ctx, "luci-project")
 		project, ok := ProjectFromContext(ctx)
-		So(project, ShouldResemble, "luci-project")
-		So(ok, ShouldBeTrue)
+		assert.Loosely(t, project, should.Match("luci-project"))
+		assert.Loosely(t, ok, should.BeTrue)
 	})
 }

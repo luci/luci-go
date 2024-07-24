@@ -22,19 +22,20 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/milo/internal/git/gitacls"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCLEmail(t *testing.T) {
 	t.Parallel()
 
-	Convey("CLEmail", t, func() {
+	ftt.Run("CLEmail", t, func(t *ftt.Test) {
 		c := caching.WithEmptyProcessCache(context.Background())
 
 		ctl := gomock.NewController(t)
@@ -45,7 +46,7 @@ func TestCLEmail(t *testing.T) {
 		acls, err := gitacls.FromConfig(c, []*configpb.Settings_SourceAcls{
 			{Hosts: []string{"limited.googlesource.com"}, Readers: []string{"allowed@example.com"}},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		impl := implementation{mockGerrit: gerritMock, acls: acls}
 		c = Use(c, &impl)
 		cAllowed := auth.WithState(c, &authtest.FakeState{Identity: "user:allowed@example.com"})
@@ -58,22 +59,22 @@ func TestCLEmail(t *testing.T) {
 		}, nil)
 
 		_, err = impl.CLEmail(cDenied, host, 123)
-		Convey("ACLs respected with cold cache", func() {
-			So(err.Error(), ShouldContainSubstring, "not logged in")
+		t.Run("ACLs respected with cold cache", func(t *ftt.Test) {
+			assert.Loosely(t, err.Error(), should.ContainSubstring("not logged in"))
 		})
 
 		// Now that we have cached change owner, no more GetChange calls should
 		// happen, ensured by gerritMock expectation above.
 
-		Convey("ACLs still respected with warm cache", func() {
+		t.Run("ACLs still respected with warm cache", func(t *ftt.Test) {
 			_, err = impl.CLEmail(cDenied, host, 123)
-			So(err.Error(), ShouldContainSubstring, "not logged in")
+			assert.Loosely(t, err.Error(), should.ContainSubstring("not logged in"))
 		})
 
-		Convey("Happy cached path", func() {
+		t.Run("Happy cached path", func(t *ftt.Test) {
 			email, err := impl.CLEmail(cAllowed, host, 123)
-			So(err, ShouldBeNil)
-			So(email, ShouldResemble, "user@example.com")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, email, should.Match("user@example.com"))
 		})
 	})
 }

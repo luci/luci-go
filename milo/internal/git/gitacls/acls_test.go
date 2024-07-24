@@ -21,20 +21,21 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestACLsWork(t *testing.T) {
 	t.Parallel()
 	c := gaetesting.TestingContext()
 
-	Convey("ACLs work", t, func() {
-		Convey("Validation works", func() {
+	ftt.Run("ACLs work", t, func(t *ftt.Test) {
+		t.Run("Validation works", func(t *ftt.Test) {
 			validate := func(cfg ...*configpb.Settings_SourceAcls) error {
 				ctx := validation.Context{Context: c}
 				ctx.SetFile("settings.cfg")
@@ -43,7 +44,7 @@ func TestACLsWork(t *testing.T) {
 			}
 			mustError := func(cfg ...*configpb.Settings_SourceAcls) multiError {
 				err := validate(cfg...)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 				return multiError(err.(*validation.Error).Errors)
 			}
 
@@ -52,17 +53,19 @@ func TestACLsWork(t *testing.T) {
 				Projects: []string{"https://b.googlesource.com/c"},
 				Readers:  []string{"group:g", "user@example.com"},
 			}
-			So(validate(&valid), ShouldBeNil)
+			assert.Loosely(t, validate(&valid), should.BeNil)
 
 			mustError(&configpb.Settings_SourceAcls{}).with(
+				t,
 				"at least 1 reader required",
 				"at least 1 host or project required",
 			)
 
-			Convey("readers", func() {
+			t.Run("readers", func(t *ftt.Test) {
 				mod := valid
 				mod.Readers = []string{"bad:kind", "group:", "user", "group:a", "group:a"}
 				mustError(&mod).with(
+					t,
 					`invalid readers "bad:kind"`,
 					`invalid readers "group:": needs a group name`,
 					`invalid readers "user"`,
@@ -70,7 +73,7 @@ func TestACLsWork(t *testing.T) {
 				)
 			})
 
-			Convey("hosts", func() {
+			t.Run("hosts", func(t *ftt.Test) {
 				second := configpb.Settings_SourceAcls{
 					Hosts: []string{
 						valid.Hosts[0],
@@ -81,13 +84,14 @@ func TestACLsWork(t *testing.T) {
 					Readers: []string{"group:a"},
 				}
 				mustError(&valid, &second).with(
+					t,
 					`host "a.googlesource.com"): has already been defined in source_acl #0`,
 					`isn't at *.googlesource.com`,
 					"shouldn't have path or fragment components",
 				)
 			})
 
-			Convey("projects", func() {
+			t.Run("projects", func(t *ftt.Test) {
 				second := configpb.Settings_SourceAcls{
 					Hosts: []string{"r.googlesource.com"},
 					Projects: []string{
@@ -102,6 +106,7 @@ func TestACLsWork(t *testing.T) {
 					Readers: []string{"group:b"},
 				}
 				mustError(&valid, &second).with(
+					t,
 					`redundant because already covered by its host in the same source_acls block`,
 					`project "not-repo.googlesource.com"): should not be just a host`,
 					`should not contain '/a' path prefix`,
@@ -122,8 +127,8 @@ func TestACLsWork(t *testing.T) {
 			return a
 		}
 
-		Convey("Loading works", func() {
-			So(load(
+		t.Run("Loading works", func(t *ftt.Test) {
+			assert.Loosely(t, load(
 				&configpb.Settings_SourceAcls{
 					Hosts: []string{"first.googlesource.com"},
 					Projects: []string{
@@ -132,37 +137,37 @@ func TestACLsWork(t *testing.T) {
 					},
 					Readers: []string{"user@example.com"},
 				}),
-				ShouldResemble,
-				&ACLs{
-					hosts: map[string]*hostACLs{
-						"first.googlesource.com": {
-							itemACLs: itemACLs{
-								definedIn: 0,
-								readers:   []string{"user:user@example.com"},
-							},
-						},
-						"second.googlesource.com": {
-							itemACLs: itemACLs{definedIn: -1},
-							projects: map[string]*itemACLs{
-								"y1": {
+				should.Resemble(
+					&ACLs{
+						hosts: map[string]*hostACLs{
+							"first.googlesource.com": {
+								itemACLs: itemACLs{
 									definedIn: 0,
 									readers:   []string{"user:user@example.com"},
 								},
 							},
-						},
-						"third.googlesource.com": {
-							itemACLs: itemACLs{definedIn: -1},
-							projects: map[string]*itemACLs{
-								"z": {
-									definedIn: 0,
-									readers:   []string{"user:user@example.com"},
+							"second.googlesource.com": {
+								itemACLs: itemACLs{definedIn: -1},
+								projects: map[string]*itemACLs{
+									"y1": {
+										definedIn: 0,
+										readers:   []string{"user:user@example.com"},
+									},
+								},
+							},
+							"third.googlesource.com": {
+								itemACLs: itemACLs{definedIn: -1},
+								projects: map[string]*itemACLs{
+									"z": {
+										definedIn: 0,
+										readers:   []string{"user:user@example.com"},
+									},
 								},
 							},
 						},
-					},
-				})
+					}))
 
-			So(load(
+			assert.Loosely(t, load(
 				&configpb.Settings_SourceAcls{
 					Hosts: []string{"first.googlesource.com"},
 					Projects: []string{
@@ -180,51 +185,51 @@ func TestACLsWork(t *testing.T) {
 					},
 					Readers: []string{"group:g"},
 				}),
-				ShouldResemble,
-				&ACLs{
-					hosts: map[string]*hostACLs{
-						"first.googlesource.com": {
-							itemACLs: itemACLs{
-								definedIn: 0,
-								readers:   []string{"user:user@example.com"},
-							},
-							projects: map[string]*itemACLs{
-								"x": {
-									definedIn: 1,
-									readers:   []string{"group:g"},
-								},
-							},
-						},
-						"second.googlesource.com": {
-							itemACLs: itemACLs{definedIn: -1},
-							projects: map[string]*itemACLs{
-								"y1": {
-									definedIn: 1,
-									readers:   []string{"group:g", "user:user@example.com"},
-								},
-								"y2": {
-									definedIn: 1,
-									readers:   []string{"group:g"},
-								},
-							},
-						},
-						"third.googlesource.com": {
-							itemACLs: itemACLs{
-								definedIn: 1,
-								readers:   []string{"group:g"},
-							},
-							projects: map[string]*itemACLs{
-								"z": {
+				should.Resemble(
+					&ACLs{
+						hosts: map[string]*hostACLs{
+							"first.googlesource.com": {
+								itemACLs: itemACLs{
 									definedIn: 0,
 									readers:   []string{"user:user@example.com"},
 								},
+								projects: map[string]*itemACLs{
+									"x": {
+										definedIn: 1,
+										readers:   []string{"group:g"},
+									},
+								},
+							},
+							"second.googlesource.com": {
+								itemACLs: itemACLs{definedIn: -1},
+								projects: map[string]*itemACLs{
+									"y1": {
+										definedIn: 1,
+										readers:   []string{"group:g", "user:user@example.com"},
+									},
+									"y2": {
+										definedIn: 1,
+										readers:   []string{"group:g"},
+									},
+								},
+							},
+							"third.googlesource.com": {
+								itemACLs: itemACLs{
+									definedIn: 1,
+									readers:   []string{"group:g"},
+								},
+								projects: map[string]*itemACLs{
+									"z": {
+										definedIn: 0,
+										readers:   []string{"user:user@example.com"},
+									},
+								},
 							},
 						},
-					},
-				})
+					}))
 		})
 
-		Convey("IsAllowed works", func() {
+		t.Run("IsAllowed works", func(t *ftt.Test) {
 			acls := load(
 				&configpb.Settings_SourceAcls{
 					Hosts:    []string{"public.googlesource.com"},
@@ -249,31 +254,31 @@ func TestACLsWork(t *testing.T) {
 				Identity:       identity.AnonymousIdentity,
 				IdentityGroups: []string{"all"},
 			})
-			So(granted(cAnon, "public.googlesource.com", "any"), ShouldBeTrue)
-			So(granted(cAnon, "limited.googlesource.com", "public"), ShouldBeTrue)
-			So(granted(cAnon, "limited.googlesource.com", "any"), ShouldBeFalse)
+			assert.Loosely(t, granted(cAnon, "public.googlesource.com", "any"), should.BeTrue)
+			assert.Loosely(t, granted(cAnon, "limited.googlesource.com", "public"), should.BeTrue)
+			assert.Loosely(t, granted(cAnon, "limited.googlesource.com", "any"), should.BeFalse)
 
 			cThey := auth.WithState(c, &authtest.FakeState{
 				Identity:       "user:they@example.com",
 				IdentityGroups: []string{"all"},
 			})
-			So(granted(cThey, "limited.googlesource.com", "public"), ShouldBeTrue)
-			So(granted(cThey, "limited.googlesource.com", "any"), ShouldBeTrue)
-			So(granted(cThey, "c.googlesource.com", "private"), ShouldBeTrue)
-			So(granted(cThey, "c.googlesource.com", "nope"), ShouldBeFalse)
+			assert.Loosely(t, granted(cThey, "limited.googlesource.com", "public"), should.BeTrue)
+			assert.Loosely(t, granted(cThey, "limited.googlesource.com", "any"), should.BeTrue)
+			assert.Loosely(t, granted(cThey, "c.googlesource.com", "private"), should.BeTrue)
+			assert.Loosely(t, granted(cThey, "c.googlesource.com", "nope"), should.BeFalse)
 
 			cSome := auth.WithState(c, &authtest.FakeState{
 				Identity:       "user:some@example.com",
 				IdentityGroups: []string{"some", "all"},
 			})
-			So(granted(cSome, "limited.googlesource.com", "any"), ShouldBeTrue)
-			So(granted(cSome, "c.googlesource.com", "private"), ShouldBeTrue)
-			So(granted(cSome, "c.googlesource.com", "nope"), ShouldBeFalse)
+			assert.Loosely(t, granted(cSome, "limited.googlesource.com", "any"), should.BeTrue)
+			assert.Loosely(t, granted(cSome, "c.googlesource.com", "private"), should.BeTrue)
+			assert.Loosely(t, granted(cSome, "c.googlesource.com", "nope"), should.BeFalse)
 
-			Convey("for Gerrit, too", func() {
-				So(granted(cAnon, "public-review.googlesource.com", "any"), ShouldBeTrue)
-				So(granted(cThey, "limited-review.googlesource.com", "any"), ShouldBeTrue)
-				So(granted(cSome, "c-review.googlesource.com", "private"), ShouldBeTrue)
+			t.Run("for Gerrit, too", func(t *ftt.Test) {
+				assert.Loosely(t, granted(cAnon, "public-review.googlesource.com", "any"), should.BeTrue)
+				assert.Loosely(t, granted(cThey, "limited-review.googlesource.com", "any"), should.BeTrue)
+				assert.Loosely(t, granted(cSome, "c-review.googlesource.com", "private"), should.BeTrue)
 			})
 		})
 	})
@@ -281,12 +286,12 @@ func TestACLsWork(t *testing.T) {
 
 type multiError []error
 
-func (m multiError) with(substrings ...string) {
+func (m multiError) with(t *ftt.Test, substrings ...string) {
 	for i, err := range m {
 		if i >= len(substrings) {
-			So(fmt.Errorf("extra errors produced: %q", m[i:]), ShouldBeNil)
+			assert.Loosely(t, fmt.Errorf("extra errors produced: %q", m[i:]), should.BeNil)
 		} else {
-			So(err.Error(), ShouldContainSubstring, substrings[i])
+			assert.Loosely(t, err.Error(), should.ContainSubstring(substrings[i]))
 		}
 	}
 	if len(substrings) > len(m) {
