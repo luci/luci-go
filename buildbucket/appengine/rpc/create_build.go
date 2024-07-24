@@ -585,6 +585,18 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 		work <- func() error { return model.UpdateBuilderStat(ctx, validBlds, now) }
 		work <- func() error { return resultdb.CreateInvocations(ctx, validBlds, filteredRDBOpts) }
 		work <- func() error { return search.UpdateTagIndex(ctx, validBlds) }
+		work <- func() error {
+			// Evaluate the builds for custom builder metrics.
+			// The builds have not been saved in datastore, so nothing to load as build details.
+			merr := make(errors.MultiError, len(validBlds))
+			for i, bld := range validBlds {
+				merr[i] = model.EvaluateBuildForCustomBuilderMetrics(ctx, bld, false)
+			}
+			if merr.First() == nil {
+				return nil
+			}
+			return merr
+		}
 	})
 	if err != nil {
 		errs := err.(errors.MultiError)

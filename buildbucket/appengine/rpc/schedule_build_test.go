@@ -6425,7 +6425,6 @@ func TestScheduleBuild(t *testing.T) {
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
-		store := tsmon.Store(ctx)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
@@ -6552,6 +6551,12 @@ func TestScheduleBuild(t *testing.T) {
 							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED,
 						},
 					},
+					{
+						Name: "chrome/infra/custom/builds/count",
+						Class: &pb.CustomMetric_MetricBase{
+							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+						},
+					},
 				},
 			}
 			ctx, _ = metrics.WithCustomMetrics(ctx, globalCfg)
@@ -6572,6 +6577,10 @@ func TestScheduleBuild(t *testing.T) {
 				Predicates:  []string{`build.tags.get_value("os")!=""`},
 				ExtraFields: map[string]string{"os": `build.tags.get_value("os")`},
 			}
+			cm4 := &pb.CustomMetricDefinition{
+				Name:       "chrome/infra/custom/builds/count",
+				Predicates: []string{`build.tags.get_value("buildset")!=""`},
+			}
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
@@ -6579,7 +6588,7 @@ func TestScheduleBuild(t *testing.T) {
 					BuildNumbers:            pb.Toggle_YES,
 					Name:                    "builder",
 					SwarmingHost:            "host",
-					CustomMetricDefinitions: []*pb.CustomMetricDefinition{cm1, cm2, cm3},
+					CustomMetricDefinitions: []*pb.CustomMetricDefinition{cm1, cm2, cm3, cm4},
 				},
 			}), ShouldBeNil)
 			reqs := []*pb.ScheduleBuildRequest{
@@ -6627,19 +6636,14 @@ func TestScheduleBuild(t *testing.T) {
 			})
 			bld := &model.Build{ID: 9021868963221667745}
 			So(datastore.Get(ctx, bld), ShouldBeNil)
-			So(len(bld.CustomMetrics), ShouldEqual, 2)
+			So(len(bld.CustomMetrics), ShouldEqual, 3)
 			So(bld.CustomMetrics[0].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED)
 			So(bld.CustomMetrics[0].Metric, ShouldResembleProto, cm1)
 			So(bld.CustomMetrics[1].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED)
 			So(bld.CustomMetrics[1].Metric, ShouldResembleProto, cm2)
-
-			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), ShouldEqual, 1)
-			ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
-			So(store.Get(ctx, metrics.V2.BuildCountCreated, time.Time{}, []any{"None"}), ShouldEqual, 1)
-
-			res, err := metrics.GetCustomMetricsData(ctx, pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED, cm1.Name, time.Time{}, []any{"Linux"})
-			So(err, ShouldBeNil)
-			So(res, ShouldEqual, 1)
+			So(bld.CustomMetrics[2].Base, ShouldEqual, pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT)
+			So(bld.CustomMetrics[2].Metric, ShouldResembleProto, cm4)
+			So(bld.CustomBuilderMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
 		})
 
 		Convey("many", func() {

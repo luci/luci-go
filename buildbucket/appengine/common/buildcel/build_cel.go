@@ -221,11 +221,11 @@ func (bbc *Bool) Eval(b *pb.Build) (bool, error) {
 func BoolEval(b *pb.Build, predicates []string) (bool, error) {
 	bbc, err := NewBool(predicates)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 	matched, err := bbc.Eval(b)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 	return matched, nil
 }
@@ -352,11 +352,11 @@ func stringStatus(intVal ref.Val) ref.Val {
 func StringMapEval(b *pb.Build, fields map[string]string) (map[string]string, error) {
 	smbc, err := NewStringMap(fields)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	res, err := smbc.Eval(b)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	return res, nil
 }

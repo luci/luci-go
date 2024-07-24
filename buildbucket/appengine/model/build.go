@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/common/buildcel"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -200,7 +201,14 @@ type Build struct {
 
 	// The list of custom metrics that the build may report to.
 	// Copied from the builder config when the build is created.
-	CustomMetrics []CustomMetric `gae:"custome_metrics"`
+	CustomMetrics []CustomMetric `gae:"custome_metrics,noindex"`
+
+	// Names of the custom builder metrics this build could report to.
+	// We report builder metrics by querying datastore, so doing predicate checks
+	// on query results is infeasible or expensive. Instead we should do the
+	// predicate check when an event happens then saves the metric name if the
+	// check passes. So later we could run a query for that specific custom metric.
+	CustomBuilderMetrics []string `gae:"custom_builder_metrics"`
 }
 
 // Realm returns this build's auth realm, or an empty string if not opted into the
@@ -525,6 +533,76 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 		}
 		if err = m.Trim(p); err != nil {
 			return errors.Annotate(err, "error trimming fields for build %q", p.Id).Err()
+		}
+	}
+	return nil
+}
+
+func getBuilderMetricBasesByStatus(status pb.Status) map[pb.CustomMetricBase]struct{} {
+	switch {
+	case status == pb.Status_SCHEDULED:
+		return map[pb.CustomMetricBase]struct{}{
+			pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT:             {},
+			pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED: {},
+		}
+	case status == pb.Status_STARTED:
+		return map[pb.CustomMetricBase]struct{}{
+			pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT: {},
+		}
+	case protoutil.IsEnded(status):
+		return map[pb.CustomMetricBase]struct{}{
+			pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT: {},
+		}
+	default:
+		panic(fmt.Sprintf("invalid build status %s", status))
+	}
+}
+
+// EvaluateBuildForCustomBuilderMetrics finds the custom builder metrics from
+// bld.CustomMetrics and evaluates the build against those metrics' predicates.
+// Update bld.CustomBuilderMetrics to add names of the matching metrics.
+func EvaluateBuildForCustomBuilderMetrics(ctx context.Context, bld *Build, loadDetails bool) error {
+	toEvaluate := make([]*pb.CustomMetricDefinition, 0, len(bld.CustomMetrics))
+	bases := getBuilderMetricBasesByStatus(bld.Proto.Status)
+	for _, cm := range bld.CustomMetrics {
+		if _, ok := bases[cm.Base]; !ok {
+			continue
+		}
+		toEvaluate = append(toEvaluate, cm.Metric)
+	}
+	if len(toEvaluate) == 0 {
+		return nil
+	}
+
+	// Load build details if needed.
+	bp := bld.Proto
+	if loadDetails {
+		// Use a copy of bld.Proto here since we need to load details to it.
+		bp = bld.ToSimpleBuildProto(ctx)
+		m, err := NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
+		if err != nil {
+			return err
+		}
+		err = LoadBuildDetails(ctx, m, func(b *pb.Build) error { return nil }, bp)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Evaluate the build.
+	// Clear bld.CustomBuilderMetrics to (re)evaluate all possible builder metrics.
+	// Practically speaking we only need to re-evaluate builder count metrics at
+	// build updates, since the other builder metrics are only evaluated once
+	// at either build creation or completion. And re-evaluating at build updates
+	// is cheap since we don't need to load details of the build from datastore.
+	bld.CustomBuilderMetrics = nil
+	for _, cm := range toEvaluate {
+		matched, err := buildcel.BoolEval(bp, cm.Predicates)
+		if err != nil {
+			return err
+		}
+		if matched {
+			bld.CustomBuilderMetrics = append(bld.CustomBuilderMetrics, cm.Name)
 		}
 	}
 	return nil

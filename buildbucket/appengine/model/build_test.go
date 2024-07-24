@@ -622,5 +622,158 @@ func TestBuild(t *testing.T) {
 			So(parts, ShouldHaveLength, 4)
 			So(parts[3], ShouldEqual, fmt.Sprint(t1.Add(b.BackendSyncInterval).Truncate(time.Minute).Unix()))
 		})
+
+		Convey("EvaluateBuildForCustomBuilderMetrics", func() {
+			Convey("nothing to check", func() {
+				blds := []*Build{
+					// no custom metrics.
+					{
+						ID: 1,
+						Proto: &pb.Build{
+							Status: pb.Status_SCHEDULED,
+						},
+					},
+					// no custom metrics of requested base.
+					{
+						ID: 2,
+						Proto: &pb.Build{
+							Status: pb.Status_SCHEDULED,
+						},
+						CustomMetrics: []CustomMetric{
+							{
+								Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED,
+								Metric: &pb.CustomMetricDefinition{
+									Name:       "custom_metric_created",
+									Predicates: []string{`build.tags.get_value("os")!=""`},
+									ExtraFields: map[string]string{
+										"os": `build.tags.get_value("os")`,
+									},
+								},
+							},
+						},
+					},
+					// requested metric already added to the build.
+					{
+						ID: 3,
+						Proto: &pb.Build{
+							Status: pb.Status_SCHEDULED,
+						},
+						CustomMetrics: []CustomMetric{
+							{
+								Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+								Metric: &pb.CustomMetricDefinition{
+									Name:       "custom_metric_count",
+									Predicates: []string{`build.tags.get_value("os")!=""`},
+								},
+							},
+						},
+						CustomBuilderMetrics: []string{"custom_metric_count"},
+					},
+				}
+				for _, bld := range blds {
+					err := EvaluateBuildForCustomBuilderMetrics(ctx, bld, false)
+					So(err, ShouldBeNil)
+				}
+			})
+
+			Convey("failed", func() {
+				bld := &Build{
+					ID: 3,
+					Proto: &pb.Build{
+						Status: pb.Status_SCHEDULED,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "os",
+								Value: "mac",
+							},
+						},
+					},
+					CustomMetrics: []CustomMetric{
+						{
+							Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+							Metric: &pb.CustomMetricDefinition{
+								Name: "custom_metric_count",
+							},
+						},
+					},
+				}
+				err := EvaluateBuildForCustomBuilderMetrics(ctx, bld, false)
+				So(err, ShouldNotBeNil)
+			})
+
+			Convey("re-evaluate", func() {
+				b := &Build{
+					ID: 1,
+					Proto: &pb.Build{
+						Id:     1,
+						Status: pb.Status_STARTED,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "os",
+								Value: "mac",
+							},
+						},
+					},
+					CustomMetrics: []CustomMetric{
+						{
+							Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+							Metric: &pb.CustomMetricDefinition{
+								Name:       "custom_metric_count1",
+								Predicates: []string{`build.tags.get_value("os")==""`},
+							},
+						},
+						{
+							Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+							Metric: &pb.CustomMetricDefinition{
+								Name:       "custom_metric_count2",
+								Predicates: []string{`build.tags.get_value("os")!=""`},
+							},
+						},
+					},
+					CustomBuilderMetrics: []string{"custom_metric_count1"},
+				}
+				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, false)
+				So(err, ShouldBeNil)
+				So(b.CustomBuilderMetrics, ShouldResemble, []string{"custom_metric_count2"})
+			})
+
+			Convey("loadDetails", func() {
+				b := &Build{
+					ID: 1,
+					Proto: &pb.Build{
+						Id:     1,
+						Status: pb.Status_SCHEDULED,
+					},
+					CustomMetrics: []CustomMetric{
+						{
+							Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+							Metric: &pb.CustomMetricDefinition{
+								Name:       "custom_metric_count",
+								Predicates: []string{`has(build.input.properties.input)`},
+							},
+						},
+					},
+				}
+				key := datastore.KeyForObj(ctx, b)
+				So(datastore.Put(ctx, &BuildInputProperties{
+					Build: key,
+					Proto: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"input": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "input value",
+								},
+							},
+						},
+					},
+				}), ShouldBeNil)
+				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, false)
+				So(err, ShouldBeNil)
+				So(len(b.CustomBuilderMetrics), ShouldEqual, 0)
+				err = EvaluateBuildForCustomBuilderMetrics(ctx, b, true)
+				So(err, ShouldBeNil)
+				So(b.CustomBuilderMetrics, ShouldResemble, []string{"custom_metric_count"})
+			})
+		})
 	})
 }
