@@ -17,17 +17,17 @@ package protoutil
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 )
 
 func TestValidateConsolePredicate(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateConsolePredicate`, t, func() {
-		Convey(`valid`, func() {
+	ftt.Run(`TestValidateConsolePredicate`, t, func(t *ftt.Test) {
+		t.Run(`valid`, func(t *ftt.Test) {
 			err := ValidateConsolePredicate(&milopb.ConsolePredicate{
 				Project: "project",
 				Builder: &buildbucketpb.BuilderID{
@@ -36,17 +36,17 @@ func TestValidateConsolePredicate(t *testing.T) {
 					Builder: "builder",
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`valid without builder`, func() {
+		t.Run(`valid without builder`, func(t *ftt.Test) {
 			err := ValidateConsolePredicate(&milopb.ConsolePredicate{
 				Project: "project",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`partial builder`, func() {
+		t.Run(`partial builder`, func(t *ftt.Test) {
 			err := ValidateConsolePredicate(&milopb.ConsolePredicate{
 				Project: "project",
 				Builder: &buildbucketpb.BuilderID{
@@ -54,8 +54,8 @@ func TestValidateConsolePredicate(t *testing.T) {
 					Builder: "builder",
 				},
 			})
-			So(err, ShouldNotBeNil)
-			So(err, ShouldErrLike, "builder: project must match")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err, should.ErrLike("builder: project must match"))
 		})
 
 	})

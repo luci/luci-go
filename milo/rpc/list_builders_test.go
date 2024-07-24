@@ -19,11 +19,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/internal/projectconfig"
@@ -37,7 +39,7 @@ import (
 
 func TestListBuilders(t *testing.T) {
 	t.Parallel()
-	Convey(`TestListBuilders`, t, func() {
+	ftt.Run(`TestListBuilders`, t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = testutils.SetUpTestGlobalCache(ctx)
@@ -96,7 +98,7 @@ func TestListBuilders(t *testing.T) {
 				ID: "other_project",
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = datastore.Put(ctx, []*projectconfig.Console{
 			{
@@ -119,7 +121,7 @@ func TestListBuilders(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Mock the first buildbucket ListBuilders response.
 		expectedReq := &buildbucketpb.ListBuildersRequest{
@@ -184,14 +186,14 @@ func TestListBuilders(t *testing.T) {
 				},
 			}, nil)
 
-		Convey(`list all builders E2E`, func() {
+		t.Run(`list all builders E2E`, func(t *ftt.Test) {
 			// Test the first page.
 			// It should return builders from the first page of the buildbucket.ListBuilders Response.
 			res, err := srv.ListBuilders(ctx, &milopb.ListBuildersRequest{
 				PageSize: 3,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "other_project",
@@ -213,8 +215,8 @@ func TestListBuilders(t *testing.T) {
 						Builder: "fake.builder 2",
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldNotBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 			// Test the second page.
 			// It should return builders from the second page of the buildbucket.ListBuilders Response.
@@ -224,8 +226,8 @@ func TestListBuilders(t *testing.T) {
 				PageSize:  3,
 				PageToken: res.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "this_project",
@@ -233,11 +235,11 @@ func TestListBuilders(t *testing.T) {
 						Builder: "fake.builder 1",
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 		})
 
-		Convey(`list project builders E2E`, func() {
+		t.Run(`list project builders E2E`, func(t *ftt.Test) {
 			// Test the first page.
 			// It should return builders from the first page of the buildbucket.ListBuilders Response.
 			// With builders from other_project filtered out.
@@ -245,8 +247,8 @@ func TestListBuilders(t *testing.T) {
 				Project:  "this_project",
 				PageSize: 2,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "this_project",
@@ -261,8 +263,8 @@ func TestListBuilders(t *testing.T) {
 						Builder: "fake.builder 2",
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldNotBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 			// Test the second page.
 			// It should return builders from the second page of the buildbucket.ListBuilders Response.
@@ -272,8 +274,8 @@ func TestListBuilders(t *testing.T) {
 				PageSize:  2,
 				PageToken: res.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "this_project",
@@ -288,8 +290,8 @@ func TestListBuilders(t *testing.T) {
 						Builder: "fake.builder 1",
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldNotBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 			// Test the third page.
 			// It should return the remaining accessible external builders.
@@ -298,8 +300,8 @@ func TestListBuilders(t *testing.T) {
 				PageSize:  2,
 				PageToken: res.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "other_project",
@@ -307,11 +309,11 @@ func TestListBuilders(t *testing.T) {
 						Builder: "fake.builder 2",
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 		})
 
-		Convey(`list group builders E2E`, func() {
+		t.Run(`list group builders E2E`, func(t *ftt.Test) {
 			// Test the first page.
 			// It should return accessible internal builders first.
 			res, err := srv.ListBuilders(ctx, &milopb.ListBuildersRequest{
@@ -319,8 +321,8 @@ func TestListBuilders(t *testing.T) {
 				Group:    "console1",
 				PageSize: 2,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "this_project",
@@ -335,8 +337,8 @@ func TestListBuilders(t *testing.T) {
 						Builder: "fake.builder 1",
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldNotBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 			// Test the second page.
 			// It should return the remaining accessible external builders.
@@ -346,8 +348,8 @@ func TestListBuilders(t *testing.T) {
 				PageSize:  2,
 				PageToken: res.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "other_project",
@@ -355,11 +357,11 @@ func TestListBuilders(t *testing.T) {
 						Builder: "fake.builder 2",
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 		})
 
-		Convey(`reject users without access to the project`, func() {
+		t.Run(`reject users without access to the project`, func(t *ftt.Test) {
 			c := auth.WithState(ctx, &authtest.FakeState{Identity: "user2"})
 
 			_, err := srv.ListBuilders(c, &milopb.ListBuildersRequest{
@@ -367,7 +369,7 @@ func TestListBuilders(t *testing.T) {
 				Group:    "console1",
 				PageSize: 2,
 			})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }

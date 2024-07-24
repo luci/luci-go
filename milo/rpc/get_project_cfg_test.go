@@ -17,10 +17,11 @@ package rpc
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/internal/projectconfig"
@@ -34,7 +35,7 @@ import (
 
 func TestGetProjectCfg(t *testing.T) {
 	t.Parallel()
-	Convey(`TestGetProjectCfg`, t, func() {
+	ftt.Run(`TestGetProjectCfg`, t, func(t *ftt.Test) {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		datastore.GetTestable(c).Consistent(true)
 		srv := &MiloInternalService{}
@@ -51,45 +52,45 @@ func TestGetProjectCfg(t *testing.T) {
 			},
 		}
 		mcbytes, err := proto.Marshal(mc)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = datastore.Put(c, &projectconfig.Project{
 			ID:             "fake_project",
 			ACL:            projectconfig.ACL{Identities: []identity.Identity{"user_with_access"}},
 			LogoURL:        "https://logo.com",
 			MetadataConfig: mcbytes,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`reject users with no access`, func() {
+		t.Run(`reject users with no access`, func(t *ftt.Test) {
 			c = auth.WithState(c, &authtest.FakeState{Identity: "user_without_access"})
 			req := &milopb.GetProjectCfgRequest{
 				Project: "fake_project",
 			}
 
 			_, err := srv.GetProjectCfg(c, req)
-			So(err, ShouldNotBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey(`accept users access`, func() {
+		t.Run(`accept users access`, func(t *ftt.Test) {
 			c = auth.WithState(c, &authtest.FakeState{Identity: "user_with_access"})
 			req := &milopb.GetProjectCfgRequest{
 				Project: "fake_project",
 			}
 
 			cfg, err := srv.GetProjectCfg(c, req)
-			So(err, ShouldBeNil)
-			So(cfg.GetLogoUrl(), ShouldEqual, "https://logo.com")
-			So(cfg.MetadataConfig, ShouldResembleProto, mc)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.GetLogoUrl(), should.Equal("https://logo.com"))
+			assert.Loosely(t, cfg.MetadataConfig, should.Resemble(mc))
 		})
 
-		Convey(`reject invalid request`, func() {
+		t.Run(`reject invalid request`, func(t *ftt.Test) {
 			c = auth.WithState(c, &authtest.FakeState{Identity: "user_with_access"})
 			req := &milopb.GetProjectCfgRequest{}
 
 			_, err := srv.GetProjectCfg(c, req)
-			So(err, ShouldNotBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
 		})
 	})
 }

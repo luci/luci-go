@@ -21,14 +21,15 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type TestStruct struct {
@@ -38,146 +39,146 @@ type TestStruct struct {
 func TestTagGRPC(t *testing.T) {
 	t.Parallel()
 
-	Convey("GRPC tagging works", t, func() {
+	ftt.Run("GRPC tagging works", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:user@example.com"})
 		cAnon := auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
-		Convey("For not found errors", func() {
+		t.Run("For not found errors", func(t *ftt.Test) {
 			errGRPCNotFound := status.Errorf(codes.NotFound, "not found")
-			So(grpcutil.Code(TagGRPC(cAnon, errGRPCNotFound)), ShouldEqual, codes.Unauthenticated)
-			So(grpcutil.Code(TagGRPC(cUser, errGRPCNotFound)), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(TagGRPC(cAnon, errGRPCNotFound)), should.Equal(codes.Unauthenticated))
+			assert.Loosely(t, grpcutil.Code(TagGRPC(cUser, errGRPCNotFound)), should.Equal(codes.NotFound))
 		})
 
-		Convey("For permission denied errors", func() {
+		t.Run("For permission denied errors", func(t *ftt.Test) {
 			errGRPCPermissionDenied := status.Errorf(codes.PermissionDenied, "permission denied")
-			So(grpcutil.Code(TagGRPC(cAnon, errGRPCPermissionDenied)), ShouldEqual, codes.Unauthenticated)
-			So(grpcutil.Code(TagGRPC(cUser, errGRPCPermissionDenied)), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(TagGRPC(cAnon, errGRPCPermissionDenied)), should.Equal(codes.Unauthenticated))
+			assert.Loosely(t, grpcutil.Code(TagGRPC(cUser, errGRPCPermissionDenied)), should.Equal(codes.NotFound))
 		})
 
-		Convey("For invalid argument errors", func() {
+		t.Run("For invalid argument errors", func(t *ftt.Test) {
 			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
-			So(grpcutil.Code(TagGRPC(cAnon, errGRPCInvalidArgument)), ShouldEqual, codes.InvalidArgument)
-			So(grpcutil.Code(TagGRPC(cUser, errGRPCInvalidArgument)), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, grpcutil.Code(TagGRPC(cAnon, errGRPCInvalidArgument)), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, grpcutil.Code(TagGRPC(cUser, errGRPCInvalidArgument)), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("For invalid argument multi-errors", func() {
+		t.Run("For invalid argument multi-errors", func(t *ftt.Test) {
 			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
 			errMulti := errors.NewMultiError(errGRPCInvalidArgument)
-			So(grpcutil.Code(TagGRPC(cAnon, errMulti)), ShouldEqual, codes.InvalidArgument)
-			So(grpcutil.Code(TagGRPC(cUser, errMulti)), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, grpcutil.Code(TagGRPC(cAnon, errMulti)), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, grpcutil.Code(TagGRPC(cUser, errMulti)), should.Equal(codes.InvalidArgument))
 		})
 	})
 
-	Convey("ParseLegacyBuilderID", t, func() {
-		Convey("For valid ID", func() {
+	ftt.Run("ParseLegacyBuilderID", t, func(t *ftt.Test) {
+		t.Run("For valid ID", func(t *ftt.Test) {
 			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test bucket/test builder")
-			So(err, ShouldBeNil)
-			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test builder",
-			})
+			}))
 		})
 
-		Convey("Allow '.' in builder ID", func() {
+		t.Run("Allow '.' in builder ID", func(t *ftt.Test) {
 			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test bucket/test.builder")
-			So(err, ShouldBeNil)
-			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test.builder",
-			})
+			}))
 		})
 
-		Convey("Allow '.' in bucket ID", func() {
+		t.Run("Allow '.' in bucket ID", func(t *ftt.Test) {
 			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test.bucket/test builder")
-			So(err, ShouldBeNil)
-			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test.bucket",
 				Builder: "test builder",
-			})
+			}))
 		})
 
-		Convey("For invalid ID", func() {
+		t.Run("For invalid ID", func(t *ftt.Test) {
 			builderID, err := ParseLegacyBuilderID("buildbucket/123456")
-			So(err, ShouldEqual, ErrInvalidLegacyBuilderID)
-			So(builderID, ShouldBeNil)
+			assert.Loosely(t, err, should.Equal(ErrInvalidLegacyBuilderID))
+			assert.Loosely(t, builderID, should.BeNil)
 		})
 	})
 
-	Convey("ParseBuilderID", t, func() {
-		Convey("For valid ID", func() {
+	ftt.Run("ParseBuilderID", t, func(t *ftt.Test) {
+		t.Run("For valid ID", func(t *ftt.Test) {
 			builderID, err := ParseBuilderID("test project/test bucket/test builder")
-			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test builder",
-			})
-			So(err, ShouldBeNil)
+			}))
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("For invalid ID", func() {
+		t.Run("For invalid ID", func(t *ftt.Test) {
 			builderID, err := ParseBuilderID("test project/123456")
-			So(builderID, ShouldBeNil)
-			So(err, ShouldEqual, ErrInvalidBuilderID)
+			assert.Loosely(t, builderID, should.BeNil)
+			assert.Loosely(t, err, should.Equal(ErrInvalidBuilderID))
 		})
 	})
 
-	Convey("ParseBuildbucketBuildID", t, func() {
-		Convey("For valid build ID", func() {
+	ftt.Run("ParseBuildbucketBuildID", t, func(t *ftt.Test) {
+		t.Run("For valid build ID", func(t *ftt.Test) {
 			bid, err := ParseBuildbucketBuildID("buildbucket/123456")
-			So(err, ShouldBeNil)
-			So(bid, ShouldEqual, 123456)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bid, should.Equal(123456))
 		})
 
-		Convey("For invalid build ID", func() {
+		t.Run("For invalid build ID", func(t *ftt.Test) {
 			bid, err := ParseBuildbucketBuildID("notbuildbucket/123456")
-			So(err, ShouldEqual, ErrInvalidLegacyBuildID)
-			So(bid, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(ErrInvalidLegacyBuildID))
+			assert.Loosely(t, bid, should.BeZero)
 		})
 	})
 
-	Convey("ParseLegacyBuildbucketBuildID", t, func() {
-		Convey("For valid build ID", func() {
+	ftt.Run("ParseLegacyBuildbucketBuildID", t, func(t *ftt.Test) {
+		t.Run("For valid build ID", func(t *ftt.Test) {
 			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test bucket/test builder/123456")
-			So(err, ShouldBeNil)
-			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test builder",
-			})
-			So(buildNum, ShouldEqual, 123456)
+			}))
+			assert.Loosely(t, buildNum, should.Equal(123456))
 		})
 
-		Convey("Allow '.' in builder ID", func() {
+		t.Run("Allow '.' in builder ID", func(t *ftt.Test) {
 			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test bucket/test.builder/123456")
-			So(err, ShouldBeNil)
-			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test.builder",
-			})
-			So(buildNum, ShouldEqual, 123456)
+			}))
+			assert.Loosely(t, buildNum, should.Equal(123456))
 		})
 
-		Convey("Allow '.' in bucket ID", func() {
+		t.Run("Allow '.' in bucket ID", func(t *ftt.Test) {
 			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test.bucket/test builder/123456")
-			So(err, ShouldBeNil)
-			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test.bucket",
 				Builder: "test builder",
-			})
-			So(buildNum, ShouldEqual, 123456)
+			}))
+			assert.Loosely(t, buildNum, should.Equal(123456))
 		})
 
-		Convey("For invalid build ID", func() {
+		t.Run("For invalid build ID", func(t *ftt.Test) {
 			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/123456")
-			So(err, ShouldEqual, ErrInvalidLegacyBuildID)
-			So(builderID, ShouldBeNil)
-			So(buildNum, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(ErrInvalidLegacyBuildID))
+			assert.Loosely(t, builderID, should.BeNil)
+			assert.Loosely(t, buildNum, should.BeZero)
 		})
 	})
 }

@@ -20,9 +20,12 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/milo/internal/testutils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -33,7 +36,7 @@ import (
 func TestBatchCheckPermissions(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestBatchCheckPermissions`, t, func() {
+	ftt.Run(`TestBatchCheckPermissions`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = testutils.SetUpTestGlobalCache(ctx)
 		ctx = auth.WithState(
@@ -49,39 +52,39 @@ func TestBatchCheckPermissions(t *testing.T) {
 
 		srv := &MiloInternalService{}
 
-		Convey(`e2e`, func() {
+		t.Run(`e2e`, func(t *ftt.Test) {
 			res, err := srv.BatchCheckPermissions(ctx, &milopb.BatchCheckPermissionsRequest{
 				Realm:       "testproject:testrealm",
 				Permissions: []string{bbperms.BuildsAdd.Name(), bbperms.BuildsList.Name(), bbperms.BuildsCancel.Name()},
 			})
 
-			So(err, ShouldBeNil)
-			So(res.Results, ShouldResemble, map[string]bool{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Results, should.Resemble(map[string]bool{
 				bbperms.BuildsAdd.Name():    true,
 				bbperms.BuildsList.Name():   true,
 				bbperms.BuildsCancel.Name(): false,
-			})
+			}))
 		})
 
-		Convey(`invalid request`, func() {
+		t.Run(`invalid request`, func(t *ftt.Test) {
 			res, err := srv.BatchCheckPermissions(ctx, &milopb.BatchCheckPermissionsRequest{
 				Permissions: []string{bbperms.BuildsAdd.Name(), bbperms.BuildsList.Name(), bbperms.BuildsCancel.Name()},
 			})
 
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "realm", "must be specified")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("must be specified"))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey(`invalid permission`, func() {
+		t.Run(`invalid permission`, func(t *ftt.Test) {
 			res, err := srv.BatchCheckPermissions(ctx, &milopb.BatchCheckPermissionsRequest{
 				Realm:       "testproject:testrealm",
 				Permissions: []string{bbperms.BuildsAdd.Name(), "testservice.testsubject.testaction"},
 			})
 
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "testservice.testsubject.testaction", "permission not registered")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("permission not registered"))
+			assert.Loosely(t, res, should.BeNil)
 		})
 	})
 }
@@ -89,35 +92,35 @@ func TestBatchCheckPermissions(t *testing.T) {
 func TestValidateBatchCheckPermissionsRequest(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestValidateBatchCheckPermissionsRequest`, t, func() {
+	ftt.Run(`TestValidateBatchCheckPermissionsRequest`, t, func(t *ftt.Test) {
 		req := &milopb.BatchCheckPermissionsRequest{
 			Realm:       "testproject:testrealm",
 			Permissions: []string{bbperms.BuildsAdd.Name(), bbperms.BuildsList.Name()},
 		}
 
-		Convey(`valid`, func() {
+		t.Run(`valid`, func(t *ftt.Test) {
 			err := validateBatchCheckPermissionsRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`no realm`, func() {
+		t.Run(`no realm`, func(t *ftt.Test) {
 			req.Realm = ""
 			err := validateBatchCheckPermissionsRequest(req)
-			So(err, ShouldErrLike, "realm:", "must be specified")
+			assert.Loosely(t, err, should.ErrLike("must be specified"))
 		})
 
-		Convey(`invalid realm`, func() {
+		t.Run(`invalid realm`, func(t *ftt.Test) {
 			req.Realm = "testinvalidrealm"
 			err := validateBatchCheckPermissionsRequest(req)
-			So(err, ShouldErrLike, "realm:", "testinvalidrealm", "should be <project>:<realm>")
+			assert.Loosely(t, err, should.ErrLike("should be <project>:<realm>"))
 		})
 
-		Convey(`too many permissions`, func() {
+		t.Run(`too many permissions`, func(t *ftt.Test) {
 			perms := strings.Split(strings.Repeat(bbperms.BuildsAdd.Name()+" ", maxPermissions+1), " ")
 			// Trim the last one because it's an empty string.
 			req.Permissions = perms[0 : maxPermissions+1]
 			err := validateBatchCheckPermissionsRequest(req)
-			So(err, ShouldErrLike, "permissions:", fmt.Sprintf("at most %d", maxPermissions))
+			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("at most %d", maxPermissions)))
 		})
 	})
 }
