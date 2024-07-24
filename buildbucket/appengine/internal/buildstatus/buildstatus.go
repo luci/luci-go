@@ -156,6 +156,16 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	protoutil.SetStatus(u.UpdateTime, u.Build.Proto, newBuildStatus.Status)
 	u.Build.Proto.StatusDetails = newBuildStatus.Details
 
+	// Update custom builder metrics.
+	// Currently only the consecutive failure count metrics need to be evaluated
+	// at build completion, so skip this for the successful ones.
+	if protoutil.IsEnded(newBuildStatus.Status) && newBuildStatus.Status != pb.Status_SUCCESS {
+		err := model.EvaluateBuildForCustomBuilderMetrics(ctx, u.Build, true)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Update BuildStatus.
 	entities, err := common.GetBuildEntities(ctx, u.Build.ID, model.BuildStatusKind)
 	if err != nil {

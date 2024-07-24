@@ -165,6 +165,22 @@ func TestUpdate(t *testing.T) {
 					Status: pb.Status_SCHEDULED,
 				},
 				Status: pb.Status_SCHEDULED,
+				CustomMetrics: []model.CustomMetric{
+					{
+						Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT,
+						Metric: &pb.CustomMetricDefinition{
+							Name:       "chrome/infra/custom/builds/failure_count_1",
+							Predicates: []string{`build.tags.get_value("os")!=""`},
+						},
+					},
+					{
+						Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT,
+						Metric: &pb.CustomMetricDefinition{
+							Name:       "chrome/infra/custom/builds/failure_count_2",
+							Predicates: []string{`build.tags.get_value("os")==""`},
+						},
+					},
+				},
 			}
 			bk := datastore.KeyForObj(ctx, b)
 			bs := &model.BuildStatus{
@@ -241,6 +257,7 @@ func TestUpdate(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 						So(updatedStatus, ShouldEqual, pb.Status_INFRA_FAILURE)
+						So(b.CustomBuilderMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/failure_count_2"})
 					})
 					Convey("output status not ended when task status success with SucceedBuildIfTaskSucceeded true", func() {
 						b.Proto.Output.Status = pb.Status_STARTED
