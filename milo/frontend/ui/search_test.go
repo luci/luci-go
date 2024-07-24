@@ -15,16 +15,17 @@
 package ui
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSearchSorting(t *testing.T) {
 	t.Parallel()
 
-	Convey("Sort search page by bucket & builder", t, func() {
-		Convey("Sort CIService by builder group", func() {
+	ftt.Run("Sort search page by bucket & builder", t, func(t *ftt.Test) {
+		t.Run("Sort CIService by builder group", func(t *ftt.Test) {
 			c := CIService{
 				BuilderGroups: []BuilderGroup{
 					{Name: "b"},
@@ -34,17 +35,17 @@ func TestSearchSorting(t *testing.T) {
 				},
 			}
 			c.Sort()
-			So(c, ShouldResemble, CIService{
+			assert.Loosely(t, c, should.Resemble(CIService{
 				BuilderGroups: []BuilderGroup{
 					{Name: "a"},
 					{Name: "b"},
 					{Name: "c"},
 					{Name: "d"},
 				},
-			})
+			}))
 		})
 
-		Convey("Sort BuilderGroup by builder name", func() {
+		t.Run("Sort BuilderGroup by builder name", func(t *ftt.Test) {
 			link := func(n string) Link {
 				return *NewLink(n, "https://example.com"+n, n)
 			}
@@ -55,12 +56,12 @@ func TestSearchSorting(t *testing.T) {
 				link("ubuntu-16.04"),
 			}}
 			b.Sort()
-			So(b, ShouldResemble, BuilderGroup{Builders: []Link{
+			assert.Loosely(t, b, should.Resemble(BuilderGroup{Builders: []Link{
 				link("mac"),
 				link("Ubuntu-14.04"),
 				link("ubuntu-16.04"),
 				link("win"),
-			}})
+			}}))
 		})
 	})
 }

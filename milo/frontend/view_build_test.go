@@ -18,50 +18,51 @@ import (
 	"testing"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPrepareGetBuildRequest(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestPrepareGetBuildRequest`, t, func() {
+	ftt.Run(`TestPrepareGetBuildRequest`, t, func(t *ftt.Test) {
 		builderID := &buildbucketpb.BuilderID{
 			Project: "fake-project",
 			Bucket:  "fake-bucket",
 			Builder: "fake-builder",
 		}
 
-		Convey("Should parse build number correctly", func() {
+		t.Run("Should parse build number correctly", func(t *ftt.Test) {
 			req, err := prepareGetBuildRequest(builderID, "123")
-			So(err, ShouldBeNil)
-			So(req.BuildNumber, ShouldEqual, 123)
-			So(req.Builder, ShouldEqual, builderID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, req.BuildNumber, should.Equal(123))
+			assert.Loosely(t, req.Builder, should.Equal(builderID))
 		})
 
-		Convey("Should reject large build number", func() {
+		t.Run("Should reject large build number", func(t *ftt.Test) {
 			req, err := prepareGetBuildRequest(builderID, "9223372036854775807")
-			So(err, ShouldNotBeNil)
-			So(req, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, req, should.BeNil)
 		})
 
-		Convey("Should reject malformated build number", func() {
+		t.Run("Should reject malformated build number", func(t *ftt.Test) {
 			req, err := prepareGetBuildRequest(builderID, "abc")
-			So(err, ShouldNotBeNil)
-			So(req, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, req, should.BeNil)
 		})
 
-		Convey("Should parse build ID correctly", func() {
+		t.Run("Should parse build ID correctly", func(t *ftt.Test) {
 			req, err := prepareGetBuildRequest(builderID, "b123")
-			So(err, ShouldBeNil)
-			So(req.Id, ShouldEqual, 123)
-			So(req.Builder, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, req.Id, should.Equal(123))
+			assert.Loosely(t, req.Builder, should.BeNil)
 		})
 
-		Convey("Should reject large build ID", func() {
+		t.Run("Should reject large build ID", func(t *ftt.Test) {
 			req, err := prepareGetBuildRequest(builderID, "b9223372036854775809")
-			So(err, ShouldNotBeNil)
-			So(req, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, req, should.BeNil)
 		})
 	})
 }

@@ -23,8 +23,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -34,7 +36,7 @@ import (
 
 func TestRawArtifactHandler(t *testing.T) {
 	t.Parallel()
-	Convey(`TestRawArtifactHandler`, t, func() {
+	ftt.Run(`TestRawArtifactHandler`, t, func(t *ftt.Test) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		resultdbMock := resultpb.NewMockResultDBClient(ctrl)
@@ -47,8 +49,8 @@ func TestRawArtifactHandler(t *testing.T) {
 				}, nil
 			},
 			GetResultDBClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (resultpb.ResultDBClient, error) {
-				So(host, ShouldEqual, "test.result.api.cr.dev")
-				So(as, ShouldEqual, auth.AsSessionUser)
+				assert.Loosely(t, host, should.Equal("test.result.api.cr.dev"))
+				assert.Loosely(t, as, should.Equal(auth.AsSessionUser))
 				return resultdbMock, nil
 			},
 		}
@@ -59,7 +61,7 @@ func TestRawArtifactHandler(t *testing.T) {
 
 		handler := srv.buildRawArtifactHandler("/prefix/")
 
-		Convey(`without encoded character`, func() {
+		t.Run(`without encoded character`, func(t *ftt.Test) {
 			resultdbMock.
 				EXPECT().
 				GetArtifact(
@@ -73,7 +75,7 @@ func TestRawArtifactHandler(t *testing.T) {
 				}, nil)
 
 			url, err := url.Parse("/prefix/test/artifact/name?n=50000")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			req := &http.Request{URL: url}
 			w := httptest.NewRecorder()
@@ -85,14 +87,14 @@ func TestRawArtifactHandler(t *testing.T) {
 			}
 
 			err = handler(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			res := w.Result()
-			So(res.StatusCode, ShouldEqual, http.StatusFound)
-			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url?n=50000")
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusFound))
+			assert.Loosely(t, res.Header.Get("location"), should.Equal("https://test.com/artifact/fetch/url?n=50000"))
 		})
 
-		Convey(`with encoded character`, func() {
+		t.Run(`with encoded character`, func(t *ftt.Test) {
 			resultdbMock.
 				EXPECT().
 				GetArtifact(
@@ -106,8 +108,8 @@ func TestRawArtifactHandler(t *testing.T) {
 				}, nil)
 
 			url, err := url.Parse("/prefix/test/artifact%2fname?n=50000")
-			So(url.RawPath, ShouldNotBeEmpty)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, url.RawPath, should.NotBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
 
 			req := &http.Request{URL: url}
 			ctx := &router.Context{
@@ -116,14 +118,14 @@ func TestRawArtifactHandler(t *testing.T) {
 			}
 
 			err = handler(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			res := w.Result()
-			So(res.StatusCode, ShouldEqual, http.StatusFound)
-			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url?n=50000")
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusFound))
+			assert.Loosely(t, res.Header.Get("location"), should.Equal("https://test.com/artifact/fetch/url?n=50000"))
 		})
 
-		Convey(`with encoded character but the URL.RawPath is not set`, func() {
+		t.Run(`with encoded character but the URL.RawPath is not set`, func(t *ftt.Test) {
 			resultdbMock.
 				EXPECT().
 				GetArtifact(
@@ -137,8 +139,8 @@ func TestRawArtifactHandler(t *testing.T) {
 				}, nil)
 
 			url, err := url.Parse("/prefix/test/artifact%20name?n=50000")
-			So(err, ShouldBeNil)
-			So(url.RawPath, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url.RawPath, should.BeEmpty)
 
 			req := &http.Request{URL: url}
 			ctx := &router.Context{
@@ -147,14 +149,14 @@ func TestRawArtifactHandler(t *testing.T) {
 			}
 
 			err = handler(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			res := w.Result()
-			So(res.StatusCode, ShouldEqual, http.StatusFound)
-			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url?n=50000")
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusFound))
+			assert.Loosely(t, res.Header.Get("location"), should.Equal("https://test.com/artifact/fetch/url?n=50000"))
 		})
 
-		Convey(`with existing query search params`, func() {
+		t.Run(`with existing query search params`, func(t *ftt.Test) {
 			resultdbMock.
 				EXPECT().
 				GetArtifact(
@@ -168,7 +170,7 @@ func TestRawArtifactHandler(t *testing.T) {
 				}, nil)
 
 			url, err := url.Parse("/prefix/test/artifact/name?n=50000")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			req := &http.Request{URL: url}
 			w := httptest.NewRecorder()
@@ -180,11 +182,11 @@ func TestRawArtifactHandler(t *testing.T) {
 			}
 
 			err = handler(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			res := w.Result()
-			So(res.StatusCode, ShouldEqual, http.StatusFound)
-			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url?n=50000&token=_12345")
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusFound))
+			assert.Loosely(t, res.Header.Get("location"), should.Equal("https://test.com/artifact/fetch/url?n=50000&token=_12345"))
 		})
 	})
 }

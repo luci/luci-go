@@ -24,6 +24,9 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -32,74 +35,72 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFuncs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Middleware Tests", t, func() {
-		Convey("Format Commit Description", func() {
-			Convey("linkify https://", func() {
-				So(formatCommitDesc("https://foo.com"),
-					ShouldEqual,
-					template.HTML("<a href=\"https://foo.com\">https://foo.com</a>"))
-				Convey("but not http://", func() {
-					So(formatCommitDesc("http://foo.com"), ShouldEqual, template.HTML("http://foo.com"))
+	ftt.Run("Middleware Tests", t, func(t *ftt.Test) {
+		t.Run("Format Commit Description", func(t *ftt.Test) {
+			t.Run("linkify https://", func(t *ftt.Test) {
+				assert.Loosely(t, formatCommitDesc("https://foo.com"),
+					should.Equal(
+						template.HTML("<a href=\"https://foo.com\">https://foo.com</a>")))
+				t.Run("but not http://", func(t *ftt.Test) {
+					assert.Loosely(t, formatCommitDesc("http://foo.com"), should.Equal(template.HTML("http://foo.com")))
 				})
 			})
-			Convey("linkify b/ and crbug/", func() {
-				So(formatCommitDesc("blah blah b/123456 blah"), ShouldEqual, template.HTML("blah blah <a href=\"http://b/123456\">b/123456</a> blah"))
-				So(formatCommitDesc("crbug:foo/123456"), ShouldEqual, template.HTML("<a href=\"https://crbug.com/foo/123456\">crbug:foo/123456</a>"))
+			t.Run("linkify b/ and crbug/", func(t *ftt.Test) {
+				assert.Loosely(t, formatCommitDesc("blah blah b/123456 blah"), should.Equal(template.HTML("blah blah <a href=\"http://b/123456\">b/123456</a> blah")))
+				assert.Loosely(t, formatCommitDesc("crbug:foo/123456"), should.Equal(template.HTML("<a href=\"https://crbug.com/foo/123456\">crbug:foo/123456</a>")))
 			})
-			Convey("linkify Bug: lines", func() {
-				So(formatCommitDesc("\nBug: 12345\n"), ShouldEqual, template.HTML("\nBug: <a href=\"https://crbug.com/12345\">12345</a>\n"))
-				So(
+			t.Run("linkify Bug: lines", func(t *ftt.Test) {
+				assert.Loosely(t, formatCommitDesc("\nBug: 12345\n"), should.Equal(template.HTML("\nBug: <a href=\"https://crbug.com/12345\">12345</a>\n")))
+				assert.Loosely(t,
 					formatCommitDesc(" > > BugS=  12345, butter:12345"),
-					ShouldEqual,
-					template.HTML(" &gt; &gt; BugS=  <a href=\"https://crbug.com/12345\">12345</a>, "+
-						"<a href=\"https://crbug.com/butter/12345\">butter:12345</a>"))
+					should.Equal(
+						template.HTML(" &gt; &gt; BugS=  <a href=\"https://crbug.com/12345\">12345</a>, "+
+							"<a href=\"https://crbug.com/butter/12345\">butter:12345</a>")))
 			})
-			Convey("linkify rules should not collide", func() {
-				So(
+			t.Run("linkify rules should not collide", func(t *ftt.Test) {
+				assert.Loosely(t,
 					formatCommitDesc("I \"fixed\" https://crbug.com/123456 <today>"),
-					ShouldEqual,
-					template.HTML("I &#34;fixed&#34; <a href=\"https://crbug.com/123456\">https://crbug.com/123456</a> &lt;today&gt;"))
-				So(
+					should.Equal(
+						template.HTML("I &#34;fixed&#34; <a href=\"https://crbug.com/123456\">https://crbug.com/123456</a> &lt;today&gt;")))
+				assert.Loosely(t,
 					formatCommitDesc("Bug: 12, crbug/34, https://crbug.com/56, 78"),
-					ShouldEqual,
-					template.HTML("Bug: <a href=\"https://crbug.com/12\">12</a>, <a href=\"https://crbug.com/34\">crbug/34</a>, <a href=\"https://crbug.com/56\">https://crbug.com/56</a>, <a href=\"https://crbug.com/78\">78</a>"))
+					should.Equal(
+						template.HTML("Bug: <a href=\"https://crbug.com/12\">12</a>, <a href=\"https://crbug.com/34\">crbug/34</a>, <a href=\"https://crbug.com/56\">https://crbug.com/56</a>, <a href=\"https://crbug.com/78\">78</a>")))
 			})
-			Convey("linkify rules interact correctly with escaping", func() {
-				So(
+			t.Run("linkify rules interact correctly with escaping", func(t *ftt.Test) {
+				assert.Loosely(t,
 					formatCommitDesc("\"https://example.com\""),
-					ShouldEqual,
-					template.HTML("&#34;<a href=\"https://example.com\">https://example.com</a>&#34;"))
-				So(
+					should.Equal(
+						template.HTML("&#34;<a href=\"https://example.com\">https://example.com</a>&#34;")))
+				assert.Loosely(t,
 					formatCommitDesc("Bug: <not a bug number, sorry>"),
-					ShouldEqual,
-					template.HTML("Bug: &lt;not a bug number, sorry&gt;"))
+					should.Equal(
+						template.HTML("Bug: &lt;not a bug number, sorry&gt;")))
 				// This is not remotely valid of a URL, but exists to test that
 				// the linking template correctly escapes the URL, both as an
 				// attribute and as a value.
-				So(
+				assert.Loosely(t,
 					formatCommitDesc("https://foo&bar<baz\"aaa>bbb"),
-					ShouldEqual,
-					template.HTML("<a href=\"https://foo&amp;bar%3cbaz%22aaa%3ebbb\">https://foo&amp;bar&lt;baz&#34;aaa&gt;bbb</a>"))
+					should.Equal(
+						template.HTML("<a href=\"https://foo&amp;bar%3cbaz%22aaa%3ebbb\">https://foo&amp;bar&lt;baz&#34;aaa&gt;bbb</a>")))
 			})
 
-			Convey("trimLongString", func() {
-				Convey("short", func() {
-					So(trimLongString(4, "😀😀😀😀"), ShouldEqual, "😀😀😀😀")
+			t.Run("trimLongString", func(t *ftt.Test) {
+				t.Run("short", func(t *ftt.Test) {
+					assert.Loosely(t, trimLongString(4, "😀😀😀😀"), should.Equal("😀😀😀😀"))
 				})
-				Convey("long", func() {
-					So(trimLongString(4, "😀😀😀😀😀"), ShouldEqual, "😀😀😀…")
+				t.Run("long", func(t *ftt.Test) {
+					assert.Loosely(t, trimLongString(4, "😀😀😀😀😀"), should.Equal("😀😀😀…"))
 				})
 			})
 		})
 
-		Convey("Redirect unauthorized users to login page for projects with access restrictions", func() {
+		t.Run("Redirect unauthorized users to login page for projects with access restrictions", func(t *ftt.Test) {
 			projectACLMiddleware := buildProjectACLMiddleware(false)
 			r := httptest.NewRecorder()
 			c := gaetesting.TestingContextWithAppID("luci-milo-dev")
@@ -113,7 +114,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
 				},
 			}))
-			So(projectconfig.UpdateProjects(c), ShouldBeNil)
+			assert.Loosely(t, projectconfig.UpdateProjects(c), should.BeNil)
 
 			ctx := &router.Context{
 				Writer:  r,
@@ -122,13 +123,13 @@ func TestFuncs(t *testing.T) {
 			}
 			projectACLMiddleware(ctx, nil)
 			project, ok := git.ProjectFromContext(ctx.Request.Context())
-			So(ok, ShouldBeFalse)
-			So(project, ShouldEqual, "")
-			So(r.Code, ShouldEqual, 302)
-			So(r.Result().Header["Location"], ShouldResemble, []string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"})
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, project, should.BeEmpty)
+			assert.Loosely(t, r.Code, should.Equal(302))
+			assert.Loosely(t, r.Result().Header["Location"], should.Resemble([]string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"}))
 		})
 
-		Convey("Install git project to context when the user has access to the project", func() {
+		t.Run("Install git project to context when the user has access to the project", func(t *ftt.Test) {
 			optionalProjectACLMiddleware := buildProjectACLMiddleware(true)
 			r := httptest.NewRecorder()
 			c := gaetesting.TestingContextWithAppID("luci-milo-dev")
@@ -142,7 +143,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"public\"\naccess: \"group:all\"",
 				},
 			}))
-			So(projectconfig.UpdateProjects(c), ShouldBeNil)
+			assert.Loosely(t, projectconfig.UpdateProjects(c), should.BeNil)
 
 			ctx := &router.Context{
 				Writer:  r,
@@ -155,13 +156,13 @@ func TestFuncs(t *testing.T) {
 			}
 			optionalProjectACLMiddleware(ctx, next)
 			project, ok := git.ProjectFromContext(ctx.Request.Context())
-			So(project, ShouldEqual, "public")
-			So(ok, ShouldBeTrue)
-			So(nextCalled, ShouldBeTrue)
-			So(r.Code, ShouldEqual, 200)
+			assert.Loosely(t, project, should.Equal("public"))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, nextCalled, should.BeTrue)
+			assert.Loosely(t, r.Code, should.Equal(200))
 		})
 
-		Convey("Don't install git project to context when the user doesn't have access to the project", func() {
+		t.Run("Don't install git project to context when the user doesn't have access to the project", func(t *ftt.Test) {
 			optionalProjectACLMiddleware := buildProjectACLMiddleware(true)
 			r := httptest.NewRecorder()
 			c := gaetesting.TestingContextWithAppID("luci-milo-dev")
@@ -175,7 +176,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
 				},
 			}))
-			So(projectconfig.UpdateProjects(c), ShouldBeNil)
+			assert.Loosely(t, projectconfig.UpdateProjects(c), should.BeNil)
 
 			ctx := &router.Context{
 				Writer:  r,
@@ -188,25 +189,25 @@ func TestFuncs(t *testing.T) {
 			}
 			optionalProjectACLMiddleware(ctx, next)
 			project, ok := git.ProjectFromContext(ctx.Request.Context())
-			So(ok, ShouldBeFalse)
-			So(project, ShouldEqual, "")
-			So(nextCalled, ShouldBeTrue)
-			So(r.Code, ShouldEqual, 200)
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, project, should.BeEmpty)
+			assert.Loosely(t, nextCalled, should.BeTrue)
+			assert.Loosely(t, r.Code, should.Equal(200))
 		})
 
-		Convey("Convert LogDog URLs", func() {
-			So(
+		t.Run("Convert LogDog URLs", func(t *ftt.Test) {
+			assert.Loosely(t,
 				logdogLink(buildbucketpb.Log{Name: "foo", Url: "logdog://www.example.com:1234/foo/bar/+/baz"}, true),
-				ShouldEqual,
-				template.HTML(`<a href="https://www.example.com:1234/logs/foo/bar/&#43;/baz?format=raw" aria-label="raw log foo">raw</a>`))
-			So(
+				should.Equal(
+					template.HTML(`<a href="https://www.example.com:1234/logs/foo/bar/&#43;/baz?format=raw" aria-label="raw log foo">raw</a>`)))
+			assert.Loosely(t,
 				logdogLink(buildbucketpb.Log{Name: "foo", Url: "%zzzzz"}, true),
-				ShouldEqual,
-				template.HTML(`<a href="#invalid-logdog-link" aria-label="raw log foo">raw</a>`))
-			So(
+				should.Equal(
+					template.HTML(`<a href="#invalid-logdog-link" aria-label="raw log foo">raw</a>`)))
+			assert.Loosely(t,
 				logdogLink(buildbucketpb.Log{Name: "foo", Url: "logdog://logs.chromium.org/foo/bar/+/baz"}, false),
-				ShouldEqual,
-				template.HTML(`<a href="https://logs.chromium.org/logs/foo/bar/&#43;/baz" aria-label="raw log foo">foo</a>`))
+				should.Equal(
+					template.HTML(`<a href="https://logs.chromium.org/logs/foo/bar/&#43;/baz" aria-label="raw log foo">foo</a>`)))
 		})
 	})
 }
