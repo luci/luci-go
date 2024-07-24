@@ -46,22 +46,6 @@ import (
 
 var emptyStruct, _ = structpb.NewStruct(map[string]any{})
 
-func nilifyReqBuildDetails(b *pb.Build) func() {
-	origTags, origSteps, origOutProp := b.Tags, b.Steps, emptyStruct
-	if b.Output != nil {
-		origOutProp = b.Output.Properties
-		b.Output.Properties = emptyStruct
-	}
-	b.Tags, b.Steps = nil, nil
-
-	return func() {
-		if b.Output != nil {
-			b.Output.Properties = origOutProp
-		}
-		b.Tags, b.Steps = origTags, origSteps
-	}
-}
-
 var (
 	// updateBuildStatuses is a set of build statuses supported by UpdateBuild RPC.
 	updateBuildStatuses = map[pb.Status]struct{}{
@@ -494,11 +478,6 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			b.Tags = tags.ToSortedSlice()
 		}
 
-		// clear the request fields stored in other entities/fields.
-		//
-		// TODO(ddoman): if crbug.com/1154557 is done, remove nilifyReqBuildDetails().
-		// Instead, remove the field paths from the mask and merge the protos with the mask.
-		defer nilifyReqBuildDetails(req.Build)()
 		origStatus = b.Proto.Status
 
 		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
@@ -558,9 +537,6 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		}
 		if err := updateMask.Merge(req.Build, b.Proto); err != nil {
 			return errors.Annotate(err, "attempting to merge masked build").Err()
-		}
-		if b.Proto.Output != nil {
-			b.Proto.Output.Properties = nil
 		}
 		isEndedStatus := protoutil.IsEnded(b.Proto.Status)
 		switch {
@@ -639,6 +615,22 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			}
 			toSave = append(toSave, infra)
 		}
+
+		// Evaluate the build with builder metrics
+		// Up until now b.Proto contains all the info for the build, including the
+		// newest update that has not been saved to datastore. So no need to load
+		// details.
+		if !isEndedStatus {
+			if err := model.EvaluateBuildForCustomBuilderMetrics(ctx, b, false); err != nil {
+				return errors.Annotate(err, "failed to update build's custom builder metrics").Err()
+			}
+		}
+
+		// Clear fields in b.Proto that are stored in other entities/fields.
+		if b.Proto.Output != nil {
+			b.Proto.Output.Properties = nil
+		}
+		b.Proto.Tags, b.Proto.Steps, b.Proto.Infra = nil, nil, nil
 
 		if toSaveOutputProperties != nil {
 			if err := toSaveOutputProperties.Put(ctx); err != nil {

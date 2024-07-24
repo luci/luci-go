@@ -683,6 +683,15 @@ func TestUpdateBuild(t *testing.T) {
 			},
 			CreateTime:  t0,
 			UpdateToken: tk,
+			CustomMetrics: []model.CustomMetric{
+				{
+					Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+					Metric: &pb.CustomMetricDefinition{
+						Name:       "chrome/infra/custom/builds/count",
+						Predicates: []string{`build.tags.get_value("resultdb")!=""`},
+					},
+				},
+			},
 		}
 		bk := datastore.KeyForObj(ctx, build)
 		infra := &model.BuildInfra{
@@ -775,6 +784,7 @@ func TestUpdateBuild(t *testing.T) {
 			b, err := common.GetBuild(ctx, req.Build.Id)
 			So(err, ShouldBeNil)
 			So(b.Proto.ViewUrl, ShouldEqual, url)
+			So(len(b.CustomBuilderMetrics), ShouldEqual, 0)
 		})
 
 		Convey("build.output.properties", func() {
@@ -914,6 +924,7 @@ func TestUpdateBuild(t *testing.T) {
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				expected := []string{strpair.Format("resultdb", "disabled")}
 				So(b.Tags, ShouldResemble, expected)
+				So(b.CustomBuilderMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
 
 				// change the value and update it again
 				tag.Value = "enabled"
@@ -923,6 +934,7 @@ func TestUpdateBuild(t *testing.T) {
 				b = getBuildWithDetails(ctx, req.Build.Id)
 				expected = append(expected, strpair.Format("resultdb", "enabled"))
 				So(b.Tags, ShouldResemble, expected)
+				So(b.CustomBuilderMetrics, ShouldResemble, []string{"chrome/infra/custom/builds/count"})
 			})
 
 			Convey("without mask", func() {
@@ -1511,6 +1523,7 @@ func TestUpdateBuild(t *testing.T) {
 							},
 							CancelTime:      timestamppb.New(t0.Add(-time.Minute)),
 							SummaryMarkdown: "original summary",
+							Status:          pb.Status_STARTED,
 						},
 						UpdateToken: tk,
 					}), ShouldBeNil)
@@ -1526,6 +1539,7 @@ func TestUpdateBuild(t *testing.T) {
 							},
 							AncestorIds:      []int64{13},
 							CanOutliveParent: false,
+							Status:           pb.Status_STARTED,
 						},
 						UpdateToken: tk,
 					}), ShouldBeNil)
@@ -1614,6 +1628,7 @@ func TestUpdateBuild(t *testing.T) {
 								Bucket:  "bucket",
 								Builder: "builder",
 							},
+							Status: pb.Status_STARTED,
 						},
 						UpdateToken: tk,
 					}), ShouldBeNil)
@@ -1629,6 +1644,7 @@ func TestUpdateBuild(t *testing.T) {
 							},
 							AncestorIds:      []int64{20},
 							CanOutliveParent: false,
+							Status:           pb.Status_STARTED,
 						},
 						UpdateToken: tk,
 					}), ShouldBeNil)

@@ -565,10 +565,9 @@ func EvaluateBuildForCustomBuilderMetrics(ctx context.Context, bld *Build, loadD
 	toEvaluate := make([]*pb.CustomMetricDefinition, 0, len(bld.CustomMetrics))
 	bases := getBuilderMetricBasesByStatus(bld.Proto.Status)
 	for _, cm := range bld.CustomMetrics {
-		if _, ok := bases[cm.Base]; !ok {
-			continue
+		if _, ok := bases[cm.Base]; ok {
+			toEvaluate = append(toEvaluate, cm.Metric)
 		}
-		toEvaluate = append(toEvaluate, cm.Metric)
 	}
 	if len(toEvaluate) == 0 {
 		return nil
