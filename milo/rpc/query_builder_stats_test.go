@@ -20,11 +20,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/internal/model"
@@ -39,7 +40,7 @@ import (
 
 func TestQueryBuilderStats(t *testing.T) {
 	t.Parallel()
-	Convey(`TestQueryBuilderStats`, t, func() {
+	ftt.Run(`TestQueryBuilderStats`, t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = testutils.SetUpTestGlobalCache(ctx)
 
@@ -92,16 +93,16 @@ func TestQueryBuilderStats(t *testing.T) {
 		}
 
 		err := datastore.Put(ctx, builds)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = datastore.Put(ctx, &projectconfig.Project{
 			ID:      "fake_project",
 			ACL:     projectconfig.ACL{Identities: []identity.Identity{"user"}},
 			LogoURL: "https://logo.com",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`get build stats`, func() {
+		t.Run(`get build stats`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -115,32 +116,32 @@ func TestQueryBuilderStats(t *testing.T) {
 			res, err := srv.QueryBuilderStats(ctx, &milopb.QueryBuilderStatsRequest{
 				Builder: builder1,
 			})
-			So(err, ShouldBeNil)
-			So(res.PendingBuildsCount, ShouldEqual, 1)
-			So(res.RunningBuildsCount, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.PendingBuildsCount, should.Equal(1))
+			assert.Loosely(t, res.RunningBuildsCount, should.Equal(2))
 		})
 
-		Convey(`reject users with no access`, func() {
+		t.Run(`reject users with no access`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user",
 			})
 			_, err := srv.QueryBuilderStats(ctx, &milopb.QueryBuilderStatsRequest{
 				Builder: builder1,
 			})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
 
 func TestValidatesQueryBuilderStatsRequest(t *testing.T) {
 	t.Parallel()
-	Convey("validatesQueryBuilderStatsRequest", t, func() {
-		Convey("no builder", func() {
+	ftt.Run("validatesQueryBuilderStatsRequest", t, func(t *ftt.Test) {
+		t.Run("no builder", func(t *ftt.Test) {
 			err := validatesQueryBuilderStatsRequest(&milopb.QueryBuilderStatsRequest{})
-			So(err, ShouldErrLike, "builder: project must match")
+			assert.Loosely(t, err, should.ErrLike("builder: project must match"))
 		})
 
-		Convey("invalid builder", func() {
+		t.Run("invalid builder", func(t *ftt.Test) {
 			err := validatesQueryBuilderStatsRequest(&milopb.QueryBuilderStatsRequest{
 				Builder: &buildbucketpb.BuilderID{
 					Project: "fake_proj",
@@ -148,10 +149,10 @@ func TestValidatesQueryBuilderStatsRequest(t *testing.T) {
 					Builder: "fake_/uilder1",
 				},
 			})
-			So(err, ShouldErrLike, "builder: bucket must match")
+			assert.Loosely(t, err, should.ErrLike("builder: bucket must match"))
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validatesQueryBuilderStatsRequest(&milopb.QueryBuilderStatsRequest{
 				Builder: &buildbucketpb.BuilderID{
 					Project: "fake_project",
@@ -159,7 +160,7 @@ func TestValidatesQueryBuilderStatsRequest(t *testing.T) {
 					Builder: "fake_builder1",
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

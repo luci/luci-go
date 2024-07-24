@@ -18,13 +18,14 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -214,7 +215,7 @@ var perms = []authtest.RealmPermission{
 
 func TestQueryConsoleSnapshots(t *testing.T) {
 	t.Parallel()
-	Convey(`TestQueryConsoleSnapshots`, t, func() {
+	ftt.Run(`TestQueryConsoleSnapshots`, t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = testutils.SetUpTestGlobalCache(ctx)
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
@@ -223,7 +224,7 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 
 		err := datastore.Put(ctx, projects)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Transform & save console defs to datastore.
 		consoles := make([]*projectconfig.Console, 0, len(consoleDefs))
@@ -243,14 +244,14 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 			consoles = append(consoles, console)
 		}
 		err = datastore.Put(ctx, consoles)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = datastore.Put(ctx, builderSummaries)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		srv := &MiloInternalService{}
 
-		Convey(`e2e`, func() {
+		t.Run(`e2e`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user", IdentityPermissions: perms})
 
 			res, err := srv.QueryConsoleSnapshots(ctx, &milopb.QueryConsoleSnapshotsRequest{
@@ -259,8 +260,8 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 				},
 				PageSize: 2,
 			})
-			So(err, ShouldBeNil)
-			So(res.Snapshots, ShouldResembleProto, []*milopb.ConsoleSnapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Snapshots, should.Resemble([]*milopb.ConsoleSnapshot{
 				{
 					Console: &projectconfigpb.Console{
 						Realm: "allowed-project:@root",
@@ -365,8 +366,8 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 						},
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldNotBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 			res, err = srv.QueryConsoleSnapshots(ctx, &milopb.QueryConsoleSnapshotsRequest{
 				Predicate: &milopb.ConsolePredicate{
@@ -375,8 +376,8 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 				PageSize:  2,
 				PageToken: res.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(res.Snapshots, ShouldResembleProto, []*milopb.ConsoleSnapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Snapshots, should.Resemble([]*milopb.ConsoleSnapshot{
 				{
 					Console: &projectconfigpb.Console{
 						Realm: "allowed-project:@root",
@@ -410,11 +411,11 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 						},
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 		})
 
-		Convey(`query with builder predicate`, func() {
+		t.Run(`query with builder predicate`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user", IdentityPermissions: perms})
 
 			res, err := srv.QueryConsoleSnapshots(ctx, &milopb.QueryConsoleSnapshotsRequest{
@@ -427,8 +428,8 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res.Snapshots, ShouldResembleProto, []*milopb.ConsoleSnapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Snapshots, should.Resemble([]*milopb.ConsoleSnapshot{
 				{
 					Console: &projectconfigpb.Console{
 						Realm: "allowed-project:@root",
@@ -518,11 +519,11 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 						},
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 		})
 
-		Convey(`query forbidden project`, func() {
+		t.Run(`query forbidden project`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user", IdentityPermissions: perms})
 
 			res, err := srv.QueryConsoleSnapshots(ctx, &milopb.QueryConsoleSnapshotsRequest{
@@ -530,12 +531,12 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 					Project: "forbidden-project",
 				},
 			})
-			So(err, ShouldNotBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey(`query forbidden project with builder predicate`, func() {
+		t.Run(`query forbidden project with builder predicate`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user", IdentityPermissions: perms})
 
 			res, err := srv.QueryConsoleSnapshots(ctx, &milopb.QueryConsoleSnapshotsRequest{
@@ -548,12 +549,12 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldNotBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey(`resolve external consoles`, func() {
+		t.Run(`resolve external consoles`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user", IdentityPermissions: perms})
 
 			res, err := srv.QueryConsoleSnapshots(ctx, &milopb.QueryConsoleSnapshotsRequest{
@@ -561,8 +562,8 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 					Project: "project-with-external-ref",
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res.Snapshots, ShouldResembleProto, []*milopb.ConsoleSnapshot{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Snapshots, should.Resemble([]*milopb.ConsoleSnapshot{
 				{
 					Console: &projectconfigpb.Console{
 						Realm: "allowed-project:@root",
@@ -652,34 +653,34 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 						},
 					},
 				},
-			})
-			So(res.NextPageToken, ShouldBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 		})
 	})
 }
 
 func TestValidateQueryConsoleSnapshotsQuery(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateQueryConsoleSnapshotsRequest`, t, func() {
-		Convey(`negative page size`, func() {
+	ftt.Run(`TestValidateQueryConsoleSnapshotsRequest`, t, func(t *ftt.Test) {
+		t.Run(`negative page size`, func(t *ftt.Test) {
 			err := validateQueryConsoleSnapshotsRequest(&milopb.QueryConsoleSnapshotsRequest{
 				Predicate: &milopb.ConsolePredicate{
 					Project: "project",
 				},
 				PageSize: -1,
 			})
-			So(err, ShouldNotBeNil)
-			So(err, ShouldErrLike, "page_size can not be negative")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err, should.ErrLike("page_size can not be negative"))
 		})
 
-		Convey(`missing project`, func() {
+		t.Run(`missing project`, func(t *ftt.Test) {
 			err := validateQueryConsoleSnapshotsRequest(&milopb.QueryConsoleSnapshotsRequest{
 				PageSize: 10,
 			})
-			So(err, ShouldErrLike, "predicate.project is required")
+			assert.Loosely(t, err, should.ErrLike("predicate.project is required"))
 		})
 
-		Convey(`valid`, func() {
+		t.Run(`valid`, func(t *ftt.Test) {
 			err := validateQueryConsoleSnapshotsRequest(&milopb.QueryConsoleSnapshotsRequest{
 				Predicate: &milopb.ConsolePredicate{
 					Project: "project",
@@ -691,16 +692,16 @@ func TestValidateQueryConsoleSnapshotsQuery(t *testing.T) {
 				},
 				PageSize: 10,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`valid with only project`, func() {
+		t.Run(`valid with only project`, func(t *ftt.Test) {
 			err := validateQueryConsoleSnapshotsRequest(&milopb.QueryConsoleSnapshotsRequest{
 				Predicate: &milopb.ConsolePredicate{
 					Project: "project",
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

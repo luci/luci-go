@@ -21,7 +21,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -29,7 +28,9 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
@@ -41,9 +42,9 @@ import (
 
 func TestPrepareQueryBlamelistRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestPrepareQueryBlamelistRequest`, t, func() {
-		Convey(`extract commit ID correctly`, func() {
-			Convey(`when there's no page token`, func() {
+	ftt.Run(`TestPrepareQueryBlamelistRequest`, t, func(t *ftt.Test) {
+		t.Run(`extract commit ID correctly`, func(t *ftt.Test) {
+			t.Run(`when there's no page token`, func(t *ftt.Test) {
 				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
@@ -57,12 +58,12 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 						Builder: "builder",
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// commit ID should take priority.
-				So(startRev, ShouldEqual, "commit-id")
+				assert.Loosely(t, startRev, should.Equal("commit-id"))
 			})
 
-			Convey(`when there's no page token or commit ID`, func() {
+			t.Run(`when there's no page token or commit ID`, func(t *ftt.Test) {
 				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
@@ -75,11 +76,11 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 						Builder: "builder",
 					},
 				})
-				So(err, ShouldBeNil)
-				So(startRev, ShouldEqual, "commit-ref")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, startRev, should.Equal("commit-ref"))
 			})
 
-			Convey(`when there's a page token`, func() {
+			t.Run(`when there's a page token`, func(t *ftt.Test) {
 				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
@@ -92,13 +93,13 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 						Builder: "builder",
 					},
 				})
-				So(err, ShouldBeNil)
-				So(startRev, ShouldEqual, "commit-id-1")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, startRev, should.Equal("commit-id-1"))
 
 				pageToken, err := serializeQueryBlamelistPageToken(&milopb.QueryBlamelistPageToken{
 					NextCommitId: "commit-id-2",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				nextCommitRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
@@ -113,12 +114,12 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 					},
 					PageToken: pageToken,
 				})
-				So(err, ShouldBeNil)
-				So(nextCommitRev, ShouldEqual, "commit-id-2")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextCommitRev, should.Equal("commit-id-2"))
 			})
 		})
 
-		Convey(`reject the page token when the page token is invalid`, func() {
+		t.Run(`reject the page token when the page token is invalid`, func(t *ftt.Test) {
 			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "chromium.googlesource.com",
@@ -132,10 +133,10 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 				},
 				PageToken: "abc",
 			})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("no builder", func() {
+		t.Run("no builder", func(t *ftt.Test) {
 			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "chromium.googlesource.com",
@@ -144,10 +145,10 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 					Ref:     "commit-ref",
 				},
 			})
-			So(err, ShouldErrLike, "builder: project must match")
+			assert.Loosely(t, err, should.ErrLike("builder: project must match"))
 		})
 
-		Convey("invalid builder", func() {
+		t.Run("invalid builder", func(t *ftt.Test) {
 			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "chromium.googlesource.com",
@@ -161,10 +162,10 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 					Builder: "fake_/uilder1",
 				},
 			})
-			So(err, ShouldErrLike, "builder: bucket must match")
+			assert.Loosely(t, err, should.ErrLike("builder: bucket must match"))
 		})
 
-		Convey(`invalid gitiles host`, func() {
+		t.Run(`invalid gitiles host`, func(t *ftt.Test) {
 			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "invalid.host",
@@ -178,7 +179,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 					Builder: "builder",
 				},
 			})
-			So(err, ShouldErrLike, "gitiles_commit.host must be a subdomain of .googlesource.com")
+			assert.Loosely(t, err, should.ErrLike("gitiles_commit.host must be a subdomain of .googlesource.com"))
 		})
 
 	})
@@ -186,7 +187,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 
 func TestQueryBlamelist(t *testing.T) {
 	t.Parallel()
-	Convey(`TestQueryBlamelist`, t, func() {
+	ftt.Run(`TestQueryBlamelist`, t, func(t *ftt.Test) {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		datastore.GetTestable(c).Consistent(true)
 		ctrl := gomock.NewController(t)
@@ -256,16 +257,16 @@ func TestQueryBlamelist(t *testing.T) {
 		}
 
 		err := datastore.Put(c, builds)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = datastore.Put(c, &projectconfig.Project{
 			ID:      "fake_project",
 			ACL:     projectconfig.ACL{Identities: []identity.Identity{"user"}},
 			LogoURL: "https://logo.com",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`reject users with no access`, func() {
+		t.Run(`reject users with no access`, func(t *ftt.Test) {
 			req := &milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "fake_host.googlesource.com",
@@ -280,11 +281,11 @@ func TestQueryBlamelist(t *testing.T) {
 				PageSize: 2000,
 			}
 			_, err := srv.QueryBlamelist(c, req)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey(`coerce page_size`, func() {
-			Convey(`to 1000 if it's greater than 1000`, func() {
+		t.Run(`coerce page_size`, func(t *ftt.Test) {
+			t.Run(`to 1000 if it's greater than 1000`, func(t *ftt.Test) {
 				req := &milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "fake_host.googlesource.com",
@@ -307,10 +308,10 @@ func TestQueryBlamelist(t *testing.T) {
 					}, nil)
 
 				_, err := srv.QueryBlamelist(c, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey(`to 100 if it's not set`, func() {
+			t.Run(`to 100 if it's not set`, func(t *ftt.Test) {
 				req := &milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "fake_host.googlesource.com",
@@ -332,13 +333,13 @@ func TestQueryBlamelist(t *testing.T) {
 					}, nil)
 
 				_, err := srv.QueryBlamelist(c, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey(`get all the commits in the blamelist`, func() {
-			Convey(`in one page`, func() {
-				Convey(`when we found the previous build`, func() {
+		t.Run(`get all the commits in the blamelist`, func(t *ftt.Test) {
+			t.Run(`in one page`, func(t *ftt.Test) {
+				t.Run(`when we found the previous build`, func(t *ftt.Test) {
 					req := &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
 							Host:    "fake_host.googlesource.com",
@@ -360,15 +361,15 @@ func TestQueryBlamelist(t *testing.T) {
 						}, nil)
 
 					res, err := srv.QueryBlamelist(c, req)
-					So(err, ShouldBeNil)
-					So(res.Commits, ShouldHaveLength, 3)
-					So(res.Commits[0].Id, ShouldEqual, "commit8")
-					So(res.Commits[1].Id, ShouldEqual, "commit7")
-					So(res.Commits[2].Id, ShouldEqual, "commit6")
-					So(res.PrecedingCommit.Id, ShouldEqual, "commit5")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.Commits, should.HaveLength(3))
+					assert.Loosely(t, res.Commits[0].Id, should.Equal("commit8"))
+					assert.Loosely(t, res.Commits[1].Id, should.Equal("commit7"))
+					assert.Loosely(t, res.Commits[2].Id, should.Equal("commit6"))
+					assert.Loosely(t, res.PrecedingCommit.Id, should.Equal("commit5"))
 				})
 
-				Convey(`when there's no previous build`, func() {
+				t.Run(`when there's no previous build`, func(t *ftt.Test) {
 					req := &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
 							Host:    "fake_host.googlesource.com",
@@ -390,17 +391,17 @@ func TestQueryBlamelist(t *testing.T) {
 						}, nil)
 
 					res, err := srv.QueryBlamelist(c, req)
-					So(err, ShouldBeNil)
-					So(res.Commits, ShouldHaveLength, 3)
-					So(res.Commits[0].Id, ShouldEqual, "commit3")
-					So(res.Commits[1].Id, ShouldEqual, "commit2")
-					So(res.Commits[2].Id, ShouldEqual, "commit1")
-					So(res.PrecedingCommit, ShouldBeZeroValue)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.Commits, should.HaveLength(3))
+					assert.Loosely(t, res.Commits[0].Id, should.Equal("commit3"))
+					assert.Loosely(t, res.Commits[1].Id, should.Equal("commit2"))
+					assert.Loosely(t, res.Commits[2].Id, should.Equal("commit1"))
+					assert.Loosely(t, res.PrecedingCommit.String(), should.Equal("<nil>"))
 				})
 			})
 
-			Convey(`in multiple pages`, func() {
-				Convey(`when we found the previous build`, func() {
+			t.Run(`in multiple pages`, func(t *ftt.Test) {
+				t.Run(`when we found the previous build`, func(t *ftt.Test) {
 					// Query the first page.
 					req := &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
@@ -425,12 +426,12 @@ func TestQueryBlamelist(t *testing.T) {
 						}, nil)
 
 					res, err := srv.QueryBlamelist(c, req)
-					So(err, ShouldBeNil)
-					So(res.Commits, ShouldHaveLength, 2)
-					So(res.Commits[0].Id, ShouldEqual, "commit8")
-					So(res.Commits[1].Id, ShouldEqual, "commit7")
-					So(res.NextPageToken, ShouldNotBeZeroValue)
-					So(res.PrecedingCommit.Id, ShouldEqual, "commit6")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.Commits, should.HaveLength(2))
+					assert.Loosely(t, res.Commits[0].Id, should.Equal("commit8"))
+					assert.Loosely(t, res.Commits[1].Id, should.Equal("commit7"))
+					assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
+					assert.Loosely(t, res.PrecedingCommit.Id, should.Equal("commit6"))
 
 					// Query the second page.
 					req = &milopb.QueryBlamelistRequest{
@@ -457,14 +458,14 @@ func TestQueryBlamelist(t *testing.T) {
 						}, nil)
 
 					res, err = srv.QueryBlamelist(c, req)
-					So(err, ShouldBeNil)
-					So(res.Commits, ShouldHaveLength, 1)
-					So(res.Commits[0].Id, ShouldEqual, "commit6")
-					So(res.NextPageToken, ShouldBeZeroValue)
-					So(res.PrecedingCommit.Id, ShouldEqual, "commit5")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.Commits, should.HaveLength(1))
+					assert.Loosely(t, res.Commits[0].Id, should.Equal("commit6"))
+					assert.Loosely(t, res.NextPageToken, should.Equal(""))
+					assert.Loosely(t, res.PrecedingCommit.Id, should.Equal("commit5"))
 				})
 
-				Convey(`when there's no previous build`, func() {
+				t.Run(`when there's no previous build`, func(t *ftt.Test) {
 					// Query the first page.
 					req := &milopb.QueryBlamelistRequest{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
@@ -489,12 +490,12 @@ func TestQueryBlamelist(t *testing.T) {
 						}, nil)
 
 					res, err := srv.QueryBlamelist(c, req)
-					So(err, ShouldBeNil)
-					So(res.Commits, ShouldHaveLength, 2)
-					So(res.Commits[0].Id, ShouldEqual, "commit3")
-					So(res.Commits[1].Id, ShouldEqual, "commit2")
-					So(res.NextPageToken, ShouldNotBeZeroValue)
-					So(res.PrecedingCommit.Id, ShouldEqual, "commit1")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.Commits, should.HaveLength(2))
+					assert.Loosely(t, res.Commits[0].Id, should.Equal("commit3"))
+					assert.Loosely(t, res.Commits[1].Id, should.Equal("commit2"))
+					assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
+					assert.Loosely(t, res.PrecedingCommit.Id, should.Equal("commit1"))
 
 					// Query the second page.
 					req = &milopb.QueryBlamelistRequest{
@@ -521,16 +522,16 @@ func TestQueryBlamelist(t *testing.T) {
 						}, nil)
 
 					res, err = srv.QueryBlamelist(c, req)
-					So(err, ShouldBeNil)
-					So(res.Commits, ShouldHaveLength, 1)
-					So(res.Commits[0].Id, ShouldEqual, "commit1")
-					So(res.NextPageToken, ShouldBeZeroValue)
-					So(res.PrecedingCommit, ShouldBeZeroValue)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.Commits, should.HaveLength(1))
+					assert.Loosely(t, res.Commits[0].Id, should.Equal("commit1"))
+					assert.Loosely(t, res.NextPageToken, should.Equal(""))
+					assert.Loosely(t, res.PrecedingCommit.String(), should.Equal("<nil>"))
 				})
 			})
 		})
 
-		Convey(`get blamelist of other projects`, func() {
+		t.Run(`get blamelist of other projects`, func(t *ftt.Test) {
 			req := &milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "fake_host.googlesource.com",
@@ -552,11 +553,11 @@ func TestQueryBlamelist(t *testing.T) {
 				}, nil)
 
 			res, err := srv.QueryBlamelist(c, req)
-			So(err, ShouldBeNil)
-			So(res.Commits, ShouldHaveLength, 2)
-			So(res.Commits[0].Id, ShouldEqual, "commit3")
-			So(res.Commits[1].Id, ShouldEqual, "commit2")
-			So(res.PrecedingCommit.Id, ShouldEqual, "commit1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Commits, should.HaveLength(2))
+			assert.Loosely(t, res.Commits[0].Id, should.Equal("commit3"))
+			assert.Loosely(t, res.Commits[1].Id, should.Equal("commit2"))
+			assert.Loosely(t, res.PrecedingCommit.Id, should.Equal("commit1"))
 		})
 	})
 }

@@ -18,30 +18,30 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	milopb "go.chromium.org/luci/milo/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateProxyGitilesLogRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateGitilesLogRequest`, t, func() {
-		Convey(`reject invalid host`, func() {
+	ftt.Run(`TestValidateGitilesLogRequest`, t, func(t *ftt.Test) {
+		t.Run(`reject invalid host`, func(t *ftt.Test) {
 			err := validateProxyGitilesLogRequest(&milopb.ProxyGitilesLogRequest{
 				Host:    "invalid.host",
 				Request: &gitiles.LogRequest{},
 			})
-			So(err, ShouldErrLike, "host must be a subdomain of .googlesource.com")
+			assert.Loosely(t, err, should.ErrLike("host must be a subdomain of .googlesource.com"))
 		})
 
-		Convey(`valid`, func() {
+		t.Run(`valid`, func(t *ftt.Test) {
 			err := validateProxyGitilesLogRequest(&milopb.ProxyGitilesLogRequest{
 				Host:    "chromium.googlesource.com",
 				Request: &gitiles.LogRequest{},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

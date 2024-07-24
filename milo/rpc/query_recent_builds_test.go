@@ -20,10 +20,11 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/internal/model"
@@ -39,7 +40,7 @@ import (
 
 func TestQueryRecentBuilds(t *testing.T) {
 	t.Parallel()
-	Convey(`TestQueryRecentBuilds`, t, func() {
+	ftt.Run(`TestQueryRecentBuilds`, t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = testutils.SetUpTestGlobalCache(ctx)
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
@@ -94,9 +95,9 @@ func TestQueryRecentBuilds(t *testing.T) {
 		}
 
 		err := datastore.Put(ctx, builds)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`get all recent builds`, func() {
+		t.Run(`get all recent builds`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -111,8 +112,8 @@ func TestQueryRecentBuilds(t *testing.T) {
 				Builder:  builder1,
 				PageSize: 2,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builds, ShouldResemble, []*buildbucketpb.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builds, should.Resemble([]*buildbucketpb.Build{
 				{
 					Builder:    builder1,
 					Id:         998,
@@ -125,27 +126,27 @@ func TestQueryRecentBuilds(t *testing.T) {
 					Status:     buildbucketpb.Status_FAILURE,
 					CreateTime: timestamppb.New(builds[3].Created),
 				},
-			})
-			So(res.NextPageToken, ShouldNotBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 
 			res, err = srv.QueryRecentBuilds(ctx, &milopb.QueryRecentBuildsRequest{
 				Builder:   builder1,
 				PageSize:  2,
 				PageToken: res.NextPageToken,
 			})
-			So(err, ShouldBeNil)
-			So(res.Builds, ShouldResemble, []*buildbucketpb.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Builds, should.Resemble([]*buildbucketpb.Build{
 				{
 					Builder:    builder1,
 					Number:     2,
 					Status:     buildbucketpb.Status_SUCCESS,
 					CreateTime: timestamppb.New(builds[1].Created),
 				},
-			})
-			So(res.NextPageToken, ShouldBeEmpty)
+			}))
+			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 		})
 
-		Convey(`reject users with no access`, func() {
+		t.Run(`reject users with no access`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user",
 			})
@@ -153,15 +154,15 @@ func TestQueryRecentBuilds(t *testing.T) {
 				Builder:  builder1,
 				PageSize: 2,
 			})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
 
 func TestValidatesQueryRecentBuildsRequest(t *testing.T) {
 	t.Parallel()
-	Convey("validatesQueryRecentBuildsRequest", t, func() {
-		Convey("negative page size builder", func() {
+	ftt.Run("validatesQueryRecentBuildsRequest", t, func(t *ftt.Test) {
+		t.Run("negative page size builder", func(t *ftt.Test) {
 			err := validatesQueryRecentBuildsRequest(&milopb.QueryRecentBuildsRequest{
 				Builder: &buildbucketpb.BuilderID{
 					Project: "fake_project",
@@ -170,15 +171,15 @@ func TestValidatesQueryRecentBuildsRequest(t *testing.T) {
 				},
 				PageSize: -10,
 			})
-			So(err, ShouldErrLike, "page_size can not be negative")
+			assert.Loosely(t, err, should.ErrLike("page_size can not be negative"))
 		})
 
-		Convey("no builder", func() {
+		t.Run("no builder", func(t *ftt.Test) {
 			err := validatesQueryRecentBuildsRequest(&milopb.QueryRecentBuildsRequest{})
-			So(err, ShouldErrLike, "builder: project must match")
+			assert.Loosely(t, err, should.ErrLike("builder: project must match"))
 		})
 
-		Convey("invalid builder", func() {
+		t.Run("invalid builder", func(t *ftt.Test) {
 			err := validatesQueryRecentBuildsRequest(&milopb.QueryRecentBuildsRequest{
 				Builder: &buildbucketpb.BuilderID{
 					Project: "fake_proj",
@@ -186,10 +187,10 @@ func TestValidatesQueryRecentBuildsRequest(t *testing.T) {
 					Builder: "fake_/uilder1",
 				},
 			})
-			So(err, ShouldErrLike, "builder: bucket must match")
+			assert.Loosely(t, err, should.ErrLike("builder: bucket must match"))
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			err := validatesQueryRecentBuildsRequest(&milopb.QueryRecentBuildsRequest{
 				Builder: &buildbucketpb.BuilderID{
 					Project: "fake_project",
@@ -197,7 +198,7 @@ func TestValidatesQueryRecentBuildsRequest(t *testing.T) {
 					Builder: "fake_builder1",
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
