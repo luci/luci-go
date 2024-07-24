@@ -17,44 +17,44 @@ package config
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Environment", t, func() {
+	ftt.Run("Test Environment", t, func(t *ftt.Test) {
 		c := gaetesting.TestingContext()
 		datastore.GetTestable(c).Consistent(true)
 
-		Convey("Tests about global configs", func() {
-			Convey("Read a config before anything is set", func() {
+		t.Run("Tests about global configs", func(t *ftt.Test) {
+			t.Run("Read a config before anything is set", func(t *ftt.Test) {
 				c = cfgclient.Use(c, memcfg.New(mockedConfigs))
 				_, err := UpdateServiceConfig(c)
-				So(err.Error(), ShouldResemble, "could not load settings.cfg from luci-config: no such config")
+				assert.Loosely(t, err.Error(), should.Match("could not load settings.cfg from luci-config: no such config"))
 				settings := GetSettings(c)
-				So(settings.Buildbucket, ShouldBeNil)
+				assert.Loosely(t, settings.Buildbucket, should.BeNil)
 			})
 
-			Convey("Read a config", func() {
+			t.Run("Read a config", func(t *ftt.Test) {
 				mockedConfigs["services/${appid}"] = memcfg.Files{
 					"settings.cfg": settingsCfg,
 				}
 				c = cfgclient.Use(c, memcfg.New(mockedConfigs))
 				rSettings, err := UpdateServiceConfig(c)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				settings := GetSettings(c)
-				So(rSettings, ShouldResembleProto, settings)
-				So(settings.Buildbucket.Name, ShouldEqual, "dev")
-				So(settings.Buildbucket.Host, ShouldEqual, "cr-buildbucket-dev.appspot.com")
+				assert.Loosely(t, rSettings, should.Resemble(settings))
+				assert.Loosely(t, settings.Buildbucket.Name, should.Equal("dev"))
+				assert.Loosely(t, settings.Buildbucket.Host, should.Equal("cr-buildbucket-dev.appspot.com"))
 			})
 		})
 	})

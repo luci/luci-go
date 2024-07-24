@@ -18,10 +18,12 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 )
@@ -31,7 +33,7 @@ const testIdentity = identity.Identity("user:test@example.com")
 func TestFilterVisibleBuilders(t *testing.T) {
 	t.Parallel()
 
-	Convey(`FilterVisibleBuilders`, t, func() {
+	ftt.Run(`FilterVisibleBuilders`, t, func(t *ftt.Test) {
 		s := &authtest.FakeState{
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockPermission(testIdentity, "proj1:bucket1", bbperms.BuildersList),
@@ -70,8 +72,8 @@ func TestFilterVisibleBuilders(t *testing.T) {
 		}
 
 		visibleBuilders, err := FilterVisibleBuilders(ctx, builders, "")
-		So(err, ShouldBeNil)
-		So(visibleBuilders, ShouldResemble, []*buildbucketpb.BuilderID{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, visibleBuilders, should.Resemble([]*buildbucketpb.BuilderID{
 			{
 				Project: "proj1",
 				Bucket:  "bucket1",
@@ -87,11 +89,11 @@ func TestFilterVisibleBuilders(t *testing.T) {
 				Bucket:  "bucket1",
 				Builder: "builder2",
 			},
-		})
+		}))
 
 		visibleBuildersInProj2, err := FilterVisibleBuilders(ctx, builders, "proj2")
-		So(err, ShouldBeNil)
-		So(visibleBuildersInProj2, ShouldResemble, []*buildbucketpb.BuilderID{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, visibleBuildersInProj2, should.Resemble([]*buildbucketpb.BuilderID{
 			{
 				Project: "proj2",
 				Bucket:  "bucket1",
@@ -102,6 +104,6 @@ func TestFilterVisibleBuilders(t *testing.T) {
 				Bucket:  "bucket1",
 				Builder: "builder2",
 			},
-		})
+		}))
 	})
 }

@@ -40,6 +40,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -52,9 +55,6 @@ import (
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Controller, *buildbucketpb.MockBuildsClient) {
@@ -85,7 +85,7 @@ func makeReq(build *buildbucketpb.Build) io.ReadCloser {
 func TestPubSub(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestPubSub`, t, func() {
+	ftt.Run(`TestPubSub`, t, func(t *ftt.Test) {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		datastore.GetTestable(c).Consistent(true)
 		c, _ = testclock.UseTime(c, RefTime)
@@ -100,13 +100,13 @@ func TestPubSub(t *testing.T) {
 			BuilderID: "buildbucket/luci.fake.bucket/fake_builder",
 		}
 		err := datastore.Put(c, builderSummary)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Initialize the appropriate project config.
 		err = datastore.Put(c, &projectconfig.Project{
 			ID: "fake",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// We'll copy this LegacyApiCommonBuildMessage base for convenience.
 		buildBase := &buildbucketpb.Build{
@@ -126,7 +126,7 @@ func TestPubSub(t *testing.T) {
 			CreateTime: timestamppb.New(RefTime.Add(2 * time.Hour)),
 		}
 
-		Convey("New in-process build", func() {
+		t.Run("New in-process build", func(t *ftt.Test) {
 			bKey := model.MakeBuildKey(c, "hostname", "1234")
 			buildExp := proto.Clone(buildBase).(*buildbucketpb.Build)
 			buildExp.Id = 1234
@@ -157,35 +157,35 @@ func TestPubSub(t *testing.T) {
 				Writer:  h,
 				Request: r.WithContext(c),
 			})
-			So(h.Code, ShouldEqual, 200)
+			assert.Loosely(t, h.Code, should.Equal(200))
 			datastore.GetTestable(c).CatchupIndexes()
 
-			Convey("stores BuildSummary and BuilderSummary", func() {
+			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
 				buildAct := model.BuildSummary{BuildKey: bKey}
 				err := datastore.Get(c, &buildAct)
-				So(err, ShouldBeNil)
-				So(buildAct.BuildKey.String(), ShouldEqual, bKey.String())
-				So(buildAct.BuilderID, ShouldEqual, "buildbucket/luci.fake.bucket/fake_builder")
-				So(buildAct.Summary, ShouldResemble, model.Summary{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildAct.BuildKey.String(), should.Equal(bKey.String()))
+				assert.Loosely(t, buildAct.BuilderID, should.Equal("buildbucket/luci.fake.bucket/fake_builder"))
+				assert.Loosely(t, buildAct.Summary, should.Resemble(model.Summary{
 					Status: milostatus.Running,
 					Start:  RefTime.Add(3 * time.Hour),
-				})
-				So(buildAct.Created, ShouldResemble, RefTime.Add(2*time.Hour))
-				So(buildAct.Experimental, ShouldBeTrue)
-				So(buildAct.BlamelistPins, ShouldResemble, []string{
+				}))
+				assert.Loosely(t, buildAct.Created, should.Resemble(RefTime.Add(2*time.Hour)))
+				assert.Loosely(t, buildAct.Experimental, should.BeTrue)
+				assert.Loosely(t, buildAct.BlamelistPins, should.Resemble([]string{
 					"commit/gitiles/chromium.googlesource.com/angle/angle/+/8930f18245df678abc944376372c77ba5e2a658b",
 					"commit/gitiles/chromium.googlesource.com/chromium/src/+/07033c702f81a75dfc2d83888ba3f8b354d0e920",
-				})
+				}))
 
 				blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_builder"}
 				err = datastore.Get(c, &blder)
-				So(err, ShouldBeNil)
-				So(blder.LastFinishedStatus, ShouldResemble, milostatus.NotRun)
-				So(blder.LastFinishedBuildID, ShouldEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, blder.LastFinishedStatus, should.Resemble(milostatus.NotRun))
+				assert.Loosely(t, blder.LastFinishedBuildID, should.BeEmpty)
 			})
 		})
 
-		Convey("Completed build", func() {
+		t.Run("Completed build", func(t *ftt.Test) {
 			bKey := model.MakeBuildKey(c, "hostname", "2234")
 			buildExp := buildBase
 			buildExp.Id = 2234
@@ -206,33 +206,33 @@ func TestPubSub(t *testing.T) {
 				Writer:  h,
 				Request: r.WithContext(c),
 			})
-			So(h.Code, ShouldEqual, 200)
+			assert.Loosely(t, h.Code, should.Equal(200))
 
-			Convey("stores BuildSummary and BuilderSummary", func() {
+			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
 				buildAct := model.BuildSummary{BuildKey: bKey}
 				err := datastore.Get(c, &buildAct)
-				So(err, ShouldBeNil)
-				So(buildAct.BuildKey.String(), ShouldEqual, bKey.String())
-				So(buildAct.BuilderID, ShouldEqual, "buildbucket/luci.fake.bucket/fake_builder")
-				So(buildAct.Summary, ShouldResemble, model.Summary{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildAct.BuildKey.String(), should.Equal(bKey.String()))
+				assert.Loosely(t, buildAct.BuilderID, should.Equal("buildbucket/luci.fake.bucket/fake_builder"))
+				assert.Loosely(t, buildAct.Summary, should.Resemble(model.Summary{
 					Status: milostatus.Success,
 					Start:  RefTime.Add(3 * time.Hour),
 					End:    RefTime.Add(6 * time.Hour),
-				})
-				So(buildAct.Created, ShouldResemble, RefTime.Add(2*time.Hour))
+				}))
+				assert.Loosely(t, buildAct.Created, should.Resemble(RefTime.Add(2*time.Hour)))
 
 				blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_builder"}
 				err = datastore.Get(c, &blder)
-				So(err, ShouldBeNil)
-				So(blder.LastFinishedCreated, ShouldResemble, RefTime.Add(2*time.Hour))
-				So(blder.LastFinishedStatus, ShouldResemble, milostatus.Success)
-				So(blder.LastFinishedBuildID, ShouldEqual, "buildbucket/2234")
-				So(buildAct.BlamelistPins, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, blder.LastFinishedCreated, should.Resemble(RefTime.Add(2*time.Hour)))
+				assert.Loosely(t, blder.LastFinishedStatus, should.Resemble(milostatus.Success))
+				assert.Loosely(t, blder.LastFinishedBuildID, should.Equal("buildbucket/2234"))
+				assert.Loosely(t, buildAct.BlamelistPins, should.Resemble([]string{
 					"commit/gitiles/chromium.googlesource.com/angle/angle/+/8930f18245df678abc944376372c77ba5e2a658b",
-				})
+				}))
 			})
 
-			Convey("results in earlier update not being ingested", func() {
+			t.Run("results in earlier update not being ingested", func(t *ftt.Test) {
 				eBuild := &buildbucketpb.Build{
 					Id: 2234,
 					Builder: &buildbucketpb.BuilderID{
@@ -258,38 +258,38 @@ func TestPubSub(t *testing.T) {
 					Writer:  h,
 					Request: r.WithContext(c),
 				})
-				So(h.Code, ShouldEqual, 200)
+				assert.Loosely(t, h.Code, should.Equal(200))
 
 				buildAct := model.BuildSummary{BuildKey: bKey}
 				err := datastore.Get(c, &buildAct)
-				So(err, ShouldBeNil)
-				So(buildAct.Summary, ShouldResemble, model.Summary{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buildAct.Summary, should.Resemble(model.Summary{
 					Status: milostatus.Success,
 					Start:  RefTime.Add(3 * time.Hour),
 					End:    RefTime.Add(6 * time.Hour),
-				})
-				So(buildAct.Created, ShouldResemble, RefTime.Add(2*time.Hour))
+				}))
+				assert.Loosely(t, buildAct.Created, should.Resemble(RefTime.Add(2*time.Hour)))
 
 				blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_builder"}
 				err = datastore.Get(c, &blder)
-				So(err, ShouldBeNil)
-				So(blder.LastFinishedCreated, ShouldResemble, RefTime.Add(2*time.Hour))
-				So(blder.LastFinishedStatus, ShouldResemble, milostatus.Success)
-				So(blder.LastFinishedBuildID, ShouldEqual, "buildbucket/2234")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, blder.LastFinishedCreated, should.Resemble(RefTime.Add(2*time.Hour)))
+				assert.Loosely(t, blder.LastFinishedStatus, should.Resemble(milostatus.Success))
+				assert.Loosely(t, blder.LastFinishedBuildID, should.Equal("buildbucket/2234"))
 			})
 		})
 	})
 }
 
 func TestShouldUpdateBuilderSummary(t *testing.T) {
-	Convey("TestShouldUpdateBuilderSummary", t, func() {
+	ftt.Run("TestShouldUpdateBuilderSummary", t, func(t *ftt.Test) {
 		c := context.Background()
 		startTime := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC).
 			Truncate(time.Duration(entityUpdateIntervalInS) * time.Second)
 
 		// Set up a test redis server.
 		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer s.Close()
 		c = redisconn.UsePool(c, &redis.Pool{
 			Dial: func() (redis.Conn, error) {
@@ -307,18 +307,18 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			}
 		}
 
-		Convey("Single call", func() {
+		t.Run("Single call", func(t *ftt.Test) {
 			// Ensures `shouldUpdateBuilderSummary` is called at the start of the time bucket.
 			c, _ := testclock.UseTime(c, startTime)
 
 			start := clock.Now(c)
 			// Should return without advancing the clock.
 			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-1", buildbucketpb.Status_SUCCESS, start))
-			So(err, ShouldBeNil)
-			So(shouldUpdate, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, shouldUpdate, should.BeTrue)
 		})
 
-		Convey("Single call followed by multiple parallel calls", func(tc C) {
+		t.Run("Single call followed by multiple parallel calls", func(tc *ftt.Test) {
 			// Ensures all `shouldUpdateBuilderSummary` calls are in the same time bucket.
 			c, tClock := testclock.UseTime(c, startTime)
 
@@ -327,7 +327,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			shouldUpdates := make([]bool, 4)
 
 			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, pivot))
-			So(err, ShouldBeNil)
+			assert.Loosely(tc, err, should.BeNil)
 			shouldUpdates[0] = shouldUpdate
 
 			err = parallel.FanOutIn(func(tasks chan<- func() error) {
@@ -345,7 +345,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				}
 
 				// Wait until the previous call reaches a blocking point.
-				tc.So(<-eventC, ShouldEqual, "timer")
+				assert.Loosely(tc, <-eventC, should.Equal("timer"))
 				tasks <- func() error {
 					createdAt := pivot.Add(15 * time.Millisecond)
 					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
@@ -354,7 +354,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				}
 
 				// Wait until the previous call reaches a blocking point.
-				tc.So(<-eventC, ShouldEqual, "timer")
+				assert.Loosely(tc, <-eventC, should.Equal("timer"))
 				tasks <- func() error {
 					createdAt := pivot.Add(10 * time.Millisecond)
 					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
@@ -365,29 +365,29 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 
 				// Wait until the last shouldUpdateBuilderSummary call returns then
 				// advance the clock to the next time bucket.
-				tc.So(<-eventC, ShouldEqual, "return")
+				assert.Loosely(tc, <-eventC, should.Equal("return"))
 				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(tc, err, should.BeNil)
 
 			// The first value should be true because there's no recent updates.
-			So(shouldUpdates[0], ShouldBeTrue)
+			assert.Loosely(tc, shouldUpdates[0], should.BeTrue)
 
 			// The second value should be false because there's a recent update, so it
 			// moves to the next time bucket, wait for the timebucket to begin.
 			// Then it's replaced by the next shouldUpdateBuilderSummary call.
-			So(shouldUpdates[1], ShouldBeFalse)
+			assert.Loosely(tc, shouldUpdates[1], should.BeFalse)
 
 			// The third value should be true because it has a newer build than the
 			// current one. And it's not replaced by any new builds.
-			So(shouldUpdates[2], ShouldBeTrue)
+			assert.Loosely(tc, shouldUpdates[2], should.BeTrue)
 
 			// The forth value should be false because the build is not created earlier
 			// than the build associated with the current pending update in it's pending bucket.
-			So(shouldUpdates[3], ShouldBeFalse)
+			assert.Loosely(tc, shouldUpdates[3], should.BeFalse)
 		})
 
-		Convey("Single call followed by multiple parallel calls that are nanoseconds apart", func(tc C) {
+		t.Run("Single call followed by multiple parallel calls that are nanoseconds apart", func(tc *ftt.Test) {
 			// This test ensures that the timestamp percision is not lost.
 
 			// Ensures all `shouldUpdateBuilderSummary` calls are in the same time bucket.
@@ -398,7 +398,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			shouldUpdates := make([]bool, 4)
 
 			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, pivot))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			shouldUpdates[0] = shouldUpdate
 
 			err = parallel.FanOutIn(func(tasks chan<- func() error) {
@@ -416,7 +416,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				}
 
 				// Wait until the previous call reaches a blocking point.
-				tc.So(<-eventC, ShouldEqual, "timer")
+				assert.Loosely(t, <-eventC, should.Equal("timer"))
 				tasks <- func() error {
 					createdAt := pivot.Add(3 * time.Nanosecond)
 					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
@@ -425,7 +425,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				}
 
 				// Wait until the previous call reaches a blocking point.
-				tc.So(<-eventC, ShouldEqual, "timer")
+				assert.Loosely(t, <-eventC, should.Equal("timer"))
 				tasks <- func() error {
 					createdAt := pivot.Add(2 * time.Nanosecond)
 					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
@@ -436,36 +436,36 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 
 				// Wait until the last shouldUpdateBuilderSummary call returns then
 				// advance the clock to the next time bucket.
-				tc.So(<-eventC, ShouldEqual, "return")
+				assert.Loosely(t, <-eventC, should.Equal("return"))
 				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The first value should be true because there's no pending/recent updates.
-			So(shouldUpdates[0], ShouldBeTrue)
+			assert.Loosely(t, shouldUpdates[0], should.BeTrue)
 
 			// The second value should be false because there's a recent update, so it
 			// moves to the next time bucket, wait for the timebucket to begin.
 			// Then it's replaced by the next shouldUpdateBuilderSummary call.
-			So(shouldUpdates[1], ShouldBeFalse)
+			assert.Loosely(t, shouldUpdates[1], should.BeFalse)
 
 			// The third value should be true because it has a newer build than the
 			// current pending one. And it's not replaced by any new builds.
-			So(shouldUpdates[2], ShouldBeTrue)
+			assert.Loosely(t, shouldUpdates[2], should.BeTrue)
 
 			// The forth value should be false because the build is not created earlier
 			// than the build associated with the current pending update in it's pending bucket.
-			So(shouldUpdates[3], ShouldBeFalse)
+			assert.Loosely(t, shouldUpdates[3], should.BeFalse)
 		})
 
-		Convey("Single call followed by multiple parallel calls in different time buckets", func(tc C) {
+		t.Run("Single call followed by multiple parallel calls in different time buckets", func(t *ftt.Test) {
 			c, tClock := testclock.UseTime(c, startTime)
 
 			pivot := clock.Now(c).Add(-time.Hour)
 			shouldUpdates := make([]bool, 4)
 
 			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, pivot))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			shouldUpdates[0] = shouldUpdate
 
 			// Ensures the following `shouldUpdateBuilderSummary` calls are in a
@@ -488,7 +488,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				}
 
 				// Wait until the previous shouldUpdateBuilderSummary call returns.
-				tc.So(<-eventC, ShouldEqual, "return")
+				assert.Loosely(t, <-eventC, should.Equal("return"))
 				tasks <- func() error {
 					createdAt := pivot.Add(15 * time.Millisecond)
 					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
@@ -497,7 +497,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				}
 
 				// Wait until the previous call reaches a blocking point.
-				tc.So(<-eventC, ShouldEqual, "timer")
+				assert.Loosely(t, <-eventC, should.Equal("timer"))
 				tasks <- func() error {
 					createdAt := pivot.Add(20 * time.Millisecond)
 					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
@@ -507,26 +507,26 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 
 				// Wait until the last shouldUpdateBuilderSummary call returns then
 				// advance the clock to the next time bucket.
-				tc.So(<-eventC, ShouldEqual, "timer")
+				assert.Loosely(t, <-eventC, should.Equal("timer"))
 				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The first value should be true because there's no pending/recent updates.
-			So(shouldUpdates[0], ShouldBeTrue)
+			assert.Loosely(t, shouldUpdates[0], should.BeTrue)
 
 			// The second value should be true because it has move to a new time bucket
 			// and there's no pending/recent updates in that bucket.
-			So(shouldUpdates[1], ShouldBeTrue)
+			assert.Loosely(t, shouldUpdates[1], should.BeTrue)
 
 			// The third value should be false because there's a recent update, so it
 			// moves to the next time bucket, wait for the timebucket to begin.
 			// Then it's replaced by the next shouldUpdateBuilderSummary call.
-			So(shouldUpdates[2], ShouldBeFalse)
+			assert.Loosely(t, shouldUpdates[2], should.BeFalse)
 
 			// The forth value should be true because it has a newer build than the
 			// current pending one. And it's not replaced by any new builds.
-			So(shouldUpdates[3], ShouldBeTrue)
+			assert.Loosely(t, shouldUpdates[3], should.BeTrue)
 		})
 	})
 }
@@ -534,50 +534,50 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 func TestDeleteOldBuilds(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeleteOldBuilds", t, func() {
+	ftt.Run("DeleteOldBuilds", t, func(t *ftt.Test) {
 		now := time.Date(2020, 01, 01, 0, 0, 0, 0, time.UTC)
 
 		ctx, _ := testclock.UseTime(memory.Use(context.Background()), now)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		createBuild := func(id string, t time.Time) *model.BuildSummary {
+		createBuild := func(id string, tm time.Time) *model.BuildSummary {
 			b := &model.BuildSummary{
 				BuildKey: model.MakeBuildKey(ctx, "host", id),
-				Created:  t,
+				Created:  tm,
 			}
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 			return b
 		}
 
-		Convey("keeps builds", func() {
-			Convey("as old as BuildSummaryStorageDuration", func() {
+		t.Run("keeps builds", func(t *ftt.Test) {
+			t.Run("as old as BuildSummaryStorageDuration", func(t *ftt.Test) {
 				build := createBuild("1", now.Add(-BuildSummaryStorageDuration))
-				So(DeleteOldBuilds(ctx), ShouldBeNil)
-				So(datastore.Get(ctx, build), ShouldBeNil)
+				assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, build), should.BeNil)
 			})
-			Convey("younger than BuildSummaryStorageDuration", func() {
+			t.Run("younger than BuildSummaryStorageDuration", func(t *ftt.Test) {
 				build := createBuild("2", now.Add(-BuildSummaryStorageDuration+time.Minute))
-				So(DeleteOldBuilds(ctx), ShouldBeNil)
-				So(datastore.Get(ctx, build), ShouldBeNil)
+				assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, build), should.BeNil)
 			})
 		})
 
-		Convey("deletes builds older than BuildSummaryStorageDuration", func() {
+		t.Run("deletes builds older than BuildSummaryStorageDuration", func(t *ftt.Test) {
 			build := createBuild("3", now.Add(-BuildSummaryStorageDuration-time.Minute))
-			So(DeleteOldBuilds(ctx), ShouldBeNil)
-			So(datastore.Get(ctx, build), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, build), should.Equal(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("removes many builds", func() {
+		t.Run("removes many builds", func(t *ftt.Test) {
 			bs := make([]*model.BuildSummary, 234)
 			old := now.Add(-BuildSummaryStorageDuration - time.Minute)
 			for i := range bs {
 				bs[i] = createBuild(fmt.Sprintf("4-%d", i), old)
 			}
-			So(DeleteOldBuilds(ctx), ShouldBeNil)
-			So(datastore.Get(ctx, bs), ShouldErrLike,
-				"datastore: no such entity (and 233 other errors)")
+			assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, bs), should.ErrLike(
+				"datastore: no such entity (and 233 other errors)"))
 		})
 	})
 }
@@ -585,48 +585,48 @@ func TestDeleteOldBuilds(t *testing.T) {
 func TestSyncBuilds(t *testing.T) {
 	t.Parallel()
 
-	Convey("SyncBuilds", t, func() {
+	ftt.Run("SyncBuilds", t, func(t *ftt.Test) {
 		now := time.Date(2020, 01, 01, 0, 0, 0, 0, time.UTC)
 
 		c, _ := testclock.UseTime(memory.Use(context.Background()), now)
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 
-		createBuild := func(id string, t time.Time, status milostatus.Status) *model.BuildSummary {
+		createBuild := func(id string, tm time.Time, status milostatus.Status) *model.BuildSummary {
 			b := &model.BuildSummary{
 				BuildKey:  model.MakeBuildKey(c, "host", id),
 				BuilderID: "buildbucket/luci.proj.bucket/builder",
 				BuildID:   "buildbucket/" + id,
-				Created:   t,
+				Created:   tm,
 				Summary: model.Summary{
 					Status: status,
 				},
-				Version: t.UnixNano(),
+				Version: tm.UnixNano(),
 			}
-			So(datastore.Put(c, b), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, b), should.BeNil)
 			return b
 		}
 
-		Convey("don't update builds", func() {
-			Convey("as old as BuildSummaryStorageDuration", func() {
+		t.Run("don't update builds", func(t *ftt.Test) {
+			t.Run("as old as BuildSummaryStorageDuration", func(t *ftt.Test) {
 				build := createBuild("luci.proj.bucket/builder/1234", now.Add(-BuildSummarySyncThreshold), milostatus.Running)
-				So(syncBuildsImpl(c), ShouldBeNil)
-				So(datastore.Get(c, build), ShouldBeNil)
-				So(build.Summary.Status, ShouldEqual, milostatus.Running)
+				assert.Loosely(t, syncBuildsImpl(c), should.BeNil)
+				assert.Loosely(t, datastore.Get(c, build), should.BeNil)
+				assert.Loosely(t, build.Summary.Status, should.Equal(milostatus.Running))
 			})
 
-			Convey("younger than BuildSummaryStorageDuration", func() {
+			t.Run("younger than BuildSummaryStorageDuration", func(t *ftt.Test) {
 				build := createBuild("luci.proj.bucket/builder/1234", now.Add(-BuildSummarySyncThreshold+time.Minute), milostatus.NotRun)
-				So(syncBuildsImpl(c), ShouldBeNil)
-				So(datastore.Get(c, build), ShouldBeNil)
-				So(build.Summary.Status, ShouldEqual, milostatus.NotRun)
+				assert.Loosely(t, syncBuildsImpl(c), should.BeNil)
+				assert.Loosely(t, datastore.Get(c, build), should.BeNil)
+				assert.Loosely(t, build.Summary.Status, should.Equal(milostatus.NotRun))
 			})
 		})
 
-		Convey("update builds older than BuildSummarySyncThreshold", func() {
+		t.Run("update builds older than BuildSummarySyncThreshold", func(t *ftt.Test) {
 			build := createBuild("luci.proj.bucket/builder/1234", now.Add(-BuildSummarySyncThreshold-time.Minute), milostatus.NotRun)
 
-			c, ctrl, mbc := newMockClient(c, t)
+			c, ctrl, mbc := newMockClient(c, t.T)
 			defer ctrl.Finish()
 			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
 				Number: 1234,
@@ -640,15 +640,15 @@ func TestSyncBuilds(t *testing.T) {
 				UpdateTime: timestamppb.New(build.Created.Add(time.Hour)),
 			}, nil).AnyTimes()
 
-			So(syncBuildsImpl(c), ShouldBeNil)
-			So(datastore.Get(c, build), ShouldBeNil)
-			So(build.Summary.Status, ShouldEqual, milostatus.Success)
+			assert.Loosely(t, syncBuildsImpl(c), should.BeNil)
+			assert.Loosely(t, datastore.Get(c, build), should.BeNil)
+			assert.Loosely(t, build.Summary.Status, should.Equal(milostatus.Success))
 		})
 
-		Convey("ensure BuildKey stays the same", func() {
+		t.Run("ensure BuildKey stays the same", func(t *ftt.Test) {
 			build := createBuild("123456", now.Add(-BuildSummarySyncThreshold-time.Minute), milostatus.NotRun)
 
-			c, ctrl, mbc := newMockClient(c, t)
+			c, ctrl, mbc := newMockClient(c, t.T)
 			defer ctrl.Finish()
 			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
 				Id:     123456,
@@ -663,14 +663,14 @@ func TestSyncBuilds(t *testing.T) {
 				UpdateTime: timestamppb.New(build.Created.Add(time.Hour)),
 			}, nil).AnyTimes()
 
-			So(syncBuildsImpl(c), ShouldBeNil)
-			So(datastore.Get(c, build), ShouldBeNil)
-			So(build.Summary.Status, ShouldEqual, milostatus.Success)
+			assert.Loosely(t, syncBuildsImpl(c), should.BeNil)
+			assert.Loosely(t, datastore.Get(c, build), should.BeNil)
+			assert.Loosely(t, build.Summary.Status, should.Equal(milostatus.Success))
 
 			buildWithNewKey := &model.BuildSummary{
 				BuildKey: model.MakeBuildKey(c, "host", "luci.proj.bucket/builder/1234"),
 			}
-			So(datastore.Get(c, buildWithNewKey), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, datastore.Get(c, buildWithNewKey), should.Equal(datastore.ErrNoSuchEntity))
 		})
 	})
 }

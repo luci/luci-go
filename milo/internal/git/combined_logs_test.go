@@ -28,20 +28,20 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/milo/internal/git/gitacls"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCombinedLogs(t *testing.T) {
 	t.Parallel()
 
-	Convey("CombinedLogs", t, func() {
+	ftt.Run("CombinedLogs", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
 		ctl := gomock.NewController(t)
@@ -52,7 +52,7 @@ func TestCombinedLogs(t *testing.T) {
 		acls, err := gitacls.FromConfig(c, []*configpb.Settings_SourceAcls{
 			{Hosts: []string{host}, Readers: []string{"allowed@example.com"}},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		impl := implementation{mockGitiles: gitilesMock, acls: acls}
 		c = Use(c, &impl)
 		cAllowed := auth.WithState(c, &authtest.FakeState{Identity: "user:allowed@example.com"})
@@ -62,7 +62,7 @@ func TestCombinedLogs(t *testing.T) {
 		commitID := make([]byte, 20)
 		commitID[0] = 255
 		epoch, err := time.Parse(time.RFC3339, "2018-06-22T19:34:06Z")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		for i := range fakeCommits {
 			fakeCommits[i] = &gitpb.Commit{
 				Id: hex.EncodeToString(commitID),
@@ -89,23 +89,23 @@ func TestCombinedLogs(t *testing.T) {
 			})).Return(&gitilespb.LogResponse{Log: respCommits}, nil)
 		}
 
-		Convey("ACLs respected", func() {
+		t.Run("ACLs respected", func(t *ftt.Test) {
 			_, err := impl.CombinedLogs(
 				cDenied, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err.Error(), ShouldContainSubstring, "not logged in")
+			assert.Loosely(t, err.Error(), should.ContainSubstring("not logged in"))
 		})
 
-		Convey("no refs match", func() {
+		t.Run("no refs match", func(t *ftt.Test) {
 			mockRefsCall("refs/branch-heads", refTips{})
 			commits, err := impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err, ShouldBeNil)
-			So(len(commits), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(commits), should.BeZero)
 		})
 
-		Convey("one ref matches", func() {
+		t.Run("one ref matches", func(t *ftt.Test) {
 			mockRefsCall("refs/branch-heads", refTips{
 				"refs/branch-heads/1.1": fakeCommits[0].Id,
 			})
@@ -115,11 +115,11 @@ func TestCombinedLogs(t *testing.T) {
 			commits, err := impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err, ShouldBeNil)
-			So(commits, ShouldResemble, fakeCommits[0:5])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble(fakeCommits[0:5]))
 		})
 
-		Convey("multiple refs match and commits are merged correctly", func() {
+		t.Run("multiple refs match and commits are merged correctly", func(t *ftt.Test) {
 			mockRefsCall("refs/branch-heads", refTips{
 				"refs/branch-heads/1.1": fakeCommits[0].Id,
 				"refs/branch-heads/1.2": fakeCommits[10].Id,
@@ -150,14 +150,14 @@ func TestCombinedLogs(t *testing.T) {
 					`regexp:refs/branch-heads/\d+\.\d+`,
 					`regexp:refs/heads/\d+\.\d+\.\d+`,
 				}, 7)
-			So(err, ShouldBeNil)
-			So(commits, ShouldResemble, []*gitpb.Commit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble([]*gitpb.Commit{
 				fakeCommits[0], fakeCommits[20], fakeCommits[1], fakeCommits[21],
 				fakeCommits[22], fakeCommits[2], fakeCommits[23],
-			})
+			}))
 		})
 
-		Convey("multiple refs match and their commits deduped", func() {
+		t.Run("multiple refs match and their commits deduped", func(t *ftt.Test) {
 			mockRefsCall("refs/branch-heads", refTips{
 				"refs/branch-heads/1.1": fakeCommits[0].Id,
 				"refs/branch-heads/1.2": fakeCommits[5].Id,
@@ -169,11 +169,11 @@ func TestCombinedLogs(t *testing.T) {
 			commits, err := impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err, ShouldBeNil)
-			So(commits, ShouldResemble, fakeCommits[0:10])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble(fakeCommits[0:10]))
 		})
 
-		Convey("use result from cache when available", func() {
+		t.Run("use result from cache when available", func(t *ftt.Test) {
 			mockRefsCall("refs/branch-heads", refTips{
 				"refs/branch-heads/1.1": fakeCommits[0].Id,
 				"refs/branch-heads/1.2": fakeCommits[10].Id,
@@ -185,18 +185,18 @@ func TestCombinedLogs(t *testing.T) {
 			commits, err := impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err, ShouldBeNil)
-			So(commits, ShouldResembleProto, fakeCommits[0:20])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble(fakeCommits[0:20]))
 
 			// This call should use logs from cache.
 			commits, err = impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err, ShouldBeNil)
-			So(commits, ShouldResembleProto, fakeCommits[0:20])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble(fakeCommits[0:20]))
 		})
 
-		Convey("invalidate cache when ref moves", func() {
+		t.Run("invalidate cache when ref moves", func(t *ftt.Test) {
 			firstRefsCall := mockRefsCall("refs/branch-heads", refTips{
 				"refs/branch-heads/1.1": fakeCommits[0].Id,
 				"refs/branch-heads/1.2": fakeCommits[11].Id,
@@ -216,17 +216,17 @@ func TestCombinedLogs(t *testing.T) {
 			commits, err := impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err, ShouldBeNil)
-			So(commits, ShouldResembleProto, []*gitpb.Commit{
-				fakeCommits[0], fakeCommits[1], fakeCommits[11], fakeCommits[12]})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble([]*gitpb.Commit{
+				fakeCommits[0], fakeCommits[1], fakeCommits[11], fakeCommits[12]}))
 
 			commits, err = impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
-			So(err, ShouldBeNil)
-			So(commits, ShouldResembleProto, []*gitpb.Commit{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, commits, should.Resemble([]*gitpb.Commit{
 				fakeCommits[0], fakeCommits[1], fakeCommits[10], fakeCommits[11],
-				fakeCommits[12]})
+				fakeCommits[12]}))
 		})
 	})
 }

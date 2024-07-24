@@ -21,8 +21,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/milo/frontend/ui"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
@@ -30,7 +32,7 @@ import (
 func TestRenderOncallers(t *testing.T) {
 	t.Parallel()
 	ctx := gaetesting.TestingContext()
-	Convey("Oncall fetching works", t, func() {
+	ftt.Run("Oncall fetching works", t, func(t *ftt.Test) {
 		serveMux := http.NewServeMux()
 		serverResponse := func(w http.ResponseWriter, r *http.Request) {
 			name := r.URL.Query()["name"][0]
@@ -48,119 +50,119 @@ func TestRenderOncallers(t *testing.T) {
 		server := httptest.NewServer(serveMux)
 		defer server.Close()
 
-		Convey("Fetch failed", func() {
+		t.Run("Fetch failed", func(t *ftt.Test) {
 			oncallConfig := projectconfigpb.Oncall{
 				Url: server.URL + "?name=bad",
 			}
 			result, err := getOncallData(ctx, &oncallConfig)
-			So(err, ShouldBeNil)
-			So(result.Oncallers, ShouldEqual, template.HTML(`ERROR: Fetching oncall failed`))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result.Oncallers, should.Equal(template.HTML(`ERROR: Fetching oncall failed`)))
 		})
-		Convey("Fetch succeeded", func() {
+		t.Run("Fetch succeeded", func(t *ftt.Test) {
 			oncallConfig := projectconfigpb.Oncall{
 				Name: "Good rotation",
 				Url:  server.URL + "?name=good",
 			}
 			result, err := getOncallData(ctx, &oncallConfig)
-			So(err, ShouldBeNil)
-			So(result.Name, ShouldEqual, "Good rotation")
-			So(result.Oncallers, ShouldEqual, template.HTML(`foo`))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result.Name, should.Equal("Good rotation"))
+			assert.Loosely(t, result.Oncallers, should.Equal(template.HTML(`foo`)))
 		})
 	})
 
-	Convey("Rendering oncallers works", t, func() {
-		Convey("Legacy trooper format", func() {
+	ftt.Run("Rendering oncallers works", t, func(t *ftt.Test) {
+		t.Run("Legacy trooper format", func(t *ftt.Test) {
 			oncallConfig := projectconfigpb.Oncall{
 				Name: "Legacy trooper",
 				Url:  "http://fake-rota.appspot.com/legacy/trooper.json",
 			}
-			Convey("No-one oncall", func() {
+			t.Run("No-one oncall", func(t *ftt.Test) {
 				response := ui.Oncall{
 					Primary:     "",
 					Secondaries: []string{},
 				}
 
-				So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`&lt;none&gt;`))
+				assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(`&lt;none&gt;`)))
 			})
-			Convey("No-one oncall with 'None' string", func() {
+			t.Run("No-one oncall with 'None' string", func(t *ftt.Test) {
 				response := ui.Oncall{
 					Primary:     "None",
 					Secondaries: []string{},
 				}
 
-				So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`None`))
+				assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(`None`)))
 			})
-			Convey("Primary only", func() {
-				Convey("Googler", func() {
+			t.Run("Primary only", func(t *ftt.Test) {
+				t.Run("Googler", func(t *ftt.Test) {
 					response := ui.Oncall{
 						Primary:     "foo@google.com",
 						Secondaries: []string{},
 					}
 
-					So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`foo`))
+					assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(`foo`)))
 				})
-				Convey("Non-Googler", func() {
+				t.Run("Non-Googler", func(t *ftt.Test) {
 					response := ui.Oncall{
 						Primary:     "foo@example.com",
 						Secondaries: []string{},
 					}
 
-					So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(
-						`foo<span style="display:none">ohnoyoudont</span>@example.com`))
+					assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(
+						`foo<span style="display:none">ohnoyoudont</span>@example.com`)))
 				})
 			})
-			Convey("Primary and secondaries", func() {
+			t.Run("Primary and secondaries", func(t *ftt.Test) {
 				response := ui.Oncall{
 					Primary:     "foo@google.com",
 					Secondaries: []string{"bar@google.com", "baz@example.com"},
 				}
 
-				So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(
-					`foo (primary), bar (secondary), baz<span style="display:none">ohnoyoudont</span>@example.com (secondary)`))
+				assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(
+					`foo (primary), bar (secondary), baz<span style="display:none">ohnoyoudont</span>@example.com (secondary)`)))
 			})
 		})
-		Convey("Email-only format", func() {
+		t.Run("Email-only format", func(t *ftt.Test) {
 			oncallConfig := projectconfigpb.Oncall{
 				Name: "Legacy trooper",
 				Url:  "http://fake-rota.appspot.com/legacy/trooper.json",
 			}
 
-			Convey("No-one oncall", func() {
+			t.Run("No-one oncall", func(t *ftt.Test) {
 				response := ui.Oncall{
 					Emails: []string{},
 				}
 
-				So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`&lt;none&gt;`))
+				assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(`&lt;none&gt;`)))
 			})
 
-			Convey("Primary only", func() {
-				Convey("Googler", func() {
+			t.Run("Primary only", func(t *ftt.Test) {
+				t.Run("Googler", func(t *ftt.Test) {
 					response := ui.Oncall{
 						Emails: []string{"foo@google.com"},
 					}
 
-					So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`foo`))
+					assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(`foo`)))
 				})
-				Convey("Non-Googler", func() {
+				t.Run("Non-Googler", func(t *ftt.Test) {
 					response := ui.Oncall{
 						Emails: []string{"foo@example.com"},
 					}
 
-					So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(
-						`foo<span style="display:none">ohnoyoudont</span>@example.com`))
+					assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(
+						`foo<span style="display:none">ohnoyoudont</span>@example.com`)))
 				})
 			})
 
-			Convey("Primary and secondaries", func() {
-				Convey("Primary/secondary labeling disabled", func() {
+			t.Run("Primary and secondaries", func(t *ftt.Test) {
+				t.Run("Primary/secondary labeling disabled", func(t *ftt.Test) {
 					response := ui.Oncall{
 						Emails: []string{"foo@google.com", "bar@google.com", "baz@example.com"},
 					}
 
-					So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(
-						`foo, bar, baz<span style="display:none">ohnoyoudont</span>@example.com`))
+					assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(
+						`foo, bar, baz<span style="display:none">ohnoyoudont</span>@example.com`)))
 				})
-				Convey("Primary/secondary labeling enabled", func() {
+				t.Run("Primary/secondary labeling enabled", func(t *ftt.Test) {
 					oncallConfig := projectconfigpb.Oncall{
 						Name:                       "Legacy trooper",
 						Url:                        "http://fake-rota.appspot.com/legacy/trooper.json",
@@ -170,8 +172,8 @@ func TestRenderOncallers(t *testing.T) {
 						Emails: []string{"foo@google.com", "bar@google.com", "baz@example.com"},
 					}
 
-					So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(
-						`foo (primary), bar (secondary), baz<span style="display:none">ohnoyoudont</span>@example.com (secondary)`))
+					assert.Loosely(t, renderOncallers(&oncallConfig, &response), should.Equal(template.HTML(
+						`foo (primary), bar (secondary), baz<span style="display:none">ohnoyoudont</span>@example.com (secondary)`)))
 				})
 			})
 		})
