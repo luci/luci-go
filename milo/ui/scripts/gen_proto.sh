@@ -23,8 +23,14 @@ cd ../../../../../
 # client-server communication.
 protoc \
   --plugin=./go.chromium.org/luci/milo/ui/node_modules/.bin/protoc-gen-ts_proto \
+  \
+  `# All the base directory to resolve the proto file dependencies from must be
+   # listed here. Otherwise, protoc may not able to resolve the dependencies
+   # listed in a proto file.` \
   -I=./go.chromium.org/luci/common/proto/googleapis \
+  -I=./go.chromium.org/chromiumos/config/proto \
   -I=./ \
+  \
   --ts_proto_out=./go.chromium.org/luci/milo/ui/src/proto \
   \
   `# Add '.pb' so it can be ignored by presubmit upload checks.` \

@@ -422,7 +422,7 @@ export interface BuilderConfig {
    */
   readonly contactTeamEmail: string;
   /** Custom metrics for the builds. */
-  readonly customBuildMetrics: readonly BuilderConfig_CustomBuildMetric[];
+  readonly customMetricDefinitions: readonly CustomMetricDefinition[];
 }
 
 /**
@@ -627,84 +627,6 @@ export interface BuilderConfig_BuilderHealthLinks_DataLinksEntry {
   readonly value: string;
 }
 
-export interface BuilderConfig_CustomBuildMetric {
-  /**
-   * Name of custom metrics to report build events.
-   *
-   * It must be a pre-registered custom metric in buildbucket's service config.
-   */
-  readonly name: string;
-  /**
-   * Predicates for the build metadata. A build has to meet all the predicates
-   * in order for its build events to be reported.
-   *
-   * This is a required field.
-   *
-   * If this is to report events of all builds under the builder, use
-   * the standard build metrics instead.
-   *
-   * If this is to report events of all builds under the builder, but
-   * with additional metric fields, copied from a build metadata, such as
-   * tags, then add a predicate for the metadata.
-   * e.g., `build.tags.get_value("key")!=""`
-   *
-   * Each item must be a boolean expression formatted in
-   * https://github.com/google/cel-spec.
-   *
-   * Example predicates that are supported currently:
-   * * a build field has non-default value, e.g. `has(build.tags)` means
-   *   build.tags is not empty,
-   * * input/output properties has a key, e.g. `has(build.input.properties.pro_key)`
-   * * an input/output property with key "key" has "value":
-   *   `string(build.output.properties.key) == "value"`
-   *   - Note that because input/output properties are Struct, we have to cast
-   *     the value to string.
-   * * experiments includes an experiment, e.g.
-   *  `build.input.experiments.exists(e, e=="luci.buildbucket.exp")`
-   * * tags includes a tag with key "key", and there are two ways:
-   *   - `build.tags.get_value("key")!=""`
-   *   - `build.tags.exists(t, t.key=="key")`
-   */
-  readonly predicates: readonly string[];
-  /**
-   * Describes how to generate metric field values.
-   *
-   * In the map,
-   * - each key is a custom metric field name, configured in the reference metric.
-   * - each value is a string expression formatted in
-   * https://github.com/google/cel-spec to set the field with.
-   *
-   * Example of the string experssions that are currently supported:
-   * * value of any build string field, e.g. `build.summary_markdown`
-   * * value of an input/output property, e.g. `string(build.input.properties.key)`
-   *   - Note that because input/output properties are Struct, we have to cast
-   *     the value to string.
-   * * value of a tag, e.g. `build.tags.get_value("os")`
-   *
-   * Must include all the metric fields defined in the referenced metrics.
-   * May include additional fields that are not defined in the referenced
-   * metrics, but those fields will be ignored (this is helpful for adding
-   * new fields into existing custom metrics).
-   *
-   * Note that the possible values of each field should be bounded.
-   * So below fields should not be included:
-   * * build id
-   * * any timestamp (e.g. build's creation time)
-   * * any markdown strings (e.g. build's summary_markdown)
-   * * any log strings (e.g. build's output logs)
-   * * any PII
-   * * build's gitiles commit hash
-   * * build's gerrit change number
-   * * etc
-   */
-  readonly fields: { [key: string]: string };
-}
-
-export interface BuilderConfig_CustomBuildMetric_FieldsEntry {
-  readonly key: string;
-  readonly value: string;
-}
-
 /** Configuration of buildbucket-swarming integration for one bucket. */
 export interface Swarming {
   /**
@@ -859,6 +781,89 @@ export interface BuildbucketCfg_CommonConfig {
   readonly buildsNotificationTopics: readonly BuildbucketCfg_Topic[];
 }
 
+/**
+ * CustomMetricDefinition contains information on what and how to populate
+ * reports to a custom metric.
+ */
+export interface CustomMetricDefinition {
+  /**
+   * Name of custom metrics to report build events.
+   *
+   * It must be a pre-registered custom metric in buildbucket's service config.
+   */
+  readonly name: string;
+  /**
+   * Predicates for the build metadata. A build has to meet all the predicates
+   * in order for its build events to be reported.
+   *
+   * This is a required field.
+   *
+   * If this is to report events of all builds under the builder, use
+   * the standard build metrics instead.
+   *
+   * If this is to report events of all builds under the builder, but
+   * with additional metric fields, copied from a build metadata, such as
+   * tags, then add a predicate for the metadata.
+   * e.g., `build.tags.get_value("key")!=""`
+   *
+   * Each item must be a boolean expression formatted in
+   * https://github.com/google/cel-spec.
+   *
+   * Example predicates that are supported currently:
+   * * a build field has non-default value, e.g. `has(build.tags)` means
+   *   build.tags is not empty,
+   * * input/output properties has a key, e.g. `has(build.input.properties.pro_key)`
+   * * an input/output property with key "key" has "value":
+   *   `string(build.output.properties.key) == "value"`
+   *   - Note that because input/output properties are Struct, we have to cast
+   *     the value to string.
+   * * experiments includes an experiment, e.g.
+   *  `build.input.experiments.exists(e, e=="luci.buildbucket.exp")`
+   * * tags includes a tag with key "key", and there are two ways:
+   *   - `build.tags.get_value("key")!=""`
+   *   - `build.tags.exists(t, t.key=="key")`
+   */
+  readonly predicates: readonly string[];
+  /**
+   * Describes how to generate values for the extra metric fields defined in
+   * CustomMetric.ExtraFields.
+   *
+   * In the map,
+   * - each key is a custom metric field name, configured in the reference metric.
+   * - each value is a string expression formatted in
+   * https://github.com/google/cel-spec to set the field with.
+   *
+   * Example of the string experssions that are currently supported:
+   * * value of any build string field, e.g. `build.summary_markdown`
+   * * value of an input/output property, e.g. `string(build.input.properties.key)`
+   *   - Note that because input/output properties are Struct, we have to cast
+   *     the value to string.
+   * * value of a tag, e.g. `build.tags.get_value("os")`
+   *
+   * Must include all the metric fields defined in the referenced metrics.
+   * May include additional fields that are not defined in the referenced
+   * metrics, but those fields will be ignored (this is helpful for adding
+   * new fields into existing custom metrics).
+   *
+   * Note that the possible values of each field should be bounded.
+   * So below fields should not be included:
+   * * build id
+   * * any timestamp (e.g. build's creation time)
+   * * any markdown strings (e.g. build's summary_markdown)
+   * * any log strings (e.g. build's output logs)
+   * * any PII
+   * * build's gitiles commit hash
+   * * build's gerrit change number
+   * * etc
+   */
+  readonly extraFields: { [key: string]: string };
+}
+
+export interface CustomMetricDefinition_ExtraFieldsEntry {
+  readonly key: string;
+  readonly value: string;
+}
+
 function createBaseAcl(): Acl {
   return { role: 0, group: "", identity: "" };
 }
@@ -981,7 +986,7 @@ function createBaseBuilderConfig(): BuilderConfig {
     retriable: 0,
     builderHealthMetricsLinks: undefined,
     contactTeamEmail: "",
-    customBuildMetrics: [],
+    customMetricDefinitions: [],
   };
 }
 
@@ -1081,8 +1086,8 @@ export const BuilderConfig = {
     if (message.contactTeamEmail !== "") {
       writer.uint32(306).string(message.contactTeamEmail);
     }
-    for (const v of message.customBuildMetrics) {
-      BuilderConfig_CustomBuildMetric.encode(v!, writer.uint32(322).fork()).ldelim();
+    for (const v of message.customMetricDefinitions) {
+      CustomMetricDefinition.encode(v!, writer.uint32(322).fork()).ldelim();
     }
     return writer;
   },
@@ -1319,7 +1324,7 @@ export const BuilderConfig = {
             break;
           }
 
-          message.customBuildMetrics.push(BuilderConfig_CustomBuildMetric.decode(reader, reader.uint32()));
+          message.customMetricDefinitions.push(CustomMetricDefinition.decode(reader, reader.uint32()));
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -1382,8 +1387,8 @@ export const BuilderConfig = {
         ? BuilderConfig_BuilderHealthLinks.fromJSON(object.builderHealthMetricsLinks)
         : undefined,
       contactTeamEmail: isSet(object.contactTeamEmail) ? globalThis.String(object.contactTeamEmail) : "",
-      customBuildMetrics: globalThis.Array.isArray(object?.customBuildMetrics)
-        ? object.customBuildMetrics.map((e: any) => BuilderConfig_CustomBuildMetric.fromJSON(e))
+      customMetricDefinitions: globalThis.Array.isArray(object?.customMetricDefinitions)
+        ? object.customMetricDefinitions.map((e: any) => CustomMetricDefinition.fromJSON(e))
         : [],
     };
   },
@@ -1489,8 +1494,8 @@ export const BuilderConfig = {
     if (message.contactTeamEmail !== "") {
       obj.contactTeamEmail = message.contactTeamEmail;
     }
-    if (message.customBuildMetrics?.length) {
-      obj.customBuildMetrics = message.customBuildMetrics.map((e) => BuilderConfig_CustomBuildMetric.toJSON(e));
+    if (message.customMetricDefinitions?.length) {
+      obj.customMetricDefinitions = message.customMetricDefinitions.map((e) => CustomMetricDefinition.toJSON(e));
     }
     return obj;
   },
@@ -1555,8 +1560,8 @@ export const BuilderConfig = {
         ? BuilderConfig_BuilderHealthLinks.fromPartial(object.builderHealthMetricsLinks)
         : undefined;
     message.contactTeamEmail = object.contactTeamEmail ?? "";
-    message.customBuildMetrics =
-      object.customBuildMetrics?.map((e) => BuilderConfig_CustomBuildMetric.fromPartial(e)) || [];
+    message.customMetricDefinitions =
+      object.customMetricDefinitions?.map((e) => CustomMetricDefinition.fromPartial(e)) || [];
     return message;
   },
 };
@@ -2414,192 +2419,6 @@ export const BuilderConfig_BuilderHealthLinks_DataLinksEntry = {
   },
 };
 
-function createBaseBuilderConfig_CustomBuildMetric(): BuilderConfig_CustomBuildMetric {
-  return { name: "", predicates: [], fields: {} };
-}
-
-export const BuilderConfig_CustomBuildMetric = {
-  encode(message: BuilderConfig_CustomBuildMetric, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.name !== "") {
-      writer.uint32(10).string(message.name);
-    }
-    for (const v of message.predicates) {
-      writer.uint32(18).string(v!);
-    }
-    Object.entries(message.fields).forEach(([key, value]) => {
-      BuilderConfig_CustomBuildMetric_FieldsEntry.encode({ key: key as any, value }, writer.uint32(26).fork()).ldelim();
-    });
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): BuilderConfig_CustomBuildMetric {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuilderConfig_CustomBuildMetric() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.name = reader.string();
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.predicates.push(reader.string());
-          continue;
-        case 3:
-          if (tag !== 26) {
-            break;
-          }
-
-          const entry3 = BuilderConfig_CustomBuildMetric_FieldsEntry.decode(reader, reader.uint32());
-          if (entry3.value !== undefined) {
-            message.fields[entry3.key] = entry3.value;
-          }
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): BuilderConfig_CustomBuildMetric {
-    return {
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
-      predicates: globalThis.Array.isArray(object?.predicates)
-        ? object.predicates.map((e: any) => globalThis.String(e))
-        : [],
-      fields: isObject(object.fields)
-        ? Object.entries(object.fields).reduce<{ [key: string]: string }>((acc, [key, value]) => {
-          acc[key] = String(value);
-          return acc;
-        }, {})
-        : {},
-    };
-  },
-
-  toJSON(message: BuilderConfig_CustomBuildMetric): unknown {
-    const obj: any = {};
-    if (message.name !== "") {
-      obj.name = message.name;
-    }
-    if (message.predicates?.length) {
-      obj.predicates = message.predicates;
-    }
-    if (message.fields) {
-      const entries = Object.entries(message.fields);
-      if (entries.length > 0) {
-        obj.fields = {};
-        entries.forEach(([k, v]) => {
-          obj.fields[k] = v;
-        });
-      }
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<BuilderConfig_CustomBuildMetric>): BuilderConfig_CustomBuildMetric {
-    return BuilderConfig_CustomBuildMetric.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<BuilderConfig_CustomBuildMetric>): BuilderConfig_CustomBuildMetric {
-    const message = createBaseBuilderConfig_CustomBuildMetric() as any;
-    message.name = object.name ?? "";
-    message.predicates = object.predicates?.map((e) => e) || [];
-    message.fields = Object.entries(object.fields ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key] = globalThis.String(value);
-      }
-      return acc;
-    }, {});
-    return message;
-  },
-};
-
-function createBaseBuilderConfig_CustomBuildMetric_FieldsEntry(): BuilderConfig_CustomBuildMetric_FieldsEntry {
-  return { key: "", value: "" };
-}
-
-export const BuilderConfig_CustomBuildMetric_FieldsEntry = {
-  encode(message: BuilderConfig_CustomBuildMetric_FieldsEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.key !== "") {
-      writer.uint32(10).string(message.key);
-    }
-    if (message.value !== "") {
-      writer.uint32(18).string(message.value);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): BuilderConfig_CustomBuildMetric_FieldsEntry {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuilderConfig_CustomBuildMetric_FieldsEntry() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.key = reader.string();
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.value = reader.string();
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): BuilderConfig_CustomBuildMetric_FieldsEntry {
-    return {
-      key: isSet(object.key) ? globalThis.String(object.key) : "",
-      value: isSet(object.value) ? globalThis.String(object.value) : "",
-    };
-  },
-
-  toJSON(message: BuilderConfig_CustomBuildMetric_FieldsEntry): unknown {
-    const obj: any = {};
-    if (message.key !== "") {
-      obj.key = message.key;
-    }
-    if (message.value !== "") {
-      obj.value = message.value;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<BuilderConfig_CustomBuildMetric_FieldsEntry>): BuilderConfig_CustomBuildMetric_FieldsEntry {
-    return BuilderConfig_CustomBuildMetric_FieldsEntry.fromPartial(base ?? {});
-  },
-  fromPartial(
-    object: DeepPartial<BuilderConfig_CustomBuildMetric_FieldsEntry>,
-  ): BuilderConfig_CustomBuildMetric_FieldsEntry {
-    const message = createBaseBuilderConfig_CustomBuildMetric_FieldsEntry() as any;
-    message.key = object.key ?? "";
-    message.value = object.value ?? "";
-    return message;
-  },
-};
-
 function createBaseSwarming(): Swarming {
   return { builders: [], taskTemplateCanaryPercentage: undefined };
 }
@@ -3171,6 +2990,193 @@ export const BuildbucketCfg_CommonConfig = {
     const message = createBaseBuildbucketCfg_CommonConfig() as any;
     message.buildsNotificationTopics =
       object.buildsNotificationTopics?.map((e) => BuildbucketCfg_Topic.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseCustomMetricDefinition(): CustomMetricDefinition {
+  return { name: "", predicates: [], extraFields: {} };
+}
+
+export const CustomMetricDefinition = {
+  encode(message: CustomMetricDefinition, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    for (const v of message.predicates) {
+      writer.uint32(18).string(v!);
+    }
+    Object.entries(message.extraFields).forEach(([key, value]) => {
+      CustomMetricDefinition_ExtraFieldsEntry.encode({ key: key as any, value }, writer.uint32(26).fork()).ldelim();
+    });
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CustomMetricDefinition {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCustomMetricDefinition() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.predicates.push(reader.string());
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          const entry3 = CustomMetricDefinition_ExtraFieldsEntry.decode(reader, reader.uint32());
+          if (entry3.value !== undefined) {
+            message.extraFields[entry3.key] = entry3.value;
+          }
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CustomMetricDefinition {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      predicates: globalThis.Array.isArray(object?.predicates)
+        ? object.predicates.map((e: any) => globalThis.String(e))
+        : [],
+      extraFields: isObject(object.extraFields)
+        ? Object.entries(object.extraFields).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: CustomMetricDefinition): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.predicates?.length) {
+      obj.predicates = message.predicates;
+    }
+    if (message.extraFields) {
+      const entries = Object.entries(message.extraFields);
+      if (entries.length > 0) {
+        obj.extraFields = {};
+        entries.forEach(([k, v]) => {
+          obj.extraFields[k] = v;
+        });
+      }
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CustomMetricDefinition>): CustomMetricDefinition {
+    return CustomMetricDefinition.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CustomMetricDefinition>): CustomMetricDefinition {
+    const message = createBaseCustomMetricDefinition() as any;
+    message.name = object.name ?? "";
+    message.predicates = object.predicates?.map((e) => e) || [];
+    message.extraFields = Object.entries(object.extraFields ?? {}).reduce<{ [key: string]: string }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = globalThis.String(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseCustomMetricDefinition_ExtraFieldsEntry(): CustomMetricDefinition_ExtraFieldsEntry {
+  return { key: "", value: "" };
+}
+
+export const CustomMetricDefinition_ExtraFieldsEntry = {
+  encode(message: CustomMetricDefinition_ExtraFieldsEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CustomMetricDefinition_ExtraFieldsEntry {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCustomMetricDefinition_ExtraFieldsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CustomMetricDefinition_ExtraFieldsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: CustomMetricDefinition_ExtraFieldsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CustomMetricDefinition_ExtraFieldsEntry>): CustomMetricDefinition_ExtraFieldsEntry {
+    return CustomMetricDefinition_ExtraFieldsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CustomMetricDefinition_ExtraFieldsEntry>): CustomMetricDefinition_ExtraFieldsEntry {
+    const message = createBaseCustomMetricDefinition_ExtraFieldsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
     return message;
   },
 };

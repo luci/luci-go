@@ -811,19 +811,23 @@ export interface QueryTestVariantArtifactGroupsRequest {
   readonly searchString:
     | ArtifactContentMatcher
     | undefined;
-  /** The test id prefix to restrict the scope of the search (optional). */
-  readonly testIdPrefix: string;
-  /** The artifact id prefix to restrict the scope of the search (optional). */
-  readonly artifactIdPrefix: string;
+  /** The test id matcher to restrict the scope of the search (optional). */
+  readonly testIdMatcher:
+    | IDMatcher
+    | undefined;
+  /** The artifact id matcher to restrict the scope of the search (optional). */
+  readonly artifactIdMatcher:
+    | IDMatcher
+    | undefined;
   /**
-   * The lower bound of the time range to search (exclusive) (required).
+   * The lower bound of the time range to search in UTC time (exclusive) (required).
    * start_time must be less than the end time.
    * The duration between start_time and end_time must not be greater than 7 days.
    */
   readonly startTime:
     | string
     | undefined;
-  /** The upper bound of the time range to search (inclusive) (required). */
+  /** The upper bound of the time range to search in UTC time (inclusive) (required). */
   readonly endTime:
     | string
     | undefined;
@@ -902,14 +906,14 @@ export interface QueryTestVariantArtifactsRequest {
   /** The artifact id (required). */
   readonly artifactId: string;
   /**
-   * The lower bound of the time range to search (exclusive) (required).
+   * The lower bound of the time range to search in UTC time (exclusive) (required).
    * start_time must be less than the end time.
    * The duration between start_time and end_time must not be greater than 7 days.
    */
   readonly startTime:
     | string
     | undefined;
-  /** The upper bound of the time range to search (inclusive) (required). */
+  /** The upper bound of the time range to search in UTC time (inclusive) (required). */
   readonly endTime:
     | string
     | undefined;
@@ -953,17 +957,19 @@ export interface QueryInvocationVariantArtifactGroupsRequest {
   readonly searchString:
     | ArtifactContentMatcher
     | undefined;
-  /** The artifact id prefix to restrict the scope of the search (optional). */
-  readonly artifactIdPrefix: string;
+  /** The artifact id matcher to restrict the scope of the search (optional). */
+  readonly artifactIdMatcher:
+    | IDMatcher
+    | undefined;
   /**
-   * The lower bound of the time range to search (exclusive) (required).
+   * The lower bound of the time range to search in UTC time (exclusive) (required).
    * start_time must be less than the end time.
    * The duration between start_time and end_time must not be greater than 7 days.
    */
   readonly startTime:
     | string
     | undefined;
-  /** The upper bound of the time range to search (inclusive) (required). */
+  /** The upper bound of the time range to search in UTC time (inclusive) (required). */
   readonly endTime:
     | string
     | undefined;
@@ -1037,14 +1043,14 @@ export interface QueryInvocationVariantArtifactsRequest {
   /** The artifact id (required). */
   readonly artifactId: string;
   /**
-   * The lower bound of the time range to search (exclusive) (required).
+   * The lower bound of the time range to search in UTC time (exclusive) (required).
    * start_time must be less than the end time.
    * The duration between start_time and end_time must not be greater than 7 days.
    */
   readonly startTime:
     | string
     | undefined;
-  /** The upper bound of the time range to search (inclusive) (required). */
+  /** The upper bound of the time range to search in UTC time (inclusive) (required). */
   readonly endTime:
     | string
     | undefined;
@@ -1098,11 +1104,29 @@ export interface ArtifactMatchingContent {
   /** The test result status, only populated if it is a result level artifact . */
   readonly testStatus: TestStatus;
   /**
-   * Part of the artifact that contains a match.
-   * Limit to 10KB to prevent exploding the response size. Prioritize fit in the matching part,
-   * and use the remaining bytes to display the before and after bits of the matched part (at most one more line above and below).
+   * Part of the artifact content that matches the search string.
+   * Size(match) + Size(before_match) + Size(after_match) is at most 10KiB.
+   * Prioritize fiting `match` into the 10KiB first, divided the remaining bytes equally
+   * to display content immediately before and after the matched part.
+   * including at most one more line above and below.
+   * Match is truncated only if it is more than 10KiB. Ellipsis ("...") are added, if it is truncated.
+   * `match`, `before_match`, and `after_match` can be concatenated to form part of the full artifact content.
    */
-  readonly content: string;
+  readonly match: string;
+  /**
+   * Artifact content that immediately before the match. Include at most one additional line.
+   * Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
+   * see how this 10KB is allocated in `match` field comment.
+   * If before_match is truncated from the front, ellipsis ("...") are added to the front.
+   */
+  readonly beforeMatch: string;
+  /**
+   * Artifact content that immediately after the match. Include at most one additional line.
+   * Size(match) + Size(before_match) + Size(after_match) is at most 10KiB,
+   * see how this 10KB is allocated in `match` field comment.
+   * If after_match is truncated, ellipsis ("...") are added..
+   */
+  readonly afterMatch: string;
 }
 
 /** Used to match a artifact content. */
@@ -1113,6 +1137,16 @@ export interface ArtifactContentMatcher {
     | undefined;
   /** Use equality match with this string to find matching artifact content. */
   readonly exactContain?: string | undefined;
+}
+
+/** Used to match IDs (eg. test id, artifact id). */
+export interface IDMatcher {
+  /** The id should has a matching prefix. */
+  readonly hasPrefix?:
+    | string
+    | undefined;
+  /** The id should exactly equal to this string. */
+  readonly exactEqual?: string | undefined;
 }
 
 function createBaseGetInvocationRequest(): GetInvocationRequest {
@@ -4604,8 +4638,8 @@ function createBaseQueryTestVariantArtifactGroupsRequest(): QueryTestVariantArti
   return {
     project: "",
     searchString: undefined,
-    testIdPrefix: "",
-    artifactIdPrefix: "",
+    testIdMatcher: undefined,
+    artifactIdMatcher: undefined,
     startTime: undefined,
     endTime: undefined,
     pageSize: 0,
@@ -4621,11 +4655,11 @@ export const QueryTestVariantArtifactGroupsRequest = {
     if (message.searchString !== undefined) {
       ArtifactContentMatcher.encode(message.searchString, writer.uint32(18).fork()).ldelim();
     }
-    if (message.testIdPrefix !== "") {
-      writer.uint32(26).string(message.testIdPrefix);
+    if (message.testIdMatcher !== undefined) {
+      IDMatcher.encode(message.testIdMatcher, writer.uint32(26).fork()).ldelim();
     }
-    if (message.artifactIdPrefix !== "") {
-      writer.uint32(34).string(message.artifactIdPrefix);
+    if (message.artifactIdMatcher !== undefined) {
+      IDMatcher.encode(message.artifactIdMatcher, writer.uint32(34).fork()).ldelim();
     }
     if (message.startTime !== undefined) {
       Timestamp.encode(toTimestamp(message.startTime), writer.uint32(42).fork()).ldelim();
@@ -4668,14 +4702,14 @@ export const QueryTestVariantArtifactGroupsRequest = {
             break;
           }
 
-          message.testIdPrefix = reader.string();
+          message.testIdMatcher = IDMatcher.decode(reader, reader.uint32());
           continue;
         case 4:
           if (tag !== 34) {
             break;
           }
 
-          message.artifactIdPrefix = reader.string();
+          message.artifactIdMatcher = IDMatcher.decode(reader, reader.uint32());
           continue;
         case 5:
           if (tag !== 42) {
@@ -4718,8 +4752,8 @@ export const QueryTestVariantArtifactGroupsRequest = {
     return {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       searchString: isSet(object.searchString) ? ArtifactContentMatcher.fromJSON(object.searchString) : undefined,
-      testIdPrefix: isSet(object.testIdPrefix) ? globalThis.String(object.testIdPrefix) : "",
-      artifactIdPrefix: isSet(object.artifactIdPrefix) ? globalThis.String(object.artifactIdPrefix) : "",
+      testIdMatcher: isSet(object.testIdMatcher) ? IDMatcher.fromJSON(object.testIdMatcher) : undefined,
+      artifactIdMatcher: isSet(object.artifactIdMatcher) ? IDMatcher.fromJSON(object.artifactIdMatcher) : undefined,
       startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
       endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
@@ -4735,11 +4769,11 @@ export const QueryTestVariantArtifactGroupsRequest = {
     if (message.searchString !== undefined) {
       obj.searchString = ArtifactContentMatcher.toJSON(message.searchString);
     }
-    if (message.testIdPrefix !== "") {
-      obj.testIdPrefix = message.testIdPrefix;
+    if (message.testIdMatcher !== undefined) {
+      obj.testIdMatcher = IDMatcher.toJSON(message.testIdMatcher);
     }
-    if (message.artifactIdPrefix !== "") {
-      obj.artifactIdPrefix = message.artifactIdPrefix;
+    if (message.artifactIdMatcher !== undefined) {
+      obj.artifactIdMatcher = IDMatcher.toJSON(message.artifactIdMatcher);
     }
     if (message.startTime !== undefined) {
       obj.startTime = message.startTime;
@@ -4765,8 +4799,12 @@ export const QueryTestVariantArtifactGroupsRequest = {
     message.searchString = (object.searchString !== undefined && object.searchString !== null)
       ? ArtifactContentMatcher.fromPartial(object.searchString)
       : undefined;
-    message.testIdPrefix = object.testIdPrefix ?? "";
-    message.artifactIdPrefix = object.artifactIdPrefix ?? "";
+    message.testIdMatcher = (object.testIdMatcher !== undefined && object.testIdMatcher !== null)
+      ? IDMatcher.fromPartial(object.testIdMatcher)
+      : undefined;
+    message.artifactIdMatcher = (object.artifactIdMatcher !== undefined && object.artifactIdMatcher !== null)
+      ? IDMatcher.fromPartial(object.artifactIdMatcher)
+      : undefined;
     message.startTime = object.startTime ?? undefined;
     message.endTime = object.endTime ?? undefined;
     message.pageSize = object.pageSize ?? 0;
@@ -5267,7 +5305,7 @@ function createBaseQueryInvocationVariantArtifactGroupsRequest(): QueryInvocatio
   return {
     project: "",
     searchString: undefined,
-    artifactIdPrefix: "",
+    artifactIdMatcher: undefined,
     startTime: undefined,
     endTime: undefined,
     pageSize: 0,
@@ -5283,8 +5321,8 @@ export const QueryInvocationVariantArtifactGroupsRequest = {
     if (message.searchString !== undefined) {
       ArtifactContentMatcher.encode(message.searchString, writer.uint32(18).fork()).ldelim();
     }
-    if (message.artifactIdPrefix !== "") {
-      writer.uint32(26).string(message.artifactIdPrefix);
+    if (message.artifactIdMatcher !== undefined) {
+      IDMatcher.encode(message.artifactIdMatcher, writer.uint32(26).fork()).ldelim();
     }
     if (message.startTime !== undefined) {
       Timestamp.encode(toTimestamp(message.startTime), writer.uint32(34).fork()).ldelim();
@@ -5327,7 +5365,7 @@ export const QueryInvocationVariantArtifactGroupsRequest = {
             break;
           }
 
-          message.artifactIdPrefix = reader.string();
+          message.artifactIdMatcher = IDMatcher.decode(reader, reader.uint32());
           continue;
         case 4:
           if (tag !== 34) {
@@ -5370,7 +5408,7 @@ export const QueryInvocationVariantArtifactGroupsRequest = {
     return {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       searchString: isSet(object.searchString) ? ArtifactContentMatcher.fromJSON(object.searchString) : undefined,
-      artifactIdPrefix: isSet(object.artifactIdPrefix) ? globalThis.String(object.artifactIdPrefix) : "",
+      artifactIdMatcher: isSet(object.artifactIdMatcher) ? IDMatcher.fromJSON(object.artifactIdMatcher) : undefined,
       startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
       endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
@@ -5386,8 +5424,8 @@ export const QueryInvocationVariantArtifactGroupsRequest = {
     if (message.searchString !== undefined) {
       obj.searchString = ArtifactContentMatcher.toJSON(message.searchString);
     }
-    if (message.artifactIdPrefix !== "") {
-      obj.artifactIdPrefix = message.artifactIdPrefix;
+    if (message.artifactIdMatcher !== undefined) {
+      obj.artifactIdMatcher = IDMatcher.toJSON(message.artifactIdMatcher);
     }
     if (message.startTime !== undefined) {
       obj.startTime = message.startTime;
@@ -5415,7 +5453,9 @@ export const QueryInvocationVariantArtifactGroupsRequest = {
     message.searchString = (object.searchString !== undefined && object.searchString !== null)
       ? ArtifactContentMatcher.fromPartial(object.searchString)
       : undefined;
-    message.artifactIdPrefix = object.artifactIdPrefix ?? "";
+    message.artifactIdMatcher = (object.artifactIdMatcher !== undefined && object.artifactIdMatcher !== null)
+      ? IDMatcher.fromPartial(object.artifactIdMatcher)
+      : undefined;
     message.startTime = object.startTime ?? undefined;
     message.endTime = object.endTime ?? undefined;
     message.pageSize = object.pageSize ?? 0;
@@ -5887,7 +5927,7 @@ export const QueryInvocationVariantArtifactsResponse = {
 };
 
 function createBaseArtifactMatchingContent(): ArtifactMatchingContent {
-  return { name: "", partitionTime: undefined, testStatus: 0, content: "" };
+  return { name: "", partitionTime: undefined, testStatus: 0, match: "", beforeMatch: "", afterMatch: "" };
 }
 
 export const ArtifactMatchingContent = {
@@ -5901,8 +5941,14 @@ export const ArtifactMatchingContent = {
     if (message.testStatus !== 0) {
       writer.uint32(24).int32(message.testStatus);
     }
-    if (message.content !== "") {
-      writer.uint32(34).string(message.content);
+    if (message.match !== "") {
+      writer.uint32(34).string(message.match);
+    }
+    if (message.beforeMatch !== "") {
+      writer.uint32(42).string(message.beforeMatch);
+    }
+    if (message.afterMatch !== "") {
+      writer.uint32(50).string(message.afterMatch);
     }
     return writer;
   },
@@ -5940,7 +5986,21 @@ export const ArtifactMatchingContent = {
             break;
           }
 
-          message.content = reader.string();
+          message.match = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.beforeMatch = reader.string();
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.afterMatch = reader.string();
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -5956,7 +6016,9 @@ export const ArtifactMatchingContent = {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
       testStatus: isSet(object.testStatus) ? testStatusFromJSON(object.testStatus) : 0,
-      content: isSet(object.content) ? globalThis.String(object.content) : "",
+      match: isSet(object.match) ? globalThis.String(object.match) : "",
+      beforeMatch: isSet(object.beforeMatch) ? globalThis.String(object.beforeMatch) : "",
+      afterMatch: isSet(object.afterMatch) ? globalThis.String(object.afterMatch) : "",
     };
   },
 
@@ -5971,8 +6033,14 @@ export const ArtifactMatchingContent = {
     if (message.testStatus !== 0) {
       obj.testStatus = testStatusToJSON(message.testStatus);
     }
-    if (message.content !== "") {
-      obj.content = message.content;
+    if (message.match !== "") {
+      obj.match = message.match;
+    }
+    if (message.beforeMatch !== "") {
+      obj.beforeMatch = message.beforeMatch;
+    }
+    if (message.afterMatch !== "") {
+      obj.afterMatch = message.afterMatch;
     }
     return obj;
   },
@@ -5985,7 +6053,9 @@ export const ArtifactMatchingContent = {
     message.name = object.name ?? "";
     message.partitionTime = object.partitionTime ?? undefined;
     message.testStatus = object.testStatus ?? 0;
-    message.content = object.content ?? "";
+    message.match = object.match ?? "";
+    message.beforeMatch = object.beforeMatch ?? "";
+    message.afterMatch = object.afterMatch ?? "";
     return message;
   },
 };
@@ -6060,6 +6130,80 @@ export const ArtifactContentMatcher = {
     const message = createBaseArtifactContentMatcher() as any;
     message.regexContain = object.regexContain ?? undefined;
     message.exactContain = object.exactContain ?? undefined;
+    return message;
+  },
+};
+
+function createBaseIDMatcher(): IDMatcher {
+  return { hasPrefix: undefined, exactEqual: undefined };
+}
+
+export const IDMatcher = {
+  encode(message: IDMatcher, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.hasPrefix !== undefined) {
+      writer.uint32(10).string(message.hasPrefix);
+    }
+    if (message.exactEqual !== undefined) {
+      writer.uint32(18).string(message.exactEqual);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): IDMatcher {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseIDMatcher() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.hasPrefix = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.exactEqual = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): IDMatcher {
+    return {
+      hasPrefix: isSet(object.hasPrefix) ? globalThis.String(object.hasPrefix) : undefined,
+      exactEqual: isSet(object.exactEqual) ? globalThis.String(object.exactEqual) : undefined,
+    };
+  },
+
+  toJSON(message: IDMatcher): unknown {
+    const obj: any = {};
+    if (message.hasPrefix !== undefined) {
+      obj.hasPrefix = message.hasPrefix;
+    }
+    if (message.exactEqual !== undefined) {
+      obj.exactEqual = message.exactEqual;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<IDMatcher>): IDMatcher {
+    return IDMatcher.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<IDMatcher>): IDMatcher {
+    const message = createBaseIDMatcher() as any;
+    message.hasPrefix = object.hasPrefix ?? undefined;
+    message.exactEqual = object.exactEqual ?? undefined;
     return message;
   },
 };
