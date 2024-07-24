@@ -138,9 +138,10 @@ type FakeBot struct {
 	NoLastSeen bool
 	NoState    bool
 
-	Pool []string
-	OS   []string
-	Dims []string
+	Pool    []string
+	OS      []string
+	Dims    []string
+	Version string
 
 	Maintenance bool
 	Dead        bool
@@ -153,7 +154,12 @@ type FakeBot struct {
 }
 
 func (f *FakeBot) BotInfo(ctx context.Context) *model.BotInfo {
-	b := &model.BotInfo{Key: model.BotInfoKey(ctx, f.ID)}
+	b := &model.BotInfo{
+		Key: model.BotInfoKey(ctx, f.ID),
+		BotCommon: model.BotCommon{
+			Version: f.Version,
+		},
+	}
 	if !f.NoLastSeen {
 		b.LastSeen = datastore.NewUnindexedOptional(time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC))
 	}

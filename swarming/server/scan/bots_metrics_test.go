@@ -46,6 +46,7 @@ func TestBotsMetricsReporter(t *testing.T) {
 			Pool:        []string{"pool-0", "pool-1"},
 			OS:          []string{"Ubuntu", "Ubuntu-22"},
 			RBEInstance: "rbe-0",
+			Version:     "v0",
 		},
 		{
 			ID:          "healthy-1",
@@ -53,6 +54,7 @@ func TestBotsMetricsReporter(t *testing.T) {
 			OS:          []string{"Ubuntu", "Ubuntu-22"},
 			RBEInstance: "rbe-0",
 			Busy:        true,
+			Version:     "v0",
 		},
 		{
 			ID:            "healthy-2",
@@ -60,6 +62,7 @@ func TestBotsMetricsReporter(t *testing.T) {
 			OS:            []string{"Ubuntu", "Ubuntu-22"},
 			RBEInstance:   "rbe-0",
 			RBEHybridMode: true,
+			Version:       "v0",
 		},
 		{
 			ID:          "healthy-3",
@@ -67,35 +70,41 @@ func TestBotsMetricsReporter(t *testing.T) {
 			OS:          []string{"Ubuntu", "Ubuntu-22"},
 			RBEInstance: "rbe-0",
 			Handshaking: true,
+			Version:     "v1",
 		},
 		{
 			ID:          "healthy-4",
 			Pool:        []string{"pool-0", "pool-1"},
 			OS:          []string{"Ubuntu", "Ubuntu-22"},
 			RBEInstance: "rbe-1",
+			Version:     "v1",
 		},
 		{
-			ID:   "healthy-5",
-			Pool: []string{"pool-0", "pool-1"},
-			OS:   []string{"Ubuntu", "Ubuntu-22"},
+			ID:      "healthy-5",
+			Pool:    []string{"pool-0", "pool-1"},
+			OS:      []string{"Ubuntu", "Ubuntu-22"},
+			Version: "v1",
 		},
 		{
 			ID:          "quarantined",
 			Pool:        []string{"pool-0"},
 			Quarantined: true,
 			RBEInstance: "rbe-0",
+			Version:     "v2",
 		},
 		{
 			ID:          "maintenance",
 			Pool:        []string{"pool-0"},
 			Maintenance: true,
 			RBEInstance: "rbe-0",
+			Version:     "v2",
 		},
 		{
 			ID:          "dead",
 			Pool:        []string{"pool-0"},
 			Dead:        true,
 			RBEInstance: "rbe-0",
+			Version:     "v2",
 		},
 	})
 	if err != nil {
@@ -164,6 +173,22 @@ func TestBotsMetricsReporter(t *testing.T) {
 	got = PerBotValues(t, mon.Cells, "executors/rbe")
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("executors/rbe (-want +got):\n%s", diff)
+	}
+
+	want = []string{
+		"dead:v2",
+		"healthy-0:v0",
+		"healthy-1:v0",
+		"healthy-2:v0",
+		"healthy-3:v1",
+		"healthy-4:v1",
+		"healthy-5:v1",
+		"maintenance:v2",
+		"quarantined:v2",
+	}
+	got = PerBotValues(t, mon.Cells, "executors/version")
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("executors/version (-want +got):\n%s", diff)
 	}
 }
 

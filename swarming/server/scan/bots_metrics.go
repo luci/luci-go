@@ -200,6 +200,7 @@ func setExecutorMetrics(ctx context.Context, bot *model.BotInfo, serviceName str
 	metrics.BotsStatus.Set(ctx, bot.GetStatus())
 	metrics.BotsDimensionsPool.Set(ctx, poolFromDimensions(bot.Dimensions))
 	metrics.BotsRBEInstance.Set(ctx, rbeState)
+	metrics.BotsVersion.Set(ctx, bot.Version)
 }
 
 // poolFromDimensions serializes the bot's dimensions and trims out redundant

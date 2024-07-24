@@ -74,4 +74,10 @@ var (
 		"RBE instance of a job executor.",
 		nil,
 	)
+
+	BotsVersion = metric.NewString(
+		"executors/version",
+		"Version of a job executor.",
+		nil,
+	)
 )
