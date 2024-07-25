@@ -227,6 +227,7 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 
 		spanner.Delete("Baselines", spanner.AllKeys()),
 		spanner.Delete("BaselineTestVariants", spanner.AllKeys()),
+		spanner.Delete("Checkpoints", spanner.AllKeys()),
 	})
 	return err
 }
