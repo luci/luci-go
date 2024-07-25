@@ -13,11 +13,12 @@
 // limitations under the License.
 
 import { Link, Typography } from '@mui/material';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Fragment } from 'react';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { TestHistoryService } from '@/common/services/luci_analysis';
+import { useTestHistoryClient } from '@/analysis/hooks/prpc_clients';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
+import { QueryTestsRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 
 interface Props {
   searchQuery: string;
@@ -25,19 +26,16 @@ interface Props {
 }
 
 export function TestList({ project, searchQuery }: Props) {
+  const client = useTestHistoryClient();
   const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
-    useInfinitePrpcQuery({
-      host: SETTINGS.luciAnalysis.host,
-      Service: TestHistoryService,
-      method: 'queryTests',
-      request: {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        project: project,
-        testIdSubstring: searchQuery,
-      },
-      options: {
-        enabled: searchQuery !== '',
-      },
+    useInfiniteQuery({
+      ...client.QueryTests.queryPaged(
+        QueryTestsRequest.fromPartial({
+          project: project,
+          testIdSubstring: searchQuery,
+        }),
+      ),
+      enabled: searchQuery !== '',
     });
 
   if (isError) {

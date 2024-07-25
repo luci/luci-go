@@ -17,9 +17,9 @@ import { act } from 'react';
 
 import {
   QueryTestsRequest,
-  TestHistoryService,
-} from '@/common/services/luci_analysis';
-import { CacheOption } from '@/generic_libs/tools/cached_fn';
+  QueryTestsResponse,
+  TestHistoryClientImpl,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestSearch } from './test_search';
@@ -27,12 +27,14 @@ import { TestSearch } from './test_search';
 describe('TestSearch', () => {
   beforeEach(() => {
     jest
-      .spyOn(TestHistoryService.prototype, 'queryTests')
-      .mockImplementation((req: QueryTestsRequest, _: CacheOption = {}) => {
+      .spyOn(TestHistoryClientImpl.prototype, 'QueryTests')
+      .mockImplementation((req: QueryTestsRequest) => {
         if (req.testIdSubstring === 'query') {
-          return Promise.resolve({
-            testIds: ['test_id_1', 'test_id_2'],
-          });
+          return Promise.resolve(
+            QueryTestsResponse.fromPartial({
+              testIds: ['test_id_1', 'test_id_2'],
+            }),
+          );
         } else {
           return Promise.reject(new Error('unknown test id'));
         }
@@ -80,14 +82,16 @@ describe('TestSearch', () => {
 
   it('should throttle requests', async () => {
     jest
-      .spyOn(TestHistoryService.prototype, 'queryTests')
-      .mockImplementation((req: QueryTestsRequest, _: CacheOption = {}) => {
+      .spyOn(TestHistoryClientImpl.prototype, 'QueryTests')
+      .mockImplementation((req: QueryTestsRequest) => {
         const result = ['test_id_1', 'test_id_2'].filter((id) =>
           id.startsWith(req.testIdSubstring),
         );
-        return Promise.resolve({
-          testIds: result,
-        });
+        return Promise.resolve(
+          QueryTestsResponse.fromPartial({
+            testIds: result,
+          }),
+        );
       });
 
     render(

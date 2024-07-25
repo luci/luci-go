@@ -15,34 +15,30 @@
 import { render, cleanup } from '@testing-library/react';
 import { act } from 'react';
 
-import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { TestHistoryService } from '@/common/services/luci_analysis';
+import {
+  QueryTestsRequest,
+  QueryTestsResponse,
+  TestHistoryClientImpl,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestList } from './test_list';
 
-jest.mock('@/common/hooks/legacy_prpc_query', () => {
-  return createSelectiveSpiesFromModule<
-    typeof import('@/common/hooks/legacy_prpc_query')
-  >('@/common/hooks/legacy_prpc_query', ['useInfinitePrpcQuery']);
-});
-
 describe('TestList', () => {
-  let useInfinitePrpcQuerySpy: jest.MockedFunction<typeof useInfinitePrpcQuery>;
   let queryTestsMock: jest.SpyInstance;
 
   beforeEach(() => {
     jest.useFakeTimers();
-    useInfinitePrpcQuerySpy = jest.mocked(useInfinitePrpcQuery);
     queryTestsMock = jest
-      .spyOn(TestHistoryService.prototype, 'queryTests')
-      .mockResolvedValue({
-        testIds: ['test-id-1', 'test-id-2'],
-      });
+      .spyOn(TestHistoryClientImpl.prototype, 'QueryTests')
+      .mockResolvedValue(
+        QueryTestsResponse.fromPartial({
+          testIds: ['test-id-1', 'test-id-2'],
+        }),
+      );
   });
   afterEach(() => {
     cleanup();
-    useInfinitePrpcQuerySpy.mockClear();
     queryTestsMock.mockRestore();
     jest.useRealTimers();
   });
@@ -56,15 +52,6 @@ describe('TestList', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
-      host: SETTINGS.luciAnalysis.host,
-      Service: TestHistoryService,
-      method: 'queryTests',
-      request: { project: 'chromium', testIdSubstring: '' },
-      options: {
-        enabled: false,
-      },
-    });
     expect(queryTestsMock).not.toHaveBeenCalled();
   });
 
@@ -77,15 +64,12 @@ describe('TestList', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    expect(useInfinitePrpcQuerySpy).toHaveBeenCalledWith({
-      host: SETTINGS.luciAnalysis.host,
-      Service: TestHistoryService,
-      method: 'queryTests',
-      request: { project: 'chromium', testIdSubstring: 'test-id' },
-      options: {
-        enabled: true,
-      },
-    });
-    expect(queryTestsMock).toHaveBeenCalled();
+    expect(queryTestsMock).toHaveBeenCalledTimes(1);
+    expect(queryTestsMock).toHaveBeenCalledWith(
+      QueryTestsRequest.fromPartial({
+        project: 'chromium',
+        testIdSubstring: 'test-id',
+      }),
+    );
   });
 });
