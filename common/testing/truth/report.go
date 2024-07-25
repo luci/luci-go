@@ -134,7 +134,6 @@ package truth
 
 import (
 	"os"
-	"testing"
 
 	"golang.org/x/term"
 
@@ -232,6 +231,16 @@ func render(f *failure.Summary) string {
 	}.Summary("", f)
 }
 
+// TestingTB is a subset of the stdlib testing.TB type.
+//
+// This allows this library to avoid directly importing "testing".
+type TestingTB interface {
+	Helper()
+	Log(args ...any)
+	Fail()
+	FailNow()
+}
+
 // Report checks that there is no failure (i.e. `failure` is nil).
 //
 // If failure is not nil, this will Log the error with t.Log, using `name` as a prefix.
@@ -239,7 +248,7 @@ func render(f *failure.Summary) string {
 // Note: The recommended way to use the truth library is to import the `assert`
 // and/or `check` sub-packages, which will call into this function. Direct use
 // of truth.Report should be very rare.
-func Report(t testing.TB, name string, failure *failure.Summary) {
+func Report(t TestingTB, name string, failure *failure.Summary) {
 	if failure == nil {
 		return
 	}

@@ -31,8 +31,6 @@
 package assert
 
 import (
-	"testing"
-
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/option"
@@ -46,7 +44,7 @@ import (
 // Example: `assert.That(t, 10, should.Equal(20))`
 //
 // Returns `true` iff `compare(actual)` returned no failure (i.e. nil)
-func That[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...option.Option) {
+func That[T any](t truth.TestingTB, actual T, compare comparison.Func[T], opts ...option.Option) {
 	if summary := option.ApplyAll(compare(actual), opts); summary != nil {
 		t.Helper()
 		truth.Report(t, "assert.That", summary)
@@ -62,7 +60,7 @@ func That[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...opt
 // Example: `assert.Loosely(t, 10, should.Equal(20))`
 //
 // Returns `true` iff `compare.CastCompare(actual)` returned no failure (i.e. nil)
-func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...option.Option) {
+func Loosely[T any](t truth.TestingTB, actual any, compare comparison.Func[T], opts ...option.Option) {
 	if summary := option.ApplyAll(compare.CastCompare(actual), opts); summary != nil {
 		t.Helper()
 		truth.Report(t, "assert.Loosely", summary)
