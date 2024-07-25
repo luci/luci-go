@@ -19,10 +19,22 @@ import (
 	"testing"
 )
 
-func TestSoMsg(t *testing.T) {
+func TestReset(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("something", t, func(t *ftt.Test) {
-		SoMsg("additional message", "cheese", ShouldResemble, "cheese")
+	state := 0
+
+	ftt.Run("something", t, func(c *ftt.Test) {
+		c.Cleanup(func() { state += 1 })
 	})
+
+	ftt.Run("else", t, func(c *ftt.Test) {
+		c.Run("inner", func(c *ftt.Test) {
+			c.Cleanup(func() { state += 1 })
+		})
+	})
+
+	if state != 2 {
+		t.Fatalf("state had wrong value %d != 2", state)
+	}
 }

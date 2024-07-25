@@ -33,30 +33,35 @@ import (
 // If one of selectorNames is '.' this will also recognize a call directly to
 // `target`.
 //
-// Returns the CallExpr or nil, if this expression is not a matching call.
-func isConveyCall(c dst.Node, selectorNames []string, target string) *dst.CallExpr {
+// Returns the (CallExpr, found target) if found.
+// Returns (nil, "") if this expression is not a matching call.
+func isConveyCall(c dst.Node, selectorNames []string, target ...string) (*dst.CallExpr, string) {
 	exp, ok := c.(*dst.ExprStmt)
 	if !ok {
-		return nil
+		return nil, ""
 	}
 
 	call, ok := exp.X.(*dst.CallExpr)
 	if !ok {
-		return nil
+		return nil, ""
 	}
 
 	for _, selName := range selectorNames {
 		if selName == "." {
-			if fun, ok := call.Fun.(*dst.Ident); ok && fun.Name == target {
-				return call
+			for _, target := range target {
+				if fun, ok := call.Fun.(*dst.Ident); ok && fun.Name == target {
+					return call, target
+				}
 			}
 		} else if sel, ok := call.Fun.(*dst.SelectorExpr); ok {
-			if x, ok := sel.X.(*dst.Ident); ok && x.Name == selName && sel.Sel.Name == target {
-				return call
+			for _, target := range target {
+				if x, ok := sel.X.(*dst.Ident); ok && x.Name == selName && sel.Sel.Name == target {
+					return call, target
+				}
 			}
 		}
 	}
-	return nil
+	return nil, ""
 }
 
 // selectorOrIdent looks to see if `c` is either
@@ -172,7 +177,9 @@ func rewriteConvey(convCall *dst.CallExpr, conveyContextName string) (newContext
 //
 // to
 //
-//	assert.Loosely(t,
+//	assert.Loosely(t, should.CompareToNullary)
+//	assert.Loosely(t, should.CompareTo(expected))
+//	assert.Loosely(t, should.CompareToVararg(expected...))
 func rewriteSoCall(soCall *dst.CallExpr, conveyImportName, assertionsImportName, conveyContextName string, adaptedAssertions stringset.Set) (usedAssertionsLib, usedAdapter bool) {
 	origComparison := soCall.Args[1]
 
@@ -219,6 +226,41 @@ func rewriteSoCall(soCall *dst.CallExpr, conveyImportName, assertionsImportName,
 	return
 }
 
+// rewriteResetCall rewrites a Reset call like:
+//
+//	Reset(func() { ... })
+//
+// to
+//
+//	t.Cleanup(func() { ... })
+func rewriteResetCall(resetCall *dst.CallExpr, conveyContextName string) {
+	resetCall.Fun = &dst.SelectorExpr{
+		X:   &dst.Ident{Name: conveyContextName},
+		Sel: &dst.Ident{Name: "Cleanup"},
+	}
+}
+
+// rewriteResetCall rewrites a Reset call like:
+//
+//	Print(args...)
+//	Println(args...)
+//	Printf(fmt, args...)
+//
+// to
+//
+//	t.Log(args...)
+//	t.Logf(fmt, args...)
+func rewritePrintCall(printCall *dst.CallExpr, callText string, conveyContextName string) {
+	sel := "Log"
+	if callText == "Printf" {
+		sel = "Logf"
+	}
+	printCall.Fun = &dst.SelectorExpr{
+		X:   &dst.Ident{Name: conveyContextName},
+		Sel: &dst.Ident{Name: sel},
+	}
+}
+
 // Rewrite rewrites a single file in `dec` to use:
 //
 //	assert.Loosely instead of So
@@ -249,6 +291,7 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 
 	needAssertions := false
 	needShould := false
+	needAssert := false
 	needAdapter := false
 
 	for _, decl := range f.Decls {
@@ -269,7 +312,7 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 		conveyContextName := "."
 
 		dst.Inspect(decl, func(c dst.Node) (needRecursion bool) {
-			if convCall := isConveyCall(c, []string{conveyImportName, conveyContextName}, "Convey"); convCall != nil {
+			if convCall, _ := isConveyCall(c, []string{conveyImportName, conveyContextName}, "Convey"); convCall != nil {
 				// conveyImportName.Convey(name, t, func() { ... })
 				// conveyContextName.Convey(name, func() { ... })
 				// conveyImportName.Convey(name, t, func(c C) { ... })
@@ -282,12 +325,30 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 				return true
 			}
 
+			if resetCall, _ := isConveyCall(c, []string{conveyImportName, conveyContextName}, "Reset"); resetCall != nil {
+				// conveyImportName.Reset(func() { ... })
+				// conveyContextName.Reset(func() { ... })
+				rewriteResetCall(resetCall, conveyContextName)
+				return false
+			}
+
+			if printCall, callText := isConveyCall(c, []string{conveyImportName, conveyContextName}, "Print", "Println", "Printf"); printCall != nil {
+				// conveyImportName.Print(func() { ... })
+				// conveyContextName.Print(func() { ... })
+				// conveyImportName.Println(func() { ... })
+				// conveyContextName.Println(func() { ... })
+				// conveyImportName.Printf(func() { ... })
+				// conveyContextName.Printf(func() { ... })
+				rewritePrintCall(printCall, callText, conveyContextName)
+				return false
+			}
+
 			// We ALWAYS look for "c" to pick up most of the helper functions which
 			// pass `c C`.
 			//
 			// In addition, we also look for the conveyImportName because even though
 			// a callback function uses `c C`, it could still use the global name :/.
-			if soCall := isConveyCall(c, []string{"c", conveyImportName, conveyContextName}, "So"); soCall != nil {
+			if soCall, _ := isConveyCall(c, []string{"c", conveyImportName, conveyContextName}, "So"); soCall != nil {
 				// conveyContextName.So(...)
 				usedAssertionsLib, usedAdapter := rewriteSoCall(
 					soCall, conveyImportName, assertionsImportName, conveyContextName,
@@ -296,11 +357,12 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 				needAdapter = needAdapter || usedAdapter
 				needShould = needShould || !usedAdapter
 				needAssertions = needAssertions || usedAssertionsLib
+				needAssert = true
 
 				// never recurse into So calls.
 				return false
 			}
-			if soMsgCall := isConveyCall(c, []string{"c", conveyImportName, conveyContextName}, "SoMsg"); soMsgCall != nil {
+			if soMsgCall, _ := isConveyCall(c, []string{"c", conveyImportName, conveyContextName}, "SoMsg"); soMsgCall != nil {
 				// there are so few of these we'll do them by hand, so just print it out
 				// here:
 				// TODO: indicate filename/lineno - this is easy (ish) with `ast`, but
@@ -340,7 +402,9 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 	if needShould {
 		astutil.AddImport(dec.Fset, newFile, shouldPkg)
 	}
-	astutil.AddImport(dec.Fset, newFile, assertPkg)
+	if needAssert {
+		astutil.AddImport(dec.Fset, newFile, assertPkg)
+	}
 
 	return
 }

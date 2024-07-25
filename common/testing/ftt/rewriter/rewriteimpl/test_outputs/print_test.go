@@ -19,10 +19,18 @@ import (
 	"testing"
 )
 
-func TestSoMsg(t *testing.T) {
+func TestPrint(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("something", t, func(t *ftt.Test) {
-		SoMsg("additional message", "cheese", ShouldResemble, "cheese")
+		t.Log("hello")
+		t.Log("hello")
+		t.Logf("hello: %s", "there")
+
+		t.Run("inner", func(c *ftt.Test) {
+			c.Log("hello")
+			c.Log("hello")
+			c.Logf("hello: %s", "there")
+		})
 	})
 }

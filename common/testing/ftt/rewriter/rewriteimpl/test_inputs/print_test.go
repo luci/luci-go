@@ -12,17 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test_outputs
+package test_inputs
 
 import (
-	"go.chromium.org/luci/common/testing/ftt"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSoMsg(t *testing.T) {
+func TestPrint(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("something", t, func(t *ftt.Test) {
-		SoMsg("additional message", "cheese", ShouldResemble, "cheese")
+	Convey("something", t, func() {
+		Print("hello")
+		Println("hello")
+		Printf("hello: %s", "there")
+
+		Convey("inner", func(c C) {
+			c.Print("hello")
+			c.Println("hello")
+			c.Printf("hello: %s", "there")
+		})
 	})
 }
+
