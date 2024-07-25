@@ -38,6 +38,10 @@
       </h5>
     </div>
     <div class="card-body">
+      <div id="group-form-alert" class="alert alert-dismissible" role="alert">
+        <strong></strong>&nbsp;<span></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
       <form id="group-form" class="m-2">
         <div class="row mb-3">
           <label for="group-name-box" class="col-2 col-form-label">Group Name</label>
@@ -56,7 +60,7 @@
         <div class="row">
           <label for="owners-box" class="col-2 col-form-label">Owners</label>
           <div class="col">
-            <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
+            <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box" placeholder="administrators"></textarea>
             <span class="error" aria-live="polite"></span>
           </div>
         </div>
@@ -102,6 +106,10 @@
       </h5>
     </div>
     <div class="card-body">
+      <div id="group-form-alert" class="alert alert-dismissible" role="alert">
+        <strong></strong>&nbsp;<span></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
       <form id="group-form" class="m-2">
         <div class="row mb-3">
           <label for="description-box" class="col-2 col-form-label">Description</label>

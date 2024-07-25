@@ -254,6 +254,12 @@ class GroupChooser {
     return this.getGroupSet().has(groupName);
   }
 
+  refetchGroups() {
+    return api.groups().then((response) => {
+      this.setGroupList(response.groups);
+    });
+  }
+
   // Sets groupList (group-chooser) element.
   setGroupList(groups) {
     // Adds list item to group-chooser.
@@ -279,6 +285,13 @@ class GroupChooser {
         this.internalOnlyGroupSet.add(group.name);
       }
     };
+
+    // Clear the previous group list data.
+    this.element.innerHTML = '';
+    this.selectedGroupName = null;
+    this.completeGroupSet = new Set();
+    this.internalOnlyGroupSet = new Set();
+    this.groupOptions = new Map();
 
     groups.map((group) => {
       addElement(group);
@@ -440,6 +453,12 @@ class GroupForm {
     // The Form element.
     this.form = this.element.querySelector('#group-form');
 
+    // The alert element, used to give feedback on form submission.
+    this.alert = this.element.querySelector('#group-form-alert');
+    this.alertTitle = this.alert.querySelector('strong');
+    this.alertMessage = this.alert.querySelector('span');
+    this.clearAlert();
+
     // Is the form valid to submit?
     this.valid = false;
 
@@ -470,13 +489,7 @@ class GroupForm {
       this.fields.forEach((formField) => { this.validate(formField); });
       if (this.valid) {
         const authGroup = this.createAuthGroupFromForm();
-
-        this.doSubmit(authGroup).then(() => {
-          location.reload();
-        }).catch((error) => {
-          console.log(error);
-          alert(error);
-        });
+        this.doSubmit(authGroup);
       }
     })
   }
@@ -528,6 +541,33 @@ class GroupForm {
       }
     })
   }
+
+  doSubmit(authGroup) {
+    // Should be overidden.
+    throw new Error('doSubmit not implemented');
+  }
+
+  clearAlert() {
+    this.alert.style.display = 'none';
+    this.alert.classList.remove('alert-danger', 'alert-success');
+    this.alertTitle.textContent = '';
+    this.alertMessage.textContent = '';
+  }
+
+  showSuccessAlert(title) {
+    this.clearAlert();
+    this.alert.classList.add('alert-success');
+    this.alertTitle.textContent = title;
+    this.alert.style.display = 'block';
+  }
+
+  showErrorAlert(message) {
+    this.clearAlert();
+    this.alert.classList.add('alert-danger');
+    this.alertTitle.textContent = 'Oh snap!';
+    this.alertMessage.textContent = message;
+    this.alert.style.display = 'block';
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -548,6 +588,16 @@ class EditGroupForm extends GroupForm {
 
     // Tooltips in this form.
     this.tooltips = [];
+  }
+
+  onUpdate(authGroup) {
+    // Should be overidden.
+    throw new Error('onUpdate not implemented');
+  }
+
+  onDelete(authGroup) {
+    // Should be overidden.
+    throw new Error('onDelete not implemented');
   }
 
   // Dispose of all tooltips in this form.
@@ -695,24 +745,14 @@ class EditGroupForm extends GroupForm {
       let result = confirm(`Are you sure you want to delete ${group.name}?`)
       if (result) {
         console.log(`attempting to delete ${group.name}...`);
-        api.groupDelete(group.name, group.etag)
-          .then(() => {
-            console.log(`deleted ${group.name} successfully!`);
-            // TODO(cjacomet): Optimize this to just reload content of scroller and not entire window.
-            location.reload();
-          })
-          .catch((error) => {
-            console.log(`failed trying to delete ${group.name}: ${error}`);
-            // TODO(cjacomet): Replace alert with error modal to display error to users through UI.
-            alert(`failed trying to delete ${group.name}: ${error}`);
-          });
+        this.onDelete(group);
       }
     })
   }
 
   doSubmit(authGroup) {
     authGroup.etag = this.groupEtag;
-    return api.groupUpdate(authGroup);
+    return this.onUpdate(authGroup);
   }
 }
 
@@ -723,10 +763,56 @@ class NewGroupForm extends GroupForm {
     super('#new-group-form-template', '');
   }
 
+  onCreate(authGroup) {
+    // Should be overidden.
+    throw new Error('onCreate not implemented');
+  }
+
   doSubmit(authGroup) {
-    return api.groupCreate(authGroup);
+    return this.onCreate(authGroup);
   }
 }
+
+// Wrapper around an RPC call that originated from some form.
+// Locks UI while call is running, then refreshes the list of groups once it
+// resolves.
+const waitForResult = (cb, groupChooser, form, listErrorBox) => {
+  let done = new Promise((resolve, reject) => {
+    // TODO: Lock UI while running the request.
+    console.log("Locking UI...");
+
+    // Hide previous error message (if any).
+    form.clearAlert();
+
+    cb
+      .then((response) => {
+        // Call succeeded. Refetch the list of groups.
+        groupChooser.refetchGroups()
+        .then(() => {
+          // Groups list updated - trigger resolve.
+          resolve(response);
+        })
+        .catch((err) => {
+          // Failed to update the groups list. Show page-wide error message and
+          // trigger reject.
+          listErrorBox.showError('Listing groups failed', err.error);
+          reject(err);
+        });
+      })
+      .catch((err) => {
+        // Show error message on the form, since it's a local error with the
+        // request, and trigger reject.
+        form.showErrorAlert(err.error);
+        reject(err);
+      })
+      .finally(() => {
+        // TODO: Unlock UI.
+        console.log('Unlocking UI...');
+      })
+  });
+
+  return done;
+};
 
 window.onload = () => {
   // Setup global UI elements.
@@ -739,11 +825,43 @@ window.onload = () => {
 
   const startNewGroupFlow = () => {
     let form = new NewGroupForm();
+
+    // Called when the 'Create' button is clicked.
+    form.onCreate = (group) => {
+      const request = api.groupCreate(group);
+      waitForResult(request, groupChooser, form, listErrorBox)
+        .then((response) => {
+          groupChooser.setSelection(response.name);
+          // If the creation was done in dry-run mode, the group won't exist.
+          if (groupChooser.reselectionRequired()) {
+            groupChooser.selectDefault();
+          }
+        });
+    };
     contentFrame.loadContent(form);
   };
 
   const startEditGroupFlow = (groupName) => {
     let form = new EditGroupForm(groupName);
+
+    // Called when the 'Update group' button is clicked.
+    form.onUpdate = (group) => {
+      const request = api.groupUpdate(group);
+      waitForResult(request, groupChooser, form, listErrorBox)
+        .then((response) => {
+          groupChooser.setSelection(response.name);
+        });
+    };
+
+    // Called when the 'Delete group' button is clicked.
+    form.onDelete = (group) => {
+      const request = api.groupDelete(group.name, group.etag);
+      waitForResult(request, groupChooser, form, listErrorBox)
+        .then(() => {
+          groupChooser.selectDefault();
+        });
+    };
+
     contentFrame.loadContent(form);
   };
 
@@ -759,6 +877,7 @@ window.onload = () => {
   const createGroupBtn = document.querySelector("#create-group-btn");
   if (createGroupBtn) {
     createGroupBtn.addEventListener('click', (event) => {
+      setCurrentGroupInURL(NEW_GROUP_PLACEHOLDER);
       startNewGroupFlow();
       groupChooser.setSelection(null);
     });
@@ -801,9 +920,8 @@ window.onload = () => {
   loadingBox.setLoadStatus(true);
   mainContent.hide();
 
-  api.groups()
-    .then((response) => {
-      groupChooser.setGroupList(response.groups);
+  groupChooser.refetchGroups()
+    .then(() => {
       jumpToCurrentGroup(true);
       onCurrentGroupInURLChange(() => {
         jumpToCurrentGroup(false);
