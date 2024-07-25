@@ -13,19 +13,16 @@
 // limitations under the License.
 
 import { CircularProgress } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { TasksServices } from '@/common/services/swarming';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { TaskIdRequest } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { getBuildURLPathFromTags } from '@/swarming/tools/utils';
 
-const ALLOWED_HOSTS = Object.freeze([
-  SETTINGS.swarming.defaultHost,
-  ...(SETTINGS.swarming.allowedHosts || []),
-]);
+import { useTasksClient } from '../hooks/prpc_clients';
 
 export function SwarmingBuildPage() {
   const { taskId } = useParams();
@@ -38,25 +35,23 @@ export function SwarmingBuildPage() {
 
   const swarmingHost =
     searchParams.get('server') || SETTINGS.swarming.defaultHost;
-  if (!ALLOWED_HOSTS.includes(swarmingHost)) {
-    throw new Error(`'${swarmingHost}' is not an allowed host`);
-  }
 
-  const { data, error } = usePrpcQuery({
-    host: swarmingHost,
-    Service: TasksServices,
-    method: 'getRequest',
-    request: {
-      taskId,
-    },
-  });
+  const client = useTasksClient(swarmingHost);
+
+  const { data, error } = useQuery(
+    client.GetRequest.query(
+      TaskIdRequest.fromPartial({
+        taskId,
+      }),
+    ),
+  );
 
   if (error) {
     throw error;
   }
 
   const targetUrlPath = useMemo(
-    () => data?.tags && getBuildURLPathFromTags(data.tags),
+    () => data && getBuildURLPathFromTags(data.tags),
     [data],
   );
 
