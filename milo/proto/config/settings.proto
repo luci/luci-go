@@ -83,7 +83,7 @@ message Settings {
   repeated SourceAcls source_acls = 4;
 
   message ResultDB {
-    // host is the hostname of the ResultDB instance we're pointing to (eg. results.api.cr.dev).
+    // host is the hostname of the ResultDB instance we're pointing to for RPCs (eg. results.api.cr.dev).
     string host = 1;
   }
   ResultDB resultdb = 5;
@@ -91,13 +91,15 @@ message Settings {
   reserved 6; // weetbix
 
   message LuciAnalysis {
-    // host is the hostname of the LUCI Analysis instance we're pointing to (eg. luci-analysis.appspot.com).
+    // host is the hostname of the LUCI Analysis instance we're pointing to for RPCs (eg. analysis.api.luci.app).
     string host = 1;
+    // ui_host is the hostname to use for links to LUCI Analysis UI (eg. luci-analysis.appspot.com).
+    string ui_host = 2;
   }
   LuciAnalysis luci_analysis = 7;
 
   message LuciBisection {
-    // host is the hostname of the LUCI Bisection instance we're pointing to (eg. luci-bisection.appspot.com).
+    // host is the hostname of the LUCI Bisection instance we're pointing to for RPCs (eg. luci-bisection.appspot.com).
     string host = 1;
   }
   LuciBisection luci_bisection = 8;
@@ -109,13 +111,13 @@ message Settings {
   SheriffOMatic sheriff_o_matic = 9;
 
   message LuciTreeStatus {
-    // host is the hostname of the LUCI Tree Status instance we're pointing to (eg. luci-tree-status.appspot.com).
+    // host is the hostname of the LUCI Tree Status instance we're pointing to for RPCs (eg. luci-tree-status.appspot.com).
     string host = 1;
   }
   LuciTreeStatus luci_tree_status = 10;
 
   message LuciNotify {
-    // host is the hostname of the LUCI Notify instance we're pointing to (eg. luci-notify.appspot.com).
+    // host is the hostname of the LUCI Notify instance we're pointing to for RPCs (eg. luci-notify.appspot.com).
     string host = 1;
   }
   LuciNotify luci_notify = 11;

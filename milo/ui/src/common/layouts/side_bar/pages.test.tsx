@@ -91,7 +91,7 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.host}/p/projecttest/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.uiHost||SETTINGS.luciAnalysis.host}/p/projecttest/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },
@@ -149,7 +149,7 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.host}/p/chromium/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.uiHost||SETTINGS.luciAnalysis.host}/p/chromium/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },
@@ -224,7 +224,7 @@ describe('generateSidebarSections', () => {
           },
           {
             page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.host}/p/chromeos/clusters`,
+            url: `https://${SETTINGS.luciAnalysis.uiHost||SETTINGS.luciAnalysis.host}/p/chromeos/clusters`,
             icon: <SpokeIcon />,
             external: true,
           },

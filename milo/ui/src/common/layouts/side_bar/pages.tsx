@@ -110,7 +110,7 @@ function generateTestsSection(project: string | undefined): SidebarSection {
       },
       {
         page: UiPage.FailureClusters,
-        url: `https://${SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
+        url: `https://${SETTINGS.luciAnalysis.uiHost||SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
         icon: <SpokeIcon />,
         external: true,
       },

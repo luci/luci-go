@@ -62,6 +62,7 @@ configJSVars.SETTINGS = Object.freeze({
   },
   luciAnalysis: {
     host: assertNonNullable(process.env['VITE_LUCI_ANALYSIS_HOST']),
+    uiHost: assertNonNullable(process.env['VITE_LUCI_ANALYSIS_UI_HOST']),
   },
   luciBisection: {
     host: assertNonNullable(process.env['VITE_LUCI_BISECTION_HOST']),

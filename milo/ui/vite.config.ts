@@ -61,6 +61,7 @@ function getLocalDevConfigsJs(env: Record<string, string>) {
     },
     luciAnalysis: {
       host: env['VITE_LUCI_ANALYSIS_HOST'],
+      uiHost: env['VITE_LUCI_ANALYSIS_UI_HOST'],
     },
     luciBisection: {
       host: env['VITE_LUCI_BISECTION_HOST'],

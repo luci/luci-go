@@ -34,7 +34,14 @@ declare const SETTINGS: {
     readonly host: string;
   };
   readonly luciAnalysis: {
+    /**
+     * Host to use for pRPC APIs.
+     */
     readonly host: string;
+    /**
+     * Host to use for links to UI.
+     */
+    readonly uiHost: string;
   };
   readonly luciBisection: {
     readonly host: string;
