@@ -14,10 +14,13 @@
 
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 
-import { ResultDb } from '@/common/services/resultdb';
-import { TestMetadataDetail } from '@/common/services/resultdb';
 import { Project } from '@/proto/go.chromium.org/luci/milo/proto/projectconfig/project.pb';
 import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
+import {
+  QueryTestMetadataResponse,
+  ResultDBClientImpl,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { TestMetadataDetail } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestIdLabel } from './test_id_label';
@@ -28,7 +31,7 @@ describe('TestIdLabel', () => {
   });
 
   const testSchema = 'testSchema';
-  const baseTestMetadata: TestMetadataDetail = {
+  const baseTestMetadata = TestMetadataDetail.fromPartial({
     name: 'project/refhash',
     project: 'chromium',
     testId: 'fakeid',
@@ -53,7 +56,7 @@ describe('TestIdLabel', () => {
       },
       propertiesSchema: testSchema,
     },
-  };
+  });
   const renderTestIdLabel = () => {
     render(
       <FakeContextProvider>
@@ -64,14 +67,16 @@ describe('TestIdLabel', () => {
     expect(screen.queryByText('testid')).not.toBeNull();
   };
 
-  test('should load test source', async () => {
+  it('should load test source', async () => {
     const testMetadataStub = jest.spyOn(
-      ResultDb.prototype,
-      'queryTestMetadata',
+      ResultDBClientImpl.prototype,
+      'QueryTestMetadata',
     );
-    testMetadataStub.mockResolvedValueOnce({
-      testMetadata: [baseTestMetadata],
-    });
+    testMetadataStub.mockResolvedValueOnce(
+      QueryTestMetadataResponse.fromPartial({
+        testMetadata: [baseTestMetadata],
+      }),
+    );
 
     renderTestIdLabel();
     expect(await screen.findByText('fakename')).not.toBeNull();
@@ -82,17 +87,19 @@ describe('TestIdLabel', () => {
     ).toStrictEqual(expectedSource);
   });
 
-  test('should not crash if no test metadata returned from the query', async () => {
+  it('should not crash if no test metadata returned from the query', async () => {
     const testMetadataStub = jest.spyOn(
-      ResultDb.prototype,
-      'queryTestMetadata',
+      ResultDBClientImpl.prototype,
+      'QueryTestMetadata',
     );
-    testMetadataStub.mockResolvedValueOnce({});
+    testMetadataStub.mockResolvedValueOnce(
+      QueryTestMetadataResponse.fromPartial({}),
+    );
 
     expect(renderTestIdLabel).not.toThrow();
   });
 
-  test('should load key value metadata using the metadataConfig', async () => {
+  it('should load key value metadata using the metadataConfig', async () => {
     const testProjectCfg = Project.fromPartial({
       metadataConfig: {
         testMetadataProperties: [
@@ -114,12 +121,14 @@ describe('TestIdLabel', () => {
     );
     cfgStub.mockResolvedValueOnce(testProjectCfg);
     const testMetadataStub = jest.spyOn(
-      ResultDb.prototype,
-      'queryTestMetadata',
+      ResultDBClientImpl.prototype,
+      'QueryTestMetadata',
     );
-    testMetadataStub.mockResolvedValueOnce({
-      testMetadata: [baseTestMetadata],
-    });
+    testMetadataStub.mockResolvedValueOnce(
+      QueryTestMetadataResponse.fromPartial({
+        testMetadata: [baseTestMetadata],
+      }),
+    );
 
     renderTestIdLabel();
     await waitFor(() => expect(screen.queryByText('validPath')).not.toBeNull());

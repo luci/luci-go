@@ -12,31 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { QueryTestMetadataRequest, ResultDb } from '@/common/services/resultdb';
+import { useQuery } from '@tanstack/react-query';
+
+import { QueryTestMetadataRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 const MAIN_GIT_REF = 'refs/heads/main';
 
 // TODO: query with pagination.
 export function useTestMetadata(request: QueryTestMetadataRequest) {
-  return usePrpcQuery({
-    host: SETTINGS.resultdb.host,
-    Service: ResultDb,
-    method: 'queryTestMetadata',
-    request,
-    options: {
-      select: (res) => {
-        if (!res.testMetadata?.length) {
-          return null;
-        }
-        // Select the main branch. Fallback to the first element if main branch
-        // is not found.
-        return (
-          res.testMetadata.find(
-            (m) => m.sourceRef.gitiles?.ref === MAIN_GIT_REF,
-          ) || res.testMetadata[0]
-        );
-      },
+  const client = useResultDbClient();
+  return useQuery({
+    ...client.QueryTestMetadata.query(request),
+    select: (res) => {
+      if (!res.testMetadata?.length) {
+        return null;
+      }
+      // Select the main branch. Fallback to the first element if main branch
+      // is not found.
+      return (
+        res.testMetadata.find(
+          (m) => m.sourceRef?.gitiles?.ref === MAIN_GIT_REF,
+        ) || res.testMetadata[0]
+      );
     },
   });
 }

@@ -22,6 +22,7 @@ import {
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
+import { QueryTestMetadataRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
 import { useTestMetadata } from './utils';
 
@@ -35,10 +36,12 @@ export function TestPropertiesEntry({
 }: TestPropertiesEntryProps) {
   const [testPropertiesExpanded, setTestPropertiesExpanded] = useState(false);
   const project = extractProject(projectOrRealm);
-  const { data, isSuccess, isLoading } = useTestMetadata({
-    project,
-    predicate: { testIds: [testId] },
-  });
+  const { data, isSuccess, isLoading } = useTestMetadata(
+    QueryTestMetadataRequest.fromPartial({
+      project,
+      predicate: { testIds: [testId] },
+    }),
+  );
   return (
     <>
       {!isLoading && isSuccess && data?.testMetadata?.properties && (
