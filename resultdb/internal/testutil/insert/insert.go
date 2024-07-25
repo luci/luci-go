@@ -16,25 +16,21 @@
 package insert
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
-
-	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testmetadata"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // TestRealm is the default realm used for invocation mutations returned by Invocation().
@@ -251,17 +247,4 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 		}
 	}
 	return trs
-}
-
-// Checkpoint returns a Spanner mutation to insert an checkpoint.
-func Checkpoint(ctx context.Context, project, resourceID, processID, uniquifier string) *spanner.Mutation {
-	values := map[string]any{
-		"Project":      project,
-		"ResourceID":   resourceID,
-		"ProcessID":    processID,
-		"Uniquifier":   uniquifier,
-		"ExpiryTime":   clock.Now(ctx).Add(time.Hour),
-		"CreationTime": spanner.CommitTimestamp,
-	}
-	return spanutil.InsertMap("Checkpoints", values)
 }

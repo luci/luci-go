@@ -521,32 +521,4 @@ CREATE TABLE BaselineTestVariants (
   -- Used to remove tests that have not been run longer than 72 hours.
   LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 ) PRIMARY KEY (Project, BaselineId, TestId, VariantHash),
-  ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 3 DAY));
-
--- Checkpoints is used by processes to ensure they only perform some task
--- once, or as close to once as possible.
--- It is useful when the task being performed is not inherently idempontent,
--- such as exporting rows to BigQuery.
-CREATE TABLE Checkpoints (
-  -- LUCI Project for which the process is occuring.
-  -- Used to enforce hard data separation between the data of each project.
-  Project STRING(40) NOT NULL,
-  -- The identifier of the resource to which the checkpointed process relates.
-  -- For example, the ResultDB invocation being ingested.
-  ResourceId STRING(MAX) NOT NULL,
-  -- The name of process for which checkpointing is occuring. For example,
-  -- "result-ingestion/schedule-continuation".
-  -- Used to namespace checkpoints between processes.
-  -- Valid pattern: ^[a-z0-9\-/]{1,64}$.
-  ProcessId STRING(MAX) NOT NULL,
-  -- A uniqifier for the checkpoint.
-  -- This could be the page number processed, or the starting test identifier
-  -- and variant hash of a batch that was processed.
-  -- For processes with only one checkpoint, this may be left empty ("").
-  Uniquifier STRING(MAX) NOT NULL,
-  -- Time that this record was inserted in the table.
-  CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-  -- Time that this record expires from the table.
-  ExpiryTime TIMESTAMP NOT NULL,
-) PRIMARY KEY(Project, ResourceId, ProcessId, Uniquifier),
-  ROW DELETION POLICY (OLDER_THAN(ExpiryTime, INTERVAL 0 DAY));
+  ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 3 DAY))
