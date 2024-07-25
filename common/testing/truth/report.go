@@ -50,12 +50,12 @@
 // runtime, which was unfortunate.
 //
 // While this library does still do some runtime type reflection (to convert
-// from `actual any` to `T` for the given Comparison in AssertLoosely and
-// CheckLoosely), this conversion is done in exactly one place (this package),
+// from `actual any` to `T` for the given Comparison in assert.Loosely and
+// check.Loosely), this conversion is done in exactly one place (this package),
 // and does not require each comparison to reimplement this. In addition, the
-// default symbols Assert and Check do no dynamic type inference at all, which
-// should hopefully encourage test authors to follow this stricter style by
-// default.
+// default symbols assert.That and check.That do no dynamic type inference at
+// all, which should hopefully encourage test authors to follow this stricter
+// style by default.
 //
 // # Why now, and why this style?
 //
@@ -95,15 +95,10 @@
 //	  "testing"
 //
 //	  "go.chromium.org/luci/common/testing/truth/assert"
-//	  // You may also import "go.chromium.org/luci/common/testing/truth/check"
-//	  // which makes non-fatal assertions.
-//	  //
-//	  // If you don't like cute names, then import
-//	  // "go.chromium.org/luci/common/testing/truth" for:
-//	  //   * truth.Assert
-//	  //   * truth.AssertLoosely
-//	  //   * truth.Check
-//	  //   * truth.CheckLoosely
+//
+//	  // check makes non-fatal assertions (t.Fail()), in opposition to assert
+//	  // which makes fatal assertions (t.FailNow()).
+//	  "go.chromium.org/luci/common/testing/truth/check"
 //
 //	  // Optional; these are a collection of useful, common, comparisons, but
 //	  // which are not required.
@@ -114,6 +109,9 @@
 //	)
 //
 //	func TestSomething(t *testing.T) {
+//	   // This check will fail, but doesn't immediately stop the test.
+//	   check.That(t, 100, should.Equal(200))
+//
 //	   // Checks that `someFunction` returns an `int` with the value `100`.
 //	   // The type of someFunction() is enforced at compile time.
 //	   assert.That(t, someFunction(), should.Equal(100))
@@ -135,19 +133,19 @@
 package truth
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
 	"golang.org/x/term"
 
-	"go.chromium.org/luci/common/data"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // Verbose indicates that the truth library should always render verbose
 // Findings in comparison Failures.
+//
+// See the example test for a quick "how to use this".
 //
 // By default this is true when the '-test.v' flag is passed to the binary (this
 // is what gets set on the binary when you run `go test -v`).
@@ -234,93 +232,18 @@ func render(f *failure.Summary) string {
 	}.Summary("", f)
 }
 
-// Assert compares `actual` using `compare`, which is typically
-// a closure over some expected value (e.g. should.Equal(100) returns
-// comparison.Func[int]).
+// Report checks that there is no failure (i.e. `failure` is nil).
 //
-// If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-func Assert[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...Option) {
-	if f := applyOpts(compare(actual), opts); f != nil {
-		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
-		t.Helper()
-		t.Log("Assert", render(f))
-		t.FailNow()
-	}
-}
-
-// Check compares `actual` using `compare`, which is typically
-// a closure over some expected value (e.g. should.Equal(100) returns
-// comparison.Func[int]).
+// If failure is not nil, this will Log the error with t.Log, using `name` as a prefix.
 //
-// If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
-// returning true iff the comparison was successful.
-func Check[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...Option) (ok bool) {
-	f := applyOpts(compare(actual), opts)
-	ok = f == nil
-	if !ok {
-		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
-		t.Helper()
-		t.Log("Check", render(f))
-		t.Fail()
+// Note: The recommended way to use the truth library is to import the `assert`
+// and/or `check` sub-packages, which will call into this function. Direct use
+// of truth.Report should be very rare.
+func Report(t testing.TB, name string, failure *failure.Summary) {
+	if failure == nil {
+		return
 	}
+	t.Helper()
+	t.Log(name, render(failure))
 	return
-}
-
-// doConversion converts `actual` to `compare`'s T value.
-//
-// If the conversion succeeds, this returns the converted value and `compare`.
-//
-// If the conversion fails, this returns an unspecified value and a comparison
-// function which always fails for all inputs with "builtin.LosslessConvertTo".
-//
-// This is so that AssertLoosely and CheckLoosely can call directly into Assert
-// and Check, respectively.
-func doConversion[T any](actual any, compare comparison.Func[T]) (converted T, newCompare comparison.Func[T]) {
-	converted, ok := data.LosslessConvertTo[T](actual)
-	if ok {
-		return converted, compare
-	}
-	return converted, func(t T) *failure.Summary {
-		sb := comparison.NewSummaryBuilder("builtin.LosslessConvertTo", t)
-		sb.Findings = append(sb.Findings, &failure.Finding{
-			Name:  "ActualType",
-			Value: []string{fmt.Sprintf("%T", actual)},
-		})
-		return sb.Summary
-	}
-}
-
-// AssertLoosely compares `actual` using `compare`, which is typically
-// a closure over some expected value (e.g. should.Equal(100) returns
-// comparison.Func[int]).
-//
-// `actual` will be converted to T using the function
-// [go.chromium.org/luci/common/data.LosslessConvertTo].
-//
-// If this conversion fails, a descriptive error will be logged and t.FailNow()
-// called.
-//
-// If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-func AssertLoosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...Option) {
-	converted, compare := doConversion(actual, compare)
-	t.Helper()
-	Assert(t, converted, compare, opts...)
-}
-
-// CheckLoosely compares `actual` using `compare`, which is typically
-// a closure over some expected value (e.g. should.Equal(100) returns
-// comparison.Func[int]).
-//
-// `actual` will be converted to T using the function
-// [go.chromium.org/luci/common/data.LosslessConvertTo].
-//
-// If this conversion fails, a descriptive error will be logged and t.Fail()
-// called.
-//
-// If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
-// returning true iff the comparison was successful.
-func CheckLoosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...Option) bool {
-	converted, compare := doConversion(actual, compare)
-	t.Helper()
-	return Check(t, converted, compare, opts...)
 }

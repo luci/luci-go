@@ -18,11 +18,10 @@ import (
 	"fmt"
 	"runtime"
 
-	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
-// LineContext returns a truth.Option which adds an "at" SourceContext with
+// LineContext returns an Option which adds an "at" SourceContext with
 // one frame containing the filename and line number of the frame calling
 // LineContext, plus skipFrames[0] (if provided).
 //
@@ -60,7 +59,7 @@ import (
 //
 // Where XX is the line of the myHelper call, and YY is the line of the actual
 // should.Equal check inside of the helper function.
-func LineContext(skipFrames ...int) truth.Option {
+func LineContext(skipFrames ...int) Option {
 	if len(skipFrames) > 1 {
 		panic(fmt.Errorf(
 			"option.LineContext: skipFrames has more than one value: %v", skipFrames))
@@ -75,7 +74,7 @@ func LineContext(skipFrames ...int) truth.Option {
 		return nil
 	}
 
-	return truth.SummaryModifierOption(func(s *failure.Summary) {
+	return SummaryModifier(func(s *failure.Summary) {
 		s.SourceContext = append(s.SourceContext, &failure.Stack{
 			Name:   "at",
 			Frames: []*failure.Stack_Frame{{Filename: filename, Lineno: int64(lineno)}},

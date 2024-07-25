@@ -54,15 +54,15 @@ func Example_basic_usage() {
 
 	// Output:
 	// --- FAIL: FakeTestName (0.00s)
-	//     filename.go:NN: Check should.Equal[int] FAILED
+	//     filename.go:NN: check.That should.Equal[int] FAILED
 	//         Actual: 100
 	//         Expected: 102
-	//     filename.go:NN: Check should.Equal[int] FAILED
+	//     filename.go:NN: check.Loosely should.Equal[int] FAILED
 	//         Actual: 100
 	//         Expected: 144
-	//     filename.go:NN: Check builtin.LosslessConvertTo[string] FAILED
+	//     filename.go:NN: check.Loosely comparison.Func[string].CastCompare FAILED
 	//         ActualType: int
-	//     filename.go:NN: Check should.Equal[string] FAILED
+	//     filename.go:NN: check.That should.Equal[string] FAILED
 	//         Actual [verbose value len=2005 (pass -v to see)]
 	//         Expected [verbose value len=2003 (pass -v to see)]
 	//         Diff: \
@@ -104,7 +104,7 @@ func Example_helpers_with_line_context() {
 
 	// Output:
 	// --- FAIL: FakeTestName (0.00s)
-	//     filename.go:NN: Check should.Equal[int] FAILED
+	//     filename.go:NN: check.That should.Equal[int] FAILED
 	//         (at example_test.go:98)
 	//         Actual: 10
 	//         Expected: 20

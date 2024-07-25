@@ -35,20 +35,37 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/option"
 )
 
-// That is an alternate name for truth.Assert.
+// That will compare `actual` using `compare(actual)`.
+//
+// If this results in a failure.Summary, it will be reported with truth.Report,
+// and the test will be failed with t.Fail().
 //
 // Example: `assert.That(t, 10, should.Equal(20))`
-func That[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...truth.Option) {
-	t.Helper()
-	truth.Assert(t, actual, compare, opts...)
+//
+// Returns `true` iff `compare(actual)` returned no failure (i.e. nil)
+func That[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...option.Option) {
+	if summary := option.ApplyAll(compare(actual), opts); summary != nil {
+		t.Helper()
+		truth.Report(t, "assert.That", summary)
+		t.FailNow()
+	}
 }
 
-// Loosely is an alternate name for truth.AssertLoosely.
+// Loosely will compare `actual` using `compare.CastCompare(actual)`.
 //
-// Example: `assert.Loosely(t, myCustomInt(10), should.Equal(20))`
-func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...truth.Option) {
-	t.Helper()
-	truth.AssertLoosely(t, actual, compare, opts...)
+// If this results in a failure.Summary, it will be reported with truth.Report,
+// and the test will be failed with t.Fail().
+//
+// Example: `assert.Loosely(t, 10, should.Equal(20))`
+//
+// Returns `true` iff `compare.CastCompare(actual)` returned no failure (i.e. nil)
+func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...option.Option) {
+	if summary := option.ApplyAll(compare.CastCompare(actual), opts); summary != nil {
+		t.Helper()
+		truth.Report(t, "assert.Loosely", summary)
+		t.FailNow()
+	}
 }

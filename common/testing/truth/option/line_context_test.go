@@ -18,7 +18,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
@@ -32,7 +31,7 @@ func TestLineContext(t *testing.T) {
 	}
 
 	t.Run("non-nil", func(t *testing.T) {
-		opt := LineContext(0).(truth.SummaryModifierOption) // Gets .../line_context_test.go:35
+		opt := LineContext(0).(SummaryModifier) // Gets .../line_context_test.go:34
 		failure := mkFailure()
 		opt(failure)
 		ctx := failure.SourceContext
@@ -54,15 +53,15 @@ func TestLineContext(t *testing.T) {
 		if diff := typed.Diff(filepath.Base(frame.Filename), "line_context_test.go"); diff != "" {
 			t.Fatalf("unexpected filename: %s", diff)
 		}
-		if diff := typed.Diff(frame.Lineno, 35); diff != "" {
+		if diff := typed.Diff(frame.Lineno, 34); diff != "" {
 			t.Fatalf("unexpected line number: %s", diff)
 		}
 	})
 
 	t.Run("helper", func(t *testing.T) {
-		opt := func() truth.SummaryModifierOption {
-			return LineContext(1).(truth.SummaryModifierOption)
-		}() // Gets .../line_context_test.go:65
+		opt := func() SummaryModifier {
+			return LineContext(1).(SummaryModifier)
+		}() // Gets .../line_context_test.go:64
 		failure := mkFailure()
 		opt(failure)
 		ctx := failure.SourceContext
@@ -84,7 +83,7 @@ func TestLineContext(t *testing.T) {
 		if diff := typed.Diff(filepath.Base(frame.Filename), "line_context_test.go"); diff != "" {
 			t.Fatalf("unexpected filename: %s", diff)
 		}
-		if diff := typed.Diff(frame.Lineno, 65); diff != "" {
+		if diff := typed.Diff(frame.Lineno, 64); diff != "" {
 			t.Fatalf("unexpected line number: %s", diff)
 		}
 	})

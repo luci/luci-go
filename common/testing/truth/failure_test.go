@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package truth
+package truth_test
 
 import (
 	"flag"
@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -40,10 +42,10 @@ func TestAllFailures(t *testing.T) {
 
 	// NOTE: it would be cool if there was a way that these could count towards
 	// coverage, but as of Go1.22 there is no easy way to do this. However, the
-	// design of Assert & friends makes it easy to cover them with unit tests.
+	// design of assert.That & friends makes it easy to cover them with unit tests.
 	//
 	// This test is just to make sure that the fake roughly aligns with reality,
-	// and that Assert/Check/etc. will correctly fail the tests.
+	// and that assert.That/check.That/etc. will correctly fail the tests.
 	testList, err := exec.Command(me, "-test.list", "TestFailure_").CombinedOutput()
 	testListRaw := string(testList)
 	if err != nil {
@@ -71,7 +73,7 @@ func TestAllFailures(t *testing.T) {
 func TestFailure_AssertSimple(t *testing.T) {
 	maybeSkipFailureTests(t)
 
-	Assert(t, 100, should.Equal(200))
+	assert.That(t, 100, should.Equal(200))
 }
 
 func TestFailure_AssertLong(t *testing.T) {
@@ -80,21 +82,21 @@ func TestFailure_AssertLong(t *testing.T) {
 	a := strings.Repeat("X", 1000) + "woat" + strings.Repeat("X", 1000)
 	b := strings.Repeat("X", 1000) + "merp" + strings.Repeat("X", 1000)
 
-	Assert(t, a, should.Equal(b))
+	assert.That(t, a, should.Equal(b))
 }
 
 func TestFailure_MultiCheck(t *testing.T) {
 	maybeSkipFailureTests(t)
 
-	Check(t, 100, should.Equal(20))
-	Check(t, 100, should.Equal(100))
-	Check(t, 100, should.Equal(200))
+	check.That(t, 100, should.Equal(20))
+	check.That(t, 100, should.Equal(100))
+	check.That(t, 100, should.Equal(200))
 }
 
 func TestFailure_BadConversion(t *testing.T) {
 	maybeSkipFailureTests(t)
 
-	CheckLoosely(t, 100, should.Equal("hello"))
-	CheckLoosely(t, uint8(100), should.Equal(100)) // passes
-	CheckLoosely(t, 10000, should.Equal(uint8(100)))
+	check.Loosely(t, 100, should.Equal("hello"))
+	check.Loosely(t, uint8(100), should.Equal(100)) // passes
+	check.Loosely(t, 10000, should.Equal(uint8(100)))
 }

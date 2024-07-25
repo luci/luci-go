@@ -15,6 +15,9 @@
 package comparison
 
 import (
+	"fmt"
+
+	"go.chromium.org/luci/common/data"
 	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
@@ -32,3 +35,27 @@ import (
 //
 // In this example, BeTrue is a comparison.Func.
 type Func[T any] func(T) *failure.Summary
+
+// CastCompare allows you to compare a value `actual` of type `any` with
+// a specifically-typed Func[T].
+//
+// This uses data.LosslessConvertTo[T] to ensure that the underlying type of
+// `actual` can fit inside of the specified type T without data loss.
+//
+// If data loss could occur, this returns a new failure.Summary describing the
+// type mismatch.
+//
+// Otherwise, this returns the result of comparison(T(actual)).
+func (compare Func[T]) CastCompare(actual any) *failure.Summary {
+	converted, ok := data.LosslessConvertTo[T](actual)
+	if ok {
+		return compare(converted)
+	}
+
+	sb := NewSummaryBuilder(fmt.Sprintf("comparison.Func[%T].CastCompare", converted))
+	sb.Findings = append(sb.Findings, &failure.Finding{
+		Name:  "ActualType",
+		Value: []string{fmt.Sprintf("%T", actual)},
+	})
+	return sb.Summary
+}
