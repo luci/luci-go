@@ -13,14 +13,15 @@
 // limitations under the License.
 
 import Link from '@mui/material/Link';
+import { useQuery } from '@tanstack/react-query';
 import { JSONPath as jsonpath } from 'jsonpath-plus';
 
-import { usePrpcQuery } from '@/common/hooks/legacy_prpc_query';
+import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { StringPair } from '@/common/services/common';
-import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { TestMetadata } from '@/common/services/resultdb';
 import { getCodeSourceUrl } from '@/common/tools/url_utils';
 import { extractProject } from '@/common/tools/utils';
+import { Project } from '@/proto/go.chromium.org/luci/milo/proto/projectconfig/project.pb';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 
 import { useTestMetadata } from './utils';
@@ -79,17 +80,13 @@ export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
         testMetadataDetail?.sourceRef.gitiles?.ref,
       )
     : null;
+
+  const client = useMiloInternalClient();
   const {
     data: projectCfg,
     isSuccess: cfgIsSuccess,
     isLoading: cfgIsLoading,
-  } = usePrpcQuery({
-    host: '',
-    insecure: location.protocol === 'http:',
-    Service: MiloInternal,
-    method: 'getProjectCfg',
-    request: { project },
-  });
+  } = useQuery(client.GetProjectCfg.query({ project }));
 
   return (
     <table>

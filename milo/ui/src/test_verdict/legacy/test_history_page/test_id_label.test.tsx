@@ -14,9 +14,10 @@
 
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 
-import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { ResultDb } from '@/common/services/resultdb';
 import { TestMetadataDetail } from '@/common/services/resultdb';
+import { Project } from '@/proto/go.chromium.org/luci/milo/proto/projectconfig/project.pb';
+import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestIdLabel } from './test_id_label';
@@ -92,7 +93,7 @@ describe('TestIdLabel', () => {
   });
 
   test('should load key value metadata using the metadataConfig', async () => {
-    const testProjectCfg: Project = {
+    const testProjectCfg = Project.fromPartial({
       metadataConfig: {
         testMetadataProperties: [
           {
@@ -106,8 +107,11 @@ describe('TestIdLabel', () => {
           },
         ],
       },
-    };
-    const cfgStub = jest.spyOn(MiloInternal.prototype, 'getProjectCfg');
+    });
+    const cfgStub = jest.spyOn(
+      MiloInternalClientImpl.prototype,
+      'GetProjectCfg',
+    );
     cfgStub.mockResolvedValueOnce(testProjectCfg);
     const testMetadataStub = jest.spyOn(
       ResultDb.prototype,
