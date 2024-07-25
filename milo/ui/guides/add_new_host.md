@@ -14,7 +14,7 @@ All paths are relative to the luci/milo directory.
 
 * `proto/config/settings.proto` is the definition of the config format.
 * `ui/src/@types/globals.d.ts` defines the types used for typescript compilation.
-* `frontend/config_js_file.go` is an RPC handler that serves the config to the browser.
+* `frontend/configs_js_file.go` is an RPC handler that serves the config to the browser.
 * `ui/vite.config.ts` imports the config from environment variables into the local dev server.
 * `ui/src/testing_tools/setup_after_env.ts` imports the config from environment variables into the test environment.
 * `ui/.env.development` defines the default values for the environment variables in the local development environment. This file is committed and shared by all developers.
