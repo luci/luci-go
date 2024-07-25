@@ -40,7 +40,8 @@ import (
 func TestQueryTestVariantArtifactGroups(t *testing.T) {
 	Convey(`TestQueryTestVariantArtifactGroups`, t, func() {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
-			Identity: "user:someone@example.com",
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"googlers"},
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm1", Permission: rdbperms.PermListArtifacts},
 				{Realm: "testproject:testrealm2", Permission: rdbperms.PermListArtifacts},
@@ -106,10 +107,28 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 		})
 
 		Convey("invalid request", func() {
-			req.StartTime = nil
-			res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, `start_time: unspecified`)
-			So(res, ShouldBeNil)
+
+			Convey("googler", func() {
+				req.StartTime = nil
+				res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
+				So(err, ShouldBeRPCInvalidArgument, `start_time: unspecified`)
+				So(res, ShouldBeNil)
+			})
+
+			Convey("non-googler", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{"other"},
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "testproject:testrealm1", Permission: rdbperms.PermListArtifacts},
+						{Realm: "testproject:testrealm2", Permission: rdbperms.PermListArtifacts},
+					},
+				})
+
+				res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
+				So(err, ShouldBeRPCInvalidArgument, `test_id_matcher: search by prefix is not allowed for non-googlers`)
+				So(res, ShouldBeNil)
+			})
 		})
 
 		Convey("valid request", func() {
@@ -164,36 +183,60 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 			PageToken: "",
 		}
 		Convey(`valid`, func() {
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`no project`, func() {
 			req.Project = ""
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `project: unspecified`)
 		})
 
 		Convey(`invalid page size`, func() {
 			req.PageSize = -1
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `page_size: negative`)
 		})
 
 		Convey(`no search string`, func() {
 			req.SearchString = &pb.ArtifactContentMatcher{}
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `search_string: unspecified`)
 		})
 
-		Convey(`invalid test id prefix`, func() {
-			req.TestIdMatcher = &pb.IDMatcher{
-				Matcher: &pb.IDMatcher_HasPrefix{
-					HasPrefix: "invalid-test-id-\r",
-				},
-			}
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
-			So(err, ShouldErrLike, `test_id_matcher`)
+		Convey(`test id matcher`, func() {
+			Convey(`invalid test id prefix`, func() {
+				req.TestIdMatcher = &pb.IDMatcher{
+					Matcher: &pb.IDMatcher_HasPrefix{
+						HasPrefix: "invalid-test-id-\r",
+					},
+				}
+				err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+				So(err, ShouldErrLike, `test_id_matcher`)
+			})
+
+			Convey(`no test id matcher called by googler`, func() {
+				req.TestIdMatcher = nil
+				err := validateQueryTestVariantArtifactGroupsRequest(req, true)
+				So(err, ShouldBeNil)
+			})
+
+			Convey(`no test id matcher called by non-googler`, func() {
+				req.TestIdMatcher = nil
+				err := validateQueryTestVariantArtifactGroupsRequest(req, false)
+				So(err, ShouldErrLike, `test_id_matcher: unspecified`)
+			})
+
+			Convey(`test id prefix called by non-googler`, func() {
+				req.TestIdMatcher = &pb.IDMatcher{
+					Matcher: &pb.IDMatcher_HasPrefix{
+						HasPrefix: "test-id-prefix",
+					},
+				}
+				err := validateQueryTestVariantArtifactGroupsRequest(req, false)
+				So(err, ShouldErrLike, `test_id_matcher: search by prefix is not allowed for non-googlers`)
+			})
 		})
 
 		Convey(`invalid artifact id prefix`, func() {
@@ -202,33 +245,33 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 					HasPrefix: "invalid-artifact-id-\r",
 				},
 			}
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `artifact_id_matcher`)
 		})
 
 		Convey(`no start time`, func() {
 			req.StartTime = nil
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `start_time: unspecified`)
 		})
 
 		Convey(`no end time`, func() {
 			req.EndTime = nil
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `end_time: unspecified`)
 		})
 
 		Convey(`start time after end time`, func() {
 			req.StartTime = timestamppb.New(time.Unix(100, 0))
 			req.EndTime = timestamppb.New(time.Unix(10, 0))
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `start time must not be later than end time`)
 		})
 
 		Convey(`time difference greater than 7 days`, func() {
 			req.StartTime = timestamppb.New(time.Unix(0, 0))
 			req.EndTime = timestamppb.New(time.Unix(7*24*60*60+1, 0))
-			err := validateQueryTestVariantArtifactGroupsRequest(req)
+			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
 			So(err, ShouldErrLike, `difference between start_time and end_time must not be greater than 7 days`)
 		})
 	})

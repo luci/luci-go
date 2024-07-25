@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -31,6 +32,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 )
+
+const googlerOnlyGroup = "googlers"
 
 // The maximium bytes for
 const maxMatchWithContextLength = 10 * 1024 // 10KiB.
@@ -49,7 +52,11 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
-	if err := validateQueryTestVariantArtifactGroupsRequest(req); err != nil {
+	isGoogler, err := auth.IsMember(ctx, googlerOnlyGroup)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to check ACL").Err()
+	}
+	if err := validateQueryTestVariantArtifactGroupsRequest(req, isGoogler); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -79,15 +86,19 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 	}, nil
 }
 
-func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtifactGroupsRequest) error {
+func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtifactGroupsRequest, isGoogler bool) error {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
 		return errors.Annotate(err, "project").Err()
 	}
 	if req.SearchString.GetExactContain() == "" && req.SearchString.GetRegexContain() == "" {
 		return errors.New("search_string: unspecified")
 	}
-	if req.TestIdMatcher != nil {
-		if err := validateTestIDMatcher(req.TestIdMatcher); err != nil {
+
+	// Non-googler caller have to specify an exact test id.
+	// Because search with empty test id, or test id prefix can uses around 36 BigQuery slot hours.
+	// This is expensive and we want to avoid people outside of google from abusing it.
+	if req.TestIdMatcher != nil || !isGoogler {
+		if err := validateTestIDMatcher(req.TestIdMatcher, isGoogler); err != nil {
 			return errors.Annotate(err, "test_id_matcher").Err()
 		}
 	}
@@ -105,9 +116,15 @@ func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtif
 	return nil
 }
 
-func validateTestIDMatcher(m *pb.IDMatcher) error {
+func validateTestIDMatcher(m *pb.IDMatcher, isGoogler bool) error {
+	if m == nil {
+		return errors.New("unspecified")
+	}
 	switch x := m.Matcher.(type) {
 	case *pb.IDMatcher_HasPrefix:
+		if !isGoogler {
+			return errors.New("search by prefix is not allowed for non-googlers")
+		}
 		// ValidateTestID can also be used to validate test id prefix.
 		return pbutil.ValidateTestID(m.GetHasPrefix())
 	case *pb.IDMatcher_ExactEqual:
