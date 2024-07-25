@@ -1666,7 +1666,9 @@ func GetAllAuthProjectRealms(ctx context.Context) ([]*AuthProjectRealms, error) 
 }
 
 // deleteAuthProjectRealms deletes an AuthProjectRealms entity from datastore.
-// The caller is expected to handle the error.
+// The caller is expected to handle the error. Also attempts to delete the
+// corresponding AuthProjectRealmsMeta, but does not return an error if deleting
+// that fails.
 //
 // Returns error if Get from datastore failed
 // Returns error if transaction delete failed
@@ -1687,8 +1689,44 @@ func deleteAuthProjectRealms(ctx context.Context, project string, dryRun bool, h
 			return nil
 		}
 
-		return commitEntity(authProjectRealms, clock.Now(ctx).UTC(), serviceIdentity, true)
+		// Delete the AuthProjectRealms for this project.
+		if err := commitEntity(authProjectRealms, clock.Now(ctx).UTC(), serviceIdentity, true); err != nil {
+			return err
+		}
+
+		// Delete the corresponding AuthProjectRealmsMeta for this project.
+		if err := deleteAuthProjectRealmsMeta(ctx, project, dryRun); err != nil {
+			// Non-fatal - the AuthProjectRealms was successfully deleted.
+			// Just log the error.
+			logging.Errorf(
+				ctx, "failed to delete corresponding AuthProjectRealmsMeta for project %s: %s",
+				project, err)
+		}
+		return nil
 	})
+}
+
+// deleteAuthProjectRealmsMeta deletes an AuthProjectRealmsMeta entity from
+// datastore. The caller is expected to handle the error.
+//
+// Returns error if Get from datastore failed.
+// Returns error if the delete transaction failed.
+func deleteAuthProjectRealmsMeta(ctx context.Context, project string, dryRun bool) error {
+	meta, err := GetAuthProjectRealmsMeta(ctx, project)
+	if err != nil {
+		return err
+	}
+
+	if dryRun {
+		logging.Infof(ctx, "(dry run) deleting meta realms for project %s", project)
+		return nil
+	}
+
+	if err := datastore.Delete(ctx, meta); err != nil {
+		return errors.Annotate(err, "error deleting meta realms for project %s", project).Err()
+	}
+
+	return nil
 }
 
 // RealmsCfgRev is information about fetched or previously processed realms.cfg.

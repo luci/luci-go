@@ -582,11 +582,21 @@ func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*Re
 	return nil
 }
 
-// deleteRealms will try to delete the AuthProjectRealms for a given projectID.
+// deleteRealms will try to delete the AuthProjectRealms & AuthProjectRealmsMeta
+// for a given projectID.
 func deleteRealms(ctx context.Context, projectID string, dryRun bool, historicalComment string) error {
 	switch err := deleteAuthProjectRealms(ctx, projectID, dryRun, historicalComment); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return errors.Annotate(err, "realms for %s do not exist or have already been deleted", projectID).Err()
+		logging.Debugf(ctx, "realms for %s do not exist or have already been deleted", projectID)
+
+		// Attempt to delete the corresponding AuthProjectRealmsMeta, as an
+		// extra clean-up step. This ensures the meta realms mirror the
+		// project realms, in case deleting meta realms failed previously.
+		metaErr := deleteAuthProjectRealmsMeta(ctx, projectID, dryRun)
+		if metaErr != nil && !errors.Is(metaErr, datastore.ErrNoSuchEntity) {
+			return metaErr
+		}
+		return nil
 	case err != nil:
 		return err
 	default:

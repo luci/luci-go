@@ -537,6 +537,12 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 			})
 		}
 
+		// putProjectRealmsMeta stores an AuthProjectRealmsMeta into datastore
+		// for the project.
+		putProjectRealmsMeta := func(ctx context.Context, projectID string) error {
+			return datastore.Put(ctx, makeAuthProjectRealmsMeta(ctx, projectID))
+		}
+
 		// runJobs is a helper function to execute callbacks.
 		runJobs := func(jobs []func() error) bool {
 			success := true
@@ -566,6 +572,14 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 
 			So(runJobs(jobs), ShouldBeTrue)
 			So(taskScheduler.Tasks(), ShouldHaveLength, 0)
+
+			actualRealms, err := GetAllAuthProjectRealms(ctx)
+			So(err, ShouldBeNil)
+			So(actualRealms, ShouldHaveLength, 2)
+			// Confirm realms metadata was not created as this should be no-op.
+			actualRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
+			So(err, ShouldBeNil)
+			So(actualRealmsMeta, ShouldHaveLength, 0)
 		})
 
 		Convey("add realms for new project", func() {
@@ -584,6 +598,15 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 
 			So(runJobs(jobs), ShouldBeTrue)
 			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+
+			actualRealms, err := GetAllAuthProjectRealms(ctx)
+			So(err, ShouldBeNil)
+			So(actualRealms, ShouldHaveLength, 2)
+			actualRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
+			So(err, ShouldBeNil)
+			// Only one project had its realms created, so only one would have
+			// its metadata created.
+			So(actualRealmsMeta, ShouldHaveLength, 1)
 		})
 
 		Convey("update existing realms.cfg", func() {
@@ -605,6 +628,15 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 
 			So(runJobs(jobs), ShouldBeTrue)
 			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+
+			actualRealms, err := GetAllAuthProjectRealms(ctx)
+			So(err, ShouldBeNil)
+			So(actualRealms, ShouldHaveLength, 2)
+			actualRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
+			So(err, ShouldBeNil)
+			// Only one project had its realms updated, so only one would have
+			// its metadata created as part of the update.
+			So(actualRealmsMeta, ShouldHaveLength, 1)
 		})
 
 		Convey("delete project realms if realms.cfg no longer exists", func() {
@@ -617,6 +649,9 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 			}
 			So(putProjectRealms(ctx, "test-project-a"), ShouldBeNil)
 			So(putProjectRealms(ctx, "@internal"), ShouldBeNil)
+			// Set up realms metadata that should be deleted as well.
+			So(putProjectRealmsMeta(ctx, "test-project-a"), ShouldBeNil)
+			So(putProjectRealmsMeta(ctx, "@internal"), ShouldBeNil)
 
 			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, false, "Updated from update-realms cron job")
 			So(err, ShouldBeNil)
@@ -624,6 +659,43 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 
 			So(runJobs(jobs), ShouldBeTrue)
 			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+
+			actualRealms, err := GetAllAuthProjectRealms(ctx)
+			So(err, ShouldBeNil)
+			So(actualRealms, ShouldHaveLength, 1)
+			actualRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
+			So(err, ShouldBeNil)
+			// Only one project had its realms deleted, so there should still be
+			// one remaining.
+			So(actualRealmsMeta, ShouldHaveLength, 1)
+		})
+
+		Convey("clean up lingering metadata", func() {
+			latest := []*RealmsCfgRev{
+				makeFetchedCfgRev("@internal"),
+			}
+			stored := []*RealmsCfgRev{
+				makeStoredCfgRev("test-project-a"),
+				makeStoredCfgRev("@internal"),
+			}
+			So(putProjectRealms(ctx, "@internal"), ShouldBeNil)
+			// Set up lingering realms metadata.
+			So(putProjectRealmsMeta(ctx, "test-project-a"), ShouldBeNil)
+
+			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, false, "Updated from update-realms cron job")
+			So(err, ShouldBeNil)
+			So(jobs, ShouldHaveLength, 1)
+
+			So(runJobs(jobs), ShouldBeTrue)
+			// No replication or changelog generation required for metadata.
+			So(taskScheduler.Tasks(), ShouldHaveLength, 0)
+
+			actualRealms, err := GetAllAuthProjectRealms(ctx)
+			So(err, ShouldBeNil)
+			So(actualRealms, ShouldHaveLength, 1)
+			actualRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
+			So(err, ShouldBeNil)
+			So(actualRealmsMeta, ShouldHaveLength, 0)
 		})
 
 		Convey("update if there is a new revision of permissions", func() {
@@ -645,6 +717,15 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 
 			So(runJobs(jobs), ShouldBeTrue)
 			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+
+			actualRealms, err := GetAllAuthProjectRealms(ctx)
+			So(err, ShouldBeNil)
+			So(actualRealms, ShouldHaveLength, 2)
+			actualRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
+			So(err, ShouldBeNil)
+			// Only one project had its realms updated, so only one would have
+			// its metadata created as part of the update.
+			So(actualRealmsMeta, ShouldHaveLength, 1)
 		})
 
 		Convey("AuthDB revisions are limited when permissions change", func() {
