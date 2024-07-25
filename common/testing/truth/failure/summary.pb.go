@@ -312,8 +312,8 @@ func (x *Comparison) GetArguments() []string {
 // Stack is an arbitrary source code context attached to a failure.Summary.
 //
 // Conventional names:
-//   - "at" - The single filename/lineno of where the assertion took place.
-//     This can be added by using `comparison.WithLineContext()` on a returned
+//   - "at" - The single filename/lineno of where the assertion took place. This
+//     can be added by using `option.LineContext()` on a returned
 //     *Failure from a comparison.Func, or by using `assert.WithContext...` or
 //     `check.WithContext...`. This is useful when writing assertion helper
 //     functions - Go will report the filename:NN of the 'top most' stack frame,

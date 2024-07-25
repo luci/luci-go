@@ -12,38 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package comparison
+package option
 
 import (
 	"path/filepath"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/typed"
 )
 
-func TestWithLineContext(t *testing.T) {
+func TestLineContext(t *testing.T) {
 	t.Parallel()
 
-	var cmpFn Func[int] = func(actual int) *failure.Summary {
-		if actual != 10 {
-			return NewSummaryBuilder("func_test/TestWithLineContext").Summary
-		}
-		return nil
+	mkFailure := func() *failure.Summary {
+		return comparison.NewSummaryBuilder("line_context_test/TestLineContext").Summary
 	}
 
-	t.Run("nil", func(t *testing.T) {
-		failure := cmpFn.WithLineContext()(10)
-		if diff := typed.Diff(failure, nil); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
 	t.Run("non-nil", func(t *testing.T) {
-		failure := cmpFn.WithLineContext()(11) // Gets .../func_test.go:43
-		if failure == nil {
-			t.Fatal("failure was unexpectedly nil")
-		}
+		opt := LineContext(0).(truth.SummaryModifierOption) // Gets .../line_context_test.go:35
+		failure := mkFailure()
+		opt(failure)
 		ctx := failure.SourceContext
 		if len(ctx) != 1 {
 			t.Fatalf("failure.SourceContext len wrong: %d", len(ctx))
@@ -56,25 +47,24 @@ func TestWithLineContext(t *testing.T) {
 			t.Fatalf("failure.SourceContext[0].Frames len wrong: %d", len(atCtx.Frames))
 		}
 
-		// NOTE - These depend on the source code location of the WithLineContext
+		// NOTE - These depend on the source code location of the LineContext
 		// call at the top of this function. If you edit this test file, the line
 		// number will change, which is expected.
 		frame := atCtx.Frames[0]
-		if diff := typed.Diff(filepath.Base(frame.Filename), "func_test.go"); diff != "" {
+		if diff := typed.Diff(filepath.Base(frame.Filename), "line_context_test.go"); diff != "" {
 			t.Fatalf("unexpected filename: %s", diff)
 		}
-		if diff := typed.Diff(frame.Lineno, 43); diff != "" {
+		if diff := typed.Diff(frame.Lineno, 35); diff != "" {
 			t.Fatalf("unexpected line number: %s", diff)
 		}
 	})
 
 	t.Run("helper", func(t *testing.T) {
-		failure := func() *failure.Summary {
-			return cmpFn.WithLineContext(1)(11)
-		}() // Gets .../func_test.go:74
-		if failure == nil {
-			t.Fatal("failure was unexpectedly nil")
-		}
+		opt := func() truth.SummaryModifierOption {
+			return LineContext(1).(truth.SummaryModifierOption)
+		}() // Gets .../line_context_test.go:65
+		failure := mkFailure()
+		opt(failure)
 		ctx := failure.SourceContext
 		if len(ctx) != 1 {
 			t.Fatalf("failure.SourceContext len wrong: %d", len(ctx))
@@ -87,14 +77,14 @@ func TestWithLineContext(t *testing.T) {
 			t.Fatalf("failure.SourceContext[0].Frames len wrong: %d", len(atCtx.Frames))
 		}
 
-		// NOTE - These depend on the source code location of the WithLineContext
+		// NOTE - These depend on the source code location of the LineContext
 		// call at the top of this function. If you edit this test file, the line
 		// number will change, which is expected.
 		frame := atCtx.Frames[0]
-		if diff := typed.Diff(filepath.Base(frame.Filename), "func_test.go"); diff != "" {
+		if diff := typed.Diff(filepath.Base(frame.Filename), "line_context_test.go"); diff != "" {
 			t.Fatalf("unexpected filename: %s", diff)
 		}
-		if diff := typed.Diff(frame.Lineno, 74); diff != "" {
+		if diff := typed.Diff(frame.Lineno, 65); diff != "" {
 			t.Fatalf("unexpected line number: %s", diff)
 		}
 	})

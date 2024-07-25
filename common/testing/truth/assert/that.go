@@ -40,15 +40,15 @@ import (
 // That is an alternate name for truth.Assert.
 //
 // Example: `assert.That(t, 10, should.Equal(20))`
-func That[T any](t testing.TB, actual T, compare comparison.Func[T]) {
+func That[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...truth.Option) {
 	t.Helper()
-	truth.Assert(t, actual, compare)
+	truth.Assert(t, actual, compare, opts...)
 }
 
 // Loosely is an alternate name for truth.AssertLoosely.
 //
 // Example: `assert.Loosely(t, myCustomInt(10), should.Equal(20))`
-func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T]) {
+func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...truth.Option) {
 	t.Helper()
-	truth.AssertLoosely(t, actual, compare)
+	truth.AssertLoosely(t, actual, compare, opts...)
 }

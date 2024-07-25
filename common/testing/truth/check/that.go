@@ -40,15 +40,15 @@ import (
 // That is an alternate name for truth.Check.
 //
 // Example: `check.That(t, 10, should.Equal(20))`
-func That[T any](t testing.TB, actual T, compare comparison.Func[T]) (ok bool) {
+func That[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...truth.Option) (ok bool) {
 	t.Helper()
-	return truth.Check(t, actual, compare)
+	return truth.Check(t, actual, compare, opts...)
 }
 
 // Loosely is an alternate name for truth.CheckLoosely.
 //
 // Example: `check.Loosely(t, myCustomInt(10), should.Equal(20))`
-func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T]) (ok bool) {
+func Loosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...truth.Option) (ok bool) {
 	t.Helper()
 	return truth.CheckLoosely(t, actual, compare)
 }

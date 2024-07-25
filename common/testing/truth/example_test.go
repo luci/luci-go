@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/testing/truth/check"
+	"go.chromium.org/luci/common/testing/truth/option"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -94,7 +95,7 @@ func Example_helpers_with_line_context() {
 		// the filename.go:NN value to print next to the error message.
 		t.Helper()
 
-		check.That(t, 10, should.Equal(expect).WithLineContext()) // line 97
+		check.That(t, 10, should.Equal(expect), option.LineContext()) // line 98
 	}
 
 	helper(10) // line 100
@@ -104,7 +105,7 @@ func Example_helpers_with_line_context() {
 	// Output:
 	// --- FAIL: FakeTestName (0.00s)
 	//     filename.go:NN: Check should.Equal[int] FAILED
-	//         (at example_test.go:97)
+	//         (at example_test.go:98)
 	//         Actual: 10
 	//         Expected: 20
 }

@@ -239,8 +239,8 @@ func render(f *failure.Summary) string {
 // comparison.Func[int]).
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-func Assert[T any](t testing.TB, actual T, compare comparison.Func[T]) {
-	if f := compare(actual); f != nil {
+func Assert[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...Option) {
+	if f := applyOpts(compare(actual), opts); f != nil {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
 		t.Helper()
 		t.Log("Assert", render(f))
@@ -254,8 +254,8 @@ func Assert[T any](t testing.TB, actual T, compare comparison.Func[T]) {
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
-func Check[T any](t testing.TB, actual T, compare comparison.Func[T]) (ok bool) {
-	f := compare(actual)
+func Check[T any](t testing.TB, actual T, compare comparison.Func[T], opts ...Option) (ok bool) {
+	f := applyOpts(compare(actual), opts)
 	ok = f == nil
 	if !ok {
 		// Only call t.Helper() if we're using the rest of `t` - it walks the stack.
@@ -301,10 +301,10 @@ func doConversion[T any](actual any, compare comparison.Func[T]) (converted T, n
 // called.
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.FailNow().
-func AssertLoosely[T any](t testing.TB, actual any, compare comparison.Func[T]) {
+func AssertLoosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...Option) {
 	converted, compare := doConversion(actual, compare)
 	t.Helper()
-	Assert(t, converted, compare)
+	Assert(t, converted, compare, opts...)
 }
 
 // CheckLoosely compares `actual` using `compare`, which is typically
@@ -319,8 +319,8 @@ func AssertLoosely[T any](t testing.TB, actual any, compare comparison.Func[T]) 
 //
 // If `comparison` returns a non-nil Failure, this logs it and calls t.Fail(),
 // returning true iff the comparison was successful.
-func CheckLoosely[T any](t testing.TB, actual any, compare comparison.Func[T]) bool {
+func CheckLoosely[T any](t testing.TB, actual any, compare comparison.Func[T], opts ...Option) bool {
 	converted, compare := doConversion(actual, compare)
 	t.Helper()
-	return Check(t, converted, compare)
+	return Check(t, converted, compare, opts...)
 }
