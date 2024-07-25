@@ -16,10 +16,10 @@ import { render } from '@testing-library/react';
 import { act } from 'react';
 
 import {
-  ConsoleSnapshot as ConsoleSnapshotData,
-  MiloInternal,
+  ConsoleSnapshot,
+  MiloInternalClientImpl,
   QueryConsoleSnapshotsResponse,
-} from '@/common/services/milo_internal';
+} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ConsoleListPage } from './console_list_page';
@@ -31,8 +31,8 @@ jest.mock('./console_snapshot_row', () => {
   >('./console_snapshot_row', ['ConsoleSnapshotRow']);
 });
 
-function makeFakeConsoleSnapshot(id: string): ConsoleSnapshotData {
-  return {
+function makeFakeConsoleSnapshot(id: string): ConsoleSnapshot {
+  return ConsoleSnapshot.fromPartial({
     console: {
       id,
       name: id,
@@ -57,7 +57,7 @@ function makeFakeConsoleSnapshot(id: string): ConsoleSnapshotData {
         },
       },
     ],
-  };
+  });
 }
 
 const mockSnapshots: { [key: string]: QueryConsoleSnapshotsResponse } = {
@@ -82,6 +82,7 @@ const mockSnapshots: { [key: string]: QueryConsoleSnapshotsResponse } = {
       makeFakeConsoleSnapshot('console-7'),
       makeFakeConsoleSnapshot('console-8'),
     ],
+    nextPageToken: '',
   },
 };
 
@@ -92,7 +93,7 @@ describe('ConsoleListPage', () => {
     jest.useFakeTimers();
     consoleSnapshotRowSpy = jest.mocked(ConsoleSnapshotRow);
     jest
-      .spyOn(MiloInternal.prototype, 'queryConsoleSnapshots')
+      .spyOn(MiloInternalClientImpl.prototype, 'QueryConsoleSnapshots')
       .mockImplementation(async (req) => {
         const pageToken = req.pageToken || '';
         return mockSnapshots[pageToken];

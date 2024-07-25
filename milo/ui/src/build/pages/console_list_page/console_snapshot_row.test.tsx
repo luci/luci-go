@@ -14,12 +14,14 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { BuildbucketStatus } from '@/common/services/buildbucket';
+import { OutputConsoleSnapshot } from '@/build/types';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import { ConsoleSnapshot } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ConsoleSnapshotRow } from './console_snapshot_row';
 
-const consoleSnapshot = {
+const consoleSnapshot = ConsoleSnapshot.fromPartial({
   console: {
     id: 'a-console',
     name: 'A Console',
@@ -61,7 +63,7 @@ const consoleSnapshot = {
       },
       build: {
         id: '1000',
-        status: BuildbucketStatus.Success,
+        status: Status.SUCCESS,
         builder: {
           project: 'the_project',
           bucket: 'the_bucket',
@@ -89,7 +91,7 @@ const consoleSnapshot = {
         // A build without a build ID but with a build num.
         id: '',
         number: 2,
-        status: BuildbucketStatus.Failure,
+        status: Status.FAILURE,
         builder: {
           project: 'the_project',
           bucket: 'the_bucket',
@@ -99,7 +101,7 @@ const consoleSnapshot = {
       },
     },
   ],
-};
+}) as OutputConsoleSnapshot;
 
 describe('ConsoleSnapshotRow', () => {
   it('should render correctly', async () => {

@@ -23,8 +23,18 @@
 
 import { ArrayElement, DeepNonNullableProps } from '@/generic_libs/types';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { Step } from '@/proto/go.chromium.org/luci/buildbucket/proto/step.pb';
+import {
+  Builder,
+  Console,
+} from '@/proto/go.chromium.org/luci/milo/proto/projectconfig/project.pb';
+import {
+  BuilderSnapshot,
+  ConsoleSnapshot,
+  QueryConsoleSnapshotsResponse,
+} from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { PARTIAL_BUILD_FIELD_MASK } from './constants';
 
@@ -49,4 +59,27 @@ export interface PartialBuild
     ArrayElement<typeof PARTIAL_BUILD_FIELD_MASK>
   > {
   readonly status: SpecifiedBuildStatus;
+}
+
+export interface OutputQueryConsoleSnapshotsResponse
+  extends QueryConsoleSnapshotsResponse {
+  readonly snapshots: readonly OutputConsoleSnapshot[];
+}
+
+export interface OutputConsoleSnapshot extends ConsoleSnapshot {
+  readonly console: OutputConsole;
+  readonly builderSnapshots: readonly OutputBuilderSnapshot[];
+}
+
+export interface OutputConsole extends Console {
+  readonly builders: readonly OutputBuilder[];
+}
+
+export interface OutputBuilder extends Builder {
+  readonly id: BuilderID;
+}
+
+export interface OutputBuilderSnapshot extends BuilderSnapshot {
+  readonly builder: BuilderID;
+  readonly build: OutputBuild | undefined;
 }

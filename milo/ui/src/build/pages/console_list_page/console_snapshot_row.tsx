@@ -17,9 +17,9 @@ import { Link } from '@mui/material';
 import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
 import { formatBuilderId } from '@/build/tools/build_utils';
-import { BUILD_STATUS_CLASS_MAP } from '@/common/constants/legacy';
-import { ConsoleSnapshot } from '@/common/services/milo_internal';
+import { OutputConsoleSnapshot } from '@/build/types';
 import {
   getBuildURLPathFromBuildData,
   getBuilderURLPath,
@@ -71,7 +71,7 @@ const BuildersCell = styled.td({
 });
 
 export interface ConsoleSnapshotRowProps {
-  readonly snapshot: ConsoleSnapshot;
+  readonly snapshot: OutputConsoleSnapshot;
 }
 
 export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
@@ -80,7 +80,7 @@ export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
   // Sort builder snapshots by builder categories.
   const sortedBuilderSnapshots = useMemo(() => {
     const entries =
-      snapshot.console.builders?.map(
+      snapshot.console.builders.map(
         (b, i) =>
           [
             [...(b.category || '').split('|'), formatBuilderId(b.id)],

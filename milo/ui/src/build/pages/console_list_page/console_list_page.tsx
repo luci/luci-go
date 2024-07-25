@@ -13,14 +13,16 @@
 // limitations under the License.
 
 import { LinearProgress } from '@mui/material';
+import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { Fragment, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { OutputQueryConsoleSnapshotsResponse } from '@/build/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
-import { useInfinitePrpcQuery } from '@/common/hooks/legacy_prpc_query';
-import { MiloInternal } from '@/common/services/milo_internal';
+import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
+import { QueryConsoleSnapshotsRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { ConsoleSnapshotRow } from './console_snapshot_row';
 import { ProjectIdBar } from './project_id_bar';
@@ -31,13 +33,17 @@ export function ConsoleListPage() {
     throw new Error('invariant violated: project should be set');
   }
 
+  const client = useMiloInternalClient();
   const { data, error, isError, isLoading, fetchNextPage, hasNextPage } =
-    useInfinitePrpcQuery({
-      host: '',
-      insecure: location.protocol === 'http:',
-      Service: MiloInternal,
-      method: 'queryConsoleSnapshots',
-      request: { predicate: { project }, pageSize: 100 },
+    useInfiniteQuery({
+      ...client.QueryConsoleSnapshots.queryPaged(
+        QueryConsoleSnapshotsRequest.fromPartial({
+          predicate: { project },
+          pageSize: 100,
+        }),
+      ),
+      select: (data) =>
+        data as InfiniteData<OutputQueryConsoleSnapshotsResponse>,
     });
 
   if (isError) {
