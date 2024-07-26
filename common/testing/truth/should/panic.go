@@ -26,9 +26,22 @@ import (
 
 // Panic checks whether a function panics.
 func Panic(fn func()) *failure.Summary {
-	thing := paniccatcher.PCall(fn)
-	if thing == nil {
+	caught := paniccatcher.PCall(fn)
+	if caught == nil {
 		return comparison.NewSummaryBuilder("should.Panic").Summary
+	}
+	return nil
+}
+
+// NotPanic checks whether a function doesn't panic.
+func NotPanic(fn func()) *failure.Summary {
+	caught := paniccatcher.PCall(fn)
+	if caught != nil {
+		return comparison.NewSummaryBuilder("should.NotPanic").
+			Actual(caught.Reason).
+			AddFindingf("stack", caught.Stack).
+			WarnIfLong().
+			Summary
 	}
 	return nil
 }
@@ -55,8 +68,8 @@ func PanicLikeString(substring string) comparison.Func[func()] {
 		default:
 			return comparison.NewSummaryBuilder(cmpName).
 				Because("panic reason is neither error nor string").
-				Actual(substring).
-				Expected(str).
+				Actual(str).
+				Expected(substring).
 				Summary
 		}
 		if strings.Contains(str, substring) {

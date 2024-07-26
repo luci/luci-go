@@ -34,6 +34,17 @@ func TestPanicSadPath(t *testing.T) {
 	}))(t)
 }
 
+func TestNotPanicHappyPath(t *testing.T) {
+	shouldPass(NotPanic(func() {
+		// do nothing
+	}))(t)
+}
+
+func TestNotPanicSadPath(t *testing.T) {
+	shouldFail(NotPanic(func() {
+		panic("hi")
+	}))(t)
+}
 func TestPanicLikeHappyPath(t *testing.T) {
 	shouldPass(PanicLike("one true error")(func() {
 		panic(errGoldenError)
