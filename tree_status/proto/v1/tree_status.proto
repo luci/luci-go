@@ -90,6 +90,18 @@ message Status {
   // The time the status update was made.
   google.protobuf.Timestamp create_time = 5
       [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Optional. Only applicable when general_state == CLOSED.
+  // If this field is set when general_state != CLOSED, it will be ignored.
+  // The name of the LUCI builder that caused the tree to close.
+  // Format: projects/{project}/buckets/{bucket}/builders/{builder}.
+  // This field will be populated by LUCI Notify, when it automatically
+  // closes a tree. When a human closes a tree, we do not require this field
+  // to be set.
+  // Note: If a tree is closed due to multiple builders, only the first failure
+  // will be recorded.
+  // This field will be exported to BigQuery for analysis.
+  string closing_builder_name = 6;
 }
 
 message ListStatusRequest {

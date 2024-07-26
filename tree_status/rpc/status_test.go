@@ -226,8 +226,47 @@ func TestStatus(t *testing.T) {
 				request := &pb.CreateStatusRequest{
 					Parent: "trees/chromium/status",
 					Status: &pb.Status{
-						GeneralState: pb.GeneralState_CLOSED,
-						Message:      "closed",
+						GeneralState:       pb.GeneralState_CLOSED,
+						Message:            "closed",
+						ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+					},
+				}
+				actual, err := server.CreateStatus(ctx, request)
+
+				So(err, ShouldBeNil)
+				So(actual, ShouldResembleProto, &pb.Status{
+					Name:               actual.Name,
+					GeneralState:       pb.GeneralState_CLOSED,
+					Message:            "closed",
+					CreateUser:         "someone@example.com",
+					CreateTime:         actual.CreateTime,
+					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+				})
+				So(actual.Name, ShouldContainSubstring, "trees/chromium/status/")
+				So(time.Since(actual.CreateTime.AsTime()), ShouldBeLessThan, time.Minute)
+
+				// Check it was actually written to the DB.
+				s, err := status.ReadLatest(span.Single(ctx), "chromium")
+				So(err, ShouldBeNil)
+				So(s, ShouldResemble, &status.Status{
+					TreeName:           "chromium",
+					StatusID:           strings.Split(actual.Name, "/")[3],
+					GeneralStatus:      pb.GeneralState_CLOSED,
+					Message:            "closed",
+					CreateUser:         "someone@example.com",
+					CreateTime:         actual.CreateTime.AsTime(),
+					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+				})
+			})
+			Convey("Closing builder name ignored if status is not closed", func() {
+				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
+
+				request := &pb.CreateStatusRequest{
+					Parent: "trees/chromium/status",
+					Status: &pb.Status{
+						GeneralState:       pb.GeneralState_OPEN,
+						Message:            "open",
+						ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
 					},
 				}
 				actual, err := server.CreateStatus(ctx, request)
@@ -235,8 +274,8 @@ func TestStatus(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(actual, ShouldResembleProto, &pb.Status{
 					Name:         actual.Name,
-					GeneralState: pb.GeneralState_CLOSED,
-					Message:      "closed",
+					GeneralState: pb.GeneralState_OPEN,
+					Message:      "open",
 					CreateUser:   "someone@example.com",
 					CreateTime:   actual.CreateTime,
 				})
@@ -249,8 +288,8 @@ func TestStatus(t *testing.T) {
 				So(s, ShouldResemble, &status.Status{
 					TreeName:      "chromium",
 					StatusID:      strings.Split(actual.Name, "/")[3],
-					GeneralStatus: pb.GeneralState_CLOSED,
-					Message:       "closed",
+					GeneralStatus: pb.GeneralState_OPEN,
+					Message:       "open",
 					CreateUser:    "someone@example.com",
 					CreateTime:    actual.CreateTime.AsTime(),
 				})

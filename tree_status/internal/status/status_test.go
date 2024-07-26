@@ -83,13 +83,31 @@ func TestValidation(t *testing.T) {
 			// TODO: unicode tests
 
 		})
+		Convey("closing builder name", func() {
+			Convey("ignored if status is not closed", func() {
+				err := Validate(NewStatusBuilder().WithClosingBuilderName("some name").Build())
+				So(err, ShouldBeNil)
+			})
+			Convey("must match format", func() {
+				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("some name").Build())
+				So(err, ShouldErrLike, "closing_builder_name: expected format")
+			})
+			Convey("empty closing builder is OK", func() {
+				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("").Build())
+				So(err, ShouldBeNil)
+			})
+			Convey("valid", func() {
+				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("projects/chromium-m100/buckets/ci.shadow/builders/Linux 123").Build())
+				So(err, ShouldBeNil)
+			})
+		})
 	})
 }
 
 func TestStatusTable(t *testing.T) {
 	Convey("Create", t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		status := NewStatusBuilder().Build()
+		status := NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("projects/chromium-m100/buckets/ci.shadow/builders/Linux 123").Build()
 
 		m, err := Create(status, status.CreateUser)
 		So(err, ShouldBeNil)
@@ -106,6 +124,16 @@ func TestStatusTable(t *testing.T) {
 		Convey("Single", func() {
 			ctx := testutil.SpannerTestContext(t)
 			status := NewStatusBuilder().CreateInDB(ctx)
+
+			fetched, err := Read(span.Single(ctx), "chromium", status.StatusID)
+
+			So(err, ShouldBeNil)
+			So(fetched, ShouldEqual, status)
+		})
+
+		Convey("With closing builder", func() {
+			ctx := testutil.SpannerTestContext(t)
+			status := NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("projects/chromium-m100/buckets/ci.shadow/builders/Linux 123").CreateInDB(ctx)
 
 			fetched, err := Read(span.Single(ctx), "chromium", status.StatusID)
 
@@ -233,6 +261,11 @@ func (b *StatusBuilder) WithCreateUser(user string) *StatusBuilder {
 	return b
 }
 
+func (b *StatusBuilder) WithClosingBuilderName(closingBuilderName string) *StatusBuilder {
+	b.status.ClosingBuilderName = closingBuilderName
+	return b
+}
+
 func (b *StatusBuilder) Build() *Status {
 	s := b.status
 	return &s
@@ -241,12 +274,13 @@ func (b *StatusBuilder) Build() *Status {
 func (b *StatusBuilder) CreateInDB(ctx context.Context) *Status {
 	s := b.Build()
 	row := map[string]any{
-		"TreeName":      s.TreeName,
-		"StatusId":      s.StatusID,
-		"GeneralStatus": int64(s.GeneralStatus),
-		"Message":       s.Message,
-		"CreateUser":    s.CreateUser,
-		"CreateTime":    s.CreateTime,
+		"TreeName":           s.TreeName,
+		"StatusId":           s.StatusID,
+		"GeneralStatus":      int64(s.GeneralStatus),
+		"Message":            s.Message,
+		"CreateUser":         s.CreateUser,
+		"CreateTime":         s.CreateTime,
+		"ClosingBuilderName": s.ClosingBuilderName,
 	}
 	m := spanner.InsertOrUpdateMap("Status", row)
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})

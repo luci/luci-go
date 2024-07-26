@@ -41,6 +41,8 @@ const (
 	TreeNameExpression = `[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?`
 	// StatusIDExpression is a partial regular expression that validates status identifiers.
 	StatusIDExpression = `[0-9a-f]{32}`
+	// BuilderNameExpression is a partial regular expression that validates builder name.
+	BuilderNameExpression = `projects/[a-z0-9\-_]{1,40}/buckets/[a-z0-9\-_.]{1,100}/builders/[a-zA-Z0-9\-_.\(\) ]{1,128}`
 )
 
 // NotExistsErr is returned when the requested object was not found in the database.
@@ -64,6 +66,9 @@ type Status struct {
 	// If filling this in from commit timestamp, make sure to call .UTC(), i.e.
 	// status.CreateTime = timestamp.UTC()
 	CreateTime time.Time
+	// The name of the LUCI builder that caused the tree to close.
+	// Format: projects/{project}/buckets/{bucket}/builders/{builder}.
+	ClosingBuilderName string
 }
 
 // Validate validates a status value.
@@ -81,6 +86,11 @@ func Validate(status *Status) error {
 	}
 	if err := validateMessage(status.Message); err != nil {
 		return errors.Annotate(err, "message").Err()
+	}
+	if status.GeneralStatus == pb.GeneralState_CLOSED {
+		if err := validateClosingBuilderName(status.ClosingBuilderName); err != nil {
+			return errors.Annotate(err, "closing_builder_name").Err()
+		}
 	}
 	return nil
 }
@@ -140,6 +150,19 @@ func validateMessage(message string) error {
 	return nil
 }
 
+var builderNameRE = regexp.MustCompile(`^` + BuilderNameExpression + `$`)
+
+func validateClosingBuilderName(name string) error {
+	// We allow closing without specifying builder name.
+	if name == "" {
+		return nil
+	}
+	if !builderNameRE.MatchString(name) {
+		return errors.Reason("expected format: %s", builderNameRE).Err()
+	}
+	return nil
+}
+
 // Create creates a status entry in the Spanner Database.
 // Must be called with an active RW transaction in the context.
 // CreateUser and CreateTime in the passed in status will be ignored
@@ -150,19 +173,20 @@ func Create(status *Status, currentUser string) (*spanner.Mutation, error) {
 	}
 
 	row := map[string]any{
-		"TreeName":      status.TreeName,
-		"StatusId":      status.StatusID,
-		"GeneralStatus": int64(status.GeneralStatus),
-		"Message":       status.Message,
-		"CreateUser":    currentUser,
-		"CreateTime":    spanner.CommitTimestamp,
+		"TreeName":           status.TreeName,
+		"StatusId":           status.StatusID,
+		"GeneralStatus":      int64(status.GeneralStatus),
+		"Message":            status.Message,
+		"CreateUser":         currentUser,
+		"CreateTime":         spanner.CommitTimestamp,
+		"ClosingBuilderName": status.ClosingBuilderName,
 	}
 	return spanner.InsertOrUpdateMap("Status", row), nil
 }
 
 // Read retrieves a status update from the database given the exact time the status update was made.
 func Read(ctx context.Context, treeName, statusID string) (*Status, error) {
-	row, err := span.ReadRow(ctx, "Status", spanner.Key{treeName, statusID}, []string{"StatusId", "GeneralStatus", "Message", "CreateUser", "CreateTime"})
+	row, err := span.ReadRow(ctx, "Status", spanner.Key{treeName, statusID}, []string{"StatusId", "GeneralStatus", "Message", "CreateUser", "CreateTime", "ClosingBuilderName"})
 	if err != nil {
 		if spanner.ErrCode(err) == codes.NotFound {
 			return nil, NotExistsErr
@@ -180,7 +204,8 @@ func ReadLatest(ctx context.Context, treeName string) (*Status, error) {
 			GeneralStatus,
 			Message,
 			CreateUser,
-			CreateTime
+			CreateTime,
+			ClosingBuilderName
 		FROM Status
 		WHERE
 			TreeName = @treeName
@@ -224,7 +249,8 @@ func List(ctx context.Context, treeName string, options *ListOptions) ([]*Status
 			GeneralStatus,
 			Message,
 			CreateUser,
-			CreateTime
+			CreateTime,
+			ClosingBuilderName
 		FROM Status
 		WHERE
 			TreeName = @treeName
@@ -272,6 +298,9 @@ func fromRow(treeName string, row *spanner.Row) (*Status, error) {
 	}
 	if err := row.Column(4, &status.CreateTime); err != nil {
 		return nil, errors.Annotate(err, "reading CreateTime column").Err()
+	}
+	if err := row.Column(5, &status.ClosingBuilderName); err != nil {
+		return nil, errors.Annotate(err, "reading ClosingBuilderName column").Err()
 	}
 	return status, nil
 }

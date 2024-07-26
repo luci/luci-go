@@ -171,11 +171,18 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 	if err != nil {
 		return nil, errors.Annotate(err, "generating status id").Err()
 	}
+
+	// Ignore the closing builder name if the status is not closed.
+	closingBuilderName := ""
+	if request.Status.GeneralState == pb.GeneralState_CLOSED {
+		closingBuilderName = request.Status.ClosingBuilderName
+	}
 	s := &status.Status{
-		TreeName:      tree,
-		StatusID:      id,
-		GeneralStatus: request.Status.GeneralState,
-		Message:       request.Status.Message,
+		TreeName:           tree,
+		StatusID:           id,
+		GeneralStatus:      request.Status.GeneralState,
+		Message:            request.Status.Message,
+		ClosingBuilderName: closingBuilderName,
 	}
 	user := auth.CurrentIdentity(ctx).Value()
 	m, err := status.Create(s, user)
@@ -188,11 +195,12 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 	}
 
 	return &pb.Status{
-		Name:         fmt.Sprintf("trees/%s/status/%s", tree, id),
-		GeneralState: s.GeneralStatus,
-		Message:      s.Message,
-		CreateUser:   user,
-		CreateTime:   timestamppb.New(ts),
+		Name:               fmt.Sprintf("trees/%s/status/%s", tree, id),
+		GeneralState:       s.GeneralStatus,
+		Message:            s.Message,
+		CreateUser:         user,
+		CreateTime:         timestamppb.New(ts),
+		ClosingBuilderName: closingBuilderName,
 	}, nil
 }
 

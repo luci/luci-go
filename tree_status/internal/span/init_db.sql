@@ -40,5 +40,10 @@ CREATE TABLE Status (
   -- The time the status update was created.
   -- Also used to control TTL of status values.
   CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+  -- The LUCI builder name that caused the tree to close.
+  -- Only applicable if the status is 'closed'.
+  -- Format: projects/{project}/buckets/{bucket}/builders/{builder}
+  -- If the information is not available, this will be set to an empty string.
+  ClosingBuilderName STRING(512) NOT NULL DEFAULT(''),
 ) PRIMARY KEY (TreeName, StatusId),
 ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 140 DAY));
