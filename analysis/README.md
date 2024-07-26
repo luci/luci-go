@@ -44,6 +44,7 @@ go run main.go \
  -cloud-project luci-analysis-dev \
  -spanner-database projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev \
  -auth-service-host chrome-infra-auth-dev.appspot.com \
+ -luci-analysis-host 127.0.0.1:8800 \
  -default-request-timeout 10m0s \
  -buganizer-mode disable \
  -config-local-dir ../configs \
@@ -147,7 +148,7 @@ Then use the following commands to deploy:
 ```
 cd frontend/ui
 npm run build
-gae.py upload --target-version ${USER} -A luci-analysis-dev
+gae.py upload -A luci-analysis-dev default api
 ```
 
 ### Dev and Prod Instances

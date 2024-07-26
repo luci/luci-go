@@ -23,9 +23,9 @@ import { GrpcError, ProtocolError, RpcCode } from '@chopsui/prpc-client';
 
 export interface PrpcClientOptions {
   /**
-   * pRPC server host, defaults to current document host.
+   * pRPC server host.
    */
-  readonly host?: string;
+  readonly host: string;
   /**
    * Auth token to use in RPC. Defaults to `() => ''`.
    */
@@ -50,8 +50,8 @@ export class PrpcClient {
   readonly insecure: boolean;
   readonly fetchImpl: typeof fetch;
 
-  constructor(options?: PrpcClientOptions) {
-    this.host = options?.host || self.location.host;
+  constructor(options: PrpcClientOptions) {
+    this.host = options.host;
     this.getAuthToken = options?.getAuthToken || (() => '');
     this.insecure = options?.insecure || false;
     this.fetchImpl = options?.fetchImpl || self.fetch.bind(self);

@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/analysis/frontend/handlers"
 	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/internal/hosts"
 	analysisserver "go.chromium.org/luci/analysis/server"
 
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -55,8 +56,13 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 			if err != nil {
 				return nil, err
 			}
+			hostname, err := hosts.APIHost(ctx)
+			if err != nil {
+				return nil, errors.Annotate(err, "lookup LUCI Analysis hostname").Err()
+			}
 
 			return templates.Args{
+				"LuciAnalysisHostname":              hostname,
 				"MonorailHostname":                  config.MonorailHostname,
 				"IsAnonymous":                       auth.CurrentUser(ctx).Identity.Kind() == identity.Anonymous,
 				"UserName":                          auth.CurrentUser(ctx).Name,

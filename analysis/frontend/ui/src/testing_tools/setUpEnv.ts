@@ -34,6 +34,7 @@ global.TextDecoder = TextDecoder;
 // @ts-ignore
 global.fetch = fetch;
 
+window.luciAnalysisHostname = self.location.host;
 window.monorailHostname = 'crbug.com';
 
 dayjsextend(relativeTime);

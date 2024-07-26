@@ -21,57 +21,43 @@ import { TestVariantsClientImpl } from '@/proto/go.chromium.org/luci/analysis/pr
 import { PrpcClient } from './prpc_client';
 import { getSessionAccessToken } from './auth_token';
 
+declare global {
+  interface Window {
+    // Host to use for pRPC requests to LUCI Analysis. E.g. analysis.api.luci.app.
+    luciAnalysisHostname: string;
+  }
+}
+
 export const getClustersService = () => {
-  const insecure = document.location.protocol === 'http:';
-  const client = new ClustersClientImpl(
-      new PrpcClient({
-        insecure: insecure,
-        getAuthToken: getSessionAccessToken,
-      }),
-  );
-  return client;
+  return new ClustersClientImpl(getLUCIAnalysisPrpcClient());
 };
 
 export const getMetricsService = () => {
-  const insecure = document.location.protocol === 'http:';
-  const client = new MetricsClientImpl(
-      new PrpcClient({
-        insecure: insecure,
-        getAuthToken: getSessionAccessToken,
-      }),
-  );
-  return client;
+  return new MetricsClientImpl(getLUCIAnalysisPrpcClient());
 };
 
 export const getProjectsService = () => {
-  const insecure = document.location.protocol === 'http:';
-  const client = new ProjectsClientImpl(
-      new PrpcClient({
-        insecure: insecure,
-        getAuthToken: getSessionAccessToken,
-      }),
-  );
-  return client;
+  return new ProjectsClientImpl(getLUCIAnalysisPrpcClient());
 };
 
 export const getRulesService = () => {
-  const insecure = document.location.protocol === 'http:';
-  const client = new RulesClientImpl(
-      new PrpcClient({
-        insecure: insecure,
-        getAuthToken: getSessionAccessToken,
-      }),
-  );
-  return client;
+  return new RulesClientImpl(getLUCIAnalysisPrpcClient());
 };
 
 export const getTestVariantsService = () => {
-  const insecure = document.location.protocol === 'http:';
-  const client = new TestVariantsClientImpl(
-      new PrpcClient({
-        insecure: insecure,
-        getAuthToken: getSessionAccessToken,
-      }),
-  );
-  return client;
+  return new TestVariantsClientImpl(getLUCIAnalysisPrpcClient());
 };
+
+function getLUCIAnalysisPrpcClient(): PrpcClient {
+  const host = window.luciAnalysisHostname;
+  // Only use HTTP with local development servers hosted
+  // on the same machine and where the page is loaded over
+  // HTTP.
+  const isLoopback = (host === 'localhost' || host.startsWith('localhost:') || host === '127.0.0.1' || host.startsWith('127.0.0.1:'));
+  const insecure = isLoopback && document.location.protocol === 'http:';
+  return new PrpcClient({
+    host: host,
+    insecure: insecure,
+    getAuthToken: getSessionAccessToken,
+  });
+}
