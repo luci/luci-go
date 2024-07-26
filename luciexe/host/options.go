@@ -78,6 +78,13 @@ type Options struct {
 	// contents.
 	BaseDir string
 
+	// The CacheDir is the absolute path to the cache base directory.
+	//
+	// If not provided, Run will pick a directory under the BaseDir; Build may
+	// override some of the cache directories by setting e.g.
+	// Build.Infra.Buildbucket.Agent.CipdClientCache.
+	CacheDir string
+
 	// The base Build message to use as the template for all merged Build
 	// messages.
 	//
@@ -96,9 +103,14 @@ type Options struct {
 	// used to implement the "Back to build" link in Milo).
 	ViewerURL string
 
+	// If DownloadAgentInputs is true, Run will check inputs for agent and ensure
+	// them available in the working directory from cipd, cas or other sources.
+	DownloadAgentInputs bool
+
 	authDir          string
 	lucictxDir       string
 	streamServerPath string
+	agentInputsDir   string
 
 	logdogTags streamproto.TagMap
 }
@@ -164,6 +176,14 @@ func (o *Options) initialize() (err error) {
 	pathsToMake := []pathToMake{
 		{"a", "auth", &o.authDir},
 		{"l", "luci context", &o.lucictxDir},
+	}
+
+	if o.DownloadAgentInputs {
+		pathsToMake = append(pathsToMake, pathToMake{"i", "agent inputs", &o.agentInputsDir})
+	}
+
+	if o.CacheDir == "" {
+		o.CacheDir = filepath.Join(o.BaseDir, "hc")
 	}
 
 	if runtime.GOOS != "windows" {

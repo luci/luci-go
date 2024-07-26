@@ -22,13 +22,16 @@ package host
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 var maxLogFlushWaitTime = 30 * time.Second
@@ -65,33 +68,70 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	}
 	logging.Infof(ctx, "starting luciexe host env with: %+v", opts)
 
-	// cleanup will accumulate all of the cleanup functions as we set up the
-	// environment. If an error occurs before we can start the user code (`cb`),
-	// the defer below will run them all. Otherwise they'll be transferred to the
-	// goroutine.
-	var cleanup cleanupSlice
-	defer cleanup.run(ctx)
+	buildCh := make(chan *bbpb.Build)
+	go func() {
+		// cleanup will accumulate all of the cleanup functions as we set up the
+		// environment.
+		var cleanup cleanupSlice
+		defer func() {
+			cleanup.run(ctx)
+			close(buildCh)
+		}()
 
-	cleanupComplete := make(chan struct{})
-	cleanup.add("cleanupComplete", func() error {
-		close(cleanupComplete)
-		return nil
-	})
+		// First, capture the entire env to restore it later.
+		cleanup.add("restoreEnv", restoreEnv())
 
-	// First, capture the entire env to restore it later.
-	cleanup.add("restoreEnv", restoreEnv())
+		// agent inputs must be downloaded before other services because it may
+		// return build when failed. Otherwise the build will always be "overwritten"
+		// by agent when shutdown.
+		if opts.DownloadAgentInputs {
+			if ok := downloadInputs(ctx, opts.agentInputsDir, opts.CacheDir, opts.BaseBuild, buildCh); !ok {
+				return
+			}
+		}
+
+		if err := cleanup.concat(startServices(ctx, &opts, buildCh)); err != nil {
+			opts.BaseBuild.Output = &bbpb.Build_Output{
+				Status:          bbpb.Status_INFRA_FAILURE,
+				SummaryMarkdown: fmt.Sprintf("Failed to start luciexe host: %s", err.Error()),
+			}
+			buildCh <- opts.BaseBuild
+			return
+		}
+
+		// Buildbucket assigns some grace period to the surrounding task which is
+		// more than what the user requested in `input.Build.GracePeriod`. We
+		// reserve the difference here so the user task only gets what they asked
+		// for.
+		deadline := lucictx.GetDeadline(ctx)
+		toReserve := deadline.GracePeriodDuration() - opts.BaseBuild.GracePeriod.AsDuration()
+		logging.Infof(
+			ctx, "Reserving %s out of %s of grace_period from LUCI_CONTEXT.",
+			toReserve, lucictx.GetDeadline(ctx).GracePeriodDuration())
+		dctx, shutdown := lucictx.TrackSoftDeadline(ctx, toReserve)
+
+		// Invoking luciexe callback.
+		logging.Infof(ctx, "invoking host environment callback")
+		cb(dctx, opts, lucictx.SoftDeadlineDone(dctx), shutdown)
+	}()
+	return buildCh, nil
+}
+
+func startServices(ctx context.Context, opts *Options, buildCh chan<- *bbpb.Build) (cleanupSlice, error) {
+	var myCleanups cleanupSlice
+	defer myCleanups.run(ctx)
 
 	logging.Infof(ctx, "starting auth services")
-	if err := cleanup.concat(startAuthServices(ctx, &opts)); err != nil {
+	if err := myCleanups.concat(startAuthServices(ctx, opts)); err != nil {
 		return nil, err
 	}
 
 	logging.Infof(ctx, "starting butler")
-	butler, err := startButler(ctx, &opts)
+	butler, err := startButler(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	cleanup.add("butler", func() error {
+	myCleanups.add("butler", func() error {
 		butler.Activate()
 		return butler.Wait()
 	})
@@ -101,25 +141,29 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	if err != nil {
 		return nil, err
 	}
-	cleanup.add("buildmerge spy", func() error {
+
+	// forwardComplete indicates all builds has been forwarded through buildCh
+	// and now buildCh is safe to be closed. Because buildCh will be closed
+	// immediately after cleanup finished, block the cleanup function to wait
+	// until forwarding is completed.
+	forwardComplete := make(chan struct{})
+	myCleanups.add("buildmerge spy", func() error {
 		agent.Close()
 		logging.Infof(ctx, "waiting for buildmerge spy to finish")
 		<-agent.DrainC
+		<-forwardComplete
 		return nil
 	})
 
-	buildCh := make(chan *bbpb.Build)
 	go func() {
-		defer close(buildCh)
+		defer close(forwardComplete)
 		for build := range agent.MergedBuildC {
 			buildCh <- build
 		}
-		<-cleanupComplete
 	}()
 
-	// Transfer ownership of cleanups to goroutine
-	userCleanup := cleanup
-	userCleanup.add("flush u/", func() error {
+	callerCleanups := myCleanups
+	callerCleanups.add("flush u/", func() error {
 		wt := calcLogFlushWaitTime(ctx)
 		cctx, cancel := clock.WithTimeout(ctx, wt)
 		defer cancel()
@@ -136,31 +180,13 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 		}
 		return nil
 	})
-	userCleanup.add("butler.Activate", func() error {
+	callerCleanups.add("butler.Activate", func() error {
 		butler.Activate()
 		return nil
 	})
-	cleanup = nil
+	myCleanups = nil
 
-	// Buildbucket assigns some grace period to the surrounding task which is
-	// more than what the user requested in `input.Build.GracePeriod`. We
-	// reserve the difference here so the user task only gets what they asked
-	// for.
-	deadline := lucictx.GetDeadline(ctx)
-	toReserve := deadline.GracePeriodDuration() - opts.BaseBuild.GracePeriod.AsDuration()
-	logging.Infof(
-		ctx, "Reserving %s out of %s of grace_period from LUCI_CONTEXT.",
-		toReserve, lucictx.GetDeadline(ctx).GracePeriodDuration())
-	dctx, shutdown := lucictx.TrackSoftDeadline(ctx, toReserve)
-
-	go func() {
-		defer userCleanup.run(ctx)
-		logging.Infof(ctx, "invoking host environment callback")
-
-		cb(dctx, opts, lucictx.SoftDeadlineDone(dctx), shutdown)
-	}()
-
-	return buildCh, nil
+	return callerCleanups, nil
 }
 
 // If ctx has the deadline set, waitTime is min(half of the remaining time
@@ -178,4 +204,71 @@ func calcLogFlushWaitTime(ctx context.Context) time.Duration {
 		}
 	}
 	return maxLogFlushWaitTime
+}
+
+// downloadInputs downloads CIPD and CAS inputs then updates the build.
+func downloadInputs(ctx context.Context, wd, cacheBase string, build *bbpb.Build, buildCh chan<- *bbpb.Build) bool {
+	defer func() { buildCh <- build }() // Always send back the result build.
+
+	logging.Infof(ctx, "downloading agent inputs")
+
+	if build.Infra.Buildbucket.Agent == nil {
+		// Most likely happens in `led get-build` process where it creates from an old build
+		// before new Agent field was there.
+		build.Infra.Buildbucket.Agent = &bbpb.BuildInfra_Buildbucket_Agent{
+			Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{
+				Status:          bbpb.Status_FAILURE,
+				SummaryMarkdown: "Cannot download agent inputs; Build Agent field is not set",
+			},
+		}
+		build.Output = &bbpb.Build_Output{
+			Status:          bbpb.Status_INFRA_FAILURE,
+			SummaryMarkdown: "Failed to install user packages for this build",
+		}
+		return false
+	}
+
+	agent := build.Infra.Buildbucket.Agent
+	agent.Output = &bbpb.BuildInfra_Buildbucket_Agent_Output{
+		Status:        bbpb.Status_STARTED,
+		AgentPlatform: platform.CurrentPlatform(),
+	}
+	buildCh <- build // Signal started
+
+	// Encapsulate all the installation logic with a defer to set the
+	// TotalDuration. As we add more installation logic (e.g. RBE-CAS),
+	// TotalDuration should continue to surround that logic.
+	agent = build.Infra.Buildbucket.Agent
+	err := func() error {
+		start := clock.Now(ctx)
+		defer func() {
+			agent.Output.TotalDuration = &durationpb.Duration{
+				Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
+			}
+		}()
+		// Download CIPD.
+		if err := installCipd(ctx, build, wd, cacheBase, agent.Output.AgentPlatform); err != nil {
+			return err
+		}
+		if err := prependPath(build, wd); err != nil {
+			return err
+		}
+		if err := installCipdPackages(ctx, build, wd, cacheBase); err != nil {
+			return err
+		}
+		return downloadCasFiles(ctx, build, wd)
+	}()
+	if err != nil {
+		logging.Errorf(ctx, "Failure in installing user packages: %s", err)
+		agent.Output.Status = bbpb.Status_FAILURE
+		agent.Output.SummaryMarkdown = err.Error()
+		build.Output = &bbpb.Build_Output{
+			Status:          bbpb.Status_INFRA_FAILURE,
+			SummaryMarkdown: "Failed to install user packages for this build",
+		}
+		return false
+	} else {
+		agent.Output.Status = bbpb.Status_SUCCESS
+		return true
+	}
 }
