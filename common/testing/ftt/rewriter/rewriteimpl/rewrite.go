@@ -94,7 +94,7 @@ func selectorOrIdent(c dst.Node, importName string) string {
 // If the given package is not imported, returns "".
 func getImportName(f *dst.File, pkg string) string {
 	for _, imp := range f.Imports {
-		if imp.Path.Value == fmt.Sprintf(`"%s"`, originalConveyPkg) {
+		if imp.Path.Value == fmt.Sprintf(`"%s"`, pkg) {
 			if imp.Name != nil {
 				// user set some name or ".", return that
 				return imp.Name.Name
