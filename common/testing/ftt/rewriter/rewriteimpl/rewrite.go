@@ -359,21 +359,24 @@ func Rewrite(dec *decorator.Decorator, f *dst.File, adaptedAssertions stringset.
 				needAssertions = needAssertions || usedAssertionsLib
 				needAssert = true
 
-				// never recurse into So calls.
-				return false
+				// surprisingly, we can have calls like:
+				// So(func() {
+				//   So(something(), ShouldBeNil)
+				// }, ShouldNotPanic)
+				//
+				// Which is kind of weird, but allowed.
+				return true
 			}
 			if soMsgCall, _ := isConveyCall(c, []string{"c", conveyImportName, conveyContextName}, "SoMsg"); soMsgCall != nil {
 				// there are so few of these we'll do them by hand, so just print it out
 				// here:
 				// TODO: indicate filename/lineno - this is easy (ish) with `ast`, but
 				// difficult with `dst`.
-				//
-				// However, we still adapt the assertion.
 				log.Println("WARN: found SoMsg (needs manual fix `if check.Loosely(...) { t.Fatal(msg) }`)")
 				warned = true
 
-				// never recurse into SoMsg calls.
-				return false
+				// See soCall above.
+				return true
 			}
 
 			// Otherwise always recurse
