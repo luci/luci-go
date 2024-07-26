@@ -20,7 +20,7 @@ import { GroupsFormNew } from './groups_form_new';
 import userEvent from '@testing-library/user-event';
 
 describe('<GroupsFormNew />', () => {
-  test('if group name textarea is displayed', async () => {
+  test('if group name, description textarea is displayed', async () => {
 
     render(
       <FakeContextProvider>
@@ -32,9 +32,10 @@ describe('<GroupsFormNew />', () => {
 
     await screen.findByTestId('groups-form-new');
     expect(screen.getByTestId('name-textarea')).toBeInTheDocument();
+    expect(screen.getByTestId('description-textarea')).toBeInTheDocument();
   });
 
-  test('alert is shown if creating invalid name', async () => {
+  test('error is shown if creating invalid name', async () => {
 
     render(
       <FakeContextProvider>
@@ -50,7 +51,25 @@ describe('<GroupsFormNew />', () => {
     await userEvent.type(textarea!, 'Invalid name');
     const createButton = screen.getByTestId('create-button');
     act(() => createButton.click());
-    await screen.findByRole('alert');
+    await screen.findByTestId('name-error');
     expect(screen.getByText('Invalid group name.')).toBeInTheDocument();
   });
+
+  test('error is shown on empty description', async () => {
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsFormNew/>
+        </List>
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('groups-form-new');
+    const createButton = screen.getByTestId('create-button');
+    act(() => createButton.click());
+    await screen.findByTestId('description-error');
+    expect(screen.getByText('Description is required.')).toBeInTheDocument();
+  });
+
 });

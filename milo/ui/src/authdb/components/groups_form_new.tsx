@@ -16,9 +16,11 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
 import { TextareaAutosize } from '@mui/base/TextareaAutosize';
 import Typography from '@mui/material/Typography';
 import { FormControl } from '@mui/material';
@@ -46,12 +48,19 @@ const theme = createTheme({
 export function GroupsFormNew () {
   const [name, setName] = useState<string>('');
   const [nameErrorMessage, setNameErrorMessage] = useState<string>();
+  const [description, setDescription] = useState<string>('');
+  const [descriptionErrorMessage, setDescriptionErrorMessage] = useState<string>();
 
     const createGroup = () => {
       if (!nameRe.test(name)) {
         setNameErrorMessage('Invalid group name.');
       } else {
         setNameErrorMessage('');
+      }
+      if (!description) {
+        setDescriptionErrorMessage('Description is required.');
+      } else {
+        setDescriptionErrorMessage('');
       }
     }
 
@@ -62,23 +71,46 @@ export function GroupsFormNew () {
         <Typography variant="h5" sx={{pl: 1.5}}> Creating New Group </Typography>
         <TableContainer sx={{ p: 0, width: '100%' }} >
           <Table>
-            <TableRow>
-              <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
-                <Typography variant="h6"> Name</Typography>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
-                <TextareaAutosize value={name} style={{width: '100%'}} onChange={(e) => setName(e.target.value)} id='nameTextfield' data-testid='name-textarea' placeholder='group-name'></TextareaAutosize>
-              </TableCell>
-            </TableRow>
-            {nameErrorMessage &&
-            <TableRow sx={{pt: 0}}>
-              <TableCell sx={{pt: 0}}>
-                <Alert severity="error">{nameErrorMessage}</Alert>
-              </TableCell>
-            </TableRow>
-            }
+            <TableBody>
+              <TableRow>
+                <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
+                  <Typography variant="h6"> Name</Typography>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
+                  <TextField value={name} style={{width: '100%'}} onChange={(e) => setName(e.target.value)} id='nameTextfield' data-testid='name-textarea' placeholder='required'></TextField>
+                </TableCell>
+              </TableRow>
+              {nameErrorMessage &&
+              <TableRow sx={{pt: 0}}>
+                <TableCell sx={{pt: 0}}>
+                  <Alert severity="error" data-testid='name-error'>{nameErrorMessage}</Alert>
+                </TableCell>
+              </TableRow>
+              }
+            </TableBody>
+          </Table>
+          <Table>
+            <TableBody>
+              <TableRow>
+                <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
+                  <Typography variant="h6"> Description</Typography>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
+                  <TextareaAutosize value={description} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield' data-testid='description-textarea' placeholder='required'></TextareaAutosize>
+                </TableCell>
+              </TableRow>
+              {descriptionErrorMessage &&
+              <TableRow sx={{pt: 0}}>
+                <TableCell sx={{pt: 0}}>
+                  <Alert severity="error" data-testid='description-error'>{descriptionErrorMessage}</Alert>
+                </TableCell>
+              </TableRow>
+              }
+            </TableBody>
           </Table>
         </TableContainer>
         <Button variant="contained" disableElevation style={{width: '30%'}} sx={{mt: 1.5, ml: '16px'}} onClick={createGroup} data-testid='create-button'>
