@@ -50,6 +50,8 @@ export function GroupsFormNew () {
   const [nameErrorMessage, setNameErrorMessage] = useState<string>();
   const [description, setDescription] = useState<string>('');
   const [descriptionErrorMessage, setDescriptionErrorMessage] = useState<string>();
+  const [owners, setOwners] = useState<string>('');
+  const [ownersErrorMessage, setOwnersErrorMessage] = useState<string>();
 
     const createGroup = () => {
       if (!nameRe.test(name)) {
@@ -61,6 +63,11 @@ export function GroupsFormNew () {
         setDescriptionErrorMessage('Description is required.');
       } else {
         setDescriptionErrorMessage('');
+      }
+      if (!nameRe.test(owners)) {
+        setOwnersErrorMessage('Invalid owners name. Must be a group.');
+      } else {
+        setOwnersErrorMessage('');
       }
     }
 
@@ -112,8 +119,29 @@ export function GroupsFormNew () {
               }
             </TableBody>
           </Table>
+          <Table>
+            <TableBody>
+              <TableRow>
+                <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
+                  <Typography variant="h6"> Owners</Typography>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
+                  <TextField value={owners} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield' data-testid='owners-textfield' placeholder='administrators'></TextField>
+                </TableCell>
+              </TableRow>
+              {ownersErrorMessage &&
+              <TableRow sx={{pt: 0}}>
+                <TableCell sx={{pt: 0}}>
+                  <Alert severity="error" data-testid='owners-error'>{ownersErrorMessage}</Alert>
+                </TableCell>
+              </TableRow>
+              }
+            </TableBody>
+          </Table>
         </TableContainer>
-        <Button variant="contained" disableElevation style={{width: '30%'}} sx={{mt: 1.5, ml: '16px'}} onClick={createGroup} data-testid='create-button'>
+        <Button variant="contained" disableElevation style={{width: '150px'}} sx={{mt: 1.5, ml: '16px'}} onClick={createGroup} data-testid='create-button'>
             Create Group
         </Button>
       </FormControl>

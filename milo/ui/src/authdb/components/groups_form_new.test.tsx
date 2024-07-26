@@ -72,4 +72,23 @@ describe('<GroupsFormNew />', () => {
     expect(screen.getByText('Description is required.')).toBeInTheDocument();
   });
 
+  test('error is shown on invalid owners name', async () => {
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsFormNew/>
+        </List>
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('groups-form-new');
+    const textarea = screen.getByTestId('owners-textfield');
+    textarea.focus();
+    await userEvent.type(textarea!, 'Invalid owners');
+    const createButton = screen.getByTestId('create-button');
+    act(() => createButton.click());
+    await screen.findByTestId('owners-error');
+    expect(screen.getByText('Invalid owners name. Must be a group.')).toBeInTheDocument();
+  });
 });
