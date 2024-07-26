@@ -216,7 +216,7 @@ var assertionMap = map[assertionKey]*mappedComp{
 					}
 					if lit.Kind == token.STRING && len(lit.Value) == 2 {
 						// covers "" and ``
-						return "BeEmpty", noArgs, nil
+						return "BeBlank", noArgs, nil
 					}
 					// This is a basic non-zero literal type - this means that the left
 					// hand side should not need the extra complexity of should.Resemble,
@@ -225,6 +225,33 @@ var assertionMap = map[assertionKey]*mappedComp{
 				}
 			}
 			// They probably actually need "should.Resemble", so let it go through.
+			return name, hasArgs, extraArgs
+		}},
+	{originalConveyPkg, "ShouldNotResemble"}: {
+		name: "NotResemble",
+		special: func(name string, extraArgs []dst.Expr) (newName string, argState argState, newExtraArgs []dst.Expr) {
+			if len(extraArgs) == 1 {
+				arg := extraArgs[0]
+				if ident, ok := arg.(*dst.Ident); ok && ident.Name == "nil" {
+					// Simplify ShouldNotResemble(nil) -> NotBeNil.
+					return "NotBeNil", noArgs, nil
+				}
+				if lit, ok := arg.(*dst.BasicLit); ok {
+					// Simplify some common ShouldNotResemble usages.
+					if lit.Kind == token.INT && lit.Value == "0" {
+						return "NotBeZero", noArgs, nil
+					}
+					if lit.Kind == token.STRING && len(lit.Value) == 2 {
+						// covers "" and ``
+						return "NotBeBlank", noArgs, nil
+					}
+					// This is a basic non-zero literal type - this means that the left
+					// hand side should not need the extra complexity of
+					// should.NotResemble, so use should.NotMatch instead.
+					return "NotMatch", hasArgs, extraArgs
+				}
+			}
+			// They probably actually need "should.NotResemble", so let it go through.
 			return name, hasArgs, extraArgs
 		}},
 

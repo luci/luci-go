@@ -28,7 +28,7 @@ func TestResemble(t *testing.T) {
 		assert.Loosely(t, 0, should.BeZero)
 		assert.Loosely(t, 100, should.Match(100))
 
-		assert.Loosely(t, "", should.BeEmpty)
+		assert.Loosely(t, "", should.BeBlank)
 
 		assert.Loosely(t, nil, should.BeNil)
 
@@ -36,5 +36,23 @@ func TestResemble(t *testing.T) {
 
 		type myType struct{ f int }
 		assert.Loosely(t, myType{100}, should.Resemble(myType{100}))
+	})
+}
+
+func TestNotResemble(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("something", t, func(t *ftt.Test) {
+		assert.Loosely(t, 1, should.NotBeZero)
+		assert.Loosely(t, 101, should.NotMatch(100))
+
+		assert.Loosely(t, "1", should.NotBeBlank)
+
+		assert.Loosely(t, &(struct{}{}), should.NotBeNil)
+
+		assert.Loosely(t, "nerb", should.NotMatch("nerb1"))
+
+		type myType struct{ f int }
+		assert.Loosely(t, myType{101}, should.NotResemble(myType{100}))
 	})
 }

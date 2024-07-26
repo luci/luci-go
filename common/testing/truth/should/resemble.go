@@ -154,6 +154,28 @@ func Resemble[T any](expected T) comparison.Func[T] {
 		"should.Resemble", expected, extractAllowUnexportedFrom(reflect.TypeOf(expected)))
 }
 
+// NotResemble returns a comparison.Func which checks if the actual value
+// doesn't 'resemble' `expected`, but implicitly compares unexported fields for
+// compatibility with goconvey's ShouldNotResemble check.
+//
+// Deprecated: Use should.NotMatch instead, which does not automatically
+// add AllowUnexported(expected). should.NotMatch also allows specifying your
+// own/ auxilliary cmp.Options globally and locally, for more advanced
+// interaction with cmp.Diff.
+//
+// Semblance is computed with "github.com/google/go-cmp/cmp", and this
+// function automatically adds the following cmp.Options to match behavior of
+// coconvey:
+//   - "google.golang.org/protobuf/testing/protocmp".Transform()
+//   - "github.com/google/go-cmp/cmp".AllowUnexported(expected) (if `expected`
+//     has an underlying struct type after peeling off slices, pointers, etc.)
+//
+// It is recommended that you use should.NotEqual when comparing primitive types.
+func NotResemble[T any](expected T) comparison.Func[T] {
+	return notMatchImpl(
+		"should.NotResemble", expected, extractAllowUnexportedFrom(reflect.TypeOf(expected)))
+}
+
 // Match returns a comparison.Func which checks if the actual value matches
 // `expected`.
 //
@@ -177,6 +199,29 @@ func Match[T any](expected T, opts ...cmp.Option) comparison.Func[T] {
 	return matchImpl("should.Match", expected, opts)
 }
 
+// NotMatch returns a comparison.Func which checks if the actual value doesn't
+// match `expected`.
+//
+// Semblance is computed with "github.com/google/go-cmp/cmp", and this
+// function accepts additional cmp.Options to allow for handling of different
+// types/fields/filtering proto Message semantics, etc.
+//
+// For convenience, `opts` implicitly includes:
+//   - "google.golang.org/protobuf/testing/protocmp".Transform()
+//
+// This is done via the go.chromium.org/luci/common/testing/registry package,
+// which also allows process-wide registration of additional default
+// cmp.Options. It is recommended to register cmp.Options in TestMain for any
+// types that your package tests which contain unexported fields, or other
+// internal details. Note that cmp.Diff implicitly will use `X.Equal(X)`
+// methods for any types which implement them as methods, so this may be a good
+// first thing to implement.
+//
+// It is recommended that you use should.NotEqual when comparing primitive types.
+func NotMatch[T any](expected T, opts ...cmp.Option) comparison.Func[T] {
+	return notMatchImpl("should.NotMatch", expected, opts)
+}
+
 // matchImpl is the implementation of Match and Resemble.
 func matchImpl[T any](cmpName string, expected T, opts []cmp.Option) comparison.Func[T] {
 	return func(actual T) *failure.Summary {
@@ -190,6 +235,21 @@ func matchImpl[T any](cmpName string, expected T, opts []cmp.Option) comparison.
 			Actual(actual).WarnIfLong().
 			Expected(expected).WarnIfLong().
 			AddCmpDiff(diff).
+			Summary
+	}
+}
+
+// notMatchImpl is the implementation of Match and Resemble.
+func notMatchImpl[T any](cmpName string, expected T, opts []cmp.Option) comparison.Func[T] {
+	return func(actual T) *failure.Summary {
+		diff := typed.Diff(expected, actual, opts...)
+
+		if diff != "" {
+			return nil
+		}
+
+		return comparison.NewSummaryBuilder(cmpName, expected).
+			Actual(actual).WarnIfLong().
 			Summary
 	}
 }

@@ -38,3 +38,20 @@ func TestResemble(t *testing.T) {
 	})
 }
 
+func TestNotResemble(t *testing.T) {
+	t.Parallel()
+
+	Convey("something", t, func() {
+		So(1, ShouldNotResemble, 0)
+		So(101, ShouldNotResemble, 100)
+
+		So("1", ShouldNotResemble, "")
+
+		So(&(struct{}{}), ShouldNotResemble, nil)
+
+		So("nerb", ShouldNotResemble, "nerb1")
+
+		type myType struct{ f int }
+		So(myType{101}, ShouldNotResemble, myType{100})
+	})
+}

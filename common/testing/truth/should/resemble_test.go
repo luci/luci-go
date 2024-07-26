@@ -20,7 +20,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 )
@@ -29,7 +29,7 @@ func TestMatch(t *testing.T) {
 	t.Parallel()
 
 	t.Run("simple", shouldPass(Match(100)(100)))
-	t.Run("simple fail", shouldFail(Match(100)(101), "Diff"))
+	t.Run("simple diff", shouldFail(Match(100)(101), "Diff"))
 
 	t.Run("simple proto", shouldPass(
 		Match(&buildbucketpb.Build{Id: 12345})(&buildbucketpb.Build{Id: 12345})))
@@ -40,7 +40,7 @@ func TestMatch(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not make struct", err)
 	}
-	t.Run("struct proto fail", shouldFail(
+	t.Run("struct proto diff", shouldFail(
 		Match(&buildbucketpb.Build{Id: 12345, Input: &buildbucketpb.Build_Input{
 			Properties: props,
 		}})(&buildbucketpb.Build{Id: 12345}), "Diff"))
@@ -51,6 +51,36 @@ func TestMatch(t *testing.T) {
 		}
 		mustPanicLike(t, "unexported field", func() {
 			Match(myStruct{"hi"})(myStruct{"hi"})
+		})
+	})
+}
+
+func TestNotMatch(t *testing.T) {
+	t.Parallel()
+
+	t.Run("simple", shouldFail(NotMatch(100)(100)))
+	t.Run("simple diff", shouldPass(NotMatch(100)(101)))
+
+	t.Run("simple proto", shouldFail(
+		NotMatch(&buildbucketpb.Build{Id: 12345})(&buildbucketpb.Build{Id: 12345})))
+
+	props, err := structpb.NewStruct(map[string]any{
+		"heyo": 100,
+	})
+	if err != nil {
+		t.Fatal("could not make struct", err)
+	}
+	t.Run("struct proto diff", shouldPass(
+		NotMatch(&buildbucketpb.Build{Id: 12345, Input: &buildbucketpb.Build_Input{
+			Properties: props,
+		}})(&buildbucketpb.Build{Id: 12345})))
+
+	t.Run("unexported fields", func(t *testing.T) {
+		type myStruct struct {
+			private string
+		}
+		mustPanicLike(t, "unexported field", func() {
+			NotMatch(myStruct{"hi"})(myStruct{"hi"})
 		})
 	})
 }
