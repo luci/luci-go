@@ -546,6 +546,55 @@ func TestUpdateTaskEntity(t *testing.T) {
 				So(s.Status, ShouldEqual, pb.Status_CANCELED)
 			}
 		})
+		Convey("expire a task", func() {
+			bs := &model.BuildStatus{
+				Build:  bk,
+				Status: pb.Status_SCHEDULED,
+			}
+			So(datastore.Put(ctx, buildModel, infraModel, bs), ShouldBeNil)
+
+			statusDetails := &pb.StatusDetails{
+				Timeout: &pb.StatusDetails_Timeout{},
+			}
+			endReq := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status:        pb.Status_INFRA_FAILURE,
+					StatusDetails: statusDetails,
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+					UpdateId: 200,
+				},
+			}
+			err := updateTaskEntity(ctx, endReq, 1, false)
+			So(err, ShouldBeNil)
+			resultInfraModel := &model.BuildInfra{
+				Build: bk,
+			}
+			result := datastore.Get(ctx, resultInfraModel, bs, buildModel)
+			So(result, ShouldBeNil)
+			So(resultInfraModel.Proto, ShouldResembleProto, &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Status:        pb.Status_INFRA_FAILURE,
+						StatusDetails: statusDetails,
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming",
+						},
+						UpdateId: 200,
+						Link:     "a link",
+					},
+				},
+			})
+
+			So(sch.Tasks(), ShouldHaveLength, 3)
+			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			So(buildModel.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			So(buildModel.Proto.StatusDetails, ShouldResembleProto, statusDetails)
+		})
 		Convey("start a task", func() {
 			buildModel.Proto.Status = pb.Status_SCHEDULED
 			infraModel.Proto.Backend.Task.Status = pb.Status_SCHEDULED

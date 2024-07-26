@@ -188,7 +188,7 @@ func prepareUpdate(ctx context.Context, build *model.Build, infra *model.BuildIn
 
 	toSave := []any{build, infra}
 
-	bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, infra, nil, &buildstatus.StatusWithDetails{Status: task.Status}, now, useTaskSuccess)
+	bs, steps, err := updateBuildStatusOnTaskStatusChange(ctx, build, infra, nil, &buildstatus.StatusWithDetails{Status: task.Status, Details: task.StatusDetails}, now, useTaskSuccess)
 	if err != nil {
 		return nil, err
 	}
