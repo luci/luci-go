@@ -17,40 +17,42 @@ package identity
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGlob(t *testing.T) {
-	Convey("MakeGlob works", t, func() {
+	ftt.Run("MakeGlob works", t, func(t *ftt.Test) {
 		g, err := MakeGlob("user:*@example.com")
-		So(err, ShouldBeNil)
-		So(g, ShouldEqual, Glob("user:*@example.com"))
-		So(g.Kind(), ShouldEqual, User)
-		So(g.Pattern(), ShouldEqual, "*@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, g, should.Equal(Glob("user:*@example.com")))
+		assert.Loosely(t, g.Kind(), should.Equal(User))
+		assert.Loosely(t, g.Pattern(), should.Equal("*@example.com"))
 
 		_, err = MakeGlob("bad ident")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Validate works", t, func() {
-		So(Glob("user:*@example.com").Validate(), ShouldBeNil)
-		So(Glob("user:").Validate(), ShouldNotBeNil)
-		So(Glob(":abc").Validate(), ShouldNotBeNil)
-		So(Glob("abc@example.com").Validate(), ShouldNotBeNil)
-		So(Glob("user:\n").Validate(), ShouldNotBeNil)
+	ftt.Run("Validate works", t, func(t *ftt.Test) {
+		assert.Loosely(t, Glob("user:*@example.com").Validate(), should.BeNil)
+		assert.Loosely(t, Glob("user:").Validate(), should.NotBeNil)
+		assert.Loosely(t, Glob(":abc").Validate(), should.NotBeNil)
+		assert.Loosely(t, Glob("abc@example.com").Validate(), should.NotBeNil)
+		assert.Loosely(t, Glob("user:\n").Validate(), should.NotBeNil)
 	})
 
-	Convey("Kind works", t, func() {
-		So(Glob("user:*@example.com").Kind(), ShouldEqual, User)
-		So(Glob("???").Kind(), ShouldEqual, Anonymous)
+	ftt.Run("Kind works", t, func(t *ftt.Test) {
+		assert.Loosely(t, Glob("user:*@example.com").Kind(), should.Equal(User))
+		assert.Loosely(t, Glob("???").Kind(), should.Equal(Anonymous))
 	})
 
-	Convey("Pattern works", t, func() {
-		So(Glob("service:*").Pattern(), ShouldEqual, "*")
-		So(Glob("???").Pattern(), ShouldEqual, "")
+	ftt.Run("Pattern works", t, func(t *ftt.Test) {
+		assert.Loosely(t, Glob("service:*").Pattern(), should.Equal("*"))
+		assert.Loosely(t, Glob("???").Pattern(), should.BeEmpty)
 	})
 
-	Convey("Match works", t, func() {
+	ftt.Run("Match works", t, func(t *ftt.Test) {
 		trials := []struct {
 			g      Glob
 			id     Identity
@@ -70,11 +72,11 @@ func TestGlob(t *testing.T) {
 			{"user:*", "service:abc", false},
 		}
 		for _, entry := range trials {
-			So(entry.g.Match(entry.id), ShouldEqual, entry.result)
+			assert.Loosely(t, entry.g.Match(entry.id), should.Equal(entry.result))
 		}
 	})
 
-	Convey("translate works", t, func() {
+	ftt.Run("translate works", t, func(t *ftt.Test) {
 		trials := []struct {
 			pat string
 			reg string
@@ -87,29 +89,29 @@ func TestGlob(t *testing.T) {
 		}
 		for _, entry := range trials {
 			re, err := translate(entry.pat)
-			So(err, ShouldBeNil)
-			So(re, ShouldEqual, entry.reg)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, re, should.Equal(entry.reg))
 		}
 	})
 
-	Convey("translate reject newline", t, func() {
+	ftt.Run("translate reject newline", t, func(t *ftt.Test) {
 		_, err := translate("blah\nblah")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Preprocess works", t, func() {
+	ftt.Run("Preprocess works", t, func(t *ftt.Test) {
 		k, r, err := Glob("user:*@example.com").Preprocess()
-		So(err, ShouldBeNil)
-		So(k, ShouldEqual, User)
-		So(r, ShouldEqual, "^.*@example\\.com$")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, k, should.Equal(User))
+		assert.Loosely(t, r, should.Equal("^.*@example\\.com$"))
 	})
 
-	Convey("Preprocess rejects malformed identity globs", t, func() {
+	ftt.Run("Preprocess rejects malformed identity globs", t, func(t *ftt.Test) {
 		_, _, err := Glob("*@example.com").Preprocess()
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 		_, _, err = Glob("unknown:*@example.com").Preprocess()
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 		_, _, err = Glob("user:*\n@example.com").Preprocess()
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

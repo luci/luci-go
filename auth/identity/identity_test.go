@@ -17,43 +17,45 @@ package identity
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestIdentity(t *testing.T) {
-	Convey("MakeIdentity works", t, func() {
+	ftt.Run("MakeIdentity works", t, func(t *ftt.Test) {
 		id, err := MakeIdentity("anonymous:anonymous")
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, Identity("anonymous:anonymous"))
-		So(id.Kind(), ShouldEqual, Anonymous)
-		So(id.Value(), ShouldEqual, "anonymous")
-		So(id.Email(), ShouldEqual, "")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal(Identity("anonymous:anonymous")))
+		assert.Loosely(t, id.Kind(), should.Equal(Anonymous))
+		assert.Loosely(t, id.Value(), should.Equal("anonymous"))
+		assert.Loosely(t, id.Email(), should.BeEmpty)
 
 		_, err = MakeIdentity("bad ident")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Validate works", t, func() {
-		So(Identity("user:abc@example.com").Validate(), ShouldBeNil)
-		So(Identity("user:").Validate(), ShouldNotBeNil)
-		So(Identity(":abc").Validate(), ShouldNotBeNil)
-		So(Identity("abc@example.com").Validate(), ShouldNotBeNil)
-		So(Identity("user:abc").Validate(), ShouldNotBeNil)
+	ftt.Run("Validate works", t, func(t *ftt.Test) {
+		assert.Loosely(t, Identity("user:abc@example.com").Validate(), should.BeNil)
+		assert.Loosely(t, Identity("user:").Validate(), should.NotBeNil)
+		assert.Loosely(t, Identity(":abc").Validate(), should.NotBeNil)
+		assert.Loosely(t, Identity("abc@example.com").Validate(), should.NotBeNil)
+		assert.Loosely(t, Identity("user:abc").Validate(), should.NotBeNil)
 	})
 
-	Convey("Kind works", t, func() {
-		So(Identity("user:abc@example.com").Kind(), ShouldEqual, User)
-		So(Identity("???").Kind(), ShouldEqual, Anonymous)
+	ftt.Run("Kind works", t, func(t *ftt.Test) {
+		assert.Loosely(t, Identity("user:abc@example.com").Kind(), should.Equal(User))
+		assert.Loosely(t, Identity("???").Kind(), should.Equal(Anonymous))
 	})
 
-	Convey("Value works", t, func() {
-		So(Identity("service:abc").Value(), ShouldEqual, "abc")
-		So(Identity("???").Value(), ShouldEqual, "anonymous")
+	ftt.Run("Value works", t, func(t *ftt.Test) {
+		assert.Loosely(t, Identity("service:abc").Value(), should.Equal("abc"))
+		assert.Loosely(t, Identity("???").Value(), should.Equal("anonymous"))
 	})
 
-	Convey("Email works", t, func() {
-		So(Identity("user:abc@example.com").Email(), ShouldEqual, "abc@example.com")
-		So(Identity("service:abc").Email(), ShouldEqual, "")
-		So(Identity("???").Email(), ShouldEqual, "")
+	ftt.Run("Email works", t, func(t *ftt.Test) {
+		assert.Loosely(t, Identity("user:abc@example.com").Email(), should.Equal("abc@example.com"))
+		assert.Loosely(t, Identity("service:abc").Email(), should.BeEmpty)
+		assert.Loosely(t, Identity("???").Email(), should.BeEmpty)
 	})
 }
