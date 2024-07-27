@@ -330,21 +330,21 @@ func TestDiskTokenCache(t *testing.T) {
 		}
 		cache.PutToken(&CacheKey{Key: "unused"}, unused)
 
-		t, err := cache.GetToken(&CacheKey{Key: "a"})
+		tok, err := cache.GetToken(&CacheKey{Key: "a"})
 		So(err, ShouldBeNil)
-		So(t, ShouldBeNil)
+		So(tok, ShouldBeNil)
 
 		// "b" is still there.
-		t, err = cache.GetToken(&CacheKey{Key: "b"})
+		tok, err = cache.GetToken(&CacheKey{Key: "b"})
 		So(err, ShouldBeNil)
-		So(t.RefreshToken, ShouldEqual, "def")
+		So(tok.RefreshToken, ShouldEqual, "def")
 
 		// Some time later "b" is also removed.
 		tc.Add(GCRefreshTokenMaxAge)
 		cache.PutToken(&CacheKey{Key: "unused"}, unused)
 
-		t, err = cache.GetToken(&CacheKey{Key: "b"})
+		tok, err = cache.GetToken(&CacheKey{Key: "b"})
 		So(err, ShouldBeNil)
-		So(t, ShouldBeNil)
+		So(tok, ShouldBeNil)
 	})
 }
