@@ -55,9 +55,9 @@ func TestTransportFactory(t *testing.T) {
 		//
 		// Note: we don't use ShouldNotEqual because it tries to read guts of
 		// http.DefaultTransport and it sometimes triggers race detector.
-		t, err := auth.Transport()
+		transport, err := auth.Transport()
 		So(err, ShouldBeNil)
-		So(t != http.DefaultTransport, ShouldBeTrue)
+		So(transport != http.DefaultTransport, ShouldBeTrue)
 
 		// MintToken is called by Login.
 		So(provider.mintTokenCalled, ShouldBeTrue)
@@ -75,9 +75,9 @@ func TestTransportFactory(t *testing.T) {
 		auth, _ := newAuth(OptionalLogin, &fakeTokenProvider{
 			interactive: true,
 		}, nil, "")
-		t, err := auth.Transport()
+		transport, err := auth.Transport()
 		So(err, ShouldBeNil)
-		So(t == http.DefaultTransport, ShouldBeTrue)
+		So(transport == http.DefaultTransport, ShouldBeTrue)
 	})
 
 	Convey("Always uses authenticating transport for non-interactive provider", t, func() {
@@ -85,9 +85,9 @@ func TestTransportFactory(t *testing.T) {
 		for _, mode := range modes {
 			auth, _ := newAuth(mode, &fakeTokenProvider{}, nil, "")
 			So(auth.Login(), ShouldBeNil) // noop
-			t, err := auth.Transport()
+			transport, err := auth.Transport()
 			So(err, ShouldBeNil)
-			So(t != http.DefaultTransport, ShouldBeTrue)
+			So(transport != http.DefaultTransport, ShouldBeTrue)
 		}
 	})
 }
