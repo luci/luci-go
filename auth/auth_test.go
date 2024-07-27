@@ -31,9 +31,9 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var (
@@ -45,7 +45,7 @@ var (
 func TestTransportFactory(t *testing.T) {
 	t.Parallel()
 
-	Convey("InteractiveLogin + interactive provider: invokes Login", t, func() {
+	ftt.Run("InteractiveLogin + interactive provider: invokes Login", t, func(t *ftt.Test) {
 		provider := &fakeTokenProvider{
 			interactive: true,
 		}
@@ -56,38 +56,38 @@ func TestTransportFactory(t *testing.T) {
 		// Note: we don't use ShouldNotEqual because it tries to read guts of
 		// http.DefaultTransport and it sometimes triggers race detector.
 		transport, err := auth.Transport()
-		So(err, ShouldBeNil)
-		So(transport != http.DefaultTransport, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, transport != http.DefaultTransport, should.BeTrue)
 
 		// MintToken is called by Login.
-		So(provider.mintTokenCalled, ShouldBeTrue)
+		assert.Loosely(t, provider.mintTokenCalled, should.BeTrue)
 	})
 
-	Convey("SilentLogin + interactive provider: ErrLoginRequired", t, func() {
+	ftt.Run("SilentLogin + interactive provider: ErrLoginRequired", t, func(t *ftt.Test) {
 		auth, _ := newAuth(SilentLogin, &fakeTokenProvider{
 			interactive: true,
 		}, nil, "")
 		_, err := auth.Transport()
-		So(err, ShouldEqual, ErrLoginRequired)
+		assert.Loosely(t, err, should.Equal(ErrLoginRequired))
 	})
 
-	Convey("OptionalLogin + interactive provider: Fallback to non-auth", t, func() {
+	ftt.Run("OptionalLogin + interactive provider: Fallback to non-auth", t, func(t *ftt.Test) {
 		auth, _ := newAuth(OptionalLogin, &fakeTokenProvider{
 			interactive: true,
 		}, nil, "")
 		transport, err := auth.Transport()
-		So(err, ShouldBeNil)
-		So(transport == http.DefaultTransport, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, transport == http.DefaultTransport, should.BeTrue)
 	})
 
-	Convey("Always uses authenticating transport for non-interactive provider", t, func() {
+	ftt.Run("Always uses authenticating transport for non-interactive provider", t, func(t *ftt.Test) {
 		modes := []LoginMode{InteractiveLogin, SilentLogin, OptionalLogin}
 		for _, mode := range modes {
 			auth, _ := newAuth(mode, &fakeTokenProvider{}, nil, "")
-			So(auth.Login(), ShouldBeNil) // noop
+			assert.Loosely(t, auth.Login(), should.BeNil) // noop
 			transport, err := auth.Transport()
-			So(err, ShouldBeNil)
-			So(transport != http.DefaultTransport, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, transport != http.DefaultTransport, should.BeTrue)
 		}
 	})
 }
@@ -95,7 +95,7 @@ func TestTransportFactory(t *testing.T) {
 func TestRefreshToken(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test non-interactive auth (no cache)", t, func() {
+	ftt.Run("Test non-interactive auth (no cache)", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 			tokenToMint: &internal.Token{
@@ -104,25 +104,25 @@ func TestRefreshToken(t *testing.T) {
 			},
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// No token yet, it is is lazily loaded below.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.BeNil)
 
 		// The token is minted on first request.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "minted")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("minted"))
 
 		// And we also get an email straight from MintToken call.
 		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "freshly-minted@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("freshly-minted@example.com"))
 	})
 
-	Convey("Test non-interactive auth (with non-expired cache)", t, func() {
+	ftt.Run("Test non-interactive auth (with non-expired cache)", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 		}
@@ -135,20 +135,20 @@ func TestRefreshToken(t *testing.T) {
 			Email: "cached-email@example.com",
 		})
 
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// Cached token is used.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "cached")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("cached"))
 
 		// Cached email is used.
 		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "cached-email@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("cached-email@example.com"))
 	})
 
-	Convey("Test non-interactive auth (with expired cache)", t, func() {
+	ftt.Run("Test non-interactive auth (with expired cache)", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 			tokenToRefresh: &internal.Token{
@@ -165,20 +165,20 @@ func TestRefreshToken(t *testing.T) {
 			Email: "cached-email@example.com",
 		})
 
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// The usage triggers refresh procedure.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "refreshed")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("refreshed"))
 
 		// Using a newly fetched email.
 		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "new-email@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("new-email@example.com"))
 	})
 
-	Convey("Test interactive auth (no cache)", t, func() {
+	ftt.Run("Test interactive auth (no cache)", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: true,
 			tokenToMint: &internal.Token{
@@ -191,42 +191,42 @@ func TestRefreshToken(t *testing.T) {
 
 		// No token cached.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.BeNil)
 
 		// Login is required, as reported by various methods.
-		So(auth.CheckLoginRequired(), ShouldEqual, ErrLoginRequired)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.Equal(ErrLoginRequired))
 
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(oauthTok, ShouldBeNil)
-		So(err, ShouldEqual, ErrLoginRequired)
+		assert.Loosely(t, oauthTok, should.BeNil)
+		assert.Loosely(t, err, should.Equal(ErrLoginRequired))
 
 		email, err := auth.GetEmail()
-		So(email, ShouldEqual, "")
-		So(err, ShouldEqual, ErrLoginRequired)
+		assert.Loosely(t, email, should.BeEmpty)
+		assert.Loosely(t, err, should.Equal(ErrLoginRequired))
 
 		// Do it.
 		err = auth.Login()
-		So(err, ShouldBeNil)
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// Minted initial token.
 		tok, err = auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "minted")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.AccessToken, should.Equal("minted"))
 
 		// And it is actually used.
 		oauthTok, err = auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "minted")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("minted"))
 
 		// Email works too now.
 		email, err = auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "freshly-minted@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("freshly-minted@example.com"))
 	})
 
-	Convey("Test interactive auth (with non-expired cache)", t, func() {
+	ftt.Run("Test interactive auth (with non-expired cache)", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: true,
 		}
@@ -240,25 +240,25 @@ func TestRefreshToken(t *testing.T) {
 		})
 
 		// No need to login, already have a token.
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// Loaded cached token.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "cached")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.AccessToken, should.Equal("cached"))
 
 		// And it is actually used.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "cached")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("cached"))
 
 		// Email works too now.
 		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "cached-email@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("cached-email@example.com"))
 	})
 
-	Convey("Test interactive auth (with expired cache)", t, func() {
+	ftt.Run("Test interactive auth (with expired cache)", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: true,
 			tokenToRefresh: &internal.Token{
@@ -277,25 +277,25 @@ func TestRefreshToken(t *testing.T) {
 
 		// No need to login, already have a token. Only its "access_token" part is
 		// expired. Refresh token part is still valid, so no login is required.
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// Loaded cached token.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "cached")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.AccessToken, should.Equal("cached"))
 
 		// Attempting to use it triggers a refresh.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "refreshed")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("refreshed"))
 
 		// Email is also refreshed.
 		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "refreshed-email@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("refreshed-email@example.com"))
 	})
 
-	Convey("Test revoked refresh_token", t, func() {
+	ftt.Run("Test revoked refresh_token", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive:  true,
 			revokedToken: true,
@@ -312,23 +312,23 @@ func TestRefreshToken(t *testing.T) {
 		// No need to login, already have a token. Only its "access_token" part is
 		// expired. Refresh token part is still presumably valid, there's no way to
 		// detect that it has been revoked without attempting to use it.
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// Loaded cached token.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "cached")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.AccessToken, should.Equal("cached"))
 
 		// Attempting to use it triggers a refresh that fails.
 		_, err = auth.GetAccessToken(time.Minute)
-		So(err, ShouldEqual, ErrLoginRequired)
+		assert.Loosely(t, err, should.Equal(ErrLoginRequired))
 
 		// Same happens when trying to grab an email.
 		_, err = auth.GetEmail()
-		So(err, ShouldEqual, ErrLoginRequired)
+		assert.Loosely(t, err, should.Equal(ErrLoginRequired))
 	})
 
-	Convey("Test revoked credentials", t, func() {
+	ftt.Run("Test revoked credentials", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive:  false,
 			revokedCreds: true,
@@ -342,20 +342,20 @@ func TestRefreshToken(t *testing.T) {
 			Email: "cached@example.com",
 		})
 
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// Attempting to use expired cached token triggers a refresh that fails.
 		_, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldErrLike,
-			"failed to refresh auth token: invalid or unavailable service account credentials")
+		assert.Loosely(t, err, should.ErrLike(
+			"failed to refresh auth token: invalid or unavailable service account credentials"))
 
 		// Same happens when trying to grab an email.
 		_, err = auth.GetEmail()
-		So(err, ShouldErrLike,
-			"failed to refresh auth token: invalid or unavailable service account credentials")
+		assert.Loosely(t, err, should.ErrLike(
+			"failed to refresh auth token: invalid or unavailable service account credentials"))
 	})
 
-	Convey("Test transient errors when refreshing, success", t, func() {
+	ftt.Run("Test transient errors when refreshing, success", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive:            false,
 			transientRefreshErrors: 5,
@@ -371,19 +371,19 @@ func TestRefreshToken(t *testing.T) {
 			},
 		})
 
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// Attempting to use expired cached token triggers a refresh that fails a
 		// bunch of times, but the succeeds.
 		tok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "refreshed")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.AccessToken, should.Equal("refreshed"))
 
 		// All calls were actually made.
-		So(tokenProvider.transientRefreshErrors, ShouldEqual, 0)
+		assert.Loosely(t, tokenProvider.transientRefreshErrors, should.BeZero)
 	})
 
-	Convey("Test transient errors when refreshing, timeout", t, func() {
+	ftt.Run("Test transient errors when refreshing, timeout", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive:            false,
 			transientRefreshErrors: 5000, // never succeeds
@@ -396,25 +396,25 @@ func TestRefreshToken(t *testing.T) {
 			},
 		})
 
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// Attempting to use expired cached token triggers a refresh that constantly
 		// fails. Eventually we give up.
 		before := clock.Now(ctx)
 		_, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldErrLike, "transient error")
+		assert.Loosely(t, err, should.ErrLike("transient error"))
 		after := clock.Now(ctx)
 
 		// It took reasonable amount of time and number of attempts.
-		So(after.Sub(before), ShouldBeLessThan, 4*time.Minute)
-		So(5000-tokenProvider.transientRefreshErrors, ShouldEqual, 15)
+		assert.Loosely(t, after.Sub(before), should.BeLessThan(4*time.Minute))
+		assert.Loosely(t, 5000-tokenProvider.transientRefreshErrors, should.Equal(15))
 	})
 }
 
 func TestActorMode(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test non-interactive auth (no cache)", t, func() {
+	ftt.Run("Test non-interactive auth (no cache)", t, func(t *ftt.Test) {
 		baseProvider := &fakeTokenProvider{
 			interactive: false,
 			tokenToMint: &internal.Token{
@@ -450,25 +450,25 @@ func TestActorMode(t *testing.T) {
 			},
 		}
 		auth, ctx := newAuth(SilentLogin, baseProvider, iamProvider, "as-actor")
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// No token yet, it is is lazily loaded below.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.BeNil)
 
 		// The token is minted on the first request. It is IAM-derived token.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "minted-iam")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("minted-iam"))
 
 		// The email also matches the IAM token.
 		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "minted-iam@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("minted-iam@example.com"))
 
 		// The correct base token was minted as well and used by IAM call.
-		So(iamProvider.baseTokenInMint.AccessToken, ShouldEqual, "minted-base")
+		assert.Loosely(t, iamProvider.baseTokenInMint.AccessToken, should.Equal("minted-base"))
 		iamProvider.baseTokenInMint = nil
 
 		// After 40 min the IAM-generated token expires, but base is still ok.
@@ -476,16 +476,16 @@ func TestActorMode(t *testing.T) {
 
 		// Getting a refreshed IAM token.
 		oauthTok, err = auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "refreshed-iam")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("refreshed-iam"))
 
 		// The email also matches the IAM token.
 		email, err = auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "refreshed-iam@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("refreshed-iam@example.com"))
 
 		// Using existing base token (still valid).
-		So(iamProvider.baseTokenInRefresh.AccessToken, ShouldEqual, "minted-base")
+		assert.Loosely(t, iamProvider.baseTokenInRefresh.AccessToken, should.Equal("minted-base"))
 		iamProvider.baseTokenInRefresh = nil
 	})
 }
@@ -493,19 +493,19 @@ func TestActorMode(t *testing.T) {
 func TestTransport(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test transport works", t, func(c C) {
+	ftt.Run("Test transport works", t, func(c *ftt.Test) {
 		calls := 0
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			calls++
 			switch r.URL.Path {
 			case "/1":
-				c.So(r.Header.Get("Authorization"), ShouldEqual, "Bearer minted")
+				assert.Loosely(c, r.Header.Get("Authorization"), should.Equal("Bearer minted"))
 			case "/2":
-				c.So(r.Header.Get("Authorization"), ShouldEqual, "Bearer minted")
+				assert.Loosely(c, r.Header.Get("Authorization"), should.Equal("Bearer minted"))
 			case "/3":
-				c.So(r.Header.Get("Authorization"), ShouldEqual, "Bearer refreshed")
+				assert.Loosely(c, r.Header.Get("Authorization"), should.Equal("Bearer refreshed"))
 			default:
-				c.So(r.URL.Path, ShouldBeBlank) // just fail in some helpful way
+				assert.Loosely(c, r.URL.Path, should.BeZero) // just fail in some helpful way
 			}
 			w.WriteHeader(200)
 		}))
@@ -523,52 +523,52 @@ func TestTransport(t *testing.T) {
 
 		auth, ctx := newAuth(SilentLogin, tokenProvider, nil, "")
 		client, err := auth.Client()
-		So(err, ShouldBeNil)
-		So(client, ShouldNotBeNil)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, client, should.NotBeNil)
 
 		// Initial call will mint new token.
 		resp, err := client.Get(ts.URL + "/1")
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		// Minted token is now cached.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "minted")
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, tok.AccessToken, should.Equal("minted"))
 
 		cacheKey, _ := tokenProvider.CacheKey(ctx)
 		cached, err := auth.opts.testingCache.GetToken(cacheKey)
-		So(err, ShouldBeNil)
-		So(cached.AccessToken, ShouldEqual, "minted")
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, cached.AccessToken, should.Equal("minted"))
 
 		// 40 minutes later it is still OK to use.
 		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
 		resp, err = client.Get(ts.URL + "/2")
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		// 30 min later (70 min since the start) it is expired and refreshed.
 		clock.Get(ctx).(testclock.TestClock).Add(30 * time.Minute)
 		resp, err = client.Get(ts.URL + "/3")
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		tok, err = auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "refreshed")
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, tok.AccessToken, should.Equal("refreshed"))
 
 		// All calls are actually made.
-		So(calls, ShouldEqual, 3)
+		assert.Loosely(c, calls, should.Equal(3))
 	})
 }
 
 func TestOptionalLogin(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test optional login works", t, func(c C) {
+	ftt.Run("Test optional login works", t, func(c *ftt.Test) {
 		// This test simulates following scenario for OptionalLogin mode:
 		//   1. There's existing cached access token.
 		//   2. At some point it expires.
@@ -579,11 +579,11 @@ func TestOptionalLogin(t *testing.T) {
 			calls++
 			switch r.URL.Path {
 			case "/1":
-				c.So(r.Header.Get("Authorization"), ShouldEqual, "Bearer cached")
+				assert.Loosely(c, r.Header.Get("Authorization"), should.Equal("Bearer cached"))
 			case "/2":
-				c.So(r.Header.Get("Authorization"), ShouldEqual, "")
+				assert.Loosely(c, r.Header.Get("Authorization"), should.BeEmpty)
 			default:
-				c.So(r.URL.Path, ShouldBeBlank) // just fail in some helpful way
+				assert.Loosely(c, r.URL.Path, should.BeZero) // just fail in some helpful way
 			}
 			w.WriteHeader(200)
 		}))
@@ -602,12 +602,12 @@ func TestOptionalLogin(t *testing.T) {
 		})
 
 		client, err := auth.Client()
-		So(err, ShouldBeNil)
-		So(client, ShouldNotBeNil)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, client, should.NotBeNil)
 
 		// Initial call uses existing cached token.
 		resp, err := client.Get(ts.URL + "/1")
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
@@ -615,28 +615,28 @@ func TestOptionalLogin(t *testing.T) {
 		// anonymous access.
 		clock.Get(ctx).(testclock.TestClock).Add(65 * time.Minute)
 		resp, err = client.Get(ts.URL + "/2")
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		// Bad token is removed from the cache.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, tok, should.BeNil)
 		cacheKey, _ := tokenProvider.CacheKey(ctx)
 		cached, err := auth.opts.testingCache.GetToken(cacheKey)
-		So(cached, ShouldBeNil)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, cached, should.BeNil)
+		assert.Loosely(c, err, should.BeNil)
 
 		// All calls are actually made.
-		So(calls, ShouldEqual, 2)
+		assert.Loosely(c, calls, should.Equal(2))
 	})
 }
 
 func TestGetEmail(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test non-interactive auth (no cache)", t, func() {
+	ftt.Run("Test non-interactive auth (no cache)", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 			knownEmail:  "known-email@example.com",
@@ -649,19 +649,19 @@ func TestGetEmail(t *testing.T) {
 
 		// No cached token.
 		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.BeNil)
 
 		// We get the email directly from the provider.
 		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "known-email@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("known-email@example.com"))
 
 		// MintToken was NOT called.
-		So(tokenProvider.mintTokenCalled, ShouldBeFalse)
+		assert.Loosely(t, tokenProvider.mintTokenCalled, should.BeFalse)
 	})
 
-	Convey("Non-expired cache without email is upgraded", t, func() {
+	ftt.Run("Non-expired cache without email is upgraded", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: true,
 		}
@@ -675,26 +675,26 @@ func TestGetEmail(t *testing.T) {
 		})
 
 		// No need to login, already have a token.
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// GetAccessToken returns the cached token.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "cached")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("cached"))
 
 		// But getting an email triggers a refresh, since the cached token doesn't
 		// have an email.
 		email, err := auth.GetEmail()
-		So(err, ShouldBeNil)
-		So(email, ShouldEqual, "some-email-refreshtoken@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, email, should.Equal("some-email-refreshtoken@example.com"))
 
 		// GetAccessToken picks up the refreshed token too.
 		oauthTok, err = auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "some refreshed access token")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("some refreshed access token"))
 	})
 
-	Convey("No email triggers ErrNoEmail", t, func() {
+	ftt.Run("No email triggers ErrNoEmail", t, func(t *ftt.Test) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 			tokenToMint: &internal.Token{
@@ -703,17 +703,17 @@ func TestGetEmail(t *testing.T) {
 			},
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		So(auth.CheckLoginRequired(), ShouldBeNil)
+		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
 
 		// The token is minted on first request.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldBeNil)
-		So(oauthTok.AccessToken, ShouldEqual, "minted")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("minted"))
 
 		// But getting an email fails with ErrNoEmail.
 		email, err := auth.GetEmail()
-		So(err, ShouldEqual, ErrNoEmail)
-		So(email, ShouldEqual, "")
+		assert.Loosely(t, err, should.Equal(ErrNoEmail))
+		assert.Loosely(t, email, should.BeEmpty)
 	})
 }
 
@@ -721,12 +721,12 @@ func TestNormalizeScopes(t *testing.T) {
 	t.Parallel()
 
 	checkExactSameSlice := func(a, b []string) {
-		So(a, ShouldResemble, b)
-		So(&a[0], ShouldEqual, &b[0])
+		assert.Loosely(t, a, should.Resemble(b))
+		assert.Loosely(t, &a[0], should.Equal(&b[0]))
 	}
 
-	Convey("Works", t, func() {
-		So(normalizeScopes(nil), ShouldBeNil)
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t, normalizeScopes(nil), should.BeNil)
 
 		// Doesn't copy already normalized slices.
 		slice := []string{"a"}
@@ -737,9 +737,9 @@ func TestNormalizeScopes(t *testing.T) {
 		checkExactSameSlice(slice, normalizeScopes(slice))
 
 		// Removes dups and sorts.
-		So(normalizeScopes([]string{"b", "a"}), ShouldResemble, []string{"a", "b"})
-		So(normalizeScopes([]string{"a", "a"}), ShouldResemble, []string{"a"})
-		So(normalizeScopes([]string{"a", "b", "a"}), ShouldResemble, []string{"a", "b"})
+		assert.Loosely(t, normalizeScopes([]string{"b", "a"}), should.Resemble([]string{"a", "b"}))
+		assert.Loosely(t, normalizeScopes([]string{"a", "a"}), should.Resemble([]string{"a"}))
+		assert.Loosely(t, normalizeScopes([]string{"a", "b", "a"}), should.Resemble([]string{"a", "b"}))
 	})
 }
 
