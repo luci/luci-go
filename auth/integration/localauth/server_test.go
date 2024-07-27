@@ -31,10 +31,10 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/lucictx"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type callbackGen struct {
@@ -64,7 +64,7 @@ func TestProtocol(t *testing.T) {
 	ctx := context.Background()
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
-	Convey("With server", t, func(c C) {
+	ftt.Run("With server", t, func(c *ftt.Test) {
 		// Use channels to pass mocked requests/responses back and forth.
 		requests := make(chan []string, 10000)
 		responses := make(chan any, 1)
@@ -75,7 +75,7 @@ func TestProtocol(t *testing.T) {
 			select {
 			case resp = <-responses:
 			default:
-				c.Println("Unexpected token request")
+				c.Log("Unexpected token request")
 				return nil, fmt.Errorf("Unexpected request")
 			}
 			switch resp := resp.(type) {
@@ -96,16 +96,16 @@ func TestProtocol(t *testing.T) {
 			DefaultAccountID: "acc_id",
 		}
 		p, err := s.Start(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		defer s.Stop(ctx)
 
-		So(p.Accounts[0], ShouldResembleProto, &lucictx.LocalAuthAccount{
+		assert.Loosely(c, p.Accounts[0], should.Resemble(&lucictx.LocalAuthAccount{
 			Id: "acc_id", Email: "some@example.com",
-		})
-		So(p.Accounts[1], ShouldResembleProto, &lucictx.LocalAuthAccount{
+		}))
+		assert.Loosely(c, p.Accounts[1], should.Resemble(&lucictx.LocalAuthAccount{
 			Id: "another_id", Email: "another@example.com",
-		})
-		So(p.DefaultAccountId, ShouldEqual, "acc_id")
+		}))
+		assert.Loosely(c, p.DefaultAccountId, should.Equal("acc_id"))
 
 		goodOAuthRequest := func() *http.Request {
 			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
@@ -123,13 +123,13 @@ func TestProtocol(t *testing.T) {
 			})
 		}
 
-		Convey("Access tokens happy path", func() {
+		c.Run("Access tokens happy path", func(c *ftt.Test) {
 			responses <- &oauth2.Token{
 				AccessToken: "tok1",
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
-			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 200 (json): {"access_token":"tok1","expiry":1454474106}`)
-			So(<-requests, ShouldResemble, []string{"A", "B"})
+			assert.Loosely(c, call(goodOAuthRequest()), should.Equal(`HTTP 200 (json): {"access_token":"tok1","expiry":1454474106}`))
+			assert.Loosely(c, <-requests, should.Resemble([]string{"A", "B"}))
 
 			// application/json is also the default.
 			req := goodOAuthRequest()
@@ -138,17 +138,17 @@ func TestProtocol(t *testing.T) {
 				AccessToken: "tok2",
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
-			So(call(req), ShouldEqual, `HTTP 200 (json): {"access_token":"tok2","expiry":1454474106}`)
-			So(<-requests, ShouldResemble, []string{"A", "B"})
+			assert.Loosely(c, call(req), should.Equal(`HTTP 200 (json): {"access_token":"tok2","expiry":1454474106}`))
+			assert.Loosely(c, <-requests, should.Resemble([]string{"A", "B"}))
 		})
 
-		Convey("ID tokens happy path", func() {
+		c.Run("ID tokens happy path", func(c *ftt.Test) {
 			responses <- &oauth2.Token{
 				AccessToken: "tok1",
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
-			So(call(goodIDTokRequest()), ShouldEqual, `HTTP 200 (json): {"id_token":"tok1","expiry":1454474106}`)
-			So(<-requests, ShouldResemble, []string{"audience:A"})
+			assert.Loosely(c, call(goodIDTokRequest()), should.Equal(`HTTP 200 (json): {"id_token":"tok1","expiry":1454474106}`))
+			assert.Loosely(c, <-requests, should.Resemble([]string{"audience:A"}))
 
 			// application/json is also the default.
 			req := goodIDTokRequest()
@@ -157,124 +157,124 @@ func TestProtocol(t *testing.T) {
 				AccessToken: "tok2",
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
-			So(call(req), ShouldEqual, `HTTP 200 (json): {"id_token":"tok2","expiry":1454474106}`)
-			So(<-requests, ShouldResemble, []string{"audience:A"})
+			assert.Loosely(c, call(req), should.Equal(`HTTP 200 (json): {"id_token":"tok2","expiry":1454474106}`))
+			assert.Loosely(c, <-requests, should.Resemble([]string{"audience:A"}))
 		})
 
-		Convey("Panic in token generator", func() {
+		c.Run("Panic in token generator", func(c *ftt.Test) {
 			responses <- "omg, panic"
-			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 500: Internal Server Error. See logs.`)
+			assert.Loosely(c, call(goodOAuthRequest()), should.Equal(`HTTP 500: Internal Server Error. See logs.`))
 		})
 
-		Convey("Not POST", func() {
+		c.Run("Not POST", func(c *ftt.Test) {
 			req := goodOAuthRequest()
 			req.Method = "PUT"
-			So(call(req), ShouldEqual, `HTTP 405: Expecting POST`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 405: Expecting POST`))
 		})
 
-		Convey("Bad URI", func() {
+		c.Run("Bad URI", func(c *ftt.Test) {
 			req := goodOAuthRequest()
 			req.URL.Path = "/zzz"
-			So(call(req), ShouldEqual, `HTTP 404: Expecting /rpc/LuciLocalAuthService.<method>`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 404: Expecting /rpc/LuciLocalAuthService.<method>`))
 		})
 
-		Convey("Bad content type", func() {
+		c.Run("Bad content type", func(c *ftt.Test) {
 			req := goodOAuthRequest()
 			req.Header.Set("Content-Type", "bzzzz")
-			So(call(req), ShouldEqual, `HTTP 400: Expecting 'application/json' Content-Type`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 400: Expecting 'application/json' Content-Type`))
 		})
 
-		Convey("Broken json", func() {
+		c.Run("Broken json", func(c *ftt.Test) {
 			req := goodOAuthRequest()
 
 			body := `not a json`
 			req.Body = io.NopCloser(bytes.NewBufferString(body))
 			req.ContentLength = int64(len(body))
 
-			So(call(req), ShouldEqual, `HTTP 400: Not JSON body - invalid character 'o' in literal null (expecting 'u')`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 400: Not JSON body - invalid character 'o' in literal null (expecting 'u')`))
 		})
 
-		Convey("Huge request", func() {
+		c.Run("Huge request", func(c *ftt.Test) {
 			req := goodOAuthRequest()
 
 			body := strings.Repeat("z", 64*1024+1)
 			req.Body = io.NopCloser(bytes.NewBufferString(body))
 			req.ContentLength = int64(len(body))
 
-			So(call(req), ShouldEqual, `HTTP 400: Expecting 'Content-Length' header, <64Kb`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 400: Expecting 'Content-Length' header, <64Kb`))
 		})
 
-		Convey("Unknown RPC method", func() {
+		c.Run("Unknown RPC method", func(c *ftt.Test) {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.UnknownMethod", map[string]any{})
-			So(call(req), ShouldEqual, `HTTP 404: Unknown RPC method "UnknownMethod"`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 404: Unknown RPC method "UnknownMethod"`))
 		})
 
-		Convey("No scopes", func() {
+		c.Run("No scopes", func(c *ftt.Test) {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"secret":     p.Secret,
 				"account_id": "acc_id",
 			})
-			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "scopes" is required.`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 400: Bad request: field "scopes" is required.`))
 		})
 
-		Convey("No audience", func() {
+		c.Run("No audience", func(c *ftt.Test) {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetIDToken", map[string]any{
 				"secret":     p.Secret,
 				"account_id": "acc_id",
 			})
-			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "audience" is required.`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 400: Bad request: field "audience" is required.`))
 		})
 
-		Convey("No secret", func() {
+		c.Run("No secret", func(c *ftt.Test) {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes":     []string{"B", "A"},
 				"account_id": "acc_id",
 			})
-			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "secret" is required.`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 400: Bad request: field "secret" is required.`))
 		})
 
-		Convey("Bad secret", func() {
+		c.Run("Bad secret", func(c *ftt.Test) {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes":     []string{"B", "A"},
 				"secret":     []byte{0, 1, 2, 3},
 				"account_id": "acc_id",
 			})
-			So(call(req), ShouldEqual, `HTTP 403: Invalid secret.`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 403: Invalid secret.`))
 		})
 
-		Convey("No account ID", func() {
+		c.Run("No account ID", func(c *ftt.Test) {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes": []string{"B", "A"},
 				"secret": p.Secret,
 			})
-			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "account_id" is required.`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 400: Bad request: field "account_id" is required.`))
 		})
 
-		Convey("Unknown account ID", func() {
+		c.Run("Unknown account ID", func(c *ftt.Test) {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes":     []string{"B", "A"},
 				"secret":     p.Secret,
 				"account_id": "unknown_acc_id",
 			})
-			So(call(req), ShouldEqual, `HTTP 404: Unrecognized account ID "unknown_acc_id".`)
+			assert.Loosely(c, call(req), should.Equal(`HTTP 404: Unrecognized account ID "unknown_acc_id".`))
 		})
 
-		Convey("Token generator returns fatal error", func() {
+		c.Run("Token generator returns fatal error", func(c *ftt.Test) {
 			responses <- fmt.Errorf("fatal!!111")
-			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 200 (json): {"error_code":-1,"error_message":"fatal!!111"}`)
+			assert.Loosely(c, call(goodOAuthRequest()), should.Equal(`HTTP 200 (json): {"error_code":-1,"error_message":"fatal!!111"}`))
 		})
 
-		Convey("Token generator returns ErrorWithCode", func() {
+		c.Run("Token generator returns ErrorWithCode", func(c *ftt.Test) {
 			responses <- errWithCode{
 				error: fmt.Errorf("with code"),
 				code:  123,
 			}
-			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 200 (json): {"error_code":123,"error_message":"with code"}`)
+			assert.Loosely(c, call(goodOAuthRequest()), should.Equal(`HTTP 200 (json): {"error_code":123,"error_message":"with code"}`))
 		})
 
-		Convey("Token generator returns transient error", func() {
+		c.Run("Token generator returns transient error", func(c *ftt.Test) {
 			responses <- errors.New("transient", transient.Tag)
-			So(call(goodOAuthRequest()), ShouldEqual, `HTTP 500: Transient error - transient`)
+			assert.Loosely(c, call(goodOAuthRequest()), should.Equal(`HTTP 500: Transient error - transient`))
 		})
 	})
 }

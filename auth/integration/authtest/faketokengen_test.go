@@ -23,15 +23,16 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/integration/localauth"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/lucictx"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFakeTokenGenerator(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
 		gen := FakeTokenGenerator{KeepRecord: true}
@@ -43,36 +44,36 @@ func TestFakeTokenGenerator(t *testing.T) {
 			DefaultAccountID: "authtest",
 		}
 		la, err := srv.Start(ctx)
-		So(err, ShouldBeNil)
-		Reset(func() { srv.Stop(ctx) })
+		assert.Loosely(t, err, should.BeNil)
+		t.Cleanup(func() { srv.Stop(ctx) })
 		ctx = lucictx.SetLocalAuth(ctx, la)
 
-		Convey("Access tokens", func() {
+		t.Run("Access tokens", func(t *ftt.Test) {
 			for idx, scope := range []string{"A", "B"} {
 				auth := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 					Scopes: []string{scope, "zzz"},
 				})
 
 				email, err := auth.GetEmail()
-				So(err, ShouldBeNil)
-				So(email, ShouldEqual, DefaultFakeEmail)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, email, should.Equal(DefaultFakeEmail))
 
 				tok, err := auth.GetAccessToken(time.Minute)
-				So(err, ShouldBeNil)
-				So(tok.AccessToken, ShouldEqual, fmt.Sprintf("fake_token_%d", idx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tok.AccessToken, should.Equal(fmt.Sprintf("fake_token_%d", idx)))
 
 				// Expiry is rounded to integer number of seconds, since that's the
 				// granularity of OAuth token expiration. Compare int unix timestamps to
 				// account for that.
-				So(tok.Expiry.Unix(), ShouldEqual,
-					testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix())
+				assert.Loosely(t, tok.Expiry.Unix(), should.Equal(
+					testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix()))
 			}
 
-			So(gen.TokenScopes("fake_token_0"), ShouldResemble, []string{"A", "zzz"})
-			So(gen.TokenScopes("fake_token_1"), ShouldResemble, []string{"B", "zzz"})
+			assert.Loosely(t, gen.TokenScopes("fake_token_0"), should.Resemble([]string{"A", "zzz"}))
+			assert.Loosely(t, gen.TokenScopes("fake_token_1"), should.Resemble([]string{"B", "zzz"}))
 		})
 
-		Convey("ID tokens", func() {
+		t.Run("ID tokens", func(t *ftt.Test) {
 			for idx, aud := range []string{"A", "B"} {
 				auth := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 					UseIDTokens: true,
@@ -80,22 +81,22 @@ func TestFakeTokenGenerator(t *testing.T) {
 				})
 
 				email, err := auth.GetEmail()
-				So(err, ShouldBeNil)
-				So(email, ShouldEqual, DefaultFakeEmail)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, email, should.Equal(DefaultFakeEmail))
 
 				tok, err := auth.GetAccessToken(time.Minute)
-				So(err, ShouldBeNil)
-				So(tok.AccessToken, ShouldEqual, fmt.Sprintf("fake_token_%d", idx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tok.AccessToken, should.Equal(fmt.Sprintf("fake_token_%d", idx)))
 
 				// Expiry is rounded to integer number of seconds, since that's the
 				// granularity of OAuth token expiration. Compare int unix timestamps to
 				// account for that.
-				So(tok.Expiry.Unix(), ShouldEqual,
-					testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix())
+				assert.Loosely(t, tok.Expiry.Unix(), should.Equal(
+					testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix()))
 			}
 
-			So(gen.TokenScopes("fake_token_0"), ShouldResemble, []string{"audience:A"})
-			So(gen.TokenScopes("fake_token_1"), ShouldResemble, []string{"audience:B"})
+			assert.Loosely(t, gen.TokenScopes("fake_token_0"), should.Resemble([]string{"audience:A"}))
+			assert.Loosely(t, gen.TokenScopes("fake_token_1"), should.Resemble([]string{"audience:B"}))
 		})
 	})
 }

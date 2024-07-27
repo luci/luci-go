@@ -22,10 +22,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type fakeGenerator struct {
@@ -74,79 +75,79 @@ func TestServer(t *testing.T) {
 
 	os.Setenv("GCE_METADATA_HOST", addr)
 
-	Convey("Works", t, func(c C) {
-		So(metadata.OnGCE(), ShouldBeTrue)
+	ftt.Run("Works", t, func(c *ftt.Test) {
+		assert.Loosely(c, metadata.OnGCE(), should.BeTrue)
 
-		Convey("Metadata client works", func() {
+		c.Run("Metadata client works", func(c *ftt.Test) {
 			cl := metadata.NewClient(http.DefaultClient)
 
 			num, err := cl.NumericProjectID()
-			So(err, ShouldBeNil)
-			So(num, ShouldEqual, "0")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, num, should.Equal("0"))
 
 			pid, err := cl.ProjectID()
-			So(err, ShouldBeNil)
-			So(pid, ShouldEqual, "none")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pid, should.Equal("none"))
 
 			zone, err := cl.Zone()
-			So(err, ShouldBeNil)
-			So(zone, ShouldEqual, "luci-emulated-zone")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, zone, should.Equal("luci-emulated-zone"))
 
 			name, err := cl.InstanceName()
-			So(err, ShouldBeNil)
-			So(name, ShouldEqual, "luci-emulated")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, name, should.Equal("luci-emulated"))
 
 			accounts, err := cl.Get("instance/service-accounts/")
-			So(err, ShouldBeNil)
-			So(accounts, ShouldEqual, "fake@example.com/\ndefault/\n")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, accounts, should.Equal("fake@example.com/\ndefault/\n"))
 
 			for _, acc := range []string{"fake@example.com", "default"} {
 				info, err := cl.Get("instance/service-accounts/" + acc + "/?recursive=true")
-				So(err, ShouldBeNil)
-				So(info, ShouldEqual,
-					`{"aliases":["default"],"email":"fake@example.com","scopes":["scope1","scope2"]}`+"\n")
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, info, should.Equal(
+					`{"aliases":["default"],"email":"fake@example.com","scopes":["scope1","scope2"]}`+"\n"))
 
 				email, err := cl.Get("instance/service-accounts/" + acc + "/email")
-				So(err, ShouldBeNil)
-				So(email, ShouldEqual, "fake@example.com")
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, email, should.Equal("fake@example.com"))
 
 				scopes, err := cl.Scopes(acc)
-				So(err, ShouldBeNil)
-				So(scopes, ShouldResemble, []string{"scope1", "scope2"})
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, scopes, should.Resemble([]string{"scope1", "scope2"}))
 			}
 		})
 
-		Convey("OAuth2 token source works", func() {
-			Convey("Default scopes", func() {
+		c.Run("OAuth2 token source works", func(c *ftt.Test) {
+			c.Run("Default scopes", func(c *ftt.Test) {
 				ts := google.ComputeTokenSource("default")
 				tok, err := ts.Token()
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				// Do not put tokens into logs, in case we somehow accidentally hit real
 				// metadata server with real tokens.
 				if tok.AccessToken != fakeAccessToken.AccessToken {
 					panic("Bad token")
 				}
-				So(time.Until(tok.Expiry), ShouldBeGreaterThan, 55*time.Minute)
-				So(gen.lastScopes, ShouldResemble, []string{"scope1", "scope2"})
+				assert.Loosely(c, time.Until(tok.Expiry), should.BeGreaterThan(55*time.Minute))
+				assert.Loosely(c, gen.lastScopes, should.Resemble([]string{"scope1", "scope2"}))
 			})
 
-			Convey("Custom scopes", func() {
+			c.Run("Custom scopes", func(c *ftt.Test) {
 				ts := google.ComputeTokenSource("default", "custom1", "custom1", "custom2")
 				tok, err := ts.Token()
-				So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				// Do not put tokens into logs, in case we somehow accidentally hit real
 				// metadata server with real tokens.
 				if tok.AccessToken != fakeAccessToken.AccessToken {
 					panic("Bad token")
 				}
-				So(time.Until(tok.Expiry), ShouldBeGreaterThan, 55*time.Minute)
-				So(gen.lastScopes, ShouldResemble, []string{"custom1", "custom2"})
+				assert.Loosely(c, time.Until(tok.Expiry), should.BeGreaterThan(55*time.Minute))
+				assert.Loosely(c, gen.lastScopes, should.Resemble([]string{"custom1", "custom2"}))
 			})
 		})
 
-		Convey("ID token fetch works", func() {
+		c.Run("ID token fetch works", func(c *ftt.Test) {
 			reply, err := metadata.Get("instance/service-accounts/default/identity?audience=boo&format=ignored")
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			// Do not put tokens into logs, in case we somehow accidentally hit real
 			// metadata server with real tokens.
 			if reply != fakeIDToken {
@@ -154,9 +155,9 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		Convey("Unsupported metadata call", func() {
+		c.Run("Unsupported metadata call", func(c *ftt.Test) {
 			_, err := metadata.InstanceID()
-			So(err.Error(), ShouldEqual, `metadata: GCE metadata "instance/id" not defined`)
+			assert.Loosely(c, err.Error(), should.Equal(`metadata: GCE metadata "instance/id" not defined`))
 		})
 	})
 }

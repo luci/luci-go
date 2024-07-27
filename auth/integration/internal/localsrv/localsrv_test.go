@@ -16,12 +16,12 @@ package localsrv
 
 import (
 	"context"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"net"
 	"sync"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func noopServe(context.Context, net.Listener, *sync.WaitGroup) error {
@@ -33,25 +33,25 @@ func TestServerLifecycle(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Double Start", t, func() {
+	ftt.Run("Double Start", t, func(t *ftt.Test) {
 		s := Server{}
 		defer s.Stop(ctx)
 		_, err := s.Start(ctx, "test", 0, noopServe)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		_, err = s.Start(ctx, "test", 0, noopServe)
-		So(err, ShouldErrLike, "already initialized")
+		assert.Loosely(t, err, should.ErrLike("already initialized"))
 	})
 
-	Convey("Start after Stop", t, func() {
+	ftt.Run("Start after Stop", t, func(t *ftt.Test) {
 		s := Server{}
 		_, err := s.Start(ctx, "test", 0, noopServe)
-		So(err, ShouldBeNil)
-		So(s.Stop(ctx), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s.Stop(ctx), should.BeNil)
 		_, err = s.Start(ctx, "test", 0, noopServe)
-		So(err, ShouldErrLike, "already initialized")
+		assert.Loosely(t, err, should.ErrLike("already initialized"))
 	})
 
-	Convey("Stop works", t, func() {
+	ftt.Run("Stop works", t, func(t *ftt.Test) {
 		serving := make(chan struct{})
 		s := Server{}
 		_, err := s.Start(ctx, "test", 0, func(c context.Context, l net.Listener, wg *sync.WaitGroup) error {
@@ -59,13 +59,13 @@ func TestServerLifecycle(t *testing.T) {
 			<-c.Done() // the context is canceled by Stop() call below
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		<-serving // wait until really started
 
 		// Stop it.
-		So(s.Stop(ctx), ShouldBeNil)
+		assert.Loosely(t, s.Stop(ctx), should.BeNil)
 		// Doing it second time is ok too.
-		So(s.Stop(ctx), ShouldBeNil)
+		assert.Loosely(t, s.Stop(ctx), should.BeNil)
 	})
 }

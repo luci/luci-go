@@ -27,8 +27,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestProtocol(t *testing.T) {
@@ -38,7 +39,7 @@ func TestProtocol(t *testing.T) {
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 	token := "tok1"
 
-	Convey("With server", t, func(c C) {
+	ftt.Run("With server", t, func(c *ftt.Test) {
 		s := Server{
 			Source: oauth2.StaticTokenSource(&oauth2.Token{
 				AccessToken: token,
@@ -46,7 +47,7 @@ func TestProtocol(t *testing.T) {
 			}),
 		}
 		addr, err := s.Start(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		defer s.Stop(ctx)
 
 		call := func(refreshTok string) (*http.Response, error) {
@@ -58,19 +59,19 @@ func TestProtocol(t *testing.T) {
 			return http.Post(addr+"/oauth2/v3/token", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
 		}
 
-		Convey("Happy path", func() {
+		c.Run("Happy path", func(c *ftt.Test) {
 			resp, err := call(token)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			defer resp.Body.Close()
 			tok := map[string]any{}
-			So(resp.StatusCode, ShouldEqual, 200)
-			So(resp.Header.Get("Content-Type"), ShouldEqual, "application/json")
-			So(json.NewDecoder(resp.Body).Decode(&tok), ShouldBeNil)
-			So(tok, ShouldResemble, map[string]any{
+			assert.Loosely(c, resp.StatusCode, should.Equal(200))
+			assert.Loosely(c, resp.Header.Get("Content-Type"), should.Equal("application/json"))
+			assert.Loosely(c, json.NewDecoder(resp.Body).Decode(&tok), should.BeNil)
+			assert.Loosely(c, tok, should.Resemble(map[string]any{
 				"access_token": "tok1",
 				"expires_in":   1800.0,
 				"token_type":   "Bearer",
-			})
+			}))
 		})
 	})
 }

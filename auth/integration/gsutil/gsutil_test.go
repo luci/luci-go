@@ -30,8 +30,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestProtocol(t *testing.T) {
@@ -40,9 +41,9 @@ func TestProtocol(t *testing.T) {
 	ctx := context.Background()
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
-	Convey("With server", t, func(c C) {
+	ftt.Run("With server", t, func(c *ftt.Test) {
 		stateDir, err := ioutil.TempDir("", "gsutil_auth")
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		defer os.RemoveAll(stateDir)
 
 		s := Server{
@@ -53,12 +54,12 @@ func TestProtocol(t *testing.T) {
 			StateDir: stateDir,
 		}
 		botoPath, err := s.Start(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		defer s.Stop(ctx)
 
 		// Parse generate .boto file.
 		f, err := os.Open(botoPath)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		defer f.Close()
 		boto := map[string]string{}
 		scanner := bufio.NewScanner(f)
@@ -78,26 +79,26 @@ func TestProtocol(t *testing.T) {
 			return http.Post(boto["provider_token_uri"], "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
 		}
 
-		Convey("Happy path", func() {
+		c.Run("Happy path", func(c *ftt.Test) {
 			resp, err := call(boto["gs_oauth2_refresh_token"])
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			defer resp.Body.Close()
 			tok := map[string]any{}
-			So(resp.StatusCode, ShouldEqual, 200)
-			So(resp.Header.Get("Content-Type"), ShouldEqual, "application/json")
-			So(json.NewDecoder(resp.Body).Decode(&tok), ShouldBeNil)
-			So(tok, ShouldResemble, map[string]any{
+			assert.Loosely(c, resp.StatusCode, should.Equal(200))
+			assert.Loosely(c, resp.Header.Get("Content-Type"), should.Equal("application/json"))
+			assert.Loosely(c, json.NewDecoder(resp.Body).Decode(&tok), should.BeNil)
+			assert.Loosely(c, tok, should.Resemble(map[string]any{
 				"access_token": "tok1",
 				"expires_in":   1800.0,
 				"token_type":   "Bearer",
-			})
+			}))
 		})
 
-		Convey("Bad refresh token", func() {
+		c.Run("Bad refresh token", func(c *ftt.Test) {
 			resp, err := call("bad-refresh-token")
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			defer resp.Body.Close()
-			So(resp.StatusCode, ShouldEqual, 400)
+			assert.Loosely(c, resp.StatusCode, should.Equal(400))
 		})
 	})
 }
