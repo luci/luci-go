@@ -26,8 +26,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDiskTokenCache(t *testing.T) {
@@ -42,15 +43,15 @@ func TestDiskTokenCache(t *testing.T) {
 	ctx := context.Background()
 	ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC.Local())
 
-	Convey("DiskTokenCache works", t, func() {
+	ftt.Run("DiskTokenCache works", t, func(t *ftt.Test) {
 		// testCacheSemantics is in proc_cache_test.go.
 		testCacheSemantics(ctx, &DiskTokenCache{
 			Context:    ctx,
 			SecretsDir: tmp,
-		})
+		}, t)
 	})
 
-	Convey("Retains unknown cacheFileEntry fields", t, func() {
+	ftt.Run("Retains unknown cacheFileEntry fields", t, func(t *ftt.Test) {
 		cacheFile := filepath.Join(tmp, "tokens.json")
 		testData := `
 		{
@@ -68,7 +69,7 @@ func TestDiskTokenCache(t *testing.T) {
 			"last_update": "2021-02-08T23:18:00.463912Z"
 		}
 		`
-		So(os.WriteFile(cacheFile, []byte(testData), 0600), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(cacheFile, []byte(testData), 0600), should.BeNil)
 
 		cache := &DiskTokenCache{
 			Context:    ctx,
@@ -76,23 +77,23 @@ func TestDiskTokenCache(t *testing.T) {
 		}
 
 		tok, err := cache.GetToken(&CacheKey{Key: "a"})
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, &Token{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(&Token{
 			Token: oauth2.Token{AccessToken: "abc"},
 			Email: "a@example.com",
-		})
-		So(cache.PutToken(&CacheKey{Key: "a"}, &Token{
+		}))
+		assert.Loosely(t, cache.PutToken(&CacheKey{Key: "a"}, &Token{
 			Token: oauth2.Token{
 				AccessToken: "def",
 				Expiry:      clock.Now(ctx).Add(time.Hour).UTC(),
 			},
 			Email: "a@example.com",
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		// Check "random_stuff" and "abc" were preserved by the update.
 		blob, err := os.ReadFile(cacheFile)
-		So(err, ShouldBeNil)
-		So(string(blob), ShouldEqual, `{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(blob), should.Equal(`{
   "cache": [
     {
       "key": {
@@ -114,10 +115,10 @@ func TestDiskTokenCache(t *testing.T) {
     }
   ],
   "last_update": "2016-02-03T04:05:06.000000007Z"
-}`)
+}`))
 	})
 
-	Convey("Merges creds.json and tokens.json", t, func() {
+	ftt.Run("Merges creds.json and tokens.json", t, func(t *ftt.Test) {
 		oldCacheFile := filepath.Join(tmp, "creds.json")
 		oldCacheFileData := `
 		{
@@ -173,8 +174,8 @@ func TestDiskTokenCache(t *testing.T) {
 		}
 		`
 
-		So(os.WriteFile(oldCacheFile, []byte(oldCacheFileData), 0600), ShouldBeNil)
-		So(os.WriteFile(newCacheFile, []byte(newCacheFileData), 0600), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(oldCacheFile, []byte(oldCacheFileData), 0600), should.BeNil)
+		assert.Loosely(t, os.WriteFile(newCacheFile, []byte(newCacheFileData), 0600), should.BeNil)
 
 		cache := &DiskTokenCache{
 			Context:    ctx,
@@ -182,19 +183,19 @@ func TestDiskTokenCache(t *testing.T) {
 		}
 
 		tok, err := cache.GetToken(&CacheKey{Key: "a"})
-		So(err, ShouldBeNil)
-		So(tok.Token.AccessToken, ShouldEqual, "better-abc")
-		So(cache.PutToken(&CacheKey{Key: "a"}, &Token{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.Token.AccessToken, should.Equal("better-abc"))
+		assert.Loosely(t, cache.PutToken(&CacheKey{Key: "a"}, &Token{
 			Token: oauth2.Token{
 				AccessToken: "xyz",
 				Expiry:      clock.Now(ctx).Add(time.Hour).UTC(),
 			},
 			Email: "a@example.com",
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		updatedOld, err := os.ReadFile(oldCacheFile)
-		So(err, ShouldBeNil)
-		So(string(updatedOld), ShouldEqual, `{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(updatedOld), should.Equal(`{
   "cache": [
     {
       "key": {
@@ -235,12 +236,12 @@ func TestDiskTokenCache(t *testing.T) {
     }
   ],
   "last_update": "2016-02-03T05:00:00Z"
-}`)
+}`))
 
 		// tokens.json is almost identical, except last_update is newer.
 		updatedNew, err := os.ReadFile(newCacheFile)
-		So(err, ShouldBeNil)
-		So(string(updatedNew), ShouldEqual, `{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(updatedNew), should.Equal(`{
   "cache": [
     {
       "key": {
@@ -281,14 +282,15 @@ func TestDiskTokenCache(t *testing.T) {
     }
   ],
   "last_update": "2016-02-03T04:05:06.000000007Z"
-}`)
+}`))
 	})
 
 	// TODO(vadimsh): This test is flaky on Windows, there's non zero probability
 	// that all 15 attempts (see testCacheInParallel) will hit "Access is denied"
 	// error. This can be "fixed" by increasing number of attempts or sleeping
 	// more between attempts. Both increase test runtime.
-	SkipConvey("DiskTokenCache works (parallel)", t, func() {
+	ftt.Run("DiskTokenCache works (parallel)", t, func(t *ftt.Test) {
+		t.Skip("flaky on Windows")
 		// testCacheInParallel is in proc_cache_test.go.
 		//
 		// Use real clock here to test real-world interaction when retrying disk
@@ -297,10 +299,10 @@ func TestDiskTokenCache(t *testing.T) {
 		testCacheInParallel(ctx, &DiskTokenCache{
 			Context:    ctx,
 			SecretsDir: tmp,
-		})
+		}, t)
 	})
 
-	Convey("Cleans up old tokens", t, func() {
+	ftt.Run("Cleans up old tokens", t, func(t *ftt.Test) {
 		cache := &DiskTokenCache{
 			Context:    ctx,
 			SecretsDir: tmp,
@@ -331,20 +333,20 @@ func TestDiskTokenCache(t *testing.T) {
 		cache.PutToken(&CacheKey{Key: "unused"}, unused)
 
 		tok, err := cache.GetToken(&CacheKey{Key: "a"})
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.BeNil)
 
 		// "b" is still there.
 		tok, err = cache.GetToken(&CacheKey{Key: "b"})
-		So(err, ShouldBeNil)
-		So(tok.RefreshToken, ShouldEqual, "def")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.RefreshToken, should.Equal("def"))
 
 		// Some time later "b" is also removed.
 		tc.Add(GCRefreshTokenMaxAge)
 		cache.PutToken(&CacheKey{Key: "unused"}, unused)
 
 		tok, err = cache.GetToken(&CacheKey{Key: "b"})
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.BeNil)
 	})
 }

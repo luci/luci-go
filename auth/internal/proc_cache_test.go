@@ -23,30 +23,32 @@ import (
 
 	"golang.org/x/oauth2"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMemoryTokenCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("MemoryTokenCache works", t, func() {
-		testCacheSemantics(context.Background(), &MemoryTokenCache{})
+	ftt.Run("MemoryTokenCache works", t, func(t *ftt.Test) {
+		testCacheSemantics(context.Background(), &MemoryTokenCache{}, t)
 	})
 
-	Convey("MemoryTokenCache works (parallel)", t, func() {
-		testCacheInParallel(context.Background(), &MemoryTokenCache{})
+	ftt.Run("MemoryTokenCache works (parallel)", t, func(t *ftt.Test) {
+		testCacheInParallel(context.Background(), &MemoryTokenCache{}, t)
 	})
 }
 
-func testCacheSemantics(ctx context.Context, cache TokenCache) {
+func testCacheSemantics(ctx context.Context, cache TokenCache, t testing.TB) {
 	// Missing is fine.
 	tok, err := cache.GetToken(&CacheKey{Key: "missing"})
-	So(err, ShouldBeNil)
-	So(tok, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.BeNil)
 
 	// Deleting missing is fine.
-	So(cache.DeleteToken(&CacheKey{Key: "missing"}), ShouldBeNil)
+	assert.Loosely(t, cache.DeleteToken(&CacheKey{Key: "missing"}), should.BeNil)
 
 	// Put -> Get.
 	tok1 := &Token{
@@ -56,14 +58,14 @@ func testCacheSemantics(ctx context.Context, cache TokenCache) {
 		},
 		Email: "some@example.com",
 	}
-	So(cache.PutToken(&CacheKey{Key: "k"}, tok1), ShouldBeNil)
+	assert.Loosely(t, cache.PutToken(&CacheKey{Key: "k"}, tok1), should.BeNil)
 	tok, err = cache.GetToken(&CacheKey{Key: "k"})
-	So(err, ShouldBeNil)
-	So(tok, ShouldResemble, tok1)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.Resemble(tok1))
 
 	// Put a bunch more.
 	for i := 0; i < 5; i++ {
-		So(cache.PutToken(&CacheKey{Key: fmt.Sprintf("k%d", i)}, tok1), ShouldBeNil)
+		assert.Loosely(t, cache.PutToken(&CacheKey{Key: fmt.Sprintf("k%d", i)}, tok1), should.BeNil)
 	}
 
 	// Overwrite -> Get.
@@ -74,28 +76,28 @@ func testCacheSemantics(ctx context.Context, cache TokenCache) {
 		},
 		Email: "another@example.com",
 	}
-	So(cache.PutToken(&CacheKey{Key: "k"}, tok2), ShouldBeNil)
+	assert.Loosely(t, cache.PutToken(&CacheKey{Key: "k"}, tok2), should.BeNil)
 	tok, err = cache.GetToken(&CacheKey{Key: "k"})
-	So(err, ShouldBeNil)
-	So(tok, ShouldResemble, tok2)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.Resemble(tok2))
 
 	// Delete -> Get.
-	So(cache.DeleteToken(&CacheKey{Key: "k"}), ShouldBeNil)
+	assert.Loosely(t, cache.DeleteToken(&CacheKey{Key: "k"}), should.BeNil)
 	tok, err = cache.GetToken(&CacheKey{Key: "k"})
-	So(err, ShouldBeNil)
-	So(tok, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.BeNil)
 
 	// The rest is still there. Remove it.
 	for i := 0; i < 5; i++ {
 		k := &CacheKey{Key: fmt.Sprintf("k%d", i)}
 		tok, err = cache.GetToken(k)
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, tok1)
-		So(cache.DeleteToken(k), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(tok1))
+		assert.Loosely(t, cache.DeleteToken(k), should.BeNil)
 	}
 }
 
-func testCacheInParallel(ctx context.Context, cache TokenCache) {
+func testCacheInParallel(ctx context.Context, cache TokenCache, t testing.TB) {
 	tok := &Token{
 		Token: oauth2.Token{
 			AccessToken: "zzz",
@@ -130,7 +132,7 @@ func testCacheInParallel(ctx context.Context, cache TokenCache) {
 	// The channel with errors should be empty.
 	select {
 	case err := <-errs:
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	default:
 	}
 }

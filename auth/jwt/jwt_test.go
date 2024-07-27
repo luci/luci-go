@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestVerifyJWT(t *testing.T) {
@@ -41,13 +41,13 @@ func TestVerifyJWT(t *testing.T) {
 
 	prepareJWT := func(alg, kid string, body fakeBody) string {
 		bodyBlob, err := json.Marshal(&body)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		b64hdr := base64.RawURLEncoding.EncodeToString([]byte(
 			fmt.Sprintf(`{"alg": "%s","kid": "%s"}`, alg, kid),
 		))
 		b64bdy := base64.RawURLEncoding.EncodeToString(bodyBlob)
 		_, sig, err := signer.SignBytes(ctx, []byte(b64hdr+"."+b64bdy))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		return b64hdr + "." + b64bdy + "." + base64.RawURLEncoding.EncodeToString(sig)
 	}
 
@@ -56,67 +56,67 @@ func TestVerifyJWT(t *testing.T) {
 		return
 	}
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		body := fakeBody{"body"}
 		verifiedBody, err := verifyJWT(prepareJWT("RS256", goodKeyID, body))
-		So(err, ShouldBeNil)
-		So(verifiedBody, ShouldResemble, body)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, verifiedBody, should.Resemble(body))
 	})
 
-	Convey("Malformed JWT", t, func() {
+	ftt.Run("Malformed JWT", t, func(t *ftt.Test) {
 		_, err := verifyJWT("wat")
-		So(err, ShouldErrLike, "expected 3 components")
-		So(NotJWT.In(err), ShouldBeTrue)
+		assert.Loosely(t, err, should.ErrLike("expected 3 components"))
+		assert.Loosely(t, NotJWT.In(err), should.BeTrue)
 	})
 
-	Convey("Bad header format (not b64)", t, func() {
+	ftt.Run("Bad header format (not b64)", t, func(t *ftt.Test) {
 		_, err := verifyJWT("???.aaaa.aaaa")
-		So(err, ShouldErrLike, "bad JWT header: not base64")
-		So(NotJWT.In(err), ShouldBeTrue)
+		assert.Loosely(t, err, should.ErrLike("bad JWT header: not base64"))
+		assert.Loosely(t, NotJWT.In(err), should.BeTrue)
 	})
 
-	Convey("Bad header format (not json)", t, func() {
+	ftt.Run("Bad header format (not json)", t, func(t *ftt.Test) {
 		_, err := verifyJWT("aaaa.aaaa.aaaa")
-		So(err, ShouldErrLike, "bad JWT header: can't deserialize JSON")
-		So(NotJWT.In(err), ShouldBeTrue)
+		assert.Loosely(t, err, should.ErrLike("bad JWT header: can't deserialize JSON"))
+		assert.Loosely(t, NotJWT.In(err), should.BeTrue)
 	})
 
-	Convey("Bad algo", t, func() {
+	ftt.Run("Bad algo", t, func(t *ftt.Test) {
 		_, err := verifyJWT(prepareJWT("bad-algo", goodKeyID, fakeBody{"body"}))
-		So(err, ShouldErrLike, "only RS256 alg is supported")
-		So(NotJWT.In(err), ShouldBeFalse)
+		assert.Loosely(t, err, should.ErrLike("only RS256 alg is supported"))
+		assert.Loosely(t, NotJWT.In(err), should.BeFalse)
 	})
 
-	Convey("Missing key ID", t, func() {
+	ftt.Run("Missing key ID", t, func(t *ftt.Test) {
 		_, err := verifyJWT(prepareJWT("RS256", "", fakeBody{"body"}))
-		So(err, ShouldErrLike, "missing the signing key ID in the header")
-		So(NotJWT.In(err), ShouldBeFalse)
+		assert.Loosely(t, err, should.ErrLike("missing the signing key ID in the header"))
+		assert.Loosely(t, NotJWT.In(err), should.BeFalse)
 	})
 
-	Convey("Unknown key", t, func() {
+	ftt.Run("Unknown key", t, func(t *ftt.Test) {
 		_, err := verifyJWT(prepareJWT("RS256", "unknown-key", fakeBody{"body"}))
-		So(err, ShouldErrLike, "no such certificate")
-		So(NotJWT.In(err), ShouldBeFalse)
+		assert.Loosely(t, err, should.ErrLike("no such certificate"))
+		assert.Loosely(t, NotJWT.In(err), should.BeFalse)
 	})
 
-	Convey("Bad signature encoding", t, func() {
+	ftt.Run("Bad signature encoding", t, func(t *ftt.Test) {
 		jwt := prepareJWT("RS256", goodKeyID, fakeBody{"body"})
 		_, err := verifyJWT(jwt + "???")
-		So(err, ShouldErrLike, "can't base64 decode the signature")
-		So(NotJWT.In(err), ShouldBeFalse)
+		assert.Loosely(t, err, should.ErrLike("can't base64 decode the signature"))
+		assert.Loosely(t, NotJWT.In(err), should.BeFalse)
 	})
 
-	Convey("Bad signature", t, func() {
+	ftt.Run("Bad signature", t, func(t *ftt.Test) {
 		jwt := prepareJWT("RS256", goodKeyID, fakeBody{"body"})
 		_, err := verifyJWT(jwt[:len(jwt)-2])
-		So(err, ShouldErrLike, "signature check error")
-		So(NotJWT.In(err), ShouldBeFalse)
+		assert.Loosely(t, err, should.ErrLike("signature check error"))
+		assert.Loosely(t, NotJWT.In(err), should.BeFalse)
 	})
 
-	Convey("Bad body JSON", t, func() {
+	ftt.Run("Bad body JSON", t, func(t *ftt.Test) {
 		jwt := prepareJWT("RS256", goodKeyID, fakeBody{"body"})
 		var notAStruct int64
 		err := VerifyAndDecode(jwt, &notAStruct, certs)
-		So(err, ShouldErrLike, "bad body: can't deserialize JSON")
+		assert.Loosely(t, err, should.ErrLike("bad body: can't deserialize JSON"))
 	})
 }
