@@ -52,6 +52,7 @@ const ansiConverter = new ANSIConverter({
   bg: '#FFF',
   fg: '#000',
   newline: true,
+  escapeXML: true,
 });
 
 /**

@@ -144,4 +144,50 @@ describe('toSinkResult', () => {
     const summaryBlob = new Blob([result.summaryHtml]);
     expect(summaryBlob.size).toBeLessThanOrEqual(4096);
   });
+
+  it('should escape HTML', async () => {
+    const testCaseResult = (await import(
+      './test_data/html_in_msg.json'
+    )) as TestCaseResult;
+    expect(testCaseResult.failureMessages[0]).toContain('<body>');
+
+    const result = await toSinkResult(
+      {
+        context: {
+          config: {
+            rootDir: '/path/to/repo/path/to/directory',
+            testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/*.test.[jt]s?(x)'],
+          } as TestContext['config'],
+        } as TestContext,
+        path: '/path/to/repo/path/to/directory/path/to/test/file.test.ts',
+      },
+      testCaseResult,
+      {
+        repo: 'example.googlesource.com/repo',
+        directory: 'path/to/directory',
+        delimiter: ' > ',
+        stackTraceOpts: {
+          noStackTrace: false,
+        },
+      },
+    );
+    expect(result).toEqual(
+      TestResult.fromPartial({
+        testId:
+          'example.googlesource.com/repo > path/to/directory/path/to/test/file.test.ts > TestIdLabel > should load test source',
+        expected: false,
+        status: TestStatus.FAIL,
+        summaryHtml: result.summaryHtml,
+        duration: {
+          seconds: '1',
+          nanos: 129000000,
+        },
+        testMetadata: {
+          name: 'TestIdLabel > should load test source',
+        },
+        artifacts: result.artifacts,
+      }),
+    );
+    expect(result.summaryHtml).not.toContain('<body>');
+  });
 });

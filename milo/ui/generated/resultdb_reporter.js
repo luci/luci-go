@@ -4544,6 +4544,11 @@ var prpcClient = {};
 // TODO(crbug/1504937): drop the '@chopsui/prpc-client' and declare our own
 // error and RPC code types once all other usage of prpc-client is migrated to
 // the binary client.
+const NON_OVERRIDABLE_HEADERS = Object.freeze([
+    'accept',
+    'content-type',
+    'authorization',
+]);
 /**
  * Class for interacting with a pRPC API with a binary protocol.
  * Protocol: https://godoc.org/go.chromium.org/luci/grpc/prpc
@@ -4552,12 +4557,20 @@ class PrpcClient {
     host;
     getAuthToken;
     tokenType;
+    additionalHeaders;
     insecure;
     fetchImpl;
     constructor(options) {
+        const headers = new Headers(options?.additionalHeaders);
+        for (const key of headers.keys()) {
+            if (NON_OVERRIDABLE_HEADERS.includes(key)) {
+                throw new Error(`\`${key}\` cannot be specified as additionalHeaders`);
+            }
+        }
         this.host = options?.host || self.location.host;
         this.getAuthToken = options?.getAuthToken || (() => '');
         this.tokenType = options?.tokenType || 'Bearer';
+        this.additionalHeaders = Object.fromEntries(headers.entries());
         this.insecure = options?.insecure || false;
         this.fetchImpl = options?.fetchImpl || self.fetch.bind(self);
     }
@@ -4579,6 +4592,7 @@ class PrpcClient {
             method: 'POST',
             credentials: 'omit',
             headers: {
+                ...this.additionalHeaders,
                 accept: 'application/json',
                 'content-type': 'application/json',
                 ...(token && { authorization: `${this.tokenType} ${token}` }),
@@ -77826,6 +77840,7 @@ const ansiConverter = new ANSIConverter({
     bg: '#FFF',
     fg: '#000',
     newline: true,
+    escapeXML: true,
 });
 /**
  * The maximum message length.
