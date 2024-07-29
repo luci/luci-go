@@ -620,6 +620,17 @@ class GroupForm {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// BuildFormError is thrown by EditGroupForm on unsuccessful loading
+// of group data. Its structure is similar to api.CallError for
+// consistency of handling and displaying error messages in the UI.
+class BuildFormError extends Error {
+  constructor(error) {
+    super('Error building form');
+    this.error = error;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Form to view/edit existing groups.
 class EditGroupForm extends GroupForm {
 
@@ -672,11 +683,23 @@ class EditGroupForm extends GroupForm {
 
     const members = (groupClone.members ? common.stripPrefixFromItems('user', groupClone.members) : []);
     const globs = (groupClone.globs ? common.stripPrefixFromItems('user', groupClone.globs) : []);
-    const membersAndGlobs = [].concat(members, globs);
 
-    // TODO(cjacomet): Assert that membersAndGlobs can be split.
+    // Assert members and globs can be split apart later.
+    members.forEach((m) => {
+      if (isGlob(m)) {
+        console.error('Invalid member (glob-like):', m);
+        throw new BuildFormError('Invalid members list');
+      }
+    });
+    globs.forEach((g) => {
+      if (!isGlob(g)) {
+        console.error('Invalid glob:', g);
+        throw new BuildFormError('Invalid globs list');
+      }
+    });
 
     // Convert lists into a single text blob.
+    const membersAndGlobs = [].concat(members, globs);
     groupClone.membersAndGlobs = membersAndGlobs.join('\n') + '\n';
     groupClone.nested = (groupClone.nested || []).join('\n') + '\n';
 
