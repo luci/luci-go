@@ -242,6 +242,10 @@ func TestValidate(t *testing.T) {
 			instructions.Instructions[0].Id = ""
 			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: id: unspecified")
 		})
+		Convey("ID does not match", func() {
+			instructions.Instructions[0].Id = "InstructionWithUpperCase"
+			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: id: does not match")
+		})
 		Convey("Duplicate ID", func() {
 			instructions.Instructions[0].Id = "step_instruction2"
 			So(ValidateInstructions(instructions), ShouldErrLike, `instructions[1]: id: "step_instruction2" is re-used at index 0`)

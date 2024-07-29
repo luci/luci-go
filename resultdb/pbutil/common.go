@@ -279,6 +279,9 @@ func ValidateInstructions(instructions *pb.Instructions) error {
 		if instruction.Id == "" {
 			return errors.Reason("instructions[%v]: id: unspecified", i).Err()
 		}
+		if !instructionIDRe.MatchString(instruction.Id) {
+			return errors.Reason("instructions[%v]: id: does not match %q", i, instructionIDPattern).Err()
+		}
 		if index, ok := idMap[instruction.Id]; ok {
 			return errors.Reason("instructions[%v]: id: %q is re-used at index %d", i, instruction.Id, index).Err()
 		}

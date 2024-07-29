@@ -20,6 +20,7 @@ import (
 
 var (
 	instructionIDPattern   = `[a-z][a-z0-9_\-:.]{0,99}`
+	instructionIDRe        = regexpf("^%s$", instructionIDPattern)
 	instructionNamePattern = fmt.Sprintf("invocations/(%s)/instructions/(%s)", invocationIDPattern, instructionIDPattern)
 	instructionNameRe      = regexpf("^%s$", instructionNamePattern)
 )
