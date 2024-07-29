@@ -31,7 +31,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -46,7 +46,9 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/common/buildcel"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const CurrentBucketSchemaVersion = 14
@@ -98,6 +100,8 @@ type changeLog struct {
 
 // UpdateProjectCfg fetches all projects' Buildbucket configs from luci-config
 // and update into Datastore.
+// TODO(b/356205234): Currently the function is very convoluted and would
+// benefit from a refactoring that splits it into multiple functions.
 func UpdateProjectCfg(ctx context.Context) error {
 	client := cfgclient.Client(ctx)
 	// Cannot fetch all projects configs at once because luci-config still uses
@@ -153,6 +157,11 @@ func UpdateProjectCfg(ctx context.Context) error {
 		projsToDelete[projKey.StringID()] = projKey
 	}
 	var projsToPut []*model.Project
+
+	bldrMetrics, err := mapBuilderMetricsToBuilders(ctx)
+	if err != nil {
+		return err
+	}
 
 	for i, meta := range cfgMetas {
 		project := meta.ConfigSet.Project()
@@ -241,11 +250,18 @@ func UpdateProjectCfg(ctx context.Context) error {
 					cfgBuilder.Dimensions = append(cfgBuilder.Dimensions, fmt.Sprintf("pool:luci.%s.%s", project, cfgBktName))
 				}
 
-				cfgBldrName := fmt.Sprintf("%s.%s.%s", project, cfgBktName, cfgBuilder.Name)
+				cfgBldrName := fmt.Sprintf("%s/%s/%s", project, cfgBktName, cfgBuilder.Name)
 				cfgBuilderHash, bldrSize, err := computeBuilderHash(cfgBuilder)
 				if err != nil {
 					return errors.Annotate(err, "while computing hash for builder:%s", cfgBldrName).Err()
 				}
+
+				for _, cm := range cfgBuilder.CustomMetricDefinitions {
+					if _, ok := bldrMetrics[cm.Name]; ok {
+						bldrMetrics[cm.Name].Add(cfgBldrName)
+					}
+				}
+
 				if bldr, ok := bldrMap[cfgBldrName]; ok {
 					delete(bldrMap, cfgBldrName)
 					if bldr.ConfigHash == cfgBuilderHash {
@@ -394,6 +410,17 @@ func UpdateProjectCfg(ctx context.Context) error {
 	if err := datastore.Put(ctx, projsToPut); err != nil {
 		return err
 	}
+
+	bldrMetricEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
+	if err != nil {
+		return err
+	}
+	if bldrMetricEnt != nil {
+		if err := datastore.Put(ctx, bldrMetricEnt); err != nil {
+			return err
+		}
+	}
+
 	return datastore.Delete(ctx, toDelete)
 }
 
@@ -1125,4 +1152,70 @@ func isLiteBackend(target string, globalCfg *pb.SettingsCfg) bool {
 		}
 	}
 	return false
+}
+
+func isBuilderMetric(base pb.CustomMetricBase) bool {
+	return base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT ||
+		base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT ||
+		base == pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED
+}
+
+// mapBuilderMetricsToBuilders calculates a map where the key is a custom builder
+// metric names, and the value are a list of builder names (in the format of
+// "<project>.<bucket>.<builder>") that report to the metric.
+func mapBuilderMetricsToBuilders(ctx context.Context) (map[string]stringset.Set, error) {
+	globalCfg, err := GetSettingsCfg(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "error fetching service config").Err()
+	}
+	res := make(map[string]stringset.Set)
+	for _, gm := range globalCfg.GetCustomMetrics() {
+		if isBuilderMetric(gm.GetMetricBase()) {
+			res[gm.Name] = stringset.New(0)
+		}
+	}
+	return res, nil
+}
+
+// prepareBuilderMetricsToPut compares the new custom_builder_metric -> builders
+// mapping with the one saved in datastore, and return a new entity if the
+// mapping needs to update.
+func prepareBuilderMetricsToPut(ctx context.Context, bldrMetrics map[string]stringset.Set) (*model.CustomBuilderMetrics, error) {
+	ent := &model.CustomBuilderMetrics{Key: model.CustomBuilderMetricsKey(ctx)}
+	err := datastore.Get(ctx, ent)
+	if err != nil && err != datastore.ErrNoSuchEntity {
+		return nil, errors.Annotate(err, "fetching CustomBuilderMetrics").Err()
+	}
+
+	metricNames := make([]string, 0, len(bldrMetrics))
+	for m := range bldrMetrics {
+		metricNames = append(metricNames, m)
+	}
+	sort.Strings(metricNames)
+	newMetrics := &modeldefs.CustomBuilderMetrics{}
+	for _, m := range metricNames {
+		bldrs := bldrMetrics[m].ToSortedSlice()
+		if len(bldrs) == 0 {
+			continue
+		}
+		bldrIDs := make([]*pb.BuilderID, len(bldrs))
+		for i, bldr := range bldrs {
+			bldrIDs[i], err = protoutil.ParseBuilderID(bldr)
+			if err != nil {
+				return nil, err
+			}
+		}
+		newMetrics.Metrics = append(newMetrics.Metrics, &modeldefs.CustomBuilderMetric{
+			Name:     m,
+			Builders: bldrIDs,
+		})
+	}
+
+	if proto.Equal(ent.Metrics, newMetrics) {
+		// Nothing to update
+		return nil, nil
+	}
+	ent.Metrics = newMetrics
+	ent.LastUpdate = clock.Now(ctx).UTC()
+	return ent, nil
 }

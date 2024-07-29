@@ -20,12 +20,14 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/cfgclient"
@@ -36,6 +38,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -1486,6 +1489,8 @@ func TestUpdateProject(t *testing.T) {
 			dartBuildbucketCfg, dartRevision = origDartCfg, origDartRev
 			v8BuildbucketCfg, v8Revision = origV8Cfg, origV8Rev
 		}
+		settingsCfg := &pb.SettingsCfg{}
+		So(SetTestSettingsCfg(ctx, settingsCfg), ShouldBeNil)
 
 		// Datastore is empty. Mimic the first time receiving configs and store all
 		// of them into Datastore.
@@ -1603,34 +1608,34 @@ func TestUpdateProject(t *testing.T) {
 			// Delete master.tryserver.chromium.win
 			// Add shadow bucket try.shadow which shadows try
 			chromiumBuildbucketCfg = `
-        buckets {
-          name: "master.tryserver.chromium.linux"
-        }
-        buckets {
-          name: "master.tryserver.chromium.mac"
-        }
-        buckets {
-          name: "try"
-          swarming {
-            task_template_canary_percentage { value: 10 }
-            builders {
-              name: "linux"
-              swarming_host: "swarming.updated.example.com"
-              task_template_canary_percentage { value: 10 }
-              dimensions: "os:Linux"
-							exe {
-								cipd_version: "refs/heads/main"
-								cipd_package: "infra/recipe_bundle"
-								cmd: ["luciexe"]
-							}
-            }
-          }
-					shadow: "try.shadow"
-        }
-				buckets {
-					name: "try.shadow"
-					dynamic_builder_template {}
+			buckets {
+				name: "master.tryserver.chromium.linux"
+			}
+			buckets {
+				name: "master.tryserver.chromium.mac"
+			}
+			buckets {
+				name: "try"
+				swarming {
+					task_template_canary_percentage { value: 10 }
+					builders {
+						name: "linux"
+						swarming_host: "swarming.updated.example.com"
+						task_template_canary_percentage { value: 10 }
+						dimensions: "os:Linux"
+						exe {
+							cipd_version: "refs/heads/main"
+							cipd_package: "infra/recipe_bundle"
+							cmd: ["luciexe"]
+						}
+					}
 				}
+				shadow: "try.shadow"
+			}
+			buckets {
+				name: "try.shadow"
+				dynamic_builder_template {}
+			}
 			`
 			chromiumRevision = "new!"
 			// Delete the entire v8 cfg
@@ -1745,33 +1750,157 @@ func TestUpdateProject(t *testing.T) {
 			})
 		})
 
+		Convey("test custom builder metrics", func() {
+			defer restoreCfgVars()
+
+			settingsCfg := &pb.SettingsCfg{
+				CustomMetrics: []*pb.CustomMetric{
+					{
+						Name:        "chrome/infra/custom/builds/count",
+						ExtraFields: []string{"os"},
+						Class: &pb.CustomMetric_MetricBase{
+							MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+						},
+					},
+				},
+			}
+			_ = SetTestSettingsCfg(ctx, settingsCfg)
+
+			// Update luci.chromium.try
+			// Delete master.tryserver.chromium.linux
+			// Delete master.tryserver.chromium.win
+			chromiumBuildbucketCfg = `
+			buckets {
+				name: "try"
+				swarming {
+					task_template_canary_percentage { value: 10 }
+					builders {
+						name: "linux"
+						swarming_host: "swarming.updated.example.com"
+						task_template_canary_percentage { value: 10 }
+						dimensions: "os:Linux"
+						exe {
+							cipd_version: "refs/heads/main"
+							cipd_package: "infra/recipe_bundle"
+							cmd: ["luciexe"]
+						}
+						custom_metric_definitions {
+							name: "chrome/infra/custom/builds/count"
+							predicates: "build.tags.get_value(\"os\")!=\"\""
+							extra_fields {
+								key: "os",
+								value: "build.tags.get_value(\"os\")",
+							}
+						}
+					}
+				}
+			}
+			`
+			chromiumRevision = "new!"
+			// Delete the entire v8 and dart cfg
+			v8BuildbucketCfg = ""
+			dartBuildbucketCfg = ""
+
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			var actualBkts []*model.Bucket
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
+			So(len(actualBkts), ShouldEqual, 1)
+			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+				{
+					Name: "try",
+					Swarming: &pb.Swarming{
+						Builders:                     []*pb.BuilderConfig{},
+						TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
+					},
+				},
+			})
+			So(actualBkts, ShouldResemble, []*model.Bucket{
+				{
+					ID:       "try",
+					Parent:   model.ProjectKey(ctx, "chromium"),
+					Bucket:   "try",
+					Schema:   CurrentBucketSchemaVersion,
+					Revision: "new!",
+				},
+			})
+
+			var actualBuilders []*model.Builder
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
+			So(len(actualBuilders), ShouldEqual, 1)
+			expectedBuilder1 := &pb.BuilderConfig{
+				Name:                         "linux",
+				Dimensions:                   []string{"os:Linux", "pool:luci.chromium.try"},
+				SwarmingHost:                 "swarming.updated.example.com",
+				TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
+				Exe: &pb.Executable{
+					CipdPackage: "infra/recipe_bundle",
+					CipdVersion: "refs/heads/main",
+					Cmd:         []string{"luciexe"},
+				},
+				CustomMetricDefinitions: []*pb.CustomMetricDefinition{
+					{
+						Name:        "chrome/infra/custom/builds/count",
+						Predicates:  []string{`build.tags.get_value("os")!=""`},
+						ExtraFields: map[string]string{"os": `build.tags.get_value("os")`},
+					},
+				},
+			}
+			expectedBldrHash1, _, _ := computeBuilderHash(expectedBuilder1)
+			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1})
+			So(actualBuilders, ShouldResemble, []*model.Builder{
+				{
+					ID:         "linux",
+					Parent:     model.BucketKey(ctx, "chromium", "try"),
+					ConfigHash: expectedBldrHash1,
+				},
+			})
+
+			bldrMetrics := &model.CustomBuilderMetrics{Key: model.CustomBuilderMetricsKey(ctx)}
+			So(datastore.Get(ctx, bldrMetrics), ShouldBeNil)
+			expectedBldrMetricsP := &modeldefs.CustomBuilderMetrics{
+				Metrics: []*modeldefs.CustomBuilderMetric{
+					{
+						Name: "chrome/infra/custom/builds/count",
+						Builders: []*pb.BuilderID{
+							{
+								Project: "chromium",
+								Bucket:  "try",
+								Builder: "linux",
+							},
+						},
+					},
+				},
+			}
+			So(bldrMetrics.Metrics, ShouldResembleProto, expectedBldrMetricsP)
+		})
+
 		Convey("test shadow", func() {
 			defer restoreCfgVars()
 
 			// Add shadow bucket try.shadow which shadows try
 			chromiumBuildbucketCfg = `
-			 buckets {
-			   name: "try"
-			   swarming {
-			     task_template_canary_percentage { value: 10 }
-			     builders {
-			       name: "linux"
-			       swarming_host: "swarming.updated.example.com"
-			       task_template_canary_percentage { value: 10 }
-			       dimensions: "os:Linux"
-							exe {
-								cipd_version: "refs/heads/main"
-								cipd_package: "infra/recipe_bundle"
-								cmd: ["luciexe"]
-							}
-			     }
-			   }
-					shadow: "try.shadow"
-			 }
-				buckets {
-					name: "try.shadow"
-					dynamic_builder_template {}
+			buckets {
+				name: "try"
+				swarming {
+					task_template_canary_percentage { value: 10 }
+					builders {
+						name: "linux"
+						swarming_host: "swarming.updated.example.com"
+						task_template_canary_percentage { value: 10 }
+						dimensions: "os:Linux"
+						exe {
+							cipd_version: "refs/heads/main"
+							cipd_package: "infra/recipe_bundle"
+							cmd: ["luciexe"]
+						}
+					}
 				}
+				shadow: "try.shadow"
+			}
+			buckets {
+				name: "try.shadow"
+				dynamic_builder_template {}
+			}
 			`
 			chromiumRevision = "new!"
 			// Delete the entire v8 cfg
@@ -1781,32 +1910,32 @@ func TestUpdateProject(t *testing.T) {
 
 			// Add a new bucket also shadowed by try.shadow
 			chromiumBuildbucketCfg = `
-        buckets {
-          name: "try"
-          swarming {
-            task_template_canary_percentage { value: 10 }
-            builders {
-              name: "linux"
-              swarming_host: "swarming.updated.example.com"
-              task_template_canary_percentage { value: 10 }
-              dimensions: "os:Linux"
-							exe {
-								cipd_version: "refs/heads/main"
-								cipd_package: "infra/recipe_bundle"
-								cmd: ["luciexe"]
-							}
-            }
-          }
-					shadow: "try.shadow"
-        }
-				buckets {
-					name: "try.shadow"
-					dynamic_builder_template {}
+			buckets {
+				name: "try"
+				swarming {
+					task_template_canary_percentage { value: 10 }
+					builders {
+						name: "linux"
+						swarming_host: "swarming.updated.example.com"
+						task_template_canary_percentage { value: 10 }
+						dimensions: "os:Linux"
+						exe {
+							cipd_version: "refs/heads/main"
+							cipd_package: "infra/recipe_bundle"
+							cmd: ["luciexe"]
+						}
+					}
 				}
-				buckets {
-          name: "another"
-					shadow: "try.shadow"
-        }
+				shadow: "try.shadow"
+			}
+			buckets {
+				name: "try.shadow"
+				dynamic_builder_template {}
+			}
+			buckets {
+				name: "another"
+				shadow: "try.shadow"
+			}
 			`
 			// Delete the entire v8 cfg
 			v8BuildbucketCfg = ""
@@ -2259,6 +2388,238 @@ func TestUpdateProject(t *testing.T) {
 				dartBuilders := []*model.Builder{}
 				So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.BucketKey(ctx, "dart", "try")), &dartBuilders), ShouldBeNil)
 				So(dartBuilders, ShouldBeEmpty)
+			})
+		})
+	})
+}
+
+func TestPrepareBuilderMetricsToPut(t *testing.T) {
+	t.Parallel()
+	Convey("prepareBuilderMetricsToPut", t, func() {
+		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		now := testclock.TestRecentTimeUTC
+		lastUpdate := now.Add(-time.Hour)
+		bldrMetrics := &model.CustomBuilderMetrics{
+			Key:        model.CustomBuilderMetricsKey(ctx),
+			LastUpdate: lastUpdate,
+			Metrics: &modeldefs.CustomBuilderMetrics{
+				Metrics: []*modeldefs.CustomBuilderMetric{
+					{
+						Name: "chrome/infra/custom/builds/count",
+						Builders: []*pb.BuilderID{
+							{
+								Project: "chromium",
+								Bucket:  "try",
+								Builder: "linux",
+							},
+							{
+								Project: "chromium",
+								Bucket:  "try",
+								Builder: "mac",
+							},
+						},
+					},
+					{
+						Name: "chrome/infra/custom/builds/max_age",
+						Builders: []*pb.BuilderID{
+							{
+								Project: "chromium",
+								Bucket:  "try",
+								Builder: "linux",
+							},
+						},
+					},
+				},
+			},
+		}
+		So(datastore.Put(ctx, bldrMetrics), ShouldBeNil)
+
+		Convey("no update", func() {
+			Convey("exactly same content", func() {
+				bldrMetrics := map[string]stringset.Set{
+					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
+					"chrome/infra/custom/builds/max_age": stringset.NewFromSlice([]string{"chromium/try/linux"}...),
+				}
+				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
+				So(newEnt, ShouldBeNil)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("same content, different metric order", func() {
+				bldrMetrics := map[string]stringset.Set{
+					"chrome/infra/custom/builds/max_age": stringset.NewFromSlice([]string{"chromium/try/linux"}...),
+					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
+				}
+				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
+				So(newEnt, ShouldBeNil)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("same content, different builder order", func() {
+				bldrMetrics := map[string]stringset.Set{
+					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/mac", "chromium/try/linux"}...),
+					"chrome/infra/custom/builds/max_age": stringset.NewFromSlice([]string{"chromium/try/linux"}...),
+				}
+				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
+				So(newEnt, ShouldBeNil)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("updated", func() {
+			Convey("add metric", func() {
+				bldrMetrics := map[string]stringset.Set{
+					"chrome/infra/custom/builds/count":    stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
+					"chrome/infra/custom/builds/max_age":  stringset.NewFromSlice([]string{"chromium/try/linux"}...),
+					"chrome/infra/custom/builds/max_age2": stringset.NewFromSlice([]string{"chromium/try/linux"}...),
+				}
+				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
+				So(err, ShouldBeNil)
+				So(newEnt.LastUpdate, ShouldEqual, now)
+				expected := &modeldefs.CustomBuilderMetrics{
+					Metrics: []*modeldefs.CustomBuilderMetric{
+						{
+							Name: "chrome/infra/custom/builds/count",
+							Builders: []*pb.BuilderID{
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "linux",
+								},
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "mac",
+								},
+							},
+						},
+						{
+							Name: "chrome/infra/custom/builds/max_age",
+							Builders: []*pb.BuilderID{
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "linux",
+								},
+							},
+						},
+						{
+							Name: "chrome/infra/custom/builds/max_age2",
+							Builders: []*pb.BuilderID{
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "linux",
+								},
+							},
+						},
+					},
+				}
+				So(newEnt.Metrics, ShouldResembleProto, expected)
+			})
+			Convey("delete metric", func() {
+				bldrMetrics := map[string]stringset.Set{
+					"chrome/infra/custom/builds/count": stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
+				}
+				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
+				So(err, ShouldBeNil)
+				So(newEnt.LastUpdate, ShouldEqual, now)
+				expected := &modeldefs.CustomBuilderMetrics{
+					Metrics: []*modeldefs.CustomBuilderMetric{
+						{
+							Name: "chrome/infra/custom/builds/count",
+							Builders: []*pb.BuilderID{
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "linux",
+								},
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "mac",
+								},
+							},
+						},
+					},
+				}
+				So(newEnt.Metrics, ShouldResembleProto, expected)
+			})
+			Convey("add builder", func() {
+				bldrMetrics := map[string]stringset.Set{
+					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
+					"chrome/infra/custom/builds/max_age": stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
+				}
+				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
+				So(err, ShouldBeNil)
+				So(newEnt.LastUpdate, ShouldEqual, now)
+				expected := &modeldefs.CustomBuilderMetrics{
+					Metrics: []*modeldefs.CustomBuilderMetric{
+						{
+							Name: "chrome/infra/custom/builds/count",
+							Builders: []*pb.BuilderID{
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "linux",
+								},
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "mac",
+								},
+							},
+						},
+						{
+							Name: "chrome/infra/custom/builds/max_age",
+							Builders: []*pb.BuilderID{
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "linux",
+								},
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "mac",
+								},
+							},
+						},
+					},
+				}
+				So(newEnt.Metrics, ShouldResembleProto, expected)
+			})
+			Convey("remove builder", func() {
+				bldrMetrics := map[string]stringset.Set{
+					"chrome/infra/custom/builds/count":   stringset.NewFromSlice([]string{"chromium/try/linux", "chromium/try/mac"}...),
+					"chrome/infra/custom/builds/max_age": stringset.New(0),
+				}
+				newEnt, err := prepareBuilderMetricsToPut(ctx, bldrMetrics)
+				So(err, ShouldBeNil)
+				So(newEnt.LastUpdate, ShouldEqual, now)
+				expected := &modeldefs.CustomBuilderMetrics{
+					Metrics: []*modeldefs.CustomBuilderMetric{
+						{
+							Name: "chrome/infra/custom/builds/count",
+							Builders: []*pb.BuilderID{
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "linux",
+								},
+								{
+									Project: "chromium",
+									Bucket:  "try",
+									Builder: "mac",
+								},
+							},
+						},
+					},
+				}
+				So(newEnt.Metrics, ShouldResembleProto, expected)
 			})
 		})
 	})

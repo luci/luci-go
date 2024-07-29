@@ -1,0 +1,22 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package buildbucket.internal.modeldefs;
+
+option go_package = "go.chromium.org/luci/buildbucket/appengine/model/defs;modeldefs";
+
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
+
+message CustomBuilderMetric {
+  // Name of the custom builder metric.
+  string name = 1;
+  // List of builders that report to the metric.
+  repeated buildbucket.v2.BuilderID builders = 2;
+}
+
+message CustomBuilderMetrics {
+  repeated CustomBuilderMetric metrics = 1;
+}

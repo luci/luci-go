@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	modeldefs "go.chromium.org/luci/buildbucket/appengine/model/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -71,7 +72,7 @@ type Builder struct {
 
 // FullBuilderName return the builder name in the format of "<project>.<bucket>.<builder>".
 func (b *Builder) FullBuilderName() string {
-	return fmt.Sprintf("%s.%s.%s", b.Parent.Parent().StringID(), b.Parent.StringID(), b.ID)
+	return fmt.Sprintf("%s/%s/%s", b.Parent.Parent().StringID(), b.Parent.StringID(), b.ID)
 }
 
 // BuilderKey returns a datastore key of a builder.
@@ -161,4 +162,22 @@ func UpdateBuilderStat(ctx context.Context, builds []*Build, scheduledTime time.
 		return errors.Annotate(err, "error putting BuilderStat").Err()
 	}
 	return nil
+}
+
+// CustomBuilderMetrics is a Datastore entity that stores custom builder metrics
+// and builders report to them.
+type CustomBuilderMetrics struct {
+	_ datastore.PropertyMap `gae:"-,extra"`
+
+	// Key is CustomBuilderMetricsKey.
+	Key *datastore.Key `gae:"$key"`
+	// LastUpdate is when this entity changed the last time.
+	LastUpdate time.Time `gae:",noindex"`
+
+	Metrics *modeldefs.CustomBuilderMetrics
+}
+
+// CustomBuilderMetricsKey is CustomBuilderMetrics entity key.
+func CustomBuilderMetricsKey(ctx context.Context) *datastore.Key {
+	return datastore.NewKey(ctx, "CustomBuilderMetrics", "", 1, nil)
 }
