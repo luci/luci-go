@@ -76,7 +76,7 @@ class ErrorBox extends HidableElement {
   constructor(container) {
     super(container, false);
 
-    const template = document.querySelector('#error-box-template')
+    const template = document.querySelector('#error-box-template');
     const errorBox = template.content.cloneNode(true);
 
     this.title = errorBox.querySelector('#error-title');

@@ -395,14 +395,24 @@ class SearchBox {
 // a NewGroupForm or an EditGroupForm.
 class ContentFrame {
   constructor(elementSelector) {
+    const container = document.querySelector(elementSelector);
     // The root element of this ContentFrame (the container for the GroupForm).
-    this.element = document.querySelector(elementSelector);
+    this.element = container.querySelector('#content-form');
+    // The element to display a message if there's an error loading content.
+    this.errorBox = new common.ErrorBox('#content-load-error-placeholder');
     // The content that this frame currently has loaded.
     // This will be an instance of GroupForm class.
     this.content = null;
     // What the frame is currently trying to load, used to check if another loadContent
     // call was made before loading is done (i.e. user clicks a different group).
     this.loading = null;
+  }
+
+  // Registers a new event listener to be called when content is loaded.
+  addContentLoadedListener(cb) {
+    this.element.addEventListener('contentLoaded', () => {
+      cb();
+    });
   }
 
   // Sets the content of the content frame.
@@ -413,7 +423,7 @@ class ContentFrame {
       this.content.clearTooltips();
     }
 
-    // Empty the dom element.
+    // Empty the element containing the GroupForm.
     this.element.innerHTML = '';
 
     // Set to the new content.
@@ -422,33 +432,40 @@ class ContentFrame {
 
     if (this.content) {
       this.element.appendChild(this.content.element);
-      if (this.content.groupName) {
-        setCurrentGroupInURL(this.content.groupName);
-      }
-      // TODO(cjacomet): Trigger content shown handler.
     }
   }
 
   // Loads new content asynchronously using content.load(...) call.
   // |content| is an instance of GroupForm class.
   loadContent(content) {
-    let self = this;
-    // TODO(cjacomet): Disable interaction while we load content.
-    self.loading = content;
+    // Clear the previous error message, if any.
+    this.errorBox.clearError();
+
+    // Disable interaction of the old content while loading the new content.
+    if (this.content) {
+      this.content.setInteractionDisabled(true);
+    }
+
+    this.loading = content;
     return content.load()
       .then(() => {
         // Switch content only if another 'loadContent' wasn't called before.
-        if (self.loading == content) {
-          self.setContent(content);
+        if (this.loading == content) {
+          this.setContent(content);
         }
       })
-      .catch((error) => {
+      .catch((err) => {
         // Still loading same content?
-        if (self.loading == content) {
-          self.setContent(null);
-          // TODO(cjacomet): Load error pane or alert instead of console.log.
-          console.log("error unable to load content");
+        if (this.loading == content) {
+          this.setContent(null);
+          this.errorBox.showError('Failed loading group details', err.error);
         }
+      })
+      .finally(() => {
+        if (content.groupName) {
+          setCurrentGroupInURL(content.groupName);
+        }
+        this.element.dispatchEvent(new CustomEvent('contentLoaded'));
       });
   };
 }
@@ -957,6 +974,13 @@ window.onload = () => {
     }
   });
 
+  // Present the page only when the group form has been loaded.
+  contentFrame.addContentLoadedListener(() => {
+    loadingBox.setLoadStatus(false);
+    mainContent.show();
+    groupChooser.ensureGroupVisible(groupChooser.selectedGroupName);
+  });
+
   // Show a loading spinner when first fetching all groups.
   listErrorBox.clearError();
   loadingBox.setLoadStatus(true);
@@ -968,13 +992,8 @@ window.onload = () => {
       onCurrentGroupInURLChange(() => {
         jumpToCurrentGroup(false);
       });
-      mainContent.show();
-      groupChooser.ensureGroupVisible(groupChooser.selectedGroupName);
     })
     .catch((err) => {
       listErrorBox.showError('Listing groups failed', err.error);
-    })
-    .finally(() => {
-      loadingBox.setLoadStatus(false);
     });
 };
