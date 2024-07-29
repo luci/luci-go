@@ -62,6 +62,7 @@ protoc \
   --ts_proto_opt=unrecognizedEnum=false \
   --ts_proto_opt=useDate=string,useReadonlyTypes=true \
   \
+  ./go.chromium.org/chromiumos/config/proto/chromiumos/test/api/device_manager_service.proto \
   ./go.chromium.org/luci/analysis/proto/v1/changepoints.proto \
   ./go.chromium.org/luci/analysis/proto/v1/clusters.proto \
   ./go.chromium.org/luci/analysis/proto/v1/test_history.proto \
@@ -78,3 +79,4 @@ protoc \
   ./go.chromium.org/luci/tree_status/proto/v1/tree_status.proto \
   ./infra/appengine/cr-rev/frontend/api/v1/service.proto \
   ./infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \
+  ./infra/unifiedfleet/api/v1/rpc/fleet.proto \
