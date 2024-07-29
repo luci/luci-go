@@ -453,6 +453,9 @@ class GroupForm {
     // The Form element.
     this.form = this.element.querySelector('#group-form');
 
+    // The spinner to show while the form is being submitted.
+    this.spinner = this.element.querySelector('#submit-spinner');
+
     // The alert element, used to give feedback on form submission.
     this.alert = this.element.querySelector('#group-form-alert');
     this.alertTitle = this.alert.querySelector('strong');
@@ -568,6 +571,22 @@ class GroupForm {
     this.alertMessage.textContent = message;
     this.alert.style.display = 'block';
   }
+
+  showSpinner() {
+    this.spinner.style.display = 'block';
+  }
+
+  hideSpinner() {
+    this.spinner.style.display = 'none';
+  }
+
+  setInteractionDisabled(disabled) {
+    // Sets the disabled attribute for all buttons, inputs and textareas in the
+    // form.
+    this.form.querySelectorAll('button, input, textarea').forEach((e) => {
+      e.setAttribute('disabled', disabled);
+    });
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -644,18 +663,22 @@ class EditGroupForm extends GroupForm {
     this.populateForm(groupClone);
   }
 
+  setInteractionDisabled(disabled) {
+    if (this.readOnly) {
+      return;
+    }
+    super.setInteractionDisabled(disabled);
+  }
+
   makeReadOnly() {
     // Exit early if this has previously been called, as form elements
     // have already been changed.
     if (this.readOnly) {
       return;
     }
-    this.readOnly = true;
 
     // Disable any inputs.
-    this.form.querySelectorAll('button, input, textarea').forEach((e) => {
-      e.setAttribute('disabled', true);
-    });
+    this.setInteractionDisabled(true);
 
     // Remove update/delete buttons.
     const editBtn = this.element.querySelector('#edit-btn');
@@ -668,6 +691,8 @@ class EditGroupForm extends GroupForm {
     insufficientPermDiv.style.textAlign = 'center';
     insufficientPermDiv.textContent = 'You do not have sufficient permissions to modify this group.';
     this.form.appendChild(insufficientPermDiv);
+
+    this.readOnly = true;
   }
 
   makeExternal() {
@@ -778,8 +803,9 @@ class NewGroupForm extends GroupForm {
 // resolves.
 const waitForResult = (cb, groupChooser, form, listErrorBox) => {
   let done = new Promise((resolve, reject) => {
-    // TODO: Lock UI while running the request.
-    console.log("Locking UI...");
+    // Lock UI while running the request.
+    form.setInteractionDisabled(true);
+    form.showSpinner();
 
     // Hide previous error message (if any).
     form.clearAlert();
@@ -806,8 +832,9 @@ const waitForResult = (cb, groupChooser, form, listErrorBox) => {
         reject(err);
       })
       .finally(() => {
-        // TODO: Unlock UI.
-        console.log('Unlocking UI...');
+        // Unlock UI.
+        form.setInteractionDisabled(false);
+        form.hideSpinner();
       })
   });
 
