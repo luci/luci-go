@@ -215,6 +215,9 @@ class GroupChooser {
     // The name of the selected group.
     this.selectedGroupName = null;
 
+    // Whether the group selected can be changed.
+    this.allowChange = true;
+
     // Sets of known groups, used for checking group presence and
     // selecting a default group.
     this.completeGroupSet = new Set();
@@ -271,7 +274,9 @@ class GroupChooser {
 
       // Add a listener for when a user chooses the group.
       listItem.element.onclick = () => {
-        this.setSelection(group.name);
+        if (this.allowChange) {
+          this.setSelection(group.name);
+        }
         return false;
       };
 
@@ -362,6 +367,14 @@ class GroupChooser {
     this.groupOptions.forEach((listGroupItem, _) => {
       listGroupItem.setExternalVisibility(this.showExternalCheckBox.checked);
     });
+  }
+
+  enableInteraction() {
+    this.allowChange = true;
+  }
+
+  disableInteraction() {
+    this.allowChange = false;
   }
 }
 
@@ -804,6 +817,7 @@ class NewGroupForm extends GroupForm {
 const waitForResult = (cb, groupChooser, form, listErrorBox) => {
   let done = new Promise((resolve, reject) => {
     // Lock UI while running the request.
+    groupChooser.disableInteraction();
     form.setInteractionDisabled(true);
     form.showSpinner();
 
@@ -833,6 +847,7 @@ const waitForResult = (cb, groupChooser, form, listErrorBox) => {
       })
       .finally(() => {
         // Unlock UI.
+        groupChooser.enableInteraction();
         form.setInteractionDisabled(false);
         form.hideSpinner();
       })
