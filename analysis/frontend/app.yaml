@@ -23,6 +23,9 @@ automatic_scaling:
   target_throughput_utilization: 0.90
   target_cpu_utilization: 0.90
   max_concurrent_requests: 20
+  # Always keep some instances running to avoid latency spikes from needing
+  # to spin up new instances.
+  min_instances: 2
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
@@ -74,6 +77,10 @@ handlers:
 - url: /.*
   script: auto
   secure: always
+
+# To allow setting min_instances in automatic scaling block above.
+inbound_services:
+- warmup
 
 # IMPORTANT: Keep in sync between app.yaml, service-api.yaml and service-result-ingestion.yaml.
 entrypoint: >
