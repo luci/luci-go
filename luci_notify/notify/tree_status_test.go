@@ -57,7 +57,7 @@ func (ts *fakeTreeStatusClient) getStatus(c context.Context, treeName string) (*
 	return nil, errors.New(fmt.Sprintf("No status for treeName %s", treeName))
 }
 
-func (ts *fakeTreeStatusClient) postStatus(c context.Context, message string, treeName string, status config.TreeCloserStatus) error {
+func (ts *fakeTreeStatusClient) postStatus(c context.Context, message string, treeName string, status config.TreeCloserStatus, closingBuilderName string) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -72,7 +72,11 @@ func (ts *fakeTreeStatusClient) postStatus(c context.Context, message string, tr
 	}
 
 	ts.statusForHosts[treeName] = treeStatus{
-		"buildbot@chromium.org", message, messageStatus, time.Now(),
+		username:           "buildbot@chromium.org",
+		message:            message,
+		status:             status,
+		timestamp:          time.Now(),
+		closingBuilderName: closingBuilderName,
 	}
 	return nil
 }
@@ -92,6 +96,7 @@ func TestUpdateTrees(t *testing.T) {
 		builder2 := &config.Builder{ProjectKey: project1Key, ID: "ci/builder2"}
 		builder3 := &config.Builder{ProjectKey: project1Key, ID: "ci/builder3"}
 		builder4 := &config.Builder{ProjectKey: project1Key, ID: "ci/builder4"}
+		builder7 := &config.Builder{ProjectKey: project1Key, ID: "buildbucket/dart/luci.dart.ci/dart-sdk-win"}
 
 		project2 := &config.Project{Name: "infra", TreeClosingEnabled: false}
 		project2Key := datastore.KeyForObj(c, project2)
@@ -259,6 +264,36 @@ func TestUpdateTrees(t *testing.T) {
 			status, err := ts.getStatus(c, "chromium")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
+			So(status.closingBuilderName, ShouldEqual, "projects/chromium/buckets/ci/builders/builder1")
+		})
+
+		Convey("Opened manually, closes on new failure, with old builder ID", func() {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  "somedev@chromium.org",
+						message:   "Opened, because I feel like it",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			So(datastore.Put(c, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder7),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Closed,
+				Timestamp:      time.Now().UTC(),
+			}), ShouldBeNil)
+			defer cleanup()
+
+			So(updateTrees(c, &ts), ShouldBeNil)
+
+			status, err := ts.getStatus(c, "chromium")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Closed)
+			So(status.closingBuilderName, ShouldEqual, "")
 		})
 
 		Convey("Multiple trees", func() {
@@ -337,6 +372,7 @@ func TestUpdateTrees(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
 			So(status.message, ShouldEqual, "Tree is closed (Automatic: Correct message)")
+			So(status.closingBuilderName, ShouldEqual, "projects/chromium/buckets/ci/builders/builder4")
 		})
 
 		Convey("Doesn't close when build is older than last status update", func() {
@@ -597,12 +633,13 @@ func TestHttpTreeStatusClient(t *testing.T) {
 		})
 
 		Convey("postStatus", func() {
-			err := ts.postStatus(c, "open for business", "dart", config.Open)
+			err := ts.postStatus(c, "open for business", "dart", config.Open, "projects/chromium/buckets/bucket/builders/builder")
 			So(err, ShouldBeNil)
 
 			So(fakePrpcClient.latestStatus, ShouldNotBeNil)
 			So(fakePrpcClient.latestStatus.Message, ShouldEqual, "open for business")
 			So(fakePrpcClient.latestStatus.GeneralState, ShouldEqual, tspb.GeneralState_OPEN)
+			So(fakePrpcClient.latestStatus.ClosingBuilderName, ShouldEqual, "projects/chromium/buckets/bucket/builders/builder")
 		})
 	})
 }

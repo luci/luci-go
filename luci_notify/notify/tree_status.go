@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -41,15 +42,16 @@ const botUsername = "luci-notify@appspot.gserviceaccount.com"
 const legacyBotUsername = "buildbot@chromium.org"
 
 type treeStatus struct {
-	username  string
-	message   string
-	status    config.TreeCloserStatus
-	timestamp time.Time
+	username           string
+	message            string
+	status             config.TreeCloserStatus
+	timestamp          time.Time
+	closingBuilderName string
 }
 
 type treeStatusClient interface {
 	getStatus(c context.Context, treeName string) (*treeStatus, error)
-	postStatus(c context.Context, message string, treeName string, status config.TreeCloserStatus) error
+	postStatus(c context.Context, message string, treeName string, status config.TreeCloserStatus, closingBuilderName string) error
 }
 
 type httpTreeStatusClient struct {
@@ -92,14 +94,15 @@ func (ts *httpTreeStatusClient) getStatus(ctx context.Context, treeName string) 
 	t := response.CreateTime.AsTime()
 
 	return &treeStatus{
-		username:  response.CreateUser,
-		message:   response.Message,
-		status:    status,
-		timestamp: t,
+		username:           response.CreateUser,
+		message:            response.Message,
+		status:             status,
+		timestamp:          t,
+		closingBuilderName: response.ClosingBuilderName,
 	}, nil
 }
 
-func (ts *httpTreeStatusClient) postStatus(ctx context.Context, message string, treeName string, status config.TreeCloserStatus) error {
+func (ts *httpTreeStatusClient) postStatus(ctx context.Context, message string, treeName string, status config.TreeCloserStatus, closingBuilderName string) error {
 	logging.Infof(ctx, "Updating status for %s: %q", treeName, message)
 
 	generalState := tspb.GeneralState_OPEN
@@ -109,8 +112,9 @@ func (ts *httpTreeStatusClient) postStatus(ctx context.Context, message string, 
 	request := &tspb.CreateStatusRequest{
 		Parent: fmt.Sprintf("trees/%s/status", treeName),
 		Status: &tspb.Status{
-			GeneralState: generalState,
-			Message:      message,
+			GeneralState:       generalState,
+			Message:            message,
+			ClosingBuilderName: closingBuilderName,
 		},
 	}
 	_, err := ts.client.CreateStatus(ctx, request)
@@ -338,17 +342,43 @@ func updateHost(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 	}
 
 	var message string
+	var closingBuilderName string
 	if newStatus == config.Open {
 		message = fmt.Sprintf("Tree is open (Automatic: %s)", randomMessage(c))
 	} else {
 		message = fmt.Sprintf("Tree is closed (Automatic: %s)", oldestClosed.Message)
+		closingBuilderName = generateClosingBuilderName(c, oldestClosed)
 	}
 
 	if anyEnabled {
-		return ts.postStatus(c, message, treeName, newStatus)
+		return ts.postStatus(c, message, treeName, newStatus, closingBuilderName)
 	}
 	logging.Infof(c, "Would update status for %s to %q", treeName, message)
 	return nil
+}
+
+func generateClosingBuilderName(c context.Context, treeCloser *config.TreeCloser) string {
+	// bucketBuilder is of the form <bucket>/<builder>
+	bucketBuilder := treeCloser.BuilderKey.StringID()
+	bucketBuilderPattern := `([a-z0-9\-_.]{1,100})/([a-zA-Z0-9\-_.\(\) ]{1,128})`
+	bucketBuilderRE := regexp.MustCompile(`^` + bucketBuilderPattern + `$`)
+	if !bucketBuilderRE.MatchString(bucketBuilder) {
+		logging.Warningf(c, "bucketBuilder %q is not valid format", bucketBuilder)
+		return ""
+	}
+
+	m := bucketBuilderRE.FindStringSubmatch(bucketBuilder)
+
+	// Some very old TreeCloser entities in datastore are not of the form
+	// bucket/builder. They used buildergroup instead. We do not support
+	// those tree closer (and they should not cause any tree to close).
+	// For those, we just return empty string.
+	if m == nil {
+		logging.Warningf(c, "bucketBuilder %q is not valid format", bucketBuilder)
+		return ""
+	}
+	project := tcProject(treeCloser)
+	return fmt.Sprintf("projects/%s/buckets/%s/builders/%s", project, m[1], m[2])
 }
 
 // Want more messages? CLs welcome!
