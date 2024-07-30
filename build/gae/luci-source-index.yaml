@@ -1,0 +1,14 @@
+name: luci-go/luci-source-index
+extends: ../gae.yaml
+
+inputsdir: ../../source_index
+
+build:
+  # This packages all Go code, including the frontend code from
+  # frontend/ui/dist.
+  - go_gae_bundle: ${inputsdir}/api/app.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/api
+  - go_gae_bundle: ${inputsdir}/backend/service-backend.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/backend

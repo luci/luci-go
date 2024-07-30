@@ -1,0 +1,44 @@
+# Copyright 2024 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+runtime: go122
+instance_class: F4
+service: backend
+
+# Note: this is interpreted by gae.py, it maps the app ID being deployed to
+# values of ${...} vars.
+# Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/examples/appengine/helloworld_v2/app.yaml
+#
+# This configuration is only used for developer testing. The
+# configuration used for development and production instances is
+# contained in the infradata/gae repo. Refer to LUCI GAE Automatic
+# Deployment for more (go/luci/how_to_deploy.md) (Googlers only).
+#
+# IMPORTANT: Keep in sync between app.yaml, service-api.yaml and service-backend.yaml.
+# IMPORTANT: Keep in sync with app.star files in
+# https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/main/apps/luci-source-index/
+luci_gae_vars:
+  luci-source-index-dev:
+    CONFIG_SERVICE_HOST: config.luci.app
+    TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+
+handlers:
+- url: /.*
+  script: auto
+  secure: always
+
+entrypoint: >
+  main
+  -config-service-host ${CONFIG_SERVICE_HOST}
+  -ts-mon-account ${TS_MON_ACCOUNT}

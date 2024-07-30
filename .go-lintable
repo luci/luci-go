@@ -65,6 +65,7 @@ paths =
     resultdb
     scheduler
     server
+    source_index
     standalone
     swarming
     teams
