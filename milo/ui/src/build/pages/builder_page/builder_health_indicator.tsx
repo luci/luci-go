@@ -15,7 +15,7 @@
 import { Link } from '@mui/material';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
-import { HealthStatus } from '@/common/services/buildbucket';
+import { HealthStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 interface BuilderHealthIndicatorProps {
   readonly healthStatus?: HealthStatus;

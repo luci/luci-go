@@ -16,8 +16,9 @@ import styled from '@emotion/styled';
 import Link from '@mui/material/Link';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { BuilderID, HealthStatus } from '@/common/services/buildbucket';
 import { getProjectURLPath } from '@/common/tools/url_utils';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
+import { HealthStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { BuilderHealthIndicator } from './builder_health_indicator';
 

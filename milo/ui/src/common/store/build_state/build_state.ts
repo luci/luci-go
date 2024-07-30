@@ -226,9 +226,6 @@ export const BuildState = types
         self.steps.some((s) => s.status === BuildbucketStatus.InfraFailure)
       );
     },
-    get buildNumOrId() {
-      return self.data.number?.toString() || 'b' + self.data.id;
-    },
   }))
   .views((self) => {
     const clusteredRootSteps = keepAliveComputed(self, () =>
