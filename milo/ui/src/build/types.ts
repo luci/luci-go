@@ -26,6 +26,10 @@ import {
   Build,
   BuildInfra,
   BuildInfra_Backend,
+  BuildInfra_Buildbucket,
+  BuildInfra_Buildbucket_Agent,
+  BuildInfra_Buildbucket_Agent_Input,
+  BuildInfra_Buildbucket_Agent_Output,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
@@ -64,10 +68,26 @@ export interface OutputStep extends Step {
 
 export interface OutputBuildInfra extends BuildInfra {
   readonly backend: OutputBuildInfra_Backend;
+  readonly buildbucket: OutputBuildInfra_Buildbucket;
 }
 
 export interface OutputBuildInfra_Backend extends BuildInfra_Backend {
   readonly task: OutputTask;
+}
+
+export interface OutputBuildInfra_Buildbucket extends BuildInfra_Buildbucket {
+  readonly agent: OutputBuildInfra_Buildbucket_Agent;
+}
+
+export interface OutputBuildInfra_Buildbucket_Agent
+  extends BuildInfra_Buildbucket_Agent {
+  readonly input: BuildInfra_Buildbucket_Agent_Input;
+  readonly output: OutputBuildInfra_Buildbucket_Agent_Output;
+}
+
+export interface OutputBuildInfra_Buildbucket_Agent_Output
+  extends BuildInfra_Buildbucket_Agent_Output {
+  readonly status: SpecifiedStatus;
 }
 
 export interface OutputTask extends Task {

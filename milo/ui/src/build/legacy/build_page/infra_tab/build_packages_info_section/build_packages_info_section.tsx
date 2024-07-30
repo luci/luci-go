@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
-
-import { useStore } from '@/common/store';
+import { useBuild } from '../../context';
 
 import { BuildPackagesInfo } from './build_packages_info';
 
-export const BuildPackagesInfoSection = observer(() => {
-  const store = useStore();
-  const build = store.buildPage.build?.data;
+export function BuildPackagesInfoSection() {
+  const build = useBuild();
   if (!build) {
     return <></>;
   }
@@ -31,4 +28,4 @@ export const BuildPackagesInfoSection = observer(() => {
       <BuildPackagesInfo build={build} />
     </>
   );
-});
+}

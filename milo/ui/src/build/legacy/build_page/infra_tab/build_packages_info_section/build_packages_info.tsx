@@ -15,17 +15,23 @@
 import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Fragment, useState } from 'react';
 
-import { MiloLink } from '@/common/components/link';
-import { SanitizedHtml } from '@/common/components/sanitized_html';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
-} from '@/common/constants/legacy';
-import { Build } from '@/common/services/buildbucket';
+} from '@/build/constants';
+import { OutputBuild } from '@/build/types';
+import { DurationBadge } from '@/common/components/duration_badge';
+import { MiloLink } from '@/common/components/link';
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { getCipdLink } from '@/common/tools/build_utils';
+import { parseProtoDuration } from '@/common/tools/time_utils';
+import {
+  InputDataRef,
+  ResolvedDataRef,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 
 export interface BuildPackagesInfoProps {
-  readonly build: Build;
+  readonly build: OutputBuild;
 }
 
 export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
@@ -45,6 +51,9 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
     displayType === 'requested'
       ? agent.input.data
       : agent.output?.resolvedData || {};
+  const downloadDuration = agent.output?.totalDuration
+    ? parseProtoDuration(agent.output.totalDuration)
+    : null;
 
   return (
     <>
@@ -87,7 +96,9 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
           </tr>
           <tr>
             <td>Download Duration:</td>
-            <td>{agent.output?.totalDuration || 'N/A'}</td>
+            <td>
+              <DurationBadge duration={downloadDuration} />
+            </td>
           </tr>
           <tr>
             <td>$ServiceURL:</td>
@@ -126,38 +137,40 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
         <Box sx={{ overflowX: 'scroll', whiteSpace: 'nowrap' }}>
           <table css={{ borderSpacing: '10px 0' }}>
             <tbody>
-              {Object.entries(data).map(([dir, ref]) => {
-                if (!ref.cipd.specs.length) {
-                  return <Fragment key={dir}></Fragment>;
-                }
-                return (
-                  <Fragment key={dir}>
-                    <tr css={{ height: '10px' }}>
-                      <td colSpan={2}></td>
-                    </tr>
-                    {dir && (
-                      <tr>
-                        <td colSpan={2}>@Subdir {dir}</td>
+              {Object.entries(data).map(
+                ([dir, ref]: [string, ResolvedDataRef | InputDataRef]) => {
+                  if (!ref.cipd?.specs.length) {
+                    return <Fragment key={dir}></Fragment>;
+                  }
+                  return (
+                    <Fragment key={dir}>
+                      <tr css={{ height: '10px' }}>
+                        <td colSpan={2}></td>
                       </tr>
-                    )}
-                    {ref.cipd.specs.map((spec) => (
-                      <tr key={spec.package}>
-                        <td>{spec.package}</td>
-                        <td>
-                          {displayType === 'resolved' ? (
-                            <MiloLink
-                              link={getCipdLink(spec.package, spec.version)}
-                              target="_blank"
-                            />
-                          ) : (
-                            spec.version
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </Fragment>
-                );
-              })}
+                      {dir && (
+                        <tr>
+                          <td colSpan={2}>@Subdir {dir}</td>
+                        </tr>
+                      )}
+                      {ref.cipd.specs.map((spec) => (
+                        <tr key={spec.package}>
+                          <td>{spec.package}</td>
+                          <td>
+                            {displayType === 'resolved' ? (
+                              <MiloLink
+                                link={getCipdLink(spec.package, spec.version)}
+                                target="_blank"
+                              />
+                            ) : (
+                              spec.version
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  );
+                },
+              )}
             </tbody>
           </table>
         </Box>

@@ -14,20 +14,14 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import {
-  Build,
-  BuildAgentInputDataRef,
-  BuildAgentOutput,
-  BuildAgentResolvedDataRef,
-  BuildInfra,
-  BuildInfraBuildbucket,
-} from '@/common/services/buildbucket';
+import { OutputBuild } from '@/build/types';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 
 import { BuildPackagesInfo } from './build_packages_info';
 
 describe('BuildPackagesInfo', () => {
   test('build without resolved packages', async () => {
-    const buildWithoutOutput = {
+    const buildWithoutOutput = Build.fromPartial({
       input: { experiments: ['luci.buildbucket.agent.cipd_installation'] },
       infra: {
         buildbucket: {
@@ -38,13 +32,13 @@ describe('BuildPackagesInfo', () => {
                   cipd: {
                     specs: [{ package: 'input-pkg', version: 'input-ver' }],
                   },
-                } as BuildAgentInputDataRef,
+                },
               },
             },
           },
-        } as Partial<BuildInfraBuildbucket> as BuildInfraBuildbucket,
-      } as Partial<BuildInfra> as BuildInfra,
-    } as Partial<Build> as Build;
+        },
+      },
+    }) as OutputBuild;
 
     render(<BuildPackagesInfo build={buildWithoutOutput} />);
     expect(
@@ -78,7 +72,7 @@ describe('BuildPackagesInfo', () => {
   });
 
   test('build with resolved packages', async () => {
-    const buildWithoutOutput = {
+    const buildWithoutOutput = Build.fromPartial({
       input: { experiments: ['luci.buildbucket.agent.cipd_installation'] },
       infra: {
         buildbucket: {
@@ -89,7 +83,7 @@ describe('BuildPackagesInfo', () => {
                   cipd: {
                     specs: [{ package: 'input-pkg', version: 'input-ver' }],
                   },
-                } as BuildAgentInputDataRef,
+                },
               },
             },
             output: {
@@ -98,13 +92,13 @@ describe('BuildPackagesInfo', () => {
                   cipd: {
                     specs: [{ package: 'output-pkg', version: 'output-ver' }],
                   },
-                } as BuildAgentResolvedDataRef,
+                },
               },
-            } as Partial<BuildAgentOutput> as BuildAgentOutput,
+            },
           },
-        } as Partial<BuildInfraBuildbucket> as BuildInfraBuildbucket,
-      } as Partial<BuildInfra> as BuildInfra,
-    } as Partial<Build> as Build;
+        },
+      },
+    }) as OutputBuild;
 
     render(<BuildPackagesInfo build={buildWithoutOutput} />);
     expect(
