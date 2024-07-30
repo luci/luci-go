@@ -115,13 +115,13 @@ func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRe
 	case err == nil:
 		return createdGroup.ToProto(true), nil
 	case errors.Is(err, model.ErrAlreadyExists):
-		return nil, status.Errorf(codes.AlreadyExists, "group already exists: %s", err)
+		return nil, status.Errorf(codes.AlreadyExists, "group already exists: %s", group.ID)
 	case errors.Is(err, model.ErrInvalidName):
-		return nil, status.Errorf(codes.InvalidArgument, "invalid group name: %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid group name: %s", group.ID)
 	case errors.Is(err, model.ErrInvalidReference):
-		return nil, status.Errorf(codes.InvalidArgument, "invalid group reference: %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	case errors.Is(err, model.ErrInvalidIdentity):
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to create group %q: %s", request.GetGroup().GetName(), err)
 	}
@@ -140,7 +140,7 @@ func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRe
 	case errors.Is(err, model.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
 	case errors.Is(err, model.ErrInvalidReference):
-		return nil, status.Errorf(codes.InvalidArgument, "invalid group reference: %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	case errors.Is(err, model.ErrInvalidArgument):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, model.ErrInvalidIdentity):

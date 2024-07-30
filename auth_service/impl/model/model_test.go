@@ -932,7 +932,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				a.Nested = []string{"A"}
 
 				_, err := UpdateAuthGroup(ctx, a, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldErrLike, "groups can not have cyclic dependencies: A -> A.")
+				So(err, ShouldErrLike, "groups can't have cyclic dependencies: A -> A")
 			})
 
 			Convey("cycle of length 2", func() {
@@ -944,7 +944,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				b2.Nested = []string{"A"}
 
 				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldErrLike, "groups can not have cyclic dependencies: B2 -> A -> B2.")
+				So(err, ShouldErrLike, "groups can't have cyclic dependencies: B2 -> A -> B2")
 			})
 
 			Convey("cycle of length 3", func() {
@@ -958,7 +958,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				c.Nested = []string{"A"}
 
 				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldErrLike, "groups can not have cyclic dependencies: C -> A -> B1 -> C.")
+				So(err, ShouldErrLike, "groups can't have cyclic dependencies: C -> A -> B1 -> C")
 			})
 
 			Convey("cycle not at root", func() {
@@ -970,7 +970,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				c.Nested = []string{"B1"}
 
 				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false, "Go pRPC API", false)
-				So(err, ShouldErrLike, "groups can not have cyclic dependencies: C -> B1 -> C.")
+				So(err, ShouldErrLike, "groups can't have cyclic dependencies: C -> B1 -> C")
 			})
 
 			Convey("diamond shape", func() {

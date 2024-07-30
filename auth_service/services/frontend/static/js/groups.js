@@ -892,9 +892,13 @@ const waitForResult = (cb, groupChooser, form, listErrorBox) => {
           });
       })
       .catch((err) => {
+        // First, ensure the error message starts with a capital.
+        const raw = err.error || '';
+        const message = raw.charAt(0).toUpperCase() + raw.slice(1);
+
         // Show error message on the form, since it's a local error with the
         // request, and trigger reject.
-        form.showErrorAlert(err.error);
+        form.showErrorAlert(message);
 
         // Unlock the current form.
         form.setInteractionDisabled(false);

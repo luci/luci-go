@@ -432,7 +432,7 @@ var (
 	// ErrInvalidName is returned when a supplied entity name is invalid.
 	ErrInvalidName = stderrors.New("invalid entity name")
 	// ErrInvalidReference is returned when a referenced entity name is invalid.
-	ErrInvalidReference = stderrors.New("invalid reference")
+	ErrInvalidReference = stderrors.New("some referenced groups don't exist")
 	// ErrInvalidIdentity is returned when a referenced identity or glob is invalid.
 	ErrInvalidIdentity = stderrors.New("invalid identity")
 	// ErrConcurrentModification is returned when an entity is modified by two concurrent operations.
@@ -440,7 +440,7 @@ var (
 	// ErrReferencedEntity is returned when an entity cannot be deleted because it is referenced elsewhere.
 	ErrReferencedEntity = stderrors.New("cannot delete referenced entity")
 	// ErrCyclicDependency is returned when an update would create a cyclic dependency.
-	ErrCyclicDependency = stderrors.New("circular dependency")
+	ErrCyclicDependency = stderrors.New("groups can't have cyclic dependencies")
 )
 
 // RootKey gets the root key of the entity group with all AuthDB entities.
@@ -744,7 +744,7 @@ func checkGroupsExist(ctx context.Context, groups []string) error {
 				missingRefs = append(missingRefs, r)
 			}
 		}
-		return errors.Annotate(ErrInvalidReference, "some referenced groups don't exist: %s", strings.Join(missingRefs, ", ")).Err()
+		return fmt.Errorf("%w: %s", ErrInvalidReference, strings.Join(missingRefs, ", "))
 	}
 	return nil
 }
@@ -861,10 +861,10 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool, histo
 
 	// Check that the supplied members and globs are well-formed.
 	if err := validateIdentities(group.Members); err != nil {
-		return nil, errors.Annotate(ErrInvalidIdentity, "%s", err).Err()
+		return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
 	}
 	if err := validateGlobs(group.Globs); err != nil {
-		return nil, errors.Annotate(ErrInvalidIdentity, "%s", err).Err()
+		return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
 	}
 
 	// Construct a new group so that we don't modify the input.
@@ -1006,12 +1006,12 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		case "members":
 			// Check that the supplied members are well-formed.
 			if err := validateIdentities(groupUpdate.Members); err != nil {
-				return nil, errors.Annotate(ErrInvalidIdentity, "%s", err).Err()
+				return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
 			}
 		case "globs":
 			// Check that the supplied globs are well-formed.
 			if err := validateGlobs(groupUpdate.Globs); err != nil {
-				return nil, errors.Annotate(ErrInvalidIdentity, "%s", err).Err()
+				return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
 			}
 		}
 	}
@@ -1065,7 +1065,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 					return err
 				} else if cycle != nil {
 					cycleStr := strings.Join(cycle, " -> ")
-					return errors.Annotate(ErrCyclicDependency, "groups can not have cyclic dependencies: %s.", cycleStr).Err()
+					return fmt.Errorf("%w: %s", ErrCyclicDependency, cycleStr)
 				}
 			case "description":
 				authGroup.Description = groupUpdate.Description
