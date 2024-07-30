@@ -14,7 +14,7 @@
 
 import createCache, { EmotionCache } from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
-import { Link } from '@mui/material';
+import { Alert, AlertTitle, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { customElement } from 'lit/decorators.js';
 import { useMemo } from 'react';
@@ -87,7 +87,14 @@ export function TextArtifact({
     },
   });
   if (isError) {
-    throw error;
+    return (
+      <Alert severity="error">
+        <AlertTitle>
+          Failed to load {invLevel ? 'inv-level' : ''} artifact: {artifactId}
+        </AlertTitle>
+        <pre>{error instanceof Error ? error.message : `${error}`}</pre>
+      </Alert>
+    );
   }
   if (isLoading) {
     return (

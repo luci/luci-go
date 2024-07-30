@@ -141,4 +141,47 @@ describe('<TextArtifact />', () => {
 
     expect(screen.getByText((s) => s.includes('is empty'))).toBeInTheDocument();
   });
+
+  it('shows alert when artifact failed to load', async () => {
+    fetchMock.get(
+      (urlStr) => {
+        const url = new URL(urlStr);
+        return (
+          url.host === location.host &&
+          url.pathname ===
+            getRawArtifactURLPath(
+              'invocations/inv-1/tests/test-1/results/result-1/artifacts/artifact-1',
+            )
+        );
+      },
+      {
+        body: 'failed to load content',
+        status: 404,
+      },
+      { overwriteRoutes: true },
+    );
+    render(
+      <FakeContextProvider>
+        <ArtifactContextProvider resultName="invocations/inv-1/tests/test-1/results/result-1">
+          <TextArtifact artifactId="artifact-1" />
+        </ArtifactContextProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const url = new URL(fetchMock.lastCall()![0]);
+    expect(parseInt(url.searchParams.get('n')!)).toBeGreaterThanOrEqual(
+      ARTIFACT_LENGTH_LIMIT,
+    );
+
+    expect(
+      screen.getByText((s) =>
+        s.includes('Failed to load artifact: artifact-1'),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText((s) => s.includes('failed to load content')),
+    ).toBeInTheDocument();
+  });
 });
