@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { DateTime, Duration } from 'luxon';
+
 import { Link } from '@/common/models/link';
+import { parseProtoDuration } from '@/common/tools/time_utils';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
@@ -71,5 +74,74 @@ export function getRecipeLink(build: OutputBuild): Link | null {
       ['q', `file:recipes/${recipeName}.py`],
     ]).toString()}`,
     ariaLabel: `recipe ${recipeName}`,
+  };
+}
+
+export interface TimingInfo {
+  readonly createTime: DateTime;
+  readonly startTime: DateTime | null;
+  readonly endTime: DateTime | null;
+
+  readonly pendingDuration: Duration;
+  readonly schedulingTimeout: Duration | null;
+  /**
+   * A build exceeded it's scheduling timeout when
+   * - the build is canceled, AND
+   * - the build did not enter the execution phase, AND
+   * - the scheduling timeout is specified, AND
+   * - the pending duration is no less than the scheduling timeout.
+   */
+  readonly exceededSchedulingTimeout: boolean;
+
+  readonly executionDuration: Duration | null;
+  readonly executionTimeout: Duration | null;
+  /**
+   * A build exceeded it's execution timeout when
+   * - the build is canceled, AND
+   * - the build had entered the execution phase, AND
+   * - the execution timeout is specified, AND
+   * - the execution duration is no less than the execution timeout.
+   */
+  readonly exceededExecutionTimeout: boolean;
+}
+
+export function getTimingInfo(build: OutputBuild, now?: DateTime): TimingInfo {
+  now = now || DateTime.now();
+
+  const createTime = DateTime.fromISO(build.createTime);
+  const startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
+  const endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
+  const schedulingTimeout = build.schedulingTimeout
+    ? parseProtoDuration(build.schedulingTimeout)
+    : null;
+  const executionTimeout = build.executionTimeout
+    ? parseProtoDuration(build.executionTimeout)
+    : null;
+
+  const pendingDuration = (startTime || endTime || now).diff(createTime);
+  const executionDuration = startTime ? (endTime || now).diff(startTime) : null;
+
+  const exceededSchedulingTimeout =
+    startTime === null &&
+    endTime !== null &&
+    schedulingTimeout !== null &&
+    pendingDuration >= schedulingTimeout;
+
+  const exceededExecutionTimeout =
+    build.status === Status.CANCELED &&
+    executionDuration !== null &&
+    executionTimeout !== null &&
+    executionDuration >= executionTimeout;
+
+  return {
+    createTime,
+    startTime,
+    endTime,
+    pendingDuration,
+    schedulingTimeout,
+    exceededSchedulingTimeout,
+    executionDuration,
+    executionTimeout,
+    exceededExecutionTimeout,
   };
 }

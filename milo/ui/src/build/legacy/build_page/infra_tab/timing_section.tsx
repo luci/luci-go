@@ -15,23 +15,40 @@
 import styled from '@emotion/styled';
 import { Info } from '@mui/icons-material';
 import { IconProps } from '@mui/material';
-import { observer } from 'mobx-react-lite';
+import { useMemo } from 'react';
 
+import { getTimingInfo } from '@/build/tools/build_utils';
+import { DurationBadge } from '@/common/components/duration_badge';
 import { Timestamp } from '@/common/components/timestamp';
-import { useStore } from '@/common/store';
 import { displayDuration } from '@/common/tools/time_utils';
+
+import { useBuild } from '../context';
 
 const InlineInfo = styled(Info)<IconProps>({
   verticalAlign: 'bottom',
 });
 
-export const TimingSection = observer(() => {
-  const store = useStore();
+export function TimingSection() {
+  const build = useBuild();
 
-  const build = store.buildPage.build;
-  if (!build) {
+  const info = useMemo(() => build && getTimingInfo(build), [build]);
+
+  if (!build || !info) {
     return <></>;
   }
+
+  const {
+    createTime,
+    startTime,
+    endTime,
+    pendingDuration,
+    schedulingTimeout,
+    exceededSchedulingTimeout,
+    executionDuration,
+    executionTimeout,
+    exceededExecutionTimeout,
+  } = info;
+
   return (
     <>
       <h3>Timing</h3>
@@ -47,40 +64,33 @@ export const TimingSection = observer(() => {
           <tr>
             <td>Created:</td>
             <td>
-              <Timestamp datetime={build.createTime} />
+              <Timestamp datetime={createTime} />
             </td>
           </tr>
           <tr>
             <td>Started:</td>
-            <td>
-              {build.startTime ? (
-                <Timestamp datetime={build.startTime} />
-              ) : (
-                'N/A'
-              )}
-            </td>
+            <td>{startTime ? <Timestamp datetime={startTime} /> : 'N/A'}</td>
           </tr>
           <tr>
             <td>Ended:</td>
-            <td>
-              {build.endTime ? <Timestamp datetime={build.endTime} /> : 'N/A'}
-            </td>
+            <td>{endTime ? <Timestamp datetime={endTime} /> : 'N/A'}</td>
           </tr>
           <tr>
             <td>Pending:</td>
             <td>
-              {displayDuration(build.pendingDuration)}
-              {build.isPending ? '(and counting)' : ''}
-              {build.exceededSchedulingTimeout ? (
+              <DurationBadge
+                duration={pendingDuration}
+                from={createTime}
+                to={startTime}
+              />
+              {exceededSchedulingTimeout ? (
                 <span className="warning">(exceeded timeout)</span>
               ) : (
                 ''
               )}
               <span
                 title={`Maximum pending duration: ${
-                  build.schedulingTimeout
-                    ? displayDuration(build.schedulingTimeout)
-                    : 'N/A'
+                  schedulingTimeout ? displayDuration(schedulingTimeout) : 'N/A'
                 }`}
               >
                 <InlineInfo fontSize="small" />
@@ -90,20 +100,19 @@ export const TimingSection = observer(() => {
           <tr>
             <td>Execution:</td>
             <td>
-              {build.executionDuration
-                ? displayDuration(build.executionDuration)
-                : 'N/A'}
-              {build.isExecuting ? '(and counting)' : ''}
-              {build.exceededExecutionTimeout ? (
+              <DurationBadge
+                duration={executionDuration}
+                from={startTime}
+                to={endTime}
+              />
+              {exceededExecutionTimeout ? (
                 <span className="warning">(exceeded timeout)</span>
               ) : (
                 ''
               )}
               <span
                 title={`Maximum execution duration: ${
-                  build.executionTimeout
-                    ? displayDuration(build.executionTimeout)
-                    : 'N/A'
+                  executionTimeout ? displayDuration(executionTimeout) : 'N/A'
                 }`}
               >
                 <InlineInfo fontSize="small" />
@@ -114,4 +123,4 @@ export const TimingSection = observer(() => {
       </table>
     </>
   );
-});
+}

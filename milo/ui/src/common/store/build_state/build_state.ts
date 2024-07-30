@@ -30,7 +30,6 @@ import { GitilesCommit, StringPair } from '@/common/services/common';
 import { Timestamp, TimestampInstance } from '@/common/store/timestamp';
 import { UserConfig, UserConfigInstance } from '@/common/store/user_config';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
-import { parseProtoDurationStr } from '@/common/tools/time_utils';
 import { keepAliveComputed } from '@/generic_libs/tools/mobx_utils';
 
 export interface StepInit {
@@ -223,35 +222,6 @@ export const BuildState = types
     rootSteps: [] as readonly StepExt[],
   }))
   .views((self) => ({
-    get createTime() {
-      return DateTime.fromISO(self.data.createTime);
-    },
-    get startTime() {
-      return self.data.startTime ? DateTime.fromISO(self.data.startTime) : null;
-    },
-    get endTime() {
-      return self.data.endTime ? DateTime.fromISO(self.data.endTime) : null;
-    },
-    get cancelTime() {
-      return self.data.cancelTime
-        ? DateTime.fromISO(self.data.cancelTime)
-        : null;
-    },
-    get schedulingTimeout() {
-      return self.data.schedulingTimeout
-        ? parseProtoDurationStr(self.data.schedulingTimeout)
-        : null;
-    },
-    get executionTimeout() {
-      return self.data.executionTimeout
-        ? parseProtoDurationStr(self.data.executionTimeout)
-        : null;
-    },
-    get gracePeriod() {
-      return self.data.gracePeriod
-        ? parseProtoDurationStr(self.data.gracePeriod)
-        : null;
-    },
     get buildOrStepInfraFailed() {
       return (
         self.data.status === BuildbucketStatus.InfraFailure ||
@@ -260,13 +230,6 @@ export const BuildState = types
     },
     get buildNumOrId() {
       return self.data.number?.toString() || 'b' + self.data.id;
-    },
-    get isCanary() {
-      return Boolean(
-        self.data.input?.experiments?.includes(
-          'luci.buildbucket.canary_software',
-        ),
-      );
     },
     get associatedGitilesCommit() {
       return getAssociatedGitilesCommit(self.data);
@@ -278,64 +241,6 @@ export const BuildState = types
         blamelistPins.push(this.associatedGitilesCommit);
       }
       return blamelistPins;
-    },
-    get _currentTime() {
-      return self.currentTime?.dateTime || DateTime.now();
-    },
-    get pendingDuration() {
-      return (this.startTime || this.endTime || this._currentTime).diff(
-        this.createTime,
-      );
-    },
-    get isPending() {
-      return !this.startTime && !this.endTime;
-    },
-    /**
-     * A build exceeded it's scheduling timeout when
-     * - the build is canceled, AND
-     * - the build did not enter the execution phase, AND
-     * - the scheduling timeout is specified, AND
-     * - the pending duration is no less than the scheduling timeout.
-     */
-    get exceededSchedulingTimeout() {
-      return (
-        !this.startTime &&
-        !this.isPending &&
-        this.schedulingTimeout !== null &&
-        this.pendingDuration >= this.schedulingTimeout
-      );
-    },
-    get executionDuration() {
-      return this.startTime
-        ? (this.endTime || this._currentTime).diff(this.startTime)
-        : null;
-    },
-    get isExecuting() {
-      return this.startTime !== null && !this.endTime;
-    },
-    /**
-     * A build exceeded it's execution timeout when
-     * - the build is canceled, AND
-     * - the build had entered the execution phase, AND
-     * - the execution timeout is specified, AND
-     * - the execution duration is no less than the execution timeout.
-     */
-    get exceededExecutionTimeout(): boolean {
-      return (
-        self.data.status === BuildbucketStatus.Canceled &&
-        this.executionDuration !== null &&
-        this.executionTimeout !== null &&
-        this.executionDuration >= this.executionTimeout
-      );
-    },
-    get timeSinceCreated(): Duration {
-      return this._currentTime.diff(this.createTime);
-    },
-    get timeSinceStarted(): Duration | null {
-      return this.startTime ? this._currentTime.diff(this.startTime) : null;
-    },
-    get timeSinceEnded(): Duration | null {
-      return this.endTime ? this._currentTime.diff(this.endTime) : null;
     },
   }))
   .views((self) => {
