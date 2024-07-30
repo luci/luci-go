@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
-
 import { BuildbucketLogLink } from '@/common/components/buildbucket_log_link';
-import { useStore } from '@/common/store';
 
-export const BuildLogSection = observer(() => {
-  const store = useStore();
-  const logs = store.buildPage.build?.data.output?.logs;
+import { useBuild } from '../context';
+
+export function BuildLogSection() {
+  const build = useBuild();
+  const logs = build?.output?.logs;
   if (!logs) {
     return <></>;
   }
@@ -36,4 +35,4 @@ export const BuildLogSection = observer(() => {
       </ul>
     </>
   );
-});
+}

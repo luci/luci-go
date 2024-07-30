@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
-
-import { useStore } from '@/common/store';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+import { useBuild } from '../context';
 
 import { PatchRow } from './patch_row';
 import { RevisionRow } from './revision_row';
 
-export const InputSection = observer(() => {
-  const store = useStore();
-  const input = store.buildPage.build?.data.input;
+export function InputSection() {
+  const build = useBuild();
+  const input = build?.input;
   if (!input?.gerritChanges && !input?.gerritChanges) {
     return <></>;
   }
@@ -35,11 +34,11 @@ export const InputSection = observer(() => {
           {input.gitilesCommit && (
             <RevisionRow commit={GitilesCommit.fromJSON(input.gitilesCommit)} />
           )}
-          {(input.gerritChanges || []).map((gc, i) => (
+          {input.gerritChanges.map((gc, i) => (
             <PatchRow key={i} gerritChange={gc} />
           ))}
         </tbody>
       </table>
     </>
   );
-});
+}

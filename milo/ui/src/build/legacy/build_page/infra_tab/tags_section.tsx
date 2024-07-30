@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
-
 import { BuildTagRow } from '@/common/components/build_tag_row';
-import { useStore } from '@/common/store';
 
-export const TagsSection = observer(() => {
-  const store = useStore();
+import { useBuild } from '../context';
 
-  const tags = store.buildPage.build?.data.tags;
+export function TagsSection() {
+  const build = useBuild();
+
+  const tags = build?.tags;
   if (!tags) {
     return <></>;
   }
@@ -44,4 +43,4 @@ export const TagsSection = observer(() => {
       </table>
     </>
   );
-});
+}

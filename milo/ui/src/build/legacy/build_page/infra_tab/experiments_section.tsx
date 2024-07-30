@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
+import { useBuild } from '../context';
 
-import { useStore } from '@/common/store';
+export function ExperimentsSection() {
+  const build = useBuild();
 
-export const ExperimentsSection = observer(() => {
-  const store = useStore();
-
-  const experiments = store.buildPage.build?.data.input?.experiments;
+  const experiments = build?.input?.experiments;
   if (!experiments) {
     return <></>;
   }
@@ -34,4 +32,4 @@ export const ExperimentsSection = observer(() => {
       </ul>
     </>
   );
-});
+}

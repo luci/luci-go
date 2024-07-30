@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
-
-import { useStore } from '@/common/store';
-
 import { StepDisplayConfig } from '../steps_tab/step_display_config';
 import { StepList } from '../steps_tab/step_list';
 
-export const StepsSection = observer(() => {
-  const store = useStore();
-  const pageState = store.buildPage;
-
-  if (!pageState.builderIdParam || !pageState.buildNumOrIdParam) {
-    return <></>;
-  }
-
+export function StepsSection() {
   return (
     <>
       <h3>Steps & Logs</h3>
@@ -34,4 +23,4 @@ export const StepsSection = observer(() => {
       <StepList />
     </>
   );
-});
+}

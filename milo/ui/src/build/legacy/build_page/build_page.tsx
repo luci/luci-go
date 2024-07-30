@@ -14,7 +14,6 @@
 
 import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -66,9 +65,8 @@ const STATUS_FAVICON_MAP = Object.freeze({
   [Status.CANCELED]: tealFavicon,
 });
 
-export const BuildPage = observer(() => {
+export function BuildPage() {
   const { project, bucket, builder, buildNumOrId } = useParams();
-  const store = useStore();
 
   if (!project || !bucket || !builder || !buildNumOrId) {
     throw new Error(
@@ -110,6 +108,9 @@ export const BuildPage = observer(() => {
     throw error;
   }
 
+  // TODO: remove the this section once the remaining usages of MobX is removed
+  // from the build page.
+  const store = useStore();
   useEffect(() => {
     store.buildPage.setParams({ project, bucket, builder }, buildNumOrId);
   }, [store, project, bucket, builder, buildNumOrId]);
@@ -205,7 +206,7 @@ export const BuildPage = observer(() => {
       </InvocationProvider>
     </BuildContextProvider>
   );
-});
+}
 
 export function Component() {
   return (

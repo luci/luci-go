@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
-
-import { useStore } from '@/common/store';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+import { useBuild } from '../context';
 
 import { RevisionRow } from './revision_row';
 
-export const OutputSection = observer(() => {
-  const store = useStore();
-  const output = store.buildPage.build?.data.output;
+export function OutputSection() {
+  const build = useBuild();
+  const output = build?.output;
   if (!output?.gitilesCommit) {
     return <></>;
   }
@@ -36,4 +35,4 @@ export const OutputSection = observer(() => {
       </table>
     </>
   );
-});
+}
