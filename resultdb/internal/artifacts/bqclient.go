@@ -93,7 +93,7 @@ func parseReadTestArtifactGroupsPageToken(pageToken string) (afterMaxPartitionTi
 		return 0, 0, "", "", "", err
 	}
 
-	if len(tokens) != 4 {
+	if len(tokens) != 5 {
 		return 0, 0, "", "", "", pagination.InvalidToken(errors.Reason("expected 5 components, got %d", len(tokens)).Err())
 	}
 
