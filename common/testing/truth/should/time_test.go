@@ -85,16 +85,16 @@ func TestHappenOnOrBetween(t *testing.T) {
 func TestHappenWithin(t *testing.T) {
 	now := testclock.TestRecentTimeLocal
 
-	t.Run("simple past", shouldPass(HappenWithin(now.Add(-time.Second), time.Second)(now)))
-	t.Run("simple future", shouldPass(HappenWithin(now, time.Second)(now)))
-	t.Run("simple future(2)", shouldPass(HappenWithin(now, time.Second)(now.Add(time.Second))))
-	t.Run("simple equal", shouldPass(HappenWithin(now, 0)(now)))
+	t.Run("simple past", shouldPass(HappenWithin(time.Second, now.Add(-time.Second))(now)))
+	t.Run("simple future", shouldPass(HappenWithin(time.Second, now)(now)))
+	t.Run("simple future(2)", shouldPass(HappenWithin(time.Second, now)(now.Add(time.Second))))
+	t.Run("simple equal", shouldPass(HappenWithin(0, now)(now)))
 
-	t.Run("simple false", shouldFail(HappenWithin(now, time.Second)(now.Add(-2*time.Second)), "± 1s"))
+	t.Run("simple false", shouldFail(HappenWithin(time.Second, now)(now.Add(-2*time.Second)), "± 1s"))
 
 	t.Run("panic with bad bounds", func(t *testing.T) {
 		mustPanicLike(t, "should.HappenWithin", func() {
-			HappenWithin(now, -time.Second)
+			HappenWithin(-time.Second, now)
 		})
 	})
 }

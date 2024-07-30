@@ -124,7 +124,7 @@ func HappenOnOrBetween(lower, upper time.Time) comparison.Func[time.Time] {
 
 // HappenWithin returns a comparison.Func which checks that some actual time
 // happened within 'delta' of 'target'.
-func HappenWithin(target time.Time, delta time.Duration) comparison.Func[time.Time] {
+func HappenWithin(delta time.Duration, target time.Time) comparison.Func[time.Time] {
 	const cmpName = "should.HappenWithin"
 
 	if delta < 0 {
