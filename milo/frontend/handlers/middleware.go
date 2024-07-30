@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package handlers
 
 import (
 	"bytes"
@@ -47,7 +47,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/internal/config"
 	"go.chromium.org/luci/milo/internal/git"

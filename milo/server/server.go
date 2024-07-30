@@ -40,7 +40,7 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
 
-	"go.chromium.org/luci/milo/frontend"
+	"go.chromium.org/luci/milo/frontend/handlers"
 	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/internal/config"
 	"go.chromium.org/luci/milo/internal/projectconfig"
@@ -125,9 +125,9 @@ func RegisterCrons(srv *server.Server, service *rpc.MiloInternalService) {
 }
 
 func RegisterFrontend(srv *server.Server) {
-	frontend.Run(srv, "frontend/templates")
+	handlers.Run(srv, "../frontend/templates")
 
-	httpService := frontend.HTTPService{
+	httpService := handlers.HTTPService{
 		Server: srv,
 		GetSettings: func(c context.Context) (*configpb.Settings, error) {
 			settings := config.GetSettings(c)

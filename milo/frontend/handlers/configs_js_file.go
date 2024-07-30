@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package handlers
 
 import (
 	"text/template"
@@ -27,7 +27,7 @@ import (
 
 // configsJSHandler serves /configs.js used by the browser-side.
 func (s *HTTPService) configsJSHandler(c *router.Context) error {
-	tmpl, err := template.ParseFiles("frontend/templates/configs.template.js")
+	tmpl, err := template.ParseFiles("../frontend/templates/configs.template.js")
 	if err != nil {
 		logging.Errorf(c.Request.Context(), "Failed to load configs.template.js: %s", err)
 		return err

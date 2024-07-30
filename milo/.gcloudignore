@@ -10,5 +10,5 @@
 .gcloudignore
 .gitignore
 
-/ui/*
-!/ui/out
+/frontend/ui/*
+!/frontend/ui/out

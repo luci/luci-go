@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package handlers
 
 import (
 	"context"
@@ -43,7 +43,7 @@ import (
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"

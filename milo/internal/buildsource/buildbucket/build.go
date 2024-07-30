@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth"

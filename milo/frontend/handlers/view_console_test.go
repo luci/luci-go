@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frontend
+package handlers
 
 import (
 	"encoding/json"
@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 

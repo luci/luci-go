@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package frontend contains all the milo frontend code, including static HTML
-// generation, HTTP routing, etc.
-package frontend
+package main
+
+import (
+	"go.chromium.org/luci/server"
+
+	miloserver "go.chromium.org/luci/milo/server"
+)
+
+func main() {
+	miloserver.Main(func(srv *server.Server) error {
+		service := miloserver.CreateInternalService()
+		miloserver.RegisterPRPCHandlers(srv, service)
+		miloserver.RegisterCrons(srv, service)
+		miloserver.RegisterFrontend(srv)
+		return nil
+	})
+}

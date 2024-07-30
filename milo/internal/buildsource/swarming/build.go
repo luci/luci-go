@@ -43,7 +43,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
-	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	"go.chromium.org/luci/milo/internal/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/internal/config"
 	"go.chromium.org/luci/milo/internal/model/milostatus"

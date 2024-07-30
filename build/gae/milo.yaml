@@ -8,12 +8,12 @@ build:
   - run: ['make', 'release']
     cwd: ${inputsdir}/ui
 
-  # This packages all Go code with its dependencies into _gopath/src/... It
-  # follows the symlinks in luci-go to pick up the built frontend code from
-  # resultui/out.
-  - go_gae_bundle: ${inputsdir}/app.yaml
+  # This packages all Go code with its dependencies into _gopath/src/... 
+  # It picks up the built frontend code from frontend/ui/out (which
+  # is symlinked to /ui/out).
+  - go_gae_bundle: ${inputsdir}/frontend/app.yaml
     go_gae_bundle_as_module: True
-    dest: ${contextdir}/milo
+    dest: ${contextdir}/frontend
   - go_gae_bundle: ${inputsdir}/service-api/service-api.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/service-api

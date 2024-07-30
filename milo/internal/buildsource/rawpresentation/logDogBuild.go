@@ -23,7 +23,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
-	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
