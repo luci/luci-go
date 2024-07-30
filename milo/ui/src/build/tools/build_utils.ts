@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Link } from '@/common/models/link';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
@@ -47,4 +48,28 @@ export function isCanary(build: Build) {
 
 export function getAssociatedGitilesCommit(build: OutputBuild) {
   return build.output?.gitilesCommit || build.input?.gitilesCommit;
+}
+
+export function getRecipeLink(build: OutputBuild): Link | null {
+  let csHost = 'source.chromium.org';
+  if (build.exe?.cipdPackage?.includes('internal')) {
+    csHost = 'source.corp.google.com';
+  }
+  // TODO(crbug.com/1149540): remove this conditional once the long-term
+  // solution for recipe links has been implemented.
+  if (build.builder.project === 'flutter') {
+    csHost = 'cs.opensource.google';
+  }
+  const recipeName = build.input?.properties?.['recipe'];
+  if (!recipeName) {
+    return null;
+  }
+
+  return {
+    label: recipeName as string,
+    url: `https://${csHost}/search/?${new URLSearchParams([
+      ['q', `file:recipes/${recipeName}.py`],
+    ]).toString()}`,
+    ariaLabel: `recipe ${recipeName}`,
+  };
 }

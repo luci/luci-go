@@ -279,29 +279,6 @@ export const BuildState = types
       }
       return blamelistPins;
     },
-    get recipeLink() {
-      let csHost = 'source.chromium.org';
-      if (self.data.exe?.cipdPackage?.includes('internal')) {
-        csHost = 'source.corp.google.com';
-      }
-      // TODO(crbug.com/1149540): remove this conditional once the long-term
-      // solution for recipe links has been implemented.
-      if (self.data.builder.project === 'flutter') {
-        csHost = 'cs.opensource.google';
-      }
-      const recipeName = self.data.input?.properties?.['recipe'];
-      if (!recipeName) {
-        return null;
-      }
-
-      return {
-        label: recipeName as string,
-        url: `https://${csHost}/search/?${new URLSearchParams([
-          ['q', `file:recipes/${recipeName}.py`],
-        ]).toString()}`,
-        ariaLabel: `recipe ${recipeName}`,
-      };
-    },
     get _currentTime() {
       return self.currentTime?.dateTime || DateTime.now();
     },

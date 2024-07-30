@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BuildInfraSwarming } from '@/common/services/buildbucket';
+import { BuildInfra_Swarming } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 
 export interface ServiceAccountRowProps {
-  readonly swarming: BuildInfraSwarming;
+  readonly swarming: BuildInfra_Swarming;
 }
 
 export function ServiceAccountRow({ swarming }: ServiceAccountRowProps) {

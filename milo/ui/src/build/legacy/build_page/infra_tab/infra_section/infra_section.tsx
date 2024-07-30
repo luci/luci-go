@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
+import { getRecipeLink } from '@/build/tools/build_utils';
 
-import { useStore } from '@/common/store';
+import { useBuild } from '../../context';
 
 import { BackendRows } from './backend_rows';
 import { BotLinkRow } from './bot_link_row';
@@ -24,13 +24,13 @@ import { RecipeRow } from './recipe_row';
 import { ServiceAccountRow } from './service_account_row';
 import { SwarmingTaskRow } from './swarming_task_row';
 
-export const InfraSection = observer(() => {
-  const store = useStore();
-
-  const build = store.buildPage.build;
+export function InfraSection() {
+  const build = useBuild();
   if (!build) {
     return <></>;
   }
+
+  const recipeLink = getRecipeLink(build);
 
   return (
     <>
@@ -44,21 +44,21 @@ export const InfraSection = observer(() => {
         }}
       >
         <tbody>
-          <BuildbucketRow buildId={build.data.id} />
-          {build.data.infra?.backend && (
-            <BackendRows backend={build.data.infra.backend} />
+          <BuildbucketRow buildId={build.id} />
+          {build.infra?.backend && (
+            <BackendRows backend={build.infra.backend} />
           )}
-          {build.data.infra?.swarming && (
+          {build.infra?.swarming && (
             <>
-              <SwarmingTaskRow swarming={build.data.infra.swarming} />
-              <BotLinkRow swarming={build.data.infra.swarming} />
-              <ServiceAccountRow swarming={build.data.infra.swarming} />
+              <SwarmingTaskRow swarming={build.infra.swarming} />
+              <BotLinkRow swarming={build.infra.swarming} />
+              <ServiceAccountRow swarming={build.infra.swarming} />
             </>
           )}
-          {build.recipeLink && <RecipeRow recipeLink={build.recipeLink} />}
-          <InvocationRow resultdb={build.data.infra?.resultdb} />
+          {recipeLink && <RecipeRow recipeLink={recipeLink} />}
+          <InvocationRow resultdb={build.infra?.resultdb} />
         </tbody>
       </table>
     </>
   );
-});
+}

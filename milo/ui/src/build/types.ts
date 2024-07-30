@@ -22,10 +22,18 @@
  */
 
 import { ArrayElement, DeepNonNullableProps } from '@/generic_libs/types';
-import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import {
+  Build,
+  BuildInfra,
+  BuildInfra_Backend,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { Step } from '@/proto/go.chromium.org/luci/buildbucket/proto/step.pb';
+import {
+  Task,
+  TaskID,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/task.pb';
 import {
   Builder,
   Console,
@@ -38,19 +46,33 @@ import {
 
 import { PARTIAL_BUILD_FIELD_MASK } from './constants';
 
-export type SpecifiedBuildStatus = Exclude<
+export type SpecifiedStatus = Exclude<
   BuildStatus,
   BuildStatus.STATUS_UNSPECIFIED | BuildStatus.ENDED_MASK
 >;
 
-export interface OutputStep extends Step {
-  readonly status: SpecifiedBuildStatus;
-}
-
 export interface OutputBuild
   extends DeepNonNullableProps<Build, 'builder' | 'createTime'> {
-  readonly status: SpecifiedBuildStatus;
+  readonly status: SpecifiedStatus;
   readonly steps: readonly OutputStep[];
+  readonly infra: OutputBuildInfra;
+}
+
+export interface OutputStep extends Step {
+  readonly status: SpecifiedStatus;
+}
+
+export interface OutputBuildInfra extends BuildInfra {
+  readonly backend: OutputBuildInfra_Backend;
+}
+
+export interface OutputBuildInfra_Backend extends BuildInfra_Backend {
+  readonly task: OutputTask;
+}
+
+export interface OutputTask extends Task {
+  readonly id: TaskID;
+  readonly status: SpecifiedStatus;
 }
 
 export interface PartialBuild
@@ -58,7 +80,7 @@ export interface PartialBuild
     DeepNonNullableProps<Build, 'builder' | 'createTime'>,
     ArrayElement<typeof PARTIAL_BUILD_FIELD_MASK>
   > {
-  readonly status: SpecifiedBuildStatus;
+  readonly status: SpecifiedStatus;
 }
 
 export interface OutputQueryConsoleSnapshotsResponse

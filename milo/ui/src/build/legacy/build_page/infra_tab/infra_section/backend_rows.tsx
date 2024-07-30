@@ -12,19 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Icon, Link } from '@mui/material';
+import { Link } from '@mui/material';
 import { JSONPath as jsonpath } from 'jsonpath-plus';
 
-import {
-  BUILD_STATUS_COLOR_MAP,
-  BUILD_STATUS_DISPLAY_MAP,
-  BUILD_STATUS_ICON_MAP,
-} from '@/common/constants/legacy';
-import { BuildInfraBackend } from '@/common/services/buildbucket';
+import { BuildStatusIcon } from '@/build/components/build_status_icon';
+import { OutputBuildInfra_Backend } from '@/build/types';
 import { getBotUrl } from '@/swarming/tools/utils';
 
 export interface BackendRowsProps {
-  readonly backend: BuildInfraBackend;
+  readonly backend: OutputBuildInfra_Backend;
 }
 
 export function BackendRows({ backend }: BackendRowsProps) {
@@ -32,13 +28,13 @@ export function BackendRows({ backend }: BackendRowsProps) {
 
   const botId = backend.task.id.target.startsWith('swarming://')
     ? jsonpath<string | undefined>({
-        json: task.details,
+        json: task.details || {},
         path: '$.bot_dimensions.id[0]@string()',
         wrap: false,
       })
     : undefined;
   const serviceAccount = jsonpath<string | undefined>({
-    json: backend.config,
+    json: backend.config || {},
     path: '$.service_account@string()',
     wrap: false,
   });
@@ -52,16 +48,7 @@ export function BackendRows({ backend }: BackendRowsProps) {
       <tr>
         <td>Backend Task:</td>
         <td>
-          <Icon
-            sx={{
-              color: BUILD_STATUS_COLOR_MAP[task.status],
-              verticalAlign: 'bottom',
-            }}
-            title={BUILD_STATUS_DISPLAY_MAP[task.status]}
-            fontSize="small"
-          >
-            {BUILD_STATUS_ICON_MAP[task.status]}
-          </Icon>{' '}
+          <BuildStatusIcon status={task.status} />
           {task.link ? (
             <Link href={task.link} target="_blank" rel="noopener">
               {task.id.id}

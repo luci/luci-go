@@ -18,7 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
-import { SpecifiedBuildStatus } from '@/build/types';
+import { SpecifiedStatus } from '@/build/types';
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
@@ -112,7 +112,7 @@ export function RecentBuilds({ builder }: RecentBuildsProps) {
     >
       {data.builds.map((build) => {
         const statusClass =
-          BUILD_STATUS_CLASS_MAP[build.status as SpecifiedBuildStatus];
+          BUILD_STATUS_CLASS_MAP[build.status as SpecifiedStatus];
         return (
           <Link
             component={RouterLink}

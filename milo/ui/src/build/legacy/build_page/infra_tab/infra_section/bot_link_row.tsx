@@ -13,19 +13,19 @@
 // limitations under the License.
 
 import { MiloLink } from '@/common/components/link';
-import { BuildInfraSwarming } from '@/common/services/buildbucket';
 import { getBotLink } from '@/common/tools/build_utils';
+import { BuildInfra_Swarming } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { StringPair } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 export interface BotLinkRowProps {
-  readonly swarming: BuildInfraSwarming;
+  readonly swarming: BuildInfra_Swarming;
 }
 
 export function BotLinkRow({ swarming }: BotLinkRowProps) {
   const botLink = swarming
     ? getBotLink({
         botDimensions:
-          swarming.botDimensions?.map((d) => StringPair.fromPartial(d)) || [],
+          swarming.botDimensions.map((d) => StringPair.fromPartial(d)) || [],
         hostname: swarming.hostname,
       })
     : null;

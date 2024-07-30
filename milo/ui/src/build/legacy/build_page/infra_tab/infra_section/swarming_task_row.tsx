@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BuildInfraSwarming } from '@/common/services/buildbucket';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
+import { BuildInfra_Swarming } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 
 export interface SwarmingTaskRowProps {
-  readonly swarming: BuildInfraSwarming;
+  readonly swarming: BuildInfra_Swarming;
 }
 
 export function SwarmingTaskRow({ swarming }: SwarmingTaskRowProps) {

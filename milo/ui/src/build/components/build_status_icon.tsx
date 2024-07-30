@@ -16,7 +16,7 @@ import { Icon, SxProps, Theme } from '@mui/material';
 import { IconOwnProps } from '@mui/material';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
-import { SpecifiedBuildStatus } from '@/build/types';
+import { SpecifiedStatus } from '@/build/types';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 const BUILD_STATUS_ICON_MAP = Object.freeze({
@@ -29,7 +29,7 @@ const BUILD_STATUS_ICON_MAP = Object.freeze({
 });
 
 export interface BuildStatusIconProps extends IconOwnProps {
-  readonly status: SpecifiedBuildStatus;
+  readonly status: SpecifiedStatus;
   readonly sx?: SxProps<Theme>;
 }
 
