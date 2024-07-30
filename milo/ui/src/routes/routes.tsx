@@ -237,6 +237,10 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/test_verdict/pages/recent_regressions_page'),
       },
       {
+        path: 'p/:project/log-search',
+        lazy: () => import('@/test_verdict/pages/log_search_page'),
+      },
+      {
         // TODO(b/321110247): once we have a stable regression group ID, replace
         // "details" with the regression group ID.
         path: 'p/:project/regressions/details',
