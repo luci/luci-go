@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { observer } from 'mobx-react-lite';
+import { Link } from '@mui/material';
 
-import { Link } from '@/common/models/link';
+import { Link as LinkData } from '@/common/models/link';
 
 export interface MiloLinkProps {
-  readonly link: Link;
+  readonly link: LinkData;
   readonly target?: string;
 }
 
 /**
  * Renders a Link object.
  */
-export const MiloLink = observer(({ link, target }: MiloLinkProps) => {
+export function MiloLink({ link, target }: MiloLinkProps) {
   return (
-    <a href={link.url} aria-label={link.ariaLabel} target={target || ''}>
+    <Link href={link.url} aria-label={link.ariaLabel} target={target || ''}>
       {link.label}
-    </a>
+    </Link>
   );
-});
+}
