@@ -307,7 +307,9 @@ class GroupChooser {
 
   // Adds the active class to the selected element,
   // highlighting the group clicked in the scroller.
-  setSelection(name) {
+  // Optional: success message to be added to the selectionChanged event; this
+  // is useful when providing feedback on user actions after form submission.
+  setSelection(name, message = '') {
     if (this.selectedGroupName === name) {
       return;
     }
@@ -318,6 +320,7 @@ class GroupChooser {
       bubble: true,
       detail: {
         group: name,
+        success: message,
       }
     });
     const groupElements = Array.from(document.getElementsByClassName('list-group-item'));
@@ -614,7 +617,11 @@ class GroupForm {
     // Sets the disabled attribute for all buttons, inputs and textareas in the
     // form.
     this.form.querySelectorAll('button, input, textarea').forEach((e) => {
-      e.setAttribute('disabled', disabled);
+      if (disabled) {
+        e.setAttribute('disabled', '');
+      } else {
+        e.removeAttribute('disabled');
+      }
     });
   }
 }
@@ -856,8 +863,13 @@ class NewGroupForm extends GroupForm {
 // resolves.
 const waitForResult = (cb, groupChooser, form, listErrorBox) => {
   let done = new Promise((resolve, reject) => {
-    // Lock UI while running the request.
+    // Lock the group chooser while running the request.
     groupChooser.disableInteraction();
+
+    // Lock the current form while running the request.
+    // If the submission of the current form is successful, there is no need to
+    // unlock it because a new form will be instantiated so that the latest
+    // group details are available.
     form.setInteractionDisabled(true);
     form.showSpinner();
 
@@ -868,29 +880,32 @@ const waitForResult = (cb, groupChooser, form, listErrorBox) => {
       .then((response) => {
         // Call succeeded. Refetch the list of groups.
         groupChooser.refetchGroups()
-        .then(() => {
-          // Groups list updated - trigger resolve.
-          resolve(response);
-        })
-        .catch((err) => {
-          // Failed to update the groups list. Show page-wide error message and
-          // trigger reject.
-          listErrorBox.showError('Listing groups failed', err.error);
-          reject(err);
-        });
+          .then(() => {
+            // Groups list updated - trigger resolve.
+            resolve(response);
+          })
+          .catch((err) => {
+            // Failed to update the groups list. Show page-wide error message and
+            // trigger reject.
+            listErrorBox.showError('Listing groups failed', err.error);
+            reject(err);
+          });
       })
       .catch((err) => {
         // Show error message on the form, since it's a local error with the
         // request, and trigger reject.
         form.showErrorAlert(err.error);
+
+        // Unlock the current form.
+        form.setInteractionDisabled(false);
+        form.hideSpinner();
+
         reject(err);
       })
       .finally(() => {
-        // Unlock UI.
+        // Unlock the group chooser.
         groupChooser.enableInteraction();
-        form.setInteractionDisabled(false);
-        form.hideSpinner();
-      })
+      });
   });
 
   return done;
@@ -913,7 +928,7 @@ window.onload = () => {
       const request = api.groupCreate(group);
       waitForResult(request, groupChooser, form, listErrorBox)
         .then((response) => {
-          groupChooser.setSelection(response.name);
+          groupChooser.setSelection(response.name, 'Group created.');
           // If the creation was done in dry-run mode, the group won't exist.
           if (groupChooser.reselectionRequired()) {
             groupChooser.selectDefault();
@@ -923,7 +938,7 @@ window.onload = () => {
     contentFrame.loadContent(form);
   };
 
-  const startEditGroupFlow = (groupName) => {
+  const startEditGroupFlow = (groupName, successMessage) => {
     let form = new EditGroupForm(groupName);
 
     // Called when the 'Update group' button is clicked.
@@ -931,7 +946,7 @@ window.onload = () => {
       const request = api.groupUpdate(group);
       waitForResult(request, groupChooser, form, listErrorBox)
         .then((response) => {
-          groupChooser.setSelection(response.name);
+          groupChooser.setSelection(response.name, 'Group updated.');
         });
     };
 
@@ -944,15 +959,22 @@ window.onload = () => {
         });
     };
 
-    contentFrame.loadContent(form);
+    // Once the group loads, show the success message if there is one.
+    contentFrame.loadContent(form).then(() => {
+      // Set the success alert message if provided.
+      if (successMessage) {
+        form.showSuccessAlert(successMessage);
+      }
+    });
   };
 
   groupChooser.element.addEventListener('selectionChanged', (event) => {
     if (event.detail.group === null) {
-      console.log('new group flow');
-    } else {
-      startEditGroupFlow(event.detail.group);
+      // Exit early for new group flow.
+      return;
     }
+
+    startEditGroupFlow(event.detail.group, event.detail.success);
   });
 
   // Button for triggering create group workflow.
