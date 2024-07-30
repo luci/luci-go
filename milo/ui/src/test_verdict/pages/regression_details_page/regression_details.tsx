@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
@@ -78,7 +78,14 @@ export function RegressionDetails({
   // all the associated changepoints.
   return (
     <BlamelistStateProvider>
-      <ChangepointTable testVariantBranchDefs={data} sx={{ padding: '10px' }} />
+      <Typography variant="h6" sx={{ padding: '10px' }}>
+        Regression group: {testVariantBranch.testId} ({data.length} test
+        variants)
+      </Typography>
+      <ChangepointTable
+        testVariantBranchDefs={data}
+        sx={{ paddingLeft: '10px', paddingRight: '10px' }}
+      />
       <RegressionDetailsDialog />
     </BlamelistStateProvider>
   );
