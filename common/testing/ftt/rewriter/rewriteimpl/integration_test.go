@@ -37,14 +37,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestRewriter(t *testing.T) {
-	testdata, err := os.ReadDir("test_inputs")
+	testdata, err := os.ReadDir("testinputs")
 	assert.Loosely(t, err, should.BeNil)
 
 	rewriteTest := func(testName string) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
-			dec, fil, err := ParseOne(filepath.Join("test_inputs", testName))
+			dec, fil, err := ParseOne(filepath.Join("testinputs", testName))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -63,13 +63,13 @@ func TestRewriter(t *testing.T) {
 			}
 
 			// The Name field is, confusingly, the package name.
-			// We want this to be 'test_outputs' in the target package.
-			newFil.Name.Name = "test_outputs"
+			// We want this to be 'testoutputs' in the target package.
+			newFil.Name.Name = "testoutputs"
 
 			var buf bytes.Buffer
 			assert.Loosely(t, format.Node(&buf, dec.Fset, newFil), should.BeNil)
 
-			expectedFile := filepath.Join("test_outputs", testName)
+			expectedFile := filepath.Join("testoutputs", testName)
 			if strings.Contains(testName, "_nobuild") {
 				expectedFile += ".nobuild"
 			}
