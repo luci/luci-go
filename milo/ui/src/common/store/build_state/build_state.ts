@@ -19,14 +19,12 @@ import { action, computed, makeObservable, untracked } from 'mobx';
 import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 
 import {
-  BLAMELIST_PIN_KEY,
   Build,
   BuildbucketStatus,
-  getAssociatedGitilesCommit,
   Log,
   Step,
 } from '@/common/services/buildbucket';
-import { GitilesCommit, StringPair } from '@/common/services/common';
+import { StringPair } from '@/common/services/common';
 import { Timestamp, TimestampInstance } from '@/common/store/timestamp';
 import { UserConfig, UserConfigInstance } from '@/common/store/user_config';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
@@ -230,17 +228,6 @@ export const BuildState = types
     },
     get buildNumOrId() {
       return self.data.number?.toString() || 'b' + self.data.id;
-    },
-    get associatedGitilesCommit() {
-      return getAssociatedGitilesCommit(self.data);
-    },
-    get blamelistPins(): readonly GitilesCommit[] {
-      const blamelistPins =
-        self.data.output?.properties?.[BLAMELIST_PIN_KEY] || [];
-      if (blamelistPins.length === 0 && this.associatedGitilesCommit) {
-        blamelistPins.push(this.associatedGitilesCommit);
-      }
-      return blamelistPins;
     },
   }))
   .views((self) => {

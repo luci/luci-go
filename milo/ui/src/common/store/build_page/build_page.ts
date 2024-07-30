@@ -43,7 +43,6 @@ import {
   unwrapObservable,
 } from '@/generic_libs/tools/mobx_utils';
 import { InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
-import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 
 export const enum SearchTarget {
   Builders,
@@ -154,12 +153,6 @@ export const BuildPage = types
     return {
       get invocationId() {
         return unwrapObservable(invocationId.get() || NEVER_OBSERVABLE, null);
-      },
-      get gitilesCommitRepo() {
-        if (!self.build?.associatedGitilesCommit) {
-          return null;
-        }
-        return getGitilesRepoURL(self.build.associatedGitilesCommit);
       },
     };
   })

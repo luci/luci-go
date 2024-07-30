@@ -14,11 +14,15 @@
 
 import { DateTime, Duration } from 'luxon';
 
+import { BLAMELIST_PIN_KEY } from '@/build/constants';
 import { Link } from '@/common/models/link';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
-import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import {
+  GitilesCommit,
+  Status,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { OutputBuild } from '../types';
 
@@ -51,6 +55,18 @@ export function isCanary(build: Build) {
 
 export function getAssociatedGitilesCommit(build: OutputBuild) {
   return build.output?.gitilesCommit || build.input?.gitilesCommit;
+}
+
+export function getBlamelistPins(build: OutputBuild): readonly GitilesCommit[] {
+  const blamelistPins: GitilesCommit[] =
+    build.output?.properties?.[BLAMELIST_PIN_KEY] || [];
+  if (blamelistPins.length === 0) {
+    const associatedCommit = getAssociatedGitilesCommit(build);
+    if (associatedCommit) {
+      blamelistPins.push(associatedCommit);
+    }
+  }
+  return blamelistPins;
 }
 
 export function getRecipeLink(build: OutputBuild): Link | null {

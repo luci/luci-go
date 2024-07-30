@@ -33,7 +33,6 @@ import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 
 export const TEST_PRESENTATION_KEY =
   '$recipe_engine/resultdb/test_presentation';
-export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 
 export const BUILD_FIELD_MASK =
   'id,builder,builderInfo,number,canceledBy,' +
@@ -192,7 +191,6 @@ export interface BuildInput {
 export interface BuildOutput {
   readonly properties?: {
     [TEST_PRESENTATION_KEY]?: TestPresentationConfig;
-    [BLAMELIST_PIN_KEY]?: GitilesCommit[];
     [key: string]: unknown;
   };
   readonly gitilesCommit?: GitilesCommit;

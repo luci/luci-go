@@ -14,6 +14,8 @@
 
 import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
+export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
+
 export const BUILD_FIELD_MASK = Object.freeze([
   'id',
   'builder',

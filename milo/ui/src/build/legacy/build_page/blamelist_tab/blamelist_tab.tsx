@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@material/mwc-button';
 import {
   CircularProgress,
   FormControl,
@@ -20,29 +19,30 @@ import {
   MenuItem,
   Select,
 } from '@mui/material';
-import { observer } from 'mobx-react-lite';
 import { useId, useState } from 'react';
 
+import { getBlamelistPins } from '@/build/tools/build_utils';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useStore } from '@/common/store';
 import { useTabId } from '@/generic_libs/components/routed_tabs';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
-import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+import { useBuild } from '../context';
 
 import { BlamelistDisplay } from './blamelist_display';
 
-export const BlamelistTab = observer(() => {
-  const store = useStore();
-  const build = store.buildPage.build;
+export function BlamelistTab() {
+  const build = useBuild();
 
   const repoSelectorLabelId = useId();
 
   const [selectedBlamelistPinIndex, setSelectedBlamelistPinIndex] = useState(0);
-  const selectedBlamelistPin = build?.blamelistPins[selectedBlamelistPinIndex];
 
   if (!build) {
     return <CircularProgress sx={{ margin: '10px' }} />;
   }
+
+  const blamelistPins = getBlamelistPins(build);
+  const selectedBlamelistPin = blamelistPins[selectedBlamelistPinIndex];
 
   if (!selectedBlamelistPin) {
     return (
@@ -61,13 +61,13 @@ export const BlamelistTab = observer(() => {
           labelId={repoSelectorLabelId}
           label="Repo"
           value={selectedBlamelistPinIndex}
-          disabled={build.blamelistPins.length <= 1}
+          disabled={blamelistPins.length <= 1}
           onChange={(e) =>
             setSelectedBlamelistPinIndex(e.target.value as number)
           }
           sx={{ width: '500px' }}
         >
-          {build.blamelistPins.map((pin, i) => (
+          {blamelistPins.map((pin, i) => (
             <MenuItem key={i} value={i}>
               {getGitilesRepoURL(pin)}
             </MenuItem>
@@ -75,12 +75,12 @@ export const BlamelistTab = observer(() => {
         </Select>
       </FormControl>
       <BlamelistDisplay
-        blamelistPin={GitilesCommit.fromJSON(selectedBlamelistPin)}
-        builder={build.data.builder}
+        blamelistPin={selectedBlamelistPin}
+        builder={build.builder}
       />
     </>
   );
-});
+}
 
 export function Component() {
   useTabId('blamelist');
