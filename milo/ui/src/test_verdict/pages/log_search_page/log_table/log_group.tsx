@@ -20,10 +20,11 @@ import {
 import { Box, Link, Button, styled } from '@mui/material';
 
 import { getTestHistoryURLPath } from '@/common/tools/url_utils';
-import { Variant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { OutputQueryTestVariantArtifactGroupsResponse_MatchGroup } from '@/test_verdict/types';
 
-import { LogSnippetRow } from './log_snippet_row';
+import { useLogGroupListDispatch } from '../contexts';
+import { LogSnippetRow } from '../log_snippet_row';
+import { VariantLine } from '../variant_line';
 
 const LogGroupHeaderDiv = styled(Box)`
   background: #e8f0fe;
@@ -45,19 +46,15 @@ const ExpandableRowDiv = styled(Box)`
   gap: 5px;
 `;
 
-function variantToString(v: Variant) {
-  return Object.entries(v.def)
-    .map(([k, v]) => `${k}:${v}`)
-    .join(', ');
-}
-
 interface LogGroupProps {
   readonly project: string;
   readonly group: OutputQueryTestVariantArtifactGroupsResponse_MatchGroup;
 }
 
 export function LogGroup({ project, group }: LogGroupProps) {
-  const { testId, variant, artifactId, artifacts, matchingCount } = group;
+  const { testId, variant, variantHash, artifactId, artifacts, matchingCount } =
+    group;
+  const dispatch = useLogGroupListDispatch();
 
   return (
     <>
@@ -72,9 +69,9 @@ export function LogGroup({ project, group }: LogGroupProps) {
         >
           {testId}
         </Link>
-        <ArrowForwardIos sx={{ fontSize: '17px' }} />
-        <Box>{variant && variantToString(variant)} </Box>
-        <ArrowForwardIos sx={{ fontSize: '17px' }} />
+        <ArrowForwardIos sx={{ fontSize: '14px' }} />
+        <Box>{variant && <VariantLine variant={variant} />}</Box>
+        <ArrowForwardIos sx={{ fontSize: '14px' }} />
         {artifactId}
       </LogGroupHeaderDiv>
       {artifacts.map((a) => (
@@ -82,6 +79,17 @@ export function LogGroup({ project, group }: LogGroupProps) {
       ))}
       {matchingCount - artifacts.length > 0 && (
         <Button
+          onClick={() =>
+            dispatch({
+              type: 'showLogGroupList',
+              logGroupIdentifer: {
+                testID: testId,
+                variantHash,
+                variant,
+                artifactID: artifactId,
+              },
+            })
+          }
           sx={{ width: '100%', textTransform: 'none', fontSize: 'inherit' }}
         >
           <ExpandableRowDiv>

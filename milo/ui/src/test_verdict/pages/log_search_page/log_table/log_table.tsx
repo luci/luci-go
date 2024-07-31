@@ -40,11 +40,8 @@ export interface LogSearchProps {
 }
 
 // TODO (beining@):
-// * Pagination
-// * Expand test variant artifact groups.
 // * search for invocation artifact, and display on a different tab.
 // * link to log viewer.
-// * handle RPC error.
 export function LogTable({ project, form }: LogSearchProps) {
   const [searchParams, _] = useSyncedSearchParams();
   const pageSize = getPageSize(searchParams, DEFAULT_PAGE_SIZE);
@@ -90,7 +87,6 @@ export function LogTable({ project, form }: LogSearchProps) {
           padding: '10px 0px',
         }}
       >
-        {/* <LogTableContent project={project} groups={data.groups} /> */}
         {isLoading ? (
           <LinearProgress />
         ) : (

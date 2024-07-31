@@ -29,6 +29,7 @@ import {
   ArtifactMatchingContent,
   QueryTestVariantArtifactGroupsResponse_MatchGroup,
   QueryTestVariantArtifactGroupsResponse,
+  QueryTestVariantArtifactsResponse,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {
   TestResultBundle,
@@ -86,12 +87,17 @@ export interface OutputBatchGetTestVariantResponse
 
 export interface OutputQueryTestVariantArtifactGroupsResponse
   extends QueryTestVariantArtifactGroupsResponse {
-  readonly groups: OutputQueryTestVariantArtifactGroupsResponse_MatchGroup[];
+  readonly groups: readonly OutputQueryTestVariantArtifactGroupsResponse_MatchGroup[];
+}
+
+export interface OutputQueryTestVariantArtifactsResponse
+  extends QueryTestVariantArtifactsResponse {
+  readonly artifacts: readonly OutputArtifactMatchingContent[];
 }
 
 export interface OutputQueryTestVariantArtifactGroupsResponse_MatchGroup
   extends QueryTestVariantArtifactGroupsResponse_MatchGroup {
-  readonly artifacts: OutputArtifactMatchingContent[];
+  readonly artifacts: readonly OutputArtifactMatchingContent[];
 }
 
 export type OutputArtifactMatchingContent = NonNullableProps<

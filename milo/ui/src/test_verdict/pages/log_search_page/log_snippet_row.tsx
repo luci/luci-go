@@ -26,7 +26,7 @@ const Container = styled(Box)`
   gap: 20px;
   border-bottom: 1px solid #dadce0;
   padding: 2px 20px;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.5;
   letter-spacing: normal;
 `;
@@ -68,7 +68,9 @@ export function LogSnippetRow({ artifact }: LogSnippetRowProps) {
           }}
         >
           {beforeMatch}
-          <span css={{ backgroundColor: '#f2f598' }}>{match}</span>
+          <span css={{ backgroundColor: '#ceead6', fontWeight: '700' }}>
+            {match}
+          </span>
           {afterMatch}
         </Box>
       </Link>

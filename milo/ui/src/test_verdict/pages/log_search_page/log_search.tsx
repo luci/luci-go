@@ -25,7 +25,9 @@ import {
   REGEX_MATCH_OPTION,
 } from './constants';
 import { FormData } from './form_data';
-import { LogTable } from './log_table/log_table';
+import { LogListDialog } from './log_list_dialog';
+import { LogTable } from './log_table';
+import { LogGroupListStateProvider } from './providers';
 import { SelectTextField } from './select_text_field';
 
 const FormContainer = styled(Box)`
@@ -220,7 +222,14 @@ export function LogSearch({ project }: LogSearchProps) {
           Query will be slow without an test ID filter or log file filter.
         </Alert>
       )}
-      {formToSearch && <LogTable project={project} form={formToSearch} />}
+      <LogGroupListStateProvider>
+        {formToSearch && (
+          <>
+            <LogTable project={project} form={formToSearch} />
+            <LogListDialog project={project} form={formToSearch} />
+          </>
+        )}
+      </LogGroupListStateProvider>
     </>
   );
 }
