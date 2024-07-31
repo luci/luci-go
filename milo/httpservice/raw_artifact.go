@@ -19,7 +19,6 @@ import (
 	"net/url"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -60,7 +59,7 @@ func (s *HTTPService) buildRawArtifactHandler(prefix string) func(ctx *router.Co
 
 		artifact, err := rdbClient.GetArtifact(ctx.Request.Context(), &resultpb.GetArtifactRequest{Name: artifactName})
 		if err != nil {
-			return appstatus.GRPCifyAndLog(ctx.Request.Context(), err)
+			return err
 		}
 
 		fetchURL := artifact.FetchUrl
