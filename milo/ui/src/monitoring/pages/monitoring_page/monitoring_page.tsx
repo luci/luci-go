@@ -52,7 +52,7 @@ import {
 
 export const MonitoringPage = () => {
   const { tree: treeName } = useParams();
-  const tree = configuredTrees.filter((t) => t.name === treeName)?.[0];
+  const tree = configuredTrees.find((t) => t.name === treeName);
 
   const client = usePrpcServiceClient({
     host: SETTINGS.sheriffOMatic.host,
@@ -93,7 +93,7 @@ export const MonitoringPage = () => {
     (extendedQueryData || []).map((a) => a?.bug).filter((b) => b && b !== '0'),
   );
 
-  const hotlistPart = tree.hotlistId
+  const hotlistPart = tree?.hotlistId
     ? `(status:open AND hotlistid:${tree?.hotlistId})`
     : '';
   const linkedIssuesPart = linkedBugs.map((b) => 'id:' + b).join(' OR ');
