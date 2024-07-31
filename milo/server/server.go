@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/milo/httpservice"
 	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/internal/config"
+	"go.chromium.org/luci/milo/internal/hosts"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	milopb "go.chromium.org/luci/milo/proto/v1"
@@ -65,6 +66,7 @@ func Main(init func(srv *server.Server) error) {
 		secrets.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		hosts.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		gtm.NewModuleFromFlags(),
 		loginsessions.NewModuleFromFlags(),
@@ -109,6 +111,9 @@ func CreateInternalService() *rpc.MiloInternalService {
 }
 
 func RegisterPRPCHandlers(srv *server.Server, service *rpc.MiloInternalService) {
+	srv.ConfigurePRPC(func(s *prpc.Server) {
+		s.AccessControl = prpc.AllowOriginAll
+	})
 	milopb.RegisterMiloInternalServer(srv, &milopb.DecoratedMiloInternal{
 		Service: service,
 		Postlude: func(ctx context.Context, methodName string, rsp proto.Message, err error) error {

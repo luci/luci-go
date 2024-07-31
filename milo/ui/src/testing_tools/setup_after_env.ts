@@ -82,6 +82,9 @@ configJSVars.SETTINGS = Object.freeze({
   crRev: {
     host: assertNonNullable(process.env['VITE_CR_REV_HOST']),
   },
+  milo: {
+    host: assertNonNullable(process.env['VITE_MILO_HOST']),
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by

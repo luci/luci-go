@@ -61,6 +61,9 @@ declare const SETTINGS: {
   readonly crRev: {
     readonly host: string;
   };
+  readonly milo: {
+    readonly host: string;
+  };
 };
 
 /**

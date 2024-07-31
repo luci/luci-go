@@ -17,9 +17,19 @@ import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/
 import { usePrpcServiceClient } from './prpc_query';
 
 export function useMiloInternalClient() {
+  // Only use HTTP with local development servers hosted
+  // on the same machine and where the page is loaded over
+  // HTTP.
+  const host = SETTINGS.milo.host;
+  const isLoopback =
+    host === 'localhost' ||
+    host.startsWith('localhost:') ||
+    host === '127.0.0.1' ||
+    host.startsWith('127.0.0.1:');
+  const useInsecure = isLoopback && document.location.protocol === 'http:';
   return usePrpcServiceClient({
-    host: '',
-    insecure: location.protocol === 'http:',
+    host: host,
+    insecure: useInsecure,
     ClientImpl: MiloInternalClientImpl,
   });
 }

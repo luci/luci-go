@@ -23,9 +23,9 @@ import { GrpcError, ProtocolError, RpcCode } from '@chopsui/prpc-client';
 
 export interface PrpcClientOptions {
   /**
-   * pRPC server host, defaults to current document host.
+   * pRPC server host.
    */
-  readonly host?: string;
+  readonly host: string;
   /**
    * Auth token to use in RPC. Defaults to `() => ''`.
    */
@@ -73,7 +73,7 @@ export class PrpcClient {
   readonly insecure: boolean;
   readonly fetchImpl: typeof fetch;
 
-  constructor(options?: PrpcClientOptions) {
+  constructor(options: PrpcClientOptions) {
     const headers = new Headers(options?.additionalHeaders);
     for (const key of headers.keys()) {
       if (NON_OVERRIDABLE_HEADERS.includes(key)) {
@@ -81,12 +81,12 @@ export class PrpcClient {
       }
     }
 
-    this.host = options?.host || self.location.host;
-    this.getAuthToken = options?.getAuthToken || (() => '');
-    this.tokenType = options?.tokenType || 'Bearer';
+    this.host = options.host;
+    this.getAuthToken = options.getAuthToken || (() => '');
+    this.tokenType = options.tokenType || 'Bearer';
     this.additionalHeaders = Object.fromEntries(headers.entries());
-    this.insecure = options?.insecure || false;
-    this.fetchImpl = options?.fetchImpl || self.fetch.bind(self);
+    this.insecure = options.insecure || false;
+    this.fetchImpl = options.fetchImpl || self.fetch.bind(self);
   }
 
   /**

@@ -32,6 +32,7 @@ luci_gae_vars:
   luci-milo-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     CONFIG_SERVICE_HOST: config.luci.app
+    MILO_HOST: VERSION.staging.milo.api.luci.app
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     OAUTH_CLIENT_ID: 897369734084-d3t2c39aht2aqeop0f42pp48ejpr54up.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
@@ -112,6 +113,7 @@ entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
+  -milo-host ${MILO_HOST}
   -ts-mon-account ${TS_MON_ACCOUNT}
   -cloud-error-reporting
   -root-secret ${ROOT_SECRET}

@@ -81,6 +81,9 @@ function getLocalDevConfigsJs(env: Record<string, string>) {
     crRev: {
       host: env['VITE_CR_REV_HOST'],
     },
+    milo: {
+      host: env['VITE_MILO_HOST'],
+    },
   };
 
   const localDevConfigsJs =

@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/milo/internal/config"
+	"go.chromium.org/luci/milo/internal/hosts"
 	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
@@ -35,6 +36,12 @@ var configsJsTemplate = template.Must(template.New("configs.js").Parse(configsJs
 
 // configsJSHandler serves /configs.js used by the browser-side.
 func (s *HTTPService) configsJSHandler(c *router.Context) error {
+	miloAPIHost, err := hosts.APIHost(c.Request.Context())
+	if err != nil {
+		logging.Errorf(c.Request.Context(), "Failed to load MILO Host: %s", err)
+		return err
+	}
+
 	settings := config.GetSettings(c.Request.Context())
 	// Reassign to make exposing props explicit.
 	settings = &configpb.Settings{
@@ -48,6 +55,12 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 		LuciNotify:     settings.LuciNotify,
 		AuthService:    settings.AuthService,
 		CrRev:          settings.CrRev,
+		Milo: &configpb.Settings_Milo{
+			// Fetched from command line arguments to the server binary instead of
+			// config. This facilitates testing locally developed UI with locally
+			// developed backend uploaded via gae.py.
+			Host: miloAPIHost,
+		},
 	}
 
 	header := c.Writer.Header()
@@ -56,7 +69,7 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 	// We don't need to cache the configs file because it is fetched and re-served
 	// by the service worker.
 	header.Set("cache-control", "no-cache")
-	err := configsJsTemplate.Execute(c.Writer, map[string]any{
+	err = configsJsTemplate.Execute(c.Writer, map[string]any{
 		"Version":      s.Server.Options.ImageVersion(),
 		"SettingsJSON": protojson.Format(settings),
 	})

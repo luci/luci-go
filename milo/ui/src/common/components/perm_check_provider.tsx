@@ -31,9 +31,16 @@ export interface PermCheckProviderProps {
 export function PermCheckProvider({ children }: PermCheckProviderProps) {
   // Use a single client instance so all requests in the same rendering cycle
   // can be batched together.
+  const host = SETTINGS.milo.host;
+  const isLoopback =
+    host === 'localhost' ||
+    host.startsWith('localhost:') ||
+    host === '127.0.0.1' ||
+    host.startsWith('127.0.0.1:');
+  const useInsecure = isLoopback && document.location.protocol === 'http:';
   const client = usePrpcServiceClient({
-    host: '',
-    insecure: location.protocol === 'http:',
+    host: host,
+    insecure: useInsecure,
     ClientImpl: BatchedMiloInternalClientImpl,
   });
 
