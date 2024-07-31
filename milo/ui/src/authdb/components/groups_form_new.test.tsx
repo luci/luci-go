@@ -13,11 +13,10 @@
 // limitations under the License.
 
 import { act } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import List from '@mui/material/List';
 import { GroupsFormNew } from './groups_form_new';
-import userEvent from '@testing-library/user-event';
 
 describe('<GroupsFormNew />', () => {
   test('if group name, description textarea is displayed', async () => {
@@ -31,9 +30,39 @@ describe('<GroupsFormNew />', () => {
     );
 
     await screen.findByTestId('groups-form-new');
-    expect(screen.getByTestId('name-textarea')).toBeInTheDocument();
-    expect(screen.getByTestId('description-textarea')).toBeInTheDocument();
+    expect(screen.getByTestId('name-textfield')).toBeInTheDocument();
+    expect(screen.getByTestId('description-textfield')).toBeInTheDocument();
   });
+  test('valid form shows no errors', async () => {
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsFormNew/>
+        </List>
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('groups-form-new');
+    const nameTextfield = screen.getByTestId('name-textfield').querySelector('input');
+    const ownersTextfield = screen.getByTestId('owners-textfield').querySelector('input');
+    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    const membersTextfield = screen.getByTestId('members-textfield').querySelector('textarea');
+
+    fireEvent.change(nameTextfield!, {target: { value: 'name'}});
+    fireEvent.change(ownersTextfield!, {target: { value: 'administrators'}});
+    fireEvent.change(descriptionTextfield!, {target: { value: 'test group'}});
+    fireEvent.change(membersTextfield!, {target: { value: 'name-name@email.com'}});
+
+    const createButton = screen.getByTestId('create-button');
+    act(() => createButton.click());
+    expect(screen.queryByText('Invalid group name.')).toBeNull();
+    expect(screen.queryByText('Description is required.')).toBeNull();
+    expect(screen.queryByText('Invalid owners name. Must be a group.')).toBeNull();
+    expect(screen.queryByText('Invalid members:', {exact: false})).toBeNull();
+
+});
+
 
   test('error is shown if creating invalid name', async () => {
 
@@ -46,12 +75,10 @@ describe('<GroupsFormNew />', () => {
     );
 
     await screen.findByTestId('groups-form-new');
-    const textarea = screen.getByTestId('name-textarea');
-    textarea.focus();
-    await userEvent.type(textarea!, 'Invalid name');
+    const textfield = screen.getByTestId('name-textfield').querySelector('input');
+    fireEvent.change(textfield!, {target: { value: 'Invalid name'}});
     const createButton = screen.getByTestId('create-button');
     act(() => createButton.click());
-    await screen.findByTestId('name-error');
     expect(screen.getByText('Invalid group name.')).toBeInTheDocument();
   });
 
@@ -68,7 +95,6 @@ describe('<GroupsFormNew />', () => {
     await screen.findByTestId('groups-form-new');
     const createButton = screen.getByTestId('create-button');
     act(() => createButton.click());
-    await screen.findByTestId('description-error');
     expect(screen.getByText('Description is required.')).toBeInTheDocument();
   });
 
@@ -83,12 +109,28 @@ describe('<GroupsFormNew />', () => {
     );
 
     await screen.findByTestId('groups-form-new');
-    const textarea = screen.getByTestId('owners-textfield');
-    textarea.focus();
-    await userEvent.type(textarea!, 'Invalid owners');
+    const textfield = screen.getByTestId('owners-textfield').querySelector('input');
+    fireEvent.change(textfield!, {target: { value: 'Invalid owners'}});
     const createButton = screen.getByTestId('create-button');
     act(() => createButton.click());
-    await screen.findByTestId('owners-error');
     expect(screen.getByText('Invalid owners name. Must be a group.')).toBeInTheDocument();
+  });
+
+  test('error is shown on invalid members name', async () => {
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsFormNew/>
+        </List>
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('groups-form-new');
+    const textfield = screen.getByTestId('members-textfield').querySelector('textarea');
+    fireEvent.change(textfield!, {target: { value: '!@email.com'}});
+    const createButton = screen.getByTestId('create-button');
+    act(() => createButton.click());
+    expect(screen.getByText('Invalid members: !@email.com')).toBeInTheDocument();
   });
 });

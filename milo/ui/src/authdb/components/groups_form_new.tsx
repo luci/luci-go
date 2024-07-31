@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Table from '@mui/material/Table';
@@ -21,12 +20,13 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
-import { TextareaAutosize } from '@mui/base/TextareaAutosize';
 import Typography from '@mui/material/Typography';
 import { FormControl } from '@mui/material';
 import { useState } from 'react';
+import validator from 'validator';
 
 const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
+const membersRe = /^((user|bot|service|anonymous):)?[\w+%.@*\[\]-]+$/;
 
 const theme = createTheme({
   typography: {
@@ -47,11 +47,13 @@ const theme = createTheme({
 
 export function GroupsFormNew () {
   const [name, setName] = useState<string>('');
-  const [nameErrorMessage, setNameErrorMessage] = useState<string>();
+  const [nameErrorMessage, setNameErrorMessage] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [descriptionErrorMessage, setDescriptionErrorMessage] = useState<string>();
+  const [descriptionErrorMessage, setDescriptionErrorMessage] = useState<string>('');
   const [owners, setOwners] = useState<string>('');
-  const [ownersErrorMessage, setOwnersErrorMessage] = useState<string>();
+  const [ownersErrorMessage, setOwnersErrorMessage] = useState<string>('');
+  const [members, setMembers] = useState<string>('');
+  const [membersErrorMessage, setMembersErrorMessage] = useState<string>('');
 
     const createGroup = () => {
       if (!nameRe.test(name)) {
@@ -68,6 +70,14 @@ export function GroupsFormNew () {
         setOwnersErrorMessage('Invalid owners name. Must be a group.');
       } else {
         setOwnersErrorMessage('');
+      }
+      const membersArray = members.split(/[\n ]+/).filter((item) => item !== "");
+      let invalidMembers = membersArray.filter((member) => !(membersRe.test(member) && validator.isEmail(member)));
+      if (invalidMembers.length > 0) {
+        let errorMessage = 'Invalid members: ' + invalidMembers.join(', ');
+        setMembersErrorMessage(errorMessage);
+      } else {
+        setMembersErrorMessage('');
       }
     }
 
@@ -86,20 +96,9 @@ export function GroupsFormNew () {
               </TableRow>
               <TableRow>
                 <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
-                  <TextField value={name} style={{width: '100%'}} onChange={(e) => setName(e.target.value)} id='nameTextfield' data-testid='name-textarea' placeholder='required'></TextField>
+                  <TextField value={name} style={{width: '100%'}} onChange={(e) => setName(e.target.value)} id='nameTextfield' data-testid='name-textfield' placeholder='required' error={nameErrorMessage !== ""} helperText={nameErrorMessage}></TextField>
                 </TableCell>
               </TableRow>
-              {nameErrorMessage &&
-              <TableRow sx={{pt: 0}}>
-                <TableCell sx={{pt: 0}}>
-                  <Alert severity="error" data-testid='name-error'>{nameErrorMessage}</Alert>
-                </TableCell>
-              </TableRow>
-              }
-            </TableBody>
-          </Table>
-          <Table>
-            <TableBody>
               <TableRow>
                 <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
                   <Typography variant="h6"> Description</Typography>
@@ -107,20 +106,9 @@ export function GroupsFormNew () {
               </TableRow>
               <TableRow>
                 <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
-                  <TextareaAutosize value={description} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield' data-testid='description-textarea' placeholder='required'></TextareaAutosize>
+                  <TextField value={description} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield' data-testid='description-textfield' placeholder='required' error={descriptionErrorMessage !== ""} helperText={descriptionErrorMessage}></TextField>
                 </TableCell>
               </TableRow>
-              {descriptionErrorMessage &&
-              <TableRow sx={{pt: 0}}>
-                <TableCell sx={{pt: 0}}>
-                  <Alert severity="error" data-testid='description-error'>{descriptionErrorMessage}</Alert>
-                </TableCell>
-              </TableRow>
-              }
-            </TableBody>
-          </Table>
-          <Table>
-            <TableBody>
               <TableRow>
                 <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
                   <Typography variant="h6"> Owners</Typography>
@@ -128,16 +116,19 @@ export function GroupsFormNew () {
               </TableRow>
               <TableRow>
                 <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
-                  <TextField value={owners} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield' data-testid='owners-textfield' placeholder='administrators'></TextField>
+                  <TextField value={owners} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield' data-testid='owners-textfield' placeholder='administrators' error={ownersErrorMessage !== ""} helperText={ownersErrorMessage}></TextField>
                 </TableCell>
               </TableRow>
-              {ownersErrorMessage &&
-              <TableRow sx={{pt: 0}}>
-                <TableCell sx={{pt: 0}}>
-                  <Alert severity="error" data-testid='owners-error'>{ownersErrorMessage}</Alert>
+              <TableRow>
+                <TableCell sx={{pb: 0}} style={{display: 'flex', flexDirection: 'row', alignItems:'center', minHeight: '45px'}}>
+                  <Typography variant="h6"> Members</Typography>
                 </TableCell>
               </TableRow>
-              }
+              <TableRow>
+                <TableCell align='left' style={{width: '95%'}} sx={{pt: 0, pb: '8px'}}>
+                  <TextField multiline value={members} style={{width: '100%', minHeight: '60px'}} onChange={(e) => setMembers(e.target.value)} id='membersTextfield' data-testid='members-textfield' error={membersErrorMessage !== ""} helperText={membersErrorMessage}></TextField>
+                </TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>
