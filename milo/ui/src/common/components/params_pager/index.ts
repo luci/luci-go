@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export * from './params_pager';
+export * from './params_pager_utils';

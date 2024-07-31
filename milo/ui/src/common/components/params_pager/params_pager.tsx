@@ -27,6 +27,8 @@ import {
 
 export interface ParamsPagerProps {
   readonly nextPageToken: string;
+  readonly pageSizes?: number[];
+  readonly defaultPageSize?: number;
 }
 
 /**
@@ -38,9 +40,13 @@ export interface ParamsPagerProps {
  * the component each time you navigate to a page.  E.g. loading spinners must not
  * replace this component, but must be lower in the component hierarchy.
  */
-export function ParamsPager({ nextPageToken }: ParamsPagerProps) {
+export function ParamsPager({
+  nextPageToken,
+  pageSizes = [25, 50, 100, 200],
+  defaultPageSize = 50,
+}: ParamsPagerProps) {
   const [searchParams, _] = useSyncedSearchParams();
-  const pageSize = getPageSize(searchParams);
+  const pageSize = getPageSize(searchParams, defaultPageSize);
   const pageToken = getPageToken(searchParams);
 
   // There could be a lot of prev pages. Do not keep those tokens in the URL.
@@ -58,11 +64,11 @@ export function ParamsPager({ nextPageToken }: ParamsPagerProps) {
       <Box sx={{ mt: '5px' }}>
         Page Size:{' '}
         <ToggleButtonGroup exclusive value={pageSize} size="small">
-          {[25, 50, 100, 200].map((s) => (
+          {pageSizes.map((s) => (
             <ToggleButton
               key={s}
               component={Link}
-              to={`?${pageSizeUpdater(s)(searchParams)}`}
+              to={`?${pageSizeUpdater(s, defaultPageSize)(searchParams)}`}
               value={s}
             >
               {s}

@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const DEFAULT_PAGE_SIZE = 50;
-
-export function getPageSize(params: URLSearchParams) {
-  return Number(params.get('limit')) || DEFAULT_PAGE_SIZE;
+export function getPageSize(params: URLSearchParams, defaultPageSize: number) {
+  return Number(params.get('limit')) || defaultPageSize;
 }
 
-export function pageSizeUpdater(newPageSize: number) {
+export function pageSizeUpdater(newPageSize: number, defaultPageSize: number) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
-    if (newPageSize === DEFAULT_PAGE_SIZE) {
+    if (newPageSize === defaultPageSize) {
       searchParams.delete('limit');
     } else {
       searchParams.set('limit', String(newPageSize));

@@ -14,6 +14,10 @@
 
 import { DateTime } from 'luxon';
 
+import {
+  ArtifactContentMatcher,
+  IDMatcher,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 export interface FormData {
   testIDStr: string;
   isTestIDStrPrefix: boolean;
@@ -24,3 +28,29 @@ export interface FormData {
   startTime: DateTime | null;
   endTime: DateTime | null;
 }
+
+export const FormData = {
+  getSearchString(form: FormData): ArtifactContentMatcher | undefined {
+    return form.searchStr === ''
+      ? undefined
+      : form.isSearchStrRegex
+        ? { regexContain: form.searchStr }
+        : { exactContain: form.searchStr };
+  },
+
+  getTestIDMatcher(form: FormData): IDMatcher | undefined {
+    return form.testIDStr === ''
+      ? undefined
+      : form.isTestIDStrPrefix
+        ? { hasPrefix: form.testIDStr }
+        : { exactEqual: form.testIDStr };
+  },
+
+  getArtifactIDMatcher(form: FormData): IDMatcher | undefined {
+    return form.artifactIDStr === ''
+      ? undefined
+      : form.isArtifactIDStrPrefix
+        ? { hasPrefix: form.artifactIDStr }
+        : { exactEqual: form.artifactIDStr };
+  },
+};
