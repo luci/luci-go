@@ -37,6 +37,8 @@ import {
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { InstructionDependencyChain_Node } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
+import { codeBlockStyles } from './style';
+
 const FIELD_MASK = Object.freeze([
   'id',
   'builder',
@@ -94,10 +96,7 @@ export function InstructionDependency({
           </Alert>
         )}
         {dependencyNode.content && (
-          <Typography
-            component="span"
-            sx={{ color: 'var(--default-text-color)' }}
-          >
+          <Typography component="span" css={codeBlockStyles}>
             <SanitizedHtml
               html={renderMustacheMarkdown(
                 dependencyNode.content,

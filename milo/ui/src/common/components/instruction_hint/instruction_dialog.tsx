@@ -37,6 +37,7 @@ import { QueryInstructionRequest } from '@/proto/go.chromium.org/luci/resultdb/p
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { InstructionDependency } from './instruction_dependency';
+import { codeBlockStyles } from './style';
 
 const INSTRUCTION_TARGET_DISPLAY_MAP = {
   // The unspecifed target should not happen.
@@ -156,10 +157,7 @@ export function InstructionDialog({
               </>
             )}
             {targetedInstructions.size > 0 && (
-              <Typography
-                component="span"
-                sx={{ color: 'var(--default-text-color)' }}
-              >
+              <Typography component="span" css={codeBlockStyles}>
                 <SanitizedHtml
                   html={renderMustacheMarkdown(
                     targetedInstruction?.content,
