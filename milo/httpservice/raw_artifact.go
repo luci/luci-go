@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package httpservice
 
 import (
 	"net/http"
@@ -63,23 +63,23 @@ func (s *HTTPService) buildRawArtifactHandler(prefix string) func(ctx *router.Co
 			return appstatus.GRPCifyAndLog(ctx.Request.Context(), err)
 		}
 
-		fetchUrl := artifact.FetchUrl
-		parsedFetchUrl, err := url.Parse(fetchUrl)
+		fetchURL := artifact.FetchUrl
+		parsedFetchURL, err := url.Parse(fetchURL)
 		if err != nil {
 			return errors.Annotate(err, "failed to parse artifact.fetchUrl").Err()
 		}
-		fetchUrlQuery := parsedFetchUrl.Query()
+		fetchURLQuery := parsedFetchURL.Query()
 		// Copy query params from request to fetch URL.
 		requestQuery := ctx.Request.URL.Query()
 		// We use two for loops as a query keycan have multiple values.
 		for key, values := range requestQuery {
 			for _, value := range values {
-				fetchUrlQuery.Add(key, value)
+				fetchURLQuery.Add(key, value)
 			}
 		}
-		parsedFetchUrl.RawQuery = fetchUrlQuery.Encode()
+		parsedFetchURL.RawQuery = fetchURLQuery.Encode()
 
-		http.Redirect(ctx.Writer, ctx.Request, parsedFetchUrl.String(), http.StatusFound)
+		http.Redirect(ctx.Writer, ctx.Request, parsedFetchURL.String(), http.StatusFound)
 		return nil
 	}
 }

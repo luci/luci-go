@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package httpservice
 
 import (
 	"text/template"
@@ -20,19 +20,21 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/router"
+
 	"go.chromium.org/luci/milo/internal/config"
 	configpb "go.chromium.org/luci/milo/proto/config"
-	"go.chromium.org/luci/server/router"
 )
+
+var configsJsTemplateStr = `
+	self.VERSION = '{{.Version}}';
+	self.SETTINGS = Object.freeze({{.SettingsJSON}});
+`
+
+var configsJsTemplate = template.Must(template.New("configs.js").Parse(configsJsTemplateStr))
 
 // configsJSHandler serves /configs.js used by the browser-side.
 func (s *HTTPService) configsJSHandler(c *router.Context) error {
-	tmpl, err := template.ParseFiles("../frontend/templates/configs.template.js")
-	if err != nil {
-		logging.Errorf(c.Request.Context(), "Failed to load configs.template.js: %s", err)
-		return err
-	}
-
 	settings := config.GetSettings(c.Request.Context())
 	// Reassign to make exposing props explicit.
 	settings = &configpb.Settings{
@@ -54,11 +56,10 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 	// We don't need to cache the configs file because it is fetched and re-served
 	// by the service worker.
 	header.Set("cache-control", "no-cache")
-	err = tmpl.Execute(c.Writer, map[string]any{
+	err := configsJsTemplate.Execute(c.Writer, map[string]any{
 		"Version":      s.Server.Options.ImageVersion(),
 		"SettingsJSON": protojson.Format(settings),
 	})
-
 	if err != nil {
 		logging.Errorf(c.Request.Context(), "Failed to execute configs.template.js: %s", err)
 		return err

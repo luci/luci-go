@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package httpservice
 
 import (
 	"context"
@@ -27,11 +27,12 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	configpb "go.chromium.org/luci/milo/proto/config"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
+
+	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
 func TestRawArtifactHandler(t *testing.T) {

@@ -15,45 +15,15 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
-	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
-	configpb "go.chromium.org/luci/milo/proto/config"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 	"google.golang.org/grpc/codes"
 )
-
-// HTTPService is the Milo frontend service that serves multiple HTTP endpoints.
-// TODO(weiweilin): move other HTTP endpoints to HTTPService.
-type HTTPService struct {
-	Server *server.Server
-
-	// GetSettings returns the current setting for milo.
-	GetSettings func(c context.Context) (*configpb.Settings, error)
-
-	// GetResultDBClient returns a ResultDB client for the given context.
-	GetResultDBClient func(c context.Context, host string, as auth.RPCAuthorityKind) (rdbpb.ResultDBClient, error)
-}
-
-// RegisterRoutes registers routes explicitly handled by the handler.
-func (s *HTTPService) RegisterRoutes() {
-	baseMW := router.NewMiddlewareChain()
-	baseAuthMW := baseMW.Extend(
-		middleware.WithContextTimeout(time.Minute),
-		auth.Authenticate(s.Server.CookieAuth),
-	)
-
-	s.Server.Routes.GET("/raw-artifact/*artifactName", baseAuthMW, handleError(s.buildRawArtifactHandler("/raw-artifact/")))
-	s.Server.Routes.GET("/configs.js", baseMW, handleError(s.configsJSHandler))
-}
 
 // handleError is a wrapper for a handler so that the handler can return an error
 // rather than call ErrorHandler directly.
