@@ -489,11 +489,9 @@ class GroupForm {
     // The spinner to show while the form is being submitted.
     this.spinner = this.element.querySelector('#submit-spinner');
 
-    // The alert element, used to give feedback on form submission.
-    this.alert = this.element.querySelector('#group-form-alert');
-    this.alertTitle = this.alert.querySelector('strong');
-    this.alertMessage = this.alert.querySelector('span');
-    this.clearAlert();
+    // The element for displaying form submission feedback.
+    this.feedback = this.element.querySelector('#submit-feedback');
+    this.feedbackTemplate = document.querySelector('#submit-feedback-template');
 
     // Is the form valid to submit?
     this.valid = false;
@@ -584,25 +582,29 @@ class GroupForm {
   }
 
   clearAlert() {
-    this.alert.style.display = 'none';
-    this.alert.classList.remove('alert-danger', 'alert-success');
-    this.alertTitle.textContent = '';
-    this.alertMessage.textContent = '';
+    // Clear the feedback section.
+    this.feedback.innerHTML = '';
+  }
+
+  #showAlert(alertClass, title, message) {
+    this.clearAlert();
+
+    // Clone the feedback template and set the class, title and message.
+    let fb = this.feedbackTemplate.content.cloneNode(true).querySelector('div');
+    fb.classList.add(alertClass);
+    fb.querySelector('strong').textContent = title;
+    fb.querySelector('span').textContent = message;
+
+    // Add the alert to the feedback section.
+    this.feedback.appendChild(fb);
   }
 
   showSuccessAlert(title) {
-    this.clearAlert();
-    this.alert.classList.add('alert-success');
-    this.alertTitle.textContent = title;
-    this.alert.style.display = 'block';
+    this.#showAlert('alert-success', title, '');
   }
 
   showErrorAlert(message) {
-    this.clearAlert();
-    this.alert.classList.add('alert-danger');
-    this.alertTitle.textContent = 'Oh snap!';
-    this.alertMessage.textContent = message;
-    this.alert.style.display = 'block';
+    this.#showAlert('alert-danger', 'Oh snap!', message);
   }
 
   showSpinner() {
