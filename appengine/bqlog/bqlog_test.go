@@ -35,10 +35,11 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/service/taskqueue"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var testingLog = Log{
@@ -59,14 +60,14 @@ func (e testEntry) Save() (map[string]bigquery.Value, string, error) {
 }
 
 func TestInsert(t *testing.T) {
-	Convey("With mock context", t, func() {
+	ftt.Run("With mock context", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 		tq := taskqueue.GetTestable(ctx)
 
 		tq.CreatePullQueue("pull-queue")
 
-		Convey("simple insert works", func() {
+		t.Run("simple insert works", func(t *ftt.Test) {
 			err := testingLog.Insert(ctx,
 				testEntry{
 					InsertID: "abc",
@@ -77,10 +78,10 @@ func TestInsert(t *testing.T) {
 				testEntry{
 					InsertID: "def",
 				})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			tasks := tq.GetScheduledTasks()["pull-queue"]
-			So(len(tasks), ShouldEqual, 1)
+			assert.Loosely(t, len(tasks), should.Equal(1))
 			var task *taskqueue.Task
 			for _, t := range tasks {
 				task = t
@@ -88,8 +89,8 @@ func TestInsert(t *testing.T) {
 			}
 
 			decoded := []rawEntry{}
-			So(gob.NewDecoder(bytes.NewReader(task.Payload)).Decode(&decoded), ShouldBeNil)
-			So(decoded, ShouldResemble, []rawEntry{
+			assert.Loosely(t, gob.NewDecoder(bytes.NewReader(task.Payload)).Decode(&decoded), should.BeNil)
+			assert.Loosely(t, decoded, should.Resemble([]rawEntry{
 				{
 					InsertID: "abc",
 					// Note that outer bigquery.Value deserializes into bqapi.JsonValue,
@@ -103,20 +104,20 @@ func TestInsert(t *testing.T) {
 				{
 					InsertID: "def",
 				},
-			})
+			}))
 		})
 
-		Convey("null insert works", func() {
+		t.Run("null insert works", func(t *ftt.Test) {
 			err := testingLog.Insert(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			tasks := tq.GetScheduledTasks()["pull-queue"]
-			So(len(tasks), ShouldEqual, 0)
+			assert.Loosely(t, len(tasks), should.BeZero)
 		})
 	})
 }
 
 func TestFlush(t *testing.T) {
-	Convey("With mock context", t, func() {
+	ftt.Run("With mock context", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 		ctx, tc := testclock.UseTime(ctx, time.Time{})
@@ -124,7 +125,7 @@ func TestFlush(t *testing.T) {
 
 		tq.CreatePullQueue("pull-queue")
 
-		Convey("No concurrency, no batches", func() {
+		t.Run("No concurrency, no batches", func(t *ftt.Test) {
 			testingLog := testingLog
 			testingLog.MaxParallelUploads = 1
 			testingLog.BatchesPerRequest = 20
@@ -133,7 +134,7 @@ func TestFlush(t *testing.T) {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
@@ -141,13 +142,13 @@ func TestFlush(t *testing.T) {
 			mockInsertAll(&testingLog, &reqs)
 
 			count, err := testingLog.Flush(ctx)
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Equal(3))
 
-			So(len(reqs), ShouldEqual, 1)
+			assert.Loosely(t, len(reqs), should.Equal(1))
 
 			blob, _ := json.MarshalIndent(reqs[0], "", "\t")
-			So(string(blob), ShouldEqual, `{
+			assert.Loosely(t, string(blob), should.Equal(`{
 	"rows": [
 		{
 			"insertId": "bqlog:5119905750835961307:0",
@@ -169,20 +170,20 @@ func TestFlush(t *testing.T) {
 		}
 	],
 	"skipInvalidRows": true
-}`)
+}`))
 
 			// Bump time to make sure all pull queue leases (if any) expire.
 			tc.Add(time.Hour)
-			So(len(tq.GetScheduledTasks()["pull-queue"]), ShouldEqual, 0)
+			assert.Loosely(t, len(tq.GetScheduledTasks()["pull-queue"]), should.BeZero)
 
 			// Nothing to flush.
 			count, err = testingLog.Flush(ctx)
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 0)
-			So(len(reqs), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.BeZero)
+			assert.Loosely(t, len(reqs), should.Equal(1))
 		})
 
-		Convey("Concurrency and batches", func() {
+		t.Run("Concurrency and batches", func(t *ftt.Test) {
 			testingLog := testingLog
 			testingLog.MaxParallelUploads = 5
 			testingLog.BatchesPerRequest = 2
@@ -191,7 +192,7 @@ func TestFlush(t *testing.T) {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
@@ -199,10 +200,10 @@ func TestFlush(t *testing.T) {
 			mockInsertAll(&testingLog, &reqs)
 
 			count, err := testingLog.Flush(ctx)
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 20)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Equal(20))
 
-			So(len(reqs), ShouldEqual, 10)
+			assert.Loosely(t, len(reqs), should.Equal(10))
 
 			// Make sure all data has been sent and insertIDs are all different.
 			ints := stringset.New(0)
@@ -213,15 +214,15 @@ func TestFlush(t *testing.T) {
 					ints.Add(string(row.Json["i"].(json.RawMessage)))
 				}
 			}
-			So(ints.Len(), ShouldEqual, 20)
-			So(ids.Len(), ShouldEqual, 20)
+			assert.Loosely(t, ints.Len(), should.Equal(20))
+			assert.Loosely(t, ids.Len(), should.Equal(20))
 
 			// Bump time to make sure all pull queue leases (if any) expire.
 			tc.Add(time.Hour)
-			So(len(tq.GetScheduledTasks()["pull-queue"]), ShouldEqual, 0)
+			assert.Loosely(t, len(tq.GetScheduledTasks()["pull-queue"]), should.BeZero)
 		})
 
-		Convey("Stops enumerating by timeout", func() {
+		t.Run("Stops enumerating by timeout", func(t *ftt.Test) {
 			testingLog := testingLog
 			testingLog.MaxParallelUploads = 1
 			testingLog.BatchesPerRequest = 1
@@ -231,7 +232,7 @@ func TestFlush(t *testing.T) {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
@@ -245,23 +246,23 @@ func TestFlush(t *testing.T) {
 
 			// First batch (until timeout).
 			count, err := testingLog.Flush(ctx)
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Equal(5))
 
 			// The rest.
 			count, err = testingLog.Flush(ctx)
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Equal(5))
 
 			// Total number of requests.
-			So(len(reqs), ShouldEqual, 10)
+			assert.Loosely(t, len(reqs), should.Equal(10))
 
 			// Bump time to make sure all pull queue leases (if any) expire.
 			tc.Add(time.Hour)
-			So(len(tq.GetScheduledTasks()["pull-queue"]), ShouldEqual, 0)
+			assert.Loosely(t, len(tq.GetScheduledTasks()["pull-queue"]), should.BeZero)
 		})
 
-		Convey("Handles fatal bq failure", func() {
+		t.Run("Handles fatal bq failure", func(t *ftt.Test) {
 			testingLog := testingLog
 			testingLog.MaxParallelUploads = 5
 			testingLog.BatchesPerRequest = 2
@@ -270,7 +271,7 @@ func TestFlush(t *testing.T) {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
@@ -279,17 +280,17 @@ func TestFlush(t *testing.T) {
 			}
 
 			count, err := testingLog.Flush(ctx)
-			So(err.Error(), ShouldEqual, "omg, error (and 9 other errors)")
-			So(count, ShouldEqual, 0)
+			assert.Loosely(t, err.Error(), should.Equal("omg, error (and 9 other errors)"))
+			assert.Loosely(t, count, should.BeZero)
 
 			// Bump time to make sure all pull queue leases (if any) expire. On fatal
 			// errors, we drop the data.
 			tc.Add(time.Hour)
-			So(len(tq.GetScheduledTasks()["pull-queue"]), ShouldEqual, 0)
+			assert.Loosely(t, len(tq.GetScheduledTasks()["pull-queue"]), should.BeZero)
 		})
 
-		// TODO(vadimsh): This test is flaky.
-		SkipConvey("Handles transient bq failure", func() {
+		t.Run("Handles transient bq failure", func(t *ftt.Test) {
+			t.Skip("This test is flaky.")
 			testingLog := testingLog
 			testingLog.MaxParallelUploads = 1
 			testingLog.BatchesPerRequest = 2
@@ -298,7 +299,7 @@ func TestFlush(t *testing.T) {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
@@ -313,16 +314,16 @@ func TestFlush(t *testing.T) {
 			})
 
 			count, err := testingLog.Flush(ctx)
-			So(err.Error(), ShouldEqual, "omg, transient error (and 2 other errors)")
-			So(count, ShouldEqual, 0)
+			assert.Loosely(t, err.Error(), should.Equal("omg, transient error (and 2 other errors)"))
+			assert.Loosely(t, count, should.BeZero)
 
 			// Bump time to make sure all pull queue leases (if any) expire. On
 			// transient error we keep the data.
 			tc.Add(time.Hour)
-			So(len(tq.GetScheduledTasks()["pull-queue"]), ShouldEqual, 20)
+			assert.Loosely(t, len(tq.GetScheduledTasks()["pull-queue"]), should.Equal(20))
 		})
 
-		Convey("Handles Lease failure", func() {
+		t.Run("Handles Lease failure", func(t *ftt.Test) {
 			testingLog := testingLog
 			testingLog.MaxParallelUploads = 5
 			testingLog.BatchesPerRequest = 2
@@ -331,7 +332,7 @@ func TestFlush(t *testing.T) {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
@@ -348,12 +349,12 @@ func TestFlush(t *testing.T) {
 			})
 
 			count, err := testingLog.Flush(ctx)
-			So(err.Error(), ShouldEqual, "lease error")
-			So(count, ShouldEqual, 0)
+			assert.Loosely(t, err.Error(), should.Equal("lease error"))
+			assert.Loosely(t, count, should.BeZero)
 
 			// Bump time to make sure all pull queue leases (if any) expire.
 			tc.Add(time.Hour)
-			So(len(tq.GetScheduledTasks()["pull-queue"]), ShouldEqual, 20)
+			assert.Loosely(t, len(tq.GetScheduledTasks()["pull-queue"]), should.Equal(20))
 		})
 	})
 }
