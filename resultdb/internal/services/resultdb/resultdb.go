@@ -135,6 +135,7 @@ func InitServer(srv *server.Server, opts Options) error {
 	srv.RegisterUnaryServerInterceptors(
 		spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_MEDIUM),
 		rpcutil.IdentityKindCountingInterceptor(),
+		rpcutil.RequestTimeoutInterceptor(),
 	)
 	return nil
 }

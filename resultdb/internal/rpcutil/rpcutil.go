@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -51,6 +52,19 @@ func IdentityKindCountingInterceptor() grpc.UnaryServerInterceptor {
 		service, method := parts[1], parts[2]
 
 		IdentityKindCounter.Add(ctx, 1, service, method, string(auth.CurrentIdentity(ctx).Kind()))
+		return handler(ctx, req)
+	}
+}
+
+// RequestTimeoutInterceptor returns a gRPC interceptor that set context timeout based on the RPC name.
+func RequestTimeoutInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+		if info.FullMethod == "/luci.resultdb.v1.ResultDB/QueryTestVariantArtifactGroups" {
+			return handler(ctx, req)
+		}
+		// All other RPCs should have a timeout limit of 1 minute.
+		ctx, cancel := context.WithTimeout(ctx, time.Minute)
+		defer cancel()
 		return handler(ctx, req)
 	}
 }
