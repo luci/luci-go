@@ -32,12 +32,11 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"github.com/golang/protobuf/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var epoch = time.Unix(1500000000, 0).UTC()
@@ -45,7 +44,7 @@ var epoch = time.Unix(1500000000, 0).UTC()
 func TestTestable(t *testing.T) {
 	t.Parallel()
 
-	Convey("With dispatcher", t, func() {
+	ftt.Run("With dispatcher", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(epoch))
 		tqt := taskqueue.GetTestable(ctx)
@@ -66,7 +65,7 @@ func TestTestable(t *testing.T) {
 		d.RegisterTask(&emptypb.Empty{}, handler, "q2", nil)
 		d.RegisterTask(&anypb.Any{}, handler, "q2", nil)
 
-		Convey("CreateQueues works", func() {
+		t.Run("CreateQueues works", func(t *ftt.Test) {
 			tst.CreateQueues()
 
 			var queue []string
@@ -74,14 +73,14 @@ func TestTestable(t *testing.T) {
 				queue = append(queue, q)
 			}
 			sort.Strings(queue)
-			So(queue, ShouldResemble, []string{"default", "q1", "q2"})
+			assert.Loosely(t, queue, should.Resemble([]string{"default", "q1", "q2"}))
 		})
 
-		Convey("GetScheduledTasks works", func() {
+		t.Run("GetScheduledTasks works", func(t *ftt.Test) {
 			tst.CreateQueues()
 
 			// Empty initially.
-			So(tst.GetScheduledTasks(), ShouldBeNil)
+			assert.Loosely(t, tst.GetScheduledTasks(), should.BeNil)
 
 			// Add a bunch.
 			d.AddTask(ctx, &tq.Task{
@@ -101,16 +100,16 @@ func TestTestable(t *testing.T) {
 
 			// Have them.
 			tasks := tst.GetScheduledTasks()
-			So(len(tasks), ShouldEqual, 4)
+			assert.Loosely(t, len(tasks), should.Equal(4))
 
 			// Correct order. First to execute are in front.
-			So(tasks[0].Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 3})
-			So(tasks[1].Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 4})
-			So(tasks[2].Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 2})
-			So(tasks[3].Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 1})
+			assert.Loosely(t, tasks[0].Payload, should.Resemble(&durationpb.Duration{Seconds: 3}))
+			assert.Loosely(t, tasks[1].Payload, should.Resemble(&durationpb.Duration{Seconds: 4}))
+			assert.Loosely(t, tasks[2].Payload, should.Resemble(&durationpb.Duration{Seconds: 2}))
+			assert.Loosely(t, tasks[3].Payload, should.Resemble(&durationpb.Duration{Seconds: 1}))
 		})
 
-		Convey("ExecuteTask works", func() {
+		t.Run("ExecuteTask works", func(t *ftt.Test) {
 			tst.CreateQueues()
 
 			d.AddTask(ctx, &tq.Task{Payload: &durationpb.Duration{Seconds: 1}})
@@ -119,10 +118,10 @@ func TestTestable(t *testing.T) {
 			for _, task := range tst.GetScheduledTasks() {
 				tst.ExecuteTask(ctx, task, nil)
 			}
-			So(calls, ShouldResembleProto, []proto.Message{
+			assert.Loosely(t, calls, should.Resemble([]proto.Message{
 				&emptypb.Empty{},
 				&durationpb.Duration{Seconds: 1},
-			})
+			}))
 		})
 	})
 }
@@ -130,7 +129,7 @@ func TestTestable(t *testing.T) {
 func TestRunSimulation(t *testing.T) {
 	t.Parallel()
 
-	Convey("Setup", t, func() {
+	ftt.Run("Setup", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = clock.Set(ctx, testclock.New(epoch))
 
@@ -192,36 +191,36 @@ func TestRunSimulation(t *testing.T) {
 		// protobuf type registry.
 		d.RegisterTask(&wrapperspb.Int64Value{}, handler, "", nil)
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			addTask(ctx, 1, 0, "")
 
 			executed, pending, err := tst.RunSimulation(ctx, nil)
-			So(err, ShouldBeNil)
-			So(len(pending), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(pending), should.BeZero)
 
 			// Task executed in correct sequence and duplicated task is skipped.
-			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3, 4, 5, 6})
+			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3, 4, 5, 6}))
 			// The clock matches last task.
-			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 3*time.Second)
+			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(3*time.Second))
 		})
 
-		Convey("Deadline", func() {
+		t.Run("Deadline", func(t *ftt.Test) {
 			addTask(ctx, 1, 0, "")
 
 			executed, pending, err := tst.RunSimulation(ctx, &SimulationParams{
 				Deadline: epoch.Add(2500 * time.Millisecond),
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The last task is still pending.
-			So(toIndexes(pending), ShouldResemble, []int64{6})
+			assert.Loosely(t, toIndexes(pending), should.Resemble([]int64{6}))
 			// Tasks executed in correct sequence and duplicated task is skipped.
-			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3, 4, 5})
+			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3, 4, 5}))
 			// The clock matches last executed task.
-			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
+			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(2*time.Second))
 		})
 
-		Convey("ShouldStopBefore", func() {
+		t.Run("ShouldStopBefore", func(t *ftt.Test) {
 			addTask(ctx, 1, 0, "")
 
 			executed, pending, err := tst.RunSimulation(ctx, &SimulationParams{
@@ -229,17 +228,17 @@ func TestRunSimulation(t *testing.T) {
 					return toIndex(t) == 5
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The task we stopped before is still pending.
-			So(toIndexes(pending), ShouldResemble, []int64{5})
+			assert.Loosely(t, toIndexes(pending), should.Resemble([]int64{5}))
 			// Tasks executed in correct sequence.
-			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3, 4})
+			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3, 4}))
 			// The clock matches last executed task.
-			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
+			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(2*time.Second))
 		})
 
-		Convey("ShouldStopAfter", func() {
+		t.Run("ShouldStopAfter", func(t *ftt.Test) {
 			addTask(ctx, 1, 0, "")
 
 			executed, pending, err := tst.RunSimulation(ctx, &SimulationParams{
@@ -247,48 +246,48 @@ func TestRunSimulation(t *testing.T) {
 					return toIndex(t) == 5
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The next task is the one submitted by the task we stopped at.
-			So(toIndexes(pending), ShouldResemble, []int64{6})
+			assert.Loosely(t, toIndexes(pending), should.Resemble([]int64{6}))
 			// Tasks executed in correct sequence.
-			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3, 4, 5})
+			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3, 4, 5}))
 			// The clock matches last executed task.
-			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
+			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(2*time.Second))
 		})
 
-		Convey("Error", func() {
+		t.Run("Error", func(t *ftt.Test) {
 			addTask(ctx, 1, 0, "")
 
 			errorOnIdx = 3
 			executed, pending, err := tst.RunSimulation(ctx, nil)
-			So(err.Error(), ShouldEqual, "task failure")
+			assert.Loosely(t, err.Error(), should.Equal("task failure"))
 
 			// Task 4 is still pending, since 3 is lexicographically earlier.
-			So(toIndexes(pending), ShouldResemble, []int64{4})
+			assert.Loosely(t, toIndexes(pending), should.Resemble([]int64{4}))
 			// Last one errored.
-			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3})
+			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3}))
 			// The clock matches last executed task.
-			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
+			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(2*time.Second))
 		})
 
-		Convey("Unrecognized task", func() {
+		t.Run("Unrecognized task", func(t *ftt.Test) {
 			unknownTask := taskqueue.Task{
 				Path:    "/unknown",
 				Payload: []byte{1, 2, 3},
 			}
-			So(taskqueue.Add(ctx, "", &unknownTask), ShouldBeNil)
+			assert.Loosely(t, taskqueue.Add(ctx, "", &unknownTask), should.BeNil)
 
 			addTask(ctx, 1, 0, "") // as in "Happy path"
 
-			Convey("Without UnknownTaskHandler", func() {
+			t.Run("Without UnknownTaskHandler", func(t *ftt.Test) {
 				executed, pending, err := tst.RunSimulation(ctx, nil)
-				So(err, ShouldErrLike, "unrecognized TQ task for handler at /unknown")
-				So(len(executed), ShouldEqual, 1) // executed the bad task
-				So(len(pending), ShouldEqual, 1)  // the good recognized task is pending
+				assert.Loosely(t, err, should.ErrLike("unrecognized TQ task for handler at /unknown"))
+				assert.Loosely(t, len(executed), should.Equal(1)) // executed the bad task
+				assert.Loosely(t, len(pending), should.Equal(1))  // the good recognized task is pending
 			})
 
-			Convey("With UnknownTaskHandler", func() {
+			t.Run("With UnknownTaskHandler", func(t *ftt.Test) {
 				var unknown []*taskqueue.Task
 				executed, pending, err := tst.RunSimulation(ctx, &SimulationParams{
 					UnknownTaskHandler: func(t *taskqueue.Task) error {
@@ -296,10 +295,10 @@ func TestRunSimulation(t *testing.T) {
 						return nil
 					},
 				})
-				So(err, ShouldBeNil)
-				So(len(executed), ShouldEqual, 7) // executed all tasks + 1 bad, see "happy path"
-				So(len(pending), ShouldEqual, 0)
-				So(unknown, ShouldResemble, []*taskqueue.Task{&unknownTask})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(executed), should.Equal(7)) // executed all tasks + 1 bad, see "happy path"
+				assert.Loosely(t, len(pending), should.BeZero)
+				assert.Loosely(t, unknown, should.Resemble([]*taskqueue.Task{&unknownTask}))
 			})
 		})
 	})
